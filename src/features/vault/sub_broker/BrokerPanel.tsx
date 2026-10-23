@@ -1,7 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ShieldCheck, ShieldOff, KeyRound, Activity, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ShieldCheck, ShieldOff, KeyRound, Activity, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
+import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
+import { Button } from '@/features/shared/components/buttons';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { Banner } from '@/features/shared/components/feedback/Banner';
+import { ConfirmPopover } from '@/features/shared/components/feedback/ConfirmPopover';
 import {
   listBrokerConsumers,
   listBrokerConsumerActivity,
@@ -11,12 +19,15 @@ import {
 } from '@/api/credentials/broker';
 
 /**
- * Zero-Plaintext Broker — minimal vault surface.
+ * Zero-Plaintext Broker — vault surface.
  *
  * Lists every external consumer identity observed using credentials through
  * the audited proxy, with a per-consumer kill-switch (revoke the consumer's
  * key) and an expandable recent-activity trail. Secrets never appear here —
  * only key prefixes and usage metadata.
+ *
+ * Composed from the same kit as the Settings tabs: the vault's ContentHeader
+ * already names the page, so the body is SectionCards on a centred column.
  */
 export function BrokerPanel() {
   const { t } = useTranslation();
@@ -40,44 +51,36 @@ export function BrokerPanel() {
   }, [refresh]);
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-3xl">
-      {/* Intro + honest exclusion copy */}
-      <div className="rounded-modal border border-primary/15 bg-secondary/30 p-4 space-y-2">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span className="typo-body text-foreground">{b.title}</span>
-        </div>
-        <p className="typo-caption text-foreground">{b.subtitle}</p>
-        <div className="flex items-start gap-2 px-2.5 py-2 rounded-card bg-amber-500/8 border border-amber-500/20">
-          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-          <p className="typo-caption text-foreground">{b.exclusion_note}</p>
-        </div>
-      </div>
+    <div className="mx-auto w-full max-w-4xl space-y-6" data-testid="broker-panel">
+      <SectionCard
+        title={b.title}
+        subtitle={b.subtitle}
+        icon={<ShieldCheck className="w-4 h-4 text-primary/60" />}
+        titleClassName="text-primary"
+      >
+        <Banner severity="warning" compact neutralBody message={b.exclusion_note} />
+      </SectionCard>
 
-      {/* Consumer list */}
-      <div>
-        <div className="typo-caption text-foreground mb-2">{b.consumers_header}</div>
-
-        {consumers === null && !loadError && (
-          <div className="typo-caption text-foreground px-1 py-2">{b.loading}…</div>
-        )}
+      <SectionCard
+        title={b.consumers_header}
+        icon={<Users className="w-4 h-4 text-primary/60" />}
+        titleClassName="text-primary"
+      >
+        {consumers === null && !loadError && <ListSkeleton rows={3} rowHeight={56} leading />}
         {loadError && (
-          <div className="typo-caption text-red-400 px-1 py-2">{b.load_error}</div>
+          <Banner severity="error" compact message={b.load_error} onRetry={() => void refresh()} />
         )}
         {consumers !== null && !loadError && consumers.length === 0 && (
-          <div className="rounded-modal border border-dashed border-primary/15 bg-secondary/20 p-6 text-center space-y-1">
-            <KeyRound className="w-5 h-5 text-foreground opacity-60 mx-auto" />
-            <div className="typo-body text-foreground/85">{b.empty_title}</div>
-            <p className="typo-caption text-foreground">{b.empty_body}</p>
+          <ScenarioEmptyState icon={KeyRound} size="sm" title={b.empty_title} subtitle={b.empty_body} />
+        )}
+        {consumers !== null && consumers.length > 0 && (
+          <div className="divide-y divide-foreground/5">
+            {consumers.map((c) => (
+              <ConsumerRow key={c.consumerKeyId} consumer={c} onChanged={refresh} />
+            ))}
           </div>
         )}
-
-        <div className="space-y-2">
-          {(consumers ?? []).map((c) => (
-            <ConsumerRow key={c.consumerKeyId} consumer={c} onChanged={refresh} />
-          ))}
-        </div>
-      </div>
+      </SectionCard>
     </div>
   );
 }
@@ -86,16 +89,16 @@ function ConsumerRow({ consumer, onChanged }: { consumer: BrokerConsumer; onChan
   const { t, tx } = useTranslation();
   const b = t.vault.broker;
 
+  const killRef = useRef<HTMLButtonElement>(null);
   const [confirming, setConfirming] = useState(false);
-  const [revoking, setRevoking] = useState(false);
   const [showActivity, setShowActivity] = useState(false);
   const [activity, setActivity] = useState<BrokerConsumerActivityEntry[] | null>(null);
 
   const status = consumer.active
-    ? { label: b.status_active, cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' }
+    ? { label: b.status_active, variant: 'success' as const }
     : consumer.revokedAt
-      ? { label: b.status_revoked, cls: 'bg-red-500/10 text-red-400 border-red-500/25' }
-      : { label: b.status_inactive, cls: 'bg-secondary/50 text-muted-foreground border-primary/15' };
+      ? { label: b.status_revoked, variant: 'error' as const }
+      : { label: b.status_inactive, variant: 'neutral' as const };
 
   const toggleActivity = async () => {
     const next = !showActivity;
@@ -109,99 +112,102 @@ function ConsumerRow({ consumer, onChanged }: { consumer: BrokerConsumer; onChan
     }
   };
 
+  // ConfirmPopover holds a real spinner while this is pending and the caller
+  // closes it, so the revoke cannot be abandoned half-way or fired twice.
   const revoke = async () => {
-    setRevoking(true);
     try {
       await revokeBrokerConsumer(consumer.consumerKeyId);
       await onChanged();
     } catch (e) {
       toastCatch('BrokerPanel:revoke', b.revoke_error)(e);
     } finally {
-      setRevoking(false);
       setConfirming(false);
     }
   };
 
   return (
-    <div className="rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden">
-      <div className="flex items-center gap-3 px-3 py-2.5">
-        <KeyRound className="w-4 h-4 text-foreground shrink-0" />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="typo-body text-foreground truncate">{consumer.consumerName}</span>
+    <div className="py-3 first:pt-0 last:pb-0">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-card border border-primary/15 bg-primary/5">
+          <KeyRound className="w-4 h-4 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="typo-body-lg text-foreground truncate">{consumer.consumerName}</span>
             {consumer.keyPrefix && (
-              <span className="typo-code text-foreground">{consumer.keyPrefix}…</span>
+              <span className="typo-code text-foreground shrink-0">{consumer.keyPrefix}…</span>
             )}
-            <span className={`px-1.5 py-0.5 typo-caption rounded-card border ${status.cls}`}>{status.label}</span>
+            <StatusBadge variant={status.variant} size="sm">{status.label}</StatusBadge>
           </div>
-          <div className="typo-caption text-foreground flex flex-wrap gap-x-3 mt-0.5">
+          <div className="typo-caption text-foreground flex flex-wrap gap-x-4 gap-y-0.5">
             <span>{tx(consumer.totalCalls === 1 ? b.calls_one : b.calls_other, { count: consumer.totalCalls })}</span>
             {consumer.lastUsedAt && (
-              <span>{b.last_used} {new Date(consumer.lastUsedAt).toLocaleString()}</span>
+              <span>{b.last_used} <RelativeTime timestamp={consumer.lastUsedAt} /></span>
             )}
             {consumer.active && consumer.expiresAt && (
-              <span>{b.expires} {new Date(consumer.expiresAt).toLocaleString()}</span>
+              <span>{b.expires} <RelativeTime timestamp={consumer.expiresAt} /></span>
             )}
           </div>
           {consumer.credentialNames.length > 0 && (
-            <div className="typo-caption text-foreground mt-0.5 truncate">
+            <div className="typo-caption text-foreground truncate">
               {b.credentials_used}: {consumer.credentialNames.join(', ')}
             </div>
           )}
         </div>
 
-        {/* Kill-switch (two-step confirm) */}
-        {consumer.active && (
-          confirming ? (
-            <button
-              type="button"
-              onClick={() => void revoke()}
-              disabled={revoking}
-              className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-card border border-red-500/40 bg-red-500/15 text-red-400 typo-caption hover:bg-red-500/25 transition-colors cursor-pointer disabled:opacity-50"
-              title={b.kill_switch_hint}
-            >
-              <ShieldOff className="w-3.5 h-3.5" />
-              {revoking ? b.revoking : b.kill_switch_confirm}
-            </button>
-          ) : (
-            <button
-              type="button"
+        <div className="flex items-center gap-1.5 shrink-0">
+          {consumer.active && (
+            <Button
+              ref={killRef}
+              variant="danger"
+              size="sm"
+              icon={<ShieldOff className="w-3.5 h-3.5" />}
               onClick={() => setConfirming(true)}
-              onBlur={() => setConfirming(false)}
-              className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-card border border-primary/15 bg-secondary/40 text-foreground typo-caption hover:border-red-500/40 hover:text-red-400 transition-colors cursor-pointer"
-              title={b.kill_switch_hint}
+              aria-haspopup="dialog"
+              aria-expanded={confirming}
             >
-              <ShieldOff className="w-3.5 h-3.5" />
               {b.kill_switch}
-            </button>
-          )
-        )}
-
-        <button
-          type="button"
-          onClick={() => void toggleActivity()}
-          className="shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-card text-foreground typo-caption hover:bg-secondary/50 transition-colors cursor-pointer"
-        >
-          <Activity className="w-3.5 h-3.5" />
-          {showActivity ? b.activity_hide : b.activity_show}
-          {showActivity ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        </button>
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<Activity className="w-3.5 h-3.5" />}
+            iconRight={showActivity ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            onClick={() => void toggleActivity()}
+            aria-expanded={showActivity}
+          >
+            {showActivity ? b.activity_hide : b.activity_show}
+          </Button>
+        </div>
       </div>
 
+      <ConfirmPopover
+        open={confirming}
+        anchorRef={killRef}
+        title={b.kill_switch_confirm}
+        detail={b.kill_switch_hint}
+        confirmLabel={b.kill_switch}
+        confirmIcon={<ShieldOff className="w-3.5 h-3.5" />}
+        tone="danger"
+        onConfirm={revoke}
+        onCancel={() => setConfirming(false)}
+      />
+
       {showActivity && (
-        <div className="border-t border-primary/10 px-3 py-2 bg-secondary/20">
+        <div className="mt-3 ml-11 rounded-card border border-primary/10 bg-secondary/20 px-3 py-2">
           {activity === null ? (
-            <div className="typo-caption text-foreground">{b.activity_loading}…</div>
+            <ListSkeleton rows={3} rowHeight={20} />
           ) : activity.length === 0 ? (
             <div className="typo-caption text-foreground">{b.activity_empty}</div>
           ) : (
             <div className="space-y-1 max-h-56 overflow-y-auto">
               {activity.map((a) => (
-                <div key={a.id} className="flex items-center gap-2 typo-caption font-mono">
-                  <span className={a.status >= 400 ? 'text-red-400' : 'text-emerald-400'}>{a.status}</span>
+                <div key={a.id} className="grid grid-cols-[3rem_4rem_minmax(0,1fr)_auto] items-center gap-2 typo-code">
+                  <span className={a.status >= 400 ? 'text-status-error' : 'text-status-success'}>{a.status}</span>
                   <span className="text-foreground">{a.method}</span>
-                  <span className="text-foreground/85 truncate flex-1">{a.path}</span>
-                  <span className="text-foreground shrink-0">{new Date(a.at).toLocaleString()}</span>
+                  <span className="text-foreground truncate">{a.path}</span>
+                  <RelativeTime timestamp={a.at} className="typo-caption text-foreground" />
                 </div>
               ))}
             </div>

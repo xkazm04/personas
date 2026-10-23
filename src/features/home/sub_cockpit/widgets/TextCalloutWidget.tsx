@@ -36,7 +36,7 @@ export function TextCalloutWidget({ config, title, span, actions, footer }: Cock
       actions={actions}
       footer={footer}
       state={body ? undefined : 'empty'}
-      empty={{ title: t.overview.cockpit.widget_empty }}
+      empty={{ art: 'report', title: t.overview.cockpit.widget_empty }}
       testId="cockpit-text-callout"
     >
       <div className="k-in max-w-[96ch]">

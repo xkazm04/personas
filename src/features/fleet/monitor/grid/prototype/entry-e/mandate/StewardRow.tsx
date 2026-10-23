@@ -1,27 +1,51 @@
-// One charter on the Stewards plate: the project and its steward, then the
-// envelope's load on one line (rung, the project's autopilot mode, budget
-// used / cap or "no cap", open asks, held items). The row is a lamp: lit amber
-// while the steward has asks open, blue for a draft waiting to be signed,
-// dark otherwise; a suspended mandate is struck dark. Pressing it opens the
-// mandate page (`M` opens the register).
+// One charter on the Stewards plate, in the rail's row grammar (a Usage plan
+// row, `PlanPlates`): ONE line - the project's name, its spend as the Usage
+// plate's thin bar against the cap (dashed when there is no cap or no
+// reading), the open asks as a right-aligned figure, and the lamp. The lamp is
+// lit only while the mandate holds something for the operator: amber while
+// the steward asks, blue for a draft waiting to be signed, dark otherwise; a
+// suspended mandate is struck. Everything else (steward, rung, mode, held,
+// spend in figures) is in the row's tooltip. Pressing it opens the mandate.
+//
+// The bar's lit length is what is SPENT (a cap fills up), the register's
+// reading of the same meter (`mandate/rowParts` SpendBar): amber past 85%,
+// red at the cap.
 
+import type { AutopilotMode } from '@/api/devTools/autopilot';
 import { Button } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import type { AutopilotMode } from '@/api/devTools/autopilot';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { MandateSummary } from '@/lib/bindings/MandateSummary';
-import { Lamp, Segments } from '../parts';
-import type { Lamp as LampModel } from '../tone';
-import { modeLabel, statusLabel } from './mandateCopy';
-
-const BUDGET_SEGS = 10;
+import { Lamp } from '../parts';
+import { toneClass, type Lamp as LampModel, type Tone } from '../tone';
+import { StewardTip } from '../stewards/StewardTip';
+import { MirrorMark } from './MirrorMark';
 
 export function stewardLamp(m: MandateSummary): LampModel {
   if (m.status === 'suspended') return { tone: 'off', lit: false };
   if ((m.load.openAsks ?? 0) > 0) return { tone: 'warn', lit: true };
   if (m.status === 'draft') return { tone: 'info', lit: true };
   return { tone: 'run', lit: false };
+}
+
+/** Spend bands, the same as the register's meter: amber past this share of the cap, red at the cap. */
+const SPEND_WARN_SHARE = 0.85;
+const SPEND_FULL_SHARE = 1;
+
+export function spendTone(share: number): Tone {
+  if (share >= SPEND_FULL_SHARE) return 'err';
+  return share > SPEND_WARN_SHARE ? 'warn' : 'run';
+}
+
+function SpendMeter({ used, cap }: { used: number | null; cap: number | null }) {
+  const share = used !== null && cap !== null && cap > 0 ? Math.min(1, used / cap) : null;
+  const tone = share === null ? null : spendTone(share);
+  return (
+    <span className={`ae-bar w-12 flex-shrink-0 ${tone ? toneClass(tone) : 'is-empty'}`} aria-hidden>
+      {share !== null && <i style={{ width: `${Math.max(share * 100, 2)}%` }} />}
+    </span>
+  );
 }
 
 export function StewardRow({ mandate, mode, modeKnown, held, onOpen }: {
@@ -36,43 +60,36 @@ export function StewardRow({ mandate, mode, modeKnown, held, onOpen }: {
   const { t, tx } = useTranslation();
   const m = t.monitor;
   const project = mandate.projectName ?? m.ml_project_unknown;
-  const steward = mandate.stewardName ?? m.ml_steward_unknown;
   const { spendUsedUsd: used, budgetUsd: cap, openAsks } = mandate.load;
-  const pct = used !== null && cap !== null && cap > 0 ? Math.min(1, used / cap) : null;
-  const lamp = stewardLamp(mandate);
+  const asking = (openAsks ?? 0) > 0;
+  const suspended = mandate.status === 'suspended';
 
   return (
-    <Tooltip content={tx(m.ml_steward_row_aria, { project })} placement="right" delay={500}>
+    <Tooltip
+      placement="right"
+      delay={400}
+      content={<StewardTip mandate={mandate} mode={mode} modeKnown={modeKnown} held={held} />}
+    >
       <Button
         variant="ghost"
+        size="xs"
         onClick={() => onOpen(mandate.charterId)}
         aria-label={tx(m.ml_steward_row_aria, { project })}
         data-testid="fleet-steward-row"
         data-charter={mandate.charterId}
         data-status={mandate.status}
-        className="ae-focus w-full min-w-0 rounded-input px-2 py-1.5 text-left [&>span]:flex [&>span]:w-full [&>span]:min-w-0 [&>span]:flex-col [&>span]:gap-1"
+        className="ae-plan ae-focus"
       >
-        <span className="flex min-w-0 items-center gap-2">
-          <span className={`min-w-0 flex-1 truncate typo-body text-foreground ${mandate.status === 'suspended' ? 'line-through decoration-foreground/40' : ''}`}>{project}</span>
-          {mandate.status !== 'active' && <span className="flex-shrink-0 typo-caption">{statusLabel(m, mandate.status)}</span>}
-          <Lamp lamp={lamp} />
-        </span>
-        <span className="truncate typo-caption text-foreground">{steward}</span>
-        <span className="flex min-w-0 flex-wrap items-center gap-x-2 typo-caption">
-          <span>{tx(m.ml_steward_rung, { rung: mandate.scopeRung })}</span>
-          <span>{modeKnown ? modeLabel(m, mode) : m.ml_steward_mode_unknown}</span>
-          <span className={(openAsks ?? 0) > 0 ? 'text-status-warning' : ''}>
-            {openAsks === null ? m.ml_steward_asks_unknown : tx(m.ml_steward_asks, { count: openAsks })}
+        <span className="flex w-full min-w-0 items-center gap-2">
+          <span className={`min-w-0 flex-1 truncate typo-caption text-foreground ${suspended ? 'line-through decoration-foreground/40' : ''}`}>
+            {project}
           </span>
-          {held !== null && held > 0 && <span>{tx(m.ml_steward_held, { count: held })}</span>}
-        </span>
-        <span className="flex min-w-0 items-center gap-2 typo-caption tabular-nums">
-          {pct !== null && <Segments className="w-14 flex-shrink-0" count={BUDGET_SEGS} lit={pct * BUDGET_SEGS} tone={pct > 0.85 ? 'warn' : 'run'} thin />}
-          <span className="min-w-0">
-            {cap === null ? m.ml_steward_no_cap : used === null ? m.ml_steward_spend_unknown : (
-              <><Numeric value={used} unit="usd" /> / <Numeric value={cap} unit="usd" /></>
-            )}
+          <MirrorMark mirror={mandate.mirror} />
+          <SpendMeter used={used} cap={cap} />
+          <span className={`w-5 flex-shrink-0 text-right typo-data tabular-nums ${asking ? 'text-status-warning' : 'text-foreground'}`}>
+            {openAsks === null ? '?' : asking ? <Numeric value={openAsks} /> : null}
           </span>
+          <Lamp lamp={stewardLamp(mandate)} />
         </span>
       </Button>
     </Tooltip>

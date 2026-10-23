@@ -56,7 +56,7 @@ function OrchestrationBody() {
       {!view ? (
         failed ? null : <Ghost />
       ) : rows.length === 0 ? (
-        <ScenarioEmptyState icon={Bot} title={s.orch_empty_title} description={s.orch_empty_hint} />
+        <ScenarioEmptyState icon={Bot} size="sm" title={s.orch_empty_title} description={s.orch_empty_hint} />
       ) : (
         <OrchestrationLedger state={state} view={view} />
       )}

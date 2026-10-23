@@ -1,0 +1,12 @@
+/* page-switch.css - bp's header page switch (bp src/components/page-switch.css, Header.tsx PageSwitch), re-ported:
+   DRAWING SET | LEDGER n, 18 px tall inside the title line, the pressed side ink-filled, the open-findings count in
+   amber. Tokens only (theme/bp-tokens.css). The segments are the sheet's Press (.bp-press resets them). */
+
+.bp-l1 .pgsw { display: inline-flex; vertical-align: middle; border: 1px solid var(--bp-ink-3); margin: -3px 0 -2px; }
+.bp-l1 .pgsw .bp-press { display: inline-flex; align-items: center; gap: 5px; height: 18px; padding: 0 6px; background: none; font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--bp-ink-2); }
+.bp-l1 .pgsw .bp-press + .bp-press { border-left: 1px solid var(--bp-ink-3); }
+.bp-l1 .pgsw .bp-press:hover { color: var(--bp-ink-hi); background: color-mix(in srgb, var(--bp-accent) 12%, transparent); }
+.bp-l1 .pgsw .bp-press[aria-pressed='true'] { background: var(--bp-ink); color: var(--bp-on-ink); }
+.bp-l1 .pgsw b { font: 600 var(--bp-fs-12)/1 var(--bp-font-mono); letter-spacing: 0; color: var(--bp-amber-2); }
+.bp-l1 .pgsw .bp-press[aria-pressed='true'] b { color: var(--bp-on-ink); }
+.bp-l1 .pgsw .bp-press:focus-visible { outline-offset: -2px; }

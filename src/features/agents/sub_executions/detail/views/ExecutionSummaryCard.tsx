@@ -6,7 +6,6 @@ import { getStatusEntry } from '@/lib/utils/formatters';
 import { STATUS_PALETTE, STATUS_PALETTE_EXTENDED } from '@/lib/design/statusTokens';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { StatusIcon } from '../../runnerTypes';
-import { CancelledResumeFooter } from '../../components/CancelledResumeFooter';
 
 // Semantic marker colors for tool-call / file-change rows, sourced from the
 // status token map rather than raw green/orange/blue literals.
@@ -18,7 +17,6 @@ import type { ExecutionSummary, ToolCallSummary, FileChangeSummary } from '@/hoo
 interface ExecutionSummaryCardProps {
   summary: ExecutionSummary;
   compact?: boolean;
-  onResume?: () => void;
 }
 
 function ToolCallList({ toolCalls, uniqueTools }: { toolCalls: ToolCallSummary[]; uniqueTools: string[] }) {
@@ -100,7 +98,7 @@ function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: F
   );
 }
 
-export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSummaryCardProps) {
+export function ExecutionSummaryCard({ summary, compact }: ExecutionSummaryCardProps) {
   const presentation = getStatusEntry(summary.status);
   const { t } = useTranslation();
 
@@ -157,14 +155,6 @@ export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSu
 
       {/* File changes expandable section */}
       <FileChangeList fileChanges={summary.fileChanges} writeCount={summary.fileWriteCount} readCount={summary.fileReadCount} />
-
-      {/* Cancelled-specific: last tool + resume */}
-      {summary.status === 'cancelled' && onResume && (
-        <CancelledResumeFooter
-          lastTool={summary.toolCalls.length > 0 ? summary.toolCalls[summary.toolCalls.length - 1]?.name : undefined}
-          onResume={onResume}
-        />
-      )}
     </div>
   );
 }

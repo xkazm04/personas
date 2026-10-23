@@ -336,13 +336,39 @@ export function parseConnectorDefinition(raw: RawConnectorDefinition): Connector
     fields: safeJsonParse(raw.fields, []),
     healthcheck_config: raw.healthcheck_config ? safeJsonParse(raw.healthcheck_config, null) : null,
     services: safeJsonParse(raw.services, []),
-    events: safeJsonParse(raw.events, []),
+    events: normalizeTemplateEvents(safeJsonParse<unknown>(raw.events, [])),
     metadata: raw.metadata ? safeJsonParse(raw.metadata, null) : null,
     resources: raw.resources ? safeJsonParse(raw.resources, []) : undefined,
     is_builtin: raw.is_builtin,
     created_at: raw.created_at,
     updated_at: raw.updated_at,
   };
+}
+
+/**
+ * Seed events are authored in two shapes: `{id,name,description}` (what readers
+ * key on) and the legacy `{eventType,label}` (local-messaging). Map the legacy
+ * shape onto the canonical one so the Events panel never keys a card by
+ * undefined; entries with neither an id nor an eventType are dropped.
+ */
+export function normalizeTemplateEvents(parsed: unknown): CredentialTemplateEvent[] {
+  if (!Array.isArray(parsed)) return [];
+  const out: CredentialTemplateEvent[] = [];
+  for (const raw of parsed) {
+    if (!raw || typeof raw !== 'object') continue;
+    // Invariant: seed JSON is an untyped object; every field is read through typeof checks below.
+    const e = raw as Record<string, unknown>;
+    const id = typeof e.id === 'string' ? e.id : typeof e.eventType === 'string' ? e.eventType : null;
+    if (!id) continue;
+    const name = typeof e.name === 'string' ? e.name : typeof e.label === 'string' ? e.label : id;
+    out.push({
+      ...(e as Partial<CredentialTemplateEvent>),
+      id,
+      name,
+      description: typeof e.description === 'string' ? e.description : '',
+    });
+  }
+  return out;
 }
 
 function safeJsonParse<T>(json: string, fallback: T): T {
@@ -412,8 +438,9 @@ export type SidebarSection = "home" | "overview" | "teams" | "personas" | "event
 // it lives at `companions` -> `curator:council` now.
 export type TeamsTab = "workspace" | "goals" | "kpis" | "factory" | "projects" | "lifecycle" | "contest" | "mastermind" | "features" | "whitelist" | "webview";
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
-export type GoalsTab = "board" | "progress";
-/** Sub-view within the KPIs hub — surfaced as sidebar sub-items (mirrors GoalsTab). */
+/** Layout of the single Goals surface: Notes (filmstrip / quest room) or the Ledger table. */
+export type GoalsView = "notes" | "ledger";
+/** Sub-view within the KPIs hub — surfaced as sidebar sub-items. */
 export type KpisTab = "dashboard" | "proposals";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";
 /** Sub-tab within the Design hub — the agent's four standing surfaces, in the
@@ -482,37 +509,12 @@ export type { ToolUsageSummary } from "@/lib/bindings/ToolUsageSummary";
 export type { ToolUsageOverTime } from "@/lib/bindings/ToolUsageOverTime";
 export type { PersonaUsageSummary } from "@/lib/bindings/PersonaUsageSummary";
 
-// -- Execution Output Types ---------------------------------------------
-
-export interface ExecutionOutputLine {
-  line?: string;
-  done?: boolean;
-  status?: string;
-}
-
 // -- Persona Info Mixin (shared across enriched types) ------------------
 
 export interface WithPersonaInfo {
   persona_name?: string;
   persona_icon?: string;
   persona_color?: string;
-}
-
-/** Build a persona lookup map and enrich records that have a persona_id field. */
-export function enrichWithPersona<T extends { persona_id: string }>(
-  records: T[],
-  personas: { id: string; name: string; icon: string | null; color: string | null }[],
-): (T & WithPersonaInfo)[] {
-  const personaMap = new Map(personas.map((p) => [p.id, p]));
-  return records.map((r) => {
-    const p = personaMap.get(r.persona_id);
-    return {
-      ...r,
-      persona_name: p?.name,
-      persona_icon: p?.icon ?? undefined,
-      persona_color: p?.color ?? undefined,
-    };
-  });
 }
 
 // -- Enriched Types (with persona info for global views) ----------------

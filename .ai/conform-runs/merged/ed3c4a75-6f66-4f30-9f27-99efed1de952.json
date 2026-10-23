@@ -1,0 +1,81 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ed3c4a75-6f66-4f30-9f27-99efed1de952",
+ "subject": "agent-session-archive",
+ "evaluatedAt": "2026-10-21T23:23:49.769556+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "notepad-editor",
+   "subject": "agent-session-archive",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/notepad/notepadStore.ts:771 Context and repository searches traced this archive action to application-owned note status changes, with no jsonl or capture_manifest matches under notepad, so third-party transcript preservation does not apply.",
+   "techniques": [
+    {
+     "technique": "capture-before-parse",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/NoteBody.tsx:56 The editor changes an application-owned note body rather than importing harness transcripts."
+    },
+    {
+     "technique": "declared-message-coordinates",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/NoteArchiveModal.tsx:107 Archive actions address notes, not citations into archived messages."
+    },
+    {
+     "technique": "ingest-disposition-accounting",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/parts/NoteMilestonePicker.tsx:74 The picker reads project milestones rather than inventories transcript sources."
+    },
+    {
+     "technique": "prefix-proof-retirement",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/NoteArchiveModal.tsx:114 This is an explicit note deletion action, not automatic retirement of transcript captures."
+    },
+    {
+     "technique": "queryable-surface-redaction",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/NoteBody.tsx:28 The workbench displays a note result summary rather than indexing archived transcript messages."
+    },
+    {
+     "technique": "root-relative-session-identity",
+     "verdict": "not-applicable",
+     "evidence": "src/features/notepad/NoteArchiveModal.tsx:93 The rendered archive contains note entities, not sessions identified by harness source paths."
+    }
+   ],
+   "absenceTerms": [
+    "jsonl",
+    "capture_manifest"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-session-archive",
+   "context": "commands-fleet",
+   "reason": "pair anchor refused: src-tauri/src/commands/fleet/transcript_read.rs:628 does not contain the quoted text"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-21T23:23:49.769556+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "agent-session-archive"
+   ],
+   "techniques": [
+    "capture-before-parse",
+    "declared-message-coordinates",
+    "ingest-disposition-accounting",
+    "prefix-proof-retirement",
+    "queryable-surface-redaction",
+    "root-relative-session-identity"
+   ],
+   "deviations": 0,
+   "context": "notepad-editor",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 
 // Plain matchers, not jest-dom's: `tsconfig.json` excludes `src/**/__tests__/**`
 // but NOT a co-located `*.test.tsx`, so this file IS typechecked and the
@@ -70,5 +70,32 @@ describe('LiveRoadmapStatusPill refresh target', () => {
       />,
     );
     expect(screen.queryByRole('button')).toBeNull();
+  });
+});
+
+describe('LiveRoadmapStatusPill freshness label', () => {
+  it('ages the "updated" label while it stays on screen', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-10-19T10:00:00Z'));
+      render(
+        <LiveRoadmapStatusPill
+          status="fresh"
+          fetchedAt="2026-10-19T10:00:00Z"
+          refreshing={false}
+          t={t}
+          language="en"
+        />,
+      );
+      expect(screen.getAllByText('Updated · now').length).toBeGreaterThan(0);
+      // No prop changes: the hourly poll has not fired, nothing re-renders the
+      // parent. The label must still move on its own.
+      act(() => {
+        vi.advanceTimersByTime(5 * 60 * 1000);
+      });
+      expect(screen.getAllByText('Updated · 5 minutes ago').length).toBeGreaterThan(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -10,6 +10,7 @@
  */
 
 import { addMiddleware, type PipelineMiddleware } from '@/lib/execution/pipeline';
+import { isActiveState } from '@/lib/execution/executionState';
 import { detectDesignDrift, saveDriftEvents } from '@/lib/design/designDrift';
 import type { AgentIR } from '@/lib/types/designTypes';
 import { createLogger } from '@/lib/log';
@@ -32,17 +33,18 @@ const driftDetectionMiddleware: PipelineMiddleware<'frontend_complete'> = async 
     const persona = state.personas.find((p) => p.id === personaId);
     if (!persona) return payload;
 
-    // Count recent consecutive failures.
-    // Use the pre-captured snapshot from the payload (captured before state
-    // reset in finishExecution) so we don't read stale or wrong-persona data.
-    const recentStatuses: string[] = [finalStatus];
-    const existingExecs = recentExecutions ?? [];
-    for (const e of existingExecs) {
-      recentStatuses.push(e.status);
-    }
+    // Count the PRIOR runs' consecutive failures -- `detectDesignDrift` adds
+    // this run itself (`recentFailureCount + 1 consecutive`, fires at >= 2).
+    // Counting `finalStatus` here as well made 2 failures in a row fire and
+    // titled 3 as "4 consecutive". Use the pre-captured snapshot from the
+    // payload (captured before state reset in finishExecution) so we don't
+    // read stale or wrong-persona data. A row still queued/running (this run's
+    // own row, or a concurrent one) has no outcome and does not end a streak;
+    // `incomplete` (the process died) is not a success, so it extends one.
     let recentFailureCount = 0;
-    for (const s of recentStatuses) {
-      if (s === 'failed') recentFailureCount++;
+    for (const e of recentExecutions ?? []) {
+      if (isActiveState(e.status)) continue;
+      if (e.status === 'failed' || e.status === 'incomplete') recentFailureCount++;
       else break;
     }
 

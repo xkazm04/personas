@@ -25,7 +25,7 @@ import { FILE, ms, sleep } from './useSoundingsNav';
 
 export function useSoundingsCanvas(model: SoundingsModel) {
   const { props, scene, stations, indexOf, nav, geo, pointOf, words } = model;
-  const { m, tx, laneLabel } = words;
+  const { m, tx, laneLabel, dimLabel } = words;
   const { level, curSlug, say, ping, goL0, goL1, goDim, setMarked, setBusy } = nav;
   const { size, card, chartRef } = geo;
 
@@ -101,7 +101,7 @@ export function useSoundingsCanvas(model: SoundingsModel) {
         if (!node) return fail('unknown_target');
         if (a.kind === 'dim.read') return ok(dimReadPayload(node));
         // dim.open: lift the reading, then open its Improve surface exactly as a click would.
-        say('athena', tx(m.soundings_log_dim, { dim: node.label, name: island.name }));
+        say('athena', tx(m.soundings_log_dim, { dim: dimLabel(node.key), name: island.name }));
         setMarked(new Set([`${island.slug}:${node.key}`]));
         goDim(i, node.key);
         await sleep(flight + ms(420, 20));

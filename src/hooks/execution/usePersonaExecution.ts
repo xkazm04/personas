@@ -5,6 +5,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { silentCatch } from "@/lib/silentCatch";
 import { useCorrelatedCliStream } from './useCorrelatedCliStream';
 import { EventName } from '@/lib/eventRegistry';
+import { runBackgroundCompletion } from '@/lib/execution/backgroundCompletion';
 import { traceStage, runMiddleware, type FinalizeStatusPayload } from '@/lib/execution/pipeline';
 import {
   canTransition,
@@ -157,9 +158,17 @@ export function usePersonaExecution() {
       store.appendExecutionOutput(`[ERROR] ${error}`);
     }
 
-    // Capture persona info before finishExecution resets state
+    // Capture persona info before finishExecution resets state. The name comes
+    // from the RUN's persona, not the selected one: a detached run is
+    // finalized here after the user switched personas, and the review
+    // notification would otherwise carry the persona now on screen.
     const execPersonaId = store.executionPersonaId;
-    const execPersonaName = store.selectedPersona?.name ?? null;
+    const execPersona = execPersonaId
+      ? store.personas.find((p) => p.id === execPersonaId)
+        ?? (store.selectedPersona?.id === execPersonaId ? store.selectedPersona : null)
+      : null;
+    // checkNewHumanReviews already takes `null` as "name unknown".
+    const execPersonaName = execPersona ? execPersona.name : null;
 
     store.finishExecution(status, {
       durationMs: duration_ms ?? null,
@@ -425,6 +434,24 @@ export function usePersonaExecution() {
           // the spend predicate counts them. Do not cite this line as precedent
           // for that one.
           const mapped = status === 'completed' ? 'completed' : status === 'cancelled' ? 'cancelled' : 'failed';
+          // Post-run middleware (budget cache, execution:completed, telemetry,
+          // drift) otherwise only ever saw the focused run. Once per lane: a
+          // repeated terminal event finds terminalAt already stamped.
+          if (!bg.terminalAt && isTerminalExecutionState(status)) {
+            const ended = validatePayload('execution-status', payload, ExecutionStatusSchema);
+            void runBackgroundCompletion({
+              executionId: execId,
+              personaId: bg.personaId,
+              status,
+              error: ended?.error ?? null,
+              durationMs: ended?.duration_ms ?? null,
+              costUsd: ended?.cost_usd ?? null,
+              recentExecutions: store.executions
+                .filter((e) => e.persona_id === bg.personaId)
+                .slice(0, 4)
+                .map((e) => ({ persona_id: e.persona_id, status: e.status })),
+            });
+          }
           // Stamps terminalAt on the first terminal status.
           store.updateBackgroundExecution(execId, mapped);
           // Completed and cancelled lanes fade after the window; a failed lane

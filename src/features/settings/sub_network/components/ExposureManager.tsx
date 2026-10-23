@@ -7,12 +7,15 @@ import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import type { ExposedResource, CreateExposedResourceInput, AccessLevel, ResourceType } from '@/api/network/exposure';
+import { buildCreateExposureInput } from './exposureInput';
 import { BundleExportDialog } from './BundleExportDialog';
 import { IdentitySettings } from './IdentitySettings';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { InlineConfirm } from './InlineConfirm';
 import { NetworkDashboard } from './NetworkDashboard';
 import { PeerList } from './PeerList';
 import { createLogger } from "@/lib/log";
+import { extractMessage } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
 
@@ -64,9 +67,17 @@ function ResourceExposureCard({
             <AccessIcon className="w-3 h-3" />
             {resource.access_level}
           </span>
+          <span
+            data-testid="exposure-auth-state"
+            className={`typo-caption px-1.5 py-0.5 rounded-full ${
+              resource.requires_auth ? 'text-status-success bg-secondary/40' : 'text-status-warning bg-secondary/40'
+            }`}
+          >
+            {resource.requires_auth ? t.sharing.exposure_auth_required : t.sharing.exposure_open_lan}
+          </span>
           {parsedFields.length > 0 && (
             <span className="text-[10px] text-foreground">
-              {parsedFields.length} field{parsedFields.length !== 1 ? 's' : ''} exposed
+              {tx(parsedFields.length === 1 ? t.sharing.fields_exposed_count_one : t.sharing.fields_exposed_count_other, { count: parsedFields.length })}
             </span>
           )}
         </div>
@@ -113,6 +124,8 @@ function AddExposureForm({
   const [resourceId, setResourceId] = useState('');
   const [accessLevel, setAccessLevel] = useState<AccessLevel>('read');
   const [tags, setTags] = useState('');
+  // Security: default off. Opening to unauthenticated LAN peers is an explicit choice.
+  const [openToLan, setOpenToLan] = useState(false);
 
   const selectedPersona = personas.find((p) => p.id === resourceId);
 
@@ -121,15 +134,14 @@ function AddExposureForm({
     const displayName = resourceType === 'persona' && selectedPersona
       ? selectedPersona.name
       : resourceId;
-    onAdd({
-      resource_type: resourceType,
-      resource_id: resourceId,
-      display_name: displayName,
-      fields_exposed: [],
-      access_level: accessLevel,
-      requires_auth: false,
-      tags: tags ? tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
-    });
+    onAdd(buildCreateExposureInput({
+      resourceType,
+      resourceId,
+      displayName,
+      accessLevel,
+      tags,
+      openToUnauthenticatedPeers: openToLan,
+    }));
   };
 
   return (
@@ -191,6 +203,21 @@ function AddExposureForm({
           onChange={(e) => setTags(e.target.value)}
           placeholder={st.tags_placeholder}
           className="w-full px-2 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
+        />
+      </div>
+
+      <div className="flex items-start justify-between gap-3 rounded-card border border-border p-2.5">
+        <div className="min-w-0">
+          <span id="exposure-open-lan-label" className="typo-caption text-foreground block">{st.open_to_lan_label}</span>
+          <span id="exposure-open-lan-hint" className="typo-caption text-foreground block mt-0.5">{st.open_to_lan_hint}</span>
+        </div>
+        <AccessibleToggle
+          checked={openToLan}
+          onChange={() => setOpenToLan((v) => !v)}
+          label={st.open_to_lan_label}
+          size="sm"
+          aria-describedby="exposure-open-lan-hint"
+          data-testid="exposure-open-lan-toggle"
         />
       </div>
 
@@ -265,7 +292,7 @@ export default function ExposureManager() {
       setShowAddForm(false);
       addToast(tx(st.resource_exposed_toast, { name: res.display_name || res.resource_id }), 'success');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       logger.warn('Failed to expose resource', { resource_type: input.resource_type, resource_id: input.resource_id, error: msg });
       addToast(st.expose_failed_toast, 'error');
     }
@@ -276,7 +303,7 @@ export default function ExposureManager() {
       await deleteExposedResource(id);
       addToast(st.exposure_removed_toast, 'success');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       logger.warn('Failed to remove exposure', { id, error: msg });
       addToast(st.remove_exposure_failed_toast, 'error');
     }

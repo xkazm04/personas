@@ -3,6 +3,7 @@ import { MessageSquare, Sparkles, Compass, Hash } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import { memberColor, FAMILY_TEXT } from '@/lib/channel/eventModel';
+import type { Translations } from '@/i18n/generated/types';
 
 /** Re-exported for the surfaces that import event-family colour from here
  *  (the shared source of truth lives in `eventModel.ts`, alongside `eventFamily`). */
@@ -28,18 +29,47 @@ export interface ChannelMember {
  * variants differ in LAYOUT, not in what a "qa requested changes" row says.
  * -------------------------------------------------------------------------- */
 
-/** Human verb per step-layer kind. */
-export const STEP_VERB: Record<string, string> = {
-  created: 'created the mission',
-  step_running: 'started',
-  step_done: 'finished',
-  step_failed: 'failed',
-  step_skipped: 'skipped',
-  status_awaiting_review: 'needs your review',
-  status_done: 'mission complete',
-  qa_changes_requested_rework: 'QA requested changes — rework round',
-  paused: 'paused',
-};
+/** The `monitor.*` i18n key of the human verb per step-layer kind. The words
+ *  live in the locale catalogs; this table only names where to read them. */
+export const STEP_VERB_COPY_KEY = {
+  created: 'live_step_created',
+  step_running: 'live_step_running',
+  step_done: 'live_step_done',
+  step_failed: 'live_step_failed',
+  step_skipped: 'live_step_skipped',
+  status_awaiting_review: 'live_step_awaiting_review',
+  status_done: 'live_step_mission_done',
+  qa_changes_requested_rework: 'live_step_rework',
+  paused: 'live_step_paused',
+} as const satisfies Record<string, keyof Translations['monitor']>;
+
+/** Brand name of the external bridge; deliberately not translated. */
+export const SLACK_BRAND = 'Slack';
+
+/** Translated names for the voices without a persona behind them. */
+export interface ChannelAuthorLabels { you: string; athena: string; director: string; system: string }
+
+/** Translated copy for the channel surfaces, read from the active locale. */
+export interface ChannelCopyLabels extends ChannelAuthorLabels {
+  /** The generic persona-post voice ("channel"). */
+  channel: string;
+  /** Step-layer verb per kind, keyed like {@link STEP_VERB_COPY_KEY}. */
+  stepVerb: Record<string, string>;
+}
+
+/** The author names from the active locale's monitor section. */
+export function channelAuthorLabels(t: Pick<Translations, 'monitor'>): ChannelAuthorLabels {
+  const m = t.monitor;
+  return { you: m.live_author_you, athena: m.live_author_athena, director: m.live_author_director, system: m.system };
+}
+
+/** Every channel-surface label from the active locale's monitor section. */
+export function channelCopyLabels(t: Pick<Translations, 'monitor'>): ChannelCopyLabels {
+  const m = t.monitor;
+  const stepVerb: Record<string, string> = {};
+  for (const [kind, key] of Object.entries(STEP_VERB_COPY_KEY)) stepVerb[kind] = m[key];
+  return { ...channelAuthorLabels(t), channel: m.live_event_channel, stepVerb };
+}
 
 /** Status-token tone per step-layer kind. */
 export const STEP_TONE: Record<string, string> = {
@@ -55,7 +85,6 @@ export const STEP_TONE: Record<string, string> = {
 };
 
 export interface AuthorMeta {
-  label: string;
   Icon: LucideIcon;
   /** Accent colour (hex or token) for gutters / rings / chips. */
   accent: string;
@@ -78,7 +107,6 @@ export function isAuthorKind(kind: string): kind is AuthorKind {
  *  (user/persona/athena/director/slack). */
 export const AUTHOR_KIND_META: Record<AuthorKind, AuthorMeta> = {
   persona: {
-    label: 'channel',
     Icon: MessageSquare,
     accent: 'rgb(148 163 184)',
     iconColor: 'text-foreground/60',
@@ -86,7 +114,6 @@ export const AUTHOR_KIND_META: Record<AuthorKind, AuthorMeta> = {
     tag: 'text-foreground/45',
   },
   athena: {
-    label: 'Athena',
     Icon: Sparkles,
     accent: 'rgb(167 139 250)',
     iconColor: 'text-violet-300',
@@ -94,7 +121,6 @@ export const AUTHOR_KIND_META: Record<AuthorKind, AuthorMeta> = {
     tag: 'text-violet-300',
   },
   director: {
-    label: 'Director',
     Icon: Compass,
     accent: 'rgb(56 189 248)',
     iconColor: 'text-sky-300',
@@ -105,7 +131,6 @@ export const AUTHOR_KIND_META: Record<AuthorKind, AuthorMeta> = {
   // own voice: a bridged message is neither the operator ("You") nor one of the
   // team's personas, and reading as either would be a lie about who is talking.
   slack: {
-    label: 'Slack',
     Icon: Hash,
     accent: 'rgb(45 212 191)',
     iconColor: 'text-teal-300',
@@ -140,19 +165,19 @@ export function avatarBgFor(kind: string): string {
 export function slackAuthorName(item: TeamChannelItem): string {
   const label = item.label?.trim();
   if (label && label !== 'slack') return label;
-  return item.personaId ?? AUTHOR_KIND_META.slack.label;
+  return item.personaId ?? SLACK_BRAND;
 }
 
 /** Resolve a display name for any channel item. */
-export function authorName(item: TeamChannelItem, persona: Persona | undefined): string {
+export function authorName(item: TeamChannelItem, persona: Persona | undefined, labels: ChannelAuthorLabels): string {
   // Slack first: a bridged author id can never index a persona, but guarding
   // here keeps an id collision from ever renaming an external human.
   if (item.kind === 'slack') return slackAuthorName(item);
   if (persona) return persona.name.replace(/^T: /, '');
-  if (item.kind === 'directive') return 'You';
-  if (item.kind === 'athena') return 'Athena';
-  if (item.kind === 'director') return 'Director';
-  return 'System';
+  if (item.kind === 'directive') return labels.you;
+  if (item.kind === 'athena') return labels.athena;
+  if (item.kind === 'director') return labels.director;
+  return labels.system;
 }
 
 /** Resolve the accent colour for any channel item (member colour for people). */

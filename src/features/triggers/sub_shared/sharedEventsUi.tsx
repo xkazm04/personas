@@ -23,15 +23,37 @@ export interface ChangePayload {
   release_version?: string;
 }
 
+/**
+ * Narrow a stored firing payload to the fields the renderers read. Payloads
+ * come from the shared-events catalog and are stored verbatim, so the shape is
+ * decided outside this app: a field of the wrong type is dropped here rather
+ * than crashing the row that renders it (`tags.map` on a string, an object
+ * summary as a React child).
+ */
 export function parseChangePayload(payload: string | null | undefined): ChangePayload {
   if (!payload) return {};
+  let v: unknown;
   try {
-    const v = JSON.parse(payload) as unknown;
-    return v && typeof v === 'object' ? (v as ChangePayload) : {};
+    v = JSON.parse(payload);
   } catch {
     return {};
   }
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+  const raw = v as Record<string, unknown>;
+  const out: ChangePayload = {};
+  for (const key of STRING_FIELDS) {
+    const value = raw[key];
+    if (typeof value === 'string') out[key] = value;
+  }
+  if (Array.isArray(raw.tags)) {
+    out.tags = raw.tags.filter((t): t is string => typeof t === 'string');
+  }
+  return out;
 }
+
+const STRING_FIELDS = [
+  'connector', 'label', 'docs_url', 'detected_at', 'summary', 'severity', 'release_version',
+] as const satisfies readonly Exclude<keyof ChangePayload, 'tags'>[];
 
 /**
  * Renders a feed's icon. Connector feeds carry an SVG asset path (`/icons/...`);

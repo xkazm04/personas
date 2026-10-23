@@ -9,10 +9,13 @@
  * keys; the stat labels reuse the already-i18n'd `project_overview.*` keys.
  */
 import { useCallback, type ReactNode } from 'react';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import type { EmptyArtMotif } from '@/features/shared/components/display/emptyArt/EmptyArt';
 import { Shield, RefreshCw, Plug, AlertCircle, Bug, Activity, BarChart3 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { updateProject } from '@/api/devTools/devTools';
 import { toastCatch } from '@/lib/silentCatch';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 import { useTranslation } from '@/i18n/useTranslation';
 import { StatCard } from '@/features/shared/components/display/StatCard';
 import { SentryProjectPicker } from '../sub_overview/OverviewParts';
@@ -69,7 +72,16 @@ function MonMatrix({ monCreds }: { monCreds: ReturnType<typeof useMonitoringPinp
   return <AssignmentMatrix {...props} />;
 }
 
-function StateMessage({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle: string }) {
+function StateMessage({ icon, title, subtitle, art }: { icon: ReactNode; title: string; subtitle: string; art?: EmptyArtMotif }) {
+  // A genuine empty (`art` given) draws the shared illustration; failures and
+  // blockers keep the plain icon block.
+  if (art) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <EmptyState art={art} title={title} description={subtitle} />
+      </div>
+    );
+  }
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-2 py-16 text-center px-6">
       <div className="text-primary/40">{icon}</div>
@@ -125,7 +137,7 @@ export default function MonitoringSection() {
         {!activeProject ? (
           <StateMessage icon={<AlertCircle className="w-8 h-8" />} title={dt.mon_no_project_title} subtitle={dt.mon_no_project_sub} />
         ) : state === 'empty' ? (
-          <StateMessage icon={<Plug className="w-8 h-8" />} title={dt.mon_empty_title} subtitle={dt.mon_empty_sub} />
+          <StateMessage art="link" icon={<Plug className="w-8 h-8" />} title={dt.mon_empty_title} subtitle={dt.mon_empty_sub} />
         ) : state === 'unmapped' ? (
           cred && cred.serviceType.toLowerCase() === 'sentry' ? (
             <div className="p-4">
@@ -136,7 +148,7 @@ export default function MonitoringSection() {
               />
             </div>
           ) : (
-            <StateMessage icon={<Plug className="w-8 h-8" />} title={dt.mon_unmapped_title} subtitle={dt.mon_unmapped_sub} />
+            <StateMessage art="link" icon={<Plug className="w-8 h-8" />} title={dt.mon_unmapped_title} subtitle={dt.mon_unmapped_sub} />
           )
         ) : state === 'unsupported' ? (
           <StateMessage
@@ -150,12 +162,12 @@ export default function MonitoringSection() {
         state === 'loading' && !stats ? (
           <MonitoringStatsGhost />
         ) : state === 'error' && !stats ? (
-          <StateMessage icon={<AlertCircle className="w-8 h-8 text-red-400/70" />} title={dt.mon_error_title} subtitle={error ?? dt.mon_unknown_error} />
+          <StateMessage icon={<AlertCircle className="w-8 h-8 text-red-400/70" />} title={dt.mon_error_title} subtitle={inlineErrorCopy(t, error, dt.mon_unknown_error)} />
         ) : stats ? (
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <StatCard label={po.unresolved_issues} value={stats.unresolvedIssues ?? '—'} icon={Bug} tone={stats.unresolvedIssues === null ? 'warning' : stats.unresolvedIssues === 0 ? 'success' : stats.unresolvedIssues > 5 ? 'danger' : 'warning'} />
-            <StatCard label={po.events_24h} value={stats.eventsLast24h} icon={Activity} tone={stats.eventsLast24h === 0 ? 'success' : stats.eventsLast24h > 100 ? 'danger' : 'warning'} />
-            <StatCard label={po.events_7d} value={stats.eventsLastWeek} icon={BarChart3} tone="info" />
+            <StatCard label={po.events_24h} value={stats.eventsLast24h ?? '—'} icon={Activity} tone={stats.eventsLast24h === null ? 'neutral' : stats.eventsLast24h === 0 ? 'success' : stats.eventsLast24h > 100 ? 'danger' : 'warning'} />
+            <StatCard label={po.events_7d} value={stats.eventsLastWeek ?? '—'} icon={BarChart3} tone={stats.eventsLastWeek === null ? 'neutral' : 'info'} />
           </div>
         ) : null}
       </div>

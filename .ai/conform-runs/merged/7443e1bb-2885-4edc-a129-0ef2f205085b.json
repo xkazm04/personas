@@ -1,0 +1,6 @@
+{"schema": "conform-run/1", "worker": "7443e1bb-2885-4edc-a129-0ef2f205085b", "subject": "build-economics",
+ "evaluatedAt": "2026-10-16T18:27:10Z",
+ "pairs": [],
+ "declined": [{"subject": "build-economics", "context": null,
+   "reason": "no-work (sixth consecutive dispatch, after merged runs ba1af589, f9579167, 1b5bb463, d406c87a, f9e84d6b - the last earlier today): .ai/registry-map.json (generatedAt 2026-10-14T18:25:17Z, 219 contexts, 1890 pairs) has build-economics in zero contexts' subjects[], absent from subjectIndex, and in no orphan; a --subject run adds no pairs. The ranking finding ('4 consumer deviations') cannot come from this map. Registry-side fix: stop the attention scan from re-dispatching this subject to personas until a map rebuild (node ../ai-registry/scripts/build-registry-map.mjs --project personas) or an operator-established pairing produces a pair, e.g. a build-tooling context covering scripts/run-codegen.mjs, scripts/build/, src-tauri/tauri.lite.conf.json and .github/workflows/ci.yml lanes; the subject is at revision 7, digest sha256-b2:2dc0e92ddb23f674."}],
+ "consults": []}

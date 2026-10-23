@@ -124,7 +124,7 @@ export function PendingDecisionList({
       render: (review) => (
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate typo-body text-foreground">{review.title || review.content.slice(0, 80)}</span>
-          {review.source === 'cloud' && <TableTag icon={<Cloud className="w-3 h-3" />}>Cloud</TableTag>}
+          {review.source === 'cloud' && <TableTag icon={<Cloud className="w-3 h-3" />}>{t.overview.review.cloud_badge}</TableTag>}
           <AutoResolvedBadge review={review} />
         </span>
       ),
@@ -188,6 +188,7 @@ export function PendingDecisionList({
           density="compact"
           borderless
           emptyTitle={t.overview.dc_pending_list_aria}
+          emptyArt="inbox"
         />
         {/* Keyset sentinel: scrolling near it pulls the next page. No spinner —
             the next page's rows ARE the progress. */}

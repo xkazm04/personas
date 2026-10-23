@@ -207,9 +207,15 @@ export function testFilesIn(failures) {
   return [...files];
 }
 
-/** The gate command narrowed to specific files: everything before the first " -- " plus "-- <files>". */
+/**
+ * The gate command narrowed to specific files: the first command of a ` && ` chain, everything
+ * before its first " -- ", plus "-- <files>". The chain cut matters: kp's gate is
+ * `npm run test:unit && node scripts/run-unit-tests.mjs "<kpi glob>"`, and appending to the whole
+ * chain handed the files to the SECOND command while the first re-ran the full suite, so a flake
+ * re-run "alone" was a full run that flaked again (run 9445de0b, 2026-10-18, held 3 h).
+ */
 export function narrowCommand(command, files) {
-  return String(command).split(' -- ')[0] + ' -- ' + files.join(' ');
+  return String(command).split(' && ')[0].split(' -- ')[0] + ' -- ' + files.join(' ');
 }
 
 /** Is every failure of `branch` also a failure of `base`? Both must be non-empty lists. */

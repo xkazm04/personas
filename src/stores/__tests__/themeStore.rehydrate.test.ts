@@ -19,6 +19,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 // Spy on the custom-theme DOM helpers so the rehydrate callback's call
 // to injectCustomThemeStyle is observable. Must come before the store import.
 vi.mock('@/lib/theme/deriveCustomTheme', () => ({
+  customThemeAttr: (m: string) => (m === 'light' ? 'light-custom' : 'custom'),
   deriveCustomThemeVars: vi.fn().mockReturnValue({}),
   injectCustomThemeStyle: vi.fn(),
   removeCustomThemeStyle: vi.fn(),

@@ -56,6 +56,27 @@ const BLOCKED_ENV_NAMES: &[&str] = &[
     "BASH_ENV",             // execute script when bash starts non-interactively
     "ENV",                  // execute script when sh starts
     "ZDOTDIR",              // redirect zsh config to attacker-controlled dir
+    "PYTHONHOME",           // swap the Python stdlib for an attacker-controlled tree
+    "PROMPT_COMMAND",       // bash runs this before every prompt
+    "SSH_ASKPASS",          // program ssh/git execute to obtain a password
+    "GIT_ASKPASS",          // program git executes to obtain credentials
+    "GIT_EXEC_PATH",        // directory git loads its sub-commands from
+    "GIT_PROXY_COMMAND",    // program git executes to reach a remote
+    "GIT_EXTERNAL_DIFF",    // program git executes for diffs
+    "GIT_TEMPLATE_DIR",     // hook templates copied into new repos
+    // Traffic-routing / TLS-trust knobs: a hostile proxy or CA bundle sees (or
+    // forges) every HTTPS call the agent makes, including other injected secrets.
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "ALL_PROXY",
+    "NO_PROXY",
+    "FTP_PROXY",
+    "NODE_EXTRA_CA_CERTS",
+    "NODE_TLS_REJECT_UNAUTHORIZED",
+    "SSL_CERT_FILE",
+    "SSL_CERT_DIR",
+    "REQUESTS_CA_BUNDLE",
+    "CURL_CA_BUNDLE",
 ];
 
 /// Env var name *prefixes* that re-arm the exact-name code-execution vectors via
@@ -75,6 +96,12 @@ const BLOCKED_ENV_PREFIXES: &[&str] = &[
     "DENO_",       // deno runtime knobs (DENO_DIR, etc.)
     "PIP_",        // pip config (index-url / extra args)
     "CARGO_",      // cargo config knobs (build/runner/rustflags overrides)
+    "GIT_CONFIG",  // GIT_CONFIG_COUNT/KEY_n/VALUE_n/GLOBAL/SYSTEM: inject core.sshCommand etc.
+    "GIT_SSH",     // GIT_SSH / GIT_SSH_COMMAND / GIT_SSH_VARIANT: program git executes
+    "GIT_SSL_",    // GIT_SSL_NO_VERIFY / GIT_SSL_CAINFO: TLS trust for git
+    "LD_",         // glibc loader knobs (LD_AUDIT, LD_PRELOAD, ...)
+    "DYLD_",       // macOS loader knobs
+    "BASH_FUNC_",  // bash exported-function injection (shellshock family)
 ];
 
 /// Sanitize an env var name: strip non-alphanumeric/underscore chars, uppercase,
@@ -153,6 +180,32 @@ mod env_name_sanitization_tests {
     }
 
     #[test]
+    fn blocks_git_proxy_and_ca_bundle_families() {
+        for name in [
+            "GIT_SSH_COMMAND",
+            "git_ssh",
+            "GIT_CONFIG_COUNT",
+            "GIT_CONFIG_KEY_0",
+            "GIT_CONFIG_VALUE_0",
+            "GIT_EXEC_PATH",
+            "GIT_ASKPASS",
+            "SSH_ASKPASS",
+            "HTTP_PROXY",
+            "https_proxy",
+            "ALL_PROXY",
+            "NODE_EXTRA_CA_CERTS",
+            "SSL_CERT_FILE",
+            "REQUESTS_CA_BUNDLE",
+            "PYTHONHOME",
+            "LD_AUDIT",
+            "PROMPT_COMMAND",
+            "BASH_FUNC_foo%%",
+        ] {
+            assert_eq!(sanitize_env_name(name), None, "{name} must be refused");
+        }
+    }
+
+    #[test]
     fn allows_benign_env_vars() {
         // Benign credential/app vars that don't hit a blocked name or family.
         assert_eq!(
@@ -163,6 +216,19 @@ mod env_name_sanitization_tests {
         assert_eq!(
             sanitize_env_name("SLACK_BOT_TOKEN"),
             Some("SLACK_BOT_TOKEN".to_string())
+        );
+        // Near-miss names must keep working.
+        assert_eq!(
+            sanitize_env_name("GITHUB_TOKEN"),
+            Some("GITHUB_TOKEN".to_string())
+        );
+        assert_eq!(
+            sanitize_env_name("GIT_TOKEN"),
+            Some("GIT_TOKEN".to_string())
+        );
+        assert_eq!(
+            sanitize_env_name("LDAP_PASSWORD"),
+            Some("LDAP_PASSWORD".to_string())
         );
     }
 }

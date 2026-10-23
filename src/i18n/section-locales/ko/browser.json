@@ -64,7 +64,8 @@
     "toggle_failed": "이 사이트의 허용 여부를 변경하지 못했습니다",
     "writes_ask": "{count}개 확인 필요",
     "writes_none": "페이지가 결정",
-    "pattern_chip": "패턴"
+    "pattern_chip": "패턴",
+    "remove_body": "{origin}이(가) 제거되며, 이 사이트의 재정의 설정과 자격 증명 연결도 함께 제거됩니다."
   },
   "add_site": {
     "cancel": "취소",

@@ -1,0 +1,103 @@
+{
+ "schema": "conform-run/1",
+ "worker": "fc0ed6f0-3e55-48ad-97da-0b3fd3104b91",
+ "subject": "optional-dependency-degradation",
+ "evaluatedAt": "2026-10-17T22:10:26.595627+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "home-welcome",
+   "subject": "optional-dependency-degradation",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/home/sub_welcome/lib/useNavCardStatus.ts:74 Unavailable activity data becomes zero counts and trends, making a failed initial read indistinguishable from confirmed inactivity.",
+   "techniques": [
+    {
+     "technique": "capability-honest-refusal",
+     "verdict": "deviation",
+     "evidence": "src/features/home/sub_welcome/lib/useNavCardStatus.ts:74 The store preserves null when its initial fetch fails, but this hook replaces it with ZERO_WINDOW and renders definite numeric activity and trend values."
+    }
+   ]
+  },
+  {
+   "context": "vault-dependency-graph",
+   "subject": "optional-dependency-degradation",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:305 Missing health data contributes a definite zero to the displayed cost-impact estimate instead of preserving an unavailable quantity.",
+   "techniques": [
+    {
+     "technique": "capability-honest-refusal",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_dependencies/credentialGraph.ts:305 Missing health records become zero burn rates; the revenue-loss reduction sums these values and SimulationPanel displays the total without an unavailable-data qualification."
+    }
+   ]
+  },
+  {
+   "context": "commands-core",
+   "subject": "optional-dependency-degradation",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/core/memory_compile.rs:251 Failed memory inserts are discarded while compilation returns success with only its created count, concealing partial or complete write failure.",
+   "techniques": [
+    {
+     "technique": "absent-degrades-malformed-fails-fast",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/core/gallery.rs:41 PERSONAS_WEB_URL silently loses surrounding whitespace rather than rejecting structural damage, and the reader performs no URL-shape validation before feature use."
+    },
+    {
+     "technique": "capability-honest-refusal",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/core/memory_compile.rs:251 The insert loop discards database errors; MemoryCompileResult returns created IDs and their count without failed-item results or a failure count."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-17T22:10:26.595627+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "optional-dependency-degradation"
+   ],
+   "techniques": [
+    "capability-honest-refusal"
+   ],
+   "deviations": 1,
+   "context": "home-welcome",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-17T22:10:26.595627+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "optional-dependency-degradation"
+   ],
+   "techniques": [
+    "capability-honest-refusal"
+   ],
+   "deviations": 1,
+   "context": "vault-dependency-graph",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-17T22:10:26.595627+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "optional-dependency-degradation"
+   ],
+   "techniques": [
+    "absent-degrades-malformed-fails-fast",
+    "capability-honest-refusal"
+   ],
+   "deviations": 1,
+   "context": "commands-core",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

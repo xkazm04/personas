@@ -33,7 +33,7 @@ structural difference."**
 (`src/lib/personas/promptMigration.ts:255`), which iterates
 `STANDARD_SECTION_KEYS` — `identity, instructions, toolGuidance, examples,
 errorHandling`. A `StructuredPrompt` also carries `customSections` and
-`webSearch` (`createEmptyStructuredPrompt`, `promptMigration.ts:70-80`). Neither
+`webSearch` (the `StructuredPrompt` interface, `promptMigration.ts:37`). Neither
 reaches the diff. The empty state at `DiffViewer.tsx:54` then re-walks *the same
 five keys* and, finding them equal, renders `t.agents.lab.no_structural_diff`.
 `DraftDiffViewer.tsx:24` has the identical blind spot, reached by a different

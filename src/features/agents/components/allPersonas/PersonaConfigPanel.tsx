@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { RefreshCw, Globe, FolderOpen, User, Minus, AlertTriangle, Search, X, Layers, ChevronRight, CornerDownRight } from 'lucide-react';
 import { listPersonas, resolveEffectiveConfigBulk } from '@/api/agents/personas';
-import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
+import { parseDesignContext } from '@/features/agents/shared/designContext';
 import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { formatModelShort } from '@/lib/utils/formatters';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -9,7 +10,9 @@ import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
 import type { ConfigSource } from '@/lib/bindings/ConfigSource';
 import type { ConfigField } from '@/lib/bindings/ConfigField';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
 /**
  * Effective model-config resolution table for every persona (global → workspace
@@ -75,7 +78,7 @@ interface CapabilityConfig {
  *  capabilities, not the persona-level config cascade. Handles camel/snake keys
  *  and both override shapes (bare model string, or a partial ModelProfile
  *  object `{ model, provider }`). */
-function capabilityConfigs(designContext: string | null): CapabilityConfig[] {
+function capabilityConfigs(designContext: string | null, untitledLabel: string): CapabilityConfig[] {
   const ucs = parseDesignContext(designContext).useCases ?? [];
   return ucs.map((uc, i) => {
     const rec = (uc ?? {}) as unknown as Record<string, unknown>;
@@ -89,7 +92,7 @@ function capabilityConfigs(designContext: string | null): CapabilityConfig[] {
       model = typeof o.model === 'string' ? o.model.trim() || null : null;
       provider = typeof o.provider === 'string' ? o.provider.trim() || null : null;
     }
-    const title = typeof rec.title === 'string' && rec.title.trim() ? rec.title : `Capability ${i + 1}`;
+    const title = typeof rec.title === 'string' && rec.title.trim() ? rec.title : `${untitledLabel} ${i + 1}`;
     const id = typeof rec.id === 'string' ? rec.id : `uc-${i}`;
     return { id, title, model, provider };
   });
@@ -250,6 +253,9 @@ function isFresh(entry: { ts: number } | undefined): entry is { ts: number; conf
 export function PersonaConfigPanel() {
   const [rows, setRows] = useState<PersonaRow[]>([]);
   const [globalLoading, setGlobalLoading] = useState(true);
+  // The raw failure of the persona LIST read, resolved to copy at render. Kept
+  // apart from `rows` so a failed read is never painted as "No agents found".
+  const [loadFailure, setLoadFailure] = useState<{ raw: unknown } | null>(null);
   const [filter, setFilter] = useState('');
   const [overridesOnly, setOverridesOnly] = useState(false);
   const { t, tx } = useTranslation();
@@ -281,9 +287,12 @@ export function PersonaConfigPanel() {
   // use-cases). Parsed from each persona's design_context, memoised over rows.
   const capConfigsByPersona = useMemo(() => {
     const m = new Map<string, CapabilityConfig[]>();
-    for (const row of rows) m.set(row.persona.id, capabilityConfigs(row.persona.design_context));
+    // An untitled use-case falls back to the localized noun + its ordinal; the
+    // literal English "Capability N" used to reach all 14 locales.
+    const untitled = t.agents.executions.col_capability;
+    for (const row of rows) m.set(row.persona.id, capabilityConfigs(row.persona.design_context, untitled));
     return m;
-  }, [rows]);
+  }, [rows, t.agents.executions.col_capability]);
 
   // Which persona rows are expanded to reveal their per-capability sub-rows.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -300,15 +309,16 @@ export function PersonaConfigPanel() {
   // Tracks the most recently started load() call so a slower, superseded
   // call (unmount mid-await, or a Refresh click while an initial load is
   // still in flight) can bail before writing stale state over fresh state.
-  const loadRequestIdRef = useRef(0);
+  const [loadLatest] = useState(createLatestWins);
 
   const load = async (forceRefresh = false) => {
-    const requestId = ++loadRequestIdRef.current;
+    const requestId = loadLatest.next();
     setGlobalLoading(true);
     try {
       if (forceRefresh) clearConfigCache();
       const personas = await listPersonas();
-      if (loadRequestIdRef.current !== requestId) return;
+      if (!loadLatest.isCurrent(requestId)) return;
+      setLoadFailure(null);
       const initial: PersonaRow[] = personas.map((p) => {
         const cached = configCache.get(p.id);
         if (isFresh(cached)) {
@@ -321,7 +331,7 @@ export function PersonaConfigPanel() {
       // Only resolve personas whose cache is stale or missing.
       const stale = personas.filter((p) => !isFresh(configCache.get(p.id)));
       if (stale.length === 0) {
-        if (loadRequestIdRef.current === requestId) setGlobalLoading(false);
+        if (loadLatest.isCurrent(requestId)) setGlobalLoading(false);
         return;
       }
 
@@ -352,7 +362,7 @@ export function PersonaConfigPanel() {
         });
       }
 
-      if (loadRequestIdRef.current !== requestId) return;
+      if (!loadLatest.isCurrent(requestId)) return;
       setRows(personas.map((p) => {
         const cached = configCache.get(p.id);
         return {
@@ -364,9 +374,11 @@ export function PersonaConfigPanel() {
       }));
     } catch (err) {
       silentCatch('PersonaConfigPanel:load')(err);
-      if (loadRequestIdRef.current === requestId) setRows([]);
+      // A failed read is a failure, not an empty roster: keep whatever rows a
+      // previous load rendered and say the read failed (loading pattern v2).
+      if (loadLatest.isCurrent(requestId)) setLoadFailure({ raw: err });
     } finally {
-      if (loadRequestIdRef.current === requestId) setGlobalLoading(false);
+      if (loadLatest.isCurrent(requestId)) setGlobalLoading(false);
     }
   };
 
@@ -377,15 +389,16 @@ export function PersonaConfigPanel() {
       {/* Subtitle + refresh */}
       <div className="flex items-start justify-between gap-3">
         <p className="typo-caption text-foreground max-w-2xl">{s.subtitle}</p>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="xs"
           onClick={() => load(true)}
-          disabled={globalLoading}
-          className="flex items-center gap-1 px-2 py-1 typo-caption text-foreground hover:text-foreground bg-secondary/30 hover:bg-secondary/50 rounded transition-colors disabled:opacity-50 shrink-0"
+          loading={globalLoading}
+          icon={<RefreshCw className="w-3 h-3" />}
+          className="shrink-0"
         >
-          <RefreshCw className={`w-3 h-3 ${globalLoading ? 'animate-spin' : ''}`} />
           {s.refresh}
-        </button>
+        </Button>
       </div>
 
       {/* Legend */}
@@ -460,7 +473,14 @@ export function PersonaConfigPanel() {
                 </td>
               </tr>
             )}
-            {!globalLoading && rows.length === 0 && (
+            {!globalLoading && loadFailure && (
+              <tr>
+                <td colSpan={2 + FIELDS.length} className="px-3 py-6 text-center text-status-error" role="alert">
+                  {resolveErrorTranslated(t, extractMessage(loadFailure.raw)).message}
+                </td>
+              </tr>
+            )}
+            {!globalLoading && !loadFailure && rows.length === 0 && (
               <tr>
                 <td colSpan={2 + FIELDS.length} className="px-3 py-6 text-center text-foreground">
                   {s.no_agents}

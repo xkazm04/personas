@@ -178,3 +178,46 @@ pub struct CreateProvenanceInput {
     pub bundle_hash: Option<String>,
     pub signature_verified: bool,
 }
+
+#[cfg(test)]
+mod exposure_vocab_tests {
+    use super::{AccessLevel, ResourceType};
+    use std::str::FromStr;
+
+    fn serde_token<T: serde::Serialize>(v: &T) -> String {
+        serde_json::to_value(v)
+            .ok()
+            .and_then(|j| j.as_str().map(str::to_owned))
+            .unwrap_or_default()
+    }
+
+    /// `as_str` (the column), `FromStr` (the read) and the serde rename (the
+    /// wire) are three hand spellings of one vocabulary. No wildcard arms.
+    #[test]
+    fn exposure_tokens_agree_with_serde_and_round_trip() {
+        for v in [AccessLevel::Read, AccessLevel::Execute, AccessLevel::Fork] {
+            match v {
+                AccessLevel::Read | AccessLevel::Execute | AccessLevel::Fork => {}
+            }
+            assert_eq!(serde_token(&v), v.as_str(), "{v:?}");
+            assert_eq!(AccessLevel::from_str(v.as_str()).ok(), Some(v));
+        }
+        for v in [
+            ResourceType::Persona,
+            ResourceType::Template,
+            ResourceType::ExecutionResult,
+            ResourceType::Knowledge,
+            ResourceType::Connector,
+        ] {
+            match v {
+                ResourceType::Persona
+                | ResourceType::Template
+                | ResourceType::ExecutionResult
+                | ResourceType::Knowledge
+                | ResourceType::Connector => {}
+            }
+            assert_eq!(serde_token(&v), v.as_str(), "{v:?}");
+            assert_eq!(ResourceType::from_str(v.as_str()).ok(), Some(v));
+        }
+    }
+}

@@ -45,8 +45,16 @@ export const kbPickDirectory = () =>
 export const kbIngestFiles = (kbId: string, filePaths: string[]) =>
   invoke<string>('kb_ingest_files', { kbId, filePaths });
 
+/**
+ * `kb_ingest_text` chunks and embeds the whole paste inline (no job id, no
+ * backend cap), so on a CPU embedder a large paste outlives the 90 s IPC
+ * default: the UI reported failure while the document was still being written
+ * and a retry raced it. The wrapper waits well past that.
+ */
+export const KB_INGEST_TEXT_TIMEOUT_MS = 600_000;
+
 export const kbIngestText = (kbId: string, title: string, text: string) =>
-  invoke<number>('kb_ingest_text', { kbId, title, text });
+  invoke<number>('kb_ingest_text', { kbId, title, text }, { timeoutMs: KB_INGEST_TEXT_TIMEOUT_MS });
 
 export const kbIngestDirectory = (kbId: string, dirPath: string, patterns: string[] = []) =>
   invoke<string>('kb_ingest_directory', { kbId, dirPath, patterns });
@@ -96,9 +104,19 @@ export const kbDeleteDocument = (documentId: string) =>
 // Structured Extraction (two-pass: infer schema -> review -> run)
 // ============================================================================
 
-/** Pass 1: propose an extraction schema by sampling the KB (one LLM call). */
+/**
+ * Pass 1: propose an extraction schema by sampling the KB (one LLM call).
+ *
+ * The backend budget is far past the 90 s IPC default: `infer_schema` hands
+ * the CLI runner `timeout_secs = 120`, a SILENCE lease the runner stretches to
+ * `120 * LEASE_CEILING_FACTOR` (3) = 360 s, and `with_escalation` re-runs a
+ * rejected output once on the escalation route, so two legs = 720 s. At 90 s
+ * the UI reported a failure while the model call went on to finish (and was
+ * paid for), and the retry paid again. 750 s sits above the ceiling;
+ * `__tests__/kbInferSchemaTimeout.test.ts` pins it to the Rust source.
+ */
 export const kbInferSchema = (kbId: string) =>
-  invoke<KbExtractionSchema>('kb_infer_schema', { kbId });
+  invoke<KbExtractionSchema>('kb_infer_schema', { kbId }, { timeoutMs: 750_000 });
 
 /** Pass 2: run extraction against an approved schema. Returns the run id;
  *  progress arrives on the `kb-extraction-progress` event. */

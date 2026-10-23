@@ -41,7 +41,7 @@ export function ChatInput({
                 : db.placeholder_followup
             }
             // Deliberately NOT disabled while generating. A generation runs for
-            // up to NL_QUERY_POLL_TIMEOUT_MS (60s), and disabling the textarea
+            // up to NL_QUERY_POLL_TIMEOUT_MS (minutes), and disabling the textarea
             // dropped focus to <body> and threw away every keystroke of the
             // follow-up the user was drafting. The double-submit guard lives in
             // ChatTab's handleSubmit (`if (!question || generating) return`), so

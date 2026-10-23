@@ -607,5 +607,7 @@
   "waiting_for_output": "Ожидание вывода…",
   "what_testing_checks": "Что проверяет тестирование:",
   "what_to_explore": "Что исследовать",
-  "your_agent_fallback": "Ваш агент"
+  "your_agent_fallback": "Ваш агент",
+  "approve_failed": "Не удалось одобрить {name}. Вы можете одобрить его позже в разделе «Коннекторы».",
+  "execution_ended": "Выполнение: {status}"
 }

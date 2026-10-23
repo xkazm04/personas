@@ -1,27 +1,29 @@
+import type { LucideIcon } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import type { EmptyArtMotif } from '@/features/shared/components/display/emptyArt/EmptyArt';
+import { motifForIcon } from '@/features/shared/components/display/emptyArt/iconMotif';
+
 interface LabEmptyStateProps {
-  icon: React.ComponentType<{ className?: string }>;
+  /** Read as its EmptyArt motif when it has one. */
+  icon?: LucideIcon;
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
   size?: 'compact' | 'standard' | 'full';
+  /** Illustration; else the icon's motif; else `runs` (Lab surfaces are run histories). */
+  art?: EmptyArtMotif;
 }
 
-export function LabEmptyState({ icon: Icon, title, subtitle, action, size = 'standard' }: LabEmptyStateProps) {
-  if (size === 'compact') {
-    return (
-      <div className="flex items-center gap-2 py-4 px-3">
-        <Icon className="w-5 h-5 text-foreground flex-shrink-0" />
-        <span className="typo-body text-foreground">{title}</span>
-      </div>
-    );
-  }
-
+/** Lab's empty state: a thin wrapper over the shared ScenarioEmptyState. */
+export function LabEmptyState({ icon, title, subtitle, action, size = 'standard', art }: LabEmptyStateProps) {
   return (
-    <div className={`text-center bg-secondary/30 border border-primary/10 rounded-modal ${size === 'full' ? 'py-12' : 'py-8'}`}>
-      <Icon className="w-8 h-8 text-foreground mx-auto mb-3" />
-      <p className="typo-body text-foreground">{title}</p>
-      {subtitle && <p className="typo-caption text-foreground mt-1">{subtitle}</p>}
-      {action && <div className="mt-4">{action}</div>}
-    </div>
+    <ScenarioEmptyState
+      art={art ?? motifForIcon(icon) ?? 'runs'}
+      size={size === 'full' ? 'md' : 'sm'}
+      title={title}
+      subtitle={subtitle}
+    >
+      {action}
+    </ScenarioEmptyState>
   );
 }

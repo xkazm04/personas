@@ -23,6 +23,8 @@ import {
 } from '@/lib/credentials/remediationBus';
 import { executeRemediationAction } from '@/lib/credentials/remediationExecutor';
 import { silentCatch } from '@/lib/silentCatch';
+import { interpolate, useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/en';
 
 /** Evaluation interval: check all credentials every 30 minutes. */
 const EVAL_INTERVAL_MS = 30 * 60 * 1000;
@@ -71,13 +73,23 @@ export function classifyEmbeddedAnomaly(metadata: string | null): EmbeddedAnomal
  * Returns the latest evaluation log for UI consumption.
  */
 export function useRemediationEvaluator() {
-  const credentials = useVaultStore((s) => s.credentials);
+  const { t } = useTranslation();
+  // `evaluate` is a long-lived callback (30 min timer); read the copy through a
+  // ref so a language switch is picked up without re-arming the timer.
+  const reasonCopyRef = useRef(t.vault.remediation_notify);
+  reasonCopyRef.current = t.vault.remediation_notify;
   const [lastEvaluation, setLastEvaluation] = useState<EvaluationResult[]>([]);
   const [evaluating, setEvaluating] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
 
+  // Reads the store at call time instead of closing over a subscribed
+  // `credentials` array. With the array in the deps, every store write that
+  // produced a new array (fetch, metadata patch, rename, tag edit) re-created
+  // `evaluate`, tore the timer effect down and re-armed its 15 s start timer:
+  // the ladder ran 15 s after each write instead of every 30 min.
   const evaluate = useCallback(async () => {
+    const credentials = useVaultStore.getState().credentials;
     if (credentials.length < MIN_CREDENTIALS) return;
     setEvaluating(true);
 
@@ -121,7 +133,7 @@ export function useRemediationEvaluator() {
           credentialName: cred.name,
           action,
           remediation: anomaly_score.remediation,
-          reason: buildReason(anomaly_score.remediation, anomaly_score),
+          reason: buildReason(anomaly_score.remediation, anomaly_score, reasonCopyRef.current),
           anomalyScore: anomaly_score,
         });
 
@@ -146,7 +158,7 @@ export function useRemediationEvaluator() {
       setLastEvaluation(results);
       setEvaluating(false);
     }
-  }, [credentials]);
+  }, []);
 
   // Start periodic evaluation
   useEffect(() => {
@@ -201,6 +213,7 @@ export function useRemediationEvaluator() {
 function buildReason(
   remediation: string,
   score: { failure_rate_1h: number; permanent_failure_rate_1h: number; transient_failure_rate_1h: number },
+  copy: Translations['vault']['remediation_notify'],
 ): string {
   const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
 
@@ -208,14 +221,14 @@ function buildReason(
   // same mismatch as the fast-path skip above defeated this switch too.
   switch (remediation) {
     case 'BackoffRetry':
-      return `Transient failure rate at ${pct(score.transient_failure_rate_1h)} (1h). Applying exponential backoff.`;
+      return interpolate(copy.reason_backoff_retry, { pct: pct(score.transient_failure_rate_1h) });
     case 'PreemptiveRotation':
-      return `Sustained degradation: ${pct(score.failure_rate_1h)} failure rate (1h). Scheduling preemptive rotation.`;
+      return interpolate(copy.reason_preemptive_rotation, { pct: pct(score.failure_rate_1h) });
     case 'RotateThenAlert':
-      return `Permanent errors detected: ${pct(score.permanent_failure_rate_1h)} permanent failure rate (1h). Rotating and alerting.`;
+      return interpolate(copy.reason_rotate_then_alert, { pct: pct(score.permanent_failure_rate_1h) });
     case 'Disable':
-      return `Critical: ${pct(score.permanent_failure_rate_1h)} permanent failure rate (1h). Auto-disabling rotation policies.`;
+      return interpolate(copy.reason_disable, { pct: pct(score.permanent_failure_rate_1h) });
     default:
-      return `Remediation level: ${remediation}`;
+      return interpolate(copy.reason_default, { level: remediation });
   }
 }

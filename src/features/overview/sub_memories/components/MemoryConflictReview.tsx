@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { InboxZero } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Shield, ChevronDown, Check } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
@@ -16,8 +17,10 @@ import {
 import { trackInteraction } from '@/lib/sentry';
 import { mergeMemories } from '../libs/conflictHelpers';
 import ConflictCard from './ConflictCard';
-import { DebtText } from '@/i18n/DebtText';
+import { DebtText, debtText } from '@/i18n/DebtText';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 
 interface MemoryConflictReviewProps {
@@ -38,9 +41,10 @@ export function MemoryConflictReview({ onConflictsResolved, loading }: MemoryCon
   const { t, tx } = useTranslation();
   const mc = t.overview.memory_conflict;
   const {
-    memories, memoriesTotal, setMemoryTier, mergeMemories: mergeMemoriesAction, fetchMemories,
+    memories, memoriesTotal, memoriesError, setMemoryTier, mergeMemories: mergeMemoriesAction, fetchMemories,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
+    memoriesError: s.memoriesError,
     memoriesTotal: s.memoriesTotal,
     setMemoryTier: s.setMemoryTier,
     mergeMemories: s.mergeMemories,
@@ -211,6 +215,16 @@ export function MemoryConflictReview({ onConflictsResolved, loading }: MemoryCon
     );
   }
 
+  // The memories read FAILED and nothing arrived: there was nothing to audit,
+  // so the all-clear below would certify a store nobody looked at.
+  if (memoriesError && memories.length === 0) {
+    return (
+      <div className="mx-4 md:mx-6">
+        <InlineErrorBanner message={resolveErrorTranslated(t, memoriesError).message} />
+      </div>
+    );
+  }
+
   // Rendering `null` here was invisible-by-design in the old banner position,
   // but this component IS the Conflicts tab's entire body: a store with no
   // detected conflicts painted a blank panel, which is indistinguishable from
@@ -274,9 +288,8 @@ export function MemoryConflictReview({ onConflictsResolved, loading }: MemoryCon
           <div className="animate-fade-slide-in overflow-hidden">
             <div className="mt-2 space-y-2 max-h-[400px] overflow-y-auto pr-1">
               {unresolvedConflicts.length === 0 ? (
-                <div className="text-center py-6 typo-body text-foreground">
-                  <Check className="w-5 h-5 mx-auto mb-2 text-emerald-400" />
-                  <DebtText k="auto_all_conflicts_resolved_b848395b" />
+                <div className="flex justify-center py-4">
+                  <InboxZero title={debtText('auto_all_conflicts_resolved_b848395b')} />
                 </div>
               ) : (
                 unresolvedConflicts.map((conflict) => (

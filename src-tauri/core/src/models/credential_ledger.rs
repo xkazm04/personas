@@ -191,39 +191,6 @@ impl CredentialLedger {
         serde_json::to_value(self).unwrap_or(serde_json::Value::Object(Default::default()))
     }
 
-    // ── Section-level merge helpers ─────────────────────────────────────
-
-    /// Merge only the health section from `other`, leaving all other
-    /// sections untouched. Used by the healthcheck subsystem.
-    pub fn merge_health(&mut self, other: &CredentialLedger) {
-        self.healthcheck_results = other.healthcheck_results.clone();
-        self.healthcheck_last_success = other.healthcheck_last_success;
-        self.healthcheck_last_success_at = other.healthcheck_last_success_at.clone();
-        self.anomaly_score = other.anomaly_score.clone();
-        self.anomaly_tolerance = other.anomaly_tolerance;
-        self.environment = other.environment.clone();
-    }
-
-    /// Merge only the OAuth section from `other`.
-    /// Used by the OAuth refresh engine.
-    pub fn merge_oauth(&mut self, other: &CredentialLedger) {
-        self.oauth_token_expires_at = other.oauth_token_expires_at.clone();
-        self.oauth_refresh_count = other.oauth_refresh_count;
-        self.oauth_last_refresh_at = other.oauth_last_refresh_at.clone();
-        self.oauth_predicted_lifetime_secs = other.oauth_predicted_lifetime_secs;
-        self.oauth_refresh_backoff_until = other.oauth_refresh_backoff_until.clone();
-        self.oauth_refresh_fail_count = other.oauth_refresh_fail_count;
-        self.needs_reauth = other.needs_reauth;
-        self.needs_reauth_at = other.needs_reauth_at.clone();
-    }
-
-    /// Merge only the usage section from `other`.
-    /// Used by the usage tracking subsystem.
-    pub fn merge_usage(&mut self, other: &CredentialLedger) {
-        self.usage_count = other.usage_count;
-        self.last_used_at = other.last_used_at.clone();
-    }
-
     // ── Convenience accessors ───────────────────────────────────────────
 
     /// Resolve the anomaly tolerance, falling back to environment hints
@@ -291,16 +258,6 @@ impl CredentialLedger {
     pub fn clear_needs_reauth(&mut self) {
         self.needs_reauth = None;
         self.needs_reauth_at = None;
-    }
-
-    /// Record an OAuth token refresh in the ledger.
-    pub fn record_oauth_refresh(&mut self, expires_at: &str, predicted_lifetime_secs: i64) {
-        let count = self.oauth_refresh_count.unwrap_or(0);
-        self.oauth_refresh_count = Some(count + 1);
-        self.oauth_last_refresh_at = Some(chrono::Utc::now().to_rfc3339());
-        self.oauth_predicted_lifetime_secs = Some(predicted_lifetime_secs);
-        self.oauth_token_expires_at = Some(expires_at.to_string());
-        self.clear_needs_reauth();
     }
 
     /// Record the provider account this credential is bound to.

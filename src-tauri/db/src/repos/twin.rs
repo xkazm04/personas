@@ -687,6 +687,24 @@ pub fn list_communications_by_contact(
     }
 }
 
+/// Byte cap on `key_facts_json`. Mirrors `TWIN_KEY_FACTS_JSON_MAX_BYTES` in
+/// `src/api/twin/twin.ts`; enforced here too because the TS wrapper is not the
+/// only door (test-automation bridge, MCP tools, direct invoke).
+pub const KEY_FACTS_JSON_MAX_BYTES: usize = 64 * 1024;
+
+/// Reject an oversized or unparseable `key_facts_json` (shape is not checked).
+pub fn validate_key_facts_json(value: &str) -> Result<(), AppError> {
+    if value.len() > KEY_FACTS_JSON_MAX_BYTES {
+        return Err(AppError::Validation(format!(
+            "key_facts_json exceeds {KEY_FACTS_JSON_MAX_BYTES} bytes (got {})",
+            value.len()
+        )));
+    }
+    serde_json::from_str::<serde_json::Value>(value)
+        .map_err(|e| AppError::Validation(format!("key_facts_json is not valid JSON ({e})")))?;
+    Ok(())
+}
+
 /// Record an interaction and optionally create a pending memory for it.
 pub fn record_interaction(
     pool: &DbPool,
@@ -700,8 +718,11 @@ pub fn record_interaction(
     create_memory: bool,
 ) -> Result<TwinCommunication, AppError> {
     let conn = pool.get()?;
-    record_interaction_on(
-        &conn,
+    // One transaction: when the caller asked for a pending memory, the
+    // communication row and the memory land together or not at all.
+    let tx = conn.unchecked_transaction()?;
+    let comm = record_interaction_on(
+        &tx,
         twin_id,
         channel,
         direction,
@@ -710,7 +731,9 @@ pub fn record_interaction(
         summary,
         key_facts_json,
         create_memory,
-    )
+    )?;
+    tx.commit()?;
+    Ok(comm)
 }
 
 /// [`record_interaction`] on a caller's connection (or transaction), so the
@@ -728,6 +751,9 @@ pub fn record_interaction_on(
     key_facts_json: Option<&str>,
     create_memory: bool,
 ) -> Result<TwinCommunication, AppError> {
+    if let Some(kf) = key_facts_json {
+        validate_key_facts_json(kf)?;
+    }
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     conn.execute(
@@ -759,7 +785,10 @@ pub fn record_interaction_on(
         let title = contact_handle
             .map(|h| format!("{direction} with {h} on {channel}"))
             .or_else(|| Some(format!("{direction} on {channel}")));
-        let _ = create_pending_memory_on(
+        // Propagated, not dropped: the caller asked for both rows, so a failed
+        // memory insert must be visible (and roll back the communication when
+        // the caller's connection is a transaction).
+        create_pending_memory_on(
             conn,
             twin_id,
             Some(channel),
@@ -767,7 +796,7 @@ pub fn record_interaction_on(
             title.as_deref(),
             3,
             Some(&id),
-        );
+        )?;
     }
 
     conn.query_row(
@@ -1729,7 +1758,74 @@ pub fn third_party_memory_ids(pool: &DbPool, twin_id: &str) -> Result<Vec<String
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn record_interaction_rejects_oversized_or_invalid_key_facts() {
+        let pool = crate::init_test_db().expect("init test db");
+        let twin = create_profile(&pool, "Cap Twin", None, None, None, None).expect("profile");
+        let big = format!("\"{}\"", "x".repeat(KEY_FACTS_JSON_MAX_BYTES));
+        for bad in [big.as_str(), "{not json"] {
+            let r = record_interaction(
+                &pool,
+                &twin.id,
+                "email",
+                "in",
+                None,
+                "hi",
+                None,
+                Some(bad),
+                false,
+            );
+            assert!(matches!(r, Err(AppError::Validation(_))), "{r:?}");
+        }
+        record_interaction(
+            &pool,
+            &twin.id,
+            "email",
+            "in",
+            None,
+            "hi",
+            None,
+            Some("{\"a\":1}"),
+            false,
+        )
+        .expect("small valid payload stores");
+    }
+
     use super::*;
+
+    /// A requested pending memory that cannot be written must surface as an
+    /// error, and must not leave the communication half-recorded.
+    #[test]
+    fn a_failed_pending_memory_insert_is_an_error_and_rolls_back_the_communication() {
+        let pool = crate::init_test_db().expect("init test db");
+        let twin =
+            create_profile(&pool, "Memory Fail Twin", None, None, None, None).expect("profile");
+        crate::PoolExt::conn(&pool, "test:twin_fail_trigger")
+            .unwrap()
+            .execute_batch(
+                "CREATE TRIGGER fail_pending_memory BEFORE INSERT ON twin_pending_memories                  BEGIN SELECT RAISE(ABORT, 'forced failure'); END;",
+            )
+            .unwrap();
+
+        let r = record_interaction(&pool, &twin.id, "email", "in", None, "hi", None, None, true);
+        assert!(r.is_err(), "the memory write failed; the call must say so");
+
+        let n: i64 = crate::PoolExt::conn(&pool, "test:twin_count")
+            .unwrap()
+            .query_row(
+                "SELECT COUNT(*) AS n FROM twin_communications WHERE twin_id = ?1",
+                params![twin.id],
+                |row| row.get("n"),
+            )
+            .unwrap();
+        assert_eq!(n, 0, "no half-recorded communication");
+
+        // Without a requested memory the same database still records.
+        record_interaction(
+            &pool, &twin.id, "email", "in", None, "hi", None, None, false,
+        )
+        .expect("no memory requested, nothing to fail");
+    }
 
     /// Every projection const must name columns that actually exist on a
     /// migrated database. This is the check the compiler cannot make: a

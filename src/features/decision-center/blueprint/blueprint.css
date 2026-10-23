@@ -1,0 +1,128 @@
+/* blueprint.css - the drawing set's frame and the L4 feature sheet. The chrome around the drawing is bp's, re-ported
+   (spark bp-fidelity, Stage A) into styles/: header.css (title line, crumbs, lens tabs, last-scan pill), projects.css
+   (the project switcher), rail.css, timeline.css (ladder, scale bar, timeline strip), queue.css (the Build queue, the
+   dock console, the hover card) and dialog.css. Its colours are bp's own palette (theme/bp-tokens.css, operator decision 2026-10-16): this file writes no
+   colour literal and no font size; it reads --bp-* and the --bp-fs-* steps. The engine reads the same variables
+   through a probe (engine/theme.ts), so the canvas and the DOM can never disagree. */
+
+/* BaseModal draws the stack: its container is fixed at 10000 + 10 per level, so this sheet sits above the deck and any
+   dialog it opens (Find, the decline reason, the key sheet) sits above it. The panel is pinned to the viewport edge to
+   edge, over BaseModal's own centring and padding. */
+.bp-panel { position: fixed; inset: 0; width: auto; height: auto; max-width: none; margin: 0; background: var(--background); outline: none; overflow: hidden; }
+
+.bp-root {
+  --bp-t0: calc(var(--type-0) * var(--type-f));
+  --bp-t1: calc(var(--type-1) * var(--type-f));
+  --bp-t2: calc(var(--type-2) * var(--type-f));
+  --bp-t4: calc(var(--type-4) * var(--type-f));
+  --bp-t5: calc(var(--type-5) * var(--type-f));
+  --bp-side-w: clamp(18rem, 24vw, 24rem);
+  /* what sits above the timeline strip (bp --bb): the strip (28 px), its 8 px margin and an 8 px gap */
+  --bp-bb: 44px;
+  /* The palette is bp's own (theme/bp-tokens.css, on the same element as .bp-scope). The names below are the
+     round-one roles this sheet's furniture still reads, mapped onto bp's tokens. */
+  --bp-live: var(--bp-mint);
+  --bp-build: var(--bp-amber);
+  --bp-dep: var(--bp-red);
+  --bp-focus: var(--bp-accent);
+  --bp-chrome: var(--bp-card);
+  --bp-radius: 0;
+  --bp-glow: 0;
+}
+
+/* ---------------------------------------------------------------- the sheet: queue beside the drawing */
+.bp-sheet:focus { outline: none; }
+.bp-sheet { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr); background: var(--bp-paper); color: var(--bp-ink); overflow: hidden; }
+.bp-sheet[data-queue="open"] { grid-template-columns: var(--bp-side-w) minmax(0, 1fr); }
+.bp-plan { position: relative; min-width: 0; min-height: 0; overflow: hidden; container: bp-plan / inline-size; }
+.bp-frame { position: absolute; inset: 0; }
+.bp-frame .bp-figure.k-figure { padding: 0; }
+.bp-host { position: absolute; inset: 0; }
+.bp-canvas { position: absolute; inset: 0; display: block; cursor: grab; outline: none; }
+.bp-ink { color: var(--bp-ink); }
+.bp-empty { color: var(--bp-ink-2); padding: 0.6rem 4px; margin: 0; }
+.bp-lg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+
+/* the one press target: a band of the drawing, ruled by hairlines */
+.bp-press { appearance: none; border: 0; background: none; color: inherit; font: inherit; text-align: inherit; padding: 0; margin: 0; cursor: pointer; }
+.bp-press:focus-visible { outline: 2px solid var(--bp-accent); outline-offset: 2px; }
+
+.bp-kp { position: absolute; z-index: 2; right: 92px; bottom: calc(var(--bp-bb) + 34px); width: 11.5rem; color: var(--bp-ink-2); padding: 6px 7px 7px; border: 1px solid var(--bp-ink-3); background: var(--bp-panel); font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); letter-spacing: var(--bp-ls-4); text-transform: uppercase; }
+.bp-kp canvas { display: block; width: 10.2rem; height: 4.4rem; }
+
+/* ---------------------------------------------------------------- L4: the feature sheet */
+.bp-top { padding: 0.9rem 1.5rem 0; background: color-mix(in srgb, var(--bp-ink) 5%, transparent); }
+/* both halves hang off the divider, not the rim, so a smaller circle cannot make them meet */
+.bp-tab { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 0.4rem 0.9rem 0.5rem; color: var(--bp-ink); border-bottom: 3px solid transparent; }
+.bp-tab[aria-selected="true"] { color: var(--bp-ink-hi); border-color: var(--bp-ink-hi); }
+.bp-lc { padding: 0.65rem 0.75rem; border: 1px solid var(--bp-line); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--bp-ink) 4%, transparent); border-top-width: 3px; min-height: 7rem; }
+.bp-lc .bp-why { color: var(--bp-ink); }
+.bp-prop { border: 1px solid color-mix(in srgb, var(--bp-amber) 60%, transparent); border-radius: var(--radius-sm); padding: 0.65rem 0.75rem; margin-bottom: 0.65rem; background: color-mix(in srgb, var(--bp-amber) 5%, transparent); }
+.bp-prop[aria-current="true"] { box-shadow: 0 0 0 2px var(--bp-focus); }
+.bp-prop .bp-ph { display: grid; grid-template-columns: 1.3rem 1fr auto; gap: 0.6rem; align-items: baseline; }
+.bp-prop .bp-pt { margin: 0; font-weight: 600; }
+.bp-prop .bp-pm { color: var(--bp-ink); margin: 4px 0 0.5rem 1.9rem; display: flex; gap: 4px 0.75rem; flex-wrap: wrap; align-items: baseline; }
+.bp-prop .bp-pb, .bp-prop .bp-opt, .bp-prop .bp-done, .bp-prop .bp-ev, .bp-prop > .bp-empty { margin-left: 1.9rem; width: calc(100% - 1.9rem); }
+.bp-prop .bp-pb { color: var(--bp-ink); margin-top: 0; margin-bottom: 0.5rem; max-height: 9rem; overflow: auto; }
+.bp-prop.bp-tone-ok { border-color: color-mix(in srgb, var(--bp-mint) 60%, transparent); background: color-mix(in srgb, var(--bp-mint) 5%, transparent); }
+.bp-prop.bp-tone-run { border-color: var(--bp-line); background: color-mix(in srgb, var(--bp-ink) 6%, transparent); }
+.bp-prop.bp-tone-no { border-color: var(--bp-line); background: none; opacity: 0.8; }
+.bp-prop.bp-tone-no .bp-pt { text-decoration: line-through; }
+.bp-prop.bp-tone-fail { border-color: color-mix(in srgb, var(--bp-red) 55%, transparent); background: color-mix(in srgb, var(--bp-red) 5%, transparent); }
+.bp-prop.bp-pack { border-color: color-mix(in srgb, var(--bp-focus) 55%, transparent); background: color-mix(in srgb, var(--bp-focus) 5%, transparent); }
+.bp-ev { margin-bottom: 0.5rem; border-collapse: collapse; }
+.bp-ev td, .bp-ev th { border: 1px solid var(--bp-line); padding: 6px 0.5rem; text-align: left; vertical-align: top; }
+.bp-ev th { text-transform: uppercase; letter-spacing: 0.08em; color: var(--bp-ink); font-weight: 600; }
+.bp-ev .bp-num { white-space: nowrap; color: var(--bp-ink-hi); }
+.bp-ev .bp-u { color: var(--bp-ink); }
+.bp-evt { max-height: 4.4em; overflow: auto; color: var(--bp-ink); }
+.bp-opt { display: grid; grid-template-columns: 2.4rem 1fr auto; align-items: center; gap: 2px 0.6rem; padding: 0.5rem 0.6rem; margin-top: 6px; border: 1px solid var(--bp-line); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--bp-ink) 5%, transparent); width: 100%; color: var(--bp-ink-hi); }
+.bp-opt:hover { border-color: var(--bp-ink); }
+.bp-opt.bp-ap { border-left: 3px solid var(--bp-mint); }
+.bp-opt .bp-on { grid-row: 1 / 3; }
+.bp-opt .bp-sub { grid-column: 2; color: var(--bp-ink); }
+.bp-opt .bp-sug { grid-row: 1; grid-column: 3; color: var(--bp-mint); letter-spacing: 0.06em; text-transform: uppercase; }
+.bp-done { color: var(--bp-ink-hi); padding: 0.5rem 0.6rem; border: 1px dashed var(--bp-line); border-radius: var(--radius-sm); }
+.bp-done .typo-eyebrow { margin-right: 6px; }
+.bp-done.bp-tone-ok .typo-eyebrow { color: var(--bp-mint); }
+.bp-done.bp-tone-wait .typo-eyebrow { color: var(--bp-amber-2); }
+.bp-done.bp-tone-fail .typo-eyebrow { color: var(--bp-red-2); }
+.bp-done.bp-tone-pack .typo-eyebrow { color: var(--bp-focus); }
+
+
+/* ---------------------------------------------------------------- L4: the compare panel (WP4b) */
+/* while the compare is open the sheet's head steps back: only the current stage, tabs by their short code, a smaller
+   detail circle, so the evidence and the triage controls get the height (1280 x 800 kept 130 px of evidence before) */
+.bp-cmp { display: flex; flex-direction: column; min-height: 0; min-width: 0; border: 1px solid color-mix(in srgb, var(--bp-focus) 55%, transparent); border-radius: var(--radius-md); background: color-mix(in srgb, var(--bp-paper) 92%, var(--background)); overflow: hidden; }
+.bp-cmp-title { margin: 0; display: flex; gap: 0.5rem; align-items: baseline; color: var(--bp-ink-hi); }
+.bp-pk-row { display: grid; grid-template-columns: 1.3rem minmax(0, 1fr); gap: 4px 0.6rem; align-items: baseline; width: 100%; padding: 0.5rem 0.6rem; margin-bottom: 0.4rem; border: 1px solid color-mix(in srgb, var(--bp-focus) 40%, transparent); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--bp-focus) 4%, transparent); color: var(--bp-ink-hi); }
+.bp-pk-row:hover { border-color: var(--bp-focus); }
+.bp-pk-row[aria-current="true"] { box-shadow: 0 0 0 2px var(--bp-focus); background: color-mix(in srgb, var(--bp-focus) 10%, transparent); }
+.bp-pk-row .bp-g { grid-row: 1 / 4; }
+.bp-pk-t { font-weight: 600; min-width: 0; }
+.bp-pk-c { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.bp-pk-m { color: var(--bp-ink); overflow-wrap: anywhere; }
+.bp-pk-row.bp-tone-fail { border-color: color-mix(in srgb, var(--bp-red) 55%, transparent); }
+.bp-pk-row.bp-tone-no .bp-pk-t { text-decoration: line-through; }
+/* the metric line */
+/* the performance table and its range strip */
+.bp-pt { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.bp-pt th, .bp-pt td { border-bottom: 1px solid var(--bp-line); padding: 5px 0.45rem; text-align: right; vertical-align: top; white-space: nowrap; }
+.bp-pt thead th { text-transform: uppercase; letter-spacing: 0.06em; color: var(--bp-ink); font-weight: 600; font-size: var(--bp-t0); }
+.bp-pt thead th:first-child, .bp-pt th[scope="row"], .bp-pt th[scope="colgroup"] { text-align: left; white-space: normal; }
+.bp-pt th[scope="row"] > span { color: var(--bp-ink); font-weight: 400; }
+.bp-pt th[scope="row"] small { display: block; color: var(--bp-ink); font-weight: 400; font-size: var(--bp-t0); }
+.bp-pt td small { display: block; color: var(--bp-ink); font-size: var(--bp-t0); }
+/* the screens */
+.bp-fig { margin: 0; min-width: 0; }
+.bp-fig figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 0.5rem; color: var(--bp-ink-hi); margin-bottom: 4px; }
+.bp-fig figcaption span { white-space: nowrap; }
+.bp-scr { --cut: 50%; position: relative; aspect-ratio: 16 / 9; border: 1px solid var(--bp-line); border-radius: var(--radius-sm); overflow: hidden; background: color-mix(in srgb, var(--bp-ink) 5%, transparent); }
+.bp-scr img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.bp-scr img.bp-top { clip-path: inset(0 0 0 var(--cut)); }
+.bp-scr-ghost { position: absolute; inset: 0; background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.bp-scr-none { position: absolute; inset: 0; display: grid; place-items: center; padding: 0.5rem; text-align: center; color: var(--bp-ink); }
+.bp-slide { position: absolute; left: 0.5rem; right: 0.5rem; bottom: 0.4rem; width: calc(100% - 1rem); margin: 0; accent-color: var(--bp-focus); }
+/* the commit */
+
+@media (prefers-reduced-motion: reduce) { .bp-root * { transition: none !important; animation: none !important; } }

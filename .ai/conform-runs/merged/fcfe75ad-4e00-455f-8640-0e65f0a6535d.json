@@ -1,0 +1,14 @@
+{"schema": "conform-run/1", "worker": "fcfe75ad-4e00-455f-8640-0e65f0a6535d", "subject": "realtime-events",
+ "evaluatedAt": "2026-10-21T12:48:57Z",
+ "pairs": [{"context": "03e7f46a-3f19-47b8-98a5-398efed815b4", "subject": "realtime-events", "bundle": "software-engineering",
+  "state": "deviation",
+  "evidence": "src/hooks/lab/useLabEvents.ts:54 subscribes to the literal 'lab-arena-status' (also ab/matrix/eval), emitted as a bare literal at src-tauri/engine/src/test_runner/modes.rs:228 and absent from src/lib/eventRegistry.ts and src-tauri/core/src/events.rs; the gate (scripts/check-event-registry.mjs:268) sees only literal listen('x') and event_name::CONST, so a rename on either side silently stops Lab progress and completion",
+  "evaluatedAgainst": "sha256-b2:a0685592373df03f", "evaluatedRevision": 6,
+  "techniques": [
+   {"technique": "event-registry", "verdict": "deviation", "evidence": "src-tauri/engine/src/test_runner/modes.rs:228 lab-*-status names are literals on both sides of the IPC boundary with no registry entry; the gate cannot see binding-routed names (scripts/check-event-registry.mjs:268), so the vocabulary has an unenumerated, ungated family"},
+   {"technique": "subscription-lifecycle", "verdict": "realized", "evidence": "src/hooks/realtime/createSingletonListener.ts:190 per-attempt cancelled flag; :155 handshake completing with zero subscribers releases the native listener; :125 bounded early-arrival buffer with counted drops (recordEarlyDrop)"},
+   {"technique": "coalescing-and-batching", "verdict": "realized", "evidence": "src/hooks/realtime/createSingletonListener.ts:40 per-frame queue flushed once per animation frame so a burst becomes one React commit"}
+  ],
+  "registryProposal": "Re-judged unchanged from 2026-10-16 (digest a0685592373df03f, revision 6, still current at registry 145ab09c). Recent hooks-realtime fixes (6c38c824aa, ffdb882f97) hardened the listener and binding error paths but none moved the lab family into the registry - the event-registry technique could name 'names passed through a binding/config object' as a gate blind spot alongside runtime-minted names."}],
+ "declined": [{"subject": "realtime-events", "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7", "reason": "triggers-test is governance: weak; the match (subscribe/events/event) is the doubtful part, so it is reported as a coverage question rather than judged"}],
+ "consults": [{"ts": "2026-10-21T12:48:57Z", "bundle": "software-engineering", "subjects": ["realtime-events"], "techniques": ["event-registry", "subscription-lifecycle", "coalescing-and-batching"], "deviations": 1}]}

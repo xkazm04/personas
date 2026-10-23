@@ -8,7 +8,7 @@ import { mixWithEvidence, run } from '../../../journey/__tests__/detailFixtures'
 import { gateDetailByMeasure, sixMeasures } from '../../history/__tests__/historyFixtures';
 import { __resetHistoryCacheForTests } from '../../history/useLifecycleHistory';
 import { renderLayer1 } from '../../layer1/__tests__/renderLayer1';
-import { LifecycleBody } from '../../LifecycleBody';
+import { ProjectLens } from '../../lens/ProjectLens';
 import { loadStepChunk } from '../stepChunks';
 
 // Wave 5: the step screen's shell - the mini-map, the band under the time
@@ -67,30 +67,9 @@ beforeEach(() => {
   });
 });
 
-const pin = (id: string) => screen.getByTestId(`lc2-map-${id}`);
-
-describe('the mini-map', () => {
-  it('draws every step as a pin, the current one raised and labelled; a pin opens its step; Left / Right still walk', async () => {
-    renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-map' }), 'gate');
-    await screen.findByTestId('lc2-map');
-    expect(screen.getAllByTestId(/^lc2-map-(?!before|after)[a-z]+$/)).toHaveLength(10);
-    expect(pin('gate').getAttribute('aria-current')).toBe('step');
-    expect(pin('docs').getAttribute('aria-current')).toBeNull();
-    // A verdict reads by shape and glyph: the pin carries its verdict as data, not colour alone.
-    expect(pin('land').closest('[data-pin]')!.getAttribute('data-health')).toBe('red');
-    expect(within(screen.getByTestId('lc2-map-after')).getByText('Gate')).toBeTruthy();
-
-    fireEvent.click(pin('docs'));
-    expect(screen.getByTestId('lc2-screen').getAttribute('data-step')).toBe('docs');
-    expect(pin('docs').getAttribute('aria-current')).toBe('step');
-    fireEvent.keyDown(window, { key: 'ArrowLeft' });
-    expect(screen.getByTestId('lc2-screen').getAttribute('data-step')).toBe('tests');
-  });
-});
-
 describe('the band', () => {
-  it('shows the viewed Measure: its verdict, reason and metrics, the travel lead, the pins too; Back to now returns', async () => {
-    renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-band' }), 'gate');
+  it('shows the viewed Measure: its verdict, reason and metrics, and the travel lead; Back to now returns', async () => {
+    renderLayer1(<ProjectLens />, mixWithEvidence({ projectId: 'p-band' }), 'gate');
     const header = await screen.findByTestId('lc2-header');
     expect(header.getAttribute('data-health')).toBe('amber');
     await waitFor(() => expect(screen.getAllByTestId(/^lc2-strip-col-\d+$/)).toHaveLength(6));
@@ -101,7 +80,6 @@ describe('the band', () => {
     expect(screen.getByTestId('lc2-reason').textContent).toBe('gate red at 3');
     expect(screen.getByTestId('lc2-instrument').textContent).toContain('50%');
     expect(screen.getByTestId('lc2-band-travel').getAttribute('data-measure')).toBe('m-h3');
-    expect(pin('gate').closest('[data-pin]')!.getAttribute('data-health')).toBe('red');
 
     fireEvent.click(screen.getByTestId('lc2-band-now'));
     await waitFor(() => expect(header.getAttribute('data-health')).toBe('amber'));
@@ -110,10 +88,11 @@ describe('the band', () => {
   });
 
   it('a step the history does not track says it is shown as it is now', async () => {
-    renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-untracked' }), 'gate');
+    renderLayer1(<ProjectLens />, mixWithEvidence({ projectId: 'p-untracked' }), 'gate');
     await waitFor(() => expect(screen.getAllByTestId(/^lc2-strip-col-\d+$/)).toHaveLength(6));
     fireEvent.click(screen.getByTestId('lc2-strip-col-2'));
-    fireEvent.click(pin('land'));
+    // Walk to Land (gate -> tests -> docs -> commit -> land) without leaving the Measure.
+    for (let i = 0; i < 4; i++) fireEvent.keyDown(window, { key: 'ArrowRight' });
     expect((await screen.findByTestId('lc2-band-untracked')).textContent).toContain('Not tracked in history');
     expect(screen.getByTestId('lc2-header').getAttribute('data-health')).toBe('red');
   });
@@ -121,7 +100,7 @@ describe('the band', () => {
 
 describe('Next', () => {
   it('leads with the failing command; Open the run opens that row with its error', async () => {
-    renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-next' }), 'gate');
+    renderLayer1(<ProjectLens />, mixWithEvidence({ projectId: 'p-next' }), 'gate');
     const failing = await screen.findByTestId('lc2-next-failing');
     expect(failing.textContent).toContain('npm run lint failed');
     expect(failing.textContent).toContain('boom');
@@ -135,7 +114,7 @@ describe('Next', () => {
 
   it('names the slow-gate item already filed and the Overseer items, each opening the item', async () => {
     getIdea.mockRejectedValueOnce(new Error('database is locked'));
-    renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-items' }), 'gate');
+    renderLayer1(<ProjectLens />, mixWithEvidence({ projectId: 'p-items' }), 'gate');
     const filed = await screen.findByTestId('lc2-next-over_budget-detail');
     expect(filed.textContent).toContain('Filed as a backlog item:');
     expect(filed.textContent).toContain('tsc is slow (Accepted)');
@@ -147,7 +126,7 @@ describe('Next', () => {
   });
 
   it('a healthy step gets one calm line with its streak and nothing else', async () => {
-    renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-healthy' }), 'record');
+    renderLayer1(<ProjectLens />, mixWithEvidence({ projectId: 'p-healthy' }), 'record');
     expect((await screen.findByTestId('lc2-next-healthy')).textContent).toBe('Healthy: done in each of the last 3 changes');
     expect(screen.getByTestId('lc2-next').querySelectorAll('[data-next]')).toHaveLength(0);
   });
@@ -155,7 +134,7 @@ describe('Next', () => {
 
 describe('backlog items about the step', () => {
   it('lists them with source, status and time; a row opens the item; the backlog link goes to the list', async () => {
-    renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-related' }), 'gate');
+    renderLayer1(<ProjectLens />, mixWithEvidence({ projectId: 'p-related' }), 'gate');
     const list = await screen.findByTestId('lc2-related');
     expect(within(list).getByTestId('lc2-related-i-slow').textContent).toContain('Slow gate');
     expect(within(list).getByTestId('lc2-related-i-ov').querySelector('[data-status="pending"]')).not.toBeNull();
@@ -168,34 +147,23 @@ describe('backlog items about the step', () => {
   });
 
   it('renders nothing when the step has none', async () => {
-    renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-none' }), 'docs');
+    renderLayer1(<ProjectLens />, mixWithEvidence({ projectId: 'p-none' }), 'docs');
     await screen.findByTestId('lc2-screen');
     await waitFor(() => expect(getLifecycleStepDetail).toHaveBeenCalledWith('p-none', 'docs'));
     expect(screen.queryByTestId('lc2-related')).toBeNull();
   });
 });
 
-describe('the key that becomes the screen', () => {
-  it('shares one layout id between the rail card and the band', async () => {
-    renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-key' }));
-    const railKey = document.querySelector('[data-card="gate"] [data-layout-id]')!;
-    expect(railKey.getAttribute('data-layout-id')).toBe('lc-key-p-key-gate');
-    fireEvent.click(screen.getByTestId('lc-node-gate'));
-    const band = await screen.findByTestId('lc2-header');
-    expect(band.querySelector('[data-layout-id]')!.getAttribute('data-layout-id')).toBe('lc-key-p-key-gate');
-  });
-
-  it('has none under reduced motion, so the layers swap still', async () => {
+describe('the step and its columns', () => {
+  it('opens from its lit column, and under reduced motion Esc returns to the columns at once', async () => {
     motion.reduced = true;
-    renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-still' }));
-    expect(document.querySelector('[data-card="gate"] [data-layout-id]')).toBeNull();
-    fireEvent.click(screen.getByTestId('lc-node-gate'));
-    const band = await screen.findByTestId('lc2-header');
-    expect(band.querySelector('[data-layout-id]')).toBeNull();
-    // Still, the step screen is gone the moment Esc returns.
+    renderLayer1(<ProjectLens />, mixWithEvidence({ projectId: 'p-still' }));
+    fireEvent.click(screen.getByTestId('lens-col-gate'));
+    fireEvent.click(screen.getByTestId('lens-col-gate'));
+    await screen.findByTestId('lc2-header');
+    expect(screen.queryByTestId('lens-field')).toBeNull();
     fireEvent.keyDown(window, { key: 'Escape' });
-    // The rail returns once the screen's (instant) exit has run, a frame or two later.
-    await screen.findByTestId('lc-journey-track', {}, { timeout: 3000 });
+    await screen.findByTestId('lens-field', {}, { timeout: 3000 });
     expect(screen.queryByTestId('lc2-screen')).toBeNull();
   });
 });

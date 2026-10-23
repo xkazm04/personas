@@ -13,7 +13,7 @@ import type { PersonaMemory } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { AttentionLedgerEntry } from '@/lib/bindings/AttentionLedgerEntry';
 import type { ActivityItem, ActivityType } from './activityTypes';
-import { ActivityHeader } from './ActivityHeader';
+import { ActiveChainsBadge } from '../sub_executions/components/ActiveChainsBadge';
 import { ActivityFilters } from './ActivityFilters';
 import { ActivityList } from './ActivityList';
 import { useActivityModals } from './ActivityModals';
@@ -212,7 +212,6 @@ export function ActivityTab() {
   const isLoading = filter === 'all'
     ? items.length === 0 && anyPending
     : activeFeed != null && pending[activeFeed] && feeds[activeFeed].length === 0;
-  const headerLoading = anyPending;
 
   const filtered = useMemo(() => {
     let result = filter === 'all' ? items : items.filter((i) => i.type === filter);
@@ -277,12 +276,9 @@ export function ActivityTab() {
 
   return (
     <div className="space-y-4">
-      <ActivityHeader
-        personaId={selectedPersona.id}
-        itemCount={counts.all}
-        isLoading={headerLoading}
-        onRefresh={loadData}
-      />
+      {/* Chains in flight: renders nothing when idle, so it costs no pixels.
+          `ExecutionList` is told not to mount its own copy below. */}
+      <ActiveChainsBadge />
       <ActivityFilters
         filter={filter}
         statusFilter={statusFilter}

@@ -1,6 +1,6 @@
-import { Key, LayoutTemplate, Sparkles, Plug, ArrowRight, Globe } from 'lucide-react';
+import { LayoutTemplate, Sparkles, Plug, ArrowRight, Globe } from 'lucide-react';
 import { motion, type Variants } from 'framer-motion';
-import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
@@ -51,9 +51,10 @@ export function EmptyStateView({ connectorDefinitions, onQuickStart, onGoToCatal
     >
       {/* Heading */}
       <motion.div variants={item} className="pt-6 pb-2">
-        <EmptyIllustration
-          icon={Key}
-          heading={t.vault.empty_state.heading}
+        <ScenarioEmptyState
+          art="vault"
+          size="lg"
+          title={t.vault.empty_state.heading}
           description={t.vault.empty_state.description}
         />
       </motion.div>

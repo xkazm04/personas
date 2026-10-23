@@ -7,7 +7,7 @@ import type { SchemaFormConfig } from './schemaFormTypes';
 import { sanitize } from './schemaFormTypes';
 import { ExtraFieldRenderer } from './ExtraFieldRenderers';
 import { SchemaFormHeader, SchemaNameField, SchemaSubTypeSelector } from './SchemaFormFields';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
@@ -156,13 +156,21 @@ export function CredentialSchemaForm({
         data: credData,
         healthcheck_passed: health.result?.success === true,
       });
+      // The credential is committed and names this connector by service_type.
+      // From here on nothing may roll the connector back: a refresh that
+      // failed used to delete the definition of a credential that was saved,
+      // and leave the form open inviting a second, duplicate save.
+      createdConnectorId = null;
 
-      await Promise.all([fetchCredentials(), fetchConnectorDefinitions()]);
-
-      // Prompt for scope if the connector declares resources[]. The picker
-      // is rendered globally; list errors surface inline. No-op when there
-      // are no resources, so safe to call unconditionally.
-      await promptIfScoped({ credentialId: newCredId, serviceType });
+      try {
+        await Promise.all([fetchCredentials(), fetchConnectorDefinitions()]);
+        // Prompt for scope if the connector declares resources[]. The picker
+        // is rendered globally; list errors surface inline. No-op when there
+        // are no resources, so safe to call unconditionally.
+        await promptIfScoped({ credentialId: newCredId, serviceType });
+      } catch (postSaveErr) {
+        silentCatch('CredentialSchemaForm:postSaveRefresh')(postSaveErr);
+      }
 
       onComplete();
     } catch (err) {
@@ -175,7 +183,10 @@ export function CredentialSchemaForm({
           silentCatch('CredentialSchemaForm:rollbackConnector')(rollbackErr);
         }
       }
-      const raw = err instanceof Error ? err.message : null;
+      // The store rethrows the IPC rejection, a serialized AppError OBJECT,
+      // not an Error: `instanceof Error` sent every backend refusal to the
+      // generic fallback.
+      const raw = extractMessage(err) || null;
       const { message } = resolveErrorTranslated(t, raw);
       setError(message);
     }

@@ -10,20 +10,22 @@
 // question it could not answer without scrolling. The row now carries only what
 // a glance needs - which provider, which bar, how much is left. The name, the
 // percentages, the countdowns, switch / remove and the rotate rule are one press
-// away in `PlanPopover`. Providers are told apart by their mark at the row's
+// away in `PlanPopover`; hovering (or focusing) a row shows the numbers last
+// measured for it (`PlanHover`, polish P2). Providers are told apart by their mark at the row's
 // head and by a hairline between groups, not by a header of their own.
 
 import { useRef, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AsyncButton, Button } from '@/features/shared/components/buttons';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { AnchoredTooltip, Tooltip } from '@/features/shared/components/display/Tooltip';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { ProviderIcon } from '../../usage/ProviderIcon';
 import type { PlanModel, ProviderModel, WindowSlot } from '../../usage/useResourceModel';
 import { cliReasonLabel, providerName, windowSentence } from '../../usageBits';
 import type { UsageFeed } from '../useUsageFeed';
 import { Engraved, Lamp } from './parts';
+import { PlanHover, useHoverAnchor } from './PlanHover';
 import { PlanPopover } from './PlanPopover';
 import { METER_TONE, toneClass } from './tone';
 
@@ -44,6 +46,7 @@ function PlanRow({ plan, provider, first, usage, open, onToggle }: {
 }) {
   const { t, tx } = useTranslation();
   const ref = useRef<HTMLButtonElement>(null);
+  const hover = useHoverAnchor(ref);
   const dead = plan.state === 'unreadable' || plan.state === 'quarantined';
   const threshold = plan.isActive && usage.autoRotate?.enabled ? usage.autoRotate.thresholdPct : null;
   const name = `${providerName(t, provider.id)} ${plan.name ?? t.monitor.usage_not_stored}`;
@@ -54,9 +57,10 @@ function PlanRow({ plan, provider, first, usage, open, onToggle }: {
     <>
       <Button
         ref={ref}
+        {...hover.bind}
         variant="ghost"
         size="xs"
-        onClick={onToggle}
+        onClick={() => { hover.dismiss(); onToggle(); }}
         aria-label={label}
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -73,6 +77,10 @@ function PlanRow({ plan, provider, first, usage, open, onToggle }: {
           <Lamp lamp={{ tone: plan.state === 'quarantined' ? 'err' : dead ? 'warn' : 'run', lit: plan.isActive || dead }} />
         </span>
       </Button>
+      {/* Hover and keyboard focus open the numbers last measured (`PlanHover`);
+          the press opens the popup with the verbs, and the tip stands down
+          while it is open. */}
+      <AnchoredTooltip placement="right" anchor={open ? null : hover.anchor} content={<PlanHover plan={plan} provider={provider} now={usage.now} />} />
       {open && (
         <PlanPopover
           plan={plan} provider={provider} usage={usage} anchorRef={ref}
@@ -103,11 +111,18 @@ export function PlanPlates({ usage }: { usage: UsageFeed; revealEnabled?: boolea
 
   return (
     <section className="ae-plate flex flex-col gap-2 rounded-card p-3" aria-label={m.usage_aria} data-testid="entry-e-usage">
-      <header className="flex items-center gap-1.5">
-        <Engraved>{m.usage_title}</Engraved>
-        <span className="flex-1" />
-        {usage.fetchedAt !== null && <RelativeTime timestamp={usage.fetchedAt} className="typo-caption tabular-nums" />}
-        <Tooltip content={usage.refreshHint}>
+      {/* ONE row at the rail's width in every locale: the title never wraps
+          (it truncates last), and the refresh time lives in the refresh
+          button's tooltip ("as of 3m ago"); each plan's own measured time is
+          in its row's hover. */}
+      <header className="flex min-w-0 items-center gap-1.5">
+        <Engraved className="min-w-0 flex-1 truncate whitespace-nowrap">{m.usage_title}</Engraved>
+        <Tooltip content={usage.fetchedAt === null ? usage.refreshHint : (
+          <span className="flex flex-col gap-0.5">
+            <span>{usage.refreshHint}</span>
+            <span className="typo-caption tabular-nums" data-testid="entry-e-usage-asof">{m.usage_as_of} <RelativeTime timestamp={usage.fetchedAt} /></span>
+          </span>
+        )}>
           <AsyncButton
             variant="ghost"
             size="icon-sm"

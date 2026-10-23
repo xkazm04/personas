@@ -1,0 +1,37 @@
+{"schema": "conform-run/1", "worker": "ce241f77-a3cb-4463-8e67-ee8254b4dd7c", "subject": "hitl-approval",
+ "evaluatedAt": "2026-10-21T12:28:56Z",
+ "pairs": [
+  {"context": "7826a48f-5883-4f26-8476-c3c515bda745", "subject": "hitl-approval", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/personas/parsers/workflowPipeline.ts:228 an imported workflow's Wait/Approval node (classified manual_review at src/lib/personas/platformDefinitions.ts:369) becomes a numbered step the model is told to execute in order, with 'attempt to continue' on failure (:233) and only a Manual Review capability label (:241) the model may choose to emit (src-tauri/src/engine/dispatch.rs:1016) - the source platform's structural human gate is translated into a prompt request the gated party can skip",
+   "techniques": [
+     {"technique": "gate-state-machines", "verdict": "deviation", "evidence": "src/lib/personas/parsers/workflowPipeline.ts:228 the approval node is rendered into the instructions as a step to perform, not into a durable pending state the executor must pass; a prompt step is a gate the machine can open"},
+     {"technique": "handoff-is-a-declared-door", "verdict": "deviation", "evidence": "src/lib/personas/platformDefinitions.ts:369 the source's declared approval node maps to protocol manual_review, which at runtime is a model-requested ProtocolMessage (src-tauri/src/engine/dispatch.rs:1016); the declared door becomes a universal model-optional ask"},
+     {"technique": "fail-closed-profile-for-headless", "verdict": "deviation", "evidence": "src/lib/personas/parsers/workflowPipeline.ts:233 the generated errorHandling tells the unattended persona to continue past any failed step, including the step that stood for a human confirmation"},
+     {"technique": "decision-records", "verdict": "not-applicable", "evidence": "src/lib/personas/parsers/workflowPipeline.ts:111 the context is a pure parse-to-AgentIR function; it records nothing and decides nothing"}
+   ],
+   "registryProposal": "Possible technique gap: no hitl-approval technique names the import/translation case - converting another platform's structural approval node into this system's vocabulary must preserve it as a gate (or refuse/flag the import), not lower it to a capability label; gate-state-machines covers the outcome but its use_when does not trigger on importers."},
+  {"context": "c413de7d-1182-4abc-8a08-9c8832254c62", "subject": "hitl-approval", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_missionControl/cards/AttentionLoopCard.tsx:100 the context's only write is the operator flipping the default-off autonomous_attention_loop config switch (:13); it holds no pending decision, decision surface or continuation - the loop's scope, ceilings and per-pass ledger live in src-tauri/src/engine/subscription/attention.rs:28 outside this context; the rest is a read-only readings dashboard",
+   "techniques": [
+     {"technique": "unattended-mode", "verdict": "not-applicable", "evidence": "src/features/overview/sub_missionControl/cards/AttentionLoopCard.tsx:100 the switch is a permanent configuration default (the technique's 'heavier decision, separately visible' case); its scope/ceiling/ledger realization belongs to the engine context; note set_app_setting writes no audit row for the flip (src-tauri/src/commands/infrastructure/settings.rs:137)"}
+   ],
+   "registryProposal": "Context drift: the context is named overview-director but src/features/overview/sub_director no longer exists in git; only sub_missionControl remains, so the hitl-approval match (driven by 'triage', 'batch-review', 'DirectorVerdict' keywords) rests on deleted code."},
+  {"context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7", "subject": "hitl-approval", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/credentials/rotation.rs:140 the context's consequential acts (rotate now, rotation policies, gateway membership) are performed by the operator themself through privileged commands and audited (:151); no machine pauses here for a human verdict, and the one consent surface, src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:1, has no caller in src - the OAuth consent itself is held by the provider",
+   "techniques": [
+     {"technique": "consent-gates", "verdict": "not-applicable", "evidence": "src/features/vault/sub_credentials/components/gateway/PendingAuthModal.tsx:1 JIT OAuth consent is granted at the provider's own page; the modal is unwired (no importer in src), so an authorization_required error surfaces as an ordinary failure - closed, not open"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "hitl-approval", "context": "942d2449-34ab-4f02-af7e-b130269d10ef", "reason": "fleet-triage-columns has no live code: its entry points (src/features/fleet/monitor/triage/triageModel.ts, MonitorProjectColumns.tsx) are absent from git ls-files and the map row's paths are empty; a dead context, not a judgeable one - needs a context-map rescan"},
+  {"subject": "hitl-approval", "context": "a38e2b93-2322-4187-befa-c0443c4ca85f", "reason": "glyph-definitions is governance: weak; a coverage question, not judged by default"},
+  {"subject": "hitl-approval", "context": "11fe7642-7a1a-47c5-8910-499850aa04fe", "reason": "plugins-companion-inbox is governance: weak; a coverage question, not judged by default"}
+ ],
+ "consults": [
+  {"ts": "2026-10-21T12:28:56Z", "bundle": "software-engineering", "subjects": ["hitl-approval"], "techniques": ["gate-state-machines", "handoff-is-a-declared-door", "fail-closed-profile-for-headless", "decision-records"], "deviations": 1},
+  {"ts": "2026-10-21T12:28:56Z", "bundle": "software-engineering", "subjects": ["hitl-approval"], "techniques": ["unattended-mode"], "deviations": 0},
+  {"ts": "2026-10-21T12:28:56Z", "bundle": "software-engineering", "subjects": ["hitl-approval"], "techniques": ["consent-gates"], "deviations": 0}
+ ]}

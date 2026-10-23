@@ -6,7 +6,6 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useTemplateGallery } from '@/hooks/design/template/useTemplateGallery';
 import { TemplateSearchBar } from '../search/TemplateSearchBar';
 /** localStorage key for persisted adoption context (legacy wizard) */
-const ADOPT_CONTEXT_KEY = 'template-adopt-context-v1';
 import { useBackgroundRebuild } from '@/hooks/design/core/useBackgroundRebuild';
 import { useBackgroundPreview } from '@/hooks/design/core/useBackgroundPreview';
 import { isCliRunSettled } from '@/hooks/execution/useCorrelatedCliStream';
@@ -17,7 +16,6 @@ import { RecommendedCarousel } from '../explore/RecommendedCarousel';
 import { TeamSynthesisPanel } from '../../shared/TeamSynthesisPanel';
 import { EmptyState } from '../explore/EmptyState';
 import { GalleryLoadError } from '../explore/GalleryLoadError';
-import { useAdoptionCompletionNotifier } from './useAdoptionCompletionNotifier';
 import { TemplateModals } from '../modals/TemplateModals';
 import { TemplateDetailModal } from '../modals/TemplateDetailModal';
 import { TemplateVirtualList } from './TemplateVirtualList';
@@ -27,16 +25,12 @@ import { CompareModal } from '../modals/CompareModal';
 import { buildComparison } from './buildComparison';
 import { useGalleryActions } from './useGalleryActions';
 import { getDesignReview } from '@/api/overview/reviews';
-import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
 import type { TemplateModal } from './reviewParseCache';
 import type { Density } from '../search/filters/DensityToggle';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { silentCatch } from '@/lib/silentCatch';
 
-
-// Re-export for barrel compatibility
-export { getCachedLightFields, getCachedDesignResult };
 
 interface Props {
   credentials?: CredentialMetadata[];
@@ -90,8 +84,6 @@ export default function GeneratedReviewsTab({
   const [setupFilter, setSetupFilter] = useState<string[]>([]);
   const modals = useModalStack<TemplateModal>();
 
-  useAdoptionCompletionNotifier(templateAdoptActive, modals.isOpen('adopt'));
-
   // A template opened from outside the gallery (Athena's suggestion card
   // routes here with the id it ranked). Consume it once: fetch that review by
   // id - it need not be on the current page - open its detail modal, and clear
@@ -117,8 +109,12 @@ export default function GeneratedReviewsTab({
   const rebuild = useBackgroundRebuild(() => gallery.refresh());
   const preview = useBackgroundPreview();
 
-  const handleResetRebuild = useCallback(() => { rebuild.resetRebuild(); }, [rebuild]);
-  const handleResetPreview = useCallback(() => { preview.resetPreview(); }, [preview]);
+  // Both hooks return a fresh object every render; depend on their stable
+  // reset callbacks, or every gallery render hands the memoized rows new props.
+  const { resetRebuild } = rebuild;
+  const { resetPreview } = preview;
+  const handleResetRebuild = useCallback(() => { resetRebuild(); }, [resetRebuild]);
+  const handleResetPreview = useCallback(() => { resetPreview(); }, [resetPreview]);
 
   const actions = useGalleryActions(
     gallery.allItems, gallery.total, gallery.sortBy,
@@ -139,15 +135,10 @@ export default function GeneratedReviewsTab({
   };
 
   const handleResumeAdoption = () => {
-    try {
-      const raw = window.localStorage.getItem(ADOPT_CONTEXT_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as { templateName?: string };
-        const match = gallery.allItems.find((r: PersonaDesignReview) => r.test_case_name === parsed.templateName);
-        if (match) { modals.open({ type: 'adopt', review: match }); return; }
-        logger.warn('Template not found for resume adoption', { templateName: parsed.templateName });
-      }
-    } catch (err) { silentCatch("features/templates/sub_generated/gallery/cards/GeneratedReviewsTab:catch1")(err); }
+    const reviewId = useSystemStore.getState().activeAdoptionReviewId;
+    const match = reviewId ? gallery.allItems.find((r: PersonaDesignReview) => r.id === reviewId) : undefined;
+    if (match) { modals.open({ type: 'adopt', review: match }); return; }
+    logger.warn('Review not found for resume adoption', { reviewId });
   };
 
   const handleResumeDraft = (draft: import('@/stores/slices/system/uiSlice').AdoptionDraft) => {
@@ -166,7 +157,7 @@ export default function GeneratedReviewsTab({
     return <GalleryLoadError onRetry={gallery.refresh} />;
   }
   if (!gallery.isLoading && gallery.total === 0 && !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0 && gallery.coverageFilter === 'all' && !gallery.aiSearchActive) {
-    return <EmptyState />;
+    return <EmptyState size="lg" />;
   }
 
   const noActiveFilters = !gallery.search && gallery.connectorFilter.length === 0 && gallery.categoryFilter.length === 0;
@@ -319,6 +310,7 @@ export default function GeneratedReviewsTab({
           hasMore={gallery.hasMore}
           isLoading={gallery.isLoading}
           fetchMore={gallery.fetchMore}
+          pagingFailed={!!gallery.error}
           compareSelectedIds={compare.selectedIds}
           compareAtCapacity={!compare.canAdd}
           onToggleCompare={compare.toggle}
@@ -385,8 +377,6 @@ export default function GeneratedReviewsTab({
         onViewFlows={onViewFlows}
         rebuild={rebuild}
         preview={preview}
-        recommendedTemplates={gallery.recommendedTemplates}
-        setExpandedRow={setExpandedRow}
         credentialModalTarget={actions.credentialModalTarget}
         onCredentialSave={actions.handleCredentialSave}
         onCredentialModalClose={actions.clearCredentialModal}

@@ -45,6 +45,10 @@ export interface FactoryL2Data {
   featureCountByContext: Map<string, number>;
   /** contextId → number of goals attached (goal.context_id). */
   goalCountByContext: Map<string, number>;
+  /** The goals read rejected: goalCountByContext is empty because nothing was read, not because there are no goals. */
+  goalsFailed: boolean;
+  /** The KPI read rejected: kpis/proposals are empty because nothing was read. */
+  kpisFailed: boolean;
   /** contextId → its PROPOSED KPIs (status='proposed', context-scoped). */
   proposalsByContext: Map<string, DevKpi[]>;
   /** Proposed KPIs with no context_id — invisible on cards, counted in the toolbar. */
@@ -63,6 +67,7 @@ export function useFactoryL2Data(projectId: string): FactoryL2Data {
   const [groups, setGroups] = useState<DevContextGroup[]>([]);
   const [contexts, setContexts] = useState<DevContext[]>([]);
   const [kpis, setKpis] = useState<DevKpi[]>([]);
+  const [kpisFailed, setKpisFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [kpiNonce, setKpiNonce] = useState(0);
   const [mapNonce, setMapNonce] = useState(0);
@@ -105,8 +110,11 @@ export function useFactoryL2Data(projectId: string): FactoryL2Data {
   useEffect(() => {
     let alive = true;
     void listKpis(projectId)
-      .then((ks) => { if (alive) setKpis(ks.filter((k) => k.status !== 'archived')); })
-      .catch(silentCatch('factoryL2:kpis'));
+      .then((ks) => { if (alive) { setKpis(ks.filter((k) => k.status !== 'archived')); setKpisFailed(false); } })
+      .catch((e) => {
+        silentCatch('factoryL2:kpis')(e);
+        if (alive) setKpisFailed(true);
+      });
     return () => { alive = false; };
   }, [projectId, kpiNonce]);
 
@@ -129,6 +137,7 @@ export function useFactoryL2Data(projectId: string): FactoryL2Data {
   }, [useCaseState.active]);
 
   const [goalCountByContext, setGoalCountByContext] = useState<Map<string, number>>(new Map());
+  const [goalsFailed, setGoalsFailed] = useState(false);
   useEffect(() => {
     let alive = true;
     void listGoals(projectId)
@@ -140,8 +149,12 @@ export function useFactoryL2Data(projectId: string): FactoryL2Data {
           m.set(g.context_id, (m.get(g.context_id) ?? 0) + 1);
         }
         setGoalCountByContext(m);
+        setGoalsFailed(false);
       })
-      .catch(silentCatch('factoryL2:goals'));
+      .catch((e) => {
+        silentCatch('factoryL2:goals')(e);
+        if (alive) setGoalsFailed(true);
+      });
     return () => { alive = false; };
   }, [projectId]);
 
@@ -171,6 +184,8 @@ export function useFactoryL2Data(projectId: string): FactoryL2Data {
     kpiStatusByContext,
     featureCountByContext,
     goalCountByContext,
+    goalsFailed,
+    kpisFailed,
     proposalsByContext,
     unassignedProposals,
     loading,

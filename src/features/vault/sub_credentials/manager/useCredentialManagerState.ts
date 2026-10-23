@@ -5,6 +5,7 @@ import { useUndoDelete } from '@/features/vault/shared/hooks/useUndoDelete';
 import { useCredentialViewFSM } from '@/features/vault/shared/hooks/useCredentialViewFSM';
 import { useBulkHealthcheck } from '@/features/vault/shared/hooks/health/useBulkHealthcheck';
 import { IS_DESKTOP } from '@/lib/utils/platform/platform';
+import { silentCatch } from '@/lib/silentCatch';
 import { useRotateAll } from './useRotateAll';
 import { useCatalogHandlers } from './useCatalogHandlers';
 
@@ -92,11 +93,20 @@ export function useCredentialManagerState() {
   }, [credentials, undoDelete]);
 
   useEffect(() => {
+    // allSettled + finally: fetchCredentials rethrows after reporting, so a
+    // failed first fetch used to skip setIsFetching(false) and leave an empty
+    // list on its loading ghost forever (and an unhandled rejection).
     const init = async () => {
-      await Promise.all([fetchCredentials(), fetchConnectorDefinitions()]);
-      setIsFetching(false);
+      try {
+        const results = await Promise.allSettled([fetchCredentials(), fetchConnectorDefinitions()]);
+        for (const r of results) {
+          if (r.status === 'rejected') silentCatch('useCredentialManagerState:initialFetch')(r.reason);
+        }
+      } finally {
+        setIsFetching(false);
+      }
     };
-    init();
+    void init();
   }, [fetchCredentials, fetchConnectorDefinitions]);
 
   return {

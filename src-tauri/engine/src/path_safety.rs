@@ -74,38 +74,41 @@ pub fn is_sensitive_credential_path(path: &str) -> bool {
     matches!(file, "wallet.dat" | ".npmrc" | ".netrc")
 }
 
-/// Validate a single watch path.
+/// Why `path` must never be watched, wherever it lives -- or `None`.
 ///
-/// Returns `Ok(())` if the path is safe to watch, or `Err(reason)` if it
-/// targets a sensitive or disallowed location.
-#[allow(dead_code)]
-pub fn validate_watch_path(path: &str) -> Result<(), String> {
+/// The location half of [`validate_watch_path`]: empty / traversal paths,
+/// system directories, the app's own data directory, and the secret stores
+/// [`is_sensitive_credential_path`] names (a watch reports file names and
+/// change patterns to the persona it wakes). It is enforced at the one place
+/// every file_watcher trigger reaches, `file_watcher::reconcile_watches`,
+/// whichever door created the trigger. The "must be under home" allowlist is
+/// NOT part of it: that one would silently stop existing triggers on other
+/// drives, which is a policy call, not a safety floor.
+pub fn watch_path_refusal(path: &str) -> Option<String> {
     let trimmed = path.trim();
     if trimmed.is_empty() {
-        return Err("Watch path cannot be empty".into());
+        return Some("Watch path cannot be empty".into());
     }
 
     // Canonicalize separators and case for comparison
     let normalised = trimmed.replace('\\', "/").to_lowercase();
 
     // Reject paths with traversal components
-    if normalised.contains("/../") || normalised.ends_with("/..") || normalised == ".." {
-        return Err(format!("Path traversal not allowed: {trimmed}"));
+    if normalised.contains("/../")
+        || normalised.ends_with("/..")
+        || normalised == ".."
+        || normalised.starts_with("../")
+    {
+        return Some(format!("Path traversal not allowed: {trimmed}"));
     }
 
-    // Block Unix system directories
-    for prefix in BLOCKED_PREFIXES_UNIX {
+    // Block Unix and Windows system directories
+    for prefix in BLOCKED_PREFIXES_UNIX
+        .iter()
+        .chain(BLOCKED_PREFIXES_WINDOWS.iter())
+    {
         if normalised == *prefix || normalised.starts_with(&format!("{prefix}/")) {
-            return Err(format!(
-                "Watching system directory is not allowed: {trimmed}"
-            ));
-        }
-    }
-
-    // Block Windows system directories
-    for prefix in BLOCKED_PREFIXES_WINDOWS {
-        if normalised == *prefix || normalised.starts_with(&format!("{prefix}/")) {
-            return Err(format!(
+            return Some(format!(
                 "Watching system directory is not allowed: {trimmed}"
             ));
         }
@@ -114,11 +117,35 @@ pub fn validate_watch_path(path: &str) -> Result<(), String> {
     // Block the app data directory (contains SQLite DB, config, etc.)
     if let Some(app_data) = app_data_dir_normalised() {
         if normalised == app_data || normalised.starts_with(&format!("{app_data}/")) {
-            return Err(format!(
+            return Some(format!(
                 "Watching the application data directory is not allowed: {trimmed}"
             ));
         }
     }
+
+    // Secret stores: the directory itself (`~/.ssh`) or anything in it. The
+    // credential predicate matches on `/.ssh/`, so probe the directory form too.
+    let as_dir = format!("{}/", normalised.trim_end_matches('/'));
+    if is_sensitive_credential_path(&normalised) || is_sensitive_credential_path(&as_dir) {
+        return Some(format!(
+            "Watching a credential or key location is not allowed: {trimmed}"
+        ));
+    }
+
+    None
+}
+
+/// Validate a single watch path.
+///
+/// Returns `Ok(())` if the path is safe to watch, or `Err(reason)` if it
+/// targets a sensitive or disallowed location.
+#[allow(dead_code)]
+pub fn validate_watch_path(path: &str) -> Result<(), String> {
+    if let Some(reason) = watch_path_refusal(path) {
+        return Err(reason);
+    }
+    let trimmed = path.trim();
+    let normalised = trimmed.replace('\\', "/").to_lowercase();
 
     // Ensure path is under user home (allowlist default)
     if !is_under_user_home(&normalised) {
@@ -627,6 +654,45 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// The refusal floor the watcher enforces: secret stores inside home, the
+    /// app's own data dir, system dirs and a leading `../` -- while a project on
+    /// another drive (outside home) stays watchable, unlike validate_watch_path.
+    #[test]
+    fn test_watch_path_refusal_floor() {
+        let mut refused = vec![
+            "C:\\Windows\\System32".to_string(),
+            "/etc".to_string(),
+            "../etc".to_string(),
+        ];
+        if let Some(home) = dirs::home_dir() {
+            refused.push(home.join(".ssh").to_string_lossy().into_owned());
+            refused.push(home.join(".gnupg").to_string_lossy().into_owned());
+            refused.push(
+                home.join(".ssh")
+                    .join("id_rsa")
+                    .to_string_lossy()
+                    .into_owned(),
+            );
+            // Through the home-allowlisted validator too: inside home was enough before.
+            assert!(validate_watch_path(&home.join(".ssh").to_string_lossy()).is_err());
+            assert!(watch_path_refusal(&home.join("projects").to_string_lossy()).is_none());
+        }
+        if let Some(data) = dirs::data_dir() {
+            refused.push(
+                data.join("com.personas.desktop")
+                    .join("personas.db")
+                    .to_string_lossy()
+                    .into_owned(),
+            );
+        }
+        let allowed: Vec<_> = refused
+            .iter()
+            .filter(|p| watch_path_refusal(p).is_none())
+            .collect();
+        assert!(allowed.is_empty(), "watchable but must not be: {allowed:?}");
+        assert!(watch_path_refusal("D:/projects/app").is_none());
     }
 
     #[test]

@@ -53,9 +53,28 @@ describe('DailyTrendChart bar geometry', () => {
     expect(parseFloat(full.style.height)).toBe(96);
   });
 
+  it('hints each bar through the Tooltip primitive, not a native title', () => {
+    const { container } = render(<DailyTrendChart points={points} />);
+    expect(container.querySelector('[title]')).toBeNull();
+  });
+
   it('clamps an out-of-range rate instead of overflowing the plot', () => {
     render(<DailyTrendChart points={[{ date: '2026-10-01', success_rate: 1.4, total: 4 }]} />);
     expect(parseFloat(screen.getByTestId('sla-trend-bar').style.height)).toBe(96);
+  });
+
+  it('marks a day with no runs as no-data, not as a 0% failure', () => {
+    // Both callers (MissionControlHome, DimDetail) send success_rate 0 for a
+    // zero-run day; the chart must not paint that as the error colour.
+    render(<DailyTrendChart points={[
+      { date: '2026-10-01', success_rate: 0, total: 0 },
+      { date: '2026-10-02', success_rate: 0, total: 3 },
+    ]} />);
+    const [idle, failed] = screen.getAllByTestId('sla-trend-bar');
+    expect(idle!.getAttribute('data-no-data')).toBe('true');
+    expect(idle!.className).not.toMatch(/status-error|red-/);
+    expect(failed!.getAttribute('data-no-data')).toBeNull();
+    expect(failed!.className).toMatch(/status-error|red-/);
   });
 
   it('renders nothing when there are no points', () => {

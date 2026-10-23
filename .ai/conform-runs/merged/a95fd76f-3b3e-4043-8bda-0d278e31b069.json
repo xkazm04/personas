@@ -1,0 +1,4 @@
+{"schema":"conform-run/1","worker":"a95fd76f-3b3e-4043-8bda-0d278e31b069","subject":"chat-transcript",
+"evaluatedAt":"2026-10-22T00:00:00Z","pairs":[],
+"declined":[{"subject":"chat-transcript","context":"1d8a480b-eac4-4110-a60e-47a6ab281c97","reason":"glyph-persona-card is a weak context (governance weak) with priorNotApplicable 8; weak pairs are not judged by default and this is a coverage question for the registry, not a verdict"}],
+"consults":[]}

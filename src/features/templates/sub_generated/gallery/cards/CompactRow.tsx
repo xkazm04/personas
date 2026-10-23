@@ -1,20 +1,22 @@
+import { onRowActivateKey } from './rowActivation';
 import {
   Download,
   Sparkles,
 } from 'lucide-react';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
+import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { getCachedLightFields } from './reviewParseCache';
 import { deriveArchCategories, userHasCategoryCredential } from '../../shared/architecturalCategories';
 import { TemplateCategoryPills } from './TemplateCategoryPills';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { TemplateModal } from './reviewParseCache';
-import type { ModalStackActions } from '../modals/useModalStack';
 
 interface CompactRowProps {
   review: PersonaDesignReview;
   searchQuery: string;
   isAiResult: boolean;
-  modals: ModalStackActions<TemplateModal>;
+  openModal: (entry: TemplateModal) => void;
   credentialServiceTypes: Set<string>;
 }
 
@@ -22,15 +24,19 @@ export function CompactRow({
   review,
   searchQuery,
   isAiResult,
-  modals,
+  openModal,
   credentialServiceTypes,
 }: CompactRowProps) {
+  const { t } = useTranslation();
   const { connectors } = getCachedLightFields(review);
   const archCategories = deriveArchCategories(connectors);
 
   return (
     <div
-      onClick={() => modals.open({ type: 'detail', review })}
+      onClick={() => openModal({ type: 'detail', review })}
+      onKeyDown={onRowActivateKey(() => openModal({ type: 'detail', review }))}
+      tabIndex={0}
+      role="button"
       className="group flex items-center border-b border-primary/5 hover:bg-secondary/30 cursor-pointer transition-colors px-4 py-1.5"
       data-testid={`template-row-${review.id}`}
     >
@@ -57,16 +63,16 @@ export function CompactRow({
           const hasIt = userHasCategoryCredential(cat.key, credentialServiceTypes);
           const CatIcon = cat.icon;
           return (
-            <div
-              key={cat.key}
-              className={`w-5.5 h-5.5 rounded flex items-center justify-center flex-shrink-0 ${
-                hasIt ? '' : 'grayscale opacity-50'
-              }`}
-              style={{ backgroundColor: `${cat.color}15` }}
-              title={`${cat.label}${hasIt ? ' (ready)' : ''}`}
-            >
-              <CatIcon className="w-3 h-3" style={{ color: cat.color }} />
-            </div>
+            <Tooltip key={cat.key} content={hasIt ? `${cat.label} · ${t.templates.connector_readiness.ready}` : cat.label}>
+              <div
+                className={`w-5.5 h-5.5 rounded flex items-center justify-center flex-shrink-0 ${
+                  hasIt ? '' : 'grayscale opacity-50'
+                }`}
+                style={{ backgroundColor: `${cat.color}15` }}
+              >
+                <CatIcon className="w-3 h-3" style={{ color: cat.color }} />
+              </div>
+            </Tooltip>
           );
         })}
         {archCategories.length > 4 && (

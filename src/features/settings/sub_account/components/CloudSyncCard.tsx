@@ -101,9 +101,12 @@ export default function CloudSyncCard() {
     try {
       const fresh = await cloudSyncNow();
       setStatus(fresh);
-      useToastStore
-        .getState()
-        .addToast(interpolate(s.cloud_sync_now_done, { count: Number(fresh.rowsSyncedLast) }), 'success');
+      // cloud_sync_now resolves even when the pass failed: per-table failures
+      // land in `lastError`, which the card already renders inline. Saying
+      // "Synced N records" over that banner contradicted it.
+      const toasts = useToastStore.getState();
+      if (fresh.lastError) toasts.addToast(s.cloud_sync_now_failed, 'warning');
+      else toasts.addToast(interpolate(s.cloud_sync_now_done, { count: Number(fresh.rowsSyncedLast) }), 'success');
     } catch (e) {
       toastCatch('CloudSyncCard:syncNow', s.cloud_sync_now_failed)(e);
     } finally {

@@ -4,7 +4,8 @@ import { getExecution } from '@/api/agents/executions';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import { tokenLabel } from '@/i18n/tokenMaps';
-import { silentCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Dot, KeyValueGrid, Tile, type Tone } from '@/features/shared/components/kit';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
@@ -26,22 +27,28 @@ export function ExecutionFactsWidget({ config, title, span, actions, footer }: C
   const personaId = (config?.personaId as string | undefined) ?? '';
 
   const [exec, setExec] = useState<PersonaExecution | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // The rejection VALUE, resolved into the product's sentence at render. IPC rejects with a
+  // serialized AppError OBJECT, so `err.message` / `String(err)` read "[object Object]".
+  const [error, setError] = useState<{ raw: unknown } | null>(null);
+  // A report written outside a run carries `execution_id: null` (openReportInChat passes it
+  // through): there is nothing to fetch, so the tile says so instead of ghosting forever.
+  const linked = executionId !== '' && personaId !== '';
 
   useEffect(() => {
-    if (!executionId || !personaId) return;
+    if (!linked) return;
     let cancelled = false;
     getExecution(executionId, personaId)
       .then((row) => { if (!cancelled) setExec(row); })
       .catch((err) => {
         silentCatch('ExecutionFactsWidget:getExecution')(err);
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
+        if (!cancelled) setError({ raw: err });
       });
     return () => { cancelled = true; };
-  }, [executionId, personaId]);
+  }, [linked, executionId, personaId]);
 
   const status = exec ? statusTone(exec.status) : null;
   const outcome = exec ? outcomeTone(exec.business_outcome) : null;
+  const failure = error ? resolveErrorTranslated(t, extractMessage(error.raw) || null) : null;
   return (
     <Tile
       span={span}
@@ -49,9 +56,10 @@ export function ExecutionFactsWidget({ config, title, span, actions, footer }: C
       actions={actions}
       footer={footer}
       testId="cockpit-widget-execution_facts"
-      state={!exec && !error ? 'loading' : undefined}
+      state={!linked ? 'empty' : !exec && !failure ? 'loading' : undefined}
       ghostRows={2}
-      error={error ? { title: error } : undefined}
+      empty={{ title: t.overview.analytics_dashboard.no_execution_data }}
+      error={failure ? { title: failure.message, hint: failure.suggestion } : undefined}
     >
       {exec && (
         <KeyValueGrid

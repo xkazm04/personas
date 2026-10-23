@@ -11,7 +11,7 @@ import {
   type SensorySignalEntry,
   type SensorySource,
 } from '@/api/companion';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 
 /**
  * "What did Athena see?" view. Lists ambient signals captured by the
@@ -58,7 +58,7 @@ export function SensorySignalsModal({
       }
       setLoadError(null);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       setLoadError(msg);
       silentCatch(
         filter === 'cli_session'

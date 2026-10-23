@@ -11,6 +11,7 @@ import {
   failureEventKey,
   hiddenFailedCount,
   selectAutoHealTargets,
+  settleAttemptStatus,
   PATTERN_ICON_CLASSES,
   type FailurePattern,
   type HealingAttempt,
@@ -201,7 +202,9 @@ export function SelfHealingPanel({
       <div className="divide-y divide-red-500/5">
         {analyzedFailures.map(({ task, pattern }) => {
           const Icon = pattern.icon;
-          const attempt = attempts.find((a) => a.taskId === task.id);
+          const found = attempts.find((a) => a.taskId === task.id);
+          // The retry is a new row, so the chip's outcome is read from it.
+          const attempt = found ? { ...found, status: settleAttemptStatus(found, tasks) } : undefined;
           return (
             <div key={task.id} className="flex items-center gap-3 px-4 py-3">
               <Icon className={`w-4 h-4 ${PATTERN_ICON_CLASSES[pattern.color]} flex-shrink-0`} />

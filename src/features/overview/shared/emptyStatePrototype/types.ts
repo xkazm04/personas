@@ -10,15 +10,18 @@ import type { ReactNode } from 'react';
  *   - {@link IllustrationEmptyState}  — a Leonardo-generated hero image
  *
  * Winners: Motion → activity / knowledge / memories; Illustration → approval /
- * messages / leaderboard. The motif union is split accordingly so each
- * component only accepts the motifs it can render. Both variants consume the
- * same {@link EmptyStateContent} and derive their accent from the motif.
+ * messages / leaderboard. Knowledge, memories and leaderboard have since moved
+ * to `ScenarioEmptyState` art, so the unions now carry only the motifs a live
+ * caller renders (their motif components and the two leaderboard PNGs went
+ * with them). The motif union is split so each component only accepts the
+ * motifs it can render. Both variants consume the same
+ * {@link EmptyStateContent} and derive their accent from the motif.
  */
 
 /** Motifs rendered by the animated-SVG variant. */
-export type MotionMotif = 'activity' | 'knowledge' | 'memories';
+export type MotionMotif = 'activity';
 /** Motifs rendered by the Leonardo-hero variant. */
-export type IllustrationMotif = 'approval' | 'messages' | 'leaderboard';
+export type IllustrationMotif = 'approval' | 'messages';
 export type EmptyStateMotif = MotionMotif | IllustrationMotif;
 
 export interface EmptyStateAction {
@@ -79,30 +82,6 @@ export const MOTIF_ACCENTS: Record<EmptyStateMotif, EmptyStateAccent> = {
     stroke: 'var(--status-info)',
     strokeLight: '#1d4ed8', // blue-700
     glow: 'color-mix(in srgb, var(--status-info) 42%, transparent)',
-  },
-  knowledge: {
-    text: 'text-violet-400',
-    soft: 'bg-violet-500/10',
-    border: 'border-violet-500/20',
-    stroke: '#a78bfa',
-    strokeLight: '#7c3aed', // violet-600
-    glow: 'color-mix(in srgb, #a78bfa 45%, transparent)',
-  },
-  memories: {
-    text: 'text-fuchsia-400',
-    soft: 'bg-fuchsia-500/10',
-    border: 'border-fuchsia-500/20',
-    stroke: '#e879f9',
-    strokeLight: '#c026d3', // fuchsia-600
-    glow: 'color-mix(in srgb, #e879f9 42%, transparent)',
-  },
-  leaderboard: {
-    text: 'text-amber-400',
-    soft: 'bg-amber-500/10',
-    border: 'border-amber-500/20',
-    stroke: '#fbbf24',
-    strokeLight: '#b45309', // amber-700
-    glow: 'color-mix(in srgb, #fbbf24 45%, transparent)',
   },
 };
 

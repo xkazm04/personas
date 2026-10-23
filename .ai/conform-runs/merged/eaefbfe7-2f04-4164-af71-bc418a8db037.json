@@ -1,0 +1,142 @@
+{
+  "schema": "conform-run/1",
+  "worker": "eaefbfe7-2f04-4164-af71-bc418a8db037",
+  "subject": "data-access",
+  "evaluatedAt": "2026-10-21T17:37:26Z",
+  "pairs": [
+    {
+      "context": "cd7e7cc7-cc5b-44a1-9bff-76b34af21966",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/api/__tests__/personas.test.ts:5 precondition unmet: the suites test the TS IPC wrappers against a mocked Tauri transport (mockInvoke at src/api/__tests__/executions.test.ts:26); no statement, row mapping or store engine is under test, so repo-testing belongs to the db crate suite"
+    },
+    {
+      "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/api/cloudSync.ts:11 precondition unmet: Zustand store composition plus thin IPC wrappers that each name one backend operation; it owns no store, statement or row decoder, and its one direct persistence (src/stores/notificationCenterStore.ts:64) is a localStorage UI cache governed by client-state"
+    },
+    {
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/stores/slices/system/devToolsTaskSlice.ts:5 precondition unmet: the slices reach persistence only through typed IPC wrappers and own no query language or decoding; where a slice holds many ids it already calls a set-shaped endpoint (src/stores/slices/system/devToolsProjectSlice.ts:434 listKpiMeasurementsBulk), and the remaining localStorage writes are UI state"
+    },
+    {
+      "context": "0aded02d-f5c5-4e24-8366-90783fb343b1",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/stores/slices/agents/personaSlice.ts:21 precondition unmet: persona data arrives only through typed IPC wrappers (set-shaped getPersonaSummaries at :266); the one direct write (src/stores/util/dedupedStorage.ts:30) is a localStorage UI-preference blob, a client-state concern"
+    },
+    {
+      "context": "336089a8-bb18-449c-a62e-ca76b02097fb",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "tests/playwright/companion-bridge.ts:2 precondition unmet: the harness drives the running app over the test-automation HTTP server and never opens a store, builds a statement or decodes a row; its query() calls are DOM selectors (:237)"
+    },
+    {
+      "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857",
+      "subject": "data-access",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:11 precondition unmet: live introspection runs in the backend parameterized commands, so these suites test frontend parsers and a clipboard SELECT helper that is never executed (src/features/vault/sub_databases/introspectionQueries.ts:7); no repository or store engine is under test"
+    }
+  ],
+  "declined": [
+    {
+      "subject": "data-access",
+      "context": "06ef5a64-1796-4637-a4d9-f860bbe67562",
+      "reason": "recipes-playground: unknown pair left for the next run, budget of 6 spent on the stale re-judgments"
+    },
+    {
+      "subject": "data-access",
+      "context": "511ca12f-50df-4941-84e1-e2d74a3dff85",
+      "reason": "capability-config-view is a weak row; judging it would manufacture a verdict on a doubtful match (coverage question for the registry)"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T17:37:26Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "data-access"
+      ],
+      "techniques": [
+        "repo-testing",
+        "layering-rules",
+        "batching-and-n-plus-one"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T17:37:26Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "data-access"
+      ],
+      "techniques": [
+        "repo-testing",
+        "layering-rules",
+        "batching-and-n-plus-one"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T17:37:26Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "data-access"
+      ],
+      "techniques": [
+        "repo-testing",
+        "layering-rules",
+        "batching-and-n-plus-one"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T17:37:26Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "data-access"
+      ],
+      "techniques": [
+        "repo-testing",
+        "layering-rules",
+        "batching-and-n-plus-one"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T17:37:26Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "data-access"
+      ],
+      "techniques": [
+        "repo-testing",
+        "layering-rules",
+        "batching-and-n-plus-one"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T17:37:26Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "data-access"
+      ],
+      "techniques": [
+        "repo-testing",
+        "layering-rules",
+        "batching-and-n-plus-one"
+      ],
+      "deviations": 0
+    }
+  ]
+}

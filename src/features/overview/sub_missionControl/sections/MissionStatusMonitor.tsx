@@ -4,6 +4,7 @@
 // Rows deep-link to the persona; the standalone status page no longer exists.
 
 import { useCallback, useMemo } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { CheckCircle2, AlertCircle, XCircle, Circle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -106,8 +107,8 @@ export function MissionStatusMonitor() {
       {loading && entries.length === 0 ? (
         <ListSkeleton calm rows={4} rowHeight={40} leading={false} />
       ) : topEntries.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center py-8 typo-caption text-foreground">
-          {he.no_personas}
+        <div className="flex-1 flex items-center justify-center py-6">
+          <ScenarioEmptyState art="agents" size="sm" title={he.no_personas} />
         </div>
       ) : (
         <div className="flex-1 min-h-0 divide-y divide-primary/5">

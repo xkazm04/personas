@@ -446,6 +446,12 @@ first.
 
 ### The rule
 
+> **Retired from `rules.json` 2026-10-21.** The backlog drain translated the
+> last four call sites (13 matches at adoption, 0 left), and the census treats
+> a rule that matches nothing as a broken matcher, so it cannot stay as a
+> zero-baseline guard. The text below is kept as the derivation; re-add it if
+> a literal title ever comes back.
+
 ```json
 {
   "id": "english-literal-os-notification",

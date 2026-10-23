@@ -10,6 +10,7 @@ import { resolveErrorTranslated } from "@/i18n/useTranslatedError";
 import type { FinderViewProps } from "./types";
 import { FINDER_SCENARIO_BOX, finderScenario, finderScenarioTestId } from "./views/finderScenario";
 import { ListView } from "./views/ListView";
+import { extractMessage } from '@/lib/silentCatch';
 
 interface Props {
   /** Header strip: title + count. */
@@ -51,7 +52,7 @@ export function FinderDerivedList({
 }: Props) {
   const { t, tx } = useTranslation();
   const failure =
-    error == null ? null : resolveErrorTranslated(t, error instanceof Error ? error.message : String(error)).message;
+    error == null ? null : resolveErrorTranslated(t, extractMessage(error)).message;
   const derived = useMemo<FinderViewProps>(
     () => ({
       ...viewProps,
@@ -83,6 +84,8 @@ export function FinderDerivedList({
         <div className="flex-1 flex items-center justify-center p-8">
           <ScenarioEmptyState
             icon={kind === "tagged" ? Tag : SearchX}
+            art={kind === "tagged" ? "folder" : "search"}
+            size="sm"
             title={emptyTitle}
             subtitle={emptyBody}
             action={{ label: backLabel, onClick: onBack, icon: ArrowLeft }}

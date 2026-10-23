@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import {
   startCredentialNegotiation,
   cancelCredentialNegotiation,
@@ -242,7 +242,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
       setStepHelp({ answer: result.answer, stepIndex: visibleIndex });
     } catch (err) {
       setStepHelp({
-        answer: err instanceof Error ? err.message : String(err),
+        answer: extractMessage(err),
         stepIndex: visibleIndex,
         isError: true,
       });

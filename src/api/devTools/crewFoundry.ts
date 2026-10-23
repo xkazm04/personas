@@ -42,8 +42,10 @@ export interface CrewFitnessReport {
 export const getProjectPulseSnapshots = (projectId: string, limit?: number) =>
   invoke<ProjectPulseSnapshot[]>("get_project_pulse_snapshots", { projectId, limit });
 
-/** Forge a project-scoped crew from a compiled brief. One Sonnet call plus
- *  team assembly — allow well past the backend's 120s LLM timeout. */
+/** Forge a project-scoped crew from a compiled brief. One StructuredJson call
+ *  that escalates once on rejected output (two legs of 120 s each, see
+ *  `SYNTHESIS_TIMEOUT_SECS` in commands/design/team_synthesis.rs) plus team
+ *  assembly — allow well past that 240 s worst case. */
 export const synthesizeProjectCrew = (
   projectId: string,
   brief: string,
@@ -53,7 +55,7 @@ export const synthesizeProjectCrew = (
   invoke<TeamSynthesisResult>(
     "synthesize_project_crew",
     { projectId, brief, roleDirectives, teamName },
-    { timeoutMs: 180_000 },
+    { timeoutMs: 300_000 },
   );
 
 /** Member roster + per-persona assignment success rate for a team. */

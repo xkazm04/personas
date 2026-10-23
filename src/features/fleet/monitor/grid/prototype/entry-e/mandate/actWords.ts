@@ -7,18 +7,27 @@
 // (`engine/src/mandate_router.rs`: "filed as evidence", "approved",
 // "acknowledged"), the envelope doors in `db/src/repos/core/mandates.rs`
 // ("signed", "widened", "narrowed", "merge-policy-set", "budget-set",
-// "suspended", "resumed", "reverted"), and the steward's idea verdicts. A token
+// "suspended", "resumed", "reverted", and WP6's "dropped", "kept", "drafted",
+// "adopted"), and the steward's idea verdicts. A token
 // none of them writes reads as "decided", never as the raw token.
+//
+// Every verb has its own words in the act log AND the dock's ticker: the
+// switches over `ActVerb` here and in `dockActLine` have no default, so a
+// verb added to the union fails tsc until both say it (`ACT_VERBS` pins the
+// list a test walks).
 
 import type { Translations } from '@/i18n/generated/types';
 import type { CharterAct } from '@/lib/bindings/CharterAct';
 
 type M = Translations['monitor'];
 
-export type ActVerb =
-  | 'filed' | 'approved' | 'acknowledged' | 'accepted' | 'rejected'
-  | 'signed' | 'widened' | 'narrowed' | 'merge_set' | 'budget_set'
-  | 'suspended' | 'resumed' | 'reverted' | 'decided';
+export const ACT_VERBS = [
+  'filed', 'approved', 'acknowledged', 'accepted', 'rejected',
+  'signed', 'widened', 'narrowed', 'merge_set', 'budget_set',
+  'suspended', 'resumed', 'reverted', 'dropped', 'kept', 'drafted', 'adopted', 'decided',
+] as const;
+
+export type ActVerb = (typeof ACT_VERBS)[number];
 
 export function verbOf(verdict: string | null | undefined): ActVerb {
   switch (verdict) {
@@ -35,6 +44,10 @@ export function verbOf(verdict: string | null | undefined): ActVerb {
     case 'suspended': return 'suspended';
     case 'resumed': return 'resumed';
     case 'reverted': return 'reverted';
+    case 'dropped': return 'dropped';
+    case 'kept': return 'kept';
+    case 'drafted': return 'drafted';
+    case 'adopted': return 'adopted';
     default: return 'decided';
   }
 }
@@ -54,6 +67,10 @@ export function verbLabel(m: M, verb: ActVerb): string {
     case 'suspended': return m.ml_verb_suspended;
     case 'resumed': return m.ml_verb_resumed;
     case 'reverted': return m.ml_verb_reverted;
+    case 'dropped': return m.ml_verb_dropped;
+    case 'kept': return m.ml_verb_kept;
+    case 'drafted': return m.ml_verb_drafted;
+    case 'adopted': return m.ml_verb_adopted;
     case 'decided': return m.ml_verb_decided;
   }
 }
@@ -75,20 +92,22 @@ export interface ShownWords {
   title: string | null;
   /** On a revert act: the reverted act's verdict. */
   verdict: string | null;
+  /** On a drop: the operator's reason. */
+  reason: string | null;
 }
 
 export function shownWords(json: string | null): ShownWords {
-  if (!json) return { title: null, verdict: null };
+  if (!json) return { title: null, verdict: null, reason: null };
   try {
     // A stored JSON text of unknown shape: read only string fields, by name.
     const v: unknown = JSON.parse(json);
-    if (typeof v !== 'object' || v === null) return { title: null, verdict: null };
+    if (typeof v !== 'object' || v === null) return { title: null, verdict: null, reason: null };
     const o = v as Record<string, unknown>;
     const str = (x: unknown) => (typeof x === 'string' && x.trim() !== '' ? x : null);
-    return { title: str(o.title), verdict: str(o.verdict) };
+    return { title: str(o.title), verdict: str(o.verdict), reason: str(o.reason) };
   } catch {
     // intentional: a malformed shown_json only costs the title; the kind stands in.
-    return { title: null, verdict: null };
+    return { title: null, verdict: null, reason: null };
   }
 }
 
@@ -103,6 +122,12 @@ export function actHeadline(m: M, act: CharterAct, mandateTitle?: string | null)
   if (act.itemKind === 'act.revert') {
     return { verb, what: shown.verdict ? verbLabel(m, verbOf(shown.verdict)) : m.ml_kind_act };
   }
-  if (act.itemKind === 'mandate') return { verb, what: mandateTitle ?? m.ml_kind_mandate };
+  if (act.itemKind === 'mandate') {
+    const what = mandateTitle ?? m.ml_kind_mandate;
+    return {
+      verb,
+      what: shown.reason ? m.ml_act_what_reason.replace('{what}', what).replace('{reason}', shown.reason) : what,
+    };
+  }
   return { verb, what: shown.title ?? kindLabel(m, act.itemKind) };
 }

@@ -9,6 +9,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { usePendingTriggerFires } from '@/features/triggers/hooks/usePendingTriggerFires';
+import { getTriggerTypeLabel } from '@/lib/utils/platform/triggerConstants';
 
 interface PendingTriggerApprovalsProps {
   /** Scope to one agent's triggers. Omit for the workspace-wide queue. */
@@ -92,8 +93,8 @@ function PendingFireRow({ fire, trigger, personaName, busy, onResolve }: Pending
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="typo-body text-foreground truncate">{personaName}</span>
           {trigger && (
-            <span className="typo-caption px-1.5 py-0.5 rounded-card border border-primary/15 bg-secondary/40 text-foreground shrink-0 capitalize">
-              {trigger.trigger_type}
+            <span className="typo-caption px-1.5 py-0.5 rounded-card border border-primary/15 bg-secondary/40 text-foreground shrink-0">
+              {getTriggerTypeLabel(trigger.trigger_type, t)}
             </span>
           )}
         </div>

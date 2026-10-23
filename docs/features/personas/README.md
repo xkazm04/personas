@@ -349,7 +349,7 @@ in the order an agent is authored: what it **is**, what it **owns**, what it
 | Manifest | `ManifestTab` (`sub_manifest/`) | the two-author core document: operator-authored **law** sections (`# Mandate`, `# Boundaries`, `# Operation defaults`) editable in place, and agent-authored **self-model** sections (`# My work`, `# My self-reads`) that change only through approved diffs. A pending self-model proposal renders as a review card **under the section it would edit**, so the change and the text it changes are read together; accepting or rejecting it anywhere decides the whole proposal. |
 | Responsibilities | `ResponsibilitiesTab` (`sub_responsibilities/`) | the persona's standing **charters**, which are what it can do. A glyph master/detail surface: the hero sigil for the active charter, one row per charter, and a full detail pane with per-dimension editors, the charter's `{{param.*}}` knobs, a status ladder, and a per-charter **Run now**. It absorbed the retired Use Cases and Parameters sub-tabs. |
 | Brain | `BrainDashboard` (`sub_brain/`) via `BrainSection` | the memory and episode dashboard, plus the proposal inbox and a manual "Consolidate now". |
-| Connectors | `ConnectorVerificationPanel` + `ConnectorsSection` (via `DesignConnectorsPanel`) | **live** connector verification — per-connector Test, Test all, Link existing, Add new, Swap alternative — above a read-only view of the saved design's connectors + tools |
+| Connectors | `ConnectorVerificationPanel` + `ConnectorsSection` (via `DesignConnectorsPanel`) | **live** connector verification — per-connector Test, Test all, Link existing, Add new, Set up an alternative (opens credential creation for an interchangeable connector; it does not rebind the persona's requirement) — above a read-only view of the saved design's connectors + tools |
 
 Six sub-tabs were retired when the charter became the capability. **Use Cases**
 is now Responsibilities. **Properties**, **Parameters**, **Events & Triggers**
@@ -394,8 +394,8 @@ verification panel derives its rows from the persona's actual tools via
 `useConnectorStatuses` — not from a saved design — so it renders for personas
 that were never designed, groups interchangeable connectors by their
 `connectorRoles` functional role, auto-tests a connector when it gains a
-credential, and offers Test / Test all / Link existing / Add new / Swap
-alternative per row. The sub-tab's empty state now appears only when the persona
+credential, and offers Test / Test all / Link existing / Add new / Set up an
+alternative (credential creation only; the requirement is unchanged) per row. The sub-tab's empty state now appears only when the persona
 has neither a live connector demand nor a saved design.
 
 Rows open showing the credential's **persisted** healthcheck
@@ -412,6 +412,16 @@ session are never stale. **Test all** diffs each outcome against the result it
 replaced (the restored baseline is what makes this possible) and reports
 transitions in its completion notification — recovered / newly failing / failing
 — instead of the old "tested N connectors".
+
+A probe that never reached the service (`state: "unreachable"` - offline, DNS,
+timeout) is **unreachable**, not failed: an amber "Couldn't reach" badge with a
+Wi-Fi-off icon, a result panel that says it is not a verdict on the credential
+(with the raw obstacle beneath), and its own "N unreachable" filter pill. It
+never counts toward the failed pill or the red readiness warning, Test all
+reports it as "N couldn't be reached" rather than as a regression, and an
+unreachable baseline is not diffed against (`summarizeTestAll` in
+`connectorTypes.ts`). The connector stays execution-ready (`isExecutionReady`),
+because nothing judged the credential.
 
 Below the verification panel, the design recap's connector cards are also
 actionable: their status line resolves through `templates.design` in all 14

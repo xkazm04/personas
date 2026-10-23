@@ -144,7 +144,9 @@
     "color_name_violet": "Violeta",
     "contrast_fail": "Contraste bajo",
     "contrast_pass": "Legible",
-    "contrast_preview": "Vista previa de contraste"
+    "contrast_preview": "Vista previa de contraste",
+    "remove_custom_icon_used_by_one": "También lo usa {count} otro agente.",
+    "remove_custom_icon_used_by_other": "También lo usan {count} otros agentes."
   },
   "general_tools": "Herramientas generales",
   "glossary_api": "Una forma en que dos programas se comunican entre sí automáticamente.",
@@ -160,6 +162,8 @@
   "grid_no_data": "Sin datos",
   "grid_rows": "Filas",
   "grid_rows_per_page": "Filas por página",
+  "grid_prev_page": "Página anterior",
+  "grid_next_page": "Página siguiente",
   "grid_showing": "Mostrando {start}–{end} de {total} elementos",
   "group_older": "Más antiguo",
   "group_this_month": "Este mes",
@@ -259,7 +263,11 @@
     "schedules": "Programaciones",
     "teams_label": "Equipos",
     "whats_new": "Novedades",
-    "whats_new_update": "Actualizado — ver novedades"
+    "whats_new_update": "Actualizado — ver novedades",
+    "activity_draft_in_progress": "Borrador en curso",
+    "activity_execution_queued": "Ejecución en cola",
+    "activity_lab_run_in_progress": "Ejecución de Lab en curso",
+    "activity_testing_agent": "Probando agente"
   },
   "sort_active_asc": "Ordenado por {label}, de forma ascendente. Actívelo para ordenar de forma descendente.",
   "sort_active_desc": "Ordenado por {label}, de forma descendente. Actívelo para ordenar de forma ascendente.",
@@ -350,5 +358,17 @@
   "rows_show_all": "Mostrar los {count}",
   "rows_show_fewer": "Mostrar menos",
   "rows_showing_all": "Mostrando los {count}",
-  "rows_showing_first": "Mostrando los primeros {count}"
+  "rows_showing_first": "Mostrando los primeros {count}",
+  "business_outcome": {
+    "value_delivered_label": "Entregado",
+    "value_delivered_title": "La persona realizó trabajo real: un artefacto accionable, un mensaje enviado o un estado modificado.",
+    "no_input_available_label": "Sin entrada",
+    "no_input_available_title": "Se ejecutó sin errores pero no había nada que procesar: solo emitió un informe de disponibilidad/estado.",
+    "precondition_failed_label": "Bloqueado",
+    "precondition_failed_title": "Falta o está roto un conector, una credencial o una condición previa necesaria. Corrige la configuración para desbloquear.",
+    "partial_label": "Parcial",
+    "partial_title": "Hizo parte del trabajo pero no todo: límite de frecuencia, error transitorio o campos que faltan en algunos elementos.",
+    "unknown_label": "-",
+    "unknown_title": "No se informó ningún resultado de negocio (ejecución antigua, o el modelo no emitió la evaluación)."
+  }
 }

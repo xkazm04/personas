@@ -106,4 +106,35 @@ describe("ChatTab transcript survives a remount", () => {
     expect(screen.getByText(en.vault.databases.cancelled)).toBeInTheDocument();
     expect(screen.getByLabelText(en.common.send)).toBeInTheDocument();
   });
+
+  it("does not restore a generated statement still claiming to execute", async () => {
+    // The statement never returns: the modal closes while it runs.
+    mockedInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === "start_nl_query") return undefined;
+      if (cmd === "get_nl_query_snapshot") {
+        return {
+          job_id: "job-1", status: "completed", error: null, lines: [],
+          generated_sql: "SELECT pg_sleep(600)", explanation: "Slow one.",
+        };
+      }
+      if (cmd === "execute_db_query") return new Promise(() => {});
+      return undefined;
+    });
+    const first = render(<ChatTab credentialId="cred-1" language="sql" serviceType="supabase" />);
+    await ask("run something slow");
+    await act(async () => { fireEvent.click(screen.getByTestId("chat-run-sql")); });
+    expect(screen.getByTestId("chat-cancel-sql")).toBeInTheDocument();
+    const cancelsBefore = mockedInvoke.mock.calls.filter(([c]) => c === "cancel_db_query").length;
+
+    await act(async () => { first.unmount(); });
+
+    // The running statement is stopped at the engine, not abandoned ...
+    expect(mockedInvoke.mock.calls.filter(([c]) => c === "cancel_db_query").length).toBe(cancelsBefore + 1);
+    // ... and the restored bubble is settled: no spinner whose Cancel can no
+    // longer reach anything, and the Run button is back.
+    render(<ChatTab credentialId="cred-1" language="sql" serviceType="supabase" />);
+    expect(screen.queryByTestId("chat-cancel-sql")).not.toBeInTheDocument();
+    expect(screen.getByTestId("chat-run-sql")).toBeInTheDocument();
+    expect(screen.getByText(en.vault.databases.cancelled)).toBeInTheDocument();
+  });
 });

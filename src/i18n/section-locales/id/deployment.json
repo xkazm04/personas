@@ -244,7 +244,9 @@
     "loading_firings": "Memuat data pemicuan…",
     "no_firings": "Tidak ada pemicuan terbaru",
     "recent_firings": "Pemicuan terbaru",
-    "firings_load_failed": "Tidak dapat memuat pemicuan terbaru."
+    "firings_load_failed": "Tidak dapat memuat pemicuan terbaru.",
+    "triggers_load_failed_one": "Tidak dapat memuat pemicu untuk {count} persona.",
+    "triggers_load_failed_other": "Tidak dapat memuat pemicu untuk {count} persona."
   },
   "sr_connecting": "Menghubungkan ke orkestrator cloud…",
   "sr_deploying": "Men-deploy persona ke cloud",

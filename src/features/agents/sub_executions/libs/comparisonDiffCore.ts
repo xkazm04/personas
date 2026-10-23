@@ -69,6 +69,14 @@ export function diffLines(linesA: string[], linesB: string[]): LineDiffEntry[] {
   return result;
 }
 
+/**
+ * The terminal log as the line diff sees it: one entry per non-blank line.
+ * Shared by the worker and the main-thread fallback so both diff the same input.
+ */
+export function splitLogLines(text: string | null): string[] {
+  return (text ?? '').split('\n').filter((line) => line.trim());
+}
+
 /** Structural diff of two JSON strings. */
 export function jsonDiff(a: string | null, b: string | null): JsonDiffEntry[] {
   const diffs: JsonDiffEntry[] = [];

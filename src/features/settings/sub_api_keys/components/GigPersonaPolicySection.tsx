@@ -18,61 +18,9 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import Button from '@/features/shared/components/buttons/Button';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
-import {
-  getGigPersonaPolicy,
-  setGigPersonaPolicy,
-  type GigPersonaPolicy,
-} from '@/api/auth/gigPersonaPolicy';
-
-interface Draft {
-  enabled: boolean;
-  maxBudgetUsd: string;
-  /** The number input holds text it cannot parse (its `value` then reads ''). */
-  budgetBadInput: boolean;
-  allowedModels: string;
-  rootPath: string;
-}
-
-function toDraft(p: GigPersonaPolicy): Draft {
-  return {
-    enabled: p.enabled,
-    // A stored `null` is no cap, shown as an empty field.
-    maxBudgetUsd: p.maxBudgetUsd === null ? '' : String(p.maxBudgetUsd),
-    budgetBadInput: false,
-    allowedModels: p.allowedModels.join(', '),
-    rootPath: p.rootPath,
-  };
-}
-
-/** An empty budget field is no cap (`null`); anything else is the typed number. */
-function budgetFromDraft(raw: string): number | null {
-  const trimmed = raw.trim();
-  return trimmed === '' ? null : Number(trimmed);
-}
-
-/**
- * A budget the field cannot read. Saving it is blocked rather than sent: a
- * number input reports unparseable text (`5,5` in a `.`-decimal locale) as an
- * EMPTY value, and NaN serializes to `null` — either way a typo would silently
- * read as "no cap".
- */
-function budgetUnreadable(d: Draft): boolean {
-  if (d.budgetBadInput) return true;
-  const budget = budgetFromDraft(d.maxBudgetUsd);
-  return budget !== null && !Number.isFinite(budget);
-}
-
-function fromDraft(d: Draft): GigPersonaPolicy {
-  return {
-    enabled: d.enabled,
-    maxBudgetUsd: budgetFromDraft(d.maxBudgetUsd),
-    allowedModels: d.allowedModels
-      .split(',')
-      .map((m) => m.trim())
-      .filter((m) => m.length > 0),
-    rootPath: d.rootPath.trim(),
-  };
-}
+import { extractMessage } from '@/lib/silentCatch';
+import { getGigPersonaPolicy, setGigPersonaPolicy } from '@/api/auth/gigPersonaPolicy';
+import { budgetUnreadable, fromDraft, toDraft, type Draft } from '../libs/gigPolicyDraft';
 
 export function GigPersonaPolicySection() {
   const { t } = useTranslation();
@@ -90,7 +38,7 @@ export function GigPersonaPolicySection() {
         if (live) setDraft(toDraft(p));
       } catch (e) {
         // Shown in the section's error row, like the key list's load error.
-        if (live) setError(e instanceof Error ? e.message : String(e));
+        if (live) setError(extractMessage(e));
       }
     };
     void load();
@@ -113,7 +61,7 @@ export function GigPersonaPolicySection() {
       setDraft(toDraft(stored));
       setSaved(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(extractMessage(e));
     } finally {
       setSaving(false);
     }

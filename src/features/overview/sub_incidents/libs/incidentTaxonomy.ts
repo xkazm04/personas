@@ -2,6 +2,7 @@ import { AlertTriangle, Bell, Database, KeyRound, Stethoscope, ShieldAlert, Unpl
 import { SEVERITY_COLORS } from '@/lib/utils/formatters';
 import type { StatusKey } from '@/lib/design/statusTokens';
 import type { Translations } from '@/i18n/en';
+import { isClosedIncidentStatus } from './incidentStatus';
 
 /**
  * Per-source visual + label mapping for the incidents inbox.
@@ -32,6 +33,14 @@ export const INCIDENT_SOURCE_ICONS: Record<IncidentSourceTable, typeof Bell> = {
   execution_error: AlertTriangle,
   mcp_sidecar: Unplug,
 };
+
+/**
+ * Every source the inbox has an icon and a label for, in declaration order.
+ * The filter bar lists exactly these, so a source added above is filterable
+ * the moment it has a label (it used to be a second hand-copied list that had
+ * already lost `mcp_sidecar`).
+ */
+export const INCIDENT_SOURCE_TABLES = Object.keys(INCIDENT_SOURCE_ICONS) as IncidentSourceTable[];
 
 export function sourceTableIcon(source: string): typeof Bell {
   return INCIDENT_SOURCE_ICONS[source as IncidentSourceTable] ?? Database;
@@ -161,7 +170,7 @@ export const STALE_THRESHOLD_MS = 3 * 24 * 3_600_000;
  * threshold — surfaced so long-waiting work doesn't rot unseen.
  */
 export function isStaleIncident(incident: { status: string; createdAt: string }): boolean {
-  if (incident.status === 'resolved' || incident.status === 'dismissed') return false;
+  if (isClosedIncidentStatus(incident.status)) return false;
   const ts = new Date(incident.createdAt).getTime();
   if (Number.isNaN(ts)) return false;
   return Date.now() - ts >= STALE_THRESHOLD_MS;

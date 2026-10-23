@@ -3,7 +3,8 @@ import type { PersonaExecution } from '@/lib/types/types';
 import { useReplayTimeline } from '@/hooks/execution/useReplayTimeline';
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
-import { getExecutionLogLines } from '@/api/agents/executions';
+import { fetchReplayLines, REPLAY_MAX_LINES } from './fetchReplayLines';
+import { formatCount } from '@/lib/utils/formatters';
 
 import { createLogger } from '@/lib/log';
 import { silentCatch } from '@/lib/silentCatch';
@@ -15,8 +16,6 @@ import { ReplayTransportControls } from './ReplayTransportControls';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("replay-sandbox");
-/** First stdout page — matches `get_execution_log_lines` default page size. */
-const LOG_PAGE_SIZE = 500;
 
 // -- Main Component -------------------------------------------------------
 
@@ -25,12 +24,12 @@ interface ReplaySandboxProps {
 }
 
 export function ReplaySandbox({ execution }: ReplaySandboxProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const e = t.agents.executions;
   const setRerunInputData = useSystemStore((s) => s.setRerunInputData);
   const addToast = useToastStore((s) => s.addToast);
 
-  // First page of stdout (forward from offset 0). The full-file command
+  // Stdout paged forward from offset 0 up to a cap. The full-file command
   // `get_execution_log` can ship 10 MB; this is the same paged path session
   // recovery already uses. Chrome stays up while the page is in flight.
   const [logLines, setLogLines] = useState<string[] | null>(null);
@@ -40,13 +39,12 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     let cancelled = false;
     setLogLines(null);
     setLogLoading(true);
-    // Stamped: the timeline places each line at the time it was written, and
-    // a page without its stamps plays back evenly spread with no silences.
-    getExecutionLogLines(execution.id, execution.persona_id, 0, LOG_PAGE_SIZE, true)
+    // Stamped and paged to the cap (see fetchReplayLines).
+    fetchReplayLines(execution.id, execution.persona_id)
       .then((lines) => {
         if (!cancelled) setLogLines(lines);
       })
-      .catch((err) => { silentCatch('ReplaySandbox:getExecutionLogLines')(err); logger.warn('Failed to load execution log', { error: err }); })
+      .catch((err) => { silentCatch('ReplaySandbox:fetchReplayLines')(err); logger.warn('Failed to load execution log', { error: err }); })
       .finally(() => {
         if (!cancelled) setLogLoading(false);
       });
@@ -60,10 +58,14 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     execution.cost_usd,
   );
 
-  // Keyboard shortcuts. currentMs is read through a ref so the listener doesn't
-  // re-bind on every animation frame during playback.
+  // Keyboard shortcuts. currentMs AND the actions are read through refs so the
+  // listener binds once: `actions` is a fresh object on every render (and its
+  // step/skip callbacks change with every playback flush), so depending on it
+  // re-bound the window listener ~12 times a second while playing.
   const currentMsRef = useRef(state.currentMs);
   currentMsRef.current = state.currentMs;
+  const actionsRef = useRef(actions);
+  actionsRef.current = actions;
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -76,6 +78,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
         (target instanceof HTMLElement && target.isContentEditable) ||
         (target instanceof HTMLElement && target.getAttribute('role') === 'slider')
       ) return;
+      const actions = actionsRef.current;
       switch (e.key) {
         case ' ':
           e.preventDefault();
@@ -101,7 +104,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [actions]);
+  }, []);
 
   const handleFork = useCallback(() => {
     if (state.forkPoint == null) return;
@@ -161,6 +164,13 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
           onToggleAutoSkip={() => actions.setAutoSkipSilence(!state.autoSkipSilence)}
         />
       </div>
+
+      {/* The log was cut at the replay cap: say so instead of replaying a silent prefix. */}
+      {logLines != null && logLines.length >= REPLAY_MAX_LINES && (
+        <p className="px-4 py-1.5 typo-caption text-foreground border-b border-primary/10" data-testid="replay-capped-notice">
+          {tx(e.replay_capped, { count: formatCount(REPLAY_MAX_LINES) })}
+        </p>
+      )}
 
       {/* Synchronized panels */}
       <div className="flex-1 flex overflow-hidden">

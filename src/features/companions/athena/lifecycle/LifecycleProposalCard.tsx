@@ -1,3 +1,4 @@
+import { extractMessage } from '@/lib/silentCatch';
 import { useState } from 'react';
 import { Workflow } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
@@ -124,7 +125,7 @@ export function LifecycleProposalCard({
     } catch (err: unknown) {
       // Resolved at the set site: the stale-version refusal and every other
       // backend sentence go through the error registry before they are shown.
-      setError(resolveErrorTranslated(t, err instanceof Error ? err.message : String(err)).message);
+      setError(resolveErrorTranslated(t, extractMessage(err)).message);
     }
   };
 

@@ -94,7 +94,7 @@ export function TriggerSetWidget({ config, title, span, actions, footer }: Cockp
       actions={actions}
       footer={footer}
       state={triggers.length === 0 ? 'empty' : undefined}
-      empty={{ title: a.trigger_set_empty }}
+      empty={{ art: 'bolt', title: a.trigger_set_empty }}
       testId="companion-trigger-set-widget"
     >
       <WidgetTable<TriggerRow>

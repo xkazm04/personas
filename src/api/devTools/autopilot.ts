@@ -1,7 +1,7 @@
 // Per-project autopilot — the cockpit's single autonomy switch over a project's
 // KPI → goal → team loop (docs/plans/kpi-driven-orchestration.md, direction D2).
 // Wraps the dev_tools_*_autopilot_mode commands; the engine-side mode→capability
-// semantics live in src-tauri/src/engine/autopilot.rs.
+// semantics live in src-tauri/engine/src/autopilot.rs.
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 /** The four explicit modes. `null` (unset) means the project follows the legacy

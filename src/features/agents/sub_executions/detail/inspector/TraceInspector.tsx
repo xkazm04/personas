@@ -10,6 +10,8 @@ import { SpanRow } from './SpanRow';
 import { TraceSummary } from './TraceSummary';
 import { useTraceData } from './useTraceData';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { extractMessage } from '@/lib/silentCatch';
 
 
 interface TraceInspectorProps {
@@ -140,7 +142,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
   if (error) {
     return (
       <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-modal typo-code text-red-300/80 space-y-2">
-        <div>{tx(e.failed_to_load_trace, { error })}</div>
+        <div>{tx(e.failed_to_load_trace, { error: resolveErrorTranslated(t, extractMessage(error.raw)).message })}</div>
         <Button variant="secondary" size="xs" onClick={retry} icon={<RefreshCw className="w-3 h-3" />}>
           {t.common.retry}
         </Button>

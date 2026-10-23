@@ -98,3 +98,22 @@ describe('useSettings -- the key list is not a delimiter round-trip', () => {
     expect(result.current.values[weird]).toBe('12');
   });
 });
+
+describe("useSettings — failed bulk read", () => {
+  beforeEach(() => {
+    resetInvokeMocks();
+    vi.mocked(listen).mockReset();
+    vi.mocked(listen).mockResolvedValue(() => {});
+  });
+
+  it("reports an AppError object's message, not [object Object]", async () => {
+    _clearAutoDedupForTests();
+    mockedTauriInvoke.mockRejectedValue({ error: "database is locked", kind: "Database" });
+
+    const { result } = renderHook(() => useSettings(["spend_ceiling_usd"]));
+
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.error).toBe("database is locked");
+    expect(result.current.values).toEqual({ spend_ceiling_usd: null });
+  });
+});

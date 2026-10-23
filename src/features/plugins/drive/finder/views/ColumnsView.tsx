@@ -96,7 +96,7 @@ export function ColumnsView(props: FinderViewProps) {
     return <RecursiveResults view={props} />;
   }
   const settledEmpty = !drive.loading && drive.visibleEntries.length === 0 && levels.length === 1 && !pendingCreate;
-  const scenario: FinderEmptyVariant | null = drive.error
+  const scenario: FinderEmptyVariant | null = drive.error != null
     ? "unreadable"
     : settledEmpty
       ? drive.searchQuery.trim().length >= 2 ? "search-empty" : "empty"

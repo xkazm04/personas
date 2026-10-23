@@ -1,13 +1,14 @@
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
+import type { QueuedPrompt } from './conversationOutbox';
 
 /* ----------------------------------------------------------------------------
  * CONVERSATION MODEL — the clustering rule (plan D7).
  *
  * The channel is a flat list of items. A conversation is not: a run of twelve
  * `step` rows from one assignment is ONE thing that happened, not twelve things
- * to read. So consecutive steps sharing an assignmentId collapse into a single
- * live ASSIGNMENT row, and messages sharing a deliberationId collapse into a
- * single DELIBERATION row.
+ * to read. So the steps of one assignment collapse into a single live
+ * ASSIGNMENT row, and the messages of one deliberation into a single
+ * DELIBERATION row (per day, see `buildConversation`).
  *
  * This is what keeps the timeline readable when capability-work (hard-wired
  * tasks) and improvement-dialog (the behaviour core) interleave in one stream:
@@ -24,7 +25,9 @@ export type ConversationRow =
   | { kind: 'talk'; key: string; at: string; item: TeamChannelItem }
   | { kind: 'assignment'; key: string; at: string; assignmentId: string; items: TeamChannelItem[] }
   | { kind: 'deliberation'; key: string; at: string; deliberationId: string; items: TeamChannelItem[] }
-  | { kind: 'proposal'; key: string; at: string; proposal: AssignProposal }
+  // `at` is empty for the same reason as `queued` below: a proposal is
+  // local-only and is appended after the fold, never ranked by a timestamp.
+  | { kind: 'proposal'; key: string; at: ''; proposal: AssignProposal }
   // `at` is empty on purpose: a queued prompt has no timestamp anyone else
   // agrees with. Minting one from the renderer's clock would give it a position
   // in a stream ordered by the server's (census:
@@ -56,70 +59,21 @@ export function rowKeyForItem(rows: ConversationRow[], itemId: string): string |
 
 /** A decomposed goal awaiting the user's Confirm — the composer's output. */
 export interface AssignProposal {
+  /** The team the goal was routed for. A proposal belongs to ONE channel: it
+   *  renders only there, and Confirm creates the assignment on THIS team, never
+   *  on whichever conversation happens to be open when it is pressed. */
+  teamId: string;
   goal: string;
   steps: Array<{ title: string; description: string; suggestedPersonaId: string | null }>;
   status: 'pending' | 'launching' | 'launched' | 'dismissed';
   assignmentId?: string;
 }
 
-/* ── THE COMPOSER QUEUE (plan Lane A, "submit-while-busy = enqueue") ───────── */
+// The composer outbox and the row-identity pass live in their own modules;
+// re-exported so every import of this model keeps working.
+export { nextPromptBatch, type PromptBatch, type QueuedPrompt } from './conversationOutbox';
+export { reconcileRows } from './conversationRowIdentity';
 
-/**
- * One thing the operator typed and pressed Enter on, before the channel was
- * ready to take it.
- *
- * The composer never disables. A prompt typed while a directive or a route is
- * in flight becomes one of these — a VISIBLE row at the bottom of the
- * conversation, in its own phase — and drains in order. The alternative the
- * surface shipped with was a greyed-out button, which loses the thought and
- * tells the operator to wait on a machine.
- */
-export interface QueuedPrompt {
-  /** Client id. Never leaves the browser — the server row is matched by the
-   *  refetch that follows a successful post, not by this. */
-  id: string;
-  text: string;
-  /** A goal ROUTES (decompose → proposal card); a plain prompt POSTS. */
-  goal: boolean;
-  phase: 'queued' | 'sending' | 'failed';
-}
-
-/** What the drain should do next: one post, covering one or more prompts. */
-export interface PromptBatch {
-  ids: string[];
-  body: string;
-  goal: boolean;
-}
-
-/**
- * The fold rule.
- *
- * Two plain prompts typed back to back are one thought split across two
- * keystrokes' worth of patience — posting them as two directives makes the team
- * answer twice, so the BODY combines while the DISPLAY stays two rows. A goal
- * never folds: routing is a decomposition of one goal, and concatenating two
- * would produce a plan for neither.
- *
- * Returns `null` when there is nothing to do, which includes the case that
- * matters most: something is already in flight. A `failed` entry is skipped
- * rather than retried — it is a row the operator now owns — and it BREAKS a
- * run, because the two prompts either side of it were never one body.
- */
-export function nextPromptBatch(queue: QueuedPrompt[]): PromptBatch | null {
-  if (queue.some((p) => p.phase === 'sending')) return null;
-  const head = queue.findIndex((p) => p.phase === 'queued');
-  if (head < 0) return null;
-  const first = queue[head]!;
-  if (first.goal) return { ids: [first.id], body: first.text, goal: true };
-
-  const run: QueuedPrompt[] = [];
-  for (let i = head; i < queue.length; i++) {
-    const p = queue[i]!;
-    if (p.phase !== 'queued' || p.goal) break;
-    run.push(p);
-  }
-  return { ids: run.map((p) => p.id), body: run.map((p) => p.text).join('\n\n'), goal: false };
-}
 
 const DAY_MS = 86_400_000;
 
@@ -142,68 +96,65 @@ export function dayLabel(at: string, labels: { today: string; yesterday: string 
 /**
  * Fold a newest-first channel page into oldest-first conversation rows.
  *
- * Clustering is by RUN, not by id globally: two separate bursts of the same
- * assignment, separated by a week of chat, stay two rows — because that's how a
- * conversation actually reads. Only consecutive same-key items merge.
+ * Clustering is by RUN within a day (WP12): every step of one assignment, and
+ * every turn of one deliberation, that lands on the same day is ONE row,
+ * placed at the cluster's newest event, even when a message lands between two
+ * of its steps. Folding only neighbours split a run in two the moment a
+ * persona spoke between its steps. A day boundary still breaks a cluster, so a
+ * day separator can never sit inside one.
  */
 export function buildConversation(items: TeamChannelItem[], now = Date.now()): ConversationRow[] {
   // The channel arrives newest-first; a conversation reads oldest-first.
   const chron = [...items].reverse();
+  // Where each (day, cluster) ends: the row is emitted at its newest item.
+  const last = new Map<string, number>();
+  chron.forEach((item, i) => {
+    const id = clusterId(item);
+    if (id) last.set(`${dayKeyOf(item.at)}|${id}`, i);
+  });
+  const open = new Map<string, TeamChannelItem[]>();
   const rows: ConversationRow[] = [];
   let lastDay = '';
 
-  for (const item of chron) {
+  chron.forEach((item, i) => {
     const day = dayKeyOf(item.at);
-    if (day && day !== lastDay) {
-      rows.push({ kind: 'day', key: `day:${day}`, at: item.at });
-      lastDay = day;
+    const id = clusterId(item);
+    if (id) {
+      const slot = `${day}|${id}`;
+      const held = open.get(slot) ?? [];
+      held.push(item);
+      if (last.get(slot) !== i) { open.set(slot, held); return; }
+      open.delete(slot);
+      pushDay(rows, day, item.at, lastDay);
+      lastDay = day || lastDay;
+      const first = held[0]!;
+      rows.push(item.deliberationId
+        ? { kind: 'deliberation', key: `delib:${item.deliberationId}:${first.id}`, at: item.at, deliberationId: item.deliberationId, items: held }
+        : { kind: 'assignment', key: `asg:${item.assignmentId}:${first.id}`, at: item.at, assignmentId: item.assignmentId!, items: held });
+      return;
     }
-
-    const prev = rows[rows.length - 1];
-
-    if (item.deliberationId) {
-      if (prev?.kind === 'deliberation' && prev.deliberationId === item.deliberationId) {
-        prev.items.push(item);
-        prev.at = item.at; // anchored at the cluster's NEWEST event
-        continue;
-      }
-      rows.push({
-        kind: 'deliberation',
-        key: `delib:${item.deliberationId}:${item.id}`,
-        at: item.at,
-        deliberationId: item.deliberationId,
-        items: [item],
-      });
-      continue;
-    }
-
-    if (item.kind === 'step' && item.assignmentId) {
-      if (prev?.kind === 'assignment' && prev.assignmentId === item.assignmentId) {
-        prev.items.push(item);
-        prev.at = item.at;
-        continue;
-      }
-      rows.push({
-        kind: 'assignment',
-        key: `asg:${item.assignmentId}:${item.id}`,
-        at: item.at,
-        assignmentId: item.assignmentId,
-        items: [item],
-      });
-      continue;
-    }
-
-    // Everything else is TALK — including bridged `slack` messages. That is the
-    // point: an inbound Slack message is a person saying something in the
-    // channel, so it reads as conversation, not as a system event. It needs no
-    // ConversationRow variant of its own; the differentiation is in the bubble's
-    // authorship (see TalkBubble / AUTHOR_KIND_META.slack), not in the fold.
+    pushDay(rows, day, item.at, lastDay);
+    lastDay = day || lastDay;
+    // Everything else is TALK, including bridged `slack` messages: an inbound
+    // Slack message is a person saying something in the channel, so it reads as
+    // conversation. The difference is in the line's authorship (TalkLine).
     rows.push({ kind: 'talk', key: `talk:${item.id}`, at: item.at, item });
-  }
+  });
 
   // Day labels are computed against `now` at render; the row only carries `at`.
   void now;
   return rows;
+}
+
+/** A deliberation turn clusters by its deliberation (it wins over the step rule); a step by its assignment. */
+function clusterId(item: TeamChannelItem): string | null {
+  if (item.deliberationId) return `d:${item.deliberationId}`;
+  if (item.kind === 'step' && item.assignmentId) return `a:${item.assignmentId}`;
+  return null;
+}
+
+function pushDay(rows: ConversationRow[], day: string, at: string, lastDay: string): void {
+  if (day && day !== lastDay) rows.push({ kind: 'day', key: `day:${day}`, at });
 }
 
 /** Does this look like WORK rather than chat? Drives the composer's /assign
@@ -228,73 +179,4 @@ export function clusterStatus(items: TeamChannelItem[]): string {
     if (l) return l;
   }
   return 'created';
-}
-
-/* ── ROW IDENTITY ──────────────────────────────────────────────────────────── */
-
-/**
- * Are these two rows the same row, carrying the same content?
- *
- * Item identity is compared by REFERENCE, not by field: the channel slice
- * preserves `TeamChannelItem` identity across a quiet refresh (C1), so a poll
- * that changed nothing hands back the very same objects. That makes `===` the
- * honest test — a deep compare would cost more than the re-render it saves.
- */
-function sameRow(a: ConversationRow, b: ConversationRow): boolean {
-  if (a.kind !== b.kind || a.key !== b.key) return false;
-  switch (a.kind) {
-    case 'day':
-      return a.at === (b as typeof a).at;
-    case 'talk':
-      return a.at === (b as typeof a).at && a.item === (b as typeof a).item;
-    case 'assignment':
-    case 'deliberation': {
-      const o = b as typeof a;
-      if (a.at !== o.at || a.items.length !== o.items.length) return false;
-      for (let i = 0; i < a.items.length; i++) if (a.items[i] !== o.items[i]) return false;
-      return true;
-    }
-    case 'proposal':
-      // `at` is deliberately NOT compared: a proposal is local-only and its
-      // timestamp is minted at build time, so comparing it would make every
-      // rebuild a change. The proposal object is the identity.
-      return a.proposal === (b as typeof a).proposal;
-    case 'queued':
-      return a.prompt === (b as typeof a).prompt;
-  }
-}
-
-/**
- * Carry unchanged rows across a rebuild.
- *
- * `buildConversation` is pure and allocates a fresh object per row, so one
- * arriving message used to hand every memoized card a brand-new `row` prop and
- * a brand-new `items` array — the virtualizer's `getItemKey` saved the DOM
- * nodes and nothing saved the renders. This re-keys the newly built list
- * against the previous one and returns the PREVIOUS object wherever the content
- * is identical, so `React.memo` on the cards finally has something to bail on.
- *
- * When nothing at all changed it returns the previous ARRAY, so the consumer's
- * own `useMemo` result keeps identity too.
- */
-export function reconcileRows(
-  prev: readonly ConversationRow[],
-  next: ConversationRow[],
-): ConversationRow[] {
-  if (prev.length === 0) return next;
-  const byKey = new Map<string, ConversationRow>();
-  for (const row of prev) byKey.set(row.key, row);
-
-  let reusedAll = prev.length === next.length;
-  for (let i = 0; i < next.length; i++) {
-    const fresh = next[i]!;
-    const old = byKey.get(fresh.key);
-    if (old && sameRow(old, fresh)) {
-      next[i] = old;
-      if (reusedAll && prev[i] !== old) reusedAll = false;
-    } else {
-      reusedAll = false;
-    }
-  }
-  return reusedAll ? (prev as ConversationRow[]) : next;
 }

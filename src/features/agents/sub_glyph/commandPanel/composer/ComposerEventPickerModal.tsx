@@ -17,9 +17,11 @@ import { useAgentStore } from "@/stores/agentStore";
 import type { EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import { DIM_META } from "@/features/shared/glyph/dimMeta";
 import { ComposerPickerShell } from "./ComposerPickerShell";
+import { useOnOpen } from "./useOnOpen";
 import { ComposerEventPersonaList, type PersonaSummary } from "./ComposerEventPersonaList";
 import { ComposerEventTemplateList, EVENT_TEMPLATES } from "./ComposerEventTemplateList";
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { useTranslation } from "@/i18n/useTranslation";
 
 
 interface ComposerEventPickerModalProps {
@@ -32,6 +34,8 @@ interface ComposerEventPickerModalProps {
 export function ComposerEventPickerModal({
   open, onClose, selected, onApply,
 }: ComposerEventPickerModalProps) {
+  const { t, tx } = useTranslation();
+  const ga = t.agents;
   // Pull personas from the store and filter out the draft we're currently
   // building — users can't hook to themselves.
   const personas = useAgentStore((s) => s.personas) as PersonaSummary[] | undefined;
@@ -47,15 +51,20 @@ export function ComposerEventPickerModal({
   const [freeTextByTrigger, setFreeTextByTrigger] = useState<Record<string, string>>({});
   const searchRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
+  useOnOpen(open, () => {
     setDraft(selected);
     setQuery("");
     setActivePersonaId(list[0]?.id ?? null);
     setFreeTextByTrigger({});
     const focusTimer = setTimeout(() => searchRef.current?.focus(), 80);
     return () => clearTimeout(focusTimer);
-  }, [open, selected, list]);
+  });
+
+  // The persona list can arrive after the picker opened; land on its first
+  // entry then, without touching the draft.
+  useEffect(() => {
+    if (open && activePersonaId === null && list[0]) setActivePersonaId(list[0].id);
+  }, [open, activePersonaId, list]);
 
   const filteredPersonas = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -84,8 +93,8 @@ export function ComposerEventPickerModal({
       onApply={() => onApply(draft)}
       title={debtText("auto_listen_to_another_persona_aecc6493")}
       subtitle={draft.length === 0
-        ? "Pick a persona and choose which events this agent should react to"
-        : `${draft.length} subscription${draft.length === 1 ? "" : "s"} ready`}
+        ? ga.glyph_event_picker_subtitle_empty
+        : tx(draft.length === 1 ? ga.glyph_event_picker_subtitle_one : ga.glyph_event_picker_subtitle_other, { count: draft.length })}
       icon={<Zap className="w-5 h-5" />}
       accentColor={DIM_META.event.color}
       size="lg"
@@ -98,7 +107,7 @@ export function ComposerEventPickerModal({
             className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-foreground typo-body transition-colors"
             style={{ boxShadow: "0 0 20px rgba(96,165,250,0.25)" }}
           >
-            {draft.length === 0 ? "Done" : `Subscribe to ${draft.length}`}
+            {draft.length === 0 ? ga.glyph_event_picker_done : tx(ga.glyph_event_picker_subscribe, { count: draft.length })}
           </button>
         </>
       }
@@ -130,11 +139,11 @@ export function ComposerEventPickerModal({
 
       {draft.length > 0 && (
         <div className="sticky bottom-0 border-t border-border/20 bg-card-bg px-5 py-3">
-          <div className="typo-label text-foreground mb-2">Subscriptions</div>
+          <div className="typo-label text-foreground mb-2">{ga.glyph_event_picker_subscriptions}</div>
           <div className="flex items-center gap-1.5 flex-wrap">
             {draft.map((sub) => {
               const persona = list.find((p) => p.id === sub.personaId);
-              const tpl = EVENT_TEMPLATES.find((t) => t.triggerId === sub.triggerId);
+              const tpl = EVENT_TEMPLATES.find((et) => et.triggerId === sub.triggerId);
               return (
                 <span
                   key={`${sub.personaId}:${sub.triggerId}`}

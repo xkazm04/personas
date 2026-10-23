@@ -121,6 +121,22 @@ describe('NoteMilestonePicker', () => {
     expect(listMilestones).toHaveBeenCalledWith('p2');
   });
 
+  it('offers a milestone created elsewhere when the menu is reopened', async () => {
+    listMilestones.mockResolvedValueOnce([milestone('p1')]);
+    render(picker('p1'));
+    const trigger = screen.getByTestId('notepad-milestone-picker');
+    fireEvent.click(trigger);
+    expect(await screen.findByText('Mile p1')).toBeInTheDocument();
+    fireEvent.click(trigger);
+
+    const fresh = { ...milestone('p1'), id: 'm-fresh', name: 'Fresh from Ship' };
+    listMilestones.mockResolvedValueOnce([milestone('p1'), fresh]);
+    fireEvent.click(trigger);
+    expect(await screen.findByText('Fresh from Ship')).toBeInTheDocument();
+    expect(screen.getByText('Mile p1')).toBeInTheDocument();
+    expect(listMilestones).toHaveBeenCalledTimes(2);
+  });
+
   it('drops a milestone list that arrives after the project changed', async () => {
     let releaseP1: (rows: DevMilestone[]) => void = () => {};
     listMilestones.mockImplementation((projectId: string) => {
@@ -145,5 +161,25 @@ describe('NoteMilestonePicker', () => {
     await waitFor(() => expect(listMilestones).toHaveBeenCalledWith('p2'));
     expect(screen.queryByText('Mile p1')).toBeNull();
     expect(screen.getByText('Mile p2')).toBeInTheDocument();
+  });
+});
+
+describe('NoteMilestonePicker option roles', () => {
+  it('exposes the create row and each milestone as options so the Listbox can announce the active one', async () => {
+    briefs.summaries = {};
+    listMilestones.mockResolvedValue([milestone('p1')]);
+    render(picker('p1'));
+    const trigger = screen.getByTestId('notepad-milestone-picker');
+
+    fireEvent.click(trigger);
+    await screen.findByText('Mile p1');
+    expect(screen.getAllByRole('option')).toHaveLength(2);
+
+    trigger.focus();
+    fireEvent.keyDown(document, { key: 'ArrowDown' });
+    fireEvent.keyDown(document, { key: 'ArrowDown' });
+    const id = trigger.getAttribute('aria-activedescendant');
+    expect(id).toBeTruthy();
+    expect(document.getElementById(id!)?.textContent).toContain('Mile p1');
   });
 });

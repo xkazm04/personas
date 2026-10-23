@@ -1,6 +1,7 @@
 import type { MemoryReviewDetail } from '@/api/overview/memories';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { getActiveTranslations } from '@/i18n/useTranslation';
 
 export type MemoryActionKind = 'throttle' | 'schedule' | 'alert' | 'config' | 'routing';
 
@@ -104,8 +105,8 @@ export function loadActions(): MemoryAction[] {
       toastCatch(
         'memoryActions:loadActions:parse',
         _sessionBackup.length > 0
-          ? 'Your saved memory-action rules could not be read and were restored from this session.'
-          : 'Your saved memory-action rules could not be read and may need to be re-created.',
+          ? getActiveTranslations().overview.memory_actions.rules_restored_from_session
+          : getActiveTranslations().overview.memory_actions.rules_unreadable,
       )(err);
     } else {
       silentCatch('memoryActions:loadActions:parse')(err);
@@ -175,10 +176,10 @@ export function extractActionsFromReview(
   return newActions;
 }
 
-export const ACTION_KIND_META: Record<MemoryActionKind, { label: string; color: string; bgClass: string; borderClass: string; textClass: string }> = {
-  throttle: { label: 'Throttle Rule', color: '#f59e0b', bgClass: 'bg-amber-500/10', borderClass: 'border-amber-500/20', textClass: 'text-amber-400' },
-  schedule: { label: 'Schedule Adjustment', color: '#8b5cf6', bgClass: 'bg-violet-500/10', borderClass: 'border-violet-500/20', textClass: 'text-violet-400' },
-  alert: { label: 'Alert Rule', color: '#f43f5e', bgClass: 'bg-rose-500/10', borderClass: 'border-rose-500/20', textClass: 'text-rose-400' },
-  config: { label: 'Config Change', color: '#06b6d4', bgClass: 'bg-cyan-500/10', borderClass: 'border-cyan-500/20', textClass: 'text-cyan-400' },
-  routing: { label: 'Routing Rule', color: '#10b981', bgClass: 'bg-emerald-500/10', borderClass: 'border-emerald-500/20', textClass: 'text-emerald-400' },
+export const ACTION_KIND_META: Record<MemoryActionKind, { color: string; bgClass: string; borderClass: string; textClass: string }> = {
+  throttle: { color: '#f59e0b', bgClass: 'bg-amber-500/10', borderClass: 'border-amber-500/20', textClass: 'text-amber-400' },
+  schedule: { color: '#8b5cf6', bgClass: 'bg-violet-500/10', borderClass: 'border-violet-500/20', textClass: 'text-violet-400' },
+  alert: { color: '#f43f5e', bgClass: 'bg-rose-500/10', borderClass: 'border-rose-500/20', textClass: 'text-rose-400' },
+  config: { color: '#06b6d4', bgClass: 'bg-cyan-500/10', borderClass: 'border-cyan-500/20', textClass: 'text-cyan-400' },
+  routing: { color: '#10b981', bgClass: 'bg-emerald-500/10', borderClass: 'border-emerald-500/20', textClass: 'text-emerald-400' },
 };

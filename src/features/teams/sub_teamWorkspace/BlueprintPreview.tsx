@@ -3,12 +3,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { TopologyBlueprint } from '@/lib/bindings/TopologyBlueprint';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
-export const EXAMPLE_PROMPTS = [
-  'Review this PR and run tests',
-  'Write a blog post with research',
-  'Analyze customer feedback',
-  'Build a content publishing pipeline',
-];
+/** Catalog keys (t.pipeline.*) of the example prompts offered on the idle auto-team screen. */
+export const EXAMPLE_PROMPT_KEYS = [
+  'auto_team_example_1',
+  'auto_team_example_2',
+  'auto_team_example_3',
+  'auto_team_example_4',
+] as const;
 
 /**
  * Suggested-team preview. When `onRoleChange` / `onRemoveMember` are provided

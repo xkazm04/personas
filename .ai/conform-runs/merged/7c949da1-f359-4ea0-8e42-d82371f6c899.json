@@ -1,0 +1,70 @@
+{
+  "schema": "conform-run/1",
+  "worker": "7c949da1-f359-4ea0-8e42-d82371f6c899",
+  "subject": "translation-pipeline-topology",
+  "evaluatedAt": "2026-10-17T01:37:57.168980+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [
+    {
+      "context": "lib-personas",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "deviation",
+      "evidence": "src/lib/personas/templates/templateOverlays.ts:275 Overlay discovery manually enumerates language-specific glob patterns, so adding a manifest language also requires editing this loader despite the standard's single-registry requirement.",
+      "techniques": [
+        {
+          "technique": "language-registry-single-source",
+          "verdict": "deviation",
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:263 The loader explicitly retains a handwritten language enumeration alongside LOCALE_CODES; the parity test detects missing patterns but does not satisfy the one-entry onboarding rule."
+        }
+      ],
+      "registryProposal": "Clarify canonical fallback unit boundaries for structured template catalogs whose translations are partial field overlays."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "translation-pipeline-topology",
+      "context": "template-generation",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "translation-pipeline-topology",
+      "context": "persona-build-matrix",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "translation-pipeline-topology",
+      "context": "prompt-assembly-engine",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor assemble.rs:96 is only the doc comment of the assembler function, so it does not show that a localization pipeline is absent. The context's own README.md describes a LANGUAGE RULE block, which makes the locale/i18n search terms too narrow."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-17T01:37:57.168980+00:00",
+      "bundle": "localization",
+      "subjects": [
+        "translation-pipeline-topology"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "prompt-assembly-engine",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-17T01:37:57.168980+00:00",
+      "bundle": "localization",
+      "subjects": [
+        "translation-pipeline-topology"
+      ],
+      "techniques": [
+        "language-registry-single-source"
+      ],
+      "deviations": 1,
+      "context": "lib-personas",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

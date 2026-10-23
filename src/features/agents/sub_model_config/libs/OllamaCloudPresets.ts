@@ -3,7 +3,6 @@ import type { ModelProfile } from '@/lib/types/frontendTypes';
 // -- Ollama Cloud model presets --
 
 export const OLLAMA_CLOUD_BASE_URL = 'https://api.ollama.com';
-export const OLLAMA_API_KEY_SETTING = 'ollama_api_key';
 
 export interface OllamaCloudPreset {
   /** Value used in the <select> dropdown */
@@ -49,11 +48,6 @@ export function profileToDropdownValue(mp: ModelProfile): string {
     if (mp.model === 'opus') return 'opus';
   }
   return 'custom';
-}
-
-/** Check if a dropdown value is an Ollama Cloud preset. */
-export function isOllamaCloudValue(value: string): boolean {
-  return value.startsWith('ollama:');
 }
 
 /** Get the preset for a dropdown value, or undefined. */

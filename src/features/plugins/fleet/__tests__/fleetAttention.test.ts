@@ -1,3 +1,7 @@
+// Reads the Rust ticker's source with node:fs (the parity block below); tsc
+// skips __tests__/.
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { sessionAttention, isNeverAttached, craftStalePrompt } from '../fleetAttention';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
@@ -34,6 +38,36 @@ describe('isNeverAttached', () => {
   });
   it('false when there is no reason at all', () => {
     expect(isNeverAttached(session({ state: 'stale', stateReason: null }))).toBe(false);
+  });
+});
+
+// `isNeverAttached` prefix-matches prose the Rust stale ticker writes
+// (`stale.rs`, the `stale:never-attached` transition). The fixture above is a
+// hand copy of it, so a reworded Rust reason left every test here green while
+// the never-attached strip silently stopped appearing. Read the real string.
+describe('never-attached reason parity with the Rust ticker', () => {
+  function rustNeverAttachedReasons(): string[] {
+    const raw = readFileSync(resolve(process.cwd(), 'src-tauri/src/commands/fleet/stale.rs'), 'utf8');
+    const src = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    const reasons: string[] = [];
+    // The reason literal bound right before the transition tagged never-attached.
+    const re = /let\s+reason\s*=\s*"([^"]+)";(?:(?!let\s+reason)[\s\S]){0,400}?"stale:never-attached"/g;
+    for (const m of src.matchAll(re)) reasons.push(m[1]!);
+    return reasons;
+  }
+
+  it('finds the reason in the Rust source (a matcher that finds nothing is broken)', () => {
+    expect(rustNeverAttachedReasons().length).toBeGreaterThan(0);
+  });
+
+  it('classifies every reason the ticker can write as never-attached', () => {
+    for (const reason of rustNeverAttachedReasons()) {
+      expect(isNeverAttached(session({ state: 'stale', stateReason: reason }))).toBe(true);
+    }
+  });
+
+  it('keeps the test fixture identical to what Rust writes', () => {
+    expect(rustNeverAttachedReasons()).toContain(NEVER_ATTACHED);
   });
 });
 

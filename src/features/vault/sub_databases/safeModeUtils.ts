@@ -227,7 +227,17 @@ export function isMutationQuery(queryText: string): boolean {
   // Everything from here runs in order to GRANT read-only status, so it fails
   // CLOSED, exactly as the backend's `cte_body_has_mutation` does: an
   // unreadable tail has to resolve to "no".
-  const body = stripSqlLiterals(s);
+  //
+  // The scan reads the WHOLE statement, not `s`. `s` is what is left after the
+  // leading-comment loop above, which only exists to FIND the leading keyword
+  // and so discards every leading `/* ... */` -- including a MySQL executable
+  // `/*! ... */`, whose body runs. `/*!INSERT INTO t*/ VALUES (1)` therefore
+  // scanned as `VALUES (1)` and was granted read-only status here, while the
+  // backend (`body_has_mutation(query_text)`, db_query.rs) scans the full text,
+  // sees the INSERT and rejects the dispatch: the user got a raw validation
+  // error instead of the confirm banner. Same for a MySQL-only `--x` line ahead
+  // of the statement, which hid a `;` batch the backend refuses.
+  const body = stripSqlLiterals(queryText.trim());
   if (body.unterminated) return true;
 
   // In safe mode a request is ONE statement. After stripping, a separator with

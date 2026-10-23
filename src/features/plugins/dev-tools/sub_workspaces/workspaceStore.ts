@@ -24,6 +24,7 @@ import {
   updateWorkspace as apiUpdateWorkspace,
 } from '@/api/devTools/workspaces';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 export interface Workspace {
   id: string;
@@ -36,9 +37,6 @@ export interface Workspace {
    *  member projects when they join. */
   adoptDefaultSkills: boolean;
 }
-
-/** Sentinel for "no workspace selected" — every project is in scope. */
-export const ALL_WORKSPACES = null;
 
 export const WORKSPACE_COLORS = [
   '#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#a78bfa', '#ec4899', '#64748b',
@@ -136,9 +134,41 @@ async function importLegacyIfPresent(): Promise<void> {
   }
 }
 
+// -- reads vs optimistic paints ----------------------------------------------
+//
+// Every mutation paints optimistically and re-reads the server when it
+// settles. Two races followed from doing that with no guard:
+//  - a re-read already in the air when a later mutation paints lands on top
+//    of that paint and erases it (bulk "Move to workspace" fires one assign
+//    per selected project: the first settler's re-read wiped the rest back to
+//    their old workspace until their own re-reads landed);
+//  - two re-reads resolving out of order publish the older answer last.
+// So a paint invalidates every in-flight read (latest-wins slot), and while
+// any mutation is unsettled the settlement re-read is deferred: the LAST
+// settler reads once, after every write has landed (a count, not a mutex).
+const reads = createLatestWins();
+let unsettled = 0;
+
+function paint(next: Snapshot): void {
+  reads.next();
+  commit(next);
+}
+
+function beginMutation(): void {
+  unsettled += 1;
+}
+
+function settleMutation(): void {
+  unsettled = Math.max(0, unsettled - 1);
+  if (unsettled === 0) void refreshWorkspaces().catch(silentCatch('workspaceStore:settle:refresh'));
+}
+
 /** Re-fetch workspaces + membership from the backend and publish. */
 export async function refreshWorkspaces(): Promise<void> {
+  const token = reads.next();
   const [rows, projects] = await Promise.all([listWorkspaces(), listProjects()]);
+  // Superseded by a newer read or by an optimistic paint since this one left.
+  if (!reads.isCurrent(token)) return;
   const workspaces: Workspace[] = rows.map((w, i) => ({
     id: w.id,
     name: w.name,
@@ -212,7 +242,11 @@ async function installPresetSkills(projectId: string): Promise<void> {
 export function renameWorkspace(id: string, name: string): void {
   const trimmed = name.trim();
   if (!trimmed) return;
-  commit({
+  // The Atlas header calls this on every blur of its name field: an unchanged
+  // name cost a write plus a two-list re-read for nothing.
+  if (snapshot.workspaces.find((w) => w.id === id)?.name === trimmed) return;
+  beginMutation();
+  paint({
     ...snapshot,
     workspaces: snapshot.workspaces.map((w) => (w.id === id ? { ...w, name: trimmed } : w)),
   });
@@ -231,37 +265,34 @@ export function renameWorkspace(id: string, name: string): void {
     // The server is the arbiter, so ask it either way.
   void apiUpdateWorkspace(id, { name: trimmed })
     .catch(toastCatch('workspaceStore:rename'))
-    .finally(() => {
-      void refreshWorkspaces().catch(silentCatch('workspaceStore:rename:refresh'));
-    });
+    .finally(settleMutation);
 }
 
 export function recolorWorkspace(id: string, color: string): void {
-  commit({ ...snapshot, workspaces: snapshot.workspaces.map((w) => (w.id === id ? { ...w, color } : w)) });
+  beginMutation();
+  paint({ ...snapshot, workspaces: snapshot.workspaces.map((w) => (w.id === id ? { ...w, color } : w)) });
   void apiUpdateWorkspace(id, { color })
     .catch(toastCatch('workspaceStore:recolor'))
-    .finally(() => {
-      void refreshWorkspaces().catch(silentCatch('workspaceStore:recolor:refresh'));
-    });
+    .finally(settleMutation);
 }
 
 /** Delete a workspace. Its projects become unassigned — never deleted. */
 export function deleteWorkspace(id: string): void {
-  commit({
+  beginMutation();
+  paint({
     workspaces: snapshot.workspaces.filter((w) => w.id !== id),
     activeId: snapshot.activeId === id ? null : snapshot.activeId,
   });
   void apiDeleteWorkspace(id)
     .catch(toastCatch('workspaceStore:delete'))
-    .finally(() => {
-      void refreshWorkspaces().catch(silentCatch('workspaceStore:delete:refresh'));
-    });
+    .finally(settleMutation);
 }
 
 /** Move a project into a workspace (or out of every one when null). A project
  *  belongs to exactly one workspace, so this removes it from the others. */
 export function assignProject(projectId: string, workspaceId: string | null): void {
-  commit({
+  beginMutation();
+  paint({
     ...snapshot,
     workspaces: snapshot.workspaces.map((w) => {
       const without = w.projectIds.filter((id) => id !== projectId);
@@ -282,9 +313,7 @@ export function assignProject(projectId: string, workspaceId: string | null): vo
       if (consented) await installPresetSkills(projectId);
     })
     .catch(toastCatch('workspaceStore:assign'))
-    .finally(() => {
-      void refreshWorkspaces().catch(silentCatch('workspaceStore:assign:refresh'));
-    });
+    .finally(settleMutation);
 }
 
 export function setActiveWorkspace(id: string | null): void {
@@ -310,10 +339,4 @@ export function scopeProjects<T extends { id: string }>(
   if (!ws) return projects;
   const set = new Set(ws.projectIds);
   return projects.filter((p) => set.has(p.id));
-}
-
-/** Projects assigned to no workspace at all. */
-export function unassignedProjects<T extends { id: string }>(projects: T[], workspaces: Workspace[]): T[] {
-  const assigned = new Set(workspaces.flatMap((w) => w.projectIds));
-  return projects.filter((p) => !assigned.has(p.id));
 }

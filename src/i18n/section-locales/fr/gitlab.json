@@ -121,5 +121,12 @@
   "view_logs": "Journaux",
   "yesterday": "hier",
   "your_tier": "(le vôtre)",
-  "agent_pipeline_title": "Pipeline de {agent} sur {ref} : {status}"
+  "agent_pipeline_title": "Pipeline de {agent} sur {ref} : {status}",
+  "pipeline_count_one": "{count} pipeline",
+  "pipeline_count_other": "{count} pipelines",
+  "notify_title_success": "Pipeline réussi",
+  "notify_title_failed": "Pipeline en échec",
+  "notify_title_canceled": "Pipeline annulé",
+  "notify_title_other": "Pipeline {status}",
+  "notify_body": "Le pipeline #{id} sur {ref} est maintenant au statut {status}"
 }

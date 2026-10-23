@@ -20,8 +20,8 @@ import { buildEstate } from '../estate/kpiEstate';
 import { EstateHeadline } from '../estate/EstateHeadline';
 import { KT } from '../estate/kpiType';
 import { useKpiAltitude } from '../estate/useKpiAltitude';
-import { weeklyStateSeries } from '../kpiSample';
-import { useLazyTrends } from '../useKpiOverview';
+import { operatorTimeZone, weeklyStateSeries } from '../kpiSample';
+import { TRENDS_PER_KPI, useLazyTrends } from '../useKpiOverview';
 import { planRiverIds } from './StateRiver.model';
 import { toRiverbed } from './river/riverbed';
 import { RiverbedChart } from './river/RiverbedChart';
@@ -50,7 +50,7 @@ export default function StateRiver({ overview, loading, onFocus }: KpiVariantPro
   const scopeKpis = altitude.project ? altitude.project.kpis : estate.kpis;
   const scopeTally = altitude.project ? altitude.project.tally : estate.tally;
   const mainBed = useMemo(
-    () => toRiverbed(weeklyStateSeries(scopeKpis, trends, WEEKS), scopeTally.total),
+    () => toRiverbed(weeklyStateSeries(scopeKpis, trends, WEEKS, Date.now(), operatorTimeZone(), TRENDS_PER_KPI), scopeTally.total),
     [scopeKpis, trends, scopeTally.total],
   );
 
@@ -74,11 +74,19 @@ export default function StateRiver({ overview, loading, onFocus }: KpiVariantPro
         }));
     return places.map((place) => ({
       ...place,
-      bed: toRiverbed(weeklyStateSeries(place.kpis, trends, WEEKS), place.tally.total),
+      bed: toRiverbed(weeklyStateSeries(place.kpis, trends, WEEKS, Date.now(), operatorTimeZone(), TRENDS_PER_KPI), place.tally.total),
     }));
   }, [estate, altitude.project, trends]);
 
-  if (loading && overview.length === 0) return <RiverGhost />;
+  // Chrome first (overview-loading.md law 1): the headline stays, the ghost sits under it.
+  if (loading && overview.length === 0) {
+    return (
+      <div className="space-y-4" data-testid="kpi-river">
+        <EstateHeadline estate={estate} project={altitude.project} onClimb={altitude.climb} loading />
+        <RiverGhost />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4" data-testid="kpi-river">
@@ -138,7 +146,6 @@ export default function StateRiver({ overview, loading, onFocus }: KpiVariantPro
 function RiverGhost() {
   return (
     <div className="space-y-3" data-testid="kpi-river-ghost" aria-hidden="true">
-      <span className="block h-8 w-72 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '150ms' }} />
       <span
         className="block rounded-card bg-primary/[0.06] animate-fade-in"
         style={{ height: MAIN_HEIGHT, animationDelay: '185ms' }}

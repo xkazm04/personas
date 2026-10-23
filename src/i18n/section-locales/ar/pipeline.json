@@ -452,5 +452,20 @@
   "use_template": "استخدام القالب",
   "version_history": "سجل الإصدارات",
   "view_persona": "عرض الشخصية",
-  "warning": "تحذير"
+  "warning": "تحذير",
+  "auto_team_create_failed": "فشل إنشاء الفريق",
+  "auto_team_example_1": "راجع هذا الـ PR وشغّل الاختبارات",
+  "auto_team_example_2": "اكتب منشور مدونة مع بحث",
+  "auto_team_example_3": "حلل ملاحظات العملاء",
+  "auto_team_example_4": "أنشئ مسار نشر للمحتوى",
+  "auto_team_no_match": "لم يتطابق أي وكيل مع وصفك. حاول أن تكون أكثر تحديدًا.",
+  "team_color_blue": "أزرق",
+  "team_color_cyan": "سماوي",
+  "team_color_green": "أخضر",
+  "team_color_indigo": "نيلي",
+  "team_color_orange": "برتقالي",
+  "team_color_pink": "وردي",
+  "team_color_rose": "وردي داكن",
+  "team_color_violet": "بنفسجي",
+  "team_color_yellow": "أصفر"
 }

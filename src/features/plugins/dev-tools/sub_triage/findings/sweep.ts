@@ -34,7 +34,7 @@ import {
 } from '@/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters';
 import type { AppPassport } from '@/features/teams/sub_factory/passport/passportModel';
 import type { PlanItem } from '@/features/teams/sub_factory/passport/improve/improvePlan';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 import {
   emitDocBrokenRefFindings,
@@ -48,7 +48,13 @@ import {
   emitStandardsFindings,
   type DormantSkill,
 } from './emitters';
-import { SWEEP_CAP } from './findingConfig';
+import {
+  DOC_ROT_TOP_N,
+  MEMORY_DISPUTED_TOP_N,
+  SENTRY_TOP_N,
+  SKILL_DORMANT_TOP_N,
+  SWEEP_CAP,
+} from './findingConfig';
 import type { FindingDraft, KpiAttention, SweepResult } from './types';
 
 /** The only credential fields the sweep reads — accepts both the vault store's
@@ -85,10 +91,18 @@ function score(d: FindingDraft): number {
 export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult> {
   const { project, credentials, passport, plan, kpiAttention, contextIdForCulprit } = inputs;
   const drafts: FindingDraft[] = [];
+  // Every signal over threshold, BEFORE the per-sensor top-N caps. The caps
+  // bound what a sweep raises; verification reads this set, because a standing
+  // finding whose signal merely dropped out of the top N has not cleared.
+  const signals: FindingDraft[] = [];
+  const raise = (all: FindingDraft[], cap = Infinity) => {
+    signals.push(...all);
+    drafts.push(...all.slice(0, cap));
+  };
   const skippedSensors: string[] = [];
   const errors: string[] = [];
   const recordError = (stage: string, e: unknown) => {
-    errors.push(`${stage}: ${e instanceof Error ? e.message : String(e)}`);
+    errors.push(`${stage}: ${extractMessage(e)}`);
   };
   // Origins whose sensor ACTUALLY RAN this sweep. Verification treats absence
   // from the drafts as `cleared` ONLY for probed origins — a skipped sensor's
@@ -107,7 +121,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
     // sweep, so one bad rubric row took the LLM, Sentry, KPI and skills sensors
     // down with it and the operator saw a failed sweep rather than a partial one.
     try {
-      drafts.push(...emitStandardsFindings(standards, passport));
+      raise(emitStandardsFindings(standards, passport));
       probedOrigins.add('standards_finding');
     } catch (e) {
       silentCatch('findings/sweep:emitStandardsFindings')(e);
@@ -116,7 +130,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
     }
     if (plan) {
       try {
-        drafts.push(...emitPassportGaps(plan, project.id));
+        raise(emitPassportGaps(plan, project.id));
         probedOrigins.add('passport_gap');
       } catch (e) {
         silentCatch('findings/sweep:emitPassportGaps')(e);
@@ -143,7 +157,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
         return [];
       });
       const idBySlug = new Map(useCases.map((u) => [u.slug, u.id]));
-      drafts.push(...emitLlmCostFindings(pinpoints, '30d', idBySlug));
+      raise(emitLlmCostFindings(pinpoints, '30d', idBySlug));
       probedOrigins.add('llm_cost');
     } catch (e) {
       silentCatch('findings/sweep:llm')(e);
@@ -160,7 +174,10 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   if (monCred && orgSlug && projSlug) {
     try {
       const issues = await fetchSentryUnresolvedIssues(monCred.id, orgSlug, projSlug);
-      drafts.push(...emitSentryFindings(issues, contextIdForCulprit ?? (() => undefined)));
+      raise(
+        emitSentryFindings(issues, contextIdForCulprit ?? (() => undefined), Infinity),
+        SENTRY_TOP_N,
+      );
       probedOrigins.add('sentry_spike');
     } catch (e) {
       silentCatch('findings/sweep:sentry')(e);
@@ -175,7 +192,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   // track — that is a probe (an existing kpi_offtrack finding may clear on it).
   if (kpiAttention) {
     probedOrigins.add('kpi_offtrack');
-    if (kpiAttention.length > 0) drafts.push(...emitKpiFindings(kpiAttention));
+    if (kpiAttention.length > 0) raise(emitKpiFindings(kpiAttention));
   } else {
     // NOT supplied is not "all on track" — the KPI tree was unreadable or the
     // caller never gathered it. Naming it keeps a thin sweep from reading as a
@@ -211,7 +228,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
           last_invoked_at: r.last_invoked_at,
           dormant: r.dormant,
         }));
-      drafts.push(...emitSkillDormantFindings(rows));
+      raise(emitSkillDormantFindings(rows, Infinity), SKILL_DORMANT_TOP_N);
       probedOrigins.add('skill_dormant');
     }
   } catch (e) {
@@ -227,10 +244,10 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
     if (rot.length === 0) {
       skippedSensors.push('docs');
     } else {
-      drafts.push(...emitDocRotFindings(rot));
+      raise(emitDocRotFindings(rot, Infinity), DOC_ROT_TOP_N);
       // The content signal — a doc naming a path that is gone. Separate from
       // the git one because it fires on docs the git rule cannot reach at all.
-      drafts.push(...emitDocBrokenRefFindings(rot));
+      raise(emitDocBrokenRefFindings(rot, Infinity), DOC_ROT_TOP_N);
       probedOrigins.add('doc_rot');
     }
   } catch (e) {
@@ -244,7 +261,7 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   // same way, so this sensor never invents disputes either way.
   try {
     const disputed = (await getMemoryDisputedOverview()).filter((m) => m.project_id === project.id);
-    drafts.push(...emitMemoryDisputedFindings(disputed));
+    raise(emitMemoryDisputedFindings(disputed, Infinity), MEMORY_DISPUTED_TOP_N);
     probedOrigins.add('memory_disputed');
   } catch (e) {
     silentCatch('findings/sweep:memory')(e);
@@ -259,7 +276,8 @@ export async function runFindingSweep(inputs: SweepInputs): Promise<SweepResult>
   // (a still-known finding is exactly the `unchanged`/`regressed` case).
   const verified = { cleared: 0, moved: 0, unchanged: 0, regressed: 0, unverifiable: 0 };
   if (inputs.ideas && inputs.tasks) {
-    const freshByKey = new Map(drafts.map((d) => [d.dedupKey, d]));
+    // `signals`, not `drafts`: a sixth-loudest Sentry issue is still a spike.
+    const freshByKey = new Map(signals.map((d) => [d.dedupKey, d]));
     for (const f of verifiableFindings(inputs.ideas, inputs.tasks)) {
       const verdict = verdictFor(f, freshByKey.get(f.dedup_key ?? ''), probedOrigins);
       try {

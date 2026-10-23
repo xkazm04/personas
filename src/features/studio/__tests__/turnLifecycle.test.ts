@@ -201,6 +201,30 @@ describe('the autonomous chain stops', () => {
     // The cause stays in the conversation, not only in a toast that vanishes.
     expect(rt?.messages.at(-1)?.text).toContain('CLI timed out');
   });
+
+  it('a failed turn gives its waiting notes back instead of dropping them', async () => {
+    // The notes ride along inside the failed send, so clearing them at the
+    // start of the turn lost them for good when the send rejected.
+    seedRuntime({ queuedNotes: ['make it blue', 'bigger logo'] });
+    let failTurn!: (e: unknown) => void;
+    webbuildSessionSend.mockImplementationOnce(() => new Promise((_, rej) => { failTurn = rej; }));
+
+    const turn = useStudioStore.getState().sendTurn(ID, 'go');
+    expect(String(webbuildSessionSend.mock.calls[0]?.[1])).toContain('make it blue');
+    // A note typed while the doomed turn is still running.
+    useStudioStore.getState().queueNote(ID, 'and a footer');
+    failTurn({ error: 'CLI timed out', kind: 'internal' });
+    await turn;
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(useStudioStore.getState().runtimes[ID]?.queuedNotes).toEqual([
+      'make it blue',
+      'bigger logo',
+      'and a footer',
+    ]);
+    // ...and a failure never pumps them into a fresh paid turn on its own.
+    expect(webbuildSessionSend).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('Stop reads whether it actually stopped anything', () => {
@@ -316,6 +340,49 @@ describe('Stop reads whether it actually stopped anything', () => {
     resolveLive(reply());
     await vi.advanceTimersByTimeAsync(0);
     expect(useStudioStore.getState().runtimes[ID]?.busy).toBe(false);
+  });
+
+  /** Start a turn, Stop it with nothing to interrupt, start a newer live turn. */
+  async function abandonThenRestart() {
+    let settleGhost!: { resolve: (v: unknown) => void; reject: (e: unknown) => void };
+    webbuildSessionSend.mockImplementationOnce(
+      () => new Promise((resolve, reject) => { settleGhost = { resolve, reject }; }),
+    );
+    seedRuntime({ autonomous: true });
+    void useStudioStore.getState().sendTurn(ID, 'go');
+    webbuildSessionStop.mockResolvedValue(false);
+    useStudioStore.getState().stopTurn(ID);
+    await vi.advanceTimersByTimeAsync(0);
+    webbuildSessionSend.mockImplementationOnce(() => new Promise(() => {}));
+    useStudioStore.setState((st) => ({
+      runtimes: { ...st.runtimes, [ID]: { ...st.runtimes[ID]!, autonomous: true } },
+    }));
+    void useStudioStore.getState().sendTurn(ID, 'again');
+    return settleGhost;
+  }
+
+  it('keeps an abandoned turn question, phases and autonomy flip off the live turn', async () => {
+    const ghost = await abandonThenRestart();
+    ghost.resolve(reply({ question: 'Pick a colour?', options: ['red'], area: 'theme', phases: MOCK_PHASES.slice(0, 1) }));
+    await vi.advanceTimersByTimeAsync(0);
+    const rt = useStudioStore.getState().runtimes[ID]!;
+    expect(rt.question).toBeNull();
+    expect(rt.options).toEqual([]);
+    expect(rt.decisionArea).toBeNull();
+    expect(rt.phases).toBe(MOCK_PHASES);
+    expect(rt.autonomous).toBe(true);
+    expect(rt.resumeAuto).toBe(false);
+    expect(rt.busy).toBe(true);
+  });
+
+  it('does not let an abandoned turn that fails stop the live autonomy', async () => {
+    const ghost = await abandonThenRestart();
+    ghost.reject(new Error('cli died'));
+    await vi.advanceTimersByTimeAsync(0);
+    const rt = useStudioStore.getState().runtimes[ID]!;
+    expect(rt.autonomous).toBe(true);
+    expect(rt.reply).toBeNull();
+    expect(rt.busy).toBe(true);
   });
 });
 

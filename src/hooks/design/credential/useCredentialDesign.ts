@@ -5,7 +5,7 @@ import { EventName } from '@/lib/eventRegistry';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAiArtifactTask } from '../core/useAiArtifactTask';
 import { saveRecipeFromDesign } from '@/lib/credentials/credentialRecipeRegistry';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 
 export type CredentialDesignPhase = 'idle' | 'analyzing' | 'preview' | 'saving' | 'done' | 'error';
@@ -131,7 +131,7 @@ export function useCredentialDesign() {
           await deleteConnectorDefinition(createdConnectorId);
         } catch (err) { silentCatch("hooks/design/credential/useCredentialDesign:catch1")(err); }
       }
-      flow.setError(err instanceof Error ? err.message : 'Failed to save credential');
+      flow.setError(extractMessage(err) || 'Failed to save credential');
       flow.setPhase('preview');
     } finally {
       savingRef.current = false;

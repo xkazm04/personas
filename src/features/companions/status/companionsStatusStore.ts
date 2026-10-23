@@ -18,10 +18,11 @@
  *
  * ## Why this is its own file
  *
- * It imports the companions API and nothing else. `useCompanionsStatus` adds
- * Curator's registry override, which reaches into the Dev Tools registry-link
- * store and its API chain; the app-shell footer and the overlay gate need only
- * Athena's switch, and must not drag that chain into their bundle to get it.
+ * It imports the companions API and nothing else, so the app-shell footer and
+ * the overlay gate can read Athena's switch from the slot (`useAthenaEnabled`)
+ * without the view hook. (`useCompanionsStatus` once patched Curator's
+ * eligibility from the Dev Tools registry-link store; migration e48 moved
+ * that decision into Rust and the patch is gone.)
  */
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 
@@ -43,6 +44,13 @@ export interface CompanionsStatusSlot {
 let slot: CompanionsStatusSlot = { companions: null, loading: true, error: null };
 const listeners = new Set<() => void>();
 let inFlight: Promise<void> | null = null;
+/**
+ * Bumped by every `status-changed` event. A read that left before an event
+ * resolves with an OLDER answer than the event carried (the write happened
+ * between the read and its reply), so it settles `loading` and leaves the
+ * rows alone.
+ */
+let eventGeneration = 0;
 
 /** ONE Tauri listener for the whole app, however many surfaces are mounted. */
 const onCompanionsStatusChanged = createSingletonListener<CompanionsStatusDto>(
@@ -71,9 +79,13 @@ export function readCompanionsStatus(): Promise<void> {
   if (inFlight) return inFlight;
   slot = { ...slot, loading: true };
   notify();
+  const startedAt = eventGeneration;
   inFlight = companionsStatus()
     .then((dto: CompanionsStatusDto) => {
-      slot = { companions: dto.companions, loading: false, error: null };
+      slot =
+        startedAt === eventGeneration
+          ? { companions: dto.companions, loading: false, error: null }
+          : { ...slot, loading: false };
     })
     .catch((e: unknown) => {
       slot = { companions: slot.companions, loading: false, error: extractMessage(e) };
@@ -97,6 +109,7 @@ export function readCompanionsStatus(): Promise<void> {
 export function useCompanionsStatusSlot(): CompanionsStatusSlot {
   onCompanionsStatusChanged(
     useCallback((payload: CompanionsStatusDto) => {
+      eventGeneration += 1;
       slot = { companions: payload.companions, loading: false, error: null };
       notify();
     }, []),
@@ -118,5 +131,6 @@ export function __resetCompanionsStatusForTests(): void {
   slot = { companions: null, loading: true, error: null };
   listeners.clear();
   inFlight = null;
+  eventGeneration = 0;
   onCompanionsStatusChanged.__resetForTests();
 }

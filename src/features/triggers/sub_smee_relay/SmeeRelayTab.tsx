@@ -25,6 +25,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
 import { useToastStore } from '@/stores/toastStore';
 import { isValidSmeeChannelUrl, SMEE_CHANNEL_PREFIX } from './smeeChannelUrl';
+import { inlineErrorCopy } from '../lib/inlineErrorCopy';
 
 
 /** Minimum gap between per-relay stat refreshes while webhooks stream in. */
@@ -50,7 +51,8 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
   const [addPersonaId, setAddPersonaId] = useState('');
   const [addFilter, setAddFilter] = useState('');
   const [isCreating, setIsCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
+  // The rejection itself, resolved at render (lib/inlineErrorCopy).
+  const [createError, setCreateError] = useState<{ raw: unknown } | null>(null);
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
 
   // Confirm delete
@@ -111,7 +113,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
       setTouchedFields(new Set());
       await fetchRelays();
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : t.triggers.relay_create_failed);
+      setCreateError({ raw: err });
     } finally {
       setIsCreating(false);
     }
@@ -320,7 +322,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             {createError && (
               <div className="flex items-center gap-2 typo-caption text-red-400">
                 <AlertCircle className="w-3 h-3" />
-                {createError}
+                {inlineErrorCopy(t, createError.raw, t.triggers.relay_create_failed)}
               </div>
             )}
 

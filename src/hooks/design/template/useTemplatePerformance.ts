@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getTemplatePerformance } from '@/api/templates/templateFeedback';
 import type { TemplatePerformance } from '@/lib/bindings/TemplatePerformance';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 interface UseTemplatePerformanceResult {
   performance: TemplatePerformance | null;
@@ -35,7 +35,7 @@ export function useTemplatePerformance(reviewId: string | null): UseTemplatePerf
       .catch((err) => {
         silentCatch('hooks/design/template/useTemplatePerformance:fetchPerformance')(err);
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
+          setError(extractMessage(err));
           setPerformance(null);
           setLoading(false);
         }

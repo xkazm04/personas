@@ -13,6 +13,7 @@ import { BundlePreviewContent, type DangerConfirmKind } from './BundlePreviewCon
 import { createLogger } from "@/lib/log";
 import { errMsg } from "@/stores/storeTypes";
 import { useTranslation } from '@/i18n/useTranslation';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 const logger = createLogger("bundle-import");
 
@@ -63,12 +64,12 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
   // Monotonic token: bumped on every reset so in-flight preview responses
   // from a prior open/share-link can be discarded instead of flashing stale
   // bundle metadata into a subsequent open.
-  const requestTokenRef = useRef(0);
+  const [previewReads] = useState(createLatestWins);
   const autoStartedRef = useRef<string | null>(null);
   const autoStartedKeyRef = useRef<number | null>(null);
 
   const reset = () => {
-    requestTokenRef.current++;
+    previewReads.next();
     setPhase('pick');
     setFilePath(null);
     setClipboardData(null);
@@ -124,6 +125,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
   };
 
   const handlePickFile = async () => {
+    let token: number | undefined;
     try {
       const selected = await open({
         multiple: false,
@@ -141,19 +143,22 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
       setError(null);
       setEnclaveResult(null);
 
-      const token = ++requestTokenRef.current;
+      token = previewReads.next();
       if (path.endsWith('.enclave')) {
         const result = await verifyEnclave(path);
-        if (token !== requestTokenRef.current) return;
+        if (!previewReads.isCurrent(token)) return;
         setEnclaveResult(result);
         setPhase('preview');
       } else {
         const p = await previewBundleImport(path);
-        if (token !== requestTokenRef.current) return;
+        if (!previewReads.isCurrent(token)) return;
         setPreview(p);
         setPhase('preview');
       }
     } catch (err) {
+      // A superseded read (the dialog was reset or re-targeted) must not
+      // paint its failure over the newer preview.
+      if (token !== undefined && !previewReads.isCurrent(token)) return;
       const msg = errMsg(err, 'Failed to load file');
       logger.warn('Failed to load file', { error: msg });
       setError(msg);
@@ -162,6 +167,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
   };
 
   const handlePasteFromClipboard = async () => {
+    let token: number | undefined;
     try {
       const text = await navigator.clipboard.readText();
       if (!text || text.trim().length === 0) {
@@ -175,12 +181,15 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
       setPhase('previewing');
       setError(null);
 
-      const token = ++requestTokenRef.current;
+      token = previewReads.next();
       const p = await previewBundleFromClipboard(trimmed);
-      if (token !== requestTokenRef.current) return;
+      if (!previewReads.isCurrent(token)) return;
       setPreview(p);
       setPhase('preview');
     } catch (err) {
+      // A superseded read (the dialog was reset or re-targeted) must not
+      // paint its failure over the newer preview.
+      if (token !== undefined && !previewReads.isCurrent(token)) return;
       const msg = errMsg(err, 'Failed to read clipboard');
       logger.warn('Failed to paste from clipboard', { error: msg });
       setError(msg);
@@ -193,6 +202,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
     const url = (urlOverride ?? shareLinkInput).trim();
     if (!url) return;
 
+    let token: number | undefined;
     try {
       // Store the original URL (may be personas:// or http://) -- both are
       // handled transparently by the backend commands.
@@ -202,12 +212,15 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
       setPhase('previewing');
       setError(null);
 
-      const token = ++requestTokenRef.current;
+      token = previewReads.next();
       const p = await previewShareLink(url);
-      if (token !== requestTokenRef.current) return;
+      if (!previewReads.isCurrent(token)) return;
       setPreview(p);
       setPhase('preview');
     } catch (err) {
+      // A superseded read (the dialog was reset or re-targeted) must not
+      // paint its failure over the newer preview.
+      if (token !== undefined && !previewReads.isCurrent(token)) return;
       const msg = errMsg(err, 'Failed to load share link');
       logger.warn('Failed to preview share link', { error: msg });
       setError(msg);

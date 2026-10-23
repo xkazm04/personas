@@ -1,0 +1,57 @@
+{
+ "schema": "conform-run/1",
+ "worker": "045c3e85-3466-4fe8-aeff-1579cc4bf12e",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-10-15T15:47:34.100Z",
+ "pairs": [
+  {
+   "context": "7826a48f-5883-4f26-8476-c3c515bda745",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:37 pins the overlay glob with source.includes over raw file text (comments included) and no floor, so a comment spelling the needle keeps it green while the real glob loses a locale",
+   "techniques": [
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "deviation: needle is a bare string a comment can spell; haystack is unstripped source prose",
+     "evidence": "src/lib/personas/templates/__tests__/templateOverlays.test.ts:37"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+   "reason": "home-cockpit-widgets: only test-named file is BrowserTestReportWidget.tsx (a UI widget, not a test); vocabulary match, no harness code to judge"
+  },
+  {
+   "subject": "test-harness",
+   "context": "959baa73-f18f-42c8-8569-466939b9050d",
+   "reason": "notepad-plan: no test files in its 21 context-map paths; matcher resonance, left unjudged"
+  },
+  {
+   "subject": "test-harness",
+   "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049",
+   "reason": "plugins-dev-tools-projects: no test files in its 14 context-map paths; matcher resonance, left unjudged"
+  },
+  {
+   "subject": "test-harness",
+   "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+   "reason": "recipe-build-models: only domain models named test_run/test_suite, not harness code; vocabulary match, left unjudged"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-15T15:47:34.100Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "pin-the-call-not-the-name"
+   ],
+   "deviations": 1
+  }
+ ]
+}

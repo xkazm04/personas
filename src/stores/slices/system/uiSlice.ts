@@ -11,7 +11,7 @@ import {
   type GatePredicate,
 } from "@/lib/navigation/history";
 import type { SystemStore } from "../../storeTypes";
-import type { SidebarSection, HomeTab, GoalsTab, KpisTab, TeamsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ApprovalsMode } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, GoalsView, KpisTab, TeamsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ApprovalsMode } from "@/lib/types/types";
 import type { CompanionCockpitSpecBody } from "@/api/companion";
 import type { CompanionsPage } from "@/features/companions/types";
 
@@ -87,8 +87,9 @@ export interface UiSlice {
   // State
   sidebarSection: SidebarSection;
   homeTab: HomeTab;
-  goalsTab: GoalsTab;
-  /** Sub-view within the KPIs hub (sidebar sub-items mirror GoalsTab). */
+  /** Layout of the Goals surface (Notes | Ledger). Persisted; legacy board/progress map to notes. */
+  goalsView: GoalsView;
+  /** Sub-view within the KPIs hub (sidebar sub-items). */
   kpisTab: KpisTab;
   /**
    * L2 inside the Projects section. Defaults to `'projects'` (Manage — the
@@ -130,9 +131,9 @@ export interface UiSlice {
   error: string | null;
   n8nTransformActive: boolean;
   templateAdoptActive: boolean;
-  showDesignNudge: boolean;
+  /** Review id of the adoption running right now (null when none), so the gallery banner can reopen it. */
+  activeAdoptionReviewId: string | null;
   isCreatingPersona: boolean;
-  autoStartDesignInstruction: string | null;
   rebuildActive: boolean;
   templateTestActive: boolean;
   connectorTestActive: boolean;
@@ -184,10 +185,6 @@ export interface UiSlice {
    *  this is the only way to land it on a specific project from outside. */
   pendingFactoryFocus: { projectId: string; l2Tab: FactoryL2Tab } | null;
 
-  // Canvas <-> Live Stream cross-linking
-  canvasEdgeFocus: { edgeId: string; eventType: string; sourceFilter: string | null } | null;
-  liveStreamHighlightEventId: string | null;
-
   /**
    * Which header overlay is currently open — the mutually-exclusive controller
    * for the Monitor and Notifications surfaces (one enum can't hold two open
@@ -213,14 +210,6 @@ export interface UiSlice {
    * sections per group + an Ungrouped bucket.
    */
   monitorGroupBy: 'none' | 'group';
-
-  /**
-   * How the Decision Center reaches the operator (spark mandate-lanes, WP4):
-   * `'chips'` = the seven-chip strip (default); `'lanes'` = the four mandate
-   * lanes (Breach, Sign, Accept, Talk) plus Orphans. A dev switch until the
-   * owner approves lanes; every count reader follows it without a reload.
-   */
-  decisionSurface: 'chips' | 'lanes';
 
   /**
    * Set of group ids the user has collapsed in the Monitor's group view.
@@ -280,10 +269,6 @@ export interface UiSlice {
   setHeaderOverlay: (overlay: HeaderOverlay) => void;
   /** Back-compat shim — maps to `setHeaderOverlay('monitor' | 'none')`. */
   setMonitorOpen: (open: boolean) => void;
-  setMonitorGroupBy: (mode: 'none' | 'group') => void;
-  setDecisionSurface: (surface: 'chips' | 'lanes') => void;
-  toggleMonitorGroupCollapsed: (groupId: string) => void;
-  setMonitorLiveMode: (on: boolean) => void;
   toggleMonitorLiveMode: () => void;
   setMonitorInitialView: (view: 'fleet' | 'channels' | 'conversations' | null) => void;
   setMonitorChannelPreset: (
@@ -293,7 +278,7 @@ export interface UiSlice {
   toggleHomeSection: (sectionId: string) => void;
   resetHomeSections: () => void;
   setHomeTab: (tab: HomeTab) => void;
-  setGoalsTab: (tab: GoalsTab) => void;
+  setGoalsView: (view: GoalsView) => void;
   setKpisTab: (tab: KpisTab) => void;
   setTeamsTab: (tab: TeamsTab) => void;
   /** Record `version` as the acknowledged "What's New" version (clears the dot). */
@@ -309,10 +294,8 @@ export interface UiSlice {
   setRerunInputData: (data: string | null) => void;
   setError: (error: string | null) => void;
   setN8nTransformActive: (active: boolean) => void;
-  setTemplateAdoptActive: (active: boolean) => void;
-  setShowDesignNudge: (show: boolean) => void;
+  setTemplateAdoptActive: (active: boolean, reviewId?: string) => void;
   setIsCreatingPersona: (creating: boolean) => void;
-  setAutoStartDesignInstruction: (instruction: string | null) => void;
   setRebuildActive: (active: boolean) => void;
   setTemplateTestActive: (active: boolean) => void;
   setConnectorTestActive: (active: boolean) => void;
@@ -331,17 +314,9 @@ export interface UiSlice {
   setPendingCouncilSubjectId: (id: string | null) => void;
   setPendingLlmContextFilter: (filter: { contextId: string; contextName: string } | null) => void;
   setPendingFactoryFocus: (focus: { projectId: string; l2Tab: FactoryL2Tab } | null) => void;
-  setCanvasEdgeFocus: (focus: { edgeId: string; eventType: string; sourceFilter: string | null } | null) => void;
-  setLiveStreamHighlightEventId: (id: string | null) => void;
   // Plugin enable/disable
   enabledPlugins: Set<PluginTab>;
   togglePlugin: (plugin: PluginTab) => void;
-
-  // Feedback-driven persona improvement
-  feedbackImprovementPersonaId: string | null;
-  feedbackImprovementComplete: boolean;
-  setFeedbackImprovementPersonaId: (id: string | null) => void;
-  setFeedbackImprovementComplete: (complete: boolean) => void;
 
   /** Transient contextual cockpit overlay — see {@link ContextualCockpit}. */
   contextualCockpit: ContextualCockpit | null;
@@ -434,7 +409,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   keyboardNavActive: false,
   setKeyboardNavActive: (active) => set({ keyboardNavActive: active }),
   monitorGroupBy: 'none' as const,
-  decisionSurface: 'chips' as const,
   monitorCollapsedGroups: [],
   monitorLiveMode: true,
   monitorInitialView: null,
@@ -442,7 +416,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   monitorFocusNode: null,
   homeHiddenSections: [],
   homeTab: "welcome" as HomeTab,
-  goalsTab: "board" as GoalsTab,
+  goalsView: "notes" as GoalsView,
   kpisTab: "dashboard" as KpisTab,
   // The section lands on Manage (the project table). 'workspace' is now
   // exclusively the selected-team detail, so it is never a default.
@@ -460,9 +434,8 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   error: null,
   n8nTransformActive: false,
   templateAdoptActive: false,
-  showDesignNudge: false,
+  activeAdoptionReviewId: null,
   isCreatingPersona: false,
-  autoStartDesignInstruction: null,
   rebuildActive: false,
   templateTestActive: false,
   connectorTestActive: false,
@@ -483,8 +456,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   pendingCouncilSubjectId: null,
   pendingLlmContextFilter: null,
   pendingFactoryFocus: null,
-  canvasEdgeFocus: null,
-  liveStreamHighlightEventId: null,
 
   // Opening a header overlay (Monitor / Notifications) while the Schedules
   // route is active also leaves Schedules — the overlay fully covers the page,
@@ -507,9 +478,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
       ? ('home' as SidebarSection)
       : state.sidebarSection,
   })),
-  setMonitorGroupBy: (mode) => set({ monitorGroupBy: mode }),
-  setDecisionSurface: (decisionSurface) => set({ decisionSurface }),
-  setMonitorLiveMode: (on) => set({ monitorLiveMode: on }),
   toggleMonitorLiveMode: () => set((state) => ({ monitorLiveMode: !state.monitorLiveMode })),
   setMonitorInitialView: (view) => set({ monitorInitialView: view }),
   setMonitorChannelPreset: (preset) => set({ monitorChannelPreset: preset }),
@@ -522,13 +490,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
         : { homeHiddenSections: [...state.homeHiddenSections, sectionId] };
     }),
   resetHomeSections: () => set({ homeHiddenSections: [] }),
-  toggleMonitorGroupCollapsed: (groupId) =>
-    set((state) => {
-      const idx = state.monitorCollapsedGroups.indexOf(groupId);
-      return idx >= 0
-        ? { monitorCollapsedGroups: state.monitorCollapsedGroups.filter((_, i) => i !== idx) }
-        : { monitorCollapsedGroups: [...state.monitorCollapsedGroups, groupId] };
-    }),
 
   setSidebarSection: (section) => startTransition(() => set((state) => {
     // Navigating any route dismisses an open header overlay (Monitor /
@@ -552,7 +513,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
     };
   })),
   setHomeTab: (tab) => startTransition(() => set({ homeTab: tab })),
-  setGoalsTab: (tab) => startTransition(() => set({ goalsTab: tab })),
+  setGoalsView: (view) => startTransition(() => set({ goalsView: view })),
   setKpisTab: (tab) => startTransition(() => set({ kpisTab: tab })),
   setTeamsTab: (tab) => startTransition(() => set({ teamsTab: tab })),
   markWhatsNewSeen: (version) => set((state) =>
@@ -582,10 +543,9 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setRerunInputData: (data) => set({ rerunInputData: data }),
   setError: (error) => set({ error }),
   setN8nTransformActive: (active) => set({ n8nTransformActive: active }),
-  setTemplateAdoptActive: (active) => set({ templateAdoptActive: active }),
-  setShowDesignNudge: (show) => set({ showDesignNudge: show }),
+  setTemplateAdoptActive: (active, reviewId) =>
+    set({ templateAdoptActive: active, activeAdoptionReviewId: active ? (reviewId ?? null) : null }),
   setIsCreatingPersona: (creating) => set({ isCreatingPersona: creating }),
-  setAutoStartDesignInstruction: (instruction) => set({ autoStartDesignInstruction: instruction }),
   setRebuildActive: (active) => set({ rebuildActive: active }),
   setTemplateTestActive: (active) => set({ templateTestActive: active }),
   setConnectorTestActive: (active) => set({ connectorTestActive: active }),
@@ -604,8 +564,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setPendingCouncilSubjectId: (id) => set({ pendingCouncilSubjectId: id }),
   setPendingLlmContextFilter: (filter) => set({ pendingLlmContextFilter: filter }),
   setPendingFactoryFocus: (focus) => set({ pendingFactoryFocus: focus }),
-  setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
-  setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
   enabledPlugins: new Set<PluginTab>([
     'dev-tools', 'obsidian-brain', 'drive', 'twin', 'scraper',
   ]),
@@ -620,10 +578,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
     }
     return { enabledPlugins: next };
   }),
-  feedbackImprovementPersonaId: null,
-  feedbackImprovementComplete: false,
-  setFeedbackImprovementPersonaId: (id) => set({ feedbackImprovementPersonaId: id }),
-  setFeedbackImprovementComplete: (complete) => set({ feedbackImprovementComplete: complete }),
 
   contextualCockpit: null,
   setContextualCockpit: (contextualCockpit) => set({ contextualCockpit }),

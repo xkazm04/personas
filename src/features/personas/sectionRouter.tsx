@@ -102,11 +102,6 @@ export function renderSectionRoute(
   );
 }
 
-/** Convenience: the registry gates for a routable section (single source of truth). */
-export function sectionGates(section: SidebarSection) {
-  return navSection(section).gates;
-}
-
 /**
  * Whether a section is blocked by its registry gates for the given context.
  * The content router uses this to fail a forbidden section straight to Home —

@@ -15,7 +15,8 @@ import { useAskAthena } from '@/features/companions/athena/useAskAthena';
 
 import { type KpiCategory, type KpiTier } from './factoryModel';
 import { useAddKpi } from './useAddKpi';
-import { CATEGORY_OPTS, TIER_OPTS, DIRECTION_OPTS, INPUT, Label, MeasurementFields } from './addKpiPrimitives';
+import { useTranslation } from '@/i18n/useTranslation';
+import { useKpiSetupOptions, INPUT, Label, MeasurementFields } from './addKpiPrimitives';
 
 export function AddKpiModal({
   projectId, projectName, contextGroupId, contextId, scopeLabel, onClose,
@@ -29,7 +30,10 @@ export function AddKpiModal({
 }) {
   const k = useAddKpi({ projectId, contextGroupId, contextId, onClose });
   const { isManual, busy } = k;
-  const optional = !isManual && <span className="text-foreground/40"> · optional</span>;
+  const { t, tx } = useTranslation();
+  const w = t.kpis;
+  const o = useKpiSetupOptions();
+  const optional = !isManual && <span className="text-foreground/40"> · {w.setup_optional}</span>;
 
   // Hand off to Athena for a guided, conversational setup (she gathers the
   // shape, proposes the KPI, and the user verifies it in Teams › KPIs).
@@ -52,10 +56,10 @@ export function AddKpiModal({
         <div className="flex items-start gap-3 px-5 py-4 border-b border-primary/10">
           <span className="rounded-interactive bg-primary/10 p-2 flex-shrink-0"><Plus className="w-5 h-5 text-primary" /></span>
           <div className="min-w-0 flex-1">
-            <h2 id="factory-add-kpi-title" className="typo-heading text-foreground">Add a KPI</h2>
-            <p className="typo-caption truncate">{scopeLabel ? `Scope: ${scopeLabel}` : 'Project-level'}</p>
+            <h2 id="factory-add-kpi-title" className="typo-heading text-foreground">{w.setup_add_title}</h2>
+            <p className="typo-caption truncate">{scopeLabel ? tx(w.setup_scope, { scope: scopeLabel }) : w.setup_scope_project}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded-interactive p-1.5 text-foreground/70 hover:bg-secondary/40"><X className="w-4 h-4" /></button>
+          <button type="button" onClick={onClose} aria-label={t.common.close} className="rounded-interactive p-1.5 text-foreground/70 hover:bg-secondary/40"><X className="w-4 h-4" /></button>
         </div>
 
         {/* Body */}
@@ -63,28 +67,28 @@ export function AddKpiModal({
           {/* Identity */}
           <div className="grid grid-cols-3 gap-4">
             <div className="col-span-2">
-              <Label htmlFor="kpi-name">Name</Label>
-              <input id="kpi-name" value={k.name} onChange={(e) => k.setName(e.target.value)} placeholder="TypeScript error count" className={INPUT} />
+              <Label htmlFor="kpi-name">{t.common.name}</Label>
+              <input id="kpi-name" value={k.name} onChange={(e) => k.setName(e.target.value)} placeholder={w.setup_name_ph} className={INPUT} />
             </div>
             <div>
-              <Label>Category</Label>
-              <ThemedSelect filterable hideSearch options={CATEGORY_OPTS} value={k.category} onValueChange={(v) => k.onCategory(v as KpiCategory)} aria-label="Category" />
+              <Label>{w.setup_category}</Label>
+              <ThemedSelect filterable hideSearch options={o.category} value={k.category} onValueChange={(v) => k.onCategory(v as KpiCategory)} aria-label={w.setup_category} />
             </div>
             <div className="col-span-3">
-              <Label htmlFor="kpi-desc">Description</Label>
-              <input id="kpi-desc" value={k.description} onChange={(e) => k.setDescription(e.target.value)} placeholder="What this signal tells you" className={INPUT} />
+              <Label htmlFor="kpi-desc">{t.common.description}</Label>
+              <input id="kpi-desc" value={k.description} onChange={(e) => k.setDescription(e.target.value)} placeholder={w.setup_description_ph} className={INPUT} />
             </div>
             <div>
-              <Label>Tier</Label>
-              <ThemedSelect filterable hideSearch options={TIER_OPTS} value={k.tier} onValueChange={(v) => k.setTier(v as KpiTier)} aria-label="Tier" />
+              <Label>{w.setup_tier}</Label>
+              <ThemedSelect filterable hideSearch options={o.tier} value={k.tier} onValueChange={(v) => k.setTier(v as KpiTier)} aria-label={w.setup_tier} />
             </div>
             <div>
-              <Label>Direction</Label>
-              <ThemedSelect filterable hideSearch options={DIRECTION_OPTS} value={k.direction} onValueChange={(v) => k.setDirection(v as 'up' | 'down')} aria-label="Direction" />
+              <Label>{w.setup_direction}</Label>
+              <ThemedSelect filterable hideSearch options={o.direction} value={k.direction} onValueChange={(v) => k.setDirection(v as 'up' | 'down')} aria-label={w.setup_direction} />
             </div>
             <div>
-              <Label htmlFor="kpi-unit">Unit{optional}</Label>
-              <input id="kpi-unit" value={k.unit} onChange={(e) => k.setUnit(e.target.value)} placeholder="%, errors, ms…" className={INPUT} />
+              <Label htmlFor="kpi-unit">{w.setup_unit}{optional}</Label>
+              <input id="kpi-unit" value={k.unit} onChange={(e) => k.setUnit(e.target.value)} placeholder={w.setup_unit_ph} className={INPUT} />
             </div>
           </div>
 
@@ -100,23 +104,22 @@ export function AddKpiModal({
           {/* Targets */}
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="kpi-baseline">Baseline{optional}</Label>
+              <Label htmlFor="kpi-baseline">{w.baseline_label}{optional}</Label>
               <input id="kpi-baseline" value={k.baseline} onChange={(e) => k.setBaseline(e.target.value)} inputMode="decimal" className={INPUT} />
             </div>
             <div>
-              <Label htmlFor="kpi-target">Target{optional}</Label>
+              <Label htmlFor="kpi-target">{w.setup_target}{optional}</Label>
               <input id="kpi-target" value={k.target} onChange={(e) => k.setTarget(e.target.value)} inputMode="decimal" className={INPUT} />
             </div>
             {/* Without a target date there is no pace to lag against, so the KPI
                 can never go off-track and goal derivation never sees it
                 (`kpi_derivation.rs:75`). Optional, but the modal says why. */}
             <div>
-              <Label htmlFor="kpi-target-date">Target date{optional}</Label>
+              <Label htmlFor="kpi-target-date">{w.target_date_label}{optional}</Label>
               <input id="kpi-target-date" type="date" value={k.targetDate} onChange={(e) => k.setTargetDate(e.target.value)} className={INPUT} />
             </div>
             <p className="col-span-3 typo-caption text-foreground">
-              Without a target date this KPI has no pace to fall behind, so the system will never
-              derive work from it. Leave it empty only if you plan to draw a critical line instead.
+              {w.setup_target_date_hint}
             </p>
           </div>
 
@@ -129,7 +132,7 @@ export function AddKpiModal({
           >
             <MessageSquare className="w-4 h-4 text-primary flex-shrink-0" />
             <span className="typo-caption text-foreground/80">
-              Prefer to describe it in words? <span className="text-foreground font-medium">Ask Athena</span> — she'll guide you through it and set it up.
+              {w.setup_ask_athena_lead} <span className="text-foreground font-medium">{w.setup_ask_athena_link}</span> {w.setup_ask_athena_tail}
             </span>
           </button>
 
@@ -139,16 +142,16 @@ export function AddKpiModal({
         {/* Footer — the button depends on Measured */}
         <div className="flex items-center gap-2 px-5 py-3 border-t border-primary/10">
           <span className="flex-1" />
-          <button type="button" onClick={onClose} className="rounded-interactive border border-primary/15 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/40">Cancel</button>
+          <button type="button" onClick={onClose} className="rounded-interactive border border-primary/15 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/40">{t.common.cancel}</button>
           {isManual ? (
             <button type="button" disabled={busy || !k.manualReady} onClick={() => void k.createManual()}
               className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/30 bg-primary/15 px-3 py-1.5 typo-body text-foreground hover:bg-primary/25 disabled:opacity-50">
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Create KPI
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} {w.setup_create}
             </button>
           ) : (
             <button type="button" disabled={busy || !k.name.trim()} onClick={() => void k.setupWithAi()}
               className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/30 bg-primary/15 px-3 py-1.5 typo-body text-foreground hover:bg-primary/25 disabled:opacity-50">
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} {busy ? 'Setting up…' : 'Set up with AI'}
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} {busy ? w.setup_setting_up : w.setup_with_ai}
             </button>
           )}
         </div>

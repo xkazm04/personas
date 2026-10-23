@@ -13,11 +13,12 @@
  *   5. Refining: sending feedback through the build session conversation
  */
 import { useCallback, useEffect, useRef } from "react";
+import { useTranslation, interpolate as tx } from "@/i18n/useTranslation";
 import { listen } from "@tauri-apps/api/event";
 import { EventName } from "@/lib/eventRegistry";
 import { answerBuildQuestion, cancelBuildSession, promoteBuildDraft, testBuildDraft } from "@/api/agents/buildSession";
 import { sendAppNotification } from "@/api/system/system";
-import { silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useSystemStore } from "@/stores/systemStore";
 import {
   updatePersona,
@@ -104,6 +105,12 @@ export function useLifecycle({
   personaId,
   consumeCoreSnapshot,
 }: UseLifecycleOptions) {
+  // OS notifications leave the app for good, so their copy is resolved from the
+  // latest catalog at send time. Callbacks read it through a ref and stay stable.
+  const { t } = useTranslation();
+  const copyRef = useRef(t.agents.lifecycle_notify);
+  copyRef.current = t.agents.lifecycle_notify;
+
   // -- Read build slice state from Zustand selectors -------------------------
 
   const buildPhase = useAgentStore((s) => s.buildPhase);
@@ -121,7 +128,7 @@ export function useLifecycle({
     let cancelled = false;
 
     async function setup() {
-      unlisten = await listen<ToolTestEventPayload>(
+      const stop = await listen<ToolTestEventPayload>(
         EventName.BUILD_TEST_TOOL_RESULT,
         (event) => {
           if (cancelled) return;
@@ -150,9 +157,14 @@ export function useLifecycle({
           );
         },
       );
+      // Unmounted while `listen` was still resolving: the cleanup below ran
+      // with nothing to detach, so detach here or the channel leaks for the
+      // session (StrictMode's double mount does exactly this every time).
+      if (cancelled) stop();
+      else unlisten = stop;
     }
 
-    setup();
+    setup().catch(silentCatch("lifecycle:listenToolResults"));
     return () => { cancelled = true; unlisten?.(); };
   }, []);
 
@@ -200,19 +212,32 @@ export function useLifecycle({
       // centres back out of step.
       const unverified = report.tools_unverified ?? 0;
       const allPassed = report.tools_failed === 0 && unverified === 0 && report.tools_passed > 0;
-      const unverifiedNote = unverified > 0 ? `, ${unverified} unverified (never called)` : '';
-      const summary = report.tools_failed === 0
-        ? `${report.tools_passed} passed${report.tools_skipped > 0 ? `, ${report.tools_skipped} skipped` : ''}${unverifiedNote}`
-        : `${report.tools_passed}/${report.tools_tested} passed, ${report.tools_failed} failed${unverifiedNote}${report.credential_issues.length > 0 ? `, ${report.credential_issues.length} credential issue(s)` : ""}`;
+      const c = copyRef.current;
+      const unverifiedPart = unverified > 0 ? [tx(c.sum_unverified, { count: unverified })] : [];
+      const summary = (report.tools_failed === 0
+        ? [
+            tx(c.sum_passed, { count: report.tools_passed }),
+            ...(report.tools_skipped > 0 ? [tx(c.sum_skipped, { count: report.tools_skipped })] : []),
+            ...unverifiedPart,
+          ]
+        : [
+            tx(c.sum_passed_of, { passed: report.tools_passed, tested: report.tools_tested }),
+            tx(c.sum_failed, { count: report.tools_failed }),
+            ...unverifiedPart,
+            ...(report.credential_issues.length > 0 ? [tx(c.sum_credential_issues, { count: report.credential_issues.length })] : []),
+          ]
+      ).join(', ');
       store.handleTestComplete(allPassed, summary);
       sendAppNotification(
-        allPassed ? 'Agent Test Passed' : 'Agent Test Complete',
-        allPassed ? `All ${report.tools_passed} tools passed. Ready to promote.` : summary,
+        allPassed ? c.test_passed_title : c.test_complete_title,
+        allPassed ? tx(c.test_all_passed_body, { count: report.tools_passed }) : summary,
       ).catch(silentCatch("lifecycle:testComplete"));
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to run tests";
+      // IPC rejects with an AppError object, not an Error: reading `.message`
+      // off `instanceof Error` dropped every backend reason for a fixed string.
+      const message = extractMessage(err) || copyRef.current.test_failed_fallback;
       useAgentStore.getState().handleTestFailed(message);
-      sendAppNotification('Agent Test Failed', message).catch(silentCatch("lifecycle:testFailed"));
+      sendAppNotification(copyRef.current.test_failed_title, message).catch(silentCatch("lifecycle:testFailed"));
     }
   }, [personaId]);
 
@@ -220,20 +245,26 @@ export function useLifecycle({
   // Sends a _refine message through the build session conversation
 
   const handleRefine = useCallback(
-    async (feedback: string) => {
+    // Resolves `true` once the refine was sent, `false` when it was not (wrong
+    // phase, or the send failed and was toasted). A composer that cleared its
+    // text on Send uses the `false` to put the user's feedback back.
+    async (feedback: string): Promise<boolean> => {
       const state = useAgentStore.getState();
-      if (state.buildPhase !== "draft_ready" && state.buildPhase !== "test_complete") return;
+      if (state.buildPhase !== "draft_ready" && state.buildPhase !== "test_complete") return false;
 
       const sessionId = state.buildSessionId;
-      if (!sessionId) return;
+      if (!sessionId) return false;
 
       // Reset test state before refining
       useAgentStore.getState().handleRejectTest();
 
       try {
         await answerBuildQuestion(sessionId, "_refine", feedback);
+        return true;
       } catch (err) {
         logger.error("Refinement failed", { error: err });
+        toastCatch("lifecycle:refine")(err);
+        return false;
       }
     },
     [],
@@ -378,25 +409,32 @@ export function useLifecycle({
         const unverified = receipt.kind === "needs_setup" && receipt.unverified;
         const entityErrors = result.entity_errors ?? [];
         if (receipt.kind === "needs_setup" || entityErrors.length > 0) {
+          const c = copyRef.current;
           const parts: string[] = [];
           if (needsSetup.length > 0) {
             parts.push(
-              `Connect ${needsSetup.length === 1 ? '1 service' : `${needsSetup.length} services`} before it can run: ${needsSetup.join(', ')}.`,
+              tx(needsSetup.length === 1 ? c.promoted_connect_one : c.promoted_connect_other, {
+                count: needsSetup.length,
+                names: needsSetup.join(', '),
+              }),
             );
           }
           if (unverified) {
-            parts.push("Its first check run could not deliver value. Review its connectors before relying on it.");
+            parts.push(c.promoted_unverified);
           }
           if (entityErrors.length > 0) {
             parts.push(
-              `${entityErrors.length === 1 ? '1 item' : `${entityErrors.length} items`} couldn't be set up: ${entityErrors.map((e) => e.entity_name).join(', ')}.`,
+              tx(entityErrors.length === 1 ? c.promoted_items_one : c.promoted_items_other, {
+                count: entityErrors.length,
+                names: entityErrors.map((e) => e.entity_name).join(', '),
+              }),
             );
           }
-          sendAppNotification('Agent Promoted — needs setup', parts.join(' ')).catch(
+          sendAppNotification(c.promoted_setup_title, parts.join(' ')).catch(
             silentCatch('lifecycle:promoted-needs-setup'),
           );
         } else {
-          sendAppNotification('Agent Promoted', 'Your agent has been promoted to production and is ready to use.').catch(silentCatch("lifecycle:promoted"));
+          sendAppNotification(copyRef.current.promoted_title, copyRef.current.promoted_body).catch(silentCatch("lifecycle:promoted"));
         }
         return {
           success: true,
@@ -427,7 +465,7 @@ export function useLifecycle({
           total_count: 8,
         });
 
-        sendAppNotification('Agent Promoted', 'Your agent has been promoted to production and is ready to use.').catch(silentCatch("lifecycle:promoted"));
+        sendAppNotification(copyRef.current.promoted_title, copyRef.current.promoted_body).catch(silentCatch("lifecycle:promoted"));
         return { ...emptyResult, success: true, receipt: { kind: "ready" } };
       }
     } catch (err) {

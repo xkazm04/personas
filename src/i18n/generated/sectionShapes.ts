@@ -165,7 +165,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "assertions": {},
     "brain": {},
     "responsibilities": {},
-    "promote_preview": {}
+    "promote_preview": {},
+    "lifecycle_notify": {}
   },
   "director": {},
   "vault": {
@@ -244,7 +245,9 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "autopilot": {},
     "cli_capture": {},
     "rotation_insight": {},
-    "connector_attention": {}
+    "connector_attention": {},
+    "resource_picker": {},
+    "remediation_notify": {}
   },
   "deliberation": {},
   "deployment": {
@@ -385,7 +388,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
       "kinds": {}
     },
     "memories_ui": {},
-    "mission_layers": {}
+    "mission_layers": {},
+    "ai_healing_overlay": {}
   },
   "matrix_v3": {},
   "templates": {
@@ -454,7 +458,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "trigger_edit": {},
     "preset_edit": {},
     "test_report": {},
-    "complexity": {}
+    "complexity": {},
+    "bg_notify": {}
   },
   "triggers": {
     "builder": {},
@@ -595,7 +600,10 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "dev_context": {},
     "obsidian": {},
     "research_lab": {},
-    "scraper": {},
+    "scraper": {
+      "step_labels": {},
+      "step_hints": {}
+    },
     "contest": {
       "ledger": {
         "state": {},
@@ -638,7 +646,8 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "terminal_extra": {},
     "use_cases_extra": {},
     "kanban": {},
-    "rich_markdown": {}
+    "rich_markdown": {},
+    "business_outcome": {}
   },
   "releases": {
     "whats_new": {}
@@ -822,5 +831,12 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
       "dial": {},
       "watershed": {}
     }
+  },
+  "decisionCenter": {
+    "blueprint": {},
+    "lens": {},
+    "build": {},
+    "evidence": {},
+    "release": {}
   }
 } as Record<string, Record<string, unknown>>);

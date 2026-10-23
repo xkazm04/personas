@@ -1,0 +1,53 @@
+{
+  "schema": "conform-run/1",
+  "worker": "5a807c85-8405-49e3-92d4-9d9359ab6729",
+  "subject": "quality-gates",
+  "evaluatedAt": "2026-10-22T19:48:37.037Z",
+  "pairs": [
+    {
+      "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/db/src/query_builder.rs:233 the context's only refusals are SQL ORDER BY allowlist input validation at runtime; it defines no check that refuses a change to the tree, so the gate precondition (a verdict over the gated tree) is unmet"
+    },
+    {
+      "context": "de8b648f-7971-452b-88dc-773b215c5f09",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/engine/pipeline_executor.rs:767 the only gate is a runtime human approval gate pausing a pipeline run, which is hitl-approval's subject; the context holds no refusal over code or artifacts"
+    },
+    {
+      "context": "33a96a83-6adc-42f7-b57c-839382bcef54",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/commands/curator/dispatch.rs:115 vet_autonomous refuses an invocation the app would invent, which is dispatch validation not a quality gate; line 291 only instructs workers not to bypass repo hooks and builds none",
+      "registryProposal": "dispatch.rs:291 states the hook-bypass prohibition (--no-verify, LEFTHOOK=0) only as prompt prose to dispatched workers, so prose-rule-drift would apply to whichever layer holds the mechanical deny in target repos; the context itself has no such layer to judge."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "quality-gates",
+      "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+      "reason": "i18n context paths are the runtime lazy-parse cache and error registry; the governing gates (check:i18n:strict, lefthook i18n jobs) live in scripts/ and lefthook.yml outside the context, so a verdict needs a different scope, left unknown"
+    },
+    {
+      "subject": "quality-gates",
+      "context": "908be532-ef83-412b-8da3-caff9ff4d8ad",
+      "reason": "overview-certification lists src/features/overview/sub_certification/* in context-map.json but none of those files are tracked, so there is no code to read"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-22T19:48:37.037Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

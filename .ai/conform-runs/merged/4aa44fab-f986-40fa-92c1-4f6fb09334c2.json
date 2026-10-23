@@ -1,0 +1,47 @@
+{"schema":"conform-run/1","worker":"4aa44fab-f986-40fa-92c1-4f6fb09334c2","subject":"module-design","evaluatedAt":"2026-10-22T02:52:27Z",
+"pairs":[
+{"context":"f838d49f-2928-441e-ac8d-f6e6c412b262","subject":"module-design","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/shared/glyph/triggers.ts:75 prettyTriggerType re-encodes the trigger-kind vocabulary in an ungated string switch whose default returns the raw token, while TRIGGER_ICONS_BY_KIND beside it is totality-gated (:48); a TriggerKind added in Rust gets an icon compile error but its label silently renders as a machine token",
+"techniques":[
+{"technique":"module-depth","verdict":"deviation","evidence":"src/features/shared/glyph/triggers.ts:75 a closed set the repo owns (generated TriggerKind) is matched on text with a fall-through to the raw value; the icon map in the same file proves the closed form is available (:48 satisfies Record<TriggerKind, ...>)"},
+{"technique":"locality-and-leverage","verdict":"conformant","evidence":"src/features/shared/glyph/channels.ts:22 icon and tint are one map keyed by channel, so a half-added channel cannot compile; petal geometry likewise has one definition at src/features/shared/glyph/helpers.ts:25"},
+{"technique":"seams-and-adapters","verdict":"conformant","evidence":"src/features/shared/glyph/types.ts:105 SigilUseCase is the structural contract the primitive reads, so any feature view model or test fixture satisfies it without the shared layer importing a feature"},
+{"technique":"declarative-or-sequential","verdict":"conformant","evidence":"src/features/shared/glyph/channels.ts:69 each summary segment takes one of three differently-shaped branches (pair, bare channel, prose scan), so the explicit loop is the honest form"},
+{"technique":"marked-unverifiable-region","verdict":"conformant","evidence":"src/features/shared/glyph/triggers.ts:86 the one key assertion is the true arm of an Object.hasOwn test in the same expression, so the invariant is the visible condition and the region is one token wide"},
+{"technique":"io-free-core","verdict":"conformant","evidence":"src/features/shared/glyph/channels.ts:66 parseChannels, humanizeCron and triggerDetail take values (and t) and return values; no clock, store or IPC is read"},
+{"technique":"mirror-type-at-the-edge","verdict":"not-applicable","evidence":"src/features/shared/glyph/types.ts:47 every input is a plain constructible record (GlyphRow), so there is no host-minted type to mirror"},
+{"technique":"emitted-code-names-from-a-root","verdict":"not-applicable","evidence":"src/features/shared/glyph/index.ts:1 the module is plain exports; it contains no macro or code generator"}]},
+{"context":"8a57c65c-06fd-45c9-9d32-d50c89c4c705","subject":"module-design","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:128 TRIGGER_OPTIONS hand-copies the trigger vocabulary as a five-member literal (legacy 'event'; missing event_listener, file_watcher, app_focus, chain, clipboard, composite) instead of deriving from the generated TriggerKind, so kinds added in Rust are never offered as a design hint while the legacy alias still is",
+"techniques":[
+{"technique":"module-depth","verdict":"deviation","evidence":"src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:128 information leakage: one repo-owned decision (which trigger kinds exist) held in a second hand-maintained encoding with no compile-time link to src/lib/bindings/TriggerKind.ts"},
+{"technique":"locality-and-leverage","verdict":"deviation","evidence":"src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:143 the valid-custom-case predicate is written twice (also :123) and one test-case shape is declared four times (PredefinedTestCase, CustomTemplateCase, ParsedTemplate, and TemplateSource at src/features/templates/sub_generated/generation/sources/TemplateSourceTypes.ts:5), so a field change is a multi-site edit"},
+{"technique":"io-free-core","verdict":"conformant","evidence":"src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:29 the list-markdown importer is a pure text-to-records function, kept out of the FileReader callback that drives it"},
+{"technique":"declarative-or-sequential","verdict":"conformant","evidence":"src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:33 the parser advances an index with lookahead over header/description/metadata lines; the cursor loop is the algorithm"},
+{"technique":"seams-and-adapters","verdict":"conformant","evidence":"src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:10 run mode is a closed union and the panel props a discriminated union on it, so each source view receives only its own mode's surface"},
+{"technique":"mirror-type-at-the-edge","verdict":"not-applicable","evidence":"src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:29 inputs are plain strings and records a test can construct directly"}]},
+{"context":"55d6d7cb-b016-4d73-8386-b5c18beafdae","subject":"module-design","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/vault/sub_databases/safeModeUtils.ts:41 the client mutation-verb list and READ_ONLY_KEYWORDS (:9) mirror src-tauri/engine/src/db_query.rs:293 and is_mutation's read list with only a 'Keep the two lists in step' comment (:40); only READ_SHAPED_WRITES is pinned (db_query.rs:3344), so a verb added on one side skips the confirm banner and the user gets a raw backend rejection - the drift this file already suffered once with DROP/ALTER",
+"techniques":[
+{"technique":"seams-and-adapters","verdict":"deviation","evidence":"src/features/vault/sub_databases/safeModeUtils.ts:41 two producers of one classification with no divergence ledger or shared fixture for two of the three lists; the pinned third (src-tauri/engine/src/db_query.rs:3344) shows the mechanism exists and was not extended"},
+{"technique":"module-depth","verdict":"deviation","evidence":"src/features/vault/sub_databases/safeModeUtils.ts:9 the read-keyword vocabulary is a second hand-maintained copy of the Rust match arm in is_mutation, the information-leakage failure"},
+{"technique":"io-free-core","verdict":"conformant","evidence":"src/features/vault/sub_databases/safeModeUtils.ts:178 classification is a pure string-to-bool function; useQuerySafeMode (src/features/vault/sub_databases/hooks/useQuerySafeMode.ts:21) is the driver that holds the pending state"},
+{"technique":"declarative-or-sequential","verdict":"conformant","evidence":"src/features/vault/sub_databases/safeModeUtils.ts:119 literal/comment stripping is an explicit character state machine with a fail-closed unterminated flag; the loop is the algorithm"},
+{"technique":"concurrency-at-the-edge","verdict":"conformant","evidence":"src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:47 one latest-wins token guards the async result; nothing is offloaded and the concurrency is the query lifecycle the hook exists for"},
+{"technique":"locality-and-leverage","verdict":"conformant","evidence":"src/features/vault/sub_databases/introspectionQueries.ts:42 language and dialect derive from one closed ConnectorFamily via totality-checked Records, so adding a family is compiler-walked"},
+{"technique":"marked-unverifiable-region","verdict":"conformant","evidence":"src/features/vault/sub_databases/safeModeUtils.ts:266 the single record assertion sits directly under its object / 'error' in guard and reads one field"},
+{"technique":"mirror-type-at-the-edge","verdict":"not-applicable","evidence":"src/features/vault/sub_databases/safeModeUtils.ts:178 the classifier takes a plain string; no host-minted input exists here"}]}
+],
+"declined":[
+{"subject":"module-design","context":"06ef5a64-1796-4637-a4d9-f860bbe67562","reason":"recipes-playground lists zero file_paths in context-map.json and git ls-files finds nothing under src/features/recipes/sub_playground; the code moved or was deleted, so there is nothing to judge until a context scan re-homes it"},
+{"subject":"module-design","context":"8650ca36-36fe-4862-98f5-745e866a2687","reason":"left unread for budget (3 pairs judged this run)"},
+{"subject":"module-design","context":"b0e9ba6b-7737-43ec-b551-9bcc1b71d76f","reason":"left unread for budget"},
+{"subject":"module-design","context":"739b6d67-2c36-41ee-9794-a74bc0b25cfd","reason":"left unread for budget"},
+{"subject":"module-design","context":"a76a8bc2-39eb-4cf1-92e6-93fba40ce96f","reason":"left unread for budget"},
+{"subject":"module-design","context":"80e0534a-d0ea-469a-9c3a-cf12910ecde9","reason":"left unread for budget"}
+],
+"consults":[
+{"ts":"2026-10-22T02:52:27Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","locality-and-leverage","seams-and-adapters","declarative-or-sequential","marked-unverifiable-region","io-free-core"],"deviations":1},
+{"ts":"2026-10-22T02:52:27Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["module-depth","locality-and-leverage","io-free-core","declarative-or-sequential","seams-and-adapters"],"deviations":1},
+{"ts":"2026-10-22T02:52:27Z","bundle":"software-engineering","subjects":["module-design"],"techniques":["seams-and-adapters","module-depth","io-free-core","declarative-or-sequential","concurrency-at-the-edge","locality-and-leverage","marked-unverifiable-region"],"deviations":1}
+]}

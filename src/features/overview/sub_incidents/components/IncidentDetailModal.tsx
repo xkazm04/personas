@@ -27,6 +27,7 @@ import {
 } from '../libs/incidentTaxonomy';
 import { IncidentDetailBreakdown } from './IncidentDetailBreakdown';
 import { IncidentDiagnosisCard } from './IncidentDiagnosisCard';
+import { ACTIVE_INCIDENT_STATUSES, isActiveIncidentStatus, isClosedIncidentStatus } from '../libs/incidentStatus';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 
 interface IncidentDetailModalProps {
@@ -43,7 +44,7 @@ interface IncidentDetailModalProps {
 type Action = 'start' | 'resolve' | 'dismiss' | 'reopen';
 
 /** Active statuses for the "other open incidents from this agent" sibling list. */
-const SIBLING_STATUSES = ['open', 'acknowledged', 'in_progress'];
+const SIBLING_STATUSES: string[] = [...ACTIVE_INCIDENT_STATUSES];
 const SIBLING_LIMIT = 20;
 
 const RESOLUTION_PRESETS = [
@@ -75,6 +76,8 @@ export function IncidentDetailModal({
   const [note, setNote] = useState('');
   const [pending, setPending] = useState<Action | null>(null);
   const [siblings, setSiblings] = useState<AuditIncident[]>([]);
+  // A failed sibling read is unknown, not "no other open incidents".
+  const [siblingsFailed, setSiblingsFailed] = useState(false);
 
   const personaId = incident.personaId;
 
@@ -93,6 +96,7 @@ export function IncidentDetailModal({
       return;
     }
     let cancelled = false;
+    setSiblingsFailed(false);
     listAuditIncidents(
       { statuses: SIBLING_STATUSES, severities: null, source_tables: null, persona_id: personaId, since: null },
       SIBLING_LIMIT,
@@ -101,17 +105,20 @@ export function IncidentDetailModal({
       .then((rows) => {
         if (!cancelled) setSiblings(rows.filter((r) => r.id !== incident.id));
       })
-      .catch(silentCatch('incidents.detail.siblings'));
+      .catch((err: unknown) => {
+        if (!cancelled) setSiblingsFailed(true);
+        silentCatch('incidents.detail.siblings')(err);
+      });
     return () => {
       cancelled = true;
     };
   }, [personaId, incident.id]);
 
   const status = incident.status;
-  const isActive = status === 'open' || status === 'acknowledged' || status === 'in_progress';
+  const isActive = isActiveIncidentStatus(status);
   const canStartWork = status === 'open' || status === 'acknowledged';
   const canBackToOpen = status === 'in_progress';
-  const canReopen = status === 'resolved' || status === 'dismissed';
+  const canReopen = isClosedIncidentStatus(status);
 
   const run = async (action: Action, fn: () => Promise<boolean>) => {
     setPending(action);
@@ -260,7 +267,9 @@ export function IncidentDetailModal({
             <h3 className="typo-eyebrow text-foreground mb-1.5">
               {t.overview.incidents.siblings_label}
             </h3>
-            {siblings.length === 0 ? (
+            {siblingsFailed ? (
+              <p className="typo-caption text-status-warning">{t.overview.incidents.load_failed}</p>
+            ) : siblings.length === 0 ? (
               <p className="typo-caption text-foreground">{t.overview.incidents.siblings_none}</p>
             ) : (
               <ul className="flex flex-col gap-1">

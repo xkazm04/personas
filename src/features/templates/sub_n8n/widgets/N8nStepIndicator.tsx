@@ -16,10 +16,8 @@ const STEP_LABEL_KEYS: Partial<Record<N8nWizardStep, 'upload_step' | 'analyze_st
   analyze: 'analyze_step',
 };
 
-/** Estimated duration hints for long-running steps. */
-const STEP_DURATION_HINT: Partial<Record<N8nWizardStep, string>> = {
-  analyze: '~30s',
-};
+/** Steps that carry an estimated-duration hint (the text is the catalog's `step_hint_analyze`). */
+const STEPS_WITH_DURATION_HINT: ReadonlySet<N8nWizardStep> = new Set<N8nWizardStep>(['analyze']);
 
 interface N8nStepIndicatorProps {
   currentStep: N8nWizardStep;
@@ -29,7 +27,7 @@ interface N8nStepIndicatorProps {
 }
 
 export function N8nStepIndicator({ currentStep, processing = false, className = '' }: N8nStepIndicatorProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const activeIndex = STEP_META[currentStep].index;
 
   // Elapsed timer -- resets on step change or when processing starts/stops
@@ -48,7 +46,7 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
     return () => clearInterval(timer);
   }, [processing, currentStep]);
 
-  const showTimer = processing && !!STEP_DURATION_HINT[currentStep];
+  const showTimer = processing && STEPS_WITH_DURATION_HINT.has(currentStep);
 
   return (
     <nav className={`flex items-center gap-1 px-2 py-3 ${className}`} role="navigation" aria-label={t.templates.n8n.wizard_progress_aria}>
@@ -59,8 +57,8 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
         const label = labelKey ? t.templates.n8n[labelKey] : step;
         const isCompleted = i < activeIndex;
         const isActive = i === activeIndex;
-        const hint = STEP_DURATION_HINT[step];
-        const statusText = isCompleted ? 'completed' : isActive ? 'in progress' : 'upcoming';
+        const hint = STEPS_WITH_DURATION_HINT.has(step) ? t.templates.n8n.step_hint_analyze : undefined;
+        const statusText = isCompleted ? t.templates.n8n.step_status_completed : isActive ? t.templates.n8n.step_status_in_progress : t.templates.n8n.step_status_upcoming;
 
         return (
           <div
@@ -101,7 +99,7 @@ export function N8nStepIndicator({ currentStep, processing = false, className = 
               {/* Step label + timer */}
               <div className="min-w-0">
                 <span className="sr-only">
-                  {`Step ${i + 1} of ${VISIBLE_STEPS.length}: ${label} (${statusText})`}
+                  {tx(t.templates.n8n.step_sr_label, { current: i + 1, total: VISIBLE_STEPS.length, label, status: statusText })}
                 </span>
                 <span
                   className={`typo-body truncate transition-colors duration-300 block ${

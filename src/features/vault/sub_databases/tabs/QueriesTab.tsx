@@ -40,7 +40,13 @@ export function QueriesTab({ credentialId, language, serviceType }: QueriesTabPr
 
       <div className="flex-1 flex flex-col min-w-0">
         {selectedQuery ? (
+          // Keyed on the query: the pane owns that query's run result, error,
+          // AI-debug state and save badge. Unkeyed, switching saved query kept
+          // the previous query's result grid (or error) under the new title,
+          // and a debug run started on query A wrote its corrected text into
+          // query B's editor, one Save away from overwriting B.
           <QueryEditorPane
+            key={selectedQuery.id}
             credentialId={credentialId}
             language={language}
             serviceType={serviceType}

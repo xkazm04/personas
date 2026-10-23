@@ -1,11 +1,14 @@
 import { Check } from 'lucide-react';
 import { useThemeStore, TEXT_SCALES } from '@/stores/themeStore';
 import type { TextScale } from '@/stores/themeStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 /** Text-size selector — drives the app-wide `data-text-scale` typography ramp. */
 export default function AppearanceTextSizeSettings() {
-  const textScale = useThemeStore((s) => s.textScale);
-  const setTextScale = useThemeStore((s) => s.setTextScale);
+  const { t } = useTranslation();
+  const s = t.settings.appearance;
+  const textScale = useThemeStore((st) => st.textScale);
+  const setTextScale = useThemeStore((st) => st.setTextScale);
 
   return (
     <div className="space-y-4">
@@ -17,6 +20,7 @@ export default function AppearanceTextSizeSettings() {
               type="button"
               key={scale.id}
               onClick={() => setTextScale(scale.id as TextScale)}
+              aria-pressed={isActive}
               className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors text-center ${
                 isActive
                   ? 'border-primary/30 bg-primary/5'
@@ -27,10 +31,10 @@ export default function AppearanceTextSizeSettings() {
                 Aa
               </span>
               <span className={`typo-heading ${isActive ? 'text-foreground' : 'text-foreground'}`}>
-                {scale.label}
+                {s[scale.labelKey]}
               </span>
               <span className="typo-caption text-foreground">
-                {scale.description}
+                {s[scale.descriptionKey]}
               </span>
               {isActive && (
                 <div className="absolute top-2 right-2">

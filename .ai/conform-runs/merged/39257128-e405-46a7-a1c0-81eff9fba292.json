@@ -1,0 +1,34 @@
+{"schema":"conform-run/1","worker":"39257128-e405-46a7-a1c0-81eff9fba292","subject":"hitl-approval","evaluatedAt":"2026-10-16T18:22:31Z",
+"pairs":[
+{"context":"6a81750d-fdbf-4518-bae6-689303e1a884","subject":"hitl-approval","bundle":"software-engineering","state":"deviation",
+"evidence":"src-tauri/src/engine/incident_continuation.rs:135 the continuation claim stamps continued_at BEFORE any work, and nothing writes the outcome back: a refused contextless resume (:239), a vanished persona/execution, or a failed start_execution (:307) all leave the same stamp, which the Autonomous lane reads as handled (src/features/overview/sub_incidents/components/AutonomousLane.tsx:18) - a resolve whose continuation never ran is spelled as one that did, and no continuation execution id is linked to the incident",
+"evaluatedAgainst":"sha256-b2:52d7f3cfb87a79d9","evaluatedRevision":22,
+"techniques":[
+{"technique":"resume-after-decision","verdict":"deviation","evidence":"src-tauri/src/engine/incident_continuation.rs:307 a failed continuation start is only logged; the incident's continued_at (set by the claim at src-tauri/db/src/repos/execution/audit_incidents.rs:578) is identical for success and failure, so the decision trail ends at 'claimed' not 'executed at T'"},
+{"technique":"resume-after-decision","verdict":"realized (partial: re-validate world + at-most-once)","evidence":"src-tauri/src/engine/incident_continuation.rs:348 admission is re-checked at resume time, :222 refuses a simulation origin, :135 atomic claim makes the resume at-most-once"}],
+"registryProposal":"resume-after-decision could name the claim-before-work shape explicitly: an at-most-once claim column doubles as the 'continued' marker readers trust, so the claim and the outcome need two columns (claimed_at vs continued_execution_id/continuation_outcome); this repo's lane reads the claim as the outcome"},
+{"context":"fbfcd99a-a333-42da-b85e-2ec1f560b4be","subject":"hitl-approval","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/agents/sub_connectors/components/automation/AutomationConditionStep.tsx:53 the deploy review shows the model's own platform_reasoning, name, setup steps and connectors but never the workflow_definition, which src-tauri/src/engine/platforms/deploy.rs:136 creates and :146 immediately activates on the external n8n instance - the human approves an externally visible, live workflow from a summary written by the gated party, and the deploy leaves no decision record of what was shown",
+"evaluatedAgainst":"sha256-b2:52d7f3cfb87a79d9","evaluatedRevision":22,
+"techniques":[
+{"technique":"consent-gates","verdict":"deviation","evidence":"src/features/agents/sub_connectors/components/automation/AutomationConditionStep.tsx:53 informed consent requires the operation with its actual parameters bound; the preview discloses the AI recommendation, not the workflow nodes deployed at src-tauri/src/engine/platforms/deploy.rs:136"},
+{"technique":"decision-records","verdict":"deviation","evidence":"src/features/agents/sub_connectors/libs/useAutomationSetup.ts:229 the Deploy click goes straight to deployAutomation; no record of who approved which design version having seen what is written, only the resulting automation row"},
+{"technique":"resume-after-decision","verdict":"realized (exactly-once traversal)","evidence":"src/features/agents/sub_connectors/libs/useAutomationSetup.ts:216 a synchronous in-flight ref blocks a double-submitted deploy"}]},
+{"context":"a6843b83-43a1-4eab-ae40-26f23b949a0d","subject":"hitl-approval","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/hooks/execution/usePersonaExecution.ts:172 the context's only contact with human review is firing a notification check after a run; these hooks consume the execution stream and own no consequence boundary, pause state, decision surface, record or continuation - the gate lives in the review/approval contexts",
+"evaluatedAgainst":"sha256-b2:52d7f3cfb87a79d9","evaluatedRevision":22,
+"techniques":[],
+"registryProposal":"matcher resonance on 'execution/scope/changes' tokens; hooks that stream execution output are not governed by hitl-approval"}],
+"declined":[
+{"subject":"hitl-approval","context":"942d2449-34ab-4f02-af7e-b130269d10ef","reason":"context code is gone: its entry points src/features/fleet/monitor/triage/triageModel.ts and MonitorProjectColumns.tsx are absent from git ls-files and file_paths is empty; a dead context, not judgeable"},
+{"subject":"hitl-approval","context":"c413de7d-1182-4abc-8a08-9c8832254c62","reason":"context drifted: its paths are sub_missionControl cards while the Director code it names now lives at src/features/companions/overseer/; judging either would judge the wrong code - needs a context-map rescan"},
+{"subject":"hitl-approval","context":"a1223fbb-1e53-471b-9829-075cce8014f8","reason":"unread this run (budget); probable match on arena 'decision' vocabulary, likely an eval surface rather than a gate"},
+{"subject":"hitl-approval","context":"7826a48f-5883-4f26-8476-c3c515bda745","reason":"unread this run (budget)"},
+{"subject":"hitl-approval","context":"ad601e35-b998-4029-97a5-77487f00d561","reason":"unread this run (budget)"},
+{"subject":"hitl-approval","context":"ee9d4d9e-0414-4460-b159-5d9c7c4108a7","reason":"unread this run (budget); PendingAuthModal and GatewayMembersModal look like real consent surfaces worth the next read"},
+{"subject":"hitl-approval","context":"a38e2b93-2322-4187-befa-c0443c4ca85f","reason":"weak context - not judged by default"},
+{"subject":"hitl-approval","context":"11fe7642-7a1a-47c5-8910-499850aa04fe","reason":"weak context - not judged by default"}],
+"consults":[
+{"ts":"2026-10-16T18:22:31Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["resume-after-decision"],"deviations":1},
+{"ts":"2026-10-16T18:22:31Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["consent-gates","decision-records","resume-after-decision"],"deviations":2},
+{"ts":"2026-10-16T18:22:31Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":[],"deviations":0}]}

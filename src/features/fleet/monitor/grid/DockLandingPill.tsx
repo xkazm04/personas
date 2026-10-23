@@ -17,9 +17,7 @@
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DockLanding } from './dockLanding';
-
-const PILL =
-  "typo-code flex items-center gap-1 whitespace-nowrap rounded-pill border border-card-border bg-card-bg px-2 py-0.5 text-foreground [[data-theme^='light']_&]:border-primary/35 [[data-theme^='light']_&]:bg-secondary/50";
+import { DOCK_READING } from './dock/dockChrome';
 
 export function DockLandingPill({ landing }: { landing: DockLanding }) {
   const { t, tx } = useTranslation();
@@ -65,8 +63,8 @@ export function DockLandingPill({ landing }: { landing: DockLanding }) {
       }
       placement="top"
     >
-      <span className={PILL} aria-label={m.grid_dock_landing_aria} data-testid="quick-dispatch-landing">
-        <b className="font-semibold tabular-nums text-foreground">{label}</b>
+      <span className={DOCK_READING} aria-label={m.grid_dock_landing_aria} data-testid="quick-dispatch-landing">
+        <span className="typo-data tabular-nums text-foreground">{label}</span>
       </span>
     </Tooltip>
   );

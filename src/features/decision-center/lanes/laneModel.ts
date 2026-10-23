@@ -4,7 +4,7 @@
  * The routing law is the backend's (`decision_lanes_snapshot`, one Rust
  * function); nothing here re-derives a lane. This module only JOINS the
  * snapshot onto the roster's items (`LaneEntry.itemId === DecisionItem.id`),
- * adds the two frontend-derived kinds (`frontendLanes`), counts, and orders.
+ * adds the frontend-derived kinds (`frontendLanes`), counts, and orders.
  *
  * Four lanes reach the operator (Breach, Sign, Accept, Talk) plus Orphans,
  * which gets its own button. `held` and `evidence` are counts on a charter,
@@ -15,6 +15,8 @@
  * `failedSources`, fails every lane the snapshot feeds (any of its kinds can
  * land in Breach as a valve, or in Orphans), and keeps the names for the
  * tooltip. Talk is fed by the chat derivation alone and fails only with it.
+ * The lens-scan cards (spark one-control) feed Breach and Accept from
+ * `lens_scan_products`; a failed read of it fails those two lanes, by name.
  *
  * Order inside a lane: clause rank (stop > valve > risk > merge > spend >
  * scope > unsigned > none), then age (oldest first), then id. "What each item
@@ -37,6 +39,7 @@ import {
   type DecisionKind,
 } from '../model/decisionModel';
 import { frontendLaneOf, type FixedLane } from './frontendLanes';
+import { LENS_KINDS, type LensKind } from '../lens/lensKinds';
 
 /** The lanes that hold cards for the operator, in button order (keys 1-4). */
 export type OperatorLane = 'breach' | 'sign' | 'accept' | 'talk';
@@ -72,6 +75,8 @@ export interface LaneCountInputs {
   questions: number;
   /** Chat threads awaiting you (Talk, frontend-derived). */
   chat: { n: number; failed: boolean };
+  /** The lens-scan cards (frontend-derived, fixed lanes) and whether their read failed. */
+  lens?: { kinds: readonly LensKind[]; failed: boolean; source: string };
 }
 
 const CLAUSE_RANK: Record<LaneClause, number> = {
@@ -103,20 +108,32 @@ export function buildLaneCounts(input: LaneCountInputs): LaneCounts {
   }
   n.breach += input.questions;
   n.talk += input.chat.n;
+  const lensLanes = new Set<LaneKey>();
+  for (const kind of input.lens?.kinds ?? []) {
+    const fixed = frontendLaneOf(kind);
+    if (fixed && isLaneKey(fixed.lane)) n[fixed.lane] += 1;
+  }
+  for (const kind of LENS_KINDS) {
+    const fixed = frontendLaneOf(kind);
+    if (fixed && isLaneKey(fixed.lane)) lensLanes.add(fixed.lane);
+  }
 
   const failedSources = [
     ...(input.snapshotFailed ? [SNAPSHOT_SOURCE] : []),
     ...(input.snapshot?.failedSources ?? []),
   ];
+  const lensFailed = input.lens?.failed ? [input.lens.source] : [];
   // Before the first read lands there is nothing to count yet; that is
   // "loading", not "failed", and the strip shows its ghost until then.
-  const snapFailed = failedSources.length > 0;
-  const fed = (lane: LaneKey, lit: TriageTone): LaneCount => ({
-    n: n[lane],
-    lamp: n[lane] > 0 ? lit : 'neutral',
-    failed: snapFailed,
-    failedSources: snapFailed ? failedSources : [],
-  });
+  const fed = (lane: LaneKey, lit: TriageTone): LaneCount => {
+    const sources = lensLanes.has(lane) ? [...failedSources, ...lensFailed] : failedSources;
+    return {
+      n: n[lane],
+      lamp: n[lane] > 0 ? lit : 'neutral',
+      failed: sources.length > 0,
+      failedSources: sources,
+    };
+  };
   return {
     breach: fed('breach', stops > 0 ? 'danger' : 'warning'),
     sign: fed('sign', 'accent'),

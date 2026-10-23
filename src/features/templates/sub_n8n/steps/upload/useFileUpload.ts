@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { createLogger } from '@/lib/log';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 const logger = createLogger('n8n-import');
 import {
@@ -14,15 +15,16 @@ import type { FilePreview } from './n8nUploadTypes';
 import { MAX_FILE_SIZE, formatFileSize, extractYamlName } from './n8nUploadTypes';
 
 export function useFileUpload(onContentPaste?: (content: string, sourceName: string) => void) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   // The one message this hook gained; the registry already carries it in all
   // 14 locales, so the YAML branch is not a new hardcoded English string.
   const invalidYamlMessage = t.error_registry.workflow_invalid_yaml_message;
+  const n = t.templates.n8n;
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<FilePreview | null>(null);
   const mountedRef = useRef(true);
   const validatedFileRef = useRef<File | null>(null);
-  const validationGenerationRef = useRef(0);
+  const [latestValidation] = useState(createLatestWins);
   const activeReaderRef = useRef<FileReader | null>(null);
   const validatedContentRef = useRef<string | null>(null);
 
@@ -77,7 +79,7 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
 
   const validateAndPreview = useCallback(
     (file: File) => {
-      const generation = ++validationGenerationRef.current;
+      const generation = latestValidation.next();
       if (activeReaderRef.current?.readyState === FileReader.LOADING) {
         activeReaderRef.current.abort();
       }
@@ -86,11 +88,11 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
       validatedContentRef.current = null;
 
       if (!isSupportedFile(file.name)) {
-        setPreview({ kind: 'error', fileName: file.name, message: 'Unsupported file type. Accepts .json (n8n, Zapier, Make) or .yml/.yaml (GitHub Actions).' });
+        setPreview({ kind: 'error', fileName: file.name, message: n.import_err_unsupported_type });
         return;
       }
       if (file.size > MAX_FILE_SIZE) {
-        setPreview({ kind: 'error', fileName: file.name, message: `File is too large (${formatFileSize(file.size)}). Maximum size is 5 MB.` });
+        setPreview({ kind: 'error', fileName: file.name, message: tx(n.import_err_file_too_large, { size: formatFileSize(file.size), max: formatFileSize(MAX_FILE_SIZE) }) });
         return;
       }
 
@@ -100,10 +102,10 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
       const reader = new FileReader();
       activeReaderRef.current = reader;
       reader.onload = (e) => {
-        if (!mountedRef.current || generation !== validationGenerationRef.current) return;
+        if (!mountedRef.current || !latestValidation.isCurrent(generation)) return;
         const content = e.target?.result as string;
         if (!content || content.length === 0) {
-          setPreview({ kind: 'error', fileName: file.name, message: 'File is empty.' });
+          setPreview({ kind: 'error', fileName: file.name, message: n.import_err_file_empty });
           return;
         }
 
@@ -126,13 +128,13 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
 
           const detection = detectWorkflowPlatform(yamlDoc, ext);
           if (detection.platform === 'unknown') {
-            setPreview({ kind: 'error', fileName: file.name, message: 'No "jobs" key found. This does not appear to be a GitHub Actions workflow.' });
+            setPreview({ kind: 'error', fileName: file.name, message: n.import_err_no_jobs });
             return;
           }
 
           const { count } = countElements(yamlDoc);
           const parsedName = typeof yamlDoc.name === 'string' ? yamlDoc.name.trim() : '';
-          const workflowName = parsedName || extractYamlName(content) || 'GitHub Actions Workflow';
+          const workflowName = parsedName || extractYamlName(content) || n.import_name_github;
           validatedFileRef.current = file;
           validatedContentRef.current = content;
 
@@ -147,17 +149,17 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
 
         let json: Record<string, unknown>;
         try { json = JSON.parse(content) as Record<string, unknown>; }
-        catch { setPreview({ kind: 'error', fileName: file.name, message: 'Invalid JSON \u2014 could not parse file contents.' }); return; }
+        catch { setPreview({ kind: 'error', fileName: file.name, message: n.import_err_invalid_json_file }); return; }
 
         const { count } = countElements(json);
         if (count === 0) {
-          setPreview({ kind: 'error', fileName: file.name, message: 'No recognized workflow structure found. Supports n8n, Zapier, Make, and GitHub Actions exports.' });
+          setPreview({ kind: 'error', fileName: file.name, message: n.import_err_no_structure_file });
           return;
         }
 
         const platform = detectPlatformLabel(json);
         const workflowName = typeof json.name === 'string' && json.name ? json.name
-          : typeof json.title === 'string' && json.title ? json.title : 'Untitled Workflow';
+          : typeof json.title === 'string' && json.title ? json.title : n.import_name_untitled;
 
         logger.debug('Validation OK', { platform, workflowName, elementCount: count });
 
@@ -166,13 +168,13 @@ export function useFileUpload(onContentPaste?: (content: string, sourceName: str
         setPreview({ kind: 'valid', fileName: file.name, fileSize: formatFileSize(file.size), workflowName, nodeCount: count, platform });
       };
       reader.onerror = () => {
-        if (!mountedRef.current || generation !== validationGenerationRef.current) return;
+        if (!mountedRef.current || !latestValidation.isCurrent(generation)) return;
         logger.warn('FileReader error', { fileName: file.name });
-        setPreview({ kind: 'error', fileName: file.name, message: 'Failed to read the file.' });
+        setPreview({ kind: 'error', fileName: file.name, message: n.import_err_read_failed });
       };
       reader.readAsText(file);
     },
-    [invalidYamlMessage],
+    [invalidYamlMessage, latestValidation, n, tx],
   );
 
   const handleDrop = useCallback((e: React.DragEvent) => {

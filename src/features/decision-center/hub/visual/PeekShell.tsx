@@ -20,7 +20,7 @@
  * Escape would close the Monitor behind it. Deferred, the keyboard hook still
  * owns Escape; the close only lands if the same chip's peek is still open.
  */
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -28,14 +28,13 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 
-import type { ChipCount, HubChip } from '../../model/decisionModel';
+import type { ChipCount } from '../../model/decisionModel';
 import { Keycap } from '../../deck/parts';
-import { CHIP_ICON, chipLabel } from '../chipMeta';
 import { PEEK_ENTER, PEEK_EXIT, peekTransition } from './peekMotion';
 
 /**
- * What a peek that hangs from something other than a chip calls itself: a
- * mandate lane (setting `lanes`). `id` lands on `data-chip` for tests.
+ * What a peek calls itself: a mandate lane, or Ready. `id` lands on
+ * `data-chip` for tests.
  */
 export interface PeekIdentity {
   id: string;
@@ -47,11 +46,9 @@ export interface PeekIdentity {
 const GUTTER = 16;
 
 export function PeekShell({
-  chip, identity, lamp, count, anchor, actions, footer, onClose, children,
+  identity, lamp, count, anchor, actions, footer, onClose, children,
 }: {
-  /** The chip it belongs to; null when `identity` names it instead. */
-  chip: HubChip | null;
-  identity?: PeekIdentity;
+  identity: PeekIdentity;
   /** The chip's lamp — the glass is lit from its corner in that tone. */
   lamp: ChipCount['lamp'];
   /** How many wait; null while the list has not been read. */
@@ -59,7 +56,7 @@ export function PeekShell({
   /** The chip it hangs from. */
   anchor: HTMLElement | null;
   actions?: ReactNode;
-  /** Extra key hints printed in the footer, before Esc. */
+  /** Extra walk keys printed after the arrows (the lane peek's 1-4 and O). */
   footer?: ReactNode;
   onClose: () => void;
   children: ReactNode;
@@ -71,10 +68,21 @@ export function PeekShell({
   const anchorRef = useRef<HTMLElement | null>(anchor);
   anchorRef.current = anchor;
   const [left, setLeft] = useState(0);
-  const label = identity?.label ?? (chip ? chipLabel(m, chip) : '');
-  const Icon = identity?.icon ?? (chip ? CHIP_ICON[chip] : CHIP_ICON.gates);
-  const isReady = chip === 'ready';
-  const tone = isReady ? 'success' : lamp;
+  const { label, icon: Icon } = identity;
+  const tone = lamp;
+
+  // The peek takes the focus while it is open and gives it back to its chip
+  // when it closes. Taking it is what hides the chip's own tooltip (a tip
+  // hides on blur), so the tip never sits over the peek's header; the keys
+  // stay the app keyboard's, which listens on the window.
+  useEffect(() => {
+    const el = panel.current;
+    el?.focus({ preventScroll: true });
+    return () => {
+      const at = document.activeElement;
+      if (el && (at === null || at === document.body || el.contains(at))) anchorRef.current?.focus({ preventScroll: true });
+    };
+  }, []);
 
   const deferredClose = useCallback(() => { setTimeout(onClose, 0); }, [onClose]);
   const inside = useMemo(() => [panel, anchorRef] as const, []);
@@ -105,15 +113,16 @@ export function PeekShell({
       ref={panel}
       role="dialog"
       aria-modal={false}
+      tabIndex={-1}
       aria-label={tx(m.dc_hub_peek_aria, { label })}
       initial={PEEK_ENTER(still)}
       animate={{ opacity: 1, y: 0, scaleY: 1 }}
       exit={PEEK_EXIT(still)}
       transition={peekTransition}
       style={{ left, transformOrigin: 'top left' }}
-      className={`au-scope au-glass au-hair au-l-${tone} au-t-${tone === 'neutral' ? 'accent' : tone} absolute top-full z-30 mt-2 flex max-h-[70vh] w-[500px] max-w-[calc(100vw-32px)] flex-col rounded-modal`}
+      className={`au-scope au-glass au-hair au-l-${tone} au-t-${tone === 'neutral' ? 'accent' : tone} absolute top-full z-30 mt-2 flex outline-none max-h-[70vh] w-[500px] max-w-[calc(100vw-32px)] flex-col rounded-modal`}
       data-testid="decision-peek"
-      data-chip={identity?.id ?? chip ?? undefined}
+      data-chip={identity.id}
       data-still={still ? '' : undefined}
     >
       <header className="flex flex-shrink-0 items-center gap-2.5 px-4 pb-2 pt-3">
@@ -130,8 +139,9 @@ export function PeekShell({
       {children}
       <footer className="flex flex-shrink-0 items-center gap-1.5 border-t border-primary/10 px-4 py-2 typo-caption" aria-hidden>
         <Keycap>↑</Keycap><Keycap>↓</Keycap> {m.dc_hub_key_move}
-        <Keycap className="ml-2">←</Keycap><Keycap>→</Keycap> {m.dc_hub_key_walk}
-        {footer}
+        {/* One walk hint: the arrows, then the lane keys the lane peek adds,
+            then the word they all share ("chips" until the WP10 cutover). */}
+        <Keycap className="ml-2">←</Keycap><Keycap>→</Keycap>{footer} {m.ml_lane_key_lanes}
         <span className="ml-auto flex items-center gap-1.5"><Keycap>Esc</Keycap> {t.common.close}</span>
       </footer>
     </motion.div>

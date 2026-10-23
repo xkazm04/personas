@@ -25,7 +25,7 @@ export function PersonaWalkthroughWidget({ config, title, span, actions, footer 
   const heading = title || t.athena.walkthrough_title;
 
   if (!content) {
-    return <Tile span={span} title={heading} actions={actions} footer={footer} state="empty" empty={{ title: t.athena.walkthrough_empty }} />;
+    return <Tile span={span} title={heading} actions={actions} footer={footer} state="empty" empty={{ art: 'agents', title: t.athena.walkthrough_empty }} />;
   }
 
   return (

@@ -3,7 +3,8 @@ import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { DecisionRow } from '@/features/shared/components/decisions/DecisionRow';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
-import { STATUS_LABELS, resolveReviewSeverity } from '../libs/reviewHelpers';
+import { reviewStatusLabel, resolveReviewSeverity } from '../libs/reviewHelpers';
+import { useTranslation } from '@/i18n/useTranslation';
 import { AutoResolvedBadge } from './AutoResolvedBadge';
 import type { ManualReviewItem } from '@/lib/types/types';
 
@@ -118,14 +119,19 @@ interface InboxItemProps {
  * pill, cloud badge, auto-resolved badge — ride in the `meta` slot.
  */
 export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
-  const status = STATUS_COLORS[review.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.pending;
-  const statusLabel = STATUS_LABELS[review.status] ?? 'Pending';
+  const { t } = useTranslation();
+  // `resolved` (the stale-review sweep's verdict) has no colour of its own in
+  // the status palette; it reads as informational, never as pending.
+  const status = review.status === 'resolved'
+    ? STATUS_COLORS.info
+    : STATUS_COLORS[review.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.pending;
+  const statusLabel = reviewStatusLabel(t, review.status);
 
   return (
     <DecisionRow
       record={{
         id: review.id,
-        title: review.persona_name || 'Unknown',
+        title: review.persona_name || t.overview.review.unknown_persona,
         summary: review.content.slice(0, 80),
         timestamp: review.created_at,
       }}
@@ -148,7 +154,7 @@ export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
           </span>
           {review.source === 'cloud' && (
             <StatusBadge accent="indigo" size="sm" className="rounded typo-caption" icon={<Cloud className="w-2.5 h-2.5" />}>
-              Cloud
+              {t.overview.review.cloud_badge}
             </StatusBadge>
           )}
           <AutoResolvedBadge review={review} />

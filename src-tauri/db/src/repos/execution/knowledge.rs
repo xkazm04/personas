@@ -1,4 +1,4 @@
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 use tracing::warn;
 
 use crate::models::{ExecutionKnowledge, KnowledgeGraphSummary};
@@ -68,13 +68,14 @@ pub fn upsert(
             let mut new_data: serde_json::Value = serde_json::from_str(pattern_data)
                 .unwrap_or_else(|_| serde_json::Value::Object(Default::default()));
 
+            // Only a missing row starts a fresh history; a real read error aborts.
             let existing: Option<String> = tx
             .query_row(
                 "SELECT pattern_data FROM execution_knowledge WHERE persona_id = ?1 AND knowledge_type = ?2 AND pattern_key = ?3",
                 params![persona_id, knowledge_type, pattern_key],
                 |row| row.get(0),
             )
-            .ok();
+            .optional()?;
 
             let mut recent: Vec<bool> = existing
                 .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
@@ -233,6 +234,17 @@ fn fnv1a_hash(input: &str) -> u64 {
     hash
 }
 
+/// The annotation doors only touch annotation rows; zero affected rows means
+/// the id is unknown or names a learned pattern, which is not theirs to change.
+fn require_annotation_hit(changed: usize, knowledge_id: &str) -> Result<(), AppError> {
+    if changed == 0 {
+        return Err(AppError::NotFound(format!(
+            "Knowledge annotation {knowledge_id}"
+        )));
+    }
+    Ok(())
+}
+
 /// Mark a knowledge annotation as verified by a user.
 pub fn verify_annotation(pool: &DbPool, knowledge_id: &str) -> Result<(), AppError> {
     timed_query!(
@@ -241,11 +253,11 @@ pub fn verify_annotation(pool: &DbPool, knowledge_id: &str) -> Result<(), AppErr
         {
             let conn = pool.conn("knowledge::verify_annotation")?;
             let now = chrono::Utc::now().to_rfc3339();
-            conn.execute(
-            "UPDATE execution_knowledge SET is_verified = 1, confidence = 1.0, updated_at = ?1 WHERE id = ?2",
+            let changed = conn.execute(
+            "UPDATE execution_knowledge SET is_verified = 1, confidence = 1.0, updated_at = ?1              WHERE id = ?2 AND knowledge_type IN ('user_annotation', 'agent_annotation')",
             params![now, knowledge_id],
         )?;
-            Ok(())
+            require_annotation_hit(changed, knowledge_id)
         }
     )
 }
@@ -257,11 +269,11 @@ pub fn dismiss_annotation(pool: &DbPool, knowledge_id: &str) -> Result<(), AppEr
         "knowledge_entries::dismiss_annotation",
         {
             let conn = pool.conn("knowledge::dismiss_annotation")?;
-            conn.execute(
-                "DELETE FROM execution_knowledge WHERE id = ?1",
+            let changed = conn.execute(
+                "DELETE FROM execution_knowledge                  WHERE id = ?1 AND knowledge_type IN ('user_annotation', 'agent_annotation')",
                 params![knowledge_id],
             )?;
-            Ok(())
+            require_annotation_hit(changed, knowledge_id)
         }
     )
 }
@@ -574,6 +586,152 @@ mod tests {
         .unwrap();
         let id = persona.id.clone();
         (pool, id)
+    }
+
+    /// A real read error on the prior row (here: a BLOB stored where the
+    /// `pattern_data` TEXT is read) must abort the upsert. Only a missing row
+    /// starts a fresh `recentResults` window; mapping every error to "no row"
+    /// restarted the sparkline while the counters kept accumulating.
+    #[test]
+    fn a_prior_row_read_error_aborts_the_upsert_instead_of_resetting_history() {
+        let (pool, persona_id) = setup();
+        for i in 0..3 {
+            upsert(
+                &pool,
+                &persona_id,
+                None,
+                "tool_sequence",
+                "k",
+                "{}",
+                true,
+                0.0,
+                1.0,
+                &format!("exec-{i}"),
+            )
+            .unwrap();
+        }
+        {
+            let conn = pool.conn("test:knowledge-blob").unwrap();
+            conn.execute(
+                "UPDATE execution_knowledge SET pattern_data = x'DEADBEEF' WHERE pattern_key = 'k'",
+                [],
+            )
+            .unwrap();
+        }
+        let res = upsert(
+            &pool,
+            &persona_id,
+            None,
+            "tool_sequence",
+            "k",
+            "{}",
+            false,
+            0.0,
+            1.0,
+            "exec-3",
+        );
+        assert!(
+            res.is_err(),
+            "a read error must propagate, not restart the window"
+        );
+        let conn = pool.conn("test:knowledge-blob-after").unwrap();
+        let (succ, fail): (i64, i64) = conn
+            .query_row(
+                "SELECT success_count AS s, failure_count AS f FROM execution_knowledge WHERE pattern_key = 'k'",
+                [],
+                |r| Ok((r.get("s")?, r.get("f")?)),
+            )
+            .unwrap();
+        assert_eq!(
+            (succ, fail),
+            (3, 0),
+            "counters must not advance on an aborted upsert"
+        );
+    }
+
+    #[test]
+    fn annotation_doors_refuse_learned_patterns_and_unknown_ids() {
+        let (pool, persona_id) = setup();
+        upsert(
+            &pool,
+            &persona_id,
+            None,
+            "tool_sequence",
+            "learned",
+            "{}",
+            true,
+            0.0,
+            1.0,
+            "exec-1",
+        )
+        .unwrap();
+        let learned_id = list_for_persona(&pool, &persona_id, None, None).unwrap()[0]
+            .id
+            .clone();
+
+        assert!(matches!(
+            dismiss_annotation(&pool, &learned_id),
+            Err(AppError::NotFound(_))
+        ));
+        assert!(matches!(
+            verify_annotation(&pool, &learned_id),
+            Err(AppError::NotFound(_))
+        ));
+        assert!(matches!(
+            dismiss_annotation(&pool, "no-such-id"),
+            Err(AppError::NotFound(_))
+        ));
+        let rows = list_for_persona(&pool, &persona_id, None, None).unwrap();
+        assert_eq!(rows.len(), 1, "learned pattern must survive dismiss");
+        assert!(!rows[0].is_verified, "learned pattern must not be verified");
+    }
+
+    /// Now that an annotation row can exist (e71 widened the type CHECK), the
+    /// positive path of the annotation doors: verify marks it verified at full
+    /// confidence, dismiss deletes it, and neither touches a learned pattern.
+    #[test]
+    fn annotation_doors_verify_and_dismiss_a_real_annotation_row() {
+        let (pool, persona_id) = setup();
+        upsert(
+            &pool,
+            &persona_id,
+            None,
+            "tool_sequence",
+            "learned",
+            "{}",
+            true,
+            0.0,
+            1.0,
+            "exec-1",
+        )
+        .unwrap();
+        let note = upsert_annotation(
+            &pool,
+            &persona_id,
+            "global",
+            None,
+            "prefer retries",
+            "user",
+            None,
+        )
+        .unwrap();
+        assert_eq!(note.knowledge_type, "user_annotation");
+        assert!(!note.is_verified);
+
+        verify_annotation(&pool, &note.id).unwrap();
+        let verified = list_for_persona(&pool, &persona_id, Some("user_annotation"), None).unwrap();
+        assert_eq!(verified.len(), 1);
+        assert!(verified[0].is_verified);
+        assert!((verified[0].confidence - 1.0).abs() < f64::EPSILON);
+
+        dismiss_annotation(&pool, &note.id).unwrap();
+        let rest = list_for_persona(&pool, &persona_id, None, None).unwrap();
+        assert_eq!(rest.len(), 1, "only the annotation is dismissed");
+        assert_eq!(rest[0].knowledge_type, "tool_sequence");
+        assert!(matches!(
+            dismiss_annotation(&pool, &note.id),
+            Err(AppError::NotFound(_))
+        ));
     }
 
     /// The first test this file has ever had, and it FAILED on its first run

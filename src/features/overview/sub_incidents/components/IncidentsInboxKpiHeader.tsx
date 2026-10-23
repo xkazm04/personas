@@ -24,7 +24,8 @@ interface Props {
    * on screen.
    */
   autonomous?: {
-    count: number;
+    /** `null` when the autonomous read failed with nothing to show. */
+    count: number | null;
     active: boolean;
     onToggle: () => void;
   };
@@ -72,6 +73,9 @@ function filtersMatch(a: IncidentFilters, b: IncidentFilters): boolean {
 export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, autonomous, pending = false }: Props) {
   const { t } = useTranslation();
   const ghost = pending && summary === null;
+  // Settled with no summary = the read FAILED (a success always sets one). The
+  // tiles then say "not measured", never a 0 that reads as an all-clear.
+  const unmeasured = !pending && summary === null;
   const open = Number(summary?.open ?? 0);
   const ack = Number(summary?.acknowledged ?? 0);
   const resolved = Number(summary?.resolved ?? 0);
@@ -85,7 +89,7 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, auto
     <div className={`grid grid-cols-2 gap-3 ${autonomous ? 'md:grid-cols-5' : 'md:grid-cols-4'}`}>
       <Tile
         label={t.overview.incidents.kpi_open}
-        value={open}
+        value={unmeasured ? null : open}
         ghost={ghost}
         Icon={AlertCircle}
         tone="warning"
@@ -94,7 +98,7 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, auto
       />
       <Tile
         label={t.overview.incidents.kpi_critical}
-        value={critical}
+        value={unmeasured ? null : critical}
         ghost={ghost}
         Icon={AlertTriangle}
         tone="danger"
@@ -104,7 +108,7 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, auto
       />
       <Tile
         label={t.overview.incidents.kpi_acknowledged}
-        value={ack}
+        value={unmeasured ? null : ack}
         ghost={ghost}
         Icon={Activity}
         tone="info"
@@ -113,7 +117,7 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, auto
       />
       <Tile
         label={t.overview.incidents.kpi_resolved}
-        value={resolved}
+        value={unmeasured ? null : resolved}
         ghost={ghost}
         Icon={CheckCircle2}
         tone="success"
@@ -134,9 +138,13 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters, auto
   );
 }
 
+/** Rendered where a figure could not be read, never a 0 (see `unmeasured`). */
+const UNMEASURED = '—';
+
 interface TileProps {
   label: string;
-  value: number;
+  /** `null` = the read failed; renders UNMEASURED instead of a fabricated 0. */
+  value: number | null;
   Icon: typeof AlertCircle;
   tone: 'warning' | 'danger' | 'info' | 'success';
   /** Optional plain-language framing shown under the value (e.g. urgency). */
@@ -175,7 +183,7 @@ function Tile({ label, value, Icon, tone, sublabel, active, onClick, ghost = fal
             style={{ animationDelay: '120ms' }}
           />
         ) : (
-          <span className="typo-heading text-foreground">{value}</span>
+          <span className="typo-heading text-foreground">{value ?? UNMEASURED}</span>
         )}
         {sublabel && <span className="typo-caption text-foreground truncate">{sublabel}</span>}
       </div>

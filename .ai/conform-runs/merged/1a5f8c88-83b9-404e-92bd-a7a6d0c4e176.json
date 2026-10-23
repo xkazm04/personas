@@ -1,0 +1,123 @@
+{
+  "schema": "conform-run/1",
+  "worker": "1a5f8c88-83b9-404e-92bd-a7a6d0c4e176",
+  "subject": "test-harness",
+  "evaluatedAt": "2026-10-16T18:08:00Z",
+  "pairs": [
+    {
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:5521806124d93882",
+      "evaluatedRevision": 26,
+      "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:66 is named 'still shows the empty copy' but never asserts linked_decisions_empty; Tile renders its testid in the loading frame (src/features/shared/components/kit/Tiles.tsx:104, LinkedDecisionsWidget.tsx:106), so both waitFors and the :73 check pass before the mock resolves and an empty success rendered as an error stays green",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:66 the empty-success decision is never reached: every assertion is satisfied by the loading frame, and the name overstates what is pinned"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "realized",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:101 the unmount check is not vacuous: RecentDecisionsWidget starts loading=true and renders, so the waitFor must observe a transition, and the error cases (:46, :80) carry their retry controls"
+        }
+      ]
+    },
+    {
+      "context": "959baa73-f18f-42c8-8569-466939b9050d",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:5521806124d93882",
+      "evaluatedRevision": 26,
+      "evidence": "src/features/notepad/plan/shipReadinessPublish.ts:27 declares a cross-language JSON contract with ship_ops::SnapDoc (src-tauri/src/companion/ship_ops.rs:131, every field serde-default), but the TS test asserts TS literals (src/features/notepad/plan/__tests__/shipAthena.test.ts:169) and the Rust test parses its own hand-written literal (ship_ops.rs:795); a renamed field on either side defaults silently to empty and both suites stay green",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/ship_ops.rs:795 the reader is driven by a literal, not by buildReadinessPayload output; the crossing is a string-marshalled setting, not a typed call, so the technique's typed-crossing exemption does not hold"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "realized",
+          "evidence": "src/features/notepad/__tests__/ShipCertifyModal.test.tsx:8 builds view models from the shared @/lib/milestone/__tests__/shipFixtures builders rather than hand-rolling rows per file (also useProjectPlanLoad.test.tsx:6)"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "realized",
+          "evidence": "src/features/notepad/__tests__/useProjectPlanLoad.test.tsx:73 failure tests carry their success control in the same file (:94 clears the failure, NotePlanRuns.test.tsx:44 checks the previous note does not linger)"
+        }
+      ],
+      "registryProposal": "assert-through-the-reader exempts 'the reader is the product itself', yet a same-repo reader in another language (TS writer, serde reader with default) fails exactly like a foreign one; unreached-decisions-pin-nothing covers it only via its typed-crossing clause. Name the cross-language in-repo case explicitly in one of them."
+    },
+    {
+      "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:5521806124d93882",
+      "evaluatedRevision": 26,
+      "evidence": "src/features/plugins/dev-tools/sub_projects/githubRepoPaging.ts:1 says the module exists so the three credential outcomes can be gated without rendering, but the none/unhealthy/ready decision stays inline in GitHubRepoSelector.tsx:100 and no test drives it; githubRepoPaging.test.ts:12 names the stale-PAT collapse as the bug and pins only the Link-header walk, so the original defect can return green",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/GitHubRepoSelector.tsx:100 the credential-state decision was not lifted into the reachable unit its header claims; only the RepoCredState type moved"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "realized",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/projectPulse.test.tsx:15 the null-vs-zero gate carries all three fixtures (never-scanned, clean :34, busy :22) and the never-scanned render (:63) asserts both absence of a number and absence of the clean cell"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "test-harness",
+      "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+      "reason": "recipe-build-models matched on suite/build/assertion, which here name the Lab product types (src-tauri/core/src/models/test_suite.rs, output_assertion.rs), not harness machinery; its inline tests (src-tauri/core/src/models/recipe.rs:699) read sound with a positive control per case, but a context of domain types reaches too few of 24 techniques to clear the conformant evidence floor, so left unknown rather than guessed"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T18:08:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "unreached-decisions-pin-nothing",
+        "negative-control-tests"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T18:08:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "unreached-decisions-pin-nothing",
+        "fixture-economics",
+        "negative-control-tests"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T18:08:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "unreached-decisions-pin-nothing",
+        "negative-control-tests"
+      ],
+      "deviations": 1
+    }
+  ]
+}

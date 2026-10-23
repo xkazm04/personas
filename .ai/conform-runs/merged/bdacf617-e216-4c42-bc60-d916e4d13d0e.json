@@ -1,0 +1,178 @@
+{
+ "schema": "conform-run/1",
+ "worker": "bdacf617-e216-4c42-bc60-d916e4d13d0e",
+ "subject": "data-access",
+ "evaluatedAt": "2026-10-22T02:49:06Z",
+ "pairs": [
+  {
+   "context": "06ef5a64-1796-4637-a4d9-f860bbe67562",
+   "subject": "data-access",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "docs/features/recipes/README.md:242 the context's only code (features/recipes/sub_playground) was deleted 2026-09-25 in 450f1c9e5c and git ls-files has no file under src/features/recipes, so no query, decode seam or write door remains for the subject to govern",
+   "techniques": [
+    {
+     "technique": "layering-rules",
+     "verdict": "not-applicable",
+     "evidence": "docs/features/recipes/README.md:242 execute_recipe/start_recipe_execution have no frontend caller since sub_playground was deleted"
+    }
+   ],
+   "registryProposal": "recipes-playground is a dead context (entry points all deleted); the context map should retire it so the matcher stops pairing subjects to it"
+  },
+  {
+   "context": "a8857307-216c-46e0-9571-e05e8cf06112",
+   "subject": "data-access",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:161 batch archive still awaits the singular archivePersona IPC once per selected id in a loop (restore likewise at :185); src/api/agents/personas.ts:83 is the only archive door, so an N-row bulk action is N sequential round trips with no set-shaped operation",
+   "techniques": [
+    {
+     "technique": "batching-and-n-plus-one",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:161 per-id archivePersona in a for-loop; no bulk archive/restore command exists"
+    }
+   ]
+  },
+  {
+   "context": "320d2cea-9761-4233-97c1-ee2eaf4d6c17",
+   "subject": "data-access",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 get_by_execution_id (single-record read by identity) still decodes spans with unwrap_or_default(), so a corrupt trace returns as a present trace with zero spans rather than a loud decode error",
+   "techniques": [
+    {
+     "technique": "row-mapping",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/execution/traces.rs:59 serde_json::from_str(&spans_json).unwrap_or_default() inside a query_row single-record read"
+    }
+   ]
+  },
+  {
+   "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+   "subject": "data-access",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/core/src/models/build_session.rs:492 PersistedBuildSession decode still maps a corrupt resolved_cells column to an empty default (unwrap_or_default) and pending_question to None via .ok() at :496, so an unreadable persisted session reads as an empty one instead of failing loud",
+   "techniques": [
+    {
+     "technique": "row-mapping",
+     "verdict": "deviation",
+     "evidence": "src-tauri/core/src/models/build_session.rs:492 serde_json::from_str(&s.resolved_cells).unwrap_or_default()"
+    }
+   ]
+  },
+  {
+   "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573",
+   "subject": "data-access",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:254 still calls listScans once per project under mapWithConcurrency (listGoals per project at :326) because the API offers only per-parent reads; no children-of-parents operation grouped by project exists, so the N+1 is bounded, not removed",
+   "techniques": [
+    {
+     "technique": "batching-and-n-plus-one",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:254 const rows = await listScans(id, SCAN_PER_PROJECT) per project id"
+    }
+   ]
+  },
+  {
+   "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+   "subject": "data-access",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:47 still hand-escapes a Redis key and splices it into TYPE command text at :48, a second quoting implementation beside src/features/vault/sub_databases/introspectionQueries.ts:147 escapeRedisGlob instead of one audited escaping door or a bound argument",
+   "techniques": [
+    {
+     "technique": "query-construction",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:47 key.replace(...) then TYPE \"${escapedKey}\" at :48"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "data-access",
+   "context": "511ca12f-50df-4941-84e1-e2d74a3dff85",
+   "reason": "capability-config-view is a weak context; the match itself is doubtful, left as a coverage question rather than judged"
+  },
+  {
+   "subject": "data-access",
+   "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+   "reason": "db deviation judged 2026-10-21 against the current digest; not re-read this run (budget)"
+  },
+  {
+   "subject": "data-access",
+   "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474",
+   "reason": "supabase-sync-pipeline deviation judged 2026-10-21 against the current digest; not re-read this run (budget)"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T02:49:06Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "data-access"
+   ],
+   "techniques": [
+    "layering-rules"
+   ],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-22T02:49:06Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "data-access"
+   ],
+   "techniques": [
+    "batching-and-n-plus-one"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-22T02:49:06Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "data-access"
+   ],
+   "techniques": [
+    "row-mapping"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-22T02:49:06Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "data-access"
+   ],
+   "techniques": [
+    "row-mapping"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-22T02:49:06Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "data-access"
+   ],
+   "techniques": [
+    "batching-and-n-plus-one"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-22T02:49:06Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "data-access"
+   ],
+   "techniques": [
+    "query-construction"
+   ],
+   "deviations": 1
+  }
+ ]
+}

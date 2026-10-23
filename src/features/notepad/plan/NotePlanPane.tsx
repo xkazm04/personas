@@ -201,7 +201,9 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
             {t.notepad.plan_milestone_missing}
           </p>
         ) : tab === 'plan' ? (
-          composing ? (
+          // `editable` as well as `composing`: a shipped plan is a record, and
+          // the runs tab's summary used to reach the composer on one anyway.
+          composing && editable ? (
             <ShipMilestoneComposer vm={vm} ship={plan.ship} onBack={() => setComposing(false)} />
           ) : (
             <NotePlanLedger vm={vm} ship={plan.ship} editable={editable} t={t} tx={tx} />
@@ -213,7 +215,7 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
         ) : (
           <NotePlanRuns
             noteId={note.id}
-            onCompose={() => { setTab('plan'); setComposing(true); }}
+            onCompose={editable ? () => { setTab('plan'); setComposing(true); } : undefined}
           />
         )}
         </div>

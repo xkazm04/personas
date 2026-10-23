@@ -1,0 +1,12 @@
+{"schema":"conform-run/1","worker":"221087c8-5061-4342-9ddd-a13f0cddbd4c","subject":"retry-backoff","evaluatedAt":"2026-10-16T17:56:07Z",
+ "pairs":[{"context":"a3cb83b5-7325-4d1c-b10d-b249ab1a186f","subject":"retry-backoff","bundle":"software-engineering","state":"deviation",
+  "evidence":"src/features/plugins/dev-tools/sub_runner/selfHealing.ts:100 heal cap is looked up by row id in session memory while every retry mints a new row whose persisted attempt (src-tauri/db/src/repos/dev/tasks.rs:963) is never checked, so auto-heal retries each child failure afresh and the lineage is unbounded - re-confirmed at registry 11037a6c",
+  "evaluatedAgainst":"sha256-b2:4ca1a8af506f44d9","evaluatedRevision":13,
+  "techniques":[
+   {"technique":"durable-retries","verdict":"deviation","evidence":"src-tauri/db/src/repos/dev/tasks.rs:963 attempt is persisted per lineage but the ceiling lives in in-memory HealingAttempt keyed by row id (src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:78), so the budget neither survives a remount nor follows the new child row"},
+   {"technique":"error-classification-for-retry","verdict":"deviation","evidence":"src/features/plugins/dev-tools/sub_runner/selfHealing.ts:45 retryability is decided by regex over error+description+title at the UI call site, so a task whose title says 'fix type error' is classed build_error regardless of how it actually failed"},
+   {"technique":"backoff-design","verdict":"deviation","evidence":"src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:138 auto-heal re-dispatches a fresh failure in the same effect tick with no delay or jitter, so a deterministic failure loops back-to-back"},
+   {"technique":"jittered-revocation-with-irrevocable-terminal","verdict":"not-applicable","evidence":"src-tauri/db/src/repos/dev/tasks.rs:944 retry re-runs a local dev task; no issued credential to revoke (stage: multi-service)"}],
+  "registryProposal":"durable-retries step 4 (identity-survives-reuse) could name the retry-as-new-row lineage shape explicitly: when each attempt is a fresh row with parent/attempt columns, the budget must key on the lineage root or the persisted attempt, never the row id - a recurring way the ladder silently resets."}],
+ "declined":[],
+ "consults":[{"ts":"2026-10-16T17:56:07Z","bundle":"software-engineering","subjects":["retry-backoff"],"techniques":["durable-retries","error-classification-for-retry","backoff-design","jittered-revocation-with-irrevocable-terminal"],"deviations":1}]}

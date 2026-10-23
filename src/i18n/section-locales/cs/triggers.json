@@ -41,12 +41,14 @@
   "budget_label": "Rozpočet",
   "build_validation": {
     "composite_min_conditions": "Kombinované spouštěče vyžadují alespoň 2 podmínky.",
+    "composite_window_maximum": "Časové okno může být nejvýše 24 hodin (86400 sekund).",
     "composite_window_minimum": "Časové okno musí být alespoň 5 sekund.",
     "cron_invalid": "Neplatný cron výraz.",
     "cron_required": "Vyžadován cron výraz.",
     "endpoint_required": "Je vyžadována URL koncového bodu nebo událost.",
     "event_type_required": "Vyžadován typ události k naslouchání.",
     "interval_minimum": "Interval musí být alespoň 60 sekund.",
+    "watch_events_required": "Vyberte alespoň jednu událost souboru ke sledování.",
     "watch_path_required": "Vyžadována alespoň jedna sledovaná cesta."
   },
   "builder": {
@@ -183,6 +185,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} události",
   "dead_letter_bulk_retry_title": "Zkusit znovu every selected událost in a single transaction",
   "dead_letter_clear_filters_to_see": "Vymazat filters to see all dead-lettered události",
+  "dead_letter_load_failed_title": "Frontu nedoručených událostí se nepodařilo načíst",
+  "dead_letter_load_failed_desc": "Frontu se nepodařilo přečíst, takže prázdný seznam by zde byl zavádějící. Vaše události nezmizely - zkuste to znovu.",
   "dead_letter_clear_selection": "Vymazat",
   "dead_letter_discard": "Zahodit",
   "dead_letter_discard_title": "Trvale zahodit tuto událost",
@@ -623,9 +627,12 @@
     "automation_delete": "Smazat automatizaci",
     "automation_enabled": "Povoleno",
     "automation_failed": "selhalo",
+    "automation_held": "čeká na schválení",
     "automation_idle": "čeká na svou událost",
     "automation_next": "příště",
+    "automation_partial": "částečně spuštěno",
     "automation_ran": "spuštěno",
+    "automation_requested": "požadováno",
     "automation_run_now": "Spustit nyní",
     "automations_title": "Aktivní systémové události",
     "cadence_custom": "Vlastní cron…",
@@ -945,5 +952,7 @@
   "add_persona_available": "K dispozici: {count}",
   "add_persona_all_connected": "Všechny persony jsou již připojeny",
   "add_persona_ungrouped": "Bez skupiny",
-  "live_status_skipped": "Přeskočeno"
+  "live_status_skipped": "Přeskočeno",
+  "webhooks_load_failed": "Triggery webhooků se nepodařilo načíst",
+  "webhooks_load_failed_desc": "Seznam se nepodařilo přečíst, takže prázdný seznam by byl zavádějící. Vaše triggery nezmizely - zkuste to znovu."
 }

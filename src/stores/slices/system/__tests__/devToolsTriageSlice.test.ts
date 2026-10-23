@@ -173,3 +173,98 @@ describe('devToolsTriageSlice — verdict bookkeeping', () => {
     expect(h.get().triageCounts).toMatchObject({ total: 0, pending: 0 });
   });
 });
+
+describe('devToolsTriageSlice — a rules run keeps the Backlog question', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  it('re-reads with the query the Backlog last asked, not a project-wide all-status read', async () => {
+    // TriageRulesPanel lives in the cross-project, status-filtered Backlog.
+    // runTriageRules used to re-read fetchTriageIdeas(projectId) with no
+    // status or limit, swapping that page for one project's every status.
+    triageIdeasMock.mockResolvedValue({ ideas: [idea()], cursor: null, hasMore: false, counts: counts() });
+    vi.mocked(devApi.runTriageRules).mockResolvedValue({ applied: 2, ideas_affected: 3 });
+    const h = harness();
+    await h.get().fetchTriageIdeas(undefined, { status: 'pending', limit: 50 });
+
+    const result = await h.get().runTriageRules('p1');
+
+    expect(result).toEqual({ applied: 2, ideas_affected: 3 });
+    expect(devApi.runTriageRules).toHaveBeenCalledWith('p1');
+    expect(triageIdeasMock).toHaveBeenLastCalledWith(undefined, 50, undefined, {
+      status: 'pending', origin: undefined, category: undefined,
+    });
+  });
+
+  it('falls back to the project read when no list was ever asked for', async () => {
+    triageIdeasMock.mockResolvedValue({ ideas: [], cursor: null, hasMore: false, counts: counts() });
+    vi.mocked(devApi.runTriageRules).mockResolvedValue({ applied: 0, ideas_affected: 0 });
+    const h = harness();
+
+    await h.get().runTriageRules('p1');
+
+    expect(triageIdeasMock).toHaveBeenLastCalledWith('p1', undefined, undefined, {
+      status: undefined, origin: undefined, category: undefined,
+    });
+  });
+});
+
+describe('devToolsTriageSlice — status switches are latest-wins', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  type Page = Awaited<ReturnType<typeof devApi.triageIdeas>>;
+  function deferredPage() {
+    let resolve!: (v: Page) => void;
+    const promise = new Promise<Page>((r) => { resolve = r; });
+    return { promise, resolve };
+  }
+  const page = (id: string, status: string, cursor: string | null = null): Page =>
+    ({ ideas: [idea({ id, status })], cursor, hasMore: cursor != null, counts: counts() });
+
+  it('Pending then Accepted: the late Pending page does not replace the Accepted one', async () => {
+    const pending = deferredPage();
+    triageIdeasMock.mockReturnValueOnce(pending.promise).mockResolvedValueOnce(page('acc', 'accepted'));
+    const h = harness();
+
+    const p1 = h.get().fetchTriageIdeas(undefined, { status: 'pending' });
+    await h.get().fetchTriageIdeas(undefined, { status: 'accepted' });
+    pending.resolve(page('pen', 'pending', 'c-pending'));
+    await p1;
+
+    expect(h.get().triageItems.map((i) => i.id)).toEqual(['acc']);
+    expect(h.get().triageCursor).toBeNull();
+    expect(h.get().triageLoading).toBe(false);
+  });
+
+  it('a superseded read does not end the newer read\'s loading state', async () => {
+    const pending = deferredPage();
+    const accepted = deferredPage();
+    triageIdeasMock.mockReturnValueOnce(pending.promise).mockReturnValueOnce(accepted.promise);
+    const h = harness();
+
+    const p1 = h.get().fetchTriageIdeas(undefined, { status: 'pending' });
+    const p2 = h.get().fetchTriageIdeas(undefined, { status: 'accepted' });
+    pending.resolve(page('pen', 'pending'));
+    await p1;
+    expect(h.get().triageLoading).toBe(true);
+
+    accepted.resolve(page('acc', 'accepted'));
+    await p2;
+    expect(h.get().triageLoading).toBe(false);
+  });
+
+  it('a load-more page of the old query is not appended to a new list', async () => {
+    triageIdeasMock.mockResolvedValueOnce(page('pen1', 'pending', 'c1'));
+    const h = harness();
+    await h.get().fetchTriageIdeas(undefined, { status: 'pending' });
+
+    const more = deferredPage();
+    triageIdeasMock.mockReturnValueOnce(more.promise).mockResolvedValueOnce(page('acc', 'accepted'));
+    const pm = h.get().fetchMoreTriageIdeas(undefined, { status: 'pending' });
+    await h.get().fetchTriageIdeas(undefined, { status: 'accepted' });
+    more.resolve(page('pen2', 'pending'));
+    await pm;
+
+    expect(h.get().triageItems.map((i) => i.id)).toEqual(['acc']);
+    expect(h.get().triageLoadingMore).toBe(false);
+  });
+});

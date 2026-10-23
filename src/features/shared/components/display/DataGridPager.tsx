@@ -65,7 +65,7 @@ export function DataGridPager({ page, totalPages, pageSize, pageSizeOptions, tot
       </div>
       {totalPages > 1 && (
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={() => onPage(Math.max(1, page - 1))} disabled={page <= 1}>
+          <Button variant="ghost" size="icon-sm" onClick={() => onPage(Math.max(1, page - 1))} disabled={page <= 1} aria-label={t.shared.grid_prev_page}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
           {pageWindow(page, totalPages).map((p) => (
@@ -80,7 +80,7 @@ export function DataGridPager({ page, totalPages, pageSize, pageSizeOptions, tot
               {p}
             </Button>
           ))}
-          <Button variant="ghost" size="icon-sm" onClick={() => onPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages}>
+          <Button variant="ghost" size="icon-sm" onClick={() => onPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} aria-label={t.shared.grid_next_page}>
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>

@@ -13,7 +13,11 @@
     "personas_one": "{count} persona",
     "personas_other": "{count} person",
     "show_all": "Zobrazit všech {count} záznamů",
-    "total_accesses": "{count} celkem"
+    "total_accesses": "{count} celkem",
+    "by_persona": "od {name}",
+    "entries_one": "{count} záznam",
+    "entries_other": "{count} záznamů",
+    "page_of": "Strana {page}/{total}"
   },
   "auto_cred_extra": {
     "all_fields_captured": "Všech {count} polí zachyceno",
@@ -102,7 +106,19 @@
     "test_to_save": "Otestuj připojení pro povolení uložení",
     "universal_auto_setup": "Univerzální automatické nastavení",
     "universal_auto_setup_hint": "Zadej URL a popis a AI bude procházet web, aby automaticky objevila a vytvořila API přihlašovací údaje.",
-    "what_do_you_need": "Co potřebuješ?"
+    "what_do_you_need": "Co potřebuješ?",
+    "err_kind_cli_error": "Chyba CLI",
+    "err_kind_cli_not_found": "CLI nenalezeno",
+    "err_kind_env_conflict": "Konflikt prostředí",
+    "err_kind_extraction_failed": "Extrakce selhala",
+    "err_kind_spawn_failed": "Spuštění selhalo",
+    "err_kind_timeout": "Vypršel časový limit",
+    "field_missing": "{label} (chybí)",
+    "log_blocked_url": "Zablokována nebezpečná URL ze sezení nastavení",
+    "log_open_url_failed": "Otevření URL se nezdařilo: {url}",
+    "log_saved_procedure": "Používá se uložený postup pro {label}",
+    "open_url": "Otevřít",
+    "open_url_title": "Otevřít {url} v prohlížeči"
   },
   "auto_cred": {
     "action_required": "Vyžadována akce",
@@ -534,7 +550,8 @@
     "use_console_hint": "K zobrazení hodnoty použijte záložku Konzole.",
     "write": "Zápis",
     "write_mode": "Režim zápisu",
-    "suggestion_api_tables": "Vypiš tabulky v této bázi a počet záznamů v každé z nich"
+    "suggestion_api_tables": "Vypiš tabulky v této bázi a počet záznamů v každé z nich",
+    "rename_failed": "Přihlašovací údaje se nepodařilo přejmenovat. Původní název zůstává uložen."
   },
   "delete_dialog": {
     "cannot_undo": "Tuto akci nelze vzít zpět.",
@@ -583,7 +600,7 @@
     "severity_high": "Vysoké riziko",
     "severity_low": "Nízké riziko",
     "severity_medium": "Střední riziko",
-    "sim_high": "Zrušení {credentialName} by ovlivnilo {personas} personu{personaPlural} v rámci tvého pracovního prostoru.",
+    "sim_high": "Zrušení {credentialName} by ovlivnilo persony v rámci tvého pracovního prostoru (počet: {personas}).",
     "sim_low": "Na těchto údajích nezávisí persony ani workflow. Bezpečné k odvolání.",
     "sim_medium": "Zrušení {credentialName} má omezený dopad.",
     "simulate_revocation": "Simulovat zneplatnění",
@@ -642,7 +659,9 @@
     "start_over": "Začít znovu",
     "technical_details": "Technické detaily",
     "title": "Navrhnout údaje",
-    "try_again_with": "Zkusit znovu s tímto požadavkem"
+    "try_again_with": "Zkusit znovu s tímto požadavkem",
+    "instruction_imported": "Přihlašovací údaje {label} (importované)",
+    "instruction_template": "Přihlašovací údaje {label}"
   },
   "design_phases": {
     "all_steps_complete": "Všechny kroky dokončené -- vyplň pole níže a otestuj připojení.",
@@ -698,7 +717,9 @@
     "typical_time": "Typicky 15--30 sekund",
     "use_template": "Použít",
     "verified_setup": "Ověřené nastavení",
-    "view_credential": "Zobrazit přihlašovací údaj"
+    "view_credential": "Zobrazit přihlašovací údaj",
+    "open": "Otevřít",
+    "step_number": "Krok {n}"
   },
   "desktop_discovery": {
     "allowed_binaries": "Povolené binárky: ",
@@ -783,7 +804,8 @@
     "scheduled_rotation": "Plánovaná rotace",
     "scheduled_rotation_desc": "Rotovat přihlašovací údaje podle cron plánu (např. denně, týdně).",
     "seconds_10": "10 sekund",
-    "seconds_30": "30 sekund"
+    "seconds_30": "30 sekund",
+    "template_trigger_aria": "Spouštěč události {name}"
   },
   "features": {
     "anomaly_detected": "Detekována anomálie: přihlašovací údaj náhle selhává po předchozím úspěchu. Možné zneplatnění.",
@@ -962,7 +984,10 @@
     "no_eligible": "Žádné vhodné přihlašovací údaje. Nejprve přidej MCP přihlašovací údaj do seznamu.",
     "no_members": "Zatím žádní členové. Přidej jednoho níže a začni sjednocovat nástroje.",
     "pick_credential": "Vyber přihlašovací údaj…",
-    "pick_error": "Vyber přihlašovací údaj a dej mu krátký zobrazovaný název"
+    "pick_error": "Vyber přihlašovací údaj a dej mu krátký zobrazovaný název",
+    "remove_member_aria": "Odebrat {name}",
+    "disable_member": "Zakázat",
+    "enable_member": "Povolit"
   },
   "graph": {
     "connection_count_one": "{count} připojení",
@@ -1006,7 +1031,27 @@
     "selected_for_import": "vybráno pro import",
     "source_ref": "Reference zdroje",
     "sync_supported": "Synchronizace podporována",
-    "title": "Zdroj importu"
+    "title": "Zdroj importu",
+    "cli_hint": "Spusťte příkaz CLI {cli} a níže vložte výstup JSON.",
+    "env_hint": "Níže vložte obsah svého souboru .env.",
+    "err_aws_no_secret_string": "V odpovědi AWS nebyl nalezen žádný SecretString",
+    "err_aws_parse_failed": "Výstup JSON z AWS Secrets Manager se nepodařilo zpracovat",
+    "err_azure_parse_failed": "Výstup JSON z Azure Key Vault se nepodařilo zpracovat",
+    "err_doppler_parse_failed": "Výstup JSON z Doppleru se nepodařilo zpracovat. Použijte: doppler secrets download --format=json",
+    "err_env_missing_separator": "Řádek {line}: chybí oddělovač „=“",
+    "err_no_secrets": "Ve vstupu nebyla nalezena žádná tajemství",
+    "err_op_expected_array": "Z výstupu CLI op se očekávalo pole JSON",
+    "err_op_parse_failed": "Výstup JSON z 1Passwordu se nepodařilo zpracovat. Použijte: op item list --format=json",
+    "placeholder_1password": "Vložte výstup příkazu: op item list --format=json",
+    "placeholder_aws_secrets": "Vložte výstup příkazu: aws secretsmanager get-secret-value --secret-id <name>",
+    "placeholder_azure_keyvault": "Vložte výstup příkazu: az keyvault secret show --vault-name <vault> --name <secret>",
+    "placeholder_doppler": "Vložte výstup příkazu: doppler secrets download --format=json",
+    "source_desc_1password": "Import z 1Passwordu pomocí CLI op",
+    "source_desc_aws_secrets": "Import z AWS Secrets Manager",
+    "source_desc_azure_keyvault": "Import z Azure Key Vault",
+    "source_desc_doppler": "Import z platformy tajemství Doppler",
+    "source_desc_env_file": "Import tajemství z místního souboru .env",
+    "source_label_env_file": "Soubor .env"
   },
   "ingest": {
     "rename_credential": "Přejmenovat údaje",
@@ -1066,7 +1111,11 @@
     "title_databases": "Databáze",
     "title_dependencies": "Závislosti",
     "unverifiable_count": "{count} neověřitelných",
-    "unverifiable_tooltip": "Tento konektor nemá žádnou živou kontrolu -- přihlašovací údaje jsou uloženy, ale nikdy nebyly ověřeny u poskytovatele"
+    "unverifiable_tooltip": "Tento konektor nemá žádnou živou kontrolu -- přihlašovací údaje jsou uloženy, ale nikdy nebyly ověřeny u poskytovatele",
+    "create_failed": "Vytvoření přihlašovacích údajů se nezdařilo",
+    "rotate_result_failed": "{count} selhalo",
+    "rotate_result_refreshed": "{count} obnoveno",
+    "rotate_result_skipped": "{count} přeskočeno"
   },
   "negotiator_extra": {
     "ask_button": "Ask",
@@ -1084,7 +1133,8 @@
     "planning_description": "AI analyzuje vývojářský portál a generuje plán provisioning krok za krokem…",
     "start_auto": "Spustit automatické provisioning",
     "existing_auth_description": "Ke službě {service} jste již přihlášeni přes {method}. Nastavení tuto relaci použije a přeskočí kroky přihlášení.",
-    "use_existing_auth": "Použít stávající relaci {service}"
+    "use_existing_auth": "Použít stávající relaci {service}",
+    "step_of": "Krok {current} z {total}: {title}"
   },
   "negotiator": {
     "all_steps_completed": "Všechny kroky dokončeny",
@@ -1261,7 +1311,11 @@
     "rotate_now": "Rotovat hned",
     "rotation_failed": "Rotace selhala: {error}",
     "rotation_paused": "Rotace pozastavena",
-    "update_period_failed": "Nepodařilo se aktualizovat rotační období: {error}"
+    "update_period_failed": "Nepodařilo se aktualizovat rotační období: {error}",
+    "countdown_days_hours": "{days} d {hours} h",
+    "countdown_due_now": "Splatné nyní",
+    "countdown_hours_minutes": "{hours} h {minutes} min",
+    "countdown_minutes": "{minutes} min"
   },
   "schema_configs": {
     "custom": {
@@ -1378,7 +1432,9 @@
     "kv_value_label": "Hodnota",
     "kv_value_placeholder": "hodnota",
     "none_configured": "Nic není nakonfigurováno.",
-    "required_badge": "POV"
+    "required_badge": "POV",
+    "field_captured": "zachyceno",
+    "select_placeholder": "Vyberte..."
   },
   "setup_kind": {
     "cli_login": "CLI poskytovatele je nainstalované, ale nejste přihlášeni — spusťte v terminálu jeho přihlašovací příkaz (například `vercel login` nebo `gh auth login`)",
@@ -1607,7 +1663,8 @@
     "extract_export_json": "Exportovat JSON",
     "extract_filter_all": "Všechny typy",
     "extract_filter_label": "Filtrovat podle typu entity",
-    "health_unreachable": "Službu se nepodařilo kontaktovat"
+    "health_unreachable": "Službu se nepodařilo kontaktovat",
+    "oauth_context_lost": "OAuth skončil, ale kontext byl ztracen. Zkuste to prosím znovu."
   },
   "subtitle": "Zvolte způsob přidání přihlašovacího údaje",
   "title": "Trezor",
@@ -1760,7 +1817,12 @@
     "select_services": "Vyber služby k připojení",
     "selected_count": "{selected} z {total} vybráno",
     "sign_in_browser": "Přihlas se svým Google účtem v okně prohlížeče.",
-    "some_failed": "Některé přihlašovací údaje selhaly"
+    "some_failed": "Některé přihlašovací údaje selhaly",
+    "service_gmail_desc": "Odesílání, čtení a správa e-mailů",
+    "service_google_calendar_desc": "Čtení a správa událostí v kalendáři",
+    "service_google_drive_desc": "Čtení a správa souborů",
+    "service_google_sheets_desc": "Čtení a zápis dat tabulek",
+    "status_failed": "Selhalo"
   },
   "connector_attention": {
     "title": "Připojení vyžadují pozornost",
@@ -1781,5 +1843,29 @@
     "reconnect_now": "Připojit znovu",
     "reconnecting": "Připojování...",
     "signed_in_as": "Přihlášen jako {email}"
+  },
+  "remediation_notify": {
+    "auto_disabled_body": "{name}: zjištěna trvalá kritická selhání. Zásady rotace byly vypnuty, aby se předešlo kaskádovým chybám.",
+    "auto_disabled_title": "Přihlašovací údaje automaticky vypnuty",
+    "critical_title": "Přihlašovací údaje v kritickém stavu",
+    "drift_title": "Zjištěn drift přihlašovacích údajů",
+    "rotation_failed_title": "Rotace přihlašovacích údajů selhala",
+    "warning_title": "Varování k přihlašovacím údajům",
+    "reason_backoff_retry": "Míra přechodných selhání je {pct} (1 h). Používá se exponenciální odklad.",
+    "reason_default": "Úroveň nápravy: {level}",
+    "reason_disable": "Kritické: míra trvalých selhání je {pct} (1 h). Zásady rotace se automaticky vypínají.",
+    "reason_preemptive_rotation": "Trvalé zhoršení: míra selhání je {pct} (1 h). Plánuje se preventivní rotace.",
+    "reason_rotate_then_alert": "Zjištěny trvalé chyby: míra trvalých selhání je {pct} (1 h). Probíhá rotace a upozornění."
+  },
+  "resource_picker": {
+    "no_matches": "Žádné shody",
+    "nothing_to_pick": "Zatím není co vybrat",
+    "pick_first": "Nejprve vyberte {dep}",
+    "picked_count": "Vybráno: {count}",
+    "save_scope": "Uložit rozsah",
+    "scope_title": "Rozsah {label}",
+    "search_placeholder": "Hledat {label}…",
+    "stale_picks_one": "{count} výběr",
+    "stale_picks_other": "{count} výběrů"
   }
 }

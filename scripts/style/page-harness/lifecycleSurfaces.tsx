@@ -1,13 +1,16 @@
 /**
- * Spark lifecycle-health: Teams > Lifecycle (the integrated LifecyclePage,
- * its own ContentBox / ContentHeader / ContentBody shell), on the synthetic
- * tapes in `lifecycleTapes.mjs` (Layer 1, WP3) and `lifecycleDetailTapes.mjs`
- * (Layer 2, WP4).
+ * Teams > Lifecycle as the Lens (contest lifecycle-portfolio-r2, winner A/3):
+ * the integrated LifecyclePage on the synthetic tapes in `lifecycleTapes.mjs`
+ * and `lifecycleDetailTapes.mjs`. Every module but `portfolio` opens the Lens
+ * on the tape's one project (as the Overseer's deep link does), so it shows
+ * that project's columns; a step's detail (the last layer) is shot with
+ * --steps "click=[data-testid=lens-col-<id>];click=[data-testid=lens-col-<id>];wait=600".
+ * Real data: pass a recorded tape with --tape (never committed).
  *
- *   plugins/lifecycle/collar        Layer 1, the collar rail (the owner's pick)
+ *   plugins/lifecycle/portfolio     the landing: three projects as the Lens portfolio
+ *   plugins/lifecycle/collar        one project's columns
  *   plugins/lifecycle/empty         Layer 1 with no health rows and no goal
- *   plugins/lifecycle/detail        Layer 1 with every step's detail on the tape;
- *                                   shoot a step with --steps "click=[data-testid=lc-node-<id>]"
+ *   plugins/lifecycle/detail        the project with every step's detail on the tape
  *   plugins/lifecycle/detail-nocov  the same with Tests' coverage unmeasured
  *   plugins/lifecycle/behind        Layer 1 measured 2 days ago, 14 commits behind (the header's warning)
  *   plugins/lifecycle/loading       the snapshot never answers: header chrome + the Layer-1 ghost
@@ -37,6 +40,7 @@
  */
 import { Profiler, type ProfilerOnRenderCallback } from 'react';
 
+import { openLifecycleProject } from '@/features/plugins/dev-tools/sub_lifecycle/lifecycleView/lens/model/lensFocus';
 import { useDevToolsLiveStore } from '@/stores/devToolsLiveStore';
 import { useSystemStore } from '@/stores/systemStore';
 import type { HarnessModule } from './registry';
@@ -44,15 +48,20 @@ import type { HarnessModule } from './registry';
 /** The tape's one project (lifecycleTapes.mjs, PROJECT). */
 const PROJECT_ID = 'p-atlas';
 
-async function prepare() {
+/** The landing: the app has loaded its projects at boot; the Lens opens on the portfolio. */
+async function preparePortfolio() {
   useSystemStore.setState({ sidebarSection: 'teams', teamsTab: 'lifecycle' });
-  // The app loads projects at boot and remembers the active one; the page reads both.
   try {
     await useSystemStore.getState().fetchProjects();
   } catch (err) {
     console.warn('[page-harness] fetchProjects failed', err);
   }
-  useSystemStore.setState({ activeProjectId: PROJECT_ID });
+}
+
+/** One project: the Lens opened on it, as the Overseer's deep link does (never the app-wide active project). */
+async function prepare() {
+  await preparePortfolio();
+  openLifecycleProject(PROJECT_ID);
 }
 
 const page = () => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage');
@@ -99,6 +108,7 @@ async function preparePerf() {
 }
 
 export const LIFECYCLE_MODULES: Record<string, HarnessModule> = {
+  'plugins/lifecycle/portfolio': { load: page, prepare: preparePortfolio }, // the Lens landing (lifecycle-portfolio-r2)
   'plugins/lifecycle/collar': { load: page, prepare },
   'plugins/lifecycle/empty': { load: page, prepare },
   'plugins/lifecycle/detail': { load: page, prepare },

@@ -70,6 +70,7 @@ export function ForagingResultCard({
       type="button"
       onClick={disabled ? undefined : onToggle}
       disabled={disabled}
+      aria-pressed={isSelected}
       className={`animate-fade-slide-in w-full text-left rounded-modal border p-3 transition-all ${
         isImported
           ? "border-emerald-500/30 bg-emerald-500/5 opacity-70"

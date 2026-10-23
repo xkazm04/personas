@@ -1,7 +1,7 @@
 import { reportFrontendCrash } from "@/api/system/system";
 import { sanitizeErrorMessage } from "@/lib/utils/sanitizers/maskSensitive";
 import { createLogger } from "@/lib/log";
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 
@@ -45,22 +45,31 @@ export function readCrashLogs(): Array<{ timestamp: string; component: string; m
     const parsed: unknown[] = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(parsed)) return [];
 
-    // Merge any entries that fell back to sessionStorage during quota exhaustion
+    // Merge any entries that fell back to sessionStorage during quota exhaustion.
+    //
+    // The fallback is removed only AFTER the merged list has been written to
+    // localStorage. It used to be removed here unconditionally while the write
+    // below ran only when the list also needed trimming, so under the cap the
+    // fallback crashes survived exactly one read and were then gone.
+    let mergedFromSession = false;
     try {
       const sessionRaw = sessionStorage.getItem(CRASH_STORAGE_KEY);
       if (sessionRaw) {
-        const sessionParsed: unknown[] = JSON.parse(sessionRaw);
-        if (Array.isArray(sessionParsed)) {
+        const sessionParsed: unknown = JSON.parse(sessionRaw);
+        if (Array.isArray(sessionParsed) && sessionParsed.length > 0) {
           parsed.unshift(...sessionParsed);
+          mergedFromSession = true;
+        } else {
+          sessionStorage.removeItem(CRASH_STORAGE_KEY);
         }
-        sessionStorage.removeItem(CRASH_STORAGE_KEY);
       }
     } catch (err) { silentCatch("lib/utils/crashPersistence:catch1")(err); }
 
     const trimmed = parsed.slice(0, CRASH_MAX_ENTRIES);
-    if (trimmed.length !== parsed.length) {
+    if (mergedFromSession || trimmed.length !== parsed.length) {
       try {
         localStorage.setItem(CRASH_STORAGE_KEY, JSON.stringify(trimmed));
+        if (mergedFromSession) sessionStorage.removeItem(CRASH_STORAGE_KEY);
       } catch (err) { silentCatch("lib/utils/crashPersistence:catch2")(err); }
     }
     return trimmed as Array<{ timestamp: string; component: string; message: string; stack?: string }>;
@@ -90,7 +99,11 @@ export function persistCrash(
   error: unknown,
   componentStack?: string,
 ): void {
-  const rawMessage = error instanceof Error ? error.message : String(error);
+  // `extractMessage`, not `String(error)`: the `unhandledrejection` caller in
+  // main.tsx passes whatever a promise rejected with, and an un-awaited IPC call
+  // rejects with a serialized AppError object, which `String()` turns into
+  // "[object Object]" -- the whole crash message, on the log the user reads.
+  const rawMessage = error instanceof Error ? error.message : extractMessage(error);
   const rawStack = error instanceof Error ? error.stack?.slice(0, 2000) : undefined;
   const rawCompStack = componentStack?.slice(0, 1000);
 

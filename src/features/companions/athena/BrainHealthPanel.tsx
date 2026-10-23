@@ -14,7 +14,7 @@ import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/useModuleSubscription';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { resolveError } from '@/lib/errors/errorRegistry';
 import {
   companionBrainHealth,
@@ -142,7 +142,7 @@ export function BrainHealthPanel() {
         // Unsolicited read: it fires on mount, so it reports inline rather
         // than toasting over the user's current task.
         if (!cancelled) {
-          setError(resolveError(err instanceof Error ? err.message : String(err)).message);
+          setError(resolveError(extractMessage(err)).message);
         }
         silentCatch('companion_brain_health')(err);
       });

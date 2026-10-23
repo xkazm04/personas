@@ -17,7 +17,9 @@ import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch } from '@/lib/silentCatch';
+import { previewCronSchedule } from '@/api/pipeline/triggers';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 import {
   createSystemOpAutomation, contextScanParamsJson, memoryReflectionParamsJson,
   healthIngestParamsJson,
@@ -97,6 +99,11 @@ export function SystemEventCommitModal({
   const [reflectPersonaId, setReflectPersonaId] = useState('');
   const [reflectTeamId, setReflectTeamId] = useState('');
 
+  // Shown inside the modal: a toast renders under a portal modal. `cron` =
+  // the custom expression can never fire; `create` = the backend refused.
+  const [formError, setFormError] = useState<{ kind: 'cron' } | { kind: 'create'; raw: unknown } | null>(null);
+  useEffect(() => { if (open) setFormError(null); }, [open, opKind]);
+
   const cron = useMemo(() => {
     if (!isSchedule) return undefined;
     return cadence === 'custom' ? customCron.trim() : CADENCES.find((c) => c.id === cadence)?.cron;
@@ -112,7 +119,19 @@ export function SystemEventCommitModal({
     const reflectTargetName = reflectScope === 'team'
       ? teams.find((tm) => tm.id === reflectTeamId)?.name
       : personas.find((p) => p.id === reflectPersonaId)?.name;
+    setFormError(null);
     try {
+      // The backend stores a custom cron it cannot schedule (compute_next_run_at
+      // returns None, so next_run_at stays NULL and get_due_schedules never
+      // picks it up): the automation would be created and never run. Ask the
+      // same parser first, and require at least one upcoming fire.
+      if (isSchedule && cadence === 'custom' && cron) {
+        const preview = await previewCronSchedule(cron, 1);
+        if (!preview.valid || preview.next_runs.length === 0) {
+          setFormError({ kind: 'cron' });
+          return;
+        }
+      }
       await createSystemOpAutomation({
         opKind,
         paramsJson: isReflection
@@ -136,7 +155,8 @@ export function SystemEventCommitModal({
       onCreated();
       onClose();
     } catch (err) {
-      toastCatch('SystemEventCommitModal:create', st.commit_failed_toast)(err);
+      silentCatch('SystemEventCommitModal:create')(err);
+      setFormError({ kind: 'create', raw: err });
     }
   };
 
@@ -205,7 +225,8 @@ export function SystemEventCommitModal({
               {cadence === 'custom' && (
                 <input
                   value={customCron}
-                  onChange={(e) => setCustomCron(e.target.value)}
+                  onChange={(e) => { setCustomCron(e.target.value); setFormError(null); }}
+                  aria-invalid={formError?.kind === 'cron' || undefined}
                   placeholder="0 3 * * 1"
                   className="w-full px-3 py-2 typo-body font-mono bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground/40 focus-ring"
                 />
@@ -250,6 +271,14 @@ export function SystemEventCommitModal({
             </div>
           )}
         </div>
+
+        {formError && (
+          <p role="alert" className="mx-5 mb-3 typo-caption text-status-error">
+            {formError.kind === 'cron'
+              ? t.triggers.build_validation.cron_invalid
+              : `${st.commit_failed_toast}: ${inlineErrorCopy(t, formError.raw)}`}
+          </p>
+        )}
 
         <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-border">
           <Button variant="ghost" size="sm" onClick={onClose}>{t.common.cancel}</Button>

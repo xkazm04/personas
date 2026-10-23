@@ -45,8 +45,7 @@ export function EditorEmptyState() {
       <div className="flex-1 flex items-center justify-center">
         <EmptyState
           icon={Bot}
-          iconColor="text-primary/80"
-          iconContainerClassName="bg-primary/10 border-primary/20"
+          size="lg"
           title={labels.title}
           subtitle={labels.subtitle}
           action={{ label: labels.create, onClick: () => setIsCreatingPersona(true), icon: Plus }}

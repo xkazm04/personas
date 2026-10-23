@@ -53,7 +53,16 @@ export default function AttentionLedger({ overview, loading, onFocus, onOpen }: 
   const ids = useMemo(() => ledgerKpiIds(altitude.project ? [altitude.project] : estate.projects), [estate, altitude.project]);
   const { trends, status, retry } = useLazyTrends(ids);
 
-  if (loading && overview.length === 0) return <LedgerGhost />;
+  // Chrome first (overview-loading.md law 1): the headline stays and the ghost
+  // sits UNDER it, so a cold visit never swaps the whole page.
+  if (loading && overview.length === 0) {
+    return (
+      <div className="space-y-4" data-testid="kpi-ledger">
+        <EstateHeadline estate={estate} project={altitude.project} onClimb={altitude.climb} loading />
+        <LedgerGhost />
+      </div>
+    );
+  }
 
   const scopeTally = altitude.project ? altitude.project.tally : estate.tally;
 
@@ -142,7 +151,6 @@ function Td({ children }: { children: React.ReactNode }) {
 function LedgerGhost() {
   return (
     <div className="space-y-3" data-testid="kpi-ledger-ghost" aria-hidden="true">
-      <span className="block h-8 w-72 rounded bg-primary/[0.06] animate-fade-in" style={{ animationDelay: '150ms' }} />
       {[0, 1, 2, 3, 4].map((i) => (
         <span
           key={i}

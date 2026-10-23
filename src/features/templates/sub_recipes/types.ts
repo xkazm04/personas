@@ -8,12 +8,9 @@
  * against a target persona's wired tools and produces a real
  * `DesignUseCase` in that persona's `design_context`.
  *
- * This file is intentionally TS-only: no Rust schema, no migrations. The
- * old `recipe_definitions` table from the legacy LLM-template subsystem
- * is being thrown out wholesale; the future Rust schema (when we wire
- * persistence) will be derived from this contract, not the reverse.
- *
- * Storage in the prototype: a hand-authored array in `mockRecipes.ts`.
+ * This is the catalog UI's own shape. Rows come from the backend
+ * `recipe_definitions` table (`list_recipes`) and are projected into it by
+ * `libs/recipeAdapter.ts`; nothing persists a `Recipe` directly.
  */
 
 import type { NotificationChannelType } from '@/lib/types/frontendTypes';

@@ -41,12 +41,14 @@
   "budget_label": "Ngân sách",
   "build_validation": {
     "composite_min_conditions": "Trình kích hoạt tổng hợp cần ít nhất 2 điều kiện.",
+    "composite_window_maximum": "Khung thời gian tối đa là 24 giờ (86400 giây).",
     "composite_window_minimum": "Khung thời gian phải tối thiểu 5 giây.",
     "cron_invalid": "Biểu thức cron không hợp lệ.",
     "cron_required": "Cần có biểu thức cron.",
     "endpoint_required": "Cần có URL endpoint hoặc sự kiện.",
     "event_type_required": "Cần chỉ định loại sự kiện cần theo dõi.",
     "interval_minimum": "Khoảng thời gian phải tối thiểu 60 giây.",
+    "watch_events_required": "Chọn ít nhất một sự kiện tệp để theo dõi.",
     "watch_path_required": "Cần ít nhất một đường dẫn theo dõi."
   },
   "builder": {
@@ -183,6 +185,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} sự kiện",
   "dead_letter_bulk_retry_title": "Thử lại every selected sự kiện in a single transaction",
   "dead_letter_clear_filters_to_see": "Xóa filters to see all dead-lettered sự kiện",
+  "dead_letter_load_failed_title": "Không thể tải hàng đợi thư chết",
+  "dead_letter_load_failed_desc": "Không thể đọc hàng đợi, nên danh sách trống ở đây sẽ gây hiểu nhầm. Sự kiện của bạn không bị mất - hãy thử lại.",
   "dead_letter_clear_selection": "Xóa",
   "dead_letter_discard": "Hủy bỏ",
   "dead_letter_discard_title": "Hủy bỏ sự kiện này vĩnh viễn",
@@ -623,9 +627,12 @@
     "automation_delete": "Xóa tự động hóa",
     "automation_enabled": "Đã bật",
     "automation_failed": "thất bại",
+    "automation_held": "đang chờ phê duyệt",
     "automation_idle": "đang chờ sự kiện của nó",
     "automation_next": "tiếp theo",
+    "automation_partial": "chạy một phần",
     "automation_ran": "đã chạy",
+    "automation_requested": "đã yêu cầu",
     "automation_run_now": "Chạy ngay",
     "automations_title": "Sự kiện hệ thống đang hoạt động",
     "cadence_custom": "Cron tùy chỉnh…",
@@ -945,5 +952,7 @@
   "add_persona_available": "{count} khả dụng",
   "add_persona_all_connected": "Tất cả persona đã được kết nối",
   "add_persona_ungrouped": "Chưa nhóm",
-  "live_status_skipped": "Đã bỏ qua"
+  "live_status_skipped": "Đã bỏ qua",
+  "webhooks_load_failed": "Không thể tải trình kích hoạt webhook",
+  "webhooks_load_failed_desc": "Không đọc được danh sách, nên hiển thị danh sách trống ở đây sẽ gây hiểu lầm. Các trình kích hoạt của bạn không mất - hãy thử lại."
 }

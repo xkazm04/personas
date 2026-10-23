@@ -311,7 +311,9 @@ pub fn pending_rows(conn: &Connection, limit: usize) -> Result<Vec<LedgerRow>, A
 /// Per-invocation bound on how much OLD ledger debt a delete door drains on
 /// the side. Finishing the previous half-delete before starting a new one is
 /// what makes transient outages self-healing without a scheduler; the bound
-/// keeps a door from paying for an unbounded backlog.
+/// keeps a door from paying for an unbounded backlog. Only the `ml` build has
+/// reapers to drain with.
+#[cfg(feature = "ml")]
 const DOOR_DRAIN_LIMIT: usize = 256;
 
 /// The single door-facing cascade: record the owed cleanup durably (while the
@@ -393,7 +395,9 @@ fn spawn_reapers(_main_pool: &DbPool, ids: Vec<String>) {
 
 /// Run every registry reaper over `ids` (all freshly recorded as owed),
 /// resolving the ledger per reaper on success. Failures are loud and keep the
-/// debt ([`record_attempt`]).
+/// debt ([`record_attempt`]). `ml` only: without it there is no vector store
+/// to reap from, and `spawn_reapers` leaves the debt on the ledger.
+#[cfg(feature = "ml")]
 fn reap_recorded(main_pool: &DbPool, vec_pool: &UserDbPool, ids: &[String]) {
     if ids.is_empty() {
         return;

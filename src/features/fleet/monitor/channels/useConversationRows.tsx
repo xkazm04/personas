@@ -1,7 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
-import { AssignmentCard, DeliberationCard, ProposalCard, TalkBubble } from './ConversationCards';
+import { Engraved } from '../grid/prototype/entry-e/parts';
+import { DeliberationBand } from './DeliberationBand';
+import { ProposalBand } from './ProposalBand';
+import { RunBand } from './RunBand';
+import { TalkLine } from './TalkLine';
 import { QueuedPromptRow } from './QueuedPromptRow';
 import { dayLabel, type ConversationRow } from './conversationModel';
 import type { useConversation } from './useConversation';
@@ -20,6 +24,8 @@ export function useConversationRows(
   conv: ReturnType<typeof useConversation>,
   onOpen: (item: TeamChannelItem) => void,
   onFocusDeliberation: (deliberationId: string) => void,
+  /** The deliberation whose controls the rail is showing (its Drive reads pressed). */
+  drivingId: string | null = null,
 ) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -52,15 +58,15 @@ export function useConversationRows(
           return (
             <div className="flex items-center gap-2 py-2">
               <span className="flex-1 h-px bg-border" />
-              <span className="typo-caption">{dayLabel(row.at, dayWords)}</span>
+              <Engraved>{dayLabel(row.at, dayWords)}</Engraved>
               <span className="flex-1 h-px bg-border" />
             </div>
           );
         case 'talk':
-          return <TalkBubble item={row.item} onOpen={onOpen} />;
+          return <TalkLine item={row.item} onOpen={onOpen} />;
         case 'assignment':
           return (
-            <AssignmentCard
+            <RunBand
               assignmentId={row.assignmentId}
               items={row.items}
               expanded={expanded.has(row.key)}
@@ -70,7 +76,7 @@ export function useConversationRows(
           );
         case 'deliberation':
           return (
-            <DeliberationCard
+            <DeliberationBand
               deliberation={delibIndex.get(row.deliberationId)}
               deliberationId={row.deliberationId}
               items={row.items}
@@ -78,14 +84,15 @@ export function useConversationRows(
               rowKey={row.key}
               onToggle={toggle}
               onFocus={onFocusDeliberation}
+              driving={drivingId === row.deliberationId}
             />
           );
         case 'proposal':
-          return <ProposalCard proposal={row.proposal} onConfirm={runProposal} onDismiss={dropProposal} />;
+          return <ProposalBand proposal={row.proposal} onConfirm={runProposal} onDismiss={dropProposal} />;
         case 'queued':
           return <QueuedPromptRow prompt={row.prompt} onRetry={retryPrompt} onDrop={dropPrompt} />;
       }
     },
-    [expanded, toggle, delibIndex, onOpen, onFocusDeliberation, runProposal, dropProposal, retryPrompt, dropPrompt, dayWords],
+    [expanded, toggle, delibIndex, onOpen, onFocusDeliberation, drivingId, runProposal, dropProposal, retryPrompt, dropPrompt, dayWords],
   );
 }

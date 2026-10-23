@@ -57,6 +57,7 @@ export const ComposerEventPersonaList = forwardRef<HTMLInputElement, ComposerEve
                 <button
                   key={p.id}
                   type="button"
+                  aria-current={active ? "true" : undefined}
                   onClick={() => onSelectPersona(p.id)}
                   className={`w-full flex items-center gap-2.5 p-2 rounded-interactive text-left transition-colors ${
                     active

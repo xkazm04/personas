@@ -173,6 +173,7 @@ export function PairedDevicesPanel({
           data={devices}
           getRowKey={(row) => row.peerId}
           isLoading={isLoading}
+          emptyArt="team"
           emptyTitle={st.paired_devices_empty_title}
           emptyDescription={st.paired_devices_empty_hint}
         />

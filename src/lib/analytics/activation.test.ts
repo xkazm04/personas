@@ -8,6 +8,8 @@ import {
   hasReachedActivation,
   captureReferrerOnce,
   getReferrer,
+  recordReferralOnce,
+  __resetReferralForTests,
 } from './activation';
 
 // In-memory localStorage so the dedupe/persistence is exercised deterministically.
@@ -110,5 +112,46 @@ describe('activation funnel', () => {
     expect(captured.map((c) => c.step)).toEqual(['persona_created']);
     markActivation('persona_created');
     expect(captured).toHaveLength(1); // ...and never twice
+  });
+});
+
+// Mocked at the IPC door, not at `@/api/agents/personas`: under vitest,
+// concurrent dynamic imports of a module mocked by path resolved partly to the
+// REAL module, so a per-module mock undercounted exactly the race tested here.
+const invokeMock = vi.hoisted(() => vi.fn<(cmd: string, args?: unknown) => Promise<unknown>>());
+vi.mock('@/lib/tauriInvoke', () => ({ invokeWithTimeout: invokeMock }));
+
+function referralCalls() {
+  return invokeMock.mock.calls.filter(([cmd]) => cmd === 'record_referral');
+}
+
+describe('referral attribution', () => {
+  beforeEach(() => {
+    __resetReferralForTests();
+    invokeMock.mockReset();
+    invokeMock.mockResolvedValue(undefined);
+  });
+
+  async function settle() {
+    await vi.dynamicImportSettled();
+    await new Promise((r) => setTimeout(r, 20));
+  }
+
+  it('does not credit a referrer before the install reaches a milestone', async () => {
+    captureReferrerOnce('alice');
+    recordReferralOnce(); // the deep-link handler's immediate call
+    await settle();
+    expect(referralCalls()).toHaveLength(0);
+  });
+
+  it('credits once on the first milestone, even when a deep link races it', async () => {
+    captureReferrerOnce('alice');
+    markActivation('persona_created');
+    recordReferralOnce();
+    markActivation('execution_completed');
+    await settle();
+    expect(referralCalls()).toEqual([
+      ['record_referral', { referrerCode: 'alice', installId: getInstallId() }],
+    ]);
   });
 });

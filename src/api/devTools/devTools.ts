@@ -22,7 +22,6 @@ import type { DevProjectEnvConnector } from "@/lib/bindings/DevProjectEnvConnect
 import type { DevIdea } from "@/lib/bindings/DevIdea";
 import type { DevScan } from "@/lib/bindings/DevScan";
 import type { DevTask } from "@/lib/bindings/DevTask";
-import type { ScanAgentMeta } from "@/lib/bindings/ScanAgentMeta";
 import type { StaticScanConfig } from "@/lib/bindings/StaticScanConfig";
 import type { StaticScanResult } from "@/lib/bindings/StaticScanResult";
 import type { TriageRule } from "@/lib/bindings/TriageRule";
@@ -136,22 +135,11 @@ export const runStandardsScan = (projectId: string) =>
 export const listStandards = (projectId: string) =>
   invoke<import("@/lib/bindings/DevStandard").DevStandard[]>("dev_tools_list_standards", { projectId });
 
-/** Retrofit the PR-test-merge capability onto existing QA Guardian instances
- *  (Stage 3d backfill). Idempotent. Returns a summary of what was wired. */
-export const backfillQaPrReview = () =>
-  invoke<{ personas_matched: number; use_cases_added: number; subscriptions_added: number; persona_names: string[]; github_credentials_in_vault: number }>(
-    "dev_tools_backfill_qa_pr_review",
-    {},
-  );
-
 export const deleteProject = (id: string) =>
   invoke<boolean>("dev_tools_delete_project", { id });
 
 export const scanDirectory = (path: string) =>
   safeInvoke<DirectoryScanResult>({} as DirectoryScanResult, "dev_tools_scan_directory", { path });
-
-export const getActiveProject = () =>
-  safeInvoke<DevProject | null>(null, "dev_tools_get_active_project");
 
 export const setActiveProject = (id: string | null) =>
   safeInvoke<void>(undefined, "dev_tools_set_active_project", { id: id });
@@ -249,9 +237,6 @@ export const updateGoalItem = (id: string, updates: { title?: string; done?: boo
 export const deleteGoalItem = (id: string) =>
   invoke<boolean>("dev_tools_delete_goal_item", { id });
 
-export const reorderGoalItems = (ids: string[]) =>
-  invoke<void>("dev_tools_reorder_goal_items", { ids });
-
 // Goal-UAT browser-test gate (web projects only) -----------------------------
 
 /** Attach/replace a goal's browser-test UAT gate (web projects only). */
@@ -346,10 +331,6 @@ export const undispatchedIdeas = (projectId?: string, limit?: number) =>
 /** Accept (→ done, off-board) or reject (→ in-progress, with a comment) a goal. */
 export const resolveGoalAcceptance = (goalId: string, decision: "accept" | "reject", comment?: string) =>
   invoke<DevGoal>("dev_tools_resolve_goal_acceptance", { goalId, decision, comment });
-
-/** All dependency edges for one project's goals in a single query (Map). */
-export const listGoalDependenciesForProject = (projectId: string) =>
-  invoke<DevGoalDependency[]>("dev_tools_list_goal_dependencies_for_project", { projectId });
 
 /** All checklist items for one project's goals in a single query (Board card todos). */
 export const listGoalItemsForProject = (projectId: string) =>
@@ -651,14 +632,6 @@ export const getScanCodebaseStatus = (scanId: string) =>
     { scanId },
   );
 
-/** Idea-scanner counterpart of {@link getScanCodebaseStatus}; same contract. */
-export const getIdeaScanStatus = (scanId: string) =>
-  safeInvoke<DevToolsScanStatus>(
-    { scan_id: scanId, status: "unavailable", error: null, lines: [] },
-    "dev_tools_get_idea_scan_status",
-    { scanId },
-  );
-
 export const generateContextDescription = (contextId: string) =>
   safeInvoke<DevContext>({} as DevContext, "dev_tools_generate_context_description", { contextId }, undefined, 60_000);
 
@@ -690,6 +663,8 @@ export interface ContextAuditReport {
   project_id: string;
   generated_at: string;
   balanced: boolean;
+  /** False when the project root could not be walked: only structural checks ran, so `balanced` proves nothing about the files. */
+  disk_verified: boolean;
   totals: ContextAuditTotals;
   findings: ContextAuditFinding[];
 }
@@ -698,6 +673,7 @@ const EMPTY_AUDIT: ContextAuditReport = {
   project_id: "",
   generated_at: "",
   balanced: true,
+  disk_verified: false,
   totals: {
     groups: 0,
     contexts: 0,
@@ -878,9 +854,6 @@ export const bulkDeleteIdeas = (ids: string[]) =>
 // Scans
 // ============================================================================
 
-export const listScanAgents = () =>
-  safeInvoke<ScanAgentMeta[]>([], "dev_tools_list_scan_agents");
-
 export interface RunScanOptions {
   /** Single legacy context scope (per-context "scan this" + auto-scan). */
   contextId?: string;
@@ -979,11 +952,6 @@ export const rejectIdea = (id: string, reason?: string, expectedStatus?: string)
     reason: reason,
     expectedStatus,
   });
-
-/** Pending backlog ideas across all projects — source for the Human-Review
- *  inbox's "Dev Tools backlog" group. Project names resolved from the store. */
-export const listPendingIdeas = (limit?: number) =>
-  safeInvoke<DevIdea[]>([], "dev_tools_list_pending_ideas", { limit });
 
 /** Deleting a triage row IS deleting the idea — `dev_tools_delete_triage_idea`
  *  never existed on the Rust side, so this used to no-op and the row came back
@@ -1094,12 +1062,25 @@ export const dispatchIdeas = (
   });
 
 /**
+ * The triage turn runs inline under `cli_text_inner`'s 180 s stream cap plus a
+ * 5 s kill wait (`companion/athena_reaction.rs`), then writes the approval row.
+ * At the 90 s default the card showed an error while the backend still filed
+ * the approval, and a retry paid for a second turn. Pinned by
+ * `__tests__/athenaTriageTimeoutParity.test.ts`, which reads the Rust figures.
+ */
+const ATHENA_TRIAGE_IPC_TIMEOUT_MS = 210_000;
+
+/**
  * One headless Athena turn over up to 30 selected pending ideas. Persists the
  * verdicts as a PENDING approval and returns them for the verdict card; nothing
  * is applied until {@link applyTriageVerdicts} (or the plain Approvals card).
  */
 export const athenaTriageBatch = (ideaIds: string[]) =>
-  invoke<AthenaTriageBatch>("dev_tools_athena_triage_batch", { ideaIds });
+  invoke<AthenaTriageBatch>(
+    "dev_tools_athena_triage_batch",
+    { ideaIds },
+    { timeoutMs: ATHENA_TRIAGE_IPC_TIMEOUT_MS },
+  );
 
 /**
  * Confirm a triage batch, with per-item human overrides layered over Athena's
@@ -1365,22 +1346,6 @@ export const getCrossProjectMap = () =>
     "dev_tools_get_cross_project_map",
   );
 
-export const upsertCrossProjectRelation = (
-  sourceProjectId: string,
-  targetProjectId: string,
-  relationType: string,
-  details?: string,
-) =>
-  invoke("dev_tools_upsert_cross_project_relation", {
-    sourceProjectId,
-    targetProjectId,
-    relationType,
-    details,
-  });
-
-export const listCrossProjectRelations = () =>
-  safeInvoke<unknown[]>([], "dev_tools_list_cross_project_relations");
-
 export const createIdeaBatch = (ideas: {
   project_id?: string;
   context_id?: string;
@@ -1469,11 +1434,12 @@ export const getGitStatus = (projectId: string) =>
     { projectId },
   );
 
-export const commitChanges = (projectId: string, message: string, stageAll?: boolean) =>
+/** `paths` (project-relative) stages and commits exactly those files; omit to stage all. */
+export const commitChanges = (projectId: string, message: string, stageAll?: boolean, paths?: string[]) =>
   safeInvoke<GitOperationResult>(
     { success: false, message: 'Command not available' },
     "dev_tools_commit_changes",
-    { projectId, message, stageAll },
+    { projectId, message, stageAll, paths },
   );
 
 // ============================================================================

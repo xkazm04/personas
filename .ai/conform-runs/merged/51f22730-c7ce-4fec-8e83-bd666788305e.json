@@ -1,0 +1,18 @@
+{"schema":"conform-run/1","worker":"51f22730-c7ce-4fec-8e83-bd666788305e","subject":"companion-identity","evaluatedAt":"2026-10-22T03:05:29Z",
+"pairs":[
+{"context":"b0e9ba6b-7737-43ec-b551-9bcc1b71d76f","subject":"companion-identity","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/src/companion/disk.rs:93 the pre-upgrade constitution backup is still `let _ = fs::copy(...)` and :94 overwrites constitution.md unconditionally on any version bump (:87, no shipped-text fingerprint), so the person's amended law is replaced even when it was edited and even when the backup failed.",
+ "techniques":[{"technique":"constitution-self-model-split","verdict":"deviation","evidence":"src-tauri/src/companion/disk.rs:93 backup ignored on failure then :94 replaces an edited file; the technique requires an edited file to stay live and any pre-write copy to succeed first"}]},
+{"context":"bcb603ad-ce58-4b76-9623-aa99ace984af","subject":"companion-identity","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/src/companion/proactive/mod.rs:342 a schedule_proactive commitment (no re-fire path, :214) is still written only as a companion_proactive_message row via approval_exec_dev.rs:843 with no brain document, so a rebuild or folder export silently drops every check-in she promised.",
+ "techniques":[{"technique":"disk-truth-db-index","verdict":"deviation","evidence":"src-tauri/src/companion/proactive/mod.rs:342 index-only promise state; a rebuild resetting it makes the companion's promise false, which the technique forbids"}]}
+],
+"declined":[
+{"subject":"companion-identity","context":"2651f2ce-7fc1-4331-8b31-61e783e9746a","reason":"weak context (companions-page, lexical-only); judging it would test the match, not the code - left as a coverage question"},
+{"subject":"companion-identity","context":"5ab49df3-3442-4ea6-a405-077dec64850d","reason":"weak context (persona-core-codex is persona glyph UI, not a companion self); left as a coverage question, likely a lexical resonance on 'identity'"},
+{"subject":"companion-identity","context":"895b4bb2-16fd-4e8e-aae8-11315fe6436b,3effd422-2610-4c8a-bc02-53aceafd827c,9e46b252-8eb1-4a15-a627-f7e342f1d85a,5ed4c95e-037f-459e-ba3e-aa1300fd7504,3f38546e-e970-4837-97f7-f0504aa32daf","reason":"judged 2026-10-21 against the current revision 7 digest; no commit touched their anchors after that verdict, so re-reading would duplicate it"}
+],
+"consults":[
+{"ts":"2026-10-22T03:05:29Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["constitution-self-model-split"],"deviations":1},
+{"ts":"2026-10-22T03:05:29Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":["disk-truth-db-index"],"deviations":1}
+]}

@@ -71,12 +71,14 @@ export function QuickStatsBar({ personaId, trailing }: QuickStatsBarProps) {
 
   return (
     <div className="flex items-center gap-1.5 mt-3 flex-wrap" data-testid="quick-stats-bar">
-      <StatChip
-        icon={<CheckCircle2 className="w-3 h-3" />}
-        label={t.agents.editor_ui.success}
-        value={`${stats.successRate}%`}
-        color={stats.successRate >= 80 ? 'emerald' : stats.successRate >= 50 ? 'amber' : 'red'}
-      />
+      {stats.successRate != null && (
+        <StatChip
+          icon={<CheckCircle2 className="w-3 h-3" />}
+          label={t.agents.editor_ui.success}
+          value={`${stats.successRate}%`}
+          color={stats.successRate >= 80 ? 'emerald' : stats.successRate >= 50 ? 'amber' : 'red'}
+        />
+      )}
       {stats.healthGrade && (
         <StatChip
           icon={<Heart className="w-3 h-3" />}

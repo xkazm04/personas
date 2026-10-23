@@ -1,0 +1,39 @@
+{"schema": "conform-run/1", "worker": "70dd0dce-707e-4b7f-8f05-9ba4ea5dd9c6", "subject": "quality-gates",
+ "evaluatedAt": "2026-10-21T12:17:01Z",
+ "pairs": [
+  {"context": "68e3a26f-d83a-447b-a2d0-ad875004506f", "subject": "quality-gates", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:0d8378dd13155e59", "evaluatedRevision": 54,
+   "evidence": "src/features/scraper/useScrapeForm.ts:230 the preview-proven refusal for an armed scrape lives only in the editor hook; src-tauri/engine/src/scraper.rs:528 config_save defaults enabled to true and :539 schedules it with no preview evidence, so any other caller arms an unproven selector on cron",
+   "techniques": [
+     {"technique": "gate-laddering", "verdict": "deviation", "evidence": "src/features/scraper/useScrapeForm.ts:230 the only rung is the client; the binding door src-tauri/src/commands/infrastructure/scraper.rs:53 calls config_save without the check, so the client rung is a courtesy with no backstop"},
+     {"technique": "severity-by-construction", "verdict": "deviation", "evidence": "src-tauri/engine/src/scraper.rs:528 an omitted enabled field resolves to armed (unwrap_or(true)), so the absent value takes the permissive branch the editor gate exists to refuse"}
+   ],
+   "registryProposal": "Runtime product gates (a UI check guarding a server write door) recur as the deviation shape in this repo (scraper, templates-recipes, notepad-plan, agents-editor): gate-laddering states the binding-rung invariant for CI pipelines only; a technique or application naming 'the refusal belongs at the write door, the renderer copy is a projection' would let judges cite it directly instead of by analogy."},
+  {"context": "e13cfc6c-f666-4959-81c0-2cfbc4815f04", "subject": "quality-gates", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:0d8378dd13155e59", "evaluatedRevision": 54,
+   "evidence": "src/features/templates/sub_recipes/components/RecipeDetailPanel.tsx:50 adopt is gated by a slug-only evaluator over all of CONNECTOR_META (useEligibility.ts:17), and libs/useAdoption.ts:62 writes the use case via mutateUseCases without ever reaching the backend refusal at src-tauri/src/commands/recipes/recipe_adoption.rs:86, so recipes the tool-catalog gate calls Incompatible are adopted",
+   "techniques": [
+     {"technique": "policy-projection", "verdict": "deviation", "evidence": "src/features/templates/sub_recipes/useEligibility.ts:17 the surface re-derives eligibility from connector slugs instead of rendering the backend policy (tool_hints catalog, src-tauri/engine/src/recipe_eligibility.rs), so it advertises a different, weaker policy than the one enforced"},
+     {"technique": "gate-laddering", "verdict": "deviation", "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 the write path bypasses recipe_adoption.rs:86 entirely; the only refusal on the path the user takes is the client projection"}
+   ]},
+  {"context": "b62fa237-32b4-41c3-bf56-3e498b643da9", "subject": "quality-gates", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:0d8378dd13155e59", "evaluatedRevision": 54,
+   "evidence": "src-tauri/src/commands/credentials/credential_design.rs:280 a design-healthcheck transport error returns Ok{success:false} with no probe state, useCredentialHealth.ts:240 forwards no state, and src/lib/credentials/healthState.ts:110 resolves it to failed, so could-not-reach renders in CredentialEditForm as a rejected key and blocks save (CredentialTemplateForm.tsx:189)",
+   "techniques": [
+     {"technique": "unmeasurable-criteria", "verdict": "deviation", "evidence": "src-tauri/src/commands/credentials/credential_design.rs:280 a hole in the gate's own vision (network failure) and the skip at :181 (no reliable endpoint) both reach the verdict as failed, never as an announced unreachable/unverifiable; the IPC-throw path was fixed (useCredentialHealth.ts:168) but this in-band path was not"},
+     {"technique": "refusal-names-a-reachable-remedy", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/forms/CredentialTemplateForm.tsx:189 refuses save with healthcheck_required when the probe never ran, sending the user to re-enter a credential that may be correct"}
+   ]},
+  {"context": "dc471d31-ae30-4ac9-b015-d51969df458d", "subject": "quality-gates", "bundle": "software-engineering", "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:0d8378dd13155e59", "evaluatedRevision": 54,
+   "evidence": "src/features/shared/chrome/sidebar/SidebarLevel1.tsx:200 the context's only gating is tier/dev visibility (plan entitlement, also FooterSectionNav.tsx:40 passesGates) and src/features/shared/chrome/CliReadinessBanner.tsx:12 is presentation only; nothing here refuses a change, artifact or advancement against a quality standard",
+   "techniques": []}
+ ],
+ "declined": [
+  {"subject": "quality-gates", "context": "*", "reason": "budget: 4 pairs judged (3 stale deviations + 1 strong stale not-applicable); remaining 9 stale not-applicable pairs and ~45 probable unknowns left for later runs; 9 weak-governance contexts deliberately not judged"}
+ ],
+ "consults": [
+  {"ts": "2026-10-21T12:17:01Z", "bundle": "software-engineering", "subjects": ["quality-gates"], "techniques": ["gate-laddering", "severity-by-construction"], "deviations": 1},
+  {"ts": "2026-10-21T12:17:01Z", "bundle": "software-engineering", "subjects": ["quality-gates"], "techniques": ["policy-projection", "gate-laddering"], "deviations": 1},
+  {"ts": "2026-10-21T12:17:01Z", "bundle": "software-engineering", "subjects": ["quality-gates"], "techniques": ["unmeasurable-criteria", "refusal-names-a-reachable-remedy"], "deviations": 1},
+  {"ts": "2026-10-21T12:17:01Z", "bundle": "software-engineering", "subjects": ["quality-gates"], "techniques": [], "deviations": 0}
+ ]}

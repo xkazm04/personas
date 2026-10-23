@@ -11,13 +11,19 @@ vi.mock("@/api/agents/buildSession", () => ({
   getSimulationArtefacts: vi.fn(),
 }));
 
+vi.mock("@/api/agents/executions", () => ({
+  getExecution: vi.fn(),
+}));
+
 import {
   simulateBuildDraft,
   getSimulationArtefacts,
 } from "@/api/agents/buildSession";
+import { getExecution } from "@/api/agents/executions";
 
 const mockSimulate = simulateBuildDraft as ReturnType<typeof vi.fn>;
 const mockArtefacts = getSimulationArtefacts as ReturnType<typeof vi.fn>;
+const mockGetExecution = getExecution as ReturnType<typeof vi.fn>;
 
 const SAMPLE_DRAFT = {
   use_cases: [
@@ -38,6 +44,7 @@ const SAMPLE_DRAFT = {
 beforeEach(() => {
   mockSimulate.mockReset();
   mockArtefacts.mockReset();
+  mockGetExecution.mockReset();
 });
 
 afterEach(() => {
@@ -196,6 +203,41 @@ describe("BuildSimulatePanel", () => {
     expect(screen.getByText(/User prefers brief summaries/i)).toBeTruthy();
   });
 
+  // `simulate_build_draft` returns after the spawn, so the row it hands back is
+  // still queued and has written nothing. Reading artefacts from it showed an
+  // empty preview for every real dry-run; the completed-row fixtures above hid it.
+  it("waits for the dry-run to finish before reading its artefacts", async () => {
+    mockSimulate.mockResolvedValueOnce({ id: "exec_q", persona_id: "p1", status: "queued" });
+    mockGetExecution.mockResolvedValue({ id: "exec_q", persona_id: "p1", status: "completed" });
+    mockArtefacts.mockResolvedValueOnce({
+      executionId: "exec_q",
+      reviews: [],
+      memories: [
+        {
+          id: "m1",
+          persona_id: "p1",
+          title: "Written by the finished run",
+          content: "x",
+          category: "fact",
+          importance: 3,
+          created_at: "2026-10-19T00:00:00Z",
+        },
+      ],
+    });
+
+    render(
+      <BuildSimulatePanel isOpen onClose={() => {}} sessionId="sess_1" draft={SAMPLE_DRAFT} />,
+    );
+    fireEvent.click(screen.getByTestId("build-simulate-run"));
+
+    await waitFor(() => expect(mockArtefacts).toHaveBeenCalledWith("exec_q"), { timeout: 4000 });
+    expect(mockGetExecution).toHaveBeenCalledWith("exec_q", "p1");
+    // The artefacts read came after the row was seen terminal, never before.
+    const firstTerminalRead = mockGetExecution.mock.invocationCallOrder[0]!;
+    expect(mockArtefacts.mock.invocationCallOrder[0]!).toBeGreaterThan(firstTerminalRead);
+    expect(await screen.findByText(/Written by the finished run/i)).toBeTruthy();
+  });
+
   it("passes the user-typed input override (trimmed) instead of null", async () => {
     mockSimulate.mockResolvedValueOnce({
       id: "exec_x",
@@ -252,6 +294,24 @@ describe("BuildSimulatePanel", () => {
       expect(alert.textContent).toMatch(/not found/i);
     });
     expect(mockArtefacts).not.toHaveBeenCalled();
+  });
+
+  // invokeWithTimeout rejects with a serialized AppError object, never an Error.
+  it("names the backend's reason, not [object Object], when IPC rejects with an AppError", async () => {
+    mockSimulate.mockRejectedValueOnce({
+      error: "use_case_id 'uc_x' not found in draft agent_ir",
+      kind: "validation",
+    });
+
+    render(
+      <BuildSimulatePanel isOpen onClose={() => {}} sessionId="sess_1" draft={SAMPLE_DRAFT} />,
+    );
+    fireEvent.click(screen.getByTestId("build-simulate-run"));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent).toMatch(/uc_x' not found in draft/);
+    });
+    expect(screen.getByRole("alert").textContent).not.toMatch(/\[object Object\]/);
   });
 
   it("disables the run button when no sessionId is available", () => {

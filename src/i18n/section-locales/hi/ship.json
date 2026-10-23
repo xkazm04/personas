@@ -27,7 +27,7 @@
   "cover_empty": "अभी कोई माइलस्टोन नहीं — पहला कट तय करें",
   "cover_forecast": "अनुमान {date}",
   "cover_next": "अगला",
-  "cover_open_aria": "{name} के लिए Ship रोडमैप खोलें",
+  "cover_open_aria": "नोटपैड में {name} का रोडमैप खोलें",
   "cover_shipped_count": "{shipped}/{total} शिप हुए",
   "crit_contexts": "कोर कॉन्टेक्स्ट्स स्वस्थ हैं",
   "crit_contexts_critical": " · क्रिटिकल: {names}",

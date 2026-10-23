@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { resolveInPool, BULK_RESOLVE_CONCURRENCY } from '../bulkResolve';
+import { resolveInPool, summarizeBulkOutcome, BULK_RESOLVE_CONCURRENCY } from '../bulkResolve';
+import { isDecisionConflict } from '@/lib/decisions/rowWrites';
 
 function instrumented(failOn: ReadonlySet<number> = new Set()) {
   let inFlight = 0;
@@ -41,5 +42,21 @@ describe('resolveInPool', () => {
 
   it('returns an empty list for an empty batch', async () => {
     expect(await resolveInPool([], async () => undefined)).toEqual([]);
+  });
+});
+
+describe('summarizeBulkOutcome', () => {
+  it('a lost compare-and-swap is decided elsewhere, not still pending', () => {
+    const out = summarizeBulkOutcome(
+      [
+        { status: 'ok' },
+        // The IPC door rejects with an AppError object; the phrase is the
+        // backend's own (manual_reviews.rs update_status).
+        { status: 'failed', reason: { error: 'Manual review r2 was already resolved by a concurrent action', kind: 'Validation' } },
+        { status: 'failed', reason: { error: 'database is locked', kind: 'Database' } },
+      ],
+      isDecisionConflict,
+    );
+    expect(out).toEqual({ failed: 1, decidedElsewhere: 1 });
   });
 });

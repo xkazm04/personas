@@ -10,12 +10,14 @@
  * (2026-10-05) kept it as the only one; Edit opens the site modal, which now
  * carries the credential, the budget and the ask-first overrides too.
  */
+import { useState } from 'react';
 import { ExternalLink, ScanSearch, Check } from 'lucide-react';
 
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
 import { TableActions } from '@/features/shared/components/display/TableCells';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -44,8 +46,11 @@ export default function WhitelistLedger({
   onOpen,
   onEdit,
 }: WhitelistLedgerProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const w = t.browser.whitelist;
+  // Remove drops the origin, its overrides and its credential binding with no
+  // undo, so it asks first (a wildcard row revokes access to many sites).
+  const [pendingRemove, setPendingRemove] = useState<BrowserSite | null>(null);
 
   const columns: TableColumn<BrowserSite>[] = [
     {
@@ -145,29 +150,51 @@ export default function WhitelistLedger({
           <Button size="xs" variant="ghost" onClick={() => onEdit(site)} data-testid={`whitelist-edit-${site.origin}`}>
             {t.browser.add_site.edit_action}
           </Button>
-          <AsyncButton size="xs" variant="ghost" onClick={() => onRemove(site)}>
+          <Button
+            size="xs"
+            variant="ghost"
+            onClick={() => setPendingRemove(site)}
+            data-testid={`whitelist-remove-${site.origin}`}
+          >
             {w.action_remove}
-          </AsyncButton>
+          </Button>
         </TableActions>
       ),
     },
   ];
 
   return (
-    <UnifiedTable<BrowserSite>
-      columns={columns}
-      data={sites as BrowserSite[]}
-      getRowKey={(site) => site.origin}
-      isLoading={loading}
-      // Windowed: the whitelist is a gate, and a gate an agent can ask to
-      // extend has no natural ceiling on how many origins it holds.
-      rowHeight={56}
-      density="compact"
-      defaultSortKey="origin"
-      defaultSortDir="asc"
-      ariaLabel={w.table_aria}
-      emptyTitle={w.empty_title}
-      emptyDescription={w.empty_description}
-    />
+    <>
+      <UnifiedTable<BrowserSite>
+        columns={columns}
+        data={sites as BrowserSite[]}
+        getRowKey={(site) => site.origin}
+        isLoading={loading}
+        // Windowed: the whitelist is a gate, and a gate an agent can ask to
+        // extend has no natural ceiling on how many origins it holds.
+        rowHeight={56}
+        density="compact"
+        defaultSortKey="origin"
+        defaultSortDir="asc"
+        ariaLabel={w.table_aria}
+        emptyArt="shield"
+        emptyTitle={w.empty_title}
+        emptyDescription={w.empty_description}
+      />
+      {pendingRemove && (
+        <ConfirmDialog
+          danger
+          title={w.action_remove}
+          body={tx(w.remove_body, { origin: pendingRemove.origin })}
+          confirmLabel={w.action_remove}
+          onConfirm={async () => {
+            const site = pendingRemove;
+            setPendingRemove(null);
+            await onRemove(site);
+          }}
+          onCancel={() => setPendingRemove(null)}
+        />
+      )}
+    </>
   );
 }

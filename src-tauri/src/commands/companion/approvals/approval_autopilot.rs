@@ -238,12 +238,13 @@ pub async fn auto_resolve_if_allowed(
                     "deferred",
                     Some("screen_changed"),
                 );
-                if let Ok(conn) = state.user_db.get() {
-                    let _ = conn.execute(
-                        "UPDATE companion_approval SET status = ?1 WHERE id = ?2",
-                        rusqlite::params![APPROVAL_STATUS_REJECTED, approval.id],
-                    );
-                }
+                crate::commands::companion::fleet_bridge::update_approval_logged(
+                    &state.user_db,
+                    "supersede stale-screen proposal",
+                    &approval.id,
+                    "UPDATE companion_approval SET status = ?1 WHERE id = ?2",
+                    rusqlite::params![APPROVAL_STATUS_REJECTED, approval.id],
+                );
                 crate::commands::companion::fleet_bridge::force_reassess(app, &state, sid);
                 return Ok(true);
             }

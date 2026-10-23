@@ -3,6 +3,8 @@ import { Stethoscope, Search, Wrench, CheckCircle2, XCircle, ChevronDown, Chevro
 import type { AiHealingState, AiHealingPhase } from '@/hooks/execution/useAiHealingStream';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 function useElapsedTime(active: boolean): number {
@@ -39,40 +41,54 @@ function useElapsedTime(active: boolean): number {
   return elapsed;
 }
 
-const PHASE_STEPS: { phase: AiHealingPhase; label: string; icon: typeof Search }[] = [
-  { phase: 'diagnosing', label: 'Diagnosing', icon: Search },
-  { phase: 'applying', label: 'Applying Fixes', icon: Wrench },
-  { phase: 'completed', label: 'Completed', icon: CheckCircle2 },
-];
+const PHASE_STEPS = [
+  { phase: 'diagnosing', labelKey: 'step_diagnosing', icon: Search },
+  { phase: 'applying', labelKey: 'step_applying', icon: Wrench },
+  { phase: 'completed', labelKey: 'step_completed', icon: CheckCircle2 },
+] as const satisfies readonly { phase: AiHealingPhase; labelKey: string; icon: typeof Search }[];
 
 function phaseIndex(phase: AiHealingPhase): number {
   if (phase === 'started' || phase === 'diagnosing') return 0;
   if (phase === 'applying') return 1;
   if (phase === 'completed') return 2;
-  if (phase === 'failed') return 3;
   return -1;
+}
+
+/**
+ * The step a run had reached. A failure is not a step of its own: it happened ON the step the
+ * run was on, so that step is the failed one and the steps after it were never reached. The
+ * failed phase used to sit at index 3, past every step, which drew all three - "Completed"
+ * included - in the done tone on a run that failed.
+ */
+function useReachedStep(phase: AiHealingPhase): number {
+  const idx = phaseIndex(phase);
+  const [reached, setReached] = useState(Math.max(0, idx));
+  useEffect(() => {
+    if (idx >= 0) setReached(idx);
+  }, [idx]);
+  return idx >= 0 ? idx : reached;
 }
 
 const HEADER_STYLES: Record<string, { border: string; bg: string; iconBox: string }> = {
   red: {
-    border: 'border-red-500/20',
-    bg: 'bg-gradient-to-r from-red-500/10 to-transparent',
-    iconBox: 'bg-red-500/15 border-red-500/25',
+    border: 'border-status-error/20',
+    bg: 'bg-gradient-to-r from-status-error/10 to-transparent',
+    iconBox: 'bg-status-error/15 border-status-error/25',
   },
   emerald: {
-    border: 'border-emerald-500/20',
-    bg: 'bg-gradient-to-r from-emerald-500/10 to-transparent',
-    iconBox: 'bg-emerald-500/15 border-emerald-500/25',
+    border: 'border-status-success/20',
+    bg: 'bg-gradient-to-r from-status-success/10 to-transparent',
+    iconBox: 'bg-status-success/15 border-status-success/25',
   },
   amber: {
-    border: 'border-amber-500/20',
-    bg: 'bg-gradient-to-r from-amber-500/10 to-transparent',
-    iconBox: 'bg-amber-500/15 border-amber-500/25',
+    border: 'border-status-warning/20',
+    bg: 'bg-gradient-to-r from-status-warning/10 to-transparent',
+    iconBox: 'bg-status-warning/15 border-status-warning/25',
   },
   cyan: {
-    border: 'border-cyan-500/20',
-    bg: 'bg-gradient-to-r from-cyan-500/10 to-transparent',
-    iconBox: 'bg-cyan-500/15 border-cyan-500/25',
+    border: 'border-role-highlight/20',
+    bg: 'bg-gradient-to-r from-role-highlight/10 to-transparent',
+    iconBox: 'bg-role-highlight/15 border-role-highlight/25',
   },
 };
 
@@ -90,9 +106,10 @@ interface AiHealingStreamOverlayProps {
 
 export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOverlayProps) {
   const { t } = useTranslation();
+  const o = t.overview.ai_healing_overlay;
   const logRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(false);
-  const activeIdx = phaseIndex(healing.phase);
+  const activeIdx = useReachedStep(healing.phase);
   const color = phaseColor(healing.phase);
   const styles = HEADER_STYLES[color]!;
   const isFailed = healing.phase === 'failed';
@@ -113,41 +130,37 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
         <div className="flex items-center gap-3">
           <div className={`w-7 h-7 rounded-card border flex items-center justify-center ${styles.iconBox}`}>
             {isFailed ? (
-              <XCircle className="w-3.5 h-3.5 text-red-400" />
+              <XCircle className="w-3.5 h-3.5 text-status-error" />
             ) : isDone ? (
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-status-success" />
             ) : (
-              <Stethoscope className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+              <Stethoscope className="w-3.5 h-3.5 text-role-highlight animate-pulse" />
             )}
           </div>
           <span className="typo-heading text-foreground/90 uppercase typo-body">
-            <DebtText k="auto_ai_healing_2ec57639" /> {isFailed ? 'Failed' : isDone ? 'Complete' : 'In Progress'}
+            <DebtText k="auto_ai_healing_2ec57639" /> {isFailed ? o.status_failed : isDone ? o.status_complete : o.status_in_progress}
           </span>
           {isDone && elapsed > 0 && (
             <span className="typo-caption text-foreground">{elapsed}s</span>
           )}
-          {!isDone && (
-            <div className="w-3.5 h-3.5 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
-          )}
         </div>
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setCollapsed((c) => !c)}
-            className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
-            title={collapsed ? 'Expand' : 'Collapse'}
-          >
-            {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-          </button>
-          {isDone && (
-            <button
-              type="button"
-              onClick={onDismiss}
-              className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors"
-              title={t.common.dismiss}
+          <Tooltip content={collapsed ? o.expand : o.collapse}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setCollapsed((c) => !c)}
+              aria-label={collapsed ? o.expand : o.collapse}
             >
-              <X className="w-3.5 h-3.5" />
-            </button>
+              {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+            </Button>
+          </Tooltip>
+          {isDone && (
+            <Tooltip content={t.common.dismiss}>
+              <Button variant="ghost" size="icon-sm" onClick={onDismiss} aria-label={t.common.dismiss}>
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -164,24 +177,25 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
 
               let dotClass: string;
               let labelClass: string;
+              const stepState = isFailed && isActive ? 'failed' : isPast || (isDone && isActive) ? 'done' : isCurrent ? 'current' : 'pending';
               if (isFailed && isActive) {
-                dotClass = 'bg-red-500/20 border-red-500/40 text-red-400';
-                labelClass = 'text-red-400';
+                dotClass = 'bg-status-error/20 border-status-error/40 text-status-error';
+                labelClass = 'text-status-error';
               } else if (isPast || (isDone && isActive)) {
-                dotClass = 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400';
-                labelClass = 'text-emerald-400';
+                dotClass = 'bg-status-success/20 border-status-success/40 text-status-success';
+                labelClass = 'text-status-success';
               } else if (isCurrent) {
-                dotClass = 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400';
-                labelClass = 'text-cyan-300';
+                dotClass = 'bg-role-highlight/20 border-role-highlight/40 text-role-highlight';
+                labelClass = 'text-role-highlight';
               } else {
                 dotClass = 'bg-secondary/40 border-primary/15 text-foreground';
                 labelClass = 'text-foreground';
               }
 
               return (
-                <div key={step.phase} className="flex items-center gap-2">
+                <div key={step.phase} className="flex items-center gap-2" data-step-state={stepState}>
                   {i > 0 && (
-                    <div className={`w-6 h-px ${isPast || (isDone && i <= activeIdx) ? 'bg-emerald-500/40' : 'bg-primary/10'}`} />
+                    <div className={`w-6 h-px ${isPast || (isDone && i <= activeIdx) ? 'bg-status-success/40' : 'bg-primary/10'}`} />
                   )}
                   <div className="flex flex-col items-start gap-0.5">
                     <div className="flex items-center gap-1.5">
@@ -189,7 +203,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
                         <Icon className="w-3 h-3" />
                       </div>
                       <span className={`typo-caption tracking-wide ${labelClass}`}>
-                        {step.label}
+                        {o[step.labelKey]}
                       </span>
                     </div>
                     {isCurrent && elapsed > 0 && (
@@ -203,17 +217,17 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
 
           {/* Diagnosis summary */}
           {healing.diagnosis && (
-            <div className="px-3 py-2 rounded-card bg-cyan-500/5 border border-cyan-500/15 typo-body text-cyan-300/90">
-              <span className="font-medium text-cyan-400"><DebtText k="auto_diagnosis_d4ef703f" /></span> {healing.diagnosis}
+            <div className="px-3 py-2 rounded-card bg-role-highlight/5 border border-role-highlight/15 typo-body text-role-highlight">
+              <span className="font-medium text-role-highlight"><DebtText k="auto_diagnosis_d4ef703f" /></span> {healing.diagnosis}
             </div>
           )}
 
           {/* Fixes applied */}
           {healing.fixesApplied.length > 0 && (
-            <div className="px-3 py-2 rounded-card bg-emerald-500/5 border border-emerald-500/15 typo-body space-y-1">
-              <span className="text-emerald-400 typo-caption uppercase tracking-wider"><DebtText k="auto_fixes_applied_239ec9a7" /></span>
+            <div className="px-3 py-2 rounded-card bg-status-success/5 border border-status-success/15 typo-body space-y-1">
+              <span className="text-status-success typo-caption uppercase tracking-wider"><DebtText k="auto_fixes_applied_239ec9a7" /></span>
               {healing.fixesApplied.map((fix, i) => (
-                <div key={i} className="flex items-start gap-2 text-emerald-300/80">
+                <div key={i} className="flex items-start gap-2 text-status-success">
                   <CheckCircle2 className="w-3 h-3 mt-0.5 flex-shrink-0" />
                   <span>{fix}</span>
                 </div>

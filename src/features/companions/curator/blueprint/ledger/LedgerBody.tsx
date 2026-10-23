@@ -88,7 +88,7 @@ function LedgerBodyInner({
               card that replaced the page. */}
           {model.rows === null && (
             <div className="cb-lrow cb-lempty" data-role="cb-ledger-empty" data-phase={phase}>
-              <EmptyState className="cb-note" {...ledgerPhaseCopy(w, phase)}>
+              <EmptyState className="cb-note" art="report" size="sm" {...ledgerPhaseCopy(w, phase)}>
                 {/* The ledger's own ink for "nobody looked", in the place the
                     rows would be. */}
                 <span className="cb-unkbox" aria-hidden="true" />
@@ -96,7 +96,11 @@ function LedgerBodyInner({
             </div>
           )}
           {bodyRows}
-          <Bands model={model} />
+          {/* The bands sit BELOW the rows, so while the first read is in flight
+              they would be pushed down by every row that lands (measured in the
+              shot harness: CLS 0.07 at 1400x900 from this alone). They draw the
+              moment the read settles - rows, or the offer - and never move. */}
+          {!(phase === 'reading' && model.rows === null) && <Bands model={model} />}
         </div>
       </div>
     </section>

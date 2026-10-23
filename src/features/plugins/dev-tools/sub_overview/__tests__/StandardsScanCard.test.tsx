@@ -7,6 +7,8 @@ import type { DevStandard } from '@/lib/bindings/DevStandard';
 // offer the control at all.
 
 const createTask = vi.hoisted(() => vi.fn());
+const runStandardsScanApi = vi.hoisted(() => vi.fn());
+const toastCatchSpy = vi.hoisted(() => vi.fn());
 const setPendingTaskFocusId = vi.fn();
 const setDevToolsTab = vi.fn();
 const fetchStandards = vi.fn(async () => undefined);
@@ -14,7 +16,11 @@ const runStandardsScan = vi.fn(async () => undefined);
 
 let standards: DevStandard[] = [];
 
-vi.mock('@/api/devTools/devTools', () => ({ createTask }));
+vi.mock('@/api/devTools/devTools', () => ({ createTask, runStandardsScan: runStandardsScanApi }));
+vi.mock('@/lib/silentCatch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/silentCatch')>()),
+  toastCatch: (ctx: string) => (err: unknown) => toastCatchSpy(ctx, err),
+}));
 
 vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (selector: (s: Record<string, unknown>) => unknown) =>
@@ -76,5 +82,28 @@ describe('StandardsScanCard dispatch', () => {
     render(<StandardsScanCard projectId="p1" />);
 
     expect(screen.queryByRole('button', { name: /queue task/i })).toBeNull();
+  });
+});
+
+describe('StandardsScanCard scan start', () => {
+  it('a scan that fails to start re-enables the button and reports the failure', async () => {
+    runStandardsScanApi.mockRejectedValue({ error: 'project root not found', kind: 'not_found' });
+    render(<StandardsScanCard projectId="p1" />);
+
+    const run = screen.getByRole('button', { name: /scan/i });
+    fireEvent.click(run);
+
+    await waitFor(() => expect(toastCatchSpy).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByRole('button', { name: /scan/i })).not.toBeDisabled());
+  });
+
+  it('a started scan stays busy until its status event arrives', async () => {
+    runStandardsScanApi.mockResolvedValue({ scan_id: 's1' });
+    render(<StandardsScanCard projectId="p1" />);
+
+    fireEvent.click(screen.getByRole('button', { name: /scan/i }));
+    await waitFor(() => expect(runStandardsScanApi).toHaveBeenCalledWith('p1'));
+    expect(screen.getByRole('button', { name: /scan/i })).toBeDisabled();
+    expect(toastCatchSpy).not.toHaveBeenCalled();
   });
 });

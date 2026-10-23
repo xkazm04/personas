@@ -1,0 +1,49 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5b793d93-cbdd-43ae-9c07-ce02c8bdd0fd",
+ "subject": "table",
+ "evaluatedAt": "2026-10-22T15:30:36.269Z",
+ "pairs": [
+  {
+   "context": "2651f2ce-7fc1-4331-8b31-61e783e9746a",
+   "subject": "table",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/companions/CompanionsPage.tsx:2 the context is a section content router over lazy companion pages with no dataset of uniform records, so no cross-record comparison job exists for a table to serve",
+   "techniques": [
+    {
+     "technique": "golden-path-when-not-to-use",
+     "verdict": "precondition unmet: no uniform-record dataset or comparison job",
+     "evidence": "src/features/companions/CompanionsPage.tsx:2 the context is a section content router over lazy companion pages with no dataset of uniform records, so no cross-record comparison job exists for a table to serve"
+    }
+   ],
+   "registryProposal": "matcher resonance on page/landing/routes and row/rows/edit tokens; neither context renders a dataset. Consider down-weighting table for router/hub and detail-layout vocabulary."
+  },
+  {
+   "context": "37cd64d2-bd42-47b9-8c17-7ea1b466135c",
+   "subject": "table",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/glyph/persona-layout/PersonaSigilSummary.tsx:74 renders a fixed-dimension summary list and per-capability rows (PersonaLayout.tsx:257) that are identity-dominant, which the golden path assigns to cards or a list; no sort, filter or paging surface",
+   "techniques": [
+    {
+     "technique": "golden-path-when-not-to-use",
+     "verdict": "precondition unmet: identity-dominant rows about one record, not comparison",
+     "evidence": "src/features/shared/glyph/persona-layout/PersonaSigilSummary.tsx:74 renders a fixed-dimension summary list and per-capability rows (PersonaLayout.tsx:257) that are identity-dominant, which the golden path assigns to cards or a list; no sort, filter or paging surface"
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-22T15:30:36.269Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "table"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

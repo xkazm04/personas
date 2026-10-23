@@ -387,8 +387,13 @@ export class ExecutionSink {
     const gen = this.generation;
 
     const flushNormal = () => {
+      // A timer left over from a previous execution must not touch this one's
+      // flag: clearing it let the next run's throttle schedule a second timer,
+      // and let forceFlush() skip the run's final lines before the snapshot.
+      // resetState() already cleared the flag for its own generation.
+      if (gen !== this.generation) return;
       this.normalFlushScheduled = false;
-      if (gen !== this.generation || !this.onFlush) return;
+      if (!this.onFlush) return;
       // Tail mode took over while this flush was pending -- the truncation
       // crossing already pushed the frozen ring snapshot.
       if (this.truncated) return;
@@ -444,8 +449,10 @@ export class ExecutionSink {
     const gen = this.generation;
 
     const flushTail = () => {
+      // Same generation rule as flushNormal.
+      if (gen !== this.generation) return;
       this.tailFlushScheduled = false;
-      if (gen !== this.generation || !this.onFlush) return;
+      if (!this.onFlush) return;
 
       this.lastTailFlushTime = Date.now();
       const output = this.buildTailOutput();

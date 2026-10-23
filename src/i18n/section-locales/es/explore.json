@@ -9,5 +9,20 @@
   "domain_revenue": "Ventas y Marketing",
   "adopt_failed": "No se pudo abrir {name}.",
   "adopt_no_template": "{name} no tiene una plantilla de origen que adoptar.",
-  "adopt_not_found": "{name} todavía no está en la galería de plantillas."
+  "adopt_not_found": "{name} todavía no está en la galería de plantillas.",
+  "l2_all_domains": "Todos los dominios",
+  "l2_col_capabilities": "Capacidades",
+  "l2_col_focus": "Enfoque",
+  "l2_col_name": "Nombre",
+  "l2_col_tools": "Herramientas",
+  "l2_col_type": "Tipo",
+  "l2_counts": "{templates} plantillas · {recipes} recetas",
+  "l2_filter_all": "Todo",
+  "l2_filter_placeholder": "Filtrar por nombre…",
+  "l2_filter_recipes": "Recetas",
+  "l2_filter_templates": "Plantillas",
+  "l2_kind_recipe": "Receta",
+  "l2_kind_template": "Plantilla",
+  "l2_no_matches": "Sin coincidencias.",
+  "l2_shown": "{shown} de {total} mostrados"
 }

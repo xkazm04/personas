@@ -1,0 +1,123 @@
+{
+  "schema": "conform-run/1",
+  "worker": "26a261d0-277d-43e2-8c68-5107a8d2f5f2",
+  "subject": "cost-metering",
+  "evaluatedAt": "2026-10-16T18:07:52Z",
+  "pairs": [
+    {
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:151 the session-scoped \"Run anyway\" override unblocks only the frontend mirror and is never recorded, while the real gate at src-tauri/src/commands/execution/executions.rs:476 takes no override and refuses the run as a generic Validation error - the slice header (:23 \"frontend-only gating\") describes a gate that no longer exists, so the override is a dead door",
+      "techniques": [
+        {
+          "technique": "budget-enforcement",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:151 override is an unrecorded in-memory Set that the server gate src-tauri/src/commands/execution/executions.rs:476 never consults; the UI gate reads a 60s-TTL frontend mirror (:29) instead of the store it enforces, and fails open before the first fetch (:148)"
+        },
+        {
+          "technique": "usage-ledgers",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:106 keeps only result.items and discards MonthlySpendResult.periodStartUtc, so the reset label is re-derived in local time by a consumer (src/features/agents/sub_executions/components/runner/BudgetRecoveryCard.tsx:17) while the gate uses the UTC month"
+        },
+        {
+          "technique": "spend-observability",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/agents/budgetEnforcementSlice.ts:33 the slice holds per-persona gate state only; no spend surface is drawn here"
+        }
+      ]
+    },
+    {
+      "context": "7901fd6c-0346-430b-aefe-fc4cd623b167",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/sub_usage/libs/chartConstants.ts:49 a unit tag (cost -> usd) is the context's only money knowledge: a generic chart kit (tooltip, gradients, period merge) that prices, records, attributes and gates nothing; spend semantics live in its consumers, judged under overview-activity-metrics and overview-observability",
+      "techniques": [
+        {
+          "technique": "spend-observability",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 the only series logic is an ordinal period split, a metrics-rollups comparison concern, applied to whatever series a caller hands it"
+        }
+      ],
+      "registryProposal": "Technique-shaped resonance, not governance: the match rides on the token 'cost' in a chart-kit context; metrics-rollups (comparison honesty) is what governs periodComparison.ts."
+    },
+    {
+      "context": "2dcda6bf-9982-422b-b63f-1481c414cdab",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:158 toNum coerces a missing tool-reported cost to 0, so every trace Langfuse/LangSmith left unpriced (:235, :303) sums into the cost column as free with no unpriced count, and the over-threshold flag under-fires on exactly the newest models",
+      "techniques": [
+        {
+          "technique": "price-tables",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:158 unknown -> 0 with no counter; the pinpoint (:28) has no unpriced-calls field to mark the total as a floor"
+        },
+        {
+          "technique": "unit-classes-are-open",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/LlmOverviewPage.tsx:341 tokens column sums exactly inputTokens + outputTokens; cached/reasoning classes the tools report are dropped by the mappers with no residual"
+        },
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:28 LlmPinpoint carries no status/failure axis, so failed-call spend cannot be shown as its own series - though the surface sorts most-expensive-first (LlmOverviewPage.tsx:505), banners a truncated window as a floor (:512) and labels costs as estimates (:534)"
+        },
+        {
+          "technique": "budget-enforcement",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:20 LLM_COST_THRESHOLD_USD is a findings-severity threshold on an external project's spend, not a ceiling this product enforces"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "cost-metering",
+      "context": "5ab49df3-3442-4ea6-a405-077dec64850d",
+      "reason": "governance: weak (persona-core-codex is a glyph/trait modal); judging it would manufacture a deviation - a coverage question, not a verdict"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T18:07:52Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "cost-metering"
+      ],
+      "techniques": [
+        "budget-enforcement",
+        "usage-ledgers",
+        "spend-observability"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-16T18:07:52Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "cost-metering"
+      ],
+      "techniques": [
+        "spend-observability"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-16T18:07:52Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "cost-metering"
+      ],
+      "techniques": [
+        "price-tables",
+        "unit-classes-are-open",
+        "spend-observability",
+        "budget-enforcement"
+      ],
+      "deviations": 3
+    }
+  ]
+}

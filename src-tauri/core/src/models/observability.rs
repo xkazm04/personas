@@ -677,3 +677,67 @@ pub struct AnomalyDrilldownData {
     pub correlated_events: Vec<CorrelatedEvent>,
     pub root_cause_suggestions: Vec<RootCauseSuggestion>,
 }
+
+#[cfg(test)]
+mod alert_vocab_tests {
+    use super::{AlertMetric, AlertOperator, AlertSeverity};
+    use std::str::FromStr;
+
+    /// The token serde puts on the wire (and into `alert_rules`).
+    fn serde_token<T: serde::Serialize>(v: &T) -> String {
+        serde_json::to_value(v)
+            .ok()
+            .and_then(|j| j.as_str().map(str::to_owned))
+            .unwrap_or_default()
+    }
+
+    /// Each alert enum spells its tokens three times: the serde rename, a
+    /// hand-written `Display` and a hand-written `FromStr`. The `match` arms
+    /// carry no wildcard, so a new variant fails to compile here instead of
+    /// escaping the check.
+    #[test]
+    fn alert_tokens_agree_across_serde_display_and_from_str() {
+        for v in [
+            AlertMetric::ErrorRate,
+            AlertMetric::SuccessRate,
+            AlertMetric::Cost,
+            AlertMetric::CostSpike,
+            AlertMetric::Executions,
+        ] {
+            match v {
+                AlertMetric::ErrorRate
+                | AlertMetric::SuccessRate
+                | AlertMetric::Cost
+                | AlertMetric::CostSpike
+                | AlertMetric::Executions => {}
+            }
+            assert_eq!(serde_token(&v), v.to_string(), "{v:?}");
+            assert_eq!(AlertMetric::from_str(&v.to_string()), Ok(v));
+        }
+        for v in [
+            AlertOperator::Gt,
+            AlertOperator::Lt,
+            AlertOperator::Gte,
+            AlertOperator::Lte,
+        ] {
+            match v {
+                AlertOperator::Gt | AlertOperator::Lt | AlertOperator::Gte | AlertOperator::Lte => {
+                }
+            }
+            assert_eq!(serde_token(&v), v.to_string(), "{v:?}");
+            assert_eq!(AlertOperator::from_str(&v.to_string()), Ok(v));
+        }
+        for v in [
+            AlertSeverity::Info,
+            AlertSeverity::Warning,
+            AlertSeverity::Critical,
+        ] {
+            match v {
+                AlertSeverity::Info | AlertSeverity::Warning | AlertSeverity::Critical => {}
+            }
+            assert_eq!(serde_token(&v), v.to_string(), "{v:?}");
+            assert_eq!(AlertSeverity::from_str(&v.to_string()), Ok(v));
+        }
+        assert!(AlertMetric::from_str("errorRate").is_err());
+    }
+}

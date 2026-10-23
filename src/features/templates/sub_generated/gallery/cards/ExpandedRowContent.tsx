@@ -4,10 +4,10 @@ import { Play, Download, Workflow, Server, Zap, UserCheck, Bell } from 'lucide-r
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { BUTTON_VARIANTS } from '@/lib/utils/designTokens';
 import { deriveArchCategories } from '../../shared/architecturalCategories';
+import { deriveExpandedRowStats } from './expandedRowStats';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import type { AgentIR, ProtocolCapability } from '@/lib/types/designTypes';
+import type { AgentIR } from '@/lib/types/designTypes';
 import type { ResolvedConnectorReadiness } from '../../shared/useConnectorReadiness';
-import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { LucideIcon } from 'lucide-react';
 
 interface ExpandedRowContentProps {
@@ -39,47 +39,26 @@ export function ExpandedRowContent({
   onViewFlows,
 }: ExpandedRowContentProps) {
   const { t } = useTranslation();
-  const flows = useMemo(() => {
-    const fromReview = parseJsonOrDefault<UseCaseFlow[]>(review.use_case_flows, []);
-    if (fromReview.length > 0) return fromReview;
-    const raw = designResult as unknown as Record<string, unknown> | null;
-    return raw?.use_case_flows
-      ? parseJsonOrDefault<UseCaseFlow[]>(JSON.stringify(raw.use_case_flows), [])
-      : [];
-  }, [review.use_case_flows, designResult]);
-
   const connectors: string[] = useMemo(
     () => parseJsonOrDefault(review.connectors_used, []),
     [review.connectors_used],
   );
 
   const archCount = useMemo(() => deriveArchCategories(connectors).length, [connectors]);
+  const counts = useMemo(() => deriveExpandedRowStats(review, designResult), [review, designResult]);
 
-  const protocols = useMemo(() => {
-    return (designResult?.protocol_capabilities ?? []) as ProtocolCapability[];
-  }, [designResult]);
-
-  const eventCount = useMemo(() => {
-    return (designResult?.suggested_event_subscriptions ?? []).length;
-  }, [designResult]);
-
-  const reviewCount = useMemo(() => {
-    return protocols.filter((p) => p.type === 'manual_review').length;
-  }, [protocols]);
-
-  const notifCount = useMemo(() => {
-    const channels = Array.isArray(designResult?.suggested_notification_channels) ? designResult.suggested_notification_channels.length : 0;
-    const msgs = protocols.filter((p) => p.type === 'user_message').length;
-    return channels + msgs;
-  }, [designResult, protocols]);
-
-  const stats: StatDef[] = useMemo(() => [
-    { key: 'usecases',      label: t.templates.expanded.use_cases,     icon: Workflow,  color: '#a78bfa', count: flows.length },
-    { key: 'architecture',  label: t.templates.expanded.architecture,  icon: Server,    color: '#06b6d4', count: archCount },
-    { key: 'events',        label: t.templates.expanded.events,        icon: Zap,       color: '#f59e0b', count: eventCount },
-    { key: 'reviews',       label: t.templates.expanded.reviews_label, icon: UserCheck, color: '#f97316', count: reviewCount },
-    { key: 'notifications', label: t.templates.expanded.notifications, icon: Bell,      color: '#10b981', count: notifCount },
-  ], [t.templates.expanded.use_cases, t.templates.expanded.architecture, t.templates.expanded.events, t.templates.expanded.reviews_label, t.templates.expanded.notifications, flows.length, archCount, eventCount, reviewCount, notifCount]);
+  // A dimension the template does not declare is left out rather than shown
+  // as a dimmed zero (seeded v3 templates carry no event or review arrays).
+  const stats: StatDef[] = useMemo(() => {
+    const all: Array<Omit<StatDef, 'count'> & { count: number | null }> = [
+      { key: 'usecases',      label: t.templates.expanded.use_cases,     icon: Workflow,  color: '#a78bfa', count: counts.useCases },
+      { key: 'architecture',  label: t.templates.expanded.architecture,  icon: Server,    color: '#06b6d4', count: archCount },
+      { key: 'events',        label: t.templates.expanded.events,        icon: Zap,       color: '#f59e0b', count: counts.events },
+      { key: 'reviews',       label: t.templates.expanded.reviews_label, icon: UserCheck, color: '#f97316', count: counts.reviews },
+      { key: 'notifications', label: t.templates.expanded.notifications, icon: Bell,      color: '#10b981', count: counts.notifications },
+    ];
+    return all.filter((s): s is StatDef => s.count !== null);
+  }, [t.templates.expanded.use_cases, t.templates.expanded.architecture, t.templates.expanded.events, t.templates.expanded.reviews_label, t.templates.expanded.notifications, counts, archCount]);
 
   return (
     <div className="py-3 px-4 flex items-center gap-4">
@@ -104,7 +83,7 @@ export function ExpandedRowContent({
             {t.templates.expanded.try_it}
           </button>
         )}
-        {flows.length > 0 && onViewFlows && (
+        {counts.flowCount > 0 && onViewFlows && (
           <button
             type="button"
             onClick={() => onViewFlows(review)}

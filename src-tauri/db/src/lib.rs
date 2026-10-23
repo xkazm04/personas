@@ -64,7 +64,6 @@ pub mod execution_project;
 /// `kp.gig_persona_policy` — the operator's standing approval for kp gig personas.
 pub mod kp_gig_policy;
 pub mod memory_recall;
-#[allow(dead_code)] // Functions used by Tauri commands in Phase 3
 pub mod migrations;
 pub mod model_routing;
 /// The file-delivered `operator-local` API key (`personas:approve`).
@@ -83,7 +82,6 @@ pub use personas_core::models;
 pub mod perf;
 pub mod query_builder;
 pub mod reclaim;
-#[allow(dead_code)]
 pub mod repos;
 pub mod restore;
 pub mod settings_keys;
@@ -488,9 +486,7 @@ pub fn init_db_with_journal(
     // Seed builtin data
     {
         let conn = pool.get()?;
-        seed_builtin_tools(&conn)?;
-        seed_builtin_connectors(&conn)?;
-        seed_builtin_shared_events(&conn)?;
+        seed_builtins(&conn)?;
         #[cfg(feature = "scraper")]
         seed_example_scrape_config(&conn)?;
     }
@@ -2003,6 +1999,24 @@ fn restrict_windows_permissions(path: &Path) {
     tracing::debug!(path = %path.display(), "Set restrictive Windows permissions (owner-only)");
 }
 
+/// Run the three builtin seeds as ONE transaction.
+///
+/// Each seed is a loop of single-row statements (the connector seed alone is
+/// three per connector, 136 connectors). On an autocommit connection every
+/// statement was its own commit. Measured 2026-10-19 re-seeding a migrated
+/// test database: 10-22 ms under WAL (the app) and ~450 ms under the rollback
+/// journal (the test template, built once per test process), against 6-7 ms
+/// and ~10 ms inside one transaction. It also makes the seed all-or-nothing,
+/// so a failure part-way no longer leaves the catalog half refreshed.
+fn seed_builtins(conn: &rusqlite::Connection) -> Result<(), AppError> {
+    let tx = conn.unchecked_transaction()?;
+    seed_builtin_tools(&tx)?;
+    seed_builtin_connectors(&tx)?;
+    seed_builtin_shared_events(&tx)?;
+    tx.commit()?;
+    Ok(())
+}
+
 /// Seed the 7 builtin tool definitions.
 fn seed_builtin_tools(conn: &rusqlite::Connection) -> Result<(), AppError> {
     let now = chrono::Utc::now().to_rfc3339();
@@ -2323,9 +2337,7 @@ fn migrated_template() -> Result<std::path::PathBuf, AppError> {
                 apply_standard_pragmas(&conn)?;
                 migrations::run(&conn)?;
                 migrations::run_incremental(&conn)?;
-                seed_builtin_tools(&conn)?;
-                seed_builtin_connectors(&conn)?;
-                seed_builtin_shared_events(&conn)?;
+                seed_builtins(&conn)?;
                 // Drop before the first copy: an open handle can leave the
                 // rollback journal on disk, and a copy taken then is torn.
                 drop(conn);

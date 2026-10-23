@@ -4,15 +4,17 @@
 // config) so the user sees exactly how golden-standard practices lift the scores
 // before applying. Apply → setStandardsConfig + re-derive. Portalled + anchored
 // so the matrix's overflow-x-auto never clips it.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Sparkles, X, ArrowRight } from 'lucide-react';
 
 import { useToastStore } from '@/stores/toastStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { derivePassportFromMetadata } from '../passportDerive';
 import { CI_LABEL, SECURITY_LABEL } from '../passportModel';
 import { ReadinessSeal } from '../passportWidgets';
 import { useImprove } from './ImproveContext';
+import { useAnchoredPopover } from './useAnchoredPopover';
 import {
   parseStandards, serializeStandards, applyStandardsActions, applicableStandardsActions,
 } from './standards';
@@ -30,10 +32,10 @@ export function ImprovePopover({
   anchor: DOMRect | null;
   onClose: () => void;
 }) {
+  const { t, tx } = useTranslation();
+  const d = t.plugins.dev_tools;
   const engine = useImprove();
   const addToast = useToastStore((s) => s.addToast);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const raw = engine?.getRaw(slug);
@@ -50,36 +52,22 @@ export function ImprovePopover({
     return { picked, projectedStandards, before, after };
   }, [raw, applicable, selected]);
 
-  useLayoutEffect(() => {
-    if (!anchor) { setPos(null); return; }
-    const panelH = panelRef.current?.offsetHeight ?? 300;
-    const spaceBelow = window.innerHeight - anchor.bottom;
-    const top = spaceBelow < panelH + 14 && anchor.top > spaceBelow ? Math.max(8, anchor.top - panelH - 6) : anchor.bottom + 6;
-    const left = Math.max(8, Math.min(anchor.left, window.innerWidth - WIDTH - 8));
-    setPos({ top, left });
-  }, [anchor, selected]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    const onDown = (e: MouseEvent) => { if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose(); };
-    window.addEventListener('keydown', onKey);
-    const id = window.setTimeout(() => document.addEventListener('mousedown', onDown), 0);
-    return () => { window.removeEventListener('keydown', onKey); window.clearTimeout(id); document.removeEventListener('mousedown', onDown); };
-  }, [onClose]);
+  const { panelRef, style: popStyle } = useAnchoredPopover({ anchor, width: WIDTH, onClose, active: !!raw && !!anchor && !!projection, estimatedHeight: 300, layoutKey: selected });
 
   if (!raw || !anchor || !projection) return null;
 
   const { picked, projectedStandards, before, after } = projection;
+  const reason = dimensionReason(rowKey, raw, t);
 
   const onApply = async () => {
     if (!engine || picked.length === 0) return;
     setSaving(true);
     try {
       await engine.applyStandards(slug, serializeStandards(projectedStandards));
-      addToast(`Upgraded ${raw.project.name}: ${picked.length} ${picked.length === 1 ? 'practice' : 'practices'} enabled`, 'success');
+      addToast(tx(picked.length === 1 ? d.improve_toast_upgraded_one : d.improve_toast_upgraded_other, { name: raw.project.name, count: picked.length }), 'success');
       onClose();
     } catch {
-      addToast('Couldn’t apply standards', 'error');
+      addToast(d.improve_toast_apply_failed, 'error');
     } finally {
       setSaving(false);
     }
@@ -89,14 +77,15 @@ export function ImprovePopover({
     <div
       ref={panelRef}
       role="dialog"
-      aria-label={`Improve ${raw.project.name}`}
-      style={{ top: pos?.top ?? anchor.bottom + 6, left: pos?.left ?? anchor.left, width: WIDTH, visibility: pos ? 'visible' : 'hidden' }}
-      className="fixed z-[9995] rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
+      tabIndex={-1}
+      aria-label={tx(d.improve_pop_title, { name: raw.project.name })}
+      style={popStyle(anchor)}
+      className="fixed z-[9995] outline-none rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
     >
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
         <Sparkles className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
-        <span className="typo-caption text-foreground truncate">Improve {raw.project.name}</span>
-        <button type="button" onClick={onClose} aria-label="Close" className="ml-auto p-0.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors">
+        <span className="typo-caption text-foreground truncate">{tx(d.improve_pop_title, { name: raw.project.name })}</span>
+        <button type="button" onClick={onClose} aria-label={t.common.close} className="ml-auto p-0.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -105,28 +94,26 @@ export function ImprovePopover({
       {ladderFor(rowKey, before) && (
         <div className="px-3 pt-2.5 space-y-1.5">
           <LevelLadder rowKey={rowKey} passport={before} />
-          {dimensionReason(rowKey, raw) && (
-            <p className="typo-caption">{dimensionReason(rowKey, raw)}</p>
-          )}
+          {reason && <p className="typo-caption">{reason}</p>}
         </div>
       )}
 
       {/* live projected-passport preview */}
       <div className="px-3 py-2.5 border-b border-primary/10 space-y-1.5">
-        <PreviewRow label="Automation">
+        <PreviewRow label={d.improve_pop_automation}>
           <ReadinessSeal kind="level" level={before.automationReadiness.level} score={before.automationReadiness.score} size="sm" />
           <ArrowRight className="w-3 h-3 text-foreground/40 flex-shrink-0" aria-hidden />
           <ReadinessSeal kind="level" level={after.automationReadiness.level} score={after.automationReadiness.score} size="sm" />
           <Delta before={before.automationReadiness.score} after={after.automationReadiness.score} />
         </PreviewRow>
-        <PreviewRow label="Production">
+        <PreviewRow label={d.improve_pop_production}>
           <ReadinessSeal kind="band" band={before.productionReadiness.band} score={before.productionReadiness.score} size="sm" />
           <ArrowRight className="w-3 h-3 text-foreground/40 flex-shrink-0" aria-hidden />
           <ReadinessSeal kind="band" band={after.productionReadiness.band} score={after.productionReadiness.score} size="sm" />
           <Delta before={before.productionReadiness.score} after={after.productionReadiness.score} />
         </PreviewRow>
         <LevelDelta label="CI" before={CI_LABEL[before.productionReadiness.ci.level]} after={CI_LABEL[after.productionReadiness.ci.level]} />
-        <LevelDelta label="Security" before={SECURITY_LABEL[before.productionReadiness.security.level]} after={SECURITY_LABEL[after.productionReadiness.security.level]} />
+        <LevelDelta label={d.improve_pop_security} before={SECURITY_LABEL[before.productionReadiness.security.level]} after={SECURITY_LABEL[after.productionReadiness.security.level]} />
       </div>
 
       {/* multi-select checklist */}
@@ -149,7 +136,7 @@ export function ImprovePopover({
       </div>
 
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-primary/10 bg-secondary/10">
-        <span className="typo-caption text-foreground/55">{picked.length} selected</span>
+        <span className="typo-caption text-foreground/55">{tx(d.improve_pop_selected, { count: picked.length })}</span>
         <button
           type="button"
           onClick={onApply}
@@ -157,7 +144,7 @@ export function ImprovePopover({
           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Sparkles className="w-3 h-3" />
-          {saving ? 'Applying…' : 'Apply upgrade'}
+          {saving ? d.improve_pop_applying : d.improve_pop_apply}
         </button>
       </div>
     </div>,

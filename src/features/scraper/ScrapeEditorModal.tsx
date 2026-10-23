@@ -16,7 +16,8 @@ interface ScrapeEditorModalProps {
   isOpen: boolean;
   onClose: () => void;
   initial?: ScraperConfig | null;
-  onSave: (input: ScraperConfigInput) => Promise<unknown>;
+  /** Resolves the saved config, or `null` when the save failed (already toasted). */
+  onSave: (input: ScraperConfigInput) => Promise<ScraperConfig | null>;
 }
 
 export function ScrapeEditorModal({ isOpen, onClose, initial, onSave }: ScrapeEditorModalProps) {
@@ -27,7 +28,10 @@ export function ScrapeEditorModal({ isOpen, onClose, initial, onSave }: ScrapeEd
     if (!form.canSave) return;
     setSaving(true);
     try {
-      await onSave(form.toInput());
+      // A failed save resolves null (useScraperData toasts and swallows it).
+      // Closing on it threw away every step of the wizard the user just filled.
+      const saved = await onSave(form.toInput());
+      if (saved === null) return;
       onClose();
     } finally {
       setSaving(false);

@@ -27,6 +27,12 @@ import type {
 // profiles (per-channel voice directives).
 // ============================================================================
 
+export interface TwinReplyDraftContext {
+  twinId: string;
+  channel: TwinChannelKind;
+  contactHandle: string;
+}
+
 // Dedupe state for fetchTwinProfiles — TwinPage and its sub-panels each
 // fetch on mount (×2 under StrictMode), which stacked 3-4 identical
 // `twin_list_profiles` IPCs per twin-tab visit. Module-level because the
@@ -46,12 +52,20 @@ let activeTwinSwitchChain: Promise<void> = Promise.resolve();
 // after B's, overwriting `twinTones` with the wrong twin's tone profiles in
 // the Training Atelier.
 const twinTonesLatestWins = createLatestWins();
+// Same guard for every other per-twin read a twin switch re-fires: without it
+// twin A's slower answer overwrote twin B's channels, conversation history or
+// readiness corpus.
+const twinChannelsLatestWins = createLatestWins();
+const twinCommsLatestWins = createLatestWins();
+const twinReadinessLatestWins = createLatestWins();
 
 export interface TwinSlice {
   // -- State -----------------------------------------------------------
   twinProfiles: TwinProfile[];
   activeTwinId: string | null;
   twinProfilesLoading: boolean;
+  /** Raw rejection of the last roster read (resolved at render); null when the last read succeeded. */
+  twinProfilesError: unknown;
   twinTab: TwinTab;
 
   // -- Tone state (P1) ------------------------------------------------
@@ -82,6 +96,9 @@ export interface TwinSlice {
   //    outbox panel can show it in an editable textarea. Cleared on discard
   //    or after the draft is approved (recorded as an outbound communication).
   twinReplyDraft: string | null;
+  /** The twin + channel + contact the staged draft was generated for. Lives beside
+   *  the draft so Approve still knows its target after the panel remounts. */
+  twinReplyDraftContext: TwinReplyDraftContext | null;
   twinReplyDrafting: boolean;
 
   // -- Cross-tab handoff slot used by Reflections → Training "Dig deeper".
@@ -219,7 +236,7 @@ export interface TwinSlice {
     toneChannel?: string,
   ) => Promise<string>;
   /** Overwrite the staged draft (used while the operator edits the textarea). */
-  setTwinReplyDraft: (draft: string | null) => void;
+  setTwinReplyDraft: (draft: string | null, context?: TwinReplyDraftContext) => void;
   /** Discard the staged draft without sending/recording. */
   clearTwinReplyDraft: () => void;
 }
@@ -228,6 +245,7 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   twinProfiles: [],
   activeTwinId: null,
   twinProfilesLoading: false,
+  twinProfilesError: null,
   twinTab: "profiles" as TwinTab,
   twinTones: [],
   twinTonesLoading: false,
@@ -241,6 +259,7 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   twinChannels: [],
   twinChannelsLoading: false,
   twinReplyDraft: null,
+  twinReplyDraftContext: null,
   twinReplyDrafting: false,
   pendingTrainingQuestions: null,
   studioJobActive: false,
@@ -331,7 +350,14 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
 
   fetchTwinProfiles: async (opts) => {
     if (!opts?.force && Date.now() - twinProfilesFetchedAt < TWIN_PROFILES_FRESH_MS) return;
-    if (twinProfilesInflight) return twinProfilesInflight;
+    if (twinProfilesInflight) {
+      if (!opts?.force) return twinProfilesInflight;
+      // A forced read is issued AFTER a write (setActiveTwin, create, delete)
+      // and must see it. Joining a read that started before the write handed
+      // back the old roster, and setActiveTwin wrote the previous twin back as
+      // active. Wait for that read, then issue a fresh one.
+      return twinProfilesInflight.then(() => get().fetchTwinProfiles({ force: true }));
+    }
     twinProfilesInflight = (async () => {
       set({ twinProfilesLoading: true });
       try {
@@ -342,11 +368,12 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
           twinProfiles,
           activeTwinId: active?.id ?? null,
           twinProfilesLoading: false,
+          twinProfilesError: null,
           error: null,
         });
       } catch (err) {
         reportError(err, "Failed to fetch twin profiles", set, {
-          stateUpdates: { twinProfilesLoading: false },
+          stateUpdates: { twinProfilesLoading: false, twinProfilesError: err },
         });
       } finally {
         twinProfilesInflight = null;
@@ -518,10 +545,13 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   // twinReadinessApproved, so panels filtering twinPendingMemories by
   // rejected/pending can't clobber the corpus the score depends on.
   fetchTwinReadinessApproved: async (twinId) => {
+    const token = twinReadinessLatestWins.next();
     try {
       const approved = await twinApi.listPendingMemories(twinId, 'approved');
+      if (!twinReadinessLatestWins.isCurrent(token)) return;
       set({ twinReadinessApproved: approved });
     } catch (err) {
+      if (!twinReadinessLatestWins.isCurrent(token)) return;
       reportError(err, "Failed to fetch approved memories", set);
     }
   },
@@ -550,11 +580,14 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   // -- Communication actions (P2) --------------------------------------
 
   fetchTwinCommunications: async (twinId, channel, limit) => {
+    const token = twinCommsLatestWins.next();
     set({ twinCommsLoading: true });
     try {
       const twinCommunications = await twinApi.listCommunications(twinId, channel, limit);
+      if (!twinCommsLatestWins.isCurrent(token)) return;
       set({ twinCommunications, twinCommsLoading: false, error: null });
     } catch (err) {
+      if (!twinCommsLatestWins.isCurrent(token)) return;
       reportError(err, "Failed to fetch communications", set, {
         stateUpdates: { twinCommsLoading: false },
       });
@@ -612,11 +645,14 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   // -- Channel actions (P4) ---------------------------------------------
 
   fetchTwinChannels: async (twinId) => {
+    const token = twinChannelsLatestWins.next();
     set({ twinChannelsLoading: true });
     try {
       const twinChannels = await twinApi.listChannels(twinId);
+      if (!twinChannelsLatestWins.isCurrent(token)) return;
       set({ twinChannels, twinChannelsLoading: false, error: null });
     } catch (err) {
+      if (!twinChannelsLatestWins.isCurrent(token)) return;
       reportError(err, "Failed to fetch channels", set, {
         stateUpdates: { twinChannelsLoading: false },
       });
@@ -667,7 +703,12 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
     set({ twinReplyDrafting: true });
     try {
       const draft = await twinApi.draftReply(twinId, channel, contactHandle, inboundMessage, directions, toneChannel);
-      set({ twinReplyDraft: draft, twinReplyDrafting: false, error: null });
+      set({
+        twinReplyDraft: draft,
+        twinReplyDraftContext: { twinId, channel, contactHandle: contactHandle?.trim() ?? '' },
+        twinReplyDrafting: false,
+        error: null,
+      });
       return draft;
     } catch (err) {
       reportError(err, "Failed to draft reply", set, {
@@ -677,7 +718,12 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
     }
   },
 
-  setTwinReplyDraft: (draft) => set({ twinReplyDraft: draft }),
+  setTwinReplyDraft: (draft, context) =>
+    set((state) => ({
+      twinReplyDraft: draft,
+      // A cleared draft takes its target with it; an edit keeps the frozen one.
+      twinReplyDraftContext: draft === null ? null : (context ?? state.twinReplyDraftContext),
+    })),
 
-  clearTwinReplyDraft: () => set({ twinReplyDraft: null }),
+  clearTwinReplyDraft: () => set({ twinReplyDraft: null, twinReplyDraftContext: null }),
 });

@@ -16,6 +16,16 @@ export type MandateAct =
 /** The card title's id — the modal's accessible name. */
 export const DECK_TITLE_ID = 'decision-deck-title';
 
+/**
+ * What the host says about a verdict that landed. `receipt` replaces the
+ * tray's default receipt ("Accepted: <title>") when the write did something
+ * else than decide here: a verdict on a mirrored mandate waits, queued, for
+ * its home device (residue item 6).
+ */
+export interface DeckLanded {
+  receipt?: string;
+}
+
 export interface DeckVerdict {
   item: DecisionItem;
   /** Spine verdict, or `'done'` (report/chat read), `'reply'` (chat sent). */

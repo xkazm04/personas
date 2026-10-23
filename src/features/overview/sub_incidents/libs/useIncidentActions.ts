@@ -7,6 +7,7 @@ import {
 } from '@/api/overview/incidents';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { toastCatch } from '@/lib/silentCatch';
 
 export interface UseIncidentActionsArgs {
   onAfterChange: () => Promise<void> | void;
@@ -35,7 +36,10 @@ export function useIncidentActions({ onAfterChange }: UseIncidentActionsArgs) {
         await onAfterChange();
         return true;
       } catch (e) {
-        addToast(`${t.overview.incidents.action_failed_prefix} ${opName}: ${e}`, 'error', 4000);
+        // Through toastCatch: the raw error reaches Sentry and the app log,
+        // the user reads "Couldn't <op>". Interpolating `${e}` painted
+        // "[object Object]", because IPC rejects with an AppError object.
+        toastCatch(`useIncidentActions:${opName}`, `${t.overview.incidents.action_failed_prefix} ${opName}`)(e);
         return false;
       }
     },

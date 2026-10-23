@@ -6,7 +6,7 @@ import { useAthenaStore } from './athenaStore';
 import { useAthenaEnabled } from '../status/useAthenaEnabled';
 import { useSystemStore } from '@/stores/systemStore';
 import { companionInit } from '@/api/companion';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { playReplyChime } from './chime';
 import { play as playAudio, synthesize as synthesizeTts } from './voicePlayback';
 import { useTtsSettings } from './useTtsSettings';
@@ -82,7 +82,7 @@ export default function AthenaFooterIcon() {
         setInitialized(true);
       })
       .catch((err: unknown) => {
-        setInitError(err instanceof Error ? err.message : String(err));
+        setInitError(extractMessage(err));
         silentCatch('companion_init')(err);
       });
   }, [initialized, statusSettled, athenaEnabled, setBrainPath, setInitialized, setInitError]);

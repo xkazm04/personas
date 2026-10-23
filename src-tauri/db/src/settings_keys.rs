@@ -81,6 +81,12 @@ pub const CONTEST_LINEUPS: &str = "contest.lineups";
 /// `.ai/manifest.yaml` `registry.local` (`commands::contest::node`).
 pub const CONTEST_INSTRUMENT_PATH: &str = "contest.instrument_path";
 
+/// Base URL of bp, the product blueprint web app (spark one-control). The
+/// Decision Center's Release card opens `<bp_url>/?product=<slug>&page=ledger&tab=release`
+/// in the system browser, because bp composes and finishes releases. Unset
+/// means `http://localhost:3010` (bp's own dev and start port), applied by the reader.
+pub const LENS_SCAN_BP_URL: &str = "lens_scan.bp_url";
+
 /// Absolute directory under which `create_project_repository` scaffolds new
 /// project repositories: `<root>/<workspace-slug>/<project-name>`.
 ///
@@ -767,7 +773,11 @@ pub const FLEET_AUTOPILOT_MEMORY_PER_AGENT_MB_MAX: u32 = 8192;
 /// only ever hibernated idle sessions and was lost on restart. Read through
 /// `queue::cap`, clamped to the bounds below.
 pub const FLEET_MAX_PARALLEL_SESSIONS: &str = "fleet.max_parallel_sessions";
-pub const FLEET_MAX_PARALLEL_SESSIONS_DEFAULT: u32 = 10;
+/// 16 since 2026-10-15 (spark one-control): lens-scan and App Master runs
+/// now queue on this ONE cap instead of beside it (App Master alone kept 16),
+/// and the RAM / five-hour / pace budgets in `commands::fleet::budgets` still
+/// gate every admission.
+pub const FLEET_MAX_PARALLEL_SESSIONS_DEFAULT: u32 = 16;
 pub const FLEET_MAX_PARALLEL_SESSIONS_MIN: u32 = 1;
 pub const FLEET_MAX_PARALLEL_SESSIONS_MAX: u32 = 30;
 /// The fleet queue's DEPTH bound — how many rows may sit in `queued` at once.
@@ -1493,6 +1503,7 @@ const ALLOWED_KEYS: &[&str] = &[
     KNOWLEDGE_REGISTRY_ROOT,
     CONTEST_LINEUPS,
     CONTEST_INSTRUMENT_PATH,
+    LENS_SCAN_BP_URL,
     SIMULATION_PROJECTS_ROOT,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,
@@ -2149,6 +2160,20 @@ pub fn deprecated_replacement(key: &str) -> Option<&'static str> {
         AUTONOMOUS_MESSAGE_TRIAGE | AUTONOMOUS_REVIEW_TRIAGE => {
             Some("implied by companion_autonomous_mode (the master autonomy toggle); this key is no longer read")
         }
+        // Allow-listed and validated, never read: the watcher debounces on its
+        // compiled `DEBOUNCE_MS` (engine/src/file_watcher.rs).
+        FILE_WATCHER_DEBOUNCE_MS => {
+            Some("nothing reads this key: the file watcher uses its compiled 500 ms debounce")
+        }
+        // Its only reader, the Obsidian semantic lint command, was deleted
+        // with the unreachable IPC commands (4bf1845d70).
+        SEMANTIC_LINT_MODEL => {
+            Some("nothing reads this key: the semantic vault lint that consumed it was removed")
+        }
+        // The Activation Quest pill that read and wrote it was descoped (459f86e082).
+        ONBOARDING_QUEST_STATE => {
+            Some("nothing reads this key: the onboarding quest pill was descoped")
+        }
         _ => None,
     }
 }
@@ -2497,6 +2522,11 @@ mod tests {
     fn deprecated_keys_flagged_live_keys_not() {
         assert!(deprecated_replacement(AUTONOMOUS_MESSAGE_TRIAGE).is_some());
         assert!(deprecated_replacement(AUTONOMOUS_REVIEW_TRIAGE).is_some());
+        // Allow-listed keys whose last reader is gone: a write to one must
+        // surface the stale writer, not persist silently.
+        assert!(deprecated_replacement(FILE_WATCHER_DEBOUNCE_MS).is_some());
+        assert!(deprecated_replacement(SEMANTIC_LINT_MODEL).is_some());
+        assert!(deprecated_replacement(ONBOARDING_QUEST_STATE).is_some());
         // Live keys and the still-active high-severity opt-in are NOT deprecated.
         assert!(deprecated_replacement(COMPANION_AUTONOMOUS_MODE).is_none());
         assert!(deprecated_replacement(AUTONOMOUS_REVIEW_TRIAGE_HIGH).is_none());
@@ -2904,7 +2934,7 @@ mod tests {
                 FLEET_MAX_PARALLEL_SESSIONS_MAX,
                 FLEET_MAX_PARALLEL_SESSIONS_DEFAULT
             ),
-            (1, 30, 10),
+            (1, 30, 16),
             "the fleet max-parallel-sessions stepper bounds must be updated to match"
         );
         assert_eq!(

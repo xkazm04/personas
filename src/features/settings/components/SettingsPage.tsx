@@ -1,24 +1,25 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useSystemStore } from "@/stores/systemStore";
-import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
+import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
+import { lazyRetry } from '@/lib/lazyRetry';
 import type { SettingsTab } from '@/lib/types/types';
 
 // Lazy-load each settings tab -- only mounted on first visit.
-const tabComponents: Record<SettingsTab, React.LazyExoticComponent<React.ComponentType>> = {
-  account: lazy(() => import('@/features/settings/sub_account/components/AccountSettings')),
-  appearance: lazy(() => import('@/features/settings/sub_appearance/components/AppearanceSettings')),
-  notifications: lazy(() => import('@/features/settings/sub_notifications/components/NotificationSettings')),
-  radio: lazy(() => import('@/features/plugins/radio/components/RadioPage')),
-  engine: lazy(() => import('@/features/settings/sub_engine/components/EngineSettings')),
-  byom: lazy(() => import('@/features/settings/sub_byom/components/ByomSettings')),
-  portability: lazy(() => import('@/features/settings/sub_portability/components/DataPortabilitySettings')),
-  network: lazy(() => import('@/features/settings/sub_network/components/ExposureManager')),
-  devices: lazy(() => import('@/features/settings/sub_devices/components/DeviceLinkPage')),
-  admin: lazy(() => import('@/features/settings/sub_admin/components/AdminSettings')),
-  'api-keys': lazy(() => import('@/features/settings/sub_api_keys/components/ApiKeysSettings')),
-  history: lazy(() => import('@/features/settings/sub_history/components/SettingsHistoryTab')),
-  limits: lazy(() => import('@/features/settings/sub_limits/components/LimitsSettings')),
+const tabComponents: Record<SettingsTab, React.ComponentType> = {
+  account: lazyRetry(() => import('@/features/settings/sub_account/components/AccountSettings')),
+  appearance: lazyRetry(() => import('@/features/settings/sub_appearance/components/AppearanceSettings')),
+  notifications: lazyRetry(() => import('@/features/settings/sub_notifications/components/NotificationSettings')),
+  radio: lazyRetry(() => import('@/features/plugins/radio/components/RadioPage')),
+  engine: lazyRetry(() => import('@/features/settings/sub_engine/components/EngineSettings')),
+  byom: lazyRetry(() => import('@/features/settings/sub_byom/components/ByomSettings')),
+  portability: lazyRetry(() => import('@/features/settings/sub_portability/components/DataPortabilitySettings')),
+  network: lazyRetry(() => import('@/features/settings/sub_network/components/ExposureManager')),
+  devices: lazyRetry(() => import('@/features/settings/sub_devices/components/DeviceLinkPage')),
+  admin: lazyRetry(() => import('@/features/settings/sub_admin/components/AdminSettings')),
+  'api-keys': lazyRetry(() => import('@/features/settings/sub_api_keys/components/ApiKeysSettings')),
+  history: lazyRetry(() => import('@/features/settings/sub_history/components/SettingsHistoryTab')),
+  limits: lazyRetry(() => import('@/features/settings/sub_limits/components/LimitsSettings')),
 };
 
 /** Unmount inactive settings tabs after this many ms of idleness. */
@@ -83,7 +84,10 @@ export default function SettingsPage() {
               : 'absolute inset-0 pointer-events-none overflow-hidden'}
             style={{ willChange: 'opacity' }}
           >
-            <Suspense fallback={<SuspenseFallback />}>
+            {/* Each tab renders its own ContentHeader, so the ghost is the delayed
+                header band: a cold tab shows chrome inside the 150ms window
+                instead of an empty box (page-loading.md Deviations D). */}
+            <Suspense fallback={<RouteChunkSkeleton showIcon />}>
               <Component />
             </Suspense>
           </motion.div>

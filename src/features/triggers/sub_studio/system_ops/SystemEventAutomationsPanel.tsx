@@ -27,6 +27,18 @@ export function SystemEventAutomationsPanel({
   const st = t.triggers.studio;
   const projects = useSystemStore((s) => s.projects);
 
+  // lastStatus vocabulary: ok | requested (delegated op emitted, outcome not yet
+  // reported) | partial | held (approval mode) | failed. Only `ok` may read "ran".
+  const runStatusLabel = (status: string | null) => {
+    switch (status) {
+      case 'failed': return st.automation_failed;
+      case 'requested': return st.automation_requested;
+      case 'partial': return st.automation_partial;
+      case 'held': return st.automation_held;
+      default: return st.automation_ran;
+    }
+  };
+
   if (automations.length === 0) return null;
 
   const projectName = (a: SystemOpAutomation) => {
@@ -59,7 +71,7 @@ export function SystemEventAutomationsPanel({
               <div className="typo-caption text-foreground">
                 {a.lastRunAt ? (
                   <>
-                    {a.lastStatus === 'failed' ? st.automation_failed : st.automation_ran}{' '}
+                    {runStatusLabel(a.lastStatus)}{' '}
                     <RelativeTime timestamp={a.lastRunAt} />
                   </>
                 ) : a.nextRunAt ? (

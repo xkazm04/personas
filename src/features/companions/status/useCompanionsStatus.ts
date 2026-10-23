@@ -19,7 +19,6 @@
 import { useMemo } from "react";
 
 import type { CompanionId, CompanionStatusDto } from "../types";
-import { COMPANION_IDS } from "../types";
 import { readCompanionsStatus, useCompanionsStatusSlot } from "./companionsStatusStore";
 
 export interface CompanionsStatusView {
@@ -52,6 +51,3 @@ export function useCompanionsStatus(): CompanionsStatusView {
     [companions, snap.loading, snap.error],
   );
 }
-
-/** The ids a surface iterates when it has no status yet. */
-export const COMPANIONS_IN_ORDER = COMPANION_IDS;

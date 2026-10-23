@@ -1,3 +1,4 @@
+import { customRangeDays } from '@/features/overview/libs/fetchWindow';
 import { createContext, useContext, useMemo, useState, useCallback, type ReactNode } from 'react';
 
 export type OverviewDayRange = 1 | 7 | 30 | 90;
@@ -66,9 +67,7 @@ export function OverviewFilterProvider({ children }: { children: ReactNode }) {
   const { effectiveDays, effectiveStartDate, effectiveEndDate } = useMemo(() => {
     if (customDateRange) {
       const [start, end] = customDateRange;
-      const ms = new Date(end).getTime() - new Date(start).getTime();
-      const days = Math.max(1, Math.ceil(ms / (1000 * 60 * 60 * 24)));
-      return { effectiveDays: days, effectiveStartDate: start, effectiveEndDate: end };
+      return { effectiveDays: customRangeDays(customDateRange), effectiveStartDate: start, effectiveEndDate: end };
     }
     const now = new Date();
     const endDate = toISODate(now);

@@ -121,5 +121,12 @@
   "view_logs": "Nhật ký",
   "yesterday": "hôm qua",
   "your_tier": "(của bạn)",
-  "agent_pipeline_title": "Pipeline của {agent} trên {ref}: {status}"
+  "agent_pipeline_title": "Pipeline của {agent} trên {ref}: {status}",
+  "pipeline_count_one": "{count} pipeline",
+  "pipeline_count_other": "{count} pipeline",
+  "notify_title_success": "Pipeline thành công",
+  "notify_title_failed": "Pipeline thất bại",
+  "notify_title_canceled": "Pipeline đã bị hủy",
+  "notify_title_other": "Pipeline {status}",
+  "notify_body": "Pipeline #{id} trên {ref} hiện có trạng thái {status}"
 }

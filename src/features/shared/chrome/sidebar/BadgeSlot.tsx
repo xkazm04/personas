@@ -49,6 +49,20 @@ function CountBadge({ badge, suppressed = 0 }: { badge: BadgeDefinition; suppres
   );
 }
 
+/** The badge a slot shows: highest priority (lowest number) among the active ones. */
+function topBadge(badges: BadgeDefinition[]): BadgeDefinition | undefined {
+  return badges.filter((b) => b.active).sort((a, b) => a.priority - b.priority)[0];
+}
+
+/**
+ * True when the slot's visible badge is a control (has `onClick`). Such a slot
+ * must be rendered BESIDE its rail button, never inside it (axe
+ * `nested-interactive`); a passive badge may stay inside.
+ */
+export function isInteractiveSlot(badges: BadgeDefinition[]): boolean {
+  return topBadge(badges)?.onClick != null && badges.filter((b) => b.active && b.variant === 'count').length < 2;
+}
+
 interface BadgeSlotProps {
   badges: BadgeDefinition[];
 }
@@ -96,6 +110,14 @@ export function BadgeSlot({ badges }: BadgeSlotProps) {
       <span
         className={`absolute top-0.5 right-0.5 z-20 min-w-[16px] h-4 flex items-center justify-center ${top.onClick ? 'cursor-pointer' : ''}`}
         onClick={handleClick}
+        {...(handleClick && {
+          role: 'button',
+          tabIndex: 0,
+          'aria-label': tooltipText,
+          onKeyDown: (e: React.KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(e as unknown as React.MouseEvent); }
+          },
+        })}
       >
         {top.variant === 'count' && <CountBadge badge={top} suppressed={suppressed} />}
 

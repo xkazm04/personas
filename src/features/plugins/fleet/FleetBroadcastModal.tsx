@@ -7,7 +7,9 @@ import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { writeInput } from '@/api/fleet/fleet';
 import { mapWithConcurrency } from '@/lib/concurrency';
+import { silentCatch } from '@/lib/silentCatch';
 import { FleetStatusDots } from './FleetStatusDots';
+import { isBroadcastTargetState } from './fleetStateMeta';
 
 
 /**
@@ -91,7 +93,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
   // tombstones with "no PTY to attach"); this list was the one place that
   // filtered on `exited` alone.
   const targetable = useMemo(
-    () => sessions.filter((s) => s.state !== 'exited' && s.state !== 'hibernated'),
+    () => sessions.filter((s) => isBroadcastTargetState(s.state)),
     [sessions],
   );
 
@@ -151,12 +153,18 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
     // the pool's fail-fast propagation never fires and every target is
     // attempted.
     let done = 0;
+    // The first rejection, kept for ONE report per batch. The toast tells the
+    // operator; nothing told telemetry, so a broadcast that failed against
+    // every session (a stale backend registry) left no trace of WHY. One event
+    // per send, not one per target: twenty identical writer errors are one fault.
+    let firstError: unknown = null;
     const outcomes = await mapWithConcurrency(targets, BROADCAST_CONCURRENCY, async (sid) => {
       try {
         await writeInput(sid, payload);
         // Keep the id, not just a tally — the caller needs to retarget.
         return null;
-      } catch {
+      } catch (err) {
+        firstError ??= err;
         return sid;
       } finally {
         done += 1;
@@ -165,6 +173,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
     });
     const failedSids = outcomes.filter((sid): sid is string => sid !== null);
     const failed = failedSids.length;
+    if (failed > 0) silentCatch('FleetBroadcastModal:write')(firstError);
     // Always surface the real outcome — the single most important feedback in
     // the feature is "did my fleet-wide command land?". Previously a full
     // success showed NO toast at all, and a total failure rendered "delivered to

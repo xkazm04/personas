@@ -10,7 +10,6 @@
 // No JSX, no i18n → trivially unit-testable; the variants own the markup.
 
 import { AlertOctagon, FileText, Mail, MessageSquareDot, type LucideIcon } from 'lucide-react';
-import { personaInitials } from '@/lib/icons/personaInitials';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import {
@@ -59,9 +58,6 @@ export const SQUARE_STATE_ORDER: SquareState[] = ['running', 'attention', 'faile
 
 /** Strip team/role prefixes so initials + labels read cleanly. */
 export const cleanName = (n: string): string => n.replace(/^T:\s*/, '').replace(/^SDLC[ —-]*/i, '').trim() || n;
-
-/** 1–2 letter initials for a persona or team name. */
-export const initialsOf = (name: string): string => personaInitials(cleanName(name));
 
 export interface TeamGroup {
   teamId: string;

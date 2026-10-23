@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { editablePart, type DocumentBlock, type DocumentSection } from './documentModel';
 import { DocumentBlocks } from './DocumentBlocks';
 import { DocumentRowEditor } from './DocumentRowEditor';
@@ -95,7 +96,7 @@ export function DocumentPage({
             )}
           />
         ) : (
-          <p className="typo-caption text-foreground">{labels.empty}</p>
+          <ScenarioEmptyState art="report" size="sm" title={labels.empty} />
         )}
       </div>
 

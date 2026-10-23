@@ -1,0 +1,44 @@
+{"schema": "conform-run/1", "worker": "ff8a116c-2acb-4ba1-9216-b4c79c720fae", "subject": "agent-runtime-assembly",
+ "evaluatedAt": "2026-10-21T17:48:30Z",
+ "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc", "evaluatedRevision": 28,
+ "pairs": [
+  {"context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e", "subject": "agent-runtime-assembly", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/design/n8n_transform/cli_runner.rs:450 a user-cancelled transform is left Interrupted 'as boot recovery would', but boot recovery (src-tauri/db/src/repos/resources/n8n_sessions.rs:214) sweeps Interrupted into Failed with 'App closed during transform', so a known cancel and a crashed in-flight run both close as a definite failure after the next restart",
+   "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc", "evaluatedRevision": 28,
+   "techniques": [
+    {"technique": "indeterminate-closure-on-interruption", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/resources/n8n_sessions.rs:214 the startup sweep includes SessionStatus::Interrupted and writes Failed + a prose error; the SessionStatus vocabulary (src-tauri/core/src/models/n8n_session.rs:13) has Interrupted but recovery never preserves it, so the outcome-unknown status exists and is overwritten"},
+    {"technique": "bounded-projection-of-external-work", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/design/n8n_transform/cli_runner.rs:894 the transform is a local CLI child spawned and drained by this process, not remote work behind a handle that outlives a turn"}
+   ]},
+  {"context": "3effd422-2610-4c8a-bc02-53aceafd827c", "subject": "agent-runtime-assembly", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/companion/mod.rs:223 companion_init runs recover_orphans, which closes every job left 'running' as status='failed' and appends ' [orphaned by process restart]' to error_text (src-tauri/src/companion/jobs/mod.rs:189) - an unearned failure verdict whose real cause is only recoverable by string-matching the message",
+   "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc", "evaluatedRevision": 28,
+   "techniques": [
+    {"technique": "indeterminate-closure-on-interruption", "verdict": "deviation", "evidence": "src-tauri/src/companion/jobs/mod.rs:189 the restart cause is encoded as a suffix inside a failure message instead of a first-class indeterminate status; the job vocabulary has no such status"}
+   ]},
+  {"context": "468953eb-0204-4013-b366-9357b2161138", "subject": "agent-runtime-assembly", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/cloud/runner.rs:73 the cloud run is polled from an in-process task whose remote handle lives only in memory (src-tauri/src/state.rs:40 cloud_exec_ids HashMap, filled at src-tauri/src/commands/infrastructure/cloud.rs:639) and is never persisted, so an app restart orphans the remote run: it cannot be re-attached, its result is lost, and it cannot be cancelled",
+   "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc", "evaluatedRevision": 28,
+   "techniques": [
+    {"technique": "bounded-projection-of-external-work", "verdict": "deviation", "evidence": "src-tauri/src/cloud/runner.rs:57 run_cloud_execution takes the cloud_execution_id as an argument from memory; the rule 'persist the remote handle and lease before returning, poll from a background runtime outside the run with the store as truth' is unmet - polling is host-side (not model-visible), but the handle is not durable"}
+   ]},
+  {"context": "a3b615d2-05d8-47bd-ad92-672c6b42b0f3", "subject": "agent-runtime-assembly", "bundle": "software-engineering",
+   "state": "unknown",
+   "evidence": "src-tauri/engine/src/parser.rs:304 subagent output carrying parent_tool_use_id is routed to SubagentMessage and excluded from root turns (:416, :1225), realizing nested-run-is-not-its-parent at the receiver; the context also holds healing, director and bridge code not read, so one realized technique is below the evidence floor for conformant",
+   "techniques": [
+    {"technique": "nested-run-is-not-its-parent", "verdict": "conformant", "evidence": "src-tauri/engine/src/parser.rs:304 a subagent's assistant message never masquerades as root output; parser.rs:416 the same for its tool_results; parser.rs:1225 only non-subagent message ids enter root_turns"}
+   ],
+   "registryProposal": "output-stream-parser is a 34-file consolidated context (parser + healing + director + desktop bridges + pollers); agent-runtime-assembly matches it on vocabulary, but only the parser's nested-run attribution is genuinely in scope. Consider a narrower pairing for src-tauri/engine/src/healing_orchestrator.rs / fix_loop.rs (self-healing) rather than this subject."}
+ ],
+ "declined": [
+  {"subject": "agent-runtime-assembly", "context": "remaining unknown pairs (about 50)", "reason": "budget: 4 pairs per run; remaining unknown pairs (plugins-fleet-tests, mcp-server, api-agents, stores, etc.) all carry priorNotApplicable=6 and are left for later runs"},
+  {"subject": "agent-runtime-assembly", "context": "plugins-fleet-tests", "reason": "not read this run; a Vitest/UI context, likely not-applicable but an unread not-applicable would be a guess"}
+ ],
+ "consults": [
+  {"ts": "2026-10-21T17:48:30Z", "bundle": "software-engineering", "subjects": ["agent-runtime-assembly"], "techniques": ["indeterminate-closure-on-interruption", "bounded-projection-of-external-work"], "deviations": 1},
+  {"ts": "2026-10-21T17:48:30Z", "bundle": "software-engineering", "subjects": ["agent-runtime-assembly"], "techniques": ["indeterminate-closure-on-interruption"], "deviations": 1},
+  {"ts": "2026-10-21T17:48:30Z", "bundle": "software-engineering", "subjects": ["agent-runtime-assembly"], "techniques": ["bounded-projection-of-external-work"], "deviations": 1},
+  {"ts": "2026-10-21T17:48:30Z", "bundle": "software-engineering", "subjects": ["agent-runtime-assembly"], "techniques": ["nested-run-is-not-its-parent"], "deviations": 0}
+ ]}

@@ -11,7 +11,7 @@
  * loaded EMPTY renders the empty state with Add app.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Server } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 import * as api from '@/api/devServers';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
@@ -88,7 +88,8 @@ export default function ServerSection({ onAdd }: { onAdd: () => void }) {
           )}
           {empty ? (
             <EmptyState
-              icon={Server}
+              art="folder"
+              size="md"
               title={s.empty_title}
               subtitle={s.empty_description}
               action={{ label: s.add_app, onClick: onAdd, icon: Plus }}

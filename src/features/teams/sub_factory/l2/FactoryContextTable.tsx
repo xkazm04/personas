@@ -66,13 +66,13 @@ export function FactoryContextGroup({ group, data, selected, onSelect, w }: {
           <div className="k-cell2">
             <span className="k-row__name typo-body k-strong">{c.ctx.business_feature?.trim() || c.ctx.name}</span>
             <span className="k-row__meta typo-caption">
-              <Meta parts={[c.ctx.category, c.kind === 'setup' && c.kpiCount === 0 ? w.t.kpis.define_kpi : `${c.kpiCount} ${w.L.kpisCount}`]} />
+              <Meta parts={[c.ctx.category, c.kpiCount == null ? null : c.kind === 'setup' && c.kpiCount === 0 ? w.t.kpis.define_kpi : `${c.kpiCount} ${w.L.kpisCount}`]} />
             </span>
           </div>
         ),
         features: fig(features),
-        goals: fig(goals),
-        proposed: proposals > 0 ? <span className="typo-data k-regular t-agent k-toned">{proposals}</span> : fig(0),
+        goals: goals == null ? dash : fig(goals),
+        proposed: proposals == null ? dash : proposals > 0 ? <span className="typo-data k-regular t-agent k-toned">{proposals}</span> : fig(0),
         kpi: kpiCell(c, w),
         errors: toned(c.errs, c.dims.errors, (v) => v),
         cost: toned(c.costUsd, c.dims.cost, (v) => <Numeric value={v} unit="usd" precision={0} />),

@@ -1,0 +1,217 @@
+{
+  "schema": "conform-run/1",
+  "worker": "89b8b5a7-4d7b-4b75-9631-9471ae7cb7e7",
+  "subject": "table",
+  "evaluatedAt": "2026-10-16T18:11:36Z",
+  "pairs": [
+    {
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_activity/ActivityTab.tsx:101 every feed's fetch failure lands [] (same at :124/:137/:150/:163), so a dead feed renders the 'no activity' empty state at ActivityList.tsx:180; and :217 filters plus the column sorts run over six server-truncated 50-row windows merged client-side, with :252 presenting items.length as the tab count.",
+      "techniques": [
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_activity/ActivityTab.tsx:101 a failed listExecutions lands an empty feed, so error wears the empty state's clothes (only attention gets an unavailable notice)"
+        },
+        {
+          "technique": "client-server-split",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_activity/ActivityTab.tsx:217 status/use-case/starred/tag filters execute on the client below per-feed server windows of 50 (limit at :113, :140)"
+        },
+        {
+          "technique": "filtering",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_activity/ActivityTab.tsx:252 counts are items.length over the loaded windows, not the predicate's extent"
+        },
+        {
+          "technique": "sorting",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_activity/ActivityList.tsx:89 a missing director_score sorts as -1 (a value, not a declared absent home) and the comparator has no identity tiebreaker"
+        },
+        {
+          "technique": "pagination",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_activity/ActivityList.tsx:177 rows keyed by type+id, a stable system-of-record identity"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+      "evaluatedRevision": 14
+    },
+    {
+      "context": "03960450-6979-4412-9de3-35c897fe56d2",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_executions/components/list/ExecutionList.tsx:69 origin/status/capability filters run over the loaded pages of a server-paged list (useExecutionPaging.ts:51, 50 per page), so a filter that matches only unloaded runs shows 'no results' at :204 while Load more is still offered.",
+      "techniques": [
+        {
+          "technique": "client-server-split",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/components/list/ExecutionList.tsx:69 client filter below a server-truncated window"
+        },
+        {
+          "technique": "sorting",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/components/list/useExecutionColumns.tsx:133 unpriced cost sorts as -1 below $0 and the sort reorders only the loaded pages"
+        },
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_executions/components/list/ExecutionList.tsx:183 a fetch error with no rows renders ExecutionListError with retry, distinct from first-run and empty"
+        },
+        {
+          "technique": "pagination",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_executions/components/list/ExecutionList.tsx:192 rows keyed by execution id across loaded pages"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+      "evaluatedRevision": 14
+    },
+    {
+      "context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx:331 loading clears in finally and the table never reads the slice error set at labSlice.ts:554, so a failed version fetch renders the 'no versions' empty state at :334 with no retry.",
+      "techniques": [
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx:331 error is indistinguishable from empty-settled"
+        },
+        {
+          "technique": "sorting",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx:226 an unmeasured composite sorts as -1 and tokens at :248 as 0, so absent values flip ends with direction instead of having one declared home"
+        },
+        {
+          "technique": "client-server-split",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx:90 all-client regime: the complete version and rating sets are fetched before any client sort"
+        },
+        {
+          "technique": "pagination",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx:329 rows keyed by a version x model key, not position"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+      "evaluatedRevision": 14
+    },
+    {
+      "context": "ba0d4722-bfde-40aa-8e1d-52591719f834",
+      "subject": "table",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_lab/components/shared/LabHistoryTable.tsx:39 an empty runs array replaces the whole table (headers included) with an empty state, and the primitive takes no loading or error input, so callers like ArenaHistory cannot render empty-loading or error distinctly from empty-settled.",
+      "techniques": [
+        {
+          "technique": "loading-and-empty-states",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/shared/LabHistoryTable.tsx:39 chrome unmounts on zero rows and empty is asserted with no settle signal"
+        },
+        {
+          "technique": "grid-keyboard-model",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/shared/LabHistoryTable.tsx:77 the row-open action is an onClick on a non-focusable tr, unreachable without a pointer"
+        },
+        {
+          "technique": "performance",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_lab/components/shared/VirtualizedTableBody.tsx:19 windowing only past a 50-row threshold, spacer rows keep native table flow, rows keyed by identity at :65"
+        },
+        {
+          "technique": "pagination",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_lab/components/shared/LabHistoryTable.tsx:76 rows keyed by run id"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+      "evaluatedRevision": 14
+    }
+  ],
+  "declined": [
+    {
+      "subject": "table",
+      "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400",
+      "reason": "stale not-applicable on a weak context with zero paths; weak contexts are not judged by default - left for a coverage decision (the context appears to be dead after c06_retire_artist_research_lab)"
+    },
+    {
+      "subject": "table",
+      "context": "cbb061cf-5c61-49d4-80d8-98b8f9b40600",
+      "reason": "budget: 4 pairs judged this run; remaining probable unknowns (browser-webview-control, display-data-formatters, fleet-session-grid, hooks-utility-interaction, notepad-overview, passport-wall-model, passport-wall-ui, persona-glyph-layout, plugins-drive, shared-components-layout, supabase-sync-pipeline, test-bridge-core) left unread"
+    },
+    {
+      "subject": "table",
+      "context": "2651f2ce-7fc1-4331-8b31-61e783e9746a",
+      "reason": "weak context, not judged by default"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T18:11:36Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "table"
+      ],
+      "techniques": [
+        "loading-and-empty-states",
+        "client-server-split",
+        "filtering",
+        "sorting",
+        "pagination"
+      ],
+      "deviations": 4,
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0"
+    },
+    {
+      "ts": "2026-10-16T18:11:36Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "table"
+      ],
+      "techniques": [
+        "client-server-split",
+        "sorting",
+        "loading-and-empty-states",
+        "pagination"
+      ],
+      "deviations": 2,
+      "context": "03960450-6979-4412-9de3-35c897fe56d2"
+    },
+    {
+      "ts": "2026-10-16T18:11:36Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "table"
+      ],
+      "techniques": [
+        "loading-and-empty-states",
+        "sorting",
+        "client-server-split",
+        "pagination"
+      ],
+      "deviations": 2,
+      "context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b"
+    },
+    {
+      "ts": "2026-10-16T18:11:36Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "table"
+      ],
+      "techniques": [
+        "loading-and-empty-states",
+        "grid-keyboard-model",
+        "performance",
+        "pagination"
+      ],
+      "deviations": 2,
+      "context": "ba0d4722-bfde-40aa-8e1d-52591719f834"
+    }
+  ]
+}

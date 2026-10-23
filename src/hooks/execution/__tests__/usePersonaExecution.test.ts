@@ -41,6 +41,8 @@ vi.mock('@/lib/notifications/checkHumanReviews', () => ({
 }));
 
 import { useAgentStore } from '@/stores/agentStore';
+import { checkNewHumanReviews } from '@/lib/notifications/checkHumanReviews';
+import { addMiddleware } from '@/lib/execution/pipeline';
 import { executionSink } from '@/lib/execution/executionSink';
 import { usePersonaExecution } from '../usePersonaExecution';
 
@@ -262,6 +264,40 @@ describe('detached focused stream', () => {
     expect(useAgentStore.getState().isExecuting).toBe(false);
   });
 
+  it("names the RUN's persona in the review check, not the one now selected", async () => {
+    getExecutionLogLinesMock.mockResolvedValue([]);
+    vi.mocked(checkNewHumanReviews).mockClear();
+    seedRun('exec-A', 'p-1');
+    useAgentStore.setState({
+      personas: [
+        { id: 'p-1', name: 'Alice' },
+        { id: 'p-2', name: 'Bob' },
+      ] as unknown as ReturnType<typeof useAgentStore.getState>['personas'],
+      selectedPersona: { id: 'p-1', name: 'Alice' } as unknown as ReturnType<typeof useAgentStore.getState>['selectedPersona'],
+    });
+
+    const { rerender } = renderHook(() => usePersonaExecution());
+    await waitFor(() => {
+      expect(registered.some((h) => h.name === EventName.EXECUTION_STATUS)).toBe(true);
+    });
+
+    // Switch to Bob mid-run; Alice's run is finalized by the background listener.
+    await act(async () => {
+      useAgentStore.setState({
+        selectedPersonaId: 'p-2',
+        selectedPersona: { id: 'p-2', name: 'Bob' } as unknown as ReturnType<typeof useAgentStore.getState>['selectedPersona'],
+      });
+      rerender();
+      await Promise.resolve();
+    });
+    await act(async () => {
+      emitTo(EventName.EXECUTION_STATUS, { execution_id: 'exec-A', status: 'completed' });
+      await Promise.resolve();
+    });
+
+    expect(checkNewHumanReviews).toHaveBeenCalledWith('p-1', 'Alice');
+  });
+
   it('does NOT finalize the focused run while its own stream is still live', async () => {
     getExecutionLogLinesMock.mockResolvedValue([]);
     seedRun('exec-A', 'p-1');
@@ -318,5 +354,45 @@ describe('final output chunk', () => {
     expect(snapshot).toBeDefined();
     expect(snapshot).toContain('final line');
     expect(snapshot).toContain('[ERROR] boom');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 5. A background run's terminal event reaches the post-run middleware
+// ---------------------------------------------------------------------------
+
+describe('background run completion', () => {
+  it('runs finalize_status and frontend_complete once for a background lane', async () => {
+    getExecutionLogLinesMock.mockResolvedValue([]);
+    const finalized: unknown[] = [];
+    const completed: unknown[] = [];
+    addMiddleware('finalize_status', 'test-bg-finalize', (_s, p) => { finalized.push(p); return p; });
+    addMiddleware('frontend_complete', 'test-bg-complete', (_s, p) => { completed.push(p); return p; });
+    useAgentStore.setState({
+      backgroundExecutions: [{
+        executionId: 'exec-bg', personaId: 'p-9', personaName: 'Bg', personaColor: '#000',
+        status: 'running', startedAt: '2026-10-20T12:00:00.000Z',
+      }],
+    });
+
+    renderHook(() => usePersonaExecution());
+    await waitFor(() => {
+      expect(registered.some((h) => h.name === EventName.EXECUTION_STATUS)).toBe(true);
+    });
+    const terminal = { execution_id: 'exec-bg', status: 'completed', duration_ms: 1200, cost_usd: 0.5 };
+    await act(async () => {
+      emitTo(EventName.EXECUTION_STATUS, terminal);
+      await Promise.resolve();
+    });
+    // A repeated terminal event must not re-run the middleware.
+    await act(async () => {
+      emitTo(EventName.EXECUTION_STATUS, terminal);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => { expect(completed).toHaveLength(1); });
+    expect(finalized).toHaveLength(1);
+    expect(finalized[0]).toMatchObject({ executionId: 'exec-bg', status: 'completed', durationMs: 1200, costUsd: 0.5 });
+    expect(completed[0]).toMatchObject({ executionId: 'exec-bg', personaId: 'p-9', finalStatus: 'completed' });
   });
 });

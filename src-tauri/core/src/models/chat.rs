@@ -124,3 +124,28 @@ pub struct UpsertSessionContextInput {
     /// Claude CLI session ID captured from execution SystemInit event.
     pub claude_session_id: Option<String>,
 }
+
+#[cfg(test)]
+mod chat_role_tests {
+    use super::ChatRole;
+
+    /// `ToSql` writes `Display`, the frontend reads serde, and `FromSql` parses
+    /// with `from_str_checked`: three spellings of one vocabulary.
+    #[test]
+    fn chat_role_tokens_agree_with_serde_and_round_trip() {
+        for v in [
+            ChatRole::User,
+            ChatRole::Assistant,
+            ChatRole::System,
+            ChatRole::Tool,
+        ] {
+            match v {
+                ChatRole::User | ChatRole::Assistant | ChatRole::System | ChatRole::Tool => {}
+            }
+            let wire = serde_json::to_value(v).unwrap();
+            assert_eq!(wire.as_str(), Some(v.to_string().as_str()), "{v:?}");
+            assert_eq!(ChatRole::from_str_checked(&v.to_string()), Ok(v));
+        }
+        assert!(ChatRole::from_str_checked("User").is_err());
+    }
+}

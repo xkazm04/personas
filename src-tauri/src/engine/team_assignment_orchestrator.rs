@@ -522,10 +522,9 @@ pub fn recover_orphaned_assignments(
         // re-attached tick loop asks autonomy admission before it claims
         // each step (`admit_step`), so a switched-off organisation that is
         // restarted re-attaches its orphans and then HOLDS every step
-        // `pending` without spending. Parking the assignment `paused` instead
-        // is not possible: the `team_assignments.status` CHECK
-        // (c02_dev_goals_and_kpis) does not admit 'paused', so that write
-        // fails and would strand the assignment `running` with no ticker.
+        // `pending` without spending. (Since e70 the `team_assignments.status`
+        // CHECK admits 'paused', but parking the assignment there would leave
+        // it with no ticker; holding per step keeps the tick loop attached.)
         run_assignment(
             pool.clone(),
             app.clone(),

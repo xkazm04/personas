@@ -21,7 +21,6 @@ use crate::db::models::{CreatePersonaEventInput, PersonaEvent};
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::cloud_webhook_watermarks as watermark_repo;
 use crate::db::DbPool;
-use crate::engine::crypto;
 use crate::error::AppError;
 
 // ---------------------------------------------------------------------------
@@ -215,6 +214,10 @@ pub async fn cloud_webhook_relay_tick(
     // Collect webhook triggers with their parent deployment index
     let mut webhook_triggers_with_deployment: Vec<(usize, CloudTrigger)> = Vec::new();
     let mut active_trigger_ids = HashSet::new();
+    // Deployments whose trigger listing failed this tick. Their triggers are
+    // absent from `active_trigger_ids` without having been deleted, so they
+    // decide whether the watermark prune below may run at all.
+    let mut listing_failures = 0usize;
 
     for (dep_idx, result) in &trigger_results {
         let deployment = &webhook_deployments[*dep_idx];
@@ -228,10 +231,11 @@ pub async fn cloud_webhook_relay_tick(
                 }
             }
             Err(e) => {
-                tracing::debug!(
+                listing_failures += 1;
+                tracing::warn!(
                     deployment_id = %deployment.id,
                     error = %e,
-                    "Failed to list triggers for deployment"
+                    "Failed to list triggers for deployment; its watermarks are kept this tick"
                 );
             }
         }
@@ -451,9 +455,15 @@ pub async fn cloud_webhook_relay_tick(
     // Re-acquire the lock only for the short, purely in-memory mutations:
     // apply the deferred last_seen updates, prune stale entries, and update
     // the poll bookkeeping.
-    let active_ids: Vec<&str> = active_trigger_ids.iter().map(|s| s.as_str()).collect();
-    if let Err(e) = watermark_repo::prune(pool, &active_ids) {
-        tracing::debug!(error = %e, "Failed to prune stale webhook watermarks");
+    // A trigger missing from an INCOMPLETE listing may still exist: pruning
+    // its watermark would make the next tick republish every firing on its
+    // page as new events. Prune only after a complete listing.
+    let prune_allowed = personas_engine::webhook_ingest::watermark_prune_allowed(listing_failures);
+    if prune_allowed {
+        let active_ids: Vec<&str> = active_trigger_ids.iter().map(|s| s.as_str()).collect();
+        if let Err(e) = watermark_repo::prune(pool, &active_ids) {
+            tracing::debug!(error = %e, "Failed to prune stale webhook watermarks");
+        }
     }
     let mut s = state.lock().await;
     for (trigger_id, watermark) in last_seen_updates {
@@ -461,9 +471,18 @@ pub async fn cloud_webhook_relay_tick(
     }
     s.total_relayed += total_new as u64;
     // Prune last_seen entries for triggers that no longer exist, then update state
-    s.last_seen.retain(|id, _| active_trigger_ids.contains(id));
+    if prune_allowed {
+        s.last_seen.retain(|id, _| active_trigger_ids.contains(id));
+    }
     s.last_poll_at = Some(now);
-    s.last_error = None;
+    s.last_error = if listing_failures > 0 {
+        Some(format!(
+            "Could not list webhook triggers for {listing_failures} of {} cloud deployments",
+            webhook_deployments.len()
+        ))
+    } else {
+        None
+    };
     s.active_webhook_triggers = trigger_count;
     emit_status(app, &s, true);
 
@@ -490,42 +509,13 @@ fn publish_and_upsert_watermark(
     trigger_id: &str,
     fired_at: &str,
 ) -> Result<PersonaEvent, AppError> {
-    let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
-    let project_id = input.project_id.unwrap_or_else(|| "default".into());
-
-    // Encrypt payload at rest if present
-    let (stored_payload, payload_iv) = match &input.payload {
-        Some(plaintext) if !plaintext.is_empty() => match crypto::encrypt_for_db(plaintext) {
-            Ok((ct, iv)) => (Some(ct), Some(iv)),
-            Err(e) => {
-                tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
-                (Some(plaintext.clone()), None)
-            }
-        },
-        other => (other.clone(), None),
-    };
 
     let mut conn = pool.get()?;
     let tx = conn.transaction().map_err(AppError::Database)?;
 
-    tx.execute(
-        "INSERT INTO persona_events
-         (id, project_id, event_type, source_type, source_id, target_persona_id, payload, payload_iv, use_case_id, status, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10)",
-        params![
-            id,
-            project_id,
-            input.event_type,
-            input.source_type,
-            input.source_id,
-            input.target_persona_id,
-            stored_payload,
-            payload_iv,
-            input.use_case_id,
-            now,
-        ],
-    ).map_err(AppError::Database)?;
+    // Same validation + encryption + INSERT as every other ingestion path.
+    let id = event_repo::publish_in(&tx, &input)?;
 
     tx.execute(
         "INSERT INTO cloud_webhook_watermarks (trigger_id, last_seen_ts, updated_at)

@@ -53,7 +53,7 @@ import {
 import { toBacklogIdea } from '@/features/overview/sub_manual-review/components/backlog/backlogModel';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { extractMessage, toastCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
@@ -620,7 +620,11 @@ export function useUnifiedTriage(
             setIdeasLoading(false);
           });
         }
-        toastCatch('Could not load backlog ideas')(error);
+        // A background read: the failure is already reported INLINE through
+        // `failures` (the hub paints it on the source's chip), so a toast here
+        // surfaced it twice and fired even after the effect was cancelled
+        // (error-surfacing-policy.md: a mount fetch never toasts).
+        silentCatch('useUnifiedTriage:ideas')(error);
       });
     return () => {
       cancelled = true;
@@ -654,7 +658,7 @@ export function useUnifiedTriage(
             setProposalsLoading(false);
           });
         }
-        toastCatch('Could not load tuning proposals')(error);
+        silentCatch('useUnifiedTriage:policy')(error);
       });
     return () => {
       cancelled = true;
@@ -682,7 +686,7 @@ export function useUnifiedTriage(
             setPromotionsLoading(false);
           });
         }
-        toastCatch('Could not load promotion proposals')(error);
+        silentCatch('useUnifiedTriage:evolution')(error);
       });
     return () => {
       cancelled = true;
@@ -714,7 +718,7 @@ export function useUnifiedTriage(
             setGoalsLoading(false);
           });
         }
-        toastCatch('Could not load goals awaiting acceptance')(error);
+        silentCatch('useUnifiedTriage:goals')(error);
       });
     return () => {
       cancelled = true;

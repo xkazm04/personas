@@ -14,7 +14,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { Button } from '@/features/shared/components/buttons';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useAutoTeam } from './useAutoTeam';
-import { BlueprintPreview, EXAMPLE_PROMPTS } from './BlueprintPreview';
+import { BlueprintPreview, EXAMPLE_PROMPT_KEYS } from './BlueprintPreview';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutoTeamModalProps {
@@ -123,7 +123,9 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
             {/* Example prompts */}
             {at.phase === 'idle' && !at.query && (
               <div className="flex flex-wrap gap-1.5">
-                {EXAMPLE_PROMPTS.map((prompt) => (
+                {EXAMPLE_PROMPT_KEYS.map((promptKey) => {
+                  const prompt = t.pipeline[promptKey];
+                  return (
                   <Button
                     key={prompt}
                     variant="ghost"
@@ -133,7 +135,8 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                   >
                     {prompt}
                   </Button>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

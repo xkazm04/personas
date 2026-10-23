@@ -2,7 +2,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { check, type Update, type DownloadEvent } from "@tauri-apps/plugin-updater";
 import { getVersion } from "@tauri-apps/api/app";
 import * as Sentry from "@sentry/react";
-import { silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
 import { recordVersion } from "@/lib/updateHistory";
 
 export interface UpdateInfo {
@@ -124,7 +124,7 @@ export async function checkForUpdate(): Promise<CheckOutcome> {
     // Surface the failure in state (Settings shows it next to lastChecked):
     // a dead/moved updater endpoint must not be indistinguishable from
     // "up to date" — background checks previously failed invisibly.
-    setState({ error: err instanceof Error ? err.message : String(err) });
+    setState({ error: extractMessage(err) });
     return "failed";
   } finally {
     checking = false;
@@ -176,7 +176,8 @@ export async function installUpdate(): Promise<void> {
       level: "info",
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to install update";
+    // Plugin commands reject with the error STRING; keep it on the banner.
+    const message = extractMessage(err) || "Failed to install update";
     setState({ error: message, isInstalling: false, downloadProgress: null });
     Sentry.captureException(err, {
       tags: { event: "update.install.failed" },

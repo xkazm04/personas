@@ -1,0 +1,330 @@
+{
+  "schema": "conform-run/1",
+  "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
+  "subject": "agent-memory",
+  "evaluatedAt": "2026-10-16T18:04:48.459Z",
+  "pairs": [
+    {
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+      "evaluatedRevision": 51,
+      "context": "71d36b74-2b52-4759-a000-b505ddf27915",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge() still hard-DELETEs both originals in the merge tx; persona_memory_sources ON DELETE CASCADE (src-tauri/db/src/migrations/incremental/e16_living_agent.rs:107) erases their episode provenance and no supersedence link survives - re-confirmed at revision 51",
+      "techniques": [
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge closes two beliefs by deletion, not supersedence with a validity window"
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 delete_all hard-DELETEs every non-core memory; no demotion tier, audit trail lost"
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/migrations/incremental/e16_living_agent.rs:107 source rows cascade away with the merged originals, so the merged belief can no longer answer where it came from"
+        }
+      ]
+    },
+    {
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+      "evaluatedRevision": 51,
+      "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477 evict_excess, called after every pipeline run that created memories (src-tauri/src/engine/pipeline_executor.rs:1108), hard-DELETEs the lowest-importance auto memories with no demotion tier - a scoring bug becomes permanent amnesia; re-confirmed at revision 51",
+      "techniques": [
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477 cap enforcement is a trapdoor DELETE ordered by importance/created_at, not demotion"
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:289 operator delete is a hard DELETE; edits keep a revision log (:226) but retirement keeps none"
+        }
+      ]
+    },
+    {
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+      "evaluatedRevision": 51,
+      "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/dev_memories.rs:163 render_for_prompt breaks at the first line that overflows the budget, so one fat item drops every lower-ranked item behind it (recall-injection: skip, do not stop); store is append-only with no decay or supersedence (:11) - re-confirmed at revision 51",
+      "techniques": [
+        {
+          "technique": "recall-injection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:163 `break` on overflow instead of skipping to the next item that fits"
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:11 append + read only: a reversed constraint is never superseded and keeps reciting itself"
+        }
+      ]
+    },
+    {
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+      "evaluatedRevision": 51,
+      "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166 build_consolidation_prompt stamps each episode with its instant (:1253) but never states today nor asks the model to ground relative dates, so a deferred or replayed pass mis-dates them; the sibling sleep-cycle prompt does it (src-tauri/src/companion/brain/sleep_cycle/prompts.rs:61) - re-confirmed at revision 51",
+      "techniques": [
+        {
+          "technique": "observation-clock",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166 prompt prints episode instants, never `now`, never a grounding instruction - the inverse failure the technique names"
+        },
+        {
+          "technique": "filter-at-the-id-door",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/retrieval.rs:734 vector hits re-filtered by id with importance > 0, so retired nodes cannot re-enter"
+        }
+      ]
+    },
+    {
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+      "evaluatedRevision": 51,
+      "context": "dc7c4f48-e819-47d0-80be-6afb942d28fd",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/models/memory.rs:225 ACTIVE_CAP archival orders by importance/access_count/created_at (src-tauri/db/src/repos/core/memories.rs:2024) while recall ranks by decay_score (src-tauri/db/src/memory_recall.rs:157), and access_count is a pure delivery count (src-tauri/src/engine/runner/mod.rs:1347), so the cap keeps whatever was shown most - exposure ranked as credit",
+      "techniques": [
+        {
+          "technique": "memory-value-model",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:2024 a second value ordering beside decay_score: the janitor and the read path disagree about what an item is worth"
+        },
+        {
+          "technique": "exposure-is-not-credit",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1347 increment_access_batch fires on every injection of prepared memories, so access_count counts delivery and then ranks survival - rank raises delivery raises rank"
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/memory.rs:225 contract records the archival ordering as a deliberate exception to decay_score - the forgetting gate does not run on the scored value"
+        }
+      ],
+      "registryProposal": "exposure-is-not-credit (revision 51) applies to plain access-count recency/frequency ranking, not only to outcome-feedback learners; its use_when triggers name feedback/verdicts, so a store whose only signal is an injection counter would not reach it by trigger - consider a use_when for \"ranking or retaining by access count incremented on delivery\""
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-memory",
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "reason": "agents-editor: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "reason": "agents-quick-answer: deviation judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "0ecc70bc-a005-4ff8-9a98-f362d2a75f53",
+      "reason": "api-overview: deviation judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "d77a22ee-23cb-42f3-a910-590f8622977f",
+      "reason": "companion-core-store: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "50bf2ad0-3da7-4405-991a-6e22695903a2",
+      "reason": "companion-narration-ops: deviation judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "bcb603ad-ce58-4b76-9623-aa99ace984af",
+      "reason": "companion-proactive: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+      "reason": "display-data-formatters: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e",
+      "reason": "fleet-monitor-channels: deviation judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+      "reason": "home-learning: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "1db5c86e-3237-4d2a-8e2f-1426d680757c",
+      "reason": "lib-execution: deviation judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "7826a48f-5883-4f26-8476-c3c515bda745",
+      "reason": "lib-personas: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "7f6d3238-7136-4361-af8f-bca556ae2042",
+      "reason": "mcp-server: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "c413de7d-1182-4abc-8a08-9c8832254c62",
+      "reason": "overview-director: deviation judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192",
+      "reason": "overview-manual-review: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "e62d5595-2bbd-480a-a757-2d3a126545a0",
+      "reason": "overview-memories: deviation judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "3f38546e-e970-4837-97f7-f0504aa32daf",
+      "reason": "plugins-companion-decision: deviation judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049",
+      "reason": "plugins-dev-tools-projects: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "10c96ae7-a356-4555-996b-df92fc5dc8e7",
+      "reason": "plugins-dev-tools-skills: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+      "reason": "prompt-assembly-engine: deviation judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+      "reason": "resource-tracking: deviation judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f",
+      "reason": "schedules-components: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "7159d27d-86c2-43be-a83f-8b50c4c816be",
+      "reason": "settings-network: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5",
+      "reason": "shared-components-forms: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+      "reason": "stores: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "reason": "stores-slices-agents: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "532bbf10-3fd3-4b57-a8ea-95a957645697",
+      "reason": "stores-slices-overview: deviation judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "reason": "stores-slices-system: deviation judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    },
+    {
+      "subject": "agent-memory",
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+      "reason": "vault-credentials-components-forms: not-applicable judged at revision 48, not re-read this run (budget 5); registry is at revision 51 so this verdict lags 3 revisions"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T18:04:48.459Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "consolidation",
+        "decay-and-forgetting",
+        "memory-governance"
+      ],
+      "deviations": 3
+    },
+    {
+      "ts": "2026-10-16T18:04:48.459Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "decay-and-forgetting",
+        "memory-governance"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-16T18:04:48.459Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "recall-injection",
+        "consolidation"
+      ],
+      "deviations": 2
+    },
+    {
+      "ts": "2026-10-16T18:04:48.459Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "observation-clock",
+        "filter-at-the-id-door"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T18:04:48.459Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "memory-value-model",
+        "exposure-is-not-credit",
+        "decay-and-forgetting"
+      ],
+      "deviations": 3
+    }
+  ]
+}

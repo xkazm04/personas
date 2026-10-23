@@ -34,6 +34,7 @@ import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { UnifiedSpan } from '@/lib/execution/pipeline';
 import { useTraceData } from '../useTraceData';
+import { extractMessage } from '@/lib/silentCatch';
 import {
   applySpanEvent,
   buildParentIndex,
@@ -274,9 +275,22 @@ describe('useTraceData — span events during the initial fetch window', () => {
       }
     });
 
-    expect(result.current.error).toBe('boom');
+    expect(result.current.error?.raw).toBeInstanceOf(Error);
     expect(result.current.trace).toBeNull();
     expect(result.current.loading).toBe(false);
+  });
+
+  it('keeps an IPC rejection object whole instead of stringifying it to "[object Object]"', async () => {
+    // invokeWithTimeout rejects with a serialized AppError, never an Error.
+    const appError = { error: 'database is locked', kind: 'Database' };
+    getExecutionTraceMock.mockReturnValue(Promise.reject(appError));
+
+    const { result } = await mountHook();
+    await act(async () => {});
+
+    expect(result.current.error).not.toBeNull();
+    expect(result.current.error?.raw).toBe(appError);
+    expect(extractMessage(result.current.error?.raw)).toBe('database is locked');
   });
 
   it('still tears down cleanly when unmounted mid-fetch (cancelled guard holds)', async () => {

@@ -33,13 +33,18 @@ vi.mock('@/api/devTools/devTools', () => ({
 vi.mock('@/api/vault/credentials', () => ({
   listCredentials: vi.fn().mockResolvedValue([]),
 }));
+vi.mock('../passportHistory', () => ({
+  recordSnapshot: vi.fn(),
+}));
 
 import * as devTools from '@/api/devTools/devTools';
+import { recordSnapshot } from '../passportHistory';
 import { usePassportData } from '../usePassportData';
 
 const listProjectsMock = vi.mocked(devTools.listProjects);
 const getCrossProjectMetadataMock = vi.mocked(devTools.getCrossProjectMetadata);
 const generateCrossProjectMetadataMock = vi.mocked(devTools.generateCrossProjectMetadata);
+const recordSnapshotMock = vi.mocked(recordSnapshot);
 
 type Deferred<T> = { promise: Promise<T>; resolve: (v: T) => void };
 function deferred<T>(): Deferred<T> {
@@ -59,6 +64,7 @@ describe('usePassportData — stale-build guard', () => {
     listProjectsMock.mockReset();
     getCrossProjectMetadataMock.mockReset();
     generateCrossProjectMetadataMock.mockReset();
+    recordSnapshotMock.mockReset();
   });
 
   it('discards the mount build when it resolves after an explicit rescan', async () => {
@@ -94,5 +100,22 @@ describe('usePassportData — stale-build guard', () => {
     });
 
     expect(result.current.generatedAt).toBe('rescan-gen');
+    // The stale build must not append its readings to the readiness history
+    // either: only the rescan's evidence-complete build records a snapshot.
+    expect(recordSnapshotMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders an IPC AppError rejection as its message, not [object Object]', async () => {
+    // invokeWithTimeout rejects with a serialized AppError OBJECT, never an Error.
+    listProjectsMock.mockReturnValue(Promise.resolve([]) as never);
+    generateCrossProjectMetadataMock.mockReturnValue(
+      Promise.reject({ error: 'scan failed: repo unreadable', kind: 'Internal' }) as never,
+    );
+    const { result } = renderHook(() => usePassportData());
+    act(() => {
+      result.current.rescan();
+    });
+    await waitFor(() => expect(result.current.error).not.toBeNull());
+    expect(result.current.error).toBe('scan failed: repo unreadable');
   });
 });

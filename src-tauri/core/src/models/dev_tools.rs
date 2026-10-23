@@ -1363,12 +1363,6 @@ impl BacklogSource {
         }
     }
 
-    /// True for a source whose items a static tool produced, so no model
-    /// attribution is owed and `Draft` completeness is expected.
-    pub fn is_mechanical(&self) -> bool {
-        matches!(self, Self::StaticScan | Self::HeadlessBenchSeed)
-    }
-
     /// The scale this producer's prompt actually asks for.
     ///
     /// **Two scales live in one column and this is where the exchange rate is
@@ -2714,6 +2708,119 @@ mod notepad_tests {
                 matches!(s, Draft | Completed),
                 "only draft (first publish) and completed (rework) reach published; saw {s:?}"
             );
+        }
+    }
+}
+
+#[cfg(test)]
+mod backlog_vocab_tests {
+    use super::{BacklogSource, IdeaCategory, IdeaCompleteness, IdeaStatus, RegistryPairingState};
+
+    fn serde_token<T: serde::Serialize>(v: &T) -> String {
+        serde_json::to_value(v)
+            .ok()
+            .and_then(|j| j.as_str().map(str::to_owned))
+            .unwrap_or_default()
+    }
+
+    /// Each of these enums spells its closed vocabulary twice by hand
+    /// (`as_str` for the column, a parser for the read) beside the serde
+    /// rename the frontend reads. None of the three CHECK-less columns would
+    /// notice a drift. No wildcard arms, so a new variant must be listed here.
+    #[test]
+    fn backlog_tokens_agree_with_serde_and_round_trip() {
+        for v in [
+            IdeaCategory::Technical,
+            IdeaCategory::User,
+            IdeaCategory::Business,
+            IdeaCategory::Mastermind,
+        ] {
+            match v {
+                IdeaCategory::Technical
+                | IdeaCategory::User
+                | IdeaCategory::Business
+                | IdeaCategory::Mastermind => {}
+            }
+            assert_eq!(serde_token(&v), v.as_str(), "{v:?}");
+            assert_eq!(IdeaCategory::from_token(v.as_str()), Some(v));
+        }
+        for v in [
+            RegistryPairingState::Unlinked,
+            RegistryPairingState::Pairing,
+            RegistryPairingState::Paired,
+            RegistryPairingState::Error,
+        ] {
+            match v {
+                RegistryPairingState::Unlinked
+                | RegistryPairingState::Pairing
+                | RegistryPairingState::Paired
+                | RegistryPairingState::Error => {}
+            }
+            assert_eq!(serde_token(&v), v.as_str(), "{v:?}");
+            assert_eq!(RegistryPairingState::parse(v.as_str()), Some(v));
+        }
+        for v in [
+            IdeaStatus::Pending,
+            IdeaStatus::Accepted,
+            IdeaStatus::Rejected,
+            IdeaStatus::Archived,
+            IdeaStatus::Delivered,
+            IdeaStatus::Expired,
+        ] {
+            match v {
+                IdeaStatus::Pending
+                | IdeaStatus::Accepted
+                | IdeaStatus::Rejected
+                | IdeaStatus::Archived
+                | IdeaStatus::Delivered
+                | IdeaStatus::Expired => {}
+            }
+            assert_eq!(serde_token(&v), v.as_str(), "{v:?}");
+            assert_eq!(IdeaStatus::from_token(v.as_str()), Some(v));
+        }
+        for v in [IdeaCompleteness::Full, IdeaCompleteness::Draft] {
+            match v {
+                IdeaCompleteness::Full | IdeaCompleteness::Draft => {}
+            }
+            assert_eq!(serde_token(&v), v.as_str(), "{v:?}");
+            assert_eq!(IdeaCompleteness::from_token(v.as_str()), Some(v));
+        }
+    }
+
+    #[test]
+    fn backlog_source_tokens_agree_with_serde_and_round_trip() {
+        use BacklogSource::*;
+        let all = [
+            StandardsFinding,
+            PassportGap,
+            LlmCost,
+            SentrySpike,
+            KpiOfftrack,
+            SkillDormant,
+            DocRot,
+            KpiSim,
+            MemoryDisputed,
+            WorkspacePractice,
+            ScanSweep,
+            AppMaster,
+            TeamProposed,
+            PlatformEscalation,
+            IdeaScanner,
+            HeadlessBenchSeed,
+            StaticScan,
+            MemoryReflection,
+            Lifecycle,
+            Manual,
+        ];
+        for v in all {
+            match v {
+                StandardsFinding | PassportGap | LlmCost | SentrySpike | KpiOfftrack
+                | SkillDormant | DocRot | KpiSim | MemoryDisputed | WorkspacePractice
+                | ScanSweep | AppMaster | TeamProposed | PlatformEscalation | IdeaScanner
+                | HeadlessBenchSeed | StaticScan | MemoryReflection | Lifecycle | Manual => {}
+            }
+            assert_eq!(serde_token(&v), v.as_str(), "{v:?}");
+            assert_eq!(BacklogSource::from_token(v.as_str()), Some(v));
         }
     }
 }

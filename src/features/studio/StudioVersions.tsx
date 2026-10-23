@@ -6,17 +6,16 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import type { BuildVersion } from '@/lib/bindings/BuildVersion';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 // C7 — version history: each build turn commits a snapshot; this lists them and
-// restores the project's files to a chosen one (git history is kept, so it's a
-// safe "go back to how it looked then"). After a restore the preview reloads.
+// restores the project's files to a chosen one. After a restore the preview reloads.
 //
-// Restore is NOT free, and the row used to fire it on a single click. The
-// backend runs `git checkout <sha> -- .` over the working tree, so anything
-// written since the last turn snapshot — a hand edit, the output of a turn the
-// user interrupted with Stop — is overwritten with no copy kept anywhere. Until
-// the backend captures the current state before restoring, the confirm step is
-// what stands between a mis-click in a dropdown and lost work.
+// Restore can be undone: the backend snapshots the live tree as a "before
+// restore" version first and refuses the restore if it cannot
+// (`webbuild/versions.rs` `restore`, pinned by studioVersions.test). The
+// confirm step still guards a mis-click in a dropdown, but it must not claim
+// the overwrite is permanent, and it is not styled as a destructive act.
 export default function StudioVersions({ id, onRestored }: { id: string; onRestored: () => void }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -93,7 +92,7 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
           {loading ? (
             <p className="px-2 py-1.5 typo-caption">{t.common.loading}</p>
           ) : versions.length === 0 ? (
-            <p className="px-2 py-1.5 typo-caption">{t.studio.no_versions_yet}</p>
+            <EmptyState art="archive" size="sm" title={t.studio.no_versions_yet} />
           ) : (
             versions.map((v, i) => (
               <button
@@ -119,9 +118,8 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
         <ConfirmDialog
           title={t.chrome.restore}
           // The version's own commit subject is user-generated content and stays
-          // untranslated; the warning around it is not.
-          body={`${pending.message.replace(/^athena:\s*/, '') || pending.sha} · ${pending.when}\n\n${t.common.confirm_destructive_cannot_undo}`}
-          danger
+          // untranslated.
+          body={`${pending.message.replace(/^athena:\s*/, '') || pending.sha} · ${pending.when}`}
           confirmLabel={t.chrome.restore}
           onConfirm={() => restore(pending.sha)}
           onCancel={() => setPending(null)}

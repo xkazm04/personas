@@ -1,0 +1,58 @@
+{
+  "schema": "conform-run/1",
+  "worker": "c5c00524-ab1f-40e4-a7f9-d6bb815ddfe9",
+  "subject": "agent-runtime-assembly",
+  "evaluatedAt": "2026-10-22T03:02:49Z",
+  "pairs": [
+    {
+      "context": "33a96a83-6adc-42f7-b57c-839382bcef54",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/curator/tick.rs:918 a dispatch whose fleet session is gone (the fleet registry is in-memory, src-tauri/src/commands/fleet/registry.rs:506, so every app restart does this) is settled Failed with the cause only in a reason string (tick.rs:999): a restart-interrupted worker is booked as a failed request / blocked plan item with no first-class unknown outcome",
+      "techniques": [
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:918 vanished session closed as Ended::Failed; CuratorRequestState has no indeterminate value (src-tauri/core/src/models/curator.rs:799 Failed is the only non-success end), so restart-vs-crash is recoverable only by matching the reason text"
+        }
+      ],
+      "registryProposal": "Fourth lane in this repo with the same indeterminate-closure deviation (companion jobs, n8n transform, contest seats, curator dispatches) while db-repos-execution restart_recovery already closes runs as incomplete. A note on adopting one recovery vocabulary per lane would help: the primitive existing in one store does not reach sibling lanes that each own their own status enum."
+    },
+    {
+      "context": "e4b48fb7-3763-4955-8ea9-01fd48aa0cf7",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/contest/record.rs:140 a seat whose capture was lost to an app restart (reason text written at src-tauri/src/commands/contest/driver.rs:1123) is recorded OUTCOME_ERRORED, a definite failure verdict the app never observed; the restart cause survives only as app_note prose",
+      "techniques": [
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/contest/record.rs:140 restart-lost seat -> errored; the outcome vocabulary (record.rs:16) is completed/seat-limit/timed-out/errored with no unknown/interrupted value"
+        }
+      ]
+    },
+    {
+      "context": "7f6d3238-7136-4361-af8f-bca556ae2042",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/mcp_server/mod.rs:34 this context is the personas-mcp stdio tool server answering JSON-RPC on the far side of the MCP wire; the subject stops at the host door and hands that side to mcp-tools (already paired here), and no hook chain, extension loader, checkpoint store or agent loop is assembled in it",
+      "techniques": [],
+      "registryProposal": "Lexical pairing via install/gate/tool. install.rs writes a persisted registration into a FOREIGN host (Claude Code user config), which resonates with activation-is-a-separate-mutation from the contributor side: src-tauri/src/mcp_server/install.rs:197 reports success loudly and fails non-zero, but no separate check mode compares the declared registration with the actual one. The technique is written from the host side; a contributor-side note may be worth forging."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "a3b615d2-05d8-47bd-ad92-672c6b42b0f3",
+      "reason": "output-stream-parser is a 34-path consolidated context (parser, pollers, healing, director, api proxy). The parser itself is a stateless line classifier and src-tauri/engine/src/tool_outcome.rs:3 says persona tool calls do not flow through it; a verdict needs a dedicated read of the healing/director paths, left for a later run"
+    }
+  ],
+  "consults": [
+    {"ts": "2026-10-22T03:02:49Z", "bundle": "software-engineering", "subjects": ["agent-runtime-assembly"], "techniques": ["indeterminate-closure-on-interruption"], "deviations": 1},
+    {"ts": "2026-10-22T03:02:49Z", "bundle": "software-engineering", "subjects": ["agent-runtime-assembly"], "techniques": ["indeterminate-closure-on-interruption", "nested-run-is-not-its-parent"], "deviations": 1},
+    {"ts": "2026-10-22T03:02:49Z", "bundle": "software-engineering", "subjects": ["agent-runtime-assembly"], "techniques": ["activation-is-a-separate-mutation", "session-scoped-capability"], "deviations": 0}
+  ]
+}

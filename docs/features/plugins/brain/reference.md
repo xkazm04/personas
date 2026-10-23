@@ -34,7 +34,6 @@ src/features/plugins/obsidian-brain/
 ├── SavedConfigsSidebar.tsx            # multi-vault switcher (right rail)
 ├── useSavedVaultConfigs.ts            # DB-backed saved configs (one-time localStorage migration)
 ├── useObsidianVaultRehydration.ts     # restores active vault from persisted config at startup
-├── useVisibleConnectorDefinitions.ts  # plugin-gated connector filter hook
 ├── openInObsidian.ts                  # shared obsidian:// deep-link helper (Graph + Browse)
 ├── sub_setup/SetupPanel.tsx           # detect/test/save flow
 ├── sub_sync/SyncPanel.tsx             # push/pull/conflict resolution

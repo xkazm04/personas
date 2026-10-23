@@ -72,8 +72,14 @@ function installIpc(): void {
       // for the assertions below.
       const a = { id: raw.id, ...(raw.patch ?? {}) } as { id: string } & Record<string, unknown>;
       if (failUpdate) throw new Error('save refused');
-      updates.push({ id: a.id, patch: a });
       const base = rows.find((r) => r.id === a.id) ?? note({ id: a.id });
+      // The server's per-key refusals (`update_note`, notes.rs): a body only
+      // while draft/scoped/cut, a project only while draft, a title anywhere but
+      // archived. A fake that accepted every key hid a writer that sent them all.
+      if ('bodyMd' in a && !['draft', 'scoped', 'cut'].includes(base.status)) throw new Error('body locked');
+      if ('projectId' in a && base.status !== 'draft') throw new Error('project locked');
+      if ('title' in a && base.status === 'archived') throw new Error('archived');
+      updates.push({ id: a.id, patch: a });
       const merged = note({
         ...base,
         ...(typeof a.title === 'string' ? { title: a.title } : {}),
@@ -164,6 +170,98 @@ describe('patchNote — the shadow/debounce/clear cycle', () => {
     expect(JSON.parse(readShadow('n1') ?? '{}')).toMatchObject({ bodyMd: 'unsaved' });
   });
 
+  it("saves a milestone brief's body without sending its project", async () => {
+    rows = [note({ id: 'n1', status: 'scoped', projectId: 'p1', milestoneId: 'm1' })];
+    await load();
+
+    patchNote('n1', { bodyMd: 'the brief grows' });
+    await flush('n1');
+
+    expect(saveStateOf('n1')).toBe('clean');
+    expect(updates).toHaveLength(1);
+    expect(updates[0]?.patch).not.toHaveProperty('projectId');
+    expect(updates[0]?.patch).not.toHaveProperty('title');
+    expect(updates[0]?.patch.bodyMd).toBe('the brief grows');
+  });
+
+  it('renames a dispatched note without sending its body', async () => {
+    rows = [note({ id: 'n1', status: 'published', projectId: 'p1' })];
+    await load();
+
+    patchNote('n1', { title: 'Renamed' });
+    await flush('n1');
+
+    expect(saveStateOf('n1')).toBe('clean');
+    expect(updates[0]?.patch).toEqual({ id: 'n1', title: 'Renamed' });
+  });
+
+  it('sends a cleared project as an explicit null', async () => {
+    rows = [note({ id: 'n1', projectId: 'p1' })];
+    await load();
+
+    patchNote('n1', { projectId: null });
+    await flush('n1');
+
+    expect(updates[0]?.patch).toEqual({ id: 'n1', projectId: null });
+  });
+
+  it('keeps a keystroke typed while the save is in flight', async () => {
+    rows = [note({ id: 'n1' })];
+    await load();
+    let release!: () => void;
+    const held = new Promise<void>((r) => {
+      release = r;
+    });
+    const fake = mocked.getMockImplementation()!;
+    mocked.mockImplementation(async (cmd: string, args?: unknown) => {
+      if (cmd === 'notepad_update_note') await held;
+      return fake(cmd, args as never);
+    });
+
+    patchNote('n1', { bodyMd: 'abc' });
+    // The debounce starts the save (not flush, which would drain the next one too).
+    await vi.advanceTimersByTimeAsync(SAVE_DEBOUNCE_MS);
+    patchNote('n1', { bodyMd: 'abcd' });
+    release();
+    await vi.advanceTimersByTimeAsync(0);
+
+    // The row that came back is 'abc'; the editor must still read 'abcd'.
+    expect(getNote('n1')?.bodyMd).toBe('abcd');
+    expect(saveStateOf('n1')).toBe('dirty');
+    expect(JSON.parse(readShadow('n1') ?? '{}')).toMatchObject({ bodyMd: 'abcd' });
+
+    await vi.advanceTimersByTimeAsync(SAVE_DEBOUNCE_MS);
+    await flush('n1');
+    expect(updates.at(-1)?.patch.bodyMd).toBe('abcd');
+    expect(saveStateOf('n1')).toBe('clean');
+  });
+
+  it('flush() does not return before an edit typed during an in-flight save lands', async () => {
+    rows = [note({ id: 'n1' })];
+    await load();
+    let release!: () => void;
+    const held = new Promise<void>((r) => {
+      release = r;
+    });
+    const fake = mocked.getMockImplementation()!;
+    mocked.mockImplementation(async (cmd: string, args?: unknown) => {
+      if (cmd === 'notepad_update_note' && updates.length === 0) await held;
+      return fake(cmd, args as never);
+    });
+
+    patchNote('n1', { bodyMd: 'abc' });
+    const first = flush('n1');
+    await vi.advanceTimersByTimeAsync(0);
+    patchNote('n1', { bodyMd: 'abcd' });
+    // What closing the pad does: flush, then act on the note.
+    const second = flush('n1');
+    release();
+    await Promise.all([first, second]);
+
+    expect(updates.at(-1)?.patch.bodyMd).toBe('abcd');
+    expect(saveStateOf('n1')).toBe('clean');
+  });
+
   it('flush() forces a pending save without waiting out the debounce', async () => {
     rows = [note({ id: 'n1' })];
     await load();
@@ -194,6 +292,23 @@ describe('load — shadow reconciliation', () => {
 
     await flush('n1');
     expect(updates.at(-1)?.patch.bodyMd).toBe('recovered');
+  });
+
+  it('restores a crashed edit on a milestone brief too, not only on a draft', async () => {
+    rows = [
+      note({ id: 'n1', status: 'scoped', milestoneId: 'm1', projectId: 'p1', bodyMd: 'brief', updatedAt: '2026-01-01T00:00:00.000Z' }),
+    ];
+    localStorage.setItem(
+      shadowKey('n1'),
+      JSON.stringify({ bodyMd: 'brief, grown', title: 'Note', updatedAt: '2026-01-02T00:00:00.000Z' }),
+    );
+
+    await load();
+    expect(getNote('n1')?.bodyMd).toBe('brief, grown');
+
+    await flush('n1');
+    expect(updates.at(-1)?.patch).toEqual({ id: 'n1', bodyMd: 'brief, grown' });
+    expect(saveStateOf('n1')).toBe('clean');
   });
 
   it('drops a shadow older than the row', async () => {

@@ -244,7 +244,9 @@
     "loading_firings": "Laden…",
     "no_firings": "Keine letzten Ausführungen",
     "recent_firings": "Letzte Ausführungen",
-    "firings_load_failed": "Die letzten Auslösungen konnten nicht geladen werden."
+    "firings_load_failed": "Die letzten Auslösungen konnten nicht geladen werden.",
+    "triggers_load_failed_one": "Trigger für {count} Persona konnten nicht geladen werden.",
+    "triggers_load_failed_other": "Trigger für {count} Personas konnten nicht geladen werden."
   },
   "sr_connecting": "Verbindung zum Cloud-Orchestrator wird hergestellt…",
   "sr_deploying": "Persona wird in der Cloud bereitgestellt",

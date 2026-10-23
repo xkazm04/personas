@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Target, FileText, Shield, Lightbulb, MessageSquare, X, ChevronDown, Zap } from 'lucide-react';
 import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
 import { UserRating } from './UserRating';
+import { scoreLabel } from './scoreLabel';
 import { LabEventStream } from './LabEventStream';
 import { labGetToolCalls } from '@/api/agents/lab';
 import { silentCatch } from '@/lib/silentCatch';
@@ -40,7 +41,7 @@ interface ScenarioDetailPanelProps {
   onClose: () => void;
   rating?: number;
   ratingFeedback?: string;
-  onRate?: (rating: number, feedback?: string) => void;
+  onRate?: (rating: number, feedback?: string) => void | boolean | Promise<void | boolean>;
   /** When provided alongside `resultKind`, renders the captured CLI event stream
    *  for this scenario. Forward-only — older results have no events to render. */
   resultId?: string;
@@ -59,15 +60,6 @@ function parseRationale(raw: string | null): { structured: StructuredRationale |
   return { structured: null, plain: raw };
 }
 
-function scoreLabel(score: number | null): string {
-  if (score == null) return 'Unscored';
-  if (score >= 80) return 'Excellent';
-  if (score >= 60) return 'Good';
-  if (score >= 40) return 'Fair';
-  if (score >= 20) return 'Weak';
-  return 'Poor';
-}
-
 function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: {
   label: string;
   icon: typeof Target;
@@ -76,6 +68,7 @@ function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: 
   color: string;
   borderColor: string;
 }) {
+  const { t } = useTranslation();
   // Unscored metric — render an empty bar and "—" rather than collapsing to 0,
   // which would visually conflate "not scored" with "scored zero".
   const isUnscored = score == null;
@@ -92,7 +85,7 @@ function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="typo-caption text-foreground">{label}</span>
-            <span className={`typo-caption ${scoreColor(score)}`}>{scoreLabel(score)}</span>
+            <span className={`typo-caption ${scoreColor(score)}`}>{scoreLabel(t, score)}</span>
           </div>
           <div className="mt-1 h-1.5 rounded-full bg-primary/5 overflow-hidden">
             <div
@@ -172,7 +165,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         <div className="flex items-center gap-4 py-2">
           <div className={`typo-hero ${scoreColor(composite)}`}>{composite ?? '—'}</div>
           <div>
-            <span className={`typo-heading ${scoreColor(composite)}`}>{scoreLabel(composite)}</span>
+            <span className={`typo-heading ${scoreColor(composite)}`}>{scoreLabel(t, composite)}</span>
             <p className="typo-caption text-foreground"><DebtText k="auto_composite_score_ta_40_oq_40_pc_20_0839893e" /></p>
           </div>
           <div className="flex-1" />
@@ -240,6 +233,10 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         {onRate && (
           <div className="border-t border-primary/10 pt-3">
             <UserRating
+              // UserRating seeds its draft from props once. Remount it when the
+              // cell or its stored rating changes, or the panel keeps showing the
+              // previous cell's thumb and never shows a rating that loads late.
+              key={`${result.scenarioName}::${result.modelId ?? ''}::${rating ?? ''}::${ratingFeedback ?? ''}`}
               currentRating={rating}
               currentFeedback={ratingFeedback}
               onRate={onRate}

@@ -1,0 +1,43 @@
+{
+ "schema": "conform-run/1",
+ "worker": "2ab6ca40-30d9-45ec-a3a7-5cc32ebc2765",
+ "subject": "session-continuation",
+ "evaluatedAt": "2026-10-21T18:06:07Z",
+ "pairs": [
+  {
+   "context": "33a96a83-6adc-42f7-b57c-839382bcef54",
+   "subject": "session-continuation",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/curator/tick.rs:117 the Curator loop is a ReactiveSubscription ticked by the background lifecycle (:109) that dispatches headless workers which exit on their own (:728); stopping is enforced by a scheduler and brakes, not at an agent turn boundary, and the golden path routes scheduler-driven loops to background-jobs",
+   "techniques": [
+    {
+     "technique": "continuation-as-state",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/curator/tick.rs:728 workers run headless and exit; no turn-boundary hook refuses a model stop"
+    },
+    {
+     "technique": "stuck-loop-detection",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/curator/tick.rs:475 repeat suppression is a dispatch-level mark (one attempt per registry HEAD), not an in-session repair loop"
+    }
+   ],
+   "registryProposal": "technique-shaped resonance: stuck-loop-detection (\"a self-improvement loop keeps accepting negligible gains\") matches this scheduler-driven quality loop, whose one-attempt-per-HEAD mark (tick.rs:475) is a failure-identity stop at dispatch granularity. The subject precondition (in-session turn boundary) excludes it, so consider whether background-jobs loop-supervision should carry a cross-session equivalent"
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-21T18:06:07Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "session-continuation"
+   ],
+   "techniques": [
+    "continuation-as-state",
+    "stuck-loop-detection"
+   ],
+   "deviations": 0
+  }
+ ]
+}

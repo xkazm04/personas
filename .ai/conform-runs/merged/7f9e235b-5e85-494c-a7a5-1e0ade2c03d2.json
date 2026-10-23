@@ -1,0 +1,21 @@
+{"schema":"conform-run/1","worker":"7f9e235b-5e85-494c-a7a5-1e0ade2c03d2","subject":"agent-instruction-files",
+"evaluatedAt":"2026-10-22T00:00:00Z",
+"pairs":[
+{"context":"f9c8b6b9-7a46-4c84-a31a-19356b174d10","subject":"agent-instruction-files","bundle":"software-engineering","state":"deviation",
+"evidence":"src-tauri/src/commands/infrastructure/skill_files.rs:1207 the single-file <name>.md install is a bare fs::copy into the target repo's .claude/skills with no provenance sidecar (read side confirms at :697-699, always local-only), so that part of the installed floor cannot be enumerated by source or reaped; sibling-floor-ownership wants every install to name its reaper.",
+"techniques":[
+{"technique":"sibling-floor-ownership","verdict":"deviation","evidence":"src-tauri/src/commands/infrastructure/skill_files.rs:1207 single-file installs write no provenance, so install and retain are not separable decisions; the directory-install path does stamp it (:1187) and skill_files_list enumerates (:992), which is the realized half"},
+{"technique":"machine-owned-regions","verdict":"conformant","evidence":"src-tauri/src/commands/infrastructure/skill_files.rs:19-29 the provenance sidecar is excluded from the content hash and listing so the app never rewrites the skill body"}
+],
+"registryProposal":"Only skill_files.rs of this context touches the subject; the rest (llm_spend, tier_usage, scraper, cloud sync) is unrelated telemetry, so the pairing is technique-shaped resonance on one file. Same defect is already recorded under plugins-fleet-tests; consider whether the map should carry it once."},
+{"context":"66bc7a14-bf15-41d7-8d9a-900aa670f47e","subject":"agent-instruction-files","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/features/teams/sub_factory/passport/passportDerive.ts:160 the model only reads an has_claude_md probe flag to grade a readiness rung; it authors, loads, delivers and maintains no instruction file, so the subject's precondition (a repo-owned file written for a harness) is unmet here.",
+"techniques":[]}
+],
+"declined":[
+{"subject":"agent-instruction-files","context":"db6357fe-000f-498d-8c02-4e8ad6d95574","reason":"workspace-knowledge UI files contain no instruction-file reference (grep of its 8 context-map paths); left unknown, judging would be a guess"},
+{"subject":"agent-instruction-files","context":"9967adb9-e895-4dcd-b296-ab49a19ab122","reason":"project-overview mentions only motionize skill provenance in comments; no instruction-file code, left unknown"},
+{"subject":"agent-instruction-files","context":"0ecc70bc-a005-4ff8-9a98-f362d2a75f53","reason":"api-overview is a thin IPC typing layer over skill_files; behaviour is judged where skill_files.rs lives, left unknown"},
+{"subject":"agent-instruction-files","context":"6c0d30e4-99b9-4580-ba02-9a526db1d639","reason":"all other probable unknowns (agent-health, templates, vault, overview, etc.) show no instruction-file code by keyword scan of their context-map files; not read further this pass"}
+],
+"consults":[{"ts":"2026-10-22T00:00:00Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["sibling-floor-ownership","machine-owned-regions"],"deviations":1}]}

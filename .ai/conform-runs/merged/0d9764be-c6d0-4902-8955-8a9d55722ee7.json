@@ -1,0 +1,35 @@
+{"schema": "conform-run/1", "worker": "0d9764be-c6d0-4902-8955-8a9d55722ee7", "subject": "settings",
+ "evaluatedAt": "2026-10-22T02:54:02Z",
+ "pairs": [
+  {"context": "0b0ee725-52a2-4656-9e13-07c5204de60e", "subject": "settings", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src-tauri/db/src/settings_keys.rs:636 MONTHLY_COST_CEILING_USD_DEFAULT is still 0.0 meaning 'no ceiling' (and CHAIN_MAX_COST_USD_DEFAULT :1307 copies the convention), with no declared setting kind, so the unconfigured install is the most permissive one on the spend keys - re-verified live 2026-10-22",
+   "techniques": [
+    {"technique": "typed-accessors", "verdict": "deviation", "evidence": "src-tauri/db/src/settings_keys.rs:636 safety-ceiling default fails open: absent/0 reads as unlimited, the fail-direction rule's named inversion"},
+    {"technique": "setting-kinds", "verdict": "deviation", "evidence": "src-tauri/db/src/settings_keys.rs:1681 validate_key checks membership only; the registry declares no kind, so ceilings validate and audit like preferences"},
+    {"technique": "key-registry", "verdict": "realized", "evidence": "src-tauri/db/src/settings_keys.rs:1681 store-side allowlist over ALLOWED_KEYS (:1486)"},
+    {"technique": "read-batching", "verdict": "realized", "evidence": "src-tauri/db/src/repos/core/settings.rs:195 get_batch bulk read, capped by GET_BATCH_MAX_KEYS (:186)"},
+    {"technique": "settings-audit-and-history", "verdict": "realized", "evidence": "src-tauri/db/src/repos/core/settings.rs:26 audit_setting_change records before/after per write"},
+    {"technique": "config-backup-and-restore", "verdict": "realized", "evidence": "src-tauri/db/src/lib.rs:86 restore module beside rotated boot backups"}]},
+  {"context": "107445f8-c266-4671-8160-f854bd79319e", "subject": "settings", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/hooks/utility/data/useAppSetting.ts:42 still takes a bare key: string and callers pass free literals ('cli_engine' src/features/settings/sub_engine/components/EngineCapabilityBadge.tsx:24), so a frontend key typo compiles clean and reads the default forever - re-verified live 2026-10-22",
+   "techniques": [
+    {"technique": "key-registry", "verdict": "deviation", "evidence": "src/features/settings/sub_limits/components/monthlySpend.ts:10 per-feature CEILING_KEY literal; no shared TS key module generated from or tested against ALLOWED_KEYS (census rule covers Rust only)"},
+    {"technique": "typed-accessors", "verdict": "deviation", "evidence": "src/features/settings/sub_notifications/components/NotificationSettings.tsx:41 caller-supplied ad hoc validator + default per call site instead of one typed accessor per key"},
+    {"technique": "read-batching", "verdict": "realized", "evidence": "src/hooks/utility/data/useSettings.ts:44 pendingByKey microtask coalescer batches mount-time reads"}]},
+  {"context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd", "subject": "settings", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src-tauri/src/webbuild/bun.rs:23 a set PERSONAS_BUN_BIN that names no file is treated as absent and falls through to PATH (:27) with no log or provenance, so a mistyped override silently runs a different Bun; the test at :189 pins the fall-through - re-verified live 2026-10-22",
+   "techniques": [
+    {"technique": "cross-source-precedence-chain", "verdict": "deviation", "evidence": "src-tauri/src/webbuild/bun.rs:23 present-but-unusable source is skipped instead of stopping the chain; no record of which source answered"}],
+   "registryProposal": "The cross-source-precedence-chain 'when not to use this' says one source is ceremony; a two-rung env-override -> PATH binary lookup is the most common shape of this chain in desktop apps and could be named explicitly as in scope (an application note on rust--cross-source-precedence-chain for binary resolution would help)."}
+ ],
+ "declined": [
+  {"subject": "settings", "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0", "reason": "context is governance: weak; the skill never judges weak pairs by default - coverage question for the registry"},
+  {"subject": "settings", "context": "621caefc-8ae0-42e7-89b6-8e879ad62814", "reason": "judged 2026-10-21 against the current digest (rev 13); outside this run's budget of 3, not stale"},
+  {"subject": "settings", "context": "14c7d145-2166-454b-aee5-d69d9d527d79", "reason": "judged 2026-10-21 against the current digest (rev 13); outside budget, not stale"},
+  {"subject": "settings", "context": "7159d27d-86c2-43be-a83f-8b50c4c816be", "reason": "judged 2026-10-21 against the current digest (rev 13); outside budget, not stale"}
+ ],
+ "consults": [
+  {"ts": "2026-10-22T02:54:02Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["typed-accessors", "setting-kinds", "key-registry", "read-batching", "settings-audit-and-history", "config-backup-and-restore"], "deviations": 2},
+  {"ts": "2026-10-22T02:54:02Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["key-registry", "typed-accessors", "read-batching"], "deviations": 2},
+  {"ts": "2026-10-22T02:54:02Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["cross-source-precedence-chain"], "deviations": 1}
+ ]}

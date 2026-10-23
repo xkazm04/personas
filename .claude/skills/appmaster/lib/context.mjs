@@ -10,11 +10,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  ASK_KINDS, COUNCIL, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PER_PROJECT_CAP, PLAN, REVIEW_CHARTERS, UX, WAKE_MAX, WAKE_MIN,
+  ASK_KINDS, COUNCIL, GLOBAL_CAP, MAX_ASKS, MAX_DISPATCH, MEM, PARALLEL_CHARTERS, PER_PROJECT_CAP, PLAN, REVIEW_CHARTERS, UX, WAKE_MAX, WAKE_MIN,
   LIVE_RUN_STATES, contextDir, briefPath, mintId, nowIso, shortId,
 } from './contract.mjs';
 import { charactersOf, councilJournal, councilEvents, featureState } from './council.mjs';
 import { loadBrief, loadWakes, saveWake, openAsks, loadAsks, loadChannel, listRuns, loadOutbox } from './store.mjs';
+import { isArmed } from './standup.mjs';
 import {
   openDb, resolveProject, masterPersona, chartersFor, projectSnapshot, pendingReviews,
   operatorChannelSince, repoDocs, milestonesOf, planProgress, briefCharters, useCasesOf, councilRunsOf, councilDecisionsOf,
@@ -42,7 +43,7 @@ const more = (total, shown, indent = '    ') => (total > shown ? [`${indent}+${t
 const pathsText = (paths) => (Array.isArray(paths) && paths.length ? paths.join(', ') : 'none declared (the whole repo)');
 /** Builder slots still free in this project and in all, from the running counts. */
 export const freeSlots = (running = {}) => ({
-  project: Math.max(0, PER_PROJECT_CAP - (running.project ?? 0)),
+  project: Math.max(0, (running.perProjectCap ?? PER_PROJECT_CAP) - (running.project ?? 0)),
   global: Math.max(0, GLOBAL_CAP - (running.global ?? 0)),
 });
 const askForText = (a) => (Array.isArray(a) ? a.join('; ') : a) || 'a scope change, spending, risk on the money or data path, a conflict between two goals';
@@ -142,7 +143,7 @@ export function renderAt(input, C) {
   L.push('- PRIORITY: an explicit priority (1 highest .. 5 lowest) goes ahead of none. No priority is not low priority: the judgment is yours.');
   L.push('- COVERAGE: the coverage and last-run lines and your last note are your memory. Do not re-run what you just ran; do not starve what you keep deferring.');
   const slots = freeSlots(machine.running);
-  L.push(`- CAPACITY: dispatch AT MOST ${MAX_DISPATCH} charters (${PER_PROJECT_CAP} builders per project, ${GLOBAL_CAP} in all; running now: ${machine.running?.project ?? 0} here, ${machine.running?.global ?? 0} in all; free slots: ${slots.project} here, ${slots.global} in all). Two at once ONLY when each is independent of the other and their \`paths\` are disjoint from each other AND from every run in flight below. Every dispatch declares \`paths\`: the repo-relative prefixes or globs its builder will touch (none = the whole repo, which leaves no room for a second builder). An overlap is refused. None is a legitimate answer.`);
+  L.push(`- CAPACITY: dispatch AT MOST ${machine.running?.perProjectCap ?? MAX_DISPATCH} charters (${machine.running?.perProjectCap ?? PER_PROJECT_CAP} builders in this project, ${GLOBAL_CAP} in all; running now: ${machine.running?.project ?? 0} here, ${machine.running?.global ?? 0} in all; free slots: ${slots.project} here, ${slots.global} in all). Several at once ONLY when each is independent of the other and their \`paths\` are disjoint from each other AND from every run in flight below. Every dispatch declares \`paths\`: the repo-relative prefixes or globs its builder will touch (none = the whole repo, which leaves no room for a second builder). An overlap is refused. None is a legitimate answer.`);
   if (repos.length) L.push(`- REPOS: \`repo\` (omit for self, or one of: ${repos.map((r) => r.key).join(', ')}) picks the repo a builder works and merges in. In a shared repo, paths must be disjoint from every OTHER project's runs there too, and its lane caps live runs across all projects; a dispatch that does not fit is queued, not lost.`);
   L.push('- MODEL: per dispatch, `model` "opus" for discovery (security scan, architecture review, KPI or measure design), "sonnet" for fixing a shape already chosen, delivering a well-specified idea, or a mechanical sweep; omit it for the charter default. A model the brief pins wins.');
   L.push(`- MACHINE: a dispatch is refused while FREE memory is under ${MEM.dispatchMinFreeGb} GB (+${MEM.perBuilderReserveGb} GB per builder already running) and while a usage-limit mark stands. A tripped memory brake clears by itself within minutes: dispatch nothing this wake and choose a SHORT next wake (10 to 20 min); a usage limit needs a long one.`);
@@ -153,6 +154,7 @@ export function renderAt(input, C) {
   L.push(`- ASK WHEN BLOCKED: ask when only the operator can take the decision that moves the project; ask only about: ${clip(askForText(brief.askFor), 300)}. Never ask what you can decide, never repeat an open ask. At most ${MAX_ASKS}; \`kind\` one of ${ASK_KINDS.join(', ')}; 2-4 options, each a label plus the action you take if chosen.`);
   L.push('- ANSWER THE OPERATOR: what the operator said is an instruction to reflect in this plan and to answer in `say`; an answered ask naming an action is yours to carry out THIS wake.');
   L.push('- EVERY charter appears exactly once, in `dispatch` or `defer`. A deferral with a reason is a decision; silence is not.');
+  L.push(`- TWO DELIVERIES: ${PARALLEL_CHARTERS.join(', ')} may run twice at once (twice in \`dispatch\`, or beside its own live run) when the paths are disjoint. Prefer a second independent delivery over a scan or doc run for the second slot, and fold a delivery's own ADR or doc update into its brief.`);
 
   // ALREADY WITH THE OPERATOR (always rendered: zero open asks is a fact to be told in words)
   head('ALREADY WITH THE OPERATOR (do not ask these again)');
@@ -288,7 +290,7 @@ export function renderAt(input, C) {
   L.push(`- memory: ${mem.freeGb ?? '?'} GB free${mem.totalGb != null ? ` of ${mem.totalGb}` : ''}; a dispatch needs ${mem.dispatchNeedGb ?? MEM.dispatchMinFreeGb} GB free${mem.stop ? ' - TRIPPED NOW' : ''}`);
   L.push(`- usage limit: ${lim.limited ? `LIMITED${lim.reason ? ` (${clip(lim.reason, 120)})` : ''}${lim.resetsAt ? `, resets ${lim.resetsAt}` : ', reset time unknown'} - dispatch is refused` : 'none'}`);
   const free = freeSlots(run);
-  L.push(`- running builders: ${run.project ?? 0} of ${PER_PROJECT_CAP} in this project (${free.project} slot(s) free), ${run.global ?? 0} of ${GLOBAL_CAP} across all projects (${free.global} free)`);
+  L.push(`- running builders: ${run.project ?? 0} of ${run.perProjectCap ?? PER_PROJECT_CAP} in this project (${free.project} slot(s) free), ${run.global ?? 0} of ${GLOBAL_CAP} across all projects (${free.global} free)`);
   L.push(`- admission queue: ${qd.total ?? 0} run(s) waiting across all projects, ${(qd.mine ?? []).length} of them yours; a refused dispatch queues and starts in order when a slot frees`);
 
   // OUTPUT CONTRACT (schema/decision.schema.json)
@@ -297,7 +299,7 @@ export function renderAt(input, C) {
   L.push(`{"wakeId":"${wakeId}","dispatch":[{"charterSlug":"<slug>","reason":"<why this one now>","brief":"<the builder's whole task>","ideaIds":["<accepted idea id>"],"model":"sonnet|opus","paths":["<repo-relative path prefix or glob it will touch>"]}],"defer":[{"charterSlug":"<slug>","reason":"<why it waits>"}],"asks":[{"kind":"<kind>","question":"<the decision you need>","context":"<why the loop needs it>","options":[{"label":"<a choice>","action":"<what you do if chosen>"}]}],"ideaVerdicts":[{"ideaId":"<pending idea id>","status":"accepted|rejected","reason":"<why>"}],"say":"<message to the operator>|null","note":"<coverage note for your next wake>","nextWakeMinutes":<${WAKE_MIN}-${WAKE_MAX}>${planShape}}`);
   if (plan.wake) L.push('`plan` is REQUIRED this wake (PLAN WAKE); on any other wake leave it out.');
   if (input.council) L.push('A dispatch of council-lite-review or council-review REQUIRES "featureSlug":"<a feature slug from COUNCIL>" (and needs no paths); a rework delivery may carry the same featureSlug.');
-  L.push(`Every key is always present ([] when empty, say null when silent). wakeId is exactly "${wakeId}"; every charter slug exactly once across dispatch and defer, no other slug; dispatch at most ${MAX_DISPATCH}, and with two each carries non-empty disjoint paths and no idea in both; model optional${repos.length ? `; repo optional (self, ${repos.map((r) => r.key).join(', ')})` : ''}; asks at most ${MAX_ASKS}, 2-4 options each, kind one of ${ASK_KINDS.join(', ')}; nextWakeMinutes an integer; every ideaId copied from this document.`);
+  L.push(`Every key is always present ([] when empty, say null when silent). wakeId is exactly "${wakeId}"; every charter slug exactly once across dispatch and defer (${PARALLEL_CHARTERS.join(", ")} may instead be dispatched several times on disjoint paths), no other slug; dispatch at most ${run.perProjectCap ?? MAX_DISPATCH}, and with more than one each carries non-empty disjoint paths and no idea in both; model optional${repos.length ? `; repo optional (self, ${repos.map((r) => r.key).join(', ')})` : ''}; asks at most ${MAX_ASKS}, 2-4 options each, kind one of ${ASK_KINDS.join(', ')}; nextWakeMinutes an integer; every ideaId copied from this document.`);
   L.push(`Charter slugs: ${charters.map((c) => c.slug).join(', ') || '(none)'}`);
   return L.join('\n') + '\n';
 }
@@ -456,7 +458,7 @@ export function gatherContext(ref) {
         })),
       };
     }
-    input.due = isDue(wakes, nowMs);
+    input.due = isArmed(project.slug) && isDue(wakes, nowMs);
   } finally { d.close(); }
   return input;
 }

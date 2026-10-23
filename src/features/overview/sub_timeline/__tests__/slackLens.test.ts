@@ -6,6 +6,9 @@ import { buildConversation } from '@/features/fleet/monitor/channels/conversatio
 import { authorName, slackAuthorName, itemAccent, AUTHOR_KIND_META } from '@/features/teams/sub_collab/collabRender';
 import { buildTeamBridgeIndex, findTeamSlackBridge } from '@/lib/channel/teamBridge';
 
+// Slack and persona names never read these; they are for the voices without a persona.
+const NO_LABELS = { you: 'You', athena: 'Athena', director: 'Director', system: 'System' };
+
 function item(over: Partial<TeamChannelItem> = {}): TeamChannelItem {
   return {
     id: 'i1',
@@ -46,8 +49,8 @@ describe('slack channel items', () => {
 
   it('never renders as the operator or as a generic persona', () => {
     // Even if a persona somehow resolves off the parked Slack user id.
-    expect(authorName(item(), persona())).toBe('Dana Reyes');
-    expect(authorName(item(), undefined)).toBe('Dana Reyes');
+    expect(authorName(item(), persona(), NO_LABELS)).toBe('Dana Reyes');
+    expect(authorName(item(), undefined, NO_LABELS)).toBe('Dana Reyes');
     expect(itemAccent(item(), persona())).toBe(AUTHOR_KIND_META.slack.accent);
   });
 

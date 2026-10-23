@@ -1,6 +1,20 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
-import { dispatchPrompt } from '../dispatch';
+const getIdea = vi.fn();
+const reportSystemOpOutcome = vi.fn();
+const addToast = vi.fn();
+vi.mock('@/api/devTools/devTools', () => ({
+  getIdea: (...a: unknown[]) => getIdea(...a),
+  listProjects: vi.fn(), createTask: vi.fn(), executeTask: vi.fn(), updateIdea: vi.fn(),
+}));
+vi.mock('@/api/fleet/fleet', () => ({ spawnSession: vi.fn() }));
+vi.mock('@/api/systemOps', () => ({
+  reportSystemOpOutcome: (...a: unknown[]) => reportSystemOpOutcome(...a),
+}));
+vi.mock('@/stores/toastStore', () => ({ useToastStore: { getState: () => ({ addToast }) } }));
+vi.mock('@/stores/systemStore', () => ({ useSystemStore: { getState: () => ({ activeProjectId: null }) } }));
+
+import { dispatchPrompt, handleSignalDispatchRequested } from '../dispatch';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 
 function idea(over: Partial<DevIdea>): DevIdea {
@@ -34,5 +48,19 @@ describe('dispatchPrompt', () => {
   it('survives a bare finding (title only)', () => {
     const p = dispatchPrompt(idea({ description: null, evidence: null }));
     expect(p.trim()).toBe('Route summarize-email to a cheaper model');
+  });
+});
+
+describe('handleSignalDispatchRequested - a failed dispatch', () => {
+  it('reports the IPC error text to the automation row, not "[object Object]"', async () => {
+    // invokeWithTimeout rejects with a serialized AppError object, never an Error.
+    getIdea.mockRejectedValue({ error: 'Idea i9 not found', kind: 'NotFound' });
+    reportSystemOpOutcome.mockResolvedValue(true);
+
+    await handleSignalDispatchRequested('i9', 'runner', 'auto-1');
+
+    await vi.waitFor(() => expect(reportSystemOpOutcome).toHaveBeenCalled());
+    expect(reportSystemOpOutcome).toHaveBeenCalledWith('auto-1', 'failed', 'Idea i9 not found');
+    expect(addToast).toHaveBeenCalledWith(expect.stringContaining('failed'), 'error');
   });
 });

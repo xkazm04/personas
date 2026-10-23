@@ -19,10 +19,9 @@ import {
   INJECTION_PATTERNS,
 } from "../../src/lib/utils/sanitizers/promptInjection";
 import {
-  sanitizeName,
+  MAX_LENGTHS,
+  sanitizeParamValue,
   sanitizeTextField,
-  sanitizeWorkflow,
-  sanitizeWorkflowJson,
 } from "../../src/lib/utils/sanitizers/workflowSanitizer";
 
 const fx = JSON.parse(
@@ -30,7 +29,10 @@ const fx = JSON.parse(
 ) as {
   injectionStrings: { label: string; text: string }[];
   escapeCases: Record<string, string>;
-  maliciousWorkflow: unknown;
+  maliciousWorkflow: {
+    name: string;
+    nodes: { type: string; name: string; parameters: Record<string, unknown> }[];
+  };
 };
 
 // Zero-width / invisible codepoints INJECTION_PATTERNS strips. Declared as numeric
@@ -84,8 +86,10 @@ describe("prompt-injection defense — escapeForPrompt", () => {
   it("escapes triple backticks and horizontal-rule delimiters", () => {
     expect(escapeForPrompt(fx.escapeCases.codeFence)).not.toContain("```");
     const ruled = escapeForPrompt(fx.escapeCases.sectionRule);
-    expect(ruled).not.toMatch(/^---$/m); // the exact 3-dash section rule no longer stands alone
-    expect(ruled).toContain("------"); // rewritten to the escaped, non-structural form
+    // No line may still be a horizontal-rule delimiter of ANY length: the old
+    // rewrite to "------" was itself a delimiter (fixed in 35e908aba5).
+    expect(ruled).not.toMatch(/^-{3,}$/m);
+    expect(ruled).toContain("\\---"); // backslash-escaped, so it reads as text
   });
 
   it("neutralizes template-variable syntax only when opted in", () => {
@@ -94,30 +98,39 @@ describe("prompt-injection defense — escapeForPrompt", () => {
   });
 
   it("returns a safe empty string for empty/undefined input", () => {
-    expect(sanitizeName(undefined)).toBe("");
+    expect(sanitizeTextField(undefined)).toBe("");
     expect(sanitizeTextField(null)).toBe("");
   });
 });
 
-describe("prompt-injection defense — sanitizeWorkflow (imported n8n export)", () => {
-  const clean = sanitizeWorkflow(fx.maliciousWorkflow);
-  const serialized = sanitizeWorkflowJson(JSON.stringify(fx.maliciousWorkflow));
+// The imported-workflow door is `runExtractionPipeline` (src/lib/personas/parsers/
+// workflowPipeline.ts), which every platform adapter lowers through. It applies exactly
+// these calls; the eval drives them directly because the pipeline imports through the
+// `@/` alias, which this config does not resolve.
+describe("prompt-injection defense — imported workflow (the extraction pipeline's sanitizers)", () => {
+  const wf = fx.maliciousWorkflow;
+  const name = sanitizeTextField(wf.name, MAX_LENGTHS.workflowName);
+  const labels = wf.nodes.map((n) => sanitizeTextField(n.name, MAX_LENGTHS.nodeName));
+  const configs = wf.nodes.map((n) => sanitizeParamValue(n.parameters));
+  const embedded = JSON.stringify({ name, labels, configs });
 
   it("strips the XML role tag out of the workflow name", () => {
-    expect(clean.name).not.toContain("<system>");
-    expect(clean.name).toContain("Payroll"); // legitimate content preserved
+    expect(name).not.toContain("<system>");
+    expect(name).toContain("Payroll"); // legitimate content preserved
   });
 
   it("strips the section-delimiter out of node names", () => {
-    expect(clean.nodes.length).toBe(1);
-    expect(clean.nodes[0].name).not.toContain("---SECTION:");
+    expect(labels.length).toBe(1);
+    expect(labels[0]).not.toContain("---SECTION:");
+    expect(labels[0]).toContain("Fetch");
   });
 
-  it("leaves NO injection marker anywhere in the re-serialized JSON the prompt embeds", () => {
-    expect(serialized).not.toContain("---SECTION:");
-    expect(serialized).not.toContain("<system>");
-    expect(serialized).not.toMatch(/ignore\s+(?:all\s+)?previous\s+instructions/i);
-    // still valid, parseable JSON (the prompt embeds this verbatim)
-    expect(() => JSON.parse(serialized)).not.toThrow();
+  it("leaves NO injection marker anywhere in what the prompt embeds", () => {
+    expect(embedded).not.toContain("---SECTION:");
+    expect(embedded).not.toContain("<system>");
+    expect(embedded).not.toMatch(/ignore\s+(?:all\s+)?previous\s+instructions/i);
+    // The role-override line rides in a parameter, where it is a real newline.
+    const note = String((configs[0] as Record<string, unknown>).note);
+    expect(note).not.toMatch(/(?:^|\n)\s*system\s*:/i);
   });
 });

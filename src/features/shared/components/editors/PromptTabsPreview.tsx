@@ -101,6 +101,7 @@ export function PromptTabsPreview({
           <button
             type="button"
             onClick={() => setShowFullPrompt(!showFullPrompt)}
+            aria-expanded={showFullPrompt}
             className="flex items-center gap-2 px-4 py-2.5 typo-body text-foreground hover:text-muted-foreground transition-colors w-full"
           >
             <Eye className="w-3.5 h-3.5" />

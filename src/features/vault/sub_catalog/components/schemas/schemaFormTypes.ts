@@ -66,18 +66,15 @@ export function buildEnvMap(extras: Record<string, unknown>): Record<string, str
 }
 
 /**
- * base64-encode an arbitrary UTF-8 string. `btoa` only accepts Latin1 and
- * throws `InvalidCharacterError` on accented letters, emoji, or any
- * non-Latin1 codepoint — which real credential values (username/password)
- * are not guaranteed to avoid.
+ * Build the probe config for a custom connection. Every credential value
+ * stays a `{{field}}` placeholder: the config is stored on the connector
+ * DEFINITION (plaintext, returned on every definition fetch) and is sent
+ * whole to the healthcheck-design prompt, while the backend's
+ * `resolve_template` substitutes the real values from the sealed credential
+ * only at probe time. Basic auth uses its `{{base64(a:b)}}` token for the
+ * same reason; encoding `username:password` here put the password into both
+ * of those places.
  */
-function utf8ToBase64(input: string): string {
-  const bytes = new TextEncoder().encode(input);
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary);
-}
-
 export function buildCustomHealthcheck(
   template: string,
   values: Record<string, string>,
@@ -94,12 +91,9 @@ export function buildCustomHealthcheck(
     case 'bearer':
       headers['Authorization'] = 'Bearer {{bearer_token}}';
       break;
-    case 'basic': {
-      const u = values.username ?? '';
-      const p = values.password ?? '';
-      headers['Authorization'] = `Basic ${utf8ToBase64(`${u}:${p}`)}`;
+    case 'basic':
+      headers['Authorization'] = 'Basic {{base64(username:password)}}';
       break;
-    }
     case 'custom-headers':
       if (values.header_1_name?.trim()) headers[values.header_1_name.trim()] = '{{header_1_value}}';
       if (values.header_2_name?.trim()) headers[values.header_2_name.trim()] = '{{header_2_value}}';

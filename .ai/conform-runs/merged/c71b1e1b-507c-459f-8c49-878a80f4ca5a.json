@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "c71b1e1b-507c-459f-8c49-878a80f4ca5a", "subject": "realtime-events",
+ "evaluatedAt": "2026-10-21T18:05:36Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "realtime-events", "context": "03e7f46a-3f19-47b8-98a5-398efed815b4", "reason": "already judged deviation on 2026-10-21 against sha256-b2:a0685592373df03f rev 6, identical to the registry index at fa4071b1; spot-check confirms it is still live (src/hooks/lab/useLabEvents.ts:54 still subscribes to the literal 'lab-arena-status', which src/lib/eventRegistry.ts and src-tauri/core/src/events.rs still do not declare), so re-judging would only restamp the same verdict"},
+  {"subject": "realtime-events", "context": "2fb16136-586e-478d-823f-38434d2d5b9a", "reason": "context is governance:weak (commands-communication); skill forbids judging weak pairs by default. Coverage note for the registry: src-tauri/src/commands/communication/events.rs:17 defers all event-bus emission to a CDC update_hook, so this context may genuinely realize the change-data-capture technique and the pair deserves a strong-confidence re-match rather than a weak-row judgment"},
+  {"subject": "realtime-events", "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7", "reason": "context is governance:weak (triggers-test); skill forbids judging weak pairs by default. Coverage note: src/features/triggers/sub_shared/SharedEventsTab.tsx:57 is a product-level persona-event feed/trigger wiring UI (shared:<slug> event_listener), matched on the words subscribe/events; likely a vocabulary resonance, not the client event-bus surface this subject governs"}
+ ],
+ "consults": []}

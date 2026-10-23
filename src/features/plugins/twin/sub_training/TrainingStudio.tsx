@@ -5,6 +5,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import * as twinApi from '@/api/twin/twin';
@@ -305,11 +306,7 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
       <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 py-4">
         <div className="max-w-5xl mx-auto space-y-3">
           {rows.length === 0 ? (
-            <div className="text-center py-16">
-              <Sparkles className="w-8 h-8 text-violet-300/60 mx-auto mb-3" />
-              <p className="typo-card-label mb-1">{t.training.studioEmptyTitle}</p>
-              <p className="typo-caption text-foreground">{t.training.studioEmptyHint}</p>
-            </div>
+            <EmptyState icon={Sparkles} art="templates" title={t.training.studioEmptyTitle} description={t.training.studioEmptyHint} />
           ) : (
             rows.map((row, idx) => {
               const words = wordCount(row.answer);

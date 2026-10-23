@@ -39,7 +39,11 @@ export function useKpiOverview(): { overview: KpiProjectRollup[]; loading: boole
   const [groupsLoading, setGroupsLoading] = useState(false);
 
   useEffect(() => {
-    if (!projectIdsKey) return;
+    // No project left to read: settle. Returning without this left a read
+    // cancelled mid-flight (scope switched to a project with no active KPIs)
+    // holding `loading` true forever, so the variants drew their ghost
+    // instead of the empty estate.
+    if (!projectIdsKey) { setGroupsLoading(false); return; }
     let cancelled = false;
     setGroupsLoading(true);
     const ids = projectIdsKey.split(',');
@@ -69,6 +73,9 @@ export function useKpiOverview(): { overview: KpiProjectRollup[]; loading: boole
   return { overview, loading: kpisLoading || groupsLoading };
 }
 
+/** Newest rows kept per KPI by the bulk read (all channels). */
+export const TRENDS_PER_KPI = 30;
+
 export type LazyTrendsStatus = 'idle' | 'loading' | 'ready' | 'failed';
 
 /**
@@ -79,7 +86,7 @@ export type LazyTrendsStatus = 'idle' | 'loading' | 'ready' | 'failed';
  */
 export function useLazyTrends(
   ids: string[],
-  perKpi = 30,
+  perKpi = TRENDS_PER_KPI,
 ): { trends: Record<string, DevKpiMeasurement[]>; status: LazyTrendsStatus; retry: () => void } {
   const key = useMemo(() => [...ids].sort().join(','), [ids]);
   const [state, setState] = useState<{ key: string; trends: Record<string, DevKpiMeasurement[]>; status: LazyTrendsStatus }>({

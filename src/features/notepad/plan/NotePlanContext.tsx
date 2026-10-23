@@ -52,7 +52,7 @@ export interface NotePlanValue {
    *  which is the state that gates Ship shut rather than open. */
   verdict: CritState;
   /** Unmet exit criteria, and how many there are in total — the badge the
-   *  control bar has carried since 2026-08-20 (`ShipControlBar:157-163`). */
+   *  retired Ship control bar carried from 2026-08-20. */
   unmet: number;
   totalCriteria: number;
   /** Spawn `/ship-milestone` into the project root and record the run. */

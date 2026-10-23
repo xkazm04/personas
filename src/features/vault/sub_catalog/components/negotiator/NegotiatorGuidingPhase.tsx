@@ -47,7 +47,7 @@ export function NegotiatorGuidingPhase({
   onCancel,
   onFinish,
 }: NegotiatorGuidingPhaseProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const totalSteps = visibleSteps.length;
   // Count only steps still present in the visible set — completedSteps can
   // retain indices for steps the step graph later resolved out (skipped),
@@ -73,11 +73,11 @@ export function NegotiatorGuidingPhase({
       const activeStep = visibleSteps[activeStepIndex];
       if (activeStep) {
         setLiveAnnouncement(
-          `Step ${activeStepIndex + 1} of ${totalSteps}: ${activeStep.step.title}`,
+          tx(t.vault.negotiator_extra.step_of, { current: activeStepIndex + 1, total: totalSteps, title: activeStep.step.title }),
         );
       }
     }
-  }, [activeStepIndex, visibleSteps, totalSteps]);
+  }, [activeStepIndex, visibleSteps, totalSteps, t, tx]);
 
   return (
     <div

@@ -166,7 +166,7 @@ export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPi
         {isOwned && (
           <span className="absolute -bottom-1 -right-1 inline-flex items-center justify-center rounded-full bg-background ring-2 ring-background">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" aria-hidden="true" />
-            <span className="sr-only">Connected</span>
+            <span className="sr-only">{t.common.connected}</span>
           </span>
         )}
       </div>

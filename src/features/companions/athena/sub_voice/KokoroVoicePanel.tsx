@@ -11,7 +11,7 @@ import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import {
   KOKORO_INSTALL_EVENT,
   companionTtsKokoroDownload,
@@ -63,7 +63,7 @@ export default function KokoroVoicePanel() {
     try {
       setVoices(await companionTtsListKokoroVoices());
     } catch (e: unknown) {
-      setVoicesError(e instanceof Error ? e.message : String(e));
+      setVoicesError(extractMessage(e));
     }
   }, []);
 

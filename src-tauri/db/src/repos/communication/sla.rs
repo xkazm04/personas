@@ -8,6 +8,7 @@ use crate::models::{
     GlobalSlaStats, HealingSummary, PersonaSlaStats, SlaDailyPoint, SlaDashboardData,
 };
 use crate::query_builder::QueryBuilder;
+use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use personas_core::error::AppError;
 
@@ -83,7 +84,7 @@ pub fn get_persona_reliability(
                 avg_duration_ms: row.get::<_, Option<f64>>("avg_dur")?.unwrap_or(0.0),
             })
         })?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "sla::get_persona_reliability"))
     })
 }
 
@@ -130,7 +131,7 @@ pub fn get_persona_daily_reliability(
                 decided,
             })
         })?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "sla::get_persona_daily_reliability"))
     })
 }
 
@@ -1014,12 +1015,10 @@ pub fn get_persona_breach_signal(
              ORDER BY created_at DESC
              LIMIT ?2",
         )?;
-        let statuses: Vec<String> = stmt
-            .query_map(params![persona_id, BREACH_LOOKBACK], |row| {
-                row.get::<_, String>("status")
-            })?
-            .filter_map(|r| r.ok())
-            .collect();
+        let rows = stmt.query_map(params![persona_id, BREACH_LOOKBACK], |row| {
+            row.get::<_, String>("status")
+        })?;
+        let statuses: Vec<String> = collect_rows(rows, "sla::get_persona_breach_signal");
 
         let consecutive_failures = statuses
             .iter()

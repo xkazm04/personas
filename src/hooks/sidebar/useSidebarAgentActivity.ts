@@ -15,6 +15,7 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type AgentActivityType = 'draft' | 'exec' | 'lab';
 
@@ -29,6 +30,10 @@ export interface AgentActivity {
 }
 
 export function useSidebarAgentActivity(): AgentActivity[] {
+  const { t } = useTranslation();
+  const copy = t.shared.sidebar_extra;
+  const draftFallback = copy.draft_agent_fallback;
+  const executionInProgress = t.agents.editor_ui.execution_in_progress;
   const {
     personas,
     buildSessions,
@@ -60,7 +65,7 @@ export function useSidebarAgentActivity(): AgentActivity[] {
       seen.add(key);
       result.push(a);
     };
-    const nameOf = (id: string) => personas.find((p) => p.id === id)?.name ?? 'Draft agent';
+    const nameOf = (id: string) => personas.find((p) => p.id === id)?.name ?? draftFallback;
 
     // 1. Draft builds (purple) — one per active persona session.
     for (const sess of Object.values(buildSessions ?? {})) {
@@ -71,7 +76,7 @@ export function useSidebarAgentActivity(): AgentActivity[] {
         personaId: sess.personaId,
         personaName: nameOf(sess.personaId),
         type: 'draft',
-        label: sess.phase === 'testing' ? 'Testing agent' : 'Draft in progress',
+        label: sess.phase === 'testing' ? copy.activity_testing_agent : copy.activity_draft_in_progress,
       });
     }
 
@@ -83,7 +88,7 @@ export function useSidebarAgentActivity(): AgentActivity[] {
         personaId: executionPersonaId,
         personaName: nameOf(executionPersonaId),
         type: 'exec',
-        label: 'Execution in progress',
+        label: executionInProgress,
       });
     }
 
@@ -95,7 +100,7 @@ export function useSidebarAgentActivity(): AgentActivity[] {
         personaId: bg.personaId,
         personaName: bg.personaName ?? nameOf(bg.personaId),
         type: 'exec',
-        label: bg.status === 'queued' ? 'Execution queued' : 'Execution in progress',
+        label: bg.status === 'queued' ? copy.activity_execution_queued : executionInProgress,
       });
     }
 
@@ -106,7 +111,7 @@ export function useSidebarAgentActivity(): AgentActivity[] {
         personaId,
         personaName: nameOf(personaId),
         type: 'lab',
-        label: 'Lab run in progress',
+        label: copy.activity_lab_run_in_progress,
       });
     }
 
@@ -116,5 +121,5 @@ export function useSidebarAgentActivity(): AgentActivity[] {
     void buildPhase;
 
     return result;
-  }, [personas, buildSessions, isExecuting, executionPersonaId, backgroundExecutions, labRunningPersonaIds, buildPhase]);
+  }, [personas, buildSessions, isExecuting, executionPersonaId, backgroundExecutions, labRunningPersonaIds, buildPhase, copy, draftFallback, executionInProgress]);
 }

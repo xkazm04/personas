@@ -14,7 +14,7 @@ import type { CredentialDesignResult } from '@/hooks/design/credential/useCreden
 import type { AutoCredMode } from '../helpers/types';
 import { useAutoCredSession } from '../helpers/useAutoCredSession';
 import { tauriPlaywrightAdapter, tauriGuidedAdapter } from '../helpers/TauriPlaywrightAdapter';
-import { checkPlaywrightAvailable } from '@/api/vault/autoCredBrowser';
+import { probeAutoCredMode } from '../helpers/probeAutoCredMode';
 import { AutoCredConsent } from './AutoCredConsent';
 import { AutoCredModeBanner } from './AutoCredModeBanner';
 import { AutoCredBrowser } from './AutoCredBrowser';
@@ -22,7 +22,6 @@ import { AutoCredReview } from './AutoCredReview';
 import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
 import { AutoCredBrowserError } from './AutoCredBrowserError';
 import { AutoCredErrorDisplay } from '../display/AutoCredErrorDisplay';
-import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface AutoCredPanelProps {
@@ -41,12 +40,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
   // therefore the "Start" button) on it. Gating init on this previously made
   // "Start" a no-op until the (sometimes slow) npx check resolved.
   useEffect(() => {
-    checkPlaywrightAvailable()
-      .then((available) => setMode(available ? 'playwright' : 'guided'))
-      .catch((err: unknown) => {
-        silentCatch('AutoCredPanel:checkPlaywrightAvailable')(err);
-        setMode('guided');
-      });
+    void probeAutoCredMode().then(setMode);
   }, []);
 
   const adapter = mode === 'guided' ? tauriGuidedAdapter : tauriPlaywrightAdapter;
@@ -125,6 +119,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
           <motion.div key="browser" {...PHASE_TRANSITION}>
             <AutoCredBrowser
               logs={session.logs}
+              startedAt={session.browserStartedAt}
               onCancel={session.cancelBrowser}
               mode={mode}
             />

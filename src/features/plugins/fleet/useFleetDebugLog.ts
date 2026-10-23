@@ -44,7 +44,7 @@ export function useFleetDebugLog(opts: { poll?: boolean } = {}) {
       apply(await debugLogStart());
       addToast(t.plugins.fleet.debug_log_started, 'success');
     } catch (e) {
-      toastCatch('useFleetDebugLog:start', 'Failed to start the fleet debug log')(e);
+      toastCatch('useFleetDebugLog:start', t.plugins.fleet.debug_log_start_failed)(e);
     }
   }, [apply, addToast, t]);
 
@@ -59,7 +59,7 @@ export function useFleetDebugLog(opts: { poll?: boolean } = {}) {
         30_000,
       );
     } catch (e) {
-      toastCatch('useFleetDebugLog:stop', 'Failed to stop the fleet debug log')(e);
+      toastCatch('useFleetDebugLog:stop', t.plugins.fleet.debug_log_stop_failed)(e);
     }
   }, [apply, addToast, t, tx]);
 

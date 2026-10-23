@@ -20,7 +20,7 @@ import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import { createTtlValueCache } from '@/lib/async/createTtlValueCache';
 
 import { mapWithConcurrency } from './passport/usePassportData';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { codeProjectsOnly } from '@/lib/devProjectKind';
 
 import type {
@@ -53,7 +53,7 @@ function toUtcIso(iso: string): string {
   return /[Zz]|[+-]\d\d:?\d\d$/.test(t) ? t : `${t}Z`;
 }
 
-function rel(iso: string | null): string {
+export function rel(iso: string | null): string {
   if (!iso) return 'never';
   const t = new Date(toUtcIso(iso)).getTime();
   if (!Number.isFinite(t)) return '—';
@@ -254,8 +254,8 @@ async function loadFactoryTree(progress?: TreeProgress): Promise<MockProject[]> 
   // not enter L2 until the last sibling assembled.
   // Registry checkouts are excluded: a Factory cover promises KPIs, contexts
   // and use cases, and a knowledge repo has none of the three. This is also
-  // the list the KPI-scan pickers (`KpiProposalsPanel`, `FactoryOverviewTab`)
-  // take their project from.
+  // the list the KPI-scan picker (`FactoryOverviewTab`) takes its
+  // project from.
   const projects = codeProjectsOnly(await devApi.listProjects());
   const skeletons: MockProject[] = projects.map((p) => ({ id: p.id, name: p.name, stack: p.tech_stack ?? '', groups: [] }));
   progress?.onSkeleton(skeletons);
@@ -275,8 +275,8 @@ async function loadFactoryTree(progress?: TreeProgress): Promise<MockProject[]> 
         useCaseApi.listUseCases(p.id).catch((err) => { silentCatch('useFactoryData:listUseCases')(err); return [] as DevUseCase[]; }),
         kpiApi.listKpis(p.id).catch((err) => { silentCatch('useFactoryData:listKpis')(err); return [] as DevKpi[]; }),
       ]);
-      // Matrix shows MANAGED KPIs only; proposed ones live in the proposals
-      // on-ramp (KpiProposalsPanel) and archived are gone.
+      // Matrix shows MANAGED KPIs only; proposed ones are reviewed on the L2
+      // Overview (FactoryContextDetail) and archived are gone.
       const pk = kpis.filter((k) => k.status === 'active' || k.status === 'paused');
       const ids = pk.map((k) => k.id);
       const measurements: DevKpiMeasurement[] = ids.length ? await kpiApi.listKpiMeasurementsBulk(ids, 20) : [];
@@ -297,18 +297,20 @@ async function loadFactoryTree(progress?: TreeProgress): Promise<MockProject[]> 
   return final;
 }
 
-/** A prefetch load in flight; a provider that mounts meanwhile adopts it. */
-let factoryInflight: Promise<MockProject[] | null> | null = null;
+/** A prefetch load in flight; a provider that mounts meanwhile adopts it.
+ *  Kept REJECTABLE: it used to swallow its error into `null`, and an adopting
+ *  provider had nothing to report, so a failed prefetch left the provider at
+ *  `loading: true, error: null` until something called reload(). */
+let factoryInflight: Promise<MockProject[]> | null = null;
 
 /** Warm the KPI tree ahead of navigation (see prefetchMastermind). No-op when
  *  a fresh tree is cached or a prefetch is running; never rejects. */
 export function prefetchFactoryData(): Promise<unknown> {
   if (factoryFresh.get(FACTORY_KEY) && factoryPaint.get(FACTORY_KEY)) return Promise.resolve();
-  if (factoryInflight) return factoryInflight;
-  factoryInflight = loadFactoryTree()
-    .catch((err) => { silentCatch('useFactoryData:prefetch')(err); return null; })
-    .finally(() => { factoryInflight = null; });
-  return factoryInflight;
+  if (!factoryInflight) {
+    factoryInflight = loadFactoryTree().finally(() => { factoryInflight = null; });
+  }
+  return factoryInflight.catch((err) => { silentCatch('useFactoryData:prefetch')(err); return null; });
 }
 
 export function FactoryDataProvider({ children }: { children: ReactNode }) {
@@ -326,7 +328,12 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
     // its result instead of a second fan-out.
     const pending = nonce === 0 ? factoryInflight : null;
     if (pending) {
-      void pending.then((final) => { if (!cancelled && final) setData({ projects: final, loading: false, error: null }); });
+      void pending.then(
+        (final) => { if (!cancelled) setData({ projects: final, loading: false, error: null }); },
+        // The adopted load failed: report it like this mount's own load would
+        // (keep whatever is painted, settle, carry the error).
+        (err) => { if (!cancelled) setData((prev) => ({ projects: prev.projects, loading: false, error: extractMessage(err) })); },
+      );
       return () => { cancelled = true; };
     }
     // Revalidating behind cached data: keep what is on screen and publish once
@@ -344,7 +351,7 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
       .catch((err) => {
         // A failed revalidation keeps the cached rows on screen; only a cold
         // load with nothing to show reports an empty tree.
-        if (!cancelled) setData((prev) => ({ projects: revalidating ? prev.projects : [], loading: false, error: err instanceof Error ? err.message : String(err) }));
+        if (!cancelled) setData((prev) => ({ projects: revalidating ? prev.projects : [], loading: false, error: extractMessage(err) }));
       });
     return () => { cancelled = true; };
   }, [nonce]);

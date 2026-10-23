@@ -202,6 +202,37 @@ describe('per-subscriber due times (the 1 Hz contagion)', () => {
     expect(calls).toBe(1);
   });
 
+  it('serves a subscriber that joins mid-period at its own due time, not a period later', () => {
+    // A shared 30s interval anchored at the FIRST subscriber's mount served a
+    // second 30s subscriber on the first tick at or after its due time: one
+    // that joined 10s in waited 50s for its first refresh.
+    renderHook(() => useFixedTicker(30 * SECOND));
+    act(() => { vi.advanceTimersByTime(10 * SECOND); });
+    let calls = 0;
+    renderHook(() => {
+      calls += 1;
+      useFixedTicker(30 * SECOND);
+    });
+    calls = 0;
+    act(() => { vi.advanceTimersByTime(30 * SECOND); });
+    expect(calls).toBe(1);
+  });
+
+  it('keeps a coarse subscriber on time when the finer one that set the pace leaves', () => {
+    let slowCalls = 0;
+    renderHook(() => {
+      slowCalls += 1;
+      useFixedTicker(30 * SECOND);
+    });
+    const fast = renderHook(() => useFixedTicker(SECOND));
+    slowCalls = 0;
+    for (let i = 0; i < 45; i += 1) act(() => { vi.advanceTimersByTime(SECOND); });
+    expect(slowCalls).toBe(1); // served at 30s
+    fast.unmount(); // at 45s; the slow subscriber is next due at 60s
+    act(() => { vi.advanceTimersByTime(15 * SECOND); });
+    expect(slowCalls).toBe(2);
+  });
+
   it('brings a subscriber forward when its cadence narrows mid-flight', () => {
     // A label crossing from "2m ago" (30s) into nothing finer here; drive the
     // bucket change directly through a timestamp that ages across a boundary.

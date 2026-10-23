@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { Activity, AppWindow, Bot, Brain, Clipboard, Eye, FileText, Power, Puzzle, Sparkles, Terminal, Volume2, Wrench } from 'lucide-react';
 import { SettingsScaffold, type SettingsSection } from '@/features/shared/components/layout/settings/SettingsScaffold';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
@@ -16,10 +18,19 @@ import {
   projectTrackingSetMasterEnabled,
   projectTrackingRunNow,
 } from '@/api/companion/projectTracking';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch, extractMessage } from '@/lib/silentCatch';
 import { AthenaStatusSection } from './AthenaStatusSection';
-import { BrowserBridgePanel } from './BrowserBridgePanel';
-import { SensorySignalsModal } from './SensorySignalsModal';
+
+// The two deep parts of the page load as their own chunks: the browser bridge
+// is the last section and arrives once the page above it has painted, and the
+// signals modal loads on its first open and stays mounted after that so its
+// close animation still plays.
+const BrowserBridgePanel = lazyRetry(() =>
+  import('./BrowserBridgePanel').then((m) => ({ default: m.BrowserBridgePanel })),
+);
+const SensorySignalsModal = lazyRetry(() =>
+  import('./SensorySignalsModal').then((m) => ({ default: m.SensorySignalsModal })),
+);
 
 /**
  * Companion plugin — Setup tab.
@@ -113,7 +124,7 @@ export default function SetupPanel() {
       setSensory(state);
       setSensoryLoadError(null);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       setSensoryLoadError(msg);
       silentCatch('companion_get_sensory_state')(err);
     }
@@ -143,6 +154,10 @@ export default function SetupPanel() {
   // refreshSensory after close so a delete immediately reflects in
   // the Setup card.
   const [signalsModalOpen, setSignalsModalOpen] = useState(false);
+  const [signalsModalMounted, setSignalsModalMounted] = useState(false);
+  useEffect(() => {
+    if (signalsModalOpen) setSignalsModalMounted(true);
+  }, [signalsModalOpen]);
 
   const sections: SettingsSection[] = [
     {
@@ -335,20 +350,28 @@ export default function SetupPanel() {
       label: c.browser_bridge_title,
       icon: <Puzzle className="w-4 h-4 text-cyan-400" />,
       card: false,
-      content: <BrowserBridgePanel />,
+      content: (
+        <DeferUntilIdle priority="idle" enter suspend>
+          <BrowserBridgePanel />
+        </DeferUntilIdle>
+      ),
     },
   ];
 
   return (
     <>
       <SettingsScaffold sections={sections} navAriaLabel={c.page_title} />
-      <SensorySignalsModal
-        open={signalsModalOpen}
-        onClose={() => {
-          setSignalsModalOpen(false);
-          void refreshSensory();
-        }}
-      />
+      {signalsModalMounted && (
+        <Suspense fallback={null}>
+          <SensorySignalsModal
+            open={signalsModalOpen}
+            onClose={() => {
+              setSignalsModalOpen(false);
+              void refreshSensory();
+            }}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

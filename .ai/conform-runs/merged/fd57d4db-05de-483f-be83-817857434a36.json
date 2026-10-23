@@ -1,0 +1,5 @@
+{"schema": "conform-run/1", "worker": "fd57d4db-05de-483f-be83-817857434a36", "subject": "quality-regression-gating",
+ "evaluatedAt": "2026-10-16T17:42:18Z",
+ "pairs": [],
+ "declined": [{"subject": "quality-regression-gating", "context": "92f6c0fc-8d5c-43a7-bab8-1851973d5198", "reason": "No work: the map's only pair for this subject (overview-leaderboard) was judged not-applicable on 2026-10-09 against sha256-b2:2fa1e4fd027c9e92 / revision 8, which is still the registry index's digest and revision at 11037a6c (revisionsBehind 0, not stale). The map holds no deviation for this subject; the ranking's '1 consumer deviation' most likely counts .ai/registry-leads.jsonl:9 (a 2026-08-27 scan-sweep lead about a Lab strategy leaderboard), which belongs to a context the map does not pair with this subject - the missing pairings (overview-certification, lab-arena, test-runner-lab, commands-contest) were already proposed in the 2026-10-09 run 03df5930."}],
+ "consults": []}

@@ -19,6 +19,8 @@ import {
   type PersonaCapability,
 } from '@/lib/personas/capabilities';
 
+import { sendRefine, type RefineHandler } from './refineSend';
+
 interface PersonaLayoutBuildProps {
   buildPhase: BuildPhase | null;
   completeness: number;
@@ -32,7 +34,7 @@ interface PersonaLayoutBuildProps {
   onApproveTestAnyway: () => void;
   onRejectTest?: () => void;
   onDeleteDraft?: () => void;
-  onRefine?: (prompt: string) => void | Promise<void>;
+  onRefine?: RefineHandler;
   onViewAgent: () => void;
   templateName: string;
   testOutputLines?: string[];
@@ -54,7 +56,7 @@ interface PersonaLayoutBuildProps {
  * persona isn't yet wired to a runnable backend — so we synthesize the
  * minimum shape.
  */
-function glyphRowToDisplay(row: GlyphRow): PersonaCapability {
+function glyphRowToDisplay(row: GlyphRow, manualLabel: string): PersonaCapability {
   const dimensions: GlyphDimension[] = GLYPH_DIMENSIONS.filter(
     (d) => row.presence[d] !== 'none',
   );
@@ -69,7 +71,7 @@ function glyphRowToDisplay(row: GlyphRow): PersonaCapability {
     health: row.enabled ? 'active' : 'disabled',
     hasModelOverride: !!row.recommendedModel,
     notificationChannels: row.events.map((e) => e.event_type),
-    triggerLabel: trigger?.description ?? (trigger?.trigger_type ?? 'Manual'),
+    triggerLabel: trigger?.description ?? (trigger?.trigger_type ?? manualLabel),
     connector: connector?.label ?? connector?.name ?? '',
     connectorKey: connector?.name ?? null,
     dimensions,
@@ -138,8 +140,8 @@ export function PersonaLayoutBuild({
   const [reportOpen, setReportOpen] = useState(false);
 
   const items = useMemo<PersonaCapability[]>(
-    () => rows.map(glyphRowToDisplay),
-    [rows],
+    () => rows.map((row) => glyphRowToDisplay(row, t.templates.chronology.trigger_manual)),
+    [rows, t.templates.chronology.trigger_manual],
   );
 
   const personaName = useMemo(() => {
@@ -424,7 +426,10 @@ export function PersonaLayoutBuild({
       onSend={(text) => {
         setRefineOpen(false);
         setRefineText('');
-        void onRefine?.(text);
+        void sendRefine(text, onRefine, (kept) => {
+          setRefineText(kept);
+          setRefineOpen(true);
+        });
       }}
     />
   ) : activeQuestion ? (
@@ -443,9 +448,6 @@ export function PersonaLayoutBuild({
         items={items}
         onRowOpen={() => {
           // Row editing during build is a follow-up — clicks are no-op here.
-        }}
-        onRowToggle={() => {
-          // Same.
         }}
         onHeroPetalClick={handlePetalClick}
         heroActiveDim={activeQuestionDim}

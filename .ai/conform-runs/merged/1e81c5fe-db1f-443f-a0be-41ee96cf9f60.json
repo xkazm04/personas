@@ -1,0 +1,24 @@
+{"schema": "conform-run/1", "worker": "1e81c5fe-db1f-443f-a0be-41ee96cf9f60", "subject": "narrative-scroll-surface",
+ "evaluatedAt": "2026-10-16T17:53:39Z",
+ "pairs": [
+  {"context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50", "subject": "narrative-scroll-surface", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/onboarding/components/GuidedTour.tsx:243 steps advance on a Next click/app event over the live app (fixed rail + overlay deck), not on scroll down an explanatory page for an uncommitted reader - the subject's precondition (a scrolling narrative page) does not hold",
+   "techniques": [
+    {"technique": "scroll-bound-progression", "verdict": "not-applicable", "evidence": "src/features/onboarding/components/GuidedTour.tsx:243 progression is advanceTour() on an explicit Next, no scroll-position signal exists to bind to"},
+    {"technique": "sequence-as-spine", "verdict": "not-applicable", "evidence": "src/features/onboarding/components/TourNarrativeDeck.tsx:90 one step at a time in a fixed overlay card; there is no long column of stations for a spine to hang them on"},
+    {"technique": "reveal-without-loss", "verdict": "not-applicable", "evidence": "src/features/onboarding/components/TourNarrativeDeck.tsx:90 fixed-position overlay inside a desktop app; no crawler/print/link-preview readers of a served page"}
+   ],
+   "registryProposal": "Coverage: the golden path's use_when lists 'building a product tour', which lexically pulls in-app coach-mark tours (stepped overlays on a live app) into this subject; those belong to guided-tours. 'Where this subject stops' should name guided-tours as a neighbour so the seam is routed by precondition (scrolling explanatory page vs stepped overlay on a working app)."},
+  {"context": "f838d49f-2928-441e-ac8d-f6e6c412b262", "subject": "narrative-scroll-surface", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/glyph/index.ts:1 the module exports SVG sigil/card/grid primitives embedded in app surfaces; it owns no page, no scroll sequence and no explanatory narrative, so the subject's precondition does not hold",
+   "techniques": []}
+ ],
+ "declined": [
+  {"subject": "narrative-scroll-surface", "context": "417112d1-004b-41d5-a656-57997a47d818", "reason": "context is governance: weak (timing utility hooks matched on 'animated/timer/animation'); the skill never judges weak pairs by default - reported as a coverage question, the match itself is doubtful"}
+ ],
+ "consults": [
+  {"ts": "2026-10-16T17:53:39Z", "bundle": "software-engineering", "subjects": ["narrative-scroll-surface"], "techniques": ["scroll-bound-progression", "sequence-as-spine", "reveal-without-loss"], "deviations": 0},
+  {"ts": "2026-10-16T17:53:39Z", "bundle": "software-engineering", "subjects": ["narrative-scroll-surface"], "techniques": [], "deviations": 0}
+ ]}

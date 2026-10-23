@@ -1,0 +1,7 @@
+/* bp's ground (bp/src/components/blueprint.css:14-17), verbatim but for the --bp- prefix and absolute positioning
+   (bp's layers are fixed to the viewport; here they fill whatever surface hosts them: the sheet's plan, the Monitor's
+   project list). Paint order, back to front: paper -> (the canvas) -> vignette -> double frame. */
+.bp-paper { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 85% 80% at 38% 46%, var(--bp-paper-hi) 0%, var(--bp-paper-mid) 34%, var(--bp-paper) 70%, var(--bp-paper-lo) 100%); }
+.bp-vig { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 220px 40px var(--bp-vignette); }
+.bp-dframe { position: absolute; inset: 5px; border: 1px solid var(--bp-ink-3); pointer-events: none; }
+.bp-dframe::after { content: ''; position: absolute; inset: 3px; border: 1px solid var(--bp-ink-4); }

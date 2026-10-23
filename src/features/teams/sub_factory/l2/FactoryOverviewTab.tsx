@@ -24,12 +24,14 @@ import { FactoryContextDetail } from './FactoryContextDetail';
 import { FactoryContextGroup, KindLegend } from './FactoryContextTable';
 import { FactoryScanActions } from './FactoryScanActions';
 import { groupCells, kindCounts } from './overviewModel';
+import { useFactoryScans } from './useFactoryScans';
 
 const ORDER: FocusKind[] = ['crit', 'warn', 'setup', 'ok'];
 
 export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
   const w = useFactoryWords();
   const [note, setNote] = useState<string | null>(null);
+  const scans = useFactoryScans(data, setNote);
   const [picked, setPicked] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
   const paneRef = useRef<HTMLElement>(null);
@@ -67,7 +69,7 @@ export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
   const loading = data.loading && all.length === 0;
 
   const detail = (
-    <FactoryContextDetail cell={selected} groupName={selectedGroup} data={data} onDecide={decide} onNote={setNote} w={w} />
+    <FactoryContextDetail cell={selected} groupName={selectedGroup} data={data} onDecide={decide} onScan={(id) => void scans.scanKpisNow(id)} scanning={scans.kpiScanning} w={w} />
   );
   const main = (
     <div data-testid="factory-overview-tab">
@@ -76,9 +78,9 @@ export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
         eyebrow={w.overview}
         title={w.contexts}
         meta={<KindLegend cells={all} w={w} />}
-        actions={<FactoryScanActions data={data} onNote={setNote} w={w} />}
+        actions={<FactoryScanActions data={data} s={scans} w={w} />}
         state={!data.loading && all.length === 0 ? 'empty' : undefined}
-        empty={{ title: w.L.noContexts, hint: w.L.noContextsHint, tone: 'info' }}
+        empty={{ art: 'folder', title: w.L.noContexts, hint: w.L.noContextsHint, tone: 'info' }}
       >
         {/* The live region is always mounted, so a new note is announced. */}
         <p className="k-in typo-caption" role="status" style={{ margin: note ? '0 0 10px' : 0 }}>{note}</p>
@@ -91,7 +93,7 @@ export function FactoryOverviewTab({ data }: { data: FactoryL2Data }) {
               draw: <UnitStrip size="m" label={w.contexts} segments={ORDER.map((k) => ({ n: n[k], ...FOCUS_MARK[k] }))} />,
             },
             { label: w.features, value: data.useCaseState.active.length },
-            { label: w.goals, value: [...data.goalCountByContext.values()].reduce((s, v) => s + v, 0) },
+            { label: w.goals, value: data.goalsFailed ? null : [...data.goalCountByContext.values()].reduce((s, v) => s + v, 0) },
             {
               label: w.L.proposed,
               value: proposedCtx + unassigned,

@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { GLOBAL_CAP, LIVE_RUN_STATES, PER_PROJECT_CAP, runDir, shortId } from './contract.mjs';
 import { listRuns, listSlugs, loadBrief, loadOutbox, loadWakes, openAsks } from './store.mjs';
+import { isArmed, activeStandup } from './standup.mjs';
 import { brakes, isDue, lastDecided, parseTs } from './brakes.mjs';
 import { pressureReport } from './memory.mjs';
 import { queueTable } from './queue.mjs';
@@ -23,7 +24,7 @@ export function projectStatus(slug, nowMs = Date.now()) {
   const brief = loadBrief(slug) ?? {};
   const name = wakes.filter((w) => w.project?.name).at(-1)?.project.name ?? brief.project ?? slug;
   return {
-    slug, name, nextWakeAt: next, due: isDue(wakes, nowMs),
+    slug, name, nextWakeAt: next, armed: isArmed(slug), due: isArmed(slug) && isDue(wakes, nowMs),
     running: runs.filter((r) => LIVE_RUN_STATES.includes(r.state)).map((r) => ({
       runId8: shortId(r.runId), charter: r.charterSlug, model: r.model, paths: r.paths ?? [], repo: r.repo ?? 'self', state: r.state, streamAgeMin: streamAgeMin(slug, r.runId, nowMs),
     })),
@@ -55,9 +56,10 @@ export function renderDigest(status, nowMs = Date.now()) {
   const L = [];
   const b = status.brakes;
   L.push(`Machine: ${b.memory.freeGb} GB free${b.memory.stop ? ` (dispatch paused: needs ${b.memory.dispatchNeedGb} GB)` : ''}${b.memory.gateOk === false ? ` (gates wait: need ${b.memory.gateNeedGb} GB)` : ''}; ${b.limit.limited ? `usage limit marked${b.limit.resetsAt ? ` until ${b.limit.resetsAt}` : ''}` : 'no usage limit'}; builders running ${status.caps.running} of ${status.caps.global}.`);
+  if (status.standup) L.push(`Standup ${status.standup.date} armed: ${status.standup.armed.join(', ')}; other managed projects are not woken.`);
   if (status.pressure) L.push(`  Memory: ours ${status.pressure.ownGb} GB; biggest others: ${status.pressure.others.map((o) => `${o.name} ${o.gb} GB`).join(', ') || 'none'}.`);
   for (const p of status.projects) {
-    const next = p.nextWakeAt ? `next wake ${hhmm(p.nextWakeAt, nowMs)}${p.due ? ' (due now)' : ''}` : 'no decision yet, due now';
+    const next = p.armed === false ? 'not armed (standup)' : p.nextWakeAt ? `next wake ${hhmm(p.nextWakeAt, nowMs)}${p.due ? ' (due now)' : ''}` : 'no decision yet, due now';
     const queued = p.queued ?? [];
     const reviewed = p.reviewed ?? [];
     const quiet = !p.running.length && !p.held.length && !p.merged.length && !reviewed.length && !queued.length && !p.asksOpen && !p.outboxDepth && !p.lastDispatch.length && !p.say;
@@ -108,6 +110,7 @@ export async function cmdStatus({ flags = {} } = {}) {
     caps: { running: b.running.global, global: GLOBAL_CAP, perProject: PER_PROJECT_CAP },
     brakes: { memory: b.memory, limit: b.limit },
     queue: queueTable(nowMs),
+    ...(activeStandup() ? { standup: activeStandup() } : {}),
   };
   // who is using the memory, only when a brake or the wait is in play (one PowerShell call, ~1 s)
   if (b.memory.stop || b.memory.gateOk === false || flags.pressure) {

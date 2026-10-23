@@ -18,7 +18,6 @@
 // thing answering `initialSection` now, so do not drop it.
 
 import { useMemo } from 'react';
-import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { DrawerSection, PersonaCardModel } from './monitorModel';
 import { DrawerHeader } from './drawer/DrawerHeader';
 import { useDrawerData } from './drawer/useDrawerData';
@@ -37,25 +36,16 @@ interface MonitorDrawerProps {
    * what made approving one review disable every other row.
    */
   isProcessing: boolean;
-  /** The Monitor's own ledger. Unused: the drawer owns its writes, so it owns
-   *  the keyed ledger that guards them (`useDrawerData`). Kept in the props so
-   *  the Monitor's call site does not change shape. */
-  isReviewInFlight: (id: string, intent?: string) => boolean;
   now: number;
-  onReviewAction: (id: string, status: ManualReviewStatus, notes?: string) => void | Promise<void>;
-  onDispatchAction?: (id: string, action: string) => void | Promise<void>;
-  onMarkRead: (id: string) => void;
-  /** Re-read Activity badges after a drawer write. */
+  /** Re-read Activity badges after a drawer write. The drawer owns its review
+   *  and message writes (and the keyed ledger guarding them) in
+   *  `useDrawerData`; this is the only way it tells the Monitor about one. */
   onAttentionChanged?: () => void | Promise<void>;
   onClose: () => void;
 }
 
 export function MonitorDrawer({
-  card, initialSection, designContext, isProcessing,
-  isReviewInFlight: _isReviewInFlight,
-  now,
-  onReviewAction: _onReviewAction, onDispatchAction: _onDispatchAction, onMarkRead: _onMarkRead,
-  onAttentionChanged, onClose,
+  card, initialSection, designContext, isProcessing, now, onAttentionChanged, onClose,
 }: MonitorDrawerProps) {
   const data = useDrawerData(card, designContext, onAttentionChanged);
 

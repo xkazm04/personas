@@ -4,6 +4,7 @@ import { Button } from '@/features/shared/components/buttons';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
 import { FleetTokenSummaryBar } from './FleetTokenSummaryBar';
+import { isBroadcastTargetState } from '../fleetStateMeta';
 
 interface FleetGridToolbarProps {
   sessions: FleetSession[];
@@ -62,7 +63,7 @@ export function FleetGridToolbar(p: FleetGridToolbarProps) {
         {f.spawn_with_task}
       </Button>
       <Button data-testid="fleet-broadcast-open" variant="secondary" size="sm" icon={<Send className="w-3.5 h-3.5" />}
-        disabled={sessions.filter((s) => s.state !== 'exited' && s.state !== 'hibernated').length === 0} onClick={p.onBroadcast}>
+        disabled={sessions.filter((s) => isBroadcastTargetState(s.state)).length === 0} onClick={p.onBroadcast}>
         Broadcast
       </Button>
       <Button data-testid="fleet-harvest-open" variant="secondary" size="sm" icon={<ClipboardList className="w-3.5 h-3.5" />}

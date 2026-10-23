@@ -11,7 +11,9 @@
 // one, the Console upgrade rail is another.
 import { useState } from 'react';
 
+import { useTranslation } from '@/i18n/useTranslation';
 import { mapWithConcurrency } from '@/lib/concurrency';
+import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useImproveActivityStore } from '@/stores/improveActivityStore';
 
@@ -48,6 +50,8 @@ export interface ImproveActions {
 
 /** Null when the improve engine or the project's row isn't available. */
 export function useImproveActions(slug: string, rowKey: string, onDone: () => void): ImproveActions | null {
+  const { t, tx } = useTranslation();
+  const d = t.plugins.dev_tools;
   const engine = useImprove();
   const addToast = useToastStore((s) => s.addToast);
   const [busy, setBusy] = useState<string | null>(null);
@@ -72,16 +76,16 @@ export function useImproveActions(slug: string, rowKey: string, onDone: () => vo
       if (mode === 'scan') {
         const scanId = await engine.runContextScan(slug, delta);
         markBusy(scanId, 'scan');
-        addToast(`Context ${delta ? 're-scan (incremental)' : 'scan'} started for ${raw.project.name}`, 'success');
+        addToast(tx(delta ? d.improve_toast_rescan_started : d.improve_toast_scan_started, { name: raw.project.name }), 'success');
       } else {
         const title = a.taskTitle?.(raw.project) ?? a.label;
         const prompt = a.prompt?.(raw.project, passport) ?? '';
-        if (mode === 'queue') { await engine.queueTask(slug, title, prompt); addToast(`Queued “${title}” for ${raw.project.name}`, 'success'); }
-        else { const taskId = await engine.deployNow(slug, title, prompt); markBusy(taskId, 'deploy'); addToast(`Deploying Claude Code on ${raw.project.name}`, 'success'); }
+        if (mode === 'queue') { await engine.queueTask(slug, title, prompt); addToast(tx(d.improve_toast_queued_title, { title, name: raw.project.name }), 'success'); }
+        else { const taskId = await engine.deployNow(slug, title, prompt); markBusy(taskId, 'deploy'); addToast(tx(d.improve_toast_deploying, { name: raw.project.name }), 'success'); }
       }
       onDone();
     } catch {
-      addToast('Couldn’t start the upgrade', 'error');
+      addToast(d.improve_toast_upgrade_failed, 'error');
     } finally {
       setBusy(null);
     }
@@ -104,12 +108,19 @@ export function useImproveActions(slug: string, rowKey: string, onDone: () => vo
       // cheap DB insert, not a live process), but still real writes against one
       // table, so a modest width avoids a burst insert storm.
       const QUEUE_BATCH_CONCURRENCY = 4;
-      await mapWithConcurrency(eligible, QUEUE_BATCH_CONCURRENCY, ({ r, p }) =>
-        engine.queueTask(r.project.id, a.taskTitle?.(r.project) ?? a.label, a.prompt?.(r.project, p) ?? ''));
-      addToast(`Queued “${a.label}” for ${eligible.length} projects`, 'success');
-      onDone();
+      // Settle per item: mapWithConcurrency rejects on the FIRST failure while
+      // the other workers keep inserting, so "Couldn't queue the batch" used to
+      // be shown over a batch that had mostly been queued.
+      let firstError: unknown = null;
+      const settled = await mapWithConcurrency(eligible, QUEUE_BATCH_CONCURRENCY, ({ r, p }) =>
+        engine.queueTask(r.project.id, a.taskTitle?.(r.project) ?? a.label, a.prompt?.(r.project, p) ?? '')
+          .then(() => true, (err: unknown) => { firstError ??= err; return false; }));
+      const queued = settled.filter(Boolean).length;
+      if (queued > 0) addToast(tx(d.improve_toast_batch_queued, { label: a.label, count: queued }), 'success');
+      if (queued < eligible.length) toastCatch('useImproveActions:runBatch')(firstError);
+      if (queued > 0) onDone();
     } catch {
-      addToast('Couldn’t queue the batch', 'error');
+      addToast(d.improve_toast_batch_failed, 'error');
     } finally {
       setBusy(null);
     }
@@ -119,7 +130,7 @@ export function useImproveActions(slug: string, rowKey: string, onDone: () => vo
     passport,
     projectName: raw.project.name,
     hasContextMap: raw.meta.context_count > 0,
-    reason: dimensionReason(rowKey, raw),
+    reason: dimensionReason(rowKey, raw, t),
     hasLadder: Boolean(ladderFor(rowKey, passport)),
     showConnector: Boolean(connectorSpecFor(rowKey)?.applicable(passport)),
     actions,

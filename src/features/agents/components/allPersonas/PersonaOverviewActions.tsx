@@ -5,6 +5,7 @@ import { getPersonaBlastRadius, bulkDeletePersonas, archivePersona, restorePerso
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -109,9 +110,18 @@ export function usePersonaActions({
     );
     const count = ids.length;
     if (count === 0) return;
+    // Same guard the single delete carries: what depends on these agents, and a
+    // typed confirmation (the name for one, the count for several).
+    // A large selection would fire one IPC per agent at once; four at a time.
+    const fetchBlastRadius = () =>
+      mapWithConcurrency(ids, 4, (id) => getPersonaBlastRadius(id)).then((groups) => groups.flat());
+    // One agent types its name; several (or a name we no longer hold) type the count.
+    const single = count === 1 ? personas.find((p) => p.id === ids[0]) : undefined;
     confirm({
       title: tx(t.agents.overview_actions.delete_agents, { count }),
       message: tx(t.agents.overview_actions.delete_agents_message, { count }),
+      blastRadius: <BlastRadiusPanelLazy fetcher={fetchBlastRadius} />,
+      requireTypedConfirmation: single ? single.name : String(count),
       onConfirm: async () => {
         setSelectedIds(new Set());
         await runBulkDelete(ids);

@@ -1,0 +1,63 @@
+{
+ "schema": "conform-run/1",
+ "worker": "318bce08-51e3-4e83-ad95-7fc33b067fb9",
+ "subject": "llm-extracted-entity-graph",
+ "evaluatedAt": "2026-10-18T23:57:28.917380+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "vault-shared-vector",
+   "subject": "llm-extracted-entity-graph",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/kb_extract.rs:292 Searches for graph and relation found no context hits; tracing its extraction command showed independent UUID-keyed SQL rows rather than a graph with relations and cross-passage entity merging.",
+   "techniques": [
+    {
+     "technique": "accumulate-then-threshold-merge",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/shared/vector/DESIGN.md:70 The implementation inserts independent rows for each run; it does not accumulate descriptions on shared graph nodes."
+    },
+    {
+     "technique": "recall-passes-with-a-declared-cap",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/kb_extract.rs:153 This is single-pass document-to-row extraction outside the subject's graph-building precondition; schema inference is not a recall pass."
+    },
+    {
+     "technique": "recoverable-fan-out-write",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/kb_extract.rs:155 Extracted rows go to SQLite through store_entities; this path does not fan graph nodes out to an entity vector index."
+    },
+    {
+     "technique": "surface-form-identity-and-its-risk",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/engine/kb_extract.rs:309 Each extracted row receives a fresh UUID; the model's entityKey is a label, not a normalized key joining mentions into one node."
+    }
+   ],
+   "absenceTerms": [
+    "graph",
+    "relation"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-18T23:57:28.917380+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "llm-extracted-entity-graph"
+   ],
+   "techniques": [
+    "accumulate-then-threshold-merge",
+    "recall-passes-with-a-declared-cap",
+    "recoverable-fan-out-write",
+    "surface-form-identity-and-its-risk"
+   ],
+   "deviations": 0,
+   "context": "vault-shared-vector",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

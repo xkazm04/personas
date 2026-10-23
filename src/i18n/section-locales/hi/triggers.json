@@ -41,12 +41,14 @@
   "budget_label": "बजट",
   "build_validation": {
     "composite_min_conditions": "कंपोज़िट ट्रिगर के लिए कम से कम 2 शर्तें आवश्यक हैं।",
+    "composite_window_maximum": "समय विंडो अधिकतम 24 घंटे (86400 सेकंड) की हो सकती है।",
     "composite_window_minimum": "समय विंडो कम से कम 5 सेकंड की होनी चाहिए।",
     "cron_invalid": "अमान्य Cron एक्सप्रेशन।",
     "cron_required": "Cron एक्सप्रेशन आवश्यक है।",
     "endpoint_required": "एंडपॉइंट URL या इवेंट आवश्यक है।",
     "event_type_required": "सुनने के लिए इवेंट प्रकार आवश्यक है।",
     "interval_minimum": "अंतराल कम से कम 60 सेकंड का होना चाहिए।",
+    "watch_events_required": "निगरानी के लिए कम से कम एक फ़ाइल इवेंट चुनें।",
     "watch_path_required": "कम से कम एक निगरानी पथ आवश्यक है।"
   },
   "builder": {
@@ -183,6 +185,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} इवेंट",
   "dead_letter_bulk_retry_title": "पुनः प्रयास every selected इवेंट in a single transaction",
   "dead_letter_clear_filters_to_see": "साफ़ करें filters to see all dead-lettered इवेंट",
+  "dead_letter_load_failed_title": "डेड लेटर कतार लोड नहीं हो सकी",
+  "dead_letter_load_failed_desc": "कतार पढ़ी नहीं जा सकी, इसलिए यहाँ खाली सूची भ्रामक होगी। आपके इवेंट गए नहीं हैं - फिर से प्रयास करें।",
   "dead_letter_clear_selection": "साफ़ करें",
   "dead_letter_discard": "खारिज करें",
   "dead_letter_discard_title": "इस इवेंट को स्थायी रूप से खारिज करें",
@@ -623,9 +627,12 @@
     "automation_delete": "ऑटोमेशन हटाएं",
     "automation_enabled": "सक्षम",
     "automation_failed": "विफल",
+    "automation_held": "अनुमोदन के लिए रोका गया",
     "automation_idle": "इवेंट की प्रतीक्षा में",
     "automation_next": "अगला",
+    "automation_partial": "आंशिक रूप से चला",
     "automation_ran": "चला",
+    "automation_requested": "अनुरोध किया गया",
     "automation_run_now": "अभी चलाएं",
     "automations_title": "सक्रिय सिस्टम इवेंट",
     "cadence_custom": "कस्टम cron…",
@@ -945,5 +952,7 @@
   "add_persona_available": "{count} उपलब्ध",
   "add_persona_all_connected": "सभी पर्सोना पहले से जुड़े हुए हैं",
   "add_persona_ungrouped": "समूह रहित",
-  "live_status_skipped": "छोड़ा गया"
+  "live_status_skipped": "छोड़ा गया",
+  "webhooks_load_failed": "वेबहुक ट्रिगर लोड नहीं हो सके",
+  "webhooks_load_failed_desc": "सूची पढ़ी नहीं जा सकी, इसलिए यहाँ खाली सूची दिखाना भ्रामक होगा। आपके ट्रिगर गायब नहीं हुए हैं - फिर से कोशिश करें।"
 }

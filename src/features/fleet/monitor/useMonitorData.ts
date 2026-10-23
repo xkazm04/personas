@@ -34,6 +34,7 @@ import type { PersonaReport } from '@/lib/bindings/PersonaReport';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import type { ActiveProcess } from '@/stores/slices/processActivitySlice';
 import { createLogger } from '@/lib/log';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 const logger = createLogger('persona-monitor');
 
@@ -673,8 +674,22 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
   const reviewsFailure = useRef<unknown>(null);
   const messagesFailure = useRef<unknown>(null);
 
+  /**
+   * THE NEWEST REVIEW READ WINS, not the last one to resolve.
+   *
+   * Several callers start this loader independently (the 30s poll, the
+   * post-verdict `refreshAfterWrite`, a drawer's `refreshAttention`) and Tauri
+   * runs each `invoke` on its own task, so two reads in flight can resolve in
+   * either order. A poll that started BEFORE an approval and resolved AFTER the
+   * post-write read painted the approved row back into the queue: the reviewer
+   * pressed it again and lost the compare-and-swap to their own verdict. Only
+   * the most recently STARTED read may write state.
+   */
+  const [reviewsLatest] = useState(createLatestWins);
+
   const reloadReviews = useCallback(async () => {
     reviewsAttemptedAt.current = Date.now();
+    const token = reviewsLatest.next();
     try {
       const [counts, page] = await Promise.all([
         badgeCounts ? getPendingReviewCountsByPersona() : null,
@@ -684,6 +699,8 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
             : listManualReviews(undefined, 'pending').then((rows) => ({ rows, hasMore: false }))
           : null,
       ]);
+      // Superseded: a newer read owns the queue (and its `loading`/error).
+      if (!reviewsLatest.isCurrent(token)) return;
       if (mounted.current) {
         if (counts) {
           const next: Record<string, ReviewBadgeCount> = {};
@@ -722,6 +739,7 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
       reviewsFailure.current = null;
     } catch (err) {
       logger.error('Failed to load manual reviews', { error: err });
+      if (!reviewsLatest.isCurrent(token)) return;
       // The log was the ONLY record. A surface cannot render a breadcrumb, so
       // an unreadable queue looked exactly like an empty one.
       if (mounted.current) setReviewsError(extractMessage(err));
@@ -730,9 +748,9 @@ export function useMonitorData(feeds: MonitorFeeds = ALL_FEEDS): MonitorData {
       // `refreshAttention`, `refreshAfterWrite`) depends on that.
       reviewsFailure.current = err;
     } finally {
-      if (mounted.current) setLoading(false);
+      if (mounted.current && reviewsLatest.isCurrent(token)) setLoading(false);
     }
-  }, [reviewLimit, badgeCounts, wantsReviewRows]);
+  }, [reviewLimit, badgeCounts, wantsReviewRows, reviewsLatest]);
 
   /**
    * Coalescing gate for the messages read.

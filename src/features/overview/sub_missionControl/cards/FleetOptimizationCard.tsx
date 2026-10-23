@@ -86,11 +86,11 @@ const TYPE_CONFIG: Record<RecommendationType, {
   },
 };
 
-const SEVERITY_LABEL: Record<string, string> = {
-  critical: 'Urgent',
-  warning: 'Suggested',
-  info: 'Insight',
-};
+const SEVERITY_KEY = {
+  critical: 'severity_critical',
+  warning: 'severity_warning',
+  info: 'severity_info',
+} as const;
 
 // -- Component -------------------------------------------------------
 
@@ -106,14 +106,15 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
   const personaId = rec.personaIds[0] ?? null;
   const personaName = rec.personaNames[0] ?? null;
 
-  // Jump straight into the affected agent's Lab in model-comparison mode so the
-  // user can test alternative models against the persona this rec is about.
+  // Jump straight into the affected agent's Lab so the user can test alternative
+  // models against the persona this rec is about. No Lab view reads a mode from
+  // the store (labMode only picks the finishLabRun refresh fallback), so the old
+  // setLabMode('matrix') landed nowhere and skewed that fallback; the tab is enough.
   const openLab = useCallback(() => {
     if (!personaId) return;
     useSystemStore.getState().setSidebarSection('personas');
     useAgentStore.getState().selectPersona(personaId);
     useSystemStore.getState().setEditorTab('lab');
-    useAgentStore.getState().setLabMode('matrix');
   }, [personaId]);
 
   // Forward the recommendation to Athena (companion) so she can investigate and,
@@ -141,6 +142,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary/[0.04] transition-colors"
       >
         <div className={`w-8 h-8 rounded-card flex items-center justify-center flex-shrink-0 ${config.badge} border`}>
@@ -152,7 +154,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
               {rec.title}
             </span>
             <span className={`typo-label px-1.5 py-0.5 rounded-input ${config.badge} border`}>
-              {SEVERITY_LABEL[rec.severity] ?? rec.severity}
+              {rec.severity in SEVERITY_KEY ? t.overview.fleet_optimization[SEVERITY_KEY[rec.severity as keyof typeof SEVERITY_KEY]] : rec.severity}
             </span>
           </div>
           <p className="typo-body text-foreground mt-0.5 truncate">
@@ -172,7 +174,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
               {/* Impact */}
               <div className="flex items-start gap-2">
                 <span className="typo-label text-foreground mt-0.5 w-16 flex-shrink-0">
-                  Impact
+                  {t.overview.fleet_optimization.label_impact}
                 </span>
                 <span className="typo-body text-foreground">{rec.impact}</span>
               </div>
@@ -180,7 +182,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
               {/* Action */}
               <div className="flex items-start gap-2">
                 <span className="typo-label text-foreground mt-0.5 w-16 flex-shrink-0">
-                  Action
+                  {t.overview.fleet_optimization.label_action}
                 </span>
                 <span className="typo-body text-foreground">{rec.suggestedAction}</span>
               </div>
@@ -189,7 +191,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
               {rec.personaNames.length > 0 && (
                 <div className="flex items-start gap-2">
                   <span className="typo-label text-foreground mt-0.5 w-16 flex-shrink-0">
-                    Agent
+                    {t.overview.fleet_optimization.label_agent}
                   </span>
                   <span className="typo-body text-foreground">
                     {rec.personaNames.join(', ')}
@@ -236,14 +238,15 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
 
 export default function FleetOptimizationCard() {
   const { t } = useTranslation();
-  const { executionDashboard, healingIssues } = useOverviewStore(useShallow((s) => ({
+  const { executionDashboard, healingIssues, healthSignals } = useOverviewStore(useShallow((s) => ({
     executionDashboard: s.executionDashboard,
     healingIssues: s.healingIssues,
+    healthSignals: s.healthSignals,
   })));
 
   const recommendation = useMemo(
-    () => generateFleetRecommendation(executionDashboard, healingIssues),
-    [executionDashboard, healingIssues],
+    () => generateFleetRecommendation(executionDashboard, healingIssues, healthSignals),
+    [executionDashboard, healingIssues, healthSignals],
   );
 
   // Don't render anything if there's no recommendation or not enough data

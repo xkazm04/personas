@@ -1,4 +1,5 @@
 import { Brain, Search, GitCommitVertical, X, FilterX } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import Button from '@/features/shared/components/buttons/Button';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import TeamMemoryRow from './TeamMemoryRow';
@@ -20,8 +21,6 @@ interface MemoryPanelListProps {
    *  not read the ledger" and "the ledger is empty" are opposite facts. */
   loadFailed?: boolean;
   onRetry?: () => void;
-  /** Grow to fill the host (pane layout) instead of capping at max-h-80 (floating). */
-  fill?: boolean;
   onCategoryChange: (cat: string) => void;
   onSearchChange: (q: string) => void;
   onClearRunFilter: () => void;
@@ -29,7 +28,8 @@ interface MemoryPanelListProps {
   onLoadMore: () => void;
   onDelete: (id: string) => void;
   onImportanceChange: (id: string, importance: number) => void;
-  onEdit?: (id: string, title: string, content: string, category: string, importance: number) => void;
+  /** Resolves `false` when the write failed; the editor then stays open with the draft. */
+  onEdit?: (id: string, title: string, content: string, category: string, importance: number) => Promise<boolean> | void;
 }
 
 export default function MemoryPanelList({
@@ -42,7 +42,6 @@ export default function MemoryPanelList({
   isFetching = false,
   loadFailed = false,
   onRetry,
-  fill = false,
   onCategoryChange,
   onSearchChange,
   onClearRunFilter,
@@ -118,7 +117,7 @@ export default function MemoryPanelList({
       </div>
 
       {/* Memory list */}
-      <div className={`${fill ? 'flex-1 min-h-0' : 'max-h-80'} overflow-y-auto px-2 pb-2 space-y-1 scrollbar-thin scrollbar-thumb-primary/10`}>
+      <div className={`flex-1 min-h-0 overflow-y-auto px-2 pb-2 space-y-1 scrollbar-thin scrollbar-thumb-primary/10`}>
         {loadFailed && memories.length === 0 ? (
           <div className="text-center py-6" data-testid="memory-load-failed">
             <Brain className="w-8 h-8 mx-auto mb-2 text-status-warning" />
@@ -140,15 +139,12 @@ export default function MemoryPanelList({
             ))}
           </div>
         ) : memories.length === 0 ? (
-          <div className="text-center py-6">
-            <Brain className="w-8 h-8 mx-auto mb-2 text-foreground" />
-            <p className="typo-body text-foreground">
-              {activeRunFilter ? t.pipeline.no_memories_for_run : t.pipeline.no_memories_yet}
-            </p>
-            <p className="typo-body text-foreground mt-0.5">
-              {activeRunFilter ? t.pipeline.try_clearing_filter : t.pipeline.run_pipeline_or_add}
-            </p>
-          </div>
+          <ScenarioEmptyState
+            art={activeRunFilter ? 'search' : 'report'}
+            size="sm"
+            title={activeRunFilter ? t.pipeline.no_memories_for_run : t.pipeline.no_memories_yet}
+            description={activeRunFilter ? t.pipeline.try_clearing_filter : t.pipeline.run_pipeline_or_add}
+          />
         ) : (
           <>
             {memories.map((memory) => (

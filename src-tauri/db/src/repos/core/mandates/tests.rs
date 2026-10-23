@@ -526,3 +526,306 @@ fn open_asks_count_only_this_projects_pending_app_master_asks() {
     }
     assert_eq!(get(&pool, "c1").unwrap().unwrap().load.open_asks, Some(2));
 }
+
+#[test]
+fn dropping_a_draft_retires_it_and_records_the_reason() {
+    let pool = init_test_db().unwrap();
+    seed(&pool);
+    charter(&pool, "c1", "draft", MANDATE_DOMAIN);
+
+    let act = drop_draft(
+        &pool,
+        "c1",
+        Some("  Fold it into an existing mandate  "),
+        None,
+    )
+    .unwrap();
+    assert_eq!(act.verdict, "dropped");
+    assert_eq!(act.actor, CharterActor::Operator);
+    assert!(
+        !act.reversible,
+        "a drop is final: drafting again is the undo"
+    );
+    let shown: serde_json::Value =
+        serde_json::from_str(act.shown_json.as_deref().unwrap()).unwrap();
+    assert_eq!(shown["reason"], "Fold it into an existing mandate");
+    let change = act.env_change.expect("a drop carries its before / after");
+    assert_eq!(change.op, EnvelopeOp::Drop);
+    assert_eq!(change.before.status, "draft");
+    assert_eq!(change.after.status, "retired");
+    assert_eq!(act.envelope_version, 0, "a drop signs nothing");
+
+    let m = get(&pool, "c1").unwrap().unwrap();
+    assert_eq!(m.status, "retired");
+    assert!(
+        list(&pool).unwrap().is_empty(),
+        "a retired mandate leaves the list"
+    );
+    // The revert door refuses it as irreversible.
+    let refused = revert(&pool, &act.id, None).unwrap_err();
+    assert!(matches!(
+        refused,
+        CharterActRevertError::Refused(CharterActRevertRefusal::Irreversible { .. })
+    ));
+}
+
+#[test]
+fn a_drop_without_a_reason_records_null_and_only_drafts_drop() {
+    let pool = init_test_db().unwrap();
+    seed(&pool);
+    charter(&pool, "c1", "draft", MANDATE_DOMAIN);
+    let act = drop_draft(&pool, "c1", Some("   "), None).unwrap();
+    let shown: serde_json::Value =
+        serde_json::from_str(act.shown_json.as_deref().unwrap()).unwrap();
+    assert!(shown["reason"].is_null());
+
+    charter(&pool, "c2", "active", MANDATE_DOMAIN);
+    let e = drop_draft(&pool, "c2", Some("no"), None).unwrap_err();
+    assert!(matches!(e, AppError::Validation(_)), "{e:?}");
+    // Retired already: refused by the writable gate.
+    let e = drop_draft(&pool, "c1", None, None).unwrap_err();
+    assert!(matches!(e, AppError::Validation(_)), "{e:?}");
+    let e = drop_draft(&pool, "missing", None, None).unwrap_err();
+    assert!(matches!(e, AppError::NotFound(_)), "{e:?}");
+    assert_eq!(get(&pool, "c2").unwrap().unwrap().status, "active");
+}
+
+#[test]
+fn keep_stamps_the_reread_marker_at_the_decision_acts_held_now() {
+    let pool = init_test_db().unwrap();
+    seed(&pool);
+    charter(&pool, "c1", "draft", MANDATE_DOMAIN);
+    // Unsigned: there is nothing to re-read.
+    assert!(matches!(
+        keep(&pool, "c1", "asks", None),
+        Err(AppError::Validation(_))
+    ));
+    sign(&pool, "c1", &sign_input(), None).unwrap();
+    for i in 0..3 {
+        charter_acts::append(&pool, &decision("c1", &format!("i{i}"), true)).unwrap();
+    }
+    let gone = charter_acts::append(&pool, &decision("c1", "i9", true)).unwrap();
+    revert(&pool, &gone.id, None).unwrap();
+
+    let act = keep(&pool, "c1", "asks", None).unwrap();
+    assert_eq!(act.verdict, "kept");
+    assert!(!act.reversible);
+    assert_eq!(act.envelope_version, 1, "a keep does not move the envelope");
+    assert_eq!(act.env_change.as_ref().unwrap().op, EnvelopeOp::Keep);
+    let shown: serde_json::Value =
+        serde_json::from_str(act.shown_json.as_deref().unwrap()).unwrap();
+    assert_eq!(shown["reread"], "asks");
+    assert_eq!(shown["keptAtActs"], 3, "standing decision acts only");
+    let env = get_envelope(&pool, "c1").unwrap().unwrap();
+    assert_eq!(env.kept_at_acts, Some(3));
+    assert_eq!(env.envelope_version, 1);
+
+    // Suspended: refused.
+    suspend(&pool, "c1", None).unwrap();
+    assert!(matches!(
+        keep(&pool, "c1", "asks", None),
+        Err(AppError::Validation(_))
+    ));
+}
+
+/// Security close-out: a keep's reason is the re-read CODE it answered. Free
+/// text (unbounded on the local door) is refused and writes nothing.
+#[test]
+fn keep_takes_only_a_reread_code_as_its_reason() {
+    let pool = init_test_db().unwrap();
+    seed(&pool);
+    charter(&pool, "c1", "draft", MANDATE_DOMAIN);
+    sign(&pool, "c1", &sign_input(), None).unwrap();
+    let before = charter_acts::list(&pool, &filter()).unwrap().len();
+    for bad in [
+        "",
+        "bogus",
+        "<img src=x onerror=alert(1)>",
+        &"x".repeat(64 * 1024),
+    ] {
+        assert!(
+            matches!(keep(&pool, "c1", bad, None), Err(AppError::Validation(_))),
+            "a keep reason of {} bytes must be refused",
+            bad.len()
+        );
+    }
+    assert_eq!(
+        charter_acts::list(&pool, &filter()).unwrap().len(),
+        before,
+        "a refused keep writes no act"
+    );
+    for code in ["cap", "asks", " merges ", "dominant"] {
+        let act = keep(&pool, "c1", code, None).unwrap();
+        let shown: serde_json::Value =
+            serde_json::from_str(act.shown_json.as_deref().unwrap()).unwrap();
+        assert_eq!(shown["reread"], code.trim());
+    }
+}
+
+#[test]
+fn re_signing_a_signed_mandate_moves_the_reread_marker_a_first_signature_does_not() {
+    let pool = init_test_db().unwrap();
+    seed(&pool);
+    charter(&pool, "c1", "draft", MANDATE_DOMAIN);
+    sign(&pool, "c1", &sign_input(), None).unwrap();
+    assert_eq!(
+        get_envelope(&pool, "c1").unwrap().unwrap().kept_at_acts,
+        None
+    );
+    charter_acts::append(&pool, &decision("c1", "i1", true)).unwrap();
+    charter_acts::append(&pool, &decision("c1", "i2", true)).unwrap();
+    sign(&pool, "c1", &sign_input(), None).unwrap();
+    assert_eq!(
+        get_envelope(&pool, "c1").unwrap().unwrap().kept_at_acts,
+        Some(2)
+    );
+}
+
+#[test]
+fn tallies_count_standing_decisions_by_scope_and_merges_since_the_last_read() {
+    let pool = init_test_db().unwrap();
+    seed(&pool);
+    charter(&pool, "c1", "draft", MANDATE_DOMAIN);
+    let mut merge = decision("c1", "m0", false);
+    merge.item_kind = "merge".into();
+    merge.scope = None;
+    charter_acts::append(&pool, &merge).unwrap();
+    sign(&pool, "c1", &sign_input(), None).unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(5));
+    charter_acts::append(&pool, &decision("c1", "i1", true)).unwrap();
+    for i in 1..3 {
+        let mut m = merge.clone();
+        m.item_id = format!("m{i}");
+        charter_acts::append(&pool, &m).unwrap();
+    }
+    let t = charter_acts::tallies(&pool).unwrap().remove("c1").unwrap();
+    assert_eq!(t.decisions, 4);
+    assert_eq!(t.by_scope.get("idea.accept"), Some(&1));
+    assert_eq!(
+        t.merges_since_read, 2,
+        "the merge before the signature is not counted"
+    );
+    assert!(t.last_read_at.is_some());
+}
+
+fn orphan_project(pool: &DbPool) {
+    pool.conn("mandates test")
+        .unwrap()
+        .execute(
+            "INSERT INTO dev_projects (id, name, root_path) VALUES ('orph','Orph','/tmp/orph')",
+            [],
+        )
+        .unwrap();
+}
+
+fn orphan_draft(automatic: bool) -> OrphanDraft {
+    OrphanDraft {
+        project_id: "orph".into(),
+        steward_persona_id: "steward".into(),
+        title: "App Master Orph".into(),
+        orphans: 12,
+        why: Some("large".into()),
+        automatic,
+    }
+}
+
+#[test]
+fn a_drafted_mandate_is_an_empty_athena_draft_and_never_drafted_twice() {
+    let pool = init_test_db().unwrap();
+    seed(&pool);
+    orphan_project(&pool);
+    charter(&pool, "c1", "active", MANDATE_DOMAIN);
+
+    let act = draft_for_orphans(&pool, &orphan_draft(true), None).unwrap();
+    assert_eq!(act.verdict, "drafted");
+    assert_eq!(act.actor, CharterActor::Router, "the sweep drafted it");
+    assert!(!act.reversible);
+    assert_eq!(act.env_change.as_ref().unwrap().op, EnvelopeOp::Draft);
+    let m = get(&pool, &act.charter_id).unwrap().unwrap();
+    assert_eq!(m.status, "draft");
+    assert_eq!(m.source, "athena");
+    assert_eq!(m.project_id, "orph");
+    assert_eq!(m.scope_rung, 0);
+    assert!(m.envelope.decide_scopes.is_empty());
+    assert_eq!(m.envelope.merge_policy, MergePolicy::Never);
+    assert_eq!(m.envelope.envelope_version, 0);
+    let origin = m.origin.expect("origin recorded");
+    assert_eq!(origin.kind, crate::models::MandateOriginKind::OrphanDraft);
+    assert_eq!(origin.orphans, Some(12));
+    assert!(
+        origin.borrowed_steward,
+        "the steward already holds proj's mandate"
+    );
+    assert!(origin.automatic);
+
+    // Idempotent: the open draft refuses a second one.
+    let again = draft_for_orphans(&pool, &orphan_draft(true), None).unwrap_err();
+    assert!(matches!(again, AppError::Validation(_)), "{again:?}");
+    assert_eq!(
+        list(&pool)
+            .unwrap()
+            .iter()
+            .filter(|s| s.project_id == "orph")
+            .count(),
+        1
+    );
+    // A dropped draft frees the project for a new one.
+    drop_draft(&pool, &act.charter_id, None, None).unwrap();
+    assert!(draft_for_orphans(&pool, &orphan_draft(false), None).is_ok());
+}
+
+#[test]
+fn drafting_refuses_unknown_projects_and_personas() {
+    let pool = init_test_db().unwrap();
+    seed(&pool);
+    let mut d = orphan_draft(false);
+    assert!(matches!(
+        draft_for_orphans(&pool, &d, None),
+        Err(AppError::NotFound(_))
+    ));
+    orphan_project(&pool);
+    d.steward_persona_id = "ghost".into();
+    assert!(matches!(
+        draft_for_orphans(&pool, &d, None),
+        Err(AppError::NotFound(_))
+    ));
+}
+
+#[test]
+fn adopting_copies_the_mandate_onto_the_project_and_refuses_twice() {
+    let pool = init_test_db().unwrap();
+    seed(&pool);
+    orphan_project(&pool);
+    charter(&pool, "c1", "draft", MANDATE_DOMAIN);
+    sign(&pool, "c1", &sign_input(), None).unwrap();
+
+    let act = adopt_project(&pool, "orph", "c1", 7, None).unwrap();
+    assert_eq!(act.verdict, "adopted");
+    assert_eq!(act.actor, CharterActor::Operator);
+    assert_eq!(act.env_change.as_ref().unwrap().op, EnvelopeOp::Adopt);
+    let m = get(&pool, &act.charter_id).unwrap().unwrap();
+    assert_eq!(m.project_id, "orph");
+    assert_eq!(m.status, "active");
+    assert_eq!(m.steward_persona_id, "steward");
+    assert_eq!(m.envelope.envelope_version, 1, "signed as the source was");
+    assert_eq!(
+        m.envelope.decide_scopes,
+        vec![DecideScope::IdeaAccept, DecideScope::ReportRead]
+    );
+    let origin = m.origin.unwrap();
+    assert_eq!(origin.from_charter_id.as_deref(), Some("c1"));
+    assert!(origin.borrowed_steward);
+
+    assert!(matches!(
+        adopt_project(&pool, "orph", "c1", 7, None),
+        Err(AppError::Validation(_))
+    ));
+    assert!(matches!(
+        adopt_project(&pool, "proj", "c1", 0, None),
+        Err(AppError::Validation(_))
+    ));
+    assert!(matches!(
+        adopt_project(&pool, "orph", "nope", 0, None),
+        Err(AppError::NotFound(_))
+    ));
+}

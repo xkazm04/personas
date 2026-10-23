@@ -75,6 +75,15 @@ export class P2pUnavailableError extends Error {
   }
 }
 
+/**
+ * reportError options for an action that RETHROWS. Every caller of those
+ * actions catches and owns the user-facing surface (a translated toast or an
+ * inline error), so the store records the error and reports it to Sentry but
+ * does not also toast it: one failure, one toast. The default "both" fired a
+ * second, untranslated toast carrying the raw backend text.
+ */
+const CALLER_OWNS_FAILURE = { severity: "state" } as const;
+
 export interface NetworkSlice {
   // State (Phase 1)
   localIdentity: PeerIdentity | null;
@@ -213,7 +222,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       const identity = await identityApi.setDisplayName(name);
       set({ localIdentity: identity });
     } catch (err) {
-      reportError(err, "Failed to update display name", set);
+      reportError(err, "Failed to update display name", set, CALLER_OWNS_FAILURE);
       throw err;
     }
   },
@@ -223,7 +232,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
     try {
       return await identityApi.exportIdentityCard();
     } catch (err) {
-      reportError(err, "Failed to export identity card", set);
+      reportError(err, "Failed to export identity card", set, CALLER_OWNS_FAILURE);
       throw err;
     }
   },
@@ -247,7 +256,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await get().fetchTrustedPeers();
       return peer;
     } catch (err) {
-      reportError(err, "Failed to import trusted peer", set);
+      reportError(err, "Failed to import trusted peer", set, CALLER_OWNS_FAILURE);
       throw err;
     }
   },
@@ -258,7 +267,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await identityApi.revokePeerTrust(peerId);
       await get().fetchTrustedPeers();
     } catch (err) {
-      reportError(err, "Failed to revoke peer trust", set);
+      reportError(err, "Failed to revoke peer trust", set, CALLER_OWNS_FAILURE);
       throw err;
     }
   },
@@ -269,7 +278,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await identityApi.deleteTrustedPeer(peerId);
       await get().fetchTrustedPeers();
     } catch (err) {
-      reportError(err, "Failed to delete trusted peer", set);
+      reportError(err, "Failed to delete trusted peer", set, CALLER_OWNS_FAILURE);
       throw err;
     }
   },
@@ -293,7 +302,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await get().fetchExposedResources();
       return resource;
     } catch (err) {
-      reportError(err, "Failed to expose resource", set);
+      reportError(err, "Failed to expose resource", set, CALLER_OWNS_FAILURE);
       throw err;
     }
   },
@@ -304,7 +313,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await exposureApi.deleteExposedResource(id);
       await get().fetchExposedResources();
     } catch (err) {
-      reportError(err, "Failed to remove resource exposure", set);
+      reportError(err, "Failed to remove resource exposure", set, CALLER_OWNS_FAILURE);
       throw err;
     }
   },
@@ -331,7 +340,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       set({ networkLoading: false });
       return result;
     } catch (err) {
-      reportError(err, "Failed to export bundle", set, { stateUpdates: { networkLoading: false } });
+      reportError(err, "Failed to export bundle", set, { ...CALLER_OWNS_FAILURE, stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -344,7 +353,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       set({ networkLoading: false });
       return result;
     } catch (err) {
-      reportError(err, "Failed to export bundle for clipboard", set, { stateUpdates: { networkLoading: false } });
+      reportError(err, "Failed to export bundle for clipboard", set, { ...CALLER_OWNS_FAILURE, stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -357,7 +366,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       set({ networkLoading: false });
       return preview;
     } catch (err) {
-      reportError(err, "Failed to preview bundle", set, { stateUpdates: { networkLoading: false } });
+      reportError(err, "Failed to preview bundle", set, { ...CALLER_OWNS_FAILURE, stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -370,7 +379,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       set({ networkLoading: false });
       return preview;
     } catch (err) {
-      reportError(err, "Failed to preview clipboard bundle", set, { stateUpdates: { networkLoading: false } });
+      reportError(err, "Failed to preview clipboard bundle", set, { ...CALLER_OWNS_FAILURE, stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -386,7 +395,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await get().fetchProvenance();
       return result;
     } catch (err) {
-      reportError(err, "Failed to import bundle", set, { stateUpdates: { networkLoading: false } });
+      reportError(err, "Failed to import bundle", set, { ...CALLER_OWNS_FAILURE, stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -401,7 +410,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await get().fetchProvenance();
       return result;
     } catch (err) {
-      reportError(err, "Failed to import clipboard bundle", set, { stateUpdates: { networkLoading: false } });
+      reportError(err, "Failed to import clipboard bundle", set, { ...CALLER_OWNS_FAILURE, stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -416,7 +425,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       set({ networkLoading: false });
       return result;
     } catch (err) {
-      reportError(err, "Failed to create share link", set, { stateUpdates: { networkLoading: false } });
+      reportError(err, "Failed to create share link", set, { ...CALLER_OWNS_FAILURE, stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -429,7 +438,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       set({ networkLoading: false });
       return preview;
     } catch (err) {
-      reportError(err, "Failed to preview share link", set, { stateUpdates: { networkLoading: false } });
+      reportError(err, "Failed to preview share link", set, { ...CALLER_OWNS_FAILURE, stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -444,7 +453,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await get().fetchProvenance();
       return result;
     } catch (err) {
-      reportError(err, "Failed to import from share link", set, { stateUpdates: { networkLoading: false } });
+      reportError(err, "Failed to import from share link", set, { ...CALLER_OWNS_FAILURE, stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -459,7 +468,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       set({ networkLoading: false });
       return result;
     } catch (err) {
-      reportError(err, "Failed to seal enclave", set, { stateUpdates: { networkLoading: false } });
+      reportError(err, "Failed to seal enclave", set, { ...CALLER_OWNS_FAILURE, stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -472,7 +481,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       set({ networkLoading: false });
       return result;
     } catch (err) {
-      reportError(err, "Failed to verify enclave", set, { stateUpdates: { networkLoading: false } });
+      reportError(err, "Failed to verify enclave", set, { ...CALLER_OWNS_FAILURE, stateUpdates: { networkLoading: false } });
       throw err;
     }
   },
@@ -504,7 +513,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       set((s) => ({
         connectionStates: { ...s.connectionStates, [peerId]: "Failed" as const },
       }));
-      reportError(err, "Failed to connect to peer", set);
+      reportError(err, "Failed to connect to peer", set, CALLER_OWNS_FAILURE);
       throw err;
     }
   },
@@ -518,7 +527,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       }));
       await get().fetchDiscoveredPeers();
     } catch (err) {
-      reportError(err, "Failed to disconnect peer", set);
+      reportError(err, "Failed to disconnect peer", set, CALLER_OWNS_FAILURE);
       throw err;
     }
   },
@@ -541,7 +550,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       await discoveryApi.syncPeerManifest(peerId);
       await get().fetchPeerManifest(peerId);
     } catch (err) {
-      reportError(err, "Failed to sync peer manifest", set);
+      reportError(err, "Failed to sync peer manifest", set, CALLER_OWNS_FAILURE);
       throw err;
     }
   },

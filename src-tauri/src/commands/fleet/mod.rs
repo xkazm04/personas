@@ -32,6 +32,7 @@ pub mod commands;
 pub mod companion_api;
 pub mod contest_seat;
 pub mod debug_log;
+pub mod door;
 pub mod external;
 pub mod headless;
 pub mod hook_install;

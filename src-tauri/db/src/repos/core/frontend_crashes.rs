@@ -59,13 +59,13 @@ pub fn list_recent(pool: &DbPool, limit: u32) -> Result<Vec<FrontendCrashRow>, A
         let rows = stmt
             .query_map(params![limit], |row| {
                 Ok(FrontendCrashRow {
-                    id: row.get(0)?,
-                    component: row.get(1)?,
-                    message: row.get(2)?,
-                    stack: row.get(3)?,
-                    component_stack: row.get(4)?,
-                    app_version: row.get(5)?,
-                    created_at: row.get(6)?,
+                    id: row.get("id")?,
+                    component: row.get("component")?,
+                    message: row.get("message")?,
+                    stack: row.get("stack")?,
+                    component_stack: row.get("component_stack")?,
+                    app_version: row.get("app_version")?,
+                    created_at: row.get("created_at")?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -80,9 +80,9 @@ pub fn count_since(pool: &DbPool, hours: u32) -> Result<u32, AppError> {
         let conn = pool.conn("frontend_crashes::count_since")?;
         let cutoff = (chrono::Utc::now() - chrono::Duration::hours(i64::from(hours))).to_rfc3339();
         let count: u32 = conn.query_row(
-            "SELECT COUNT(*) FROM frontend_crashes WHERE created_at >= ?1",
+            "SELECT COUNT(*) AS n FROM frontend_crashes WHERE created_at >= ?1",
             params![cutoff],
-            |row| row.get(0),
+            |row| row.get("n"),
         )?;
         Ok(count)
     })
@@ -95,4 +95,37 @@ pub fn clear_all(pool: &DbPool) -> Result<(), AppError> {
         conn.execute("DELETE FROM frontend_crashes", [])?;
         Ok(())
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+
+    /// Every read maps its columns by name against the real migrated schema.
+    #[test]
+    fn reads_map_every_column_by_name() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        insert(
+            &pool,
+            "Panel",
+            "boom",
+            Some("at x"),
+            Some("in Panel"),
+            Some("1.1.0"),
+        )?;
+        let rows = list_recent(&pool, 10)?;
+        assert_eq!(rows.len(), 1);
+        let r = &rows[0];
+        assert_eq!(
+            (r.component.as_str(), r.message.as_str(), r.stack.as_deref()),
+            ("Panel", "boom", Some("at x"))
+        );
+        assert_eq!(
+            (r.component_stack.as_deref(), r.app_version.as_deref()),
+            (Some("in Panel"), Some("1.1.0"))
+        );
+        assert_eq!(count_since(&pool, 1)?, 1);
+        Ok(())
+    }
 }

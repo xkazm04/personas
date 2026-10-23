@@ -79,6 +79,8 @@ export interface PlanModel {
   /** Claude only: which browser profile signs the plan in, and the latest re-login run. */
   login: AccountLoginLink | null;
   relogin: ReloginState | null;
+  /** Claude only: 1 = the plan auto-rotate switches to next; null when not queued. */
+  rotationRank: number | null;
 }
 
 export interface ProviderModel {
@@ -169,6 +171,7 @@ function claudePlan(a: ClaudeAccountView, now: number): PlanModel {
     canRemove: unreadable && !a.isActive,
     login: a.login,
     relogin: a.relogin,
+    rotationRank: a.rotationRank,
   };
 }
 
@@ -192,11 +195,13 @@ function claudeProvider(inputs: ResourceInputs): ProviderModel {
       canRemove: false,
       login: null,
       relogin: null,
+      rotationRank: null,
     }];
   } else if (inputs.claudeFailed) {
     plans = [{
       id: 'live', name: accounts?.liveEmail ?? null, slot: null, isActive: true, state: 'unreadable',
       reason: 'ipc', windows: [], asOfMs: null, canSwitch: false, canRemove: false, login: null, relogin: null,
+      rotationRank: null,
     }];
   }
   return {
@@ -250,6 +255,7 @@ function cliProvider(id: CliProvider, usage: CliProviderUsage | undefined, settl
     canRemove: false,
     login: null,
     relogin: null,
+    rotationRank: null,
   }));
   return { ...base, emptyReason: null, pending: false, plans };
 }

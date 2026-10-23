@@ -39,6 +39,11 @@ export interface StoreBusEventMap {
   /** A trigger was created / updated / deleted (agentStore subscribes to refresh detail). */
   'trigger:changed': { personaId: string };
 
+  /** An automation was deployed / updated / deleted (agentStore subscribes to
+   *  refresh the selected persona's detail, which is what the Automations
+   *  section renders; the vault slice that performs the write is not). */
+  'automation:changed': { personaId: string };
+
   /** Set a persona's home team / workspace (agentStore subscribes to apply the operation). */
   'persona:set-home-team': { personaId: string; homeTeamId: string | null };
 

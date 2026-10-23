@@ -445,7 +445,7 @@
     {
       "doc": "docs/features/teams/goals.md",
       "sourceGlobs": [
-        "src/features/teams/sub_goals/**"
+        "src/features/projects/development/goals/**"
       ]
     },
     {

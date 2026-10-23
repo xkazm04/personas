@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useId } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Search, FolderOpen, CheckCircle2, XCircle, Save, Brain, Users, Plug, RefreshCw, Network, Sparkles } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -26,7 +26,7 @@ import {
 } from '@/api/obsidianBrain';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { useSavedVaultConfigs } from '../useSavedVaultConfigs';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -69,6 +69,7 @@ export default function SetupPanel() {
   const [memoriesFolder, setMemoriesFolder] = useState('memories');
   const [personasFolder, setPersonasFolder] = useState('Personas');
   const [connectorsFolder, setConnectorsFolder] = useState('Connectors');
+  const folderFieldId = useId();
 
   const visibleDetectedVaults = useMemo(
     () => detectedVaults.filter((v) => !savedPaths.has(v.path)),
@@ -97,15 +98,22 @@ export default function SetupPanel() {
       setMirrorConfig(next); // optimistic
       try {
         await obsidianMirrorSetConfig(next);
-        // Enabling the execution-knowledge mirror backfills existing rows once,
-        // so the vault isn't empty until each persona happens to run again.
-        if (key === 'executionKnowledge' && next.executionKnowledge) {
-          const count = await obsidianMirrorBackfillExecutionKnowledge();
-          addToast(tx(t.plugins.obsidian_brain.mirror_backfill_done, { count }), 'success');
-        }
       } catch (e) {
         setMirrorConfig(mirrorConfig); // revert on failure
-        addToast(tx(t.plugins.obsidian_brain.mirror_save_failed, { error: String(e) }), 'error');
+        addToast(tx(t.plugins.obsidian_brain.mirror_save_failed, { error: extractMessage(e) }), 'error');
+        return;
+      }
+      // Enabling the execution-knowledge mirror backfills existing rows once,
+      // so the vault isn't empty until each persona happens to run again. The
+      // setting is already saved: a failed backfill must not flip the switch
+      // back while the backend keeps the mirror on.
+      if (key === 'executionKnowledge' && next.executionKnowledge) {
+        try {
+          const count = await obsidianMirrorBackfillExecutionKnowledge();
+          addToast(tx(t.plugins.obsidian_brain.mirror_backfill_done, { count }), 'success');
+        } catch (e) {
+          toastCatch('SetupPanel:mirrorBackfill')(e);
+        }
       }
     },
     [mirrorConfig, addToast, t, tx],
@@ -126,7 +134,7 @@ export default function SetupPanel() {
         );
       }
     } catch (e) {
-      addToast(tx(t.plugins.obsidian_brain.detection_failed, { error: String(e) }), 'error');
+      addToast(tx(t.plugins.obsidian_brain.detection_failed, { error: extractMessage(e) }), 'error');
     } finally {
       setDetecting(false);
     }
@@ -151,7 +159,7 @@ export default function SetupPanel() {
       // test (without Save) made every consumer believe the vault was active.
       setConnectionResult(result);
     } catch (e) {
-      addToast(tx(t.plugins.obsidian_brain.connection_test_failed, { error: String(e) }), 'error');
+      addToast(tx(t.plugins.obsidian_brain.connection_test_failed, { error: extractMessage(e) }), 'error');
     } finally {
       setTesting(false);
     }
@@ -186,7 +194,7 @@ export default function SetupPanel() {
       useTourStore.getState().emitTourEvent('tour:obsidian-vault-connected');
       addToast(t.plugins.obsidian_brain.config_saved, 'success');
     } catch (e) {
-      addToast(tx(t.plugins.obsidian_brain.save_failed, { error: String(e) }), 'error');
+      addToast(tx(t.plugins.obsidian_brain.save_failed, { error: extractMessage(e) }), 'error');
     } finally {
       setSaving(false);
     }
@@ -271,6 +279,7 @@ export default function SetupPanel() {
               value={vaultPath}
               onChange={(e) => { setVaultPath(e.target.value); setConnectionResult(null); }}
               placeholder={t.plugins.obsidian_brain.vault_path_placeholder}
+              aria-label={t.plugins.obsidian_brain.vault_path_placeholder}
               data-testid="obsidian-vault-path-input"
               className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
             />
@@ -368,10 +377,11 @@ export default function SetupPanel() {
               { label: t.plugins.obsidian_brain.personas_folder, value: personasFolder, onChange: setPersonasFolder },
               { label: t.plugins.obsidian_brain.memories_subfolder, value: memoriesFolder, onChange: setMemoriesFolder },
               { label: t.plugins.obsidian_brain.connectors_folder, value: connectorsFolder, onChange: setConnectorsFolder },
-            ].map((field) => (
+            ].map((field, i) => (
               <div key={field.label} className="space-y-1.5">
-                <label className="typo-label text-foreground/90">{field.label}</label>
+                <label className="typo-label text-foreground/90" htmlFor={`${folderFieldId}-${i}`}>{field.label}</label>
                 <input
+                  id={`${folderFieldId}-${i}`}
                   type="text"
                   value={field.value}
                   onChange={(e) => field.onChange(e.target.value)}

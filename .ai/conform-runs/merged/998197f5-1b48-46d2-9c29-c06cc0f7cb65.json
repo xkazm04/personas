@@ -1,0 +1,30 @@
+{"schema":"conform-run/1","worker":"998197f5-1b48-46d2-9c29-c06cc0f7cb65","subject":"supply-chain","evaluatedAt":"2026-10-16T17:20:32Z",
+"pairs":[
+{"context":"10c96ae7-a356-4555-996b-df92fc5dc8e7","subject":"supply-chain","bundle":"software-engineering","state":"deviation",
+ "evaluatedAgainst":"sha256-b2:f5666db1094acd9f","evaluatedRevision":6,
+ "evidence":"src-tauri/src/commands/infrastructure/static_scan.rs:113 the 'read-only' Static Scan (StaticScanCard.tsx:38) spawns knip/fallow in the project root with no digest approval of the configs they evaluate, so a planted statement in a scanned repo's config or its local imports runs silently",
+ "techniques":[
+  {"technique":"reading-is-not-running","verdict":"deviation","evidence":"src-tauri/src/commands/infrastructure/static_scan.rs:113 Command::new(exe).current_dir(&project.root_path) runs the analyzer with no approved-digest check over configs + local import closure and no loud refusal on change; the module header at :6 calls the surface read-only"},
+  {"technique":"dependency-policy-gates","verdict":"conformant","evidence":"src-tauri/src/commands/infrastructure/static_scan.rs:102 preflight_static_scan_argv refuses an npx fetch of a tool the project never declared, so the scan cannot pull unadopted third-party code"}],
+ "registryProposal":"Upward lesson for reading-is-not-running: this repo's preflight (static_scan.rs:102) closes the adjacent hole the technique leaves unnamed - a 'read' verb that ALSO downloads the runner (non-TTY npx assumes --yes). Worth a sentence: approve the bytes AND refuse an undeclared tool fetch."},
+{"context":"b4439e30-fcff-4095-97dd-d9d7da2247dd","subject":"supply-chain","bundle":"software-engineering","state":"deviation",
+ "evaluatedAgainst":"sha256-b2:f5666db1094acd9f","evaluatedRevision":6,
+ "evidence":"src-tauri/src/commands/core/data_portability/import_skills.rs:86 a bundle entry with an unsafe path is skipped with a warning and the rest of that bundle's skill files are still written into <project>/.claude/skills, and :158 writes each file in place with no quarantine-then-promote, so a hostile bundle partly lands and a failed write leaves a half-written skill directory agents will load",
+ "techniques":[
+  {"technique":"archive-extraction-safety","verdict":"deviation","evidence":"src-tauri/src/commands/core/data_portability/import_skills.rs:86 unsafe entry -> skip-and-continue instead of refusing the archive; :158 direct per-file std::fs::write into the live skills dir, no temp dir + atomic rename (containment itself holds: helpers.rs:121 is_safe_rel_path rejects non-Normal components; byte budget holds: archive.rs:85 capped take() on observed bytes)"},
+  {"technique":"unsafe-deserialization-off-by-default","verdict":"conformant","evidence":"src-tauri/src/commands/core/data_portability/archive.rs:66 read_zip_bundle reads only manifest.json as JSON text - a data-only format, no type-instantiating loader"}]},
+{"context":"937c9d47-b0ca-4e3b-90e3-25baefe04474","subject":"supply-chain","bundle":"software-engineering","state":"not-applicable",
+ "evaluatedAgainst":"sha256-b2:f5666db1094acd9f","evaluatedRevision":6,
+ "evidence":"src-tauri/src/cloud/sync/mod.rs:3 the context is a push-only writer of secret-free JSON row projections to the user's Supabase tenant; it crosses no dependency graph, permission manifest, archive, history or code-loading boundary the subject governs",
+ "techniques":[]}
+],
+"declined":[
+ {"subject":"supply-chain","context":"(29 other probable/unknown pairs)","reason":"budget of 3 pairs per run; all remaining unknown pairs are confidence 'probable', none 'strong'"},
+ {"subject":"supply-chain","context":"a35d1f4a-5de8-4be1-af8b-1a3784296400","reason":"weak governance row - coverage question, not judged by default"},
+ {"subject":"supply-chain","context":"89d44c76-ec4c-4388-843e-503cf6ca2507","reason":"weak governance row - coverage question, not judged by default"}
+],
+"consults":[
+ {"ts":"2026-10-16T17:20:32Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running","dependency-policy-gates"],"deviations":1},
+ {"ts":"2026-10-16T17:20:32Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["archive-extraction-safety","unsafe-deserialization-off-by-default"],"deviations":1},
+ {"ts":"2026-10-16T17:20:32Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":[],"deviations":0}
+]}

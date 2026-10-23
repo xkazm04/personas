@@ -44,6 +44,8 @@ vi.mock('../fleetTerminalManager', () => ({
   setFleetTerminalDeadNotice: vi.fn(),
   setFleetTerminalListenerNotice: vi.fn(),
   setTerminalLiveness: vi.fn(),
+  configureFleetTerminals: vi.fn(),
+  appIsLightTheme: () => false,
   onTerminalHolderLost: (container: HTMLElement, cb: () => void) => {
     holderLost.byContainer.set(container, cb);
     return () => holderLost.byContainer.delete(container);
@@ -63,6 +65,18 @@ describe('FleetTerminalPane displacement notice', () => {
 
     expect(screen.getByText('MOVED-TO-ANOTHER-PANE')).toBeInTheDocument();
     expect(container.getAttribute('data-displaced')).toBe('true');
+  });
+
+  it('paints the notice on the theme surface so it stays legible in light themes', () => {
+    render(<FleetTerminalPane sessionId="s-theme" />);
+    const container = screen.getByTestId('fleet-terminal-s-theme');
+    act(() => holderLost.byContainer.get(container)!());
+
+    // `text-foreground` is near-black in the light themes; on the terminal's
+    // hard-coded #0a0a0c scrim it measured 1.01:1.
+    const overlay = screen.getByTestId('fleet-terminal-displaced-s-theme');
+    expect(overlay.className).toContain('bg-background/95');
+    expect(overlay.className).not.toMatch(/bg-\[#/);
   });
 
   it('offers the terminal back, and re-attaching clears the notice', () => {

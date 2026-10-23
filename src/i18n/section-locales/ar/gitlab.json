@@ -121,5 +121,12 @@
   "view_logs": "السجلات",
   "yesterday": "أمس",
   "your_tier": "(مستواك)",
-  "agent_pipeline_title": "خط الأنابيب الخاص بـ {agent} على {ref}: {status}"
+  "agent_pipeline_title": "خط الأنابيب الخاص بـ {agent} على {ref}: {status}",
+  "pipeline_count_one": "{count} مسار",
+  "pipeline_count_other": "{count} مسارات",
+  "notify_title_success": "نجح المسار",
+  "notify_title_failed": "فشل المسار",
+  "notify_title_canceled": "تم إلغاء المسار",
+  "notify_title_other": "المسار {status}",
+  "notify_body": "المسار #{id} على {ref} أصبح الآن {status}"
 }

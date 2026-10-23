@@ -1,0 +1,44 @@
+{"schema":"conform-run/1","worker":"d0d5d9b2-b44c-4acb-9aee-43f05e83409c","subject":"table","evaluatedAt":"2026-10-21T12:23:04Z",
+"pairs":[
+{"context":"a4174786-a5fb-4145-a1b3-f02826fac64a","subject":"table","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/teams/sub_factory/ProjectsLayer.tsx:158 failure renders only when zero passports are loaded, so a per-project rescan that fails (usePassportData.ts:471 sets error) leaves the comparison table showing the old rows with no failure signal and no staleness note",
+ "techniques":[
+  {"technique":"loading-and-empty-states","verdict":"deviation","evidence":"src/features/teams/sub_factory/ProjectsLayer.tsx:158 error is gated on passports.length === 0; a refresh failure while rows are shown is never surfaced (the technique requires keeping the rows AND surfacing the failure ambiently with its staleness); first-load failure vs empty is correctly split at :158-159 and the ghost at :187"},
+  {"technique":"sorting","verdict":"deviation","evidence":"src/features/teams/sub_factory/passport/ProjectsPassportWall.tsx:93 score sorts carry no identity tiebreaker and lean on input order from sortByNameAsc (src/features/teams/sub_factory/passport/passportModel.ts:325), which breaks ties by the display name - the label the technique names as mutable and colliding - not by identity.slug"},
+  {"technique":"client-server-split","verdict":"conformant","evidence":"src/features/teams/sub_factory/passport/ProjectsPassportWall.tsx:89 all-client regime: the full passport set is loaded once and sorted locally, with no server window to disagree with"}
+ ]},
+{"context":"283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0","subject":"table","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/shared/components/layout/TableSkeleton.tsx:59 the shared table placeholder ghosts the header band by default (docstring :4-6 says swap in the real header after data), so its consumer LeaderboardMatrixView.tsx:60 hides the column headers while loading instead of rendering chrome first and ghosting only the body",
+ "techniques":[
+  {"technique":"loading-and-empty-states","verdict":"deviation","evidence":"src/features/shared/components/layout/TableSkeleton.tsx:59 header ghost on by default makes chrome conditional on data; :75 bar widths vary per column but are identical on every row (the barcode the technique warns against); geometry-matching via column spans (:19) and the calm, non-pulsing tone (:55) are realized, and the 150-300ms delay is left to the caller (LeaderboardMatrixView.tsx:58 uses 185ms)"}
+ ]},
+{"context":"67c91bb4-f3ee-4aa0-91ca-e7097ac6b394","subject":"table","bundle":"software-engineering","state":"not-applicable",
+ "evidence":"src/features/plugins/fleet/FleetSessionCard.tsx:18 sessions render as compact one-row cards in state groups (FleetSessionList.tsx:82) for 5-10 live CLIs, with no column model and no cross-record attribute comparison - the golden path's own 'a list, not a table' case",
+ "techniques":[]},
+{"context":"937c9d47-b0ca-4e3b-90e3-25baefe04474","subject":"table","bundle":"software-engineering","state":"not-applicable",
+ "evidence":"src-tauri/src/cloud/sync/mod.rs:1 is a backend SQLite-to-Supabase sync writer with no UI surface; 'table' and 'rows' here mean database tables, so there is no rendered table for the subject to govern",
+ "techniques":[],
+ "registryProposal":"Matcher false positive: the token overlap ['table','rows','client'] comes from database vocabulary (SQLite tables, sync rows, HTTP client), not a UI data table. The table subject could add a negative signal for contexts whose paths are entirely src-tauri/**/*.rs or that have no .tsx file."},
+{"context":"a35d1f4a-5de8-4be1-af8b-1a3784296400","subject":"table","bundle":"software-engineering","state":"not-applicable",
+ "evidence":"src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1 retires the Artist plugin (artist_assets dropped at :18), and context-map.json lists zero file_paths for this context, so no gallery remains to judge; re-judged against revision 14",
+ "techniques":[],
+ "registryProposal":"Not a registry finding: this context is empty in the project's context-map (zero file_paths) and should be retired by the next context scan rather than carrying pairs."}
+],
+"declined":[
+ {"subject":"table","context":"cbb061cf-5c61-49d4-80d8-98b8f9b40600","reason":"budget: 5 pairs judged this run; browser-webview-control left for a later pass"},
+ {"subject":"table","context":"2651f2ce-7fc1-4331-8b31-61e783e9746a","reason":"weak context (companions-page); per skill rule weak pairs are not judged by default"},
+ {"subject":"table","context":"89eddf81-0c57-441d-a07d-de36bf022cb5","reason":"budget: display-data-formatters unread"},
+ {"subject":"table","context":"cc76d419-f457-4fe4-833c-6869efbc9287","reason":"budget: hooks-utility-interaction unread"},
+ {"subject":"table","context":"4eb0030b-e8a2-4993-bfab-81aee6943054","reason":"budget: notepad-overview unread"},
+ {"subject":"table","context":"66bc7a14-bf15-41d7-8d9a-900aa670f47e","reason":"budget: passport-wall-model unread (its sort/derive code was read only as support for passport-wall-ui)"},
+ {"subject":"table","context":"37cd64d2-bd42-47b9-8c17-7ea1b466135c","reason":"budget: persona-glyph-layout unread"},
+ {"subject":"table","context":"3c107fe6-ec95-4f45-bf31-665e9ccfe223","reason":"budget: plugins-drive unread"},
+ {"subject":"table","context":"336089a8-bb18-449c-a62e-ca76b02097fb","reason":"budget: test-bridge-core unread"}
+],
+"consults":[
+ {"ts":"2026-10-21T12:23:04Z","bundle":"software-engineering","subjects":["table"],"techniques":["loading-and-empty-states","sorting","client-server-split"],"deviations":2},
+ {"ts":"2026-10-21T12:23:04Z","bundle":"software-engineering","subjects":["table"],"techniques":["loading-and-empty-states"],"deviations":1},
+ {"ts":"2026-10-21T12:23:04Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0},
+ {"ts":"2026-10-21T12:23:04Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0},
+ {"ts":"2026-10-21T12:23:04Z","bundle":"software-engineering","subjects":["table"],"techniques":[],"deviations":0}
+]}

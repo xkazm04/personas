@@ -100,9 +100,21 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
       {/* Content */}
       {subTab === 'body' && (
         prettyBody ? (
-          <div className="rounded-card border border-primary/8 bg-secondary/15 p-3 overflow-auto max-h-[400px]">
-            <MarkdownRenderer content={isJson ? '```json\n' + prettyBody + '\n```' : prettyBody} />
-          </div>
+          isJson ? (
+            <div className="rounded-card border border-primary/8 bg-secondary/15 p-3 overflow-auto max-h-[400px]">
+              <MarkdownRenderer content={'```json\n' + prettyBody + '\n```'} />
+            </div>
+          ) : (
+            // A non-JSON body is the remote service's text, shown as text. It
+            // used to go through the markdown renderer, which rewrote it (`*`,
+            // `_`, `#` became formatting) and turned an `![](url)` in the body
+            // into an <img> the app fetched on render; the CSP admits
+            // http://127.0.0.1:*, so a response could make the app GET its own
+            // local listeners.
+            <pre className="typo-code text-foreground bg-secondary/15 rounded-card border border-primary/8 p-3 overflow-auto max-h-[400px] whitespace-pre-wrap break-words">
+              {prettyBody}
+            </pre>
+          )
         ) : (
           <div className="typo-body text-foreground p-3">{t.vault.playground.response_empty}</div>
         )

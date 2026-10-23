@@ -73,6 +73,29 @@ describe("useAutoUpdater", () => {
     b.unmount();
   });
 
+  it("keeps the updater's own reason when an install rejects with a string", async () => {
+    // Tauri plugin commands reject with the error STRING, not an Error, so the
+    // old `instanceof Error` ladder replaced the real reason on the banner with
+    // a generic English literal.
+    checkMock.mockResolvedValue({
+      version: "9.9.9",
+      body: null,
+      downloadAndInstall: () => Promise.reject("signature verification failed"),
+    });
+    const { result } = renderHook(() => useAutoUpdater());
+    await act(async () => { await result.current.checkForUpdate(); });
+    await act(async () => { await result.current.installUpdate(); });
+    expect(result.current.error).toBe("signature verification failed");
+    expect(result.current.isInstalling).toBe(false);
+  });
+
+  it("reads a check failure's AppError object as its message", async () => {
+    checkMock.mockRejectedValue({ error: "endpoint unreachable", kind: "Network" });
+    const { result } = renderHook(() => useAutoUpdater());
+    await act(async () => { await result.current.checkForUpdate(); });
+    expect(result.current.error).toBe("endpoint unreachable");
+  });
+
   it("refcounts the poller: acquired on first mount, released on last unmount", () => {
     expect(autoUpdaterSubscriberCountForTests()).toBe(0);
 

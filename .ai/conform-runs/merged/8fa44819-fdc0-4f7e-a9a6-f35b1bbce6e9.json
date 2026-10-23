@@ -1,0 +1,95 @@
+{
+  "schema": "conform-run/1",
+  "worker": "8fa44819-fdc0-4f7e-a9a6-f35b1bbce6e9",
+  "subject": "grounded-answer-scoring",
+  "evaluatedAt": "2026-10-18T23:43:47.049157+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [
+    {
+      "context": "agents-quick-answer",
+      "subject": "grounded-answer-scoring",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:149 Context searches found none of the listed scoring terms, and repository searches identified no connected answer-support scorer; this context routes human approvals and configuration answers rather than measuring answer groundedness.",
+      "techniques": [
+        {
+          "technique": "bidirectional-claim-matching",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/QuickAnswerQuestionGroup.tsx:43 Collected user answers are submitted to a build session; this path has no reference-answer correctness comparison."
+        },
+        {
+          "technique": "decompose-then-verify",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/QuickAnswerReviewCard.tsx:27 The review card forwards the human's status and notes, without producing an answer-support score."
+        },
+        {
+          "technique": "per-source-attribution",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:648 Evidence is review context carried for presentation, not retrieved passages used to diagnose incorrect answer claims."
+        },
+        {
+          "technique": "question-blind-relevance",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/QuickAnswerQuestionGroup.tsx:34 This counts filled user inputs; it does not judge whether generated answers address questions."
+        },
+        {
+          "technique": "the-decomposer-is-inside-the-instrument",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageQueue.ts:177 The denominator measures queue progress over items, with no claim decomposer or claim-level scoring instrument."
+        }
+      ],
+      "absenceTerms": [
+        "faithfulness",
+        "entailment",
+        "reference_answer",
+        "supportedClaims"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "grounded-answer-scoring",
+      "context": "plugins-twin-training",
+      "reason": "withdrawn after review: reviewer (sonnet): The context's draft-answer path (useTrainingSession.ts:176 calling simulateAnswer, backed by twin.rs:1882 where a knowledge-base block is retrieved and `kb_grounded` is recorded) is retrieval-grounded answer generation, so grounded-answer scoring can apply, and the cited topicCoverage.ts:158 line on"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-18T23:43:47.049157+00:00",
+      "bundle": "llm-observability",
+      "subjects": [
+        "grounded-answer-scoring"
+      ],
+      "techniques": [
+        "bidirectional-claim-matching",
+        "decompose-then-verify",
+        "per-source-attribution",
+        "question-blind-relevance",
+        "the-decomposer-is-inside-the-instrument"
+      ],
+      "deviations": 0,
+      "context": "agents-quick-answer",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-18T23:43:47.049157+00:00",
+      "bundle": "llm-observability",
+      "subjects": [
+        "grounded-answer-scoring"
+      ],
+      "techniques": [
+        "bidirectional-claim-matching",
+        "decompose-then-verify",
+        "per-source-attribution",
+        "question-blind-relevance",
+        "the-decomposer-is-inside-the-instrument"
+      ],
+      "deviations": 0,
+      "context": "plugins-twin-training",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

@@ -1,10 +1,8 @@
 import type { IllustrationMotif } from '../types';
 import approvalHero from './assets/approval.png';
 import messagesHero from './assets/messages.png';
-import leaderboardHero from './assets/leaderboard.png';
 import approvalHeroLight from './assets/approval-light.png';
 import messagesHeroLight from './assets/messages-light.png';
-import leaderboardHeroLight from './assets/leaderboard-light.png';
 
 /**
  * Leonardo-generated hero illustrations for the Illustration variant
@@ -40,12 +38,6 @@ export const ILLUSTRATIONS: Record<IllustrationMotif, IllustrationEntry> = {
     srcLight: messagesHeroLight,
     prompt:
       'Three luminous blue conversation bubbles connected by a glowing thread, forming a persona dialogue, floating in dark space, neon geometric futuristic style, soft sky-blue glow, clean edges, dark background, premium product illustration',
-  },
-  leaderboard: {
-    src: leaderboardHero,
-    srcLight: leaderboardHeroLight,
-    prompt:
-      'A glowing amber-gold winners podium with three ranked light bars and a radiant star crowning the tallest, achievement and ranking mood, neon geometric futuristic style, soft golden glow, clean edges, dark background, premium product illustration',
   },
 };
 

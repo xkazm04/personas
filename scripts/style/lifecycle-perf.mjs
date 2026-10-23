@@ -11,10 +11,11 @@
 //   cold     first mount to Layer 1 on screen (the ghost, the snapshot, the rail)
 //   revision a `lifecycleRevision` bump whose refetch returns the SAME data
 //            (what every backend event does): commits and their cost
-//   travel   picking a past Measure on the history, then back to now
-//   open     pressing Gate's key to its command rows on screen (chunk + detail;
+//   hover    the pointer swept over every cell of the project's columns
+//   open     pressing a Gate cell to its command rows on screen (chunk + detail;
 //            the chunks are warm after the idle prefetch, as in the app)
-//   back     Esc from the step screen to the rail
+//   travel   picking a past Measure on the Gate detail's history strip, then back to now
+//   back     Esc from the step's detail to the project's columns
 //
 // Each scenario reports wall time (performance.now around the action, until its
 // result is in the DOM), React commits (count, summed and max actualDuration)
@@ -91,7 +92,7 @@ async function oneRun(browser, url, tape) {
       .observe({ type: 'longtask', buffered: true });
   }, tape);
   await page.goto(`${url}${HARNESS}?module=${encodeURIComponent(MODULE)}&theme=dark-midnight`, { waitUntil: 'commit' });
-  await page.waitForSelector('[data-testid="lc1-layer1"]', { timeout: 180_000 });
+  await page.waitForSelector('[data-testid="lens-field"]', { timeout: 180_000 });
   await page.waitForTimeout(400);
   const cold = await page.evaluate(() => {
     const commits = (window.__LC_PROFILE__ ?? []).filter((c) => c.id === 'lifecycle');
@@ -108,14 +109,19 @@ async function oneRun(browser, url, tape) {
   });
   // Let the history read and the idle chunk prefetch finish, as a reader would.
   await page.waitForTimeout(2500);
-  const revision = await timed(page, 'window.__LC_LIVE__.getState().markLifecycleChanged()', '[data-testid="lc1-layer1"]', { settle: 1200 });
-  const cols = await page.locator('[data-testid^="lc-history-col-"]').count();
-  const travel = await timed(page, `document.querySelector('[data-testid="lc-history-col-${Math.max(0, cols - 3)}"]').click()`, '[data-testid="lc-travel-lead"]');
-  const travelBack = await timed(page, `document.querySelector('[data-testid="lc-travel-back"]').click()`, '[data-testid="lc-travel-lead"]', { gone: true });
-  const open = await timed(page, `document.querySelector('[data-testid="lc-node-gate"]').click()`, '[data-testid^="lc2-cmd-"]', { settle: 1000 });
-  const back = await timed(page, `window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`, '[data-testid="lc-journey-track"]', { settle: 800 });
+  const revision = await timed(page, 'window.__LC_LIVE__.getState().markLifecycleChanged()', '[data-testid="lens-field"]', { settle: 1200 });
+  // The pointer swept across every cell of the project's columns: only the readout line and the
+  // cells whose outline flips may commit, never a column or the field.
+  const hover = await timed(page, `document.querySelectorAll('[data-testid="lens-field"] .lens-cell').forEach((c) => c.dispatchEvent(new MouseEvent('mouseover', { bubbles: true, relatedTarget: document.body })))`, '[data-testid="lens-head-readout"]', { settle: 600 });
+  const open = await timed(page, `document.querySelector('[data-testid=\"lens-col-gate\"] .lens-cell:not(.is-none)').click()`, '[data-testid^="lc2-cmd-"]', { settle: 1000 });
+  // Time travel lives on the Gate and Tests detail now, on the step's history strip.
+  await page.waitForSelector('[data-testid^="lc2-strip-col-"]', { timeout: 30_000 });
+  const cols = await page.locator('[data-testid^="lc2-strip-col-"]').count();
+  const travel = await timed(page, `document.querySelector('[data-testid="lc2-strip-col-${Math.max(0, cols - 3)}"]').click()`, '[data-testid="lc2-band-travel"]');
+  const travelBack = await timed(page, `document.querySelector('[data-testid="lc2-band-now"]').click()`, '[data-testid="lc2-band-travel"]', { gone: true });
+  const back = await timed(page, `window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`, '[data-testid="lens-field"]', { settle: 800 });
   await context.close();
-  return { cold, revision, travel, travelBack, open, back };
+  return { cold, revision, hover, open, travel, travelBack, back };
 }
 
 const median = (xs) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };

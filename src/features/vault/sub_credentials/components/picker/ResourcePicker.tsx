@@ -13,6 +13,7 @@
  * "user declined" from "never shown".
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createKeyedLatestWins } from '@/stores/util/latestWins';
 import { Search, Check, RefreshCw, AlertTriangle, X } from 'lucide-react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -23,8 +24,9 @@ import {
   type ResourceItem,
   type ScopedResources,
 } from '@/api/credentials/scopedResources';
-import { toastCatch } from '@/lib/silentCatch';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
 import { DebtText } from '@/i18n/DebtText';
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 interface Props {
@@ -54,10 +56,14 @@ export function ResourcePicker({
   onClose,
   onCommit,
 }: Props) {
+  const { t, tx } = useTranslation();
   const [state, setState] = useState<Record<string, FetchState>>({});
   const [selections, setSelections] = useState<ScopedResources>(initial ?? {});
   const [search, setSearch] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  // One latest-wins slot per spec: a slow fetch for a previous parent pick must
+  // not overwrite the list of the current one.
+  const [fetchLatest] = useState(() => createKeyedLatestWins());
 
   // Order specs so dependencies resolve first.
   const orderedSpecs = useMemo(() => topoSortSpecs(specs), [specs]);
@@ -72,7 +78,7 @@ export function ResourcePicker({
             [spec.id]: {
               loading: false,
               items: [],
-              error: `Pick a ${dep} first`,
+              error: tx(t.vault.resource_picker.pick_first, { dep }),
               fetched: false,
             },
           }));
@@ -80,6 +86,7 @@ export function ResourcePicker({
         }
       }
 
+      const token = fetchLatest.next(spec.id);
       setState((s) => ({
         ...s,
         [spec.id]: { ...(s[spec.id] ?? { items: [], error: null, fetched: false }), loading: true, error: null },
@@ -92,19 +99,23 @@ export function ResourcePicker({
           if (first) ctx[dep] = first;
         }
         const items = await listConnectorResources(credentialId, spec.id, ctx, bypassCache);
+        if (!fetchLatest.isCurrent(spec.id, token)) return;
         setState((s) => ({
           ...s,
           [spec.id]: { loading: false, items, error: null, fetched: true },
         }));
       } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : String(e);
+        // invokeWithTimeout rejects with the AppError object, never an Error:
+        // String(e) painted "[object Object]" over the provider's reason.
+        if (!fetchLatest.isCurrent(spec.id, token)) return;
+        const msg = extractMessage(e);
         setState((s) => ({
           ...s,
           [spec.id]: { loading: false, items: [], error: msg, fetched: false },
         }));
       }
     },
-    [credentialId, selections],
+    [credentialId, fetchLatest, selections, t, tx],
   );
 
   // Fetch each spec once its dependencies are resolved.
@@ -149,6 +160,7 @@ export function ResourcePicker({
       for (const other of orderedSpecs) {
         if ((other.depends_on ?? []).includes(spec.id) && other.id in out) {
           delete out[other.id];
+          fetchLatest.next(other.id); // invalidate any in-flight fetch for the old parent
           changed = true;
         }
       }
@@ -192,7 +204,7 @@ export function ResourcePicker({
       <header className="shrink-0 px-6 pt-5 pb-4 border-b border-primary/10 flex items-start justify-between gap-3">
         <div>
           <h2 id="resource-picker-title" className="typo-title-lg text-foreground">
-            Scope {connectorLabel}
+            {tx(t.vault.resource_picker.scope_title, { label: connectorLabel })}
           </h2>
           <p className="typo-body text-foreground mt-1">
             <DebtText k="auto_narrow_this_credential_to_specific_resourc_5f20fe8a" />
@@ -202,7 +214,7 @@ export function ResourcePicker({
           type="button"
           onClick={onClose}
           className="text-foreground hover:text-foreground transition-colors"
-          aria-label="Close"
+          aria-label={t.common.close}
         >
           <X className="w-5 h-5" />
         </button>
@@ -255,14 +267,14 @@ export function ResourcePicker({
                 <div className="flex items-center gap-2">
                   {picked.length > 0 && (
                     <span className="typo-caption text-foreground">
-                      {picked.length} picked
+                      {tx(t.vault.resource_picker.picked_count, { count: picked.length })}
                     </span>
                   )}
                   <button
                     type="button"
                     onClick={() => fetchSpec(spec, true)}
                     className="p-1.5 rounded-interactive hover:bg-foreground/5 text-foreground hover:text-foreground transition-colors"
-                    title="Refresh"
+                    title={t.common.refresh}
                     disabled={st.loading}
                   >
                     <RefreshCw
@@ -287,7 +299,7 @@ export function ResourcePicker({
                   <AlertTriangle className="w-4 h-4 text-status-warning mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="typo-caption text-status-warning">
-                      {stalePicks.length} pick{stalePicks.length === 1 ? '' : 's'} <DebtText k="auto_no_longer_exist_bcf3d173" />
+                      {tx(stalePicks.length === 1 ? t.vault.resource_picker.stale_picks_one : t.vault.resource_picker.stale_picks_other, { count: stalePicks.length })} <DebtText k="auto_no_longer_exist_bcf3d173" />
                     </p>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {stalePicks.map((p) => (
@@ -322,7 +334,7 @@ export function ResourcePicker({
                       onChange={(e) =>
                         setSearch((s) => ({ ...s, [spec.id]: e.target.value }))
                       }
-                      placeholder={`Search ${spec.label.toLowerCase()}…`}
+                      placeholder={tx(t.vault.resource_picker.search_placeholder, { label: spec.label.toLowerCase() })}
                       className="w-full pl-8 pr-3 py-1.5 typo-body bg-secondary/50 border border-border rounded-input text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
                     />
                   </div>
@@ -334,7 +346,7 @@ export function ResourcePicker({
                     )}
                     {!st.loading && visible.length === 0 && (
                       <p className="px-3 py-2 typo-caption text-foreground">
-                        {q ? 'No matches' : 'Nothing to pick yet'}
+                        {q ? t.vault.resource_picker.no_matches : t.vault.resource_picker.nothing_to_pick}
                       </p>
                     )}
                     {visible.map((item) => {
@@ -397,7 +409,7 @@ export function ResourcePicker({
             data-testid="resource-picker-cancel"
             className="px-4 py-1.5 rounded-interactive border border-border hover:bg-foreground/5 typo-body text-foreground transition-colors disabled:opacity-50"
           >
-            Cancel
+            {t.common.cancel}
           </button>
           <button
             type="button"
@@ -406,7 +418,7 @@ export function ResourcePicker({
             data-testid="resource-picker-save"
             className="px-4 py-1.5 rounded-interactive bg-primary hover:bg-primary/90 typo-body text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? 'Saving…' : 'Save scope'}
+            {saving ? t.common.saving : t.vault.resource_picker.save_scope}
           </button>
         </div>
       </footer>

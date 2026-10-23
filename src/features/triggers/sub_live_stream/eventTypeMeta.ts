@@ -3,19 +3,6 @@ import {
   FileEdit, Rocket, Clock, Link, Zap, ScanSearch, Radar, BadgeCheck,
 } from 'lucide-react';
 
-export const COMMON_EVENT_TYPES = [
-  'file_changed',
-  'build_complete',
-  'deploy',
-  'test_passed',
-  'test_failed',
-  'error',
-  'alert',
-  'schedule_fired',
-  'webhook_received',
-  'cloud_webhook',
-];
-
 export interface EventTypeMeta {
   Icon: typeof CheckCircle2;
   /** Tailwind text color class */

@@ -713,7 +713,49 @@ pub async fn verify_promoted_persona(
     )
     .await
     .ok()?;
-    Some(execution)
+    // `execute_persona_inner` returns the spawned (queued) row: its
+    // `business_outcome` is still unassessed. Judge the run that FINISHED, or
+    // the promote gate can never see `value_delivered` / `failed`.
+    Some(
+        await_terminal_execution(
+            &state.db,
+            &execution.id,
+            VERIFY_RUN_BUDGET,
+            VERIFY_POLL_INTERVAL,
+        )
+        .await
+        .unwrap_or(execution),
+    )
+}
+
+/// How long promote waits for its verification run to finish. Past it the
+/// last-seen row is judged (an unfinished run reads as unassessed -> the
+/// "Unverified" review, the pre-existing fail-open behaviour).
+const VERIFY_RUN_BUDGET: std::time::Duration = std::time::Duration::from_secs(150);
+const VERIFY_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(1500);
+
+/// Poll an execution row until it is terminal or `budget` elapses; returns the
+/// last row read (`None` only if it could never be read).
+pub(crate) async fn await_terminal_execution(
+    pool: &crate::db::DbPool,
+    execution_id: &str,
+    budget: std::time::Duration,
+    interval: std::time::Duration,
+) -> Option<PersonaExecution> {
+    use crate::db::repos::execution::executions;
+    let start = std::time::Instant::now();
+    let mut last = None;
+    loop {
+        if let Ok(ex) = executions::get_by_id(pool, execution_id) {
+            if ex.state().is_terminal() || start.elapsed() >= budget {
+                return Some(ex);
+            }
+            last = Some(ex);
+        } else if start.elapsed() >= budget {
+            return last;
+        }
+        tokio::time::sleep(interval).await;
+    }
 }
 
 #[cfg(test)]
@@ -1077,5 +1119,92 @@ mod tests {
             rusqlite::params![persona_id, "Test", "you are test", dc, now],
         )
         .expect("seed persona");
+    }
+}
+
+#[cfg(test)]
+mod verification_wait_tests {
+    use super::*;
+    use crate::db::init_test_db;
+    use std::time::Duration;
+
+    /// The spawned row is `running` with an unassessed outcome; the waiter must
+    /// return the row as it stands once the run finishes.
+    #[tokio::test]
+    async fn waits_for_the_run_and_returns_its_final_outcome() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+                 VALUES ('p1', 'P', 'sp', datetime('now'), datetime('now'))",
+                [],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO persona_executions (id, persona_id, status, created_at)
+                 VALUES ('e1', 'p1', 'running', datetime('now'))",
+                [],
+            )
+            .unwrap();
+        }
+        let bg = pool.clone();
+        let writer = tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(200)).await;
+            let conn = bg.get()?;
+            conn.execute(
+                "UPDATE persona_executions
+                    SET status = 'completed', business_outcome = 'value_delivered'
+                  WHERE id = 'e1'",
+                [],
+            )?;
+            Ok::<(), AppError>(())
+        });
+
+        let ex = await_terminal_execution(
+            &pool,
+            "e1",
+            Duration::from_secs(10),
+            Duration::from_millis(50),
+        )
+        .await
+        .ok_or_else(|| AppError::Internal("no row".into()))?;
+        writer
+            .await
+            .map_err(|e| AppError::Internal(e.to_string()))??;
+        assert_eq!(ex.business_outcome, "value_delivered");
+        assert!(ex.state().is_terminal());
+        Ok(())
+    }
+
+    /// A run that never finishes returns the last-seen row at the deadline.
+    #[tokio::test]
+    async fn gives_up_at_the_budget_with_the_running_row() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+                 VALUES ('p1', 'P', 'sp', datetime('now'), datetime('now'))",
+                [],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO persona_executions (id, persona_id, status, created_at)
+                 VALUES ('e1', 'p1', 'running', datetime('now'))",
+                [],
+            )
+            .unwrap();
+        }
+        let ex = await_terminal_execution(
+            &pool,
+            "e1",
+            Duration::from_millis(120),
+            Duration::from_millis(40),
+        )
+        .await
+        .unwrap();
+        assert!(!ex.state().is_terminal());
+        Ok(())
     }
 }

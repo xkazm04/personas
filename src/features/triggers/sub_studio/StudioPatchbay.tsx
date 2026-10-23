@@ -18,7 +18,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, ArrowRight, Check, Trash2, X, Filter, Eye, EyeOff, PanelLeft, PanelLeftClose, PanelRight, PanelRightClose } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, Trash2, X, Eye, EyeOff, PanelLeft, PanelLeftClose, PanelRight, PanelRightClose } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
@@ -186,7 +186,7 @@ export function StudioPatchbay() {
             <EmptyState icon={AlertTriangle} title={st.load_failed_title} description={st.load_failed_desc}
               action={{ label: st.load_failed_retry, onClick: () => void routing.reload() }} />
           )}
-          {showEmpty && <EmptyState icon={Filter} title={st.no_routes_title} description={st.no_routes_desc} />}
+          {showEmpty && <EmptyState art="link" size="md" title={st.no_routes_title} description={st.no_routes_desc} />}
 
           {/* Draft cables (pending, unsaved) */}
           {c.draft.links.map((link) => {

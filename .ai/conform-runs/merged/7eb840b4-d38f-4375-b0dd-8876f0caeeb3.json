@@ -1,0 +1,49 @@
+{
+ "schema": "conform-run/1",
+ "worker": "7eb840b4-d38f-4375-b0dd-8876f0caeeb3",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-10-22T15:26:25.325Z",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+   "reason": "Read the context test files against the 24-technique standard: no defect found (assertions reach their decisions, e.g. src/stores/__tests__/systemStore.rehydrate.test.ts seeds persisted legacy values that only the migration can map), but the repo-level techniques (live-app lane, flake lifecycle, long lanes, partitioning) are not visible from this context, so the half-of-techniques evidence floor for conformant is unmet; left unknown rather than guessed. Checked src/stores/improveActivityStore.test.ts:32 (supersede then late end) and themeStore.rehydrate.test.ts:75 (mock proven live by a positive case)."
+  },
+  {
+   "subject": "test-harness",
+   "context": "0a73aef0-7c50-4be1-b990-cbddad3671bd",
+   "reason": "Read src/lib/analytics/sink.test.ts: sound (line 31 routes through the real surface); only src/lib/analytics/sink.test.ts:44 asserts a noop does not throw, which cannot fail by construction - too minor for a deviation. Evidence floor for conformant unmet."
+  },
+  {
+   "subject": "test-harness",
+   "context": "fd961ee9-bf7c-4ec7-90c3-a728045d3d44",
+   "reason": "Grepped goals/__tests__ and useTeamChannel.test.ts for skipped, source-text and vacuous assertions: none found; not read deeply enough to call conformant."
+  },
+  {
+   "subject": "test-harness",
+   "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+   "reason": "Grepped display/__tests__: toBeTruthy follows getByText/querySelector which throw on absence, so not vacuous; no deviation found, floor unmet."
+  },
+  {
+   "subject": "test-harness",
+   "context": "e13cfc6c-f666-4959-81c0-2cfbc4815f04",
+   "reason": "Not read: only two test files in a 31-file context; not worth a verdict this pass."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T15:26:25.325Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "unreached-decisions-pin-nothing",
+    "negative-control-tests",
+    "pin-the-call-not-the-name"
+   ],
+   "deviations": 0
+  }
+ ]
+}

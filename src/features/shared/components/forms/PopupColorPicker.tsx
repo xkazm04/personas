@@ -30,6 +30,9 @@ export function PopupColorPicker({ value, onChange, size = 'sm' }: PopupColorPic
       <button
         type="button"
         onClick={() => setOpen((p) => !p)}
+        aria-label={t.shared.forms_extra.choose_color}
+        aria-haspopup="dialog"
+        aria-expanded={open}
         className={`w-10 h-10 rounded-lg border flex items-center justify-center transition-all cursor-pointer ${
           open
             ? 'border-primary/40 ring-2 ring-primary/20'

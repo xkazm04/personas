@@ -19,26 +19,30 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
         {t.recipes_catalog.what_it_needs_heading}
       </h4>
 
-      <div className="mb-4">
-        <div className="typo-caption text-foreground mb-1.5">{t.recipes_catalog.required_connectors_heading}</div>
-        <div className="flex flex-wrap gap-1.5">
-          {recipe.requiredConnectors.map((slug) => {
-            const m = getConnectorMeta(slug);
-            return (
-              <span
-                key={slug}
-                className="inline-flex items-center gap-1.5 px-2 py-1 rounded border bg-secondary/40"
-                style={{ borderColor: m.color + '55' }}
-              >
-                <ConnectorIcon meta={m} size="w-3.5 h-3.5" />
-                <span className="typo-caption" style={{ color: m.color }}>
-                  {m.label}
+      {/* No heading over an empty strip: a recipe that needs no connector
+          simply has no connectors block. */}
+      {recipe.requiredConnectors.length > 0 && (
+        <div className="mb-4">
+          <div className="typo-caption text-foreground mb-1.5">{t.recipes_catalog.required_connectors_heading}</div>
+          <div className="flex flex-wrap gap-1.5">
+            {recipe.requiredConnectors.map((slug) => {
+              const m = getConnectorMeta(slug);
+              return (
+                <span
+                  key={slug}
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive border bg-secondary/40"
+                  style={{ borderColor: m.color + '55' }}
+                >
+                  <ConnectorIcon meta={m} size="w-3.5 h-3.5" />
+                  <span className="typo-caption" style={{ color: m.color }}>
+                    {m.label}
+                  </span>
                 </span>
-              </span>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {recipe.optionalConnectors.length > 0 && (
         <div className="mb-4">
@@ -51,7 +55,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
               return (
                 <span
                   key={slug}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-card-border/60 bg-secondary/30"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive border border-card-border/60 bg-secondary/30"
                 >
                   <ConnectorIcon meta={m} size="w-3.5 h-3.5" />
                   <span className="typo-caption text-foreground">{m.label}</span>
@@ -62,14 +66,18 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
         </div>
       )}
 
-      {(recipe.template.inputParameters?.length ?? 0) > 0 && (
+      {/* The parameter list and the binding list are both projections of the
+          same declared input schema; listing both printed every setting twice.
+          The raw list is the fallback for a schema whose fields could not
+          become bindings (names that are not a bare word). */}
+      {recipe.bindings.length === 0 && (recipe.template.inputParameters?.length ?? 0) > 0 && (
         <div className="mb-4">
           <div className="typo-caption text-foreground mb-1.5">{t.recipes_catalog.parameters_heading}</div>
           <ul className="space-y-1">
             {recipe.template.inputParameters!.map((p) => (
               <li
                 key={p.name}
-                className="flex items-start gap-2 px-2 py-1.5 rounded border border-card-border/50 bg-secondary/20"
+                className="flex items-start gap-2 px-2 py-1.5 rounded-interactive border border-card-border/50 bg-secondary/20"
               >
                 <SlidersHorizontal className="w-3 h-3 text-foreground mt-1 shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -79,7 +87,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
                       <span className="typo-label text-foreground">{p.type}</span>
                     )}
                     {p.defaultValue && (
-                      <span className="typo-label font-mono px-1 py-0.5 rounded border border-card-border/50 bg-secondary/30 text-foreground">
+                      <span className="typo-label font-mono px-1 py-0.5 rounded-interactive border border-card-border/50 bg-secondary/30 text-foreground">
                         {t.recipes_catalog.param_default_label} {p.defaultValue}
                       </span>
                     )}
@@ -103,7 +111,7 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
             {recipe.bindings.map((b) => (
               <li
                 key={b.variable}
-                className="flex items-start gap-2 px-2 py-1.5 rounded border border-card-border/50 bg-secondary/20"
+                className="flex items-start gap-2 px-2 py-1.5 rounded-interactive border border-card-border/50 bg-secondary/20"
               >
                 <Plug className="w-3 h-3 text-foreground mt-1 shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -115,6 +123,11 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
                     <span className="typo-label text-foreground">
                       {bindingKindLabel(b.kind.type, t)}
                     </span>
+                    {b.default !== undefined && (
+                      <span className="typo-label font-mono px-1 py-0.5 rounded-interactive border border-card-border/50 bg-secondary/30 text-foreground">
+                        {t.recipes_catalog.param_default_label} {Array.isArray(b.default) ? b.default.join(', ') : String(b.default)}
+                      </span>
+                    )}
                   </div>
                   <div className="typo-caption text-foreground">{b.description}</div>
                 </div>

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { ArrowLeftRight, Zap, Hash, X } from 'lucide-react';
 import { formatDuration, formatTimestamp, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
-import { parseToolSteps, fmtTokens, fmtCost, generateWhatChanged } from '../../libs/comparisonHelpers';
+import { parseToolSteps, fmtTokens, fmtCost, generateWhatChanged, type WhatChangedItem } from '../../libs/comparisonHelpers';
 import { MetricDeltaCard } from './ComparisonMetrics';
 import { ToolTimelineComparison } from './ComparisonTable';
 import { OutputDiffSection, JsonDiffSection } from './ComparisonDiff';
@@ -20,6 +20,15 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
   const stepsLeft = useMemo(() => parseToolSteps(left.tool_steps), [left.tool_steps]);
   const stepsRight = useMemo(() => parseToolSteps(right.tool_steps), [right.tool_steps]);
   const whatChanged = useMemo(() => generateWhatChanged(left, right), [left, right]);
+  const describeChange = (item: WhatChangedItem): string => {
+    const side = item.retry > 0 ? tx(e.retry_count, { count: item.retry }) : e.what_changed_side_original;
+    const vars: Record<string, string | number> = { ...item.vars, side };
+    if (item.kind === 'status') {
+      vars.from = getStatusEntry(String(item.vars.from)).label;
+      vars.to = getStatusEntry(String(item.vars.to)).label;
+    }
+    return tx(e[`what_changed_${item.kind}` as const], vars);
+  };
 
   const leftStatus = getStatusEntry(left.status);
   const rightStatus = getStatusEntry(right.status);
@@ -35,6 +44,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
         <button
           type="button"
           onClick={onClose}
+          aria-label={t.common.close}
           className="p-1 text-foreground hover:text-muted-foreground/80 transition-colors"
         >
           <X className="w-4 h-4" />
@@ -51,7 +61,7 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
           {whatChanged.map((change, i) => (
             <li key={i} className="flex items-start gap-2 typo-body text-foreground">
               <span className="w-1 h-1 rounded-full bg-primary/40 mt-2 flex-shrink-0" />
-              {change}
+              {describeChange(change)}
             </li>
           ))}
         </ul>

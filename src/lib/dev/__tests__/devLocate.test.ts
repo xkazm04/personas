@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, it, expect, beforeEach } from "vitest";
 
 import {
@@ -98,6 +100,37 @@ describe("devLocate", () => {
       const b = { el: document.body, raw: "x:1:9", loc: "x:1", path: "x", line: 1 };
       const c = { el: document.body, raw: "y:2:1", loc: "y:2", path: "y", line: 2 };
       expect(dedupeChain([a, b, c]).map((e) => e.loc)).toEqual(["x:1", "y:2"]);
+    });
+  });
+
+  describe("framework-internals independence", () => {
+    // The resolver rests on two specified primitives: an attribute and an
+    // ancestor walk. A read of the renderer's private debug surface works
+    // under one framework build and fails silently under the next, so the
+    // dev-inspector sources may not name it. Comments are stripped first: the
+    // plugin header names the removed field to explain why it is not used.
+    const PRIVATE_SURFACE =
+      /__reactFiber|__reactProps|__reactContainer|_reactInternal|_debugSource|_debugOwner|memoizedProps|getOwnPropertyNames\(\s*(?:el|node|target)/;
+    const FILES = [
+      "src/lib/dev/devLocate.ts",
+      "src/lib/dev/DevInspector.tsx",
+      "src/lib/dev/devInspectorUi.tsx",
+      "scripts/babel/inject-source-loc.mjs",
+    ];
+
+    it.each(FILES)("%s reads no framework-private fields", (rel) => {
+      const src = readFileSync(resolve(process.cwd(), rel), "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/^\s*\/\/.*$/gm, "");
+      expect(src.length).toBeGreaterThan(200); // an empty read must not pass
+      expect(src).not.toMatch(PRIVATE_SURFACE);
+    });
+
+    it("resolves a chain from DOM built with no framework at all", () => {
+      document.body.innerHTML =
+        '<section data-loc="src/features/a/A.tsx:3:1"><p><b id="t"></b></p></section>';
+      const chain = buildChain(document.getElementById("t"));
+      expect(chain.map((e) => e.loc)).toEqual(["src/features/a/A.tsx:3"]);
     });
   });
 });

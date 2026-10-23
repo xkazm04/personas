@@ -52,9 +52,6 @@ export const dismissAuditIncident = (id: string, resolutionNote?: string) =>
 export const reopenAuditIncident = (id: string) =>
   invoke<boolean>("reopen_audit_incident", { id });
 
-export const bulkAcknowledgeAuditIncidents = (ids: string[]) =>
-  invoke<number>("bulk_acknowledge_audit_incidents", { ids });
-
 export const bulkResolveAuditIncidents = (ids: string[], resolutionNote?: string) =>
   invoke<number>("bulk_resolve_audit_incidents", {
     ids,

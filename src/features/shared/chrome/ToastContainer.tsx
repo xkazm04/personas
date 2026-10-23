@@ -177,9 +177,17 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
 
   const handleResolve = useCallback(async () => {
     const { useOverviewStore } = await import("@/stores/overviewStore");
-    await useOverviewStore.getState().resolveHealingIssue(toast.issueId);
-    onDismiss(toast.id);
-  }, [toast.issueId, toast.id, onDismiss]);
+    // Pass the toast's own persona id. Without it the slice looks the issue up
+    // in `healingIssues`, which a toast raised on any page has no guarantee of
+    // holding (never fetched, still in flight, or past its 100-row window):
+    // the resolve then refused with "no persona_id available" while the toast
+    // dismissed itself as if it had worked.
+    // A failed resolve keeps the toast (the slice already reported why), so the
+    // issue is not dismissed from view while it stays open.
+    if (await useOverviewStore.getState().resolveHealingIssue(toast.issueId, toast.personaId)) {
+      onDismiss(toast.id);
+    }
+  }, [toast.issueId, toast.personaId, toast.id, onDismiss]);
 
   return (
     <div

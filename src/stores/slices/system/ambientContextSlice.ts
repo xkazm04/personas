@@ -19,7 +19,7 @@ import {
   getContextStreamStats,
 } from "@/api/system/ambientContext";
 import { reportError } from "../../storeTypes";
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 
 
 export interface AmbientContextSlice {
@@ -27,6 +27,8 @@ export interface AmbientContextSlice {
   ambientSnapshot: AmbientContextSnapshot | null;
   ambientEnabled: boolean;
   ambientPolicy: SensoryPolicy | null;
+  /** Raw rejection of the last policy read (resolved at render); null once a read succeeds. */
+  ambientPolicyError: unknown;
   ambientLoading: boolean;
   ambientError: string | null;
 
@@ -76,6 +78,7 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
   ambientSnapshot: null,
   ambientEnabled: true,
   ambientPolicy: null,
+  ambientPolicyError: null,
   ambientLoading: false,
   ambientError: null,
 
@@ -94,7 +97,7 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
       if (latestSnapshotPersonaId !== personaId) return;
       reportError(err, "Failed to fetch ambient context", set as (partial: { error: string }) => void, {
         severity: "state",
-        stateUpdates: { ambientError: err instanceof Error ? err.message : String(err) },
+        stateUpdates: { ambientError: extractMessage(err) },
       });
     }
   },
@@ -138,10 +141,13 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
     try {
       const policy = await getAmbientSensoryPolicy(personaId);
       if (latestPolicyPersonaId !== personaId) return;
-      set({ ambientPolicy: policy });
-    } catch {
+      set({ ambientPolicy: policy, ambientPolicyError: null });
+    } catch (err) {
       if (latestPolicyPersonaId !== personaId) return;
-      set({ ambientPolicy: DEFAULT_SENSORY_POLICY });
+      // A failed read is not "defaults": showing them as stored lets Save widen
+      // the real policy. Present it as unread (null + the raw error).
+      silentCatch("stores/slices/system/ambientContextSlice:fetchSensoryPolicy")(err);
+      set({ ambientPolicy: null, ambientPolicyError: err });
     }
   },
 
@@ -149,7 +155,7 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
     try {
       await removeAmbientSensoryPolicy(personaId);
       if (latestPolicyPersonaId !== null && latestPolicyPersonaId !== personaId) return;
-      set({ ambientPolicy: DEFAULT_SENSORY_POLICY });
+      set({ ambientPolicy: DEFAULT_SENSORY_POLICY, ambientPolicyError: null });
     } catch (err) {
       reportError(err, "Failed to reset sensory policy", set as (partial: { error: string }) => void, {
         severity: "toast",

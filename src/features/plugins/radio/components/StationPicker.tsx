@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type RefObject } from 'react';
 import { Check, ChevronDown, ChevronRight, ExternalLink, EyeOff, Music, Radio } from 'lucide-react';
 import { openExternalUrl } from '@/api/system/system';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useSystemStore } from '@/stores/systemStore';
 import type { StationSourceKind } from '@/stores/slices/system/radioSlice';
 import type { Station } from '@/lib/bindings/Station';
@@ -12,6 +13,8 @@ interface StationPickerProps {
   currentStationId: string | null | undefined;
   onPick: (stationId: string) => void;
   onClose: () => void;
+  /** Wrapper holding the trigger that toggles this popover. */
+  anchorRef: RefObject<HTMLElement | null>;
 }
 
 export default function StationPicker({
@@ -19,9 +22,11 @@ export default function StationPicker({
   currentStationId,
   onPick,
   onClose,
+  anchorRef,
 }: StationPickerProps) {
   const { t, tx } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const disabledStationIds = useSystemStore((s) => s.disabledStationIds);
   const collapsedSourceKinds = useSystemStore((s) => s.collapsedSourceKinds);
   const setSourceKindCollapsed = useSystemStore((s) => s.setSourceKindCollapsed);
@@ -62,32 +67,12 @@ export default function StationPicker({
   const showGrouping = youtube.length > 0 && streams.length > 0;
   const collapsedSet = new Set(collapsedSourceKinds);
 
-  useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      // Close the context menu first if open — clicking outside it
-      // shouldn't also close the underlying picker in one go.
-      if (contextMenu) {
-        setContextMenu(null);
-        return;
-      }
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (contextMenu) {
-          setContextMenu(null);
-          return;
-        }
-        onClose();
-      }
-    };
-    document.addEventListener('mousedown', onDocClick);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDocClick);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [onClose, contextMenu]);
+  // An open context menu is dismissed first: a press outside it (or Escape)
+  // closes only the menu, never the picker underneath in the same press.
+  useClickOutside(menuRef, contextMenu !== null, () => setContextMenu(null));
+  // The anchor holds the trigger: pressing it toggles the picker closed
+  // instead of closing-then-reopening it.
+  useClickOutside([ref, anchorRef], contextMenu === null, onClose);
 
   const onRowContextMenu = (e: React.MouseEvent, stationId: string) => {
     e.preventDefault();
@@ -209,6 +194,7 @@ export default function StationPicker({
       </div>
       {contextMenu && contextStation && (
         <div
+          ref={menuRef}
           role="menu"
           aria-label={t.radio.row_menu_label}
           className="fixed z-50 min-w-44 rounded-card border border-primary/10 bg-background shadow-elevation-3 py-1"

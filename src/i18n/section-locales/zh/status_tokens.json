@@ -105,7 +105,10 @@
     "pending": "待处理",
     "processed": "已处理",
     "processing": "处理中",
-    "retrying": "重试中"
+    "retrying": "重试中",
+    "dead_letter": "死信",
+    "discarded": "已丢弃",
+    "skipped": "已跳过"
   },
   "execution": {
     "cancelled": "已取消",

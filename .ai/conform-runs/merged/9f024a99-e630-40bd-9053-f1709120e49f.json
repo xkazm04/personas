@@ -1,0 +1,50 @@
+{"schema": "conform-run/1", "worker": "9f024a99-e630-40bd-9053-f1709120e49f", "subject": "module-design",
+ "evaluatedAt": "2026-10-21T12:26:12Z",
+ "evaluatedAgainst": "sha256-b2:7c8008f2207b1946", "evaluatedRevision": 18,
+ "pairs": [
+  {"context": "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6", "subject": "module-design", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/utils/parseJson.ts:24 parseJsonOrDefault<T> asserts any parsed JSON into a caller-chosen T with no guard and no stated invariant, so its 34 consumers receive unchecked shapes typed as checked ones while the guarded door (safeJsonParse, :49) sits beside it",
+   "evaluatedAgainst": "sha256-b2:7c8008f2207b1946", "evaluatedRevision": 18,
+   "techniques": [
+     {"technique": "marked-unverifiable-region", "verdict": "deviation", "evidence": "src/lib/utils/parseJson.ts:24 the unverifiable cast is the shared door itself: named (greppable) but not enclosed behind a checked surface and carrying no invariant, so property 2 and property 4 both fail"},
+     {"technique": "locality-and-leverage", "verdict": "conformant", "evidence": "src/lib/utils/dayOfWeek.ts:31 one day-name to cron-digit vocabulary replaces three drifting copies (header :5-12); schedule.ts:2 consumes it"},
+     {"technique": "module-depth", "verdict": "conformant", "evidence": "src/lib/utils/tauri/safeInvoke.ts:64 isCommandNotFound hides Tauri's exact unregistered-command string behind a one-boolean interface and refuses to widen to resource not-found"}
+   ]},
+  {"context": "ad601e35-b998-4029-97a5-77487f00d561", "subject": "module-design", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/types/types.ts:426 getAuthMethods asserts any non-empty metadata array into ConnectorAuthMethod[] without an element check, a second unchecked door beside parseConnectorMetadata (:218), so a malformed seed entry reaches callers typed as a method",
+   "evaluatedAgainst": "sha256-b2:7c8008f2207b1946", "evaluatedRevision": 18,
+   "techniques": [
+     {"technique": "marked-unverifiable-region", "verdict": "deviation", "evidence": "src/lib/types/types.ts:426 cast with no invariant and not enclosed by the typeof-checked door at :218; contrast :359, which states its invariant and does realize property 4"},
+     {"technique": "seams-and-adapters", "verdict": "conformant", "evidence": "src/lib/types/__tests__/tauriErrorKindParity.test.ts:5 the hand-written TauriErrorKind mirror is pinned to the Rust AppError serializer by a shared-contract test, so the two producers cannot drift silently"},
+     {"technique": "locality-and-leverage", "verdict": "conformant", "evidence": "src/lib/types/schedule.ts:2 day vocabulary imported from the one owner instead of the former local DOW_MAP"}
+   ]},
+  {"context": "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0", "subject": "module-design", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/core/personas.rs:34 list_personas takes lifecycle as Option<Vec<String>> although the closed PersonaLifecycle enum with a validating FromStr exists (src-tauri/core/src/models/persona.rs:200), so a misspelt stage returns an empty roster instead of a Validation error",
+   "evaluatedAgainst": "sha256-b2:7c8008f2207b1946", "evaluatedRevision": 18,
+   "techniques": [
+     {"technique": "module-depth", "verdict": "deviation", "evidence": "src-tauri/src/commands/core/personas.rs:34 a closed set held in an open type at the IPC door; the strings go straight into a WHERE IN (src-tauri/db/src/repos/core/personas.rs:666) unvalidated"},
+     {"technique": "seams-and-adapters", "verdict": "conformant", "evidence": "src-tauri/src/commands/core/personas.rs:51 archive/restore commands are thin adapters: auth gate then one repo call"},
+     {"technique": "marked-unverifiable-region", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/core/personas.rs:679 the delete path's hazards are an engine marker with guaranteed unmark (:679-686), not an unchecked operation"}
+   ]},
+  {"context": "de8b648f-7971-452b-88dc-773b215c5f09", "subject": "module-design", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/pipeline_executor.rs:138 ConditionSpec.op is a String matched on text with an unknown-operator arm that fails open (:200), so an edge saved with a misspelt or unsupported op runs its target node unconditionally - gating silently disabled",
+   "evaluatedAgainst": "sha256-b2:7c8008f2207b1946", "evaluatedRevision": 18,
+   "techniques": [
+     {"technique": "module-depth", "verdict": "deviation", "evidence": "src-tauri/src/engine/pipeline_executor.rs:138 four accepted operators held in an open type; same shape for connection_type == \"conditional\" at :220"},
+     {"technique": "io-free-core", "verdict": "conformant", "evidence": "src-tauri/src/engine/pipeline_executor.rs:154 evaluate_condition is a pure function of (condition, predecessor output) exercised without doubles by unit tests from :1373"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "module-design", "context": "*", "reason": "18 further unknown non-weak pairs left for later runs (budget 4 of 3-6); 4 weak-governance contexts (persona-core-codex, plugins-companion-inbox, template-design-preview, triggers-test) not judged by rule"}
+ ],
+ "consults": [
+  {"ts": "2026-10-21T12:26:12Z", "bundle": "software-engineering", "subjects": ["module-design"], "techniques": ["marked-unverifiable-region", "locality-and-leverage", "module-depth"], "deviations": 1},
+  {"ts": "2026-10-21T12:26:12Z", "bundle": "software-engineering", "subjects": ["module-design"], "techniques": ["marked-unverifiable-region", "seams-and-adapters", "locality-and-leverage"], "deviations": 1},
+  {"ts": "2026-10-21T12:26:12Z", "bundle": "software-engineering", "subjects": ["module-design"], "techniques": ["module-depth", "seams-and-adapters", "marked-unverifiable-region"], "deviations": 1},
+  {"ts": "2026-10-21T12:26:12Z", "bundle": "software-engineering", "subjects": ["module-design"], "techniques": ["module-depth", "io-free-core"], "deviations": 1}
+ ]
+}

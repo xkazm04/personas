@@ -35,7 +35,7 @@ export const GOOGLE_WORKSPACE: WorkspaceProvider = {
   color: '#4285F4',
   services: [
     {
-      serviceType: 'google_gmail',
+      serviceType: 'gmail',
       label: 'Gmail',
       description: 'Send, read, and manage email',
       scopes: [
@@ -78,8 +78,6 @@ export const GOOGLE_WORKSPACE: WorkspaceProvider = {
     },
   ],
 };
-
-export const WORKSPACE_PROVIDERS: WorkspaceProvider[] = [GOOGLE_WORKSPACE];
 
 /** Collect all unique scopes for a set of services. */
 export function aggregateScopes(services: WorkspaceService[]): string[] {

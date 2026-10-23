@@ -23,7 +23,8 @@ import { RetireKeysDialog } from './RetireKeysDialog';
 interface ConnectedAppsSectionProps {
   keys: readonly ExternalApiKey[];
   actioningId: string | null;
-  onDisconnect: (id: string) => void;
+  /** Revoke every pairing of the group's origin (see `disconnectIds`). */
+  onDisconnect: (group: PairingGroup) => void;
   onAudit: (key: ExternalApiKey) => void;
   /** Reload the key list after a retire pass. */
   onRetired: () => void;
@@ -86,7 +87,7 @@ export function ConnectedAppsSection({ keys, actioningId, onDisconnect, onAudit,
 interface PairingGroupRowProps {
   group: PairingGroup;
   actioning: boolean;
-  onDisconnect: (id: string) => void;
+  onDisconnect: (group: PairingGroup) => void;
   onAudit: (key: ExternalApiKey) => void;
 }
 
@@ -96,7 +97,7 @@ function PairingGroupRow({ group, actioning, onDisconnect, onAudit }: PairingGro
   const { current } = group;
   const shown = current ?? group.keys[0]!;
   const { armed: confirm, trigger: triggerDisconnect } = useConfirmClick(() => {
-    if (current) onDisconnect(current.id);
+    if (current) onDisconnect(group);
   });
   const expiry = current ? expiryInfo(current) : null;
   const expiredCount = group.retirable.filter((c) => c.reason === 'expired').length;

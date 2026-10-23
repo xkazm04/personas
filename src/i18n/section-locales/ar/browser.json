@@ -64,7 +64,8 @@
     "toggle_failed": "تعذّر تغيير حالة السماح لهذا الموقع",
     "writes_ask": "{count} تسأل أولًا",
     "writes_none": "الصفحة تقرر",
-    "pattern_chip": "نمط"
+    "pattern_chip": "نمط",
+    "remove_body": "ستتم إزالة {origin} مع تجاوزات هذا الموقع وربط بيانات الاعتماد الخاص به."
   },
   "add_site": {
     "cancel": "إلغاء",

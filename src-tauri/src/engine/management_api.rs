@@ -366,11 +366,6 @@ pub fn load_paired_origins(pool: &DbPool) {
     }
 }
 
-#[cfg(test)]
-mod paired_origin_tests {
-    use super::*;
-}
-
 // =============================================================================
 // API key auth middleware
 // =============================================================================
@@ -408,28 +403,6 @@ const SCOPE_APPROVE: &str = crate::db::operator_key::APPROVE_SCOPE;
 const API_KEY_RATE_MAX: usize = 120;
 const API_KEY_RATE_WINDOW: Duration = Duration::from_secs(60);
 
-/// Authorize a request given the API key's scopes. Returns `Ok(())` if the key
-/// may proceed, or `Err(reason)` (→ 403) if it lacks the required scope.
-///
-/// Resource-aware: a route naming a persona/credential is satisfied by EITHER
-/// the broad scope OR the matching per-resource grant. Policy:
-/// - `/a2a/*` + `/agent-card/*` — authenticated only at this layer. The
-///   handlers apply the per-persona `gateway_exposure` gate with the key's
-///   scopes ([`find_exposed_persona_for_key`]): a `public` agent is served to
-///   any valid key, an `invite_only` one only to a key holding
-///   `personas:execute` or `personas:execute:persona:{persona_id}`.
-/// - `/api/build*` — requires `personas:build` (whole flow, including status
-///   GETs, so a key without build scope can neither inspect nor drive builds).
-/// - `/api/proxy/{credential_id}` — requires `proxy` OR
-///   `proxy:credential:{credential_id}`. NOT `personas:execute`: the proxy
-///   injects stored secrets, so it is gated on a dedicated scope.
-/// - `/api/execute/{persona_id}` — requires `personas:execute` OR
-///   `personas:execute:persona:{persona_id}`.
-/// - all other `/api/*` — read verbs (GET/HEAD) need only authentication;
-///   mutating verbs (POST/…) require broad `personas:execute`.
-///
-/// `scopes` comes from `parsed_scopes`, which fails closed (empty vec) on a
-/// corrupt column, so a malformed row authorizes nothing scope-gated.
 /// Wire shape of `POST /api/scrape/query`. Every field is consumed by
 /// `scraper::query_dataset` inside the `#[cfg(feature = "scraper")]` arm of
 /// `scrape_query`; the `not(scraper)` arm returns 501 without reading the
@@ -558,6 +531,38 @@ fn find_exposed_persona_for_key(
         .filter(|p| exposure_admits_key(p.gateway_exposure, &p.id, scopes)))
 }
 
+/// Authorize a request given the API key's scopes. Returns `Ok(())` if the key
+/// may proceed, or `Err(reason)` (→ 403) if it lacks the required scope.
+///
+/// Resource-aware: a route naming a persona/credential is satisfied by EITHER
+/// the broad scope OR the matching per-resource grant. Policy:
+/// - `/a2a/*` + `/agent-card/*` — authenticated only at this layer. The
+///   handlers apply the per-persona `gateway_exposure` gate with the key's
+///   scopes ([`find_exposed_persona_for_key`]): a `public` agent is served to
+///   any valid key, an `invite_only` one only to a key holding
+///   `personas:execute` or `personas:execute:persona:{persona_id}`.
+/// - `/api/build*` — requires `personas:build` (whole flow, including status
+///   GETs, so a key without build scope can neither inspect nor drive builds).
+/// - `/api/proxy/{credential_id}` — requires `proxy` OR
+///   `proxy:credential:{credential_id}` OR any `cred:<connector>:use` grant
+///   (re-checked against the credential's connector in the handler). NOT
+///   `personas:execute`: the proxy injects stored secrets, so it is gated on a
+///   dedicated scope.
+/// - `/api/approvals*` + `/api/pairings*` — exactly `personas:approve`, every
+///   method, reads included.
+/// - `/api/settings/http-project-roots` — reads need only authentication;
+///   writes require `personas:approve` (`personas:execute` is not enough).
+/// - `/api/broker/mint/*` — broad `proxy` only.
+/// - `/api/execute/{persona_id}` — requires `personas:execute` OR
+///   `personas:execute:persona:{persona_id}`.
+/// - `/api/kp/test/*` — `personas:test`, every method.
+/// - `/api/kp/*` and `/api/dev/*` — reads need only authentication; writes
+///   require `personas:build`.
+/// - all other `/api/*` — read verbs (GET/HEAD) need only authentication;
+///   mutating verbs (POST/…) require broad `personas:execute`.
+///
+/// `scopes` comes from `parsed_scopes`, which fails closed (empty vec) on a
+/// corrupt column, so a malformed row authorizes nothing scope-gated.
 fn authorize(method: &Method, path: &str, scopes: &[String]) -> Result<(), &'static str> {
     let has = |needle: &str| scopes.iter().any(|s| s == needle);
 
@@ -678,13 +683,6 @@ fn authorize(method: &Method, path: &str, scopes: &[String]) -> Result<(), &'sta
     Ok(())
 }
 
-/// Require a valid `Authorization: Bearer <token>` header AND the scope the
-/// matched route demands. Tokens are checked against `external_api_keys`;
-/// disabled / revoked / unknown tokens return 401. An authenticated key that
-/// lacks the route's required scope (see [`authorize`]) is
-/// rejected with 403 — authentication alone never authorizes mutating or
-/// credential-bearing routes. The middleware never logs token plaintext — only
-/// the prefix when a match succeeds, for traceability.
 /// Consumer identity of the authenticated API key, inserted into request
 /// extensions by [`require_api_key`] so credential-bearing handlers (the
 /// broker proxy) can attribute + exactly authorize the call. Never carries
@@ -696,6 +694,13 @@ pub struct AuthedApiKey {
     pub scopes: Vec<String>,
 }
 
+/// Require a valid `Authorization: Bearer <token>` header AND the scope the
+/// matched route demands. Tokens are checked against `external_api_keys`;
+/// disabled / revoked / unknown tokens return 401. An authenticated key that
+/// lacks the route's required scope (see [`authorize`]) is
+/// rejected with 403 — authentication alone never authorizes mutating or
+/// credential-bearing routes. The middleware never logs token plaintext — only
+/// the prefix when a match succeeds, for traceability.
 async fn require_api_key(
     AxumState(state): AxumState<Arc<ManagementState>>,
     mut req: Request,
@@ -2414,20 +2419,10 @@ async fn run_persona_synchronous(
 
     loop {
         let row = exec_repo::get_by_id(&state.pool, &execution.id)?;
-        let status = row.status.as_str();
-        match status {
-            "completed" | "success" => {
-                return Ok((
-                    execution.id.clone(),
-                    row.output_data.unwrap_or_else(|| "".to_string()),
-                ));
-            }
-            "failed" | "error" | "cancelled" | "timeout" => {
-                return Err(AppError::Execution(
-                    row.error_message.unwrap_or_else(|| status.to_string()),
-                ));
-            }
-            _ => {
+        match a2a_terminal_outcome(&row.status, row.output_data, row.error_message) {
+            Some(Ok(output)) => return Ok((execution.id.clone(), output)),
+            Some(Err(e)) => return Err(e),
+            None => {
                 if started.elapsed() > MAX_WAIT {
                     return Err(AppError::Execution(
                         "A2A execution timed out waiting for terminal status".into(),
@@ -2437,6 +2432,29 @@ async fn run_persona_synchronous(
             }
         }
     }
+}
+
+/// Verdict of one `run_persona_synchronous` poll: `None` while the row is still
+/// active (or its status is unrecognised), otherwise the caller's result.
+/// Parsed as `ExecutionState` so every terminal state ends the wait: an
+/// `incomplete` row (the process died) used to hold the caller for the full
+/// 600 s and then report a misleading timeout.
+fn a2a_terminal_outcome(
+    status: &str,
+    output: Option<String>,
+    error_message: Option<String>,
+) -> Option<Result<String, AppError>> {
+    use crate::engine::types::ExecutionState;
+    let state = status.parse::<ExecutionState>().ok()?;
+    if !state.is_terminal() {
+        return None;
+    }
+    Some(match state {
+        ExecutionState::Completed => Ok(output.unwrap_or_default()),
+        _ => Err(AppError::Execution(
+            error_message.unwrap_or_else(|| status.to_string()),
+        )),
+    })
 }
 
 // =============================================================================
@@ -4625,6 +4643,24 @@ async fn kp_test_retire(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a2a_poll_ends_on_every_terminal_state() {
+        let done = a2a_terminal_outcome("completed", Some("out".into()), None);
+        assert_eq!(done.expect("terminal").expect("ok"), "out");
+        for s in ["failed", "incomplete", "cancelled"] {
+            let r = a2a_terminal_outcome(s, None, Some("process died".into()));
+            let e = r.expect("terminal").expect_err("not a success");
+            assert!(e.to_string().contains("process died"), "{s}: {e}");
+        }
+    }
+
+    #[test]
+    fn a2a_poll_keeps_waiting_on_active_or_unknown_status() {
+        for s in ["queued", "running", "pending", "bogus"] {
+            assert!(a2a_terminal_outcome(s, None, None).is_none(), "{s}");
+        }
+    }
 
     /// Temp-file pool with the initial schema applied (no `run_incremental`).
     ///

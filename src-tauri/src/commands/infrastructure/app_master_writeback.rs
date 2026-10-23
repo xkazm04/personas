@@ -1368,11 +1368,14 @@ const ALREADY_DELIVERED_LINE: &str =
 /// notices an accepted item is already on main, and until it was told how to
 /// close one, nothing but a delivery dispatch ever could.
 pub fn write_back_brief(project_id: &str, idea_ids: &[String]) -> String {
-    let mut s = String::from(
+    // The handshake of THIS instance: an isolated one (`PERSONAS_DATA_DIR`) no
+    // longer writes `~/.personas/local-http.json`, so its workers are told its own.
+    let mut s = format!(
         "\nPERSONAS WRITE-BACK — your run is not finished until the outcome is written back.\n\
-         The app publishes a handshake at ~/.personas/local-http.json with `port` and `token`.\n\
+         The app publishes a handshake at {} with `port` and `token`.\n\
          Every call needs the header `x-personas-local-token: <token>` and\n\
          a base of http://127.0.0.1:<port>/dev-tools\n",
+        crate::local_http::handshake_hint()
     );
     s.push_str(&format!("Your project_id is {project_id}.\n"));
     if let [idea] = idea_ids {

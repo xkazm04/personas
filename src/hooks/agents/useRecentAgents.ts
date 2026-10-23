@@ -1,4 +1,5 @@
 import { useSyncExternalStore, useCallback } from 'react';
+import { silentCatch } from '@/lib/silentCatch';
 
 const STORAGE_KEY = 'personas:recent-agents';
 const MAX_RECENT = 5;
@@ -12,17 +13,43 @@ interface RecentEntry {
 let recents: RecentEntry[] = [];
 const listeners = new Set<() => void>();
 
+function isRecentEntry(v: unknown): v is RecentEntry {
+  return (
+    typeof v === 'object' && v !== null
+    && typeof (v as { id?: unknown }).id === 'string'
+    && typeof (v as { ts?: unknown }).ts === 'number'
+  );
+}
+
+/**
+ * Parse at the boundary. The stored value used to be asserted straight to
+ * `RecentEntry[]`, so any non-array JSON (`{}`, `"x"`, `null` written by an
+ * older build or a devtools edit) became `recents` and the next
+ * `trackRecentAgent` threw on `.filter` - inside `selectPersona` and
+ * `executePersona`, aborting the run start after its state was already set.
+ */
 function load(): RecentEntry[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as RecentEntry[]) : [];
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(isRecentEntry).slice(0, MAX_RECENT) : [];
   } catch {
     return [];
   }
 }
 
+/**
+ * Best-effort: a full or blocked storage (quota, private mode) must not throw
+ * out of `trackRecentAgent`, whose callers are selection and run start. The
+ * in-memory list still updates; only persistence across reloads is lost.
+ */
 function persist(entries: RecentEntry[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  } catch (err) {
+    silentCatch('hooks/agents/useRecentAgents:persist')(err);
+  }
 }
 
 function notify() {

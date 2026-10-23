@@ -31,7 +31,6 @@ use chrono::Utc;
 use rusqlite::{params, OptionalExtension};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
-use uuid::Uuid;
 
 /// Where a job-status event lands. The desktop binary wires this to a
 /// Tauri `AppHandle.emit(...)` so the chat panel updates its indicator —
@@ -595,10 +594,5 @@ fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<BackgroundJob> {
 }
 
 fn short_uuid() -> String {
-    Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(10)
-        .collect()
+    crate::companion::util::short_id(10)
 }

@@ -75,7 +75,12 @@ export function useTraceData(executionId: string, personaId: string) {
   /** True while `trace` is the locally-built shell above, not a backend trace. */
   const [traceIsSynthetic, setTraceIsSynthetic] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // The RAW rejection, resolved to copy at render. `getExecutionTrace` goes
+  // through invokeWithTimeout, which rejects with a serialized AppError object
+  // (`{ error, kind }`), never an `Error`: the old
+  // `err instanceof Error ? err.message : String(err)` rendered every IPC
+  // failure as "[object Object]".
+  const [error, setError] = useState<{ raw: unknown } | null>(null);
   const [collapsedSpans, setCollapsedSpans] = useState<Set<string>>(new Set());
   /** Bumped by `retry()` to re-run the fetch effect after a load failure. */
   const [refreshKey, setRefreshKey] = useState(0);
@@ -152,7 +157,7 @@ export function useTraceData(executionId: string, personaId: string) {
         if (!cancelled) {
           // Nothing to replay onto — discard rather than hold the buffer open.
           pendingSpanEventsRef.current = null;
-          setError(err instanceof Error ? err.message : String(err));
+          setError({ raw: err });
           setLoading(false);
         }
       });

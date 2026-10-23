@@ -61,11 +61,54 @@ export const deleteAutomation = (id: string) =>
 export const getAutomationBlastRadius = (id: string) =>
   invoke<BlastRadiusItem[]>("automation_blast_radius", { id });
 
-export const triggerAutomation = (id: string, inputData?: string | null, executionId?: string | null) =>
-  invoke<AutomationRun>("trigger_automation", { id, inputData: inputData, executionId: executionId });
+// -- Run budget -------------------------------------------------------------
+// `trigger_automation` and `test_automation_webhook` await the outbound webhook
+// inline (engine/src/automation_runner.rs `invoke_automation`): up to
+// `retry_count.clamp(1, 5)` attempts, each allowed `timeout_ms.max(1000)`, with
+// a `min(1000 * 2^(n-1), MAX_BACKOFF_MS)` sleep between attempts. The editor
+// lets a user set the per-attempt timeout up to an hour, so the 90 s IPC
+// default gave up on a run the backend was still finishing: the UI reported
+// "Failed to trigger automation" for a webhook that then fired anyway, and a
+// retry fired it twice. These mirror the Rust figures; a test reads the Rust
+// source so the two cannot drift.
+export const AUTOMATION_MAX_ATTEMPTS = 5;
+export const AUTOMATION_MIN_ATTEMPT_MS = 1_000;
+export const AUTOMATION_MAX_BACKOFF_MS = 30_000;
+/** Auth resolution before the first attempt plus the run-row writes after the last. */
+const AUTOMATION_RUN_MARGIN_MS = 30_000;
+/** Used when the caller does not know the automation's own settings. */
+const AUTOMATION_UNKNOWN_BUDGET_MS = 30 * 60_000;
 
-export const testAutomationWebhook = (id: string) =>
-  invoke<AutomationRun>("test_automation_webhook", { id });
+export interface AutomationRunSettings {
+  /** ts-rs types the i64 as bigint; it arrives as a JSON number. */
+  timeoutMs: bigint | number;
+  retryCount: number;
+}
+
+/** Worst-case wall time of one `invoke_automation` call, plus a margin. */
+export function automationRunBudgetMs(settings?: AutomationRunSettings | null): number {
+  if (!settings) return AUTOMATION_UNKNOWN_BUDGET_MS;
+  const perAttempt = Math.max(Number(settings.timeoutMs) || 0, AUTOMATION_MIN_ATTEMPT_MS);
+  const attempts = Math.min(Math.max(Math.trunc(settings.retryCount) || 1, 1), AUTOMATION_MAX_ATTEMPTS);
+  let backoff = 0;
+  for (let n = 1; n < attempts; n++) backoff += Math.min(1000 * 2 ** (n - 1), AUTOMATION_MAX_BACKOFF_MS);
+  return attempts * perAttempt + backoff + AUTOMATION_RUN_MARGIN_MS;
+}
+
+export const triggerAutomation = (
+  id: string,
+  inputData?: string | null,
+  executionId?: string | null,
+  settings?: AutomationRunSettings | null,
+) =>
+  invoke<AutomationRun>(
+    "trigger_automation",
+    { id, inputData: inputData, executionId: executionId },
+    { timeoutMs: automationRunBudgetMs(settings) },
+  );
+
+export const testAutomationWebhook = (id: string, settings?: AutomationRunSettings | null) =>
+  invoke<AutomationRun>("test_automation_webhook", { id }, { timeoutMs: automationRunBudgetMs(settings) });
 
 export const getAutomationRuns = (automationId: string, limit?: number | null) =>
   invoke<AutomationRun[]>("get_automation_runs", { automationId, limit: limit });

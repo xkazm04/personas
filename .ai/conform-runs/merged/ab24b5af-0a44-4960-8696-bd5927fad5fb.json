@@ -1,0 +1,33 @@
+{"schema": "conform-run/1", "worker": "ab24b5af-0a44-4960-8696-bd5927fad5fb", "subject": "multi-project",
+ "evaluatedAt": "2026-10-21T17:42:04Z",
+ "pairs": [
+  {"context": "d5c5e7fe-6353-41eb-800b-dc11adee0775", "subject": "multi-project", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src-tauri/db/src/lib.rs:1559 re-confirmed after 353c496b93/0b17d00233 touched the file: dev_tools_project_subscription still has no unwatched-since/reason column, so a blind tick (src-tauri/src/engine/project_tracking/scheduler.rs:198) is only a warn log and a blind project renders exactly like a quiet one",
+   "techniques": [
+     {"technique": "passive-signal-ingestion", "verdict": "deviation", "evidence": "src-tauri/src/engine/project_tracking/scheduler.rs:198 the cursor gate holds (last_pulse_at not advanced on a blind tick) but could-not-observe is not durable state on the project, so no drill level can show blind distinctly from quiet"}
+   ]},
+  {"context": "a4174786-a5fb-4145-a1b3-f02826fac64a", "subject": "multi-project", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/teams/sub_factory/passport/atlas/variants/instrument/InstrumentParts.tsx:45 re-judged after 4aff4d381a touched passportModel.ts: the wall dial still renders a bare composite with no anchor policy, graded by passportModel.ts:309 scoreTint against fixed 80/60/40 cut-offs recorded nowhere as the dimension's anchor",
+   "techniques": [
+     {"technique": "cross-project-comparison", "verdict": "deviation", "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:309 fixed 80/60/40 ramp applied to every score with no per-dimension anchor policy rendered beside the score"}
+   ]},
+  {"context": "54236947-3775-4d0a-8e14-1a709dd4d8bc", "subject": "multi-project", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/teams/sub_factory/ProjectsLayer.tsx:58 re-judged after 9c5077abb6/29a02ace11/e67653e006: the wall still pulls the full per-project KPI tree via useFactoryData (factoryData.tsx:270 groups+contexts+useCases+kpis per project) solely to fold the attention badge at :134, beside the batched projectWallSummary at :82 - wall cost grows with N x depth",
+   "techniques": [
+     {"technique": "portfolio-drill-hierarchy", "verdict": "deviation", "evidence": "src/features/teams/sub_factory/factoryData.tsx:270 per-project detail fan-out feeding a wall-level badge instead of a stored summary row"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "multi-project", "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b", "reason": "weak context with an empty path sample (research report generation); a coverage question, not a pair to judge by default"},
+  {"subject": "multi-project", "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049", "reason": "verdict current against digest 07b32de44fd25fc6 and its anchor useProjectPulse.ts has no commits since the 10-10 verdict"},
+  {"subject": "multi-project", "context": "7741725e-8124-4899-b17e-8e39e7fcf1ed", "reason": "verdict current and studioBuildModel.ts has no commits since the 10-10 verdict"},
+  {"subject": "multi-project", "context": "ca705961-f138-494a-b0fe-f882c674d25a", "reason": "judged today (2026-10-21) against the current digest"},
+  {"subject": "multi-project", "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573", "reason": "judged today (2026-10-21) against the current digest"},
+  {"subject": "multi-project", "context": "9967adb9-e895-4dcd-b296-ab49a19ab122", "reason": "judged today (2026-10-21) against the current digest"},
+  {"subject": "multi-project", "context": "d7b7eb04-730f-4450-9a68-affc95f93267", "reason": "judged today (2026-10-21) against the current digest"}
+ ],
+ "consults": [
+  {"ts": "2026-10-21T17:42:04Z", "bundle": "software-engineering", "subjects": ["multi-project"], "techniques": ["passive-signal-ingestion"], "deviations": 1},
+  {"ts": "2026-10-21T17:42:04Z", "bundle": "software-engineering", "subjects": ["multi-project"], "techniques": ["cross-project-comparison"], "deviations": 1},
+  {"ts": "2026-10-21T17:42:04Z", "bundle": "software-engineering", "subjects": ["multi-project"], "techniques": ["portfolio-drill-hierarchy"], "deviations": 1}
+ ]}

@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { getAnomalyDrilldown } from '@/api/overview/observability';
+import { createLatestWins } from '@/stores/util/latestWins';
 import type { AnomalyDrilldownData } from '@/lib/bindings/AnomalyDrilldownData';
 import type { MetricAnomaly } from '@/lib/bindings/MetricAnomaly';
 
@@ -10,8 +11,11 @@ export interface AnomalyDrilldownState {
   drilldownData: AnomalyDrilldownData | null;
   /** Whether a fetch is in progress. */
   loading: boolean;
-  /** Error message from the last fetch. */
-  error: string | null;
+  /**
+   * The last fetch's failure, kept RAW and resolved at render: invokeWithTimeout rejects with a
+   * serialized AppError object, so `err.message` / `String(err)` printed "[object Object]".
+   */
+  error: { raw: unknown } | null;
   /** Open the drill-down panel for a specific anomaly. */
   openDrilldown: (anomaly: MetricAnomaly, personaId?: string | null) => void;
   /** Close the drill-down panel. */
@@ -22,7 +26,7 @@ export function useAnomalyDrilldown(): AnomalyDrilldownState {
   const [selectedAnomaly, setSelectedAnomaly] = useState<MetricAnomaly | null>(null);
   const [drilldownData, setDrilldownData] = useState<AnomalyDrilldownData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ raw: unknown } | null>(null);
 
   // Sequence guard: every click bumps the counter, and only the response
   // whose seq still matches the latest call is allowed to write to state.
@@ -30,10 +34,10 @@ export function useAnomalyDrilldown(): AnomalyDrilldownState {
   // resolve last and overwrite B's panel — the user sees B's metadata
   // paired with A's correlated events / root-cause, leading to wrong
   // root-cause conclusions during incident triage.
-  const fetchSeqRef = useRef(0);
+  const latest = useRef(createLatestWins()).current;
 
   const openDrilldown = useCallback(async (anomaly: MetricAnomaly, personaId?: string | null) => {
-    const seq = ++fetchSeqRef.current;
+    const seq = latest.next();
     setSelectedAnomaly(anomaly);
     setDrilldownData(null);
     setError(null);
@@ -47,26 +51,26 @@ export function useAnomalyDrilldown(): AnomalyDrilldownState {
         anomalyDeviationPct: anomaly.deviation_pct,
         personaId,
       });
-      if (seq !== fetchSeqRef.current) return;
+      if (!latest.isCurrent(seq)) return;
       setDrilldownData(data);
     } catch (err) {
-      if (seq !== fetchSeqRef.current) return;
-      setError(err instanceof Error ? err.message : String(err));
+      if (!latest.isCurrent(seq)) return;
+      setError({ raw: err });
     } finally {
-      if (seq === fetchSeqRef.current) {
+      if (latest.isCurrent(seq)) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [latest]);
 
   const closeDrilldown = useCallback(() => {
-    // Bump seq so any in-flight fetch can't write into a closed panel.
-    fetchSeqRef.current += 1;
+    // Mint a token so any in-flight fetch can't write into a closed panel.
+    latest.next();
     setSelectedAnomaly(null);
     setDrilldownData(null);
     setError(null);
     setLoading(false);
-  }, []);
+  }, [latest]);
 
   return { selectedAnomaly, drilldownData, loading, error, openDrilldown, closeDrilldown };
 }

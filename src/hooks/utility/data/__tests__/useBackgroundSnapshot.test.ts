@@ -155,3 +155,58 @@ describe('useBackgroundSnapshot -- maxFailures is clamped', () => {
     expect(getSnapshot).toHaveBeenCalledTimes(3);
   });
 });
+
+describe('useBackgroundSnapshot -- a poll in flight at teardown is abandoned', () => {
+  it('neither delivers nor re-arms after unmount', async () => {
+    vi.useFakeTimers();
+    try {
+      let resolveFirst: (s: SnapshotLike) => void = () => {};
+      const getSnapshot = vi
+        .fn()
+        .mockImplementationOnce(() => new Promise<SnapshotLike>((res) => { resolveFirst = res; }))
+        .mockResolvedValue(runningSnapshot());
+      const onLines = vi.fn();
+
+      const { unmount } = renderHook(() =>
+        useBackgroundSnapshot(freshOptions('job-1', getSnapshot, { onLines, interval: 1000 })),
+      );
+      expect(getSnapshot).toHaveBeenCalledTimes(1);
+
+      // The component goes away while the first poll is still awaiting IPC.
+      unmount();
+      resolveFirst(runningSnapshot());
+      await vi.advanceTimersByTimeAsync(0);
+
+      // The late response must not reach a consumer that no longer exists...
+      expect(onLines).not.toHaveBeenCalled();
+      // ...and must not schedule another poll that no cleanup will ever clear.
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(getSnapshot).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not let the previous job deliver after the id changes', async () => {
+    let resolveFirst: (s: SnapshotLike) => void = () => {};
+    const getSnapshot = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise<SnapshotLike>((res) => { resolveFirst = res; }))
+      .mockResolvedValue({ status: 'running', error: null, lines: ['job-2'] });
+    const onLines = vi.fn();
+
+    const { rerender } = renderHook(
+      ({ id }: { id: string }) => useBackgroundSnapshot(freshOptions(id, getSnapshot, { onLines })),
+      { initialProps: { id: 'job-1' } },
+    );
+    await waitFor(() => expect(getSnapshot).toHaveBeenCalledTimes(1));
+
+    rerender({ id: 'job-2' });
+    await waitFor(() => expect(onLines).toHaveBeenCalledWith(['job-2']));
+
+    // job-1's poll lands late: its lines belong to a session that was replaced.
+    resolveFirst({ status: 'running', error: null, lines: ['job-1'] });
+    await new Promise((r) => setTimeout(r, 30));
+    expect(onLines).not.toHaveBeenCalledWith(['job-1']);
+  });
+});

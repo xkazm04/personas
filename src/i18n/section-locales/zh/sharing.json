@@ -322,5 +322,15 @@
   "conn_state_connecting": "连接中...",
   "conn_state_failed": "失败",
   "conn_state_disconnected": "已断开",
-  "resources_synced": "已同步 {count} 个"
+  "resources_synced": "已同步 {count} 个",
+  "exposure_auth_required": "需要身份验证",
+  "exposure_open_lan": "对局域网对等端开放",
+  "open_to_lan_hint": "网络中任何连接的设备都可以在不证明身份的情况下查看此资源。除非你信任此网络中的每台设备，否则请保持关闭。",
+  "open_to_lan_label": "对未经身份验证的局域网对等端开放",
+  "by_creator": "作者：{name}",
+  "created_on": "创建于 {date}",
+  "fields_exposed_count_one": "已公开 {count} 个字段",
+  "fields_exposed_count_other": "已公开 {count} 个字段",
+  "health_latency_ms": "{ms}毫秒",
+  "health_missed": "{count} 次错过"
 }

@@ -55,7 +55,8 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DesignConnectorGrid` | _(add a `@catalog` tag)_ |
 | `DragHandle` | Visual size of the grip icon. |
 | `DropIndicator` | Orientation of the list the indicator sits in. |
-| `EmptyIllustration` | _(add a `@catalog` tag)_ |
+| `EmptyArt` | Small animated empty-state illustration (19 motifs: agents, vault, launch, archive, stream, search, inbox ...). Tokens-only colour |
+| `EmptyIllustration` | Compact empty state for a card or panel: small animated art (from art or the icon), heading, caption. |
 | `FacetedDecisionTable` | Left group-rail + toolbar + DataGrid table over a derived slash-path facet tree. |
 | `FieldHint` | Valid value range, e. |
 | `GroupedVirtualList` | Virtualized list that buckets ordered items under sticky date/category group headers (Today / Yesterday / …). |
@@ -123,11 +124,10 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DropZoneGlow` | rounded-card (8) / rounded-modal (12) so the SVG outline aligns. |
 | `ErrorBanner` | User-facing error display — inline / banner / panel variants with retry + dismiss. |
 | `ErrorBoundary` | Called when the user clicks "Go to dashboard". |
-| `ErrorRecoveryBanner` | _(add a `@catalog` tag)_ |
-| `InlineErrorBanner` | _(add a `@catalog` tag)_ |
+| `InlineErrorBanner` | Inline error/warning/info banner with optional title, retry, dismiss and an actions slot; a thin wrapper over Banner. |
 | `LoadingSpinner` | RENDERS NOTHING. Spinners are disabled app-wide; this survives for import compatibility and emits an sr-only role="status" only when given `label`. Never use it as a visual loading state — for a SURFACE use a calm delayed ghost (docs/design/overview-loading.md), for an ACTION use Button/AsyncButton, which render real spinners by design. |
 | `Reveal` | Reveal — fade (+ subtle slide-up) a block of content in on mount; the canonical "content arrived" reveal for the golden loading pa |
-| `ScenarioEmptyState` | _(add a `@catalog` tag)_ |
+| `ScenarioEmptyState` | THE empty state: animated EmptyArt illustration (from art, the icon or the variant), a heading-over-body type ramp, actions; sizes |
 | `StalenessIndicator` | Epoch ms when this data source was last successfully fetched. |
 | `StepGuideRow` | StepGuideRow — the numbered Create → Credential → Run path under a first-run empty state; steps become buttons when the caller sup |
 | `SuspenseFallback` | Standard fallback for React.lazy/Suspense boundaries. |
@@ -212,7 +212,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 |---|---|
 | `ActionRow` | Left-aligned content (filters, status chips, project picker, etc. |
 | `ContentHeaderSkeleton` | _(add a `@catalog` tag)_ |
-| `DeferUntilIdle` | _(add a `@catalog` tag)_ |
+| `DeferUntilIdle` | DeferUntilIdle - postpone a heavy or below-fold subtree until idle / next frame, optionally staggered by order with a fade-in entr |
 | `FullScreenOverlay` | _(add a `@catalog` tag)_ |
 | `ListSkeleton` | ListSkeleton — calm, non-pulsing placeholder rows for a list/table body while the first page loads, so panel chrome lands before d |
 | `PanelTabBar` | Horizontal tab bar for in-panel navigation. |
@@ -253,7 +253,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | Component | What it's for |
 |---|---|
 | `ContentLoader` | _(add a `@catalog` tag)_ |
-| `EstimatedProgressBar` | if (progress < 75) return 'hsl(var(primary) / 0. |
+| `EstimatedProgressBar` | Returns the bar color based on progress phase. |
 
 ## surface
 
@@ -272,4 +272,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_173 components, 40 without a `@catalog` description._
+_173 components, 35 without a `@catalog` description._

@@ -299,7 +299,7 @@
     },
     "src/lib/personas/parsers/n8nParser.ts:33,": {"count":1,"sections":[0],"lines":["46"],"contexts":["(`src/lib/personas/parsers/n8nParser.ts:33,:46`). `escapeForPrompt`, `sanitizeTextField`,"],"resolved":false,"isDir":true},
     "src/lib/utils/sanitizers/promptInjection.ts": {"count":1,"sections":[0],"contexts":["| 3 | `src/lib/utils/sanitizers/promptInjection.ts` | TS | **0** direct |"]},
-    "src/lib/utils/sanitizers/variableSanitizer.ts": {"count":1,"sections":[0],"contexts":["| 5 | `src/lib/utils/sanitizers/variableSanitizer.ts` | TS | **0** |"]},
+    "src/lib/utils/sanitizers/variableSanitizer.ts": {"count":1,"sections":[0],"contexts":["| 5 | `src/lib/utils/sanitizers/variableSanitizer.ts` | TS | **0** |"],"resolved":false},
     "src/lib/utils/sanitizers/workflowSanitizer.ts": {"count":1,"sections":[0],"contexts":["| 4 | `src/lib/utils/sanitizers/workflowSanitizer.ts` | TS | **2** — `sanitizeName` only |"]},
     "src/lib/utils/sanitizers/{promptInjection,variableSanitizer,workflowSanitizer}.ts": {"count":1,"sections":[],"contexts":["`src/lib/utils/sanitizers/{promptInjection,variableSanitizer,workflowSanitizer}.ts`,"],"resolved":false},
     "tests/": {"count":1,"sections":[],"contexts":["**Sweep.** All **946** non-generated `.rs` files under `src-tauri/` (`bindings/`, `tests/`, `*_test.rs`,"],"resolved":false,"isDir":true},

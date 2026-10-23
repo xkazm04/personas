@@ -1,0 +1,106 @@
+{
+  "schema": "conform-run/1",
+  "worker": "c2bf05c6-6801-4c21-87e2-5b9c47a74b82",
+  "subject": "canvas-graph",
+  "evaluatedAt": "2026-10-16T17:14:03Z",
+  "pairs": [
+    {
+      "context": "ca705961-f138-494a-b0fe-f882c674d25a",
+      "subject": "canvas-graph",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:701 re-judged at revision 6 (sha256-b2:98dcec8d04236b95): popovers are HTML overlays placed at raw clientX/clientY clamped to the window, no node/edge topology and no world space, so the pan/zoom relationship-surface precondition is unmet and even the renderer stage's mapping clause has nothing to convert",
+      "techniques": [
+        {
+          "technique": "viewport-transform",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:701 popover position is screen-space clientX/clientY, never a world coordinate"
+        }
+      ]
+    },
+    {
+      "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+      "subject": "canvas-graph",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/components/layout/ContentLayout.tsx:51 re-judged at revision 6 (sha256-b2:98dcec8d04236b95): all 33 context files are page-shell, skeleton, button, kanban and editor primitives; no graph, no coordinate space, no drawn set, so the canvas-graph precondition is unmet (KanbanBoard is columns of cards, the golden path's list/table exit)",
+      "techniques": []
+    },
+    {
+      "context": "6e3e06ef-e5d0-4b4d-807f-688123370b14",
+      "subject": "canvas-graph",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/teams/sub_mastermind/MastermindPage.tsx:9 re-judged at revision 6 (sha256-b2:98dcec8d04236b95): the context's files are assignment event listeners plus a data-owning page that delegates its chart to SoundingsView; the DAG canvas the context is named for (src/features/teams/sub_canvas) no longer exists, so no canvas-graph surface lives here",
+      "techniques": [],
+      "registryProposal": "Coverage/hygiene, not a corpus hole: context-map.json still lists entry_points under the deleted src/features/teams/sub_canvas/ for context teams-canvas, so the matcher keeps pairing canvas-graph (score 852 on canvas/nodes/edges) to a context whose canvas is gone; a context-map rescan should rename or retire it."
+    },
+    {
+      "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+      "subject": "canvas-graph",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_studio/StudioPatchbay.tsx:243 re-judged at revision 6 (sha256-b2:98dcec8d04236b95): routes render as a linear ledger of cable rows (connected.map), no geometry, no transform, no drag-to-place; the golden path's table/list exit applies and no coordinate mapping exists to retain",
+      "techniques": [
+        {
+          "technique": "viewport-transform",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/TriggerStudioCanvas.tsx:17 the canvas wrapper only mounts StudioPatchbay in a flex column; no pan, zoom or world space"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "canvas-graph",
+      "context": "77b8c703-0803-42bc-808a-f255725cc293",
+      "reason": "already judged deviation on 2026-10-15 against the current digest sha256-b2:98dcec8d04236b95 (revision 6); not stale, re-reading it would not change the verdict"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T17:14:03Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "canvas-graph"
+      ],
+      "techniques": [
+        "viewport-transform"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-16T17:14:03Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "canvas-graph"
+      ],
+      "techniques": [
+        "viewport-transform"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-16T17:14:03Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "canvas-graph"
+      ],
+      "techniques": [
+        "viewport-transform"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-16T17:14:03Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "canvas-graph"
+      ],
+      "techniques": [
+        "viewport-transform"
+      ],
+      "deviations": 0
+    }
+  ]
+}

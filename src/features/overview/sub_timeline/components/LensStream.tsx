@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ArrowUp } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
@@ -86,7 +87,7 @@ export function LensStream({
   if (data.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <span className="hud-empty typo-label text-foreground opacity-60">{emptyLabel}</span>
+        <ScenarioEmptyState art="stream" size="sm" title={emptyLabel} />
       </div>
     );
   }

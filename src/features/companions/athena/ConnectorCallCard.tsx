@@ -12,7 +12,7 @@ import {
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
 import { companionEnqueueJob, type BackgroundJob } from '@/api/companion';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { capabilityLabel, connectorDisplayName } from './athenaLabels';
 import { useAthenaStore } from './athenaStore';
 
@@ -62,7 +62,7 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
       const newId = await companionEnqueueJob('connector_use', rawParams);
       setRetryingState({ phase: 'fired', newId });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = extractMessage(err);
       setRetryingState({ phase: 'error', message });
       silentCatch('companion_retry_connector_call')(err);
     }

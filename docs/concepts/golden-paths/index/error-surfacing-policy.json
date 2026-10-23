@@ -124,6 +124,14 @@
     },
     "src/features/plugins/companion/BrainViewer.tsx": {"count":1,"sections":[6],"lines":["610-620"],"contexts":["- `src/features/plugins/companion/BrainViewer.tsx:610-620` — `setError(…)` for the user **and**"],"resolved":false},
     "src/features/plugins/fleet/FleetSessionCard.tsx": {"count":2,"sections":[6,7],"lines":["118-131","128"],"contexts":["- `src/features/plugins/fleet/FleetSessionCard.tsx:118-131` — an optimistic rename **reverted on"]},
+    "src/features/projects/development/goals/GoalDetailDrawer.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["431"],
+      "contexts": ["*and* swallows; `GoalDetailDrawer.tsx:431` documents that the store already toasted;"],
+      "resolvedFrom": "basename",
+      "verbatim": "GoalDetailDrawer.tsx"
+    },
     "src/features/shared/chrome/ToastContainer.tsx": {
       "count": 2,
       "sections": [7],
@@ -148,7 +156,7 @@
       "resolvedFrom": "basename",
       "verbatim": "FactoryShell.tsx"
     },
-    "src/features/teams/sub_goals/GoalDetailDrawer.tsx": {"count":2,"sections":[6,7],"lines":["425-432","431"],"contexts":["- `src/features/teams/sub_goals/GoalDetailDrawer.tsx:425-432` — `silentCatch` with a comment"]},
+    "src/features/teams/sub_goals/GoalDetailDrawer.tsx": {"count":1,"sections":[6],"lines":["425-432"],"contexts":["- `src/features/teams/sub_goals/GoalDetailDrawer.tsx:425-432` — `silentCatch` with a comment"],"resolved":false},
     "src/features/triggers/lib/triggerError.ts": {"count":1,"sections":[6],"lines":["39-58"],"contexts":["**The one site to copy: `src/features/triggers/lib/triggerError.ts:39-58`.**"]},
     "src/features/vault/shared/playground/tabs/ExecutionsTab.tsx": {
       "count": 1,

@@ -79,6 +79,42 @@ pub(crate) fn verdict_status(s: &ScoreResult) -> String {
     }
 }
 
+/// The sub-scores a cell contributes to the run's aggregates (summary JSON,
+/// arena ranking, prose summary). An `inconclusive` cell was scored by the
+/// heuristic fallback, whose "nothing expected = 100" sentinels and confusion
+/// veto zeros are not measurements: they already cannot make the cell pass
+/// ([`verdict_status`]), so they must not move the run's averages or pick its
+/// best model either. Its cost and duration are still real and still counted.
+pub(crate) fn tracked_scores(
+    status: &str,
+    s: &ScoreResult,
+) -> (Option<i32>, Option<i32>, Option<i32>) {
+    if status == "inconclusive" {
+        (None, None, None)
+    } else {
+        (s.tool_accuracy, s.output_quality, s.protocol_compliance)
+    }
+}
+
+/// `tool_accuracy` as a measurement, or `None` when the cell had nothing to
+/// measure it against. A sandbox cell was told not to call real tools; a cell
+/// whose scenario expects no tools is graded by the judge rubric's own N/A
+/// rule ("no tools were expected ... give 50"), so that 50 is a placeholder,
+/// not a score. Storing it would pull every tool-less persona's composite
+/// toward 50 at 40% weight (oq 90 / pc 90 read as 74 instead of 90).
+pub(crate) fn measured_tool_accuracy(
+    is_sandbox: bool,
+    expected_tools: Option<&[String]>,
+    judged: i32,
+) -> Option<i32> {
+    let nothing_expected = expected_tools.map_or(true, |t| t.is_empty());
+    if is_sandbox || nothing_expected {
+        None
+    } else {
+        Some(judged.clamp(0, 100))
+    }
+}
+
 // -- Scoring (delegates to unified eval framework + LLM eval) ---
 
 pub async fn score_result(
@@ -141,16 +177,13 @@ pub async fn score_result(
         "protocol": llm_result.protocol_rationale,
     });
 
-    // Exclude tool_accuracy from sandbox cells: store NULL so the composite
-    // renormalises over output_quality + protocol_compliance (see
-    // `renormalized_composite`) and the ratings rollup flags `partial_coverage`
-    // instead of auto-failing the cell on a degenerate zero. The judge's
+    // Exclude tool_accuracy from sandbox cells and from cells that expected no
+    // tools: store NULL so the composite renormalises over output_quality +
+    // protocol_compliance (see `renormalized_composite`) and the ratings rollup
+    // flags `partial_coverage` instead of scoring a placeholder. The judge's
     // tool-usage rationale is still preserved in `rationale_json` above.
-    let tool_accuracy = if is_sandbox {
-        None
-    } else {
-        Some(llm_result.tool_accuracy.clamp(0, 100))
-    };
+    let tool_accuracy =
+        measured_tool_accuracy(is_sandbox, expected_tools, llm_result.tool_accuracy);
     let output_quality = Some(llm_result.output_quality.clamp(0, 100));
     let protocol_compliance = Some(llm_result.protocol_compliance.clamp(0, 100));
 
@@ -236,8 +269,13 @@ pub(crate) fn best_value_model(rankings: &[serde_json::Value]) -> String {
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false)
         })
-        .max_by_key(|r| r.get("value_score").and_then(|v| v.as_i64()).unwrap_or(0))
-        .and_then(|r| r.get("model_id"))
+        .filter_map(|r| {
+            r.get("value_score")
+                .and_then(|v| v.as_i64())
+                .map(|v| (v, r))
+        })
+        .max_by_key(|(v, _)| *v)
+        .and_then(|(_, r)| r.get("model_id"))
         .and_then(|v| v.as_str())
         .unwrap_or("unknown")
         .to_string()

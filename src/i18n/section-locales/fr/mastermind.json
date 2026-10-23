@@ -228,5 +228,22 @@
   "soundings_where_it_sits": "Où il se situe. Projets liés en gras",
   "soundings_who_athena": "Athena",
   "soundings_who_chart": "Graphique",
-  "soundings_yes": "oui"
+  "soundings_yes": "oui",
+  "dim_label_agents": "Agents",
+  "dim_label_auth": "Authentification",
+  "dim_label_ci": "CI",
+  "dim_label_datalinks": "Analyse de données",
+  "dim_label_db": "Base de données",
+  "dim_label_goals": "Objectifs",
+  "dim_label_hosting": "Hébergement",
+  "dim_label_ideas": "Idées",
+  "dim_label_kpi": "KPI",
+  "dim_label_llm": "Coût LLM",
+  "dim_label_monitoring": "Supervision",
+  "dim_label_security": "Sécurité",
+  "dim_label_skills": "Compétences",
+  "dim_label_support": "Support",
+  "dim_label_tests": "Tests",
+  "scan_dispatched_toast": "Analyse d'idées lancée ({label})",
+  "scan_drawer_label": "Analyse d'idées ({label})"
 }

@@ -25,7 +25,7 @@ import {
 } from '@/features/decision-center/__tests__/rosterFixtures';
 
 import { useAthenaStore } from '../../athenaStore';
-import { resetDecisionDeferrals } from '../decisionDeferral';
+import { isDecisionDeferred, resetDecisionDeferrals } from '../decisionDeferral';
 
 const roster = {
   items: [] as DecisionItem[],
@@ -124,5 +124,25 @@ describe('the orb queue over the roster', () => {
     hook.rerender();
 
     expect(useAthenaStore.getState().pendingDecision?.id).toBe(approval.id);
+  });
+});
+
+describe('"Open" reads, it does not decide - and holds the item back either way', () => {
+  it('holds an opened blocking incident back for the snooze window (control)', async () => {
+    const blocker = incidentToDecision(incidentRow({ id: 'inc-open', severity: 'critical' }), c);
+    const queue = await buildDecisionQueueForTest({ items: [blocker], decide: roster.decide });
+    await queue[0]!.options.find((o) => o.key === 'open')!.run();
+    expect(isDecisionDeferred(blocker.id)).toBe(true);
+    expect(roster.decide).not.toHaveBeenCalled();
+  });
+
+  it('holds an opened review back too, so the bubble does not re-ask it at once', async () => {
+    const queue = await buildDecisionQueueForTest({ items: [review], decide: roster.decide });
+    await queue[0]!.options.find((o) => o.key === 'open')!.run();
+    expect(isDecisionDeferred(review.id)).toBe(true);
+    expect(roster.decide).not.toHaveBeenCalled();
+    // The next build moves past it while the operator works it on its page.
+    const next = await buildDecisionQueueForTest({ items: [review], decide: roster.decide });
+    expect(next.map((d) => d.id)).toEqual([]);
   });
 });

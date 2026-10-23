@@ -49,10 +49,10 @@ export function MemoryTiersTile({
           // Honest absence: no bar at all. A full-width zero track would read
           // as "measured and empty across the tiers" — it is neither.
           <EmptyState
-            icon={Layers}
+            art="report"
+            size="sm"
             title={b.tiers_empty_title}
             description={b.tiers_empty_desc}
-            className="py-4"
           />
         ) : (
           <>

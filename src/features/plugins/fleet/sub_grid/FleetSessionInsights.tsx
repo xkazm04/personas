@@ -7,6 +7,7 @@ import { sessionMetadata, readTranscript } from '@/api/fleet/fleet';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { readSummaryCache, writeSummaryCache, SUMMARY_TTL_MS } from './insightsCache';
 import { Stat, TokenCell, Section } from './InsightsParts';
 
@@ -30,8 +31,14 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
   );
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  // The focus pane keeps this panel mounted while the operator switches
+  // sessions, so `claudeSessionId` changes under an in-flight read. Only the
+  // newest load may write state; an older one would paint the previous
+  // session's tokens and files under the new session's header.
+  const [latest] = useState(createLatestWins);
 
   const load = useCallback(async (force = false) => {
+    const token = latest.next();
     if (!claudeSessionId) return;
     const cached = readSummaryCache(claudeSessionId);
     if (!force && cached && Date.now() - cached.at < SUMMARY_TTL_MS) {
@@ -46,16 +53,19 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
       // Prefer the incremental rollup (delta-only, scale-friendly); fall back
       // to a full transcript read if the rollup isn't available yet.
       const s = (await sessionMetadata(claudeSessionId)) ?? (await readTranscript(claudeSessionId));
+      // Cached under its own id either way: a superseded read is still a good rollup.
       writeSummaryCache(claudeSessionId, { summary: s, at: Date.now() });
+      if (!latest.isCurrent(token)) return;
       setSummary(s);
     } catch (e) {
+      silentCatch('FleetSessionInsights:readTranscript')(e);
+      if (!latest.isCurrent(token)) return;
       setFailed(true);
       setSummary(null);
-      silentCatch('FleetSessionInsights:readTranscript')(e);
     } finally {
-      setLoading(false);
+      if (latest.isCurrent(token)) setLoading(false);
     }
-  }, [claudeSessionId]);
+  }, [claudeSessionId, latest]);
 
   useEffect(() => { load(); }, [load]);
 

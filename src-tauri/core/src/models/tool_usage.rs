@@ -21,8 +21,11 @@ pub struct PersonaToolUsage {
 #[serde(rename_all = "snake_case")]
 pub struct ToolUsageSummary {
     pub tool_name: String,
+    #[ts(type = "number")]
     pub total_invocations: i64,
+    #[ts(type = "number")]
     pub unique_executions: i64,
+    #[ts(type = "number")]
     pub unique_personas: i64,
 }
 
@@ -32,6 +35,7 @@ pub struct ToolUsageSummary {
 pub struct ToolUsageOverTime {
     pub date: String,
     pub tool_name: String,
+    #[ts(type = "number")]
     pub invocations: i64,
 }
 
@@ -43,6 +47,8 @@ pub struct PersonaUsageSummary {
     pub persona_name: String,
     pub persona_icon: Option<String>,
     pub persona_color: Option<String>,
+    #[ts(type = "number")]
     pub total_invocations: i64,
+    #[ts(type = "number")]
     pub unique_tools: i64,
 }

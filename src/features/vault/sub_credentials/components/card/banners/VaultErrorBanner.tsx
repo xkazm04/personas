@@ -1,5 +1,6 @@
 import { XCircle } from 'lucide-react';
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface VaultErrorBannerProps {
   message: string;
@@ -8,6 +9,7 @@ interface VaultErrorBannerProps {
 }
 
 export function VaultErrorBanner({ message, onDismiss, variant = 'banner' }: VaultErrorBannerProps) {
+  const { t } = useTranslation();
   const sizeClass = variant === 'inline' ? 'px-3 py-2.5' : 'px-4 py-3';
 
   return (
@@ -20,7 +22,7 @@ export function VaultErrorBanner({ message, onDismiss, variant = 'banner' }: Vau
           onClick={onDismiss}
           className="text-red-400/60 hover:text-red-400 typo-body shrink-0"
         >
-          Dismiss
+          {t.common.dismiss}
         </button>
       )}
     </div>

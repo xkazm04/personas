@@ -1,8 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { Terminal, LayoutDashboard, Settings as SettingsIcon, Activity, Unplug } from 'lucide-react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
-import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { debtText } from '@/i18n/DebtText';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -21,10 +19,10 @@ type InternalTab = 'grid' | 'activity' | 'settings';
 // Sessions is the home for every operation (spawn, kill, broadcast, terminal
 // view). Activity is the cross-session transcript feed (F2/P2.2). Settings
 // stays for hook uninstall + diagnostics; install lives in the Sessions pill.
-const TABS: { id: InternalTab; label: string; icon: typeof Terminal }[] = [
-  { id: 'grid', label: 'Sessions', icon: LayoutDashboard },
-  { id: 'activity', label: 'Activity', icon: Activity },
-  { id: 'settings', label: 'Settings', icon: SettingsIcon },
+const TABS: { id: InternalTab; labelKey: 'tab_sessions' | 'tab_activity' | 'tab_settings'; icon: typeof Terminal }[] = [
+  { id: 'grid', labelKey: 'tab_sessions', icon: LayoutDashboard },
+  { id: 'activity', labelKey: 'tab_activity', icon: Activity },
+  { id: 'settings', labelKey: 'tab_settings', icon: SettingsIcon },
 ];
 
 /**
@@ -94,7 +92,7 @@ export default function FleetPage() {
           now live in the left drawer (opened from the grid), not a tab. */}
       <div className="flex items-center gap-1 px-6 pt-5 pb-3 border-b border-primary/10">
         <Terminal className="w-5 h-5 text-primary mr-1" />
-        <h1 className="typo-heading text-foreground mr-3">Fleet</h1>
+        <h1 className="typo-heading text-foreground mr-3">{f.footer_title}</h1>
         {TABS.map((tabDef) => {
           const Icon = tabDef.icon;
           const active = tab === tabDef.id;
@@ -111,7 +109,7 @@ export default function FleetPage() {
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
-              {tabDef.label}
+              {f[tabDef.labelKey]}
             </button>
           );
         })}
@@ -156,26 +154,5 @@ export default function FleetPage() {
         </Suspense>
       </div>
     </div>
-  );
-}
-
-// Retained for the three sub_*/page modules that still import it as a
-// placeholder. Used only when a sub-page wants to surface "this surface
-// isn't fully wired yet" while iterating; harmless to keep.
-export function FleetPhaseBanner({ phase, summary }: { phase: string; summary: string }) {
-  return (
-    <ContentBox>
-      <ContentHeader
-        icon={<Terminal className="w-5 h-5 text-primary" />}
-        title={debtText("auto_fleet_claude_code_session_aggregator_d33e41a2")}
-        subtitle="Experimental — lives under Dev Tools, inherits the active project"
-      />
-      <ContentBody>
-        <div className="border border-primary/20 rounded-modal bg-primary/5 px-4 py-3">
-          <p className="typo-caption text-primary mb-1">{phase}</p>
-          <p className="text-[14px] text-foreground leading-relaxed">{summary}</p>
-        </div>
-      </ContentBody>
-    </ContentBox>
   );
 }

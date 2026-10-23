@@ -4,7 +4,7 @@
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
 
-import { kpiNormValue, kpiTrack, type KpiTrack } from '../kpiMath';
+import { kpiNormValue, kpiTrackAt, type KpiTrack } from '../kpiMath';
 import type { KpiProjectRollup } from '../kpiOverviewModel';
 import { NOT_DIRECTLY_MEASURED, bucketSeries, measuredAtMs, type TimeWindow } from '../kpiSample';
 
@@ -50,8 +50,9 @@ export interface StateChange {
 
 /**
  * KPIs whose newest production reading changed the verdict. Both verdicts are
- * computed by judging the KPI at each value (`kpiTrack`), so the change is the
- * same rule the rest of the app grades with — not a stored flag that can drift.
+ * computed by judging the KPI at each value at the instant it was read
+ * (`kpiTrackAt`), so the change is the same rule the rest of the app grades
+ * with — not a stored flag that can drift.
  * Arrivals at `off-track` sort first, then most recent. A KPI with fewer than
  * two real readings has no change to report and is skipped (never "stable").
  */
@@ -65,8 +66,8 @@ export function stateChanges(
     for (const kpi of g.kpis) {
       const pts = realPoints(trends[kpi.id]);
       if (pts.length < 2) continue;
-      const to = kpiTrack({ ...kpi, current_value: pts[0]!.value });
-      const from = kpiTrack({ ...kpi, current_value: pts[1]!.value });
+      const to = kpiTrackAt(kpi, pts[0]!.value, measuredAtMs(pts[0]!));
+      const from = kpiTrackAt(kpi, pts[1]!.value, measuredAtMs(pts[1]!));
       if (to === from) continue;
       out.push({ kpi, from, to, at: measuredAtMs(pts[0]!) });
     }

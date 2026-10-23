@@ -9,41 +9,21 @@
  * contract, graph-gated by `comparisonWorkerGraph.test.ts`) and from nothing
  * else that is not equally pure.
  */
-import { jsonDiff } from '../libs/comparisonDiffCore';
+import { diffLines, jsonDiff, splitLogLines } from '../libs/comparisonDiffCore';
 import type { DiffWorkerRequest, JsonDiffEntry, LineDiffEntry } from '../libs/comparisonDiffCore';
 
 function post(message: unknown) {
   self.postMessage(message);
 }
 
+// The algorithm is the core's `diffLines`, the same one the main-thread
+// fallback runs; this file only streams its result in chunks. It used to carry
+// a second hand-written copy of the Set-membership diff and of the line split.
 function computeLineDiff(id: number, left: string | null, right: string | null, chunkSize: number) {
-  const linesA = (left ?? '').split('\n').filter((line) => line.trim());
-  const linesB = (right ?? '').split('\n').filter((line) => line.trim());
-  const setA = new Set(linesA);
-  const setB = new Set(linesB);
-  const result: LineDiffEntry[] = [];
-  let chunk: LineDiffEntry[] = [];
-
-  const pushEntry = (entry: LineDiffEntry) => {
-    result.push(entry);
-    chunk.push(entry);
-    if (chunk.length >= chunkSize) {
-      post({ id, kind: 'line-chunk', chunk });
-      chunk = [];
-    }
-  };
-
-  for (const line of linesA) {
-    pushEntry({ type: setB.has(line) ? 'same' : 'removed', text: line });
-  }
-  for (const line of linesB) {
-    if (!setA.has(line)) {
-      pushEntry({ type: 'added', text: line });
-    }
-  }
-
-  if (chunk.length > 0) {
-    post({ id, kind: 'line-chunk', chunk });
+  const result: LineDiffEntry[] = diffLines(splitLogLines(left), splitLogLines(right));
+  const size = Math.max(1, chunkSize);
+  for (let i = 0; i < result.length; i += size) {
+    post({ id, kind: 'line-chunk', chunk: result.slice(i, i + size) });
   }
   post({ id, kind: 'line-complete', result });
 }

@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { cancelSetupInstall, startSetupInstall } from "@/api/system/system";
-import { silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
 import { createLatestWins } from "@/stores/util/latestWins";
 
 
@@ -146,7 +146,10 @@ export function useAutoInstaller() {
 
       await startSetupInstall(target);
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : 'Failed to start installation';
+      // The IPC layer rejects with an AppError object, not an Error: read its
+      // message. An empty one stays null so InstallButton shows its own
+      // translated `installation_failed` rather than an English literal.
+      const errMsg = extractMessage(err) || null;
       if (target === 'node' || target === 'all') {
         setNodeState((prev) => ({ ...prev, phase: 'failed', error: errMsg }));
       }

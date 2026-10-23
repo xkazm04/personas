@@ -1,0 +1,134 @@
+{
+ "schema": "conform-run/1",
+ "worker": "15fb2a27-f979-4772-98da-54430e6be7a7",
+ "subject": "quality-gates",
+ "evaluatedAt": "2026-10-15T16:09:25.243Z",
+ "pairs": [
+  {
+   "context": "a3b615d2-05d8-47bd-ad92-672c6b42b0f3",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/ai_healing.rs:211 takes should_retry from the healer own output (prompt contract at :169), src-tauri/src/engine/healing_retry.rs:947 runs the verifying retry only when it is true, while ai_healing.rs:296 has already snapshotted the healed prompt as a production version - a heal ending should_retry:false ships an unverified fix; the fixer holds the verdict",
+   "techniques": [
+    {
+     "technique": "oracle-frozen-during-repair",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/ai_healing.rs:211 the fixer decides whether the oracle (re-run) is consulted"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+   "evaluatedRevision": 54
+  },
+  {
+   "context": "6a81750d-fdbf-4518-bae6-689303e1a884",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/output_assertions.rs:409 returns total:0/critical_failures:0 when assertions fail to load, identical to the no-assertions summary at :422, so src-tauri/src/engine/execution.rs:2328 marks the run Completed - could-not-run reads as pass, blocker assertions included",
+   "techniques": [
+    {
+     "technique": "gate-liveness",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/output_assertions.rs:409 instrument failure folded into an empty-success summary"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+   "evaluatedRevision": 54
+  },
+  {
+   "context": "66bc7a14-bf15-41d7-8d9a-900aa670f47e",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_factory/passport/usePassportData.ts:331 a failed repo probe becomes null, passportDerive.ts:386 marks unreadable only when a probe returned unscanned, so usePassportData.ts:338 publishes none-ratings as measured - ingestion failure rendered as findings about the repo",
+   "techniques": [
+    {
+     "technique": "gate-liveness",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/usePassportData.ts:331 could-not-run folded into a value"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+   "evaluatedRevision": 54
+  },
+  {
+   "context": "17f44718-7d6d-4579-91bf-86191e29595a",
+   "subject": "quality-gates",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:87 refuses on Incompatible, but the command (registered src-tauri/src/ipc_shards/shard_2.rs:206) has no frontend caller (only src/lib/commandNames.generated.ts:25) while UI adoption writes via src/features/templates/sub_recipes/libs/useAdoption.ts:62 - the gate refuses nothing a user does",
+   "techniques": [
+    {
+     "technique": "enforcement-binding",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 the real door bypasses the gate"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+   "evaluatedRevision": 54
+  }
+ ],
+ "declined": [
+  {
+   "subject": "quality-gates",
+   "context": "059fdee0-40da-434a-a5cb-874bc9179a31",
+   "reason": "stale deviation anchored to ci.yml:978, which now holds an unrelated retry comment; the claim (cargo deny check at .github/workflows/ci.yml:1149 mixes moving advisories with deterministic license/ban checks) is a CI-workflow finding, outside the engine context paths - context fit doubtful, left for a run that can re-pair it"
+  },
+  {
+   "subject": "quality-gates",
+   "context": "all other 86 pairs",
+   "reason": "budget; most are UI/component contexts where quality-gates (CI/check-gate doctrine) is a weak fit"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-15T16:09:25.243Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "oracle-frozen-during-repair"
+   ],
+   "deviations": 1,
+   "context": "a3b615d2-05d8-47bd-ad92-672c6b42b0f3"
+  },
+  {
+   "ts": "2026-10-15T16:09:25.243Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "gate-liveness"
+   ],
+   "deviations": 1,
+   "context": "6a81750d-fdbf-4518-bae6-689303e1a884"
+  },
+  {
+   "ts": "2026-10-15T16:09:25.243Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "gate-liveness"
+   ],
+   "deviations": 1,
+   "context": "66bc7a14-bf15-41d7-8d9a-900aa670f47e"
+  },
+  {
+   "ts": "2026-10-15T16:09:25.243Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "quality-gates"
+   ],
+   "techniques": [
+    "enforcement-binding"
+   ],
+   "deviations": 1,
+   "context": "17f44718-7d6d-4579-91bf-86191e29595a"
+  }
+ ]
+}

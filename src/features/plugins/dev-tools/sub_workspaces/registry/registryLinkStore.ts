@@ -57,6 +57,7 @@ import type { DevRegistryInput } from '@/lib/bindings/DevRegistryInput';
 import type { RegistryLinkSnapshot } from '@/lib/bindings/RegistryLinkSnapshot';
 import type { WorkspaceRegistryLink } from '@/lib/bindings/WorkspaceRegistryLink';
 import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage } from '@/lib/silentCatch';
 
 /** The lanes a registry can publish. Presence is what pairing reports.
  *  Mirrors the lane list in the registry's own root `registry.yaml` — `usage`
@@ -430,7 +431,7 @@ export async function dispatchPairing(registry: Registry, cwd: string): Promise<
   } catch (e) {
     await patchRegistry(registry.id, {
       state: 'error',
-      error: e instanceof Error ? e.message : String(e),
+      error: extractMessage(e),
     });
   }
 }

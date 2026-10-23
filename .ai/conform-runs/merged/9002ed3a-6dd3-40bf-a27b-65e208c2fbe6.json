@@ -1,0 +1,150 @@
+{
+  "schema": "conform-run/1",
+  "worker": "9002ed3a-6dd3-40bf-a27b-65e208c2fbe6",
+  "subject": "job-coordination",
+  "evaluatedAt": "2026-10-16T17:05:24Z",
+  "pairs": [
+    {
+      "context": "059fdee0-40da-434a-a5cb-874bc9179a31",
+      "subject": "job-coordination",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/boot/workers.rs:233 recover_orphans runs on every boot ahead of the leader-only gate (:246) and blanket-fails every running row (src-tauri/src/engine/persona_jobs.rs:205), so a follower booting kills the leader in-flight job; re-confirmed unchanged since 2026-10-09",
+      "evaluatedAgainst": "sha256-b2:68f09609d1498e88",
+      "evaluatedRevision": 17,
+      "techniques": [
+        {
+          "technique": "terminal-state-recovery",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:205 one blanket UPDATE ... WHERE status = running stamps failed on every survivor, no per-class verdict, and runs ungated by leadership at src-tauri/src/boot/workers.rs:233"
+        },
+        {
+          "technique": "atomic-claiming@delivery-guarantees",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:153 conditional UPDATE ... WHERE id = ?2 AND status = queued; zero rows means lost claim"
+        },
+        {
+          "technique": "lease-renewal",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:155 the claim writes only started_at, no holder or renewed lease, so reclaim cannot tell a dead executor from a live leader"
+        },
+        {
+          "technique": "job-progress-and-cancellation@background-jobs",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:229 comment names a request_cancel path that does not exist; cancel_requested (:77) has no writer anywhere in src-tauri/src or src/"
+        },
+        {
+          "technique": "job-observability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/persona_jobs.rs:28 the command surface is enqueue + schedule get/set only; no command lists or reads job rows, so position/age/holder are not queryable"
+        },
+        {
+          "technique": "job-state-machines",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:65 status vocabulary is a doc comment over a String field; transitions are scattered raw UPDATEs, not one checked door"
+        }
+      ]
+    },
+    {
+      "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+      "subject": "job-coordination",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/api/pipeline/scheduler.ts:13 one-line invokeWithTimeout forwards with no local state; the durable job record lives in the Rust engine, not this IPC binding layer",
+      "evaluatedAgainst": "sha256-b2:68f09609d1498e88",
+      "evaluatedRevision": 17,
+      "techniques": []
+    },
+    {
+      "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+      "subject": "job-coordination",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/onboarding/components/useOnboardingState.ts:70 step position is renderer Zustand state with no durable job record or executor; the golden path routes human-paced flows to wizard-flows",
+      "evaluatedAgainst": "sha256-b2:68f09609d1498e88",
+      "evaluatedRevision": 17,
+      "techniques": []
+    },
+    {
+      "context": "a4174786-a5fb-4145-a1b3-f02826fac64a",
+      "subject": "job-coordination",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/teams/sub_factory/passport/ProjectsPassportWall.tsx:38 display component over pre-fetched passport props; owns no job record, claim or recovery path",
+      "evaluatedAgainst": "sha256-b2:68f09609d1498e88",
+      "evaluatedRevision": 17,
+      "techniques": []
+    },
+    {
+      "context": "2b61b648-d166-4255-b7b7-5d32ffdd6751",
+      "subject": "job-coordination",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/gitlab/components/GitLabPipelineViewer.tsx:28 renders GitLab-owned pipeline status from a store selector; GitLab owns the job record, so cicd-monitoring governs",
+      "evaluatedAgainst": "sha256-b2:68f09609d1498e88",
+      "evaluatedRevision": 17,
+      "techniques": []
+    }
+  ],
+  "declined": [
+    {
+      "subject": "job-coordination",
+      "context": "89d44c76-ec4c-4388-843e-503cf6ca2507",
+      "reason": "weak context (progress-transform); existing not-applicable verdict of 2026-10-10 is against the current digest, and the skill does not judge weak pairs by default"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T17:05:24Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "job-coordination"
+      ],
+      "techniques": [
+        "terminal-state-recovery",
+        "atomic-claiming",
+        "lease-renewal",
+        "job-progress-and-cancellation",
+        "job-observability",
+        "job-state-machines"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:05:24Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "job-coordination"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-16T17:05:24Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "job-coordination"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-16T17:05:24Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "job-coordination"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-16T17:05:24Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "job-coordination"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

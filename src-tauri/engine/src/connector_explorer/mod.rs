@@ -96,6 +96,13 @@ pub async fn explore_url(
     let parsed_url = url::Url::parse(url)
         .map_err(|e| AppError::Validation(format!("invalid URL '{url}': {e}")))?;
 
+    // Pre-flight: the client's resolver guards hostnames only, so an IP-literal
+    // URL (http://169.254.169.254/, http://127.0.0.1:PORT/) must be refused
+    // before any socket is opened.
+    personas_core::url_safety::validate_url_safety_async(parsed_url.as_str())
+        .await
+        .map_err(|reason| AppError::Validation(format!("URL blocked: {reason}")))?;
+
     // SSRF-safe client: DNS-rebinding resolver + per-hop redirect
     // re-validation. `url` here is caller-supplied (that's the whole point
     // of this explorer), so a bare `redirect::Policy::limited(10)` with no
@@ -490,6 +497,20 @@ fn decode_basic_html_entities(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    /// IP-literal targets are refused with a Validation error before dialling
+    /// (a dial to port 9 would otherwise surface as an Execution error).
+    #[tokio::test]
+    async fn explore_url_refuses_ip_literal_internal_targets() {
+        for url in [
+            "http://127.0.0.1:9/",
+            "http://169.254.169.254/latest/meta-data/",
+            "http://[::1]:9/",
+        ] {
+            let r = explore_url(url, ExplorerOptions::default()).await;
+            assert!(matches!(r, Err(AppError::Validation(_))), "{url}: {r:?}");
+        }
+    }
+
     use super::*;
 
     fn base() -> url::Url {

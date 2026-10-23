@@ -2,7 +2,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useEffect, useState } from 'react';
 import { History, Calendar } from 'lucide-react';
 import { getCredentialAuditLog } from '@/api/vault/credentials';
-import { toastCatch } from "@/lib/silentCatch";
+import { silentCatch } from '@/lib/silentCatch';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 import type { CredentialAuditEntry } from '@/lib/bindings/CredentialAuditEntry';
 import { formatTimestamp } from '@/lib/utils/formatters';
 
@@ -24,22 +26,31 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
   const sh = t.vault.shared;
   const [entries, setEntries] = useState<CredentialAuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  // A failed read is not an empty history: it used to fire an English toast
+  // (rendered as the generic sentence) while the list below said "No recorded
+  // activity yet", which states a fact nobody checked.
+  const [loadError, setLoadError] = useState<{ raw: unknown } | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setLoadError(null);
     getCredentialAuditLog(credentialId, 10)
       .then((data) => { if (!cancelled) setEntries(data); })
-      .catch(toastCatch("ExecutionsTab:fetchAuditLog", "Failed to load audit history"))
+      .catch((err: unknown) => {
+        silentCatch('ExecutionsTab:fetchAuditLog')(err);
+        if (!cancelled) setLoadError({ raw: err });
+      })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [credentialId]);
+  }, [credentialId, attempt]);
 
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center gap-2 typo-body text-foreground">
         <Calendar className="w-3.5 h-3.5" />
-        <span>Created {formatTimestamp(createdAt, 'Unknown')}</span>
+        <span>{sh.label_created} {formatTimestamp(createdAt, '--')}</span>
       </div>
 
       <div className="space-y-1.5">
@@ -48,7 +59,14 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
           {sh.recent_activity}
         </h3>
 
-        {!loading && entries.length === 0 && (
+        {loadError && (
+          <InlineErrorBanner
+            message={inlineErrorCopy(t, loadError.raw)}
+            onRetry={() => setAttempt((n) => n + 1)}
+          />
+        )}
+
+        {!loading && !loadError && entries.length === 0 && (
           <div className="typo-body text-foreground py-4 text-center border border-dashed border-primary/15 rounded-card">
             {sh.no_recorded_activity}
           </div>

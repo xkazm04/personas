@@ -1,15 +1,16 @@
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { useSystemStore } from "@/stores/systemStore";
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { PortfolioStrip } from './components/PortfolioStrip';
 
-const ProjectOverviewPage = lazy(() => import('./sub_overview/ProjectOverviewPage'));
-const LlmOverviewPage = lazy(() => import('./sub_llm_overview/LlmOverviewPage'));
-const ContextMapPage = lazy(() => import('./sub_context/ContextMapPage'));
-const RunDeskPage = lazy(() => import('./sub_runner/RunDeskPage'));
-const FleetPage = lazy(() => import('@/features/plugins/fleet/FleetPage'));
-const WorkspacesPage = lazy(() => import('./sub_workspaces/WorkspacesPage'));
-const SkillsManagerPage = lazy(() => import('./sub_skills/SkillsManagerPage'));
+const ProjectOverviewPage = lazyRetry(() => import('./sub_overview/ProjectOverviewPage'));
+const LlmOverviewPage = lazyRetry(() => import('./sub_llm_overview/LlmOverviewPage'));
+const ContextMapPage = lazyRetry(() => import('./sub_context/ContextMapPage'));
+const RunDeskPage = lazyRetry(() => import('./sub_runner/RunDeskPage'));
+const FleetPage = lazyRetry(() => import('@/features/plugins/fleet/FleetPage'));
+const WorkspacesPage = lazyRetry(() => import('./sub_workspaces/WorkspacesPage'));
+const SkillsManagerPage = lazyRetry(() => import('./sub_skills/SkillsManagerPage'));
 
 // ---------------------------------------------------------------------------
 // Main Page

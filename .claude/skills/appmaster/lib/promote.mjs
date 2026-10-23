@@ -8,6 +8,7 @@
 
 import { QUEUE_REASONS, Refusal, nowIso, shortId } from './contract.mjs';
 import { findRun } from './store.mjs';
+import { isArmed } from './standup.mjs';
 import { loadQueue, orderQueue, markQueue, moveInQueue, queueTable, queuedEntry, withQueueLock } from './queue.mjs';
 import { dispatchCore, awaitCommandFor, cmdRelease, requireRun } from './worker.mjs';
 
@@ -36,6 +37,7 @@ export function promote() {
         out.refusals.push({ runId: e.runId, reason: `run is ${run.state} (dropped from the queue)` });
         continue;
       }
+      if (!isArmed(run.slug)) { out.stillQueued++; out.refusals.push({ runId: e.runId, reason: 'not armed (standup)' }); continue; }
       if (stop) { out.stillQueued++; out.refusals.push({ runId: e.runId, reason: stop }); continue; }
       try {
         const r = dispatchCore({ flags: { run: run.runId } });

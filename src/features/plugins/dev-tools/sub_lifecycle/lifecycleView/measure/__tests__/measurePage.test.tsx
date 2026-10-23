@@ -8,9 +8,10 @@ import { useDevToolsLiveStore } from '@/stores/devToolsLiveStore';
 import { healthyMix } from '../../../journey/__tests__/fixtures';
 import { cmd, midMeasure, NOW, progress } from './progressFixtures';
 
-// The page through a whole Measure against a stubbed lifecycle API: the
-// header's control in one footprint, Cancel pressed twice, the panel in the
-// band's slot, the rail holding Gate's verdict until the last run lands, the
+// The page through a whole Measure against a stubbed lifecycle API, opened on
+// one project (the Lens's project plane): the top bar's control in one
+// footprint, Cancel pressed twice, the panel over the columns, the Gate column
+// holding its verdict until the last run lands, the
 // summary (changed / unchanged / cancelled / failure named), the live region,
 // the "nothing to measure" way to the Commands editor, and the ticker.
 
@@ -34,6 +35,7 @@ vi.mock('@/stores/systemStore', () => ({
 }));
 
 import LifecyclePage from '../../../LifecyclePage';
+import { __resetLensFocusForTests, openLifecycleProject } from '../../lens/model/lensFocus';
 import { loadStepChunk } from '../../layer2/stepChunks';
 
 // The Gate screen's chunks are transformed once, up front: under a full parallel run a cold
@@ -44,6 +46,7 @@ const ESLINT_ERROR = "src/a.ts:4:1  error  'x' is never used";
 
 beforeEach(() => {
   vi.clearAllMocks();
+  __resetLensFocusForTests();
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(NOW);
   api.getLifecycleHistory.mockResolvedValue({ measures: [], stepIds: ['gate', 'tests'] });
@@ -66,6 +69,7 @@ afterEach(() => {
 function project(id: string, snap: LifecycleSnapshot) {
   activeProjectId = id;
   api.getLifecycle.mockResolvedValue({ ...snap, projectId: id });
+  openLifecycleProject(id);
 }
 
 /** The next snapshot the page reads, as a `dev_lifecycle_*` change would bring it. */
@@ -115,11 +119,12 @@ describe('a Measure on the page', () => {
     expect(api.cancelLifecycleMeasure).toHaveBeenCalledWith('p-m-cancel');
   });
 
-  it('shows the panel in the status band slot, one row per command with its time against its median', async () => {
+  it('shows the panel over the project columns, one row per command with its time against its median', async () => {
     project('p-m-panel', measuring());
     render(<LifecyclePage />);
     const panel = await screen.findByTestId('lc-measure-panel');
-    expect(screen.queryByTestId('lc1-status')).toBeNull();
+    expect(screen.getByTestId('lens-measure').contains(panel)).toBe(true);
+    expect(screen.getByTestId('lens-head').contains(panel)).toBe(false);
     const rows = within(panel).getAllByRole('listitem');
     expect(rows).toHaveLength(5);
     expect(rows[2]!.textContent).toContain('40s of ~1m');
@@ -130,26 +135,27 @@ describe('a Measure on the page', () => {
   it('holds Gate at its verdict until the last run lands, then says what changed and names the failure', async () => {
     project('p-m-summary', healthyMix());
     render(<LifecyclePage />);
-    await screen.findByTestId('lc1-status');
+    await screen.findByTestId('lens-field');
 
-    // Mid-Measure the backend already judges Gate green: the card must not say so yet.
+    // Mid-Measure the backend already judges Gate green: the column must not say so yet.
     await next({ ...recovered(), measuring: true, progress: midMeasure() });
-    const gate = await screen.findByTestId('lc-measure-panel').then(() => document.querySelector('[data-card="gate"]')!);
+    await screen.findByTestId('lc-measure-panel');
+    const gate = screen.getByTestId('lens-col-gate');
     expect(gate.getAttribute('data-measuring')).toBe('true');
     expect(gate.textContent).toContain('Measuring, 2 of 3');
-    expect(gate.textContent).toContain('90');
+    expect(gate.textContent).not.toContain('Healthy');
 
     await next(recovered());
     const changed = await screen.findByTestId('lc-measure-changed');
     expect(changed.textContent).toMatch(/^Measured in .+: Gate At risk → Healthy/);
     await waitFor(() => expect(screen.getByTestId('lc-measure-failure').textContent).toContain(`eslint failed: ${ESLINT_ERROR}`));
-    expect(document.querySelector('[data-card="gate"]')!.getAttribute('data-settle')).toBe('true');
-    expect(screen.getByTestId('lc1-verdict-gate').textContent).toContain('Healthy');
+    expect(screen.getByTestId('lens-col-gate').getAttribute('data-settle')).toBe('true');
+    expect(screen.getByTestId('lens-col-gate').textContent).toContain('Healthy');
     expect(screen.getByTestId('lc-measure-live').textContent).toMatch(/^Measure finished in .+\. Gate At risk → Healthy.*eslint failed\.$/);
 
-    // Dismissed, the band returns.
+    // Dismissed, the columns have the plane to themselves again.
     fireEvent.click(screen.getByTestId('lc-measure-dismiss'));
-    expect(await screen.findByTestId('lc1-status')).toBeTruthy();
+    await waitFor(() => expect(screen.queryByTestId('lens-measure')).toBeNull());
   });
 
   it('says no verdict changed, and how many commands a cancel left unrun', async () => {
@@ -160,7 +166,7 @@ describe('a Measure on the page', () => {
     ]);
     project('p-m-cancelled', healthyMix());
     render(<LifecyclePage />);
-    await screen.findByTestId('lc1-status');
+    await screen.findByTestId('lens-field');
     await next(healthyMix({ measuring: true, progress: clean }));
     fireEvent.click(await screen.findByTestId('lc-measure-cancel'));
     await next(healthyMix());

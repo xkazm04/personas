@@ -27,7 +27,7 @@
   "cover_empty": "এখনও কোনো মাইলস্টোন নেই — প্রথম কাটটি পরিকল্পনা করুন",
   "cover_forecast": "পূর্বাভাস {date}",
   "cover_next": "পরবর্তী",
-  "cover_open_aria": "{name}-এর Ship রোডম্যাপ খুলুন",
+  "cover_open_aria": "নোটপ্যাডে {name}-এর রোডম্যাপ খুলুন",
   "cover_shipped_count": "{shipped}/{total} শিপ হয়েছে",
   "crit_contexts": "মূল কনটেক্সটগুলো সুস্থ",
   "crit_contexts_critical": " · সংকটাপন্ন: {names}",

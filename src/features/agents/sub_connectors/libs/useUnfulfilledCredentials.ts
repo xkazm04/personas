@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
-import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
+import { parseDesignContext } from '@/features/agents/shared/designContext';
 import type { CredentialMetadata, ConnectorDefinition, PersonaWithDetails } from '@/lib/types/types';
 
 // Hex fallbacks for unknown / placeholder entries. Consumed by callers

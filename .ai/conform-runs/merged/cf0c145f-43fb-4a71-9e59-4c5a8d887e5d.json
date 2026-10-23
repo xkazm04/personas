@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "cf0c145f-43fb-4a71-9e59-4c5a8d887e5d", "subject": "multi-provider-gateway-plane",
+ "evaluatedAt": "2026-10-21T17:47:54Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "multi-provider-gateway-plane", "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0", "reason": "weak context (governance: weak, empty paths sample, priorNotApplicable 10) - the match itself is doubtful; left as a coverage question, not judged"},
+  {"subject": "multi-provider-gateway-plane", "context": "89d44c76-ec4c-4388-843e-503cf6ca2507", "reason": "weak context (governance: weak, two progress-UI files, priorNotApplicable 10; tokens transform/multi/status are lexical resonance) - left as a coverage question, not judged"},
+  {"subject": "multi-provider-gateway-plane", "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b", "reason": "deviation already judged 2026-10-21 against the current digest sha256-b2:f268193750c0a517 rev 9; no commits since 2026-10-20 touch src-tauri/src/engine/runner/mod.rs or src-tauri/engine/src/failover.rs and its anchors (mod.rs:2079/2143/3832, failover.rs:770) still print the cited constructs - re-judging would duplicate a current verdict"}
+ ],
+ "consults": []}

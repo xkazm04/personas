@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { extractMessage } from '@/lib/silentCatch';
 
 export type ValidationState = 'idle' | 'validating' | 'valid' | 'error';
 
@@ -38,7 +39,12 @@ export function useFieldValidation({
   const [state, setState] = useState<ValidationState>('idle');
   const [error, setError] = useState<string | undefined>();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const seqRef = useRef(0);
+  // Retired on EVERY onChange, not when the next debounce fires: a check still
+  // in flight when the user types again (or clears below minLength) is stale
+  // the moment the value changes. Same AbortController shape as the sibling
+  // useAsyncFieldValidation (a catalog primitive cannot import the stores'
+  // createLatestWins).
+  const inFlightRef = useRef<AbortController | null>(null);
 
   // Keep validate ref stable to avoid stale closures
   const validateRef = useRef(validate);
@@ -46,8 +52,12 @@ export function useFieldValidation({
 
   const onChange = useCallback(
     (value: string) => {
-      // Clear pending timer
+      // Clear pending timer and retire any check already in flight.
       if (timerRef.current) clearTimeout(timerRef.current);
+      inFlightRef.current?.abort();
+      const controller = new AbortController();
+      inFlightRef.current = controller;
+      const { signal } = controller;
 
       // Reset if below min length
       if (value.length < minLength) {
@@ -60,11 +70,10 @@ export function useFieldValidation({
       setError(undefined);
 
       timerRef.current = setTimeout(async () => {
-        const seq = ++seqRef.current;
         try {
           const result = await validateRef.current(value);
           // Ignore stale results
-          if (seq !== seqRef.current) return;
+          if (signal.aborted) return;
           if (result) {
             setState('error');
             setError(result);
@@ -73,9 +82,9 @@ export function useFieldValidation({
             setError(undefined);
           }
         } catch (err) {
-          if (seq !== seqRef.current) return;
+          if (signal.aborted) return;
           setState('error');
-          setError(err instanceof Error ? err.message : String(err));
+          setError(extractMessage(err));
         }
       }, debounceMs);
     },
@@ -86,6 +95,7 @@ export function useFieldValidation({
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      inFlightRef.current?.abort();
     };
   }, []);
 

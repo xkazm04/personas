@@ -17,31 +17,32 @@ pub(crate) fn build_keyed_summary(
     let mut summary_obj = serde_json::Map::new();
     for (key, results) in tracker.iter() {
         let count = results.len() as f64;
-        let avg_ta = avg_scored(results.iter().map(|r| r.0)).unwrap_or(0.0);
-        let avg_oq = avg_scored(results.iter().map(|r| r.1)).unwrap_or(0.0);
-        let avg_pc = avg_scored(results.iter().map(|r| r.2)).unwrap_or(0.0);
+        let avg_ta = avg_scored(results.iter().map(|r| r.0));
+        let avg_oq = avg_scored(results.iter().map(|r| r.1));
+        let avg_pc = avg_scored(results.iter().map(|r| r.2));
         let total_cost: f64 = results.iter().map(|r| r.3).sum();
         // Renormalise over present sub-scores (sandbox runs omit tool_accuracy)
         // — mirrors `verdict_status`.
-        let composite = renormalized_composite(
-            avg_scored(results.iter().map(|r| r.0)),
-            avg_scored(results.iter().map(|r| r.1)),
-            avg_scored(results.iter().map(|r| r.2)),
-        )
-        .unwrap_or(0.0);
+        let composite = renormalized_composite(avg_ta, avg_oq, avg_pc);
         summary_obj.insert(
             key.clone(),
             serde_json::json!({
-                "avg_tool_accuracy": avg_ta.round() as i32,
-                "avg_output_quality": avg_oq.round() as i32,
-                "avg_protocol_compliance": avg_pc.round() as i32,
-                "composite_score": composite.round() as i32,
+                "avg_tool_accuracy": rounded_score(avg_ta),
+                "avg_output_quality": rounded_score(avg_oq),
+                "avg_protocol_compliance": rounded_score(avg_pc),
+                "composite_score": rounded_score(composite),
                 "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
                 "scenarios_tested": count as i32,
             }),
         );
     }
     serde_json::Value::Object(summary_obj)
+}
+
+/// A summary score: the rounded average, or JSON `null` when no cell measured
+/// it. Never `0`: a sandbox run's absent tool_accuracy is not a zero.
+fn rounded_score(v: Option<f64>) -> Option<i32> {
+    v.map(|v| v.round() as i32)
 }
 
 /// Build arena-style ranked summary.
@@ -54,53 +55,43 @@ pub(crate) fn build_arena_summary(
     for model in models {
         if let Some(results) = tracker.get(&model.id) {
             let count = results.len() as f64;
-            let avg_ta = avg_scored(results.iter().map(|r| r.0)).unwrap_or(0.0);
-            let avg_oq = avg_scored(results.iter().map(|r| r.1)).unwrap_or(0.0);
-            let avg_pc = avg_scored(results.iter().map(|r| r.2)).unwrap_or(0.0);
+            let avg_ta = avg_scored(results.iter().map(|r| r.0));
+            let avg_oq = avg_scored(results.iter().map(|r| r.1));
+            let avg_pc = avg_scored(results.iter().map(|r| r.2));
             let total_cost: f64 = results.iter().map(|r| r.3).sum();
             let avg_duration = results.iter().map(|r| r.4 as f64).sum::<f64>() / count;
             // Renormalise over present sub-scores (sandbox runs omit
             // tool_accuracy) — mirrors `verdict_status`.
-            let composite = renormalized_composite(
-                avg_scored(results.iter().map(|r| r.0)),
-                avg_scored(results.iter().map(|r| r.1)),
-                avg_scored(results.iter().map(|r| r.2)),
-            )
-            .unwrap_or(0.0);
+            let composite = renormalized_composite(avg_ta, avg_oq, avg_pc);
             let cost_known = provider_cost_is_known(&model.provider);
-            let value_score = compute_value_score(composite, total_cost);
+            let value_score = composite.map(|c| compute_value_score(c, total_cost));
             rankings.push(serde_json::json!({
                 "model_id": model.id,
                 "provider": model.provider,
-                "avg_tool_accuracy": avg_ta.round() as i32,
-                "avg_output_quality": avg_oq.round() as i32,
-                "avg_protocol_compliance": avg_pc.round() as i32,
-                "composite_score": composite.round() as i32,
+                "avg_tool_accuracy": rounded_score(avg_ta),
+                "avg_output_quality": rounded_score(avg_oq),
+                "avg_protocol_compliance": rounded_score(avg_pc),
+                "composite_score": rounded_score(composite),
                 "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
                 "cost_unknown": !cost_known,
                 "avg_duration_ms": avg_duration.round() as i64,
-                "value_score": value_score.round() as i32,
+                "value_score": rounded_score(value_score),
                 "scenarios_tested": count as i32,
             }));
         }
     }
-    rankings.sort_by(|a, b| {
-        let sa = a
-            .get("composite_score")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
-        let sb = b
-            .get("composite_score")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
-        sb.cmp(&sa)
-    });
+    // An unmeasured model (every cell errored or was inconclusive) sorts last
+    // and can never be named best: `None < Some(_)`. With no measured model
+    // `best_quality_model` is null, so the arena history column and the
+    // all-time champion tally (both skip a non-string) award no trophy.
+    let measured = |r: &serde_json::Value| r.get("composite_score").and_then(|v| v.as_i64());
+    rankings.sort_by_key(|r| std::cmp::Reverse(measured(r)));
     let best_model = rankings
         .first()
+        .filter(|r| measured(r).is_some())
         .and_then(|r| r.get("model_id"))
         .and_then(|v| v.as_str())
-        .unwrap_or("unknown")
-        .to_string();
+        .map(str::to_string);
     let best_value = best_value_model(&rankings);
     serde_json::json!({
         "best_quality_model": best_model,

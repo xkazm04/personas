@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
@@ -33,6 +33,14 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
   );
   const query = useStructuredQuery(onCategoryFilterChange, onSearchChange, queryCallbacks);
   const selectedCategory: string | null = categoryFilter[0] ?? null;
+  // The filter row repeats the category as its own chip. Clearing it there must
+  // clear the input's chip too, or the input keeps a chip the list no longer
+  // applies and the next visit to the gallery re-applies it from the cache.
+  const { removeChipsOfType } = query;
+  const handleFilterRowCategoryChange = useCallback((categories: string[]) => {
+    if (categories.length === 0) removeChipsOfType('category');
+    else onCategoryFilterChange(categories);
+  }, [removeChipsOfType, onCategoryFilterChange]);
 
   const showAiSuggestion = useMemo(() => {
     return !aiSearchActive && !aiSearchLoading && !aiSearchMode
@@ -87,7 +95,7 @@ export function TemplateSearchBar(props: TemplateSearchBarProps) {
 
       <TemplateSearchFilterRow
         density={density} selectedCategory={selectedCategory}
-        connectorFilter={connectorFilter} onCategoryFilterChange={onCategoryFilterChange}
+        connectorFilter={connectorFilter} onCategoryFilterChange={handleFilterRowCategoryChange}
         onConnectorFilterChange={onConnectorFilterChange} availableConnectors={availableConnectors}
         coverageFilter={coverageFilter} onCoverageFilterChange={onCoverageFilterChange} coverageCounts={coverageCounts}
         componentFilter={props.componentFilter} onComponentFilterChange={props.onComponentFilterChange}

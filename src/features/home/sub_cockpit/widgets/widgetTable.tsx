@@ -32,6 +32,7 @@
  * same tone, with the mark's label kept as the row's `sr-only` name prefix (see `nameCell`) so
  * nothing that was spoken stops being spoken.
  */
+import type { EmptyArtMotif } from '@/features/shared/components/display/emptyArt/EmptyArt';
 import { useCallback, useState, type ReactNode } from 'react';
 
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
@@ -141,6 +142,8 @@ export interface WidgetTableProps<T> {
   rowTone?: (row: T) => Tone;
   /** Already-translated, surface-specific (never "No data"). */
   emptyTitle: string;
+  /** The illustration of the settled-empty table (default: inbox). */
+  emptyArt?: EmptyArtMotif;
   /** Accessible name of the table and of its "Show all" pager. */
   label: string;
   /**
@@ -158,7 +161,7 @@ export interface WidgetTableProps<T> {
  * head lines up under the tile's own title, with the capped "Show all N" under the last row.
  */
 export function WidgetTable<T>({
-  columns, rows, getRowKey, onRowClick, rowTone, emptyTitle, label, cap = DEFAULT_CAP, isLoading, testId,
+  columns, rows, getRowKey, onRowClick, rowTone, emptyTitle, emptyArt, label, cap = DEFAULT_CAP, isLoading, testId,
 }: WidgetTableProps<T>) {
   const { t, tx } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -191,6 +194,7 @@ export function WidgetTable<T>({
           onRowClick={onRowClick}
           rowAccent={rowTone ? accent : undefined}
           emptyTitle={emptyTitle}
+          emptyArt={emptyArt}
           isLoading={isLoading}
           density="compact"
           borderless

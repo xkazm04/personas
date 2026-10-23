@@ -101,17 +101,41 @@ pub(super) async fn run_execution_with_ceiling(
             if global_enabled {
                 if let Some(home) = dirs::home_dir() {
                     let now = std::time::SystemTime::now();
-                    if let Some(active) = cli_session_awareness::discovery::discover_active_session(
-                        &home,
-                        now,
-                        cli_session_awareness::discovery::DEFAULT_FRESHNESS_CUTOFF,
-                    ) {
-                        // Cap at 8 turns total (~4 user + 4 assistant; the
-                        // tail-N is role-agnostic so the boundary is
-                        // approximate). 500-char/turn cap is enforced
-                        // inside the reader.
-                        let turns =
-                            cli_session_awareness::transcript::read_recent_turns(&active.path, 8);
+                    // The directory walk stats every transcript under
+                    // ~/.claude/projects (thousands on a heavy machine), so
+                    // it and the tail read run on the blocking pool, not on
+                    // an async worker.
+                    let discovered = match tokio::task::spawn_blocking(move || {
+                        cli_session_awareness::discovery::discover_active_session(
+                            &home,
+                            now,
+                            cli_session_awareness::discovery::DEFAULT_FRESHNESS_CUTOFF,
+                        )
+                        .map(|active| {
+                            // Cap at 8 turns total (~4 user + 4 assistant; the
+                            // tail-N is role-agnostic so the boundary is
+                            // approximate). 500-char/turn cap is enforced
+                            // inside the reader.
+                            let turns = cli_session_awareness::transcript::read_recent_turns(
+                                &active.path,
+                                8,
+                            );
+                            (active, turns)
+                        })
+                    })
+                    .await
+                    {
+                        Ok(found) => found,
+                        Err(e) => {
+                            if e.is_panic() {
+                                tracing::error!(error = %e, "cli_session: discovery task panicked");
+                            } else {
+                                tracing::warn!(error = %e, "cli_session: discovery task cancelled");
+                            }
+                            None
+                        }
+                    };
+                    if let Some((active, turns)) = discovered {
                         if let Some(md) =
                             cli_session_awareness::render::render_cli_session_for_prompt(
                                 &active, &turns, now,

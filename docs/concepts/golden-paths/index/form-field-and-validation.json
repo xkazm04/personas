@@ -33,6 +33,7 @@
     ".claude/worktrees/**": {"count":1,"sections":[],"contexts":["tree), not estimated. `.claude/worktrees/**` excluded."],"resolved":false,"isDir":true},
     "ChannelsAtelier.tsx": {"count":1,"sections":[5],"lines":["381"],"contexts":["`RecipeAdoptionModal.tsx:270`, `ChannelsAtelier.tsx:381`. The user sees that"],"resolved":false},
     "CreatePlaybookModal.tsx": {"count":1,"sections":[8],"lines":["138"],"contexts":["`CreatePlaybookModal.tsx:138` and most call sites — accepts none of"],"resolved":false},
+    "CreateTeamForm.tsx": {"count":2,"sections":[4,8],"lines":["79-91","142"],"contexts":["(`CreateTeamForm.tsx:79-91` is the reference shape)."],"resolved":false},
     "agents/quick-answer/triage/deck/QuestionPanel.tsx": {
       "count": 1,
       "sections": [7],
@@ -233,6 +234,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "sub_channels/ReplyOutbox.tsx"
     },
+    "src/features/projects/development/goals/GoalEditorModal.tsx": {"count":1,"sections":[5],"lines":["275"],"contexts":["accepts any non-empty string as a webhook URL. `GoalEditorModal.tsx:275` has no"],"resolvedFrom":"basename","verbatim":"GoalEditorModal.tsx"},
     "src/features/settings/sub_api_keys/components/CreateApiKeyDialog.tsx": {
       "count": 6,
       "sections": [5,7,9],
@@ -370,22 +372,6 @@
       "contexts": ["`teams/sub_factory/factoryPrimitives.tsx:234,239,245,315`."],
       "resolvedFrom": "suffix",
       "verbatim": "teams/sub_factory/factoryPrimitives.tsx"
-    },
-    "src/features/teams/sub_goals/GoalEditorModal.tsx": {
-      "count": 5,
-      "sections": [5,7],
-      "lines": ["275","189,234"],
-      "contexts": ["accepts any non-empty string as a webhook URL. `GoalEditorModal.tsx:275` has no"],
-      "resolvedFrom": "basename",
-      "verbatim": "GoalEditorModal.tsx"
-    },
-    "src/features/teams/sub_teamWorkspace/CreateTeamForm.tsx": {
-      "count": 5,
-      "sections": [4,6,7,8],
-      "lines": ["79-91","98-113","127,141,157","189","142"],
-      "contexts": ["(`CreateTeamForm.tsx:79-91` is the reference shape)."],
-      "resolvedFrom": "basename",
-      "verbatim": "CreateTeamForm.tsx"
     },
     "src/features/teams/sub_teamWorkspace/teamStudio/slackBridge/SlackBridgePickers.tsx": {
       "count": 1,
@@ -574,6 +560,16 @@
       ],
       "resolved": false
     },
+    "teams/sub_goals/GoalEditorModal.tsx": {
+      "count": 4,
+      "sections": [7],
+      "lines": ["189,234","275"],
+      "contexts": [
+        "| `agents/sub_deployment/components/cloud/CreateTriggerForm.tsx:52,67,99` · `vault/sub_credentials/components/import/ImportSyncConfig.tsx:41,56` · `teams/sub_goals/GoalEditorModal.tsx:189,234` · `tem…"
+      ],
+      "resolved": false
+    },
+    "teams/sub_teamWorkspace/CreateTeamForm.tsx": {"count":3,"sections":[6,7],"lines":["98-113","127,141,157","189"],"contexts":["- **`teams/sub_teamWorkspace/CreateTeamForm.tsx:98-113` — the ONE site to copy.**"],"resolved":false},
     "templates/draft-editor/DraftIdentityTab.tsx": {
       "count": 2,
       "sections": [7],

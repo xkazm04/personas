@@ -57,6 +57,7 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
         onFocus={handleEnter}
         onBlur={handleLeave}
         aria-label={previewAriaLabel}
+        aria-pressed={active}
         className={`group relative flex flex-col w-full p-0 overflow-hidden rounded-modal border transition-all ${
           active
             ? 'border-primary/40 ring-2 ring-primary/20'

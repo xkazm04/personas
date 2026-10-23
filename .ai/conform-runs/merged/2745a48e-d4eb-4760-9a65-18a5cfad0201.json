@@ -1,0 +1,10 @@
+{"schema": "conform-run/1", "worker": "2745a48e-d4eb-4760-9a65-18a5cfad0201", "subject": "codebase-scanning",
+ "evaluatedAt": "2026-10-21T18:03:46Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "codebase-scanning", "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91", "reason": "overview-patterns has no code to judge: its entry points (src/features/overview/sub_patterns/*) were deleted by 6ea91dd77b 'remove the Patterns tab and its frontend module' and context-map.json lists no file_paths; the context is dead and should leave the context map on the next scan, not receive a verdict"},
+  {"subject": "codebase-scanning", "context": "cab45fee-e439-4bff-9924-217b1acc17f8", "reason": "plugins-artist-hooks has no code to judge: src/features/plugins/artist/hooks/* was deleted by 0697f13438 'remove the Artist and Research Lab plugins'; the context is dead (and its 'scanning' was asset-folder enumeration, not defect discovery, so it would be not-applicable even if live)"},
+  {"subject": "codebase-scanning", "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400", "reason": "weak governance row, skipped by rule; its code is the same removed Artist plugin (0697f13438)"}
+ ],
+ "consults": []
+}

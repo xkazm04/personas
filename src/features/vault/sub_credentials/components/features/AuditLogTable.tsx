@@ -11,19 +11,26 @@ const SUCCESS_STATUS = STATUS_COLORS.success!;
 const WARNING_STATUS = STATUS_COLORS.warning!;
 const ERROR_STATUS = STATUS_COLORS.error!;
 
-export const OP_LABELS: Record<string, { label: string; color: string; dot: string }> = {
-  decrypt: { label: 'Decrypted', color: INFO_STATUS.text, dot: 'bg-blue-400' },
-  create: { label: 'Created', color: SUCCESS_STATUS.text, dot: 'bg-emerald-400' },
-  update: { label: 'Updated', color: 'text-purple-400', dot: 'bg-purple-400' },
-  delete: { label: 'Deleted', color: ERROR_STATUS.text, dot: 'bg-red-400' },
-  healthcheck: { label: 'Healthcheck', color: WARNING_STATUS.text, dot: 'bg-amber-400' },
+type AuditOpKey = 'op_decrypted' | 'op_created' | 'op_updated' | 'op_deleted' | 'op_healthcheck';
+
+/** Label is a key into `t.vault.features.audit`, resolved at render. */
+export const OP_LABELS: Record<string, { labelKey: AuditOpKey; color: string; dot: string }> = {
+  decrypt: { labelKey: 'op_decrypted', color: INFO_STATUS.text, dot: 'bg-blue-400' },
+  create: { labelKey: 'op_created', color: SUCCESS_STATUS.text, dot: 'bg-emerald-400' },
+  update: { labelKey: 'op_updated', color: 'text-purple-400', dot: 'bg-purple-400' },
+  delete: { labelKey: 'op_deleted', color: ERROR_STATUS.text, dot: 'bg-red-400' },
+  healthcheck: { labelKey: 'op_healthcheck', color: WARNING_STATUS.text, dot: 'bg-amber-400' },
 };
 
 const AUDIT_FILTERS = ['all', 'decrypt', 'create', 'update', 'delete', 'healthcheck'] as const;
 const AUDIT_PAGE_SIZE = 20;
 
 export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: CredentialAuditEntry[]; isLoading?: boolean }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const opLabel = (operation: string) => {
+    const def = OP_LABELS[operation];
+    return def ? t.vault.features.audit[def.labelKey] : operation;
+  };
   const [auditFilter, setAuditFilter] = useState('all');
   const [auditPage, setAuditPage] = useState(0);
 
@@ -96,10 +103,10 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
                 : 'text-foreground hover:text-muted-foreground/90 hover:bg-secondary/30'
             }`}
           >
-            {f === 'all' ? 'All' : (OP_LABELS[f]?.label ?? f)}
+            {f === 'all' ? t.common.all : opLabel(f)}
           </button>
         ))}
-        <span className="ml-auto typo-caption text-foreground">{filtered.length} entries</span>
+        <span className="ml-auto typo-caption text-foreground">{tx(filtered.length === 1 ? t.vault.audit_log.entries_one : t.vault.audit_log.entries_other, { count: filtered.length })}</span>
       </div>
 
       {/* Table */}
@@ -114,17 +121,17 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
           </thead>
           <tbody>
             {pageEntries.map((entry) => {
-              const op = OP_LABELS[entry.operation] ?? { label: entry.operation, color: 'text-foreground', dot: 'bg-muted-foreground' };
+              const op = OP_LABELS[entry.operation] ?? { color: 'text-foreground', dot: 'bg-muted-foreground' };
               return (
                 <tr key={entry.id} className="border-b border-primary/5 last:border-b-0 hover:bg-secondary/10" data-testid={`audit-entry-${entry.id}`}>
                   <td className="px-3 py-1.5">
                     <span className={`inline-flex items-center gap-1.5 typo-caption ${op.color}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${op.dot}`} />
-                      {op.label}
+                      {opLabel(entry.operation)}
                     </span>
                   </td>
                   <td className="px-3 py-1.5 typo-caption text-foreground truncate max-w-[300px]">
-                    {entry.personaName ? `by ${entry.personaName}` : entry.detail ?? ''}
+                    {entry.personaName ? tx(t.vault.audit_log.by_persona, { name: entry.personaName }) : entry.detail ?? ''}
                   </td>
                   <td className="px-3 py-1.5 typo-caption text-foreground tabular-nums text-right whitespace-nowrap">
                     {formatRelativeTime(entry.createdAt, '')}
@@ -148,7 +155,7 @@ export function AuditLogTable({ auditLog, isLoading = false }: { auditLog: Crede
             <ChevronLeft className="w-3.5 h-3.5 text-foreground" />
           </button>
           <span className="typo-caption text-foreground tabular-nums">
-            Page {auditPage + 1}/{totalPages}
+            {tx(t.vault.audit_log.page_of, { page: auditPage + 1, total: totalPages })}
           </span>
           <button
             type="button"

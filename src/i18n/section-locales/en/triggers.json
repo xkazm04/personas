@@ -71,6 +71,9 @@
     "commit_failed_toast": "Couldn't create the automation",
     "automations_title": "Active system events",
     "automation_ran": "ran",
+    "automation_requested": "requested",
+    "automation_partial": "partly ran",
+    "automation_held": "held for approval",
     "automation_failed": "failed",
     "automation_next": "next",
     "automation_idle": "waiting for its event",
@@ -480,7 +483,9 @@
     "watch_path_required": "At least one watch path is required.",
     "composite_min_conditions": "Composite triggers need at least 2 conditions.",
     "composite_window_minimum": "Time window must be at least 5 seconds.",
-    "endpoint_required": "Endpoint URL or event is required."
+    "endpoint_required": "Endpoint URL or event is required.",
+    "composite_window_maximum": "Time window can be at most 24 hours (86400 seconds).",
+    "watch_events_required": "Select at least one file event to watch."
   },
   "simulated_event": "Simulated Event",
   "matched_subscriptions_title": "Matched Subscriptions",
@@ -838,6 +843,8 @@
   "dead_letter_group_other": "Other errors",
   "dead_letter_no_matches": "No events match the current filters",
   "dead_letter_clear_filters_to_see": "Clear filters to see all dead-lettered events",
+  "dead_letter_load_failed_title": "Couldn't load the dead letter queue",
+  "dead_letter_load_failed_desc": "The queue could not be read, so an empty list here would be misleading. Your events are not gone - try again.",
   "marketplace": {
     "view_cards": "Cards",
     "view_cards_sub": "Original card grid",
@@ -945,5 +952,7 @@
   "add_persona_available": "{count} available",
   "add_persona_all_connected": "All personas are already connected",
   "add_persona_ungrouped": "Ungrouped",
-  "live_status_skipped": "Skipped"
+  "live_status_skipped": "Skipped",
+  "webhooks_load_failed": "Couldn't load webhook triggers",
+  "webhooks_load_failed_desc": "The list could not be read, so an empty one here would be misleading. Your triggers are not gone - try again."
 }

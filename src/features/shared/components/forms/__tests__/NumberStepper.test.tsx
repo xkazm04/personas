@@ -130,4 +130,25 @@ describe('NumberStepper', () => {
     expect(onCommit).toHaveBeenCalledTimes(1);     // settle fired exactly once
     expect(onCommit).toHaveBeenLastCalledWith(15);
   });
+  // A keyboard (Enter/Space) or assistive-tech activation of a button fires a
+  // click with detail 0 and NO pointer events, so a pointer-only handler left
+  // both step buttons dead for anyone not using a mouse.
+  it('steps when a step button is activated from the keyboard (click, detail 0)', () => {
+    const onCommit = vi.fn();
+    render(<Harness initial={10} step={5} onCommit={onCommit} />);
+    fireEvent.click(inc(), { detail: 0 });
+    expect(field().value).toBe('15');
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenLastCalledWith(15);
+    fireEvent.click(dec(), { detail: 0 });
+    expect(field().value).toBe('10');
+  });
+
+  it('does not double-step a pointer press (the trailing click has detail >= 1)', () => {
+    render(<Harness initial={10} step={5} />);
+    fireEvent.pointerDown(inc());
+    fireEvent.pointerUp(inc());
+    fireEvent.click(inc(), { detail: 1 });
+    expect(field().value).toBe('15');
+  });
 });

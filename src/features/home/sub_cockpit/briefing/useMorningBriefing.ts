@@ -2,8 +2,8 @@
  * Morning Director — the session-open trigger.
  *
  * Runs ONCE per app session from `HomePage`. Freezes the previous
- * session's last-seen anchor during the first render (before the
- * Welcome surface's heartbeat advances it), waits for the shared
+ * session's last-seen anchor during the first render (before
+ * `useLastSeenHeartbeat`, mounted beside it in `HomePage`, advances it), waits for the shared
  * Overview-spine fetches, promotes the delta into the serializable
  * session-delta document, and then:
  *
@@ -49,9 +49,9 @@ export function __resetMorningBriefingForTests(): void {
 
 export function useMorningBriefing(): void {
   const { t, tx } = useTranslation();
-  // Freeze the previous-session anchor during the FIRST render — child
-  // effects (the Welcome heartbeat) advance the stored value before any
-  // parent effect gets to run.
+  // Freeze the previous-session anchor during the FIRST render: the heartbeat's
+  // effect (`useLastSeenHeartbeat` in `HomePage`) advances the stored value
+  // before any effect of ours gets to run.
   const [anchor] = useState<number | null>(() => (briefingRan ? null : readLastSeen()));
   const startedRef = useRef(false);
 

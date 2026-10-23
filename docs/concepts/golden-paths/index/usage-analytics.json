@@ -108,7 +108,15 @@
       "verbatim": "sink.ts"
     },
     "src/lib/analytics/summary.test.ts": {"count":2,"sections":[6,9],"contexts":["(`summary.test.ts`), and it is the only file in the layer whose correctness does"],"resolvedFrom":"basename","verbatim":"summary.test.ts"},
-    "src/lib/analytics/summary.ts": {"count":4,"sections":[3,6,7],"lines":["40"],"contexts":["`summary.ts` 58, plus its three test files), `src/lib/sentry.ts` (262),"],"resolvedFrom":"basename","verbatim":"summary.ts"},
+    "src/lib/analytics/summary.ts": {
+      "count": 2,
+      "sections": [3,6],
+      "contexts": [
+        "| `lib/analytics/summary.ts` `buildSessionSummary(counts)` | The pure visited/ignored diff against the full catalog. Side-effect-free, unit-tested without a DOM. **This is the file to copy** — it is…"
+      ],
+      "resolvedFrom": "suffix",
+      "verbatim": "lib/analytics/summary.ts"
+    },
     "src/lib/db/badge-analytics.ts": {"count":1,"sections":[6],"contexts":["- **`ascent`: not the same problem.** `src/lib/db/badge-analytics.ts` is a table"],"resolved":false},
     "src/lib/execution/middleware/analyticsMiddleware.ts": {"count":3,"sections":[7,9],"contexts":["`src/lib/execution/middleware/analyticsMiddleware.ts`, `src/main.tsx`'s boot"]},
     "src/lib/navigation/registry.ts": {
@@ -145,6 +153,7 @@
     "src/stores/storeTypes.ts": {"count":2,"sections":[7,9],"contexts":["`researchLabSlice.ts`, `storeTypes.ts`."],"resolvedFrom":"basename","verbatim":"storeTypes.ts"},
     "stores/slices/system/artistSlice.ts": {"count":1,"sections":[7],"lines":["74"],"contexts":["| `artistTab` | `stores/slices/system/artistSlice.ts:74` | 3 | no |"],"resolved":false},
     "stores/slices/system/companionPluginSlice.ts": {"count":1,"sections":[7],"lines":["114"],"contexts":["| `companionPluginTab` | `stores/slices/system/companionPluginSlice.ts:114` | — | no |"],"resolved":false},
+    "summary.ts": {"count":2,"sections":[7],"lines":["40"],"contexts":["`summary.ts` 58, plus its three test files), `src/lib/sentry.ts` (262),"],"resolved":false},
     "track.ts": {"count":1,"sections":[6],"lines":["22-24"],"contexts":["`track.ts:22-24` — `if (!analyticsEnabled()) return;` is the first line of"],"resolved":false},
     "useCreateTemplateSnapshot.ts": {"count":2,"sections":[7,9],"contexts":["`useOnboardingState.ts`, `useCreateTemplateSnapshot.ts`, `useAutoUpdater.ts`,"],"resolved":false}
   }

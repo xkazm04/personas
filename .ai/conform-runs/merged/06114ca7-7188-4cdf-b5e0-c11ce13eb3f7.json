@@ -1,0 +1,172 @@
+{
+  "schema": "conform-run/1",
+  "worker": "06114ca7-7188-4cdf-b5e0-c11ce13eb3f7",
+  "subject": "fleet-orchestration",
+  "evaluatedAt": "2026-10-22T02:46:59Z",
+  "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+  "evaluatedRevision": 28,
+  "pairs": [
+    {
+      "context": "bcb603ad-ce58-4b76-9623-aa99ace984af",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/proactive/fleet_triggers.rs:64 the stale nudge hard-codes 'no activity for 5+ minutes' while the one authority is STALE_AFTER_SECS = 6*60 (src-tauri/src/commands/fleet/stale.rs:65), operator-tunable 60-3600 s via set_state_cutoffs (:187), so the message states a budget the registry does not use. Re-judged rev 28: unchanged.",
+      "techniques": [
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/fleet_triggers.rs:64 staleness budget restated as a literal instead of read from src-tauri/src/commands/fleet/stale.rs:65"
+        },
+        {
+          "technique": "session-registry",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/companion/proactive/fleet_triggers.rs:59 matches on the registry's FleetSessionState::Stale rather than an invented state"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28
+    },
+    {
+      "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/lib/harness/orchestrator.ts:112 the area loop exits on config.maxIterations (src/lib/harness/types.ts:180, default 100) with no event; only pass-rate (:118) and no-areas (:142) emit harness:completed and the HarnessEventType union (src/lib/harness/types.ts:190) has no cap-fired member, so a cap-cut run is indistinguishable from a finished one and the cap-fired fraction cannot be measured. Re-judged rev 28: unchanged.",
+      "techniques": [
+        {
+          "technique": "soft-budget-under-the-hard-cap",
+          "verdict": "deviation",
+          "evidence": "src/lib/harness/orchestrator.ts:112 cap exit unmarked; decision rule 'treat a cap-fired run's artifact as truncated' and 'report the cap-fired fraction' unrealizable"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28
+    },
+    {
+      "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/models/team_assignment.rs:150 status is still a free String beside a closed TeamAssignmentStatus enum (:31) that lacks Paused and that no code references; since e70 (src-tauri/db/src/migrations/incremental/e70_team_assignment_paused.rs:1) the DB CHECK admits paused, so pause now works, but the vocabulary has three disagreeing homes (enum, CHECK, string literals in src-tauri/src/engine/team_assignment_orchestrator.rs:623). Revised on rev 28: runtime failure fixed, single-source defect remains.",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/team_assignment.rs:31 the defined vocabulary omits a state the store accepts and nothing derives from it"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28
+    },
+    {
+      "context": "4560e824-e952-45a9-8aef-fe88d721952e",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/home/sub_welcome/lib/useNavCardStatus.ts:80 'Active agents' = enabled personas, not sessions; src/features/home/sub_welcome/lib/fleetHealth.ts:2 is a success-rate tile over finished executions; none of the context's 30 files creates, tracks, dispatches or harvests a session. Re-judged rev 28 (verifier-seat-capacity, parallel-dispatch supervisory stock): still no fleet precondition.",
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28
+    },
+    {
+      "context": "5e531c95-b6d9-46f5-a33d-d07001fee61e",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/libs/fleetOptimizer.ts:2 'Fleet' is the persona population; it recommends model/retry changes from ExecutionDashboardData and healing issues (:8-:9), with no sessions, registry, dispatch or lifecycle states. Re-judged rev 28: unchanged.",
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28
+    }
+  ],
+  "declined": [
+    {
+      "subject": "fleet-orchestration",
+      "context": "8650ca36-36fe-4862-98f5-745e866a2687",
+      "reason": "stale not-applicable (rev 26->28, only verifier-seat-capacity/parallel-dispatch/completion-claim-verification changed); beyond this run's budget of 5, left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "reason": "stale not-applicable (rev 26->28, only verifier-seat-capacity/parallel-dispatch/completion-claim-verification changed); beyond this run's budget of 5, left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+      "reason": "stale not-applicable (rev 26->28, only verifier-seat-capacity/parallel-dispatch/completion-claim-verification changed); beyond this run's budget of 5, left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "reason": "stale not-applicable (rev 26->28, only verifier-seat-capacity/parallel-dispatch/completion-claim-verification changed); beyond this run's budget of 5, left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "reason": "stale not-applicable (rev 26->28, only verifier-seat-capacity/parallel-dispatch/completion-claim-verification changed); beyond this run's budget of 5, left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+      "reason": "stale not-applicable (rev 26->28, only verifier-seat-capacity/parallel-dispatch/completion-claim-verification changed); beyond this run's budget of 5, left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "c5228746-931d-4733-9cf7-84519a2c9605",
+      "reason": "stale not-applicable (rev 26->28, only verifier-seat-capacity/parallel-dispatch/completion-claim-verification changed); beyond this run's budget of 5, left for the next --stale pass"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-22T02:46:59Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "lifecycle-signals",
+        "session-registry"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-22T02:46:59Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "soft-budget-under-the-hard-cap"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-22T02:46:59Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "session-registry"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-22T02:46:59Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-22T02:46:59Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

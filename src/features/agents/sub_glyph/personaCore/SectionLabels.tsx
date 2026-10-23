@@ -8,7 +8,8 @@
 
 /** Column title — the dominant tier that anchors each column. A real heading,
  *  not a styled span: it is the only structure a screen reader can use to tell
- *  the modal's three columns apart (the dialog's own h2 is the surface title). */
+ *  the configurator's three columns apart (the host layer's head is the surface
+ *  title). */
 export function SectionHeader({ id, children }: { id?: string; children: React.ReactNode }) {
   return <h3 id={id} className="typo-section-title">{children}</h3>;
 }

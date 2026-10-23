@@ -14,11 +14,18 @@ export function mergeEndpoints(existing: ApiEndpoint[], incoming: ApiEndpoint[])
   return merged;
 }
 
-/** Line classifier for API test output (checkmark/cross/arrow markers). */
+/**
+ * The markers `useApiTestRunner` writes into its log. One table for writer and
+ * reader: the classifier below used to look for the Unicode check, cross and
+ * arrow while the runner wrote ASCII, so not one of the three ever matched and
+ * every pass, failure and request line rendered in the same colour.
+ */
+export const RUN_LOG_MARK = { pass: '[v]', fail: '[x]', send: '->' } as const;
+
+/** Line classifier for API test output (pass/fail/request markers). */
 export function apiTestLineClassName(line: string): string {
-  if (line.includes('\u2713')) return 'text-emerald-400/70';
-  if (line.includes('\u2717')) return 'text-red-400/70';
-  if (line.includes('\u2192')) return 'text-blue-400/50';
-  if (line.includes('Done:') || line.includes('Starting')) return 'text-foreground';
+  if (line.includes(RUN_LOG_MARK.pass)) return 'text-emerald-400/70';
+  if (line.includes(RUN_LOG_MARK.fail)) return 'text-red-400/70';
+  if (line.includes(`${RUN_LOG_MARK.send} `)) return 'text-blue-400/50';
   return 'text-foreground';
 }

@@ -1,5 +1,6 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import { silentCatch } from "@/lib/silentCatch";
+import { localUtcOffsetMinutes } from "./localUtcOffset";
 
 import type { AlertRule } from "@/lib/bindings/AlertRule";
 import type { AlertMetric } from "@/lib/bindings/AlertMetric";
@@ -77,15 +78,15 @@ export const getPromptVersionsBulk = (personaIds: string[], limit?: number) =>
 
 export const getAllMonthlySpend = () =>
   invoke<import('@/lib/bindings/MonthlySpendResult').MonthlySpendResult>("get_all_monthly_spend", {
-    utcOffsetMinutes: -new Date().getTimezoneOffset(),
+    utcOffsetMinutes: localUtcOffsetMinutes(),
   });
 
 const overviewBundleCache = new Map<string, { expiresAt: number; promise: Promise<OverviewBundle> }>();
 const OVERVIEW_BUNDLE_CACHE_MS = 1000;
 
-export const getOverviewBundle = (days?: number, personaId?: string) => {
-  const utcOffsetMinutes = -new Date().getTimezoneOffset();
-  const key = `${days ?? 30}|${personaId ?? ""}|${utcOffsetMinutes}`;
+export const getOverviewBundle = (days?: number, personaId?: string, window?: { start: string; end: string } | null) => {
+  const utcOffsetMinutes = localUtcOffsetMinutes();
+  const key = `${days ?? 30}|${personaId ?? ""}|${utcOffsetMinutes}|${window?.start ?? ""}|${window?.end ?? ""}`;
   const now = Date.now();
   const cached = overviewBundleCache.get(key);
   if (cached && cached.expiresAt > now) {
@@ -96,6 +97,9 @@ export const getOverviewBundle = (days?: number, personaId?: string) => {
     days,
     personaId,
     utcOffsetMinutes,
+    // A custom range travels as an explicit window; the backend lets it win over `days`.
+    start: window?.start,
+    end: window?.end,
   }).catch((error) => {
     silentCatch("observability:getOverviewBundle")(error);
     overviewBundleCache.delete(key);
@@ -119,9 +123,11 @@ export const getPromptPerformance = (personaId: string, days?: number) =>
 // Execution Metrics Dashboard
 // ============================================================================
 
-export const getExecutionDashboard = (days?: number) =>
+export const getExecutionDashboard = (days?: number, window?: { start: string; end: string } | null) =>
   invoke<ExecutionDashboardData>("get_execution_dashboard", {
     days: days,
+    start: window?.start,
+    end: window?.end,
   });
 
 // ============================================================================
@@ -132,10 +138,9 @@ export const getExecutionHeatmap = (days?: number, personaId?: string) =>
   invoke<ExecutionHeatmapData>("get_execution_heatmap", {
     days: days,
     personaId: personaId,
-    // Local-minus-UTC minutes (UTC+2 → +120). getTimezoneOffset() is the
-    // inverse sign. Lets the server bucket executions by the user's LOCAL day
-    // so the heatmap matches the locally-rendered grid (no wrong-day cells).
-    tzOffsetMinutes: -new Date().getTimezoneOffset(),
+    // Lets the server bucket executions by the user's LOCAL day so the
+    // heatmap matches the locally-rendered grid (no wrong-day cells).
+    tzOffsetMinutes: localUtcOffsetMinutes(),
   });
 
 // ============================================================================

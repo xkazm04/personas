@@ -34,6 +34,14 @@ export type {
   TwinPendingMemoryStatus,
 } from "@/api/enums";
 
+/**
+ * Every other `TwinCall::legacy` command (bio, simulate answer, draft reply,
+ * compile/audit wiki, reflect) shares the same 300 s backend deadline. Three of
+ * them persist their result, so a wrapper that gave up at the 90 s default
+ * rejected while the write still landed and a retry ran the call twice.
+ */
+const TWIN_LLM_TIMEOUT_MS = 330_000;
+
 // ============================================================================
 // Twin Profiles (P0)
 //
@@ -55,15 +63,6 @@ export const listProfiles = () =>
 
 export const getProfile = (id: string) =>
   invoke<TwinProfile>("twin_get_profile", { id });
-
-/**
- * Resolve the active twin. With `personaId`, returns the persona's
- * pinned twin (from `design_context.twin_id`) if set and still exists;
- * otherwise falls back to the globally-active twin. Without
- * `personaId`, returns the globally-active twin.
- */
-export const getActiveProfile = (personaId?: string) =>
-  invoke<TwinProfile | null>("twin_get_active_profile", { personaId });
 
 export const createProfile = (
   name: string,
@@ -115,9 +114,6 @@ export const setActiveProfile = (id: string) =>
 
 export const listTones = (twinId: string) =>
   invoke<TwinTone[]>("twin_list_tones", { twinId });
-
-export const getTone = (twinId: string, channel: TwinChannelKind) =>
-  invoke<TwinTone>("twin_get_tone", { twinId, channel });
 
 export const upsertTone = (
   twinId: string,
@@ -306,7 +302,7 @@ export const generateBio = (
   keywords: string,
   existingBio?: string,
 ) =>
-  invoke<string>("twin_generate_bio", { name, role, keywords, existingBio });
+  invoke<string>("twin_generate_bio", { name, role, keywords, existingBio }, { timeoutMs: TWIN_LLM_TIMEOUT_MS });
 
 /**
  * Training Studio — draft an interview answer *as the twin*, grounded in the
@@ -320,7 +316,7 @@ export const simulateAnswer = (
   question: string,
   directions?: string,
 ) =>
-  invoke<string>("twin_simulate_answer", { twinId, question, directions });
+  invoke<string>("twin_simulate_answer", { twinId, question, directions }, { timeoutMs: TWIN_LLM_TIMEOUT_MS });
 
 /**
  * Channels outbox — draft a channel-appropriate REPLY to a specific contact,
@@ -349,11 +345,21 @@ export const draftReply = (
     inboundMessage,
     directions,
     toneChannel,
-  });
+  }, { timeoutMs: TWIN_LLM_TIMEOUT_MS });
 
 export type { TwinPageContext } from "@/lib/bindings/TwinPageContext";
 export type { TwinPageDraft } from "@/lib/bindings/TwinPageDraft";
 export type { TwinSteer } from "@/lib/bindings/TwinSteer";
+
+/**
+ * The backend gives the draft's CLI call `TwinCall::legacy`'s 300 s
+ * (`src-tauri/src/engine/twin_setup/llm.rs` LEGACY_TIMEOUT), after a KB
+ * retrieval. At the 90 s default the lane showed "failed" while the model was
+ * still writing, and a Regenerate started a second paid call beside it. The
+ * wrapper waits past the backend so the backend's own timeout is the one the
+ * user reads.
+ */
+const PAGE_DRAFT_TIMEOUT_MS = TWIN_LLM_TIMEOUT_MS;
 
 /**
  * Browser webview — draft a comment AS the twin for the box the user picked
@@ -369,17 +375,23 @@ export const draftForPage = (
   directions?: string,
   steer?: TwinSteer,
 ) =>
-  invoke<TwinPageDraft>("twin_draft_for_page", { twinId, page, directions, steer });
+  invoke<TwinPageDraft>(
+    "twin_draft_for_page",
+    { twinId, page, directions, steer },
+    { timeoutMs: PAGE_DRAFT_TIMEOUT_MS },
+  );
 
 // ============================================================================
 // Style studio (spark twin-presets)
 //
 // Roll and materialize are PROPOSALS: neither writes. Both are one Claude CLI
-// call (materialize writes every channel at once), so they get 150 s rather
+// call (materialize writes every channel at once), so they get two legacy budgets rather
 // than the 90 s default. Only `applyTwinStyle` writes, after the user accepted.
 // ============================================================================
 
-const STYLE_LLM_TIMEOUT_MS = 150_000;
+// generate_with_repair runs up to TWO legacy CLI calls (first try + one repair), so the
+// wrapper must outlive 2 x LEGACY_TIMEOUT; 150 s rejected while the backend kept spending.
+const STYLE_LLM_TIMEOUT_MS = 2 * TWIN_LLM_TIMEOUT_MS;
 
 /** Roll 3 contrasting candidate styles. Pinned dimensions hold in all three;
  *  `avoid` lists dimension vectors already seen this session. */
@@ -437,14 +449,6 @@ export const studioCancel = (batchId: string) =>
 // Wiki commands (Direction 4 — currently surfaced via the Knowledge tab)
 // ============================================================================
 
-/**
- * Scrape a URL and queue extracted facts as pending memories. Returns a
- * short summary string the caller can show to the user before the memory
- * indexing pass runs.
- */
-export const ingestUrl = (url: string, twinId?: string) =>
-  invoke<string>("twin_ingest_url", { url, twinId });
-
 export interface TwinIngestDocsSummary {
   filesIngested: number;
   chunksAdded: number;
@@ -467,7 +471,7 @@ export const ingestDoctrineDocs = (twinId: string) =>
  * them without any caller bookkeeping).
  */
 export const compileWiki = (twinId: string, outputDir?: string) =>
-  invoke<TwinWikiCompileResult>("twin_compile_wiki", { twinId, outputDir });
+  invoke<TwinWikiCompileResult>("twin_compile_wiki", { twinId, outputDir }, { timeoutMs: TWIN_LLM_TIMEOUT_MS });
 
 /**
  * AI-audit a compiled wiki for gaps and contradictions. Returns a pending
@@ -475,7 +479,7 @@ export const compileWiki = (twinId: string, outputDir?: string) =>
  * surfaces in the Knowledge inbox).
  */
 export const auditWiki = (twinId: string, wikiDir?: string) =>
-  invoke<TwinPendingMemory>("twin_audit_wiki", { twinId, wikiDir });
+  invoke<TwinPendingMemory>("twin_audit_wiki", { twinId, wikiDir }, { timeoutMs: TWIN_LLM_TIMEOUT_MS });
 
 /**
  * Non-mutating freshness query — returns `{ exists, fileCount, lastCompiledAt,
@@ -547,7 +551,7 @@ export const listTwinReflections = (twinId: string) =>
  * cached list rather than refetch.
  */
 export const reflectOnTwin = (twinId: string, promptSeed: string) =>
-  invoke<TwinReflection>("twin_reflect", { twinId, promptSeed });
+  invoke<TwinReflection>("twin_reflect", { twinId, promptSeed }, { timeoutMs: TWIN_LLM_TIMEOUT_MS });
 
 export const deleteTwinReflection = (id: string) =>
   invoke<boolean>("twin_delete_reflection", { id });

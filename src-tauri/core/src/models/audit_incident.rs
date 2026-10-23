@@ -59,6 +59,19 @@ impl IncidentStatus {
             _ => None,
         }
     }
+
+    /// The non-terminal ("open") set: everything except `resolved`/`dismissed`.
+    /// One definition for every backend read that asks "is this still open?"
+    /// (the portfolio count and the UI use the same three).
+    pub fn is_active(self) -> bool {
+        matches!(
+            self,
+            IncidentStatus::Open | IncidentStatus::Acknowledged | IncidentStatus::InProgress
+        )
+    }
+
+    /// SQL `IN (...)` body for [`IncidentStatus::is_active`]; pinned to it by a test.
+    pub const ACTIVE_SQL_LIST: &'static str = "'open','acknowledged','in_progress'";
 }
 
 /// Severity scale — normalized across all source streams.
@@ -124,7 +137,8 @@ pub struct AuditIncident {
     pub title: String,
     /// Optional longer payload (free text or JSON) for the detail modal.
     pub detail: Option<String>,
-    /// One of `open` / `acknowledged` / `resolved` / `dismissed`. See
+    /// One of `open` / `acknowledged` / `in_progress` / `resolved` /
+    /// `dismissed`. See
     /// `IncidentStatus`.
     pub status: String,
     pub acknowledged_at: Option<String>,
@@ -165,13 +179,19 @@ pub struct CreateAuditIncidentInput {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AuditIncidentSummary {
+    #[ts(type = "number")]
     pub open: i64,
+    #[ts(type = "number")]
     pub acknowledged: i64,
+    #[ts(type = "number")]
     pub resolved: i64,
+    #[ts(type = "number")]
     pub dismissed: i64,
     /// (severity, count) for `status='open'` only.
+    #[ts(type = "Array<[string, number]>")]
     pub open_by_severity: Vec<(String, i64)>,
     /// (source_table, count) for `status='open'` only.
+    #[ts(type = "Array<[string, number]>")]
     pub open_by_source: Vec<(String, i64)>,
 }
 
@@ -190,4 +210,75 @@ pub struct IncidentFilters {
     pub persona_id: Option<String>,
     /// ISO 8601 lower bound on `created_at`. None means no lower bound.
     pub since: Option<String>,
+}
+
+#[cfg(test)]
+mod incident_vocab_tests {
+    use super::{IncidentSeverity, IncidentStatus};
+
+    fn serde_token<T: serde::Serialize>(v: &T) -> String {
+        serde_json::to_value(v)
+            .ok()
+            .and_then(|j| j.as_str().map(str::to_owned))
+            .unwrap_or_default()
+    }
+
+    /// `ACTIVE_SQL_LIST` must be exactly the `is_active` variants.
+    #[test]
+    fn active_sql_list_matches_is_active() {
+        let all = [
+            IncidentStatus::Open,
+            IncidentStatus::Acknowledged,
+            IncidentStatus::InProgress,
+            IncidentStatus::Resolved,
+            IncidentStatus::Dismissed,
+        ];
+        let listed: Vec<&str> = IncidentStatus::ACTIVE_SQL_LIST
+            .split(',')
+            .map(|t| t.trim_matches('\''))
+            .collect();
+        for v in all {
+            assert_eq!(listed.contains(&v.as_str()), v.is_active(), "{v:?}");
+        }
+    }
+
+    /// The comment on `IncidentStatus` records the drift this pins: with
+    /// `rename_all = "lowercase"` the wire said `inprogress` while the column
+    /// and `as_str` said `in_progress`. No wildcard arm, so a new variant must
+    /// be listed here to compile.
+    #[test]
+    fn incident_tokens_agree_with_serde_and_round_trip() {
+        for v in [
+            IncidentStatus::Open,
+            IncidentStatus::Acknowledged,
+            IncidentStatus::InProgress,
+            IncidentStatus::Resolved,
+            IncidentStatus::Dismissed,
+        ] {
+            match v {
+                IncidentStatus::Open
+                | IncidentStatus::Acknowledged
+                | IncidentStatus::InProgress
+                | IncidentStatus::Resolved
+                | IncidentStatus::Dismissed => {}
+            }
+            assert_eq!(serde_token(&v), v.as_str(), "{v:?}");
+            assert_eq!(IncidentStatus::from_str(v.as_str()), Some(v));
+        }
+        for v in [
+            IncidentSeverity::Low,
+            IncidentSeverity::Medium,
+            IncidentSeverity::High,
+            IncidentSeverity::Critical,
+        ] {
+            match v {
+                IncidentSeverity::Low
+                | IncidentSeverity::Medium
+                | IncidentSeverity::High
+                | IncidentSeverity::Critical => {}
+            }
+            assert_eq!(serde_token(&v), v.as_str(), "{v:?}");
+        }
+        assert_eq!(IncidentStatus::from_str("inprogress"), None);
+    }
 }

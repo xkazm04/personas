@@ -103,8 +103,6 @@ export function DriveSignaturesPanel({
           {!signing.loadingSignatures && signing.signatures.length === 0 && (
             <EmptyState
               icon={FileSignature}
-              iconColor="text-rose-300"
-              iconContainerClassName="bg-rose-500/10 border-rose-500/25"
               title={t.plugins.doc_signing.no_signatures}
               subtitle={t.plugins.doc_signing.no_signatures_hint}
             />
@@ -200,7 +198,9 @@ function SignatureRow({
     setVerify({ status: "verifying" });
     try {
       const sidecarJson = await signing.exportSidecarJson(sig.id);
-      const result = await signing.verifyDriveFile(filePath, sidecarJson);
+      // `file_path` is the absolute path the file was signed under, so it goes
+      // to the backend as-is (verifyDriveFile would prefix the root again).
+      const result = await signing.verifyStoredFile(filePath, sidecarJson);
       setVerify({ status: "done", result });
     } catch (e) {
       // A throw here is almost always "file no longer at that path" — surface

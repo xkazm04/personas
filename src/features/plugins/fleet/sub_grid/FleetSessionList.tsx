@@ -2,6 +2,7 @@ import type { RefObject } from 'react';
 import { Terminal as TerminalIcon } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { DebtText } from '@/i18n/DebtText';
 import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetSearchField } from './FleetSearchField';
@@ -56,8 +57,8 @@ export function FleetSessionList(p: FleetSessionListProps) {
           </p>
         </div>
       ) : p.groups.length === 0 ? (
-        <div className="text-center py-6 typo-caption" data-testid="fleet-no-matches">
-          {f.search_no_matches}
+        <div data-testid="fleet-no-matches">
+          <EmptyState art="search" size="sm" title={f.search_no_matches} />
         </div>
       ) : (
         p.groups.map((g, idx) => {

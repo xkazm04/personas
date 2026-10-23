@@ -42,15 +42,25 @@ export function listImageGenCredentials(): Promise<ImageGenCredential[]> {
 }
 
 /**
+ * IPC ceiling for `generate_persona_icon`. The backend runs a metered async
+ * job (`src-tauri/src/commands/core/persona_icon_gen.rs`): one POST, polls
+ * until `POLL_DEADLINE` (120 s, checked before each `POLL_INTERVAL` sleep, so
+ * one more poll can start after it), then the image download, every request on
+ * the 30 s `SHARED_HTTP` client. Worst case 30 + 120 + 3 + 30 + 30 = 213 s.
+ * The old 150 s ceiling rejected first on a slow provider while the backend
+ * went on to record the spend and store the icon, so a retry paid twice.
+ */
+export const PERSONA_ICON_GEN_IPC_TIMEOUT_MS = 240_000;
+
+/**
  * Generate a persona icon from a text prompt using a vault image-gen
- * credential. Returns the stored asset ID. The provider runs an async job
- * (POST + poll), so this can take up to ~2 minutes — hence the long timeout.
+ * credential. Returns the stored asset ID.
  */
 export function generatePersonaIcon(credentialId: string, prompt: string): Promise<string> {
   return invoke<string>(
     'generate_persona_icon',
     { credentialId, prompt },
-    { timeoutMs: 150_000 },
+    { timeoutMs: PERSONA_ICON_GEN_IPC_TIMEOUT_MS },
   );
 }
 

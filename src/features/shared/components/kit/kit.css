@@ -62,6 +62,9 @@
 @supports (color: oklch(from red l c h)) {
   :is([data-theme^="light"], [data-brightness^="light"]) .k-host {
     --band-alt: oklch(from var(--background) calc(l - 0.035) c h);
+    /* hover and selection need the same light-theme step, or a picked row paints as a dark slate slab */
+    --band-hover: color-mix(in srgb, var(--primary) 6%, var(--background));
+    --band-sel: color-mix(in srgb, var(--primary) 12%, var(--background));
   }
   :is([data-theme^="light"], [data-brightness^="light"]) .k-dtile::before { background: color-mix(in srgb, var(--primary) 60%, transparent); }
 }

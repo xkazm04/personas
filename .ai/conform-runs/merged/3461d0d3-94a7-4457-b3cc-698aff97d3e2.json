@@ -1,0 +1,9 @@
+{"schema":"conform-run/1","worker":"3461d0d3-94a7-4457-b3cc-698aff97d3e2","subject":"native-shell-integration",
+"evaluatedAt":"2026-10-22T12:00:00Z",
+"pairs":[{"context":"fc62a53a-85f9-4491-8b54-9b5f1795ef91","subject":"native-shell-integration","bundle":"software-engineering",
+"state":"not-applicable",
+"evidence":"src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:14 the context's surface (Practice Detail modal, sub_patterns) was removed (git 6ea91dd77b, bec576bc8f) and its workspace_knowledge table retired; no tracked file remains under src/features/overview/sub_patterns, so no native capability, command target, overlay or stream exists to judge",
+"techniques":[],
+"registryProposal":"Stale context: overview-patterns paths no longer exist; the context map should drop or rename it. Not a registry gap."}],
+"declined":[{"subject":"native-shell-integration","context":"511ca12f-50df-4941-84e1-e2d74a3dff85","reason":"capability-config-view is a weak context (empty paths); the match itself is doubtful, reported as a coverage question rather than judged"}],
+"consults":[{"ts":"2026-10-22T12:00:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":[],"deviations":0}]}

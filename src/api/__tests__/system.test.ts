@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { mockInvoke, mockInvokeError, resetInvokeMocks } from "@/test/tauriMock";
+import { mockInvoke, mockInvokeError, mockedTauriInvoke, resetInvokeMocks } from "@/test/tauriMock";
 import {
   systemHealthCheck,
   healthCheckLocal,
@@ -11,11 +11,20 @@ import {
   reportFrontendCrash,
   getFrontendCrashes,
   clearFrontendCrashes,
-  getFrontendCrashCount,
   startSetupInstall,
   cancelSetupInstall,
   sendAppNotification,
 } from "@/api/system/system";
+
+/**
+ * The payload the wrapper put on the wire. A pass-through return assertion
+ * cannot see a renamed key (`componentStack` -> `component_stack`), and a key
+ * the Rust handler does not recognise arrives as `None` without an error, so
+ * payload-bearing wrappers pin their args against the Rust parameter names.
+ */
+function lastPayload(): unknown {
+  return mockedTauriInvoke.mock.calls.at(-1)?.[1];
+}
 
 describe("api/system/system", () => {
   beforeEach(() => {
@@ -46,6 +55,7 @@ describe("api/system/system", () => {
   it("openExternalUrl calls open_external_url", async () => {
     mockInvoke("open_external_url", undefined);
     await expect(openExternalUrl("https://example.com")).resolves.toBeUndefined();
+    expect(lastPayload()).toEqual({ url: "https://example.com" });
   });
 
   it("getCrashLogs returns entries", async () => {
@@ -63,11 +73,14 @@ describe("api/system/system", () => {
     mockInvoke("report_frontend_crash", row);
     const result = await reportFrontendCrash("App", "oops", "stack");
     expect(result).toEqual(row);
+    // crash_telemetry.rs report_frontend_crash(component, message, stack, component_stack)
+    expect(lastPayload()).toEqual({ component: "App", message: "oops", stack: "stack", componentStack: null });
   });
 
   it("getFrontendCrashes returns entries with limit", async () => {
     mockInvoke("get_frontend_crashes", []);
     expect(await getFrontendCrashes(10)).toEqual([]);
+    expect(lastPayload()).toEqual({ limit: 10 });
   });
 
   it("clearFrontendCrashes resolves", async () => {
@@ -75,14 +88,10 @@ describe("api/system/system", () => {
     await expect(clearFrontendCrashes()).resolves.toBeUndefined();
   });
 
-  it("getFrontendCrashCount returns number", async () => {
-    mockInvoke("get_frontend_crash_count", 3);
-    expect(await getFrontendCrashCount(24)).toBe(3);
-  });
-
   it("startSetupInstall returns result", async () => {
     mockInvoke("start_setup_install", { started: true });
     expect(await startSetupInstall("ollama")).toEqual({ started: true });
+    expect(lastPayload()).toEqual({ target: "ollama" });
   });
 
   it("cancelSetupInstall resolves", async () => {
@@ -93,6 +102,7 @@ describe("api/system/system", () => {
   it("sendAppNotification resolves", async () => {
     mockInvoke("send_app_notification", undefined);
     await expect(sendAppNotification("Title", "Body")).resolves.toBeUndefined();
+    expect(lastPayload()).toEqual({ title: "Title", body: "Body" });
   });
 
   it("rejects on backend error", async () => {

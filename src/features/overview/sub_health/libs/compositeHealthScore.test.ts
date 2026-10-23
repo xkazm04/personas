@@ -189,3 +189,51 @@ describe('TREND_NEUTRAL_BAND', () => {
     expect(TREND_NEUTRAL_BAND).toBe(0.02);
   });
 });
+
+describe('computeCompositeHealth — each persona is read from its own daily series', () => {
+  // 14 axis days; the fleet is perfect every day (that is the number the old
+  // code painted onto every persona with a cost row that day).
+  const dates = Array.from({ length: 14 }, (_, i) => `2026-10-${String(i + 1).padStart(2, '0')}`);
+  const fleetPerfect = dates.map((date) => ({
+    date, success_rate: 1, total_executions: 10, completed: 10, failed: 0,
+    persona_costs: [{ persona_id: 'good', cost: 1 }, { persona_id: 'bad', cost: 1 }],
+  }));
+  const input: CompositeScoreInput = {
+    personas: [
+      { id: 'good', name: 'Good', icon: null, color: null },
+      { id: 'bad', name: 'Bad', icon: null, color: null },
+    ],
+    slaStats: [makeSla({ persona_id: 'good' }), makeSla({ persona_id: 'bad' })],
+    healingIssues: [],
+    costAnomalyCount: 0,
+    dailyPoints: fleetPerfect,
+    personaDaily: [
+      ...dates.map((date) => ({ persona_id: 'good', date, success_rate: 1, decided: 5 })),
+      // 'bad' fails everything for the last 7 days after a clean first week.
+      ...dates.map((date, i) => ({ persona_id: 'bad', date, success_rate: i < 7 ? 1 : 0, decided: 5 })),
+    ],
+  };
+
+  it('paints a failing persona as outage on its own failing days, not the fleet colour', () => {
+    const byId = new Map(computeCompositeHealth(input).map((e) => [e.personaId, e]));
+    const good = byId.get('good')!;
+    const bad = byId.get('bad')!;
+    expect(good.dailyStatuses.slice(-14).every((s) => s === 'operational')).toBe(true);
+    expect(bad.dailyStatuses.slice(-7).every((s) => s === 'outage')).toBe(true);
+    expect(bad.uptimePercent).toBe(0.5);
+    expect(bad.trend).toBe('degrading');
+    expect(good.trend).toBe('stable');
+  });
+
+  it('a day with no decided runs for this persona is no-data, whatever the fleet did', () => {
+    const [entry] = computeCompositeHealth({ ...input, personas: [input.personas[0]!], personaDaily: [] });
+    expect(entry!.dailyStatuses.every((s) => s === 'no-data')).toBe(true);
+    expect(entry!.uptimePercent).toBeNull();
+  });
+
+  it('a failed per-persona read (null) is no-data, never the fleet rate', () => {
+    const [entry] = computeCompositeHealth({ ...input, personas: [input.personas[1]!], personaDaily: null });
+    expect(entry!.dailyStatuses.every((s) => s === 'no-data')).toBe(true);
+    expect(entry!.trend).toBe('stable');
+  });
+});

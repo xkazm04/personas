@@ -2,9 +2,6 @@ pub mod claude;
 
 use personas_core::types::{CliArgs, ModelProfile, StreamLineType};
 use personas_db::models::Persona;
-use personas_db::DbPool;
-#[allow(unused_imports)] // pending: re-emit engine-fallback event from this module
-use tauri::Emitter;
 
 // =============================================================================
 // PromptDelivery -- how the provider sends the prompt to the CLI process
@@ -120,50 +117,6 @@ pub trait CliProvider: Send + Sync {
 pub fn resolve_provider(kind: EngineKind) -> Box<dyn CliProvider> {
     match kind {
         EngineKind::ClaudeCode => Box::new(claude::ClaudeProvider),
-    }
-}
-
-/// Read the active engine kind from the settings DB.
-/// Falls back to ClaudeCode if unset or unrecognized.
-#[allow(dead_code)]
-pub fn load_engine_kind(pool: &DbPool) -> EngineKind {
-    personas_db::repos::core::settings::get(pool, personas_db::settings_keys::CLI_ENGINE)
-        .ok()
-        .flatten()
-        .map(|s| EngineKind::from_setting(&s))
-        .unwrap_or(EngineKind::ClaudeCode)
-}
-
-/// Like [`load_engine_kind`] but emits an `engine-fallback` event to the
-/// frontend when an unrecognized engine setting triggers the ClaudeCode
-/// fallback, so the user sees a toast notification.
-#[allow(dead_code)] // pending: wire from engine startup once fallback toast is desired
-pub fn load_engine_kind_notified(
-    pool: &DbPool,
-    emitter: &dyn super::events::ExecutionEventEmitter,
-) -> EngineKind {
-    use super::event_registry::event_name;
-
-    let raw = personas_db::repos::core::settings::get(pool, personas_db::settings_keys::CLI_ENGINE)
-        .ok()
-        .flatten();
-
-    match raw {
-        Some(ref s) if s.parse::<EngineKind>().is_err() => {
-            // Unrecognized value — from_setting will log the warning
-            let kind = EngineKind::from_setting(s);
-            super::events::emit_to(
-                emitter,
-                event_name::ENGINE_FALLBACK,
-                &serde_json::json!({
-                    "requested": s,
-                    "actual": kind.as_setting(),
-                }),
-            );
-            kind
-        }
-        Some(ref s) => EngineKind::from_setting(s),
-        None => EngineKind::ClaudeCode,
     }
 }
 

@@ -35,6 +35,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { useColumnWidths, ColumnResizeHandle } from './ColumnResize';
 import { MotionizedGlyph, type TracedGlyph } from './MotionizedGlyph';
+import { EmptyArt, type EmptyArtMotif } from './emptyArt/EmptyArt';
 import { buildGroupRows, type GroupSpec } from './grouping';
 import { useGroupedVirtualizer, GroupHeaderRow, GROUP_HEADER_SIZE } from './GroupedVirtualList';
 import { UnifiedTableRow, useStableRowClick, useIndexSensitive } from './UnifiedTableRow';
@@ -116,6 +117,8 @@ export interface UnifiedTableProps<T> {
   emptyDescription?: string;
   /** Optional traced glyph drawn above the empty title (illustrated empty state). */
   emptyGlyph?: TracedGlyph;
+  /** The small animated illustration above the empty title (EmptyArt). Default `inbox`; ignored when `emptyGlyph` is set. */
+  emptyArt?: EmptyArtMotif;
   isLoading?: boolean;
   /**
    * Already-translated failure message for the last fetch. Distinguishes
@@ -145,6 +148,8 @@ export interface UnifiedTableProps<T> {
    * undefined for no accent. Mirrors the Activity table's status-accent rows.
    */
   rowAccent?: (row: T, index: number) => string | undefined;
+  /** Progress fill painted behind the row (left to right, `pct` 0..100, `color` any CSS colour). */
+  rowFill?: (row: T, index: number) => { pct: number; color: string } | undefined;
   /**
    * Pin the header to the top of the nearest scrolling ancestor. Default true —
    * harmless in virtual mode (header sits outside the scroll container) and
@@ -362,8 +367,10 @@ function TableGhostRows<T>({ columns, gridTemplate, rowHeight, rowPadY, loadingL
 // ---------------------------------------------------------------------------
 
 function ColumnHeader<T>({
-  col, sortKey, sortDir, onSort, resizeHandle, density = 'comfortable',
+  col, sortKey, sortDir, onSort, resizeHandle, density = 'comfortable', semantic = false,
 }: {
+  /** Emit columnheader/aria-sort (only valid inside a labelled role=table). */
+  semantic?: boolean;
   col: TableColumn<T>;
   sortKey: string | null;
   sortDir: 'asc' | 'desc';
@@ -372,7 +379,7 @@ function ColumnHeader<T>({
   resizeHandle?: ReactNode;
   density?: 'comfortable' | 'compact';
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [showFilter, setShowFilter] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -391,10 +398,14 @@ function ColumnHeader<T>({
   const isFiltered = !!(col.filterValue && col.filterValue !== '' && col.filterValue !== 'all');
   const isSearched = !!(col.searchValue && col.searchValue.trim());
 
+  const aria = semantic
+    ? { role: 'columnheader' as const, 'aria-sort': col.sortable ? (isSorted ? (sortDir === 'asc' ? 'ascending' as const : 'descending' as const) : 'none' as const) : undefined }
+    : {};
+
   // Custom filter component takes full control
   if (col.filterComponent) {
     return (
-      <div className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
+      <div {...aria} className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
         {col.filterComponent}
         {resizeHandle}
       </div>
@@ -402,7 +413,7 @@ function ColumnHeader<T>({
   }
 
   return (
-    <div className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
+    <div {...aria} className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
       {/* Same label type the filter-bearing headers get from their filter
           component's trigger (TABLE_HEAD_LABEL): one header scale across every
           column, whether or not it filters. */}
@@ -415,6 +426,11 @@ function ColumnHeader<T>({
           onClick={() => onSort(col.key)}
           className={`p-0.5 rounded transition-colors ${isSorted ? 'text-primary' : 'text-foreground hover:text-muted-foreground/60'}`}
           title={t.shared.sort_by.replace('{label}', col.label)}
+          // The name carries the sort state, as SortableHeader's does: the
+          // arrow glyph alone tells a screen reader nothing.
+          aria-label={isSorted
+            ? tx(sortDir === 'asc' ? t.shared.sort_active_asc : t.shared.sort_active_desc, { label: col.label })
+            : tx(t.shared.sort_by, { label: col.label })}
         >
           {isSorted ? (
             sortDir === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
@@ -430,6 +446,8 @@ function ColumnHeader<T>({
           <button
             type="button"
             onClick={() => { setShowFilter(!showFilter); setShowSearch(false); }}
+            aria-haspopup="true"
+            aria-expanded={showFilter}
             className={`p-0.5 rounded transition-colors ${isFiltered ? 'text-primary' : 'text-foreground hover:text-muted-foreground/60'}`}
             title={t.shared.filter_label.replace('{label}', col.label)}
           >
@@ -470,6 +488,7 @@ function ColumnHeader<T>({
               <button
                 type="button"
                 onClick={() => { col.onSearchChange!(''); setShowSearch(false); }}
+                aria-label={t.common.clear}
                 className="p-0.5 text-foreground/90 hover:text-foreground"
               >
                 <X className="w-3 h-3" />
@@ -506,6 +525,7 @@ export function UnifiedTable<T>({
   emptyTitle,
   emptyDescription,
   emptyGlyph,
+  emptyArt = 'inbox',
   isLoading,
   error,
   onRetry,
@@ -513,6 +533,7 @@ export function UnifiedTable<T>({
   tableId,
   density = 'comfortable',
   rowAccent,
+  rowFill,
   stickyHeader = true,
   ariaLabel,
   borderless = false,
@@ -644,10 +665,13 @@ export function UnifiedTable<T>({
     <div
       role={ariaLabel ? 'table' : undefined}
       aria-label={ariaLabel}
+      aria-rowcount={ariaLabel && (useVirtual || grouped) ? sortedData.length + 1 : undefined}
       className={`${borderless ? '' : 'border border-primary/10 rounded-xl'} overflow-hidden flex flex-col min-h-0 ${resize.isResizing ? 'select-none cursor-col-resize' : ''} ${className ?? ''}`}
     >
       {/* Header */}
       <div
+        role={ariaLabel ? 'row' : undefined}
+        aria-rowindex={ariaLabel && (useVirtual || grouped) ? 1 : undefined}
         className={`grid border-b border-primary/10 ${stickyHeader ? 'sticky top-0 z-20 bg-background/95 backdrop-blur-sm' : 'bg-primary/5'}`}
         style={{ gridTemplateColumns: gridTemplate }}
       >
@@ -659,10 +683,12 @@ export function UnifiedTable<T>({
             sortDir={sortDir}
             onSort={handleSort}
             density={density}
+            semantic={!!ariaLabel}
             resizeHandle={resizable && i < columns.length - 1 ? (
               <ColumnResizeHandle
                 label={t.shared.resize_column}
                 onBeginResize={(w, x) => resize.beginResize(col.key, w, x)}
+                onNudge={(w, d) => resize.resizeBy(col.key, w, d)}
                 onReset={() => resize.clearColumn(col.key)}
               />
             ) : null}
@@ -681,7 +707,8 @@ export function UnifiedTable<T>({
            The column header above stays mounted (law 5). */
         <ErrorBanner variant="panel" message={error} onRetry={onRetry} />
       ) : sortedData.length === 0 ? (
-        <div className="py-8 text-center">
+        <div className="py-8 flex flex-col items-center text-center">
+          {!emptyGlyph && <EmptyArt motif={emptyArt} size="sm" className="mb-3" />}
           {emptyGlyph && (
             <MotionizedGlyph
               data={emptyGlyph.data}
@@ -693,8 +720,8 @@ export function UnifiedTable<T>({
           {/* No hardcoded English fallback: an untranslated default leaks into
               all 14 locales. `shared.grid_no_data` is the shared translated
               last resort — always pass a specific `emptyTitle` instead. */}
-          <p className="typo-body text-foreground">{emptyTitle ?? t.shared.grid_no_data}</p>
-          {emptyDescription && <p className="typo-body text-foreground/90 mt-1">{emptyDescription}</p>}
+          <p className="typo-heading text-foreground">{emptyTitle ?? t.shared.grid_no_data}</p>
+          {emptyDescription && <p className="typo-caption mt-1 max-w-[46ch]">{emptyDescription}</p>}
         </div>
       ) : null}
 
@@ -713,12 +740,17 @@ export function UnifiedTable<T>({
           getRowKey={getRowKey}
           onRowClick={onRowClick ? handleRowClick : undefined}
           rowAccent={rowAccent}
+          rowFill={rowFill}
           groupBy={groupBy!}
           scrollRestoreKey={scrollRestoreKey}
           onEndReached={onEndReached}
           endReachedThreshold={endReachedThreshold}
           rowReveal={resolvedReveal}
           revealSurfaceKey={revealSurfaceKey}
+          keyboardNav={keyboardNav}
+          activeKey={activeKey}
+          rowAttrs={rowAttrs}
+          semantic={!!ariaLabel}
         />
       ) : sortedData.length > 0 && (useVirtual ? (
         <div
@@ -743,12 +775,15 @@ export function UnifiedTable<T>({
                   onRowClick={handleRowClick}
                   clickable={clickable}
                   accent={rowAccent?.(row, vRow.index)}
+                  fill={rowFill?.(row, vRow.index)}
                   focused={vRow.index === focusedIndex || rowKey === activeKey}
                   domId={rowAttrs?.(row).id}
                   testId={rowAttrs?.(row).testId}
                   revealDelayMs={delayFor(rowKey, vRow.index)}
                   onRevealEnd={markEntered}
                   padY={rowPadY}
+                  semantic={!!ariaLabel}
+                  ariaRowIndex={vRow.index + 2}
                   virtualStart={vRow.start}
                   virtualSize={vRow.size}
                 />
@@ -776,12 +811,14 @@ export function UnifiedTable<T>({
                 onRowClick={handleRowClick}
                 clickable={clickable}
                 accent={rowAccent?.(row, idx)}
+                fill={rowFill?.(row, idx)}
                 focused={idx === focusedIndex || rowKey === activeKey}
                 domId={rowAttrs?.(row).id}
                 testId={rowAttrs?.(row).testId}
                 revealDelayMs={delayFor(rowKey, idx)}
                 onRevealEnd={markEntered}
                 padY={rowPadY}
+                semantic={!!ariaLabel}
               />
             );
           })}
@@ -809,13 +846,19 @@ function GroupedTableBody<T>({
   getRowKey,
   onRowClick,
   rowAccent,
+  rowFill,
   groupBy,
   scrollRestoreKey,
   onEndReached,
   endReachedThreshold,
   rowReveal,
   revealSurfaceKey,
+  keyboardNav = true,
+  activeKey,
+  rowAttrs,
+  semantic,
 }: {
+  semantic?: boolean;
   sortedData: T[];
   columns: TableColumn<T>[];
   gridTemplate: string;
@@ -823,12 +866,17 @@ function GroupedTableBody<T>({
   getRowKey: (row: T) => string;
   onRowClick?: (row: T) => void;
   rowAccent?: (row: T, index: number) => string | undefined;
+  /** Progress fill painted behind the row (left to right, `pct` 0..100, `color` any CSS colour). */
+  rowFill?: (row: T, index: number) => { pct: number; color: string } | undefined;
   groupBy: (row: T) => GroupSpec;
   scrollRestoreKey?: string;
   onEndReached?: () => void;
   endReachedThreshold?: number;
   rowReveal?: { resetKey?: string | number };
   revealSurfaceKey?: string;
+  keyboardNav?: boolean;
+  activeKey?: string | null;
+  rowAttrs?: (row: T) => { id?: string; testId?: string };
 }) {
   const { delayFor, markEntered } = useRowRevealDelay(rowReveal, revealSurfaceKey);
   const handleRowClick = useStableRowClick(onRowClick);
@@ -847,7 +895,8 @@ function GroupedTableBody<T>({
 
   // Keyboard row navigation, indexed by the item's position in sortedData.
   // scrollToIndex needs the flattened-row index, so map data → flat.
-  const navigable = !!onRowClick;
+  const clickable = !!onRowClick;
+  const navigable = clickable && keyboardNav;
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const flatByData = useMemo(() => {
     const map: number[] = [];
@@ -910,12 +959,17 @@ function GroupedTableBody<T>({
               gridTemplate={gridTemplate}
               indexSensitive={indexSensitive}
               onRowClick={handleRowClick}
-              clickable={navigable}
+              clickable={clickable}
               accent={rowAccent?.(item, dataIndex)}
-              focused={dataIndex === focusedIndex}
+              fill={rowFill?.(item, dataIndex)}
+              focused={dataIndex === focusedIndex || rowKey === activeKey}
+              domId={rowAttrs?.(item).id}
+              testId={rowAttrs?.(item).testId}
               revealDelayMs={delayFor(rowKey, dataIndex)}
               onRevealEnd={markEntered}
               padY=""
+              semantic={semantic}
+              ariaRowIndex={dataIndex + 2}
               virtualStart={vRow.start}
               virtualSize={rowHeight}
             />

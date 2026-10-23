@@ -31,9 +31,20 @@ export async function companionSetEngineSettings(settings: AthenaEngineSettings)
   return invoke<void>('companion_set_engine_settings', { settings });
 }
 
+/**
+ * The backend runs its three probes (claude --version, grok --version, grok
+ * models) one after another, each under a 10 s PROBE_TIMEOUT
+ * (`companion/session/launch.rs`). At 30 s the wrapper gave up exactly when an
+ * all-hung probe pass would answer, turning per-engine reasons into a bare
+ * failure. Pinned by `__tests__/probeEnginesTimeoutParity.test.ts`.
+ */
+const PROBE_ENGINES_IPC_TIMEOUT_MS = 45_000;
+
 /** Probe each engine (claude, grok) through the spawn door the real turn uses. */
 export async function companionProbeEngines(): Promise<EngineAvailability[]> {
-  return invoke<EngineAvailability[]>('companion_probe_engines', {}, { timeoutMs: 30_000 });
+  return invoke<EngineAvailability[]>('companion_probe_engines', {}, {
+    timeoutMs: PROBE_ENGINES_IPC_TIMEOUT_MS,
+  });
 }
 
 /**
@@ -517,6 +528,19 @@ export interface TtsSettings {
 }
 
 /**
+ * Dictation and synthesis run a local sidecar inline and resolve when it
+ * exits. The slowest caps are 120 s (`WHISPER_TIMEOUT` in
+ * `companion/stt/whisper.rs`, `POCKET_SIDECAR_TIMEOUT` in
+ * `companion/tts/pocket.rs`); Kokoro's is 90 s, a tie with the IPC default
+ * that the default always lost. At the 90 s default the wrapper rejected
+ * while the sidecar was still working and its result was discarded. The
+ * margin covers the WAV write/read around the sidecar. Pinned by
+ * `__tests__/voiceTimeoutParity.test.ts`, which reads the Rust constants.
+ */
+const VOICE_SIDECAR_CAP_MS = 120_000;
+const VOICE_IPC_TIMEOUT_MS = VOICE_SIDECAR_CAP_MS + 15_000;
+
+/**
  * Synthesize speech for the given text. `engine` defaults to `'kokoro'`
  * (the primary engine). `credentialId` is a descoped-ElevenLabs leftover:
  * accepted for call-site shape stability, ignored by the backend — pass
@@ -529,13 +553,17 @@ export async function companionTts(
   settings?: TtsSettings,
   engine: TtsEngineId = 'kokoro',
 ): Promise<TtsAudio> {
-  return invoke<TtsAudio>('companion_tts', {
-    text,
-    voiceId,
-    engine,
-    credentialId,
-    settings: settings ?? null,
-  });
+  return invoke<TtsAudio>(
+    'companion_tts',
+    {
+      text,
+      voiceId,
+      engine,
+      credentialId,
+      settings: settings ?? null,
+    },
+    { timeoutMs: VOICE_IPC_TIMEOUT_MS },
+  );
 }
 
 // ── Kokoro voice catalog + engine/model status ──────────────────────────
@@ -599,6 +627,22 @@ export async function companionTtsListKokoroVoices(): Promise<KokoroVoiceEntry[]
   return invoke<KokoroVoiceEntry[]>('companion_tts_list_kokoro_voices');
 }
 
+/**
+ * The whisper model download and the three sidecar installers download INLINE
+ * and resolve only when the files are on disk. Each download leg carries its
+ * own 20-minute reqwest `DOWNLOAD_TIMEOUT` (`companion/stt/downloader.rs`,
+ * `stt/installer.rs`, `tts/kokoro_installer.rs`, `tts/pocket_installer.rs`);
+ * Kokoro and Pocket run two legs back to back, then extract. At the 90 s
+ * default the wrapper rejected mid-download, the UI showed "failed" and
+ * re-enabled the button while the backend kept going. The margin covers the
+ * extract step. Pinned by `__tests__/sidecarDownloadTimeoutParity.test.ts`,
+ * which reads the Rust constants.
+ */
+const SIDECAR_DOWNLOAD_LEG_MS = 20 * 60_000;
+const SIDECAR_EXTRACT_MARGIN_MS = 2 * 60_000;
+const ONE_LEG_INSTALL_IPC_TIMEOUT_MS = SIDECAR_DOWNLOAD_LEG_MS + SIDECAR_EXTRACT_MARGIN_MS;
+const TWO_LEG_INSTALL_IPC_TIMEOUT_MS = 2 * SIDECAR_DOWNLOAD_LEG_MS + SIDECAR_EXTRACT_MARGIN_MS;
+
 export async function companionTtsKokoroStatus(): Promise<KokoroStatus> {
   return invoke<KokoroStatus>('companion_tts_kokoro_status');
 }
@@ -609,7 +653,9 @@ export async function companionTtsKokoroStatus(): Promise<KokoroStatus> {
  * `KOKORO_INSTALL_EVENT` — subscribe before calling. Windows-only.
  */
 export async function companionTtsKokoroDownload(): Promise<void> {
-  return invoke<void>('companion_tts_kokoro_download');
+  return invoke<void>('companion_tts_kokoro_download', undefined, {
+    timeoutMs: TWO_LEG_INSTALL_IPC_TIMEOUT_MS,
+  });
 }
 
 // ── Pocket TTS sidecar service (local, voice cloning) ───────────────────
@@ -653,7 +699,9 @@ export const POCKET_INSTALL_EVENT = 'companion://pocket-install';
  * — subscribe before calling. Windows-only.
  */
 export async function companionTtsPocketDownload(): Promise<void> {
-  return invoke<void>('companion_tts_pocket_download');
+  return invoke<void>('companion_tts_pocket_download', undefined, {
+    timeoutMs: TWO_LEG_INSTALL_IPC_TIMEOUT_MS,
+  });
 }
 
 /**
@@ -748,11 +796,15 @@ export async function companionSttTranscribe(
   modelId: string,
   language?: string,
 ): Promise<string> {
-  return invoke<string>('companion_stt_transcribe', {
-    audioBase64,
-    modelId,
-    language: language ?? null,
-  });
+  return invoke<string>(
+    'companion_stt_transcribe',
+    {
+      audioBase64,
+      modelId,
+      language: language ?? null,
+    },
+    { timeoutMs: VOICE_IPC_TIMEOUT_MS },
+  );
 }
 
 export async function companionSttListModels(): Promise<WhisperModelListing[]> {
@@ -760,7 +812,9 @@ export async function companionSttListModels(): Promise<WhisperModelListing[]> {
 }
 
 export async function companionSttDownloadModel(modelId: string): Promise<void> {
-  return invoke<void>('companion_stt_download_model', { modelId });
+  return invoke<void>('companion_stt_download_model', { modelId }, {
+    timeoutMs: ONE_LEG_INSTALL_IPC_TIMEOUT_MS,
+  });
 }
 
 export async function companionSttDeleteModel(modelId: string): Promise<void> {
@@ -777,7 +831,9 @@ export const STT_INSTALL_EVENT = 'companion://stt-install';
  * resolvable. Windows-only for now.
  */
 export async function companionSttInstallEngine(): Promise<void> {
-  return invoke<void>('companion_stt_install_engine');
+  return invoke<void>('companion_stt_install_engine', undefined, {
+    timeoutMs: ONE_LEG_INSTALL_IPC_TIMEOUT_MS,
+  });
 }
 
 export async function companionSttEngineStatus(): Promise<SttEngineStatus> {
@@ -1568,8 +1624,22 @@ export interface ApplyConsolidationEdits {
   confidence?: number;
 }
 
+/**
+ * Consolidation and reflection run one Claude call inline, under an absolute
+ * backstop of 300 s and 180 s (`CONSOLIDATION_TIMEOUT` in
+ * `companion/brain/consolidation.rs`, `REFLECTION_TIMEOUT` in `reflection.rs`).
+ * At the 90 s IPC default the UI reported a failure while the backend went on
+ * to write its proposals, and a retry ran a second pass with no dedup. Each
+ * ceiling sits 30 s above its backstop; `consolidationTimeoutParity.test.ts`
+ * reads the Rust constants so the two cannot drift apart.
+ */
+const CONSOLIDATION_IPC_TIMEOUT_MS = 330_000;
+const REFLECTION_IPC_TIMEOUT_MS = 210_000;
+
 export async function companionRunConsolidation(): Promise<string> {
-  return invoke<string>('companion_run_consolidation');
+  return invoke<string>('companion_run_consolidation', undefined, {
+    timeoutMs: CONSOLIDATION_IPC_TIMEOUT_MS,
+  });
 }
 
 export async function companionListConsolidationRuns(
@@ -1637,7 +1707,9 @@ export interface ReflectionDetail {
 }
 
 export async function companionRunReflection(): Promise<string> {
-  return invoke<string>('companion_run_reflection');
+  return invoke<string>('companion_run_reflection', undefined, {
+    timeoutMs: REFLECTION_IPC_TIMEOUT_MS,
+  });
 }
 
 // ── Phase E: proactive messaging ──────────────────────────────────────

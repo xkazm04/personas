@@ -14,7 +14,6 @@ import {
   type ScraperConfigInput,
 } from '@/api/scraper';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
-import { errMsg } from '@/stores/storeTypes';
 
 /**
  * Shared data + actions for the Scraper surface. All prototype variants consume
@@ -40,7 +39,9 @@ export interface ScraperData {
   configs: ScraperConfig[];
   datasets: DatasetSummary[];
   loading: boolean;
-  error: string | null;
+  /** The last load's rejection, raw (an AppError object from IPC), or null
+   *  once a load succeeds. Resolved to copy at the render site. */
+  error: unknown;
   runningId: string | null;
   reload: () => Promise<void>;
   save: (input: ScraperConfigInput) => Promise<ScraperConfig | null>;
@@ -60,7 +61,7 @@ export function useScraperData(): ScraperData {
   // empty row region shows a ghost (fetch running) or the settled-empty state
   // (fetch finished, genuinely nothing). See docs/design/overview-loading.md.
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
@@ -76,9 +77,8 @@ export function useScraperData(): ScraperData {
       cachedDatasets = dsets;
       setError(null);
     } catch (e) {
-      // The backend returns a structured AppError envelope (`{ error, kind, … }`),
-      // not an Error instance — errMsg unwraps both shapes.
-      setError(errMsg(e, String(e)));
+      // Kept raw: the Control Room resolves it at render (inlineErrorCopy).
+      setError(e ?? new Error('load failed'));
       silentCatch('scraper: load configs/datasets')(e);
     } finally {
       setLoading(false);

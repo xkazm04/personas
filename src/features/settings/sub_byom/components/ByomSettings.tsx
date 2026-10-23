@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Network, Shield, Route, ScrollText, KeyRound, AlertTriangle } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
@@ -13,6 +13,7 @@ import { ByomAuditLog } from './ByomAuditLog';
 import { ByomApiKeyManager } from './ByomApiKeyManager';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const SECTION_TABS: { id: ByomSection; labelKey: 'tab_providers' | 'tab_keys' | 'tab_routing' | 'tab_compliance' | 'tab_audit'; icon: typeof Shield }[] = [
@@ -27,6 +28,7 @@ export default function ByomSettings() {
   const bm = useByomSettings();
   const { t } = useTranslation();
   const s = t.settings.byom;
+  const [confirmingReset, setConfirmingReset] = useState(false);
 
   const guardCallbacks = useMemo(() => ({
     onSave: () => bm.handleSave(),
@@ -41,7 +43,7 @@ export default function ByomSettings() {
         <ContentHeader
           icon={<Network className="w-5 h-5 text-violet-400" />}
           iconColor="violet"
-          title="BYOM"
+          title={s.title}
           subtitle={s.loading}
         />
       </ContentBox>
@@ -62,7 +64,7 @@ export default function ByomSettings() {
             )}
             <button
               type="button"
-              onClick={bm.handleReset}
+              onClick={() => setConfirmingReset(true)}
               disabled={bm.isSaving}
               className="px-3 py-1.5 typo-body rounded-modal border border-primary/10 text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
@@ -140,7 +142,7 @@ export default function ByomSettings() {
               </div>
               <button
                 type="button"
-                onClick={bm.handleReset}
+                onClick={() => setConfirmingReset(true)}
                 className="shrink-0 px-3 py-1.5 typo-body rounded-modal bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition-colors"
               >
                 {s.reset_policy}
@@ -216,12 +218,26 @@ export default function ByomSettings() {
         </div>
       </ContentBody>
 
+      {confirmingReset && (
+        <ConfirmDialog
+          danger
+          title={s.reset_policy}
+          body={t.common.confirm_destructive_cannot_undo}
+          confirmLabel={s.reset_policy}
+          onConfirm={async () => {
+            await bm.handleReset();
+            setConfirmingReset(false);
+          }}
+          onCancel={() => setConfirmingReset(false)}
+        />
+      )}
+
       <UnsavedChangesModal
         saveError={guard.saveError}
         isSaving={guard.isSaving}
         isOpen={guard.isOpen}
         onAction={guard.resolve}
-        changedSections={['BYOM Policy']}
+        changedSections={[s.policy_changed_section]}
       />
     </ContentBox>
   );

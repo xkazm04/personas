@@ -9,6 +9,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { PillGroup } from '@/features/shared/components/forms/PillGroup';
 import { RotationCountdownRing } from './RotationCountdownRing';
 import { useTranslation } from '@/i18n/useTranslation';
+import { extractMessage } from '@/lib/silentCatch';
 
 const ROTATION_STATUS = STATUS_COLORS.rotation!;
 
@@ -72,7 +73,7 @@ export function RotationActivePolicy({
                 await onRefresh();
                 onHealthcheck(credentialId);
               } catch (err) {
-                onError(tx(t.vault.rotation_section.rotation_failed, { error: err instanceof Error ? err.message : 'Unknown error' }));
+                onError(tx(t.vault.rotation_section.rotation_failed, { error: extractMessage(err) }));
               } finally {
                 setIsRotating(false);
               }
@@ -97,7 +98,7 @@ export function RotationActivePolicy({
                 }
                 await onRefresh();
               } catch (err) {
-                onError(tx(t.vault.rotation_section.remove_policy_failed, { error: err instanceof Error ? err.message : 'Unknown error' }));
+                onError(tx(t.vault.rotation_section.remove_policy_failed, { error: extractMessage(err) }));
               } finally {
                 setIsRemovingPolicy(false);
               }
@@ -150,7 +151,7 @@ export function RotationActivePolicy({
                   await onRefresh();
                   setIsEditingPeriod(false);
                 } catch (err) {
-                  onError(tx(t.vault.rotation_section.update_period_failed, { error: err instanceof Error ? err.message : 'Unknown error' }));
+                  onError(tx(t.vault.rotation_section.update_period_failed, { error: extractMessage(err) }));
                 }
               }}
               data-testid="rotation-save-period-btn"

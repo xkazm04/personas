@@ -17,18 +17,17 @@ Pipeline is where multi-persona teams are composed. Teams are assembled from **p
 
 ## Page host
 
-`src/features/teams/sub_teamWorkspace/TeamCanvas.tsx` is the host for the Teams workspace, lazy-mounted in `src/features/personas/PersonasPage.tsx` for `sidebarSection === 'teams'`. That section is split into four L2 tabs (the `teamsTab` state, set via `setTeamsTab`): **Workspace** (default), **Goals** (`GoalsPage`, see [goals.md](./goals.md)), **KPIs** (`KPIsPage`, see [kpis.md](./kpis.md)), and **Factory**. `TeamCanvas` owns the Workspace tab: with no team selected it renders the `TeamList` management table; with a team selected it renders the **Team Studio** (`teamStudio/TeamStudioSplitVariant.tsx`). The Teams sub-view is gated and currently surfaced through dev/team builds (sidebar entry depends on tier).
+`src/features/teams/sub_teamWorkspace/TeamCanvas.tsx` is the host for the Teams workspace, lazy-mounted in `src/features/personas/PersonasPage.tsx` for `sidebarSection === 'teams'`. That section is split into four L2 tabs (the `teamsTab` state, set via `setTeamsTab`): **Workspace** (default), **Goals** (`GoalsPage`, see [goals.md](./goals.md)), **KPIs** (`KPIsPage`, see [kpis.md](./kpis.md)), and **Factory**. `TeamCanvas` owns the Workspace tab: with a team selected it renders the **Team Studio** (`teamStudio/TeamStudioSplitVariant.tsx`); with none selected it redirects to Manage (`teamsTab: 'projects'`), since a project owns exactly one team and the `TeamList` table was retired 2026-08-26. The Teams sub-view is gated and currently surfaced through dev/team builds (sidebar entry depends on tier).
 
 ## Top-level surface (the Workspace tab)
 
-`TeamCanvas.tsx` is the Workspace-tab router: no team selected → the `TeamList` management table; a team selected → the **Team Studio** (see below). It consumes `usePipelineStore`.
+`TeamCanvas.tsx` is the Workspace-tab router: preset flow open → `PresetStudio`; no team selected → redirect to Manage; a team selected → the **Team Studio** (see below). It consumes `usePipelineStore`.
 
 | Surface | Behavior | Implementation |
 | --- | --- | --- |
-| Team list | The teams management table with create/edit. The create form (`CreateTeamForm.tsx`) checks the team name against existing teams inline as you type — a debounced spinner → emerald "Name available" → amber "Already in use, try X" via `useAsyncFieldValidation` + `FormField`'s `availability` prop — so collisions surface at type-time, not on save. The form also has a **Codebase repository** section (GitHub connector picker + repo selector + optional main branch); when a repo is set, submitting provisions a `Codebase — <team>` connector (`service_type: codebase`) carrying `team_id` + `github_url` (+ `main_branch`, `mode: 'team'`), giving the team a single source-control truth that Dev Tools' "Team" source mode consumes | `TeamList.tsx`, `CreateTeamForm.tsx` |
 | Team Studio | The per-team **configuration** console (roster rail + mode panes) opened when a team is selected — member scope, team memory, settings. Watching/driving a team moved to the Monitor in 2026-07. | `teamStudio/TeamStudioSplitVariant.tsx` (see [Team Studio](#team-studio--configuration-only)) |
-| Auto-team | LLM-assisted team composition | `AutoTeamModal.tsx`, `useAutoTeam.ts` |
-| Preset team | "Preset Team" button (+ empty-state CTA) opens the in-app **`PresetStudio`** (full content area, routed by `pipelineStore.presetFlowOpen` in `TeamCanvas` — not a modal): a gallery of best-practice, pre-wired presets under `scripts/templates/_team_presets/` (e.g. the **Web Development Team**) → on pick, the **Blueprint** adoption process. Its connection graph (`PresetConnectionGraph`) is the hero and the include/exclude surface — tap a node to toggle a member; sequential vs feedback edges are distinguished, and edge event-labels reveal on hover. Adopts the selected subset in one pass. Shares the `usePresetAdoption` state machine with the Templates → Presets modal. See [templates/08-team-presets.md](../templates/08-team-presets.md) | `TeamList.tsx`, `TeamCanvas.tsx`, `presetStudio/` (`PresetStudio`, `PresetProcessHost`, `PresetProcessBlueprint`, `PresetConnectionGraph`, `PresetGalleryShowcase`), `sub_presets/usePresetAdoption.ts` |
+| Auto-team | LLM-assisted team composition, opened from the Team Studio header | `AutoTeamModal.tsx`, `useAutoTeam.ts`, `teamStudio/TeamCreateActions.tsx` |
+| Preset team | "Preset Team" button on the Team Studio header (`teamStudio/TeamCreateActions.tsx`) opens the in-app **`PresetStudio`** (full content area, routed by `pipelineStore.presetFlowOpen` in `TeamCanvas` — not a modal): a gallery of best-practice, pre-wired presets under `scripts/templates/_team_presets/` (e.g. the **Web Development Team**) → on pick, the **Blueprint** adoption process. Its connection graph (`PresetConnectionGraph`) is the hero and the include/exclude surface — tap a node to toggle a member; sequential vs feedback edges are distinguished, and edge event-labels reveal on hover. Adopts the selected subset in one pass. Shares the `usePresetAdoption` state machine with the Templates → Presets modal. See [templates/08-team-presets.md](../templates/08-team-presets.md) | `teamStudio/TeamCreateActions.tsx`, `TeamCanvas.tsx`, `presetStudio/` (`PresetStudio`, `PresetProcessHost`, `PresetProcessBlueprint`, `PresetConnectionGraph`, `PresetGalleryShowcase`), `sub_presets/usePresetAdoption.ts` |
 | Blueprint preview | Read-only render of a team blueprint | `BlueprintPreview.tsx` |
 
 > The earlier standalone, edge-wiring **xyflow canvas** (with `TeamConfigPanel` / `TeamDragPanel` / a pipeline-template gallery) is gone — teams are assembled from presets / auto-team and operated from the **Team Studio**. The preset **blueprint** graph is `presetStudio/PresetConnectionGraph.tsx`, a self-contained SVG surface that never depended on `sub_canvas/`; the dry-run debugger went with the canvas.
@@ -70,7 +69,7 @@ Nothing in the Studio watches or drives a team. Where the retired modes went:
 
 Team memory is *read* in the Stream (as a lens, with the run-timeline and run-diff views) and *authored* here — the Stream is a read-only observatory by construction.
 
-> `src/features/teams/sub_assignments/` is **listener-only** (`useAssignmentProgressListener.ts` / `useGlobalAssignmentProgressListener.ts` listen to `TEAM_ASSIGNMENT_PROGRESS`; `useAssignmentNotificationDispatcher.ts` fires bell-icon notifications on `awaiting_review`).
+> `src/features/teams/sub_assignments/` is **listener-only** (`useGlobalAssignmentProgressListener.ts` listens to `TEAM_ASSIGNMENT_PROGRESS`; `useAssignmentNotificationDispatcher.ts` fires bell-icon notifications on `awaiting_review` and on the terminal statuses `done` / `failed` / `aborted`).
 
 ### Assigning work — the conversation composer
 
@@ -130,7 +129,6 @@ project-scoped rather than team-scoped and shows goal-less missions as first-cla
 - Each step renders a status (`pending → matching → running → done | failed | skipped | awaiting_review`), the matched persona, match confidence + rationale (auto modes), and the output snippet / error.
 - On failure the assignment pauses (only that assignment — siblings continue) and the step exposes inline **Edit requirement / Reassign / Skip** actions. A title-bar notification (`team_assignment_failed` / `team_assignment_unmatched` process types) deep-links here.
 - Cascade-skip: skipping a step auto-skips every step that depends on it.
-- `AssignmentReplay.tsx` replays a finished assignment's step timeline.
 
 ### Templates (backend-only today)
 
@@ -179,7 +177,7 @@ The pane also hosts the **Disband team** danger zone — a two-click confirm
 store's `deleteTeam`. Disbanding deletes the `PersonaTeam` and cascades its
 membership + connections but **keeps the member personas** — they survive
 ungrouped. On success the store clears `selectedTeamId`, which returns the user
-to the Teams table. This mirrors the per-row Disband action in `TeamList`; the
+to the Manage table. The
 backend `delete_team` refuses while a pipeline is running or when the team is a
 dev project's canonical team.
 

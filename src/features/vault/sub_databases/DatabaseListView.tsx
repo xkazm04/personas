@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Database } from 'lucide-react';
-import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useTranslation } from '@/i18n/useTranslation';
@@ -122,11 +122,11 @@ export function DatabaseListView({ onBack: _onBack, isFetching = false }: Databa
   if (allRows.length === 0 && !isFetching) {
     return (
       <div className="animate-fade-slide-in">
-        <EmptyIllustration
-          icon={Database}
-          heading={db.no_credentials}
+        <ScenarioEmptyState
+          art="folder"
+          size="lg"
+          title={db.no_credentials}
           description={db.no_credentials_hint}
-          className="py-20"
         />
       </div>
     );
@@ -145,6 +145,7 @@ export function DatabaseListView({ onBack: _onBack, isFetching = false }: Databa
           onSort={handleSort}
           isLoading={isFetching && displayRows.length === 0}
           emptyIcon={Database}
+          emptyArt="search"
           emptyTitle={db.no_matching}
           emptyDescription={db.no_matching_hint}
           className="flex-1"

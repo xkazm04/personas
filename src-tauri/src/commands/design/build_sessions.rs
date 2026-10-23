@@ -3626,6 +3626,29 @@ pub(crate) async fn preview_promote(
 ///
 /// Returns the count of relays actually created. Best-effort — individual
 /// failures are logged but never bubble up to fail the promote.
+/// The prompt teaches the build agent a comma list in dotted form
+/// (`github.push,github.pull_request`); the relay engine reads `event_filter`
+/// as a JSON array of its own event vocabulary (`github_push`, built from
+/// `x-github-event`). Convert at the write, so the stored row is what the
+/// Smee tab would have written. An already-JSON array is kept (tokens
+/// normalised the same way). Blank input means "forward everything" (None).
+fn smee_event_filter_to_json(raw: &str) -> Option<String> {
+    let raw = raw.trim();
+    let tokens: Vec<String> = match serde_json::from_str::<Vec<String>>(raw) {
+        Ok(v) => v,
+        Err(_) => raw.split(',').map(str::to_string).collect(),
+    };
+    let tokens: Vec<String> = tokens
+        .iter()
+        .map(|t| t.trim().replace('.', "_"))
+        .filter(|t| !t.is_empty())
+        .collect();
+    if tokens.is_empty() {
+        return None;
+    }
+    serde_json::to_string(&tokens).ok()
+}
+
 fn auto_create_smee_relays(
     pool: &crate::db::DbPool,
     persona_id: &str,
@@ -3700,9 +3723,7 @@ fn auto_create_smee_relays(
         let event_filter = cfg
             .get("smee_event_filter")
             .and_then(|v| v.as_str())
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .map(|s| s.to_string());
+            .and_then(smee_event_filter_to_json);
 
         let label = format!(
             "Build · trigger {}",
@@ -3967,11 +3988,36 @@ mod tests {
             conn.query_row(
                 "SELECT target_persona_id, event_filter, label FROM smee_relays WHERE channel_url = ?1",
                 rusqlite::params![url],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+                |row| {
+                    Ok((
+                        row.get("target_persona_id")?,
+                        row.get("event_filter")?,
+                        row.get("label")?,
+                    ))
+                },
             ).unwrap();
         assert_eq!(target_persona_id.as_deref(), Some("p_a"));
-        assert_eq!(event_filter.as_deref(), Some("github.push"));
+        // JSON array in the relay engine's vocabulary, not the prompt's CSV.
+        assert_eq!(event_filter.as_deref(), Some(r#"["github_push"]"#));
         assert!(label.starts_with("Build · trigger"));
+    }
+
+    #[test]
+    fn smee_event_filter_is_a_json_array_in_relay_vocabulary() {
+        assert_eq!(
+            smee_event_filter_to_json("github.push, github.pull_request").as_deref(),
+            Some(r#"["github_push","github_pull_request"]"#)
+        );
+        assert_eq!(
+            smee_event_filter_to_json(r#"["github_push"]"#).as_deref(),
+            Some(r#"["github_push"]"#)
+        );
+        assert_eq!(smee_event_filter_to_json("  ,, "), None);
+        assert_eq!(smee_event_filter_to_json(""), None);
+        // What the relay engine parses back out.
+        let json = smee_event_filter_to_json("github.push").unwrap();
+        let parsed: Vec<String> = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed, vec!["github_push".to_string()]);
     }
 
     #[test]

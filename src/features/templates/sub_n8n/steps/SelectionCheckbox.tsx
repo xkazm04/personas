@@ -1,7 +1,5 @@
 import { Check } from 'lucide-react';
 
-export { PLATFORM_COLORS } from '../colorTokens';
-
 export function SelectionCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
     <button

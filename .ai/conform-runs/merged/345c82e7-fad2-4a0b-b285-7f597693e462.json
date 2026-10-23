@@ -1,0 +1,152 @@
+{
+  "schema": "conform-run/1",
+  "worker": "345c82e7-fad2-4a0b-b285-7f597693e462",
+  "subject": "client-fetch-cache",
+  "evaluatedAt": "2026-10-16T17:17:44Z",
+  "pairs": [
+    {
+      "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:304 the goals flight is keyed 'goals' without the projectIds that change the answer, so a one-project post-mutation refresh (MastermindGoalsModal.tsx:87) supersedes the whole-portfolio fan-out, leaving the rest of the projects unloaded and lastGoalProjectIds narrowed to one",
+      "techniques": [
+        {
+          "technique": "cache-key-discipline",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:304 flights.run('goals') and :234 flights.run('scans') omit projectIds; a joiner with different ids gets another question's answer, against the registry's own rule at src/stores/util/inFlight.ts:13"
+        },
+        {
+          "technique": "in-flight-dedup",
+          "verdict": "realized",
+          "evidence": "src/stores/util/inFlight.ts:36 keyed join registry cleared at settle on success and failure alike; replace mode for post-event reloads"
+        },
+        {
+          "technique": "swr-design",
+          "verdict": "partial",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:184 fresh window declared and stamped only on success (:253), failure goes stale with data kept (:83); no stale ceiling is named"
+        },
+        {
+          "technique": "warm-remount-caches",
+          "verdict": "realized",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:195 module-scoped store survives remount, event-driven invalidateScans, test reset hatch"
+        },
+        {
+          "technique": "prefetch-and-defer",
+          "verdict": "realized",
+          "evidence": "src/features/teams/sub_mastermind/lib/prefetchMastermind.ts:43 intent prefetch goes through the same loaders, debounced by REPEAT_MS"
+        }
+      ]
+    },
+    {
+      "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:133 a failed reopen refresh overwrites the shown list with [] and settles the scope, so the modal paints its no-results empty state (ExportSelectionModal.tsx:303) while the previous selection ids stay selected and exportable",
+      "techniques": [
+        {
+          "technique": "swr-design",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:133 evicts stale rows on failed revalidation and reports it as an empty success (same shape for teams/credentials/projects/workspaces/twins/athena)"
+        },
+        {
+          "technique": "warm-remount-caches",
+          "verdict": "deviation",
+          "evidence": "src/lib/async/createTtlValueCache.ts:39 an entry past the 60s TTL (useDataPortability.ts:27) is returned as a miss, so a remount after a minute paints cold (useDataPortability.ts:99) instead of warm-stale with a revalidation"
+        },
+        {
+          "technique": "in-flight-dedup",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_portability/components/ExportSelectionModal.tsx:41 the picker reads have a single caller; there is no concurrent identical request to join"
+        }
+      ]
+    },
+    {
+      "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:103 a team switch resets filters but not memories/total/stats, and the host keeps the pane mounted across switches (TeamMemoryPane.tsx:15), so team B paints team A's memories until B's list lands, and keeps them if it fails (MemoryPanelList.tsx:123 hides the failure when rows exist)",
+      "techniques": [
+        {
+          "technique": "warm-remount-caches",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:103 retained rows are neither cleared on identity change nor keyed by teamId; and leaving memory mode unmounts the pane (TeamStudioSplitVariant.tsx:226), so every return reloads cold"
+        },
+        {
+          "technique": "swr-design",
+          "verdict": "partial",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:77 rows are kept during refetch and a failure sets loadFailed, but MemoryPanelList.tsx:123 shows the failure only into emptiness, so stale rows are not marked stale"
+        },
+        {
+          "technique": "cache-key-discipline",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:46 the held list carries no teamId axis, so one team's answer is served under another team's identity"
+        },
+        {
+          "technique": "in-flight-dedup",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:69 successive filter fetches are different questions, guarded by latest-wins (the sibling guard), not dedup"
+        }
+      ],
+      "registryProposal": "warm-remount-caches decision rule 'clear on identity change' also bites hooks with no cache at all: a render-only 'keep rows on screen during refetch' law (this repo's overview-loading law 1) produces cross-identity paints when the host stays mounted. Worth a line in swr-design or async-ui-states."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "client-fetch-cache",
+      "context": "a38e2b93-2322-4187-befa-c0443c4ca85f",
+      "reason": "weak context (glyph-definitions); the match is the doubtful part - a coverage question, not judged"
+    },
+    {
+      "subject": "client-fetch-cache",
+      "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7",
+      "reason": "weak context (triggers-test); not judged by default"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T17:17:44Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "client-fetch-cache"
+      ],
+      "techniques": [
+        "cache-key-discipline",
+        "in-flight-dedup",
+        "swr-design",
+        "warm-remount-caches",
+        "prefetch-and-defer"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:17:44Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "client-fetch-cache"
+      ],
+      "techniques": [
+        "swr-design",
+        "warm-remount-caches",
+        "in-flight-dedup"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:17:44Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "client-fetch-cache"
+      ],
+      "techniques": [
+        "warm-remount-caches",
+        "swr-design",
+        "cache-key-discipline",
+        "in-flight-dedup"
+      ],
+      "deviations": 1
+    }
+  ]
+}

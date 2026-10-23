@@ -46,6 +46,10 @@ interface TemplateVirtualListProps {
   hasMore: boolean;
   isLoading: boolean;
   fetchMore: () => void;
+  /** The last page request failed: stop auto-paging so a broken backend is not
+   *  hammered every time `isFetchingMore` flips back (a filter change or refresh
+   *  that loads page 0 clears it). */
+  pagingFailed?: boolean;
   compareSelectedIds: Set<string>;
   compareAtCapacity: boolean;
   onToggleCompare: (review: PersonaDesignReview) => void;
@@ -80,6 +84,7 @@ export function TemplateVirtualList({
   hasMore,
   isLoading,
   fetchMore,
+  pagingFailed = false,
   compareSelectedIds,
   compareAtCapacity,
   onToggleCompare,
@@ -111,17 +116,22 @@ export function TemplateVirtualList({
   const virtualItems = virtualizer.getVirtualItems();
   const lastVisibleIndex = virtualItems[virtualItems.length - 1]?.index ?? -1;
 
+  // Client-side facets (difficulty, setup, component, coverage) filter only the
+  // pages loaded so far. When they empty the list there is no virtual row to
+  // reach the end of, so keep paging until a match lands or the catalog runs
+  // out; only then is "no results" true.
+  const isEmpty = displayItems.length === 0;
   useEffect(() => {
-    if (lastVisibleIndex < 0) return;
-    if (lastVisibleIndex >= displayItems.length - 10 && hasMore && !isFetchingMore && !isLoading) {
+    if (!hasMore || isFetchingMore || isLoading || pagingFailed) return;
+    if (isEmpty || (lastVisibleIndex >= 0 && lastVisibleIndex >= displayItems.length - 10)) {
       fetchMore();
     }
-  }, [lastVisibleIndex, displayItems.length, hasMore, isFetchingMore, isLoading, fetchMore]);
+  }, [isEmpty, lastVisibleIndex, displayItems.length, hasMore, isFetchingMore, isLoading, pagingFailed, fetchMore]);
 
   // Sticky header — static chrome. Renders identically above ghost rows,
   // the settled-empty state, and real rows so no swap ever moves it.
   const header = (
-    <div className="flex items-center border-b border-primary/10 bg-secondary/80 flex-shrink-0" style={{ backgroundColor: 'hsl(var(--background))' }}>
+    <div className="flex items-center border-b border-primary/10 bg-secondary/80 flex-shrink-0" style={{ backgroundColor: 'var(--background)' }}>
       {density === 'comfortable' && <div className="w-20 px-4 py-3" />}
       <div className="flex-1 text-left typo-body text-foreground px-4 py-2">{t.templates.list.template_name}</div>
       <div className={`typo-body text-foreground px-4 py-2 flex-shrink-0 ${density === 'compact' ? 'w-32 text-center' : 'w-auto text-right'}`}>
@@ -134,14 +144,15 @@ export function TemplateVirtualList({
     </div>
   );
 
-  if (displayItems.length === 0) {
-    // Nothing to show. While a fetch is in flight this is cold emptiness —
-    // ghost rows under the real header (delayed ≥120ms so a fast fetch never
-    // paints one). Once settled with genuinely nothing, the real empty state.
+  if (isEmpty) {
+    // Nothing to show. While a fetch is in flight, or unfetched pages may still
+    // hold a match, this is cold emptiness — ghost rows under the real header
+    // (delayed ≥120ms so a fast fetch never paints one). Once settled with
+    // genuinely nothing, the real empty state.
     return (
       <>
         {header}
-        {isLoading ? (
+        {isLoading || (hasMore && !pagingFailed) ? (
           <GalleryGhostRows density={density} />
         ) : (
           // A settled zero-hit list with a live query is a dead end unless it
@@ -190,7 +201,7 @@ export function TemplateVirtualList({
                       review={review}
                       searchQuery={searchQuery}
                       isAiResult={isAiResult}
-                      modals={modals}
+                      openModal={modals.open}
                       credentialServiceTypes={credentialServiceTypes}
                     />
                   ) : (
@@ -201,7 +212,7 @@ export function TemplateVirtualList({
                       isAiResult={isAiResult}
                       credentialServiceTypes={credentialServiceTypes}
                       connectorReadiness={connectorReadiness}
-                      modals={modals}
+                      openModal={modals.open}
                       onToggleExpand={onToggleExpand}
                       onViewFlows={onViewFlows}
                       onDeleteReview={onDeleteReview}

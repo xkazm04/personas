@@ -27,7 +27,7 @@
   "cover_empty": "Belum ada milestone — rencanakan potongan pertama",
   "cover_forecast": "perkiraan {date}",
   "cover_next": "Berikutnya",
-  "cover_open_aria": "Buka roadmap Ship untuk {name}",
+  "cover_open_aria": "Buka roadmap {name} di Buku Catatan",
   "cover_shipped_count": "{shipped}/{total} dirilis",
   "crit_contexts": "Core contexts sehat",
   "crit_contexts_critical": " · kritis: {names}",

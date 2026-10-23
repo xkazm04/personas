@@ -452,5 +452,20 @@
   "use_template": "टेम्पलेट उपयोग करें",
   "version_history": "संस्करण इतिहास",
   "view_persona": "पर्सोना देखें",
-  "warning": "चेतावनी"
+  "warning": "चेतावनी",
+  "auto_team_create_failed": "टीम बनाने में विफल",
+  "auto_team_example_1": "इस PR की समीक्षा करें और परीक्षण चलाएं",
+  "auto_team_example_2": "शोध के साथ एक ब्लॉग पोस्ट लिखें",
+  "auto_team_example_3": "ग्राहक फीडबैक का विश्लेषण करें",
+  "auto_team_example_4": "कंटेंट पब्लिशिंग पाइपलाइन बनाएं",
+  "auto_team_no_match": "कोई एजेंट आपके विवरण से मेल नहीं खाया। अधिक स्पष्ट लिखकर देखें।",
+  "team_color_blue": "नीला",
+  "team_color_cyan": "सियान",
+  "team_color_green": "हरा",
+  "team_color_indigo": "नील",
+  "team_color_orange": "नारंगी",
+  "team_color_pink": "गुलाबी",
+  "team_color_rose": "रोज़",
+  "team_color_violet": "बैंगनी",
+  "team_color_yellow": "पीला"
 }

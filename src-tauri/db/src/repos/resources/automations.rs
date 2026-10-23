@@ -311,27 +311,6 @@ pub fn update(
 
 crud_delete!("persona_automations");
 
-/// Unbounded (unlike `get_runs_by_automation`'s capped `limit`) check for any
-/// run of this automation still `pending` or `running`. Used by `delete` to
-/// avoid deleting an automation out from under an active run — see
-/// refactor-bughunt-2026-07-10/tauri-commands-misc-2.md #4.
-pub fn has_active_run(pool: &DbPool, automation_id: &str) -> Result<bool, AppError> {
-    timed_query!(
-        "persona_automations",
-        "persona_automations::has_active_run",
-        {
-            let conn = pool.get()?;
-            let exists: i64 = conn.query_row(
-                "SELECT EXISTS(SELECT 1 FROM automation_runs \
-                 WHERE automation_id = ?1 AND status IN ('pending', 'running'))",
-                params![automation_id],
-                |row| row.get(0),
-            )?;
-            Ok(exists != 0)
-        }
-    )
-}
-
 /// Returns a summary of resources affected by deleting this automation.
 pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, AppError> {
     timed_query!(
@@ -598,27 +577,6 @@ pub fn reap_stale_runs(pool: &DbPool) -> Result<usize, AppError> {
         let changed = conn.execute(&sql, params![now])?;
         Ok(changed)
     })
-}
-
-pub fn get_runs_by_execution(
-    pool: &DbPool,
-    execution_id: &str,
-) -> Result<Vec<AutomationRun>, AppError> {
-    timed_query!(
-        "persona_automations",
-        "persona_automations::get_runs_by_execution",
-        {
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare(
-                "SELECT * FROM automation_runs WHERE execution_id = ?1 ORDER BY started_at",
-            )?;
-            let rows = stmt.query_map(params![execution_id], row_to_run)?;
-            let items = rows
-                .collect::<Result<Vec<_>, _>>()
-                .map_err(AppError::Database)?;
-            Ok(items)
-        }
-    )
 }
 
 #[cfg(test)]

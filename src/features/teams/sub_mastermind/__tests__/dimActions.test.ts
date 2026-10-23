@@ -113,14 +113,21 @@ describe('dimActions — dimAction applicability', () => {
     expect(dimAction('ci', passport, undefined).action).toBeNull();
   });
 
-  it('a deploy-capable row → deploy', () => {
+  // Both cases name NON-modal rows. They used `db` and `monitoring`, which are
+  // modal rows and return `deploy` before the deploy/connector check runs, so
+  // each passed with its mock ignored and the gap-filling branch was untested.
+  it('a deploy-capable row → deploy, and inert without the deploy action', () => {
     mockDeploy.mockReturnValue([{} as never]);
-    expect(dimAction('db', passport, raw()).action).toBe('deploy');
+    expect(dimAction('tests', passport, raw()).action).toBe('deploy');
+    mockDeploy.mockReturnValue([]);
+    expect(dimAction('tests', passport, raw()).action).toBeNull();
   });
 
-  it('a connector-backed row → deploy', () => {
+  it('a connector-backed row → deploy, and inert when the connector does not apply', () => {
     mockConnector.mockReturnValue({ applicable: () => true } as never);
-    expect(dimAction('monitoring', passport, raw()).action).toBe('deploy');
+    expect(dimAction('hosting', passport, raw()).action).toBe('deploy');
+    mockConnector.mockReturnValue({ applicable: () => false } as never);
+    expect(dimAction('hosting', passport, raw()).action).toBeNull();
   });
 
   it('skills with pending installs (none installed) → deploy (adopt path)', () => {

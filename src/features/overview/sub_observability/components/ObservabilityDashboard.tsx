@@ -175,7 +175,7 @@ export default function ObservabilityDashboard() {
       detail = <SystemTraceViewer />;
       break;
     case 'athena':
-      detail = <AthenaHealthPanel health={athena.data} loading={athena.loading} />;
+      detail = <AthenaHealthPanel health={athena.data} loading={athena.loading} failed={athena.error} />;
       break;
     default:
       detail = null;
@@ -201,10 +201,12 @@ export default function ObservabilityDashboard() {
               w={w}
               issues={d.healingIssues}
               issuesLoading={issuesLoading}
+              issuesFailed={pipelineErrors.healingIssues !== undefined}
               peakCost={peakDayCost}
               failed={d.summary?.failedExecutions ?? 0}
               anomalies={d.chartAnomalies.filter((a) => a.metric === 'cost').length}
               metricsLoading={metricsLoading}
+              metricsFailed={!d.summary && !!d.observabilityError}
               tools={tools}
               athena={athena}
             />

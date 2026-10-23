@@ -1,0 +1,123 @@
+{
+  "schema": "conform-run/1",
+  "worker": "8034a62c-3406-4d0e-be81-6627e0bca59b",
+  "subject": "eval-harness",
+  "evaluatedAt": "2026-10-21T17:28:26Z",
+  "pairs": [
+    {
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/stores/slices/agents/labSlice.ts:51 BaselinePin carries a runId that its only caller fills with an empty string (src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx:200), so the regression baseline is a version, not a measurement, and delta-vs-baseline compares against an aggregate that keeps moving as suites and judges change",
+      "techniques": [
+        {
+          "technique": "comparison-modes",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/versionMatrixRows.ts:110 deltaVsBaseline subtracts the baseline version current composite (compositeFor over live versionRatings), not a frozen run score; tracking quality over time requires absolute scoring on a frozen instrument"
+        },
+        {
+          "technique": "scenario-design",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/labSlice.ts:51 the pin records no suite, scenario version or judge packet, and the runId that could recover them is written as an empty string, so the instrument behind the baseline score has no identity"
+        }
+      ],
+      "registryProposal": "Pinning a regression baseline is its own small technique (pin a measurement, not a candidate): a baseline keyed by version only silently re-scores itself whenever the version gains ratings under a new suite or judge. comparison-modes says absolute on a frozen instrument but does not name the baseline-pin shape.",
+      "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+      "evaluatedRevision": 37
+    },
+    {
+      "context": "6c0d30e4-99b9-4580-ba02-9a526db1d639",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_health/useHealthCheck.ts:6 the health check aggregates static configuration sub-checks (design feasibility, config warnings) into a severity score; no scenario set, trials or judge exist, so the subject precondition (run candidates against declared scenarios and score across versions) is unmet",
+      "techniques": [],
+      "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+      "evaluatedRevision": 37
+    },
+    {
+      "context": "33a96a83-6adc-42f7-b57c-839382bcef54",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/commands/curator/growth.rs:10 the curator samples ecosystem size and reports a direction across registry work; it runs no agent or model against declared scenarios and scores nothing (loop/improvement match is vocabulary only)",
+      "techniques": [],
+      "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+      "evaluatedRevision": 37
+    },
+    {
+      "context": "54236947-3775-4d0a-8e14-1a709dd4d8bc",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/teams/sub_factory/factoryModel.ts:2 operational KPI management for dev projects (context x KPI matrix with met/warn/crit thresholds); no candidate is run against scenarios, so the matrix/score match is vocabulary only",
+      "techniques": [],
+      "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+      "evaluatedRevision": 37
+    }
+  ],
+  "declined": [
+    {
+      "subject": "eval-harness",
+      "context": "(26 remaining probable priorNotApplicable pairs)",
+      "reason": "budget of 4 pairs spent; remaining unknowns are probable-confidence lexical matches with priorNotApplicable=12, left for later runs"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "2fb16136-586e-478d-823f-38434d2d5b9a",
+      "reason": "weak context (commands-communication); not judged by default"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+      "reason": "weak context (plugins-research-lab-reports); not judged by default"
+    },
+    {
+      "subject": "eval-harness",
+      "context": "9b6cc17c-3add-4152-a349-c189b15a109f",
+      "reason": "weak context (template-design-preview); not judged by default"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T17:28:26Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "eval-harness"
+      ],
+      "techniques": [
+        "comparison-modes",
+        "scenario-design"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T17:28:26Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "eval-harness"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T17:28:26Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "eval-harness"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T17:28:26Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "eval-harness"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

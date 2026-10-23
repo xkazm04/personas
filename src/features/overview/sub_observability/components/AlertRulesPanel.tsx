@@ -41,6 +41,9 @@ export function AlertRulesPanel() {
     // "Empty state renders only when !isFetching"). `Rows` already owns the
     // calm delayed ghost; it only ever lacked the flag.
     loading: st.alertRulesLoading,
+    // alertSlice has written this on every failed read since it existed, and nothing read it:
+    // a failed load told the operator "no rules configured".
+    failed: st.alertRulesError != null,
   })));
   const personas = useAgentStore((st) => st.personas);
   const personaList = personas.map((p) => ({ id: p.id, name: p.name }));
@@ -77,7 +80,9 @@ export function AlertRulesPanel() {
       <Rows
         count={s.alertRules.length}
         loading={s.loading && s.alertRules.length === 0}
-        empty={{ title: hp.no_rules_configured }}
+        empty={s.failed
+          ? { title: t.overview.observability.error_recovery.panel_failed, tone: 'error' }
+          : { title: hp.no_rules_configured }}
       >
         {s.alertRules.map((rule) => {
           if (editingId === rule.id) {

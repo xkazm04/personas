@@ -71,9 +71,15 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
   // app B before A's fetch resolves, A's response can land after B's and
   // clobber the manifest. Compare against the in-flight selection before
   // committing the result.
+  //
+  // The previous manifest is dropped on every new selection: the approval card
+  // renders `selectedApp`'s label over `manifest`'s capabilities, and Approve
+  // sends `manifest.connector_id`, so a manifest left over from app A would
+  // ask "approve B?" while granting A's capabilities to A.
   const inflightSelectionRef = useRef<string | null>(null);
   const handleSelectApp = async (connectorName: string) => {
     setSelectedApp(connectorName);
+    setManifest(null);
     inflightSelectionRef.current = connectorName;
     try {
       const m = await getDesktopConnectorManifest(connectorName);
@@ -191,7 +197,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           approving={approving}
           onSelectApp={handleSelectApp}
           onApprove={handleApprove}
-          onCancelApproval={() => { setSelectedApp(null); setManifest(null); }}
+          onCancelApproval={() => { inflightSelectionRef.current = null; setSelectedApp(null); setManifest(null); }}
         />
       )}
 

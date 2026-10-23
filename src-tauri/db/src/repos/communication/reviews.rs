@@ -1,10 +1,11 @@
 use rusqlite::params;
 
 use crate::models::{
-    CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, PersonaDesignPattern,
-    PersonaDesignReview, SmartSearchRow,
+    CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, PersonaDesignReview,
+    SmartSearchRow,
 };
 use crate::query_builder::QueryBuilder;
+use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use personas_core::error::AppError;
 
@@ -50,12 +51,6 @@ fn row_to_review(row: &rusqlite::Row) -> rusqlite::Result<PersonaDesignReview> {
         category: row.get("category")?,
     })
 }
-
-row_mapper!(row_to_pattern -> PersonaDesignPattern {
-    id, pattern_type, pattern_text, trigger_condition,
-    confidence, usage_count,
-    last_validated_at, is_active [bool], created_at,
-});
 
 fn row_to_smart(row: &rusqlite::Row) -> rusqlite::Result<SmartSearchRow> {
     Ok(SmartSearchRow {
@@ -115,10 +110,11 @@ pub fn search_reviews_compact(
             let conn = pool.get()?;
 
             // Count total templates (for truncation detection)
-            let total: i64 =
-                conn.query_row("SELECT COUNT(*) FROM persona_design_reviews", [], |row| {
-                    row.get(0)
-                })?;
+            let total: i64 = conn.query_row(
+                "SELECT COUNT(*) AS n FROM persona_design_reviews",
+                [],
+                |row| row.get("n"),
+            )?;
 
             if keywords.is_empty() {
                 let mut stmt = conn.prepare(
@@ -352,6 +348,14 @@ pub fn delete_review(pool: &DbPool, id: &str) -> Result<bool, AppError> {
             "DELETE FROM persona_design_reviews WHERE id = ?1",
             params![id],
         )?;
+        if rows > 0 {
+            // exposed_resources has no FK: withdraw the template's p2p exposure
+            // so the manifest does not keep advertising a deleted template.
+            conn.execute(
+                "DELETE FROM exposed_resources WHERE resource_type = 'template' AND resource_id = ?1",
+                params![id],
+            )?;
+        }
         Ok(rows > 0)
     })
 }
@@ -568,9 +572,9 @@ pub fn get_reviews_paginated(
             // Fast path: no coverage filter -- use SQL LIMIT/OFFSET
             // Count total
             let count_sql =
-                format!("SELECT COUNT(*) FROM persona_design_reviews{where_with_space}");
+                format!("SELECT COUNT(*) AS n FROM persona_design_reviews{where_with_space}");
             let total: i64 =
-                conn.query_row(&count_sql, qb.params_ref().as_slice(), |row| row.get(0))?;
+                conn.query_row(&count_sql, qb.params_ref().as_slice(), |row| row.get("n"))?;
 
             // Sort
             let order_col = match sort_by.unwrap_or("created_at") {
@@ -630,7 +634,7 @@ pub fn increment_adoption_count(
             // Look up the review id for the audit log
             let review_id: Option<String> = tx
                 .prepare("SELECT id FROM persona_design_reviews WHERE test_case_name = ?1")?
-                .query_row(params![template_name], |row| row.get(0))
+                .query_row(params![template_name], |row| row.get("id"))
                 .ok();
 
             // Insert audit log entry
@@ -684,13 +688,13 @@ pub fn get_distinct_connectors(pool: &DbPool) -> Result<Vec<ConnectorWithCount>,
         "SELECT connectors_used FROM persona_design_reviews WHERE connectors_used IS NOT NULL",
     )?;
             let rows = stmt.query_map([], |row| {
-                let json_str: String = row.get(0)?;
+                let json_str: String = row.get("connectors_used")?;
                 Ok(json_str)
             })?;
 
             let mut counts: std::collections::HashMap<String, i64> =
                 std::collections::HashMap::new();
-            for json_str in rows.flatten() {
+            for json_str in collect_rows(rows, "reviews::get_distinct_connectors") {
                 if let Ok(arr) = serde_json::from_str::<Vec<String>>(&json_str) {
                     for name in arr {
                         *counts.entry(name).or_insert(0) += 1;
@@ -721,8 +725,8 @@ pub fn get_distinct_categories(pool: &DbPool) -> Result<Vec<CategoryWithCount>, 
             )?;
             let rows = stmt.query_map([], |row| {
                 Ok(CategoryWithCount {
-                    name: row.get(0)?,
-                    count: row.get(1)?,
+                    name: row.get("cat")?,
+                    count: row.get("cnt")?,
                 })
             })?;
             rows.collect::<Result<Vec<_>, _>>()
@@ -838,63 +842,6 @@ pub fn cleanup_duplicate_reviews(pool: &DbPool) -> Result<i64, AppError> {
     )
 }
 
-// ============================================================================
-// Design Patterns
-// ============================================================================
-
-pub fn get_active_patterns(pool: &DbPool) -> Result<Vec<PersonaDesignPattern>, AppError> {
-    timed_query!("design_reviews", "design_reviews::get_active_patterns", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_design_patterns WHERE is_active = 1 ORDER BY confidence DESC",
-        )?;
-        let rows = stmt.query_map([], row_to_pattern)?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
-    })
-}
-
-pub fn create_pattern(
-    pool: &DbPool,
-    pattern_type: &str,
-    pattern_text: &str,
-    trigger_condition: &str,
-    confidence: i32,
-) -> Result<PersonaDesignPattern, AppError> {
-    timed_query!("design_reviews", "design_reviews::create_pattern", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-
-        let conn = pool.get()?;
-        conn.execute(
-            "INSERT INTO persona_design_patterns
-         (id, pattern_type, pattern_text, trigger_condition, confidence,
-          usage_count, is_active, created_at)
-         VALUES (?1,?2,?3,?4,?5,0,1,?6)",
-            params![
-                id,
-                pattern_type,
-                pattern_text,
-                trigger_condition,
-                confidence,
-                now
-            ],
-        )?;
-
-        Ok(PersonaDesignPattern {
-            id,
-            pattern_type: pattern_type.to_string(),
-            pattern_text: pattern_text.to_string(),
-            trigger_condition: trigger_condition.to_string(),
-            confidence,
-            usage_count: 0,
-            last_validated_at: None,
-            is_active: true,
-            created_at: now,
-        })
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -949,30 +896,6 @@ mod tests {
 
         let empty = get_reviews(&pool, Some("run-999"), None).unwrap();
         assert_eq!(empty.len(), 0);
-    }
-
-    #[test]
-    fn test_pattern_crud() {
-        let pool = init_test_db().unwrap();
-
-        // Create pattern
-        let pattern = create_pattern(
-            &pool,
-            "routing",
-            "Use conditional routing when multiple output paths exist",
-            "output_count > 1",
-            80,
-        )
-        .unwrap();
-        assert_eq!(pattern.pattern_type, "routing");
-        assert!(pattern.is_active);
-        assert_eq!(pattern.confidence, 80);
-        assert_eq!(pattern.usage_count, 0);
-
-        // Get active patterns
-        let active = get_active_patterns(&pool).unwrap();
-        assert_eq!(active.len(), 1);
-        assert_eq!(active[0].id, pattern.id);
     }
 
     #[test]

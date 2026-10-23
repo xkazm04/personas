@@ -55,7 +55,7 @@ export function useObservabilityData() {
   const refreshAll = useCallback(() => {
     return Promise.all([
       fetchObservabilityMetrics(effectiveDays, selectedPersonaId || undefined),
-      fetchHealingIssues(),
+      fetchHealingIssues(selectedPersonaId ?? null),
       fetchAlertRules(true),
       fetchAlertHistory(true),
     ]);
@@ -93,27 +93,6 @@ export function useObservabilityData() {
     })),
   [backendChartData?.persona_breakdown, personas]);
 
-  const successRate = summary && summary.totalExecutions > 0
-    ? ((summary.successfulExecutions / summary.totalExecutions) * 100).toFixed(1)
-    : '0';
-
-  // Trend percentages are deliberately disabled until a proper period-over-
-  // period fetch is wired into this hook. The previous implementation split
-  // the SAME chartData window in half (first half = 'previous', second half =
-  // 'current') and reported the ratio as 'period-over-period change' — but
-  // the data was never fetched at 2× the window, so the percentages were
-  // statistical noise. Users reacted to phantom 'cost spiked 40%' deltas
-  // that meant nothing more than 'the second half of this week was different
-  // from the first half of this week'. Returning nulls makes the Summary
-  // cards omit the trend chips (the consumer already handles null) instead
-  // of lying about a comparison we didn't actually compute.
-  // TODO: fetch with `2 × effectiveDays` and compute against the true prior
-  // period, or wire this hook to `useExecutionMetrics`'s comparedChartData.
-  const trends = useMemo(
-    () => ({ cost: null, executions: null, successRate: null, personas: null }),
-    [],
-  );
-
   const chartAnnotations = useAnnotationData({ selectedPersonaId, healingIssues });
 
   return {
@@ -123,7 +102,7 @@ export function useObservabilityData() {
     // Refresh
     autoRefresh, setAutoRefresh, refreshAll,
     // Metrics
-    observabilityError, summary, chartData, pieData, chartAnomalies, successRate, trends, chartAnnotations,
+    observabilityError, summary, chartData, pieData, chartAnomalies, chartAnnotations,
     setFailureDrilldownDate, setOverviewTab,
     // Healing (data only — UI state lives in the dashboard)
     healingIssues, healingRunning, triggerHealing,

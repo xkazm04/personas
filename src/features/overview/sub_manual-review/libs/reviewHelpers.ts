@@ -1,14 +1,9 @@
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
+import type { Translations } from '@/i18n/en';
 
 // Canonical, shared across every review surface (Phase 5 convergence).
 export { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
 
-
-export const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pending',
-  approved: 'Approved',
-  rejected: 'Rejected',
-};
 
 export const SEVERITY_LABELS: Record<string, string> = {
   info: 'Info',
@@ -42,19 +37,31 @@ export function resolveReviewSeverity(severity: string | null | undefined): Reso
 export type FilterStatus = 'all' | ManualReviewStatus;
 export type SourceFilter = 'all' | 'local' | 'cloud';
 
-export const FILTER_LABELS: Record<FilterStatus, string> = {
-  all: 'All',
-  pending: 'Pending',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  resolved: 'Resolved',
-};
+/**
+ * The label for a review status (or the "all" filter tab), in the reader's
+ * language. Replaces three hardcoded English maps: the filter tabs read
+ * "All / Pending / Approved / Rejected" in every one of the 14 locales, and the
+ * row pill's map had no `resolved` entry and fell back to 'Pending' -- so every
+ * review the stale-review sweep auto-resolved was labelled Pending in the All
+ * view. An unrecognised token shows itself rather than borrowing a real one.
+ */
+export function reviewStatusLabel(t: Translations, status: FilterStatus | string): string {
+  const r = t.overview.review;
+  switch (status) {
+    case 'all': return r.filter_all;
+    case 'pending': return r.filter_pending;
+    case 'approved': return r.filter_approved;
+    case 'rejected': return r.filter_rejected;
+    case 'resolved': return t.overview.incidents.filter_status_resolved;
+    default: return status;
+  }
+}
 
-export const SOURCE_LABELS: Record<SourceFilter, string> = {
-  all: 'All Sources',
-  local: 'Local',
-  cloud: 'Cloud',
-};
+/** The source-filter label (all / local / cloud), in the reader's language. */
+export function reviewSourceLabel(t: Translations, source: SourceFilter): string {
+  const r = t.overview.review;
+  return source === 'local' ? r.source_local : source === 'cloud' ? r.source_cloud : r.source_all;
+}
 
 
 // Personas often prefix review titles with their own name (e.g.
@@ -128,4 +135,21 @@ export function resolveReviewQueueView(state: {
   if (state.loading) return 'ghost';
   if (state.error) return 'error';
   return 'empty';
+}
+
+/**
+ * Whether the inbox should open its first visible review on its own.
+ *
+ * On desktop the detail is a split pane, so an empty pane next to a full list
+ * is just a blank: open the first row. On mobile the detail is a full-screen
+ * overlay whose X sets the active review to null -- and the auto-open used to
+ * fire on that null and reopen the first review on the same frame, so the
+ * overlay could never be closed (and opened by itself on arrival).
+ */
+export function shouldAutoOpenFirstReview(state: {
+  hasActive: boolean;
+  visibleCount: number;
+  isMobile: boolean;
+}): boolean {
+  return !state.isMobile && !state.hasActive && state.visibleCount > 0;
 }

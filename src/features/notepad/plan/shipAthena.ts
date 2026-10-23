@@ -1,4 +1,7 @@
-// What the Ship control bar's "Ask Athena" button actually sends.
+// What the plan pane's "Decompose brief" sends Athena, and the history behind
+// its shape. The control bar's "Ask Athena" pointer this file was written for
+// (`buildShipAskPrompt`) was retired with that bar on 2026-10-19; it had had no
+// caller since the Factory Ship tab went on 2026-09-15.
 //
 // # Round 1 (2026-08-24) — it stopped pasting the milestone
 //
@@ -37,30 +40,6 @@
 import type { DevProject } from '@/lib/bindings/DevProject';
 
 import type { ShipMilestoneVM } from '@/lib/milestone/shipModel';
-
-/**
- * The Ask-Athena message: the operator's location, and the id.
- *
- * Sent through `useAskAthena` tagged `system_source: 'Ship'`, so she is told the
- * surface handed her a situation rather than the operator asking a question —
- * his question is whatever he types next, and what she does about the situation
- * before he types is hers to decide.
- *
- * Deliberately carries NO verdict, NO summary of the cut, and NO instruction
- * about what to say. `describe_ship_milestone` answers all three, live.
- */
-export function buildShipAskPrompt(vm: ShipMilestoneVM, project: DevProject): string {
-  return [
-    `The operator is on the Ship tab for "${project.name}", looking at milestone \`${vm.id}\` ("${vm.name}").`,
-    '',
-    `Read it with \`describe_ship_milestone\` (query: \`${vm.id}\`) before you say anything about it. That op is the whole picture: the objective and the prose under it, the live exit-criteria verdicts and ship verdict as this tab derived them, the cut by bucket with his notes and ratings, the bound goals, and each member's contexts and KPI coverage.`,
-    '',
-    // The one thing left worth saying, and it is about STALENESS, not content:
-    // he pressed a button, and the milestone may have moved since. Everything
-    // else the message used to assert is now something she can go and read.
-    'He pressed a button; the milestone is whatever the op says it is now.',
-  ].join('\n');
-}
 
 /**
  * The Decompose-brief message: the same pointer, plus the one thing that makes

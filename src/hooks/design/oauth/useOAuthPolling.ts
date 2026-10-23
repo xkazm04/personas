@@ -3,6 +3,7 @@ import { openExternalUrl } from "@/api/system/system";
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 import { getActiveTranslations, interpolate } from '@/i18n/useTranslation';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 
 /**
@@ -19,7 +20,7 @@ export interface OAuthStartResult {
 }
 
 import type { OAuthSessionStatus } from '@/lib/bindings/OAuthSessionStatus';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 
 /** Minimum shape a poll result must satisfy. */
@@ -100,10 +101,10 @@ export function useOAuthPolling<
   const abortRef = useRef<AbortController | null>(null);
   const startTimeoutRef = useRef<number | null>(null);
 
-  // Generation counter: incremented on every sessionId change. Poll callbacks
-  // capture the current generation and discard results if it has since changed,
-  // guarding against stale microtasks that survive AbortController.abort().
-  const generationRef = useRef(0);
+  // Generation token: minted on every sessionId change and every start. Poll
+  // callbacks capture the current token and discard results once a newer one
+  // exists, guarding against stale microtasks that survive AbortController.abort().
+  const generationRef = useRef(createLatestWins());
 
   const clearStartTimeout = useCallback(() => {
     if (startTimeoutRef.current !== null) {
@@ -122,7 +123,7 @@ export function useOAuthPolling<
     abortRef.current = controller;
 
     // Capture generation so stale microtasks from a previous session are discarded
-    const gen = ++generationRef.current;
+    const gen = generationRef.current.next();
 
     let timer: number | null = null;
     // 120 attempts × 1500ms = 3 minutes before giving up on a stuck session
@@ -130,11 +131,11 @@ export function useOAuthPolling<
     let attempts = 0;
 
     const poll = async () => {
-      if (controller.signal.aborted || gen !== generationRef.current) return;
+      if (controller.signal.aborted || !generationRef.current.isCurrent(gen)) return;
 
       try {
         const result = await configRef.current.pollFn(sessionId);
-        if (controller.signal.aborted || gen !== generationRef.current) return;
+        if (controller.signal.aborted || !generationRef.current.isCurrent(gen)) return;
 
         if (result.status === 'pending') {
           attempts++;
@@ -172,7 +173,7 @@ export function useOAuthPolling<
           message: result.error || interpolate(getActiveTranslations().errors.oauth_failed, { provider: currentLabel() }),
         });
       } catch (err) {
-        if (controller.signal.aborted || gen !== generationRef.current) return;
+        if (controller.signal.aborted || !generationRef.current.isCurrent(gen)) return;
         setSessionId(null);
         setIsAuthorizing(false);
         isAuthorizingRef.current = false;
@@ -202,7 +203,10 @@ export function useOAuthPolling<
 
     // Abort any existing poll from a previous session and invalidate its generation
     abortRef.current?.abort();
-    generationRef.current += 1;
+    const startGen = generationRef.current.next();
+    // reset() (or a newer session) bumps the generation; a start call that
+    // settles after that must not open a consent page or touch state.
+    const superseded = () => !generationRef.current.isCurrent(startGen);
 
     setIsAuthorizing(true);
     setCompletedAt(null);
@@ -221,6 +225,7 @@ export function useOAuthPolling<
 
     withTimeout
       .then(async (oauthStart) => {
+        if (superseded()) return;
         clearStartTimeout();
         const safeAuthUrl = sanitizeExternalUrl(oauthStart.authUrl);
         if (!safeAuthUrl) {
@@ -244,6 +249,7 @@ export function useOAuthPolling<
           throw new Error(interpolate(getActiveTranslations().errors.oauth_popup_blocked, { provider: currentLabel() }));
         }
 
+        if (superseded()) return;
         setMessage({
           success: false,
           message: interpolate(getActiveTranslations().errors.oauth_consent_opened, { provider: currentLabel() }),
@@ -252,6 +258,7 @@ export function useOAuthPolling<
       })
       .catch((err) => {
         silentCatch("hooks/design/oauth/useOAuthPolling:catch3")(err);
+        if (superseded()) return;
         clearStartTimeout();
         setSessionId(null);
         setIsAuthorizing(false);
@@ -272,7 +279,7 @@ export function useOAuthPolling<
   const reset = useCallback(() => {
     clearStartTimeout();
     abortRef.current?.abort();
-    generationRef.current += 1;
+    generationRef.current.next();
     isAuthorizingRef.current = false;
     valuesRef.current = {};
     setValuesVersion((v) => v + 1);
@@ -291,17 +298,8 @@ export function useOAuthPolling<
   return { getValues, valuesVersion, isAuthorizing, completedAt, message, startConsent, reset };
 }
 
-/** Pull a human-readable message out of a Tauri IPC rejection.
- *  Tauri's `AppError` serialises to `{ error: string, kind?: string }` —
- *  the bare `instanceof Error` / `typeof string` checks miss this shape
- *  and the user gets "unknown error" instead of the actionable message. */
+/** A Tauri IPC rejection is the `{ error, kind }` AppError envelope, which
+ *  `extractMessage` reads; an empty one falls back to the catalog's copy. */
 function extractErrorDetail(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === 'string') return err;
-  if (err && typeof err === 'object') {
-    const obj = err as Record<string, unknown>;
-    if (typeof obj.error === 'string' && obj.error.length > 0) return obj.error;
-    if (typeof obj.message === 'string' && obj.message.length > 0) return obj.message;
-  }
-  return getActiveTranslations().errors.oauth_unknown_error;
+  return extractMessage(err) || getActiveTranslations().errors.oauth_unknown_error;
 }

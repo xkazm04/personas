@@ -1,0 +1,20 @@
+/* projects.css - bp's project switcher (bp src/components/projects.css:3-19, ProjectSwitcher.tsx), re-ported onto the
+   --bp-* tokens. Readiness reads by shape and word (LevelIcon), never by colour. Text never under 12 px, body 14 px. */
+.projsw { position: relative; display: inline-flex; }
+.projsw .projsw-btn { display: inline-flex; align-items: center; gap: 7px; height: 30px; max-width: 240px; padding: 0 9px 0 10px; border: 1px solid var(--bp-ink-3); background: var(--bp-panel); color: var(--bp-ink); font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-3); text-transform: uppercase; white-space: nowrap; }
+.projsw .projsw-btn:hover, .projsw .projsw-btn[aria-expanded='true'] { border-color: var(--bp-ink); }
+.projsw-btn .nm { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.projsw-btn .car { flex: 0 0 auto; color: var(--bp-ink-2); }
+.bp-lvl-ic { flex: 0 0 auto; display: block; }
+
+.projsw-pop { position: absolute; top: 34px; right: 0; width: 320px; max-height: min(420px, calc(100vh - 90px)); overflow: auto; background: var(--bp-card-hi); border: 1px solid var(--bp-ink-2); box-shadow: 0 16px 44px var(--bp-shadow); z-index: 45; padding-bottom: 4px; }
+.projsw-h { display: flex; justify-content: space-between; gap: 8px; padding: 7px 12px 5px; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-4); text-transform: uppercase; color: var(--bp-ink-2); border-bottom: 1px solid var(--bp-ink-4); }
+.projsw-pop .projsw-it { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 6px 12px; border-left: 3px solid transparent; text-align: left; font: 400 var(--bp-fs-14)/1.3 var(--bp-font-sans); color: var(--bp-ink); }
+.projsw-pop .projsw-it:hover, .projsw-pop .projsw-it:focus-visible { background: var(--bp-ink-4); outline: none; }
+.projsw-it[aria-checked='true'] { border-left-color: var(--bp-accent); }
+.projsw-it[aria-checked='true'] .nm { font-weight: 600; }
+.projsw-it .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.projsw-it .lv { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-1); color: var(--bp-ink-2); }
+.projsw-pop .projsw-it[aria-disabled='true'] { cursor: not-allowed; color: var(--bp-ink-2); }
+.projsw-it .why { display: block; font-size: var(--bp-fs-12); white-space: normal; color: var(--bp-ink-2); }
+.projsw-none { padding: 8px 12px 6px; font: 400 var(--bp-fs-13)/1.4 var(--bp-font-sans); color: var(--bp-ink-2); border-top: 1px solid var(--bp-ink-4); margin-top: 4px; }

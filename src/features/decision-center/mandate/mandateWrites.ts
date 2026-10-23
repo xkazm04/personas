@@ -4,8 +4,12 @@
  *
  *   Sign card (`kind: 'mandate'`)
  *     accept            mandate_sign(charter, the card's draft envelope)
- *     reject            the draft charter is retired (Drop)
+ *     reject            mandate_drop(charter, the reason from the prompt)
  *     skip / done       nothing: the card stays
+ *   Re-read card (`kind: 'mandate'`, `payload.reread` set)
+ *     accept, no edit   mandate_keep(charter, the re-read code): kept as signed
+ *     accept, edited    mandate_sign(charter, the edited envelope): re-signing
+ *                       is re-reading, so it moves the re-read marker too
  *   Breach card (`mandateAct`, any kind)
  *     amend             mandate_amend(charter, change)
  *     suspend           mandate_suspend(charter)
@@ -13,10 +17,6 @@
  * Everything else is not a mandate write (`false`): the caller routes it to
  * the roster as before. A write that did not land REJECTS, like every deck
  * door, so the deck walks back to the card.
- *
- * Drop's reason is captured by the prompt but has nowhere to land: the only
- * door that ends a draft (`retire_persona_responsibility`) takes no reason and
- * writes no act. Recorded as an open risk of WP5, not papered over here.
  */
 import type { MandateChange } from '@/lib/bindings/MandateChange';
 import type { MandateSignInput } from '@/lib/bindings/MandateSignInput';
@@ -25,7 +25,8 @@ import type { DeckVerdict } from '../deck/deckTypes';
 
 export interface MandateDoors {
   sign: (charterId: string, envelope: MandateSignInput) => Promise<unknown>;
-  drop: (charterId: string) => Promise<unknown>;
+  drop: (charterId: string, reason: string | null) => Promise<unknown>;
+  keep: (charterId: string, reason: string) => Promise<unknown>;
   amend: (charterId: string, change: MandateChange) => Promise<unknown>;
   suspend: (charterId: string) => Promise<unknown>;
 }
@@ -44,13 +45,18 @@ export async function writeMandateVerdict(v: DeckVerdict, doors: MandateDoors): 
   }
   if (v.item.kind !== 'mandate') return false;
   const charterId = v.item.payload?.charterId ?? v.item.sourceId;
+  const reread = v.item.payload?.reread;
   if (v.verdict === 'accept') {
+    if (reread && !v.envelope) {
+      await doors.keep(charterId, reread);
+      return true;
+    }
     if (!v.envelope) throw new Error('A mandate cannot be signed without its envelope');
     await doors.sign(charterId, v.envelope);
     return true;
   }
-  if (v.verdict === 'reject') {
-    await doors.drop(charterId);
+  if (v.verdict === 'reject' && !reread) {
+    await doors.drop(charterId, v.reason?.trim() || null);
     return true;
   }
   return false;

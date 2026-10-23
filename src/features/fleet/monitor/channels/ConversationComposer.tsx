@@ -1,10 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Send, Sparkles, Wand2, X } from 'lucide-react';
+import { Send, Wand2, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAthenaStore } from '@/features/companions/athena/athenaStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { Button } from '@/features/shared/components/buttons';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Keycap } from '@/features/decision-center/deck/parts';
+import '@/features/decision-center/deck/aurora.css';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
 import { goalText, looksLikeGoal } from './conversationModel';
+import { MentionMenu } from './MentionMenu';
+import { useComposerDraft } from './useComposerDraft';
 
 /* ----------------------------------------------------------------------------
  * COMPOSER — where Assign dissolves.
@@ -31,7 +35,8 @@ import { goalText, looksLikeGoal } from './conversationModel';
  * `useConversation`, which is also where the failure lands.
  * -------------------------------------------------------------------------- */
 
-const DRAFT_PREFIX = 'personas.channel.draft.';
+/* WP12: drawn in the deck's well (`au-well`), the send key printed once inside
+ * the button, the same well the deck's reply composer uses. */
 
 export function ConversationComposer({
   teamId, teamName, members, onSubmit,
@@ -40,82 +45,32 @@ export function ConversationComposer({
   teamName: string;
   members: ChannelMember[];
   /** Accepts always. `goal` picks the outbox lane: route (decompose) or post. */
-  onSubmit: (text: string, goal: boolean) => void;
+  onSubmit: (text: string, goal: boolean, onPosted?: () => void) => void;
 }) {
   const { t, tx } = useTranslation();
-  const [draft, setDraft] = useState('');
-  const [mentionAt, setMentionAt] = useState<number | null>(null);
-  const ref = useRef<HTMLTextAreaElement>(null);
-
-  // Draft persists per team — switching projects must not lose what you typed.
-  useEffect(() => {
-    try {
-      setDraft(localStorage.getItem(DRAFT_PREFIX + teamId) ?? '');
-    } catch {
-      setDraft('');
-    }
-  }, [teamId]);
-  useEffect(() => {
-    try {
-      if (draft.trim()) localStorage.setItem(DRAFT_PREFIX + teamId, draft);
-      else localStorage.removeItem(DRAFT_PREFIX + teamId);
-    } catch (e) {
-      silentCatch('conversation:draft')(e);
-    }
-  }, [draft, teamId]);
-
-  // Autosize — rAF-batched (C4). The write-auto → read-scrollHeight pair
-  // forces a synchronous reflow; doing it inline in the effect put that
-  // reflow on every keystroke's commit. One frame of latency on a textarea
-  // growing a line is imperceptible; a layout thrash per keypress is not.
-  useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      const el = ref.current;
-      if (!el) return;
-      el.style.height = 'auto';
-      el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-    });
-    return () => cancelAnimationFrame(id);
-  }, [draft]);
-
-  const mentionQuery = mentionAt === null ? null : draft.slice(mentionAt + 1).toLowerCase();
-  const candidates =
-    mentionQuery === null
-      ? []
-      : [{ personaId: 'athena', name: 'Athena' } as { personaId: string; name: string }, ...members]
-          .filter((m) => m.name.toLowerCase().replace(/^t:\s*/, '').includes(mentionQuery))
-          .slice(0, 5);
-
-  const completeMention = useCallback(
-    (name: string) => {
-      if (mentionAt === null) return;
-      const first = name.replace(/^T:\s*/, '').split(/\s+/)[0] ?? name;
-      setDraft((d) => `${d.slice(0, mentionAt)}@${first} `);
-      setMentionAt(null);
-      ref.current?.focus();
-    },
-    [mentionAt],
-  );
-
+  const m = t.monitor;
+  const { draft, setDraft, ref, candidates, completeMention, mentionOpen, closeMention, onChange } = useComposerDraft(teamId, members);
   const isGoal = looksLikeGoal(draft);
 
   const send = () => {
     const text = draft.trim();
     if (!text) return;
     // Nothing is gated on an in-flight post: the outbox holds the order.
-    onSubmit(isGoal ? goalText(text) : text, isGoal);
-    setDraft('');
-    if (!isGoal && /@athena\b/i.test(text)) {
-      // Athena replies INTO the channel rather than into her own panel.
-      useAthenaStore.getState().setPendingPrompt({
+    // Athena replies INTO the channel rather than into her own panel. She is
+    // summoned only once the directive has posted (the outbox may hold it behind
+    // others or fail it), so she never answers a line that is absent.
+    const summonAthena = !isGoal && /@athena\b/i.test(text)
+      ? () => useAthenaStore.getState().setPendingPrompt({
         text: `You were tagged in the ${teamName} team channel (team_id: ${teamId}). The user wrote:
 
 "${text}"
 
 Respond by posting a short reply INTO that team's channel via your post_team_message capability.`,
         autoSend: true,
-      });
-    }
+      })
+      : undefined;
+    onSubmit(isGoal ? goalText(text) : text, isGoal, summonAthena);
+    setDraft('');
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -124,8 +79,8 @@ Respond by posting a short reply INTO that team's channel via your post_team_mes
       completeMention(candidates[0].name);
       return;
     }
-    if (e.key === 'Escape' && mentionAt !== null) {
-      setMentionAt(null);
+    if (e.key === 'Escape' && mentionOpen) {
+      closeMention();
       return;
     }
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -134,76 +89,43 @@ Respond by posting a short reply INTO that team's channel via your post_team_mes
     }
   };
 
-  const onChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const v = e.target.value;
-    setDraft(v);
-    const caret = e.target.selectionStart ?? v.length;
-    const upto = v.slice(0, caret);
-    const at = upto.lastIndexOf('@');
-    setMentionAt(at >= 0 && !/\s/.test(upto.slice(at + 1)) ? at : null);
-  };
-
   return (
-    <div className="relative flex-shrink-0 border-t border-border bg-foreground/[0.02] px-3 py-2">
-      {candidates.length > 0 && (
-        <div className="absolute bottom-full left-3 mb-1 z-20 min-w-[200px] rounded-card border border-border bg-background shadow-elevation-3 p-1">
-          {candidates.map((m, i) => (
-            <button
-              key={m.personaId}
-              type="button"
-              onMouseDown={(e) => { e.preventDefault(); completeMention(m.name); }}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive text-left typo-caption transition-colors ${
-                i === 0 ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/40'
-              }`}
-            >
-              {m.personaId === 'athena' && <Sparkles className="w-3 h-3 text-violet-300 flex-shrink-0" />}
-              <span className="truncate">{m.name.replace(/^T:\s*/, '')}</span>
-              {i === 0 && <span className="ml-auto typo-caption opacity-40">Tab</span>}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* The composer TELLS you when it's about to spawn work rather than talk. */}
+    <div className="au-scope relative flex-shrink-0 border-t border-border px-3 py-2">
+      <MentionMenu candidates={candidates} onPick={completeMention} />
+      {/* The composer TELLS you when it is about to spawn work rather than talk. */}
       {isGoal && (
         <div className="mb-1.5 flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-status-info/30 bg-status-info/10 typo-caption text-status-info">
-            <Wand2 className="w-3 h-3" /> {t.monitor.conv_composer_goal_hint}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-status-info/30 bg-status-info/10 px-2 py-0.5 typo-caption text-status-info">
+            <Wand2 className="h-3 w-3" aria-hidden /> {m.conv_composer_goal_hint}
           </span>
-          <button
-            type="button"
-            onClick={() => setDraft((d) => `. ${d}`)}
-            title={t.monitor.conv_composer_plain}
-            className="p-0.5 rounded-full text-foreground opacity-40 hover:opacity-100 transition-opacity"
-          >
-            <X className="w-3 h-3" />
-          </button>
+          <Tooltip content={m.conv_composer_plain}>
+            <Button variant="ghost" size="icon-sm" onClick={() => setDraft((d) => `. ${d}`)} aria-label={m.conv_composer_plain}>
+              <X className="h-3 w-3" aria-hidden />
+            </Button>
+          </Tooltip>
         </div>
       )}
-
-      <div className="flex items-end gap-2">
+      <div className="au-well flex items-end gap-2 rounded-input px-3 py-1">
         <textarea
           ref={ref}
           rows={1}
           value={draft}
           onChange={onChange}
           onKeyDown={onKeyDown}
-          placeholder={tx(t.monitor.conv_composer_placeholder, { team: teamName })}
-          className="flex-1 resize-none px-3 py-2 rounded-input bg-secondary/30 border border-border typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
+          placeholder={tx(m.conv_composer_placeholder, { team: teamName })}
+          aria-label={tx(m.conv_composer_placeholder, { team: teamName })}
+          className="min-w-0 flex-1 resize-none bg-transparent py-1.5 typo-body text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={send}
           disabled={!draft.trim()}
-          className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-interactive border typo-body transition-colors disabled:opacity-40 ${
-            isGoal
-              ? 'border-status-info/30 bg-status-info/10 text-status-info hover:bg-status-info/20'
-              : 'border-status-success/30 bg-status-success/10 text-status-success hover:bg-status-success/20'
-          }`}
+          icon={isGoal ? <Wand2 className="h-4 w-4" aria-hidden /> : <Send className="h-4 w-4" aria-hidden />}
+          className={`au-lift mb-0.5 flex-shrink-0 ${isGoal ? 'text-status-info' : 'text-status-success'} [&>span:last-child]:inline-flex [&>span:last-child]:items-center [&>span:last-child]:gap-1.5`}
         >
-          {isGoal ? <Wand2 className="w-4 h-4" aria-hidden /> : <Send className="w-4 h-4" aria-hidden />}
-          {isGoal ? t.monitor.conv_composer_route : t.monitor.conv_composer_send}
-        </button>
+          {isGoal ? m.conv_composer_route : m.conv_composer_send} <Keycap>↵</Keycap>
+        </Button>
       </div>
     </div>
   );

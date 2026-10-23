@@ -9,5 +9,20 @@
   "domain_revenue": "বিক্রয় ও বিপণন",
   "adopt_failed": "{name} খোলা যায়নি।",
   "adopt_no_template": "{name}-এর গ্রহণ করার মতো কোনো উৎস টেমপ্লেট নেই।",
-  "adopt_not_found": "{name} এখনও টেমপ্লেট গ্যালারিতে নেই।"
+  "adopt_not_found": "{name} এখনও টেমপ্লেট গ্যালারিতে নেই।",
+  "l2_all_domains": "সব ডোমেন",
+  "l2_col_capabilities": "সক্ষমতা",
+  "l2_col_focus": "ফোকাস",
+  "l2_col_name": "নাম",
+  "l2_col_tools": "টুল",
+  "l2_col_type": "ধরন",
+  "l2_counts": "{templates}টি টেমপ্লেট · {recipes}টি রেসিপি",
+  "l2_filter_all": "সব",
+  "l2_filter_placeholder": "নাম দিয়ে ফিল্টার করুন…",
+  "l2_filter_recipes": "রেসিপি",
+  "l2_filter_templates": "টেমপ্লেট",
+  "l2_kind_recipe": "রেসিপি",
+  "l2_kind_template": "টেমপ্লেট",
+  "l2_no_matches": "কোনো মিল নেই।",
+  "l2_shown": "{total}টির মধ্যে {shown}টি দেখানো হচ্ছে"
 }

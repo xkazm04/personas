@@ -1,0 +1,35 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d7321406-2639-40ba-b279-cea8d322386c",
+  "subject": "adoption-measurement",
+  "evaluatedAt": "2026-10-16T17:13:08.390Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "adoption-measurement",
+      "context": "9b013060-5483-4162-9f8a-6b69109d623d",
+      "reason": "no work: teams-kpis (weak; not-applicable 2026-10-03) already judged against sha256-b2:502064804797857b rev 3, which is the subject digest in the registry index at 328bf071; not stale, nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "reason": "no work: template-adoption-persona-layout (not-applicable 2026-10-09) already judged against sha256-b2:502064804797857b rev 3, which is the subject digest in the registry index at 328bf071; not stale, nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8",
+      "reason": "no work: template-adoption-questionnaire (not-applicable 2026-10-09) already judged against sha256-b2:502064804797857b rev 3, which is the subject digest in the registry index at 328bf071; not stale, nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "80e0534a-d0ea-469a-9c3a-cf12910ecde9",
+      "reason": "no work: template-adoption-support (not-applicable 2026-10-09) already judged against sha256-b2:502064804797857b rev 3, which is the subject digest in the registry index at 328bf071; not stale, nothing to re-judge"
+    },
+    {
+      "subject": "adoption-measurement",
+      "context": "7dddb34a-3a9b-4ce0-832f-55ea352c12b5",
+      "reason": "no work: templates-generated-adoption-ucpicker (not-applicable 2026-10-09) already judged against sha256-b2:502064804797857b rev 3, which is the subject digest in the registry index at 328bf071; not stale, nothing to re-judge"
+    }
+  ],
+  "consults": []
+}

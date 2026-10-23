@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, type ReactNode } from 'react';
+import { Suspense, useEffect, useRef, type ReactNode } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import type { HomeTab } from '@/lib/types/types';
 import { lazyRetry } from '@/lib/lazyRetry';
@@ -15,14 +15,14 @@ import { DEFAULT_HOME_TAB, isHomeTabAvailable } from '@/features/shared/chrome/s
 // `false` at build time: their only reference is inside a dead branch, and the chunk goes with it.
 // (`docs/design/overview-loading.md` is about which FETCH a region waits on; this is the same
 // question asked of CODE -- the first screen must not be gated on the last section's module.)
-// The two NEW boundaries take `lazyRetry`, not `lazy`: it is the documented form
+// Every boundary takes `lazyRetry`, not `lazy`: it is the documented form
 // (`docs/concepts/golden-paths/lazy-route-chunk.md`, census rule `raw-react-lazy`) and survives a
-// failed chunk fetch instead of caching the rejection forever. The three below are the pre-existing
-// raw ones; converting them is a baseline move and belongs in its own commit.
+// failed chunk fetch instead of caching the rejection forever. Cockpit is the production landing, so
+// a raw `lazy` there turned one dropped chunk fetch into a Home that stayed broken until a reload.
 const HomeWelcome = lazyRetry(() => import('@/features/home/sub_welcome/HomeWelcome'));
-const HomeReleases = lazy(() => import('@/features/home/sub_releases/HomeReleases'));
-const HomeLearning = lazy(() => import('@/features/home/sub_learning/HomeLearning'));
-const Cockpit = lazy(() => import('@/features/home/sub_cockpit/CockpitPanel'));
+const HomeReleases = lazyRetry(() => import('@/features/home/sub_releases/HomeReleases'));
+const HomeLearning = lazyRetry(() => import('@/features/home/sub_learning/HomeLearning'));
+const Cockpit = lazyRetry(() => import('@/features/home/sub_cockpit/CockpitPanel'));
 const SystemCheck = lazyRetry(() =>
   import('@/features/overview/components/health/SystemHealthPanel').then((m) => ({ default: m.SystemHealthPanel })),
 );

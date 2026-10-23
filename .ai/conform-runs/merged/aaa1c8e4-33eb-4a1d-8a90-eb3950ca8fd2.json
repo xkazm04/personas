@@ -1,0 +1,61 @@
+{
+  "schema": "conform-run/1",
+  "worker": "aaa1c8e4-33eb-4a1d-8a90-eb3950ca8fd2",
+  "subject": "tenant-scoped-agent-runtime",
+  "evaluatedAt": "2026-10-19T00:45:53.249777+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "tenant-scoped-agent-runtime",
+      "context": "hooks-realtime",
+      "reason": "withdrawn after review: reviewer (sonnet): The primary anchor at createSingletonListener.ts:113 is just a Tauri listen() call that buffers events, so it doesn't show tenant or runtime-config multiplexing is absent. The not-applicable rests on a grep for 'tenant' and 'AsyncLocalStorage', which are the wrong terms for a Tauri desktop app that "
+    },
+    {
+      "subject": "tenant-scoped-agent-runtime",
+      "context": "stores-slices-overview",
+      "reason": "withdrawn after review: reviewer (sonnet): The primary anchor at homeSpineSlice.ts:13 is a doc comment about TTL caching and doesn't show the precondition is absent. The not-applicable rests on a grep for 'tenant' and 'AsyncLocalStorage', which are the wrong terms for this app, and the technique anchors only show these slices pass persona id"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-19T00:45:53.249777+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "tenant-scoped-agent-runtime"
+      ],
+      "techniques": [
+        "fail-direction-follows-deployment-mode",
+        "resolve-handles-at-call-time",
+        "stamp-ownership-before-the-router",
+        "task-local-tenant-scope",
+        "tenant-keyed-cache-evicts-loaded-code",
+        "written-inventory-of-what-stays-global"
+      ],
+      "deviations": 0,
+      "context": "hooks-realtime",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-19T00:45:53.249777+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "tenant-scoped-agent-runtime"
+      ],
+      "techniques": [
+        "fail-direction-follows-deployment-mode",
+        "resolve-handles-at-call-time",
+        "stamp-ownership-before-the-router",
+        "task-local-tenant-scope",
+        "tenant-keyed-cache-evicts-loaded-code",
+        "written-inventory-of-what-stays-global"
+      ],
+      "deviations": 0,
+      "context": "stores-slices-overview",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

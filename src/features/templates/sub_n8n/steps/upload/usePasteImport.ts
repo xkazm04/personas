@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   countElements,
   detectPlatformLabel,
@@ -7,6 +8,8 @@ import type { FilePreview } from './n8nUploadTypes';
 import { MAX_PASTE_LENGTH, formatFileSize } from './n8nUploadTypes';
 
 export function usePasteImport(onContentPaste?: (content: string, sourceName: string) => void) {
+  const { t, tx } = useTranslation();
+  const n = t.templates.n8n;
   const [pasteText, setPasteText] = useState('');
   const [pastePreview, setPastePreview] = useState<FilePreview | null>(null);
   const pasteDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -20,29 +23,29 @@ export function usePasteImport(onContentPaste?: (content: string, sourceName: st
   const validatePastedContentImmediate = useCallback((text: string) => {
     if (!text.trim()) { setPastePreview(null); return; }
     if (text.length > MAX_PASTE_LENGTH) {
-      setPastePreview({ kind: 'error', fileName: 'pasted', message: `Content too large (${formatFileSize(text.length)}). Maximum 5 MB.` });
+      setPastePreview({ kind: 'error', fileName: 'pasted', message: tx(n.import_err_content_too_large, { size: formatFileSize(text.length), max: formatFileSize(MAX_PASTE_LENGTH) }) });
       return;
     }
 
     let json: Record<string, unknown>;
     try { json = JSON.parse(text.trim()) as Record<string, unknown>; }
-    catch { setPastePreview({ kind: 'error', fileName: 'pasted', message: 'Invalid JSON \u2014 could not parse pasted content.' }); return; }
+    catch { setPastePreview({ kind: 'error', fileName: 'pasted', message: n.import_err_invalid_json_paste }); return; }
 
     const { count } = countElements(json);
     if (count === 0) {
-      setPastePreview({ kind: 'error', fileName: 'pasted', message: 'No recognized workflow structure. Supports n8n, Zapier, Make, and GitHub Actions JSON.' });
+      setPastePreview({ kind: 'error', fileName: 'pasted', message: n.import_err_no_structure_paste });
       return;
     }
 
     const platform = detectPlatformLabel(json);
     const workflowName = typeof json.name === 'string' && json.name ? json.name
-      : typeof json.title === 'string' && json.title ? json.title : 'Pasted Workflow';
+      : typeof json.title === 'string' && json.title ? json.title : n.import_name_pasted;
 
     setPastePreview({
       kind: 'valid', fileName: 'pasted.json', fileSize: formatFileSize(text.length),
       workflowName, nodeCount: count, platform,
     });
-  }, []);
+  }, [n, tx]);
 
   // Debounce paste validation so JSON.parse doesn't fire on every keystroke
   // for large content.  For small pastes (<50KB) validate immediately.

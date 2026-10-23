@@ -41,12 +41,14 @@
   "budget_label": "Budget",
   "build_validation": {
     "composite_min_conditions": "Les déclencheurs composites nécessitent au moins 2 conditions.",
+    "composite_window_maximum": "La fenêtre temporelle ne peut pas dépasser 24 heures (86400 secondes).",
     "composite_window_minimum": "La fenêtre temporelle doit être d’au moins 5 secondes.",
     "cron_invalid": "Expression cron invalide.",
     "cron_required": "L’expression cron est requise.",
     "endpoint_required": "Une URL de point de terminaison ou un événement est requis.",
     "event_type_required": "Le type d’événement à écouter est requis.",
     "interval_minimum": "L’intervalle doit être d’au moins 60 secondes.",
+    "watch_events_required": "Sélectionnez au moins un événement de fichier à surveiller.",
     "watch_path_required": "Au moins un chemin à surveiller est requis."
   },
   "builder": {
@@ -183,6 +185,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} événements",
   "dead_letter_bulk_retry_title": "Réessayer every selected événement in a single transaction",
   "dead_letter_clear_filters_to_see": "Effacer filters to see all dead-lettered événements",
+  "dead_letter_load_failed_title": "Impossible de charger la file des messages morts",
+  "dead_letter_load_failed_desc": "La file n'a pas pu être lue, une liste vide ici serait donc trompeuse. Vos événements ne sont pas perdus - réessayez.",
   "dead_letter_clear_selection": "Effacer",
   "dead_letter_discard": "Ignorer",
   "dead_letter_discard_title": "Ignorer l’événement",
@@ -623,9 +627,12 @@
     "automation_delete": "Supprimer l’automatisation",
     "automation_enabled": "Activé",
     "automation_failed": "échoué",
+    "automation_held": "en attente d'approbation",
     "automation_idle": "en attente de son événement",
     "automation_next": "prochain",
+    "automation_partial": "partiellement exécuté",
     "automation_ran": "exécuté",
+    "automation_requested": "demandé",
     "automation_run_now": "Exécuter maintenant",
     "automations_title": "Événements système actifs",
     "cadence_custom": "cron personnalisé…",
@@ -945,5 +952,7 @@
   "add_persona_available": "{count} disponibles",
   "add_persona_all_connected": "Toutes les personas sont déjà connectées",
   "add_persona_ungrouped": "Sans groupe",
-  "live_status_skipped": "Ignoré"
+  "live_status_skipped": "Ignoré",
+  "webhooks_load_failed": "Impossible de charger les déclencheurs de webhook",
+  "webhooks_load_failed_desc": "La liste n’a pas pu être lue, une liste vide serait donc trompeuse. Vos déclencheurs ne sont pas perdus - réessayez."
 }

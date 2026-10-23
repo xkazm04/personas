@@ -3,28 +3,49 @@
 /// Maximum length for a single variable value substituted at runtime.
 pub(super) const MAX_RUNTIME_VAR_LENGTH: usize = 2000;
 
-/// Monotonic counter mixed with process start time for boundary nonces.
-pub(super) static RUNTIME_NONCE_COUNTER: std::sync::atomic::AtomicU64 =
-    std::sync::atomic::AtomicU64::new(0);
-
-/// Generate a short random-ish nonce for XML boundary tags.
-/// Not cryptographic -- only needs to be unpredictable enough that untrusted
-/// content cannot guess the tag name ahead of time.
+/// Mint a boundary nonce: 64 bits from `rand`'s thread-local CSPRNG (ChaCha,
+/// seeded from the OS), rendered as 16 lowercase hex digits.
+///
+/// The format is load-bearing: `cloud::persona_projection::prompt_identity`
+/// strips `_[0-9a-f]{16}>` to compare two assemblies of an unchanged persona.
+///
+/// This used to be `system_time_nanos ^ counter ^ constant` - a value anyone
+/// who knows roughly when a run started can reproduce, so the tag name was a
+/// guess away from forgeable (prompt-safety, untrusted-span-fencing:
+/// "cryptographic randomness, generated at assembly time").
 pub(super) fn generate_runtime_nonce() -> String {
-    let count = RUNTIME_NONCE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    let seed = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    let mixed = (seed as u64) ^ count ^ 0x517cc1b727220a95;
-    format!("{:016x}", mixed)
+    format!("{:016x}", rand::random::<u64>())
 }
+
+/// A fence-shaped tag inside a payload: `<untrusted_…`, `</untrusted_…`, with
+/// any case and any whitespace after the `<`.
+static FORGED_BOUNDARY_RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+    regex::Regex::new(r"(?i)<(\s*/?\s*untrusted_)").expect("static regex")
+});
 
 /// Wrap untrusted content in XML boundary tags with a random nonce.
 /// The nonce makes the tag name unpredictable, so injected content cannot close
 /// the boundary and escape into the trusted prompt.
+///
+/// This is the ONE door every fenced span passes (`wrap_untrusted_section`,
+/// the episode / input-data / correction / scratchpad sections, the resume
+/// prompt), so it does the whole job for all of them:
+///
+/// - **Neutralize what looks like a fence.** A payload that carries its own
+///   `</untrusted_input_data_…>` cannot close the real fence (wrong nonce), but
+///   a model reading it sees a region that appears to end there, followed by
+///   text in the application's voice. Every fence-shaped tag in the payload
+///   has its `<` rewritten to `&lt;`, so the only `<untrusted_` / `</untrusted_`
+///   in a wrapped span are the two this function writes. The fidelity spent:
+///   a document that legitimately quotes such a tag shows it entity-escaped.
+/// - **Mint until absent.** A nonce the payload already contains is re-minted
+///   (a 2^-64 event per draw; checking is free).
 pub(super) fn wrap_runtime_xml_boundary(label: &str, content: &str) -> String {
-    let nonce = generate_runtime_nonce();
+    let content = FORGED_BOUNDARY_RE.replace_all(content, "&lt;$1");
+    let mut nonce = generate_runtime_nonce();
+    while content.contains(nonce.as_str()) {
+        nonce = generate_runtime_nonce();
+    }
     let tag = format!("untrusted_{label}_{nonce}");
     format!("<{tag}>\n{content}\n</{tag}>")
 }
@@ -48,6 +69,33 @@ pub(super) const DANGEROUS_TAGS: &[&str] = &[
     "override",
     "ignore",
 ];
+
+/// The sanitiser's patterns, compiled once per process.
+///
+/// `sanitize_runtime_variable` used to compile all ten on every call, and it is
+/// called once per input key per `replace_variables` call - which the assembler
+/// makes once per persona field. Measured 2026-10-20 (debug `cargo test`, a
+/// persona with 7 templated fields and 12 input keys): ~296 ms per assembly,
+/// almost all of it regex compilation.
+static RE_SECTION: std::sync::LazyLock<regex::Regex> =
+    std::sync::LazyLock::new(|| regex::Regex::new(r"(?i)---SECTION:\w+---").expect("static regex"));
+static RE_DANGEROUS_TAGS: std::sync::LazyLock<Vec<regex::Regex>> = std::sync::LazyLock::new(|| {
+    // One regex PER TAG, applied in order, exactly as before: a single
+    // alternation would strip a different set from nested constructions.
+    DANGEROUS_TAGS
+        .iter()
+        .map(|tag| {
+            regex::Regex::new(&format!(r"(?i)</?{}\b[^>]*>", regex::escape(tag)))
+                .expect("static regex")
+        })
+        .collect()
+});
+static RE_HEADING: std::sync::LazyLock<regex::Regex> =
+    std::sync::LazyLock::new(|| regex::Regex::new(r"(?m)^(#{1,6})\s").expect("static regex"));
+static RE_DELIMITER: std::sync::LazyLock<regex::Regex> =
+    std::sync::LazyLock::new(|| regex::Regex::new(r"(?m)^---+$").expect("static regex"));
+static RE_VAR: std::sync::LazyLock<regex::Regex> =
+    std::sync::LazyLock::new(|| regex::Regex::new(r"\{\{(\w+)\}\}").expect("static regex"));
 
 /// Check if a character is an invisible/zero-width Unicode character.
 pub(super) fn is_invisible_runtime_char(c: char) -> bool {
@@ -111,8 +159,7 @@ pub(super) fn sanitize_runtime_variable(value: &str) -> String {
 
     // 4. Strip section delimiters (---SECTION:xxx---)
     let mut clean = clean;
-    let re_section = regex::Regex::new(r"(?i)---SECTION:\w+---").unwrap();
-    clean = re_section.replace_all(&clean, "").to_string();
+    clean = RE_SECTION.replace_all(&clean, "").to_string();
 
     // 5. Strip role override lines (system:, user:, assistant:, etc.)
     clean = clean
@@ -134,16 +181,13 @@ pub(super) fn sanitize_runtime_variable(value: &str) -> String {
         .join("\n");
 
     // 6. Strip dangerous XML/HTML tags
-    for tag in DANGEROUS_TAGS {
-        let open_re =
-            regex::Regex::new(&format!(r"(?i)</?{}\b[^>]*>", regex::escape(tag))).unwrap();
+    for open_re in RE_DANGEROUS_TAGS.iter() {
         clean = open_re.replace_all(&clean, "").to_string();
     }
 
     // 7. Contextual escaping for prompt structure
     // Escape markdown headings that could inject prompt sections
-    let re_heading = regex::Regex::new(r"(?m)^(#{1,6})\s").unwrap();
-    clean = re_heading
+    clean = RE_HEADING
         .replace_all(&clean, |caps: &regex::Captures| {
             let hashes = caps.get(1).unwrap().as_str();
             let escaped = hashes.replace('#', "\u{FF03}"); // fullwidth #
@@ -155,12 +199,10 @@ pub(super) fn sanitize_runtime_variable(value: &str) -> String {
     clean = clean.replace("```", "\\`\\`\\`");
 
     // Escape section-like delimiters (--- on its own line)
-    let re_delimiter = regex::Regex::new(r"(?m)^---+$").unwrap();
-    clean = re_delimiter.replace_all(&clean, "------").to_string();
+    clean = RE_DELIMITER.replace_all(&clean, "------").to_string();
 
     // 8. Neutralize {{...}} patterns to prevent recursive substitution
-    let re_var = regex::Regex::new(r"\{\{(\w+)\}\}").unwrap();
-    clean = re_var.replace_all(&clean, "{ {$1} }").to_string();
+    clean = RE_VAR.replace_all(&clean, "{ {$1} }").to_string();
 
     // 9. Announce the cut. Same shape as the codebase's other honest
     //    truncations (`prompt::advisory`, `runner`'s omitted-memories note).

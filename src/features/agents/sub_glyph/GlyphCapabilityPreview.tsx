@@ -87,7 +87,9 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
 
   if (capabilityOrder.length === 0) return null;
 
-  const excludedSet = new Set(excludedIds);
+  // Only exclusions that still name a capability on screen count: nothing
+  // prunes `excludedCapabilityIds` when a refine replaces the capability set.
+  const excludedSet = new Set(excludedIds.filter((id) => capabilityOrder.includes(id)));
   const activeCount = capabilityOrder.length - excludedSet.size;
 
   // Localized review-policy label. Falls back to the raw mode token for an

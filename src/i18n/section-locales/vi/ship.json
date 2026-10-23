@@ -27,7 +27,7 @@
   "cover_empty": "Chưa có cột mốc — lên kế hoạch lát cắt đầu tiên",
   "cover_forecast": "dự báo {date}",
   "cover_next": "Tiếp theo",
-  "cover_open_aria": "Mở lộ trình Ship của {name}",
+  "cover_open_aria": "Mở lộ trình của {name} trong Sổ ghi chú",
   "cover_shipped_count": "{shipped}/{total} đã phát hành",
   "crit_contexts": "Các context cốt lõi khỏe mạnh",
   "crit_contexts_critical": " · nghiêm trọng: {names}",

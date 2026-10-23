@@ -13,7 +13,7 @@ import { useLifecycleViewModel } from '../../context';
 import { metricDelta } from '../../layer1/delta';
 import { VERDICT, type HealthStep } from '../../layer1/healthModel';
 import { MetricValue, SampleNote } from '../../layer1/parts/MetricValue';
-import { DeltaMark } from '../../layer1/rail/DeltaMark';
+import { DeltaMark } from '../../layer1/parts/DeltaMark';
 import { RHYTHM } from '../../system/lcSurface';
 import { LT } from '../../system/lcType';
 import type { StepThresholds } from '../../system/rules';
@@ -73,7 +73,7 @@ export function AdherenceSection({ step, series, thresholds, stepKey, loading, l
       level={2}
       desc={tx(dl.lc2_done_threshold, { green, amber })}
       state={loading ? 'loading' : nothing ? 'empty' : undefined}
-      empty={{ title: dl.lcx8_no_rate }}
+      empty={{ art: 'chart', title: dl.lcx8_no_rate }}
       ghostRows={4}
     >
       <div className={RHYTHM.block}>

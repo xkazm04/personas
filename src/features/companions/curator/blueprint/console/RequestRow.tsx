@@ -12,14 +12,28 @@
  * never real.
  */
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import type { CuratorRequest } from '@/lib/bindings/CuratorRequest';
 
 import { utcStamp } from '../format';
 import { useWords } from '../words';
 
-export function RequestRow({ request, onCancel }: {
+/** A paged list's entrance: the row's place in its page, and the id guard. */
+// The lane's rows draw plainly: without a reveal they read as already entered.
+const ALWAYS_ENTERED = () => true;
+const NEVER_MIND = () => {};
+
+export interface RequestRowReveal {
+  order: number;
+  hasEntered: (id: string) => boolean;
+  markEntered: (id: string) => void;
+}
+
+export function RequestRow({ request, onCancel, reveal }: {
   request: CuratorRequest;
   onCancel: (id: string) => Promise<void>;
+  /** Present in the paged history, so each new page fades in once; the lane passes none. */
+  reveal?: RequestRowReveal;
 }) {
   const { w, tx } = useWords();
   const state = w.console.request_state[request.state];
@@ -28,7 +42,17 @@ export function RequestRow({ request, onCancel }: {
   const say = request.failureReason ?? request.outcome;
 
   return (
-    <li className="cb-req" data-role="cb-request" data-state={request.state} data-cb-id={request.id}>
+    <RevealItem
+      as="li"
+      revealId={request.id}
+      order={reveal?.order ?? 0}
+      hasEntered={reveal?.hasEntered ?? ALWAYS_ENTERED}
+      markEntered={reveal?.markEntered ?? NEVER_MIND}
+      className="cb-req"
+      data-role="cb-request"
+      data-state={request.state}
+      data-cb-id={request.id}
+    >
       <span className="cb-req-state typo-label" data-role="cb-request-state">
         {state}
       </span>
@@ -64,6 +88,6 @@ export function RequestRow({ request, onCancel }: {
           {w.console.request_cancel}
         </AsyncButton>
       )}
-    </li>
+    </RevealItem>
   );
 }

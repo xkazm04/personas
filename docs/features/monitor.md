@@ -21,25 +21,245 @@ See [companion](./companion/README.md).
 ### The Decision Center (2026-10-06)
 
 Everything that needs a human now lands in one place: the Activity view's
-command bar. It carries a strip of chips — **Gates** (persona reviews, build
-questions, Athena's approvals), **Proposals** (routing/budget policies,
-evolution promotions, finished goals awaiting sign-off), **Backlog**,
-**Incidents**, **Council**, **Reports**, **Chat** (threads where a persona or
-Athena spoke after your last reply) — then, after a divider, **Ready to
-dispatch** (accepted ideas not yet sent to the fleet). Each chip shows its
-count and a severity lamp; a chip at zero stays in place, dimmed; a chip whose
-source failed to load shows a warning glyph, never a 0.
+command bar. Since the mandate-lanes cutover (2026-10-15) it carries the
+**mandate lanes** (Breach, Sign, Accept, Talk, then Orphans; see [Mandate
+lanes](#mandate-lanes-2026-10-15) below), then **Ready to dispatch** (accepted
+ideas not yet sent to the fleet). Each button shows its count and a severity
+lamp; one at zero stays in place, dimmed; one whose source failed to load
+shows a warning glyph, never a 0.
 
-Pressing a chip opens a **peek** under it, in the order the queue should be
-worked (blocking items first, then decisions, then reads and replies). Keys:
-↑/↓ move, ←/→ switch chip, **A** accept, **R** reject (Enter confirms),
-**D** done (reports, chat), **S** skip, **Enter** opens the item, **Esc**
-steps back. **Triage all** opens the first item across every chip. The
-titlebar decisions badge counts the same roster and opens this view; Athena's
-orb and the Home decisions widget read it too, so every count agrees.
+Pressing a lane opens a **peek** under it, in lane order. Keys: ↑/↓ move,
+←/→ switch lane, **A** accept, **R** reject (Enter confirms), **D** done
+(reports, chat), **S** skip, **Enter** opens the item, **Esc** steps back. The
+titlebar decisions badge counts the same roster (the lanes' total) and opens
+this view (Shift+click opens the deck over every queue at once); Athena's orb
+and the Home decisions widget read it too, so every count agrees.
+
+> **The chip strip is gone (2026-10-15, mandate-lanes WP10).** From 2026-10-06
+> the command bar carried seven decision chips (Gates, Proposals, Backlog,
+> Incidents, Council, Reports, Chat), and from 2026-10-14 a **Chips | Lanes**
+> switch in the Monitor header chose between them and the lanes. After daily
+> use the owner approved the lanes; the chips, the switch and its persisted
+> setting were deleted. The roster still groups its sources by those seven
+> names (the deck's card eyebrows and the title-bar badge tooltip use them),
+> but they are no longer a surface. A stored `decisionSurface` value from an
+> older build is dropped on load.
 
 The old Activity rail ("Decision dock" with Reviews / Dispatch / Messages tabs)
 is retired; its dispatch bar lives in the Ready peek.
+
+**The decision deck's card anatomy** (2026-10-14, every card). Each card reads top-down: the kind as a lit eyebrow, the ask as
+the title, one context line (the tier in words and who raised it), then the
+**outcome lines**, "If you approve: ..." beside "If you reject: ...", so what each
+verdict does is read before either is pressed. The no side is the dock's own
+negative (Later on a report, Done on a chat). Long body sections fold to one
+counted line that opens in place (click, or `I`), so a card is decidable at
+1280x800 without scrolling. The dock is fixed at the foot of the rail with each
+key printed inside its button. An item whose yes cannot be taken back (a merge,
+a spend, an outbound message, a deletion) **arms first**: the first press shows
+exactly what leaves, `A` again or `Enter` confirms, `Esc` disarms. After a
+verdict the tray keeps a receipt ("Accepted: <title>"), and an emptied deck
+offers the lanes that still hold cards.
+
+### Mandate lanes (2026-10-15)
+
+> **The only decision surface.** This section shipped behind a **Chips | Lanes**
+> switch in the Monitor header; on 2026-10-15 (PLAN WP10) the owner approved
+> the lanes after daily use and the switch, the chip strip and the Autopilot
+> plate's chips-era form were deleted. Everything below is what every operator
+> sees.
+
+Each project's App Master charter is a **mandate**: an envelope saying which
+kinds of decision its steward may take alone (scopes such as *accept ideas* or
+*file reports as read*), a merge policy (default *never alone*) and the monthly
+spend cap. Inside the envelope the steward decides and every decision lands in
+an **act log** you can audit and revert. Only crossings reach you. Every live
+charter starts **unsigned** (envelope version 0): nothing is delegated until it
+is signed, so an unsigned mandate behaves exactly as before.
+
+**Lane buttons.** The command bar carries five buttons: **Breach**
+`1` (crossed a mandate's envelope), **Sign** `2` (a mandate waiting for its
+signature), **Accept** `3` (read and close, or accept a claim that a goal is
+met), **Talk** `4` (threads waiting for your reply) and **Orphans** `O` (items
+no mandate covers; the button opens the **Orphanage**, below, instead of a peek). Counts come from the backend's `decision_lanes_snapshot`
+(the router's one verdict per item, never re-derived on the client); a source
+that failed shows the failed mark with its name in the tooltip, never 0.
+**Ready to dispatch** stays beside them. A button opens the lane's peek, ordered
+by clause (stop, valve, risk, merge, spend, scope, unsigned), then age; `←/→`
+walk the lanes, `Enter` opens the deck scoped to the lane. The Sign peek lists
+each draft mandate as "Sign the <project> mandate: <title>"; `A` and `R` on it
+open the card (signing needs the envelope, a drop needs its reason) and never
+decide from the row. The title-bar badge, the Home decisions widget and
+Athena's orb count Breach + Sign + Accept + Talk.
+
+**Card shapes in the lane deck** (on the anatomy above):
+
+- **Breach**: why it reached you, in one sentence (on an unsigned mandate the
+  sentence names the project and says what signing would change); the clause
+  diff where an amend would change the envelope ("Steward decides: file reports
+  as read -> + accept ideas"); the items the router coalesced on the same clause,
+  folded; an **incident sheet** on a stop. The head's outcome lines follow the
+  dock, one per verb: **`1` amend** (widen a scope, let merges land, raise the
+  cap, or decide the item itself; armed for merge and spend), **`2` deny** with a
+  one-key reason, **`3` suspend** the mandate (printed only when there is a
+  mandate to suspend). An item with **no mandate** says that its project has
+  none and that it gathers in the Orphans lane; one whose mandate did not load
+  says so instead of guessing. The item's own branches move to `4`+.
+- **Valve walk**: one irreversible item per step ("Valve 3 of 48"), each armed
+  twice, never batched.
+- **Sign**: the envelope as a document (scopes in plain words, `E` to edit, the
+  merge policy as a live choice, the cap), the refusal classes and how many items
+  are held on the draft. The ledger's cost tile says what signing releases
+  ("Releases 4 items"). **`A` sign** arms when it grants merge or spend: the verb
+  keeps its name and prints the confirm key (`↵`), and what it grants is listed
+  at the top of the body before the second press. **`X` drop** with a reason:
+  the draft is retired and the act log records the drop with that reason
+  (`mandate_drop`).
+- **Re-read** (a Sign card, `mandate-reread:<charterId>`): a signed mandate whose
+  USE asks to be read again, never a calendar. Four triggers, each a named
+  constant in `engine/src/mandate_reread.rs`: near its cap (90%) while nothing
+  reaches you; asks often for its size (more than 0.25 asks per act past 6
+  acts, or 1.5 times the fleet's own ratio with 3+ asks); 5+ merges since you
+  last read it; one kind of work dominating what reaches you (the scope that
+  would absorb it takes 3+ of 4+ asks, at least twice an even share). The card
+  is titled with the reason and shows the suggestion (widen or narrow a scope,
+  or merges back to never). **`A` keep as signed** (`mandate_keep`): the card
+  does not return until the mandate's acts reach twice the count you kept it
+  at ("You kept it at 6 acts"). **`E`** opens the envelope with the suggestion
+  applied; `A` then signs the change. No drop.
+- **Accept (claim)**: the goal's own **met when** (`dev_goals.met_when`, read
+  through `goal_met_when`): one row per condition the goal names. The KPI row
+  is checked against its target; the UAT and the council round are listed with
+  no tick and say why (nothing here records a UAT pass or links a council
+  verdict to a goal). A goal that names no condition says so in one line, and
+  a read that failed says that instead. Then a random audit sample of the
+  mandate's acts (`1`-`3` pick one, `V` revert it, `N` narrow its scope), `A`
+  accept, `R` send back with a reason.
+- **Talk** keeps the chat thread; council cards say the council never admits
+  work on its own.
+
+**Lens-scan cards** (2026-10-16, spark one-control WP3). Every code project
+whose repo holds a lens-scan store (`.ai/lens-scan/scan.db`) can hold up to
+three cards, one of each kind, read from `lens_scan_products` (one read
+app-wide; the lane buttons count them too):
+
+- **Build** (Breach, clause *unsigned*): proposals wait for approve or decline,
+  or approved items are not built yet. The body gives the counts.
+- **Evidence** (Accept): built items wait for triage (accept, rework, descope).
+- **Release** (Accept): a release waits on you (its pull request is open, or it
+  merged and was never finished), or accepted items wait for one. The body gives
+  the suggested version (bp's own rule, with the store's releases standing in
+  for git tags) and the item count.
+
+The cards never write. Their verdicts are printed **disabled**; `A` and `R`
+(on the card and on the peek row) only open it, and **`Enter` opens**: a Build
+card opens the product **blueprint** over the deck, an Evidence card opens it
+at the first feature waiting for triage (the L4 sheet with the compare panel),
+and every decision happens on the sheet. A Release card opens the release's
+**composition, read only** (version, items, notes); its one action, **Open in
+bp** (`Enter`), opens bp's Release tab in your browser at
+`<lens_scan.bp_url>/?product=<slug>&page=ledger&tab=release` (setting
+`lens_scan.bp_url`, default `http://localhost:3010`, the port bp's `npm run dev`
+serves on). When bp does not answer,
+the sheet says bp is not running and shows `npm run dev`, to run in bp's root.
+Closing a sheet, and every write on the blueprint, re-reads the products so the
+counts follow. No mandate ever acts on a lens-scan card, signed or not (the
+router's keep-out). A product whose store cannot be read shows no card.
+
+**The Blueprint tab** (2026-10-16). The Monitor header carries a fourth destination beside
+Activity: **Blueprint** lists every lens-scan product as bp's project list, on bp's own ground and palette:
+per product its readiness (bp's shape-only icon: map only, measured, full, missing) with a checklist (map
+version, store, events log, features, lenses, measured facets, last scan), and the proposed, approved and
+to-triage counts, all from the same `lens_scan_products` read. **Open the blueprint** opens that product's drawing
+set, the same sheet a Build card opens, whether or not anything waits for a decision; a product with a
+release waiting also gets **Open the release**. A product whose map cannot be read opens the store's
+error frame instead of the drawing. `Esc` climbs the drawing level by level and, at its site,
+closes only the drawing: you land back on the Blueprint tab, never outside the Monitor. The
+Monitor answers `Esc` from the app's keyboard ladder (full-screen-layer rung, 60), so any surface
+above it (a modal, the Decision Deck, the drawing) that takes the key keeps it.
+
+The drawing set itself is bp's look (2026-10-16, round two): bp's palette, ground, IBM Plex type and drawing
+detail, bp's header with a **project switcher** (switch product without leaving the sheet) and a last-scan
+pill, bp's rail, ladder and timeline strip; the Build queue column keeps its keys in bp's ink. bp's features
+return with it: the findings ledger (L: triage table, matrix, read-only release), the rail's Agents / Plan / View
+panels, bp's full feature page, the expanded timeline with time travel (T), the hover card, the on-plan decision
+card and multi-select (Space, Shift+click) with batch moves. See
+`src/features/decision-center/blueprint/PARITY.md`.
+
+**The drawing set stays live** (2026-10-17). While it is open it re-reads its product by itself: every 5 s
+while a lens-scan run is running or a build started from the sheet is still working, every minute otherwise,
+and at once when the window comes back into focus; never while the window is hidden. A read that finds
+nothing new redraws nothing. A build started from the sheet follows its fleet sessions (matched by its
+`personas:<uuid>` run label): queued, running, waiting, done or failed, with its session count and time in
+the Agents panel and the dock console, and its waiting items say **building** in the queue; when its last
+session ends the sheet re-reads at once. Every figure on the sheet comes from one count (in trouble = bad,
+watch shown on its own, live includes partly open), and findings whose feature is not on the plan are
+named in the queue column with a link to the ledger. A missing value shows as missing: no later reading
+posing as a before, "risk not stated", "not measured", and a project whose store did not open says so in
+the project list. A rail panel narrows the plan when there is room beside it and lies over it when there
+is not; the lens strip shows how many sheets it cut off; the queue footer lists L, T, Space and a clickable
+`?` for all keys. Each re-read is compared with the last: a header chip **N changed** lists what moved since you looked (decisions, new proposals, runs that ended, new readings) and takes you to it, and the changed tiles and queue rows light once and fade. Changes you made from the sheet, and ones you already saw, are not announced.
+
+**Stewards plate.** In the supply column the Autopilot plate became the
+Stewards plate: the attention-loop switch on top (unchanged, same tour anchors
+`fleet-autopilot` / `fleet-autopilot-toggle`), Athena's CLI answerer as its own
+row with its own toggle, then one row per charter (project, steward, rung, the
+project's autopilot mode, budget used / cap or "no cap", open asks, held items),
+the charters asking you first. A **Bay nameplate** gains a second lamp, present
+only when the project has a mandate and lit only while it holds a Breach, Sign
+or Accept card for you.
+
+**The mandate drawer** (in the Monitor's one drawer shell): **`M`** opens the
+register of mandates, a row opens a **mandate page**, **`L`** opens the act log
+across every mandate. The page puts its act log first with counted filters (all
+/ by the steward / by you / revertible / reverted), each act in words (the
+verb, then the item's title), and the envelope in the rail. **`S`** suspends or resumes,
+**`V`** reverts the selected act, **`N`** takes back its scope; a final act says
+why it cannot be reverted before anything is pressed.
+
+The mandate page has two views: **`1` act log** (the default) and **`2`
+Scopes**. Scopes lists every decide scope, then the merge policy and the spend
+cap. A held scope says how many acts were taken under it and its agreement,
+labelled **design** (nothing yet records whether the steward would have decided
+an item the way you did). A scope not held says how many of the items waiting
+on you now it would take, counted by routing each one again through the router
+with the scope added (on an unsigned mandate: "if you signed it with this
+scope"). **`W`** widens the picked line, **`N`** narrows it, both through
+`mandate_amend` (one act with its before / after). A widen that touches merge
+or spend (the merge policy, the cap, `dispatch`) arms first and lists the items
+that will no longer reach you; `W` again or `Enter` confirms, `Esc` disarms. An
+unsigned mandate writes nothing and says to sign it first.
+
+**`O`** (or the Orphans lane button) opens the **Orphanage**: one row per
+project whose pending work no mandate holds, with why it asks for a mandate,
+measured against what one card releases today (never a clock): *large* (3+
+items and at least one card's worth) or *growing* (more than half newer than
+the fleet's median item). The detail offers **`D` draft** a mandate (a draft
+with an empty envelope and merge never, `source = athena`; it arrives in Sign;
+when no persona works on the project you pick the steward first), **`A` adopt**
+the project into an existing mandate (a new charter carrying that mandate's
+steward and envelope), and **`X` archive** (armed twice: the items leave the
+Orphans lane, archived not deleted, still in their own lists). On its tick the
+steward sweep drafts a firing cluster on its own when the project has an App
+Master persona (or a persona raised most of its items): deterministic, no
+model call, never a second draft while one is open, and not again after you
+dropped one until new orphans arrive.
+
+**The dock's act ticker.** The dispatch dock's resting row gains one line of
+what the stewards just decided ("App Master · Personas filed 3 reports as
+evidence"), pushed by `charter-act-recorded` (no poll; acts of one mandate by
+the same hand coalesce within two minutes; absent until the first act). A press
+opens the act log at that act, from any Monitor tab: from Conversations or the
+Map it switches to Activity first.
+
+**One roof.** The Monitor paints one
+ground under every tab, a fine dot grid over a soft tonal field
+(`.monitor-surface`), with a light-theme reading; the old dark-only network
+image and the per-tab hairline grid are gone. The Activity layout switch reads
+**Bays | Queue**. The Queue view's three lanes (Running, Queued, Parked) are
+built as bays: engraved name, count, a lamp lit with the worst state inside, a
+share bar. Conversations uses the same panel, 52px command strip, plates and
+lamps as Activity.
 
 Press `Esc` (or click the titlebar button again) to close. The Monitor fades
 in on open and fades out on close (the mount is wrapped in `AnimatePresence`
@@ -503,6 +723,10 @@ because both copies are on screen at the same moment.
 
 #### Autopilot — the board's one switch, paced to the subscription
 
+> This plate is the top row of the **Stewards** plate (see
+> [Mandate lanes](#mandate-lanes-2026-10-15)); the switch, its pacing and its
+> testids are unchanged.
+
 The header's **Autopilot** pill is the attention loop's on/off
 (`autonomous_attention_loop`, the same setting Mission Control's Attention
 Loop card flips) with a **pacing policy** between the quota governor's stop and
@@ -552,13 +776,17 @@ governor's stop is announced.
 
 #### Schedules plate: the operator's scheduled tasks, so a nightly job is never forgotten
 
-Below the Autopilot plate, the Supply deck (`SupplyDeck.tsx`) carries a **Schedules** plate
+Below the Stewards plate, the Supply deck (`SupplyDeck.tsx`) carries a **Schedules** plate
 (`SchedulePlate.tsx`) listing every Windows Task Scheduler task in the `\Personas\` folder. Today
 that is the `/curator --multi` night (`\Personas\CuratorNight`, 23:00-07:00); anything else
 scheduled into the folder appears with no code change. Each line is a lamp (green while enabled,
-amber while running, dark when off), the task's title, its next start in **Prague time**
-(`Europe/Prague`, whatever zone the machine runs in), and a switch that enables or disables it.
-The line's tooltip adds the declared window, the last run and its result. The plate renders
+amber while running, dark when off) and the task's title on its first row, and on the second,
+under the title, its next start as the Monitor's clock token (the persona line's calendar glyph
+and 24-hour time: `23:00` today, `Tue 23:00` within the week, `13 Oct 23:00` beyond it) in
+**Prague time** (`Europe/Prague`, whatever zone the machine runs in), and a switch that enables
+or disables it. The title's tooltip adds the declared window, the last run and its result.
+(Two rows since 2026-10-16: on one line at the rail's width the title truncated to three
+letters.) The plate renders
 nothing until something is scheduled, and nothing off Windows.
 
 The task's `Description` carries what the line shows, as `<title>|<window>`. The read
@@ -569,9 +797,31 @@ never as `schtasks` locale text. The plate polls every 30 s while the window is 
 task off stops it starting tomorrow; a night already running ends on its own window
 (`loop.py multi stop` ends it after its running units).
 
+#### The rail's usage plate and the dispatch dock as plates (2026-10-16)
+
+The **Subscription usage** plate (`PlanPlates.tsx`) keeps its header to one row in every locale:
+the title (which truncates rather than wraps) and the refresh button, whose tooltip now carries
+the refresh time ("as of 3m ago"). Hovering or focusing a plan row opens its numbers last measured
+beside the rail (`PlanHover.tsx`, the house `AnchoredTooltip`): per window the span (5h, 7d, 7d ·
+Opus), used %, the countdown and the wall-clock reset, and when the plan was measured (with
+*Estimated* for a projected plan). There is no "used / limit" line: none of the reads behind a plan
+(`fleet_claude_accounts_list`, `fleet_claude_usage`, `fleet_cli_usage`) reports an absolute count,
+so it is omitted rather than invented. Pressing a row still opens the popup with switch, remove and
+auto-rotate, and the hover stands down while it is open.
+
+The **dispatch dock** sits on a plate of the panel's language (`.ae-dock` + `.ae-plate`), inset by
+the panel's gutter. At rest it is one 40px plate (52px with its gutter): a window holding the composer's prompt (the door
+that expands it), the stewards' act ticker, and the session tally as the command bar's lamp chips
+(*Needs you* amber, *Running* in the run tone). Expanded, the same plate holds the console: every
+control and reading is the command bar's chip (`dock/dockChrome.ts`), the chips ride at the head
+of the manifest row instead of a row of their own, and the console is 23px shorter (163px with its
+gutter, measured in the harness at 1280x800 and 1920x1080 in en, de and ru, with no horizontal
+overflow). The Athena and background toggles keep their
+glyph and label on one line (they had stacked).
+
 #### Orchestration panel — the next tick, read-only
 
-Opened from the Activity board's Autopilot plate (`SupplyDeck.tsx`), the
+Opened from the Activity board's Stewards plate (`SupplyDeck.tsx`), the
 **Orchestration** panel is a `BaseModal`
 (`src/features/fleet/monitor/grid/orchestration/OrchestrationPanel.tsx`, exported
 from that folder's `index.ts`) around the autonomous-agent ledger that used to be the third tab of
@@ -930,12 +1180,42 @@ step_done / ...), so consecutive lifecycle rows never read as duplicates.
 
 ### Conversations
 
-The messenger, and the only place you write. Team channels (bands for
-assignments/deliberations interleaved with talk bubbles, composer with
-goal-routing) and **persona conversations** (chat bubbles with optimistic
-echo, Reports as clamped markdown previews with an attachment chip opening
-the full Report viewer, events/memories as subtle system lines, human
-reviews as inline quick-decide cards with an open-in-Reviews forward).
+The messenger, and the only place you write. Since WP12 (2026-10-16, the
+owner's pick "V1") it is three plates in the Activity board's language:
+
+- **Projects** (left): one line per project in the Stewards row grammar - the
+  project's colour edge, its name, its members' presence as a share strip
+  (working / waiting / idle), then two figures under engraved column heads:
+  **NEW** (unread) and **YOU** (reviews and questions it holds for you), and a
+  lamp lit only while it holds something. Hovering a row says who works,
+  waits or idles, when each was last seen, a live deliberation and the last
+  message's time. Persona conversations follow on the same grid.
+- **The thread** (middle): runs and deliberations are bands that say the
+  OUTCOME first. A run band's eyebrow is its state (Waiting on you, Running,
+  Run done, Run failed) and its title is what happened (the step waiting on
+  you, or the newest output); steps, outputs and Pause / Resume fold behind
+  the chevron. A run stays ONE band even when a message lands between its
+  steps. A deliberation band shows its status, spend meter and round, the
+  converged proposal as "Leaning: ..." once the engine wrote one, and **Drive**.
+  Talk lines carry the speaker's glyph tile; your own lines sit right.
+  **Persona conversations** keep chat with optimistic echo, Reports as clamped
+  previews opening the full Report viewer, events and memories as caption
+  lines, and reviews in the Decision Deck's card anatomy (outcome pair, the
+  deck's verdict pair, suggested actions as branches, Open in Reviews).
+- **Needs you** (right): reviews and held build questions (formerly the
+  Reviews and Quick tabs) are ONE queue, a review that holds a team step
+  first, then the longest wait. The ask in hand wears the deck's card head
+  with "If you approve / If you reject"; the rest are one-line rows; the
+  deck's fixed verdict dock sits at the foot. Keys: **A** approve (or answer a
+  question), **R** reject (asks "Why?" first; Enter sends no reason) or skip a
+  question, **S** later, **J / K** walk, **1-9** a suggested action, a
+  question's option or Open in builder. Keys never fire while a field has
+  focus. The tab's lamp is lit with the count while anything waits and stays
+  dark (never "0") while the queue is unread or unreadable. **Drive** on a
+  deliberation turns the rail to its controls (advance, run to budget / stop,
+  split, run all tracks, merge, the gated capability, the escalation, the
+  proposal, the agenda), each with its digit. With a persona open, the rail
+  lists only that persona's asks.
 
 The team composer never disables itself. Pressing Enter while a directive
 or a goal-route is still in flight puts the next prompt in a visible **queued
@@ -947,7 +1227,7 @@ behind it keep going. Switching projects abandons the outbox, because a
 directive is addressed to one team. On send, your own row is posed at the top
 of the viewport with a reserve below it that shrinks as replies land, so the
 pose is a legitimate bottom and follow-to-bottom stays armed. Both side
-rails - the projects sidebar (left) and the Reviews/Deliberation rail (right)
+rails - the projects plate (left) and the Needs you / Deliberation rail (right)
 - resize by drag or arrow keys and remember their width, exactly like the
 Activity rail. A deliberation whose engine-written JSON is malformed no
 longer blanks the rail; its status caption is translated.
@@ -1068,8 +1348,89 @@ visible (`useAmbientMotion.ts`, CSS-gated again). The Queued lane's rungs
 estimated start and the amber not-before cue for a deferred rung; drag and
 Alt+Up/Down reorder are unchanged, and the four verbs now float over the
 rung's right edge on hover or focus instead of reserving their width. The bay
-nameplates' lamps still speak the Annunciator's lamp vocabulary (`tone.ts`). Harness: `monitor/classic`, `monitor/lanes` (+
-`/sim`) in `scripts/style/page-harness/monitorActivitySurfaces.tsx`.
+nameplates' lamps still speak the Annunciator's lamp vocabulary (`tone.ts`). Harness: `monitor/classic`, `monitor/queue` (+
+`/sim`; `monitor/lanes` until the WP10 cutover freed the word for the decision
+lanes) in `scripts/style/page-harness/monitorActivitySurfaces.tsx`.
+
+**Persona lines say what the persona is doing (WP11 "Tail", 2026-10-16).** The
+persona line no longer wears its pile as a fill. It is one flat 36px row in the
+bay nameplate's grammar (`entry-e/PersonaLine.tsx` + `PersonaTail.tsx`, model
+`personaTailModel.ts`): the framed face, the bold name, then the activity as
+caption tokens (the last run's outcome glyph and age, or, while it runs, how
+many runs wait behind it; then a calendar glyph and the next scheduled start),
+and at the right edge the one figure (why it needs you with its count, or the
+run's elapsed time, or the off glyph) and the lamp. State is the lamp plus a
+tone edge (`.ae-line`): needs-you lights the edge and a soft wash, critical a
+stronger wash and a wider edge, a run keeps only the edge, off is greyed. In a
+narrow column the tokens give way in a fixed order and none is cut mid-token:
+the next start leaves whole first, then the name truncates down to a floor,
+then the last-run token leaves whole. The tooltip and the accessible name
+always carry the whole sentence: the reason in words, the activity, and the
+next start. Sources: the last run is `get_persona_summaries` (outcome and
+`lastRunAt`), the run and its queue come from the live process events, and the
+next start is `list_cron_agents`, now read while the Monitor is open
+(`entry-e/useMonitorSchedules.ts`: once for the panel, on open, every 30 s
+while the window is visible, and when the scheduler fires overdue triggers; a
+failed read is logged, not toasted). A switched-off trigger, an off persona and
+a peer's agent have no next start; a value nobody reported is absent, never
+guessed. A peer's line keeps its device glyph and on/off switch and shows only
+its state word, since the device snapshot carries no last run or schedule.
+Harness: `monitor/persona-cards` (`&narrow=1` pins the bays to the 250px
+column floor) and `monitor/persona-cards/peer`; shots in
+`docs/design/mandate-lanes/wp11-shots/`.
+
+**Every bay row in the same hand (WP11 C, 2026-10-16).** Sessions, a paired
+device's sessions and the compact queue rungs left the pile tiles too, so a
+bay of personas and sessions is one list. Every row is the same 36px `.ae-line`
+built from one shared token row (`entry-e/LineParts.tsx`, which `PersonaTail`
+also uses): a face in the persona face's 24px frame, the bold name, glyph and
+time tokens that give way by priority and never mid-token, and at the right
+edge the figure and the lamp. A session line (`SessionLine.tsx`, model
+`sessionTailModel.ts`; Classic's bays and tray, the Queue view's Running and
+Parked lanes) shows its origin glyph, the title, the state glyph, then the
+state in words (not while it runs) and the project (board-wide lists only),
+which leave first in a narrow column; the session's age is the right-edge
+figure (the old foot bar is gone). Its lamp is `sessionLamp` (`tone.ts`),
+lit in the edge's tone whenever the edge is lit: awaiting input or stale lights
+amber, a failed exit is critical red, a clean exit or expired row is greyed.
+The recap floats over the right edge on hover or focus, a capped holder keeps
+the amber over-cap edge, and a running line keeps the ambient sweep as a faint
+wash under the same motion gates. A device's session (`RemoteLine.tsx`) is the
+same line with a terminal face and the device glyph at the right edge, drawing
+only what the device's snapshot carries (title, state, project, age). A compact
+queue rung (`QueueRung.tsx`, the Queued lane and a peer bay's queue) keeps its
+grip and rank, then the origin face, the title, an hourglass with the estimated
+start in the persona line's clock, the amber not-before time, and the lamp; the
+full Runway rung stays a ladder on purpose. Cold bays and lanes draw line
+ghosts in the same geometry. Harness tape with sessions sent to a device:
+`scripts/style/page-harness/bayRowsTape.mjs`; shots `wp11-shots/c-*`.
+
+**Bays polish (P1, 2026-10-16).** After the owner's live look, five fixes to
+the bay rows. (1) A row name is the body weight every Monitor list row uses
+(`LineParts.tsx` `ROW_NAME`, `typo-body`, 400) and its tokens the caption role's
+own ink, so a bay reads bay name (bold) > row name > tokens. (2) Fleet rows (a
+session, a device's session, a queue rung) stand on a fine dot ground
+(`.ae-line.is-fleet`, set by `sessionLineClass`); persona rows stay plain. Dots
+rather than a hatch, because a hatch already means "off" on this panel.
+(3) A session an App Master dispatched joins its project's bay instead of the
+Ungrouped tray (`grid/sessionHome.ts`). Its cwd is a worktree of its own, so the
+cwd rule cannot place it; two other facts on `FleetSession` can: a headless
+`/appmaster` builder carries the label `fleet-door:app_master:cli-master:<slug>`,
+where `<slug>` is the project root's last path segment slugified (the skill's
+own `slugOf`, which a test reads from `.claude/skills/appmaster/lib/contract.mjs`),
+and a worker of the in-app App Master carries the `personaId` of the persona
+that dispatched it, whose `home_team_id` is its bay (`useBoardModel` applies
+this one). A slug two projects on different teams share names neither, and a
+session nothing names stays in the tray. (4) A row that needs you has no
+background wash: the amber edge, need glyph and lamp say it. Critical keeps
+its stronger red wash and wider edge, so it stays the one alarm in a bay.
+(5) A row that runs AND needs you keeps the run frame: the edge, lamp, run
+glyph and sweep are the run tone and only the need glyph and its count are
+amber. One rule decides all of this for persona and session rows alike
+(`tone.ts` `lineSignal`), and a running persona row now sweeps as a running
+session row always did. Harness tape `bayPolishTape.mjs` (a running persona that
+needs you, an App Master's two CLI builders shaped like the live FireTV rows);
+shots `docs/design/mandate-lanes/polish-shots/bays-*`.
 
 ## Card context menus
 

@@ -47,6 +47,27 @@ const OCR_SYSTEM_PROMPT: &str =
 /// pre-split or run through a native PDF text path.
 const MAX_OCR_FILE_BYTES: u64 = 20 * 1024 * 1024;
 
+/// Deadline for one Claude CLI OCR run. The renderer gives up at 300 s
+/// (`ocrDriveFileClaude` in src/api/drive/fs.ts); this must stay below that so
+/// the backend never saves a document the drawer already reported as failed,
+/// and never leaves the CLI running on the user's plan after the UI moved on.
+const CLAUDE_OCR_DEADLINE: std::time::Duration = std::time::Duration::from_secs(280);
+
+/// Await `fut` for at most `deadline`; an expiry is an `AppError::Internal`
+/// naming the limit. The future is dropped on expiry, and the OCR child is
+/// spawned with `kill_on_drop`, so dropping it ends the process.
+async fn within_deadline<T>(
+    deadline: std::time::Duration,
+    fut: impl std::future::Future<Output = T>,
+) -> Result<T, AppError> {
+    tokio::time::timeout(deadline, fut).await.map_err(|_| {
+        AppError::Internal(format!(
+            "Claude Code OCR timed out after {} s and was stopped",
+            deadline.as_secs()
+        ))
+    })
+}
+
 /// Registry of in-flight OCR cancellation tokens, keyed by client-supplied
 /// `operation_id`. Each entry pairs the `CancellationToken` with a process-
 /// unique registration handle so that two runs sharing an `operation_id`
@@ -699,6 +720,7 @@ async fn run_claude_ocr(
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
+            .kill_on_drop(true)
             .creation_flags(0x08000000)
             .spawn()
             .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn Claude Code: {e}")))?;
@@ -709,6 +731,7 @@ async fn run_claude_ocr(
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
+            .kill_on_drop(true)
             .spawn()
             .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn Claude Code: {e}")))?;
 
@@ -721,9 +744,8 @@ async fn run_claude_ocr(
             drop(stdin); // Close stdin so Claude starts processing
         }
 
-        child
-            .wait_with_output()
-            .await
+        within_deadline(CLAUDE_OCR_DEADLINE, child.wait_with_output())
+            .await?
             .map_err(|e| AppError::Internal(format!("Failed to read Claude output: {e}")))?
     };
 
@@ -786,6 +808,25 @@ async fn run_claude_ocr(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The renderer's IPC timeout for `ocrDriveFileClaude` (src/api/drive/fs.ts).
+    const RENDERER_OCR_TIMEOUT_MS: u64 = 300_000;
+
+    #[test]
+    fn claude_ocr_deadline_expires_before_the_renderer_gives_up() {
+        assert!(CLAUDE_OCR_DEADLINE.as_millis() < u128::from(RENDERER_OCR_TIMEOUT_MS));
+    }
+
+    #[tokio::test]
+    async fn a_run_past_its_deadline_is_an_error_not_a_wait() {
+        let err = within_deadline(
+            std::time::Duration::from_millis(20),
+            std::future::pending::<()>(),
+        )
+        .await
+        .expect_err("a pending run must hit the deadline");
+        assert!(err.to_string().contains("timed out"), "{err}");
+    }
 
     fn parse(json: &str) -> Result<ExtractedText, String> {
         extract_text(&serde_json::from_str::<GeminiResponse>(json).expect("fixture parses"))

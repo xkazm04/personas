@@ -1,7 +1,7 @@
 /** PersonaCoreBody — the configurator's content without any host chrome: the
  *  Codex (or its ghost while it loads) over a footer with Reset and Done.
- *  Hosted by `PersonaCoreModal` and by the Sheet · Cinema loupe layer, which
- *  gives it the whole stage (`fill`) instead of a modal's fixed width. */
+ *  Hosted by the Sheet · Cinema loupe layer (`CoreLayer`), which gives it the
+ *  whole stage (`fill`). */
 import { Suspense } from "react";
 import { RotateCcw } from "lucide-react";
 import { ErrorBoundary } from "@/features/shared/components/feedback/ErrorBoundary";

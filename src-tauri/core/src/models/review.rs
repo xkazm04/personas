@@ -160,14 +160,6 @@ pub struct LearnedMemoryRef {
     pub persona_id: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
-pub struct UpdateManualReviewInput {
-    pub status: Option<ManualReviewStatus>,
-    pub reviewer_notes: Option<String>,
-    pub resolved_at: Option<String>,
-}
-
 // ============================================================================
 // Review Messages (conversational thread per review)
 // ============================================================================
@@ -394,4 +386,32 @@ pub struct PersonaDesignPattern {
     pub last_validated_at: Option<String>,
     pub is_active: bool,
     pub created_at: String,
+}
+
+#[cfg(test)]
+mod manual_review_status_tests {
+    use super::ManualReviewStatus;
+
+    /// `from_db` falls back to `Pending` for an unknown token, so a drift
+    /// between `as_str` and `from_db` would fail nowhere: an approved review
+    /// would silently read back as pending. This pins the round trip.
+    #[test]
+    fn status_tokens_agree_with_serde_and_round_trip() {
+        for v in [
+            ManualReviewStatus::Pending,
+            ManualReviewStatus::Approved,
+            ManualReviewStatus::Rejected,
+            ManualReviewStatus::Resolved,
+        ] {
+            match v {
+                ManualReviewStatus::Pending
+                | ManualReviewStatus::Approved
+                | ManualReviewStatus::Rejected
+                | ManualReviewStatus::Resolved => {}
+            }
+            let wire = serde_json::to_value(v).unwrap();
+            assert_eq!(wire.as_str(), Some(v.as_str()), "{v:?}");
+            assert_eq!(ManualReviewStatus::from_db(v.as_str()), v);
+        }
+    }
 }

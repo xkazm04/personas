@@ -103,10 +103,36 @@ pub fn mark_run_now(pool: &DbPool, persona_id: &str) -> Result<(), AppError> {
 
 fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PersonaCurationSchedule> {
     Ok(PersonaCurationSchedule {
-        persona_id: row.get(0)?,
-        cron_expr: row.get(1)?,
-        last_curation_at: row.get(2)?,
-        created_at: row.get(3)?,
-        updated_at: row.get(4)?,
+        persona_id: row.get("persona_id")?,
+        cron_expr: row.get("cron_expr")?,
+        last_curation_at: row.get("last_curation_at")?,
+        created_at: row.get("created_at")?,
+        updated_at: row.get("updated_at")?,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::init_test_db;
+
+    /// `upsert` reads its row back through `map_row`, by name.
+    #[test]
+    fn upsert_and_list_map_every_column_by_name() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        pool.get()?.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES ('cs_p', 'Echo', 'sp', datetime('now'), datetime('now'))",
+            [],
+        )?;
+        let row = upsert(&pool, "cs_p", "0 3 * * *")?;
+        assert_eq!(
+            (row.persona_id.as_str(), row.cron_expr.as_str()),
+            ("cs_p", "0 3 * * *")
+        );
+        assert!(row.last_curation_at.is_none());
+        assert!(!row.created_at.is_empty() && !row.updated_at.is_empty());
+        assert_eq!(list(&pool)?.len(), 1);
+        Ok(())
+    }
 }

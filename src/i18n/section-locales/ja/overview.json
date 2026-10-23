@@ -63,7 +63,11 @@
     "unknown": "不明",
     "value_delivered_count": "価値提供数",
     "value_delivered_rate": "価値提供率",
-    "value_section_title": "ビジネス価値"
+    "value_section_title": "ビジネス価値",
+    "prev_p50": "前回 p50",
+    "prev_p95": "前回 p95",
+    "range_last_days_one": "過去 1 日",
+    "range_last_days_other": "過去 {count} 日間"
   },
   "analytics_dashboard": {
     "active_count": "{count}件アクティブ",
@@ -640,7 +644,13 @@
     "ask_athena_prompt": "エージェントのフリート最適化の提案を確認しています:「{title}」。{description} 推奨アクション:{action}。{focus}",
     "open_lab": "ラボを開く",
     "open_lab_hint": "Labで{persona}の代替モデルをテストする",
-    "title": "フリート最適化"
+    "title": "フリート最適化",
+    "label_action": "アクション",
+    "label_agent": "エージェント",
+    "label_impact": "影響",
+    "severity_critical": "緊急",
+    "severity_info": "インサイト",
+    "severity_warning": "提案"
   },
   "focused_decision": {
     "accept": "受諾",
@@ -898,7 +908,6 @@
     "bulk_acknowledge_count": "{count}件を確認",
     "bulk_clear_selection": "クリア",
     "bulk_resolve_count": "{count}件を解決",
-    "col_days": "日数",
     "col_incident": "インシデント",
     "detail_label_acknowledged": "確認日時",
     "detail_label_created": "作成日時",
@@ -926,10 +935,8 @@
     "filter_source_all": "すべてのソース",
     "filter_source_label": "ソース",
     "filter_status_acknowledged": "確認済み",
-    "filter_status_all": "すべて",
     "filter_status_dismissed": "却下済み",
     "filter_status_in_progress": "対応中",
-    "filter_status_label": "ステータス",
     "filter_status_open": "未対応",
     "filter_status_resolved": "解決済み",
     "filters_active_aria": "{count}件のフィルターが有効",
@@ -939,7 +946,6 @@
     "group_by_none": "なし",
     "group_by_severity": "重大度",
     "group_by_source": "ソース",
-    "group_no_persona": "エージェントなし",
     "groups_collapse_all": "すべて折りたたむ",
     "groups_expand_all": "すべて展開",
     "guidance_alert": "アラートルールが発動しました。しきい値を超えた指標を確認してください。",
@@ -996,7 +1002,6 @@
     "noc_diagnosis_title": "根本原因",
     "noc_evidence_label": "証拠",
     "noc_handled_by": "Athena が対応",
-    "noc_handled_continued": "自動再開",
     "noc_handled_empty": "まだ自律的に対応したものはありません。インシデントを安全に自分で修正できたら、ここに表示されます。",
     "noc_handled_title": "自律的に対応済み",
     "noc_no_diagnosis": "まだ診断はありません。このインシデントを調べることができます。",
@@ -1025,7 +1030,6 @@
     "source_policy": "ポリシー",
     "source_provider": "プロバイダー",
     "source_tool": "ツール",
-    "stale_label": "滞留",
     "subtitle": "アラートとエラーを横断的に集約する受信トレイ",
     "title": "インシデント",
     "urgency_critical": "今すぐ対応が必要",
@@ -1097,7 +1101,8 @@
     "stat_total_runs": "総実行数",
     "subtitle": "すべてのエージェントのパフォーマンスランキング",
     "this_agent": "このエージェント",
-    "title": "エージェントリーダーボード"
+    "title": "エージェントリーダーボード",
+    "sort_hint": "指標をクリックして並べ替え"
   },
   "llm_spend": {
     "by_source": "種別別コスト",
@@ -1156,7 +1161,6 @@
     "curation_schedule_save": "スケジュールを保存",
     "curation_schedule_title": "メモリーキュレーションのスケジュール設定",
     "delete_all": "すべて削除",
-    "delete_all_confirm_body": "すべての{count}件の記憶が完全に削除されます。この操作は取り消せません。",
     "delete_all_confirm_cta": "すべて削除",
     "delete_all_confirm_title": "すべての記憶を削除しますか？",
     "form": {
@@ -1182,13 +1186,21 @@
     "reflect_pick_persona": "エージェントのメモリをリフレクション",
     "reflecting": "リフレクション中…",
     "search_placeholder": "メモリーを検索…",
-    "title": "メモリ"
+    "title": "メモリ",
+    "delete_all_confirm_body_all_agents": "現在のフィルターの表示に関係なく、すべてのエージェントの {count} 件のメモリをすべて完全に削除します。この操作は元に戻せません。"
   },
   "memory_actions": {
     "dismiss_suggestion": "提案を却下",
     "memory_insights": "メモリインサイト",
     "suggestions": "{count}件の提案",
-    "suggestions_one": "{count}件の提案"
+    "suggestions_one": "{count}件の提案",
+    "kind_throttle": "スロットル ルール",
+    "kind_schedule": "スケジュール調整",
+    "kind_alert": "アラート ルール",
+    "kind_config": "設定変更",
+    "kind_routing": "ルーティング ルール",
+    "rules_restored_from_session": "保存済みのメモリ アクション ルールを読み取れなかったため、このセッションから復元しました。",
+    "rules_unreadable": "保存済みのメモリ アクション ルールを読み取れませんでした。再作成が必要な場合があります。"
   },
   "memory_card": {
     "cancel": "キャンセル",
@@ -1218,7 +1230,14 @@
     "resolved_toast": "矛盾を解消しました",
     "retire_blocked_core_toast": "コア（固定）の記憶はアーカイブできません — この矛盾は手動で解消してください",
     "scanned_scope": "最新 {count} 件のメモリ内",
-    "vs": "対"
+    "vs": "対",
+    "kind_duplicate": "重複",
+    "kind_contradiction": "矛盾",
+    "kind_superseded": "置き換え済み",
+    "reason_contradiction": "同じトピックに矛盾する可能性のある指示があります(トピックの重なり {pct}%)",
+    "reason_duplicate_cross_agent": "異なるエージェント間でほぼ重複する記憶です(類似度 {pct}%)",
+    "reason_duplicate_same_agent": "同じエージェント内でほぼ重複する記憶です(類似度 {pct}%)",
+    "reason_superseded": "新しい記憶が同じトピックの古い記憶に取って代わる可能性があります(重なり {pct}%)"
   },
   "memory_detail": {
     "category_label": "カテゴリ",
@@ -1366,7 +1385,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": "、設定からAPIキーをコピーしてください。このキーはローカルに保存され、すべてのエージェントで共有されます。",
-    "sign_up_free_at": "無料で登録"
+    "sign_up_free_at": "無料で登録",
+    "api_key_label": "API キー",
+    "litellm_base_url_label": "プロキシのベース URL",
+    "litellm_master_key_label": "マスターキー",
+    "ollama_key_placeholder": "ollama.com/settings のキーを貼り付け"
   },
   "predictive_alerts_extra": {
     "all_nominal": "すべて正常",
@@ -1887,7 +1910,9 @@
     "p95_latency": "P95レイテンシ",
     "runs": "実行",
     "streak": "連続成功",
-    "successful": "成功"
+    "successful": "成功",
+    "daily_trend_hint_one": "{date}: {rate}（{count} 回の実行）",
+    "daily_trend_hint_other": "{date}: {rate}（{count} 回の実行）"
   },
   "sla": {
     "active_agents": "{count}件の有効なエージェント",
@@ -2106,5 +2131,15 @@
   "dc_pending_lead": "保留中のレビューはそれぞれ、詳細な内容とほかの判断と同じキー操作で、ディシジョンセンターに開きます。",
   "dc_pending_list_aria": "保留中のレビュー",
   "dc_select_review": "レビューを選択",
-  "dc_col_decision": "判断"
+  "dc_col_decision": "判断",
+  "ai_healing_overlay": {
+    "collapse": "折りたたむ",
+    "expand": "展開",
+    "status_complete": "完了",
+    "status_failed": "失敗",
+    "status_in_progress": "進行中",
+    "step_applying": "修正を適用中",
+    "step_completed": "完了",
+    "step_diagnosing": "診断中"
+  }
 }

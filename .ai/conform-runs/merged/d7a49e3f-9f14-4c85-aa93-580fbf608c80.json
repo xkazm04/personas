@@ -1,0 +1,62 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d7a49e3f-9f14-4c85-aa93-580fbf608c80",
+  "subject": "mcp-tools",
+  "evaluatedAt": "2026-10-16T17:06:42Z",
+  "pairs": [
+    {
+      "context": "320d2cea-9761-4233-97c1-ee2eaf4d6c17",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+      "evaluatedRevision": 34,
+      "evidence": "src-tauri/db/src/repos/execution/tool_usage.rs:59 persona_tool_usage stores only tool_name (no tool id column) and :114 groups the monthly KP connector totals by it, so renaming a tool definition splits its usage history into a death and a birth even though the caller holds tool.id (src-tauri/src/engine/tool_runner.rs:413)",
+      "techniques": [
+        {"technique": "tool-identity-vs-tool-name", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/execution/tool_usage.rs:65 record() takes tool_name only; :114 and :167 GROUP BY tool_name feed get_monthly_totals_by_tool (KP reporter) and the usage summary; the name is renamable via src-tauri/db/src/repos/resources/tools.rs:171"},
+        {"technique": "transport-selection", "verdict": "not-applicable", "evidence": "src-tauri/db/src/repos/execution/tool_usage.rs:1 a SQLite repo module; no transport, server or client lives in this context"},
+        {"technique": "server-composition", "verdict": "not-applicable", "evidence": "src-tauri/db/src/repos/execution/mod.rs:1 repository modules only; no tool registry or dispatch door in this context"}
+      ],
+      "registryProposal": "tool-identity-vs-tool-name is written from the publisher's side. Here the consumer persists usage for tools from third-party MCP servers that publish no identifier at all (src-tauri/src/engine/mcp_tools.rs:941 records the bare wire name). The technique should say what a consumer stores when the wire carries no identifier: mint a local identity at first sight, keyed on the registration plus the name, and record renames as events. The repo's own attempt at this, mcp:{credential_id}:{tool_name}, is still a name."
+    },
+    {
+      "context": "f71df7d8-fb1c-4151-bba3-00fe164a537b",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+      "evaluatedRevision": 34,
+      "evidence": "src-tauri/db/src/repos/resources/mcp_gateways.rs:63 inserts a gateway member whose display_name becomes the '<name>::' tool prefix with no per-gateway uniqueness (the only UNIQUE is (gateway, member)), so two members named alike collide and src-tauri/src/engine/mcp_tools.rs:837 routes every call to whichever matches first, under that member's credential",
+      "techniques": [
+        {"technique": "client-integration", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/resources/mcp_gateways.rs:48 add_member accepts a duplicate display_name in the same gateway; collision management is a convention in a doc comment (src/api/credentials/mcpGateways.ts:44 'Keep short and unique') rather than a constraint, and the shadowed member's tools become unreachable or misrouted"},
+        {"technique": "tool-identity-vs-tool-name", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/resources/tool_audit_log.rs:143 the tool performance summary groups by tool_name although every row carries tool_id; the name is editable via src-tauri/db/src/repos/resources/tools.rs:171, so a rename splits the audit series"},
+        {"technique": "transport-selection", "verdict": "not-applicable", "evidence": "src-tauri/db/src/repos/resources/mod.rs:1 repository modules only; transport is chosen in the engine, outside this context"}
+      ]
+    },
+    {
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+      "evaluatedRevision": 34,
+      "evidence": "src/features/vault/sub_catalog/components/desktop/McpServerCard.tsx:24 the Claude Desktop MCP import shows the spawn command CSS-truncated and never its args, and one click (:39) registers it as a stdio server Personas will execute, which is a code-execution consent about a program the user cannot fully see",
+      "techniques": [
+        {"technique": "client-integration", "verdict": "deviation", "evidence": "src/features/vault/sub_catalog/components/desktop/McpServerCard.tsx:24 renders server.command with 'truncate' and omits server.args; config writing is code execution and requires the exact untruncated command with arguments before the write"},
+        {"technique": "untrusted-result-handling", "verdict": "not-applicable", "evidence": "src/features/vault/sub_catalog/components/desktop/DiscoveryMcpList.tsx:56 lists configured servers only; no tool result is consumed in this context"}
+      ]
+    }
+  ],
+  "declined": [
+    {"subject": "mcp-tools", "context": "895b4bb2-16fd-4e8e-aae8-11315fe6436b", "reason": "api-agents is 33 thin invokeWithTimeout wrappers (src/api/agents/mcpTools.ts, src/api/credentials/mcpGateways.ts). Every applicable technique is realized or broken in the Rust side, so a verdict here would duplicate a backend verdict; a conformant one would need more than 11 anchors the wrappers cannot supply. Left unknown."},
+    {"subject": "mcp-tools", "context": "3f38546e-e970-4837-97f7-f0504aa32daf", "reason": "budget: a strong unknown left for the next run"},
+    {"subject": "mcp-tools", "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049", "reason": "budget: a strong unknown left for the next run"},
+    {"subject": "mcp-tools", "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df", "reason": "budget: a strong unknown left for the next run"},
+    {"subject": "mcp-tools", "context": "7159d27d-86c2-43be-a83f-8b50c4c816be", "reason": "budget: a strong unknown left for the next run"}
+  ],
+  "consults": [
+    {"ts": "2026-10-16T17:06:42Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["tool-identity-vs-tool-name", "transport-selection", "server-composition"], "deviations": 1},
+    {"ts": "2026-10-16T17:06:42Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["client-integration", "tool-identity-vs-tool-name", "transport-selection"], "deviations": 2},
+    {"ts": "2026-10-16T17:06:42Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["client-integration", "untrusted-result-handling"], "deviations": 1}
+  ]
+}

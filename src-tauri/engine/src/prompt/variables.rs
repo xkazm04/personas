@@ -4,6 +4,10 @@ use personas_db::models::Persona;
 
 use super::runtime_safety::{sanitize_runtime_variable, MAX_RUNTIME_VAR_LENGTH};
 
+/// `{{key}}`, compiled once per process (it used to be compiled on every call).
+static PLACEHOLDER_RE: std::sync::LazyLock<regex::Regex> =
+    std::sync::LazyLock::new(|| regex::Regex::new(r"\{\{([^}]+)\}\}").expect("static regex"));
+
 /// Replace {{variable}} placeholders in a string with values from input_data or magic variables.
 ///
 /// Magic variables (now, today, persona_id, etc.) are trusted internal values.
@@ -15,6 +19,14 @@ pub fn replace_variables(
     input_data: Option<&serde_json::Value>,
 ) -> String {
     use chrono::Datelike;
+
+    // Most persona fields carry no placeholder at all. Everything below -
+    // building the variable maps and sanitising EVERY input value - exists
+    // only to answer a placeholder, so a text without one is returned as is
+    // (no substitution happens and nothing is logged either way).
+    if !text.contains("{{") {
+        return text.to_string();
+    }
     let now = chrono::Utc::now();
 
     // Define magic variables (trusted -- skip sanitization)
@@ -88,7 +100,7 @@ pub fn replace_variables(
     }
 
     // Regex to find {{variable}}
-    let re = regex::Regex::new(r"\{\{([^}]+)\}\}").unwrap();
+    let re = &*PLACEHOLDER_RE;
     let mut unresolved: Vec<String> = Vec::new();
     let mut cut: Vec<String> = Vec::new();
     let out = re

@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { AlertCircle, ArrowLeft, ChevronRight, NotepadText } from 'lucide-react';
+import { AlertCircle, Archive, ArrowLeft, ChevronRight, NotepadText } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
@@ -9,6 +9,7 @@ import { NOTEPAD_LAYER_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeyboa
 import { useSystemStore } from '@/stores/systemStore';
 import { listProjects } from '@/api/devTools/devTools';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { lazyRetry } from '@/lib/lazyRetry';
 import type { DevNote } from '@/lib/bindings/DevNote';
@@ -478,6 +479,18 @@ export default function NotepadOverlayHost() {
         </div>
 
         <div className="flex items-center gap-2">
+        {/* The archive drawer's only door. It used to open from the note tab
+            strip, deleted in 050e58866f; without this an archived note could
+            not be restored and a shipped note could not be read. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setArchiveOpen(true)}
+          data-testid="notepad-open-archive"
+        >
+          <Archive className="w-3.5 h-3.5" aria-hidden />
+          {t.notepad.archived_open}
+        </Button>
         {view === 'editor' && active && (
           <NoteThreadButton
             noteId={active.id}

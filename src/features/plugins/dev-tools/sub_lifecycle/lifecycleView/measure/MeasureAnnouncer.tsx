@@ -1,8 +1,8 @@
 // The Measure's live region: always mounted (so assistive tech hears the
 // first sentence), visually hidden, polite. It says the start, each command
 // as it finishes, a cancel on its way, and the summary (`announce`). Mounted
-// under the time cursor (`LifecycleBody`), so it hears a Measure from either
-// layer and can read the ended Measure's own runs.
+// under the time cursor (`LifecyclePage`), so it hears a Measure from every
+// plane and can read the ended Measure's own runs.
 import { useEffect, useRef, useState } from 'react';
 
 import { useTranslation } from '@/i18n/useTranslation';

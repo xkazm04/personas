@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Plus, Trash2, Star, Check, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useTranslation } from '@/i18n/useTranslation';
@@ -136,7 +137,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
               type="button"
               aria-label={t.common.delete}
               onClick={(e) => { e.stopPropagation(); setPendingDelete({ id: q.id, title: q.title }); }}
-              className="p-0.5 text-foreground opacity-0 group-hover:opacity-100 hover:text-red-400/60 transition-all"
+              className="p-0.5 text-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:text-red-400/60 transition-all"
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -144,12 +145,7 @@ export function QuerySidebar({ credentialId, language, selectedId, onSelect }: Q
         ))}
 
         {queries.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 gap-2">
-            <div className="w-10 h-10 rounded-modal bg-secondary/30 border border-primary/10 flex items-center justify-center">
-              <Plus className="w-4 h-4 text-foreground" />
-            </div>
-            <p className="typo-body text-foreground">{db.no_saved_queries}</p>
-          </div>
+          <ScenarioEmptyState art="report" size="sm" title={db.no_saved_queries} />
         )}
       </div>
 

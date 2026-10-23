@@ -73,7 +73,10 @@ export function CopyButton({
   const btn = (
     <button
       type="button"
-      title={resolvedTooltip ?? undefined}
+      // No native `title`: the shared Tooltip below already shows this text,
+      // and a title on the button painted the browser's own tooltip on top of
+      // it. The icon-only form is named by aria-label instead.
+      aria-label={hasLabel ? undefined : resolvedTooltip}
       onClick={handleClick}
       disabled={disabled}
       className={[

@@ -1,0 +1,83 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d66ec3a5-3bfa-4146-bfbc-92ed9937b886",
+ "subject": "issuance-policy-ladder",
+ "evaluatedAt": "2026-10-22T02:11:43.664152+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "lib-credentials",
+   "subject": "issuance-policy-ladder",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/credentials/connectorRoles.ts:69 The context groups interchangeable connectors rather than shaping issued authority, and searches found no issuer, issuance, issuing, or sign_verbatim occurrences in its directory or builtin seeds.",
+   "techniques": [
+    {
+     "technique": "bounds-as-modes",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/credentials/remediationBus.ts:70 This bounds local remediation deduplication, not an artifact's validity negotiated between requester, role, and issuer."
+    },
+    {
+     "technique": "explicit-forbid-beats-allow-any",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/credentials/connectorAudiences.ts:194 Audience membership filters connector classifications; it does not compose issuance permissions and prohibitions."
+    },
+    {
+     "technique": "float-references-resolve-at-use",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/credentials/connectorRoles.ts:257 The lookup resolves a connector's functional grouping, not an issuing key or issuance-policy reference."
+    },
+    {
+     "technique": "program-role-returns-the-artifact",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/credentials/credentialRecipeRegistry.ts:102 Recipes persist connector credential-field schemas; they are not executable issuance roles."
+    },
+    {
+     "technique": "require-one-constraint",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/credentials/connectorRoles.ts:64 These role records hold catalog labels and connector members rather than constraints on issued authority."
+    },
+    {
+     "technique": "stamped-instants-name-their-clock",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/credentials/remediationBus.ts:136 The timestamp records a remediation event, not a validity or creation stamp on an issued authority artifact."
+    },
+    {
+     "technique": "verbatim-is-a-separate-privilege",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/credentials/catalogApiEndpoints.ts:17 The endpoint helper constructs API Explorer metadata and exposes no unconstrained signing operation."
+    }
+   ],
+   "absenceTerms": [
+    "issuer",
+    "issuance",
+    "issuing",
+    "sign_verbatim"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-22T02:11:43.664152+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "issuance-policy-ladder"
+   ],
+   "techniques": [
+    "bounds-as-modes",
+    "explicit-forbid-beats-allow-any",
+    "float-references-resolve-at-use",
+    "program-role-returns-the-artifact",
+    "require-one-constraint",
+    "stamped-instants-name-their-clock",
+    "verbatim-is-a-separate-privilege"
+   ],
+   "deviations": 0,
+   "context": "lib-credentials",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

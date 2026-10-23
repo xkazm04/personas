@@ -166,8 +166,10 @@ export default function EngineSettings() {
       />
 
       <ContentBody centered>
-        <div className="max-w-5xl mx-auto space-y-4">
-          <SettingsScaffold sections={sections} navAriaLabel={s.title} />
+        <div className="space-y-4">
+          {/* No quick-nav rail: the capability map is the reason to visit, and
+              its provider columns need the full content width to stay legible. */}
+          <SettingsScaffold sections={sections} navAriaLabel={s.title} showNav={false} maxWidth="max-w-none" />
 
           {/* Protocol warning */}
           <div className="rounded-modal border border-amber-500/20 bg-amber-500/5 p-4 flex items-start gap-3">

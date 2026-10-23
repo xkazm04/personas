@@ -41,7 +41,12 @@ let totalRecords = 0;
 let totalTimeouts = 0;
 let totalErrors = 0;
 
-export function recordIpcCall(record: IpcCallRecord): void {
+export function recordIpcCall(input: IpcCallRecord): void {
+  // Reads copy the array, but a copied array still shares its row objects with
+  // the ring, so a caller writing a field would rewrite what the next reader
+  // computes. Freeze a private copy at append: the ring holds values, and a read
+  // row can be sorted or kept but never written back.
+  const record = Object.freeze({ ...input });
   if (ring.length < RING_SIZE) {
     ring.push(record);
   } else {

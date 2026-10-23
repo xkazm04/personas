@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { obsidianBrainGetConfig } from '@/api/obsidianBrain';
 import { useSystemStore } from '@/stores/systemStore';
+import { useVaultStore } from '@/stores/vaultStore';
 import { silentCatch } from '@/lib/silentCatch';
 
 // One-shot per app run — the persisted config only changes through the Setup
@@ -26,7 +27,8 @@ const RETRY_DELAYS_MS = [1_000, 4_000];
  * "No Vault Connected" for whole sessions while the choice sat in the DB.
  *
  * Mounted in {@link BackgroundServices} so it runs app-wide (the connector
- * gating in useVisibleConnectorDefinitions lives outside the plugin page).
+ * gating in the vault store's fetchConnectorDefinitions lives outside the
+ * plugin page).
  */
 export function useObsidianVaultRehydration() {
   useEffect(() => {
@@ -45,6 +47,12 @@ export function useObsidianVaultRehydration() {
           store.setObsidianVaultPath(config.vaultPath);
           store.setObsidianVaultName(config.vaultName);
           store.setObsidianConnected(true);
+          // fetchConnectorDefinitions drops `requires_plugin: "obsidian-brain"`
+          // connectors while no vault is connected, and its callers only fetch
+          // when the list is empty. A list fetched before this landed would
+          // hide obsidian_memory for the whole session, so refresh it here.
+          const vault = useVaultStore.getState();
+          if (vault.connectorDefinitions.length > 0) void vault.fetchConnectorDefinitions();
         })
         .catch((err: unknown) => {
           if (cancelled) return;

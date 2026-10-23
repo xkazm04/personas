@@ -1,0 +1,141 @@
+{
+ "schema": "conform-run/1",
+ "worker": "984e7801-5dad-4d0c-8bce-4121b05bc61f",
+ "subject": "untrusted-extension-host",
+ "evaluatedAt": "2026-10-16T22:40:48.315173+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "vault-database-shell",
+   "subject": "untrusted-extension-host",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/vault/sub_databases/introspectionQueries.ts:9 This module selects built-in database integrations, and searches found no plugin, sandbox, or manifest references in the context directory, supporting exclusion of an administrator-installed extension host here.",
+   "techniques": [
+    {
+     "technique": "declared-schema-extension-storage",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 The explorer executes the user's query against a selected credential; this is not persistence allocated to an installed extension."
+    },
+    {
+     "technique": "safe-mode-registration",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_databases/hooks/useQuerySafeMode.ts:43 This safe mode requests confirmation for database mutations; it is not a boot mode for recovering from extension failures."
+    }
+   ],
+   "absenceTerms": [
+    "plugin",
+    "sandbox",
+    "manifest"
+   ]
+  },
+  {
+   "context": "agents-deployment",
+   "subject": "untrusted-extension-host",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_deployment/components/cloud/CloudDeploymentsPanel.tsx:88 The deployment action submits an existing persona and budget, and searches found no plugin, sandbox, or manifest references in the context directory, supporting exclusion of an extension installation or hosting lifecycle here.",
+   "techniques": [
+    {
+     "technique": "pluggable-isolation-runner",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentHealth.ts:72 This hook reads execution telemetry; it does not instantiate, load, limit, or tear down extension runtimes."
+    },
+    {
+     "technique": "two-tier-extension-format",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_deployment/components/UnifiedDeploymentDashboard.tsx:103 The dashboard classifies persona deployment destinations, not extension formats or execution privilege tiers."
+    }
+   ],
+   "absenceTerms": [
+    "plugin",
+    "sandbox",
+    "manifest"
+   ]
+  },
+  {
+   "context": "agents-use-cases",
+   "subject": "untrusted-extension-host",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:63 The supplied files configure persona settings and declarative phrase assertions, and searches found no plugin, sandbox, or manifest references in their directory, supporting exclusion of an untrusted extension host here.",
+   "techniques": [
+    {
+     "technique": "canonicalizable-privilege-declaration",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:29 The closed choice selects a host-defined assertion operation, not an extension's privilege declaration."
+    },
+    {
+     "technique": "per-callback-failure-policy",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:31 This configures the response to a built-in output assertion; it does not register foreign callbacks."
+    }
+   ],
+   "absenceTerms": [
+    "plugin",
+    "sandbox",
+    "manifest"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "untrusted-extension-host",
+   "context": "api-agents",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "untrusted-extension-host",
+   "context": "api-system",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-16T22:40:48.315173+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "untrusted-extension-host"
+   ],
+   "techniques": [
+    "declared-schema-extension-storage",
+    "safe-mode-registration"
+   ],
+   "deviations": 0,
+   "context": "vault-database-shell",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-16T22:40:48.315173+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "untrusted-extension-host"
+   ],
+   "techniques": [
+    "pluggable-isolation-runner",
+    "two-tier-extension-format"
+   ],
+   "deviations": 0,
+   "context": "agents-deployment",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-16T22:40:48.315173+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "untrusted-extension-host"
+   ],
+   "techniques": [
+    "canonicalizable-privilege-declaration",
+    "per-callback-failure-policy"
+   ],
+   "deviations": 0,
+   "context": "agents-use-cases",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

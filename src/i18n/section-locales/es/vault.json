@@ -13,7 +13,11 @@
     "personas_one": "{count} persona",
     "personas_other": "{count} personas",
     "show_all": "Mostrar todas las {count} entradas",
-    "total_accesses": "{count} en total"
+    "total_accesses": "{count} en total",
+    "by_persona": "por {name}",
+    "entries_one": "{count} entrada",
+    "entries_other": "{count} entradas",
+    "page_of": "Página {page}/{total}"
   },
   "auto_cred_extra": {
     "all_fields_captured": "Todos los {count} campos capturados",
@@ -102,7 +106,19 @@
     "test_to_save": "Prueba la conexión para habilitar el guardado",
     "universal_auto_setup": "Configuración automática universal",
     "universal_auto_setup_hint": "Proporciona una URL y descripción, y la IA navegará el sitio para descubrir y crear credenciales API automáticamente.",
-    "what_do_you_need": "¿Qué necesitas?"
+    "what_do_you_need": "¿Qué necesitas?",
+    "err_kind_cli_error": "Error de CLI",
+    "err_kind_cli_not_found": "CLI no encontrada",
+    "err_kind_env_conflict": "Conflicto de entorno",
+    "err_kind_extraction_failed": "Falló la extracción",
+    "err_kind_spawn_failed": "Falló el inicio del proceso",
+    "err_kind_timeout": "Tiempo agotado",
+    "field_missing": "{label} (falta)",
+    "log_blocked_url": "Se bloqueó una URL no segura de la sesión de configuración",
+    "log_open_url_failed": "No se pudo abrir la URL: {url}",
+    "log_saved_procedure": "Usando el procedimiento guardado para {label}",
+    "open_url": "Abrir",
+    "open_url_title": "Abrir {url} en el navegador"
   },
   "auto_cred": {
     "action_required": "Acción requerida",
@@ -534,7 +550,8 @@
     "use_console_hint": "Usa la pestaña Consola para inspeccionar el valor de esta clave.",
     "write": "Escritura",
     "write_mode": "Modo escritura",
-    "suggestion_api_tables": "Muestra las tablas de esta base y cuántos registros tiene cada una"
+    "suggestion_api_tables": "Muestra las tablas de esta base y cuántos registros tiene cada una",
+    "rename_failed": "No se pudo cambiar el nombre de la credencial. El nombre anterior sigue guardado."
   },
   "delete_dialog": {
     "cannot_undo": "Esta acción no se puede deshacer.",
@@ -583,7 +600,7 @@
     "severity_high": "Riesgo alto",
     "severity_low": "Riesgo bajo",
     "severity_medium": "Riesgo medio",
-    "sim_high": "Revocar {credentialName} afectaría a {personas} persona{personaPlural} en su espacio de trabajo.",
+    "sim_high": "Revocar {credentialName} afectaría a {personas} persona en su espacio de trabajo.",
     "sim_low": "Ninguna persona ni flujo de trabajo depende de esta credencial. Es seguro revocarla.",
     "sim_medium": "Revocar {credentialName} tiene un radio de impacto limitado.",
     "simulate_revocation": "Simular revocación",
@@ -642,7 +659,9 @@
     "start_over": "Empezar de nuevo",
     "technical_details": "Detalles técnicos",
     "title": "Diseñar credencial",
-    "try_again_with": "Intentar de nuevo con su solicitud"
+    "try_again_with": "Intentar de nuevo con su solicitud",
+    "instruction_imported": "Credencial de {label} (importada)",
+    "instruction_template": "Credencial de {label}"
   },
   "design_phases": {
     "all_steps_complete": "Todos los pasos completados -- rellene los campos a continuación y pruebe su conexión.",
@@ -698,7 +717,9 @@
     "typical_time": "Normalmente 15-30 segundos",
     "use_template": "Usar",
     "verified_setup": "Configuración verificada",
-    "view_credential": "Ver credencial"
+    "view_credential": "Ver credencial",
+    "open": "Abrir",
+    "step_number": "Paso {n}"
   },
   "desktop_discovery": {
     "allowed_binaries": "Binarios permitidos: ",
@@ -783,7 +804,8 @@
     "scheduled_rotation": "Rotación programada",
     "scheduled_rotation_desc": "Rota las credenciales según un programa cron (p. ej. diario, semanal).",
     "seconds_10": "10 segundos",
-    "seconds_30": "30 segundos"
+    "seconds_30": "30 segundos",
+    "template_trigger_aria": "Disparador de evento {name}"
   },
   "features": {
     "anomaly_detected": "Anomalía detectada: la credencial está fallando repentinamente después de un éxito previo. Posible revocación.",
@@ -962,7 +984,10 @@
     "no_eligible": "Sin credenciales elegibles. Agrega una credencial MCP primero en la lista de credenciales.",
     "no_members": "Sin miembros aún. Agrega uno abajo para comenzar a agrupar herramientas.",
     "pick_credential": "Elige una credencial…",
-    "pick_error": "Elige una credencial y dale un nombre de visualización corto"
+    "pick_error": "Elige una credencial y dale un nombre de visualización corto",
+    "remove_member_aria": "Quitar a {name}",
+    "disable_member": "Desactivar",
+    "enable_member": "Activar"
   },
   "graph": {
     "connection_count_one": "{count} conexión",
@@ -1006,7 +1031,27 @@
     "selected_for_import": "seleccionados para importar",
     "source_ref": "Referencia de origen",
     "sync_supported": "Sincronización compatible",
-    "title": "Origen de importación"
+    "title": "Origen de importación",
+    "cli_hint": "Ejecuta el comando de la CLI {cli} y pega la salida JSON a continuación.",
+    "env_hint": "Pega a continuación el contenido de tu archivo .env.",
+    "err_aws_no_secret_string": "No se encontró ningún SecretString en la respuesta de AWS",
+    "err_aws_parse_failed": "No se pudo analizar la salida JSON de AWS Secrets Manager",
+    "err_azure_parse_failed": "No se pudo analizar la salida JSON de Azure Key Vault",
+    "err_doppler_parse_failed": "No se pudo analizar la salida JSON de Doppler. Usa: doppler secrets download --format=json",
+    "err_env_missing_separator": "Línea {line}: falta el separador «=»",
+    "err_no_secrets": "No se encontraron secretos en la entrada",
+    "err_op_expected_array": "Se esperaba un array JSON en la salida de la CLI op",
+    "err_op_parse_failed": "No se pudo analizar la salida JSON de 1Password. Usa: op item list --format=json",
+    "placeholder_1password": "Pega la salida de: op item list --format=json",
+    "placeholder_aws_secrets": "Pega la salida de: aws secretsmanager get-secret-value --secret-id <name>",
+    "placeholder_azure_keyvault": "Pega la salida de: az keyvault secret show --vault-name <vault> --name <secret>",
+    "placeholder_doppler": "Pega la salida de: doppler secrets download --format=json",
+    "source_desc_1password": "Importar desde 1Password con la CLI op",
+    "source_desc_aws_secrets": "Importar desde AWS Secrets Manager",
+    "source_desc_azure_keyvault": "Importar desde Azure Key Vault",
+    "source_desc_doppler": "Importar desde la plataforma de secretos Doppler",
+    "source_desc_env_file": "Importar secretos desde un archivo .env local",
+    "source_label_env_file": "Archivo .env"
   },
   "ingest": {
     "rename_credential": "Renombrar credencial",
@@ -1066,7 +1111,11 @@
     "title_databases": "Bases de datos",
     "title_dependencies": "Dependencias",
     "unverifiable_count": "{count} no verificable(s)",
-    "unverifiable_tooltip": "Este conector no tiene ninguna prueba en vivo -- las credenciales están almacenadas pero nunca se verificaron con el proveedor"
+    "unverifiable_tooltip": "Este conector no tiene ninguna prueba en vivo -- las credenciales están almacenadas pero nunca se verificaron con el proveedor",
+    "create_failed": "No se pudo crear la credencial",
+    "rotate_result_failed": "{count} fallidas",
+    "rotate_result_refreshed": "{count} actualizadas",
+    "rotate_result_skipped": "{count} omitidas"
   },
   "negotiator_extra": {
     "ask_button": "Ask",
@@ -1084,7 +1133,8 @@
     "planning_description": "La IA está analizando el portal del desarrollador y generando un plan de aprovisionamiento paso a paso…",
     "start_auto": "Iniciar aprovisionamiento automático",
     "existing_auth_description": "Ya has iniciado sesión en {service} mediante {method}. La configuración reutilizará esa sesión y omitirá los pasos de inicio de sesión.",
-    "use_existing_auth": "Usar la sesión de {service} existente"
+    "use_existing_auth": "Usar la sesión de {service} existente",
+    "step_of": "Paso {current} de {total}: {title}"
   },
   "negotiator": {
     "all_steps_completed": "Todos los pasos completados",
@@ -1261,7 +1311,11 @@
     "rotate_now": "Rotar ahora",
     "rotation_failed": "Rotación fallida: {error}",
     "rotation_paused": "Rotación pausada",
-    "update_period_failed": "Error al actualizar el período de rotación: {error}"
+    "update_period_failed": "Error al actualizar el período de rotación: {error}",
+    "countdown_days_hours": "{days} d {hours} h",
+    "countdown_due_now": "Vence ahora",
+    "countdown_hours_minutes": "{hours} h {minutes} min",
+    "countdown_minutes": "{minutes} min"
   },
   "schema_configs": {
     "custom": {
@@ -1378,7 +1432,9 @@
     "kv_value_label": "Valor",
     "kv_value_placeholder": "valor",
     "none_configured": "Ninguno configurado.",
-    "required_badge": "REQ"
+    "required_badge": "REQ",
+    "field_captured": "capturado",
+    "select_placeholder": "Seleccionar..."
   },
   "setup_kind": {
     "cli_login": "La CLI del proveedor está instalada pero no has iniciado sesión — ejecuta su comando de inicio de sesión en una terminal (por ejemplo `vercel login` o `gh auth login`)",
@@ -1607,7 +1663,8 @@
     "extract_export_json": "Exportar JSON",
     "extract_filter_all": "Todos los tipos",
     "extract_filter_label": "Filtrar por tipo de entidad",
-    "health_unreachable": "No se pudo conectar con el servicio"
+    "health_unreachable": "No se pudo conectar con el servicio",
+    "oauth_context_lost": "OAuth terminó pero se perdió el contexto. Inténtalo de nuevo."
   },
   "subtitle": "Elige cómo quieres agregar una credencial",
   "title": "Bóveda",
@@ -1760,7 +1817,12 @@
     "select_services": "Seleccionar servicios para conectar",
     "selected_count": "{selected} de {total} seleccionados",
     "sign_in_browser": "Inicie sesión con su cuenta de Google en la ventana del navegador.",
-    "some_failed": "Algunas credenciales fallaron"
+    "some_failed": "Algunas credenciales fallaron",
+    "service_gmail_desc": "Enviar, leer y gestionar correo",
+    "service_google_calendar_desc": "Leer y gestionar eventos del calendario",
+    "service_google_drive_desc": "Leer y gestionar archivos",
+    "service_google_sheets_desc": "Leer y escribir datos de hojas de cálculo",
+    "status_failed": "Fallido"
   },
   "connector_attention": {
     "title": "Conexiones que requieren atención",
@@ -1781,5 +1843,29 @@
     "reconnect_now": "Reconectar ahora",
     "reconnecting": "Reconectando...",
     "signed_in_as": "Sesion iniciada como {email}"
+  },
+  "remediation_notify": {
+    "auto_disabled_body": "{name}: se detectaron fallos críticos sostenidos. Las políticas de rotación se desactivaron para evitar errores en cascada.",
+    "auto_disabled_title": "Credencial desactivada automáticamente",
+    "critical_title": "Credencial en estado crítico",
+    "drift_title": "Desviación de credencial detectada",
+    "rotation_failed_title": "Falló la rotación de la credencial",
+    "warning_title": "Advertencia de credencial",
+    "reason_backoff_retry": "Tasa de fallos transitorios del {pct} (1 h). Aplicando retroceso exponencial.",
+    "reason_default": "Nivel de remediación: {level}",
+    "reason_disable": "Crítico: tasa de fallos permanentes del {pct} (1 h). Desactivando automáticamente las políticas de rotación.",
+    "reason_preemptive_rotation": "Degradación sostenida: tasa de fallos del {pct} (1 h). Programando rotación preventiva.",
+    "reason_rotate_then_alert": "Errores permanentes detectados: tasa de fallos permanentes del {pct} (1 h). Rotando y alertando."
+  },
+  "resource_picker": {
+    "no_matches": "Sin coincidencias",
+    "nothing_to_pick": "Aún no hay nada que elegir",
+    "pick_first": "Elige primero un {dep}",
+    "picked_count": "{count} elegidos",
+    "save_scope": "Guardar alcance",
+    "scope_title": "Alcance de {label}",
+    "search_placeholder": "Buscar {label}…",
+    "stale_picks_one": "{count} elemento elegido",
+    "stale_picks_other": "{count} elementos elegidos"
   }
 }

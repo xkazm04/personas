@@ -12,15 +12,17 @@ import { coverageOf, type Cell } from './overviewModel';
 
 const num = (v: number | null, unit: string) => (v != null ? `${v} ${unit}`.trim() : '-');
 
-export function FactoryContextDetail({ cell, groupName, data, onDecide, onNote, w }: {
+export function FactoryContextDetail({ cell, groupName, data, onDecide, onScan, scanning, w }: {
   cell: Cell | null;
   groupName: string;
   data: FactoryL2Data;
   onDecide: (k: DevKpi, status: 'active' | 'archived') => void;
-  onNote: (s: string) => void;
+  /** Run a KPI scan scoped to the selected context. */
+  onScan: (contextId: string) => void;
+  scanning: boolean;
   w: FactoryWords;
 }) {
-  if (!cell) return <Section title={w.context} state="empty" empty={{ title: w.L.noContexts }} />;
+  if (!cell) return <Section title={w.context} state="empty" empty={{ art: 'folder', title: w.L.noContexts }} />;
   const name = cell.ctx.business_feature?.trim() || cell.ctx.name;
   const proposals = data.proposalsByContext.get(cell.ctx.id) ?? [];
   const cov = coverageOf(data, cell.ctx.id);
@@ -35,7 +37,7 @@ export function FactoryContextDetail({ cell, groupName, data, onDecide, onNote, 
       title={name}
       meta={<Meta parts={[cell.ctx.category, cell.ctx.name !== name ? cell.ctx.name : null]} />}
       actions={
-        <KitButton onClick={() => onNote(w.L.scanContextNote(name))} testId="factory-context-scan">{w.L.scanContext}</KitButton>
+        <KitButton onClick={() => { if (!scanning) onScan(cell.ctx.id); }} loading={scanning} testId="factory-context-scan">{w.L.scanContext}</KitButton>
       }
     >
       <Section level={2} title={w.t.common.status}>
@@ -45,13 +47,13 @@ export function FactoryContextDetail({ cell, groupName, data, onDecide, onNote, 
             {
               k: w.L.worstKpi,
               v: cell.kpiPct == null ? null : `${cell.kpiPct}% ${w.L.ofTarget}`,
-              none: cell.kpiCount > 0 ? w.t.kpis.track_unmeasured : w.t.kpis.define_kpi,
+              none: cell.kpiCount == null ? '-' : cell.kpiCount > 0 ? w.t.kpis.track_unmeasured : w.t.kpis.define_kpi,
             },
-            { k: w.kpis, v: cell.kpiCount },
+            { k: w.kpis, v: cell.kpiCount, none: '-' },
             { k: w.errors, v: cell.errs, none: w.L.notWired },
             { k: w.cost, v: cell.costUsd == null ? null : <Numeric value={cell.costUsd} unit="usd" precision={2} />, none: w.L.notWired },
             { k: w.features, v: cov.features },
-            { k: w.goals, v: cov.goals },
+            { k: w.goals, v: cov.goals, none: '-' },
           ]}
         />
       </Section>

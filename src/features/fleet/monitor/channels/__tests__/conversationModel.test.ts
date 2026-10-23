@@ -15,8 +15,8 @@ import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
  * The fold is the whole readability argument of the Conversations surface, and
  * it had no test. Two properties matter and neither is visible from a render
  * test: the channel arrives NEWEST-FIRST and the conversation reads
- * OLDEST-FIRST, and clustering is by RUN — two bursts of one assignment
- * separated by chat are two rows, not one.
+ * OLDEST-FIRST, and clustering is by RUN: every step of one assignment on one
+ * day is one row, even when a message lands between two of its steps (WP12).
  * -------------------------------------------------------------------------- */
 
 function item(id: string, at: string, patch: Partial<TeamChannelItem> = {}): TeamChannelItem {
@@ -85,17 +85,29 @@ describe('buildConversation', () => {
     ]);
   });
 
-  it('clusters by RUN — two bursts of one assignment split by talk stay two rows', () => {
+  it('groups by RUN: a message landing between two steps does not split the run (WP12)', () => {
     const rows = buildConversation([
       step('s3', '2026-08-24T10:03:00Z', 'asg-1'),
       item('t1', '2026-08-24T10:02:00Z'),
       step('s1', '2026-08-24T10:01:00Z', 'asg-1'),
     ]);
-    expect(rows.map((r) => r.kind)).toEqual(['day', 'assignment', 'talk', 'assignment']);
-    expect(rows.filter((r) => r.kind === 'assignment').map((r) => r.key)).toEqual([
-      'asg:asg-1:s1',
-      'asg:asg-1:s3',
+    // One band, placed at the run's newest step, after the line that interrupted it.
+    expect(rows.map((r) => r.kind)).toEqual(['day', 'talk', 'assignment']);
+    const run = rows[2];
+    expect(run).toMatchObject({ key: 'asg:asg-1:s1', at: '2026-08-24T10:03:00Z' });
+    expect(run?.kind === 'assignment' && run.items.map((i) => i.id)).toEqual(['s1', 's3']);
+  });
+
+  it('groups a deliberation the same way when the operator speaks between two turns', () => {
+    const rows = buildConversation([
+      turn('d3', '2026-08-24T10:03:00Z', 'del-1'),
+      step('s2', '2026-08-24T10:02:30Z', 'asg-1'),
+      item('t1', '2026-08-24T10:02:00Z'),
+      turn('d1', '2026-08-24T10:01:00Z', 'del-1'),
     ]);
+    expect(rows.map((r) => r.kind)).toEqual(['day', 'talk', 'assignment', 'deliberation']);
+    const delib = rows[3];
+    expect(delib?.kind === 'deliberation' && delib.items.map((i) => i.id)).toEqual(['d1', 'd3']);
   });
 
   it('does not merge steps of different assignments', () => {
@@ -228,7 +240,7 @@ describe('nextPromptBatch', () => {
 
   it('folds a run of consecutive plain prompts into ONE body', () => {
     const batch = nextPromptBatch([q('a', { text: 'one' }), q('b', { text: 'two' })]);
-    expect(batch).toEqual({ ids: ['a', 'b'], body: 'one\n\ntwo', goal: false });
+    expect(batch).toEqual({ ids: ['a', 'b'], body: 'one\n\ntwo', goal: false, afterPost: [] });
   });
 
   it('never folds a goal — routing decomposes one goal, not two concatenated', () => {
@@ -236,6 +248,7 @@ describe('nextPromptBatch', () => {
       ids: ['a'],
       body: 'a',
       goal: true,
+      afterPost: [],
     });
   });
 

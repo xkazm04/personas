@@ -117,3 +117,27 @@ describe('Mission Control cards under a StrictMode double mount', () => {
     expect(listAllTriggers.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe('UpcomingRoutinesCard when the trigger read fails', () => {
+  it('says the read failed instead of holding its loading ghost forever', async () => {
+    // invokeWithTimeout rejects with a serialized AppError object.
+    listAllTriggers.mockReset().mockRejectedValue({ error: 'database is locked', kind: 'Database' });
+    const { default: UpcomingRoutinesCard } = await import('../UpcomingRoutinesCard');
+    render(<UpcomingRoutinesCard />);
+
+    await waitFor(() => expect(screen.getByText('Failed to load')).toBeTruthy());
+    // Not the settled empty state either: a failed read is not "no routines".
+    expect(screen.queryByText('No scheduled runs.')).toBeNull();
+  });
+
+  it('keeps rows it already showed when a later refetch fails', async () => {
+    const { default: UpcomingRoutinesCard } = await import('../UpcomingRoutinesCard');
+    render(<UpcomingRoutinesCard />);
+    await waitFor(() => expect(screen.getByText('persona-')).toBeTruthy());
+
+    listAllTriggers.mockRejectedValue({ error: 'database is locked', kind: 'Database' });
+    await act(() => vi.advanceTimersByTimeAsync(31_000));
+    expect(screen.getByText('persona-')).toBeTruthy();
+    expect(screen.queryByText('Failed to load')).toBeNull();
+  });
+});

@@ -25,7 +25,7 @@ import { useDecisionRoster } from '../useDecisionRoster';
 import { chipLabel } from './deckMeta';
 import { originFromRect } from './deckMotion';
 import { closeDecisionDeck, useDecisionDeckStore, type DeckRequest } from './deckStore';
-import type { DeckVerdict } from './deckTypes';
+import type { DeckLanded, DeckVerdict } from './deckTypes';
 import { ReplyRouteError, writeDeckVerdict, type DeckWriteDoors } from './deckWrites';
 import { DeckModal, type DeckSessionSpec } from './DeckModal';
 import { useDeckHosts } from './useDeckHosts';
@@ -37,6 +37,9 @@ import { isMandateWrite } from '../mandate/mandateWrites';
 import { useMandateDeck } from '../mandate/useMandateDeck';
 import { DeckLaneContext, type DeckLaneData } from './shapes/DeckLaneContext';
 import { withLaneIrreversible } from './shapes/cardShape';
+import { lensDealsLane } from '../lens/lensKinds';
+import { useLensScanItems } from '../lens/useLensScanItems';
+import { LensSheetHost } from '../lens/LensSheetHost';
 
 function loadOf(
   request: DeckRequest | null,
@@ -50,7 +53,7 @@ function loadOf(
 }
 
 function LiveDeck({ request, session }: { request: DeckRequest | null; session: number }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const m = t.monitor;
   const { hosts, followUp } = useDeckHosts();
   const laneScope = request?.scope.kind === 'lane';
@@ -58,9 +61,11 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
   const roster = useDecisionRoster({ load: loadOf(request, lanesState.snapshot), enabled: !!request, hosts });
   const lanes = useMemo(() => indexLanes(lanesState.snapshot), [lanesState.snapshot]);
   const mandateDeck = useMandateDeck(laneScope, lanesState.snapshot);
+  // The lens-scan cards (spark one-control): fixed lanes, appended like the Sign lane's mandates.
+  const lens = useLensScanItems(request?.scope.kind === 'lane' && lensDealsLane(request.scope.lane));
   const items = useMemo(
-    () => (laneScope ? withLaneIrreversible([...roster.items, ...mandateDeck.items], lanes) : roster.items),
-    [laneScope, roster.items, mandateDeck.items, lanes],
+    () => (laneScope ? withLaneIrreversible([...roster.items, ...mandateDeck.items, ...lens.items], lanes) : roster.items),
+    [laneScope, roster.items, mandateDeck.items, lens.items, lanes],
   );
   const laneData = useMemo<DeckLaneData>(
     () => ({ lanes, mandates: mandateDeck.mandates, charters: mandateDeck.charters }),
@@ -78,14 +83,18 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
 
   const decidedElsewhere = m.dc_hub_decided_elsewhere;
   const replyFailed = m.dc_deck_reply_failed;
-  const onDecide = useCallback(async (v: DeckVerdict) => {
+  const onDecide = useCallback(async (v: DeckVerdict): Promise<DeckLanded | void> => {
     if (v.item.kind === 'report' && v.branchId === 'chat') {
       followUp.current = { item: v.item, linkedReviews: v.linkedReviews ?? [] };
     }
     // A Sign card, or a Breach card's amend / suspend, writes to the mandate.
     if (isMandateWrite(v)) {
       try {
-        await writeMandate(v);
+        const written = await writeMandate(v);
+        // Sent home to an offline device: the tray says it waits there, as the drawer does.
+        if (written.queuedOn) {
+          return { receipt: tx(m.dc_deck_receipt, { verdict: tx(m.remote_queued_until, { device: written.queuedOn }), title: v.item.title }) };
+        }
       } catch (err) {
         toastCatch('decision-deck:mandate', m.ml_write_failed)(err);
         throw err;
@@ -108,7 +117,7 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
       else toastCatch('decision-deck:decide')(err);
       throw err;
     }
-  }, [doors, decidedElsewhere, replyFailed, followUp, writeMandate, m]);
+  }, [doors, decidedElsewhere, replyFailed, followUp, writeMandate, m, tx]);
 
   const onOpenLink = useCallback((item: DecisionItem, linkId: string) => {
     if (!item.links?.some((l) => l.id === linkId)) return;
@@ -154,7 +163,13 @@ function LiveDeck({ request, session }: { request: DeckRequest | null; session: 
 export default function DecisionDeckHost() {
   const request = useDecisionDeckStore((s) => s.request);
   const session = useDecisionDeckStore((s) => s.session);
-  // Never opened: mount nothing, read nothing.
-  if (session === 0) return null;
-  return <LiveDeck request={request} session={session} />;
+  return (
+    <>
+      {/* Never opened: mount no deck, read nothing. */}
+      {session !== 0 && <LiveDeck request={request} session={session} />}
+      {/* The blueprint sheet (or a release's composition), over the deck. Mounted whether or not the deck ever
+          opened: a lens-scan card opens it, and so does the Monitor's Blueprint picker, which needs no deck. */}
+      <LensSheetHost />
+    </>
+  );
 }

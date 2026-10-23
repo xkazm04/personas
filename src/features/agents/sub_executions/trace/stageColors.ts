@@ -6,7 +6,6 @@ import { PIPELINE_STAGES, stageCategory } from '@/lib/execution/pipeline';
 // ---------------------------------------------------------------------------
 
 export interface StageColor {
-  bar: string;
   barGradient: string;
   barShadow: string;
   text: string;
@@ -14,7 +13,6 @@ export interface StageColor {
   border: string;
   /** Derived, never hand-written — see `stageCategory` in `lib/execution/pipeline`. */
   category: StageCategory;
-  haloColor: string;
 }
 
 /**
@@ -26,13 +24,13 @@ export interface StageColor {
  * `stageCategory`, so the badge cannot drift from the waterfall again.
  */
 const STAGE_PALETTE: Record<PipelineStage, Omit<StageColor, 'category'>> = {
-  initiate:           { bar: 'bg-blue-500/50',    barGradient: 'bg-gradient-to-r from-blue-500/60 to-cyan-500/50',       barShadow: 'shadow-[inset_0_1px_2px_rgba(59,130,246,0.3)]',   text: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25', haloColor: 'shadow-[0_0_4px_rgba(59,130,246,0.5)]' },
-  validate:           { bar: 'bg-emerald-500/50', barGradient: 'bg-gradient-to-r from-emerald-500/60 to-teal-500/50',    barShadow: 'shadow-[inset_0_1px_2px_rgba(16,185,129,0.3)]',   text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25',  haloColor: 'shadow-[0_0_4px_rgba(16,185,129,0.5)]' },
-  create_record:      { bar: 'bg-emerald-500/50', barGradient: 'bg-gradient-to-r from-emerald-500/60 to-teal-500/50',    barShadow: 'shadow-[inset_0_1px_2px_rgba(16,185,129,0.3)]',   text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25',  haloColor: 'shadow-[0_0_4px_rgba(16,185,129,0.5)]' },
-  spawn_engine:       { bar: 'bg-violet-500/50',  barGradient: 'bg-gradient-to-r from-violet-500/60 to-indigo-500/50',   barShadow: 'shadow-[inset_0_1px_2px_rgba(139,92,246,0.3)]',   text: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/25',   haloColor: 'shadow-[0_0_4px_rgba(139,92,246,0.5)]' },
-  stream_output:      { bar: 'bg-violet-500/50',  barGradient: 'bg-gradient-to-r from-violet-500/60 to-indigo-500/50',   barShadow: 'shadow-[inset_0_1px_2px_rgba(139,92,246,0.3)]',   text: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/25',   haloColor: 'shadow-[0_0_4px_rgba(139,92,246,0.5)]' },
-  finalize_status:    { bar: 'bg-emerald-500/50', barGradient: 'bg-gradient-to-r from-emerald-500/60 to-teal-500/50',    barShadow: 'shadow-[inset_0_1px_2px_rgba(16,185,129,0.3)]',   text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25',  haloColor: 'shadow-[0_0_4px_rgba(16,185,129,0.5)]' },
-  frontend_complete:  { bar: 'bg-blue-500/50',    barGradient: 'bg-gradient-to-r from-blue-500/60 to-cyan-500/50',       barShadow: 'shadow-[inset_0_1px_2px_rgba(59,130,246,0.3)]',   text: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25', haloColor: 'shadow-[0_0_4px_rgba(59,130,246,0.5)]' },
+  initiate:           { barGradient: 'bg-gradient-to-r from-blue-500/60 to-cyan-500/50',       barShadow: 'shadow-[inset_0_1px_2px_rgba(59,130,246,0.3)]',   text: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
+  validate:           { barGradient: 'bg-gradient-to-r from-emerald-500/60 to-teal-500/50',    barShadow: 'shadow-[inset_0_1px_2px_rgba(16,185,129,0.3)]',   text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
+  create_record:      { barGradient: 'bg-gradient-to-r from-emerald-500/60 to-teal-500/50',    barShadow: 'shadow-[inset_0_1px_2px_rgba(16,185,129,0.3)]',   text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
+  spawn_engine:       { barGradient: 'bg-gradient-to-r from-violet-500/60 to-indigo-500/50',   barShadow: 'shadow-[inset_0_1px_2px_rgba(139,92,246,0.3)]',   text: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/25' },
+  stream_output:      { barGradient: 'bg-gradient-to-r from-violet-500/60 to-indigo-500/50',   barShadow: 'shadow-[inset_0_1px_2px_rgba(139,92,246,0.3)]',   text: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/25' },
+  finalize_status:    { barGradient: 'bg-gradient-to-r from-emerald-500/60 to-teal-500/50',    barShadow: 'shadow-[inset_0_1px_2px_rgba(16,185,129,0.3)]',   text: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/25' },
+  frontend_complete:  { barGradient: 'bg-gradient-to-r from-blue-500/60 to-cyan-500/50',       barShadow: 'shadow-[inset_0_1px_2px_rgba(59,130,246,0.3)]',   text: 'text-blue-400',    bg: 'bg-blue-500/15',    border: 'border-blue-500/25' },
 };
 
 /**

@@ -42,6 +42,8 @@ vi.mock('../fleetTerminalManager', () => ({
   setFleetTerminalDeadNotice: vi.fn(),
   setFleetTerminalListenerNotice: vi.fn(),
   setTerminalLiveness,
+  configureFleetTerminals: vi.fn(),
+  appIsLightTheme: () => false,
   onTerminalHolderLost: () => () => {},
 }));
 

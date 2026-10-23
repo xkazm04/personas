@@ -39,9 +39,11 @@ const OUT = arg('out', null);
 const MAX_STOPS = 140;
 
 const SURFACES = [
-  { name: 'collar', module: 'plugins/lifecycle/collar', open: null, ready: '[data-testid="lc1-layer1"]' },
-  { name: 'gate', module: 'plugins/lifecycle/gate', open: '[data-testid="lc-node-gate"]', ready: '[data-testid^="lc2-cmd-"]' },
-  { name: 'setup', module: 'plugins/lifecycle/setup', open: null, ready: '[data-testid^="lc10-setup-row-"]' },
+  { name: 'collar', module: 'plugins/lifecycle/collar', open: null, ready: '[data-testid="lens-field"]' },
+  { name: 'gate', module: 'plugins/lifecycle/gate', open: '[data-testid="lens-col-gate"] .lens-cell:not(.is-none)', ready: '[data-testid^="lc2-cmd-"]' },
+  // The first-run setup heads the Gate detail: a column's first press lights it, the second opens it.
+  { name: 'setup', module: 'plugins/lifecycle/setup', open: ['[data-testid="lens-col-gate"] .lens-col-head', '[data-testid="lens-col-gate"] .lens-col-head'], ready: '[data-testid^="lc10-setup-row-"]' },
+  { name: 'portfolio', module: 'plugins/lifecycle/portfolio', open: null, ready: '[data-testid="lens-field"] [role="option"]' },
 ];
 
 /** What the focused element is and whether its focus draws anything. Runs in the page. */
@@ -150,10 +152,11 @@ async function walk(browser, url, surface, theme) {
   const page = await context.newPage();
   await page.addInitScript((t) => { window.__PAGE_HARNESS_TAPE__ = t; }, tape);
   await page.goto(`${url}${HARNESS}?module=${encodeURIComponent(surface.module)}&theme=${theme}`, { waitUntil: 'commit' });
-  await page.waitForSelector(surface.open ?? surface.ready, { timeout: 180_000 });
-  if (surface.open) {
+  const opens = surface.open ? [surface.open].flat() : [];
+  await page.waitForSelector(opens[0] ?? surface.ready, { timeout: 180_000 });
+  if (opens.length) {
     await page.waitForTimeout(800);
-    await page.click(surface.open);
+    for (const sel of opens) { await page.click(sel); await page.waitForTimeout(300); }
     await page.waitForSelector(surface.ready, { timeout: 30_000 });
   }
   await page.waitForTimeout(1200);

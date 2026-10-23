@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FleetSession } from '@/lib/bindings/FleetSession';
@@ -62,6 +62,13 @@ describe('FleetTerminalModal - a sleeping session', () => {
     await waitFor(() => expect(screen.getByTestId('fleet-terminal-wake-error')).toBeTruthy());
     await act(async () => {
       fireEvent.click(screen.getByTestId('fleet-terminal-kill'));
+    });
+    // Kill asks first (17949b5829): dropping a tombstone cannot be taken back,
+    // so nothing is removed until the confirmation is accepted.
+    expect(api.removeSession).not.toHaveBeenCalled();
+    const confirm = await screen.findByRole('dialog', { name: /kill/i });
+    await act(async () => {
+      fireEvent.click(within(confirm).getByRole('button', { name: 'Kill' }));
     });
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(api.removeSession).toHaveBeenCalledWith('s1');

@@ -607,5 +607,7 @@
   "waiting_for_output": "Čekání na výstup…",
   "what_testing_checks": "Co testování kontroluje:",
   "what_to_explore": "Co prozkoumat",
-  "your_agent_fallback": "Váš agent"
+  "your_agent_fallback": "Váš agent",
+  "approve_failed": "Aplikaci {name} se nepodařilo schválit. Můžete ji schválit později v Konektorech.",
+  "execution_ended": "Provedení: {status}"
 }

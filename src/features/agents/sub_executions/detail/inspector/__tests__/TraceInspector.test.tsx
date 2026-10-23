@@ -49,6 +49,33 @@ function arrangeSpans(spans: UnifiedSpan[], droppedSpanEvents = 0) {
   render(<TraceInspector execution={{ id: 'e1', persona_id: 'p1' } as PersonaExecution} />);
 }
 
+describe('TraceInspector load failure', () => {
+  beforeEach(() => mockedUseTraceData.mockReset());
+
+  it('renders an IPC rejection object as copy, never "[object Object]"', () => {
+    const failed: ReturnType<typeof useTraceData> = {
+      droppedSpanEvents: 0,
+      spanEventBufferCap: 10_000,
+      trace: null,
+      traceIsSynthetic: false,
+      unifiedTrace: null,
+      loading: false,
+      error: { raw: { error: 'database is locked', kind: 'Database' } },
+      retry: vi.fn(),
+      collapsedSpans: new Set<string>(),
+      toggleSpan: vi.fn(),
+      visibleNodes: [],
+      totalMs: 0,
+      childrenMap: new Map<string, boolean>(),
+    };
+    mockedUseTraceData.mockReturnValue(failed);
+
+    const { container } = render(<TraceInspector execution={{ id: 'e1', persona_id: 'p1' } as PersonaExecution} />);
+    expect(container.textContent).not.toContain('[object Object]');
+    expect(container.textContent).toMatch(/\S/);
+  });
+});
+
 describe('TraceInspector error cards', () => {
   beforeEach(() => mockedUseTraceData.mockReset());
 

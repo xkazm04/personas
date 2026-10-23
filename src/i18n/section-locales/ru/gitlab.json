@@ -121,5 +121,12 @@
   "view_logs": "Журналы",
   "yesterday": "вчера",
   "your_tier": "(ваш)",
-  "agent_pipeline_title": "Конвейер для {agent} на {ref}: {status}"
+  "agent_pipeline_title": "Конвейер для {agent} на {ref}: {status}",
+  "pipeline_count_one": "{count} конвейер",
+  "pipeline_count_other": "{count} конвейеров",
+  "notify_title_success": "Конвейер выполнен успешно",
+  "notify_title_failed": "Сбой конвейера",
+  "notify_title_canceled": "Конвейер отменён",
+  "notify_title_other": "Конвейер: {status}",
+  "notify_body": "Конвейер #{id} для {ref} теперь в состоянии: {status}"
 }

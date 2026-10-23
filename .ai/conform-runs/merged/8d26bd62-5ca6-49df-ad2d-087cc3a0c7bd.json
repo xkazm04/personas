@@ -1,0 +1,135 @@
+{
+  "schema": "conform-run/1",
+  "worker": "8d26bd62-5ca6-49df-ad2d-087cc3a0c7bd",
+  "subject": "client-fetch-cache",
+  "evaluatedAt": "2026-10-21T17:45:01Z",
+  "pairs": [
+    {
+      "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:48 the inbox list lives in hook state and OverviewPage.tsx:73 mounts IncidentsInbox only on its tab, so every return to Incidents starts empty and paints ghost rows (IncidentsInbox.tsx:245) for data held seconds ago",
+      "techniques": [
+        {
+          "technique": "warm-remount-caches",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:48 useState([]) per mount, no module-scoped last-result cache; src/features/overview/components/dashboard/OverviewPage.tsx:73 tab switch unmounts it, so remount is cold"
+        },
+        {
+          "technique": "swr-design",
+          "verdict": "realized",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:80 a failed list refresh sets error but keeps the last rows; IncidentsInbox.tsx:245 ghosts only when nothing is on screen"
+        },
+        {
+          "technique": "cache-key-discipline",
+          "verdict": "realized",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:69 the read is keyed by the canonical JSON of the full filter object; the summary is filter-less and carries its own guard"
+        },
+        {
+          "technique": "in-flight-dedup",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_incidents/libs/useIncidentsData.ts:62 a single caller per read; overlapping polls are arbitrated by latest-wins tokens, not joined (no second concurrent caller of the same key on this surface)"
+        }
+      ],
+      "registryProposal": "The inbox polls every 30s (useIncidentsData.ts:117) while src/lib/eventRegistry.ts:1364 declares INCIDENT_RESOLVED; that is client-state invalidation-strategy territory, worth judging on the client-state pair rather than here.",
+      "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+      "evaluatedRevision": 15
+    },
+    {
+      "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:54 re-judged after a7c0b5b21f (which fixed EventHistoryModal.tsx:111): a failed first catalog load still only logs and clears loading, the hook returns no error (useSharedEvents.ts:117), so the Watchtower paints no_feeds (SharedEventsTab.tsx:222) as if no feeds exist",
+      "techniques": [
+        {
+          "technique": "swr-design",
+          "verdict": "deviation",
+          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:54 failure collapsed into empty success; failure-not-empty-success says the outcome must be separately available"
+        },
+        {
+          "technique": "warm-remount-caches",
+          "verdict": "not-judged",
+          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:13 catalog in hook state; remount behaviour not traced this run"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+      "evaluatedRevision": 15
+    }
+  ],
+  "declined": [
+    {
+      "subject": "client-fetch-cache",
+      "context": "a38e2b93-2322-4187-befa-c0443c4ca85f",
+      "reason": "weak context (glyph-definitions); the match is the doubtful part, reported as a coverage question instead"
+    },
+    {
+      "subject": "client-fetch-cache",
+      "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd",
+      "reason": "deviation judged 2026-10-16 at revision 15; the anchor useExportPicker.ts:133 is untouched since, still settles [] on failure; verdict stands, not re-written"
+    },
+    {
+      "subject": "client-fetch-cache",
+      "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+      "reason": "deviation judged 2026-10-13 at revision 15; live_roadmap.rs has no commits since; verdict stands"
+    },
+    {
+      "subject": "client-fetch-cache",
+      "context": "208f50de-5d3b-4345-9fed-1c106a7a36e9",
+      "reason": "re-judged today (2026-10-21) at current revision"
+    },
+    {
+      "subject": "client-fetch-cache",
+      "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573",
+      "reason": "re-judged today (2026-10-21) at current revision"
+    },
+    {
+      "subject": "client-fetch-cache",
+      "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473",
+      "reason": "re-judged today (2026-10-21) at current revision"
+    },
+    {
+      "subject": "client-fetch-cache",
+      "context": "9fca099d-94e4-4fd0-8460-3cf5d8c85acf",
+      "reason": "re-judged today (2026-10-21) at current revision"
+    },
+    {
+      "subject": "client-fetch-cache",
+      "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5",
+      "reason": "re-judged today (2026-10-21) at current revision"
+    },
+    {
+      "subject": "client-fetch-cache",
+      "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+      "reason": "not-applicable judged 2026-10-13 at current revision; layout primitives issue no reads"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T17:45:01Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "client-fetch-cache"
+      ],
+      "techniques": [
+        "warm-remount-caches",
+        "swr-design",
+        "cache-key-discipline",
+        "in-flight-dedup"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T17:45:01Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "client-fetch-cache"
+      ],
+      "techniques": [
+        "swr-design"
+      ],
+      "deviations": 1
+    }
+  ]
+}

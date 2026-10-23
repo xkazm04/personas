@@ -86,15 +86,16 @@ describe('the state and origin marks', () => {
     }
   });
 
-  // Ten since 2026-09-24, when `curator` joined the enum. The literal is a
+  // Thirteen since 2026-10-15, when `lens_scan` and `app_master` joined (spark
+  // one-control); ten since 2026-09-24, when `curator` joined the enum. The literal is a
   // fifth hand-kept mirror of `DispatchOrigin` and there is no runtime
   // enumeration of a TS union to derive it from - but `ORIGIN_GLYPH` itself is
   // an exhaustive `Record`, so the type checker is what actually guards the
   // membership and this only guards the distinctness.
   it('gives every origin a distinct glyph', () => {
     const glyphs = Object.values(ORIGIN_GLYPH);
-    expect(glyphs).toHaveLength(11);
-    expect(new Set(glyphs).size).toBe(11);
+    expect(glyphs).toHaveLength(13);
+    expect(new Set(glyphs).size).toBe(13);
   });
 });
 

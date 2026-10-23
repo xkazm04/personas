@@ -113,7 +113,12 @@ export function SegmentedTabs<T extends string>({
       {tabs.map((tab, index) => {
         const active = activeTab === tab.id;
         const tabId = `${prefix}-tab-${tab.id}`;
-        const panelId = `${prefix}-panel-${tab.id}`;
+        // aria-controls is a claim that a panel with this id exists. Without an
+        // `idPrefix` the id derives from useId(), which no caller can know, so
+        // the claim could only dangle: withhold it, as PanelTabBar does. A
+        // caller that renders the panel passes `idPrefix` and spreads
+        // `segmentedTabPanelProps(idPrefix, activeTab)` onto it.
+        const panelId = idPrefix ? `${idPrefix}-panel-${tab.id}` : undefined;
 
         if (variant === 'pill') {
           return (

@@ -6,10 +6,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { installLifecycle } from '@/api/devTools/lifecycle';
 import type { LifecycleSnapshot } from '@/lib/bindings/LifecycleSnapshot';
-import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 
 import type { LifecycleViewModel } from './useLifecycleView';
+import { errorText } from './system/errorText';
 
 export interface InstallNote {
   tone: 'success' | 'warning' | 'error';
@@ -59,7 +59,7 @@ export function useLifecycleInstall(
       refetchRef.current();
     } catch (err) {
       silentCatch('lifecycle:install')(err);
-      const cause = resolveError(err instanceof Error ? err.message : String(err)).message;
+      const cause = errorText(err);
       setNote({ tone: 'error', text: dl.lc_install_failed, cause });
     }
   }, [projectId, tx, dl]);

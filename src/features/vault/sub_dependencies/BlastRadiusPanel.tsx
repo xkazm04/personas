@@ -4,6 +4,7 @@ import type { SimulationResult } from './credentialGraph';
 import { getSeverityStyles } from './graphConstants';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SimulationPanel } from './SimulationPanel';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 
 interface BlastRadiusPanelProps {
   blast: BlastRadius;
@@ -33,22 +34,15 @@ export function BlastRadiusPanel({
             <FlaskConical className={`w-3.5 h-3.5 ${simulationMode ? 'text-fuchsia-400' : 'text-foreground'}`} />
             <span className="typo-caption text-foreground">{dep.simulate_revocation}</span>
           </div>
-          <button
-            type="button"
-            onClick={onToggleSimulation}
-            className={`relative w-8 h-4.5 rounded-full transition-colors cursor-pointer ${
-              simulationMode ? 'bg-fuchsia-500/40' : 'bg-secondary/60 border border-primary/15'
-            }`}
-            aria-label={simulationMode ? 'Disable simulation mode' : 'Enable simulation mode'}
-            role="switch"
-            aria-checked={simulationMode}
-          >
-            <span
-              className={`absolute top-0.5 w-3.5 h-3.5 rounded-full transition-all ${
-                simulationMode ? 'left-4 bg-fuchsia-400' : 'left-0.5 bg-muted-foreground/40'
-              }`}
-            />
-          </button>
+          {/* A switch is named by what it controls; its state is aria-checked.
+              The hand-rolled one carried an English "Enable/Disable simulation
+              mode" name in every locale. */}
+          <AccessibleToggle
+            size="sm"
+            checked={!!simulationMode}
+            onChange={onToggleSimulation}
+            label={dep.simulate_revocation}
+          />
         </div>
       )}
 

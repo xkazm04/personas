@@ -458,7 +458,7 @@ spec (`twin-cycle-features.spec.ts:51,70,85,120,136`).
 
 **D2 — two different env-var names mean the same thing, and you must set both.** The Rust
 server reads **`PERSONAS_TEST_PORT`** (`test_automation.rs:1347`). The entire TypeScript
-harness reads **`COMPANION_TEST_PORT`** (`companion-bridge.ts:23`, `adoption-bridge.ts:18`,
+harness reads **`COMPANION_TEST_PORT`** (`companion-bridge.ts:23`,
 `artist-bridge.ts:22`, `perf-nav-walk.spec.ts:30`, `preset-questionnaire.spec.ts:51`,
 `template-marathon-bridge.ts:11`, `discord-twin-*.spec.ts`). A third set of `.mjs` drivers
 reads `PERSONAS_BASE`; one reads `PERSONAS_TEST_BASE`; one reads `COMPANION_BRIDGE`; one

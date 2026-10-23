@@ -28,6 +28,8 @@ export interface BedPoint {
   offTrack: number;
   /** Read, no verdict possible - drawn as silt, never as a state. */
   silt: number;
+  /** KPIs whose history was truncated before this week: not read, not dry. */
+  unknown: number;
   partial: boolean;
 }
 
@@ -51,6 +53,7 @@ export function toRiverbed(states: WeeklyState[], declared: number): Riverbed {
     onTrack: s.onTrack,
     offTrack: s.offTrack,
     silt: Math.max(0, s.measured - (s.met + s.onTrack + s.offTrack)),
+    unknown: s.unknown,
     partial: s.partial,
   }));
   const closed = points.filter((p) => !p.partial);
@@ -58,7 +61,7 @@ export function toRiverbed(states: WeeklyState[], declared: number): Riverbed {
   return {
     declared,
     points,
-    dryWeeks: points.filter((p) => p.read === 0).length,
+    dryWeeks: points.filter((p) => p.read === 0 && p.unknown === 0).length,
     peak: peak && peak.read > 0 ? peak : null,
     latest: points.length > 0 ? points[points.length - 1]! : null,
   };

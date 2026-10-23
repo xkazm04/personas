@@ -86,6 +86,9 @@ pub struct ClaudeAccountView {
     pub login: Option<relogin::AccountLoginLink>,
     /// The latest re-login run since the app started, or null.
     pub relogin: Option<relogin::ReloginState>,
+    /// Position in the auto-rotate queue (1 = the next target), or null for
+    /// the live plan and for a plan the rotation would not pick.
+    pub rotation_rank: Option<u32>,
 }
 
 /// Everything the strip's multi-plan mode renders, in one read.
@@ -328,7 +331,19 @@ pub(super) async fn build_snapshot(pool: &DbPool) -> Result<ClaudeAccountsSnapsh
                 .find(|l| l.account_id == row.id)
                 .map(relogin::link_view),
             relogin: relogin::state_of(&row.id),
+            rotation_rank: None,
         });
+    }
+
+    let auto_rotate = rotate::read_config(pool);
+    // The queue is only meaningful while the loop is on.
+    let ranks = if auto_rotate.enabled {
+        rotate::rotation_ranks(&auto_rotate, &accounts)
+    } else {
+        Default::default()
+    };
+    for a in &mut accounts {
+        a.rotation_rank = ranks.get(&a.id).copied();
     }
 
     let live_captured = active_id
@@ -340,7 +355,7 @@ pub(super) async fn build_snapshot(pool: &DbPool) -> Result<ClaudeAccountsSnapsh
         live_captured,
         live_present: live.is_some(),
         accounts,
-        auto_rotate: rotate::read_config(pool),
+        auto_rotate,
         last_rotation: rotate::read_last(pool),
         profiles: login_repo::list_profiles(pool)
             .unwrap_or_default()

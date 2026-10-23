@@ -5,9 +5,12 @@ import {
   credentialMatchesConnector,
   deriveReadiness,
   getStatusKey,
+  isExecutionReady,
   isStaleResult,
+  isUnreachable,
   matchesHealthFilter,
   restoreHealthcheck,
+  summarizeTestAll,
 } from '../connectorTypes';
 
 function status(over: Partial<ConnectorStatus> = {}): ConnectorStatus {
@@ -45,6 +48,31 @@ describe('unverifiable is never treated as verified', () => {
   it('an explicit probe failure is still unhealthy', () => {
     expect(deriveReadiness(status({ result: result({ success: false, state: 'failed' }) }))).toBe('unhealthy');
     expect(getStatusKey(status({ result: result({ success: false, state: 'failed' }) }))).toBe('failed');
+  });
+});
+
+// `unreachable` (connect / DNS / timeout) arrives with success === false, so a
+// success-keyed fallthrough painted every connector red on an offline laptop.
+// It is "could not check now", never a verdict about the credential.
+describe('unreachable is never treated as failed', () => {
+  const offline = () => result({ success: false, state: 'unreachable', message: 'connect timeout' });
+
+  it('deriveReadiness and getStatusKey give it its own state', () => {
+    expect(deriveReadiness(status({ result: offline() }))).toBe('unreachable');
+    expect(getStatusKey(status({ result: offline() }))).toBe('unreachable');
+    expect(isUnreachable(offline())).toBe(true);
+    expect(isUnreachable(result({ success: false, state: 'failed' }))).toBe(false);
+    expect(isUnreachable(null)).toBe(false);
+  });
+
+  it('the failed filter excludes it and the unreachable filter selects it', () => {
+    const s = status({ result: offline() });
+    expect(matchesHealthFilter(s, 'unhealthy')).toBe(false);
+    expect(matchesHealthFilter(s, 'unreachable')).toBe(true);
+  });
+
+  it('a linked-but-unreachable connector stays execution-ready', () => {
+    expect(isExecutionReady(status({ result: offline() }))).toBe(true);
   });
 });
 
@@ -148,5 +176,61 @@ describe('credentialMatchesConnector', () => {
   it('an unknown service type falls back to the strict test only', () => {
     expect(credentialMatchesConnector({ service_type: 'made_up' }, 'made_up')).toBe(true);
     expect(credentialMatchesConnector({ service_type: 'made_up' }, 'source_control')).toBe(false);
+  });
+});
+
+// `unreachable` (connect / DNS / timeout) is not a judgement about the
+// credential: engine/healthcheck.rs `is_verdict()` says so, the vault store
+// returns it un-persisted (credentialSlice.ts) so the caller can paint "could
+// not check", and the vault list files it beside `untested`. Its `success` is
+// false, so keying on the boolean painted an offline laptop's good keys red here.
+describe('unreachable is never treated as a failure', () => {
+  const offline = result({ success: false, state: 'unreachable', message: 'connect timeout' });
+
+  it('deriveReadiness reports its own no-verdict state rather than unhealthy', () => {
+    expect(deriveReadiness(status({ result: offline }))).toBe('unreachable');
+    expect(matchesHealthFilter(status({ result: offline }), 'unhealthy')).toBe(false);
+    expect(isExecutionReady(status({ result: offline }))).toBe(true);
+  });
+
+  it('getStatusKey selects its own badge, not `failed`', () => {
+    expect(getStatusKey(status({ result: offline }))).toBe('unreachable');
+  });
+
+  it('a result without a state token still falls back to the boolean', () => {
+    expect(deriveReadiness(status({ result: result({ success: false }) }))).toBe('unhealthy');
+    expect(getStatusKey(status({ result: result({ success: false }) }))).toBe('failed');
+  });
+});
+
+describe('summarizeTestAll', () => {
+  const ok = result({ success: true, state: 'verified' });
+  const bad = result({ success: false, state: 'failed' });
+  const offline = result({ success: false, state: 'unreachable' });
+
+  it('counts recovered, newly failing and still failing against the baseline', () => {
+    const baseline = new Map([['a', bad], ['b', ok], ['c', bad], ['d', null]]);
+    const outcomes = [
+      { name: 'a', result: ok },
+      { name: 'b', result: bad },
+      { name: 'c', result: bad },
+      { name: 'd', result: bad },
+    ];
+    expect(summarizeTestAll(outcomes, baseline)).toEqual({ recovered: 1, regressed: 1, failing: 2, unreachable: 0 });
+  });
+
+  it('an unreachable probe is neither a regression nor a failure', () => {
+    const baseline = new Map([['a', ok], ['b', null]]);
+    const outcomes = [{ name: 'a', result: offline }, { name: 'b', result: offline }];
+    expect(summarizeTestAll(outcomes, baseline)).toEqual({ recovered: 0, regressed: 0, failing: 0, unreachable: 2 });
+  });
+
+  it('an unreachable baseline is not a failure a pass can recover from', () => {
+    const baseline = new Map([['a', offline]]);
+    expect(summarizeTestAll([{ name: 'a', result: ok }], baseline)).toEqual({ recovered: 0, regressed: 0, failing: 0, unreachable: 0 });
+  });
+
+  it('a skipped (already in flight) test counts nowhere', () => {
+    expect(summarizeTestAll([{ name: 'a', result: null }], new Map([['a', bad]]))).toEqual({ recovered: 0, regressed: 0, failing: 0, unreachable: 0 });
   });
 });

@@ -144,7 +144,9 @@
     "color_name_violet": "紫罗兰",
     "contrast_fail": "对比度不足",
     "contrast_pass": "清晰可读",
-    "contrast_preview": "对比度预览"
+    "contrast_preview": "对比度预览",
+    "remove_custom_icon_used_by_one": "另有 {count} 个智能体也在使用。",
+    "remove_custom_icon_used_by_other": "另有 {count} 个智能体也在使用。"
   },
   "general_tools": "通用工具",
   "glossary_api": "两个程序自动相互通信的方式。",
@@ -160,6 +162,8 @@
   "grid_no_data": "无数据",
   "grid_rows": "行",
   "grid_rows_per_page": "每页行数",
+  "grid_prev_page": "上一页",
+  "grid_next_page": "下一页",
   "grid_showing": "显示 {start}–{end}，共 {total} 项",
   "group_older": "更早",
   "group_this_month": "本月",
@@ -259,7 +263,11 @@
     "schedules": "计划",
     "teams_label": "团队",
     "whats_new": "新功能",
-    "whats_new_update": "已更新 — 查看新内容"
+    "whats_new_update": "已更新 — 查看新内容",
+    "activity_draft_in_progress": "草稿进行中",
+    "activity_execution_queued": "执行已排队",
+    "activity_lab_run_in_progress": "实验室运行中",
+    "activity_testing_agent": "正在测试智能体"
   },
   "sort_active_asc": "已按{label}升序排序，点击可切换为降序。",
   "sort_active_desc": "已按{label}降序排序，点击可切换为升序。",
@@ -350,5 +358,17 @@
   "rows_show_all": "显示全部 {count} 项",
   "rows_show_fewer": "收起",
   "rows_showing_all": "正在显示全部 {count} 项",
-  "rows_showing_first": "正在显示前 {count} 项"
+  "rows_showing_first": "正在显示前 {count} 项",
+  "business_outcome": {
+    "value_delivered_label": "已交付",
+    "value_delivered_title": "角色完成了实际工作：产出了可用成果、发送了消息或修改了状态。",
+    "no_input_available_label": "无输入",
+    "no_input_available_title": "运行正常，但没有可处理的内容：仅输出了就绪/状态报告。",
+    "precondition_failed_label": "已阻塞",
+    "precondition_failed_title": "缺少或损坏了必需的连接器、凭据或前置条件。请修复配置以解除阻塞。",
+    "partial_label": "部分完成",
+    "partial_title": "完成了部分工作但未全部完成：触发速率限制、临时错误，或部分条目缺少字段。",
+    "unknown_label": "-",
+    "unknown_title": "未报告业务结果（较早的执行，或模型未输出评估）。"
+  }
 }

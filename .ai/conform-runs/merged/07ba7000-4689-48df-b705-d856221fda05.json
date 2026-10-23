@@ -1,0 +1,25 @@
+{"schema":"conform-run/1","worker":"07ba7000-4689-48df-b705-d856221fda05","subject":"narrative-scroll-surface",
+ "evaluatedAt":"2026-10-21T12:00:00Z",
+ "pairs":[
+  {"context":"739b6d67-2c36-41ee-9794-a74bc0b25cfd","subject":"narrative-scroll-surface","bundle":"software-engineering","state":"not-applicable",
+   "evidence":"src/features/shared/components/display/UnifiedTable.tsx:4 declares the golden-standard table for in-app list views (task-bearing reader); no explanatory page for an uncommitted reader exists here, so the subject's precondition does not hold",
+   "techniques":[]},
+  {"context":"cc76d419-f457-4fe4-833c-6869efbc9287","subject":"narrative-scroll-surface","bundle":"software-engineering","state":"not-applicable",
+   "evidence":"src/hooks/utility/interaction/useProgressiveReveal.ts:6 'reveal' here staggers mounting of already-fetched table rows, not scroll-bound narrative progression; the context owns no explanatory page, so the precondition does not hold",
+   "techniques":[],
+   "registryProposal":"Matcher resonance: 'reveal'/'motion'/'scroll' tokens rank this subject 'strong' on list-virtualization hooks; route by the golden path's precondition (an explanatory page for a reader with no task) rather than vocabulary."},
+  {"context":"36783fec-01fa-40d5-8620-cf65ae691d27","subject":"narrative-scroll-surface","bundle":"software-engineering","state":"not-applicable",
+   "evidence":"src/features/overview/shared/emptyStatePrototype/types.ts:5 the module is an empty-state variant system inside overview tabs (one motif per state), not a sequenced explanatory page, so the subject's precondition does not hold",
+   "techniques":[]},
+  {"context":"bb9239ca-2b5b-4d51-b6ec-c32921a2fe20","subject":"narrative-scroll-surface","bundle":"software-engineering","state":"not-applicable",
+   "evidence":"src/features/plugins/radio/components/RadioPage.tsx:12 the page is the Settings > Radio station-curation tab, a task surface, not an explanatory narrative page, so the subject's precondition does not hold",
+   "techniques":[]}
+ ],
+ "declined":[
+  {"subject":"narrative-scroll-surface","context":"417112d1-004b-41d5-a656-57997a47d818","reason":"context governance is weak (timing hooks matched on 'animated'/'timer'); judging it would manufacture a verdict on a doubtful match - coverage question, not a conformance one"},
+  {"subject":"narrative-scroll-surface","context":"aa2197a5-6b7c-46ff-a6cd-8172d2984f50","reason":"already judged not-applicable 2026-10-16 against the current digest with a sound anchor (GuidedTour.tsx:243 advanceTour on click); no re-judge needed"},
+  {"subject":"narrative-scroll-surface","context":"f838d49f-2928-441e-ac8d-f6e6c412b262","reason":"already judged not-applicable 2026-10-16 against the current digest; verdict current"}
+ ],
+ "consults":[
+  {"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["narrative-scroll-surface"],"techniques":[],"deviations":0}
+ ]}

@@ -35,4 +35,9 @@ login: AccountLoginLink | null,
 /**
  * The latest re-login run since the app started, or null.
  */
-relogin: ReloginState | null, };
+relogin: ReloginState | null, 
+/**
+ * Position in the auto-rotate queue (1 = the next target), or null for
+ * the live plan and for a plan the rotation would not pick.
+ */
+rotationRank: number | null, };

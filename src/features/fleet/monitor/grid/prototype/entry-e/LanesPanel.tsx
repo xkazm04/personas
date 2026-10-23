@@ -1,8 +1,8 @@
 // The Queue view: the same sessions as three plates side by side - Running,
 // Queued, Parked / done - each built as a bay is (`QueueLane`): an engraved
 // nameplate with its count and a lamp lit with the worst state inside, the
-// share bar, then one compact two-row line per session (hairlines between, no
-// box around), so a lane holds three times what a card column did. Activity's
+// share bar, then one 36px line per session (`SessionLine`, the persona line's
+// anatomy), so a lane holds three times what a card column did. Activity's
 // plate, lamp and card anatomy, so Bays and Queue read as one panel.
 //
 // The Queued lane is NOT windowed. It renders `QueueLadder`, which owns the
@@ -18,7 +18,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useQuantizedNow } from '@/hooks/utility/timing/relativeTimeTicker';
 import type { ActivitySurface } from '../useActivitySurface';
 import type { QueueItem } from '../../board/queue/useQueueModel';
-import { SessionLine, SESSION_LINE_H } from './SessionLine';
+import { SessionLine } from './SessionLine';
+import { LineGhost } from './Ghosts';
 import { QueueLadder } from './QueueLadder';
 import { LaneHead, QueueLane, type LaneRow } from './QueueLane';
 import { isParked, type PanelFilter } from './boardFilter';
@@ -36,8 +37,8 @@ function ColdLanes({ titles }: { titles: string[] }) {
       {titles.map((title, i) => (
         <section key={title} className="ae-plate flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-card">
           <LaneHead title={title} count={null} sessions={[]} />
-          <div className="mt-1 flex flex-col gap-1 px-1.5">
-            {Array.from({ length: 3 - i }, (_, j) => <span key={j} className="ae-ghost rounded-card" style={{ height: SESSION_LINE_H }} />)}
+          <div className="mt-1 flex flex-col">
+            {Array.from({ length: 3 - i }, (_, j) => <LineGhost key={j} />)}
           </div>
         </section>
       ))}

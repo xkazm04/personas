@@ -16,7 +16,8 @@ import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineE
 import Button from '@/features/shared/components/buttons/Button';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { bulkResolveAuditIncidents } from '@/api/overview/incidents';
-import { toastCatch } from '@/lib/silentCatch';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useIncidentsData, DEFAULT_LIMIT } from '../libs/useIncidentsData';
 import { useIncidentActions } from '../libs/useIncidentActions';
 import { useAutonomousIncidents } from '../libs/useAutonomousIncidents';
@@ -35,6 +36,7 @@ import {
   useReloadOnDeckClose,
 } from '@/features/overview/sub_manual-review/libs/decisionDeckDoors';
 import { openIncidentDoor } from '../libs/incidentDeckDoor';
+import { isActiveIncidentStatus } from '../libs/incidentStatus';
 
 export default function IncidentsInbox() {
   const { t, tx } = useTranslation();
@@ -56,7 +58,7 @@ export default function IncidentsInbox() {
   // asking for something. Already-closed rows are left alone so the count in
   // the dialog is the count of rows that will visibly change.
   const clearableIds = useMemo(
-    () => incidents.filter((i) => i.status !== 'resolved' && i.status !== 'dismissed').map((i) => i.id),
+    () => incidents.filter((i) => isActiveIncidentStatus(i.status)).map((i) => i.id),
     [incidents],
   );
 
@@ -202,7 +204,7 @@ export default function IncidentsInbox() {
             filters={filters}
             onApplyFilters={(next) => { setFilters(next); setShowAutonomous(false); }}
             autonomous={{
-              count: autonomous.incidents.length,
+              count: autonomous.failed && autonomous.incidents.length === 0 ? null : autonomous.incidents.length,
               active: showAutonomous,
               onToggle: () => setShowAutonomous((v) => !v),
             }}
@@ -213,6 +215,8 @@ export default function IncidentsInbox() {
           <AutonomousLogPanel
             incidents={autonomous.incidents}
             loading={autonomous.loading}
+            failed={autonomous.failed}
+            onRetry={() => void autonomous.refresh()}
             onOpenIncident={openDetail}
             onBack={() => setShowAutonomous(false)}
           />
@@ -223,7 +227,8 @@ export default function IncidentsInbox() {
             {error && (
               <div className="px-4 py-3">
                 <InlineErrorBanner
-                  message={`${t.overview.incidents.load_failed}: ${error}`}
+                  title={t.overview.incidents.load_failed}
+                  message={resolveErrorTranslated(t, extractMessage(error.raw)).message}
                   onRetry={() => void refresh()}
                 />
               </div>
@@ -242,7 +247,8 @@ export default function IncidentsInbox() {
               <div className="flex items-center justify-center py-16">
                 {isNarrowed ? (
                   <EmptyState
-                    icon={Inbox}
+                    art="search"
+                    size="sm"
                     title={t.overview.incidents.empty_filtered_title}
                     subtitle={t.overview.incidents.empty_state_filtered}
                   />

@@ -1,71 +1,50 @@
 /**
- * Lifecycle: the active project's development practice, over ONE data model
- * (`lifecycleView/useLifecycleView`).
+ * Lifecycle: the development practice of every project, as the Lens
+ * (`lifecycleView/lens/LensBody`; contest lifecycle-portfolio-r2, winner A/3;
+ * docs/design/lifecycle-lens/migration-plan.md).
  *
- * The FRAME (Lifecycle excellence wave 1, 2026-10-08): the header names the
- * PROJECT, with one line under it for the practice and how fresh its
- * measurement is against the base branch (`frame/HeaderSubtitle`), and one
- * action cluster on its own row (`frame/HeaderToolbar`): picker, Measure, the
- * Overseer hand-off, Ask Athena, and Install when a binding is missing. The
- * header and its cluster are permanent chrome: they paint at their final size
- * before the snapshot lands, disabled where they need it.
+ * The page lands on the portfolio. Opening a project focuses Lifecycle on it
+ * without touching the app-wide active project (owner, 2026-10-16): the Lens
+ * route owns the focused project, and the one view model
+ * (`lifecycleView/useLifecycleView`) reads that project's snapshot, so every
+ * block below the portfolio - the step screens, Measure, the Overseer
+ * hand-off - works on it unchanged.
  *
- * Two layers in one body (`lifecycleView/LifecycleBody`). Layer 1 is the whole
- * practice as the collar rail; pressing a step replaces it, in place, with
- * that step's Layer-2 screen (a lazily loaded chunk, warmed on intent). Esc
- * comes back. Not a drawer and not a route: the owner's 2026-10-06 note that a
- * modal reopened on every node made walking the journey impossible still
- * holds, so Layer 2 walks too (Left / Right).
- *
- * A running Measure is one session for the whole page (`measure/measureSession`):
- * the header's Measure control turns into its live progress and its subtitle
- * says the time left, Layer 1 shows the Measure panel in the status band's
- * slot, and Gate and Tests hold their verdict until the last run lands.
- *
- * Loading pattern v2: a cold first load ghosts Layer 1 in its real geometry
- * under the permanent header; a warm remount paints from the module cache in
- * useLifecycleSnapshot and revalidates; a failure shows an inline banner and
- * keeps any warm snapshot on screen.
+ * A running Measure is one session for the page (`measure/measureSession`):
+ * the top bar's Measure control turns into its live progress, the project
+ * plane shows its panel, and Gate and Tests hold their verdict until the last
+ * run lands. One time cursor (`history/timeTravel`) spans the project's
+ * planes.
  */
-import { GitBranch } from 'lucide-react';
+import { KitHost } from '@/features/shared/components/kit';
+import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 
-import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
-import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
-import { useTranslation } from '@/i18n/useTranslation';
-
+import { useLifecycleReconcile } from './journey/useLifecycleReconcile';
 import { LifecycleViewProvider } from './lifecycleView/context';
-import { HeaderSubtitle } from './lifecycleView/frame/HeaderSubtitle';
-import { HeaderToolbar } from './lifecycleView/frame/HeaderToolbar';
-import { LifecycleBody } from './lifecycleView/LifecycleBody';
+import { TimeTravelProvider } from './lifecycleView/history/timeTravel';
+import { LensBody, useLensRoute } from './lifecycleView/lens/LensBody';
+import { MeasureAnnouncer } from './lifecycleView/measure/MeasureAnnouncer';
 import { MeasureSessionProvider } from './lifecycleView/measure/measureSession';
-import { GLYPH } from './lifecycleView/system/scales';
 import { useLifecycleView } from './lifecycleView/useLifecycleView';
 
 export default function LifecyclePage() {
-  const { t } = useTranslation();
-  const model = useLifecycleView();
+  const [route, dispatch] = useLensRoute();
+  // A dropped lifecycle push heals on entry, focus and re-show, not on the next write.
+  useLifecycleReconcile();
+  const model = useLifecycleView(route.plane === 'project' ? route.projectId : null);
 
   return (
     <LifecycleViewProvider model={model}>
       <MeasureSessionProvider>
         <ContentBox>
-          <ContentHeader
-            compact
-            icon={<GitBranch className={`${GLYPH.md} text-primary`} />}
-            iconColor="primary"
-            title={model.projectName ?? t.plugins.dev_tools.lifecycle_title}
-            subtitle={model.projectId ? <HeaderSubtitle /> : undefined}
-          >
-            <HeaderToolbar />
-          </ContentHeader>
-
-          <ContentBody centered>
-            {!model.projectId ? (
-              <EmptyState icon={GitBranch} title={model.dl.lc_empty_title} subtitle={model.dl.lc_empty_subtitle} />
-            ) : (
-              <LifecycleBody />
-            )}
-          </ContentBody>
+          <div className="flex-1 min-h-0">
+            <KitHost>
+              <TimeTravelProvider projectId={model.projectId} ready={model.order.length > 0}>
+                <MeasureAnnouncer />
+                <LensBody route={route} dispatch={dispatch} />
+              </TimeTravelProvider>
+            </KitHost>
+          </div>
         </ContentBox>
       </MeasureSessionProvider>
     </LifecycleViewProvider>

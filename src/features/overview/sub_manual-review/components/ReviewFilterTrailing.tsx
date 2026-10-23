@@ -1,7 +1,7 @@
 import { CheckSquare, Square, Cloud, Monitor } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
-import { SOURCE_LABELS, type SourceFilter } from '../libs/reviewHelpers';
+import { reviewSourceLabel, type SourceFilter } from '../libs/reviewHelpers';
 import type { Persona } from '@/lib/bindings/Persona';
 
 interface ReviewFilterTrailingProps {
@@ -44,7 +44,7 @@ export function ReviewFilterTrailing({
             >
               {src === 'local' && <Monitor className="w-3 h-3" />}
               {src === 'cloud' && <Cloud className="w-3 h-3" />}
-              {SOURCE_LABELS[src]}
+              {reviewSourceLabel(t, src)}
             </button>
           ))}
         </div>

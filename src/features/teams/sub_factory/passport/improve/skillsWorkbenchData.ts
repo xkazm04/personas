@@ -12,7 +12,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listSkills, stampSkillProvenance, syncRegistryClone, writeRegistryUsage, type SkillEntry } from '@/api/devTools/devTools';
 import { usageFileFor } from '@/features/plugins/dev-tools/sub_workspaces/registry/useRegistryLibrary';
 import { spawnExternalConsole, spawnSession, writeDispatchBrief } from '@/api/fleet/fleet';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { interpolate, useTranslation, type Translations } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useImproveActivityStore } from '@/stores/improveActivityStore';
@@ -49,10 +50,12 @@ async function syncBeforeDispatch(clonePath: string | null | undefined): Promise
 
 /** Surface a sync refusal with the backend's own sentence — it already names
  *  which of connectivity / mapping / local state the operator should look at,
- *  and a generic "sync failed" would throw that away. */
-function syncFailureMessage(e: unknown): string {
-  const raw = e instanceof Error ? e.message : String(e);
-  return raw.trim() ? `Registry not synced — ${raw.split('\n')[0]}` : 'Registry not synced';
+ *  and a generic "sync failed" would throw that away. The rejection is an IPC
+ *  AppError OBJECT, never an Error, so `String(e)` printed "[object Object]". */
+export function syncFailureMessage(e: unknown, t: Translations): string {
+  const d = t.plugins.dev_tools;
+  const raw = extractMessage(e);
+  return raw.trim() ? interpolate(d.improve_registry_not_synced_detail, { detail: raw.split('\n')[0]! }) : d.improve_registry_not_synced;
 }
 
 export type WorkbenchMode = 'manage' | 'dispatch';
@@ -167,6 +170,7 @@ export function usageHint(description: string | null): string | null {
 /** Assemble the workbench for a project. Returns null when the improve engine
  *  or the project's raw row isn't available (caller renders nothing). */
 export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
+  const { t, tx } = useTranslation();
   const engine = useImprove();
   const addToast = useToastStore((s) => s.addToast);
   const managing = useImproveActivityStore((s) => Boolean(s.byCell[`${slug}:skills`]));
@@ -188,8 +192,8 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
   }, [slug]);
 
   const sourceLabel = useCallback((source: string | null): string =>
-    source === null ? 'Global library' : engine?.getRaw(source)?.project.name ?? 'another project',
-    [engine]);
+    source === null ? t.plugins.dev_tools.improve_src_global : engine?.getRaw(source)?.project.name ?? t.plugins.dev_tools.improve_src_other,
+    [engine, t]);
   const sourceRootOf = useCallback((projectId: string): string | null =>
     engine?.getRaw(projectId)?.project.root_path ?? null, [engine]);
 
@@ -226,7 +230,7 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
     try {
       await syncBeforeDispatch(clonePath);
     } catch (e) {
-      addToast(syncFailureMessage(e), 'error');
+      addToast(syncFailureMessage(e, t), 'error');
       throw e;
     }
     try {
@@ -242,12 +246,12 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
         unsubscribe();
         stampSkillProvenance(name, slug, src.source).catch(silentCatch('skillsWorkbench stamp provenance'));
       });
-      addToast(`Claude is adopting “${name}” into ${raw.project.name}, customized for its codebase`, 'success');
+      addToast(tx(t.plugins.dev_tools.improve_toast_adopting, { skill: name, name: raw.project.name }), 'success');
     } catch (e) {
-      addToast('Couldn’t start the skill task', 'error');
+      addToast(t.plugins.dev_tools.improve_toast_skill_task_failed, 'error');
       throw e;
     }
-  }, [engine, raw, slug, sourceRootOf, addToast]);
+  }, [engine, raw, slug, sourceRootOf, addToast, t, tx]);
 
   const runShare = useCallback(async (name: string, target?: ShareTarget) => {
     if (!engine || !raw) return;
@@ -256,7 +260,7 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
     try {
       await syncBeforeDispatch(target?.kind === 'registry' ? target.clonePath : null);
     } catch (e) {
-      addToast(syncFailureMessage(e), 'error');
+      addToast(syncFailureMessage(e, t), 'error');
       throw e;
     }
 
@@ -281,12 +285,12 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
     try {
       const taskId = await engine.deployNow(slug, shareTaskTitle(name), shareTaskPrompt(name, raw.project, effective), SKILL_TASK_MODEL);
       useImproveActivityStore.getState().start(`${slug}:skills`, taskId, 'deploy');
-      addToast(`Claude is generalizing “${name}” into your library`, 'success');
+      addToast(tx(t.plugins.dev_tools.improve_toast_generalizing, { skill: name }), 'success');
     } catch (e) {
-      addToast('Couldn’t start the skill task', 'error');
+      addToast(t.plugins.dev_tools.improve_toast_skill_task_failed, 'error');
       throw e;
     }
-  }, [engine, raw, slug, addToast]);
+  }, [engine, raw, slug, addToast, t, tx]);
 
   const runDispatch = useCallback(async (name: string, args: string) => {
     if (!raw?.project.root_path) return;
@@ -294,14 +298,14 @@ export function useSkillsWorkbench(slug: string): SkillsWorkbench | null {
     try {
       await spawnSession(raw.project.root_path, [skillCommand(name, args)]);
       void useSystemStore.getState().fleetRefresh();
-      addToast(`Running /${name} in ${raw.project.name}`, 'success');
+      addToast(tx(t.plugins.dev_tools.improve_toast_running_skill, { skill: name, name: raw.project.name }), 'success');
     } catch (e) {
-      addToast('Couldn’t start the Fleet session', 'error');
+      addToast(t.plugins.dev_tools.improve_toast_fleet_failed, 'error');
       throw e;
     } finally {
       setDispatching(false);
     }
-  }, [raw, addToast]);
+  }, [raw, addToast, tx, t]);
 
   // The console lane. No toast here and no `dispatching` guard: the app keeps
   // no handle on the window it opens (see fleet/external.rs), so there is

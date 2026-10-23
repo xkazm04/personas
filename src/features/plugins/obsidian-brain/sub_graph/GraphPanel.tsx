@@ -7,13 +7,12 @@ import {
   Compass,
   CalendarDays,
   Users,
-  Loader2,
   ExternalLink,
-  Settings,
 } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { NoVaultConnected } from '../NoVaultConnected';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -36,7 +35,8 @@ import {
 import { listen } from '@tauri-apps/api/event';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { openNoteInObsidian } from '../openInObsidian';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 /**
  * The Orphans tile reads `stats.orphanCount` (every unlinked note in the vault)
@@ -59,7 +59,6 @@ export default function GraphPanel() {
   const connected = useSystemStore((s) => s.obsidianConnected);
   const activeVaultPath = useSystemStore((s) => s.obsidianVaultPath);
   const vaultName = useSystemStore((s) => s.obsidianVaultName);
-  const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
 
   const [stats, setStats] = useState<VaultStats | null>(null);
   const [orphansExpanding, setOrphansExpanding] = useState(false);
@@ -85,7 +84,13 @@ export default function GraphPanel() {
   const [meetingBody, setMeetingBody] = useState('');
   const [meetingSaving, setMeetingSaving] = useState(false);
 
+  // Graph reads are async and unordered (watcher refreshes, writes, a vault
+  // switch): an older read must not land over a newer one or another vault.
+  const statsLoads = useRef(createLatestWins()).current;
+  const searches = useRef(createLatestWins()).current;
+
   const loadStats = useCallback(async () => {
+    const token = statsLoads.next();
     setStatsLoading(true);
     try {
       const [s, o, m] = await Promise.all([
@@ -93,32 +98,42 @@ export default function GraphPanel() {
         obsidianGraphListOrphans(orphanLimitRef.current),
         obsidianGraphListMocs(8, 10),
       ]);
+      if (!statsLoads.isCurrent(token)) return;
       setStats(s);
       setOrphans(o);
       setMocs(m);
     } catch (e) {
-      addToast(`Failed to load vault stats: ${e}`, 'error');
+      if (statsLoads.isCurrent(token)) toastCatch('GraphPanel:loadStats')(e);
     } finally {
-      setStatsLoading(false);
+      if (statsLoads.isCurrent(token)) setStatsLoading(false);
     }
-  }, [addToast]);
+  }, [statsLoads]);
 
   /** Widen the sample to the whole orphan set (up to the backend's cap). */
   const expandOrphans = useCallback(async () => {
     setOrphansExpanding(true);
+    const generation = statsLoads.current();
     try {
       const all = await obsidianGraphListOrphans(ORPHAN_MAX);
+      if (statsLoads.current() !== generation) return;
       orphanLimitRef.current = ORPHAN_MAX;
       setOrphans(all);
     } catch (e) {
-      addToast(tx(t.plugins.obsidian_brain.orphan_expand_failed, { error: String(e) }), 'error');
+      addToast(tx(t.plugins.obsidian_brain.orphan_expand_failed, { error: extractMessage(e) }), 'error');
     } finally {
       setOrphansExpanding(false);
     }
-  }, [addToast, t, tx]);
+  }, [addToast, statsLoads, t, tx]);
 
   useEffect(() => {
     if (!connected) return;
+    // A new vault (or a reconnect) starts from its own data: search hits and
+    // a widened orphan list name paths of the previous vault, and opening one
+    // would deep-link the NEW vault's name to the OLD vault's path.
+    searches.next();
+    setSearchHits([]);
+    setSearching(false);
+    orphanLimitRef.current = ORPHAN_SAMPLE;
     loadStats();
     void obsidianGraphStartWatcher().catch(silentCatch('GraphPanel:startWatcher'));
     let unlisten: (() => void) | null = null;
@@ -144,29 +159,29 @@ export default function GraphPanel() {
       // watcher without stopping the previous one.
       void obsidianGraphStopWatcher().catch(silentCatch('GraphPanel:stopWatcher'));
     };
-  }, [connected, activeVaultPath, loadStats]);
+  }, [connected, activeVaultPath, loadStats, searches]);
 
   const runSearch = useCallback(async () => {
     if (!query.trim()) {
       setSearchHits([]);
       return;
     }
+    const token = searches.next();
     setSearching(true);
     try {
       const hits = await obsidianGraphSearch(query.trim(), 25);
-      setSearchHits(hits);
+      if (searches.isCurrent(token)) setSearchHits(hits);
     } catch (e) {
-      addToast(`Search failed: ${e}`, 'error');
+      if (searches.isCurrent(token)) toastCatch('GraphPanel:search')(e);
     } finally {
-      setSearching(false);
+      if (searches.isCurrent(token)) setSearching(false);
     }
-  }, [query, addToast]);
+  }, [query, searches]);
 
   const appendJournal = useCallback(async () => {
-    if (!journalBody.trim()) {
-      addToast('Write something to capture first', 'error');
-      return;
-    }
+    // The button is disabled while the body is empty; this only guards a
+    // programmatic call.
+    if (!journalBody.trim()) return;
     setJournalSaving(true);
     try {
       const result = await obsidianGraphAppendDailyNote(journalBody, {
@@ -181,17 +196,16 @@ export default function GraphPanel() {
       setJournalBody('');
       void loadStats();
     } catch (e) {
-      addToast(`Daily note write failed: ${e}`, 'error');
+      toastCatch('GraphPanel:appendDailyNote')(e);
     } finally {
       setJournalSaving(false);
     }
   }, [journalBody, journalSection, addToast, loadStats]);
 
   const writeMeeting = useCallback(async () => {
-    if (!meetingTitle.trim() || !meetingBody.trim()) {
-      addToast('Meeting title and body are required', 'error');
-      return;
-    }
+    // The button is disabled until both are filled; this only guards a
+    // programmatic call.
+    if (!meetingTitle.trim() || !meetingBody.trim()) return;
     setMeetingSaving(true);
     try {
       const attendees = meetingAttendees
@@ -209,7 +223,7 @@ export default function GraphPanel() {
       setMeetingBody('');
       void loadStats();
     } catch (e) {
-      addToast(`Meeting note write failed: ${e}`, 'error');
+      toastCatch('GraphPanel:writeMeetingNote')(e);
     } finally {
       setMeetingSaving(false);
     }
@@ -217,16 +231,7 @@ export default function GraphPanel() {
 
   if (!connected) {
     return (
-      <div className="flex-1 flex items-center justify-center py-20">
-        <EmptyState
-          icon={AlertTriangle}
-          title={t.plugins.obsidian_brain.no_vault_connected}
-          subtitle={t.plugins.obsidian_brain.no_vault_hint}
-          iconColor="text-amber-400/80"
-          iconContainerClassName="bg-amber-500/10 border-amber-500/20"
-          action={{ label: t.plugins.obsidian_brain.tab_setup, onClick: () => setObsidianBrainTab('setup'), icon: Settings }}
-        />
-      </div>
+      <NoVaultConnected />
     );
   }
 
@@ -287,7 +292,7 @@ export default function GraphPanel() {
               })}
             </div>
           ) : (
-            <p className="typo-caption text-foreground py-2">{t.plugins.obsidian_brain.no_stats_yet}</p>
+            <EmptyState art="chart" size="sm" title={t.plugins.obsidian_brain.no_stats_yet} />
           )}
         </SectionCard>
 
@@ -305,18 +310,20 @@ export default function GraphPanel() {
                     if (e.key === 'Enter') runSearch();
                   }}
                   placeholder={t.plugins.obsidian_brain.search_vault_placeholder}
+                  aria-label={t.plugins.obsidian_brain.search_vault_placeholder}
                   className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
                 />
               </div>
-              <button
-                type="button"
+              <Button
+                variant="accent"
+                tone="agent"
+                icon={<Search className="w-4 h-4" />}
+                loading={searching}
                 onClick={runSearch}
                 disabled={searching || !query.trim()}
-                className="flex items-center gap-2 px-4 py-2 rounded-card bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
               >
-                {searching ? <LoadingSpinner size="sm" /> : <Search className="w-4 h-4" />}
                 {t.plugins.obsidian_brain.search}
-              </button>
+              </Button>
             </div>
 
             {searchHits.length > 0 && (
@@ -342,7 +349,7 @@ export default function GraphPanel() {
               </div>
             )}
             {!searching && query.trim() && searchHits.length === 0 && (
-              <p className="typo-caption text-foreground">{t.plugins.obsidian_brain.no_matches}</p>
+              <EmptyState art="search" size="sm" title={t.plugins.obsidian_brain.no_matches} />
             )}
           </div>
         </SectionCard>
@@ -365,7 +372,7 @@ export default function GraphPanel() {
               /* Settled-only empty state — orphans load in the same
                  Promise.all as stats, so don't claim "none" while that
                  fetch is still in flight. */
-              !statsLoading && <p className="typo-caption text-foreground py-2">{t.plugins.obsidian_brain.orphan_notes_empty}</p>
+              !statsLoading && <EmptyState art="link" size="sm" title={t.plugins.obsidian_brain.orphan_notes_empty} />
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {orphans.map((o) => (
@@ -386,7 +393,7 @@ export default function GraphPanel() {
 
           <SectionCard collapsible title={`${t.plugins.obsidian_brain.mocs_title} (${mocs.length})`} subtitle={t.plugins.obsidian_brain.mocs_subtitle} storageKey="obsidian-graph-mocs">
             {mocs.length === 0 ? (
-              !statsLoading && <p className="typo-caption text-foreground py-2">{t.plugins.obsidian_brain.mocs_empty}</p>
+              !statsLoading && <EmptyState art="link" size="sm" title={t.plugins.obsidian_brain.mocs_empty} />
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {mocs.map((m) => (
@@ -418,22 +425,26 @@ export default function GraphPanel() {
                 value={journalSection}
                 onChange={(e) => setJournalSection(e.target.value)}
                 placeholder={t.plugins.obsidian_brain.journal_section_placeholder}
+                aria-label={t.plugins.obsidian_brain.journal_section_placeholder}
                 className="w-48 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
               />
-              <button
-                type="button"
+              <Button
+                variant="accent"
+                tone="agent"
+                icon={<CalendarDays className="w-4 h-4" />}
+                loading={journalSaving}
                 onClick={appendJournal}
                 disabled={journalSaving || !journalBody.trim()}
-                className="ml-auto flex items-center gap-2 px-5 py-2 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
+                className="ml-auto"
               >
-                {journalSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
                 {t.plugins.obsidian_brain.append_to_today}
-              </button>
+              </Button>
             </div>
             <textarea
               value={journalBody}
               onChange={(e) => setJournalBody(e.target.value)}
               placeholder={t.plugins.obsidian_brain.journal_body_placeholder}
+              aria-label={t.plugins.obsidian_brain.quick_journal}
               rows={4}
               className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all resize-none"
             />
@@ -448,6 +459,7 @@ export default function GraphPanel() {
               value={meetingTitle}
               onChange={(e) => setMeetingTitle(e.target.value)}
               placeholder={t.plugins.obsidian_brain.meeting_title_placeholder}
+              aria-label={t.plugins.obsidian_brain.meeting_title_placeholder}
               className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
             />
             <div className="relative">
@@ -457,6 +469,7 @@ export default function GraphPanel() {
                 value={meetingAttendees}
                 onChange={(e) => setMeetingAttendees(e.target.value)}
                 placeholder={t.plugins.obsidian_brain.meeting_attendees_placeholder}
+                aria-label={t.plugins.obsidian_brain.meeting_attendees_placeholder}
                 className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
               />
             </div>
@@ -464,18 +477,20 @@ export default function GraphPanel() {
               value={meetingBody}
               onChange={(e) => setMeetingBody(e.target.value)}
               placeholder={t.plugins.obsidian_brain.meeting_body_placeholder}
+              aria-label={t.plugins.obsidian_brain.meeting_body_placeholder}
               rows={5}
               className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all resize-none"
             />
-            <button
-              type="button"
+            <Button
+              variant="accent"
+              tone="agent"
+              icon={<Users className="w-4 h-4" />}
+              loading={meetingSaving}
               onClick={writeMeeting}
               disabled={meetingSaving || !meetingTitle.trim() || !meetingBody.trim()}
-              className="flex items-center gap-2 px-5 py-2 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
             >
-              {meetingSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
               {t.plugins.obsidian_brain.save_meeting_note}
-            </button>
+            </Button>
           </div>
         </SectionCard>
       </div>

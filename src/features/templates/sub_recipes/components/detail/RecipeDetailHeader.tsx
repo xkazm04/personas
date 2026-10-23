@@ -50,14 +50,16 @@ export function RecipeDetailHeader({
             style={{ background: `linear-gradient(105deg, ${accent}14 0%, transparent 45%)` }}
           />
         )}
-        <button
-          type="button"
-          onClick={onBack}
-          className="relative mt-1 inline-flex items-center justify-center w-8 h-8 rounded-full border border-card-border bg-secondary/40 text-foreground hover:border-primary/40 cursor-pointer transition-colors"
-          title={t.recipes_catalog.back_to_catalog}
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
+        <Tooltip content={t.recipes_catalog.back_to_catalog}>
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label={t.recipes_catalog.back_to_catalog}
+            className="relative mt-1 inline-flex items-center justify-center w-8 h-8 rounded-full border border-card-border bg-secondary/40 text-foreground hover:border-primary/40 cursor-pointer transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+        </Tooltip>
         {iconMeta && (
           <span
             className="relative shrink-0 flex items-center justify-center rounded-card mt-0.5"
@@ -120,17 +122,18 @@ export function RecipeDetailHeader({
         {hasPersona && adopted ? (
           // Adopted → the CTA becomes the symmetric detach. Destructive
           // tone; confirmation dialog is owned by the panel.
-          <button
-            type="button"
-            onClick={onRemove}
-            disabled={removePending}
-            data-testid="recipe-remove-cta"
-            className="relative shrink-0 self-center inline-flex items-center gap-2 px-4 py-2 rounded-interactive border typo-body transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer border-status-error/40 bg-status-error/10 text-status-error hover:bg-status-error/20"
-            title={t.recipes_catalog.remove_tooltip}
-          >
-            <Trash2 className="w-4 h-4" />
-            {t.recipes_catalog.remove_label}
-          </button>
+          <Tooltip content={t.recipes_catalog.remove_tooltip}>
+            <button
+              type="button"
+              onClick={onRemove}
+              disabled={removePending}
+              data-testid="recipe-remove-cta"
+              className="relative shrink-0 self-center inline-flex items-center gap-2 px-4 py-2 rounded-interactive border typo-body transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer border-status-error/40 bg-status-error/10 text-status-error hover:bg-status-error/20"
+            >
+              <Trash2 className="w-4 h-4" />
+              {t.recipes_catalog.remove_label}
+            </button>
+          </Tooltip>
         ) : (
           <button
             type="button"

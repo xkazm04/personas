@@ -6,6 +6,7 @@
 // "manifest" cart that tallies exactly what ships, its encryption state, and the
 // export CTA. KPIs are not a standalone scope — they ride along with their team
 // via the all-or-none "Include KPI setup" control in the cart.
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Search, X, CheckCheck, HardDriveDownload } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -300,11 +301,7 @@ export function ExportSelectionModal({ isOpen, onClose, onExport, exporting }: E
             {inv.pending[scope] && shownIds.length === 0 ? (
               <ExportListGhostRows />
             ) : shownIds.length === 0 ? (
-              <div className="flex flex-col items-center justify-center text-center py-20 gap-1.5">
-                <Search className="w-7 h-7 text-foreground" />
-                <p className="typo-body text-foreground">{p.no_results_title}</p>
-                <p className="typo-caption text-foreground">{p.no_results_hint}</p>
-              </div>
+              <ScenarioEmptyState art="search" size="sm" title={p.no_results_title} description={p.no_results_hint} />
             ) : (
               renderRows()
             )}

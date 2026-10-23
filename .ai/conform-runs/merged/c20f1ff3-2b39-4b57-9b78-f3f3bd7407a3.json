@@ -1,0 +1,15 @@
+{"schema": "conform-run/1", "worker": "c20f1ff3-2b39-4b57-9b78-f3f3bd7407a3", "subject": "background-jobs",
+ "evaluatedAt": "2026-10-16T17:44:08Z",
+ "pairs": [{"context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0", "subject": "background-jobs", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:22ed2a99172ae050", "evaluatedRevision": 5,
+   "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 the WorkflowJob projection drops the cancel_outcome JobSnapshot carries (src-tauri/src/background_job.rs:1002) though :134 claims the snapshot reports it, and src/api/pipeline/workflows.ts:16 cancel resolves void onto a terminal Failed row, so no client can show cancelling or tell cancelled from failed",
+   "techniques": [
+     {"technique": "job-progress-and-cancellation", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 cancel_outcome is dropped from WorkflowJob; src-tauri/src/background_job.rs:684 sync cancel writes JobStatus::Failed at once, no cancelling state, no distinct cancelled terminal - collapses two-step acknowledgement and failure/cancelled into one gray endpoint"},
+     {"technique": "job-progress-and-cancellation (re-attach snapshot)", "verdict": "realized", "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:75 overview snapshot carries a bounded 20-line output_tail per job id, read via src/api/pipeline/workflows.ts:10"},
+     {"technique": "loop-supervision", "verdict": "not-applicable", "evidence": "src/api/pipeline/workflows.ts:1 this context is IPC wrappers; the supervisor/loops live in src-tauri, not in these files"},
+     {"technique": "timeout-is-a-status-not-a-consumption", "verdict": "not-applicable", "evidence": "src/api/pipeline/workflows.ts:12 no wait-for-result call on a tracked job exists; the client only lists, reads output and cancels"}
+   ],
+   "registryProposal": "Prior verdict (rev 4) re-judged against rev 5: still a deviation. Partial backend fix (ae76c1fb8c CancelOutcome Requested/Reclaimed) shows a real-world middle state the technique lacks words for: a cancel that SIGNALLED but cannot prove the task stopped. The technique's two-step cancelling->cancelled assumes the runner can observe stop; consider naming 'requested-unconfirmed' as an honest terminal-ish state for un-abortable spans. Also: cancelWorkflowJob/getWorkflowsOverview have no UI caller in src/ - context paths may over-claim this surface."}],
+ "declined": [{"subject": "background-jobs", "context": "33a96a83-6adc-42f7-b57c-839382bcef54", "reason": "commands-curator is governance: weak; the skill does not judge weak pairs by default - reported as a coverage question (matched on loop/tick/jobs vocabulary only)"}],
+ "consults": [{"ts": "2026-10-16T17:44:08Z", "bundle": "software-engineering", "subjects": ["background-jobs"], "techniques": ["job-progress-and-cancellation", "loop-supervision", "timeout-is-a-status-not-a-consumption"], "deviations": 1}]}

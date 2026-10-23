@@ -41,12 +41,14 @@
   "budget_label": "الميزانية",
   "build_validation": {
     "composite_min_conditions": "تحتاج المُشغِّلات المركّبة إلى شرطين على الأقل.",
+    "composite_window_maximum": "يجب ألا تتجاوز النافذة الزمنية 24 ساعة (86400 ثانية).",
     "composite_window_minimum": "يجب أن تكون النافذة الزمنية 5 ثوانٍ على الأقل.",
     "cron_invalid": "تعبير cron غير صالح.",
     "cron_required": "يجب تحديد تعبير cron.",
     "endpoint_required": "رابط نقطة النهاية أو الحدث مطلوب.",
     "event_type_required": "يجب تحديد نوع الحدث المطلوب الاستماع إليه.",
     "interval_minimum": "يجب أن يكون الفاصل الزمني 60 ثانية على الأقل.",
+    "watch_events_required": "اختر حدثًا واحدًا على الأقل من أحداث الملفات للمراقبة.",
     "watch_path_required": "يجب تحديد مسار مراقبة واحد على الأقل."
   },
   "builder": {
@@ -183,6 +185,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} أحداث",
   "dead_letter_bulk_retry_title": "إعادة محاولة كل الأحداث المحدّدة في معاملة واحدة",
   "dead_letter_clear_filters_to_see": "امسح عوامل التصفية لعرض كل الأحداث في قائمة الرسائل الميتة",
+  "dead_letter_load_failed_title": "تعذّر تحميل قائمة الرسائل الميتة",
+  "dead_letter_load_failed_desc": "تعذّرت قراءة القائمة، لذا فإن القائمة الفارغة هنا ستكون مضللة. أحداثك لم تُفقد - حاول مرة أخرى.",
   "dead_letter_clear_selection": "مسح",
   "dead_letter_discard": "تجاهل",
   "dead_letter_discard_title": "تجاهل هذا الحدث نهائياً",
@@ -623,9 +627,12 @@
     "automation_delete": "حذف الأتمتة",
     "automation_enabled": "مفعّل",
     "automation_failed": "فشل",
+    "automation_held": "محتجز بانتظار الموافقة",
     "automation_idle": "بانتظار حدثه",
     "automation_next": "التالي",
+    "automation_partial": "شُغِّل جزئيًا",
     "automation_ran": "شُغِّل",
+    "automation_requested": "طُلب",
     "automation_run_now": "تشغيل الآن",
     "automations_title": "أحداث النظام النشطة",
     "cadence_custom": "cron مخصص…",
@@ -945,5 +952,7 @@
   "add_persona_available": "{count} متاحة",
   "add_persona_all_connected": "جميع الشخصيات متصلة بالفعل",
   "add_persona_ungrouped": "بدون مجموعة",
-  "live_status_skipped": "تم التخطي"
+  "live_status_skipped": "تم التخطي",
+  "webhooks_load_failed": "تعذّر تحميل مشغّلات الويب هوك",
+  "webhooks_load_failed_desc": "تعذّرت قراءة القائمة، وعرض قائمة فارغة هنا سيكون مضللًا. مشغّلاتك لم تُفقد - حاول مرة أخرى."
 }

@@ -1,0 +1,14 @@
+{"schema": "conform-run/1", "worker": "77864223-e4f8-4758-8372-05b7fc612743", "subject": "session-continuation",
+ "evaluatedAt": "2026-10-16T17:57:16Z",
+ "pairs": [{"context": "aebcd52a-07a3-4305-bf42-d961b4f37a62", "subject": "session-continuation", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/infrastructure/dev_tools/goals.rs:336 the only agent work here is a single fire-and-forget browser-test turn per operator click (dev_tools_run_goal_uat); the rest are CRUD/git commands (git_ops.rs:160 one test run, workspace.rs:20 worktree isolation at the spawn boundary) - no session turn boundary, continuation mode or stop decision lives in this context",
+   "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4", "evaluatedRevision": 8,
+   "techniques": [
+     {"technique": "continuation-as-state", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/infrastructure/dev_tools/goals.rs:336 one-shot spawn_browser_test_turn; no keep-working fact is armed or read"},
+     {"technique": "single-loop-authority", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/infrastructure/dev_tools/git_ops.rs:160 dev_tools_run_tests is a single invocation, no loop owner exists in the context"},
+     {"technique": "ordered-teardown", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/infrastructure/dev_tools/workspace.rs:20 worktree isolation sits at the subprocess spawn boundary (subprocess-lifecycle seam), not a session's cancel path"}
+   ],
+   "registryProposal": "Lexical resonance, not a hole: the match was earned by 'goal'/'checkpoint'/'tools' (the context-map's api_surface names a dev_tools_git_checkpoint that does not appear in git_ops.rs). Goal/milestone CRUD should not route to session-continuation; consider down-weighting 'goal' and 'checkpoint' as use_when tokens when no turn/stop/loop vocabulary co-occurs."}],
+ "declined": [{"subject": "session-continuation", "context": "33a96a83-6adc-42f7-b57c-839382bcef54", "reason": "commands-curator is governance: weak (and priorNotApplicable 7); the skill forbids judging weak rows by default - reported as a coverage question instead"}],
+ "consults": [{"ts": "2026-10-16T17:57:16Z", "bundle": "software-engineering", "subjects": ["session-continuation"], "techniques": ["continuation-as-state", "single-loop-authority", "ordered-teardown"], "deviations": 0}]}

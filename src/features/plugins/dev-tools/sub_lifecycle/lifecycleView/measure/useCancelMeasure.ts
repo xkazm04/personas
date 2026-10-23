@@ -5,12 +5,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { cancelLifecycleMeasure } from '@/api/devTools/lifecycle';
-import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch } from '@/lib/silentCatch';
-import { isTauriError } from '@/lib/types/tauriError';
 
 import { useLifecycleViewModel } from '../context';
 import { isMeasuring, useMeasureSession } from './measureSession';
+import { errorText } from '../system/errorText';
 
 export interface CancelMeasure {
   cancel: () => Promise<void>;
@@ -41,7 +40,7 @@ export function useCancelMeasure(): CancelMeasure {
       silentCatch('lifecycle:cancelMeasure')(err);
       asked.current = false;
       markCancelAsked(false);
-      setFailure(resolveError(isTauriError(err) ? err.error : err instanceof Error ? err.message : String(err)).message);
+      setFailure(errorText(err));
     }
   }, [projectId, phase, markCancelAsked]);
 

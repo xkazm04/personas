@@ -6,7 +6,6 @@ import { CredentialEditForm } from '@/features/vault/sub_credentials/components/
 import { VaultErrorBanner } from '@/features/vault/sub_credentials/components/card/banners/VaultErrorBanner';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { useVaultStore } from "@/stores/vaultStore";
-import type { RotationStatus } from '@/api/vault/rotation';
 import type { HealthResult } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import type { GoogleOAuthState } from '@/features/vault/shared/hooks/useGoogleOAuth';
 import { OverviewSections } from './OverviewSections';
@@ -14,6 +13,7 @@ import { HealthProbeBanner } from './HealthProbeBanner';
 import { BoundAccountChip } from '@/features/vault/shared/BoundAccountChip';
 import { readCredentialAccount } from '@/features/vault/shared/credentialAccount';
 import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 
 export interface OverviewTabProps {
   credential: CredentialMetadata;
@@ -26,9 +26,6 @@ export interface OverviewTabProps {
     checkStored: () => void;
     checkPreview: (serviceType: string, values: Record<string, string>) => void;
   };
-  rotationStatus: RotationStatus | null;
-  rotationCountdown: string | null;
-  fetchRotationStatus: () => Promise<void>;
   editError: string | null;
   setEditError: (error: string | null) => void;
   onOAuthConsent: (values: Record<string, string>) => void;
@@ -48,8 +45,9 @@ export function OverviewTab({
   onOAuthConsent,
   onDelete,
 }: OverviewTabProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const sh = t.vault.shared;
+  const cb = t.vault.card_body;
   const [isEditing, setIsEditing] = useState(false);
   const boundAccount = readCredentialAccount(credential.metadata).email;
 
@@ -105,14 +103,16 @@ export function OverviewTab({
                 serviceType: credential.service_type,
               });
             } catch (err) {
-              setEditError(err instanceof Error ? err.message : sh.failed_update);
+              // The store rethrows the IPC rejection, an AppError object, so
+              // the old `instanceof Error` test always chose the generic line.
+              setEditError(inlineErrorCopy(t, err, sh.failed_update));
             }
           }}
           onOAuthConsent={isGoogleOAuthFlow ? onOAuthConsent : undefined}
-          oauthConsentLabel={googleOAuth.isAuthorizing ? 'Authorizing with Google...' : 'Authorize with Google'}
+          oauthConsentLabel={tx(googleOAuth.isAuthorizing ? cb.authorizing_with : cb.authorize_with, { name: 'Google' })}
           oauthConsentDisabled={googleOAuth.isAuthorizing}
-          oauthConsentHint={isGoogleOAuthFlow ? 'Launches app-managed Google consent and updates refresh token after approval.' : undefined}
-          oauthConsentSuccessBadge={googleOAuth.completedAt ? `Google consent completed at ${googleOAuth.completedAt}` : undefined}
+          oauthConsentHint={isGoogleOAuthFlow ? tx(cb.authorize_hint, { name: 'Google' }) : undefined}
+          oauthConsentSuccessBadge={googleOAuth.completedAt ? tx(cb.consent_completed, { name: 'Google', time: googleOAuth.completedAt }) : undefined}
           isAuthorizingOAuth={googleOAuth.isAuthorizing}
           oauthPollingMessage={googleOAuth.message}
           onCancel={() => setIsEditing(false)}

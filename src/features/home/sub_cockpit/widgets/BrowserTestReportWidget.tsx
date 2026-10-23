@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { KitButton, Meta, Tile } from '@/features/shared/components/kit';
 import { companionFileBrowserDefects } from '@/api/companion';
 import { completeGoalUat } from '@/api/devTools/devTools';
-import { toastCatch, silentCatch } from '@/lib/silentCatch';
+import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { recordsOf, textOf } from './narrow';
 import { BrowserReportSections, type ReportDefect, type ReportStep } from './BrowserReportSections';
 
 /**
@@ -24,8 +25,17 @@ export function BrowserTestReportWidget({ config, title, span, actions, footer }
   const url = typeof config?.url === 'string' ? config.url : '';
   const projectName =
     typeof config?.project_name === 'string' ? config.project_name : '';
-  const steps = (Array.isArray(config?.steps) ? config.steps : []) as ReportStep[];
-  const defects = (Array.isArray(config?.defects) ? config.defects : []) as ReportDefect[];
+  const steps: ReportStep[] = recordsOf(config?.steps).map((r) => ({
+    label: textOf(r.label),
+    result: textOf(r.result),
+    evidence: textOf(r.evidence),
+  }));
+  const defects: ReportDefect[] = recordsOf(config?.defects).map((r) => ({
+    title: textOf(r.title),
+    severity: textOf(r.severity),
+    detail: textOf(r.detail),
+    fix: textOf(r.fix),
+  }));
   const consoleErrors = (
     Array.isArray(config?.console_errors) ? config.console_errors : []
   ).map((e) => (typeof e === 'string' ? e : JSON.stringify(e)));
@@ -33,28 +43,26 @@ export function BrowserTestReportWidget({ config, title, span, actions, footer }
     Array.isArray(config?.security_notes) ? config.security_notes : []
   ).map((n) => (typeof n === 'string' ? n : JSON.stringify(n)));
 
-  // Goal-UAT linkage: when this report is a goal's acceptance gate and EVERY
-  // step passed, close the gate (tick the verify item → goal can reach done).
-  // The "attempted" flag is persisted per goal so a remount (tab revisit,
-  // spec recompose) can't re-fire the close call — a fresh ref would reset.
+  // Goal-UAT linkage: when this report is a goal's acceptance gate and EVERY step passed, the
+  // user can close the gate (tick the verify item -> the goal can reach done) with an explicit
+  // press. It used to fire on render, so a model-composed report carrying a goal_id and all-pass
+  // steps closed the gate on a claim alone: the start command issues no run id the backend could
+  // check, so the person pressing is the evidence.
   const goalId = typeof config?.goal_id === 'string' ? config.goal_id : '';
   const allPass = steps.length > 0 && steps.every((s) => s.result === 'pass');
   const [uatClosed, setUatClosed] = useState(false);
-  const closeAttemptedStorageKey = goalId ? `cockpit_uat_close_attempted:${goalId}` : '';
-  const closeAttempted = useRef(
-    closeAttemptedStorageKey ? window.localStorage.getItem(closeAttemptedStorageKey) === '1' : false,
-  );
-  useEffect(() => {
-    if (goalId && allPass && !closeAttempted.current) {
-      closeAttempted.current = true;
-      try {
-        window.localStorage.setItem(closeAttemptedStorageKey, '1');
-      } catch (err) { silentCatch('BrowserTestReportWidget:persistAttempted')(err); }
-      completeGoalUat(goalId)
-        .then(() => setUatClosed(true))
-        .catch(silentCatch('BrowserTestReportWidget:completeGoalUat'));
+  const [closing, setClosing] = useState(false);
+  const closeGate = async () => {
+    setClosing(true);
+    try {
+      await completeGoalUat(goalId);
+      setUatClosed(true);
+    } catch (e) {
+      toastCatch('BrowserTestReportWidget:completeGoalUat')(e);
+    } finally {
+      setClosing(false);
     }
-  }, [goalId, allPass, closeAttemptedStorageKey]);
+  };
 
   const fileDefects = async () => {
     setFiling(true);
@@ -70,6 +78,9 @@ export function BrowserTestReportWidget({ config, title, span, actions, footer }
 
   const empty = steps.length === 0;
   const uatDone = !!goalId && uatClosed;
+  const closeAction = goalId && allPass && !uatClosed
+    ? <KitButton loading={closing} onClick={closeGate} testId="browser-report-close-uat">{t.plugins.dev_tools.accept}</KitButton>
+    : null;
   const fileAction = defects.length > 0 && !empty
     ? filed === null
       ? <KitButton loading={filing} onClick={fileDefects} testId="browser-report-file-ideas">{c.browser_report_file_ideas}</KitButton>
@@ -87,9 +98,9 @@ export function BrowserTestReportWidget({ config, title, span, actions, footer }
         ]} />
       )}
       actions={actions}
-      footer={fileAction || footer ? <>{fileAction}{footer}</> : undefined}
+      footer={fileAction || closeAction || footer ? <>{closeAction}{fileAction}{footer}</> : undefined}
       state={empty ? 'empty' : undefined}
-      empty={{ title: c.browser_report_empty }}
+      empty={{ art: 'report', title: c.browser_report_empty }}
       testId={empty ? 'companion-browser-test-report-empty' : 'companion-browser-test-report'}
     >
       <BrowserReportSections steps={steps} defects={defects} consoleErrors={consoleErrors} securityNotes={securityNotes} />

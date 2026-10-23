@@ -1,20 +1,17 @@
 import { type ReactNode } from 'react';
-import { AlertTriangle, AlertCircle, Info, WifiOff, Settings, RefreshCw, X } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info, RefreshCw, X } from 'lucide-react';
 import { STATUS_PALETTE } from '@/lib/design/statusTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 
 /**
- * Shared primitive underneath ErrorRecoveryBanner and InlineErrorBanner —
- * both rendered the identical shape (role alert/status + severity-colored
- * bordered card + leading icon + message/body + optional retry/action
- * button + optional dismiss + `actions` slot) with two parallel per-severity
- * config maps. This is the single source of truth for that shape; the two
- * named components are thin wrappers kept for call-site ergonomics and to
- * preserve each one's existing visual/behavioral defaults.
+ * Shared primitive underneath InlineErrorBanner (a thin wrapper kept for its
+ * 24 importers): role alert/status + severity-coloured bordered card +
+ * leading icon + title/message/cause + optional retry + `actions` slot +
+ * optional dismiss. This is the single source of truth for that shape and
+ * its per-severity config map.
  */
 
 export type BannerSeverity = 'error' | 'warning' | 'info';
-export type BannerActionType = 'retry' | 'check_connection' | 'open_settings';
 
 export interface BannerProps {
   severity?: BannerSeverity;
@@ -23,16 +20,10 @@ export interface BannerProps {
   message: string;
   /** Likely cause of the problem (rendered under the message, in the accent color). */
   cause?: string;
-  /** Primary recovery action type — renders an action button styled from `actionType`/`actionLabel`/`onAction`. */
-  actionType?: BannerActionType;
-  /** Label override for the action button. */
-  actionLabel?: string;
-  /** Handler for the primary action button (actionType-driven). */
-  onAction?: () => void;
-  /** Simple retry button (fixed icon + translated "Retry" label). Ignored if `onAction` is set. */
+  /** Simple retry button (fixed icon + translated "Retry" label). */
   onRetry?: () => void;
   onDismiss?: () => void;
-  /** Extra content rendered after the action button. */
+  /** Extra content rendered after the retry button. */
   actions?: ReactNode;
   compact?: boolean;
   className?: string;
@@ -40,8 +31,6 @@ export interface BannerProps {
   alwaysAlert?: boolean;
   /** Render the message body in neutral foreground instead of the severity accent color. */
   neutralBody?: boolean;
-  /** Render the dismiss button in a muted severity tone instead of the tier-accent hover style. */
-  mutedDismiss?: boolean;
 }
 
 const SEVERITY_CONFIG = {
@@ -71,20 +60,11 @@ const SEVERITY_CONFIG = {
   },
 } as const;
 
-const ACTION_DEFAULTS: Record<BannerActionType, { icon: typeof RefreshCw; label: string }> = {
-  retry: { icon: RefreshCw, label: 'Retry' },
-  check_connection: { icon: WifiOff, label: 'Check Connection' },
-  open_settings: { icon: Settings, label: 'Open Settings' },
-};
-
 export function Banner({
   severity = 'error',
   title,
   message,
   cause,
-  actionType,
-  actionLabel,
-  onAction,
   onRetry,
   onDismiss,
   actions,
@@ -92,19 +72,12 @@ export function Banner({
   className = '',
   alwaysAlert = false,
   neutralBody = false,
-  mutedDismiss = false,
 }: BannerProps) {
   const { t } = useTranslation();
   const config = SEVERITY_CONFIG[severity];
   const { Icon, tokens } = config;
   const isAlert = alwaysAlert || severity === 'error';
-  const actionConfig = actionType ? ACTION_DEFAULTS[actionType] : null;
-  const ActionIcon = actionConfig?.icon ?? RefreshCw;
-  const actionFinalLabel = actionLabel ?? actionConfig?.label ?? 'Retry';
   const bodyText = neutralBody ? 'text-foreground' : config.accentText;
-  const dismissClass = mutedDismiss
-    ? `${tokens.text} opacity-60 hover:opacity-100`
-    : config.dismissText;
 
   return (
     <div
@@ -119,16 +92,7 @@ export function Banner({
           <p className={`typo-body ${bodyText}${title ? ' mt-0.5' : ''}`}>{message}</p>
           {cause && <p className={`typo-caption ${config.accentText} mt-1`}>{cause}</p>}
         </div>
-        {onAction && (
-          <button
-            type="button"
-            onClick={onAction}
-            className={`flex items-center gap-1.5 px-2.5 py-1 typo-heading rounded-xl border ${config.buttonBg} transition-colors cursor-pointer shrink-0`}
-          >
-            <ActionIcon className="w-3 h-3" /> {actionFinalLabel}
-          </button>
-        )}
-        {!onAction && onRetry && (
+        {onRetry && (
           <button
             type="button"
             onClick={onRetry}
@@ -143,7 +107,7 @@ export function Banner({
             type="button"
             onClick={onDismiss}
             aria-label={t.common.dismiss}
-            className={`${dismissClass} transition-colors cursor-pointer shrink-0`}
+            className={`${config.dismissText} transition-colors cursor-pointer shrink-0`}
           >
             <X className="w-4 h-4" />
           </button>

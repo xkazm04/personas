@@ -34,5 +34,12 @@
   "oauth_unknown_error": "neznámá chyba",
   "ai_search_no_results": "Nenalezeny žádné odpovídající šablony.",
   "ai_search_coverage": " (prohledáno {searched} z {total} šablon)",
-  "ai_search_failed": "Vyhledávání pomocí AI selhalo: {detail}"
+  "ai_search_failed": "Vyhledávání pomocí AI selhalo: {detail}",
+  "run_timed_out": "Běh vypršel po {minutes} minutách. Operace se mohla zaseknout.",
+  "startup_failed": "Spuštění selhalo: nepodařilo se načíst {sources}.",
+  "startup_source_credentials": "přihlašovací údaje",
+  "startup_source_personas": "persony",
+  "startup_source_recipes": "recepty",
+  "startup_source_teams": "týmy",
+  "startup_source_tools": "nástroje"
 }

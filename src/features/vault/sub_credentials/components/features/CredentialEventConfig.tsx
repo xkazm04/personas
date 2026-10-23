@@ -54,6 +54,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
 
   const toggleInFlightRef = useRef<Set<string>>(new Set());
   const configInFlightRef = useRef<Set<string>>(new Set());
+  const configQueuedRef = useRef<Map<string, { templateId: string; updates: Record<string, unknown> }>>(new Map());
 
   const markSaving = (templateId: string) =>
     setSavingIds((prev) => {
@@ -98,26 +99,39 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
   const handleUpdateConfig = async (eventId: string, templateId: string, updates: Record<string, unknown>) => {
     // Serialize concurrent config writes on the same event: a second write
     // that starts before the first resolves would otherwise merge against a
-    // stale pre-update snapshot and clobber the first write's field.
-    if (configInFlightRef.current.has(eventId)) return;
+    // stale pre-update snapshot and clobber the first write's field. A write
+    // that arrives mid-flight is queued (merged over any earlier queued one)
+    // and flushed after the current save, so the last click wins.
+    if (configInFlightRef.current.has(eventId)) {
+      configQueuedRef.current.set(eventId, { templateId, updates: { ...configQueuedRef.current.get(eventId)?.updates, ...updates } });
+      return;
+    }
     configInFlightRef.current.add(eventId);
     try {
-      const existing = myEvents.find(e => e.id === eventId);
-      if (!existing) return;
+      let next: { templateId: string; updates: Record<string, unknown> } | undefined = { templateId, updates };
+      while (next) {
+        const { templateId: tid, updates: upd } = next;
+        next = undefined;
+        const existing = useVaultStore.getState().credentialEvents.find(e => e.id === eventId);
+        if (!existing) return;
 
-      markSaving(templateId);
-      try {
-        const currentConfig = safeParseConfig(existing.config);
-        const updatedConfig = { ...currentConfig, ...updates };
-        await updateCredentialEvent(eventId, { config: updatedConfig });
-        await fetchCredentialEvents(credentialId);
-      } catch (err) {
-        logger.error('Failed to update event config', { error: String(err) });
-      } finally {
-        clearSaving(templateId);
+        markSaving(tid);
+        try {
+          const currentConfig = safeParseConfig(existing.config);
+          const updatedConfig = { ...currentConfig, ...upd };
+          await updateCredentialEvent(eventId, { config: updatedConfig });
+          await fetchCredentialEvents(credentialId);
+        } catch (err) {
+          logger.error('Failed to update event config', { error: String(err) });
+        } finally {
+          clearSaving(tid);
+        }
+        next = configQueuedRef.current.get(eventId);
+        configQueuedRef.current.delete(eventId);
       }
     } finally {
       configInFlightRef.current.delete(eventId);
+      configQueuedRef.current.delete(eventId);
     }
   };
 

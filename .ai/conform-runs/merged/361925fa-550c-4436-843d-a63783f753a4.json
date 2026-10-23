@@ -1,0 +1,6 @@
+{"schema":"conform-run/1","worker":"361925fa-550c-4436-843d-a63783f753a4","subject":"companion-identity",
+"evaluatedAt":"2026-10-22T00:00:00Z","pairs":[],
+"declined":[
+{"subject":"companion-identity","context":"2651f2ce-7fc1-4331-8b31-61e783e9746a","reason":"companions-page is a weak context (lexical-only match on 'companion'/'store'); it is a UI page shell, so a verdict would be speculative. Coverage question, left unjudged."},
+{"subject":"companion-identity","context":"5ab49df3-3442-4ea6-a405-077dec64850d","reason":"persona-core-codex is a weak context (lexical-only match); it renders persona archetype/trait tiles, not a companion constitution or self-model. Coverage question, left unjudged."}],
+"consults":[]}

@@ -10,9 +10,10 @@ import { getAttentionLoopStatus } from '@/api/agents/personaBrain';
 import { listAllTriggers } from '@/api/pipeline/triggers';
 import { getCredentialAuditLogGlobal, type CredentialAuditEntry } from '@/api/vault/credentials';
 import { getHealingEffectiveness, type HealingEffectivenessReport } from '@/api/overview/healing';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import type { AttentionLoopStatus } from '@/lib/bindings/AttentionLoopStatus';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
+import type { TriggerKind } from '@/lib/bindings/TriggerKind';
 import type { Reading } from './readings';
 
 const REFRESH_MS = 60_000;
@@ -30,7 +31,7 @@ function useSource<T>(label: string, load: () => Promise<T>): Reading<T> {
         .catch((err: unknown) => {
           silentCatch(`missionControl/${label}`)(err);
           // A failed refresh never hides a reading already on screen (law 1).
-          if (alive) setReading((prev) => (prev.status === 'ready' ? prev : { status: 'failed', error: String(err) }));
+          if (alive) setReading((prev) => (prev.status === 'ready' ? prev : { status: 'failed', error: extractMessage(err) }));
         });
     };
     run();
@@ -63,5 +64,9 @@ export function useSideReadings(): SideReadings {
   };
 }
 
-/** Schedule-shaped triggers, exactly as UpcomingRoutinesCard filters them. */
-export const SCHEDULE_TRIGGER_TYPES = new Set(['schedule', 'cron', 'polling']);
+/** Clock-driven trigger kinds: the ones with a `next_trigger_at`, read by the
+ *  routines card and the mission readings. Typed against the ts-rs
+ *  `TriggerKind` union so a spelling the schema cannot store fails tsc (the
+ *  hand-typed copies listed 'cron', which `TriggerKind` does not have). */
+const SCHEDULE_TRIGGER_KINDS: readonly TriggerKind[] = ['schedule', 'polling'];
+export const SCHEDULE_TRIGGER_TYPES: ReadonlySet<string> = new Set(SCHEDULE_TRIGGER_KINDS);

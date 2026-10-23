@@ -87,7 +87,7 @@ export function PersonaSelectorModal({
         <div className="px-5 pt-5 pb-3 border-b border-primary/10 space-y-3">
           <div className="flex items-center justify-between">
             <h3 id="persona-selector-modal" className="typo-heading text-foreground uppercase">{t.shared.persona_modal_title}</h3>
-            <button type="button" onClick={handleClose} className="p-1.5 rounded-lg hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors">
+            <button type="button" onClick={handleClose} aria-label={t.common.close} className="p-1.5 rounded-lg hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -102,7 +102,7 @@ export function PersonaSelectorModal({
               autoFocus
             />
             {search && (
-              <button type="button" onClick={() => setSearch('')} className="text-foreground hover:text-foreground">
+              <button type="button" onClick={() => setSearch('')} aria-label={t.common.clear} className="text-foreground hover:text-foreground">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}

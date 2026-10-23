@@ -1,4 +1,24 @@
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
+import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
+
+/** The bucket `get_stats` folds every run-less (hand-written) memory into:
+ *  `SELECT COALESCE(run_id, 'manual') ... GROUP BY run_id`. It is not a run. */
+const NO_RUN_BUCKET = 'manual';
+
+/**
+ * The team's RUNS from `stats.run_counts`, as `[runId, count]`.
+ *
+ * `run_counts` also carries the `'manual'` bucket of memories no run wrote, and
+ * every reader treated it as a run: a team with one run and one hand-written
+ * memory got a "2 runs" timeline header, a diff tab, and a default comparison
+ * of that run against `listTeamMemoriesByRun('manual')` -- which matches no row
+ * -- so the diff reported every memory as added or removed.
+ */
+export function teamRunCounts(stats: TeamMemoryStats | null): [string, number][] {
+  return (stats?.run_counts ?? [])
+    .filter(([id]) => id !== NO_RUN_BUCKET)
+    .map(([id, c]) => [id, Number(c)]);
+}
 
 export interface CategoryDiff {
   category: string;

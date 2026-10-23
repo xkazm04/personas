@@ -1,0 +1,123 @@
+{
+  "schema": "conform-run/1",
+  "worker": "749bb879-039a-4271-8961-1ea27359f5f7",
+  "subject": "versioning-snapshots",
+  "evaluatedAt": "2026-10-16T17:19:52Z",
+  "pairs": [
+    {
+      "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+      "subject": "versioning-snapshots",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/execution/metrics.rs:310 promote_to_production still demotes the incumbent by retagging it experimental and writes no activation record - a retired production version reads as never-promoted and which version was live when stays unanswerable (re-verified 2026-10-16, unchanged)",
+      "techniques": [
+        {
+          "technique": "promotion-lifecycle",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/metrics.rs:310 demotion collapses retired into experimental and leaves no first-class lifecycle event naming who/when/displacing which (prohibitions 1, 5, 6)"
+        }
+      ]
+    },
+    {
+      "context": "9b0ee86c-2613-49a5-9fda-fcc4d432fb72",
+      "subject": "versioning-snapshots",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/lab/versions.rs:45 create_version (one tx, parent edge, full-graph copy) still has zero production callers - only its tests at :185-:230 - while live captures go to persona_prompt_versions through hand-rolled INSERTs (src-tauri/src/commands/execution/lab.rs:630, src-tauri/src/commands/design/build_sessions.rs:2726): the one correct capture door is dead (re-verified 2026-10-16)",
+      "techniques": [
+        {
+          "technique": "snapshot-scope",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/execution/lab.rs:630 a second capture path writes persona_prompt_versions directly, bypassing the one snapshot routine (prohibition 5)"
+        },
+        {
+          "technique": "lineage-and-variants",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/lab/versions.rs:45 the only writer that records a parent edge is never called in production, so live versions carry no lineage (prohibition 1)"
+        }
+      ]
+    },
+    {
+      "context": "7741725e-8124-4899-b17e-8e39e7fcf1ed",
+      "subject": "versioning-snapshots",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/studio/StudioVersions.tsx:124 the restore confirm still warns confirm_destructive_cannot_undo - false, since the backend captures the live tree first (src-tauri/src/webbuild/versions.rs:107) - and success at :55 closes and reloads silently instead of saying what was restored from which version (re-verified 2026-10-16; anchor moved from :123 comment to the body line)",
+      "techniques": [
+        {
+          "technique": "restore-semantics",
+          "verdict": "deviation",
+          "evidence": "src/features/studio/StudioVersions.tsx:55 success says nothing about what it did; restore-semantics requires the surface to state it in version terms (Failure is loud, and success says what it did)"
+        }
+      ]
+    },
+    {
+      "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd",
+      "subject": "versioning-snapshots",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/webbuild/versions.rs:107 capture-before-restore lands but the restore itself mints no version and records no source: the pre-restore snapshot is labelled before restore without the target sha, and --overlay (:112) keeps files added later, so the result is an unlabelled chimera nobody can later read as restored from X (re-verified 2026-10-16, unchanged)",
+      "techniques": [
+        {
+          "technique": "restore-semantics",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/versions.rs:107 restore mints no version naming its source and records no activation, so neither the append nor the re-activation model holds (prohibitions 5, 7)"
+        },
+        {
+          "technique": "lineage-and-variants",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/versions.rs:107 the restore leaves the default parent = previous head in place; the true source sha is recorded nowhere (prohibition 3)"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-16T17:19:52Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "versioning-snapshots"
+      ],
+      "techniques": [
+        "promotion-lifecycle"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:19:52Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "versioning-snapshots"
+      ],
+      "techniques": [
+        "snapshot-scope",
+        "lineage-and-variants"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:19:52Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "versioning-snapshots"
+      ],
+      "techniques": [
+        "restore-semantics"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:19:52Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "versioning-snapshots"
+      ],
+      "techniques": [
+        "restore-semantics",
+        "lineage-and-variants"
+      ],
+      "deviations": 1
+    }
+  ]
+}

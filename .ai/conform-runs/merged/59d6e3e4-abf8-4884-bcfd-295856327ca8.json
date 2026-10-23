@@ -1,0 +1,23 @@
+{"schema":"conform-run/1","worker":"59d6e3e4-abf8-4884-bcfd-295856327ca8","subject":"supply-chain","evaluatedAt":"2026-10-22T12:00:00Z",
+"pairs":[
+{"context":"7741725e-8124-4899-b17e-8e39e7fcf1ed","subject":"supply-chain","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/features/studio/StudioVisionStart.tsx:49 Studio is an IPC client that only probes for Bun presence (webbuild_bun_status) and shows install guidance; every fetch/spawn crossing lives in the backend webbuild contexts, already judged separately",
+"techniques":[{"technique":"reading-is-not-running","verdict":"not-applicable here: the frontend spawns nothing, the spawn sits behind @/api/webbuild","evidence":"src/features/studio/studioStore.ts:21 imports only the IPC wrappers"}]},
+{"context":"ad601e35-b998-4029-97a5-77487f00d561","subject":"supply-chain","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/lib/types/types.ts:2 pure frontend type definitions bridging ts-rs bindings; no dependency, archive, secret or install crossing exists in this context, the match came from build/review/team vocabulary",
+"techniques":[]}
+],
+"declined":[
+{"subject":"supply-chain","context":"aebcd52a-07a3-4305-bf42-d961b4f37a62","reason":"weak context; coverage question, not judged"},
+{"subject":"supply-chain","context":"a35d1f4a-5de8-4be1-af8b-1a3784296400","reason":"weak context; coverage question, not judged"},
+{"subject":"supply-chain","context":"89d44c76-ec4c-4388-843e-503cf6ca2507","reason":"weak context; coverage question, not judged"},
+{"subject":"supply-chain","context":"cab45fee-e439-4bff-9924-217b1acc17f8","reason":"context-map has no file_paths for plugins-artist-hooks and git ls-files shows the artist plugin retired (c06_retire_artist_research_lab.rs); nothing to read, likely orphaned context"},
+{"subject":"supply-chain","context":"2a54cdc2-87af-4298-b490-9eb87f230df7","reason":"map paths (templates sub_explore/sub_presets) do not match the draft-editor description; unread, left unknown"},
+{"subject":"supply-chain","context":"0ecc70bc-a005-4ff8-9a98-f362d2a75f53","reason":"vocabulary-only match (review/saved/audit) on IPC wrappers; unread, budget"},
+{"subject":"supply-chain","context":"4eb0030b-e8a2-4993-bfab-81aee6943054","reason":"unread, budget; notepad UI likely not-applicable"},
+{"subject":"supply-chain","context":"fc62a53a-85f9-4491-8b54-9b5f1795ef91","reason":"unread, budget"},
+{"subject":"supply-chain","context":"fd092e44-fcec-4418-8337-ed2b7b2c8473","reason":"unread, budget"},
+{"subject":"supply-chain","context":"d7b7eb04-730f-4450-9a68-affc95f93267","reason":"unread, budget"},
+{"subject":"supply-chain","context":"a576c14f-1edd-4da4-8d11-527161a3b5b3","reason":"unread, budget"}
+],
+"consults":[{"ts":"2026-10-22T12:00:00Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running"],"deviations":0}]}

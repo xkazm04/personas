@@ -14,6 +14,7 @@ pub struct ToolExecutionAuditEntry {
     pub persona_name: Option<String>,
     pub credential_id: Option<String>,
     pub result_status: String,
+    #[ts(type = "number | null")]
     pub duration_ms: Option<i64>,
     pub error_message: Option<String>,
     /// Typed failure category (see `engine::tool_outcome::ToolErrorKind`).
@@ -31,8 +32,11 @@ pub struct ToolExecutionAuditEntry {
 pub struct ToolPerformanceSummary {
     pub tool_name: String,
     pub tool_type: String,
+    #[ts(type = "number")]
     pub total_runs: i64,
+    #[ts(type = "number")]
     pub error_runs: i64,
     pub avg_duration_ms: Option<f64>,
+    #[ts(type = "number | null")]
     pub max_duration_ms: Option<i64>,
 }

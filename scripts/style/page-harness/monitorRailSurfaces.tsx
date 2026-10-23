@@ -3,8 +3,9 @@
  * `monitorRailTapes.mjs`.
  *
  *   monitor/rail         the REAL Monitor shell on Activity in the test
- *                        build's simulation, the strip's Gates chip pressed so
- *                        its peek hangs open under it
+ *                        build's simulation, the strip's Breach lane pressed
+ *                        so its peek hangs open under it (the Gates chip until
+ *                        the mandate-lanes cutover, WP10)
  *
  * Until 2026-10-06 this module shot the DecisionDock (opened on Reviews by its
  * own resting figure) and, as `monitor/rail/kinds`, the dock's row component
@@ -41,7 +42,7 @@ function Drive({ steps, children }: { steps: string[]; children: ReactNode }) {
   return <div ref={ref} className="contents">{children}</div>;
 }
 
-const STRIP_STEPS = ['[data-testid="monitor-view-activity"]', '[data-testid="decision-chip-gates"]'];
+const STRIP_STEPS = ['[data-testid="monitor-view-activity"]', '[data-testid="decision-lane-breach"]'];
 
 async function prepareSimulation(): Promise<void> {
   // The flag lib.rs injects into a test build; setSimulation refuses without it.

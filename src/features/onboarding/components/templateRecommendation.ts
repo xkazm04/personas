@@ -103,6 +103,22 @@ export function rankTemplatesByApprovedApps(
   });
 }
 
+/** How many starter templates the onboarding picker offers. */
+export const STARTER_TEMPLATES_SHOWN = 3;
+
+/**
+ * The templates the picker shows: the whole candidate pool ranked by the
+ * approved desktop apps, THEN trimmed. Ranking after the trim could only
+ * reorder templates that were already chosen without looking at the apps.
+ */
+export function pickStarterTemplates(
+  pool: PersonaDesignReview[],
+  approvedApps: Set<string>,
+  shown: number = STARTER_TEMPLATES_SHOWN,
+): TemplateMatch[] {
+  return rankTemplatesByApprovedApps(pool, approvedApps).slice(0, shown);
+}
+
 /** Display label for a desktop connector name (e.g. "desktop_obsidian" → "Obsidian"). */
 export function approvedAppDisplayLabel(connectorName: string): string {
   const stripped = connectorName.startsWith(DESKTOP_PREFIX)

@@ -1,0 +1,146 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
+  "subject": "translation-pipeline-topology",
+  "evaluatedAt": "2026-10-21T12:44:16Z",
+  "pairs": [
+    {
+      "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "deviation",
+      "evidence": "src/features/onboarding/components/AppearanceStep.tsx:13 still hand-lists 11 of the 14 locales in src/i18n/locales.manifest.ts (no bn/id/vi), so 3 shipped languages cannot be picked at onboarding, and the manifest says no other file lists locales",
+      "techniques": [
+        {
+          "technique": "language-registry-single-source",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_welcome/LanguageSwitcher.tsx:16 is a second hand-made 14-entry list beside the manifest (src/i18n/locales.manifest.ts:13 says it is the only one); onboarding copy at AppearanceStep.tsx:13 has already drifted"
+        },
+        {
+          "technique": "source-identical-value-audit",
+          "verdict": "conformant",
+          "evidence": "scripts/i18n/check-untranslated.mjs:3 value-level gate with a committed allowlist, enforced --strict in pre-commit at lefthook.yml:87"
+        },
+        {
+          "technique": "pseudo-localization-readiness",
+          "verdict": "conformant",
+          "evidence": "src/i18n/pseudoLocale.ts:2 dev-only pseudo-locale built from en at runtime, with no catalog file and no effect on coverage"
+        },
+        {
+          "technique": "canonical-fallback-serving",
+          "verdict": "conformant",
+          "evidence": "src/i18n/useTranslation.ts:327 deepMergeSection layers each locale over English per key, so a miss renders canonical text"
+        },
+        {
+          "technique": "canonical-and-derived-split",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/locales.manifest.ts:4 reviewed-and-committed product catalog; no derived MT store exists"
+        },
+        {
+          "technique": "sharded-translation-ci",
+          "verdict": "not-applicable",
+          "evidence": "package.json:130 gaps are planned and merged by local scripts (i18n:plan-gaps / merge-chunks); no CI translation job"
+        }
+      ]
+    },
+    {
+      "context": "7826a48f-5883-4f26-8476-c3c515bda745",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "deviation",
+      "evidence": "src/lib/personas/templates/templateOverlays.ts:276 overlay glob still lists 13 per-language literals; a test catches drift, but adding a manifest language still means editing this file, which fails the one-line-diff test",
+      "techniques": [
+        {
+          "technique": "language-registry-single-source",
+          "verdict": "deviation",
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:276 hand-written per-locale glob; a single ../scripts/templates/**/*.*.json glob filtered by OVERLAY_SUFFIX_RE (derived from LOCALE_CODES at :270) would remove the shadow list"
+        },
+        {
+          "technique": "canonical-fallback-serving",
+          "verdict": "unknown",
+          "evidence": "src/lib/personas/templates/useLocalizedTemplateCatalog.ts not read this run"
+        }
+      ],
+      "registryProposal": "language-registry-single-source: when a bundler requires literal glob strings, a test that checks the copy against the registry stops drift but does not pass the one-line-diff test. The technique could name the conformant escape: one wildcard glob filtered at runtime by a pattern derived from the registry"
+    },
+    {
+      "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evidence": "src-tauri/engine/src/prompt/mod.rs:1 assembles persona runtime prompts; no locale registry, translation store or MT request is built here (no locale/language reference across src-tauri/engine/src/prompt/*.rs)",
+      "techniques": []
+    },
+    {
+      "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/components/matrix/useBuild.ts:2 here \"matrix\" means the persona build session UI, not a translation matrix; no locale or translation code in this context",
+      "techniques": []
+    },
+    {
+      "context": "8a57c65c-06fd-45c9-9d32-d50c89c4c705",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:2 runs design reviews over template sources; it neither generates nor serves translated content",
+      "techniques": []
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-21T12:44:16Z",
+      "bundle": "localization",
+      "subjects": [
+        "translation-pipeline-topology"
+      ],
+      "techniques": [
+        "language-registry-single-source",
+        "source-identical-value-audit",
+        "pseudo-localization-readiness",
+        "canonical-fallback-serving"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T12:44:16Z",
+      "bundle": "localization",
+      "subjects": [
+        "translation-pipeline-topology"
+      ],
+      "techniques": [
+        "language-registry-single-source"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T12:44:16Z",
+      "bundle": "localization",
+      "subjects": [
+        "translation-pipeline-topology"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T12:44:16Z",
+      "bundle": "localization",
+      "subjects": [
+        "translation-pipeline-topology"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T12:44:16Z",
+      "bundle": "localization",
+      "subjects": [
+        "translation-pipeline-topology"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

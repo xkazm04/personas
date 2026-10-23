@@ -29,6 +29,8 @@ export interface FormFieldInputProps {
   id: string;
   'aria-invalid'?: boolean;
   'aria-describedby'?: string;
+  /** Present only when the field is `required`: the asterisk is visual, this is the state. */
+  'aria-required'?: boolean;
 }
 
 /**
@@ -146,6 +148,7 @@ export function FormField({
   const errorId = `${fieldId}-err`;
   const helpId = `${fieldId}-help`;
   const availId = `${fieldId}-avail`;
+  const hintId = `${fieldId}-hint`;
   const [focused, setFocused] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [showSuccessPop, setShowSuccessPop] = useState(false);
@@ -165,18 +168,22 @@ export function FormField({
   const charLength = typeof value === 'string' ? value.length : Number(value ?? 0);
 
   const availabilityActive = !!availability && availability.status !== 'idle' && !!availability.message;
-  const describedBy = effectiveError
+  // The feedback slot below the input has one occupant (error > availability >
+  // help); the hint above it always applies, and is read first.
+  const slotId = effectiveError
     ? errorId
     : availabilityActive
       ? availId
       : helpText
         ? helpId
         : undefined;
+  const describedBy = [hint ? hintId : undefined, slotId].filter(Boolean).join(' ') || undefined;
 
   const inputProps: FormFieldInputProps = {
     id: fieldId,
     ...(effectiveError ? { 'aria-invalid': true } : {}),
     ...(describedBy ? { 'aria-describedby': describedBy } : {}),
+    ...(required ? { 'aria-required': true } : {}),
   };
 
   // Register/unregister this field with a surrounding FormErrorProvider so a
@@ -249,7 +256,7 @@ export function FormField({
     >
       <label htmlFor={fieldId} className="typo-heading text-foreground">
         {label}
-        {required && <span className="text-red-400 ml-1">*</span>}
+        {required && <span aria-hidden="true" className="text-red-400 ml-1">*</span>}
         {showSpinner && (
           <Loader2
             aria-hidden="true"
@@ -266,7 +273,7 @@ export function FormField({
         )}
       </label>
 
-      {hint && <p className="typo-body text-foreground">{hint}</p>}
+      {hint && <p id={hintId} className="typo-body text-foreground">{hint}</p>}
 
       {typeof children === 'function' ? children(inputProps) : children}
 

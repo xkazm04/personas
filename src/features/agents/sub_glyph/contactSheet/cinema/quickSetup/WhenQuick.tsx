@@ -9,7 +9,7 @@ import Button from "@/features/shared/components/buttons/Button";
 import { DIM_META } from "@/features/shared/glyph";
 import { INPUT_CLS, type Frequency } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import type { ComposeQuickSetup } from "@/features/agents/sub_glyph/useComposeConfig";
-import { DAY_OPTIONS } from "@/features/agents/sub_glyph/commandPanel/composer/ComposerScheduleDetailForm";
+import { useDayOptions } from "@/features/agents/sub_glyph/commandPanel/composer/ComposerScheduleDetailForm";
 import { ChoicePill } from "./ChoicePill";
 import { MoreButton } from "./MoreButton";
 import { QS } from "./copy";
@@ -29,6 +29,7 @@ function presetOf(frequency: Frequency | null, days: string[]): Preset {
 
 export function WhenQuick({ quick, onMore }: { quick: ComposeQuickSetup; onMore: () => void }) {
   const color = DIM_META.trigger.color;
+  const dayOptions = useDayOptions();
   const { frequency, days, monthDay, time } = quick.config;
   const preset = presetOf(frequency, days);
   const set = (patch: Partial<{ frequency: Frequency | null; days: string[]; monthDay: number; time: string }>) =>
@@ -67,7 +68,7 @@ export function WhenQuick({ quick, onMore }: { quick: ComposeQuickSetup; onMore:
             <div className="flex items-center gap-3">
               <span className="w-24 shrink-0 typo-body text-foreground">{QS.when.on}</span>
               <div role="group" aria-label={QS.when.on} className="flex flex-wrap gap-1.5">
-                {DAY_OPTIONS.map((d) => (
+                {dayOptions.map((d) => (
                   <ChoicePill key={d.id} on={days.includes(d.id)} color={color} onClick={() => toggleDay(d.id)} ariaLabel={d.long}>
                     {d.short}
                   </ChoicePill>

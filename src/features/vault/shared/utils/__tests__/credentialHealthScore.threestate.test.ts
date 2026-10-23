@@ -33,4 +33,11 @@ describe('composite health three-state (wave-13 carry-in)', () => {
     const legacy: HealthResult = { success: true, message: 'm' };
     expect(computeHealthScore(legacy, null).score).toBe(100);
   });
+
+  it('unreachable is the absence of a verdict, neutral like unverifiable', () => {
+    const c = computeHealthScore(hr('unreachable', false), null);
+    expect(c.score).toBe(80);
+    expect(c.tier).toBe('healthy');
+    expect(c.reason).toBe('Probe could not reach the service');
+  });
 });

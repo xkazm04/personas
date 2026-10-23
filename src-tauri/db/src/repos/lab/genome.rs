@@ -243,14 +243,3 @@ pub fn update_result_fitness_measured(
         }
     )
 }
-
-pub fn mark_adopted(pool: &DbPool, result_id: &str, persona_id: &str) -> Result<(), AppError> {
-    timed_query!("persona_genome", "persona_genome::mark_adopted", {
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE genome_breeding_results SET adopted = 1, adopted_persona_id = ?1 WHERE id = ?2",
-            params![persona_id, result_id],
-        )?;
-        Ok(())
-    })
-}

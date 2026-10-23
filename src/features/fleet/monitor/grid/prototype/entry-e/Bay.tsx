@@ -8,9 +8,10 @@
 // switch, then Start / Stop / Restart / Open for its dev server) or the
 // workspace group's menu; a line with its own menu claims the click first. While
 // the project's dev server holds its port the plate lights its top edge and the
-// nameplate carries the server's lamp and port. Under the `lanes` setting a
-// second lamp sits beside the bay's own: lit while the project's mandate holds
-// a card for the operator (`mandate/MandateLamp`).
+// nameplate carries the server's lamp and port. A
+// project with a mandate carries its shield before the roster count: amber
+// with the count while the mandate holds cards for the operator, dark when
+// calm (`mandate/MandateLamp`).
 
 import { Button } from '@/features/shared/components/buttons';
 import { memo, useCallback, useState, type MouseEvent, type ReactNode } from 'react';
@@ -26,7 +27,7 @@ import { PERSONA_LAMP, toneClass, type Lamp as LampModel } from './tone';
 import { Lamp } from './parts';
 import { BayProjectMenu, BayServerChip, useServerHint } from './BayServerMenu';
 import { useBayServer } from './useBayServer';
-import { MandateLamp } from './mandate/MandateLamp';
+import { MandateLamp, useMandateHint } from './mandate/MandateLamp';
 
 /** The bay's own lamp: the most urgent persona inside it. */
 export function bayLamp(cards: BoardColumn['cards']): LampModel {
@@ -72,6 +73,7 @@ export const Bay = memo(function Bay({
   const off = project !== null && !project.enabled;
   const server = useBayServer(workspaceId === null ? project?.id ?? null : null);
   const serverHint = useServerHint(server);
+  const mandateHint = useMandateHint(remote ? null : project?.id ?? null);
   const [menu, setMenu] = useState<ColumnMenuAnchor | null>(null);
   const closeMenu = useCallback(() => setMenu(null), []);
   // The whole bay answers a right-click. A persona or session line opens its
@@ -100,7 +102,7 @@ export const Bay = memo(function Bay({
       data-server-state={server?.state}
       onContextMenu={onContextMenu}
     >
-      <Tooltip content={serverHint ? <>{hint}<br />{serverHint}</> : hint} delay={500}>
+      <Tooltip content={<>{hint}{serverHint && <><br />{serverHint}</>}{mandateHint && <><br />{mandateHint}</>}</>} delay={500}>
         <Button
           variant="ghost"
           disabled={remote !== null}
@@ -124,8 +126,8 @@ export const Bay = memo(function Bay({
               <Lamp lamp={{ tone: 'run', lit: true }} />{liveCount}
             </span>
           )}
-          <span className="flex-shrink-0 typo-data tabular-nums text-foreground">{column.cards.length}</span>
           {!remote && <MandateLamp projectId={project?.id ?? null} />}
+          <span className="flex-shrink-0 typo-data tabular-nums text-foreground">{column.cards.length}</span>
           {!remote && <Lamp lamp={lamp} />}
         </Button>
       </Tooltip>

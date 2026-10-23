@@ -6,9 +6,8 @@
 import { fetchLlmPinpoints, hasLiveAdapter } from '@/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { silentCatch } from '@/lib/silentCatch';
-
-import { mapWithConcurrency } from './sceneStore';
 
 export async function loadLlmSpendMap(
   projects: readonly DevProject[],

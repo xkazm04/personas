@@ -9,5 +9,20 @@
   "domain_revenue": "Prodej a marketing",
   "adopt_failed": "Nepodařilo se otevřít {name}.",
   "adopt_no_template": "{name} nemá zdrojovou šablonu k převzetí.",
-  "adopt_not_found": "{name} zatím není v galerii šablon."
+  "adopt_not_found": "{name} zatím není v galerii šablon.",
+  "l2_all_domains": "Všechny domény",
+  "l2_col_capabilities": "Schopnosti",
+  "l2_col_focus": "Zaměření",
+  "l2_col_name": "Název",
+  "l2_col_tools": "Nástroje",
+  "l2_col_type": "Typ",
+  "l2_counts": "{templates} šablon · {recipes} receptů",
+  "l2_filter_all": "Vše",
+  "l2_filter_placeholder": "Filtrovat podle názvu…",
+  "l2_filter_recipes": "Recepty",
+  "l2_filter_templates": "Šablony",
+  "l2_kind_recipe": "Recept",
+  "l2_kind_template": "Šablona",
+  "l2_no_matches": "Žádné shody.",
+  "l2_shown": "Zobrazeno {shown} z {total}"
 }

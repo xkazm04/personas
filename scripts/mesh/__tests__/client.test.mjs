@@ -9,8 +9,9 @@ import { findSharedProject, normalizeGitUrl } from '../tests.mjs';
 import { StubDoor } from '../stub-door.mjs';
 import { meshDir } from '../state.mjs';
 
-test('handshake resolution: PERSONAS_HANDSHAKE, then PERSONAS_DATA_DIR, then ~/.personas', () => {
+test('handshake resolution: PERSONAS_HANDSHAKE, then PERSONAS_DATA_DIR, then ~/.personas', (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mesh-hs-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
   assert.equal(resolveHandshakePath({ PERSONAS_HANDSHAKE: path.join(dir, 'x.json'), PERSONAS_DATA_DIR: dir }), path.join(dir, 'x.json'));
   assert.equal(resolveHandshakePath({ PERSONAS_DATA_DIR: dir }), path.join(dir, 'local-http.json'));
   assert.equal(resolveHandshakePath({}), path.join(os.homedir(), '.personas', 'local-http.json'));

@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, X } from 'lucide-react';
 
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { resolveTechIcon } from '@/features/shared/components/display/techIcons';
 import type { DevProject } from '@/lib/bindings/DevProject';
@@ -116,7 +117,15 @@ export function MembershipPanel({
 }) {
   const { t, tx } = useTranslation();
   const tw = t.plugins.dev_tools.workspaces;
+  const { workspaces } = useWorkspaces();
   const memberSet = new Set(workspace.projectIds);
+  // "Already in another workspace" comes from the workspace store, the one
+  // source every move updates. `DevProject.workspace_id` (systemStore) is the
+  // snapshot from the last fetchProjects and no move refreshes it, so the hint
+  // went stale on the first move made from this very panel.
+  const elsewhere = new Set(
+    workspaces.filter((w) => w.id !== workspace.id).flatMap((w) => w.projectIds),
+  );
   const members = projects.filter((p) => memberSet.has(p.id));
   const candidates = projects.filter((p) => !memberSet.has(p.id));
 
@@ -128,7 +137,7 @@ export function MembershipPanel({
         </div>
         <div className="flex flex-col gap-1">
           {members.length === 0 && (
-            <p className="typo-body text-muted-foreground">{tw.no_projects_yet}</p>
+            <EmptyState art="folder" size="sm" title={tw.no_projects_yet} />
           )}
           {members.map((p) => (
             <ProjectRow
@@ -147,7 +156,7 @@ export function MembershipPanel({
         </div>
         <div className="flex flex-col gap-1">
           {candidates.length === 0 && (
-            <p className="typo-body text-muted-foreground">{tw.every_project_member}</p>
+            <EmptyState art="folder" size="sm" title={tw.every_project_member} />
           )}
           {candidates.map((p) => (
             <ProjectRow
@@ -156,7 +165,7 @@ export function MembershipPanel({
               actionIcon={<ArrowRight className="w-3.5 h-3.5" />}
               actionLabel={tw.add_to_workspace}
               onAction={() => assignProject(p.id, workspace.id)}
-              subdued={Boolean(p.workspace_id)}
+              subdued={elsewhere.has(p.id)}
             />
           ))}
         </div>

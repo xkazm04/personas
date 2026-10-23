@@ -228,5 +228,22 @@
   "soundings_where_it_sits": "Kde se nachází. Související projekty tučně",
   "soundings_who_athena": "Athena",
   "soundings_who_chart": "Graf",
-  "soundings_yes": "ano"
+  "soundings_yes": "ano",
+  "dim_label_agents": "Agenti",
+  "dim_label_auth": "Autentizace",
+  "dim_label_ci": "CI",
+  "dim_label_datalinks": "Analýza dat",
+  "dim_label_db": "Databáze",
+  "dim_label_goals": "Cíle",
+  "dim_label_hosting": "Hosting",
+  "dim_label_ideas": "Nápady",
+  "dim_label_kpi": "KPI",
+  "dim_label_llm": "Náklady na LLM",
+  "dim_label_monitoring": "Monitorování",
+  "dim_label_security": "Zabezpečení",
+  "dim_label_skills": "Dovednosti",
+  "dim_label_support": "Podpora",
+  "dim_label_tests": "Testy",
+  "scan_dispatched_toast": "Skenování nápadů spuštěno ({label})",
+  "scan_drawer_label": "Skenování nápadů ({label})"
 }

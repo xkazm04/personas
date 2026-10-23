@@ -5,7 +5,7 @@ import {
   approveRemoteCommand,
   rejectRemoteCommand,
 } from '@/api/remoteCommands';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 interface RemoteCommandState {
   /** FIFO queue of run-requests awaiting the user's decision. */
@@ -18,6 +18,31 @@ interface RemoteCommandState {
   reject: (id: string) => Promise<void>;
   /** Defer locally without rejecting — it stays pending and re-surfaces later. */
   dismiss: (id: string) => void;
+}
+
+/**
+ * After a failed approve/reject, ask the backend whether `id` is still pending.
+ * A request approved from another device, rejected on the dashboard, or expired
+ * fails with "no longer pending" / "not found" on every retry, so keeping it at
+ * the head of the queue re-opens the same modal with a button that can never
+ * succeed. Drop it only on positive evidence (a successful list without it); a
+ * list that fails too keeps the card, so a network blip never loses a request.
+ */
+async function dropIfNoLongerPending(
+  id: string,
+  set: (fn: (s: RemoteCommandState) => Partial<RemoteCommandState>) => void,
+): Promise<void> {
+  let pending: RemoteCommand[];
+  try {
+    pending = await listPendingRemoteCommands();
+  } catch (err) {
+    // The original failure was already toasted; without a fresh list there is
+    // no evidence either way, so the card stays.
+    silentCatch('remoteCommands:reconcileAfterFailure')(err);
+    return;
+  }
+  if (pending.some((c) => c.id === id)) return;
+  set((s) => ({ queue: s.queue.filter((c) => c.id !== id) }));
 }
 
 export const useRemoteCommandStore = create<RemoteCommandState>((set) => ({
@@ -51,6 +76,7 @@ export const useRemoteCommandStore = create<RemoteCommandState>((set) => ({
     } catch (e) {
       set((s) => ({ busyId: s.busyId === id ? null : s.busyId }));
       toastCatch('remoteCommands:approve')(e);
+      await dropIfNoLongerPending(id, set);
     }
   },
 
@@ -62,6 +88,7 @@ export const useRemoteCommandStore = create<RemoteCommandState>((set) => ({
     } catch (e) {
       set((s) => ({ busyId: s.busyId === id ? null : s.busyId }));
       toastCatch('remoteCommands:reject')(e);
+      await dropIfNoLongerPending(id, set);
     }
   },
 

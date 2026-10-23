@@ -18,7 +18,24 @@ import { useTranslation } from '@/i18n/useTranslation';
 // If the backend job never reaches a terminal status (crash, dropped job,
 // stuck snapshot), stop polling after this long instead of locking the chat
 // input forever.
-const NL_QUERY_POLL_TIMEOUT_MS = 60_000;
+//
+// This is a LOST-JOB watchdog, so it must outlast the backend's own budget for
+// a job that is still working. It was 60 s, while `run_nl_query` hands the
+// model to `ai_helpers::run_single_turn_prompt`: a 120 s silence lease that a
+// producing call may stretch to LEASE_CEILING_FACTOR (3) x 120 s, and an
+// output with no SQL block escalates ONCE to a second model (with_escalation).
+// Any answer slower than 60 s was cancelled here -- the model call it had
+// already paid for thrown away, the bubble painted "timed out" -- while the
+// backend was inside its budget. Pinned against the Rust source by
+// __tests__/nlQueryTimeoutParity.test.ts. The Cancel button stays live the
+// whole time, so the user is never held to this number.
+const NL_SINGLE_TURN_LEASE_SECS = 120; // ai_helpers::run_single_turn_prompt
+const NL_LEASE_CEILING_FACTOR = 3; // cli_runner::LEASE_CEILING_FACTOR
+const NL_ATTEMPTS = 2; // with_escalation: first route + one escalation
+/** Headroom for the schema introspection that runs before the model call. */
+const NL_SCHEMA_CONTEXT_SLACK_SECS = 60;
+export const NL_QUERY_POLL_TIMEOUT_MS =
+  (NL_ATTEMPTS * NL_SINGLE_TURN_LEASE_SECS * NL_LEASE_CEILING_FACTOR + NL_SCHEMA_CONTEXT_SLACK_SECS) * 1000;
 
 /**
  * Telemetry category for the NL-query lane. This is the most expensive surface
@@ -113,9 +130,20 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
       const pending = activeQueryIdRef.current;
       if (pending) {
         cancelNlQuery(pending).catch(silentCatch('ChatTab:cancelNlQueryUnmount'));
-        // The job is gone, so the bubble it belonged to must not come back
-        // spinning. A restored `generating` message would be a promise nothing
-        // is keeping.
+      }
+      // Same for a generated statement still running: its result would land
+      // in a dead component, so stop it at the engine the way Cancel does.
+      const runningExec = runningExecIdRef.current;
+      if (runningExec) {
+        runningExecIdRef.current = null;
+        void useVaultStore.getState().cancelDbQuery(runningExec);
+      }
+      if (pending || runningExec) {
+        // Neither job survives the unmount, so no bubble may come back
+        // spinning. A restored `generating` or `executing` message is a promise
+        // nothing is keeping -- and an `executing` one could never leave that
+        // state: its Cancel button reads runningExecIdRef, which a remount
+        // starts empty, and its Run button only renders for ready/done.
         const cred = messagesCredRef.current;
         const stored = transcriptCache.get(cred);
         if (stored) {
@@ -124,7 +152,9 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
             stored.map((m) =>
               m.status === 'generating'
                 ? { ...m, content: cancelledLabelRef.current, status: 'failed' as const }
-                : m,
+                : m.status === 'executing'
+                  ? { ...m, error: cancelledLabelRef.current, status: 'done' as const }
+                  : m,
             ),
           );
         }
@@ -164,7 +194,12 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
       await startNlQuery(queryId, credentialId, question, history, dbType);
 
       const pollStartedAt = Date.now();
+      // One snapshot read in flight at a time: a read slower than the interval
+      // let a second tick start before the first settled, and both then saw
+      // `completed` -- two `generated` events and two bubble rewrites per job.
+      let tickInFlight = false;
       pollRef.current = setInterval(async () => {
+        if (tickInFlight) return;
         if (Date.now() - pollStartedAt > NL_QUERY_POLL_TIMEOUT_MS) {
           clearInterval(pollRef.current);
           pollRef.current = undefined;
@@ -181,8 +216,11 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
           );
           return;
         }
+        tickInFlight = true;
         try {
           const snapshot: NlQuerySnapshot = await getNlQuerySnapshot(queryId);
+          // Cancelled or timed out while the read was in flight: its result is stale.
+          if (pollRef.current === undefined) return;
           if (snapshot.status === 'completed') {
             trackInteraction(NL_TELEMETRY, 'generated', snapshot.generated_sql ? 'with_sql' : 'no_sql');
             clearInterval(pollRef.current);
@@ -211,6 +249,7 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
             );
           }
         } catch (err) { silentCatch("features/vault/sub_databases/tabs/ChatTab:catch1")(err); }
+        finally { tickInFlight = false; }
       }, 800);
     } catch (err) {
       trackInteraction(NL_TELEMETRY, 'generation_failed', 'start');

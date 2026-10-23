@@ -1,8 +1,23 @@
 import { Check, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { Button } from '@/features/shared/components/buttons';
+import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/generated/types';
 import type { WorkspaceService } from './workspaceProviders';
 import type { ServiceProvisionState } from './useWorkspaceConnect';
+
+const SERVICE_DESCRIPTION_KEYS = {
+  gmail: 'service_gmail_desc',
+  google_calendar: 'service_google_calendar_desc',
+  google_drive: 'service_google_drive_desc',
+  google_sheets: 'service_google_sheets_desc',
+} as const;
+
+/** Localized description for a known workspace service; falls back to the data module's English. */
+function serviceDescription(t: Translations, service: WorkspaceService): string {
+  const key = SERVICE_DESCRIPTION_KEYS[service.serviceType as keyof typeof SERVICE_DESCRIPTION_KEYS];
+  return (key && t.vault.workspace_panel[key]) || service.description;
+}
 
 export function ServiceCheckbox({
   service,
@@ -15,6 +30,7 @@ export function ServiceCheckbox({
   onToggle: () => void;
   disabled: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <Button
       onClick={onToggle}
@@ -45,13 +61,14 @@ export function ServiceCheckbox({
       </div>
       <div className="min-w-0">
         <div className="typo-body text-foreground">{service.label}</div>
-        <div className="typo-caption text-foreground truncate">{service.description}</div>
+        <div className="typo-caption text-foreground truncate">{serviceDescription(t, service)}</div>
       </div>
     </Button>
   );
 }
 
 export function ProvisionProgress({ states }: { states: ServiceProvisionState[] }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-2">
       {states.map((s) => (
@@ -80,9 +97,9 @@ export function ProvisionProgress({ states }: { states: ServiceProvisionState[] 
             )}
           </div>
           <div className="typo-caption text-foreground flex-shrink-0">
-            {s.status === 'pending' && 'Creating...'}
-            {s.status === 'created' && 'Connected'}
-            {s.status === 'failed' && 'Failed'}
+            {s.status === 'pending' && t.common.creating}
+            {s.status === 'created' && t.common.connected}
+            {s.status === 'failed' && t.vault.workspace_panel.status_failed}
           </div>
         </div>
       ))}

@@ -22,10 +22,12 @@
 //! the job kinds for each side grow. A future architect pass can DRY
 //! them up if the divergence stays small.
 
+use std::panic::AssertUnwindSafe;
 #[cfg(test)]
 use std::sync::Arc;
 
 use chrono::Utc;
+use futures_util::FutureExt;
 use rusqlite::{params, OptionalExtension};
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
@@ -34,6 +36,7 @@ use uuid::Uuid;
 
 use crate::db::DbPool;
 use crate::error::AppError;
+use crate::utils::extract_panic_message;
 
 /// Tauri event channel for job status changes — frontend listens and
 /// updates its in-flight indicator. Payload: the full `BackgroundJob`
@@ -231,7 +234,7 @@ pub async fn worker_tick(pool: &DbPool, app: &AppHandle) -> Result<(), AppError>
     // skipped it. The remaining concern is mid-running cancel which
     // v1 handles only as a "skip the LLM call before spawn" check
     // below.
-    let _ = app.emit(JOB_EVENT, &job);
+    emit_job(app, &job);
 
     // Pre-dispatch cancel check — if the user requested cancel
     // between enqueue and our pop, honor it without burning the LLM
@@ -239,12 +242,12 @@ pub async fn worker_tick(pool: &DbPool, app: &AppHandle) -> Result<(), AppError>
     if cancel_requested(pool, &job.id)? {
         let _ = mark_canceled(pool, &job.id);
         if let Ok(Some(updated)) = get(pool, &job.id) {
-            let _ = app.emit(JOB_EVENT, &updated);
+            emit_job(app, &updated);
         }
         return Ok(());
     }
 
-    let result = dispatch_handler(pool, &job).await;
+    let result = catch_handler_panic(dispatch_handler(pool, &job)).await;
 
     match result {
         Ok(report) => {
@@ -261,9 +264,17 @@ pub async fn worker_tick(pool: &DbPool, app: &AppHandle) -> Result<(), AppError>
     }
 
     if let Ok(Some(updated)) = get(pool, &job.id) {
-        let _ = app.emit(JOB_EVENT, &updated);
+        emit_job(app, &updated);
     }
     Ok(())
+}
+
+/// Push a job row to the UI. Logged, never returned: a failed notification
+/// must not fail the job, but a silent discard reads as "delivered" forever.
+fn emit_job(app: &AppHandle, job: &BackgroundJob) {
+    if let Err(e) = app.emit(JOB_EVENT, job) {
+        tracing::warn!(job_id = %job.id, error = %e, "persona-job: status emit failed");
+    }
 }
 
 fn cancel_requested(pool: &DbPool, id: &str) -> Result<bool, AppError> {
@@ -286,6 +297,23 @@ fn mark_canceled(pool: &DbPool, id: &str) -> Result<(), AppError> {
         params![now, id],
     )?;
     Ok(())
+}
+
+/// Run a job handler behind a panic boundary. The worker loop is one perpetual
+/// task, so a panic in any handler (sleep cycle, curation, reflection) used to
+/// end it: the row stayed `running` until restart and no further job ran. A
+/// panic now becomes the job's failure message and the loop carries on.
+async fn catch_handler_panic(
+    fut: impl std::future::Future<Output = Result<String, AppError>>,
+) -> Result<String, AppError> {
+    match AssertUnwindSafe(fut).catch_unwind().await {
+        Ok(result) => result,
+        Err(panic) => {
+            let msg = extract_panic_message(panic);
+            tracing::error!(panic = %msg, "persona-job: handler panicked");
+            Err(AppError::Internal(format!("job handler panicked: {msg}")))
+        }
+    }
 }
 
 async fn dispatch_handler(pool: &DbPool, job: &BackgroundJob) -> Result<String, AppError> {
@@ -525,6 +553,25 @@ async fn memory_curation_run(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn a_panicking_handler_becomes_a_failure_not_a_dead_worker() {
+        let err = catch_handler_panic(async {
+            if true {
+                panic!("boom");
+            }
+            Ok(String::new())
+        })
+        .await
+        .expect_err("a panic is a failed job");
+        assert!(err.to_string().contains("boom"), "{err}");
+    }
+
+    #[tokio::test]
+    async fn a_healthy_handler_result_passes_through() {
+        let ok = catch_handler_panic(async { Ok("done".to_string()) }).await;
+        assert_eq!(ok.expect("ok"), "done");
+    }
 
     // F-DRY (2026-05-10): the extract_json_array tests previously here were
     // duplicates of the suite in `commands::core::memories::tests`

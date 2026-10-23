@@ -1,6 +1,7 @@
 import { ExternalLink } from 'lucide-react';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { useTranslation } from '@/i18n/useTranslation';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import {
   FLEET_STATE_META, laneOfState, FLEET_LANE_ORDER, FLEET_LANE_LABEL_KEY, FLEET_LANE_TONE,
 } from './fleetStateMeta';
@@ -63,7 +64,7 @@ export function FleetFooterPopover({
       </div>
 
       {lanes.length === 0 ? (
-        <p className="px-1 py-2 text-[11px] text-foreground">{t.plugins.fleet.footer_empty}</p>
+        <EmptyState art="runs" size="sm" title={t.plugins.fleet.footer_empty} />
       ) : (
         <div className="space-y-1">
           {lanes.map(({ lane, states, total }) => (

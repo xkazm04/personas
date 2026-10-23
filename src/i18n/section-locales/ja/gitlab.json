@@ -121,5 +121,12 @@
   "view_logs": "ログ",
   "yesterday": "昨日",
   "your_tier": "（あなたのプラン）",
-  "agent_pipeline_title": "{ref} 上の {agent} のパイプライン: {status}"
+  "agent_pipeline_title": "{ref} 上の {agent} のパイプライン: {status}",
+  "pipeline_count_one": "{count} 件のパイプライン",
+  "pipeline_count_other": "{count} 件のパイプライン",
+  "notify_title_success": "パイプラインが成功しました",
+  "notify_title_failed": "パイプラインが失敗しました",
+  "notify_title_canceled": "パイプラインがキャンセルされました",
+  "notify_title_other": "パイプライン {status}",
+  "notify_body": "{ref} のパイプライン #{id} の状態が {status} になりました"
 }

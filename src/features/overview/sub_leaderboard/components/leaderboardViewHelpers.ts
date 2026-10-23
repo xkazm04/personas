@@ -5,7 +5,7 @@
  * score.
  */
 
-import type { LeaderboardEntry } from '../libs/leaderboardScoring';
+import { dimensionValue, type LeaderboardEntry } from '../libs/leaderboardScoring';
 import type { RankKey } from '../libs/leaderboardRanking';
 import type { FleetBenchmark } from '../libs/useLeaderboardData';
 
@@ -13,21 +13,23 @@ import type { FleetBenchmark } from '../libs/useLeaderboardData';
  *  FleetBenchmark.dimensionValues so a key maps to the right benchmark slot. */
 const DIM_ORDER = ['success', 'health', 'speed', 'cost', 'activity'] as const;
 
-/** Normalized 0-100 value for any rankable metric (overall = composite). */
-export function metricValue(entry: LeaderboardEntry, key: RankKey): number {
+/** Normalized 0-100 value for any rankable metric (overall = composite), or
+ *  null when the agent was not measured on it. */
+export function metricValue(entry: LeaderboardEntry, key: RankKey): number | null {
   if (key === 'overall') return entry.compositeScore;
-  return entry.dimensions.find((d) => d.key === key)?.value ?? 0;
+  return dimensionValue(entry, key);
 }
 
-/** Fleet-average normalized value for a metric, for the benchmark reference. */
+/** Fleet-average normalized value for a metric, for the benchmark reference;
+ *  null when no agent was measured on it. */
 export function fleetValue(
   key: RankKey,
-  fleetAvgScore: number,
+  fleetAvgScore: number | null,
   benchmark: FleetBenchmark | null,
-): number {
+): number | null {
   if (key === 'overall') return fleetAvgScore;
   const idx = DIM_ORDER.indexOf(key as (typeof DIM_ORDER)[number]);
-  return benchmark?.dimensionValues[idx] ?? 0;
+  return benchmark?.dimensionValues[idx] ?? null;
 }
 
 export interface ScoreTint {

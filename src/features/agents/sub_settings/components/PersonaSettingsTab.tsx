@@ -48,7 +48,7 @@ export function PersonaSettingsTab({
   isSaving,
   onDelete,
 }: PersonaSettingsTabProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const personaId = useAgentStore((s) => s.selectedPersonaId);
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const { isStarter: isSimple } = useTier();
@@ -111,8 +111,7 @@ export function PersonaSettingsTab({
               className={inputFieldClass(draft.name.trim() === '')}
             />
             {draft.name.trim() === '' && (
-              // eslint-disable-next-line custom/no-hardcoded-jsx-text
-              <p id="persona-name-error" className="mt-1 typo-caption text-red-400">Name is required</p>
+              <p id="persona-name-error" className="mt-1 typo-caption text-red-400">{t.agents.creation.name_required}</p>
             )}
           </div>
           <div className="relative">
@@ -161,6 +160,7 @@ export function PersonaSettingsTab({
         value={draft.icon}
         onChange={(icon) => patch({ icon })}
         onClose={() => setIconPickerOpen(false)}
+        personaId={personaId ?? undefined}
         personaName={draft.name}
         personaDescription={draft.description}
       />
@@ -178,8 +178,8 @@ export function PersonaSettingsTab({
                 <label className="block typo-body text-foreground mb-1">
                   {t.agents.settings_status.max_concurrent}
                   <FieldHint
-                    text="Maximum parallel executions for this persona. Limits how many runs can happen at the same time to prevent API rate limits."
-                    range={`${MIN_PERSONA_MAX_CONCURRENT}--${MAX_PERSONA_MAX_CONCURRENT}`}
+                    text={t.agents.settings_status.max_concurrent_hint}
+                    range={`${MIN_PERSONA_MAX_CONCURRENT}-${MAX_PERSONA_MAX_CONCURRENT}`}
                     example="3"
                   />
                 </label>
@@ -196,8 +196,8 @@ export function PersonaSettingsTab({
                 <label className="block typo-body text-foreground mb-1">
                   {t.agents.settings_status.timeout_sec}
                   <FieldHint
-                    text={`How long a single execution can run before being cancelled. The engine hard ceiling is ${MAX_PERSONA_TIMEOUT_S} seconds (${Math.round(MAX_PERSONA_TIMEOUT_S / 60)} min) — values above this are rejected.`}
-                    range={`${MIN_PERSONA_TIMEOUT_S}--${MAX_PERSONA_TIMEOUT_S} seconds`}
+                    text={tx(t.agents.settings_status.timeout_hint, { seconds: MAX_PERSONA_TIMEOUT_S, minutes: Math.round(MAX_PERSONA_TIMEOUT_S / 60) })}
+                    range={tx(t.agents.settings_status.timeout_range, { min: MIN_PERSONA_TIMEOUT_S, max: MAX_PERSONA_TIMEOUT_S })}
                     example="300"
                   />
                 </label>
@@ -221,8 +221,8 @@ export function PersonaSettingsTab({
               <label className="block typo-body text-foreground mb-1">
                 {t.agents.settings_status.execution_retention}
                 <FieldHint
-                  text="How long execution history is kept before automatic cleanup. Older executions are deleted to save disk space."
-                  range="1--24 months"
+                  text={t.agents.settings_status.retention_hint}
+                  range={t.agents.settings_status.retention_range}
                   example="2"
                 />
               </label>

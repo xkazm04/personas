@@ -13,6 +13,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { openGoalsBoard } from '@/features/companions/athena/guidance/appActions';
 import type { Translations } from '@/i18n/en';
 
@@ -301,7 +302,7 @@ export function LedgerActions({
       variant="accent"
       tone="warning"
       size="sm"
-      onClick={() => void state.scan()}
+      onClick={() => { state.scan().catch(toastCatch('ContextMap:featureScan')); }}
       disabled={!hasMap}
       title={t.uc_scan_tooltip}
       icon={<Layers className="w-3 h-3" />}

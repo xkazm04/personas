@@ -31,11 +31,8 @@ import {
 
 import { DockAthenaToggle } from '../DockAthenaToggle';
 import { DockPresetSelect } from '../DockPresetSelect';
+import { DOCK_CHIP, DOCK_CHIP_ON } from './dockChrome';
 import type { DockConsole } from './useDockConsole';
-
-/** The shared resting chrome for a toolbar pill that is not currently set. */
-const RESTING =
-  "border-card-border bg-card-bg text-foreground hover:border-primary/45 [[data-theme^='light']_&]:border-primary/35 [[data-theme^='light']_&]:bg-secondary/50";
 
 export function DockToolbar({ console: d, className = '' }: { console: DockConsole; className?: string }) {
   const { c, pickerOpen, togglePicker, athenaArmed, toggleAthena } = d;
@@ -59,9 +56,7 @@ export function DockToolbar({ console: d, className = '' }: { console: DockConso
           aria-pressed={pickerOpen}
           aria-haspopup="dialog"
           data-testid="quick-dispatch-skill-picker-toggle"
-          className={`h-6 w-6 flex-shrink-0 rounded-pill border ${
-            pickerOpen ? 'border-primary/55 bg-primary/10 text-primary' : RESTING
-          }`}
+          className={`${DOCK_CHIP} w-7 !px-0 ${pickerOpen ? DOCK_CHIP_ON : ''}`}
         >
           <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
         </Button>
@@ -101,10 +96,12 @@ export function DockToolbar({ console: d, className = '' }: { console: DockConso
 
 /**
  * Where the WORK happens. A switch with a visible track rather than a tinted
- * icon — it was the one control that changed where the work ran and an icon
- * differing only by tint read as decoration. Now also the shared `Button`, and
- * now carrying its name in the row rather than only in a tooltip: track, glyph
- * and label on ONE line, the shape rule the whole toolbar obeys.
+ * icon: it was the one control that changed where the work ran, and an icon
+ * differing only by tint read as decoration. The shared `Button`, the dock's
+ * chip, with track, glyph and label on ONE line. The track and the glyph ride
+ * in the Button's `icon` slot as one inline-flex unit: as children they
+ * stacked (the primitive wraps children in one inline span, and an inline
+ * span cannot hold the track's size, which drew it as a dot).
  */
 function DockHeadlessToggle({ console: d }: { console: DockConsole }) {
   const { c } = d;
@@ -117,24 +114,18 @@ function DockHeadlessToggle({ console: d }: { console: DockConsole }) {
         aria-label={c.quickT.headless_label}
         aria-pressed={c.headless}
         data-testid="quick-dispatch-headless-toggle"
-        className={`typo-label flex h-6 flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-pill border py-0 pl-1 pr-2.5 ${
-          c.headless ? 'border-brand-purple/50 bg-brand-purple/10 text-brand-purple' : RESTING
-        }`}
+        className={`${DOCK_CHIP} pl-1.5 ${c.headless ? DOCK_CHIP_ON : ''}`}
+        icon={
+          <span className="inline-flex items-center gap-1.5" aria-hidden>
+            <span className={`relative block h-3.5 w-6 rounded-pill transition-colors ${c.headless ? 'bg-primary' : 'bg-foreground/15'}`}>
+              <span className={`absolute left-0.5 top-0.5 block h-2.5 w-2.5 rounded-full transition-transform ${
+                c.headless ? 'translate-x-2.5 bg-btn-primary-fg' : 'bg-foreground'}`} />
+            </span>
+            <Ghost className="h-3.5 w-3.5" />
+          </span>
+        }
       >
-        <span
-          className={`relative h-[15px] w-[26px] flex-shrink-0 rounded-pill transition-colors ${
-            c.headless ? 'bg-brand-purple/55' : 'bg-foreground/15'
-          }`}
-          aria-hidden
-        >
-          <span
-            className={`absolute left-0.5 top-0.5 h-[11px] w-[11px] rounded-full transition-transform ${
-              c.headless ? 'translate-x-[11px] bg-btn-primary-fg' : 'bg-muted-foreground'
-            }`}
-          />
-        </span>
-        <Ghost className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
-        <span>{c.quickT.headless_label}</span>
+        {c.quickT.headless_label}
       </Button>
     </Tooltip>
   );

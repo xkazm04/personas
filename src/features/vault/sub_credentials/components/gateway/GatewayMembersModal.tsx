@@ -42,6 +42,13 @@ import { useVaultStore } from '@/stores/vaultStore';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { extractMessage } from '@/lib/silentCatch';
+
+/** A failure to show: our own sentence, or a raw IPC rejection resolved at render.
+ *  invokeWithTimeout rejects with the AppError object, never an Error, so the
+ *  old `e instanceof Error ? e.message : String(e)` painted "[object Object]". */
+type ModalFailure = { text: string } | { raw: unknown };
 
 /** Small ok/failed/unknown badge for a gateway member's last healthcheck. */
 function MemberHealthBadge({ state }: { state: string | null }) {
@@ -78,8 +85,8 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   const [members, setMembers] = useState<GatewayMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [loadFailure, setLoadFailure] = useState<{ raw: unknown } | null>(null);
+  const [actionFailure, setActionFailure] = useState<ModalFailure | null>(null);
   const [pendingMemberId, setPendingMemberId] = useState<string | null>(null);
   const [newMemberCredentialId, setNewMemberCredentialId] = useState('');
   const [newMemberDisplayName, setNewMemberDisplayName] = useState('');
@@ -87,13 +94,13 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
-    setLoadError(null);
+    setLoadFailure(null);
     try {
       const memberRows = await listMcpGatewayMembers(credential.id);
       setMembers(memberRows);
       if (credentials.length === 0) await fetchCredentials();
     } catch (e) {
-      setLoadError(e instanceof Error ? e.message : String(e));
+      setLoadFailure({ raw: e });
     } finally {
       setIsLoading(false);
     }
@@ -120,11 +127,11 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
 
   const handleAdd = useCallback(async () => {
     if (!newMemberCredentialId || !newMemberDisplayName.trim()) {
-      setActionError(gw.pick_error);
+      setActionFailure({ text: gw.pick_error });
       return;
     }
     setIsAdding(true);
-    setActionError(null);
+    setActionFailure(null);
     try {
       await addMcpGatewayMember(
         credential.id,
@@ -136,7 +143,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
       setNewMemberDisplayName('');
       await refresh();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : String(e));
+      setActionFailure({ raw: e });
     } finally {
       setIsAdding(false);
     }
@@ -152,12 +159,12 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
   const handleToggle = useCallback(
     async (memberCredentialId: string, enabled: boolean) => {
       setPendingMemberId(memberCredentialId);
-      setActionError(null);
+      setActionFailure(null);
       try {
         await setMcpGatewayMemberEnabled(credential.id, memberCredentialId, enabled);
         await refresh();
       } catch (e) {
-        setActionError(e instanceof Error ? e.message : String(e));
+        setActionFailure({ raw: e });
       } finally {
         setPendingMemberId(null);
       }
@@ -168,12 +175,12 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
   const handleRemove = useCallback(
     async (memberCredentialId: string) => {
       setPendingMemberId(memberCredentialId);
-      setActionError(null);
+      setActionFailure(null);
       try {
         await removeMcpGatewayMember(credential.id, memberCredentialId);
         await refresh();
       } catch (e) {
-        setActionError(e instanceof Error ? e.message : String(e));
+        setActionFailure({ raw: e });
       } finally {
         setPendingMemberId(null);
       }
@@ -204,9 +211,9 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
 
       <div className={`flex-1 overflow-y-auto ${CARD_PADDING.standard}`}>
         <div className={SECTION_GAP.between}>
-          {loadError ? (
+          {loadFailure ? (
             <div className="rounded-interactive border border-red-500/30 bg-red-500/10 p-3">
-              <p className="typo-body text-foreground">{loadError}</p>
+              <p className="typo-body text-foreground">{resolveErrorTranslated(t, extractMessage(loadFailure.raw)).message}</p>
               <Button variant="secondary" size="sm" onClick={refresh} className="mt-2">
                 {t.common.try_again}
               </Button>
@@ -274,7 +281,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                             onClick={() => handleToggle(m.memberCredentialId, !m.enabled)}
                             disabled={isPending}
                           >
-                            {m.enabled ? t.common.disabled : t.common.enabled}
+                            {m.enabled ? gw.disable_member : gw.enable_member}
                           </Button>
                           <Button
                             variant="ghost"
@@ -282,7 +289,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                             icon={<Trash2 className="w-3.5 h-3.5" />}
                             onClick={() => handleRemove(m.memberCredentialId)}
                             disabled={isPending}
-                            aria-label={`Remove ${m.memberLabel}`}
+                            aria-label={tx(t.vault.gateway.remove_member_aria, { name: m.memberLabel })}
                           />
                         </li>
                       );
@@ -353,9 +360,13 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                 )}
               </section>
 
-              {actionError && (
+              {actionFailure && (
                 <div className="rounded-interactive border border-red-500/30 bg-red-500/10 p-3">
-                  <p className="typo-body text-foreground">{actionError}</p>
+                  <p className="typo-body text-foreground" data-testid="gateway-action-error">
+                    {'text' in actionFailure
+                      ? actionFailure.text
+                      : resolveErrorTranslated(t, extractMessage(actionFailure.raw)).message}
+                  </p>
                 </div>
               )}
             </>

@@ -74,7 +74,7 @@ export function CredentialEditForm({
   const { validateField, validateAll } = useFieldValidation(fields);
 
   useEffect(() => {
-    vaultStatus().then(setVault).catch(toastCatch("CredentialEditForm:fetchVaultStatus", "Failed to check vault status"));
+    vaultStatus().then(setVault).catch(toastCatch("CredentialEditForm:fetchVaultStatus"));
   }, []);
 
   // Fields the user has actually edited. Some callers pass a fresh

@@ -13,10 +13,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Inbox, Wand2, X } from 'lucide-react';
+import { Check, Wand2, X } from 'lucide-react';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { InboxZero } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { HUB_KIND_META, HubRejectChips } from '../HubEntryActions';
 import { HUB_REJECT_REASONS, type HubDeskProps } from '../hubContract';
@@ -108,12 +109,11 @@ export function QueueLane({ feed }: HubDeskProps) {
         ) : !current ? (
           // Nothing framed: the proposals band (when there is one) IS the work.
           proposals > 0 ? null : (
-            <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 text-center">
-              <Inbox className="w-9 h-9 text-status-success" />
-              <p className="typo-body-lg text-foreground">{t.desk.emptyTitle}</p>
-              <p className="typo-caption text-foreground max-w-sm">
-                {feed.counts.approved + feed.counts.rejected > 0 ? t.desk.emptyReviewed : t.desk.emptyNothingCaptured}
-              </p>
+            <div className="flex-1 flex items-center justify-center px-6">
+              <InboxZero
+                title={t.desk.emptyTitle}
+                subtitle={feed.counts.approved + feed.counts.rejected > 0 ? t.desk.emptyReviewed : t.desk.emptyNothingCaptured}
+              />
             </div>
           )
         ) : (

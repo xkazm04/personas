@@ -41,12 +41,14 @@
   "budget_label": "Бюджет",
   "build_validation": {
     "composite_min_conditions": "Составным триггерам нужно как минимум 2 условия.",
+    "composite_window_maximum": "Временное окно не может превышать 24 часа (86400 секунд).",
     "composite_window_minimum": "Временное окно должно быть не менее 5 секунд.",
     "cron_invalid": "Неверное cron-выражение.",
     "cron_required": "Необходимо указать cron-выражение.",
     "endpoint_required": "Требуется URL конечной точки или событие.",
     "event_type_required": "Необходимо указать тип отслеживаемого события.",
     "interval_minimum": "Интервал должен быть не менее 60 секунд.",
+    "watch_events_required": "Выберите хотя бы одно файловое событие для отслеживания.",
     "watch_path_required": "Необходимо указать хотя бы один отслеживаемый путь."
   },
   "builder": {
@@ -183,6 +185,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} события",
   "dead_letter_bulk_retry_title": "Повторить every selected событие in a single transaction",
   "dead_letter_clear_filters_to_see": "Очистить filters to see all dead-lettered события",
+  "dead_letter_load_failed_title": "Не удалось загрузить очередь недоставленных событий",
+  "dead_letter_load_failed_desc": "Не удалось прочитать очередь, поэтому пустой список здесь вводил бы в заблуждение. Ваши события не пропали - попробуйте ещё раз.",
   "dead_letter_clear_selection": "Очистить",
   "dead_letter_discard": "Отклонить",
   "dead_letter_discard_title": "Отклонить это событие навсегда",
@@ -623,9 +627,12 @@
     "automation_delete": "Удалить автоматизацию",
     "automation_enabled": "Включено",
     "automation_failed": "ошибка",
+    "automation_held": "ожидает одобрения",
     "automation_idle": "ожидает своего события",
     "automation_next": "следующий",
+    "automation_partial": "выполнено частично",
     "automation_ran": "выполнено",
+    "automation_requested": "запрошено",
     "automation_run_now": "Запустить сейчас",
     "automations_title": "Активные системные события",
     "cadence_custom": "Свой cron…",
@@ -945,5 +952,7 @@
   "add_persona_available": "Доступно: {count}",
   "add_persona_all_connected": "Все персоны уже подключены",
   "add_persona_ungrouped": "Без группы",
-  "live_status_skipped": "Пропущено"
+  "live_status_skipped": "Пропущено",
+  "webhooks_load_failed": "Не удалось загрузить триггеры вебхуков",
+  "webhooks_load_failed_desc": "Список не удалось прочитать, поэтому пустой список здесь вводил бы в заблуждение. Ваши триггеры не пропали - повторите попытку."
 }

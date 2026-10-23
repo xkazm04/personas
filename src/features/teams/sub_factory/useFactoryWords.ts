@@ -27,7 +27,6 @@ export const LOCAL = {
   noProposed: 'No proposed KPIs',
   unassigned: 'unassigned',
   scanContext: 'Scan this context',
-  scanContextNote: (name: string) => `Per-context scan for "${name}" arrives with the unified dispatch concept. Use Dev Tools, Idea Scanner meanwhile.`,
   worstKpi: 'Worst KPI',
   ofTarget: 'of target',
   notWired: 'not wired',

@@ -10,6 +10,7 @@ import { statusColor, statusIcon, timeAgo, budgetUtilization, budgetColor, forma
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import type { TestResult } from '../../hooks/useDeploymentTest';
 import { ApiPlayground } from './ApiPlayground';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 interface DeploymentCardProps {
   deployment: CloudDeployment;
@@ -68,7 +69,7 @@ export function DeploymentCard({
             return (
               <span className={`inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card border ${statusColor(d.status)}`}>
                 <StatusIcon className="w-3 h-3" aria-hidden="true" />
-                {d.status}
+                {tokenLabel(t, 'deployment', d.status)}
               </span>
             );
           })()}

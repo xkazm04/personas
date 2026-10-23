@@ -83,7 +83,8 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
     if (!team) return false;
     return (
       (name.trim() !== team.name && name.trim() !== '') ||
-      (description.trim() !== (team.description ?? '') && description.trim() !== '') ||
+      // Clearing the description is an edit: save sends null for it.
+      description.trim() !== (team.description ?? '') ||
       color !== (team.color ?? '#6366f1')
     );
   }, [team, name, description, color]);
@@ -130,11 +131,23 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
         ? { description: description.trim() === '' ? null : description.trim() }
         : {}),
       ...(color !== (team.color ?? '#6366f1') ? { color } : {}),
-      // Workspace facet — value sets, null clears (double_option).
-      shared_instructions: instructions.trim() === '' ? null : instructions,
-      default_model_profile: profileModel ? JSON.stringify({ model: profileModel, provider: 'anthropic' }) : null,
-      default_max_budget_usd: budget.trim() === '' ? null : Number(budget),
-      default_max_turns: turns.trim() === '' ? null : Number(turns),
+      // Workspace facet — value sets, null clears (double_option). Same rule
+      // as identity: send a key only when the user changed it. The model
+      // picker is lossy (a profile collapses to inherit/haiku/sonnet/opus), so
+      // re-sending it on every save rewrote an untouched profile: a retired or
+      // non-Anthropic model became today's tier id, or null.
+      ...((instructions || null) !== (team.shared_instructions ?? null)
+        ? { shared_instructions: instructions.trim() === '' ? null : instructions }
+        : {}),
+      ...(modelKey !== modelKeyFromProfile(team.default_model_profile ?? null)
+        ? { default_model_profile: profileModel ? JSON.stringify({ model: profileModel, provider: 'anthropic' }) : null }
+        : {}),
+      ...((budget.trim() === '' ? null : Number(budget)) !== (team.default_max_budget_usd ?? null)
+        ? { default_max_budget_usd: budget.trim() === '' ? null : Number(budget) }
+        : {}),
+      ...((turns.trim() === '' ? null : Number(turns)) !== (team.default_max_turns ?? null)
+        ? { default_max_turns: turns.trim() === '' ? null : Number(turns) }
+        : {}),
     };
     try {
       await updateTeam(teamId, input);
@@ -206,7 +219,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
         </label>
         <div>
           <span className="typo-label text-foreground/85 mb-1.5 block">{t.pipeline.color}</span>
-          <TeamColorPicker value={color} onChange={setColor} size="sm" />
+          <TeamColorPicker value={color} onChange={setColor} />
         </div>
         <p className="typo-caption text-foreground">{ts.identity_hint}</p>
       </div>

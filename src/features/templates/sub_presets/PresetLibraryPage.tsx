@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Layers, Users } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { Users } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import type { TeamPreset } from '@/lib/bindings/TeamPreset';
 import { listTeamPresets } from '@/api/templates/teamPresets';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
+import { resolveError } from '@/lib/errors/errorRegistry';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
@@ -38,14 +41,22 @@ export default function PresetLibraryPage() {
   const [presets, setPresets] = useState<TeamPreset[] | null>(null);
   const [openPreset, setOpenPreset] = useState<TeamPreset | null>(null);
 
-  useEffect(() => {
+  // A rejected read is its own state: collapsing it to `[]` painted the
+  // "no presets" empty state over an IPC/filesystem failure, with no retry.
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setLoadError(null);
+    setPresets(null);
     listTeamPresets()
       .then(setPresets)
       .catch((err) => {
         silentCatch('PresetLibraryPage:list')(err);
-        setPresets([]);
+        setLoadError(resolveError(extractMessage(err)).message);
       });
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const ranked = useMemo(
     () => (presets ? [...presets].sort((a, b) => b.members.length - a.members.length) : []),
@@ -59,7 +70,7 @@ export default function PresetLibraryPage() {
   // in flight AND there is nothing on screen yet; the header renders on every
   // frame regardless.
   const enter = useRevealTracker('presets');
-  const showGhost = presets === null;
+  const showGhost = presets === null && loadError === null;
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto p-6" data-testid="preset-library-page">
@@ -69,14 +80,12 @@ export default function PresetLibraryPage() {
           <p className="typo-body text-foreground mt-1">{t.templates.presets.page_subtitle}</p>
         </header>
 
-        {showGhost ? (
+        {loadError !== null ? (
+          <InlineErrorBanner severity="error" message={loadError} onRetry={load} />
+        ) : showGhost ? (
           <PresetGhostTiles />
         ) : ranked.length === 0 ? (
-          <div className="text-center py-12">
-            <Layers className="w-10 h-10 mx-auto text-foreground mb-3" />
-            <h2 className="typo-heading-lg text-foreground/90 mb-1">{t.templates.presets.empty_title}</h2>
-            <p className="typo-body text-foreground max-w-md mx-auto">{t.templates.presets.empty_hint}</p>
-          </div>
+          <ScenarioEmptyState art="templates" size="lg" title={t.templates.presets.empty_title} description={t.templates.presets.empty_hint} />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-4 auto-rows-[130px] gap-3">
             {ranked.map((p, idx) => (

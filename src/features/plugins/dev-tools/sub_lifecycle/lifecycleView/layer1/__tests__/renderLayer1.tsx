@@ -1,6 +1,7 @@
 // Mounts a Lifecycle view on a real view model built from a fixture snapshot:
-// the real lanes (`buildLanes`), a live selection, a live open step (Layer 2)
-// and `openStep` as a spy. Used by the Layer-1 and the Layer-2 / preset tests.
+// the real lanes (`buildLanes`), a live selection, a live open step (the
+// Lens's last layer), `openStep` as a spy, under the page's time cursor. Used
+// by the project-plane, step screen and preset tests.
 import { useState, type ReactNode } from 'react';
 import { render } from '@testing-library/react';
 import { vi } from 'vitest';
@@ -10,9 +11,11 @@ import type { LifecycleSnapshot } from '@/lib/bindings/LifecycleSnapshot';
 
 import { buildLanes } from '../../../journey/journeyModel';
 import { LifecycleViewProvider } from '../../context';
+import { TimeTravelProvider } from '../../history/timeTravel';
 import type { LifecycleViewModel, StepFocus } from '../../useLifecycleView';
 
-export function renderLayer1(ui: ReactNode, snapshot: LifecycleSnapshot, initialOpen: string | null = null) {
+/** `timeCursor: false` leaves the page's time cursor out, so a test counting history reads sees only its own. */
+export function renderLayer1(ui: ReactNode, snapshot: LifecycleSnapshot, initialOpen: string | null = null, { timeCursor = true } = {}) {
   const openStep = vi.fn();
   function Harness() {
     const { t, tx } = useTranslation();
@@ -35,7 +38,11 @@ export function renderLayer1(ui: ReactNode, snapshot: LifecycleSnapshot, initial
       headline: '', headlineHealth: null, headlineState: null, missingText: '', missingCount: 0,
       installing: false, install: async () => {}, installNote: null, askAthena: () => {},
     };
-    return <LifecycleViewProvider model={model}>{ui}</LifecycleViewProvider>;
+    return (
+      <LifecycleViewProvider model={model}>
+        {timeCursor ? <TimeTravelProvider projectId={snapshot.projectId} ready>{ui}</TimeTravelProvider> : ui}
+      </LifecycleViewProvider>
+    );
   }
   return { openStep, ...render(<Harness />) };
 }

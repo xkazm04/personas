@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Folder, FileText, ChevronRight, ChevronDown, ExternalLink, AlertTriangle, Search, Settings } from 'lucide-react';
+import { Folder, FileText, ChevronRight, ChevronDown, ExternalLink, Search } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { NoVaultConnected } from '../NoVaultConnected';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import {
   obsidianBrainListVaultFiles,
@@ -17,6 +17,10 @@ import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { openNoteInObsidian } from '../openInObsidian';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { parseNote } from './parseNote';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 /**
  * Rows in the first viewport that play the one-shot entrance ripple when the
@@ -130,77 +134,95 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter, onExpandFolder,
 
 export default function BrowsePanel() {
   const { t, tx } = useTranslation();
-  const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const vaultName = useSystemStore((s) => s.obsidianVaultName);
   const vaultPath = useSystemStore((s) => s.obsidianVaultPath);
-  const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
 
   const [tree, setTree] = useState<VaultTreeNode | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState<string | null>(null);
   const [loadingNote, setLoadingNote] = useState(false);
+  // Raw failure, resolved at render (an IPC rejection is an AppError object,
+  // not an Error, so interpolating it printed "[object Object]").
+  const [noteError, setNoteError] = useState<{ raw: unknown } | null>(null);
   const [filter, setFilter] = useState('');
   const [loadingFolders, setLoadingFolders] = useState<Set<string>>(() => new Set());
   const loadedFoldersRef = useRef(new Set<string>());
   const loadingFoldersRef = useRef(new Set<string>());
+  // Vault reads are async and unordered: a slow read for the previous vault or
+  // the previously clicked note must not land over the current one.
+  const treeLoads = useRef(createLatestWins()).current;
+  const noteLoads = useRef(createLatestWins()).current;
 
   const loadTree = useCallback(async () => {
+    const token = treeLoads.next();
     setLoading(true);
     try {
       const root = await obsidianBrainListVaultFiles();
+      if (!treeLoads.isCurrent(token)) return;
       setTree(root);
       loadedFoldersRef.current = new Set([root.path]);
       loadingFoldersRef.current = new Set();
       setLoadingFolders(new Set());
     } catch (e) {
-      addToast(`Failed to load vault: ${e}`, 'error');
+      if (treeLoads.isCurrent(token)) toastCatch('BrowsePanel:loadTree')(e);
     } finally {
-      setLoading(false);
+      if (treeLoads.isCurrent(token)) setLoading(false);
     }
-  }, [addToast]);
+  }, [treeLoads]);
 
   const expandFolder = useCallback(async (path: string) => {
     if (loadedFoldersRef.current.has(path) || loadingFoldersRef.current.has(path)) return;
     loadingFoldersRef.current.add(path);
     setLoadingFolders(new Set(loadingFoldersRef.current));
+    // The tree generation this expand started under; a reload since then
+    // (vault switch) means the folder belongs to another vault.
+    const generation = treeLoads.current();
     try {
       const node = await obsidianBrainListVaultFiles(path);
+      if (treeLoads.current() !== generation) return;
       setTree((prev) => (prev ? mergeFolderChildren(prev, node.path, node.children) : node));
       loadedFoldersRef.current.add(node.path);
     } catch (e) {
-      addToast(`Failed to load vault: ${e}`, 'error');
+      if (treeLoads.current() === generation) toastCatch('BrowsePanel:expandFolder')(e);
     } finally {
-      loadingFoldersRef.current.delete(path);
-      setLoadingFolders(new Set(loadingFoldersRef.current));
+      if (treeLoads.current() === generation) {
+        loadingFoldersRef.current.delete(path);
+        setLoadingFolders(new Set(loadingFoldersRef.current));
+      }
     }
-  }, [addToast]);
+  }, [treeLoads]);
 
   useEffect(() => {
     if (connected) {
+      noteLoads.next(); // a note read for the previous vault is now stale
       setSelectedPath(null);
       setNoteContent(null);
+      setNoteError(null);
+      setLoadingNote(false);
       loadTree();
     }
-  }, [connected, vaultPath, loadTree]);
+  }, [connected, vaultPath, loadTree, noteLoads]);
 
   const selectNote = useCallback(async (path: string) => {
+    const token = noteLoads.next();
     setSelectedPath(path);
     // Clear the previous note immediately — this is a context switch to a
     // different resource, not a refresh of the same one, so the stale body
     // must not linger under the new title while the fetch is in flight.
     setNoteContent(null);
+    setNoteError(null);
     setLoadingNote(true);
     try {
       const content = await obsidianBrainReadVaultNote(path);
-      setNoteContent(content);
+      if (noteLoads.isCurrent(token)) setNoteContent(content);
     } catch (e) {
-      setNoteContent(`Error: ${e}`);
+      if (noteLoads.isCurrent(token)) setNoteError({ raw: e });
     } finally {
-      setLoadingNote(false);
+      if (noteLoads.isCurrent(token)) setLoadingNote(false);
     }
-  }, []);
+  }, [noteLoads]);
 
   const openInObsidian = useCallback(() => {
     if (!selectedPath) return;
@@ -229,16 +251,7 @@ export default function BrowsePanel() {
 
   if (!connected) {
     return (
-      <div className="flex-1 flex items-center justify-center py-20">
-        <EmptyState
-          icon={AlertTriangle}
-          title={t.plugins.obsidian_brain.no_vault_connected}
-          subtitle={t.plugins.obsidian_brain.no_vault_hint}
-          iconColor="text-amber-400/80"
-          iconContainerClassName="bg-amber-500/10 border-amber-500/20"
-          action={{ label: t.plugins.obsidian_brain.tab_setup, onClick: () => setObsidianBrainTab('setup'), icon: Settings }}
-        />
-      </div>
+      <NoVaultConnected />
     );
   }
 
@@ -261,6 +274,7 @@ export default function BrowsePanel() {
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder={t.plugins.obsidian_brain.filter_notes}
+            aria-label={t.plugins.obsidian_brain.filter_notes}
             className="w-full pl-8 pr-3 py-1.5 rounded-card bg-background/50 border border-primary/12 text-foreground typo-caption placeholder:text-foreground/40 focus-ring transition-all"
           />
         </div>
@@ -295,7 +309,7 @@ export default function BrowsePanel() {
                 </RevealItem>
               ))}
               {tree.children.length === 0 && (
-                <p className="typo-caption text-foreground p-4">{t.plugins.obsidian_brain.vault_empty}</p>
+                <EmptyState art="folder" size="sm" title={t.plugins.obsidian_brain.vault_empty} />
               )}
             </div>
           ) : (
@@ -338,6 +352,12 @@ export default function BrowsePanel() {
                  geometry as the real note. Delayed entrance means opening a
                  cached/fast note never flashes it — see NoteGhostBlock. */
               <NoteGhostBlock />
+            ) : noteError ? (
+              <InlineErrorBanner
+                compact
+                title={t.plugins.obsidian_brain.failed_to_load}
+                message={resolveErrorTranslated(t, extractMessage(noteError.raw)).message}
+              />
             ) : noteContent ? (
               <>
                 {parsed && parsed.properties.length > 0 && (
@@ -365,8 +385,6 @@ export default function BrowsePanel() {
               icon={FileText}
               title={t.plugins.obsidian_brain.select_note}
               subtitle={t.plugins.obsidian_brain.select_note_hint}
-              iconColor="text-violet-400/80"
-              iconContainerClassName="bg-violet-500/10 border-violet-500/20"
             />
           </div>
         )}

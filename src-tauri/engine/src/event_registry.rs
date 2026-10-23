@@ -32,8 +32,14 @@ pub use personas_core::events::event_name;
 /// use crate::event_registry::{emit_event, event_name};
 /// emit_event(&app, event_name::EXECUTION_OUTPUT, &my_payload);
 /// ```
+///
+/// A failed emit is logged, never returned: a notification must not fail the
+/// write that caused it, but a payload that cannot serialise fails on EVERY
+/// call, so a silent discard would read as "delivered" forever.
 pub fn emit_event<P: Serialize + Clone>(app: &AppHandle, event: &str, payload: &P) {
-    let _ = app.emit(event, payload.clone());
+    if let Err(e) = app.emit(event, payload.clone()) {
+        tracing::warn!(event, error = %e, "Failed to emit event");
+    }
 }
 
 /// Emit a [`PersonaEvent`] to the frontend event bus (`event-bus` channel).

@@ -1,0 +1,66 @@
+{
+  "schema": "conform-run/1",
+  "worker": "0bdd7d79-05d1-4719-bed0-6ac46df9c917",
+  "subject": "agent-runtime-assembly",
+  "evaluatedAt": "2026-10-22T19:57:20.348Z",
+  "pairs": [
+    {
+      "context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/fleet/FleetHooksPill.tsx:34 the grid is a UI that shows hook status and calls installHooks over IPC; it assembles no hook chain, loader or session store (hook installation itself is judged under commands-fleet)",
+      "techniques": [
+        {
+          "technique": "semantic-hook-placement",
+          "verdict": "precondition unmet",
+          "evidence": "src/features/plugins/fleet/FleetHooksPill.tsx:21 pill only renders installed/port state; no chain composition here"
+        }
+      ]
+    },
+    {
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/stores/slices/agents/toolSlice.ts:33 Zustand slice caching tool definitions and usage stats (TTL at :15); the runtime assembly lives in the backend, not in these slices",
+      "techniques": [
+        {
+          "technique": "session-scoped-capability",
+          "verdict": "precondition unmet",
+          "evidence": "src/stores/slices/agents/toolSlice.ts:15 60s read cache of tool definitions, no capability roster resolution"
+        }
+      ]
+    },
+    {
+      "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/companion/brain/oneshot.rs:6 brain calls are one-shot CLI invocations with no resume, hooks or session store; the long-lived loop assembly is judged under prompt-assembly-engine",
+      "techniques": [
+        {
+          "technique": "checkpoint-mode-custody",
+          "verdict": "precondition unmet",
+          "evidence": "src-tauri/src/companion/brain/oneshot.rs:6 no --resume, no durable conversation state to custody"
+        }
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-22T19:57:20.348Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [
+        "semantic-hook-placement",
+        "session-scoped-capability",
+        "checkpoint-mode-custody"
+      ],
+      "deviations": 0
+    }
+  ]
+}

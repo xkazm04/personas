@@ -1,0 +1,121 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
+ "subject": "agent-memory",
+ "evaluatedAt": "2026-10-22T19:48:16.584Z",
+ "pairs": [
+  {
+   "context": "10c96ae7-a356-4555-996b-df92fc5dc8e7",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:70 coverage is counted client-side from listMemoryNodes(...,500), which the backend orders by updated_at DESC LIMIT 500 (src-tauri/src/commands/infrastructure/memory_ledger.rs:556) and never filters to the 30d the :30 comment claims, so a context beyond the cap reads as uncovered and a context with only stale nodes reads as covered",
+   "techniques": [
+    {
+     "technique": "coverage-instrumentation",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:72 denominator is every project context (right), but the numerator is a truncated, unwindowed row list: a false zero and a false non-zero, neither marked as a failure"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+   "evaluatedRevision": 51,
+   "registryProposal": "Prior not-applicable verdict was wrong for this context: the skills page hosts a coverage instrument over the memory ledger. Technique-shaped match the lexical matcher missed; coverage-instrumentation could name truncated-numerator as an honest-zero failure case."
+  },
+  {
+   "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/infrastructure/dev_tools/portfolio.rs:330 deterministic aggregation of project context maps; nothing an agent observed or believes, so no capture, consolidation, decay or recall stage exists here",
+   "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+   "evaluatedRevision": 51
+  },
+  {
+   "context": "7159d27d-86c2-43be-a83f-8b50c4c816be",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:37 RESOURCE_TYPES lists resources exposed to peers as sharing permissions; not an agent memory store or its governance",
+   "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+   "evaluatedRevision": 51
+  },
+  {
+   "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/stores/slices/agents/chatSlice.ts:97 the 500-message cap is a render buffer evicting FIFO and turn assembly lives in Rust (:180); no agent-recalled store in this slice",
+   "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+   "evaluatedRevision": 51
+  },
+  {
+   "context": "d77a22ee-23cb-42f3-a910-590f8622977f",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/companions/athena/types.ts:5 UI-shape types that do not cross the IPC boundary; the memory pipeline lives in the Rust brain (companion-brain context)",
+   "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+   "evaluatedRevision": 51
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-memory",
+   "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+   "reason": "stale not-applicable (judged at revision 48, subject now 51) left for the next run; run budget spent on the five pairs with a live chance of a changed verdict"
+  },
+  {
+   "subject": "agent-memory",
+   "context": "89eddf81-0c57-441d-a07d-de36bf022cb5",
+   "reason": "stale not-applicable (judged at revision 48, subject now 51) left for the next run; run budget spent on the five pairs with a live chance of a changed verdict"
+  },
+  {
+   "subject": "agent-memory",
+   "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+   "reason": "stale not-applicable (judged at revision 48, subject now 51) left for the next run; run budget spent on the five pairs with a live chance of a changed verdict"
+  },
+  {
+   "subject": "agent-memory",
+   "context": "7826a48f-5883-4f26-8476-c3c515bda745",
+   "reason": "stale not-applicable (judged at revision 48, subject now 51) left for the next run; run budget spent on the five pairs with a live chance of a changed verdict"
+  },
+  {
+   "subject": "agent-memory",
+   "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192",
+   "reason": "stale not-applicable (judged at revision 48, subject now 51) left for the next run; run budget spent on the five pairs with a live chance of a changed verdict"
+  },
+  {
+   "subject": "agent-memory",
+   "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f",
+   "reason": "stale not-applicable (judged at revision 48, subject now 51) left for the next run; run budget spent on the five pairs with a live chance of a changed verdict"
+  },
+  {
+   "subject": "agent-memory",
+   "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5",
+   "reason": "stale not-applicable (judged at revision 48, subject now 51) left for the next run; run budget spent on the five pairs with a live chance of a changed verdict"
+  },
+  {
+   "subject": "agent-memory",
+   "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+   "reason": "stale not-applicable (judged at revision 48, subject now 51) left for the next run; run budget spent on the five pairs with a live chance of a changed verdict"
+  },
+  {
+   "subject": "agent-memory",
+   "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+   "reason": "stale not-applicable (judged at revision 48, subject now 51) left for the next run; run budget spent on the five pairs with a live chance of a changed verdict"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T19:48:16.585Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "coverage-instrumentation"
+   ],
+   "deviations": 1
+  }
+ ]
+}

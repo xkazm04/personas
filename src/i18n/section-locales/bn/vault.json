@@ -13,7 +13,11 @@
     "personas_one": "{count}টি পার্সোনা",
     "personas_other": "{count}টি পার্সোনা",
     "show_all": "সব {count}টি এন্ট্রি দেখান",
-    "total_accesses": "{count}টি মোট"
+    "total_accesses": "{count}টি মোট",
+    "by_persona": "{name} দ্বারা",
+    "entries_one": "{count}টি এন্ট্রি",
+    "entries_other": "{count}টি এন্ট্রি",
+    "page_of": "পৃষ্ঠা {page}/{total}"
   },
   "auto_cred_extra": {
     "all_fields_captured": "সব {count}টি ফিল্ড ক্যাপচার হয়েছে",
@@ -102,7 +106,19 @@
     "test_to_save": "সংরক্ষণ সক্রিয় করতে সংযোগ পরীক্ষা করুন",
     "universal_auto_setup": "ইউনিভার্সাল অটো-সেটআপ",
     "universal_auto_setup_hint": "একটি URL এবং বিবরণ প্রদান করুন, এবং AI সাইটটি নেভিগেট করে API ক্রেডেনশিয়াল স্বয়ংক্রিয়ভাবে আবিষ্কার ও তৈরি করবে।",
-    "what_do_you_need": "আপনার কী দরকার?"
+    "what_do_you_need": "আপনার কী দরকার?",
+    "err_kind_cli_error": "CLI ত্রুটি",
+    "err_kind_cli_not_found": "CLI পাওয়া যায়নি",
+    "err_kind_env_conflict": "এনভায়রনমেন্ট সংঘাত",
+    "err_kind_extraction_failed": "এক্সট্র্যাকশন ব্যর্থ",
+    "err_kind_spawn_failed": "স্পন ব্যর্থ",
+    "err_kind_timeout": "টাইমআউট",
+    "field_missing": "{label} (অনুপস্থিত)",
+    "log_blocked_url": "সেটআপ সেশন থেকে একটি অনিরাপদ URL ব্লক করা হয়েছে",
+    "log_open_url_failed": "URL খুলতে ব্যর্থ: {url}",
+    "log_saved_procedure": "{label}-এর জন্য সংরক্ষিত পদ্ধতি ব্যবহার করা হচ্ছে",
+    "open_url": "খুলুন",
+    "open_url_title": "ব্রাউজারে {url} খুলুন"
   },
   "auto_cred": {
     "action_required": "কার্যক্রম প্রয়োজন",
@@ -534,7 +550,8 @@
     "use_console_hint": "এই কীটির মান পরীক্ষা করতে কনসোল ট্যাব ব্যবহার করুন।",
     "write": "রাইট",
     "write_mode": "রাইট মোড",
-    "suggestion_api_tables": "এই বেসের টেবিলগুলি এবং প্রতিটিতে কতগুলি রেকর্ড আছে দেখান"
+    "suggestion_api_tables": "এই বেসের টেবিলগুলি এবং প্রতিটিতে কতগুলি রেকর্ড আছে দেখান",
+    "rename_failed": "ক্রেডেনশিয়ালের নাম পরিবর্তন করা যায়নি। পুরনো নামটি এখনও সংরক্ষিত আছে।"
   },
   "delete_dialog": {
     "cannot_undo": "এই পদক্ষেপ পূর্বাবস্থায় ফেরানো যাবে না।",
@@ -583,7 +600,7 @@
     "severity_high": "উচ্চ ঝুঁকি",
     "severity_low": "কম ঝুঁকি",
     "severity_medium": "মাঝারি ঝুঁকি",
-    "sim_high": "{credentialName} প্রত্যাহার করলে আপনার ওয়ার্কস্পেসের {personas}টি পার্সোনা{personaPlural}-এ প্রভাব পড়বে।",
+    "sim_high": "{credentialName} প্রত্যাহার করলে আপনার ওয়ার্কস্পেসের {personas}টি পার্সোনা-এ প্রভাব পড়বে।",
     "sim_low": "কোনো পার্সোনা বা ওয়ার্কফ্লো এই ক্রেডেনশিয়ালের উপর নির্ভর করে না। বাতিল করা নিরাপদ।",
     "sim_medium": "{credentialName} প্রত্যাহার করার প্রভাবের পরিসর সীমিত।",
     "simulate_revocation": "বাতিলকরণ সিমুলেট করুন",
@@ -642,7 +659,9 @@
     "start_over": "আবার শুরু করুন",
     "technical_details": "প্রযুক্তিগত বিস্তারিত",
     "title": "ক্রেডেনশিয়াল ডিজাইন করুন",
-    "try_again_with": "আপনার অনুরোধ নিয়ে আবার চেষ্টা করুন"
+    "try_again_with": "আপনার অনুরোধ নিয়ে আবার চেষ্টা করুন",
+    "instruction_imported": "{label} ক্রেডেনশিয়াল (ইমপোর্ট করা)",
+    "instruction_template": "{label} ক্রেডেনশিয়াল"
   },
   "design_phases": {
     "all_steps_complete": "সব ধাপ সম্পন্ন -- নিচের ফিল্ডগুলি পূরণ করুন এবং আপনার সংযোগ পরীক্ষা করুন।",
@@ -698,7 +717,9 @@
     "typical_time": "সাধারণত ১৫-৩০ সেকেন্ড",
     "use_template": "ব্যবহার",
     "verified_setup": "যাচাইকৃত সেটআপ",
-    "view_credential": "ক্রেডেনশিয়াল দেখুন"
+    "view_credential": "ক্রেডেনশিয়াল দেখুন",
+    "open": "খুলুন",
+    "step_number": "ধাপ {n}"
   },
   "desktop_discovery": {
     "allowed_binaries": "অনুমোদিত বাইনারি: ",
@@ -783,7 +804,8 @@
     "scheduled_rotation": "নির্ধারিত রোটেশন",
     "scheduled_rotation_desc": "cron শিডিউলে ক্রেডেনশিয়াল রোটেট করুন (যেমন, প্রতিদিন, সাপ্তাহিক)।",
     "seconds_10": "১০ সেকেন্ড",
-    "seconds_30": "৩০ সেকেন্ড"
+    "seconds_30": "৩০ সেকেন্ড",
+    "template_trigger_aria": "{name} ইভেন্ট ট্রিগার"
   },
   "features": {
     "anomaly_detected": "অসঙ্গতি: পূর্বে সফল শংসাপত্র হঠাৎ ব্যর্থ হচ্ছে। সম্ভাব্য প্রত্যাহার।",
@@ -962,7 +984,10 @@
     "no_eligible": "কোনো যোগ্য ক্রেডেনশিয়াল নেই। প্রথমে ক্রেডেনশিয়াল তালিকায় একটি MCP ক্রেডেনশিয়াল যোগ করুন।",
     "no_members": "এখনও কোনো সদস্য নেই। টুল বান্ডিল শুরু করতে নিচে একটি যোগ করুন।",
     "pick_credential": "একটি ক্রেডেনশিয়াল বেছে নিন…",
-    "pick_error": "একটি ক্রেডেনশিয়াল বেছে নিন এবং একটি সংক্ষিপ্ত ডিসপ্লে নাম দিন"
+    "pick_error": "একটি ক্রেডেনশিয়াল বেছে নিন এবং একটি সংক্ষিপ্ত ডিসপ্লে নাম দিন",
+    "remove_member_aria": "{name} কে সরান",
+    "disable_member": "নিষ্ক্রিয় করুন",
+    "enable_member": "সক্রিয় করুন"
   },
   "graph": {
     "connection_count_one": "{count}টি সংযোগ",
@@ -1006,7 +1031,27 @@
     "selected_for_import": "আমদানির জন্য নির্বাচিত",
     "source_ref": "উৎস রেফারেন্স",
     "sync_supported": "সিঙ্ক সমর্থিত",
-    "title": "ইম্পোর্ট উৎস"
+    "title": "ইম্পোর্ট উৎস",
+    "cli_hint": "{cli} CLI কমান্ড চালান এবং JSON আউটপুট নিচে পেস্ট করুন।",
+    "env_hint": "আপনার .env ফাইলের বিষয়বস্তু নিচে পেস্ট করুন।",
+    "err_aws_no_secret_string": "AWS প্রতিক্রিয়ায় কোনো SecretString পাওয়া যায়নি",
+    "err_aws_parse_failed": "AWS Secrets Manager-এর JSON আউটপুট পার্স করা যায়নি",
+    "err_azure_parse_failed": "Azure Key Vault-এর JSON আউটপুট পার্স করা যায়নি",
+    "err_doppler_parse_failed": "Doppler-এর JSON আউটপুট পার্স করা যায়নি। ব্যবহার করুন: doppler secrets download --format=json",
+    "err_env_missing_separator": "লাইন {line}: '=' বিভাজক নেই",
+    "err_no_secrets": "ইনপুটে কোনো সিক্রেট পাওয়া যায়নি",
+    "err_op_expected_array": "op CLI আউটপুট থেকে একটি JSON অ্যারে প্রত্যাশিত ছিল",
+    "err_op_parse_failed": "1Password-এর JSON আউটপুট পার্স করা যায়নি। ব্যবহার করুন: op item list --format=json",
+    "placeholder_1password": "এই কমান্ডের আউটপুট পেস্ট করুন: op item list --format=json",
+    "placeholder_aws_secrets": "এই কমান্ডের আউটপুট পেস্ট করুন: aws secretsmanager get-secret-value --secret-id <name>",
+    "placeholder_azure_keyvault": "এই কমান্ডের আউটপুট পেস্ট করুন: az keyvault secret show --vault-name <vault> --name <secret>",
+    "placeholder_doppler": "এই কমান্ডের আউটপুট পেস্ট করুন: doppler secrets download --format=json",
+    "source_desc_1password": "op CLI ব্যবহার করে 1Password থেকে ইমপোর্ট করুন",
+    "source_desc_aws_secrets": "AWS Secrets Manager থেকে ইমপোর্ট করুন",
+    "source_desc_azure_keyvault": "Azure Key Vault থেকে ইমপোর্ট করুন",
+    "source_desc_doppler": "Doppler সিক্রেট প্ল্যাটফর্ম থেকে ইমপোর্ট করুন",
+    "source_desc_env_file": "স্থানীয় .env ফাইল থেকে সিক্রেট ইমপোর্ট করুন",
+    "source_label_env_file": ".env ফাইল"
   },
   "ingest": {
     "rename_credential": "ক্রেডেনশিয়ালের নাম পরিবর্তন করুন",
@@ -1066,7 +1111,11 @@
     "title_databases": "ডেটাবেস",
     "title_dependencies": "নির্ভরতা",
     "unverifiable_count": "{count}টি যাচাইযোগ্য নয়",
-    "unverifiable_tooltip": "এই কানেক্টরের কোনো লাইভ প্রোব নেই -- ক্রেডেনশিয়ালগুলো সংরক্ষিত আছে কিন্তু প্রদানকারীর বিরুদ্ধে কখনো যাচাই করা হয়নি"
+    "unverifiable_tooltip": "এই কানেক্টরের কোনো লাইভ প্রোব নেই -- ক্রেডেনশিয়ালগুলো সংরক্ষিত আছে কিন্তু প্রদানকারীর বিরুদ্ধে কখনো যাচাই করা হয়নি",
+    "create_failed": "ক্রেডেনশিয়াল তৈরি করতে ব্যর্থ",
+    "rotate_result_failed": "{count}টি ব্যর্থ",
+    "rotate_result_refreshed": "{count}টি রিফ্রেশ হয়েছে",
+    "rotate_result_skipped": "{count}টি এড়িয়ে গেছে"
   },
   "negotiator_extra": {
     "ask_button": "Ask",
@@ -1084,7 +1133,8 @@
     "planning_description": "AI ডেভেলপার পোর্টাল বিশ্লেষণ করছে এবং ধাপে ধাপে প্রোভিশনিং পরিকল্পনা তৈরি করছে…",
     "start_auto": "অটো-প্রভিশনিং শুরু করুন",
     "existing_auth_description": "আপনি {method} এর মাধ্যমে ইতিমধ্যেই {service} এ সাইন ইন করা আছেন। সেটআপ সেই সেশনটি পুনরায় ব্যবহার করবে এবং সাইন-ইন ধাপগুলি এড়িয়ে যাবে।",
-    "use_existing_auth": "বিদ্যমান {service} সেশন ব্যবহার করুন"
+    "use_existing_auth": "বিদ্যমান {service} সেশন ব্যবহার করুন",
+    "step_of": "ধাপ {current}/{total}: {title}"
   },
   "negotiator": {
     "all_steps_completed": "সব ধাপ সম্পন্ন",
@@ -1261,7 +1311,11 @@
     "rotate_now": "এখন রোটেট করুন",
     "rotation_failed": "রোটেশন ব্যর্থ: {error}",
     "rotation_paused": "রোটেশন বিরতিতে",
-    "update_period_failed": "রোটেশন পিরিয়ড আপডেট ব্যর্থ: {error}"
+    "update_period_failed": "রোটেশন পিরিয়ড আপডেট ব্যর্থ: {error}",
+    "countdown_days_hours": "{days} দিন {hours} ঘণ্টা",
+    "countdown_due_now": "এখনই প্রদেয়",
+    "countdown_hours_minutes": "{hours} ঘণ্টা {minutes} মিনিট",
+    "countdown_minutes": "{minutes} মিনিট"
   },
   "schema_configs": {
     "custom": {
@@ -1378,7 +1432,9 @@
     "kv_value_label": "মান",
     "kv_value_placeholder": "মান",
     "none_configured": "কিছু কনফিগার নেই।",
-    "required_badge": "প্রয়োজনীয়"
+    "required_badge": "প্রয়োজনীয়",
+    "field_captured": "ক্যাপচার করা হয়েছে",
+    "select_placeholder": "নির্বাচন করুন..."
   },
   "setup_kind": {
     "cli_login": "প্রোভাইডারের CLI ইনস্টল করা আছে কিন্তু সাইন ইন করা নেই — টার্মিনালে এর লগইন কমান্ড চালান (উদাহরণস্বরূপ `vercel login` বা `gh auth login`)",
@@ -1607,7 +1663,8 @@
     "extract_export_json": "JSON এক্সপোর্ট",
     "extract_filter_all": "সব ধরন",
     "extract_filter_label": "সত্তার ধরন অনুযায়ী ফিল্টার",
-    "health_unreachable": "সার্ভিসে পৌঁছানো যায়নি"
+    "health_unreachable": "সার্ভিসে পৌঁছানো যায়নি",
+    "oauth_context_lost": "OAuth সম্পন্ন হয়েছে কিন্তু প্রসঙ্গ হারিয়ে গেছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
   },
   "subtitle": "শংসাপত্র যোগ করার পদ্ধতি বেছে নিন",
   "title": "ভল্ট",
@@ -1760,7 +1817,12 @@
     "select_services": "সংযুক্ত করতে সেবা নির্বাচন করুন",
     "selected_count": "{total}-এর মধ্যে {selected}টি নির্বাচিত",
     "sign_in_browser": "ব্রাউজার উইন্ডোতে আপনার Google অ্যাকাউন্ট দিয়ে সাইন ইন করুন।",
-    "some_failed": "কিছু ক্রেডেনশিয়াল ব্যর্থ হয়েছে"
+    "some_failed": "কিছু ক্রেডেনশিয়াল ব্যর্থ হয়েছে",
+    "service_gmail_desc": "ইমেইল পাঠান, পড়ুন ও পরিচালনা করুন",
+    "service_google_calendar_desc": "ক্যালেন্ডার ইভেন্ট পড়ুন ও পরিচালনা করুন",
+    "service_google_drive_desc": "ফাইল পড়ুন ও পরিচালনা করুন",
+    "service_google_sheets_desc": "স্প্রেডশিট ডেটা পড়ুন ও লিখুন",
+    "status_failed": "ব্যর্থ"
   },
   "connector_attention": {
     "title": "সংযোগগুলোতে মনোযোগ প্রয়োজন",
@@ -1781,5 +1843,29 @@
     "reconnect_now": "এখনই পুনঃসংযোগ করুন",
     "reconnecting": "পুনঃসংযোগ করা হচ্ছে...",
     "signed_in_as": "{email} হিসেবে সাইন ইন করা হয়েছে"
+  },
+  "remediation_notify": {
+    "auto_disabled_body": "{name}: ক্রমাগত গুরুতর ব্যর্থতা শনাক্ত হয়েছে। ধারাবাহিক ত্রুটি রোধে রোটেশন নীতি নিষ্ক্রিয় করা হয়েছে।",
+    "auto_disabled_title": "ক্রেডেনশিয়াল স্বয়ংক্রিয়ভাবে নিষ্ক্রিয়",
+    "critical_title": "ক্রেডেনশিয়াল গুরুতর অবস্থায়",
+    "drift_title": "ক্রেডেনশিয়াল ড্রিফট শনাক্ত হয়েছে",
+    "rotation_failed_title": "ক্রেডেনশিয়াল রোটেশন ব্যর্থ",
+    "warning_title": "ক্রেডেনশিয়াল সতর্কতা",
+    "reason_backoff_retry": "ক্ষণস্থায়ী ব্যর্থতার হার {pct} (১ ঘণ্টা)। এক্সপোনেনশিয়াল ব্যাকঅফ প্রয়োগ করা হচ্ছে।",
+    "reason_default": "প্রতিকারের স্তর: {level}",
+    "reason_disable": "গুরুতর: স্থায়ী ব্যর্থতার হার {pct} (১ ঘণ্টা)। রোটেশন নীতি স্বয়ংক্রিয়ভাবে নিষ্ক্রিয় করা হচ্ছে।",
+    "reason_preemptive_rotation": "ক্রমাগত অবনতি: ব্যর্থতার হার {pct} (১ ঘণ্টা)। প্রতিরোধমূলক রোটেশন নির্ধারণ করা হচ্ছে।",
+    "reason_rotate_then_alert": "স্থায়ী ত্রুটি শনাক্ত হয়েছে: স্থায়ী ব্যর্থতার হার {pct} (১ ঘণ্টা)। রোটেশন ও সতর্কতা চলছে।"
+  },
+  "resource_picker": {
+    "no_matches": "কোনো মিল পাওয়া যায়নি",
+    "nothing_to_pick": "এখনো বেছে নেওয়ার কিছু নেই",
+    "pick_first": "আগে একটি {dep} বেছে নিন",
+    "picked_count": "{count}টি বেছে নেওয়া হয়েছে",
+    "save_scope": "স্কোপ সংরক্ষণ করুন",
+    "scope_title": "{label} স্কোপ",
+    "search_placeholder": "{label} খুঁজুন…",
+    "stale_picks_one": "{count}টি নির্বাচন",
+    "stale_picks_other": "{count}টি নির্বাচন"
   }
 }

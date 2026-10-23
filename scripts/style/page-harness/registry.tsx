@@ -39,8 +39,13 @@ import { MONITOR_RAIL_MODULES } from './monitorRailSurfaces';
 import { MONITOR_ACTIVITY_MODULES } from './monitorActivitySurfaces';
 import { MANDATE_LANES_MODULES } from './mandateLanesSurfaces';
 import { DECISION_DECK_MODULES } from './decisionDeckSurfaces';
+import { BLUEPRINT_MODULES } from './blueprintSurfaces';
 import { MANDATE_CARDS_MODULES } from './mandateCardsSurfaces';
+import { MANDATE_WP6_MODULES } from './mandateWp6Surfaces';
+import { BREACH_STATES_MODULES } from './breachStatesSurfaces';
 import { ATHENA_CHAT_MODULES } from './athenaChatSurfaces';
+import { CONVERSATION_VARIANTS_MODULES } from './conversationVariantsSurfaces';
+import { PERSONA_CARD_MODULES } from './personaCardVariants';
 
 type Wrap = (children: ReactNode) => ReactNode;
 
@@ -94,8 +99,14 @@ export const MODULES: Record<string, HarnessModule> = {
   ...MANDATE_LANES_MODULES,
   // The live Decision Deck (decisionDeckSurfaces.tsx, decisionDeckTapes.mjs).
   ...DECISION_DECK_MODULES,
+  // The product blueprint drawing set on the Kettle fixture (blueprintSurfaces.tsx, blueprintTapes.mjs).
+  ...BLUEPRINT_MODULES,
   // The mandate-lane card shapes in the live deck (mandateCardsSurfaces.tsx, mandateCardsTapes.mjs).
   ...MANDATE_CARDS_MODULES,
+  ...MANDATE_WP6_MODULES, // Re-read, met-when, Scopes and the Orphanage (mandateWp6Surfaces.tsx, WP6).
+  ...BREACH_STATES_MODULES, // Breach head lines and mandate states (breachStatesSurfaces.tsx, WP5P).
+  ...CONVERSATION_VARIANTS_MODULES, // Conversations restructure variants in the real Monitor (conversationVariantsSurfaces.tsx, WP12).
+  ...PERSONA_CARD_MODULES, // Persona card variants over the real board (personaCardVariants.tsx, WP11).
   ...TONE_MODULES,
   ...TRIAGE_MODULES,
   ...DATAGRID_MODULES,

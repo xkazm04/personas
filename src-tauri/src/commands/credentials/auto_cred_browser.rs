@@ -1400,9 +1400,15 @@ pub async fn get_playwright_procedure(
 pub(crate) fn build_playwright_mcp_config() -> Result<tempfile::NamedTempFile, String> {
     use std::io::Write;
 
+    // Same pinned version as the build-turn connectors (supply-chain policy,
+    // see webbuild::mcp::PLAYWRIGHT_MCP_VERSION).
+    let pkg = format!(
+        "@playwright/mcp@{}",
+        crate::webbuild::mcp::PLAYWRIGHT_MCP_VERSION
+    );
     let config = personas_core::mcp_config::mcp_config_json([(
         "playwright",
-        personas_core::mcp_config::McpServer::stdio("npx", ["@playwright/mcp@latest"]),
+        personas_core::mcp_config::McpServer::stdio("npx", [pkg.as_str()]),
     )]);
 
     let mut tmp = tempfile::Builder::new()
@@ -1484,7 +1490,7 @@ static PLAYWRIGHT_PROBE: std::sync::Mutex<Option<(std::time::Instant, bool)>> =
     std::sync::Mutex::new(None);
 
 /// Async wrapper around the npx probe. The raw probe runs `npx --yes
-/// @playwright/mcp@latest --help`, which can hit the npm registry and take
+/// @playwright/mcp@<PLAYWRIGHT_MCP_VERSION> --help`, which can hit the npm registry and take
 /// seconds-to-minutes on a cold cache — running it inline pinned a tokio
 /// worker and froze the auto-cred UI. Off-thread with a 15s ceiling and a
 /// 5-minute cache shared by session start and the upfront UI check.
@@ -1510,10 +1516,14 @@ async fn check_playwright_available_async() -> bool {
 /// Check if Playwright MCP is likely to work (npx and @playwright/mcp available).
 fn check_playwright_available() -> bool {
     let npx_cmd = if cfg!(windows) { "cmd" } else { "npx" };
+    let pkg = format!(
+        "@playwright/mcp@{}",
+        crate::webbuild::mcp::PLAYWRIGHT_MCP_VERSION
+    );
     let npx_args: Vec<&str> = if cfg!(windows) {
-        vec!["/C", "npx", "--yes", "@playwright/mcp@latest", "--help"]
+        vec!["/C", "npx", "--yes", pkg.as_str(), "--help"]
     } else {
-        vec!["--yes", "@playwright/mcp@latest", "--help"]
+        vec!["--yes", pkg.as_str(), "--help"]
     };
 
     match std::process::Command::new(npx_cmd)

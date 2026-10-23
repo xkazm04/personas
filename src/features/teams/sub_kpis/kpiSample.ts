@@ -6,7 +6,7 @@
 // measurement yields NO point — a gap, never a zero.
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
-import { kpiTrack } from './kpiMath';
+import { kpiInstantMs, kpiTrackAt } from './kpiMath';
 
 export interface TimeWindow {
   from: number;
@@ -23,7 +23,7 @@ export interface SamplePoint {
 export const NOT_DIRECTLY_MEASURED = new Set(['simulation', 'ai-compose']);
 
 export function measuredAtMs(m: DevKpiMeasurement): number {
-  return new Date(m.measured_at.replace(' ', 'T')).getTime();
+  return kpiInstantMs(m.measured_at);
 }
 
 /** One window spanning every listed series (ids missing from `trends` are
@@ -85,6 +85,9 @@ export interface WeeklyState {
   offTrack: number;
   /** KPIs with at least one production measurement at or before week end. */
   measured: number;
+  /** KPIs whose fetched history was cut by the per-KPI read limit and starts
+   *  after this week ended: truncation, not absence. Never counted as dry. */
+  unknown: number;
   /** The current, still-open week. */
   partial: boolean;
 }
@@ -119,10 +122,18 @@ export function mondayOf(ms: number, timeZone: string): number {
   return monday - wallMs;
 }
 
+/** Epoch ms of the oldest fetched row when the read hit its limit, else -Infinity. */
+function truncationHorizon(rows: DevKpiMeasurement[], limit: number): number {
+  if (rows.length < limit) return -Infinity;
+  const times = rows.map(measuredAtMs).filter(Number.isFinite);
+  return times.length > 0 ? Math.min(...times) : -Infinity;
+}
+
 /**
  * Weekly state distribution of a KPI set, rebuilt from the append-only
  * measurement log: for each of the last `weeks` weeks, every KPI's latest
- * production value at or before the week's end is judged with `kpiTrack`.
+ * production value at or before the week's end is judged AS OF that week's
+ * end (`kpiTrackAt`), never at today's pace.
  * A week where no KPI had any value yet has `measured: 0` — callers draw a
  * gap there, never a zero. `now` is injectable for tests.
  */
@@ -132,11 +143,15 @@ export function weeklyStateSeries(
   weeks = 12,
   now = Date.now(),
   timeZone = operatorTimeZone(),
+  perKpiLimit = Infinity,
 ): WeeklyState[] {
   const WEEK = 7 * 86_400_000;
   const thisMonday = mondayOf(now, timeZone);
-  const series: Array<{ kpi: DevKpi; pts: SamplePoint[] }> = kpis.map((kpi) => ({
+  const series: Array<{ kpi: DevKpi; pts: SamplePoint[]; horizon: number }> = kpis.map((kpi) => ({
     kpi,
+    // The bulk read keeps the newest `perKpiLimit` rows across ALL channels. A
+    // KPI that hit the limit has no history before its oldest returned row.
+    horizon: truncationHorizon(trends[kpi.id] ?? [], perKpiLimit),
     pts: (trends[kpi.id] ?? [])
       .filter((m) => (m.env ?? 'production') === 'production' && !NOT_DIRECTLY_MEASURED.has(m.source))
       .map((m) => ({ t: measuredAtMs(m), v: m.value }))
@@ -147,13 +162,14 @@ export function weeklyStateSeries(
   for (let i = weeks - 1; i >= 0; i--) {
     const week = thisMonday - i * WEEK;
     const end = week + WEEK;
-    const row: WeeklyState = { week, met: 0, onTrack: 0, offTrack: 0, measured: 0, partial: i === 0 };
-    for (const { kpi, pts } of series) {
+    const row: WeeklyState = { week, met: 0, onTrack: 0, offTrack: 0, measured: 0, unknown: 0, partial: i === 0 };
+    for (const { kpi, pts, horizon } of series) {
+      if (end <= horizon) { row.unknown += 1; continue; }
       let last: SamplePoint | undefined;
       for (const p of pts) { if (p.t < end) last = p; else break; }
       if (!last) continue;
       row.measured += 1;
-      const t = kpiTrack({ ...kpi, current_value: last.v });
+      const t = kpiTrackAt(kpi, last.v, Math.min(end, now));
       if (t === 'met') row.met += 1;
       else if (t === 'on-track') row.onTrack += 1;
       else if (t === 'off-track') row.offTrack += 1;

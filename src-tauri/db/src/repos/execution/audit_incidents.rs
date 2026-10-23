@@ -248,8 +248,8 @@ pub fn promote(pool: &DbPool, input: CreateAuditIncidentInput) -> Result<Option<
 /// `limit`. Used by the execution-time team-awareness block
 /// (`engine::runner::team_context`) so members avoid repeating known failures.
 ///
-/// "Open" here = `status IN ('open','acknowledged')` (the two non-terminal
-/// states; `resolved`/`dismissed` are excluded). Scope is by `persona_id`
+/// "Open" here = `IncidentStatus::is_active` (open, acknowledged, in_progress;
+/// `resolved`/`dismissed` are excluded), the same set the portfolio count uses. Scope is by `persona_id`
 /// because `audit_incidents` has no project/team FK — the persona roster is the
 /// closest available team scope. Ordering is `created_at DESC` (the table has no
 /// `last_seen_at`); the caller applies the severity-rank + high/critical filter
@@ -271,7 +271,15 @@ pub fn list_open_by_personas(
             let mut qb = QueryBuilder::new();
             qb.where_in(
                 "status",
-                vec!["open".to_string(), "acknowledged".to_string()],
+                [
+                    IncidentStatus::Open,
+                    IncidentStatus::Acknowledged,
+                    IncidentStatus::InProgress,
+                ]
+                .into_iter()
+                .filter(|s| s.is_active())
+                .map(|s| s.as_str().to_string())
+                .collect(),
             );
             qb.where_in("persona_id", persona_ids.to_vec());
             qb.order_by("created_at", "DESC");
@@ -866,6 +874,25 @@ mod tests {
     /// The escalation lifecycle's active-work state: `open → in_progress →
     /// resolved`. Entering in_progress stamps acknowledged_at; resolving from
     /// in_progress carries the note. resolved → in_progress is NOT allowed.
+    #[test]
+    fn list_open_by_personas_includes_in_progress() {
+        let pool = init_test_db().unwrap();
+        let id = promote(
+            &pool,
+            make_input("fired_alerts", "lop-1", "high", "Being worked"),
+        )
+        .unwrap()
+        .unwrap();
+        let ids = vec!["p-1".to_string()];
+        assert_eq!(list_open_by_personas(&pool, &ids, 10).unwrap().len(), 1);
+        assert!(start_progress(&pool, &id).unwrap());
+        let listed = list_open_by_personas(&pool, &ids, 10).unwrap();
+        assert_eq!(listed.len(), 1, "an in_progress incident is still open");
+        assert_eq!(listed[0].status, "in_progress");
+        assert!(resolve(&pool, &id, None).unwrap());
+        assert!(list_open_by_personas(&pool, &ids, 10).unwrap().is_empty());
+    }
+
     #[test]
     fn in_progress_lifecycle() {
         let pool = init_test_db().unwrap();

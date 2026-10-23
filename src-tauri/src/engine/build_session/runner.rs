@@ -1540,11 +1540,13 @@ pub(super) async fn run_session(
                         // Update persona name from agent_ir
                         if let Some(name) = data.get("name").and_then(|n| n.as_str()) {
                             if !name.is_empty() {
-                                let _ = crate::db::repos::core::personas::update_name(
+                                if let Err(e) = crate::db::repos::core::personas::update_name(
                                     &pool,
                                     &persona_id,
                                     name,
-                                );
+                                ) {
+                                    tracing::warn!(session_id = %session_id, persona_id = %persona_id, error = %e, "build session: persona name update failed");
+                                }
                             }
                         }
                     } else if cell_key != "_test_report" {

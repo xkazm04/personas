@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, ChevronDown, Plus, ArrowLeftRight, ShieldQuestion } from 'lucide-react';
+import { Link, CheckCircle2, AlertCircle, XCircle, Activity, Loader2, ChevronDown, Plus, ArrowLeftRight, ShieldQuestion, WifiOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
@@ -28,6 +28,8 @@ const STATUS_ICON = {
   ready: CheckCircle2,
   // Deliberately NOT a check: nothing verified this credential.
   unverifiable: ShieldQuestion,
+  // The probe never reached the service: no verdict, so neither a check nor a cross.
+  unreachable: WifiOff,
   failed: XCircle,
   missing: AlertCircle,
   untested: AlertCircle,
@@ -72,7 +74,7 @@ export function ConnectorStatusCard({
               title={t.agents.connectors.ct_swap_alt_tooltip}><ArrowLeftRight className="w-3 h-3" /></button>
           )}
           {status.credentialId ? (
-            <Tooltip content={status.testing ? 'Test already in progress' : ''} placement="top" delay={200}>
+            <Tooltip content={status.testing ? t.agents.connectors.status_testing : ''} placement="top" delay={200}>
               <Button variant="secondary" size="sm" loading={status.testing} disabled={status.testing}
                 icon={<Activity className="w-3 h-3" />} onClick={() => onTest(status.name, status.credentialId!)}>
                 {t.agents.connectors.st_test}

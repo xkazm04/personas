@@ -69,10 +69,12 @@ impl TauriEmitter {
 
 impl ExecutionEventEmitter for TauriEmitter {
     fn emit_json(&self, event: &str, payload: serde_json::Value) {
-        // Tauri's emit() returns Result but historically all engine call sites
-        // ignore the result with `let _ =`. Preserve that behavior — a failed
-        // emit is not an error the engine can recover from.
-        let _ = self.app.emit(event, payload);
+        // A failed emit is not an error the engine can recover from, so it is
+        // never returned -- but it is logged: a permanent failure (a payload
+        // that cannot serialise) otherwise looks exactly like delivery.
+        if let Err(e) = self.app.emit(event, payload) {
+            tracing::warn!(event, error = %e, "Failed to emit execution event");
+        }
     }
 }
 

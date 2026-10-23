@@ -28,18 +28,19 @@ const DIVIDER_COLORS: Record<SessionState, { text: string; line: string }> = {
 
 interface AutoCredBrowserProps {
   logs: BrowserLogEntry[];
+  /** When this browser run started (ms epoch); drives the elapsed clock. */
+  startedAt: number | null;
   onCancel: () => void;
   mode?: AutoCredMode;
 }
 
-export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCredBrowserProps) {
+export function AutoCredBrowser({ logs, startedAt, onCancel, mode = 'playwright' }: AutoCredBrowserProps) {
   const { t } = useTranslation();
   const ace = t.vault.auto_cred_extra;
   const scrollRef = useRef<HTMLDivElement>(null);
   const isGuided = mode === 'guided';
   const sessionState = deriveSessionState(logs);
-  const startTs = logs.length > 0 ? logs[0]!.ts : null;
-  const elapsed = useElapsed(startTs);
+  const elapsed = useElapsed(startedAt);
 
   const visibleLogs = useMemo(
     () => logs.filter((e) => e.type !== 'info'),

@@ -1,9 +1,9 @@
-import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle, Clock, ShieldQuestion, Filter } from 'lucide-react';
+import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle, Clock, ShieldQuestion, WifiOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
-import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ConnectorStatusCard } from './ConnectorStatusCard';
 import type { ConnectorStatus, ConnectorHealthFilter } from '../../libs/connectorTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -92,6 +92,8 @@ interface ConnectorsSectionProps {
   unlinked: number;
   /** Linked, but the connector exposes no live probe — never counted healthy. */
   unverifiable: number;
+  /** Linked, but the last probe never reached the service — never counted failed. */
+  unreachable: number;
   /** Rows whose only evidence is a restored healthcheck past the staleness cutoff. */
   staleCount: number;
   testableCount: number;
@@ -111,7 +113,7 @@ interface ConnectorsSectionProps {
 }
 
 export function ConnectorsSection({
-  roleGroups, requiredCredTypes, healthy, unhealthy, unlinked, unverifiable, staleCount,
+  roleGroups, requiredCredTypes, healthy, unhealthy, unlinked, unverifiable, unreachable, staleCount,
   testableCount, testingAll, credentials, linkingConnector,
   onTestAll, onTestConnector, onToggleLinking, onLink,
   onAddCredential, onClearLinkError, onSwap,
@@ -137,6 +139,8 @@ export function ConnectorsSection({
               icon={<AlertCircle className="w-2.5 h-2.5" />} label={tx(t.agents.connectors.st_missing, { count: unlinked })} />
             <FilterPill count={unverifiable} variant="neutral" value="unverifiable" active={healthFilter} onToggle={onHealthFilterChange}
               icon={<ShieldQuestion className="w-2.5 h-2.5" />} label={tx(t.agents.connectors.st_unverifiable, { count: unverifiable })} />
+            <FilterPill count={unreachable} variant="warning" value="unreachable" active={healthFilter} onToggle={onHealthFilterChange}
+              icon={<WifiOff className="w-2.5 h-2.5" />} label={tx(t.agents.connectors.st_unreachable, { count: unreachable })} />
             <FilterPill count={staleCount} variant="warning" value="stale" active={healthFilter} onToggle={onHealthFilterChange}
               icon={<Clock className="w-2.5 h-2.5" />} label={tx(t.agents.connectors.st_stale, { count: staleCount })} />
           </>
@@ -149,10 +153,10 @@ export function ConnectorsSection({
         ) : undefined}
       />
       {roleGroups.length === 0 && healthFilter && onHealthFilterChange ? (
-        <ScenarioEmptyState
-          icon={Filter}
+        <NoResults
           title={t.agents.connectors.st_filter_empty}
-          action={{ label: t.agents.connectors.st_filter_clear, onClick: () => onHealthFilterChange(null) }}
+          resetLabel={t.agents.connectors.st_filter_clear}
+          onReset={() => onHealthFilterChange(null)}
         />
       ) : (
       <div className="space-y-2">
@@ -168,12 +172,15 @@ export function ConnectorsSection({
             {group.roleLabel && group.items.length > 1 && (
               <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider px-1 pt-1">{group.roleLabel}</p>
             )}
-            {group.items.map((status, i) => (
+            {group.items.map((status) => (
               <ConnectorStatusCard
-                // Composite key: persona configs can carry duplicate connector
-                // names (e.g. test-seeded adoptions), which made a name-only
-                // key collide and spam dup-key warnings on every render.
-                key={`${status.name}-${i}`} status={status}
+                // Identity is the connector name. Rows come from
+                // `useConnectorStatuses`, which builds them from a Set of
+                // required types, so a name is unique here. The index that
+                // used to be appended shifted whenever the health filter hid
+                // an earlier member, remounting every later card and dropping
+                // its open swap picker.
+                key={status.name} status={status}
                 isLinking={linkingConnector === status.name}
                 credentials={credentials}
                 onTest={(name, credId) => void onTestConnector(name, credId)}

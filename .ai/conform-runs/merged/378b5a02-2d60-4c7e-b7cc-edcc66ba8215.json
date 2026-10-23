@@ -1,0 +1,18 @@
+{"schema":"conform-run/1","worker":"378b5a02-2d60-4c7e-b7cc-edcc66ba8215","subject":"health-checks","evaluatedAt":"2026-10-16T17:52:07Z",
+"pairs":[
+{"context":"6c0d30e4-99b9-4580-ba02-9a526db1d639","subject":"health-checks","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/agents/sub_health/useHealthDigestScheduler.ts:107 all-healthy notification keys on totalIssues === 0, which excludes undetermined (src/stores/slices/agents/healthCheckSlice.ts:206) and :101 never reads undeterminedCount - a fleet whose sub-checks could not run is announced as all healthy (re-affirmed 2026-10-16 against rev 11, code unchanged since 2026-09-14)",
+"techniques":[
+{"technique":"health-rollup","verdict":"deviation","evidence":"src/features/agents/sub_health/useHealthDigestScheduler.ts:107 rollup notification omits the undetermined count the slice computes; unverifiable members are laundered into 'all healthy'"},
+{"technique":"three-state-outcomes","verdict":"deviation","evidence":"src/stores/slices/agents/healthCheckSlice.ts:206 totalIssues sums error+warning+info only; the third state exists in the slice but the digest consumer at useHealthDigestScheduler.ts:101 drops it"},
+{"technique":"check-scheduling","verdict":"realized","evidence":"src/features/agents/sub_health/useHealthDigestScheduler.ts:71 corrupt stamp parsed as due-once-then-heal; :89 failed attempt latches for the session (delayed retry, not hot retry)"}]},
+{"context":"dd45411d-8955-4579-906e-5a3b00ba16da","subject":"health-checks","bundle":"software-engineering","state":"deviation",
+"evidence":"src-tauri/src/commands/infrastructure/system/health.rs:111 count_since(..).unwrap_or(0) turns an unreadable crash table into 'no crashes', the section is omitted and all_ok (:147) stays true - HealthCheckStatus (:22) has no could-not-determine member, so unverifiable collapses into green (re-affirmed 2026-10-16 against rev 11, code unchanged since 2026-09-14)",
+"techniques":[
+{"technique":"three-state-outcomes","verdict":"deviation","evidence":"src-tauri/src/commands/infrastructure/system/health.rs:22 HealthCheckStatus is Ok/Warn/Error/Inactive/Info - no unverifiable variant, so a failed probe must pick a side"},
+{"technique":"health-rollup","verdict":"deviation","evidence":"src-tauri/src/commands/infrastructure/system/health.rs:147 all_ok derives only from present items; the crash section silently omitted on a DB read failure (:111) cannot drag it down"},
+{"technique":"remediation-affordances","verdict":"realized","evidence":"src-tauri/src/commands/infrastructure/system/health.rs:43 per-item remediation string plus :38 structural installable flag the surface branches on"}]}],
+"declined":[],
+"consults":[
+{"ts":"2026-10-16T17:52:07Z","bundle":"software-engineering","subjects":["health-checks"],"techniques":["health-rollup","three-state-outcomes","check-scheduling"],"deviations":1},
+{"ts":"2026-10-16T17:52:07Z","bundle":"software-engineering","subjects":["health-checks"],"techniques":["three-state-outcomes","health-rollup","remediation-affordances"],"deviations":1}]}

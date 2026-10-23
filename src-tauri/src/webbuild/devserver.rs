@@ -204,6 +204,10 @@ impl DevServerRegistry {
                     .stdout(Stdio::null())
                     .stderr(Stdio::null());
                 super::bun::hide_window(&mut cmd);
+                // Own process group, so kill_tree's `-pid` signal reaches the
+                // next/node children bun spawns and not just bun itself.
+                #[cfg(unix)]
+                cmd.process_group(0);
                 cmd.spawn()
                     .map_err(|e| AppError::Internal(format!("spawn `bun run dev`: {e}")))?
             }

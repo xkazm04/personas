@@ -18,7 +18,7 @@
   "ruleIds": ["unlooking-lint-rule","unlooking-lint-rule-positive-control"],
   "ruleIdsFrom": "section-9",
   "sections": [1,2,3,4,5,6,7,8,9],
-  "citationCount": 69,
+  "citationCount": 72,
   "triggers": [
     "\"This keeps happening in review — let's add a lint rule for it.\"",
     "\"Can ESLint catch X?\" / \"I'll write a custom rule so this can't regress.\"",
@@ -48,6 +48,7 @@
       "resolved": false
     },
     "eslint-rules/": {"count":7,"sections":[1,7,8,9],"contexts":["grepped), all **21** rule modules in `eslint-rules/` (**2,564** lines) read at"],"resolved":false,"isDir":true},
+    "eslint-rules/_classname-strings.cjs": {"count":2,"sections":[7],"contexts":["**Done for the design-token family, 2026-10-09.** `eslint-rules/_classname-strings.cjs`"]},
     "eslint-rules/async-catch-requires-helper.cjs": {
       "count": 1,
       "sections": [9],
@@ -84,6 +85,7 @@
     "src-tauri/": {"count":1,"sections":[9],"contexts":["ESLint (which never sees `src-tauri/` at all — `eslint.config.js:30` ignores"],"resolved":false,"isDir":true},
     "src-tauri/clippy.toml": {"count":1,"sections":[],"contexts":["no custom clippy lint, no `clippy.toml`, no `xtask`. One stock lint"],"resolvedFrom":"basename","verbatim":"clippy.toml"},
     "src/": {"count":4,"sections":[4,7],"contexts":["Measured by AST across every `.ts`/`.tsx` under `src/`, including the files the"],"resolved":false,"isDir":true},
+    "src/test/eslint-rules/classNameStrings.test.ts": {"count":1,"sections":[7],"contexts":["depth is pinned by `src/test/eslint-rules/classNameStrings.test.ts`. So the"]},
     "src/test/eslint-rules/customRules.test.ts": {"count":6,"sections":[2,3,4,6,7,9],"lines":["228-249"],"contexts":["`src/test/eslint-rules/customRules.test.ts`: a **positive control** (the textbook"]}
   }
 }

@@ -1,0 +1,109 @@
+{
+  "schema": "conform-run/1",
+  "worker": "dee58dcf-0a19-4367-845a-dde1434e4813",
+  "subject": "llm-call-telemetry-model",
+  "evaluatedAt": "2026-10-16T18:16:49Z",
+  "pairs": [
+    {
+      "context": "2fb16136-586e-478d-823f-38434d2d5b9a",
+      "subject": "llm-call-telemetry-model",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/runner/mod.rs:4012 writes cost_usd: Some(metrics.cost_usd) from a bare f64 defaulting to 0 (src-tauri/core/src/types.rs:526), summed as COALESCE(e.spend, 0.0) beside max_budget_usd at src-tauri/src/commands/communication/observability/metrics.rs:192 and enforced at src-tauri/src/engine/execution.rs:3021 - phantom-zero spend gives the budget cap headroom it does not have (anchor re-pinned from :3996, drifted by d2625bd9f2).",
+      "techniques": [
+        {
+          "technique": "nullable-cost-never-zero",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/types.rs:526 ExecutionMetrics.cost_usd is f64, not Option<f64>, so an unpriced run persists as 0.0 via src-tauri/src/engine/runner/mod.rs:4012"
+        }
+      ],
+      "registryProposal": "Context is weak-governed (commands-communication); the governing site is the engine runner + execution budget gate, which no context row pairs with this subject - consider routing the runner/execution context to llm-call-telemetry-model."
+    },
+    {
+      "context": "a7ece012-8300-4780-b286-b9cea81801fc",
+      "subject": "llm-call-telemetry-model",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/models/llm_spend.rs:46 LlmSpendTotals sums a nullable cost_usd (:30) into a bare f64 with no unpriced-call count, and LlmSpendInsert (:20) carries no cost_source - a window with unpriced rows reads as fully priced (re-confirmed 2026-10-16; file unchanged since 10-12).",
+      "techniques": [
+        {
+          "technique": "nullable-cost-never-zero",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/llm_spend.rs:46 totals carry no unpriced count beside the summed cost"
+        }
+      ]
+    },
+    {
+      "context": "2dcda6bf-9982-422b-b63f-1481c414cdab",
+      "subject": "llm-call-telemetry-model",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:38 LlmPinpoint.totalCostUsd is non-nullable and mappers substitute 0 for missing cost (:95 r.cost_usd ?? 0, :402 toNum(r.costUSD)) - phantom zero; the shape (:28) has no cached-input/reasoning counters (re-confirmed 2026-10-16; file unchanged since 10-09).",
+      "techniques": [
+        {
+          "technique": "nullable-cost-never-zero",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:95 r.cost_usd ?? 0"
+        },
+        {
+          "technique": "token-usage-quadruple",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_llm_overview/llmTracingAdapters.ts:28 LlmPinpoint has no cached-input or reasoning token fields"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "llm-call-telemetry-model",
+      "context": "621caefc-8ae0-42e7-89b6-8e879ad62814",
+      "reason": "not-applicable verdict at current digest (rev 7, 2026-10-12); anchor file has no commits since - nothing to re-judge"
+    },
+    {
+      "subject": "llm-call-telemetry-model",
+      "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+      "reason": "not-applicable verdict at current digest (rev 7, 2026-10-12); anchor file has no commits since - nothing to re-judge"
+    },
+    {
+      "subject": "llm-call-telemetry-model",
+      "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7",
+      "reason": "not-applicable verdict at current digest (rev 7, 2026-10-09) on a weak context; anchor file unchanged - nothing to re-judge"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T18:16:49Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "llm-call-telemetry-model"
+      ],
+      "techniques": [
+        "nullable-cost-never-zero"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T18:16:49Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "llm-call-telemetry-model"
+      ],
+      "techniques": [
+        "nullable-cost-never-zero"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T18:16:49Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "llm-call-telemetry-model"
+      ],
+      "techniques": [
+        "nullable-cost-never-zero",
+        "token-usage-quadruple"
+      ],
+      "deviations": 1
+    }
+  ]
+}

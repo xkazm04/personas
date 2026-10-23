@@ -1,0 +1,35 @@
+{"schema": "conform-run/1", "worker": "172ec1ad-68b8-4c86-a059-6d85806a7c06", "subject": "eval-harness",
+ "evaluatedAt": "2026-10-21T12:18:39Z",
+ "pairs": [
+  {"context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df", "subject": "eval-harness", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/core/src/models/test_suite.rs:30 TestSuiteScenario's only identity is a mutable name with no stable id or content version, and src-tauri/core/src/models/lab.rs:101 LabResultBase records eval_method but no judge model, rubric or packet version, so the shared result contract cannot keep a score series on one scenario version or one instrument",
+   "techniques": [
+    {"technique": "scenario-design", "verdict": "deviation", "evidence": "src-tauri/core/src/models/test_suite.rs:30 name-equality identity, which the technique says breaks on edit; lab.rs:77 every lab result keys its scenario by scenario_name"},
+    {"technique": "judge-stability", "verdict": "deviation", "evidence": "src-tauri/core/src/models/lab.rs:101 only the eval method (llm vs heuristic) is stamped; the concrete judge model id and packet version the technique requires on the run artifact have no field"},
+    {"technique": "comparison-modes", "verdict": "deviation", "evidence": "src-tauri/core/src/models/test_run.rs:13 PersonaTestRun carries persona_id and models_tested but no suite id, trial count or declared aggregation rule, so a cell's identity is not minted with the run"},
+    {"technique": "failure-signatures-beside-the-pass-rate", "verdict": "realized-in-part", "evidence": "src-tauri/core/src/models/lab.rs:503 degraded_count keeps heuristic-fallback samples apart from real judge verdicts in each version cell, so a composite that mixes the two is visible"}
+   ]},
+  {"context": "97025c06-0d64-4025-8a1f-98b90ba1c233", "subject": "eval-harness", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:6 the A/B model compare panel was deleted (d71e0eb948); the context now holds only a tier price table, which runs no scenarios and scores nothing",
+   "techniques": []},
+  {"context": "d9cffe6c-a868-4ed4-b5e8-6c8add36918a", "subject": "eval-harness", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx:2 the context's files are the Lifecycle development-practice lens, not prompt competitions; nothing here runs variants against scenarios or ranks them",
+   "techniques": [],
+   "registryProposal": "Matcher resonance on a stale context description: this context's description still describes prompt competitions (prompt/winner/leaderboard) while its two files are the Lifecycle lens; the competition code appears to live elsewhere (src/features/plugins/dev-tools/contest/stats.ts). A context-map rescan should refresh the description, and the contest code may deserve its own eval-harness pairing."},
+  {"context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60", "subject": "eval-harness", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/quick-answer/triage/triageTypes.ts:4 a unified inbox where a human decides queued reviews, ideas and questions; it measures no system against scenarios (the answer/question/metric match is vocabulary only)",
+   "techniques": []}
+ ],
+ "declined": [
+  {"subject": "eval-harness", "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae", "reason": "stores-slices-agents only forwards start/cancel/fetch calls (src/stores/slices/agents/labSlice.ts:360 startEval takes versions, models and a filter); scenario identity, trials, judge and aggregation are decided in the backend, where deviations are already recorded, so a verdict here would restate them rather than judge this code"}
+ ],
+ "consults": [
+  {"ts": "2026-10-21T12:18:39Z", "bundle": "software-engineering", "subjects": ["eval-harness"], "techniques": ["scenario-design", "judge-stability", "comparison-modes", "failure-signatures-beside-the-pass-rate"], "deviations": 1},
+  {"ts": "2026-10-21T12:18:39Z", "bundle": "software-engineering", "subjects": ["eval-harness"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-21T12:18:39Z", "bundle": "software-engineering", "subjects": ["eval-harness"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-21T12:18:39Z", "bundle": "software-engineering", "subjects": ["eval-harness"], "techniques": [], "deviations": 0}
+ ]}

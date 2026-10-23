@@ -3,16 +3,6 @@
  * Works in Tauri's WebView -- no plugin required.
  */
 
-import { silentCatch } from '@/lib/silentCatch';
-
-/** Request permission proactively (non-blocking). */
-export function requestNotificationPermission(): void {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'default') {
-    Notification.requestPermission().catch(silentCatch('osNotification:requestPermission'));
-  }
-}
-
 /** Send an OS notification. Requests permission on first call if needed. */
 export async function sendOsNotification(title: string, body: string): Promise<void> {
   if (!('Notification' in window)) return;

@@ -6,7 +6,7 @@ import { EmptyIllustration } from '@/features/shared/components/display/EmptyIll
 import { useTranslation } from '@/i18n/useTranslation';
 import type { KnowledgeBase, VectorSearchResult } from '@/api/vault/database/vectorKb';
 import { kbSearch, kbListDocuments } from '@/api/vault/database/vectorKb';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { trackInteraction } from '@/lib/analytics';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { SearchResultCard } from '../search/SearchResultCard';
@@ -142,7 +142,7 @@ export function SearchTab({ kb }: SearchTabProps) {
       );
     } catch (err) {
       if (!mountedRef.current || !latestWins.isCurrent(seq)) return;
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
       setResults(null);
     } finally {
       if (mountedRef.current && latestWins.isCurrent(seq)) setSearching(false);

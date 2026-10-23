@@ -297,12 +297,36 @@ pub fn get_dead_letter_config(
 
 // -- Dev seed: mock event -------------------------------------------------------
 
+/// Dev seeds write mock rows into the live event bus, so release builds refuse
+/// them (same stance as `seed_mock_message`).
+fn ensure_dev_seed_allowed(debug_build: bool, command: &str) -> Result<(), AppError> {
+    if debug_build {
+        Ok(())
+    } else {
+        Err(AppError::Validation(format!(
+            "{command} is only available in debug builds"
+        )))
+    }
+}
+
+#[cfg(test)]
+mod dev_seed_guard_tests {
+    use super::*;
+
+    #[test]
+    fn release_builds_refuse_dev_seeds() {
+        assert!(ensure_dev_seed_allowed(false, "seed_mock_event").is_err());
+        assert!(ensure_dev_seed_allowed(true, "seed_mock_event").is_ok());
+    }
+}
+
 #[tauri::command]
 pub fn seed_mock_event(
     _app: AppHandle,
     state: State<'_, Arc<AppState>>,
 ) -> Result<PersonaEvent, AppError> {
     require_auth_sync(&state)?;
+    ensure_dev_seed_allowed(cfg!(debug_assertions), "seed_mock_event")?;
 
     use super::mock_seed::{self, MOCK_EVENT_TEMPLATES};
 

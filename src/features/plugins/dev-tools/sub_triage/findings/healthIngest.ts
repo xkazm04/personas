@@ -19,7 +19,7 @@ import { derivePassportFromMetadata } from '@/features/teams/sub_factory/passpor
 import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 import { runFindingSweep } from './sweep';
 import { recordSweep } from './lastSweep';
@@ -45,6 +45,19 @@ export function describeSweep(res: SweepResult): string {
   if (res.skippedSensors.length > 0) parts.push(`skipped: ${res.skippedSensors.join(', ')}`);
   if (res.errors.length > 0) parts.push(`${res.errors.length} write error(s)`);
   return parts.join(' · ');
+}
+
+/**
+ * The toast colour for a sweep. A regression is bad news and never wears a
+ * success colour; a partial sweep (write errors) is never a clean one; only
+ * new findings or a signal that actually moved earn success. `unchanged`
+ * alone is not good news - merged is not fixed.
+ */
+export function sweepTone(res: SweepResult): 'success' | 'warning' | 'error' {
+  if (res.verified.regressed > 0) return 'error';
+  if (res.errors.length > 0) return 'warning';
+  if (res.created > 0 || res.verified.cleared + res.verified.moved > 0) return 'success';
+  return 'warning';
 }
 
 /**
@@ -132,16 +145,10 @@ export async function handleHealthIngestRequested(
     // Same record the manual button writes: an unattended sweep that skipped
     // half its sensors must leave that visible on the scoreboard too.
     recordSweep(projectId, res.skippedSensors);
-    const tone =
-      res.verified.regressed > 0
-        ? 'error'
-        : res.created > 0 || res.verified.cleared + res.verified.moved > 0
-          ? 'success'
-          : 'warning';
-    addToast(`Health ingest — ${describeSweep(res)}`, tone);
+    addToast(`Health ingest — ${describeSweep(res)}`, sweepTone(res));
     report(res.errors.length > 0 ? 'partial' : 'ok', describeSweep(res));
   } catch (e) {
     silentCatch('healthIngest:run')(e);
-    report('failed', e instanceof Error ? e.message : String(e));
+    report('failed', extractMessage(e));
   }
 }

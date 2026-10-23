@@ -14,5 +14,16 @@
   "url_empty": "Harap masukkan URL orkestrator.",
   "credentials_revoked": "Kredensial kedaluwarsa atau dicabut. Silakan hubungkan kembali ke orkestrator cloud.",
   "reconnect_exhausted": "Orkestrator cloud tidak dapat dijangkau setelah beberapa kali percobaan. Periksa koneksi lalu coba lagi. Kesalahan terakhir: {cause}",
-  "reconnect_disconnected": "Pemeriksaan koneksi melaporkan terputus"
+  "reconnect_disconnected": "Pemeriksaan koneksi melaporkan terputus",
+  "gitlab_agent_redeployed": "Agen berhasil di-deploy ulang",
+  "gitlab_auto_connect_failed": "Sambungan otomatis GitLab gagal. Anda dapat menyambungkan ulang secara manual dari panel GitLab.",
+  "gitlab_branches_created": "Branch lingkungan telah dibuat",
+  "gitlab_no_persona": "Tidak ditemukan persona yang cocok dengan agen \"{name}\". Deploy secara manual.",
+  "gitlab_no_project": "Tidak ada proyek yang terkait dengan agen ini. Deploy secara manual terlebih dahulu.",
+  "gitlab_rolled_back": "{name} dikembalikan ke {tag}",
+  "gitlab_rolled_back_previous": "Dikembalikan ke deployment sebelumnya",
+  "gitlab_version_tag_failed": "{name} telah di-deploy, tetapi tag versi tidak dapat dibuat. Versi ini tidak akan muncul di riwayat dan tidak dapat dikembalikan. Coba deploy lagi.",
+  "oauth_timed_out_error": "Otorisasi OAuth kehabisan waktu. Silakan coba lagi.",
+  "oauth_timed_out_toast": "Otorisasi OAuth kehabisan waktu. Silakan coba lagi.",
+  "persona_fallback": "persona"
 }

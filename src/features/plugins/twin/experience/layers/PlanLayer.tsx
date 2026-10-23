@@ -15,6 +15,7 @@
 
 import { RotateCcw, Route } from 'lucide-react';
 import { AsyncButton } from '@/features/shared/components/buttons';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { SetupGoal } from '@/lib/bindings/SetupGoal';
 import { SETUP_FOCUS_ORDER, type SetupSessionApi } from '../../setup/setupContract';
@@ -115,7 +116,7 @@ export function PlanLayer({ open, onClose, session }: PlanLayerProps) {
             ))}
           </div>
         ) : goals.length === 0 ? (
-          <p className="typo-caption" data-testid="mr-plan-empty">{tx.empty}</p>
+          <div data-testid="mr-plan-empty"><EmptyState art="launch" size="sm" title={tx.empty} /></div>
         ) : (
           <>
             {phase(tx.phaseSetup, setupGoals, 'mr-plan-phase-setup')}

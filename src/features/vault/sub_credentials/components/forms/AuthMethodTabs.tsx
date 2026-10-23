@@ -22,6 +22,7 @@ export function AuthMethodTabs({
           type="button"
           key={method.id}
           onClick={() => onMethodChange(method)}
+          aria-pressed={activeAuthMethodId === method.id}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body transition-colors ${
             activeAuthMethodId === method.id
               ? `border ${getAuthBadgeClasses(method)}`

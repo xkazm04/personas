@@ -65,6 +65,10 @@ export default function FleetGridPage() {
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Selection is wake-aware: activating a dozing or hibernated session resumes it.
+  // The pane's Wake button goes through the same door, so it shares
+  // selectSession's in-flight guard: a second wake of one conversation would
+  // admit a second `claude --resume` on it (fleet_wake_session reads the row,
+  // then awaits admission, before it removes the sleeping row).
   const handleActivate = useCallback((id: string) => void selectSession(id), [selectSession]);
   const handleRemovedLocal = useCallback((id: string) => removeLocal(id), [removeLocal]);
 
@@ -149,7 +153,7 @@ export default function FleetGridPage() {
                 onCompact={ops.handleCompact}
                 onOpenSkills={() => setSkillsDrawerOpen(true)}
                 onHibernate={ops.handleHibernate}
-                onWake={ops.handleWake}
+                onWake={handleActivate}
               />
             </div>
           </div>

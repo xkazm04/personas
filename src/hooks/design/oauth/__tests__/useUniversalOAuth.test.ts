@@ -7,7 +7,7 @@ vi.mock('@/api/vault/oauthGatewayApi', () => ({
 }));
 vi.mock('@/api/system/system', () => ({ openExternalUrl: vi.fn(async () => {}) }));
 vi.mock('@/hooks/utility/useDocumentVisibility', () => ({ useDocumentVisibility: () => true }));
-vi.mock('@/lib/silentCatch', () => ({ silentCatch: () => () => {} }));
+vi.mock('@/lib/silentCatch', async (importOriginal) => ({ ...(await importOriginal<typeof import('@/lib/silentCatch')>()), silentCatch: () => () => {} }));
 vi.mock('@/features/vault/sub_catalog/components/design/CredentialDesignHelpers', () => ({
   OAUTH_FIELD: { SESSION_REF: 'session_ref', SCOPE: 'scope', COMPLETED_AT: 'completed_at', PROVIDER: 'provider' },
 }));

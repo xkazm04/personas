@@ -1,0 +1,40 @@
+{
+  "schema": "conform-run/1",
+  "worker": "9f7d6e71-03d6-423a-a951-a8406e80f14e",
+  "subject": "job-coordination",
+  "evaluatedAt": "2026-10-16T18:20:14.740Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "job-coordination",
+      "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+      "reason": "already judged against the current subject digest sha256-b2:68f09609d1498e88 (revision 17, registry 11037a6c); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "job-coordination",
+      "context": "059fdee0-40da-434a-a5cb-874bc9179a31",
+      "reason": "already judged against the current subject digest sha256-b2:68f09609d1498e88 (revision 17, registry 11037a6c); not stale, nothing to re-judge; deviation spot-checked live: src-tauri/src/boot/workers.rs:233 still precedes the leader gate at :246"
+    },
+    {
+      "subject": "job-coordination",
+      "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+      "reason": "already judged against the current subject digest sha256-b2:68f09609d1498e88 (revision 17, registry 11037a6c); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "job-coordination",
+      "context": "a4174786-a5fb-4145-a1b3-f02826fac64a",
+      "reason": "already judged against the current subject digest sha256-b2:68f09609d1498e88 (revision 17, registry 11037a6c); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "job-coordination",
+      "context": "2b61b648-d166-4255-b7b7-5d32ffdd6751",
+      "reason": "already judged against the current subject digest sha256-b2:68f09609d1498e88 (revision 17, registry 11037a6c); not stale, nothing to re-judge"
+    },
+    {
+      "subject": "job-coordination",
+      "context": "89d44c76-ec4c-4388-843e-503cf6ca2507",
+      "reason": "already judged against the current subject digest sha256-b2:68f09609d1498e88 (revision 17, registry 11037a6c); not stale, nothing to re-judge; also a weak context"
+    }
+  ],
+  "consults": []
+}

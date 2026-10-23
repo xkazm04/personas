@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { WIDGET_DEFAULT_SPAN, cockpitWidgetRegistry } from '../widgetRegistry';
 import { parseWidgetActions } from '../briefing/actions';
 import { WidgetActionBar } from '../briefing/WidgetActionBar';
+import { WidgetBoundary } from './WidgetBoundary';
 
 /**
  * The Cockpit grid: the kit's Tiles (12 columns, content-sized rows, spans that
@@ -39,5 +40,9 @@ function CockpitWidgetCell({ widget }: { widget: CompanionCockpitWidget }) {
     return <Tile span={span} error={{ title: tx(t.overview.cockpit.unknown_widget, { kind: widget.kind }) }} />;
   }
   const footer = actions.length > 0 ? <WidgetActionBar actions={actions} /> : undefined;
-  return <Component title={widget.title} config={widget.config} span={span} footer={footer} />;
+  return (
+    <WidgetBoundary kind={widget.kind} span={span} resetKey={widget.config}>
+      <Component title={widget.title} config={widget.config} span={span} footer={footer} />
+    </WidgetBoundary>
+  );
 }

@@ -4,18 +4,23 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { UnifiedTable } from '@/features/shared/components/display/UnifiedTable';
 import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
 import type { PersonaEvent } from '@/lib/types/types';
 import { seedMockEvent } from '@/api/overview/events';
 import { useEventLog } from '../libs/useEventLog';
 import { eventSourceLabel } from '../libs/eventSourceRegistry';
-import { EventDetailContent } from './EventDetailContent';
+import { EventDetailModal } from '../EventDetailModal';
+import { eventTypeLabel } from '../libs/eventTypeLabel';
+import { eventStatusOptions } from '../libs/eventStatusOptions';
 import { EventLogToolbar } from './EventLogToolbar';
 import { useEventLogColumns } from './eventLogColumns';
 import { createLogger } from "@/lib/log";
+import { extractMessage } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 
 const logger = createLogger("event-log");
@@ -24,21 +29,13 @@ const EVENT_ROW_HEIGHT = 44;
 
 export default function EventLogList() {
   const { t, tx } = useTranslation();
-  const STATUS_OPTIONS = [
-    { value: 'all', label: t.overview.events.all_statuses },
-    { value: 'completed', label: 'Completed' },
-    { value: 'failed', label: 'Failed' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'processed', label: 'Processed' },
-    { value: 'processing', label: 'Processing' },
-    { value: 'skipped', label: 'Skipped' },
-  ];
+  const STATUS_OPTIONS = eventStatusOptions(t, t.overview.events.all_statuses);
   const {
     recentEvents, personas, availableTypes, skippedStats,
     statusFilter, setStatusFilter, typeFilter, setTypeFilter,
     selectedEvent, setSelectedEvent,
     selectedPersonaId, setSelectedPersonaId,
-    isFetching, isRefreshing, isSearching,
+    isFetching, isRefreshing, isSearching, searchError, retrySearch,
     filteredEvents,
     handleRefresh, getPersona,
     // Search
@@ -79,8 +76,13 @@ export default function EventLogList() {
 
   const typeOptions = useMemo(() => [
     { value: 'all', label: t.overview.events.all_types },
-    ...[...availableTypes].sort((a, b) => a.localeCompare(b)).map((v) => ({ value: v, label: v.replace(/_/g, ' ') })),
-  ], [availableTypes, t.overview.events.all_types]);
+    // Same label as the Event column's cell (eventTypeLabel), so the filter
+    // offers "SLA breach opened" for the row that says "SLA breach opened"
+    // rather than a third spelling ("sla.breach.opened").
+    ...availableTypes
+      .map((v) => ({ value: v, label: eventTypeLabel(t, v) }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
+  ], [availableTypes, t]);
 
   // Bucket the event stream under sticky day headers (Today / Yesterday / …)
   // for temporal wayfinding. Grouping runs over UnifiedTable's already-sorted
@@ -112,7 +114,11 @@ export default function EventLogList() {
   // data pre-warmed by the event bus or a prior visit — are never hidden by a
   // fetch. The only thing left here is gating this surface's own rich
   // zero-events CTA on the fetch having settled (law 5).
-  const showRichEmpty = !isFetching && displayedEvents.length === 0 && !hasActiveFilters;
+  // A failed read of the live window is not "no events yet": with nothing on
+  // screen it gets the failure banner and a retry, never the first-run CTA.
+  const recentEventsError = useOverviewStore((s) => s.recentEventsError);
+  const readFailed = recentEventsError != null && !isFetching && displayedEvents.length === 0 && !hasActiveFilters;
+  const showRichEmpty = !readFailed && !isFetching && displayedEvents.length === 0 && !hasActiveFilters;
 
   return (
     <ContentBox>
@@ -171,16 +177,31 @@ export default function EventLogList() {
       />
 
       <ContentBody flex>
-        {showRichEmpty ? (
+        {readFailed ? (
+          <div className="p-4">
+            <InlineErrorBanner
+              message={resolveErrorTranslated(t, recentEventsError).message}
+              onRetry={() => void handleRefresh()}
+            />
+          </div>
+        ) : showRichEmpty ? (
           <div className="flex-1 flex items-center justify-center p-6">
             <EmptyState
-              icon={Zap}
+              art="stream"
+              size="lg"
               title={t.overview.events.no_events}
               subtitle={t.overview.events.no_events_hint}
-              iconColor="text-amber-400/80"
-              iconContainerClassName="bg-amber-500/10 border-amber-500/20"
               action={{ label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
               secondaryAction={{ label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+            />
+          </div>
+        ) : searchError && displayedEvents.length === 0 ? (
+          // A filtered search that never ran is not "no events match": say it
+          // failed, keep the filters, and retry the same query.
+          <div className="p-4">
+            <InlineErrorBanner
+              message={resolveErrorTranslated(t, extractMessage(searchError.raw)).message}
+              onRetry={() => void retrySearch()}
             />
           </div>
         ) : (
@@ -192,6 +213,7 @@ export default function EventLogList() {
               onRowClick={setSelectedEvent}
               isLoading={isFetching}
               emptyTitle={t.overview.events.no_filter_match}
+              emptyArt="search"
               rowHeight={EVENT_ROW_HEIGHT}
               rowAccent={(e) =>
                 e.status === 'failed'
@@ -220,14 +242,11 @@ export default function EventLogList() {
         )}
       </ContentBody>
 
+      {/* The one event-detail modal (also opened from Agents > Activity), so
+          the title names the event the way the row and the filter do instead
+          of printing the raw type id. */}
       {selectedEvent && (
-        <DetailModal
-          title={`${t.overview.events.event_detail_title} ${selectedEvent.event_type}`}
-          subtitle={`${t.overview.events.event_detail_status} ${selectedEvent.status}`}
-          onClose={() => setSelectedEvent(null)}
-        >
-          <EventDetailContent event={selectedEvent} />
-        </DetailModal>
+        <EventDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
       )}
     </ContentBox>
   );

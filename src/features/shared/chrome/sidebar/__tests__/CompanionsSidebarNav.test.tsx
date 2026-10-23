@@ -57,7 +57,6 @@ vi.mock('@/features/companions/status/useCompanionsStatus', () => ({
     byId: (id: keyof typeof TODAY) => TODAY[id] ?? null,
     refresh: () => {},
   }),
-  COMPANIONS_IN_ORDER: ['athena', 'overseer', 'curator'],
 }));
 
 import { CompanionsSidebarNav } from '../sections/CompanionsSidebarNav';

@@ -1,0 +1,17 @@
+{
+ "schema": "conform-run/1",
+ "worker": "1cfdefb6-58a9-40ee-9696-e4d1f17e36c1",
+ "subject": "deployment-contract",
+ "evaluatedAt": "2026-10-17T02:44:16.113939+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "deployment-contract",
+   "context": "plugins-artist-hooks",
+   "reason": "The context is absent from this checkout: src/features/plugins/artist/hooks does not exist, git ls-files lists no artist hook files, and searches for useArtistAssets and the described artist IPC commands found no implementation in src or src-tauri. src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 explicitly states: \"//! Both plugins were removed from the app on 2026-09-14 - no command reads or\"."
+  }
+ ],
+ "consults": []
+}

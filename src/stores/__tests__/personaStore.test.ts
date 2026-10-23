@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useAgentStore } from "../agentStore";
 import { useSystemStore } from "../systemStore";
-import { mockInvokeMap, resetInvokeMocks } from "@/test/tauriMock";
+import { mockInvokeMap, mockedTauriInvoke, resetInvokeMocks } from "@/test/tauriMock";
 import type { Persona } from "@/lib/bindings/Persona";
 
 // Helper to create a minimal Persona fixture
@@ -192,7 +192,7 @@ describe("personaStore", () => {
 
   describe("deletePersona", () => {
     it("removes persona from list and clears selection if selected", async () => {
-      mockInvokeMap({ delete_persona: undefined });
+      mockInvokeMap({ delete_persona: DELETED });
 
       useAgentStore.setState({
         personas: [makePersona({ id: "p-1" }), makePersona({ id: "p-2" })],
@@ -209,5 +209,111 @@ describe("personaStore", () => {
       expect(state.selectedPersonaId).toBeNull();
       expect(state.selectedPersona).toBeNull();
     });
+
+    // Every caller awaits the action and reads a resolution as "deleted": the
+    // editor closes its confirm dialog and resets the build session, the
+    // overview drops the row from its selection. A swallowed failure lied to
+    // all of them.
+    it("rejects when the backend refuses, and keeps the persona", async () => {
+      mockedTauriInvoke.mockImplementation(async (cmd: string) => {
+        if (cmd === "delete_persona") throw { error: "persona is locked", kind: "Validation" };
+        return undefined;
+      });
+      useAgentStore.setState({
+        personas: [makePersona({ id: "p-1" })],
+        selectedPersonaId: "p-1",
+      });
+
+      await expect(useAgentStore.getState().deletePersona("p-1")).rejects.toMatchObject({
+        error: "persona is locked",
+      });
+
+      const state = useAgentStore.getState();
+      expect(state.personas.map((p) => p.id)).toEqual(["p-1"]);
+      expect(state.selectedPersonaId).toBe("p-1");
+      expect(state.error).toBe("persona is locked");
+    });
   });
 });
+
+// `isLoading` is the roster's busy flag: Home's get-started band and Mission
+// Control read it as "personas are still loading". A detail load must neither
+// set it nor clear it.
+describe("isLoading belongs to the roster, not the detail load", () => {
+  beforeEach(() => {
+    useAgentStore.setState({ personas: [makePersona({ id: "p-1" })], selectedPersonaId: null, selectedPersona: null, detailCache: {}, isLoading: false, isEditorDirty: false });
+    resetInvokeMocks();
+  });
+
+  it("a detail load superseded by a deselect does not strand the flag at true", async () => {
+    let resolveDetail!: (v: unknown) => void;
+    mockedTauriInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "get_persona_detail") return new Promise((r) => { resolveDetail = r; });
+      return Promise.resolve(undefined);
+    });
+
+    useAgentStore.getState().selectPersona("p-1");
+    await vi.waitFor(() => expect(resolveDetail).toBeTypeOf("function"));
+    useAgentStore.getState().selectPersona(null);
+    resolveDetail({ ...makePersona({ id: "p-1" }), tools: [], triggers: [] });
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(useAgentStore.getState().isLoading).toBe(false);
+  });
+
+  it("a detail load landing first does not clear the roster's busy state", async () => {
+    let resolveList!: (v: unknown) => void;
+    mockedTauriInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "list_personas") return new Promise((r) => { resolveList = r; });
+      if (cmd === "get_persona_detail") return Promise.resolve({ ...makePersona({ id: "p-1" }), tools: [], triggers: [] });
+      return Promise.resolve(undefined);
+    });
+
+    const roster = useAgentStore.getState().fetchPersonas();
+    await useAgentStore.getState().fetchDetail("p-1");
+    expect(useAgentStore.getState().isLoading).toBe(true);
+
+    resolveList([makePersona({ id: "p-1" })]);
+    await roster;
+    expect(useAgentStore.getState().isLoading).toBe(false);
+  });
+});
+
+// IPC rejects with a serialized AppError OBJECT, so `String(err)` logged
+// "[object Object]" and the one record of why the fleet board was blank had
+// no reason in it.
+describe("load-failure logs carry the backend's reason", () => {
+  beforeEach(() => {
+    useAgentStore.setState({ personas: [makePersona({ id: "p-1" })], selectedPersonaId: null, selectedPersona: null, detailCache: {}, isEditorDirty: false });
+    resetInvokeMocks();
+    mockedTauriInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === "get_persona_summaries" || cmd === "get_persona_detail") {
+        throw { error: "database is locked", kind: "Database" };
+      }
+      return undefined;
+    });
+  });
+
+  it.each([
+    ["fetchPersonaSummaries", () => useAgentStore.getState().fetchPersonaSummaries()],
+    ["fetchDetail", () => useAgentStore.getState().fetchDetail("p-1")],
+  ])("%s", async (_name, run) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      await run();
+      const line = warn.mock.calls.map((c) => String(c[0])).find((l) => l.includes("failed"));
+      expect(line).toContain("database is locked");
+      expect(line).not.toContain("[object Object]");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
+const DELETED = {
+  deleted: true,
+  executionsCancelled: 0,
+  executionsForceCancelled: 0,
+  timeoutReached: false,
+  cancelFailures: [],
+};

@@ -22,6 +22,7 @@ import type { LucideIcon } from 'lucide-react';
 const activeLanguage = (): string => useI18nStore.getState().language;
 import { CheckCircle2, XCircle, AlertTriangle, Pause, Clock, Loader2, HelpCircle } from 'lucide-react';
 import { getActiveTranslations } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 /**
  * SQLite `datetime('now')` returns "YYYY-MM-DD HH:MM:SS" — UTC, but with NO
@@ -297,23 +298,32 @@ export function formatCost(
   // cloud run is disproportionately a new model the price book does not know.
   // An exact 0 still renders as `$0.00` two lines below: zero is a
   // measurement, null is an admission.
-  if (usd == null) return '\u2014';
+  // NaN and Infinity are not measurements either: NaN failed every comparison
+  // below and reached Intl verbatim as "$NaN".
+  if (usd == null || !Number.isFinite(usd)) return '\u2014';
   // Hoisted above the precision branches so all three agree about zero. It used
   // to live inside the `precision === 2` branch alone, and the two branches
   // below reached their `< threshold` case for an exact 0.
   if (usd === 0) return fmt(0, precision === 4 ? 4 : 2);
+  // The thresholds compare MAGNITUDE. They compared `usd`, which every negative
+  // number is below, so -$12.30 (a refund, a credit, a cost delta) rendered as
+  // "<$0.01". Intl places the sign; a tiny negative is bounded from below
+  // (">-$0.01": between minus one cent and zero), the mirror of "<$0.01".
+  const abs = Math.abs(usd);
+  const tiny = (threshold: number, digits: number) =>
+    usd < 0 ? `>${fmt(-threshold, digits)}` : `<${fmt(threshold, digits)}`;
   if (precision === 2) {
-    if (usd < 0.01) return `<${fmt(0.01, 2)}`;
+    if (abs < 0.01) return tiny(0.01, 2);
     return fmt(usd, 2);
   }
   if (precision === 4) {
-    if (usd < 0.001) return `<${fmt(0.001, 3)}`;
+    if (abs < 0.001) return tiny(0.001, 3);
     return fmt(usd, 4);
   }
   // 'auto'
-  if (usd < 0.001) return `<${fmt(0.001, 3)}`;
-  if (usd < 0.01) return fmt(usd, 4);
-  if (usd < 1) return fmt(usd, 3);
+  if (abs < 0.001) return tiny(0.001, 3);
+  if (abs < 0.01) return fmt(usd, 4);
+  if (abs < 1) return fmt(usd, 3);
   return fmt(usd, 2);
 }
 
@@ -396,13 +406,6 @@ export const SEVERITY_COLORS: Record<string, BadgeColors> = {
   critical: { bg: 'bg-status-error/10',   text: 'text-status-error',   border: 'border-status-error/20' },
 };
 
-export const HEALING_CATEGORY_COLORS: Record<string, BadgeColors> = {
-  prompt: { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20' },
-  tool: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20' },
-  config: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-  external: { bg: 'bg-gray-500/10', text: 'text-gray-600', border: 'border-gray-500/20' },
-};
-
 export interface CategoryColors extends BadgeColors {
   label: string;
   accent: string;
@@ -467,17 +470,6 @@ export function formatInterval(seconds: number): string {
   return parts.join(' ');
 }
 
-/** Format remaining seconds into a compact countdown like "4m 32s" or "1h 23m" */
-export function formatCountdown(seconds: number): string {
-  if (seconds <= 0) return '0s';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  if (m > 0) return s > 0 ? `${m}m ${s}s` : `${m}m`;
-  return `${s}s`;
-}
-
 /**
  * Format an elapsed duration as a human-readable string.
  * - `compact` (default): "30s", "2m 30s", "1h 5m"
@@ -492,9 +484,13 @@ export function formatElapsed(
   value: number,
   opts?: 'compact' | 'clock' | { unit?: 'ms' | 's'; format?: 'compact' | 'clock' },
 ): string {
+  if (!Number.isFinite(value)) return '—';
   const resolved = typeof opts === 'string' ? { format: opts } : opts;
   const { unit = 'ms', format = 'compact' } = resolved ?? {};
-  const totalSeconds = unit === 's' ? Math.floor(value) : Math.floor(value / 1000);
+  // Elapsed time runs from a start to now; a start ahead of now is clock skew,
+  // not a negative duration. Unclamped, the clock form printed "-1:-1".
+  const clamped = Math.max(0, value);
+  const totalSeconds = unit === 's' ? Math.floor(clamped) : Math.floor(clamped / 1000);
 
   if (format === 'clock') {
     const hours = Math.floor(totalSeconds / 3600);
@@ -650,40 +646,6 @@ export function formatNumeric(
   }
 }
 
-// -- Simple mode helpers ------------------------------------------------
-
-import type { SimpleStatus } from './designTokens';
-import type { Translations } from '@/i18n/en';
-import { tokenLabel } from '@/i18n/tokenMaps';
-
-
-
-/** Map a granular status string to one of three simple levels. */
-export function toSimpleStatusLevel(status: string): SimpleStatus {
-  const s = status.toLowerCase();
-  if (['completed', 'success', 'healthy', 'ready', 'approved', 'active', 'running', 'processed'].includes(s)) {
-    return 'good';
-  }
-  if (['failed', 'error', 'critical', 'rejected', 'blocked', 'unhealthy'].includes(s)) {
-    return 'problem';
-  }
-  return 'warning';
-}
-
-/**
- * Map a granular status string to one of three simple levels, with its label.
- * Used in simple mode to reduce cognitive load.
- *
- * The label used to come from `SIMPLE_MODE.STATUS[level].label` — literal English
- * in a design-token module, so the mode built for the least technical users was
- * the one that could not be translated. It now resolves through the same
- * `status_tokens` path every other machine token uses.
- */
-export function formatSimpleStatus(t: Translations, status: string): { level: SimpleStatus; label: string } {
-  const level = toSimpleStatusLevel(status);
-  return { level, label: tokenLabel(t, 'simple', level) };
-}
-
 /**
  * Format a duration as a human-readable string.
  *
@@ -696,9 +658,14 @@ export function formatDuration(
   value: number | null | undefined,
   opts?: { unit?: 'ms' | 's'; precision?: 'integer' | 'decimal' },
 ): string {
-  if (value == null) return '\u2014';
+  if (value == null || !Number.isFinite(value)) return '\u2014';
   const { unit = 'ms', precision = 'integer' } = opts ?? {};
   const ms = unit === 's' ? value * 1000 : value;
+  // A duration DELTA is legitimately negative (ComparisonTable renders a step's
+  // `right - left`). Every rung below assumed a positive value: a negative one
+  // satisfied `ms < 1000` at any magnitude and printed raw milliseconds
+  // ("-65000ms" beside "+1m 5s"). Format the magnitude, then restore the sign.
+  if (ms < 0) return `-${formatDuration(-ms, { unit: 'ms', precision })}`;
 
   if (precision === 'decimal') {
     if (ms < 1000) return `${Math.round(ms)}ms`;

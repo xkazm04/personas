@@ -8,6 +8,7 @@ import { Rocket } from 'lucide-react';
 
 import { BaseModal } from '@/features/shared/components/modals';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 
 export function DispatchFleetModal({ name, targetCount, onDispatch, onClose }: {
   /** Project (island) display name, or a group's label — shown in the header. */
@@ -32,6 +33,11 @@ export function DispatchFleetModal({ name, targetCount, onDispatch, onClose }: {
     try {
       await onDispatch(instruction);
       onClose();
+    } catch (err) {
+      // The rejection is the "stay open" signal; onDispatch already toasted
+      // it. Letting it escape had no awaiter - the click / Ctrl+Enter handler
+      // drops the promise - so every failed dispatch was an unhandledrejection.
+      silentCatch('mastermind dispatch modal')(err);
     } finally {
       setDispatching(false);
     }

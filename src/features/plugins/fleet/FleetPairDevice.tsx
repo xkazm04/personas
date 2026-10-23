@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Smartphone, QrCode, Copy, Check, Lock, ShieldOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import {
@@ -12,6 +15,7 @@ import {
 } from '@/api/fleet/fleet';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useNowTick, formatAgo } from './relativeAgo';
+import { extractMessage } from '@/lib/silentCatch';
 
 /**
  * "Pair a device" — the real pairing flow for Fleet Command Anywhere.
@@ -31,14 +35,23 @@ export function FleetPairDevice() {
   const now = useNowTick();
   const [pair, setPair] = useState<FleetPairResult | null>(null);
   const [status, setStatus] = useState<FleetCompanionStatus | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const refreshDevices = useCallback(() => {
     companionDevices()
-      .then(setStatus)
-      .catch(silentCatch('FleetPairDevice:devices'));
+      .then((next) => {
+        setStatus(next);
+        setLoadError(null);
+      })
+      .catch((err: unknown) => {
+        silentCatch('FleetPairDevice:devices')(err);
+        // A failed read must not render as "No devices paired yet": a paired,
+        // active phone would look absent and un-revocable.
+        setLoadError(resolveError(extractMessage(err)).message);
+      });
   }, []);
 
   useEffect(() => {
@@ -95,8 +108,13 @@ export function FleetPairDevice() {
 
   const copy = useCallback(() => {
     if (!pair) return;
+    // `copyText` RESOLVES false on a refused write (it reports the failure
+    // itself); it never rejects. Confirming regardless told the operator the
+    // pairing link was on the clipboard when the clipboard still held whatever
+    // was there before - possibly an older pairing link.
     copyText(pair.url)
-      .then(() => {
+      .then((ok) => {
+        if (!ok) return;
         setCopied(true);
         if (copiedTimer.current !== null) clearTimeout(copiedTimer.current);
         copiedTimer.current = setTimeout(() => {
@@ -234,8 +252,16 @@ export function FleetPairDevice() {
         <p className="typo-label text-foreground mb-1.5">
           {t.plugins.fleet.pair_devices_title}
         </p>
+        {loadError && (
+          <InlineErrorBanner
+            compact
+            title={t.plugins.fleet.pair_load_failed}
+            message={loadError}
+            onRetry={refreshDevices}
+          />
+        )}
         {devices.length === 0 ? (
-          <p className="text-[13px] text-foreground">{t.plugins.fleet.pair_no_devices}</p>
+          loadError ? null : <EmptyState art="team" size="sm" title={t.plugins.fleet.pair_no_devices} />
         ) : (
           <ul className="space-y-1" data-testid="fleet-pair-devices">
             {devices.map((d) => (

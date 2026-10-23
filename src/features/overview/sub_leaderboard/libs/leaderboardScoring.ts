@@ -2,11 +2,20 @@
  * Leaderboard Scoring Engine
  *
  * Computes a composite performance score for each persona by combining:
- *   - Success Rate   (30%) — execution success percentage
+ *   - Success Rate   (30%) — the persona's own measured success percentage
  *   - Health         (20%) — heartbeat health score
  *   - Speed          (20%) — latency relative to fleet average (lower is better)
- *   - Cost Efficiency(20%) — cost per execution relative to fleet average (lower is better)
+ *   - Cost           (20%) — daily burn relative to fleet average (lower is better)
  *   - Activity       (10%) — recent execution volume relative to most active
+ *
+ * Absence policy (registry scoring-rubrics / unmeasured-honesty): a dimension
+ * this persona was not measured on is `null`, never a default. The slice fills
+ * an agent with no decided runs with a success rate of 100 ('unknown') or the
+ * fleet's rate ('proxy'), a heartbeat built on that rate, and the fleet's
+ * latency; scoring any of those let an agent that never ran take gold. The
+ * composite renormalizes over the measured dimensions, and below
+ * COVERAGE_FLOOR of the total weight it is `null`: the persona is listed but
+ * not ranked.
  *
  * Input: PersonaHealthSignal[] from the health dashboard pipeline.
  * Output: Ranked LeaderboardEntry[] with composite scores, medals, and dimension breakdowns.
@@ -22,14 +31,11 @@ export type DimensionKey = 'success' | 'health' | 'speed' | 'cost' | 'activity';
 
 export interface ScoreDimension {
   key: DimensionKey;
-  label: string;
-  value: number;   // 0-100 normalized
-  weight: number;  // 0-1 (sums to 1)
-  raw: string;     // human-readable raw value (e.g. "94.2%", "$0.03")
+  /** 0-100 normalized, or null when this persona has no measurement for it. */
+  value: number | null;
 }
 
 export type Medal = 'gold' | 'silver' | 'bronze' | null;
-export type PerformanceTier = 'elite' | 'strong' | 'average' | 'developing';
 
 export interface LeaderboardEntry {
   personaId: string;
@@ -37,20 +43,13 @@ export interface LeaderboardEntry {
   personaIcon: string | null;
   personaColor: string | null;
 
-  rank: number;
-  compositeScore: number; // 0-100
+  /** 1-based, or null when the persona is below the coverage floor. */
+  rank: number | null;
+  /** 0-100 over the measured dimensions, or null below the coverage floor. */
+  compositeScore: number | null;
   medal: Medal;
-  tier: PerformanceTier;
 
   dimensions: ScoreDimension[];
-  trend: 'improving' | 'stable' | 'degrading';
-
-  // Raw stats for display
-  totalExecutions: number;
-  recentExecutions: number;
-  successRate: number;
-  avgLatencyMs: number;
-  dailyBurnRate: number;
 }
 
 // ── Weights ────────────────────────────────────────────────────────────
@@ -63,21 +62,17 @@ const WEIGHTS = {
   activity: 0.10,
 } as const;
 
+/** Share of the total weight that must be measured before a persona is
+ *  ranked. Success + health (0.5) are measured together, from the persona's
+ *  own decided runs, so in practice: no decided runs, no rank. */
+export const COVERAGE_FLOOR = 0.5;
+
 // ── Scoring functions ──────────────────────────────────────────────────
 
-/** Normalize latency to 0-100 where lower latency = higher score.
- *  Uses fleet average as the midpoint (score=50). */
-function scoreSpeed(latencyMs: number, fleetAvgMs: number): number {
-  if (fleetAvgMs <= 0 || latencyMs <= 0) return 50;
-  // Ratio: 0.5x average → 100, 1x → 50, 2x → 0
-  const ratio = latencyMs / fleetAvgMs;
-  return Math.max(0, Math.min(100, Math.round(100 * (1 - (ratio - 0.5) / 1.5))));
-}
-
-/** Normalize cost per execution to 0-100 where lower cost = higher score. */
-function scoreCostEfficiency(costPerExec: number, fleetAvgCost: number): number {
-  if (fleetAvgCost <= 0 || costPerExec <= 0) return 50;
-  const ratio = costPerExec / fleetAvgCost;
+/** Normalize a lower-is-better quantity to 0-100 against the fleet average:
+ *  0.5x average → 100, 1x → 50, 2x → 0. */
+function scoreAgainstAverage(value: number, fleetAvg: number): number {
+  const ratio = value / fleetAvg;
   return Math.max(0, Math.min(100, Math.round(100 * (1 - (ratio - 0.5) / 1.5))));
 }
 
@@ -87,18 +82,20 @@ function scoreActivity(recentExecs: number, maxRecent: number): number {
   return Math.round((recentExecs / maxRecent) * 100);
 }
 
-function assignMedal(rank: number): Medal {
-  if (rank === 1) return 'gold';
-  if (rank === 2) return 'silver';
-  if (rank === 3) return 'bronze';
-  return null;
+function mean(values: number[]): number | null {
+  return values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length : null;
 }
 
-function assignTier(score: number): PerformanceTier {
-  if (score >= 80) return 'elite';
-  if (score >= 60) return 'strong';
-  if (score >= 40) return 'average';
-  return 'developing';
+const MEDALS = ['gold', 'silver', 'bronze'] as const;
+
+/** Medal for a 1-based rank; an unranked entry never carries one. */
+export function medalFor(rank: number | null): Medal {
+  return rank !== null && rank <= MEDALS.length ? MEDALS[rank - 1]! : null;
+}
+
+/** A dimension's normalized value, or null when the persona was not measured on it. */
+export function dimensionValue(entry: LeaderboardEntry, key: DimensionKey): number | null {
+  return entry.dimensions.find((d) => d.key === key)?.value ?? null;
 }
 
 // ── Main computation ───────────────────────────────────────────────────
@@ -107,84 +104,68 @@ function assignTier(score: number): PerformanceTier {
 export function computeLeaderboard(signals: PersonaHealthSignal[]): LeaderboardEntry[] {
   if (signals.length === 0) return [];
 
-  // Fleet-wide averages for normalization
-  const withExecs = signals.filter((s) => s.totalExecutions > 0);
-  const fleetAvgLatency = withExecs.length > 0
-    ? withExecs.reduce((sum, s) => sum + s.avgLatencyMs, 0) / withExecs.length
-    : 1000;
+  // Only the persona's own decided runs measure success, health and latency.
+  const measured = (s: PersonaHealthSignal) => s.successRateSource === 'measured';
 
-  const fleetAvgCost = withExecs.length > 0
-    ? withExecs.reduce((sum, s) => sum + s.dailyBurnRate, 0) / withExecs.length
-    : 0.01;
-
+  // Fleet averages over the personas actually measured on each quantity.
+  const fleetAvgLatency = mean(signals.filter((s) => measured(s) && s.avgLatencyMs > 0).map((s) => s.avgLatencyMs));
+  const fleetAvgCost = mean(signals.filter((s) => s.dailyBurnRate > 0).map((s) => s.dailyBurnRate));
   const maxRecentExecs = Math.max(1, ...signals.map((s) => s.recentExecutions));
 
-  // Score each persona
   const entries: LeaderboardEntry[] = signals.map((signal) => {
-    const successScore = signal.successRate;
-    const healthScore = signal.heartbeatScore;
-    const speedScore = scoreSpeed(signal.avgLatencyMs, fleetAvgLatency);
-    const costScore = scoreCostEfficiency(signal.dailyBurnRate, fleetAvgCost);
-    const activityScore = scoreActivity(signal.recentExecutions, maxRecentExecs);
+    const ownRuns = measured(signal);
+    const values: Record<DimensionKey, number | null> = {
+      success: ownRuns ? signal.successRate : null,
+      // 40% of the heartbeat IS the success rate, and the rest are penalties
+      // from a full score that an agent which never ran cannot incur.
+      health: ownRuns ? signal.heartbeatScore : null,
+      speed: ownRuns && signal.avgLatencyMs > 0 && fleetAvgLatency
+        ? scoreAgainstAverage(signal.avgLatencyMs, fleetAvgLatency)
+        : null,
+      cost: signal.dailyBurnRate > 0 && fleetAvgCost
+        ? scoreAgainstAverage(signal.dailyBurnRate, fleetAvgCost)
+        : null,
+      // A count: zero runs is a measurement, not an absence.
+      activity: scoreActivity(signal.recentExecutions, maxRecentExecs),
+    };
 
-    // Speed & cost only contribute to the composite when there's a real baseline
-    // AND the agent has data — scoreSpeed/scoreCostEfficiency return a neutral 50
-    // otherwise (fine for the dimension display, which shows '—'), but folding a
-    // flat 50 into the weighted score across the fleet flattens the ranking and
-    // masks real performance. Drop the dimension and renormalize the remaining
-    // weights so the composite reflects only the dimensions with real data.
-    const hasSpeed = fleetAvgLatency > 0 && signal.avgLatencyMs > 0;
-    const hasCost = fleetAvgCost > 0 && signal.dailyBurnRate > 0;
-    const parts: Array<[number, number]> = [
-      [successScore, WEIGHTS.success],
-      [healthScore, WEIGHTS.health],
-      [activityScore, WEIGHTS.activity],
-    ];
-    if (hasSpeed) parts.push([speedScore, WEIGHTS.speed]);
-    if (hasCost) parts.push([costScore, WEIGHTS.cost]);
-    const totalWeight = parts.reduce((sum, [, w]) => sum + w, 0);
-    const composite = Math.round(
-      parts.reduce((sum, [v, w]) => sum + v * w, 0) / totalWeight,
-    );
-
-    const costPerExec = signal.totalExecutions > 0
-      ? signal.dailyBurnRate / Math.max(1, signal.recentExecutions / 7)
-      : 0;
-
-    const dimensions: ScoreDimension[] = [
-      { key: 'success', label: 'Success', value: successScore, weight: WEIGHTS.success, raw: `${signal.successRate.toFixed(1)}%` },
-      { key: 'health', label: 'Health', value: healthScore, weight: WEIGHTS.health, raw: `${signal.heartbeatScore}/100` },
-      { key: 'speed', label: 'Speed', value: speedScore, weight: WEIGHTS.speed, raw: signal.avgLatencyMs > 0 ? `${(signal.avgLatencyMs / 1000).toFixed(1)}s` : '—' },
-      { key: 'cost', label: 'Cost', value: costScore, weight: WEIGHTS.cost, raw: costPerExec > 0 ? `$${costPerExec.toFixed(3)}` : '—' },
-      { key: 'activity', label: 'Activity', value: activityScore, weight: WEIGHTS.activity, raw: `${signal.recentExecutions} / 7d` },
-    ];
+    let weighted = 0;
+    let coverage = 0;
+    for (const key of Object.keys(WEIGHTS) as DimensionKey[]) {
+      const v = values[key];
+      if (v === null) continue;
+      weighted += v * WEIGHTS[key];
+      coverage += WEIGHTS[key];
+    }
+    // Rounded so float sums (0.3 + 0.2) compare cleanly against the floor.
+    const scored = Math.round(coverage * 100) >= Math.round(COVERAGE_FLOOR * 100);
 
     return {
       personaId: signal.personaId,
       personaName: signal.personaName,
       personaIcon: signal.personaIcon,
       personaColor: signal.personaColor,
-      rank: 0, // filled after sorting
-      compositeScore: composite,
+      rank: null, // filled after sorting
+      compositeScore: scored ? Math.round(weighted / coverage) : null,
       medal: null, // filled after sorting
-      tier: assignTier(composite),
-      dimensions,
-      trend: signal.failureTrend,
-      totalExecutions: signal.totalExecutions,
-      recentExecutions: signal.recentExecutions,
-      successRate: signal.successRate,
-      avgLatencyMs: signal.avgLatencyMs,
-      dailyBurnRate: signal.dailyBurnRate,
+      dimensions: (Object.keys(WEIGHTS) as DimensionKey[]).map((key) => ({ key, value: values[key] })),
     };
   });
 
-  // Sort descending by composite score, then by success rate as tiebreaker
-  entries.sort((a, b) => b.compositeScore - a.compositeScore || b.successRate - a.successRate);
+  // Scored entries first by composite, success as the tiebreaker; unscored
+  // after them, busiest first.
+  const success = (e: LeaderboardEntry) => dimensionValue(e, 'success') ?? -1;
+  const activity = (e: LeaderboardEntry) => dimensionValue(e, 'activity') ?? -1;
+  entries.sort((a, b) =>
+    (b.compositeScore ?? -1) - (a.compositeScore ?? -1)
+    || success(b) - success(a)
+    || activity(b) - activity(a),
+  );
 
-  // Assign ranks and medals
   entries.forEach((entry, i) => {
+    if (entry.compositeScore === null) return;
     entry.rank = i + 1;
-    entry.medal = assignMedal(i + 1);
+    entry.medal = medalFor(entry.rank);
   });
 
   return entries;

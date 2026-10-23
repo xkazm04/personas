@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
-import { Cloud, CloudOff, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
+import { Cloud, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
 import { CopyButton, Button } from '@/features/shared/components/buttons';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { useAgentStore } from '@/stores/agentStore';
@@ -16,7 +18,8 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { mapWithConcurrency } from '@/lib/concurrency';
 
 
@@ -36,8 +39,16 @@ export function CloudWebhooksTab() {
 
   const [webhookRows, setWebhookRows] = useState<WebhookTriggerRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // A list read that failed. Without it the empty state claims "no webhook
+  // triggers" about a list nobody could read.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const fetchSeqRef = useRef(0);
+  // Personas with an ACTIVE deployment: the only ones a webhook trigger can be
+  // created for. The URL is /api/deployed/{slug} and this list reads triggers
+  // from active deployments only, so a trigger created on an undeployed persona
+  // had no URL and never appeared here.
+  const [activeDeployments, setActiveDeployments] = useState<CloudDeployment[]>([]);
+  const [fetchLatest] = useState(createLatestWins);
   const { copiedKey: copiedId, copy } = useKeyedCopyFlag<string>();
 
   // Create form state
@@ -51,21 +62,23 @@ export function CloudWebhooksTab() {
   const [firingsLoading, setFiringsLoading] = useState(false);
 
   const fetchWebhookTriggers = useCallback(async () => {
-    const seq = ++fetchSeqRef.current;
+    const seq = fetchLatest.next();
+    let failedReads = 0;
     try {
       const [deployments, url] = await Promise.all([
         cloudListDeployments(),
         cloudGetBaseUrl(),
       ]);
-      if (seq !== fetchSeqRef.current) return;
+      if (!fetchLatest.isCurrent(seq)) return;
 
       const webhookEnabled = deployments.filter((d) => d.status === 'active');
+      setActiveDeployments(webhookEnabled);
       const collected: WebhookTriggerRow[] = [];
 
       await mapWithConcurrency(webhookEnabled, 4, async (dep) => {
         try {
           const triggers = await cloudListTriggers(dep.personaId);
-          if (seq !== fetchSeqRef.current) return;
+          if (!fetchLatest.isCurrent(seq)) return;
           const webhookTriggers = triggers.filter((t) => t.triggerType === 'webhook');
           const persona = personas.find((p) => p.id === dep.personaId);
           const newRows: WebhookTriggerRow[] = webhookTriggers.map((trigger) => ({
@@ -82,15 +95,22 @@ export function CloudWebhooksTab() {
             const seen = new Set(newRows.map((r) => r.trigger.id));
             return [...prev.filter((r) => !seen.has(r.trigger.id)), ...newRows];
           });
-        } catch (err) { silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch1")(err); }
+        } catch (err) {
+          failedReads += 1;
+          silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch1")(err);
+        }
       });
 
-      if (seq !== fetchSeqRef.current) return;
+      if (!fetchLatest.isCurrent(seq)) return;
       setWebhookRows(collected);
-    } catch (err) { silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch2")(err); } finally {
-      if (seq === fetchSeqRef.current) setIsLoading(false);
+      setLoadFailed(collected.length === 0 && failedReads > 0);
+    } catch (err) {
+      silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch2")(err);
+      if (fetchLatest.isCurrent(seq)) setLoadFailed(true);
+    } finally {
+      if (fetchLatest.isCurrent(seq)) setIsLoading(false);
     }
-  }, [personas]);
+  }, [personas, fetchLatest]);
 
   useEffect(() => {
     fetchWebhookTriggers();
@@ -102,14 +122,18 @@ export function CloudWebhooksTab() {
       setFirings([]);
       return;
     }
+    // Switching rows quickly must not let the previous row's slower answer
+    // paint its firings under the newly selected trigger.
+    let stale = false;
     setFiringsLoading(true);
     cloudListTriggerFirings(selectedTriggerId, 20)
-      .then(setFirings)
+      .then((rows) => { if (!stale) setFirings(rows); })
       .catch((err) => {
         silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch4")(err);
-        setFirings([]);
+        if (!stale) setFirings([]);
       })
-      .finally(() => setFiringsLoading(false));
+      .finally(() => { if (!stale) setFiringsLoading(false); });
+    return () => { stale = true; };
   }, [selectedTriggerId]);
 
   const handleCopy = (text: string, id: string) => copy(id, text);
@@ -122,7 +146,7 @@ export function CloudWebhooksTab() {
       setShowCreate(false);
       setCreatePersonaId('');
       await fetchWebhookTriggers();
-    } catch (err) { silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch3")(err); } finally {
+    } catch (err) { toastCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:create")(err); } finally {
       setIsCreating(false);
     }
   };
@@ -132,18 +156,23 @@ export function CloudWebhooksTab() {
       await cloudDeleteTrigger(triggerId);
       setWebhookRows((prev) => prev.filter((r) => r.trigger.id !== triggerId));
       if (selectedTriggerId === triggerId) setSelectedTriggerId(null);
-    } catch (err) { silentCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:catch4")(err); }
+    } catch (err) { toastCatch("features/triggers/sub_cloud_webhooks/CloudWebhooksTab:delete")(err); }
   };
 
-  // Deployed personas available for webhook creation
-  const deployedPersonaIds = new Set(webhookRows.map((r) => r.deployment.personaId));
+  // Deployed personas available for webhook creation: an active deployment
+  // that does not carry a webhook trigger yet.
+  const hasWebhook = new Set(webhookRows.map((r) => r.deployment.personaId));
+  const creatablePersonaIds = new Set(
+    activeDeployments.map((d) => d.personaId).filter((id) => !hasWebhook.has(id)),
+  );
 
   // Not connected state
   if (!relay.connected && !isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <EmptyState
-          icon={CloudOff}
+          art="link"
+          size="md"
           title={t.triggers.cloud_not_connected}
           subtitle={t.triggers.cloud_not_connected_desc}
         />
@@ -192,6 +221,9 @@ export function CloudWebhooksTab() {
           </div>
         </div>
 
+        {/* Degraded relay: the backend reports listing failures and timeouts here */}
+        {relay.error && <InlineErrorBanner severity="warning" message={relay.error} />}
+
         {/* Header + Create button */}
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-mono text-foreground uppercase tracking-wider">
@@ -215,7 +247,7 @@ export function CloudWebhooksTab() {
               >
                 <option value="">{t.triggers.select_persona}</option>
                 {personas
-                  .filter((p) => !deployedPersonaIds.has(p.id))
+                  .filter((p) => creatablePersonaIds.has(p.id))
                   .map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
@@ -248,9 +280,19 @@ export function CloudWebhooksTab() {
         )}
 
         {/* Empty state */}
-        {!isLoading && webhookRows.length === 0 && (
+        {!isLoading && webhookRows.length === 0 && loadFailed && (
+          <InlineErrorBanner
+            severity="error"
+            title={t.triggers.webhooks_load_failed}
+            message={t.triggers.webhooks_load_failed_desc}
+            onRetry={fetchWebhookTriggers}
+          />
+        )}
+
+        {!isLoading && webhookRows.length === 0 && !loadFailed && (
           <EmptyState
-            icon={Webhook}
+            art="link"
+            size="md"
             title={t.triggers.no_webhook_triggers}
             subtitle={t.triggers.no_webhook_triggers_desc}
           />
@@ -335,7 +377,7 @@ export function CloudWebhooksTab() {
                 <ListSkeleton calm rows={3} rowHeight={40} leading={false} className="border border-border/30 rounded-modal overflow-hidden" />
               </div>
             ) : firings.length === 0 ? (
-              <p className="typo-body text-foreground py-4">{t.triggers.no_firings}</p>
+              <EmptyState art="stream" size="sm" title={t.triggers.no_firings} />
             ) : (
               <div className="border border-border/30 rounded-modal overflow-hidden">
                 <div className="grid grid-cols-[1fr_0.8fr_0.6fr_0.8fr] gap-3 px-4 py-2 bg-secondary/30 border-b border-border/20 text-xs font-mono text-foreground uppercase tracking-wider">
@@ -350,7 +392,7 @@ export function CloudWebhooksTab() {
                       f.status === 'completed' ? 'text-emerald-400' :
                       f.status === 'failed' ? 'text-red-400' : 'text-amber-400'
                     }`}>
-                      {f.status}
+                      {tokenLabel(t, 'execution', f.status)}
                     </span>
                     <span className="text-foreground">
                       <RelativeTime timestamp={f.firedAt ?? null} fallback="—" />

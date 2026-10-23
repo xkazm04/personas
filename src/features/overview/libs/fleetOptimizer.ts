@@ -20,6 +20,17 @@ import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 // change and are left as they are.)
 import { formatCost, formatPercent } from '@/lib/utils/formatters';
 
+/**
+ * Per-agent measured reliability, a structural subset of the health slice's
+ * `PersonaHealthSignal`. Only entries tagged `'measured'` (computed from that
+ * agent's own decided runs) override the open-issue proxy.
+ */
+export interface MeasuredReliability {
+  personaId: string;
+  successRate: number; // 0-100
+  successRateSource: 'measured' | 'proxy' | 'unknown';
+}
+
 // -- Recommendation Types --------------------------------------------
 
 export type RecommendationType =
@@ -149,7 +160,12 @@ function attributeAnomaly(
 function derivePerPersonaPerformance(
   dashboard: ExecutionDashboardData,
   healingIssues: PersonaHealingIssue[],
+  reliability: MeasuredReliability[],
 ): PersonaPerformance[] {
+  const measuredById = new Map<string, number>();
+  for (const r of reliability) {
+    if (r.successRateSource === 'measured') measuredById.set(r.personaId, r.successRate);
+  }
   // Aggregate healing issues per persona
   const healingByPersona = new Map<string, { total: number; autoFixed: number; open: number }>();
   for (const issue of healingIssues) {
@@ -178,10 +194,17 @@ function derivePerPersonaPerformance(
     // tracks "failing now" far better than a lifetime tally and aligns with the
     // windowed `totalExecs`. Still cap at totalExecs so the rate stays a sane
     // [0,100] approximation (preserves the prior negative-rate clamp).
-    const failedEstimate = Math.min(healing.open, totalExecs);
-    const successRate = totalExecs > 0
-      ? Math.max(0, Math.min(100, ((totalExecs - failedEstimate) / totalExecs) * 100))
-      : 100;
+    // A measured per-agent rate (decided runs) beats the open-issue proxy: an
+    // agent with failed runs and no open issue would otherwise read 100%.
+    const measured = measuredById.get(tp.persona_id);
+    const failedEstimate = measured !== undefined
+      ? Math.min(totalExecs, Math.round(totalExecs * (1 - measured / 100)))
+      : Math.min(healing.open, totalExecs);
+    const successRate = measured !== undefined
+      ? Math.max(0, Math.min(100, measured))
+      : totalExecs > 0
+        ? Math.max(0, Math.min(100, ((totalExecs - failedEstimate) / totalExecs) * 100))
+        : 100;
 
     results.push({
       personaId: tp.persona_id,
@@ -216,12 +239,13 @@ function derivePerPersonaPerformance(
 export function generateFleetRecommendation(
   dashboard: ExecutionDashboardData | null,
   healingIssues: PersonaHealingIssue[],
+  reliability: MeasuredReliability[] = [],
 ): FleetRecommendation | null {
   if (!dashboard || dashboard.total_executions < MIN_EXECUTIONS) {
     return null; // Not enough data
   }
 
-  const performances = derivePerPersonaPerformance(dashboard, healingIssues);
+  const performances = derivePerPersonaPerformance(dashboard, healingIssues, reliability);
 
   // 1. Check for cost anomalies (most urgent). Time-bound them: a spike is only
   // a *live* critical if it happened recently — an old anomaly still sitting in

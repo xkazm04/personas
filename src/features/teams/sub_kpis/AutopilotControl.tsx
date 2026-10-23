@@ -20,7 +20,9 @@ import { Power, Activity, Lightbulb, Rocket, type LucideIcon } from 'lucide-reac
 import { getAutopilotMode, setAutopilotMode, type AutopilotMode } from '@/api/devTools/autopilot';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
+import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
+import { resolveError } from '@/lib/errors/errorRegistry';
 
 interface ModeMeta {
   mode: AutopilotMode;
@@ -39,21 +41,28 @@ const MODES: ModeMeta[] = [
 
 export function AutopilotControl({ projectId, className }: { projectId: string; className?: string }) {
   const { t } = useTranslation();
-  const [mode, setMode] = useState<AutopilotMode>('off');
+  // null = not read yet or the read failed; the control never guesses 'off'.
+  const [mode, setMode] = useState<AutopilotMode | null>(null);
+  const [readError, setReadError] = useState<unknown>(null);
   const [busy, setBusy] = useState(true);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     setBusy(true);
+    setReadError(null);
     getAutopilotMode(projectId)
       .then((m) => { if (!cancelled) setMode(m ?? 'off'); })
-      .catch(silentCatch('AutopilotControl:getAutopilotMode'))
+      .catch((e: unknown) => {
+        silentCatch('AutopilotControl:getAutopilotMode')(e);
+        if (!cancelled) { setMode(null); setReadError(e); }
+      })
       .finally(() => { if (!cancelled) setBusy(false); });
     return () => { cancelled = true; };
-  }, [projectId]);
+  }, [projectId, reload]);
 
   const select = async (next: AutopilotMode) => {
-    if (next === mode || busy) return;
+    if (next === mode || busy || mode === null) return;
     const prev = mode;
     setMode(next);
     setBusy(true);
@@ -67,7 +76,7 @@ export function AutopilotControl({ projectId, className }: { projectId: string; 
     }
   };
 
-  const active = MODES.find((m) => m.mode === mode) ?? MODES[0]!;
+  const active = MODES.find((m) => m.mode === mode) ?? null;
 
   return (
     <div className={className}>
@@ -82,7 +91,7 @@ export function AutopilotControl({ projectId, className }: { projectId: string; 
               type="button"
               role="radio"
               aria-checked={isActive}
-              disabled={busy}
+              disabled={busy || mode === null}
               onClick={() => select(m.mode)}
               title={m.desc(t)}
               className={`inline-flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 typo-caption transition-colors disabled:opacity-60 ${
@@ -95,7 +104,15 @@ export function AutopilotControl({ projectId, className }: { projectId: string; 
           );
         })}
       </div>
-      <p className="typo-caption text-foreground/60 mt-1.5 max-w-md">{active.desc(t)}</p>
+      {readError != null ? (
+        <ErrorBanner
+          variant="inline"
+          message={resolveError(extractMessage(readError)).message}
+          onRetry={() => setReload((n) => n + 1)}
+        />
+      ) : active && (
+        <p className="typo-caption text-foreground/60 mt-1.5 max-w-md">{active.desc(t)}</p>
+      )}
     </div>
   );
 }

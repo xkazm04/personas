@@ -1,14 +1,30 @@
 /**
  * Sensitive data masking for execution display.
  *
- * - maskSensitiveJson(): redacts JSON values whose keys match sensitive patterns
+ * - maskSensitiveJson(): redacts JSON values whose keys match sensitive patterns,
+ *   and token-shaped values (ghp_, sk-ant-, AKIA, xox*, JWT, ...) wherever they sit,
+ *   including in text that is not JSON at all
  * - sanitizeErrorMessage(): strips file paths, IPs, and internal hostnames from errors
  */
 
 import { silentCatch } from '@/lib/silentCatch';
 
+/**
+ * Matched against the key's LAST words, after `normalizeKey`. Anchoring the
+ * whole key used to let every qualified name through - `github_token`,
+ * `OPENAI_API_KEY`, `db_password`, `githubToken` - which is how real payloads
+ * name their secrets; `max_tokens` / `token_count` / `author` stay visible.
+ */
 const SENSITIVE_KEY_RE =
-  /^(password|passwd|secret|token|api_key|apikey|api[-_]?secret|access[-_]?key|auth|authorization|credential|private[-_]?key|client[-_]?secret|refresh[-_]?token|access[-_]?token|bearer|session[-_]?id|cookie|x[-_]?api[-_]?key|connection[-_]?string|dsn)$/i;
+  /(?:^|_)(password|passwd|secret|token|api_?key|api_?secret|access_?key|auth|authorization|credentials?|private_?key|client_?secret|bearer|session_?id|cookie|connection_?string|dsn)$/;
+
+/** `githubToken` / `X-Api-Key` / `OPENAI_API_KEY` -> `github_token` / `x_api_key` / `openai_api_key`. */
+function normalizeKey(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/[-.\s]+/g, '_')
+    .toLowerCase();
+}
 
 const MASK = '********';
 
@@ -18,11 +34,12 @@ const MASK = '********';
  */
 function redactObject(obj: unknown): unknown {
   if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'string') return maskTokenShapes(obj);
   if (Array.isArray(obj)) return obj.map(redactObject);
   if (typeof obj === 'object') {
     const out: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(obj as Record<string, unknown>)) {
-      if (SENSITIVE_KEY_RE.test(key) && (typeof val === 'string' || typeof val === 'number')) {
+      if (SENSITIVE_KEY_RE.test(normalizeKey(key)) && (typeof val === 'string' || typeof val === 'number')) {
         out[key] = MASK;
       } else {
         out[key] = redactObject(val);
@@ -34,8 +51,13 @@ function redactObject(obj: unknown): unknown {
 }
 
 /**
- * Parse a raw JSON string, redact sensitive keys, and re-serialize.
- * Returns the original string unchanged if it doesn't parse as JSON.
+ * Parse a raw JSON string, redact sensitive keys and token-shaped values, and
+ * re-serialize. Text that doesn't parse as JSON (a scraped page, a plain-text
+ * tool result) still has its token-shaped substrings masked.
+ *
+ * Key names alone are not enough: a persona coaxed by hostile tool output into
+ * echoing a vault value writes it into free text, under a key no list can
+ * predict. See src/lib/utils/sanitizers/__tests__/hostileToolOutput.golden.test.ts.
  */
 export function maskSensitiveJson(raw: string | null | undefined): string | null | undefined {
   if (!raw) return raw;
@@ -43,8 +65,8 @@ export function maskSensitiveJson(raw: string | null | undefined): string | null
     const parsed: unknown = JSON.parse(raw);
     return JSON.stringify(redactObject(parsed));
   } catch {
-    // intentional: non-critical -- JSON parse fallback
-    return raw;
+    // intentional: non-critical -- not JSON, mask token shapes in the text itself
+    return maskTokenShapes(raw);
   }
 }
 
@@ -102,6 +124,21 @@ const INLINE_SECRET_RE =
 const PREFIXED_SECRET_RE =
   /(?:PMR?S[a-zA-Z0-9]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}|sk-ant-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{20,}|sk_live_[a-zA-Z0-9]{16,}|xox[baprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35}|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/g;
 
+/** Every pass except the file-path one, applied to a URL's scheme+host+path. */
+function redactUrlParts(url: string): string {
+  return url
+    .replace(IPV4_RE, '[ip]')
+    .replace(INTERNAL_HOST_RE, '[host]')
+    .replace(EMAIL_RE, '[email]')
+    .replace(INLINE_SECRET_RE, (_match, key) => `${key}: [secret]`)
+    .replace(PREFIXED_SECRET_RE, '[secret]');
+}
+
+/** Replace every token-shaped substring (PREFIXED_SECRET_RE) with the JSON mask. */
+function maskTokenShapes(text: string): string {
+  return text.replace(PREFIXED_SECRET_RE, MASK);
+}
+
 /**
  * Strip internal file paths, IP addresses, internal hostnames, emails,
  * and potential secrets from a string to prevent leakage in plaintext storage.
@@ -125,7 +162,11 @@ export function sanitizeErrorMessage(msg: string): string {
       // Not a parseable URL despite matching the loose regex; leave as-is
       // and let the remaining passes handle it.
     }
-    const idx = urls.push(safe) - 1;
+    // The shield exists to keep FILE_PATH_RE off the URL, not to exempt it
+    // from redaction: an IP or internal host in the authority and an email or
+    // token in a path segment are exactly what the passes below remove from
+    // bare text, so they run on the kept URL here, before it is restored.
+    const idx = urls.push(redactUrlParts(safe)) - 1;
     return `@@SANITIZED_URL_${idx}@@`;
   });
 

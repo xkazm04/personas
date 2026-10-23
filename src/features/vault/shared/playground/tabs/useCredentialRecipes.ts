@@ -7,7 +7,7 @@ import {
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { useRecipeGenerator } from '@/hooks/design/template/useRecipeGenerator';
 import { getActiveTranslations, useTranslation } from '@/i18n/useTranslation';
-import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 import { silentCatch } from '@/lib/silentCatch';
 
 /**
@@ -110,14 +110,19 @@ export function useCredentialRecipes(credentialId: string) {
       // a machine sentence: untranslated in a 14-locale app and unbounded in a
       // bounded layout. `getActiveTranslations` is the door for a hook, which
       // cannot call `useTranslation` at the point of failure.
-      const raw = err instanceof Error ? err.message : String(err);
-      setError(resolveErrorTranslated(getActiveTranslations(), raw).message);
+      // An IPC rejection is an AppError object: the old `instanceof Error`
+      // ladder fed "[object Object]" to the resolver, which always answered
+      // with the generic sentence. inlineErrorCopy reads the envelope.
+      setError(inlineErrorCopy(getActiveTranslations(), err));
     } finally {
       setSaving(false);
     }
   }, [credentialId, generator.draft, refresh, saving, cancelCreate]);
 
+  const clearError = useCallback(() => setError(null), []);
+
   const remove = useCallback(async (id: string) => {
+    setError(null);
     try {
       await deleteRecipe(id);
       setRecipes((prev) => prev.filter((r) => r.id !== id));
@@ -142,6 +147,7 @@ export function useCredentialRecipes(credentialId: string) {
     generate,
     saveDraft,
     remove,
+    clearError,
   };
 }
 

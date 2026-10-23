@@ -1,39 +1,15 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useDesignReviews } from "../template/useDesignReviews";
-import { mockInvokeMap, resetInvokeMocks, mockInvokeError } from "@/test/tauriMock";
+import { mockInvokeMap, resetInvokeMocks } from "@/test/tauriMock";
 import { clearSWRCache } from "@/lib/utils/staleWhileRevalidate";
-import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 
 // Set IPC token so invokeWithTimeout doesn't enter infinite token-wait loop
 (globalThis as Record<string, unknown>).__IPC_TOKEN = "test-token";
 
-function makeReview(overrides: Partial<PersonaDesignReview> = {}): PersonaDesignReview {
-  return {
-    id: "r-1",
-    test_case_id: "tc-1",
-    test_case_name: "Test Case 1",
-    instruction: "Do something",
-    status: "passed",
-    structural_score: 0.85,
-    semantic_score: 0.9,
-    connectors_used: null,
-    trigger_types: null,
-    design_result: null,
-    structural_evaluation: null,
-    semantic_evaluation: null,
-    test_run_id: "run-1",
-    had_references: null,
-    suggested_adjustment: null,
-    adjustment_generation: null,
-    use_case_flows: null,
-    reviewed_at: "2025-01-01T00:00:00Z",
-    created_at: "2025-01-01T00:00:00Z",
-    adoption_count: 0,
-    last_adopted_at: null,
-    category: null,
-    ...overrides,
-  };
+async function invokedCommands(): Promise<string[]> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  return vi.mocked(invoke).mock.calls.map((c) => c[0] as string);
 }
 
 describe("useDesignReviews", () => {
@@ -42,160 +18,77 @@ describe("useDesignReviews", () => {
     clearSWRCache();
   });
 
-  it("reports the TRUE total from the count query, not the length of the capped page", async () => {
-    // The regression this locks in: `listDesignReviews()` returns at most
-    // REVIEW_LIST_LIMIT rows, so a page of 50 was being rendered as the total
-    // for a catalog of 124+. The count comes from its own query now.
-    const page = Array.from({ length: 50 }, (_, i) => makeReview({ id: `r-${i}` }));
-    mockInvokeMap({ list_design_reviews: page, count_design_reviews: 124 });
+  it("reports the TRUE total from the count query", async () => {
+    mockInvokeMap({ count_design_reviews: 124 });
 
     const { result } = renderHook(() => useDesignReviews());
 
+    // The first mount in this file pays the seed-catalog import
+    // (getSeedReviews() dynamically imports the whole template JSON glob),
+    // which can exceed waitFor's 1s default under a loaded full-suite run.
     await waitFor(
       () => {
         expect(result.current.totalCount).toBe(124);
+        expect(result.current.isLoading).toBe(false);
       },
       { timeout: 10_000 },
     );
+    expect(result.current.error).toBeNull();
+  });
 
-    expect(result.current.reviews).toHaveLength(50);
-    expect(result.current.totalCount).not.toBe(result.current.reviews.length);
-    // And the truncation is surfaced rather than silently applied.
-    expect(result.current.isTruncated).toBe(true);
+  it("does not fetch review rows nobody reads", async () => {
+    // The page header reads only the count. The hook used to pull a capped
+    // page of up to 50 full rows twice per mount (before and after the seed).
+    mockInvokeMap({ count_design_reviews: 3 });
+
+    const { result } = renderHook(() => useDesignReviews());
+    await waitFor(() => expect(result.current.totalCount).toBe(3), { timeout: 10_000 });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const commands = await invokedCommands();
+    expect(commands.filter((c) => c === "list_design_reviews")).toHaveLength(0);
+    expect(commands).toContain("count_design_reviews");
   });
 
   it("does not claim a total before the count query answers", async () => {
-    mockInvokeMap({ list_design_reviews: [], count_design_reviews: 0 });
+    mockInvokeMap({ count_design_reviews: 0 });
 
     const { result } = renderHook(() => useDesignReviews());
 
     // `null`, never 0 — "not known yet" must be distinguishable from "none",
     // or the header flashes a confident wrong number on every cold load.
     expect(result.current.totalCount).toBeNull();
-    expect(result.current.isTruncated).toBe(false);
 
     await waitFor(() => {
       expect(result.current.totalCount).toBe(0);
     });
-    expect(result.current.isTruncated).toBe(false);
   });
 
-  it("fetches reviews on mount", async () => {
-    const reviews = [makeReview({ id: "r-1" }), makeReview({ id: "r-2" })];
-    mockInvokeMap({ list_design_reviews: reviews, count_design_reviews: 2 });
-
-    const { result } = renderHook(() => useDesignReviews());
-
-    // Initially loading
-    expect(result.current.isLoading).toBe(true);
-
-    // The first mount in this file pays the seed-catalog import
-    // (getSeedReviews() dynamically imports the whole template JSON glob),
-    // which can exceed waitFor's 1s default under a loaded full-suite run.
-    // Later tests reuse the warm module cache, so only this one needs slack.
-    await waitFor(
-      () => {
-        expect(result.current.isLoading).toBe(false);
-      },
-      { timeout: 10_000 },
-    );
-
-    expect(result.current.reviews).toHaveLength(2);
-    expect(result.current.error).toBeNull();
-  });
-
-  it("sets error when fetch fails", async () => {
-    mockInvokeError("list_design_reviews", "Network error");
-
-    const { result } = renderHook(() => useDesignReviews());
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    expect(result.current.error).toBe("Network error");
-    expect(result.current.reviews).toEqual([]);
-  });
-
-  it("startNewReview sets error when no personaId provided", async () => {
-    mockInvokeMap({ list_design_reviews: [] });
-
-    const { result } = renderHook(() => useDesignReviews());
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    await act(async () => {
-      await result.current.startNewReview(undefined);
-    });
-
-    expect(result.current.error).toBe("No persona selected for review");
-    expect(result.current.isRunning).toBe(false);
-  });
-
-  it("cancelReview stops the run", async () => {
-    mockInvokeMap({ list_design_reviews: [] });
-
-    const { result } = renderHook(() => useDesignReviews());
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    act(() => {
-      result.current.cancelReview();
-    });
-
-    expect(result.current.isRunning).toBe(false);
-    expect(result.current.runLines).toEqual(["[Cancelled by user]"]);
-  });
-
-  it("deleteReview removes review from list", async () => {
-    const reviews = [makeReview({ id: "r-1" }), makeReview({ id: "r-2" })];
-    mockInvokeMap({
-      list_design_reviews: reviews,
-      delete_design_review: undefined,
-    });
-
-    const { result } = renderHook(() => useDesignReviews());
-
-    await waitFor(() => {
-      expect(result.current.reviews).toHaveLength(2);
-    });
-
-    await act(async () => {
-      await result.current.deleteReview("r-1");
-    });
-
-    expect(result.current.reviews).toHaveLength(1);
-    expect(result.current.reviews[0]?.id).toBe("r-2");
-  });
-
-  it("deleteReview sets error on failure", async () => {
-    mockInvokeMap({
-      list_design_reviews: [makeReview()],
-      import_design_review: undefined,
-      delete_design_review: undefined,
-    });
-
-    const { result } = renderHook(() => useDesignReviews());
-
-    await waitFor(() => {
-      expect(result.current.reviews).toHaveLength(1);
-    });
-
+  it("shows the message of an IPC AppError rejection, not a fixed fallback", async () => {
     const { invoke } = await import("@tauri-apps/api/core");
     vi.mocked(invoke).mockImplementation((cmd: string) => {
-      if (cmd === "delete_design_review") return Promise.reject(new Error("Delete failed"));
-      if (cmd === "list_design_reviews") return Promise.resolve([makeReview()] as never);
+      if (cmd === "count_design_reviews") return Promise.reject({ error: "Database is locked", kind: "Database" });
       return Promise.resolve(undefined as never);
     });
 
+    const { result } = renderHook(() => useDesignReviews());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.error).toBe("Database is locked");
+    expect(result.current.totalCount).toBeNull();
+  });
+
+  it("refresh recounts and clears a previous error", async () => {
+    mockInvokeMap({ count_design_reviews: 5 });
+    const { result } = renderHook(() => useDesignReviews());
+    await waitFor(() => expect(result.current.totalCount).toBe(5));
+
+    mockInvokeMap({ count_design_reviews: 6 });
     await act(async () => {
-      await result.current.deleteReview("r-1");
+      await result.current.refresh();
     });
 
-    expect(result.current.error).toBe("Delete failed");
+    expect(result.current.totalCount).toBe(6);
+    expect(result.current.error).toBeNull();
   });
 });

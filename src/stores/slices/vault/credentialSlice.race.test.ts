@@ -305,3 +305,66 @@ describe("credentialSlice — healthcheck probe state", () => {
     expect(readCredentialHealthState(h.get().credentials[0]!)).toBe("failed");
   });
 });
+
+describe("credentialSlice — create/update vs. in-flight fetch race", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    clockBase += 200_000;
+    vi.setSystemTime(clockBase);
+    vi.mocked(credApi.listCredentials).mockReset();
+    vi.mocked(credApi.createCredential).mockReset();
+    vi.mocked(credApi.updateCredential).mockReset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("keeps a credential created while a fetch is in flight", async () => {
+    const h = makeHarness();
+    const d = deferred<PersonaCredential[]>();
+    vi.mocked(credApi.listCredentials).mockReturnValue(d.promise);
+    vi.mocked(credApi.createCredential).mockResolvedValue(cred("NEW"));
+
+    const fetchPromise = h.get().fetchCredentials();
+    await h.get().createCredential({ name: "NEW", service_type: "github", data: {} });
+    expect(h.get().credentials.map((c) => c.id)).toContain("NEW");
+
+    // The fetch's snapshot was taken before the create committed.
+    d.resolve([cred("A")]);
+    await fetchPromise;
+
+    expect(h.get().credentials.map((c) => c.id).sort()).toEqual(["A", "NEW"]);
+  });
+
+  it("keeps an edit committed while a fetch is in flight", async () => {
+    const h = makeHarness();
+    vi.mocked(credApi.listCredentials).mockResolvedValueOnce([cred("A")]);
+    await h.get().fetchCredentials({ force: true });
+
+    const d = deferred<PersonaCredential[]>();
+    vi.mocked(credApi.listCredentials).mockReturnValue(d.promise);
+    vi.mocked(credApi.updateCredential).mockResolvedValue({ ...cred("A"), name: "renamed" });
+
+    const fetchPromise = h.get().fetchCredentials({ force: true });
+    await h.get().updateCredential("A", { name: "renamed" });
+
+    d.resolve([cred("A")]);
+    await fetchPromise;
+
+    expect(h.get().credentials.find((c) => c.id === "A")?.name).toBe("renamed");
+  });
+
+  it("a fetch that starts after the write takes the backend snapshot as-is", async () => {
+    const h = makeHarness();
+    vi.mocked(credApi.createCredential).mockResolvedValue(cred("NEW"));
+    await h.get().createCredential({ name: "NEW", service_type: "github", data: {} });
+
+    // The backend no longer lists NEW (deleted elsewhere): no log was open
+    // during the write, so nothing pins the local row.
+    vi.mocked(credApi.listCredentials).mockResolvedValue([cred("A")]);
+    await h.get().fetchCredentials({ force: true });
+
+    expect(h.get().credentials.map((c) => c.id)).toEqual(["A"]);
+  });
+});

@@ -63,7 +63,11 @@
     "unknown": "Неизвестно",
     "value_delivered_count": "Доставлено ценности",
     "value_delivered_rate": "Доля реализованной ценности",
-    "value_section_title": "Бизнес-ценность"
+    "value_section_title": "Бизнес-ценность",
+    "prev_p50": "Пред. p50",
+    "prev_p95": "Пред. p95",
+    "range_last_days_one": "Последний день",
+    "range_last_days_other": "Последние {count} дн."
   },
   "analytics_dashboard": {
     "active_count": "Активно: {count}",
@@ -640,7 +644,13 @@
     "ask_athena_prompt": "Я рассматриваю предложение по оптимизации флота для своих агентов: «{title}». {description} Рекомендуемое действие: {action}. {focus}",
     "open_lab": "Открыть Lab",
     "open_lab_hint": "Протестировать альтернативные модели для «{persona}» в Lab",
-    "title": "Оптимизация флота"
+    "title": "Оптимизация флота",
+    "label_action": "Действие",
+    "label_agent": "Агент",
+    "label_impact": "Влияние",
+    "severity_critical": "Срочно",
+    "severity_info": "Наблюдение",
+    "severity_warning": "Рекомендуется"
   },
   "focused_decision": {
     "accept": "Принять",
@@ -898,7 +908,6 @@
     "bulk_acknowledge_count": "Подтвердить {count}",
     "bulk_clear_selection": "Очистить",
     "bulk_resolve_count": "Решить {count}",
-    "col_days": "Дни",
     "col_incident": "Инцидент",
     "detail_label_acknowledged": "Подтверждено",
     "detail_label_created": "Создано",
@@ -926,10 +935,8 @@
     "filter_source_all": "Все источники",
     "filter_source_label": "Источник",
     "filter_status_acknowledged": "Подтвержденные",
-    "filter_status_all": "Все",
     "filter_status_dismissed": "Отклоненные",
     "filter_status_in_progress": "В работе",
-    "filter_status_label": "Статус",
     "filter_status_open": "Открытые",
     "filter_status_resolved": "Решенные",
     "filters_active_aria": "Активные фильтры ({count})",
@@ -939,7 +946,6 @@
     "group_by_none": "Без группировки",
     "group_by_severity": "Серьезность",
     "group_by_source": "Источник",
-    "group_no_persona": "Без агента",
     "groups_collapse_all": "Свернуть все",
     "groups_expand_all": "Развернуть все",
     "guidance_alert": "Сработало правило оповещения. Проверьте метрику, превысившую порог.",
@@ -996,7 +1002,6 @@
     "noc_diagnosis_title": "Первопричина",
     "noc_evidence_label": "Доказательства",
     "noc_handled_by": "Обработано Афиной",
-    "noc_handled_continued": "Автоматически возобновлено",
     "noc_handled_empty": "Пока ничего не обработано автономно — как только я смогу безопасно исправить инцидент сама, он появится здесь.",
     "noc_handled_title": "Обработано автономно",
     "noc_no_diagnosis": "Диагноза пока нет — я могу разобраться в этом инциденте за вас.",
@@ -1025,7 +1030,6 @@
     "source_policy": "Политика",
     "source_provider": "Провайдер",
     "source_tool": "Инструмент",
-    "stale_label": "Залежалось",
     "subtitle": "Общий почтовый ящик для оповещений и ошибок",
     "title": "Инциденты",
     "urgency_critical": "Требует внимания сейчас",
@@ -1097,7 +1101,8 @@
     "stat_total_runs": "Всего запусков",
     "subtitle": "Рейтинг производительности всех агентов",
     "this_agent": "Этот агент",
-    "title": "Рейтинг агентов"
+    "title": "Рейтинг агентов",
+    "sort_hint": "Нажмите на метрику для сортировки"
   },
   "llm_spend": {
     "by_source": "Расходы по уровню",
@@ -1156,7 +1161,6 @@
     "curation_schedule_save": "Сохранить расписание",
     "curation_schedule_title": "Расписание курирования памяти",
     "delete_all": "Удалить все",
-    "delete_all_confirm_body": "Это безвозвратно удалит все {count} воспоминаний. Отменить невозможно.",
     "delete_all_confirm_cta": "Удалить все",
     "delete_all_confirm_title": "Удалить все воспоминания?",
     "form": {
@@ -1182,13 +1186,21 @@
     "reflect_pick_persona": "Рефлексия воспоминаний агента",
     "reflecting": "Идёт рефлексия…",
     "search_placeholder": "Поиск воспоминаний…",
-    "title": "Воспоминания"
+    "title": "Воспоминания",
+    "delete_all_confirm_body_all_agents": "Все воспоминания ({count}) всех агентов будут удалены безвозвратно, независимо от текущего фильтра. Это действие нельзя отменить."
   },
   "memory_actions": {
     "dismiss_suggestion": "Отклонить предложение",
     "memory_insights": "Аналитика памяти",
     "suggestions": "Предложений: {count}",
-    "suggestions_one": "{count} предложение"
+    "suggestions_one": "{count} предложение",
+    "kind_throttle": "Правило ограничения",
+    "kind_schedule": "Изменение расписания",
+    "kind_alert": "Правило оповещения",
+    "kind_config": "Изменение конфигурации",
+    "kind_routing": "Правило маршрутизации",
+    "rules_restored_from_session": "Не удалось прочитать сохранённые правила действий памяти, они восстановлены из этой сессии.",
+    "rules_unreadable": "Не удалось прочитать сохранённые правила действий памяти, возможно, их придётся создать заново."
   },
   "memory_card": {
     "cancel": "Отмена",
@@ -1218,7 +1230,14 @@
     "resolved_toast": "Противоречие снято",
     "retire_blocked_core_toast": "Основное (закреплённое) воспоминание нельзя архивировать — разберите это противоречие вручную",
     "scanned_scope": "среди {count} последних воспоминаний",
-    "vs": "против"
+    "vs": "против",
+    "kind_duplicate": "Дубликат",
+    "kind_contradiction": "Противоречие",
+    "kind_superseded": "Устарело",
+    "reason_contradiction": "Возможно противоречивые указания по одной теме (пересечение тем {pct}%)",
+    "reason_duplicate_cross_agent": "Почти одинаковые воспоминания разных агентов (сходство {pct}%)",
+    "reason_duplicate_same_agent": "Почти одинаковые воспоминания одного агента (сходство {pct}%)",
+    "reason_superseded": "Более новое воспоминание может заменить старое по той же теме (пересечение {pct}%)"
   },
   "memory_detail": {
     "category_label": "Категория",
@@ -1366,7 +1385,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", затем скопируйте API-ключ из Настроек. Ключ хранится локально и используется всеми агентами.",
-    "sign_up_free_at": "Бесплатная регистрация на"
+    "sign_up_free_at": "Бесплатная регистрация на",
+    "api_key_label": "Ключ API",
+    "litellm_base_url_label": "Базовый URL прокси",
+    "litellm_master_key_label": "Мастер-ключ",
+    "ollama_key_placeholder": "Вставьте ключ со страницы ollama.com/settings"
   },
   "predictive_alerts_extra": {
     "all_nominal": "Все системы в норме",
@@ -1887,7 +1910,9 @@
     "p95_latency": "P95-задержка",
     "runs": "Запуски",
     "streak": "Серия",
-    "successful": "Успешно"
+    "successful": "Успешно",
+    "daily_trend_hint_one": "{date}: {rate} ({count} запуск)",
+    "daily_trend_hint_other": "{date}: {rate} ({count} запусков)"
   },
   "sla": {
     "active_agents": "{count} активных агентов",
@@ -2106,5 +2131,15 @@
   "dc_pending_lead": "Каждое ожидающее ревью открывается в Центре решений с полным описанием и теми же клавишами, что и любое другое решение.",
   "dc_pending_list_aria": "Ожидающие ревью",
   "dc_select_review": "Выбрать ревью",
-  "dc_col_decision": "Решение"
+  "dc_col_decision": "Решение",
+  "ai_healing_overlay": {
+    "collapse": "Свернуть",
+    "expand": "Развернуть",
+    "status_complete": "Завершено",
+    "status_failed": "Сбой",
+    "status_in_progress": "В процессе",
+    "step_applying": "Применение исправлений",
+    "step_completed": "Завершено",
+    "step_diagnosing": "Диагностика"
+  }
 }

@@ -2,7 +2,7 @@
 // pure core the worker itself imports — one definition for both sides of the
 // boundary. Importing them from `comparisonHelpers` (as this file used to) is
 // what put the i18n layer into the worker's graph; see comparisonDiffCore.ts.
-import { diffLines, jsonDiff } from './comparisonDiffCore';
+import { diffLines, jsonDiff, splitLogLines } from './comparisonDiffCore';
 import type {
   DiffWorkerRequest,
   DiffWorkerResponse,
@@ -196,13 +196,12 @@ export function computeLineDiffOffThread(
 
   const activeWorker = getWorker();
   if (!activeWorker) {
-    const result = diffLines(
-      (left ?? '').split('\n').filter((line) => line.trim()),
-      (right ?? '').split('\n').filter((line) => line.trim()),
-    );
+    const result = diffLines(splitLogLines(left), splitLogLines(right));
     lruSet(lineCache, key, result, () => lineCacheEvictions++);
-    queueMicrotask(() => onChunk(result));
-    return { cancel: () => undefined, promise: Promise.resolve(result) };
+    // Same cancel contract as the cached path above: a cancelled job delivers nothing.
+    let cancelled = false;
+    queueMicrotask(() => { if (!cancelled) onChunk(result); });
+    return { cancel: () => { cancelled = true; }, promise: Promise.resolve(result) };
   }
 
   const id = nextRequestId++;

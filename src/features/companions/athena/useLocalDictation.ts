@@ -22,7 +22,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { companionSttTranscribe } from '@/api/companion';
 import { useSystemStore } from '@/stores/systemStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import type { DictationState } from './useDictation';
 
 /**
@@ -263,7 +263,7 @@ export function useLocalDictation({ lang }: { lang?: string } = {}): DictationSt
       })
       .catch((err: unknown) => {
         if (transcribeIdRef.current === reqId) {
-          setError(err instanceof Error ? err.message : String(err));
+          setError(extractMessage(err));
         }
         silentCatch('companion_stt_transcribe')(err);
       })

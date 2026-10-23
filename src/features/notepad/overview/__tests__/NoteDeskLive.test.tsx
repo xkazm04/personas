@@ -164,6 +164,20 @@ describe('the card menu — the dispatch bar’s predicates, per status', () => 
     expect(items.ask!.hint).toBe(t.notepad.dispatch_needs_project);
   });
 
+  it('every refused dispatch row says why, not only Publish', () => {
+    const t = strings();
+    for (const [over, reason] of [
+      [{ projectId: null }, t.notepad.dispatch_needs_project],
+      [{ status: 'published' as NoteStatus }, t.notepad.dispatch_needs_draft],
+    ] as const) {
+      const items = byId(noteCardMenuItems(note('n1', over), [], t, handlers()));
+      for (const id of ['publish', 'goals', 'link']) {
+        expect(items[id]!.disabled).toBe(true);
+        expect(items[id]!.hint).toBe(reason);
+      }
+    }
+  });
+
   it('Delete is offered on every status — and refused while a Fleet session holds the note', () => {
     const t = strings();
     for (const status of ['draft', 'published', 'in_progress', 'completed', 'scoped', 'cut'] as NoteStatus[]) {

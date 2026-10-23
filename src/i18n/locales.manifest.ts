@@ -50,8 +50,6 @@ export type LocaleCode = (typeof LOCALES)[number]['code'];
 
 export const LOCALE_CODES = LOCALES.map((l) => l.code) as readonly LocaleCode[];
 
-export const DEFAULT_LOCALE: LocaleCode = 'en';
-
 export function getLocaleDescriptor(code: string): LocaleDescriptor | undefined {
   return LOCALES.find((l) => l.code === code);
 }

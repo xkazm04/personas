@@ -9,6 +9,7 @@ import { StatusIcon, statusColor } from './pipelineHelpers';
 import { PipelineRow } from './PipelineRow';
 import { JobRow } from './JobRow';
 import { usePipelineNotifications } from '../hooks/usePipelineNotifications';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
@@ -20,7 +21,7 @@ interface GitLabPipelineViewerProps {
 }
 
 export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [expandedJobId, setExpandedJobId] = useState<number | null>(null);
 
   const pipelines = useSystemStore((s) => s.gitlabPipelines);
@@ -83,7 +84,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
       {/* Header actions */}
       <div className="flex items-center justify-between">
         <p className="typo-body text-foreground">
-          {pipelines.length > 0 ? `${pipelines.length} pipeline(s)` : t.gitlab.no_pipelines}
+          {pipelines.length > 0 ? tx(pipelines.length === 1 ? t.gitlab.pipeline_count_one : t.gitlab.pipeline_count_other, { count: pipelines.length }) : t.gitlab.no_pipelines}
         </p>
         <div className="flex items-center gap-2">
           <Button
@@ -116,13 +117,12 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
           {loading && pipelines.length === 0 ? (
             null
           ) : pipelines.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-orange-400/60" />
-              </div>
-              <p className="typo-body text-foreground">{t.gitlab.no_pipelines_yet}</p>
-              <p className="typo-caption text-foreground mt-1">{t.gitlab.trigger_to_start}</p>
-            </div>
+            <EmptyState
+              icon={FileText}
+              size="sm"
+              title={t.gitlab.no_pipelines_yet}
+              description={t.gitlab.trigger_to_start}
+            />
           ) : (
             pipelines.map((p) => (
               <PipelineRow
@@ -177,7 +177,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
                 {jobs.length === 0 && loading ? (
                   null
                 ) : jobs.length === 0 ? (
-                  <p className="typo-body text-foreground text-center py-4">{t.gitlab.no_jobs_found}</p>
+                  <EmptyState art="runs" size="sm" title={t.gitlab.no_jobs_found} />
                 ) : (
                   jobs.map((job) => (
                     <JobRow

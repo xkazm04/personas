@@ -146,6 +146,33 @@ pub async fn fleet_spawn_external_console(
     Ok(pid)
 }
 
+/// The resolver hands back `cmd /C claude.cmd` when `claude.exe` was not found.
+/// Appending a prose prompt to a `cmd` line lets cmd.exe re-parse `& | < > ^ %VAR%`
+/// inside it, which is exactly what this transport exists to avoid, so refuse.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn refuse_shell_fallback(program: &str) -> Result<(), AppError> {
+    if program.eq_ignore_ascii_case("cmd") {
+        return Err(AppError::Validation(
+            "Claude CLI (claude.exe) was not found; the external console will not run the \
+             prompt through cmd.exe. Install Claude Code or use the in-app Fleet terminal."
+                .into(),
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod shell_fallback_tests {
+    use super::*;
+
+    #[test]
+    fn cmd_shim_is_refused_and_real_exe_is_not() {
+        assert!(refuse_shell_fallback("cmd").is_err());
+        assert!(refuse_shell_fallback("CMD").is_err());
+        assert!(refuse_shell_fallback(r"C:\Users\x\claude.exe").is_ok());
+    }
+}
+
 #[cfg(windows)]
 fn spawn_console(
     root: &std::path::Path,
@@ -161,15 +188,8 @@ fn spawn_console(
     let (program, leading) = crate::engine::cli_process::claude_cli_invocation();
     let mut cmd = std::process::Command::new(&program);
 
-    if program.eq_ignore_ascii_case("cmd") {
-        // Legacy fallback path: `claude.exe` was not found and the resolver
-        // handed back `cmd /C claude.cmd`. `/C` would close the window the
-        // moment the session ended (and, worse, before the operator could read
-        // a spawn error), so swap it for `/K`.
-        cmd.args(leading.iter().map(|a| if a == "/C" { "/K" } else { a }));
-    } else {
-        cmd.args(&leading);
-    }
+    refuse_shell_fallback(&program)?;
+    cmd.args(&leading);
 
     if skip_permissions {
         cmd.arg("--dangerously-skip-permissions");

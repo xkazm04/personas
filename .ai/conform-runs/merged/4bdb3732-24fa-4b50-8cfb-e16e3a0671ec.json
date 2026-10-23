@@ -1,0 +1,117 @@
+{
+  "schema": "conform-run/1",
+  "worker": "4bdb3732-24fa-4b50-8cfb-e16e3a0671ec",
+  "subject": "form",
+  "evaluatedAt": "2026-10-16T17:52:42Z",
+  "pairs": [
+    {
+      "context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5",
+      "subject": "form",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/shared/components/forms/DesignInput.tsx:177 the primary composition textarea still has no label, aria-label or FormField wiring; its only name is the hardcoded English placeholder at :186, which vanishes on first keystroke (TableSelector.tsx:67 filter input same) - the primitives library itself ships a placeholder-as-label control",
+      "techniques": [
+        {
+          "technique": "field-composition",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/forms/DesignInput.tsx:177 placeholder-only textarea (prohibitions 1-2); the primitive itself is sound: FormField.tsx:144 mints ids via useId and wires aria-invalid/aria-describedby with one feedback slot priority error>availability>help"
+        },
+        {
+          "technique": "error-aggregation-and-focus",
+          "verdict": "realized-with-gap",
+          "evidence": "src/features/shared/components/forms/FormErrorContext.tsx:16 split stable-write/changing-read registry holding only visible errors, FormErrorSummary focuses+scrolls the field; but register appends in visibility order (FormErrorContext.tsx:60), not user-facing visual order"
+        },
+        {
+          "technique": "validation-timing",
+          "verdict": "realized",
+          "evidence": "src/features/shared/components/forms/FormField.tsx:155 validateOn gate: blur by default, then live revalidation after first interaction, forceValidation for submit; useAsyncFieldValidation.ts:116 debounced check guarded by AbortController"
+        }
+      ]
+    },
+    {
+      "context": "6229df3d-d54e-47bb-8091-abb479003c18",
+      "subject": "form",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:229 one `error` slot (fixed id schema-form-error) carries both the name-required check and every server rejection, and SchemaFormFields.tsx:53 sets aria-invalid on the name input whenever it is set - a failed connector/credential create marks the name field invalid though it is not attributable to it",
+      "techniques": [
+        {
+          "technique": "server-error-mapping",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:229 resolveErrorTranslated maps the message (rung 3 is loud) but form-level and field-level rejections share one slot, so rung 2 lands on the name field"
+        },
+        {
+          "technique": "field-composition",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/forms/TemplateFormBody.tsx:100 label has no htmlFor and the input no id - no programmatic association; SchemaFormFields.tsx:47 hand-assembles label+input+error with a hard-coded describedby id while forms/FormField exists"
+        },
+        {
+          "technique": "error-aggregation-and-focus",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/CredentialSchemaForm.tsx:111 name-required failure sets text rendered at the bottom of the form (:229) and moves no focus to the name field"
+        }
+      ]
+    },
+    {
+      "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+      "subject": "form",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_presets/PresetQuestionnaireForm.tsx:253 every adoption question renders a bare <label> with no htmlFor and controls with no id, so no select/text/number control has a programmatic name; NumberControl coerces a cleared value to 0 (:346)",
+      "techniques": [
+        {
+          "technique": "field-composition",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_presets/PresetQuestionnaireForm.tsx:253 hand-rolled label+hint+control stack unassociated (prohibitions 1 and 5); :346 onChange(v ?? 0) invents a value the user never entered (prohibition 6); :323 hardcoded On/Off"
+        },
+        {
+          "technique": "validation-timing",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_presets/PresetQuestionnaireForm.tsx:66 header states validation is HTML5 min/max only and out-of-range answers silently fall back to the template default at adopt time - no field-level feedback on any schedule"
+        }
+      ],
+      "registryProposal": "Not a corpus finding but a context-map one: this context is described as the n8n draft editor (entry point src/features/templates/draft-editor/DraftEditStep.tsx), which no longer exists in git; its file_paths now cover template explore + presets. The form pairing still holds via PresetQuestionnaireForm, but the context should be re-described or split on the next context scan."
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-16T17:52:42Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "form"
+      ],
+      "techniques": [
+        "field-composition",
+        "error-aggregation-and-focus",
+        "validation-timing"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:52:42Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "form"
+      ],
+      "techniques": [
+        "server-error-mapping",
+        "field-composition",
+        "error-aggregation-and-focus"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:52:42Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "form"
+      ],
+      "techniques": [
+        "field-composition",
+        "validation-timing"
+      ],
+      "deviations": 1
+    }
+  ]
+}

@@ -76,6 +76,7 @@ function queue(rows: BacklogIdea[], status: BacklogQueue['status'] = 'pending'):
     rows,
     counts: null,
     loading: false,
+    error: null,
     loadingMore: false,
     hasMore: false,
     status,
@@ -205,5 +206,17 @@ describe('BacklogDetailModal — a failed verdict keeps the card', () => {
     const { onStep } = renderModal(onAccept);
     fireEvent.keyDown(window, { key: 'a' });
     await vi.waitFor(() => expect(onStep).toHaveBeenCalledWith(1));
+  });
+});
+
+describe('Backlog — a failed status read is an error, not "no ideas"', () => {
+  it('useBacklogQueue exposes the failure and the panel shows a retryable alert', async () => {
+    const reload = vi.fn();
+    // Rows left over from the previous (pending) status are filtered away by
+    // the new status, so the table would be empty over a failed read.
+    const q = { ...queue([]), status: 'accepted' as const, error: 'database is locked', reload };
+    render(<BacklogPanel queue={q} />);
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.queryByTestId('row-idea-1')).toBeNull();
   });
 });

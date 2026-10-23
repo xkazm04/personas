@@ -1,11 +1,11 @@
 /**
  * Shared Prompt-Injection Defense Primitives
  *
- * Common structural-pattern stripping and prompt-context escaping shared by
- * `variableSanitizer.ts` and `workflowSanitizer.ts`. Both sanitize untrusted
- * text before it is embedded into AI prompts; this module is the single
- * source of truth for the union of protections either one needs, so the two
- * call sites can never drift apart again.
+ * Common structural-pattern stripping and prompt-context escaping for untrusted
+ * text embedded into AI prompts (`workflowSanitizer.ts` and the workflow
+ * parsers). It began as the union of two drifted copies - the other one,
+ * `variableSanitizer.ts`, was deleted 2026-10-19 with no caller since April -
+ * so every protection either had is kept here.
  *
  * Uses structural patterns that target prompt *structure* exploits rather
  * than a blocklist of specific injection phrases (which are trivially
@@ -49,11 +49,20 @@ export const INJECTION_PATTERNS: RegExp[] = [
  * Strip all known prompt-injection structural patterns from text.
  */
 export function stripInjectionPatterns(text: string): string {
+  // Removal rejoins what it cut around, so ONE pass rebuilt the very payloads
+  // it removed: a zero-width char inside a phrase (`ign\u200Bore previous
+  // instructions`) was stripped AFTER the phrase patterns had looked, and a
+  // nested tag (`<sys<system>tem>`) closed back into `<system>`. Repeat the
+  // whole list until nothing changes. No pattern matches the empty string, so
+  // every pass that changes the text shortens it, and the loop terminates.
   let clean = text;
-  for (const pattern of INJECTION_PATTERNS) {
-    clean = clean.replace(pattern, '');
+  for (;;) {
+    const before = clean;
+    for (const pattern of INJECTION_PATTERNS) {
+      clean = clean.replace(pattern, '');
+    }
+    if (clean === before) return clean;
   }
-  return clean;
 }
 
 export interface EscapeForPromptOptions {
@@ -78,8 +87,9 @@ export function escapeForPrompt(text: string, opts: EscapeForPromptOptions = {})
     .replace(/^(#{1,6})\s/gm, (_, hashes: string) => `${hashes.replace(/#/g, '＃')} `)
     // Escape triple backticks (could break markdown code fences)
     .replace(/```/g, '\\`\\`\\`')
-    // Escape section-like delimiters
-    .replace(/^---+$/gm, '------');
+    // Escape section-like delimiters. The backslash prefix makes the line no
+    // longer match ^---+$ (the old '------' replacement was itself a delimiter).
+    .replace(/^---+$/gm, (m) => `\\${m}`);
 
   if (opts.neutralizeTemplateVars) {
     // Neutralize {{...}} patterns to prevent recursive substitution

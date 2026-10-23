@@ -13,7 +13,15 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 export function useKpiDetail(kpi: DevKpi) {
   const { t } = useTranslation();
-  const measurements = useSystemStore((s) => s.kpiMeasurements);
+  // The store holds ONE measurement list, for whichever KPI was fetched last.
+  // Opening KPI B shows A's rows until B's read lands, and a slow read for A
+  // landing after B's leaves A's series under B's name for good. Only rows of
+  // THIS KPI are this KPI's history.
+  const storeMeasurements = useSystemStore((s) => s.kpiMeasurements);
+  const measurements = useMemo(
+    () => storeMeasurements.filter((m) => m.kpi_id === kpi.id),
+    [storeMeasurements, kpi.id],
+  );
   const goals = useSystemStore((s) => s.goals);
   const fetchKpiMeasurements = useSystemStore((s) => s.fetchKpiMeasurements);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
@@ -35,13 +43,17 @@ export function useKpiDetail(kpi: DevKpi) {
 
   const linkedGoals = useMemo(() => goals.filter((g) => g.kpi_id === kpi.id), [goals, kpi.id]);
 
+  /** Resolves true once the reading is stored. False on a refused or failed
+   *  write (already reported), so the caller keeps what the user typed. */
   const recordManual = useCallback(
-    async (value: number) => {
-      if (!Number.isFinite(value)) return;
+    async (value: number): Promise<boolean> => {
+      if (!Number.isFinite(value)) return false;
       try {
         await recordKpiMeasurement(kpi.id, value);
+        return true;
       } catch (err) {
         toastCatch('kpi measure', t.kpis.measure_failed)(err);
+        return false;
       }
     },
     [kpi.id, recordKpiMeasurement, t],

@@ -121,5 +121,12 @@
   "view_logs": "Log",
   "yesterday": "kemarin",
   "your_tier": "(milik Anda)",
-  "agent_pipeline_title": "Pipeline untuk {agent} di {ref}: {status}"
+  "agent_pipeline_title": "Pipeline untuk {agent} di {ref}: {status}",
+  "pipeline_count_one": "{count} pipeline",
+  "pipeline_count_other": "{count} pipeline",
+  "notify_title_success": "Pipeline Berhasil",
+  "notify_title_failed": "Pipeline Gagal",
+  "notify_title_canceled": "Pipeline Dibatalkan",
+  "notify_title_other": "Pipeline {status}",
+  "notify_body": "Pipeline #{id} pada {ref} sekarang berstatus {status}"
 }

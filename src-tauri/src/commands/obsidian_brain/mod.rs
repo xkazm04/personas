@@ -206,9 +206,42 @@ pub fn obsidian_brain_save_config(
     config: ObsidianVaultConfig,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
+    validate_folder_mapping(&config.folder_mapping)?;
     let json = serde_json::to_string(&config)
         .map_err(|e| AppError::Internal(format!("Failed to serialize config: {e}")))?;
     settings_repo::set(&state.db, SETTINGS_KEY, &json)
+}
+
+/// Every folder in the mapping is `Path::join`ed onto the vault base by push,
+/// pull and the mirrors. An absolute or `..` folder would make those write and
+/// read outside the vault, so each must be a plain relative path (nested
+/// `A/B` is fine; empty means the vault root).
+fn validate_folder_mapping(m: &crate::db::models::FolderMapping) -> Result<(), AppError> {
+    for (label, folder) in [
+        ("memoriesFolder", &m.memories_folder),
+        ("personasFolder", &m.personas_folder),
+        ("connectorsFolder", &m.connectors_folder),
+        ("researchFolder", &m.research_folder),
+        ("knowledgeFolder", &m.knowledge_folder),
+        ("athenaFolder", &m.athena_folder),
+    ] {
+        let escapes = folder.contains('\0')
+            || Path::new(folder.as_str()).components().any(|c| {
+                !matches!(
+                    c,
+                    std::path::Component::Normal(_) | std::path::Component::CurDir
+                )
+            })
+            || folder.starts_with(['/', '\\'])
+            || folder.split(['/', '\\']).any(|seg| seg == "..")
+            || folder.as_bytes().get(1) == Some(&b':');
+        if escapes {
+            return Err(AppError::Validation(format!(
+                "{label} must be a relative folder inside the vault"
+            )));
+        }
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -478,8 +511,14 @@ pub fn obsidian_mirror_backfill_execution_knowledge(
 
 pub(crate) fn get_config_or_err(pool: &crate::db::DbPool) -> Result<ObsidianVaultConfig, AppError> {
     match settings_repo::get(pool, SETTINGS_KEY)? {
-        Some(json) => serde_json::from_str(&json)
-            .map_err(|e| AppError::Internal(format!("Invalid obsidian config: {e}"))),
+        Some(json) => {
+            let config: ObsidianVaultConfig = serde_json::from_str(&json)
+                .map_err(|e| AppError::Internal(format!("Invalid obsidian config: {e}")))?;
+            // A config saved before save-time validation existed can still
+            // hold an escaping folder; refuse it before any sync joins it.
+            validate_folder_mapping(&config.folder_mapping)?;
+            Ok(config)
+        }
         None => Err(AppError::Validation(
             "Obsidian Brain not configured. Please set up a vault first.".into(),
         )),
@@ -1822,20 +1861,11 @@ pub fn obsidian_brain_lint_vault(
     self::lint::lint_vault(Path::new(&path), stale_days)
 }
 
-// ── Phase 5.1: Semantic Vault Lint (LLM-assisted integrity check) ────
-//
-// Complement to `obsidian_brain_lint_vault`: spawns a short Claude Code CLI
-// call to find inconsistencies, missing-page candidates, and obvious missing
-// wikilinks the syntactic lint can't catch. Opt-in; bills tokens. Inspired by
-// Karpathy's LLM knowledge base walkthrough (research run 2026-04-08,
-// youtube.com/watch?v=sboNwYmH3AY).
-
 // ── Phase 6: Google Drive Cloud Sync ────────────────────────────────────
-// pending: companion of `drive.rs`. These commands need to be registered in
-// `lib.rs`'s `invoke_handler` once the Drive sync UI ships.
+// Companion of `drive.rs`. Registered in `ipc_shards/shard_4.rs` and called by
+// the Cloud Sync panel (`src/api/obsidianBrain/index.ts`).
 
 #[tauri::command]
-#[allow(dead_code)]
 pub async fn obsidian_drive_status(
     state: State<'_, Arc<AppState>>,
 ) -> Result<drive::DriveStatus, AppError> {
@@ -1853,7 +1883,6 @@ pub async fn obsidian_drive_status(
 }
 
 #[tauri::command]
-#[allow(dead_code)]
 pub async fn obsidian_drive_push_sync(
     state: State<'_, Arc<AppState>>,
     folder_names: Option<Vec<String>>,
@@ -1890,7 +1919,6 @@ pub async fn obsidian_drive_push_sync(
 }
 
 #[tauri::command]
-#[allow(dead_code)]
 pub async fn obsidian_drive_pull_sync(
     state: State<'_, Arc<AppState>>,
     folder_names: Option<Vec<String>>,
@@ -1929,7 +1957,6 @@ pub async fn obsidian_drive_pull_sync(
 /// Extract the Google provider token from auth state.
 /// This is the raw Google access token (not the Supabase JWT),
 /// obtained when the user authenticates with the `drive.file` scope.
-#[allow(dead_code)] // pending: only called from obsidian_drive_* commands above (also dormant)
 async fn get_google_provider_token(state: &Arc<AppState>) -> Result<String, AppError> {
     let auth = state.auth.read().await;
     auth.google_provider_token
@@ -1940,4 +1967,47 @@ async fn get_google_provider_token(state: &Arc<AppState>) -> Result<String, AppE
                 "Google Drive not connected. Please sign in with Google Drive access.".into(),
             )
         })
+}
+
+#[cfg(test)]
+mod folder_mapping_tests {
+    use super::validate_folder_mapping;
+    use crate::db::models::FolderMapping;
+
+    fn mapping(personas: &str) -> FolderMapping {
+        FolderMapping {
+            memories_folder: "Memories".into(),
+            personas_folder: personas.into(),
+            connectors_folder: "Connectors".into(),
+            research_folder: "Research".into(),
+            knowledge_folder: "Knowledge".into(),
+            athena_folder: "Athena".into(),
+        }
+    }
+
+    #[test]
+    fn accepts_relative_and_nested_folders() {
+        for ok in ["Personas", "Agents/Personas", "Personas/", "./Personas"] {
+            assert!(validate_folder_mapping(&mapping(ok)).is_ok(), "{ok}");
+        }
+    }
+
+    #[test]
+    fn refuses_folders_that_leave_the_vault() {
+        for bad in [
+            "..",
+            "../outside",
+            "a/../../outside",
+            "/etc",
+            "\\evil",
+            "C:\\Windows",
+            "C:/Windows",
+            "a\\..\\..\\b",
+        ] {
+            assert!(validate_folder_mapping(&mapping(bad)).is_err(), "{bad}");
+        }
+        let mut m = mapping("Personas");
+        m.memories_folder = "../x".into();
+        assert!(validate_folder_mapping(&m).is_err());
+    }
 }

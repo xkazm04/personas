@@ -353,19 +353,16 @@ export const MAX_WEBGL = 6;
 
 // Sessions holding a live WebGL addon, least-recently-loaded first.
 //
-// Two parallel builds each landed this ledger under a name of its own, and both
-// vocabularies now have readers (the stats object exposes both spellings for the
-// same reason). ONE array is published under BOTH keys, so a devtools console —
-// or a test — reaches the same object either way; aliasing beats picking a
-// winner and silently leaving the other name reading `undefined`.
+// Two parallel builds once landed this ledger under two names
+// (`__fleetTerminalWebglOrder__` beside this one) and published one array under
+// both, with a second stats field (`webgl` beside `webglContexts`) for the same
+// number. Neither alias ever had a production reader - the settings budget
+// panel reads `webglContexts` and nothing reads the second key - so they were
+// retired on 2026-10-19 rather than kept as two doors to one value.
 const WEBGL_LRU_KEY = '__fleetTerminalWebglLru__';
-const WEBGL_ORDER_KEY = '__fleetTerminalWebglOrder__';
 const webglLru: string[] =
-  ((globalThis as Record<string, unknown>)[WEBGL_LRU_KEY] as string[] | undefined) ??
-  ((globalThis as Record<string, unknown>)[WEBGL_ORDER_KEY] as string[] | undefined) ??
-  [];
+  ((globalThis as Record<string, unknown>)[WEBGL_LRU_KEY] as string[] | undefined) ?? [];
 (globalThis as Record<string, unknown>)[WEBGL_LRU_KEY] = webglLru;
-(globalThis as Record<string, unknown>)[WEBGL_ORDER_KEY] = webglLru;
 
 /** Renderers dropped BECAUSE of MAX_WEBGL — the same instrument logic as
  *  `bumpEvictions()` below: a cap set too low and a renderer bug both read as
@@ -415,10 +412,6 @@ export interface FleetTerminalStats {
   /** Terminals disposed BECAUSE of that budget, since app start. */
   evictions: number;
   /** Terminals holding a live accelerated (WebGL) renderer right now. */
-  webgl: number;
-  /** The same count under the other name the parallel builds gave it. Both
-   *  spellings already have readers; they are one number read from one
-   *  ledger, so they cannot disagree. */
   webglContexts: number;
   /** The budget those GL contexts are bounded by. */
   maxWebgl: number;
@@ -437,7 +430,6 @@ export function getFleetTerminalStats(): FleetTerminalStats {
     parked: parked.length,
     maxParked: MAX_PARKED,
     evictions: (g[EVICTIONS_KEY] as number | undefined) ?? 0,
-    webgl: webglLru.length,
     webglContexts: webglLru.length,
     maxWebgl: MAX_WEBGL,
     webglEvictions: (g[WEBGL_EVICTIONS_KEY] as number | undefined) ?? 0,
@@ -480,6 +472,42 @@ export function onTerminalHolderLost(container: HTMLElement, cb: () => void): ()
 function unpark(sessionId: string): void {
   const i = parked.indexOf(sessionId);
   if (i !== -1) parked.splice(i, 1);
+}
+
+/**
+ * The last subscribe/unsubscribe issued for each session, so the next one is
+ * sent only after it settles.
+ *
+ * The backend keeps ONE `subscribed` flag per session ring, and the two
+ * commands that flip it are `async` Tauri commands, each spawned as its own
+ * task. Two invokes sent back to back are therefore not ordered by anything:
+ * a pane that remounts on the same session (a layout switch, a modal opening
+ * over the grid, StrictMode's double effect) sends unsubscribe and then
+ * subscribe a microtask apart, and if the backend runs them the other way round
+ * the flag ends `false` while the pane holds a fresh snapshot - it paints the
+ * tail and then never updates, which reads exactly like a hung agent. The
+ * mirror image (a detach's unsubscribe overtaking an in-flight subscribe)
+ * leaves a parked session streaming over IPC with no pane to show it.
+ *
+ * Chaining them per session makes the order the frontend chose the order the
+ * backend applies. A session with nothing in flight pays nothing: the call is
+ * issued synchronously, as before. Module scope (not globalThis): a hot reload
+ * that drops this map only forgets ordering for calls already in flight.
+ */
+const subscriptionTail = new Map<string, Promise<void>>();
+
+function sequencedSubscription<T>(sessionId: string, op: () => Promise<T>): Promise<T> {
+  const prev = subscriptionTail.get(sessionId);
+  const next = prev ? prev.then(op) : op();
+  const settled = next.then(
+    () => undefined,
+    () => undefined,
+  );
+  subscriptionTail.set(sessionId, settled);
+  void settled.then(() => {
+    if (subscriptionTail.get(sessionId) === settled) subscriptionTail.delete(sessionId);
+  });
+  return next;
 }
 
 /**
@@ -660,11 +688,19 @@ function pushResize(m: ManagedTerminal): void {
  * (SIGWINCH; ConPTY's equivalent on Windows), and a same-size resize is a no-op
  * on both, hence the one-column wiggle. It deliberately bypasses `pushResize`'s
  * de-dupe and leaves `lastCols`/`lastRows` alone: the grid ends where it began.
+ *
+ * "Where it began" is the grid as it is WHEN the wiggle returns, read then, not
+ * the one captured before it. A fit that lands inside the 60 ms window (the
+ * grid overlay's density font change, a panel animation) pushes the new size
+ * and records it in `lastCols`; restoring the captured size afterwards left the
+ * child on the old width while the emulator drew the new one, and the de-dupe
+ * then skipped every later push of that same new size.
  */
 function nudgeRepaint(m: ManagedTerminal): void {
   const { cols, rows } = m.term;
   if (cols < 2 || rows < 1) return;
-  const back = () => resizeSession(m.sessionId, cols, rows).catch(silentCatch('fleetTerminal:repaint'));
+  const back = () =>
+    resizeSession(m.sessionId, m.term.cols, m.term.rows).catch(silentCatch('fleetTerminal:repaint'));
   resizeSession(m.sessionId, cols - 1, rows)
     .then(() => { setTimeout(back, 60); })
     .catch(silentCatch('fleetTerminal:repaint'));
@@ -997,7 +1033,7 @@ function beginHydration(m: ManagedTerminal): number {
  */
 function completeHydration(m: ManagedTerminal, gen: number): void {
   if (gen !== m.hydrationGen || !m.attached) return;
-  subscribeTerminal(m.sessionId)
+  sequencedSubscription(m.sessionId, () => subscribeTerminal(m.sessionId))
     .then((snapshot) => {
       // Superseded by a newer attach/detach — drop this snapshot.
       if (gen !== m.hydrationGen || !m.attached) return;
@@ -1037,9 +1073,11 @@ function completeHydration(m: ManagedTerminal, gen: number): void {
         // Say so IN the terminal. This is the difference between "still
         // starting up" and "this session is gone", and the operator had no way
         // to tell them apart: both painted an empty black box.
+        // Through writeChunk, not `term.write`: a throw here would escape this
+        // rejection handler before the subscribe failure below is reported.
         if (m.attached && deadNotice && !m.deadNoticeShown) {
           m.deadNoticeShown = true;
-          m.term.write(`\r\n\x1b[31m${deadNotice}\x1b[0m\r\n`);
+          writeChunk(m, `\r\n\x1b[31m${deadNotice}\x1b[0m\r\n`);
         }
       }
       silentCatch('fleetTerminal:subscribe')(e);
@@ -1074,7 +1112,9 @@ export function detachTerminal(sessionId: string, owner?: HTMLElement): void {
   // This detach UNSUBSCRIBES, so the snapshot the terminal holds stops tracking
   // the session — the next attach must genuinely re-subscribe and replay.
   m.hydratedOk = false;
-  unsubscribeTerminal(sessionId).catch(silentCatch('fleetTerminal:unsubscribe'));
+  sequencedSubscription(sessionId, () => unsubscribeTerminal(sessionId)).catch(
+    silentCatch('fleetTerminal:unsubscribe'),
+  );
   disposeWebgl(m);
   m.attached = false;
   // Forget the pushed grid so the next attach reconciles size once against
@@ -1124,7 +1164,9 @@ export function disposeTerminal(sessionId: string): void {
   // subscribed names the unsubscribe.
   if (m.attached) {
     m.attached = false;
-    unsubscribeTerminal(sessionId).catch(silentCatch('fleetTerminal:unsubscribe'));
+    sequencedSubscription(sessionId, () => unsubscribeTerminal(sessionId)).catch(
+      silentCatch('fleetTerminal:unsubscribe'),
+    );
   }
   if (m.rafId !== null) cancelAnimationFrame(m.rafId);
   try {

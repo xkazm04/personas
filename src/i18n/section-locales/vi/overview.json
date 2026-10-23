@@ -63,7 +63,11 @@
     "unknown": "Không rõ",
     "value_delivered_count": "Giá trị đạt được",
     "value_delivered_rate": "Tỷ lệ giá trị đạt được",
-    "value_section_title": "Giá trị kinh doanh"
+    "value_section_title": "Giá trị kinh doanh",
+    "prev_p50": "p50 trước",
+    "prev_p95": "p95 trước",
+    "range_last_days_one": "1 ngày qua",
+    "range_last_days_other": "{count} ngày qua"
   },
   "analytics_dashboard": {
     "active_count": "{count} đang hoạt động",
@@ -640,7 +644,13 @@
     "ask_athena_prompt": "Tôi đang xem xét một đề xuất tối ưu hóa đội cho các tác nhân của mình: \"{title}\". {description} Hành động được đề xuất: {action}. {focus}",
     "open_lab": "Mở Lab",
     "open_lab_hint": "Kiểm tra các mô hình thay thế cho {persona} trong Lab",
-    "title": "Tối ưu hóa đội"
+    "title": "Tối ưu hóa đội",
+    "label_action": "Hành động",
+    "label_agent": "Tác nhân",
+    "label_impact": "Tác động",
+    "severity_critical": "Khẩn cấp",
+    "severity_info": "Nhận định",
+    "severity_warning": "Đề xuất"
   },
   "focused_decision": {
     "accept": "Chấp nhận",
@@ -898,7 +908,6 @@
     "bulk_acknowledge_count": "Ghi nhận {count}",
     "bulk_clear_selection": "Xóa",
     "bulk_resolve_count": "Xử lý {count}",
-    "col_days": "Ngày",
     "col_incident": "Sự cố",
     "detail_label_acknowledged": "Đã xác nhận",
     "detail_label_created": "Ngày tạo",
@@ -926,10 +935,8 @@
     "filter_source_all": "Mọi nguồn",
     "filter_source_label": "Nguồn",
     "filter_status_acknowledged": "Đã ghi nhận",
-    "filter_status_all": "Tất cả",
     "filter_status_dismissed": "Đã bỏ qua",
     "filter_status_in_progress": "Đang xử lý",
-    "filter_status_label": "Trạng thái",
     "filter_status_open": "Đang mở",
     "filter_status_resolved": "Đã xử lý",
     "filters_active_aria": "{count} bộ lọc đang hoạt động",
@@ -939,7 +946,6 @@
     "group_by_none": "Không có",
     "group_by_severity": "Mức độ",
     "group_by_source": "Nguồn",
-    "group_no_persona": "Không có tác nhân",
     "groups_collapse_all": "Thu gọn tất cả",
     "groups_expand_all": "Mở rộng tất cả",
     "guidance_alert": "Một quy tắc cảnh báo đã kích hoạt. Xem chỉ số đã vượt ngưỡng.",
@@ -996,7 +1002,6 @@
     "noc_diagnosis_title": "Nguyên nhân gốc",
     "noc_evidence_label": "Bằng chứng",
     "noc_handled_by": "Athena xử lý",
-    "noc_handled_continued": "Tự động tiếp tục",
     "noc_handled_empty": "Chưa có gì được xử lý tự động — khi tôi có thể tự khắc phục sự cố một cách an toàn, nó sẽ xuất hiện ở đây.",
     "noc_handled_title": "Đã xử lý tự động",
     "noc_no_diagnosis": "Chưa có chẩn đoán — tôi có thể điều tra sự cố này giúp bạn.",
@@ -1025,7 +1030,6 @@
     "source_policy": "Chính sách",
     "source_provider": "Nhà cung cấp",
     "source_tool": "Công cụ",
-    "stale_label": "Tồn đọng",
     "subtitle": "Hộp thư đa nguồn cho cảnh báo và lỗi",
     "title": "Sự cố",
     "urgency_critical": "Cần chú ý ngay",
@@ -1097,7 +1101,8 @@
     "stat_total_runs": "Tổng số lần chạy",
     "subtitle": "Xếp hạng hiệu suất trên tất cả tác nhân",
     "this_agent": "Tác nhân này",
-    "title": "Bảng xếp hạng tác nhân"
+    "title": "Bảng xếp hạng tác nhân",
+    "sort_hint": "Nhấp vào một chỉ số để sắp xếp"
   },
   "llm_spend": {
     "by_source": "Chi phí theo cấp độ",
@@ -1156,7 +1161,6 @@
     "curation_schedule_save": "Lưu lịch trình",
     "curation_schedule_title": "Lên lịch rà soát bộ nhớ",
     "delete_all": "Xóa tất cả",
-    "delete_all_confirm_body": "Thao tác này sẽ xóa vĩnh viễn tất cả {count} bộ nhớ. Không thể hoàn tác.",
     "delete_all_confirm_cta": "Xóa tất cả",
     "delete_all_confirm_title": "Xóa tất cả bộ nhớ?",
     "form": {
@@ -1182,13 +1186,21 @@
     "reflect_pick_persona": "Chiêm nghiệm ký ức của một agent",
     "reflecting": "Đang chiêm nghiệm…",
     "search_placeholder": "Tìm kiếm bộ nhớ…",
-    "title": "Bộ nhớ"
+    "title": "Bộ nhớ",
+    "delete_all_confirm_body_all_agents": "Thao tác này xóa vĩnh viễn toàn bộ {count} bộ nhớ của mọi agent, bất kể bộ lọc hiện tại hiển thị gì. Không thể hoàn tác."
   },
   "memory_actions": {
     "dismiss_suggestion": "Bỏ qua gợi ý",
     "memory_insights": "Hiểu biết bộ nhớ",
     "suggestions": "{count} gợi ý",
-    "suggestions_one": "{count} gợi ý"
+    "suggestions_one": "{count} gợi ý",
+    "kind_throttle": "Quy tắc giới hạn tốc độ",
+    "kind_schedule": "Điều chỉnh lịch",
+    "kind_alert": "Quy tắc cảnh báo",
+    "kind_config": "Thay đổi cấu hình",
+    "kind_routing": "Quy tắc định tuyến",
+    "rules_restored_from_session": "Không đọc được các quy tắc hành động bộ nhớ đã lưu và đã khôi phục từ phiên này.",
+    "rules_unreadable": "Không đọc được các quy tắc hành động bộ nhớ đã lưu và có thể cần tạo lại."
   },
   "memory_card": {
     "cancel": "Hủy",
@@ -1218,7 +1230,14 @@
     "resolved_toast": "Đã xử lý xung đột",
     "retire_blocked_core_toast": "Không thể lưu trữ ký ức cốt lõi (đã ghim) — hãy tự xử lý xung đột này",
     "scanned_scope": "trong {count} bộ nhớ gần nhất",
-    "vs": "vs"
+    "vs": "vs",
+    "kind_duplicate": "Trùng lặp",
+    "kind_contradiction": "Mâu thuẫn",
+    "kind_superseded": "Đã bị thay thế",
+    "reason_contradiction": "Có thể có chỉ dẫn mâu thuẫn về cùng một chủ đề (trùng chủ đề {pct}%)",
+    "reason_duplicate_cross_agent": "Các bộ nhớ gần như trùng nhau giữa các agent khác nhau (giống {pct}%)",
+    "reason_duplicate_same_agent": "Các bộ nhớ gần như trùng nhau trong cùng một agent (giống {pct}%)",
+    "reason_superseded": "Bộ nhớ mới hơn có thể thay thế bộ nhớ cũ về cùng chủ đề (trùng {pct}%)"
   },
   "memory_detail": {
     "category_label": "Danh mục",
@@ -1366,7 +1385,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", sau đó sao chép khóa API của bạn từ Cài đặt. Khóa này được lưu cục bộ và dùng chung cho mọi tác nhân.",
-    "sign_up_free_at": "Đăng ký miễn phí tại"
+    "sign_up_free_at": "Đăng ký miễn phí tại",
+    "api_key_label": "Khóa API",
+    "litellm_base_url_label": "URL gốc của proxy",
+    "litellm_master_key_label": "Khóa chính",
+    "ollama_key_placeholder": "Dán khóa của bạn từ ollama.com/settings"
   },
   "predictive_alerts_extra": {
     "all_nominal": "Tất cả hệ thống bình thường",
@@ -1887,7 +1910,9 @@
     "p95_latency": "Độ trễ P95",
     "runs": "Lượt chạy",
     "streak": "Chuỗi thành công",
-    "successful": "Thành công"
+    "successful": "Thành công",
+    "daily_trend_hint_one": "{date}: {rate} ({count} lần chạy)",
+    "daily_trend_hint_other": "{date}: {rate} ({count} lần chạy)"
   },
   "sla": {
     "active_agents": "{count} tác nhân hoạt động",
@@ -2106,5 +2131,15 @@
   "dc_pending_lead": "Mỗi đánh giá đang chờ sẽ mở trong Trung tâm quyết định, với đầy đủ nội dung và cùng phím như mọi quyết định khác.",
   "dc_pending_list_aria": "Đánh giá đang chờ",
   "dc_select_review": "Chọn đánh giá",
-  "dc_col_decision": "Quyết định"
+  "dc_col_decision": "Quyết định",
+  "ai_healing_overlay": {
+    "collapse": "Thu gọn",
+    "expand": "Mở rộng",
+    "status_complete": "Hoàn tất",
+    "status_failed": "Thất bại",
+    "status_in_progress": "Đang thực hiện",
+    "step_applying": "Đang áp dụng bản sửa",
+    "step_completed": "Đã hoàn tất",
+    "step_diagnosing": "Đang chẩn đoán"
+  }
 }

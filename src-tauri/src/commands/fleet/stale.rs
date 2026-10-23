@@ -348,8 +348,14 @@ fn staleness_transition(
 /// process. Pure, so the rule is unit-tested. Quiet stays VISIBLE through the
 /// separate freshness signal: `last_activity_ms` / `last_grew_ms` keep being
 /// written, and the tile's "Xs ago" reads from them.
+///
+/// A fleet-door run (`fleet-door:…`, `super::door`) is exempt for the same
+/// reason: one `claude -p` turn whose caller (lens-scan's driver, an App
+/// Master builder) owns its wall clock, and whose long silent tool calls are
+/// normal. Dozing one would kill the run its caller is still relaying.
 fn exempt_from_silence_sweep(run_label: Option<&str>) -> bool {
     super::contest_seat::is_contest_run_label(run_label)
+        || super::door::is_door_run_label(run_label)
 }
 
 /// True when a `Running` session looks frozen mid-run: its PTY went totally
@@ -1007,6 +1013,8 @@ fn tick_once(app: &AppHandle) {
     auto_forget_pass(app);
     machine_worker_retire_pass(app, now);
     queued_expiry_pass(app, now);
+    // Fleet-door runs whose caller (the personas-run shim) stopped polling.
+    super::door::lease_pass(app, now);
 }
 
 /// Which queued rows have waited past the expiry bound. Pure over the
@@ -2152,10 +2160,11 @@ fn live_slot_pass(app: &AppHandle) {
 
 #[cfg(test)]
 mod tests {
-    /// A contest seat is exempt from the silence sweep (never stamped stale,
-    /// never dozed); every other label, and a lookalike, is not.
+    /// A contest seat and a fleet-door run are exempt from the silence sweep
+    /// (never stamped stale, never dozed); every other label, and a lookalike,
+    /// is not.
     #[test]
-    fn only_a_contest_seat_is_exempt_from_the_silence_sweep() {
+    fn only_a_contest_seat_or_a_door_run_is_exempt_from_the_silence_sweep() {
         use personas_engine::unattended::app_master_run_label;
         let seat =
             crate::commands::fleet::contest_seat::contest_run_label("p1", "c1", "grok-4.6_high");
@@ -2171,6 +2180,13 @@ mod tests {
         assert!(!super::exempt_from_silence_sweep(Some("contest notes")));
         assert!(!super::exempt_from_silence_sweep(Some("contest:c1")));
         assert!(!super::exempt_from_silence_sweep(None));
+        assert!(super::exempt_from_silence_sweep(Some(
+            "fleet-door:lens_scan:bp nightly"
+        )));
+        assert!(super::exempt_from_silence_sweep(Some(
+            "fleet-door:app_master"
+        )));
+        assert!(!super::exempt_from_silence_sweep(Some("fleet door")));
     }
 
     /// Only machine dispatches that ENDED leave the grid, and only once silent

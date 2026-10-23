@@ -6,6 +6,7 @@
 // padding, mono-font numerics, persistent column sort affordance.
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { Brain, Sparkles, Plus, Search, Trash2, Shield, Lightbulb } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -15,7 +16,9 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
-import { deleteAllMemories } from '@/api/overview/memories';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { countDeletableMemories, deleteAllMemories } from '@/api/overview/memories';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -34,7 +37,7 @@ import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReve
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { MemoryTierFilter } from '@/api/overview/memories';
-import { DebtText, debtText } from '@/i18n/DebtText';
+import { debtText } from '@/i18n/DebtText';
 
 
 type SortField = 'title' | 'persona' | 'category' | 'importance' | 'access_count' | 'last_accessed' | 'created' | 'tier';
@@ -96,14 +99,17 @@ export default function MemoriesPageDense() {
    *  reads below stay readable. */
   const mui = t.overview.memories_ui;
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
+  // Unfiltered count of what `delete_all_memories` removes (all agents, all non-core tiers).
+  const [deleteAllCount, setDeleteAllCount] = useState(0);
   const personas = useAgentStore((s) => s.personas);
   const {
-    memories, memoriesTotal, memoriesLoading, memoryStats, fetchMemories, deleteMemory, reviewMemories, reflectMemories,
+    memories, memoriesTotal, memoriesLoading, memoriesError, memoryStats, fetchMemories, deleteMemory, reviewMemories, reflectMemories,
     memoryReviewRunning, memoryReviewResult, memoryReviewError, clearMemoryReviewResult,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
     memoriesTotal: s.memoriesTotal,
     memoriesLoading: s.memoriesLoading,
+    memoriesError: s.memoriesError,
     memoryStats: s.memoryStats,
     fetchMemories: s.fetchMemories,
     deleteMemory: s.deleteMemory,
@@ -152,25 +158,27 @@ export default function MemoriesPageDense() {
   const categoryForFetch = categoryFilters.size === 1 ? [...categoryFilters][0] : undefined;
   const sortColumn = SERVER_SORT[sortField] ?? 'created_at';
 
+  const fetchFirstPage = useCallback(() => fetchMemories({
+    search: search || undefined,
+    persona_id: personaFilter ?? undefined,
+    tier: tierFilter ?? undefined,
+    category: categoryForFetch,
+    sort_column: sortColumn,
+    sort_direction: sortDir,
+    limit: PAGE_SIZE,
+    offset: 0,
+  }), [fetchMemories, search, personaFilter, tierFilter, categoryForFetch, sortColumn, sortDir]);
+
   useEffect(() => {
     const requestId = latest.next();
     setDebouncePending(true);
     const timer = setTimeout(() => {
       if (!latest.isCurrent(requestId)) return;
       setDebouncePending(false);
-      fetchMemories({
-        search: search || undefined,
-        persona_id: personaFilter ?? undefined,
-        tier: tierFilter ?? undefined,
-        category: categoryForFetch,
-        sort_column: sortColumn,
-        sort_direction: sortDir,
-        limit: PAGE_SIZE,
-        offset: 0,
-      });
+      void fetchFirstPage();
     }, 300);
     return () => clearTimeout(timer);
-  }, [fetchMemories, search, personaFilter, tierFilter, categoryForFetch, sortColumn, sortDir, latest]);
+  }, [fetchFirstPage, latest]);
 
   const isFetching = debouncePending || memoriesLoading;
   const hasActiveFilters = search.trim().length > 0 || categoryFilters.size > 0 || personaFilter !== null || tierFilter !== null;
@@ -380,7 +388,11 @@ export default function MemoriesPageDense() {
               {t.common.add}
             </button>
             {memories.length > 0 && (
-              <button type="button" onClick={() => setConfirmingDeleteAll(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 typo-heading rounded-modal border transition-all bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25" title={t.overview.memories.delete_all}>
+              <button type="button" onClick={() => {
+                countDeletableMemories()
+                  .then((n) => { setDeleteAllCount(n); setConfirmingDeleteAll(true); })
+                  .catch(toastCatch('MemoriesPageDense:deleteAllCount', mui.delete_all_error));
+              }} className="flex items-center gap-1.5 px-2.5 py-1.5 typo-heading rounded-modal border transition-all bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25" title={t.overview.memories.delete_all}>
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
@@ -522,15 +534,24 @@ export default function MemoriesPageDense() {
           <div className="flex-1 overflow-y-auto relative z-10">
             {isFetching && sortedMemories.length === 0 ? (
               <DenseGhostRows />
+            ) : memoriesError && sortedMemories.length === 0 ? (
+              // A failed read with nothing on screen is unknown, not "no
+              // memories yet": the store records the failure, so say so.
+              <div className="px-4 py-6">
+                <InlineErrorBanner
+                  message={resolveErrorTranslated(t, memoriesError).message}
+                  onRetry={() => void fetchFirstPage()}
+                />
+              </div>
             ) : sortedMemories.length === 0 ? (
               // Both zero-row conditions used to read "No memories match current
               // filters", so a first-run user with an empty store and no filter
               // set was told their filters were too narrow. Filtered-to-zero and
               // nothing-here-yet are different states and get different copy.
-              <div className="flex items-center justify-center py-12 typo-body text-foreground">
+              <div className="flex items-center justify-center py-10">
                 {hasActiveFilters
-                  ? <DebtText k="auto_no_memories_match_current_filters_06cb075f" />
-                  : <DebtText k="auto_no_memories_yet_775ad944" />}
+                  ? <ScenarioEmptyState art="search" size="sm" title={debtText('auto_no_memories_match_current_filters_06cb075f')} />
+                  : <ScenarioEmptyState art="report" title={debtText('auto_no_memories_yet_775ad944')} />}
               </div>
             ) : (
               <>
@@ -580,12 +601,13 @@ export default function MemoriesPageDense() {
         // memory in the database. Counting the page understated the blast radius
         // by the whole pagination factor — "This permanently deletes all 100
         // memories" in front of a 3,000-row store. `memoriesTotal` is the
-        // server-side count for the current filter, so it is the largest honest
-        // number this surface holds.
+        // server-side count for the CURRENT FILTER, which is still not what the
+        // delete takes (it ignores persona/tier/search), so the dialog counts the
+        // unfiltered non-core total via `countDeletableMemories`.
         <ConfirmDialog
           danger
           title={t.overview.memories.delete_all_confirm_title}
-          body={tx(t.overview.memories.delete_all_confirm_body, { count: memoriesTotal })}
+          body={tx(t.overview.memories.delete_all_confirm_body_all_agents, { count: deleteAllCount })}
           confirmLabel={t.overview.memories.delete_all_confirm_cta}
           onConfirm={async () => {
             try {

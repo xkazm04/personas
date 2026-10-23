@@ -1,6 +1,6 @@
 import { Download } from 'lucide-react';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import { getCategoryMeta, type RoleGroup } from '../search/filters/searchConstants';
+import { categoryLabel, getCategoryMeta, type RoleGroup } from '../search/filters/searchConstants';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useIsDarkTheme } from '@/stores/themeStore';
@@ -55,7 +55,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
             <GroupIcon className="w-4.5 h-4.5 text-primary/80" />
           </div>
           <div>
-            <h3 className="typo-heading text-foreground/85">{group.label}</h3>
+            <h3 className="typo-heading text-foreground/85">{t.templates.search[group.labelKey]}</h3>
             <p className="typo-caption text-foreground">{group.description}</p>
           </div>
         </div>
@@ -76,7 +76,7 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
               >
                 <CatIcon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.color }} />
                 <span className="typo-body text-foreground flex-1 group-hover/cat:text-foreground/90 transition-colors">
-                  {meta.label}
+                  {categoryLabel(t, catName)}
                 </span>
                 {count > 0 && (
                   <span className="typo-data text-foreground">{count}</span>

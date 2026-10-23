@@ -12,7 +12,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { detectLifecycleCommands, setLifecycleStepParams } from '@/api/devTools/lifecycle';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import type { LifecycleGateCommand } from '@/lib/bindings/LifecycleGateCommand';
-import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
@@ -22,6 +21,7 @@ import { draftProblem } from '../../presets/useCommandsEditor';
 import {
   coverageTemplates, initialRows, isEdited, stepCommands, templateRow, type CoverageTemplate, type SetupRow,
 } from './setupModel';
+import { errorText } from '../../system/errorText';
 
 // What detection found, per project, this session. Bounded by the projects opened.
 const detectedCache = createModuleCache<string, LifecycleGateCommand[]>({ maxSize: 32 });
@@ -35,11 +35,11 @@ export type DetectState = 'loading' | 'ready' | 'failed';
 
 export interface SetupResult { tone: 'error'; text: string }
 
-const message = (err: unknown) => resolveError(err instanceof Error ? err.message : String(err)).message;
+const message = errorText;
 
 export function useSetup() {
   const { projectId, snapshot, dl } = useLifecycleViewModel();
-  const techStack = useSystemStore((s) => s.projects.find((p) => p.id === s.activeProjectId)?.tech_stack ?? null);
+  const techStack = useSystemStore((s) => s.projects.find((p) => p.id === projectId)?.tech_stack ?? null);
   const measureNow = useMeasureNow();
   const [detected, setDetected] = useState<LifecycleGateCommand[] | null>(() => (projectId ? detectedCache.get(projectId) ?? null : null));
   const [detect, setDetect] = useState<DetectState>(detected ? 'ready' : 'loading');

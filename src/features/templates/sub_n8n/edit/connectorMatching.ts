@@ -8,7 +8,7 @@
 export type CredentialLike = { id: string; name: string; serviceType: string };
 
 /** Minimum connector name length for fuzzy (prefix / substring) matching. */
-const MIN_FUZZY_LENGTH = 4;
+export const MIN_FUZZY_LENGTH = 4;
 
 /**
  * Canonical credential-to-connector matching.
@@ -48,48 +48,4 @@ export function matchCredentialToConnector(
   if (nameMatch) return nameMatch;
 
   return null;
-}
-
-/**
- * Partition credentials into "matching" (best matches first) and "others"
- * for a credential picker dropdown.
- */
-export function rankCredentialsForConnector(
-  credentials: CredentialLike[],
-  connectorName: string,
-): { matching: CredentialLike[]; others: CredentialLike[] } {
-  const lower = connectorName.toLowerCase();
-
-  const matching: CredentialLike[] = [];
-  const others: CredentialLike[] = [];
-
-  const fuzzyEligible = connectorName.length >= MIN_FUZZY_LENGTH;
-
-  // Pre-compute prefix matches to detect ambiguity
-  const prefixHits = fuzzyEligible
-    ? new Set(
-        credentials
-          .filter(
-            (c) =>
-              c.serviceType.startsWith(connectorName) ||
-              connectorName.startsWith(c.serviceType),
-          )
-          .map((c) => c.id),
-      )
-    : new Set<string>();
-  const prefixUnambiguous = prefixHits.size === 1;
-
-  for (const cred of credentials) {
-    const isExact = cred.serviceType === connectorName;
-    const isPrefix = prefixUnambiguous && prefixHits.has(cred.id);
-    const isNameMatch = fuzzyEligible && cred.name.toLowerCase().includes(lower);
-
-    if (isExact || isPrefix || isNameMatch) {
-      matching.push(cred);
-    } else {
-      others.push(cred);
-    }
-  }
-
-  return { matching, others };
 }

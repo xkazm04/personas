@@ -5,6 +5,7 @@ import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
 import { isFailedExecutionStatus, isSuccessExecutionStatus } from './executionStatus';
 import { createLatestWins } from '@/stores/util/latestWins';
+import { extractMessage } from '@/lib/silentCatch';
 
 const logger = createLogger('bulk-rerun');
 
@@ -271,7 +272,7 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
         error: landed.error_message ?? null,
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       logger.warn('Bulk-rerun item failed', { id: row.id, error: msg });
       updateItem(token, row.id, { status: 'failed', error: msg });
     }

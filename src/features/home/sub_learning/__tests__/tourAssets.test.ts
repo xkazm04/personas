@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { TOUR_REGISTRY } from '@/stores/slices/system/tourSlice';
 import { TOUR_ICONS } from '../data';
 import { TOUR_ILLUSTRATIONS, getTourIllustration } from '../illustrations';
+import illustrationPrompts from '../illustrations/prompts.json';
 
 /**
  * The Learning hub decorates each tour from two hand-written maps keyed by
@@ -21,6 +22,13 @@ describe('Learning hub tour decoration maps', () => {
   it('has no illustration for a tour that no longer exists', () => {
     const ids = new Set(TOUR_REGISTRY.map((t) => t.id as string));
     expect(Object.keys(TOUR_ILLUSTRATIONS).filter((k) => !ids.has(k))).toEqual([]);
+  });
+
+  it('keeps the regeneration brief of every illustration, and only those', () => {
+    // The briefs live outside the bundle (`prompts.json`, never imported by app
+    // code); this keeps the two key sets from drifting apart.
+    expect(Object.keys(illustrationPrompts).sort()).toEqual(Object.keys(TOUR_ILLUSTRATIONS).sort());
+    for (const brief of Object.values(illustrationPrompts)) expect(brief.length).toBeGreaterThan(0);
   });
 
   it('resolves every registered tour icon without falling back', () => {

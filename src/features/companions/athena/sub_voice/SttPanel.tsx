@@ -21,7 +21,7 @@ import { ActivityDot } from '@/features/shared/components/display/ActivityDot';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAthenaStore } from '../athenaStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import { VoiceEngineInstallBlock } from './voiceEngineShared';
 import {
   STT_DOWNLOAD_EVENT,
@@ -168,7 +168,7 @@ function WhisperConfig() {
     try {
       setModels(await companionSttListModels());
     } catch (e: unknown) {
-      setModelsError(e instanceof Error ? e.message : String(e));
+      setModelsError(extractMessage(e));
     }
   }, []);
 
@@ -220,7 +220,7 @@ function WhisperConfig() {
       // otherwise sit on a 'queued' spinner forever. Flip it to a failed state
       // carrying the reason so the row renders an actionable error (same shape
       // the backend's SttDownloadProgress.error uses for stream failures).
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = extractMessage(e);
       setProgress((p) => ({
         ...p,
         [id]: { modelId: id, state: 'failed', bytesDownloaded: 0, bytesTotal: null, error: msg },

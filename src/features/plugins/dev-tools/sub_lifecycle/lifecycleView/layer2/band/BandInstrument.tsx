@@ -10,7 +10,7 @@ import { isRateKey, VERDICT, type HealthStep, type StepMetric } from '../../laye
 import { metricLabel } from '../../layer1/layer1Labels';
 import { ArcGauge } from '../../layer1/parts/ArcGauge';
 import { MetricValue, SampleNote } from '../../layer1/parts/MetricValue';
-import { DeltaMark } from '../../layer1/rail/DeltaMark';
+import { DeltaMark } from '../../layer1/parts/DeltaMark';
 import { useLifecycleViewModel } from '../../context';
 import { BAND, lcSurface } from '../../system/lcSurface';
 import { LT } from '../../system/lcType';

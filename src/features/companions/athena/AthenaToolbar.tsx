@@ -9,7 +9,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import {
@@ -148,7 +148,7 @@ export function AthenaToolbar(props: {
           ];
       setPluginToggles(updated);
     } catch (err: unknown) {
-      addToast(err instanceof Error ? err.message : String(err), 'error');
+      addToast(extractMessage(err), 'error');
       silentCatch('companion_set_plugin_enabled')(err);
     }
   };
@@ -175,7 +175,7 @@ export function AthenaToolbar(props: {
           );
         } catch (err: unknown) {
           addToast(
-            err instanceof Error ? err.message : String(err),
+            extractMessage(err),
             'error',
           );
           silentCatch('companion_set_connector_enabled')(err);
@@ -191,7 +191,7 @@ export function AthenaToolbar(props: {
           );
         } catch (err: unknown) {
           addToast(
-            err instanceof Error ? err.message : String(err),
+            extractMessage(err),
             'error',
           );
           silentCatch('companion_remove_connector')(err);
@@ -308,7 +308,7 @@ export function AthenaToolbar(props: {
             setPickerOpen(false);
           } catch (err: unknown) {
             addToast(
-              err instanceof Error ? err.message : String(err),
+              extractMessage(err),
               'error',
             );
             silentCatch('companion_set_active_connectors')(err);

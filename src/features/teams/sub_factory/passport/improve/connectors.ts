@@ -6,11 +6,12 @@
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { BUILTIN_CONNECTORS } from '@/lib/credentials/builtinConnectors';
 import type { AppPassport } from '../passportModel';
+import type { DevToolsKey } from './improveCopy';
 
 export interface ConnectorSpec {
   rowKey: string;
-  /** Human label for the category (shown in the popover). */
-  categoryLabel: string;
+  /** i18n key of the human label for the category (shown in the popover). */
+  categoryKey: DevToolsKey;
   /** Credential serviceTypes that satisfy this row. */
   serviceTypes: string[];
   /** Which DevProject credential slot binding writes. */
@@ -36,14 +37,14 @@ export const LLM_TRACKING_SERVICE_TYPES = [
 export const CONNECTOR_SPECS: Record<string, ConnectorSpec> = {
   observability: {
     rowKey: 'observability',
-    categoryLabel: 'monitoring / error-tracking',
+    categoryKey: 'improve_conn_cat_monitoring',
     serviceTypes: MONITORING_SERVICE_TYPES,
     bindField: 'monitoring',
     applicable: (p) => p.productionReadiness.observability.level === 'none',
   },
   aiflow: {
     rowKey: 'aiflow',
-    categoryLabel: 'source control (GitHub)',
+    categoryKey: 'improve_conn_cat_pr',
     serviceTypes: ['github'],
     bindField: 'pr',
     applicable: (p) => !p.automationReadiness.aiInWorkflow,
@@ -56,35 +57,35 @@ export const CONNECTOR_SPECS: Record<string, ConnectorSpec> = {
   // below; wiring a connector fills the production slot (see passportDerive).
   monitoring: {
     rowKey: 'monitoring',
-    categoryLabel: 'monitoring / error-tracking',
+    categoryKey: 'improve_conn_cat_monitoring',
     serviceTypes: MONITORING_SERVICE_TYPES,
     bindField: 'monitoring',
     applicable: (p) => !p.stack.monitoring.errorTracking,
   },
   errors: {
     rowKey: 'errors',
-    categoryLabel: 'error tracking',
+    categoryKey: 'improve_conn_cat_errors',
     serviceTypes: MONITORING_SERVICE_TYPES,
     bindField: 'monitoring',
     applicable: (p) => !p.stack.monitoring.errorTracking,
   },
   logs: {
     rowKey: 'logs',
-    categoryLabel: 'logging',
+    categoryKey: 'improve_conn_cat_logs',
     serviceTypes: MONITORING_SERVICE_TYPES,
     bindField: 'monitoring',
     applicable: (p) => !p.stack.monitoring.logs,
   },
   metrics: {
     rowKey: 'metrics',
-    categoryLabel: 'metrics',
+    categoryKey: 'improve_conn_cat_metrics',
     serviceTypes: MONITORING_SERVICE_TYPES,
     bindField: 'monitoring',
     applicable: (p) => !p.stack.monitoring.metrics,
   },
   tracing: {
     rowKey: 'tracing',
-    categoryLabel: 'tracing',
+    categoryKey: 'improve_conn_cat_tracing',
     serviceTypes: MONITORING_SERVICE_TYPES,
     bindField: 'monitoring',
     applicable: (p) => !p.stack.monitoring.tracing,
@@ -92,7 +93,7 @@ export const CONNECTOR_SPECS: Record<string, ConnectorSpec> = {
   // LLM tracking — its own credential slot, like monitoring but for LLM-obs.
   llmtracking: {
     rowKey: 'llmtracking',
-    categoryLabel: 'LLM observability (Langfuse / Helicone / LangSmith / …)',
+    categoryKey: 'improve_conn_cat_llm',
     serviceTypes: LLM_TRACKING_SERVICE_TYPES,
     bindField: 'llm_tracking',
     applicable: (p) => !p.stack.llmTracking,
@@ -101,7 +102,7 @@ export const CONNECTOR_SPECS: Record<string, ConnectorSpec> = {
   // Always applicable so an already-bound channel can be switched.
   support: {
     rowKey: 'support',
-    categoryLabel: 'customer-support channel (Email / Discord)',
+    categoryKey: 'improve_conn_cat_support',
     serviceTypes: ['discord', 'gmail', 'microsoft_outlook'],
     bindField: 'support',
     applicable: () => true,

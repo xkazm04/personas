@@ -98,7 +98,7 @@ export function AutoCredReview({
               <FieldCaptureRow
                 source="auto"
                 mode="confirming"
-                label={isMissing ? `${field.label} (missing)` : field.label}
+                label={isMissing ? tx(t.vault.auto_cred_extra.field_missing, { label: field.label }) : field.label}
                 value={extractedValues[field.key] ?? ''}
                 onChange={(nextValue) => onValueChange(field.key, nextValue)}
                 placeholder={field.placeholder ?? ''}

@@ -13,6 +13,7 @@ import { FolderGit2, RefreshCw } from 'lucide-react';
 
 import { githubListRepos } from '@/api/agents/automations';
 import { probeRegistry } from '@/api/devTools/registryProbe';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { DirectoryPickerInput } from '@/features/shared/components/forms/DirectoryPickerInput';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -24,6 +25,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useVaultStore } from '@/stores/vaultStore';
 
 import { dispatchPairing, linkLocalRegistry, linkRegistry, type Registry } from './registryLinkStore';
+import { extractMessage } from '@/lib/silentCatch';
 
 // The clone path is CHOSEN, not derived — see `Registry.clonePath`. A scan skill
 // reads the registry working copy and the project repos side by side, so a URL
@@ -134,7 +136,7 @@ export function RegistryWiring({
       })
       .catch((e: unknown) => {
         if (cancelled) return;
-        setLoadError(e instanceof Error ? e.message : String(e));
+        setLoadError(extractMessage(e));
         setRepos([]);
         silentCatch('RegistryWiring:githubListRepos')(e);
       });
@@ -152,7 +154,7 @@ export function RegistryWiring({
     // linkable with zero ceremony.
     return (
       <div className="flex flex-col gap-3">
-        <p className="typo-body text-foreground">{tr.no_credential}</p>
+        <EmptyState art="vault" size="sm" title={tr.no_credential} />
         <div className="border-t border-border pt-3">
           <p className="typo-caption text-foreground mb-2">{tr.local_heading}</p>
           <LocalFolderLink workspaceId={workspaceId} onLinked={onLinked} />

@@ -1,4 +1,6 @@
 import { useFixedTicker } from '@/hooks/utility/timing/relativeTimeTicker';
+import { interpolate } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/en';
 
 /**
  * Subscribe to the rotation countdown ticker.
@@ -19,13 +21,18 @@ export function useRotationTicker(): number {
  * Pure function: compute a human-readable countdown string from an ISO timestamp.
  * Returns `null` if the timestamp is falsy.
  */
-export function formatCountdown(nextRotationAt: string | null | undefined): string | null {
+export function formatCountdown(
+  nextRotationAt: string | null | undefined,
+  rs: Translations['vault']['rotation_section'],
+): string | null {
   if (!nextRotationAt) return null;
   const diff = Math.max(0, Math.floor((new Date(nextRotationAt).getTime() - Date.now()) / 1000));
-  if (diff <= 0) return 'Due now';
+  if (diff <= 0) return rs.countdown_due_now;
   const d = Math.floor(diff / 86400);
   const h = Math.floor((diff % 86400) / 3600);
-  if (d > 0) return `${d}d ${h}h`;
+  if (d > 0) return interpolate(rs.countdown_days_hours, { days: d, hours: h });
   const m = Math.floor((diff % 3600) / 60);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  return h > 0
+    ? interpolate(rs.countdown_hours_minutes, { hours: h, minutes: m })
+    : interpolate(rs.countdown_minutes, { minutes: m });
 }

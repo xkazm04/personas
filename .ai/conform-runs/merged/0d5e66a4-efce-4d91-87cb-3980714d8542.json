@@ -1,0 +1,11 @@
+{"schema":"conform-run/1","worker":"0d5e66a4-efce-4d91-87cb-3980714d8542","subject":"multi-provider-gateway-plane",
+ "evaluatedAt":"2026-10-16T17:32:12Z",
+ "pairs":[{"context":"94b0b4ea-9adb-44d7-8222-4e2345de455b","subject":"multi-provider-gateway-plane","bundle":"software-engineering","state":"deviation",
+   "evidence":"src-tauri/src/engine/runner/mod.rs:2115 re-verified 2026-10-16: the remote-HTTP (Qwen/DashScope) branch returns run_http_execution before the failover chain's blocked_providers filter (src-tauri/engine/src/failover.rs:770) and the provider_audit insert (src-tauri/src/engine/runner/mod.rs:3783), while src/features/settings/sub_byom/components/ByomProviderList.tsx:37 lists Qwen beside policy-governed providers - a compliance-tagged persona can run on an unblocked, unaudited upstream",
+   "techniques":[
+     {"technique":"strategy-tree-with-inherited-policy","verdict":"deviation","evidence":"src-tauri/src/engine/runner/mod.rs:2097 is_remote_http_provider branch dispatches outside the candidate tree, so the BYOM block/compliance policy at src-tauri/engine/src/failover.rs:770 is never inherited by it"},
+     {"technique":"policy-verdict-in-the-status-space","verdict":"deviation","evidence":"src-tauri/src/engine/runner/mod.rs:2401 a chain emptied by policy surfaces as 'All providers failed or have open circuit breakers' - a denial reads as an outage"}]}],
+ "declined":[
+   {"subject":"multi-provider-gateway-plane","context":"742be60e-3ddf-4160-b7cb-4c5cac5965a0","reason":"weak context (plugins-research-lab-shared), lexical match on client/rest/source, priorNotApplicable=10; skill never judges weak pairs by default - coverage question, not a verdict"},
+   {"subject":"multi-provider-gateway-plane","context":"89d44c76-ec4c-4388-843e-503cf6ca2507","reason":"weak context (progress-transform), lexical match on transform/multi/status, priorNotApplicable=10; skill never judges weak pairs by default - coverage question, not a verdict"}],
+ "consults":[{"ts":"2026-10-16T17:32:12Z","bundle":"software-engineering","subjects":["multi-provider-gateway-plane"],"techniques":["strategy-tree-with-inherited-policy","policy-verdict-in-the-status-space"],"deviations":1}]}

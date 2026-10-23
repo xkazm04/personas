@@ -1,0 +1,96 @@
+{
+  "schema": "conform-run/1",
+  "worker": "08263e89-8d2e-4c2d-984e-8af8e157fdbf",
+  "subject": "ui-controls",
+  "evaluatedAt": "2026-10-19T08:19:20.079220+00:00",
+  "provider": "agy",
+  "model": "gemini-3.8-flash-high",
+  "pairs": [
+    {
+      "context": "hooks-utility-interaction",
+      "subject": "ui-controls",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/utility/interaction/useCopyToClipboard.ts:43 When clipboard writing fails, the hook silently aborts execution without notifying the caller or setting error state, violating the micro-interaction contract that clipboard failure must not result in silence.",
+      "techniques": [
+        {
+          "technique": "micro-interaction-contracts",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useCopyToClipboard.ts:43 Failed copy silently aborts with no error state or announcement, violating the clipboard contract."
+        },
+        {
+          "technique": "adoption-enforcement",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:9 useRovingTabIndex is an unratified zero-adopter primitive across the codebase."
+        },
+        {
+          "technique": "composition-contracts",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useAsyncAction.ts:54 useAsyncAction's execute callback does not guard against concurrent double-invocation during pending state."
+        },
+        {
+          "technique": "control-inventory-and-discovery",
+          "verdict": "deviation",
+          "evidence": "src/hooks/utility/interaction/useRovingTabIndex.ts:11 The catalogued roving focus primitive keys by array index rather than identity, causing consumers to bypass it."
+        },
+        {
+          "technique": "call-site-ownership",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useTrackedElementRect.ts:15 Headless interaction utility hooks do not render DOM elements or accept CSS styling passthroughs."
+        },
+        {
+          "technique": "variant-discipline",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:22 Headless interaction utility hooks implement motion logic rather than visual UI variants."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "ui-controls",
+      "context": "templates-generated-adoption-ucpicker",
+      "reason": "withdrawn after review: reviewer (sonnet): The ucPicker.tsx:73, ucCardHeader.tsx:71 and ucRouteToggle.tsx:33 anchors are confirmed, but the technique anchor commandCenterParts.tsx:24 sits in the chronology directory, which is not among this context's files, so the verdict rests partly on another context's code."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-19T08:19:20.079220+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "ui-controls"
+      ],
+      "techniques": [
+        "adoption-enforcement",
+        "call-site-ownership",
+        "composition-contracts",
+        "control-inventory-and-discovery",
+        "micro-interaction-contracts",
+        "variant-discipline"
+      ],
+      "deviations": 1,
+      "context": "hooks-utility-interaction",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    },
+    {
+      "ts": "2026-10-19T08:19:20.079220+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "ui-controls"
+      ],
+      "techniques": [
+        "adoption-enforcement",
+        "call-site-ownership",
+        "composition-contracts",
+        "control-inventory-and-discovery",
+        "micro-interaction-contracts",
+        "variant-discipline"
+      ],
+      "deviations": 1,
+      "context": "templates-generated-adoption-ucpicker",
+      "via": "curator-multi:agy",
+      "model": "gemini-3.8-flash-high"
+    }
+  ]
+}

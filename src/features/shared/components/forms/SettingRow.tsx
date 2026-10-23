@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { AccessibleToggle } from './AccessibleToggle';
 import { ActivityDot } from '../display/ActivityDot';
 
@@ -52,6 +52,7 @@ export function SettingRow({
   testId,
 }: SettingRowProps) {
   const interactive = !disabled;
+  const descriptionId = useId();
   const wrap =
     variant === 'card'
       ? 'flex items-center justify-between gap-4 px-3 py-2.5 rounded-modal hover:bg-secondary/20 transition-colors'
@@ -79,7 +80,7 @@ export function SettingRow({
           // overrides — utilities can't beat the unlayered typo tokens
           // anyway (that's how an earlier font-normal/85 patch silently
           // failed here).
-          <div className="typo-caption mt-1">{description}</div>
+          <div id={descriptionId} className="typo-caption mt-1">{description}</div>
         ) : null}
         {countLabel ? (
           <div className="typo-caption text-foreground mt-1">{countLabel}</div>
@@ -90,6 +91,7 @@ export function SettingRow({
           checked={checked}
           onChange={onChange}
           label={label}
+          aria-describedby={description ? descriptionId : undefined}
           disabled={disabled}
           size={toggleSize}
         />

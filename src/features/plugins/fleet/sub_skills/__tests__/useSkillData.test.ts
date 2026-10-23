@@ -7,19 +7,23 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 // Mock the skill files API surface used by useSkillData.
 vi.mock('@/api/devTools/devTools', () => ({
   listSkills: vi.fn(),
-  readSkillFile: vi.fn(),
-  writeSkillFile: vi.fn(),
+  listSkillsGlobal: vi.fn(),
+  installSkill: vi.fn(),
 }));
 
 // Avoid pulling the toast store's full module graph.
+// toastCatch writes through getState(), the hook through a selector: carry both.
+const addToast = vi.fn();
 vi.mock('@/stores/toastStore', () => ({
-  useToastStore: (selector: (s: { addToast: () => void }) => unknown) =>
-    selector({ addToast: vi.fn() }),
+  useToastStore: Object.assign(
+    (selector: (s: { addToast: typeof addToast }) => unknown) => selector({ addToast }),
+    { getState: () => ({ addToast }) },
+  ),
 }));
 
 // useSkillData now subscribes to activeProjectId so it can scope skill
 // lookups to the user's selected dev-tools project. Minimal stub returns
-// null (no project selected) — list/read/write still get exercised.
+// null (no project selected).
 vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (selector: (s: { activeProjectId: string | null }) => unknown) =>
     selector({ activeProjectId: null }),
@@ -29,7 +33,7 @@ vi.mock('@/stores/systemStore', () => ({
 // strings only matter when an error path fires. Stub minimally.
 vi.mock('@/i18n/useTranslation', () => ({
   useTranslation: () => ({
-    t: { plugins: { dev_tools: {} } },
+    t: { plugins: { dev_tools: {}, fleet: { skill_install_failed: 'Install failed' } } },
     tx: (s: string) => s,
   }),
 }));
@@ -43,17 +47,16 @@ const SKILLS = [
   { name: 'friend', path: '/skills/friend', description: 'Endless loop', referenceFileCount: 0, referenceFiles: [] },
 ];
 
-describe('useSkillData — favorites + recently-opened', () => {
+describe('useSkillData — favorites', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.mocked(devApi.listSkills).mockResolvedValue(SKILLS);
   });
 
-  it('starts with no favorites and no recent when storage is empty', async () => {
+  it('starts with no favorites when storage is empty', async () => {
     const { result } = renderHook(() => useSkillData());
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.skills).toHaveLength(3);
-    expect(result.current.recentSkills).toEqual([]);
+    expect(result.current.filtered).toHaveLength(3);
     expect(result.current.isFavorite('research')).toBe(false);
   });
 
@@ -87,57 +90,58 @@ describe('useSkillData — favorites + recently-opened', () => {
     expect(result.current.filtered[0]!.name).toBe('friend');
   });
 
-  it('selectSkill pushes onto recentlyOpened (MRU order) and persists', async () => {
-    const { result } = renderHook(() => useSkillData());
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    act(() => result.current.selectSkill(SKILLS[0]!));
-    act(() => result.current.selectSkill(SKILLS[1]!));
-    act(() => result.current.selectSkill(SKILLS[2]!));
-
-    expect(result.current.recentSkills.map((s) => s.name)).toEqual(['friend', 'add-template', 'research']);
-    const stored = JSON.parse(localStorage.getItem('personas.devtools.skill_recent')!);
-    expect(stored).toEqual(['friend', 'add-template', 'research']);
-  });
-
-  it('re-selecting an already-recent skill moves it to MRU front without duplication', async () => {
-    const { result } = renderHook(() => useSkillData());
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    act(() => result.current.selectSkill(SKILLS[0]!));
-    act(() => result.current.selectSkill(SKILLS[1]!));
-    act(() => result.current.selectSkill(SKILLS[0]!)); // research again
-
-    expect(result.current.recentSkills.map((s) => s.name)).toEqual(['research', 'add-template']);
-  });
-
-  it('caps recentlyOpened at MAX_RECENT = 5', async () => {
-    const big = Array.from({ length: 8 }, (_, i) => ({
-      name: `s${i}`, path: `/skills/s${i}`, description: '', referenceFileCount: 0, referenceFiles: [],
-    }));
-    vi.mocked(devApi.listSkills).mockResolvedValue(big);
-    const { result } = renderHook(() => useSkillData());
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    for (const s of big) act(() => result.current.selectSkill(s));
-    expect(result.current.recentSkills).toHaveLength(5);
-    // Most recent first; should be the last-pushed 5.
-    expect(result.current.recentSkills.map((s) => s.name)).toEqual(['s7', 's6', 's5', 's4', 's3']);
-  });
-
-  it('filters recentSkills to skip names that no longer exist after a list refresh', async () => {
-    localStorage.setItem('personas.devtools.skill_recent', JSON.stringify(['research', 'deleted-skill', 'friend']));
-    const { result } = renderHook(() => useSkillData());
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.recentSkills.map((s) => s.name)).toEqual(['research', 'friend']);
-  });
-
   it('treats corrupted localStorage as empty without crashing', async () => {
     localStorage.setItem('personas.devtools.skill_favorites', '{not json');
-    localStorage.setItem('personas.devtools.skill_recent', 'also-broken');
     const { result } = renderHook(() => useSkillData());
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.recentSkills).toEqual([]);
     expect(result.current.isFavorite('research')).toBe(false);
+  });
+});
+
+describe('useSkillData — install failure', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    addToast.mockClear();
+    vi.mocked(devApi.listSkills).mockResolvedValue(SKILLS);
+    vi.mocked(devApi.listSkillsGlobal).mockResolvedValue(SKILLS);
+  });
+
+  it('toasts the translated sentence, never the raw OS error', async () => {
+    vi.mocked(devApi.installSkill).mockRejectedValue(new Error('EACCES: permission denied, mkdir /b/.claude/skills'));
+    const { result } = renderHook(() => useSkillData('global'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let out: unknown = 'unset';
+    await act(async () => { out = await result.current.installSkill('research', 'p2', false); });
+    expect(out).toBeNull();
+    expect(addToast).toHaveBeenCalledWith('Install failed', 'error', expect.any(Number));
+    expect(addToast.mock.calls.flat().join(' ')).not.toContain('EACCES');
+  });
+
+  it('handles the AppError object the IPC actually rejects with', async () => {
+    vi.mocked(devApi.installSkill).mockRejectedValue({ error: 'target project has no root', kind: 'NotFound' });
+    const { result } = renderHook(() => useSkillData('global'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => { await result.current.installSkill('research', 'p2', false); });
+    expect(addToast.mock.calls.at(-1)?.slice(0, 2)).toEqual(['Install failed', 'error']);
+    expect(addToast.mock.calls.flat().join(' ')).not.toContain('[object Object]');
+  });
+});
+
+describe('useSkillData — source switch', () => {
+  it('keeps the selected source list when the previous source answers late', async () => {
+    localStorage.clear();
+    let resolveProject: (v: typeof SKILLS) => void = () => {};
+    vi.mocked(devApi.listSkills).mockImplementation(() => new Promise((r) => { resolveProject = r; }));
+    vi.mocked(devApi.listSkillsGlobal).mockResolvedValue([SKILLS[2]!]);
+    const { result } = renderHook(() => useSkillData('project'));
+
+    act(() => result.current.setSource('global'));
+    await waitFor(() => expect(result.current.filtered.map((s) => s.name)).toEqual(['friend']));
+
+    await act(async () => { resolveProject(SKILLS); });
+    expect(result.current.filtered.map((s) => s.name)).toEqual(['friend']);
+    expect(result.current.loading).toBe(false);
   });
 });

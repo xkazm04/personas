@@ -195,31 +195,33 @@ test.describe('Getting Started guided tour — full real build', () => {
     await app.clickTestId('tour-btn-next');
 
     // ── Step 4: run the live agent (REAL execution) ─────────────────────
-    // The step nav opens the new agent's Use Cases tab. Use the always-visible
-    // capability tab-bar Run Now (`capability-run-now`), which runs the
-    // auto-selected first capability through the REAL frontend execution
-    // pipeline — that pipeline's `frontend_complete` stage is what emits
-    // execution:completed → tour:execution-complete (see storeBusWiring.ts).
+    // The step nav opens the new agent's Responsibilities tab (the tab-bar
+    // `capability-run-now` was removed 2026-09-04; the tour itself now points
+    // at `resp-run-now`). That button lives in the charter detail, which only
+    // mounts once a responsibility row (`uc-row-<id>`) is opened.
     //
     // Do NOT fall back to a raw `execute_persona` IPC: it bypasses the
-    // frontend pipeline (so it wouldn't fire the tour event) and was observed
-    // to drop the bridge connection on a fresh-built agent. The detail-panel
-    // `use-case-run-now` only mounts once a capability is expanded, so it's
-    // not reliable here either.
-    // The step nav selects the new agent and opens its Use Cases tab, but
-    // persona:selected resets the editor tab to 'activity' (storeBusWiring),
-    // racing the tour's setEditorTab('use-cases'). Re-assert the tab until the
-    // capability Run Now is reachable.
+    // frontend pipeline and was observed to drop the bridge connection on a
+    // fresh-built agent. The charter Run now button is the user's own path.
+    // The step nav selects the new agent and opens its Responsibilities tab,
+    // but persona:selected resets the editor tab to 'activity' (storeBusWiring),
+    // racing the tour's setEditorTab('use-cases') (which maps to design ->
+    // responsibilities). Re-assert the tab and open the first responsibility
+    // row until Run now is reachable.
     let runReady = false;
     for (let i = 0; i < 30; i++) {
-      if ((await app.query('[data-testid="capability-run-now"]')).some((n) => n.visible)) { runReady = true; break; }
+      if ((await app.query('[data-testid="resp-run-now"]')).some((n) => n.visible)) { runReady = true; break; }
       await app.eval(
         `(()=>{const a=window.__AGENT_STORE__&&window.__AGENT_STORE__.getState();const id=a&&a.selectedPersona&&a.selectedPersona.id;if(id){window.__SYSTEM_STORE__.getState().setEditorTab('use-cases');}})()`,
       );
+      await sleep(400);
+      await app.eval(
+        `(()=>{const r=document.querySelector('[data-testid^="uc-row-"]:not([data-testid^="uc-row-run-"])');if(r)r.click();})()`,
+      );
       await sleep(800);
     }
-    if (!runReady) throw new Error('capability Run Now not reachable for first-execution step');
-    await app.clickTestId('capability-run-now');
+    if (!runReady) throw new Error('responsibility Run now not reachable for first-execution step');
+    await app.clickTestId('resp-run-now');
 
     // The real run streams through the frontend execution pipeline whose
     // frontend_complete stage emits execution:completed → tour:execution-complete

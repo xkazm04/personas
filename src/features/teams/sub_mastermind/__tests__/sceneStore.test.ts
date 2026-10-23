@@ -76,7 +76,10 @@ describe('sceneStore — mapWithConcurrency', () => {
     expect(out).toEqual([30, 10, 20, 5]);
   });
 
-  it('never exceeds the concurrency width', async () => {
+  // Both bounds. `<= 4` alone passed a fully SERIAL limiter (width forced to
+  // 1), so the scene's 5-wide family fan-out could collapse to one lane with
+  // every test green. The four lanes start synchronously, so the peak is exact.
+  it('runs exactly the concurrency width in parallel, never more', async () => {
     let inFlight = 0;
     let peak = 0;
     await mapWithConcurrency(Array.from({ length: 20 }, (_, i) => i), 4, async () => {
@@ -86,7 +89,7 @@ describe('sceneStore — mapWithConcurrency', () => {
       inFlight--;
       return null;
     });
-    expect(peak).toBeLessThanOrEqual(4);
+    expect(peak).toBe(4);
   });
 
   it('handles an empty list', async () => {
@@ -236,5 +239,31 @@ describe('sceneStore — invalidateScans keyed guards', () => {
     listScansMock.mockResolvedValueOnce([scan('recovered', 'p', '2026-07-12T00:00:00Z')]);
     await useSceneStore.getState().invalidateScans('p');
     expect(useSceneStore.getState().scans.get('p')!.map((r) => r.id)).toEqual(['recovered']);
+  });
+});
+
+describe('sceneStore — a failed reload over held data is stale, not failed', () => {
+  // Every load sets `loading` before its await, so the status a failure sees is
+  // always `loading`; reading it there made `stale` unreachable and a failed
+  // background refresh flipped every island's Ideas cell to unknown while the
+  // real rows were still in the store.
+  it('scans: loaded once, then a fresh reload rejects -> stale, rows kept', async () => {
+    listScansMock.mockReset();
+    listScansMock.mockResolvedValueOnce([scan('held', 'p', '2026-07-01T00:00:00Z')]);
+    await useSceneStore.getState().loadScans({ fresh: true });
+    expect(useSceneStore.getState().scansStatus).toBe('loaded');
+
+    listScansMock.mockRejectedValueOnce(new Error('ipc down'));
+    await useSceneStore.getState().loadScans({ fresh: true });
+
+    expect(useSceneStore.getState().scansStatus).toBe('stale');
+    expect(useSceneStore.getState().scans.get('p')!.map((r) => r.id)).toEqual(['held']);
+  });
+
+  it('scans: a family that never answered still goes failed', async () => {
+    listScansMock.mockReset();
+    listScansMock.mockRejectedValueOnce(new Error('ipc down'));
+    await useSceneStore.getState().loadScans({ fresh: true });
+    expect(useSceneStore.getState().scansStatus).toBe('failed');
   });
 });

@@ -185,8 +185,14 @@ export class CompanionBridge {
   // ── Companion-specific helpers ─────────────────────────────────────
 
   /**
-   * Open the chat panel via the footer icon. Idempotent — returns once
-   * `companionInspect` reports `panelVisible: true`.
+   * Open the chat panel. Idempotent — returns once `companionInspect`
+   * reports `panelVisible: true`.
+   *
+   * Opens through the bridge's `openCompanion` (sets the lifecycle state to
+   * 'open'), not by clicking `footer-companion`: with the floating orb on
+   * (`athenaOrbEnabled`, default true) that button only toggles the orb
+   * minimized <-> collapsed and never opens the chat, so every spec that
+   * opened the panel in `beforeEach` died there on a default app.
    *
    * NOTE: we deliberately do NOT use `/wait` here — its visibility check
    * is `offsetParent !== null`, which is always null for `position: fixed`
@@ -197,7 +203,7 @@ export class CompanionBridge {
     const initial = await this.snapshotPanel();
     if (initial.panelVisible) return;
 
-    await this.clickTestId('footer-companion');
+    await this.bridgeExec('openCompanion', {}, 10);
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       const state = await this.snapshotPanel();
@@ -618,14 +624,18 @@ export class CompanionBridge {
     return this.bridgeExec('promoteBuildDraft', {}, 120);
   }
 
-  /** Whether the chat panel currently shows a `sendError` chip. */
+  /**
+   * Whether the chat panel currently shows a `sendError` chip.
+   *
+   * Probes the chip's own Retry control (`companion-retry-send`,
+   * AthenaChatErrorNotice.tsx). The old probe matched /timed out|failed/ in
+   * rose-tinted text, but the chip renders the registry-TRANSLATED message,
+   * which for an unclassified error is "Something went wrong." - so a spec
+   * asserting "no error chip" passed with one on screen.
+   */
   async hasSendErrorChip(): Promise<boolean> {
-    // The error chip is rendered as a rose-tinted div near the bottom
-    // of the transcript when `sendError` is set in the store. We
-    // probe by text class signature rather than testid (the chip
-    // doesn't have one yet).
-    const nodes = await this.query('.text-rose-400');
-    return nodes.some((n) => n.visible && /timed out|failed/i.test(n.text ?? ''));
+    const nodes = await this.query('[data-testid="companion-retry-send"]');
+    return nodes.some((n) => n.visible);
   }
 }
 

@@ -12,7 +12,6 @@
 //! land once. See refactor-bughunt-2026-07-10 finding #8.
 
 use sha2::{Digest, Sha256};
-use uuid::Uuid;
 
 /// Stable `sha256:<hex>` content hash, used as a dedupe/change-detection key
 /// across brain writes.
@@ -27,15 +26,9 @@ pub fn excerpt(s: &str, n: usize) -> String {
 }
 
 /// Random lowercase-hex id: the first `n` chars of a UUIDv4 with dashes
-/// stripped.
-pub fn short_id(n: usize) -> String {
-    Uuid::new_v4()
-        .simple()
-        .to_string()
-        .chars()
-        .take(n)
-        .collect()
-}
+/// stripped. The one implementation is `companion::util::short_id`; the brain
+/// modules reach it through this path.
+pub use crate::companion::util::short_id;
 
 /// Lowercase-ascii-alphanumeric slug with single-dash separators (leading/
 /// trailing/duplicate separators collapsed). Falls back to `fallback` when

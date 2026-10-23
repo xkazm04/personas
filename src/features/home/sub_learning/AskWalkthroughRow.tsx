@@ -9,6 +9,16 @@ import { silentCatch } from '@/lib/silentCatch';
 type AskState = 'idle' | 'composing' | 'failed';
 
 /**
+ * `companion_compose_tour` refuses a topic over 120 (`commands/companion/tours.rs`)
+ * with a Validation error, which this row can only render as the generic
+ * "could not compose" line. Capping the field at the same number stops a long
+ * topic from being typed into a request that is refused before Athena sees it.
+ * The backend counts UTF-8 bytes, not characters, so a non-Latin topic can still
+ * be refused under this cap; that half is the backend's to fix.
+ */
+export const COMPOSE_TOPIC_MAX = 120;
+
+/**
  * "Ask Athena for a walkthrough": the user-initiated entry point to the same
  * compose + ingest path `WalkthroughOfferWidget` uses when Athena volunteers.
  * Composition is one LLM call, so it only ever runs on an explicit press with a
@@ -63,6 +73,7 @@ export function AskWalkthroughRow({ onComposed }: { onComposed: () => void }) {
           data-testid="learning-ask-walkthrough-input"
           aria-label={ht.ask_title}
           placeholder={ht.ask_placeholder}
+          maxLength={COMPOSE_TOPIC_MAX}
           value={topic}
           disabled={composing}
           onChange={(e) => {

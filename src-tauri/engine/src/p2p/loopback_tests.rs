@@ -1098,3 +1098,70 @@ async fn cli_mail_round_trips_and_an_oversized_body_is_refused() {
     }
     assert!(repo::get(&desktop.pool, "raw-big-mail").unwrap().is_none());
 }
+
+/// A peer's display name is its own claim on every door, not only mDNS. The
+/// handshake (`Hello` on the responder, `HelloAck` on the initiator) and the
+/// pairing request carry one too, and they reach the pairing prompt and the
+/// `owned_devices` row. Each is capped like the mDNS TXT name (128 chars),
+/// so a peer cannot park a frame-sized name (up to 16 MB) in our registry.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn a_peer_supplied_display_name_is_capped_on_every_wire_door() {
+    let huge = "\u{00e9}".repeat(10_000);
+    let laptop = node(&huge).await;
+    let desktop = node(&format!("  {huge}  ")).await;
+    know_address(&laptop, &desktop).expect("address");
+    connect(&laptop, &desktop).await;
+
+    let cap = 128;
+    // Responder side: the name in the initiator's Hello.
+    let seen_by_desktop = desktop
+        .svc
+        .connections
+        .get_remote_display_name(&laptop.id)
+        .await
+        .expect("connected");
+    assert_eq!(seen_by_desktop.chars().count(), cap, "Hello name is capped");
+    // Initiator side: the name in the responder's HelloAck (trimmed, then capped).
+    let seen_by_laptop = laptop
+        .svc
+        .connections
+        .get_remote_display_name(&desktop.id)
+        .await
+        .expect("connected");
+    assert_eq!(
+        seen_by_laptop.chars().count(),
+        cap,
+        "HelloAck name is capped"
+    );
+    assert!(!seen_by_laptop.starts_with(' '), "and trimmed");
+
+    // Pairing: the responder's pending prompt shows the PairRequest's name.
+    // Written as a raw frame, the way a hostile peer would send it (the
+    // initiator's own `request` reads the process identity's name instead).
+    let (mut send, _recv) = laptop
+        .svc
+        .connections
+        .open_stream(&desktop.id)
+        .await
+        .expect("stream");
+    protocol::write_message(
+        &mut send,
+        &Message::PairRequest {
+            session_nonce: protocol::generate_nonce(),
+            device_group_id: "group-laptop".into(),
+            display_name: huge.clone(),
+            devices_at_stake: 0,
+        },
+    )
+    .await
+    .expect("send PairRequest");
+    wait_for!("desktop holds the pairing prompt", {
+        !desktop.svc.pairing.list_pending().await.is_empty()
+    });
+    let pending = desktop.svc.pairing.list_pending().await;
+    assert_eq!(
+        pending[0].display_name.chars().count(),
+        cap,
+        "PairRequest name is capped"
+    );
+}

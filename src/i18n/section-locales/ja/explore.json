@@ -9,5 +9,20 @@
   "domain_revenue": "営業・マーケティング",
   "adopt_failed": "{name} を開けませんでした。",
   "adopt_no_template": "{name} には採用できるソーステンプレートがありません。",
-  "adopt_not_found": "{name} はまだテンプレートギャラリーにありません。"
+  "adopt_not_found": "{name} はまだテンプレートギャラリーにありません。",
+  "l2_all_domains": "すべての領域",
+  "l2_col_capabilities": "機能",
+  "l2_col_focus": "フォーカス",
+  "l2_col_name": "名前",
+  "l2_col_tools": "ツール",
+  "l2_col_type": "種類",
+  "l2_counts": "テンプレート {templates} 件 · レシピ {recipes} 件",
+  "l2_filter_all": "すべて",
+  "l2_filter_placeholder": "名前で絞り込み…",
+  "l2_filter_recipes": "レシピ",
+  "l2_filter_templates": "テンプレート",
+  "l2_kind_recipe": "レシピ",
+  "l2_kind_template": "テンプレート",
+  "l2_no_matches": "一致する項目はありません。",
+  "l2_shown": "{total} 件中 {shown} 件を表示"
 }

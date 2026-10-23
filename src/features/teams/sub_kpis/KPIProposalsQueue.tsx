@@ -202,6 +202,7 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
   if (!kpisLoading && proposals.length === 0) {
     return (
       <EmptyState
+        art="chart"
         title={t.kpis.queue_empty_title}
         description={t.kpis.queue_empty_hint}
         action={{ label: t.kpis.queue_refresh, onClick: onRefresh }}

@@ -74,20 +74,6 @@ fn smee_webhook_secret() -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
-/// Normalize SSE line endings: `\r\n` → `\n`, then bare `\r` → `\n`.
-/// The SSE spec allows `\r`, `\n`, or `\r\n` as line terminators; normalizing
-/// up-front lets the rest of the parser only look for `\n`.
-fn normalize_line_endings(text: &str) -> String {
-    text.replace("\r\n", "\n").replace('\r', "\n")
-}
-
-/// Find the first SSE message boundary (`\n\n`) and return
-/// `(message_end, delimiter_len)` so the caller can split correctly.
-/// Assumes the buffer has already been normalized via [`normalize_line_endings`].
-fn find_sse_boundary(buf: &str) -> Option<(usize, usize)> {
-    buf.find("\n\n").map(|pos| (pos, 2))
-}
-
 // ---------------------------------------------------------------------------
 // Notification channel (replaces 60s polling)
 // ---------------------------------------------------------------------------
@@ -248,34 +234,8 @@ struct RelayParams {
 /// channel's recent event history on every new SSE connection, so without this
 /// each transient disconnect (laptop sleep, Wi-Fi drop, smee rate-limit) would
 /// re-publish already-handled webhooks and spawn duplicate persona executions
-/// (bug-hunt 2026-06-07 triggers #1). Bounded FIFO so it can't grow unboundedly.
-#[derive(Default)]
-struct RelayDedup {
-    /// Most recent SSE `id:` seen — sent as `Last-Event-ID` on reconnect so a
-    /// spec-compliant server resumes after it instead of replaying from scratch.
-    last_event_id: Option<String>,
-    seen_order: std::collections::VecDeque<String>,
-    seen_set: std::collections::HashSet<String>,
-}
-
-impl RelayDedup {
-    const CAP: usize = 512;
-
-    /// Record `key`; return true if new, false if already seen this process.
-    fn check_and_insert(&mut self, key: String) -> bool {
-        if self.seen_set.contains(&key) {
-            return false;
-        }
-        self.seen_set.insert(key.clone());
-        self.seen_order.push_back(key);
-        if self.seen_order.len() > Self::CAP {
-            if let Some(old) = self.seen_order.pop_front() {
-                self.seen_set.remove(&old);
-            }
-        }
-        true
-    }
-}
+/// (bug-hunt 2026-06-07 triggers #1). Bounded FIFO, tested in personas-engine.
+type RelayDedup = personas_engine::webhook_ingest::DeliveryDedup;
 
 /// SSE relay loop: connects to a smee.io channel, streams SSE events,
 /// and publishes parsed payloads to the local event bus.
@@ -342,7 +302,9 @@ async fn relay_sse_core(
 
     // Stream SSE
     let mut stream = resp.bytes_stream();
-    let mut buffer = String::new();
+    // Decodes BYTES: a chunk may end inside a multi-byte character or between
+    // the \r and \n of one terminator, which per-chunk text decoding corrupted.
+    let mut decoder = personas_engine::webhook_ingest::SseDecoder::new();
 
     loop {
         let chunk = tokio::select! {
@@ -357,37 +319,20 @@ async fn relay_sse_core(
             break;
         };
         let chunk = chunk.map_err(|e| format!("Stream error: {e}"))?;
-        let text = String::from_utf8_lossy(&chunk);
-        buffer.push_str(&normalize_line_endings(&text));
+        let messages = decoder.push(&chunk);
 
         // Guard against unbounded buffer growth from a misbehaving endpoint
-        if buffer.len() > MAX_SSE_BUFFER_BYTES {
+        if decoder.pending_bytes() > MAX_SSE_BUFFER_BYTES {
             return Err(
                 "SSE buffer exceeded 1 MB without a complete message — disconnecting".into(),
             );
         }
 
-        // Process complete SSE messages (separated by \n\n)
-        while let Some((pos, delim_len)) = find_sse_boundary(&buffer) {
-            let message = buffer[..pos].to_string();
-            buffer = buffer[pos + delim_len..].to_string();
-
-            // Extract the data: line(s) from the SSE message
-            let data_lines: Vec<&str> = message
-                .lines()
-                .filter(|l| l.starts_with("data: ") || l.starts_with("data:"))
-                .map(|l| {
-                    l.strip_prefix("data: ")
-                        .or_else(|| l.strip_prefix("data:"))
-                        .unwrap_or("")
-                })
-                .collect();
-
-            if data_lines.is_empty() {
+        // Process complete SSE messages
+        for message in messages {
+            let Some(data) = message.data else {
                 continue;
-            }
-
-            let data = data_lines.join("");
+            };
 
             // Skip the smee.io "ready" ping
             if data.is_empty() || data == "{}" {
@@ -491,11 +436,7 @@ async fn relay_sse_core(
             // every reconnect, so derive a stable per-delivery key (SSE id >
             // x-github-delivery header > content hash) and skip anything already
             // published this process (bug-hunt 2026-06-07 triggers #1).
-            let sse_id = message
-                .lines()
-                .find_map(|l| l.strip_prefix("id:"))
-                .map(|s| s.trim().to_string())
-                .filter(|s| !s.is_empty());
+            let sse_id = message.id;
             if let Some(ref id) = sse_id {
                 dedup.last_event_id = Some(id.clone());
             }
@@ -512,7 +453,7 @@ async fn relay_sse_core(
                     data.hash(&mut h);
                     format!("h:{:x}", h.finish())
                 });
-            if !dedup.check_and_insert(dedup_key) {
+            if !dedup.check_and_insert(dedup_key.clone()) {
                 tracing::debug!(
                     relay_key = %params.relay_key,
                     "Smee relay: skipping duplicate (replayed) event"
@@ -574,7 +515,15 @@ async fn relay_sse_core(
                     tracing::debug!(event_id = %event.id, "Smee relay: published event");
                 }
                 Err(e) => {
-                    tracing::debug!(error = %e, "Smee relay: failed to publish event");
+                    // The delivery did not land: un-record it so smee's replay
+                    // on the next reconnect is handled instead of skipped as a
+                    // duplicate.
+                    dedup.forget(&dedup_key);
+                    tracing::warn!(
+                        relay_key = %params.relay_key,
+                        error = %e,
+                        "Smee relay: failed to publish event; it will be accepted again if replayed"
+                    );
                 }
             }
         }

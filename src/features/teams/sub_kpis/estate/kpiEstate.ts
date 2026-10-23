@@ -15,7 +15,7 @@
 // Pure: no React, no store, no i18n. The sentences live in `kpiNextMove`.
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 
-import { kpiTrack } from '../kpiMath';
+import { kpiInstantMs, kpiTrack } from '../kpiMath';
 import type { KpiBand, KpiGroupRollup, KpiProjectRollup } from '../kpiOverviewModel';
 import { bandOf } from '../kpiOverviewModel';
 
@@ -43,7 +43,7 @@ export function freshDays(cadence: string | null | undefined): number {
 /** Epoch ms of a KPI's newest reading, or null when it has never been read. */
 export function lastReadAt(kpi: DevKpi): number | null {
   if (!kpi.last_measured_at) return null;
-  const ms = new Date(kpi.last_measured_at.replace(' ', 'T')).getTime();
+  const ms = kpiInstantMs(kpi.last_measured_at);
   return Number.isFinite(ms) ? ms : null;
 }
 

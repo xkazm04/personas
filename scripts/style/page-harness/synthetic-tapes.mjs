@@ -33,7 +33,10 @@ import { monitorRailTapes } from './monitorRailTapes.mjs';
 import { monitorActivityTapes } from './monitorActivityTapes.mjs';
 import { mandateLanesTapes } from './mandateLanesTapes.mjs';
 import { decisionDeckTapes } from './decisionDeckTapes.mjs';
+import { blueprintTapes } from './blueprintTapes.mjs';
 import { mandateCardsTapes } from './mandateCardsTapes.mjs';
+import { mandateWp6Tapes } from './mandateWp6Tapes.mjs';
+import { breachStatesTapes } from './breachStatesTapes.mjs';
 import { athenaChatTapes } from './athenaChatTapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
@@ -348,8 +351,12 @@ const BUILDERS = {
   ...mandateLanesTapes({ RECORDED_AT }).builders,
   // The live Decision Deck (decisionDeckSurfaces.tsx, decisionDeckTapes.mjs).
   ...decisionDeckTapes({ RECORDED_AT, PERSONAS }).builders,
+  // The product blueprint drawing set (blueprintSurfaces.tsx, blueprintTapes.mjs): empty tape, the fixture is the data.
+  ...blueprintTapes({ RECORDED_AT }).builders,
   // The mandate-lane card shapes in the live deck (mandateCardsSurfaces.tsx, mandateCardsTapes.mjs).
   ...mandateCardsTapes({ RECORDED_AT, PERSONAS }).builders,
+  ...mandateWp6Tapes({ RECORDED_AT, PERSONAS }).builders, // WP6 surfaces (mandateWp6Tapes.mjs).
+  ...breachStatesTapes({ RECORDED_AT, PERSONAS }).builders, // Breach states (breachStatesTapes.mjs, WP5P).
   // Module 3, the Fleet cluster (fleetSurfaces.tsx, fleetTapes.mjs).
   ...fleetTapes({ RECORDED_AT }).builders,
   // The session terminal modal (fleetTerminalSurfaces.tsx, fleetTerminalTapes.mjs).

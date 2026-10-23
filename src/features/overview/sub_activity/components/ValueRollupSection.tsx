@@ -7,6 +7,7 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { getValueRollup } from '@/api/overview/observability';
 import { fmtCost } from '../libs/executionMetricsHelpers';
 import { silentCatch } from '@/lib/silentCatch';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { SUMMARY_GRID } from '@/features/overview/libs/dashboardGrid';
 import type { ValueRollup } from '@/lib/bindings/ValueRollup';
 
@@ -34,22 +35,31 @@ export function ValueRollupSection({ days }: Props) {
   const { t, language } = useTranslation();
   const [rollup, setRollup] = useState<ValueRollup | null>(null);
   const [loaded, setLoaded] = useState(false);
+  // A failed read must not fall through to the "nothing to show" branch,
+  // which renders nothing and so reads as a clean window.
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
     setLoaded(false);
     getValueRollup(days)
       .then((r) => {
-        if (active) setRollup(r);
+        if (!active) return;
+        setRollup(r);
+        setFailed(false);
       })
-      .catch(silentCatch('ValueRollupSection:getValueRollup'))
+      .catch((err) => {
+        silentCatch('ValueRollupSection:getValueRollup')(err);
+        if (active) setFailed(true);
+      })
       .finally(() => {
         if (active) setLoaded(true);
       });
     return () => {
       active = false;
     };
-  }, [days]);
+  }, [days, attempt]);
 
   if (!loaded) {
     return (
@@ -66,6 +76,21 @@ export function ValueRollupSection({ days }: Props) {
             />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (failed) {
+    return (
+      <div className="space-y-2">
+        <h4 className="typo-heading text-emerald-400/80 flex items-center gap-1.5">
+          <Target className="w-3 h-3" /> {t.overview.activity.value_section_title}
+        </h4>
+        <InlineErrorBanner
+          compact
+          message={t.overview.observability.error_recovery.panel_failed}
+          onRetry={() => setAttempt((n) => n + 1)}
+        />
       </div>
     );
   }

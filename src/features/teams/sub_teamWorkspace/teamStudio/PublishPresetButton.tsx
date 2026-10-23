@@ -22,7 +22,10 @@ export function PublishPresetButton({ teamId }: { teamId: string }) {
   const [done, setDone] = useState(false);
 
   const handlePublish = async () => {
-    if (publishing) return;
+    // Every call POSTs a NEW catalog entry (gallery_publish_preset has no
+    // idempotency key), so a second click after success would publish the
+    // same team twice. Done is terminal for this mount.
+    if (publishing || done) return;
     setPublishing(true);
     try {
       await publishTeamAsPreset(teamId, null, getInstallId());
@@ -50,6 +53,7 @@ export function PublishPresetButton({ teamId }: { teamId: string }) {
           loading={publishing}
           icon={done ? <Check className="w-3.5 h-3.5" /> : <Users className="w-3.5 h-3.5" />}
           onClick={handlePublish}
+          disabled={done}
           data-testid="team-publish-preset-btn"
         >
           {done ? p.published_short : p.button}

@@ -20,7 +20,6 @@ import {
   query,
   readAdoptionState,
   seedAdoptionAnswers,
-  selectAdoptionVariant,
   sleep,
   waitForBuildPhase,
   waitForExecution,
@@ -226,8 +225,8 @@ test('marathon-template', async () => {
     // there's no specific testid on the AdoptionWizardModal so we
     // match the dialog + the id of the title node.
     await waitForVisible('[role="dialog"], #adoption-matrix-title', 15_000);
-    // Switch to persona-layout (Glyph) variant
-    await selectAdoptionVariant('persona-layout');
+    // The adoption modal has one layout now; the Classic / Persona Layout
+    // switcher this step used to click is gone (no layout_tab_* in src).
     await sleep(300);
     return { opened: true };
   });
@@ -396,8 +395,10 @@ test('marathon-template', async () => {
         result.capability_results.push({ cap_id: capId, outcome: 'hard-fail', detail: `execution-timeout (${mode})` });
         continue;
       }
-      if (row.status === 'failed') {
-        result.capability_results.push({ cap_id: capId, outcome: 'hard-fail', execution_id: row.id, detail: `execution-failed (${mode})` });
+      // Any terminal status but completed is a failed capability: failed,
+      // incomplete (the process died) and cancelled all ran nothing to verify.
+      if (row.status !== 'completed') {
+        result.capability_results.push({ cap_id: capId, outcome: 'hard-fail', execution_id: row.id, detail: `execution-${row.status} (${mode})` });
         continue;
       }
       // Phase 7: metadata check. Real executions should produce at

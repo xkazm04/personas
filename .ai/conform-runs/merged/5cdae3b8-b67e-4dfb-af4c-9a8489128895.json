@@ -1,0 +1,29 @@
+{"schema":"conform-run/1","worker":"5cdae3b8-b67e-4dfb-af4c-9a8489128895","subject":"prompt-assembly","evaluatedAt":"2026-10-16T18:06:32Z",
+"pairs":[
+{"context":"a3b615d2-05d8-47bd-ad92-672c6b42b0f3","subject":"prompt-assembly","bundle":"software-engineering","state":"deviation",
+ "evaluatedAgainst":"sha256-b2:ad13b2ee69c25e8d","evaluatedRevision":44,
+ "evidence":"src-tauri/engine/src/ai_healing.rs:171 cuts the failure text at 2000 bytes (truncate_on_char_boundary) with no notice, so the self-healing model diagnoses a partial error that presents as complete; and src-tauri/src/engine/deliberation.rs:1320 renders the capability layer after the per-turn conversation (:1303), so no two turns share a stable prefix",
+ "techniques":[
+  {"technique":"context-budgeting","verdict":"deviation","evidence":"src-tauri/engine/src/ai_healing.rs:171 error = truncate_str(error, 2000) drops the tail silently; contrast src-tauri/src/engine/deliberation.rs:444 which appends [truncated]"},
+  {"technique":"layered-composition","verdict":"deviation","evidence":"src-tauri/src/engine/deliberation.rs:1320 YOUR CAPABILITIES is written after THE CONVERSATION SO FAR (:1303), against the stability gradient; src-tauri/engine/src/ai_healing.rs:145 is a call-site format! with no family assembler"},
+  {"technique":"variable-interpolation","verdict":"deviation","evidence":"src-tauri/src/engine/deliberation.rs:1314 other members' model-authored turns are interpolated as bare '- {who}: {line}' bullets with no trust class or boundary"},
+  {"technique":"capability-documentation","verdict":"conformant","evidence":"src-tauri/src/engine/deliberation.rs:1320 the capability list is rendered only when non-empty, from caller-supplied (id, title) pairs, and the act clause changes with it"}]},
+{"context":"7826a48f-5883-4f26-8476-c3c515bda745","subject":"prompt-assembly","bundle":"software-engineering","state":"deviation",
+ "evaluatedAgainst":"sha256-b2:ad13b2ee69c25e8d","evaluatedRevision":44,
+ "evidence":"src/lib/personas/parsers/workflowPipeline.ts:230 writes the imported persona's Tool Guidance naming tools by node label while the tools actually created are ${service}_${safeName} (:189), and the engine renders that section into every run (src-tauri/engine/src/prompt/assemble.rs:475) - capability drift born at import",
+ "techniques":[
+  {"technique":"capability-documentation","verdict":"deviation","evidence":"src/lib/personas/parsers/workflowPipeline.ts:230 hand-written 'Use the following tools in sequence: <labels>' instead of text derived from the tool ids built at :189"},
+  {"technique":"layered-composition","verdict":"conformant","evidence":"src/lib/personas/promptMigration.ts:48 STANDARD_SECTION_KEYS gives identity/instructions/toolGuidance/... owned sections that the Rust assembler renders"},
+  {"technique":"fingerprinting-and-cache-keys","verdict":"deviation","evidence":"src/lib/personas/promptMigration.ts:244 previewPrompt silently falls back to renderToMarkdown, which omits tools/protocols, so the reviewed preview is not the prompt sent and nothing marks it partial"}]}
+],
+"declined":[
+ {"subject":"prompt-assembly","context":"c5228746-931d-4733-9cf7-84519a2c9605","reason":"not-applicable in substance, left for a run that can write it: the design hooks hand typed inputs to backend commands and assemble nothing (src/hooks/design/core/useDesignAnalysis.ts:169 startDesignAnalysis(instruction, personaId, clientDesignId)); recorded as a decline only because this worker could not confirm every file in the 30-file context list was prompt-free beyond a grep"},
+ {"subject":"prompt-assembly","context":"ae80cd74-5beb-4d76-ae0a-16a4b581a2df","reason":"read and left unknown: a models crate, not an assembler. The only live section renderer is deterministic and conditional (src-tauri/core/src/models/platform_definition.rs:96, consumed at src-tauri/src/commands/design/n8n_transform/prompts.rs:312), too little for the conformant floor of 16/32 techniques. The latent defect at :148 (format_node_roles_prompt iterates a HashMap, so section order is random per process) has no caller, so it is not yet a deviation"}
+],
+"consults":[
+ {"ts":"2026-10-16T18:06:32Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["context-budgeting","layered-composition","variable-interpolation","capability-documentation"],"deviations":3},
+ {"ts":"2026-10-16T18:06:32Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["capability-documentation","layered-composition","fingerprinting-and-cache-keys"],"deviations":2},
+ {"ts":"2026-10-16T18:06:32Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["pinned-prompt-clock"],"deviations":0}
+],
+"registryProposal":"applications/rust--pinned-prompt-clock--personas.md (verified_on 2026-09-29): substance still holds at 2026-10-16 (variables.rs:23 now/to_rfc3339 unchanged; no shipped template uses {{now}}/{{iso8601}}, only tests/runtime_safety.rs:21), but two anchors drifted: assemble.rs:1172 -> :1207 (the %H:%M:%S fmt), runner/mod.rs:1690 -> :1698 (append_spawn_time_section call); re-stamp verified_on and fix the line numbers. Also: the map's prompt-assembly pairs carry revision 43 / sha256-b2:7436fd55a7cb2500 while the index is at 44 / sha256-b2:ad13b2ee69c25e8d; verdicts here were written against 44."
+}

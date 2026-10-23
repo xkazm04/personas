@@ -121,5 +121,12 @@
   "view_logs": "লগ",
   "yesterday": "গতকাল",
   "your_tier": "(আপনার)",
-  "agent_pipeline_title": "{ref}-এ {agent}-এর পাইপলাইন: {status}"
+  "agent_pipeline_title": "{ref}-এ {agent}-এর পাইপলাইন: {status}",
+  "pipeline_count_one": "{count}টি পাইপলাইন",
+  "pipeline_count_other": "{count}টি পাইপলাইন",
+  "notify_title_success": "পাইপলাইন সফল হয়েছে",
+  "notify_title_failed": "পাইপলাইন ব্যর্থ হয়েছে",
+  "notify_title_canceled": "পাইপলাইন বাতিল হয়েছে",
+  "notify_title_other": "পাইপলাইন {status}",
+  "notify_body": "{ref}-এ পাইপলাইন #{id} এখন {status}"
 }

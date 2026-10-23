@@ -39,17 +39,12 @@ import { useSystemStore } from '@/stores/systemStore';
 import { PRESET_SKILLS, presetVisual } from '../../constants/presetSkills';
 import { useRegistryLibrary } from '../../sub_workspaces/registry/useRegistryLibrary';
 import { useWorkspaces, workspaceOf } from '../../sub_workspaces/workspaceStore';
-import { parseSkillArg } from '../analytics/useSkillsAnalytics';
+import { normPath, skillsRunBy } from '../skillSessionMatch';
 import { cellKey, type RegistryCell, type RegistryColumn, type RegistryModel, type RegistrySkill } from './registryTypes';
 
-const LIVE_STATES = new Set(['spawning', 'running', 'awaiting_input']);
 const GROUP_LABEL: Record<string, string> = {
   technical: 'Technical', user: 'User experience', business: 'Business', mastermind: 'Mastermind',
 };
-
-function normPath(p: string): string {
-  return p.replace(/\\/g, '/').toLowerCase().replace(/\/+$/, '');
-}
 
 interface Fetched {
   loading: boolean;
@@ -184,10 +179,12 @@ export function useSkillsRegistry(activeProjectId: string | null, refreshTick = 
 
       const runningSet = new Set<string>();
       for (const sess of (snap as { sessions: Array<{ args: string[]; cwd: string; state: string }> }).sessions) {
-        if (!LIVE_STATES.has(sess.state)) continue;
-        const parsed = parseSkillArg(sess.args);
+        // The Launch tab's matcher, not the first arg alone: a session Athena
+        // dispatched carries `/skill` later in its args, and read as idle here
+        // it left the cell open to a second adopt of the same skill.
         const pid = projectRootById.get(normPath(sess.cwd));
-        if (parsed && pid) runningSet.add(cellKey(parsed.skill, pid));
+        if (!pid) continue;
+        for (const skill of skillsRunBy(sess, libraryNames)) runningSet.add(cellKey(skill, pid));
       }
 
       setF({ ...phase1, covByKey, ctxByProject, coveredByProject, usageByKey, runningSet });

@@ -41,12 +41,14 @@
   "budget_label": "বাজেট",
   "build_validation": {
     "composite_min_conditions": "সম্মিলিত ট্রিগারে অন্তত ২টি শর্ত প্রয়োজন।",
+    "composite_window_maximum": "সময় উইন্ডো সর্বোচ্চ ২৪ ঘণ্টা (৮৬৪০০ সেকেন্ড) হতে পারে।",
     "composite_window_minimum": "সময় উইন্ডো অন্তত ৫ সেকেন্ড হতে হবে।",
     "cron_invalid": "অবৈধ Cron এক্সপ্রেশন।",
     "cron_required": "Cron এক্সপ্রেশন আবশ্যক।",
     "endpoint_required": "এন্ডপয়েন্ট URL বা ইভেন্ট প্রয়োজন।",
     "event_type_required": "শোনার জন্য ইভেন্ট টাইপ আবশ্যক।",
     "interval_minimum": "ইন্টারভাল অন্তত ৬০ সেকেন্ড হতে হবে।",
+    "watch_events_required": "পর্যবেক্ষণের জন্য অন্তত একটি ফাইল ইভেন্ট নির্বাচন করুন।",
     "watch_path_required": "অন্তত একটি ওয়াচ পাথ আবশ্যক।"
   },
   "builder": {
@@ -183,6 +185,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} ইভেন্ট",
   "dead_letter_bulk_retry_title": "আবার চেষ্টা every selected ইভেন্ট in a single transaction",
   "dead_letter_clear_filters_to_see": "সাফ করুন filters to see all dead-lettered ইভেন্ট",
+  "dead_letter_load_failed_title": "ডেড লেটার সারি লোড করা যায়নি",
+  "dead_letter_load_failed_desc": "সারিটি পড়া যায়নি, তাই এখানে খালি তালিকা বিভ্রান্তিকর হবে। আপনার ইভেন্টগুলি হারায়নি - আবার চেষ্টা করুন।",
   "dead_letter_clear_selection": "সাফ করুন",
   "dead_letter_discard": "বাতিল",
   "dead_letter_discard_title": "এই ইভেন্টটি স্থায়ীভাবে বাতিল করুন",
@@ -623,9 +627,12 @@
     "automation_delete": "অটোমেশন মুছুন",
     "automation_enabled": "সক্রিয়",
     "automation_failed": "ব্যর্থ হয়েছে",
+    "automation_held": "অনুমোদনের জন্য স্থগিত",
     "automation_idle": "ইভেন্টের জন্য অপেক্ষা করছে",
     "automation_next": "পরবর্তী",
+    "automation_partial": "আংশিক চলেছে",
     "automation_ran": "চলেছে",
+    "automation_requested": "অনুরোধ করা হয়েছে",
     "automation_run_now": "এখনই চালান",
     "automations_title": "সক্রিয় সিস্টেম ইভেন্ট",
     "cadence_custom": "কাস্টম cron…",
@@ -945,5 +952,7 @@
   "add_persona_available": "{count}টি উপলব্ধ",
   "add_persona_all_connected": "সব পার্সোনা ইতিমধ্যে সংযুক্ত",
   "add_persona_ungrouped": "গ্রুপহীন",
-  "live_status_skipped": "এড়িয়ে যাওয়া হয়েছে"
+  "live_status_skipped": "এড়িয়ে যাওয়া হয়েছে",
+  "webhooks_load_failed": "ওয়েবহুক ট্রিগার লোড করা যায়নি",
+  "webhooks_load_failed_desc": "তালিকাটি পড়া যায়নি, তাই এখানে খালি তালিকা দেখানো বিভ্রান্তিকর হবে। আপনার ট্রিগারগুলো হারায়নি - আবার চেষ্টা করুন।"
 }

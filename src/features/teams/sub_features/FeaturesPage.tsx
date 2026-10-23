@@ -264,7 +264,7 @@ export default function FeaturesPage() {
             </div>
           ) : !projectId && !fixtureBoard ? (
             <div className="flex flex-1 items-center justify-center p-6">
-              <ScenarioEmptyState title={f.no_project_title} subtitle={f.no_project_subtitle} />
+              <ScenarioEmptyState art="folder" size="lg" title={f.no_project_title} subtitle={f.no_project_subtitle} />
             </div>
           ) : loading && !board ? (
             /* A calm ghost UNDER the chrome, never a spinner for a surface. */
@@ -274,6 +274,8 @@ export default function FeaturesPage() {
           ) : board?.neverScanned ? (
             <div className="flex flex-1 items-center justify-center p-6">
               <ScenarioEmptyState
+                art="launch"
+                size="lg"
                 title={f.never_scanned_title}
                 subtitle={f.never_scanned_subtitle}
                 action={devToolsReachable ? { label: f.never_scanned_action, onClick: openContext } : undefined}
@@ -282,6 +284,8 @@ export default function FeaturesPage() {
           ) : board && board.features.length === 0 ? (
             <div className="flex flex-1 items-center justify-center p-6">
               <ScenarioEmptyState
+                art="launch"
+                size="lg"
                 title={f.no_features_title}
                 subtitle={f.no_features_subtitle}
                 action={devToolsReachable ? { label: f.no_features_action, onClick: openContext } : undefined}
@@ -387,7 +391,7 @@ export default function FeaturesPage() {
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center p-6">
-                      <ScenarioEmptyState title={f.pick_title} subtitle={f.pick_subtitle} />
+                      <ScenarioEmptyState art="inbox" size="lg" title={f.pick_title} subtitle={f.pick_subtitle} />
                     </div>
                   )}
                 </div>

@@ -1,16 +1,14 @@
 /**
- * TIME TRAVEL: the page's one time cursor. Layer 1 shows NOW (the snapshot)
- * unless a past Measure is being viewed; then the rail's Gate and Tests cards,
- * the status band and the history figure all show that Measure, and every
- * other step is drawn dimmed as it is now. Layer 2's Gate and Tests strips
- * read and move the same cursor, so a Measure picked on a step's screen is the
- * one Layer 1 shows on return, and the other way round.
+ * TIME TRAVEL: the page's one time cursor. A project's planes show NOW (the
+ * snapshot) unless a past Measure is being viewed; the Gate and Tests step
+ * screens' history strips read and move the cursor, and their bands show the
+ * Measure it is on, so walking between the two steps keeps the same Measure.
  *
- * Mounted above both layers (`LifecycleBody`). Nothing is refetched to travel:
+ * Mounted above every plane (`LifecyclePage`). Nothing is refetched to travel:
  * the history payload holds every Measure's cells and runs.
  *
- * Esc returns to now, on the app's keyboard ladder at the default rung (Layer
- * 2's own Esc, at the route rung, still goes back to Layer 1 first), and only
+ * Esc returns to now, on the app's keyboard ladder at the default rung (the
+ * step screen's own Esc, at the route rung, still goes back first), and only
  * while a past Measure is viewed. A project switch, or a history that no
  * longer holds the viewed Measure, returns to now.
  */

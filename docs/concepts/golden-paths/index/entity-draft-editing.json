@@ -237,6 +237,14 @@
       "resolvedFrom": "basename",
       "verbatim": "AnnotationEditor.tsx"
     },
+    "src/features/decision-center/blueprint/model/triage.ts": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["22-26"],
+      "contexts": ["(`triage.ts:22-26`). **Draft shape ≠ patch shape**, held apart deliberately. That is exactly the"],
+      "resolvedFrom": "basename",
+      "verbatim": "triage.ts"
+    },
     "src/features/fleet/monitor/channels/ConversationComposer.tsx": {
       "count": 1,
       "sections": [7],
@@ -287,14 +295,6 @@
       "contexts": ["| `src/features/vault/shared/hooks/health/useCredentialHealth.ts:183` | the **only** client that patches a JSON blob through the server-side atomic merge instead of round-tripping it |"]
     },
     "src/features/vault/shared/hooks/useCredentialRename.ts": {"count":1,"sections":[7],"lines":["48-55"],"contexts":["| `src/features/vault/shared/hooks/useCredentialRename.ts:48-55` | **Renaming a credential clears its entire metadata column.** |"]},
-    "src/features/vault/shared/hooks/useCredentialTags.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["26-34"],
-      "contexts": ["`useCredentialTags.ts:26-34` and `PlaygroundHeader.tsx:39-47` add a tag by calling"],
-      "resolvedFrom": "basename",
-      "verbatim": "useCredentialTags.ts"
-    },
     "src/features/vault/shared/playground/PlaygroundHeader.tsx": {
       "count": 1,
       "sections": [7],
@@ -378,9 +378,9 @@
       "contexts": ["| `src/stores/slices/vault/credentialSlice.ts:189-196` | Same, on **every** store-level credential update — the slice hardcodes `metadata: null` for all callers. |"]
     },
     "src/stores/utils/persistence.ts": {"count":1,"sections":[6],"lines":["99-155"],"contexts":["(though `src/stores/utils/persistence.ts:99-155` provides an unused `'session_work'` category with"],"resolved":false},
-    "triage.ts": {"count":1,"sections":[6],"lines":["22-26"],"contexts":["(`triage.ts:22-26`). **Draft shape ≠ patch shape**, held apart deliberately. That is exactly the"],"resolved":false},
     "triggers.rs": {"count":2,"sections":[7],"lines":["449-450","1590-1596"],"contexts":["**There is a guard against exactly this, and the client defeats it.** `triggers.rs:449-450` reads:"],"resolved":false},
     "types/api.ts": {"count":1,"sections":[6],"lines":["190-193"],"contexts":["`UpdateProjectRequest extends Partial<CreateProjectRequest>` (`types/api.ts:190-193`), while three"],"resolved":false},
+    "useCredentialTags.ts": {"count":1,"sections":[7],"lines":["26-34"],"contexts":["`useCredentialTags.ts:26-34` and `PlaygroundHeader.tsx:39-47` add a tag by calling"],"resolved":false},
     "useScheduleActions.ts": {"count":2,"sections":[7],"lines":["112","134"],"contexts":["`useScheduleActions.ts:112` (edit a schedule's cron), `useScheduleActions.ts:134` (pause/resume),"],"resolved":false},
     "withValidation.ts": {"count":1,"sections":[6],"lines":["19-48"],"contexts":["**zero call sites**. So does `vibeman`'s `withValidation` (`withValidation.ts:19-48`) and its"],"resolved":false}
   }

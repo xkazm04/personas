@@ -96,8 +96,10 @@ export interface FacetedDecisionTableProps<T> {
   fit?: 'fill' | 'content' | 'page';
   /* -- DataGrid selection / bulk pass-throughs ------------------------------ */
   isRowSelected?: (row: T) => boolean;
+  /** Header checkbox state. Omitted: derived from `isRowSelected` over the NARROWED rows. */
   selectAll?: boolean;
-  onSelectAll?: () => void;
+  /** Receives the rows the rail, search and filters narrowed to (the set the reviewer sees), never `items`. */
+  onSelectAll?: (rows: T[]) => void;
   selectedCount?: number;
   bulkActions?: DataGridBulkAction[];
   onClearSelection?: () => void;
@@ -133,11 +135,16 @@ export function FacetedDecisionTable<T>({
   bulkActions,
   onClearSelection,
 }: FacetedDecisionTableProps<T>) {
-  const [selected, setSelected] = useState('');
+  const [chosen, setSelected] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(['']));
   const [query, setQuery] = useState('');
 
   const tree = useMemo(() => buildGroupTree(items, getGroupPath), [items, getGroupPath]);
+  // A chosen group the data no longer contains (a refetch emptied it, a
+  // sibling decision moved its last item) reads as the root, not as an
+  // empty table under a summary naming a group the rail no longer shows.
+  // Derived, not reset: if the group comes back, so does the choice.
+  const selected = chosen && !hasGroup(tree, chosen) ? '' : chosen;
 
   const rows = useMemo(() => {
     const branch = itemsUnderGroup(items, getGroupPath, selected);
@@ -201,6 +208,7 @@ export function FacetedDecisionTable<T>({
               <input
                 className={`${INPUT_FIELD} pl-8 w-56`}
                 placeholder={labels.searchPlaceholder}
+                aria-label={labels.searchPlaceholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
@@ -225,8 +233,8 @@ export function FacetedDecisionTable<T>({
           emptyTitle={labels.emptyTitle}
           emptyDescription={labels.emptyDescription}
           isRowSelected={isRowSelected}
-          selectAll={selectAll}
-          onSelectAll={onSelectAll}
+          selectAll={selectAll ?? (isRowSelected ? rows.length > 0 && rows.every(isRowSelected) : undefined)}
+          onSelectAll={onSelectAll ? () => onSelectAll(rows) : undefined}
           selectedCount={selectedCount}
           bulkActions={bulkActions}
           onClearSelection={onClearSelection}
@@ -236,6 +244,11 @@ export function FacetedDecisionTable<T>({
       </div>
     </div>
   );
+}
+
+function hasGroup(node: GroupNode, path: string): boolean {
+  if (node.path === path) return true;
+  return node.children.some((child) => (path === child.path || path.startsWith(`${child.path}/`)) && hasGroup(child, path));
 }
 
 function TreeBranch({
@@ -333,6 +346,7 @@ function NodeButton({
         <button
           type="button"
           aria-label={expanded ? collapseLabel : expandLabel}
+          aria-expanded={expanded}
           onClick={onToggle}
           className="p-0.5 text-foreground/70 hover:text-foreground"
         >
@@ -346,6 +360,7 @@ function NodeButton({
       <button
         type="button"
         onClick={onSelect}
+        aria-current={active ? 'true' : undefined}
         className="flex-1 min-w-0 flex flex-col gap-0.5 py-1 text-left"
       >
         <span className="flex items-center justify-between gap-2">

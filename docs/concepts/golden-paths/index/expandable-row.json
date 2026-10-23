@@ -44,6 +44,7 @@
     "SkillsCatalog.tsx": {"count":3,"sections":[7],"lines":["236","124","270"],"contexts":["`SkillsCatalog.tsx:236` holds `openId` seeded from `ranked[0]?.id` and compares"],"resolved":false},
     "ToneConsole.tsx": {"count":6,"sections":[4,5,7,8,9],"lines":["158-241","159-167","159"],"contexts":["with the summary row in a `<Fragment key={row.id}>` — `ToneConsole.tsx:158-241` and"],"resolved":false},
     "eslint.config.js": {"count":1,"sections":[9],"contexts":["deliberate and is the reason to put it here rather than in `eslint.config.js` — as"]},
+    "hooks/utility/interaction/useToggleSet.ts": {"count":3,"sections":[6,7,8],"lines":["6-14"],"contexts":["- `hooks/utility/interaction/useToggleSet.ts:6-14` — the many-at-a-time toggle, once."],"resolved":false},
     "overview/sub_director/components/PersonaDetailModal.tsx": {"count":1,"sections":[7],"contexts":["- `overview/sub_director/components/PersonaDetailModal.tsx` — the **row** disclosure at"],"resolved":false},
     "personas-web/src/components/dashboard/DataTable.tsx": {"count":1,"sections":[8],"contexts":["exists, in a sibling repo:** `personas-web/src/components/dashboard/DataTable.tsx` —"],"resolved":false},
     "plugins/companion/orchestration/LiveOpsStrip.tsx": {"count":1,"sections":[7],"contexts":["- `plugins/companion/orchestration/LiveOpsStrip.tsx` — **two buttons toggling the same"],"resolved":false},
@@ -283,9 +284,15 @@
     },
     "src/features/vault/shared/playground/tabs/useApiExplorerState.ts": {"count":1,"sections":[7],"lines":["20"],"contexts":["The single defect is live and precise. `useApiExplorerState.ts:20` holds"],"resolvedFrom":"basename","verbatim":"useApiExplorerState.ts"},
     "src/hooks/index.ts": {"count":1,"sections":[3],"lines":["67"],"contexts":["retyped **60 times**. Exported from `@/hooks` (`hooks/index.ts:67`). **One adopter"],"resolvedFrom":"suffix","verbatim":"hooks/index.ts"},
-    "src/hooks/lab/useToggleSet.ts": {"count":1,"sections":[8],"contexts":["`@/hooks`; `hooks/lab/useToggleSet.ts` returns a richer object with `has` / `clear` /"],"resolvedFrom":"suffix","verbatim":"hooks/lab/useToggleSet.ts"},
-    "src/hooks/utility/interaction/useToggleSet.ts": {"count":4,"sections":[3,6,7,8],"lines":["6-14"],"contexts":["- **`src/hooks/utility/interaction/useToggleSet.ts` — `useToggleSet<T>()`** — the"]},
-    "src/i18n/useTranslation.ts": {"count":1,"sections":[3],"contexts":["- **`src/i18n/useTranslation.ts` — `t` / `tx`** — the control's accessible name and any"]},
-    "useToggleSet.ts": {"count":1,"sections":[5],"lines":["6-14"],"contexts":["`useToggleSet.ts:6-14`. It is not a hard function to write; that is why it is written"],"resolved":false}
+    "src/hooks/lab/useToggleSet.ts": {
+      "count": 2,
+      "sections": [5,8],
+      "lines": ["6-14"],
+      "contexts": ["`useToggleSet.ts:6-14`. It is not a hard function to write; that is why it is written"],
+      "resolvedFrom": "basename",
+      "verbatim": "useToggleSet.ts"
+    },
+    "src/hooks/utility/interaction/useToggleSet.ts": {"count":1,"sections":[3],"contexts":["- **`src/hooks/utility/interaction/useToggleSet.ts` — `useToggleSet<T>()`** — the"],"resolved":false},
+    "src/i18n/useTranslation.ts": {"count":1,"sections":[3],"contexts":["- **`src/i18n/useTranslation.ts` — `t` / `tx`** — the control's accessible name and any"]}
   }
 }

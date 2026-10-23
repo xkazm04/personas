@@ -10,6 +10,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import { assertionConfigJson, parsePhrases } from './assertionConfig';
 
 /**
  * Quality gates — declarative output assertions attached to a persona and
@@ -52,7 +53,7 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
   };
 
   const handleCreate = async () => {
-    const phrases = phrase.split(',').map((p) => p.trim()).filter(Boolean);
+    const phrases = parsePhrases(phrase);
     if (!name.trim() || phrases.length === 0) return;
     setSaving(true);
     try {
@@ -60,7 +61,8 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
         personaId,
         name: name.trim(),
         assertionType,
-        config: JSON.stringify({ phrases, case_sensitive: false }),
+        // The engine reads `patterns` for not_contains, `phrases` for contains.
+        config: assertionConfigJson(assertionType, phrases),
         severity: 'warning',
         onFailure,
       });

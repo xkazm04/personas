@@ -3,8 +3,9 @@ import { cronFireTimesInRange, listRecentScheduleRuns } from '@/api/pipeline/tri
 import { classifyRunOutcome, matchPastSlotsToRuns, type CalendarEvent, type RunPoint } from './calendarHelpers';
 import type { ScheduleEntry } from './scheduleHelpers';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
-// The recent-runs history command caps at 168h / 200 rows; a month view whose
+// The recent-runs history command caps at 168h (2100 rows per trigger); a month view whose
 // past portion reaches further back simply gets no run records for the older
 // slots, which then render honestly as 'past-unknown'.
 const RECENT_RUNS_MAX_HOURS = 168;
@@ -60,7 +61,7 @@ function slotCapForWindow(startMs: number, endMs: number): number {
  *    downtime drift, contribute their real runs directly as past events.
  *
  * Run history is fetched only when the window has a past portion, bounded to the
- * command's 168h cap. Stale responses are discarded via a request-id ref.
+ * command's 168h cap. Stale responses are discarded via a createLatestWins token.
  */
 export function useCalendarEvents(
   entries: ScheduleEntry[],
@@ -68,13 +69,12 @@ export function useCalendarEvents(
   end: Date,
 ): CalendarEventsResult {
   const [result, setResult] = useState<CalendarEventsResult>({ events: [], loading: false });
-  const reqIdRef = useRef(0);
+  const latestWins = useRef(createLatestWins()).current;
   const startMs = start.getTime();
   const endMs = end.getTime();
 
-  // Effect keys on a value signature instead of the `entries` array identity
-  // (mirrors useConflictPreview's `sig` below): every 30s poll produces a
-  // brand-new entries array, and identity-keying refired this effect — re-running
+  // Effect keys on a value signature instead of the `entries` array identity:
+  // every 30s poll produces a brand-new entries array, and identity-keying refired this effect — re-running
   // every cron_fire_times_in_range IPC (up to 500 slots × N schedules) with an
   // open calendar even when nothing changed. Run-history freshness is preserved:
   // a run completing changes recent_executions / last_triggered_at, which are
@@ -96,7 +96,7 @@ export function useCalendarEvents(
       setResult({ events: [], loading: false });
       return;
     }
-    const myId = ++reqIdRef.current;
+    const myId = latestWins.next();
     setResult((prev) => ({ ...prev, loading: true }));
     const startD = new Date(startMs);
     const endD = new Date(endMs);
@@ -110,7 +110,7 @@ export function useCalendarEvents(
     let runsLeft = startMs < nowMs ? 1 : 0;
 
     const publish = () => {
-      if (myId !== reqIdRef.current) return;
+      if (!latestWins.isCurrent(myId)) return;
       const events = assembleCalendarEvents(entries, slotsPerEntry, runsByTrigger);
       setResult({ events, loading: slotsLeft > 0 || runsLeft > 0 });
     };
@@ -135,7 +135,10 @@ export function useCalendarEvents(
             (d.getTime() < nowMs ? pastCron : future).push(d);
           }
           return { future, pastCron };
-        } catch {
+        } catch (err) {
+          // The trigger renders with no fires at all; leave a breadcrumb so an
+          // engine-side refusal of its expression is findable.
+          silentCatch('features/schedules/libs/useCronPreview:cronFireTimes')(err);
           return EMPTY_SLOTS;
         }
       }
@@ -159,7 +162,7 @@ export function useCalendarEvents(
       );
       void listRecentScheduleRuns(hours)
         .then((runs) => {
-          if (myId !== reqIdRef.current) return;
+          if (!latestWins.isCurrent(myId)) return;
           for (const run of runs) {
             const t = Date.parse(run.created_at);
             if (Number.isNaN(t) || t < startMs || t > nowMs) continue;
@@ -180,18 +183,19 @@ export function useCalendarEvents(
     entries.forEach((entry, i) => {
       void slotOf(entry)
         .then((slots) => {
-          if (myId !== reqIdRef.current) return;
+          if (!latestWins.isCurrent(myId)) return;
           slotsPerEntry[i] = slots;
           slotsLeft -= 1;
           publish();
         })
-        .catch(() => {
-          if (myId !== reqIdRef.current) return;
+        .catch((err) => {
+          silentCatch('features/schedules/libs/useCronPreview:slots')(err);
+          if (!latestWins.isCurrent(myId)) return;
           slotsLeft -= 1;
           publish();
         });
     });
-  }, [sig, startMs, endMs]);
+  }, [sig, startMs, endMs, latestWins]);
 
   return result;
 }
@@ -252,9 +256,7 @@ function assembleCalendarEvents(
  *
  * `anchorIso` is the trigger's `next_trigger_at`. When null (paused /
  * unscheduled / brand-new) there is no engine-owned phase to project, so we
- * return nothing rather than invent one. Conflict-preview passes an explicit
- * `now + interval` anchor for a not-yet-saved candidate to match the engine's
- * "first fire" for a fresh interval trigger.
+ * return nothing rather than invent one.
  */
 export function generateIntervalFireTimes(
   intervalSeconds: number,
@@ -280,150 +282,4 @@ export function generateIntervalFireTimes(
     cursor += intervalMs;
   }
   return out;
-}
-
-// -- conflict preview --------------------------------------------------------
-
-const CONFLICT_WINDOW_MS = 5 * 60_000;
-
-/**
- * Count fire-time conflicts in the next 7 days between a candidate schedule
- * and a list of existing entries. A conflict is two fires from different
- * triggers that land within 5 minutes of each other.
- *
- * Backend-driven: candidate + each existing cron is resolved via
- * cron_fire_times_in_range so the count matches what the engine actually
- * fires (timezone, DST, and step semantics all honored). Interval triggers
- * are computed locally because they are zone-agnostic — anchored on the same
- * field the engine uses (`next_trigger_at`), or `now + interval` for the
- * not-yet-saved candidate (the engine's first fire for a fresh interval).
- *
- * Returns 0 while the IPC fetches are in flight to avoid flashing a stale
- * value; the loading flag lets the caller render a spinner if desired.
- */
-export function useConflictPreview(
-  existingEntries: ScheduleEntry[] | undefined,
-  candidateCron: string | null,
-  candidateIntervalSeconds: number | null,
-  candidateTimezone: string | undefined,
-  excludeTriggerId?: string,
-): { count: number; loading: boolean } {
-  const [result, setResult] = useState<{ count: number; loading: boolean }>({ count: 0, loading: false });
-  const reqIdRef = useRef(0);
-
-  // Stable serialization of the existing-entry list for dep tracking. Only
-  // the schedule-shaping fields matter; ignore everything else so re-renders
-  // from health updates do not churn the IPC fetches.
-  const sig = (existingEntries ?? [])
-    .filter((e) => e.health !== 'paused' && e.agent.trigger_id !== excludeTriggerId)
-    .map((e) => `${e.agent.trigger_id}|${e.agent.cron_expression ?? ''}|${e.agent.interval_seconds ?? ''}|${e.agent.timezone ?? ''}|${e.agent.next_trigger_at ?? ''}`)
-    .join('::');
-
-  // Entries are read through a ref so the effect keys on `sig` alone — having
-  // the raw array in the dep list defeated sig's whole purpose (health-update
-  // re-renders churned the IPC fetches, exactly what the comment above says
-  // sig prevents).
-  const entriesRef = useRef(existingEntries);
-  entriesRef.current = existingEntries;
-
-  useEffect(() => {
-    const trimmedCandidateCron = candidateCron?.trim() ?? '';
-    if (!trimmedCandidateCron && (!candidateIntervalSeconds || candidateIntervalSeconds <= 0)) {
-      setResult({ count: 0, loading: false });
-      return;
-    }
-    if (!entriesRef.current || entriesRef.current.length === 0) {
-      setResult({ count: 0, loading: false });
-      return;
-    }
-    const myId = ++reqIdRef.current;
-    setResult({ count: 0, loading: true });
-
-    // Debounced like useCronPreview above: without this, every keystroke in
-    // the custom-cron field fired 1+N cron_fire_times_in_range IPC calls
-    // (500 fire times each) — ~150 round-trips for a 15-char expression
-    // against 10 schedules.
-    const debounce = setTimeout(() => {
-    const existingEntries = entriesRef.current ?? [];
-    const now = new Date();
-    const end = new Date(now.getTime() + 7 * 24 * 3_600_000);
-
-    void (async () => {
-      // Candidate fire times.
-      let candidateTimes: Date[] = [];
-      if (trimmedCandidateCron) {
-        try {
-          // Seed with `excludeTriggerId` when editing an existing trigger: it
-          // IS the candidate's own stable id (the only live caller,
-          // FrequencyEditor, always edits an existing trigger), so an H-token
-          // candidate's conflict count is checked against the exact minutes
-          // the engine will use post-save, not the seed-0 default.
-          const isos = await cronFireTimesInRange(trimmedCandidateCron, candidateTimezone, now, end, 200, excludeTriggerId);
-          candidateTimes = isos.map((s) => new Date(s));
-        } catch {
-          candidateTimes = [];
-        }
-      } else if (candidateIntervalSeconds && candidateIntervalSeconds > 0) {
-        // Fresh interval trigger: the engine's first fire is `now + interval`
-        // (next_interval_at with a None anchor), and the cadence flows from there.
-        const candidateAnchor = new Date(now.getTime() + candidateIntervalSeconds * 1000).toISOString();
-        candidateTimes = generateIntervalFireTimes(candidateIntervalSeconds, candidateAnchor, now, end);
-      }
-      if (candidateTimes.length === 0) {
-        if (myId === reqIdRef.current) setResult({ count: 0, loading: false });
-        return;
-      }
-
-      // Existing fire times — fetch in parallel.
-      const filtered = existingEntries.filter(
-        (e) => e.health !== 'paused' && (excludeTriggerId ? e.agent.trigger_id !== excludeTriggerId : true),
-      );
-      const existingArrays = await Promise.all(
-        filtered.map(async (entry) => {
-          const a = entry.agent;
-          if (a.cron_expression) {
-            try {
-              const isos = await cronFireTimesInRange(
-                a.cron_expression,
-                a.timezone ?? undefined,
-                now,
-                end,
-                200,
-                a.trigger_id,
-              );
-              return isos.map((s) => new Date(s));
-            } catch {
-              return [] as Date[];
-            }
-          }
-          if (a.interval_seconds) {
-            return generateIntervalFireTimes(Number(a.interval_seconds), a.next_trigger_at, now, end);
-          }
-          return [] as Date[];
-        }),
-      );
-      if (myId !== reqIdRef.current) return;
-      const existingTimes = existingArrays.flat().sort((a, b) => a.getTime() - b.getTime());
-      if (existingTimes.length === 0) {
-        setResult({ count: 0, loading: false });
-        return;
-      }
-
-      let conflicts = 0;
-      for (const ct of candidateTimes) {
-        const ctMs = ct.getTime();
-        for (const et of existingTimes) {
-          if (Math.abs(ctMs - et.getTime()) <= CONFLICT_WINDOW_MS) {
-            conflicts++;
-            break;
-          }
-        }
-      }
-      setResult({ count: conflicts, loading: false });
-    })();
-    }, 300);
-    return () => clearTimeout(debounce);
-  }, [sig, candidateCron, candidateIntervalSeconds, candidateTimezone, excludeTriggerId]);
-
-  return result;
 }

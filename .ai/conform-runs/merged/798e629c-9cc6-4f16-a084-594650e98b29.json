@@ -1,0 +1,11 @@
+{"schema": "conform-run/1", "worker": "798e629c-9cc6-4f16-a084-594650e98b29", "subject": "embedded-preview",
+ "evaluatedAt": "2026-10-22T02:58:00Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "embedded-preview", "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd", "reason": "verdict is current: deviation judged 2026-10-21 against sha256-b2:a6e12ae70d42efcc rev 2, which is still the registry index digest at 82801d41; src-tauri/src/webbuild/athena_preview_agent.tsx last changed 2026-09-24 and still checks only source==='athena' (:294) and posts to window.parent with '*' (:145). Nothing to re-judge."},
+  {"subject": "embedded-preview", "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049", "reason": "verdict is current: not-applicable judged 2026-10-16 against the unchanged digest sha256-b2:a6e12ae70d42efcc rev 2"},
+  {"subject": "embedded-preview", "context": "9b6cc17c-3add-4152-a349-c189b15a109f", "reason": "verdict is current: not-applicable judged 2026-10-16 against the unchanged digest sha256-b2:a6e12ae70d42efcc rev 2"},
+  {"subject": "embedded-preview", "context": "aebcd52a-07a3-4305-bf42-d961b4f37a62", "reason": "weak context (governance: weak, confidence: probable, priorNotApplicable: 2), matched on generic tokens dev/checkpoint/surface; the skill never judges weak pairs by default. A grep of src-tauri/src/commands/infrastructure/dev_tools/ for iframe/postMessage/devserver/preview found nothing, so this looks like a vocabulary resonance, reported as a coverage question rather than a verdict"}
+ ],
+ "consults": []
+}

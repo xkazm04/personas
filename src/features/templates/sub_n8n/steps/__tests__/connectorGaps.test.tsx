@@ -80,4 +80,24 @@ describe('ConnectorsSection credential gaps', () => {
     expect(screen.queryByTestId('connector-gap-github')).toBeNull();
     expect(screen.queryByTestId('connector-gap-notion')).toBeNull();
   });
+
+  // Two vault items whose service types both extend the connector name are
+  // two candidates. matchCredentialToConnector refuses an ambiguous prefix
+  // (returns null), and the gap analysis read that null as "missing" - so the
+  // chip said no credential exists and offered the Vault to add one the user
+  // already has twice.
+  it('calls two prefix candidates ambiguous, not missing', () => {
+    setCredentials([cred('g1', 'Sheets', 'google_sheets'), cred('g2', 'Drive', 'google_drive')]);
+    render(
+      <ConnectorsSection
+        connectors={[{ name: 'google', credential_fields: [], related_tools: [], related_triggers: [] }]}
+        hasSelection={false}
+      />,
+    );
+    expect(status('google')).toBe('ambiguous');
+    const chip = screen.getByTestId('connector-gap-google').textContent ?? '';
+    expect(chip).toContain('Sheets');
+    expect(chip).toContain('Drive');
+    expect(screen.queryByTestId('connector-gaps-open-vault')).toBeNull();
+  });
 });

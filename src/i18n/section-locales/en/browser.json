@@ -38,7 +38,8 @@
     "remove_failed": "Could not remove this site",
     "open_failed": "Could not open this site",
     "save_failed": "Could not save this site",
-    "pattern_chip": "pattern"
+    "pattern_chip": "pattern",
+    "remove_body": "{origin} will be removed, along with this site's overrides and its credential binding."
   },
   "servers": {
     "title": "Server control",

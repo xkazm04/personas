@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import {
   listDeadLetterEvents,
+  countDeadLetterEvents,
   retryDeadLetterEvent,
   discardDeadLetterEvent,
   getDeadLetterConfig,
@@ -30,7 +31,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState, { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { EventReasonNote } from '../lib/EventReasonView';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 /**
  * First-paint default while `getDeadLetterConfig` is in flight. Matches the
@@ -38,6 +39,9 @@ import { silentCatch } from '@/lib/silentCatch';
  * this so UI labels never drift from `MAX_MANUAL_RETRIES` in `events.rs`.
  */
 const MAX_MANUAL_RETRIES_FALLBACK = 5;
+
+/** The list read's window. The queue can hold more; the header says so. */
+const DLQ_WINDOW = 100;
 
 type AgeFilter = 'any' | '15m' | '1h' | '24h' | 'old';
 type ViewMode = 'list' | 'grouped';
@@ -130,6 +134,13 @@ export function DeadLetterTab() {
   const { t, tx } = useTranslation();
   const [events, setEvents] = useState<PersonaEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  // A failed read is not an empty queue: without this flag a refused
+  // listDeadLetterEvents rendered "No dead-lettered events / All events
+  // processed successfully" over a queue nobody had looked at.
+  const [loadFailed, setLoadFailed] = useState(false);
+  // The queue's real size. The list is a DLQ_WINDOW-row window, and its length
+  // was printed as the queue's count: a 4,000-event backlog read "(100 events)".
+  const [queueTotal, setQueueTotal] = useState<number | null>(null);
   const [maxManualRetries, setMaxManualRetries] = useState<number>(MAX_MANUAL_RETRIES_FALLBACK);
   const [actionsInProgress, setActionsInProgress] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -155,8 +166,20 @@ export function DeadLetterTab() {
   const loadEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await listDeadLetterEvents(100);
+      // The count is an enrichment: a refused count leaves the header on the
+      // rows on screen (queueTotal null = unknown), it never blanks the list.
+      const [data, total] = await Promise.all([
+        listDeadLetterEvents(DLQ_WINDOW),
+        Promise.allSettled([countDeadLetterEvents()]).then(([r]) => r),
+      ]);
       setEvents(data);
+      if (total?.status === 'fulfilled') {
+        setQueueTotal(total.value);
+      } else {
+        setQueueTotal(null);
+        silentCatch('DeadLetterTab:countDeadLetterEvents')(total?.reason);
+      }
+      setLoadFailed(false);
       setSelected((prev) => {
         // Drop selections for ids that are no longer in the queue.
         const ids = new Set(data.map((e) => e.id));
@@ -164,12 +187,13 @@ export function DeadLetterTab() {
         for (const id of prev) if (ids.has(id)) next.add(id);
         return next;
       });
-    } catch {
-      addToast('Failed to load dead letter events', 'error');
+    } catch (err) {
+      setLoadFailed(true);
+      toastCatch('DeadLetterTab:listDeadLetterEvents')(err);
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, []);
 
   useEffect(() => { void loadEvents(); }, [loadEvents]);
 
@@ -324,8 +348,8 @@ export function DeadLetterTab() {
       } else {
         addToast(summary, 'success');
       }
-    } catch {
-      addToast('Bulk retry failed — please try again', 'error');
+    } catch (err) {
+      toastCatch('DeadLetterTab:bulkRetry')(err);
     } finally {
       setBulkInFlight(false);
     }
@@ -351,8 +375,8 @@ export function DeadLetterTab() {
           } else {
             addToast(summary, 'success');
           }
-        } catch {
-          addToast('Bulk discard failed — please try again', 'error');
+        } catch (err) {
+          toastCatch('DeadLetterTab:bulkDiscard')(err);
         } finally {
           setBulkInFlight(false);
         }
@@ -376,9 +400,9 @@ export function DeadLetterTab() {
     } catch (err: unknown) {
       const kind = (err as { kind?: string })?.kind;
       if (kind === 'retry_exhausted') {
-        addToast('Retry limit reached — this event cannot be retried again. Discard or investigate.', 'error');
+        addToast(t.triggers.dead_letter_retry_exhausted_title, 'error');
       } else {
-        addToast('Failed to retry event — please try again', 'error');
+        toastCatch('DeadLetterTab:retry')(err);
       }
     } finally {
       endAction(id);
@@ -387,11 +411,11 @@ export function DeadLetterTab() {
 
   const handleDiscard = (evt: PersonaEvent) => {
     confirm({
-      title: 'Discard Event',
-      message: 'This dead-letter event will be permanently discarded.',
-      confirmLabel: 'Discard',
+      title: t.common.confirm_destructive_discard_event,
+      message: t.common.confirm_destructive_discard_event_warning,
+      confirmLabel: t.common.confirm_destructive_discard,
       details: [
-        { label: 'Type', value: evt.event_type },
+        { label: t.triggers.col_type, value: evt.event_type },
         { label: 'Retries', value: String(evt.retry_count) },
       ],
       onConfirm: async () => {
@@ -405,8 +429,8 @@ export function DeadLetterTab() {
             next.delete(evt.id);
             return next;
           });
-        } catch {
-          addToast('Failed to discard event — please try again', 'error');
+        } catch (err) {
+          toastCatch('DeadLetterTab:discard')(err);
         } finally {
           endAction(evt.id);
         }
@@ -421,6 +445,10 @@ export function DeadLetterTab() {
   // ---- Render ------------------------------------------------------------
 
   const totalEvents = events.length;
+  // A successful action shrinks `events` locally, so never report fewer than
+  // the rows on screen; the count re-syncs on the next load.
+  const shownTotal = Math.max(totalEvents, queueTotal ?? 0);
+  const windowed = shownTotal > totalEvents;
   const allFilteredVisibleSelected =
     selectableFilteredIds.length > 0 && selectableFilteredIds.every((id) => selected.has(id));
 
@@ -432,8 +460,13 @@ export function DeadLetterTab() {
             <Archive className="w-5 h-5 text-red-400" />
             <h3 className="typo-heading">{t.triggers.tab_dead_letter}</h3>
             <span className="typo-caption text-foreground">
-              ({totalEvents} event{totalEvents !== 1 ? 's' : ''})
+              ({tx(shownTotal === 1 ? t.triggers.dead_letter_group_singular : t.triggers.dead_letter_group_plural, { count: shownTotal })})
             </span>
+            {windowed && (
+              <span className="typo-caption text-foreground">
+                · {tx(t.triggers.dead_letter_filtered_summary, { visible: totalEvents, total: shownTotal })}
+              </span>
+            )}
             {filtersDirty && (
               <span className="typo-caption text-foreground">
                 · {tx(t.triggers.dead_letter_filtered_summary, { visible: filtered.length, total: totalEvents })}
@@ -591,9 +624,20 @@ export function DeadLetterTab() {
           </div>
         )}
 
-        {!loading && totalEvents === 0 && (
+        {!loading && loadFailed && totalEvents === 0 && (
           <EmptyState
-            icon={Archive}
+            icon={AlertTriangle}
+            size="md"
+            title={t.triggers.dead_letter_load_failed_title}
+            description={t.triggers.dead_letter_load_failed_desc}
+            action={{ label: t.common.retry, onClick: () => void loadEvents() }}
+          />
+        )}
+
+        {!loading && !loadFailed && totalEvents === 0 && (
+          <EmptyState
+            art="archive"
+            size="md"
             title={t.triggers.no_dead_letters}
             subtitle={t.triggers.all_events_processed}
           />

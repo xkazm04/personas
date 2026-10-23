@@ -1,0 +1,56 @@
+{"schema": "conform-run/1", "worker": "6e4b8795-7c67-4326-af94-42a1bd7ea0db", "subject": "mcp-tools",
+ "evaluatedAt": "2026-10-21T12:29:00Z",
+ "evaluatedAgainst": "sha256-b2:ed8e615f51454325", "evaluatedRevision": 34,
+ "pairs": [
+  {"context": "mcp-server", "subject": "mcp-tools", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:ed8e615f51454325", "evaluatedRevision": 34,
+   "evidence": "src-tauri/src/mcp_server/auth.rs:86 every tools/call demands the one omnibus scope personas:execute (auth.rs:34), so a token that can read gmail_get_message can also run personas_create and drive_write_text - no floor scope, no step-up naming the missing scope; tools.rs:1229 returns an unknown tool as an in-band isError result instead of a protocol error, and no descriptor carries annotations",
+   "techniques": [
+    {"technique": "authentication-and-scoping", "verdict": "deviation", "evidence": "src-tauri/src/mcp_server/auth.rs:86 single omnibus scope for every tool, read and write alike; the token is a master key over the whole catalog"},
+    {"technique": "tool-schema-design", "verdict": "deviation", "evidence": "src-tauri/src/mcp_server/tools.rs:1229 unknown tool falls through to Err -> isError:true result (a machinery failure on the model's channel); grep finds zero \"annotations\" in tools.rs, so no read-only/destructive verdict is published"},
+    {"technique": "server-composition", "verdict": "realized", "evidence": "src-tauri/src/mcp_server/mod.rs:103 one dispatch door: every tools/call is authorized and audited before tools::call_tool, and handler Errs become in-band results"}
+   ]},
+  {"context": "companion-brain", "subject": "mcp-tools", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:ed8e615f51454325", "evaluatedRevision": 34,
+   "evidence": "src-tauri/src/companion/orchestration/mcp/handlers.rs:267 an empty tool argument is returned as JSON-RPC -32602 and :328 an expired human wait as -32603, so failures only the calling model can fix or work around travel on the protocol channel instead of an in-band isError result; descriptors at handlers.rs:20 publish no annotations for the destructive request_approval tool",
+   "techniques": [
+    {"technique": "tool-schema-design", "verdict": "deviation", "evidence": "src-tauri/src/companion/orchestration/mcp/handlers.rs:267 argument validation routed to the protocol channel (same at :186, :226, :354, :556, :560); :328 recoverable timeout as internal_error"},
+    {"technique": "authentication-and-scoping", "verdict": "realized", "evidence": "src-tauri/src/companion/orchestration/mcp/mod.rs:92 per-fleet-session token minted, released on exit (:101) and checked at the call door (:310) while list/discover stay open"},
+    {"technique": "server-composition", "verdict": "realized", "evidence": "src-tauri/src/companion/orchestration/mcp/mod.rs:258 tools/list advertises cache terms; tools/call goes through one require_session door"}
+   ]},
+  {"context": "output-stream-parser", "subject": "mcp-tools", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:ed8e615f51454325", "evaluatedRevision": 34,
+   "evidence": "src-tauri/engine/src/parser.rs:423 turns a tool_result block into StreamLineType::ToolResult without reading the block's is_error flag (the only is_error read is the final result line, :485), and the return at :427 drops any further parallel tool_results in the same message, so failed and successful tool calls become the same row downstream",
+   "techniques": [
+    {"technique": "tool-schema-design", "verdict": "deviation", "evidence": "src-tauri/engine/src/parser.rs:423 the in-band error channel is discarded on the consuming side - an isError result is recorded as an ordinary result (failure-not-empty-success)"},
+    {"technique": "untrusted-result-handling", "verdict": "unknown", "evidence": "src-tauri/engine/src/parser.rs:427 results are parsed for display/telemetry only, not re-fed to a model here; provenance fencing lives elsewhere"}
+   ]},
+  {"context": "webhook-ingestion", "subject": "mcp-tools", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:ed8e615f51454325", "evaluatedRevision": 34,
+   "evidence": "src-tauri/src/engine/runner/mod.rs:1793 every persona run is handed the process-wide system API key, which src-tauri/engine/src/cli_mcp_config.rs:168 writes as PERSONAS_MCP_TOKEN, so all persona MCP calls share one broad authority and one audit identity; src-tauri/src/engine/mcp_tools.rs:952 also keys the tool audit row as mcp:<credential>:<tool_name>, so a rename splits a tool's history",
+   "techniques": [
+    {"technique": "first-party-agent-is-a-principal", "verdict": "deviation", "evidence": "src-tauri/src/engine/runner/mod.rs:1793 the product's own agents call with the system credential rather than a per-persona grant"},
+    {"technique": "authentication-and-scoping", "verdict": "deviation", "evidence": "src-tauri/engine/src/cli_mcp_config.rs:168 one shared token per process rather than a per-consumer capability token"},
+    {"technique": "tool-identity-vs-tool-name", "verdict": "deviation", "evidence": "src-tauri/src/engine/mcp_tools.rs:952 audit tool_id is derived from the mutable tool name"},
+    {"technique": "tool-schema-design", "verdict": "realized", "evidence": "src-tauri/src/engine/mcp_tools.rs:946 a server isError result is recorded as tool_error, distinct from a transport/protocol Err"}
+   ]},
+  {"context": "vault-shared-playground", "subject": "mcp-tools", "bundle": "software-engineering", "state": "unknown",
+   "evaluatedAgainst": "sha256-b2:ed8e615f51454325", "evaluatedRevision": 34,
+   "evidence": "src/features/vault/shared/playground/tabs/McpToolResultDisplay.tsx:28 the human test console distinguishes isError and renders results as inert text (:54); the prior deviation's anchor (src-tauri/src/engine/mcp_tools.rs:952, name-derived audit id) is in webhook-ingestion's files, not this context's, and is now carried on that pair; below the evidence floor for conformant",
+   "techniques": [
+    {"technique": "tool-schema-design", "verdict": "realized", "evidence": "src/features/vault/shared/playground/tabs/McpToolResultDisplay.tsx:28 consumer renders the in-band error channel distinctly"},
+    {"technique": "untrusted-result-handling", "verdict": "realized", "evidence": "src/features/vault/shared/playground/tabs/McpToolResultDisplay.tsx:54 result text is shown to a human inside <pre>, never promoted to instruction"},
+    {"technique": "client-integration", "verdict": "unknown", "evidence": "src/lib/bindings/McpTool.ts:7 the tool type carries no annotations, so the Run button (src/features/vault/shared/playground/tabs/McpToolRow.tsx:61) gives no blast-radius signal; whether a human-pulled trigger needs one is not settled by the technique"}
+   ],
+   "registryProposal": "The prior verdict on this pair was anchored in a file (src-tauri/src/engine/mcp_tools.rs) owned by another context; the map should flag verdicts whose evidence path is outside the context's context-map paths. Separately, client-integration's consent seat addresses model-controlled calls; a human-operated tool console (operator clicks Run on a third-party tool) is an unaddressed case - whether annotations should surface there is worth a sentence."}
+ ],
+ "declined": [
+  {"subject": "mcp-tools", "context": "plugins-companion-decision", "reason": "the context has zero file paths in context-map.json (and none in the map row), so there is no code to judge; a strong match on an empty context is a context-map defect, not a verdict"}
+ ],
+ "consults": [
+  {"ts": "2026-10-21T12:29:00Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["authentication-and-scoping", "tool-schema-design", "server-composition"], "deviations": 1, "context": "mcp-server"},
+  {"ts": "2026-10-21T12:29:00Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["tool-schema-design", "authentication-and-scoping", "server-composition"], "deviations": 1, "context": "companion-brain"},
+  {"ts": "2026-10-21T12:29:00Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["tool-schema-design", "untrusted-result-handling"], "deviations": 1, "context": "output-stream-parser"},
+  {"ts": "2026-10-21T12:29:00Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["first-party-agent-is-a-principal", "authentication-and-scoping", "tool-identity-vs-tool-name", "tool-schema-design"], "deviations": 1, "context": "webhook-ingestion"},
+  {"ts": "2026-10-21T12:29:00Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["tool-schema-design", "untrusted-result-handling", "client-integration"], "deviations": 0, "context": "vault-shared-playground"}
+ ]}

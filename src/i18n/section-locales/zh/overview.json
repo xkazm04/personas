@@ -63,7 +63,11 @@
     "unknown": "未知",
     "value_delivered_count": "已交付价值",
     "value_delivered_rate": "价值交付率",
-    "value_section_title": "业务价值"
+    "value_section_title": "业务价值",
+    "prev_p50": "上期 p50",
+    "prev_p95": "上期 p95",
+    "range_last_days_one": "最近 1 天",
+    "range_last_days_other": "最近 {count} 天"
   },
   "analytics_dashboard": {
     "active_count": "{count} 活跃",
@@ -640,7 +644,13 @@
     "ask_athena_prompt": "我正在查看我的智能体的舰队优化建议：\"{title}\"。{description} 建议操作：{action}。{focus}",
     "open_lab": "打开实验室",
     "open_lab_hint": "在实验室中为 {persona} 测试备选模型",
-    "title": "舰队优化"
+    "title": "舰队优化",
+    "label_action": "操作",
+    "label_agent": "智能体",
+    "label_impact": "影响",
+    "severity_critical": "紧急",
+    "severity_info": "洞察",
+    "severity_warning": "建议"
   },
   "focused_decision": {
     "accept": "接受",
@@ -898,7 +908,6 @@
     "bulk_acknowledge_count": "确认 {count}",
     "bulk_clear_selection": "清除",
     "bulk_resolve_count": "解决 {count}",
-    "col_days": "天数",
     "col_incident": "事件",
     "detail_label_acknowledged": "已确认",
     "detail_label_created": "创建时间",
@@ -926,10 +935,8 @@
     "filter_source_all": "所有来源",
     "filter_source_label": "来源",
     "filter_status_acknowledged": "已确认",
-    "filter_status_all": "全部",
     "filter_status_dismissed": "已忽略",
     "filter_status_in_progress": "处理中",
-    "filter_status_label": "状态",
     "filter_status_open": "未处理",
     "filter_status_resolved": "已解决",
     "filters_active_aria": "{count} 个活动筛选器",
@@ -939,7 +946,6 @@
     "group_by_none": "无",
     "group_by_severity": "严重性",
     "group_by_source": "来源",
-    "group_no_persona": "无智能体",
     "groups_collapse_all": "全部折叠",
     "groups_expand_all": "全部展开",
     "guidance_alert": "某条告警规则已触发。请查看超过阈值的指标。",
@@ -996,7 +1002,6 @@
     "noc_diagnosis_title": "根本原因",
     "noc_evidence_label": "证据",
     "noc_handled_by": "由 Athena 处理",
-    "noc_handled_continued": "已自动恢复",
     "noc_handled_empty": "目前还没有自主处理的事件——当我能安全地自行修复事件时，它会显示在这里。",
     "noc_handled_title": "已自主处理",
     "noc_no_diagnosis": "尚无诊断——我可以为您深入调查此事件。",
@@ -1025,7 +1030,6 @@
     "source_policy": "策略",
     "source_provider": "提供商",
     "source_tool": "工具",
-    "stale_label": "已搁置",
     "subtitle": "跨来源的告警与错误收件箱",
     "title": "事件",
     "urgency_critical": "需立即处理",
@@ -1097,7 +1101,8 @@
     "stat_total_runs": "总运行数",
     "subtitle": "所有智能体的性能排名",
     "this_agent": "此智能体",
-    "title": "智能体排行榜"
+    "title": "智能体排行榜",
+    "sort_hint": "点击指标即可排序"
   },
   "llm_spend": {
     "by_source": "按层级划分成本",
@@ -1156,7 +1161,6 @@
     "curation_schedule_save": "保存计划",
     "curation_schedule_title": "设置记忆整理计划",
     "delete_all": "全部删除",
-    "delete_all_confirm_body": "这将永久删除所有 {count} 条记忆，此操作无法撤销。",
     "delete_all_confirm_cta": "全部删除",
     "delete_all_confirm_title": "删除所有记忆？",
     "form": {
@@ -1182,13 +1186,21 @@
     "reflect_pick_persona": "对某个智能体的记忆进行反思",
     "reflecting": "反思中…",
     "search_placeholder": "搜索记忆…",
-    "title": "记忆"
+    "title": "记忆",
+    "delete_all_confirm_body_all_agents": "这将永久删除所有智能体的全部 {count} 条记忆，无论当前筛选结果如何。此操作无法撤销。"
   },
   "memory_actions": {
     "dismiss_suggestion": "忽略建议",
     "memory_insights": "记忆见解",
     "suggestions": "{count} 条建议",
-    "suggestions_one": "{count} 条建议"
+    "suggestions_one": "{count} 条建议",
+    "kind_throttle": "限流规则",
+    "kind_schedule": "计划调整",
+    "kind_alert": "告警规则",
+    "kind_config": "配置变更",
+    "kind_routing": "路由规则",
+    "rules_restored_from_session": "无法读取已保存的记忆操作规则,已从本次会话中恢复。",
+    "rules_unreadable": "无法读取已保存的记忆操作规则,可能需要重新创建。"
   },
   "memory_card": {
     "cancel": "取消",
@@ -1218,7 +1230,14 @@
     "resolved_toast": "冲突已处理",
     "retire_blocked_core_toast": "核心（已固定）记忆无法归档 — 请手动处理此冲突",
     "scanned_scope": "在最近 {count} 条记忆中",
-    "vs": "对比"
+    "vs": "对比",
+    "kind_duplicate": "重复",
+    "kind_contradiction": "矛盾",
+    "kind_superseded": "已被取代",
+    "reason_contradiction": "同一主题下可能存在相互矛盾的指令(主题重叠 {pct}%)",
+    "reason_duplicate_cross_agent": "不同智能体之间存在近乎重复的记忆(相似度 {pct}%)",
+    "reason_duplicate_same_agent": "同一智能体内存在近乎重复的记忆(相似度 {pct}%)",
+    "reason_superseded": "较新的记忆可能取代同一主题下较旧的记忆(重叠 {pct}%)"
   },
   "memory_detail": {
     "category_label": "类别",
@@ -1366,7 +1385,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": "，然后从设置中复制您的 API 密钥。此密钥存储在本地，所有智能体共享使用。",
-    "sign_up_free_at": "免费注册于"
+    "sign_up_free_at": "免费注册于",
+    "api_key_label": "API 密钥",
+    "litellm_base_url_label": "代理基础 URL",
+    "litellm_master_key_label": "主密钥",
+    "ollama_key_placeholder": "粘贴你在 ollama.com/settings 获取的密钥"
   },
   "predictive_alerts_extra": {
     "all_nominal": "所有系统正常",
@@ -1887,7 +1910,9 @@
     "p95_latency": "P95 延迟",
     "runs": "运行次数",
     "streak": "连续成功",
-    "successful": "成功"
+    "successful": "成功",
+    "daily_trend_hint_one": "{date}：{rate}（{count} 次运行）",
+    "daily_trend_hint_other": "{date}：{rate}（{count} 次运行）"
   },
   "sla": {
     "active_agents": "{count} 个活跃智能体",
@@ -2106,5 +2131,15 @@
   "dc_pending_lead": "每个待审阅项都会在决策中心打开，附带完整背景，按键与其他所有决定一致。",
   "dc_pending_list_aria": "待审阅项",
   "dc_select_review": "选择审阅项",
-  "dc_col_decision": "决策"
+  "dc_col_decision": "决策",
+  "ai_healing_overlay": {
+    "collapse": "收起",
+    "expand": "展开",
+    "status_complete": "已完成",
+    "status_failed": "失败",
+    "status_in_progress": "进行中",
+    "step_applying": "正在应用修复",
+    "step_completed": "已完成",
+    "step_diagnosing": "正在诊断"
+  }
 }

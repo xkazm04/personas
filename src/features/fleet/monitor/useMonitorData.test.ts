@@ -465,3 +465,30 @@ describe('useMonitorData — the pending-review read can be bounded', () => {
     expect(result.current.reviewsHasMore).toBe(false);
   });
 });
+
+describe('useMonitorData — overlapping review reads', () => {
+  // Tauri runs every invoke on its own task, so a poll that STARTED before a
+  // verdict can resolve after the post-write re-read. Whichever resolved last
+  // used to win, which painted the approved row back into the queue.
+  it('a read that started before a verdict cannot repaint the resolved row', async () => {
+    const { result } = await mount();
+    expect(result.current.reviews.map((r) => r.id)).toEqual(['r1', 'r2']);
+
+    let releaseOld!: (rows: ReturnType<typeof row>[]) => void;
+    mockListReviews.mockReturnValueOnce(new Promise((r) => { releaseOld = r; }));
+    let oldRead!: Promise<void>;
+    act(() => { oldRead = result.current.refreshAttention(); });
+
+    // The verdict lands and its own re-read sees r1 gone.
+    mockListReviews.mockResolvedValueOnce([row('r2')]);
+    await act(async () => { await result.current.handleReviewAction('r1', 'approved'); });
+    expect(result.current.reviews.map((r) => r.id)).toEqual(['r2']);
+
+    // Now the stale read, which saw r1 still pending, comes back.
+    await act(async () => {
+      releaseOld([row('r1'), row('r2')]);
+      await oldRead;
+    });
+    expect(result.current.reviews.map((r) => r.id)).toEqual(['r2']);
+  });
+});

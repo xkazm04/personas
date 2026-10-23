@@ -49,6 +49,23 @@ describe("useAppSetting", () => {
     expect(JSON.stringify(logError.mock.calls)).not.toContain(secret);
   });
 
+  it("renders a rejected save's AppError object as its message, not [object Object]", async () => {
+    // invokeWithTimeout rejects with the serialized AppError OBJECT; seven
+    // Limits/Autopilot rows render `setting.error` straight into the page.
+    mockedInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === "get_app_settings_bulk") return { max_parallel: null };
+      throw { error: "Value out of range", kind: "Validation" };
+    });
+
+    const { result } = renderHook(() => useAppSetting("max_parallel"));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+
+    act(() => { result.current.setValue("999"); });
+    await act(async () => { await result.current.save(); });
+
+    expect(result.current.error).toBe("Value out of range");
+  });
+
   it("reports a rejected read as loadFailed instead of a settled default", async () => {
     mockedInvoke.mockImplementation(async () => {
       throw new Error("ipc timeout");

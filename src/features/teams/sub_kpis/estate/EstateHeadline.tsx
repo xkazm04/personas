@@ -22,10 +22,14 @@ export function EstateHeadline({
   estate,
   project,
   onClimb,
+  loading = false,
 }: {
   estate: Estate;
   project: EstateProject | null;
   onClimb: () => void;
+  /** The first read is still in flight and the estate is empty: the chrome
+   *  stays, but its figures are calm bars instead of a false "0%". */
+  loading?: boolean;
 }) {
   const { t, tx } = useTranslation();
   const o = t.kpis.overview;
@@ -37,13 +41,17 @@ export function EstateHeadline({
     <header className="space-y-3">
       <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b border-primary/10 pb-3">
         <h2 className="flex items-baseline gap-2">
-          <span className={KT.hero}>{`${coveragePct(tally)}%`}</span>
+          {loading ? (
+            <span aria-hidden="true" className="inline-block h-9 w-24 rounded bg-primary/[0.06]" data-testid="kpi-headline-pending" />
+          ) : (
+            <span className={KT.hero}>{`${coveragePct(tally)}%`}</span>
+          )}
           <span className="typo-title-lg">{o.headline_coverage}</span>
         </h2>
         <nav className="flex flex-wrap items-center gap-1" aria-label={o.altitude_portfolio}>
           <Crumb
             label={o.altitude_portfolio}
-            detail={tx(o.headline_scope, { projects: estate.projects.length, groups: estate.groupCount })}
+            detail={loading ? '' : tx(o.headline_scope, { projects: estate.projects.length, groups: estate.groupCount })}
             active={!project}
             onClick={project ? onClimb : undefined}
           />
@@ -65,13 +73,13 @@ export function EstateHeadline({
       <CoverageBar tally={tally} height={6} />
 
       <dl className="grid grid-cols-[repeat(auto-fit,minmax(7.5rem,1fr))] gap-2">
-        <Stat label={o.stat_observed} value={`${tally.measured}/${tally.total}`} tone="var(--primary)" />
-        <Stat label={o.count_off_track} value={tally.offTrack} tone="var(--status-error)" />
-        <Stat label={o.count_on_track} value={tally.onTrack} tone="var(--primary)" />
-        <Stat label={o.count_met} value={tally.met} tone="var(--status-success)" />
-        <Stat label={o.count_no_verdict} value={tally.unpaced} tone="var(--status-warning)" />
-        <Stat label={o.count_stale} value={tally.stale} tone="var(--status-info)" />
-        <Stat label={o.count_never_read} value={tally.unmeasured} tone="var(--muted-foreground)" />
+        <Stat pending={loading} label={o.stat_observed} value={`${tally.measured}/${tally.total}`} tone="var(--primary)" />
+        <Stat pending={loading} label={o.count_off_track} value={tally.offTrack} tone="var(--status-error)" />
+        <Stat pending={loading} label={o.count_on_track} value={tally.onTrack} tone="var(--primary)" />
+        <Stat pending={loading} label={o.count_met} value={tally.met} tone="var(--status-success)" />
+        <Stat pending={loading} label={o.count_no_verdict} value={tally.unpaced} tone="var(--status-warning)" />
+        <Stat pending={loading} label={o.count_stale} value={tally.stale} tone="var(--status-info)" />
+        <Stat pending={loading} label={o.count_never_read} value={tally.unmeasured} tone="var(--muted-foreground)" />
       </dl>
     </header>
   );
@@ -117,7 +125,18 @@ function Crumb({
  *  rather than force every caller to reach for a 0 (golden path:
  *  metric-tile.md). A zero stays quiet: the tone only lights a count that has
  *  something in it. */
-function Stat({ label, value, tone }: { label: string; value: number | string | null; tone: string }) {
+function Stat({
+  label,
+  value,
+  tone,
+  pending = false,
+}: {
+  label: string;
+  value: number | string | null;
+  tone: string;
+  /** Still loading: a calm bar where the figure goes, never a made-up zero. */
+  pending?: boolean;
+}) {
   const { t } = useTranslation();
   const lit = typeof value === 'string' || (value != null && value > 0);
   return (
@@ -131,7 +150,11 @@ function Stat({ label, value, tone }: { label: string; value: number | string | 
       />
       <dt className={KT.meta}>{label}</dt>
       <dd className={`${KT.stat} leading-tight`} style={{ color: lit ? tone : 'var(--foreground)' }}>
-        {value ?? t.kpis.overview.read_never}
+        {pending ? (
+          <span aria-hidden="true" className="inline-block h-[1em] w-10 rounded bg-primary/[0.06] align-middle" />
+        ) : (
+          value ?? t.kpis.overview.read_never
+        )}
       </dd>
     </div>
   );

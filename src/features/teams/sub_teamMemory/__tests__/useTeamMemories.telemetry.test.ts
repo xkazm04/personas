@@ -89,6 +89,30 @@ describe('useTeamMemories — mutation telemetry', () => {
     expect(track).not.toHaveBeenCalledWith('team_memory', 'delete', 'ok');
   });
 
+  // The write and the list refresh that follows it are two different
+  // outcomes. Chaining the refresh inside the write's promise made a failed
+  // RE-READ count as a failed WRITE: the memory was saved, yet telemetry
+  // recorded `ok` AND `failed` for one click, and the toast blamed the write.
+  it('a refresh that fails after a successful write does not record the write as failed', async () => {
+    const { result } = mountHook();
+    await waitFor(() => expect(result.current.isFetching).toBe(false));
+    vi.mocked(api.listTeamMemories).mockRejectedValue(new Error('list down'));
+    await act(async () => {
+      result.current.onCreate({
+        team_id: 'team-1', run_id: null, member_id: null, persona_id: null,
+        title: 't', content: 'c', category: 'observation', importance: 3, tags: 'manual',
+      });
+      result.current.onDelete('mem-1');
+      result.current.onEdit('mem-1', 't', 'c', 'decision', 7);
+    });
+    await waitFor(() => expect(result.current.loadFailed).toBe(true));
+    for (const op of ['create', 'delete', 'edit']) {
+      expect(track).toHaveBeenCalledWith('team_memory', op, 'ok');
+      expect(track).not.toHaveBeenCalledWith('team_memory', op, 'failed');
+    }
+    vi.mocked(api.listTeamMemories).mockResolvedValue([]);
+  });
+
   it('never puts an id or user-authored content on the wire', async () => {
     const { result } = mountHook();
     await act(async () => {

@@ -150,6 +150,7 @@ export function markActivation(step: ActivationStep): boolean {
 }
 
 let referralRecorded = false;
+let referralInFlight = false;
 
 /**
  * If this install was referred (a code was captured from a `personas://ref/…`
@@ -159,9 +160,17 @@ let referralRecorded = false;
  * Safe to call from multiple places (activation + the moment a code is captured).
  */
 export function recordReferralOnce(): void {
-  if (referralRecorded) return;
+  if (referralRecorded || referralInFlight) return;
   const referrer = getReferrer();
   if (!referrer) return;
+  // Credit only an ACTIVATED install. The deep-link handler calls this the
+  // moment a code arrives ("record now if this install already activated"),
+  // and without this check a fresh install was credited before it had done
+  // anything - the attribution the funnel exists to withhold.
+  if (readReached().size === 0) return;
+  // Two milestones (or a milestone and a deep link) in one tick each started
+  // a request, because the latch is only set after the await.
+  referralInFlight = true;
   void (async () => {
     try {
       const { recordReferral } = await import('@/api/agents/personas');
@@ -169,6 +178,8 @@ export function recordReferralOnce(): void {
       referralRecorded = true;
     } catch (err) {
       silentCatch('activation:recordReferralOnce')(err);
+    } finally {
+      referralInFlight = false;
     }
   })();
 }
@@ -199,4 +210,10 @@ export function getReferrer(): string | null {
   } catch {
     return null;
   }
+}
+
+/** Test hatch: the referral latches are module state (see `__resetAnalyticsSessionForTests`). */
+export function __resetReferralForTests(): void {
+  referralRecorded = false;
+  referralInFlight = false;
 }

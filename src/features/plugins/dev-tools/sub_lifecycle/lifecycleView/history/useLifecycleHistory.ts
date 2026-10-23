@@ -19,10 +19,10 @@ import { getLifecycleHistory } from '@/api/devTools/lifecycle';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { idlePrefetch } from '@/lib/idlePrefetch';
 import type { LifecycleHistory } from '@/lib/bindings/LifecycleHistory';
-import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 import { useDevToolsLiveStore } from '@/stores/devToolsLiveStore';
 import { createLatestWins } from '@/stores/util/latestWins';
+import { errorText } from '../system/errorText';
 
 // One entry per project opened this session; the cap names the bound.
 const historyCache = createModuleCache<string, LifecycleHistory>({ maxSize: 32 });
@@ -109,7 +109,7 @@ export function useLifecycleHistory(projectId: string | null, enabled = true): U
       .catch((err: unknown) => {
         if (!latestWins.isCurrent(token)) return;
         silentCatch('lifecycle:getLifecycleHistory')(err);
-        setError(resolveError(err instanceof Error ? err.message : String(err)).message);
+        setError(errorText(err));
         setLoading(false);
       });
     // Cold: wait for an idle slice after Layer 1 painted. Warm, joining, or a retry: now.

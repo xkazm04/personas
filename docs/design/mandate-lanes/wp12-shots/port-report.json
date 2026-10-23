@@ -1,0 +1,738 @@
+{
+  "module": "monitor/conversations/port",
+  "kit": null,
+  "query": null,
+  "reducedMotion": true,
+  "steps": null,
+  "label": "port",
+  "createdAt": "2026-10-16T08:01:54.016Z",
+  "browser": "153.0.8010.12",
+  "tape": {
+    "path": "C:\\Users\\kazda\\AppData\\Local\\Temp\\claude\\C--Users-kazda-kiro-personas\\280a8953-d775-4c5e-9416-b6c27d2b2f6b\\scratchpad\\wp12b-tape.json",
+    "source": "synthetic",
+    "recordedAt": "2026-09-22T15:40:00.000Z",
+    "calls": 39,
+    "note": "Synthetic: 30 personas shaped like the operator fleet (12 / 2 / 11 singletons / 5 teamless, 2 empty workspace groups). Plus 10 sessions in every painted state and a queue of 4 (3 dev projects tie them to bays); dev servers running / stopped / external on those 3 projects. Plus a Personas Desktop conversation (talk, a live and a settled assignment, a converging deliberation) and one held step for its first member (monitorRoofTape.mjs). Grown for WP12 (conversationVariantsTape.mjs): an operator reply, three held steps, an outcome on the settled run, two persona conversations. Port (conversationPortTape.mjs): the fleet-wide pending-review read, the driven deliberation."
+  },
+  "ok": true,
+  "unknownIpcCommands": [
+    "decision_lanes_snapshot",
+    "lens_scan_products",
+    "dev_tools_pending_counts",
+    "mandate_list",
+    "fleet_autopilot_status",
+    "fleet_scheduled_tasks",
+    "fleet_cli_usage",
+    "list_cron_agents",
+    "get_network_status",
+    "fleet_set_auto_hibernate",
+    "fleet_set_state_cutoffs",
+    "mesh_device_snapshots",
+    "resource_live_samples",
+    "list_remote_sessions",
+    "list_dispatch_devices",
+    "list_team_slack_bridges"
+  ],
+  "shots": [
+    {
+      "file": "port-1280x800-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "decision_lanes_snapshot",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "lens_scan_products",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "dev_tools_pending_counts",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "mandate_list",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_cron_agents",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "get_network_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        },
+        {
+          "cmd": "mandate_list",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "mesh_device_snapshots",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "resource_live_samples",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_team_slack_bridges",
+          "args": {},
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "get_persona_summaries": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 1,
+        "dev_tools_workspace_set_active": 1,
+        "decision_lanes_snapshot": 1,
+        "lens_scan_products": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1,
+        "mandate_list": 2,
+        "fleet_autopilot_status": 1,
+        "fleet_scheduled_tasks": 1,
+        "fleet_claude_accounts_list": 4,
+        "fleet_claude_usage": 4,
+        "fleet_cli_usage": 4,
+        "list_cron_agents": 1,
+        "get_network_status": 1,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 1,
+        "get_pending_review_counts_by_persona": 1,
+        "list_manual_reviews_page": 2,
+        "get_unread_report_counts_by_persona": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 1,
+        "mesh_device_snapshots": 1,
+        "resource_live_samples": 1,
+        "dev_servers_list": 1,
+        "list_team_channel": 14,
+        "count_team_channel_kinds": 15,
+        "list_remote_sessions": 1,
+        "list_dispatch_devices": 1,
+        "fleet_queue_snapshot": 1,
+        "list_persona_channel": 24,
+        "list_team_slack_bridges": 1,
+        "list_team_deliberations": 1,
+        "list_team_assignment_steps": 2
+      },
+      "stable": true,
+      "textLength": 1696,
+      "textSample": "Persona Monitor Activity Conversations Map Conversations PROJECTS NEW YOU Personas Desktop 4 Docs Legal Research People Growth Support Data Marketing Finance Infra Sales Ops PERSONAS Release Noter 1 1",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "port-1920x1080-dark-midnight.png",
+      "theme": "dark-midnight",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "decision_lanes_snapshot",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "lens_scan_products",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "dev_tools_pending_counts",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "mandate_list",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_cron_agents",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "get_network_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        },
+        {
+          "cmd": "mandate_list",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "mesh_device_snapshots",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "resource_live_samples",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_team_slack_bridges",
+          "args": {},
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "get_persona_summaries": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 1,
+        "dev_tools_workspace_set_active": 1,
+        "decision_lanes_snapshot": 1,
+        "lens_scan_products": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1,
+        "mandate_list": 2,
+        "fleet_autopilot_status": 1,
+        "fleet_scheduled_tasks": 1,
+        "fleet_claude_accounts_list": 4,
+        "fleet_claude_usage": 4,
+        "fleet_cli_usage": 4,
+        "list_cron_agents": 1,
+        "get_network_status": 1,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 1,
+        "get_pending_review_counts_by_persona": 1,
+        "list_manual_reviews_page": 2,
+        "get_unread_report_counts_by_persona": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 1,
+        "mesh_device_snapshots": 1,
+        "resource_live_samples": 1,
+        "dev_servers_list": 1,
+        "list_team_channel": 14,
+        "count_team_channel_kinds": 15,
+        "list_remote_sessions": 1,
+        "list_dispatch_devices": 1,
+        "fleet_queue_snapshot": 1,
+        "list_persona_channel": 24,
+        "list_team_slack_bridges": 1,
+        "list_team_deliberations": 1,
+        "list_team_assignment_steps": 2
+      },
+      "stable": true,
+      "textLength": 1761,
+      "textSample": "Persona Monitor Activity Conversations Map Conversations PROJECTS NEW YOU Personas Desktop 4 Docs Legal Research People Growth Support Data Marketing Finance Infra Sales Ops PERSONAS Release Noter 1 1",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    },
+    {
+      "file": "port-1280x800-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1280,
+        "height": 800
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "decision_lanes_snapshot",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "lens_scan_products",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "dev_tools_pending_counts",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "mandate_list",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_cron_agents",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "get_network_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        },
+        {
+          "cmd": "mandate_list",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "mesh_device_snapshots",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "resource_live_samples",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_team_slack_bridges",
+          "args": {},
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "get_persona_summaries": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 1,
+        "dev_tools_workspace_set_active": 1,
+        "decision_lanes_snapshot": 1,
+        "lens_scan_products": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1,
+        "mandate_list": 2,
+        "fleet_autopilot_status": 1,
+        "fleet_scheduled_tasks": 1,
+        "fleet_claude_accounts_list": 4,
+        "fleet_claude_usage": 4,
+        "fleet_cli_usage": 4,
+        "list_cron_agents": 1,
+        "get_network_status": 1,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 1,
+        "get_pending_review_counts_by_persona": 1,
+        "list_manual_reviews_page": 2,
+        "get_unread_report_counts_by_persona": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 1,
+        "mesh_device_snapshots": 1,
+        "resource_live_samples": 1,
+        "dev_servers_list": 1,
+        "list_team_channel": 14,
+        "count_team_channel_kinds": 15,
+        "list_remote_sessions": 1,
+        "list_dispatch_devices": 1,
+        "fleet_queue_snapshot": 1,
+        "list_persona_channel": 24,
+        "list_team_slack_bridges": 1,
+        "list_team_deliberations": 1,
+        "list_team_assignment_steps": 2
+      },
+      "stable": true,
+      "textLength": 1696,
+      "textSample": "Persona Monitor Activity Conversations Map Conversations PROJECTS NEW YOU Personas Desktop 4 Docs Legal Research People Growth Support Data Marketing Finance Infra Sales Ops PERSONAS Release Noter 1 1",
+      "dims": {
+        "document": {
+          "width": 1280,
+          "height": 800
+        },
+        "main": {
+          "width": 952,
+          "height": 752,
+          "scrollWidth": 952,
+          "scrollHeight": 752
+        }
+      }
+    },
+    {
+      "file": "port-1920x1080-light.png",
+      "theme": "light",
+      "size": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ok": true,
+      "problems": [],
+      "consoleErrors": [],
+      "unknownIpc": [
+        {
+          "cmd": "decision_lanes_snapshot",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "lens_scan_products",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "dev_tools_pending_counts",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "mandate_list",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "fleet_autopilot_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_scheduled_tasks",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_cron_agents",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "get_network_status",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_auto_hibernate",
+          "args": {
+            "afterMinutes": 30,
+            "enabled": false
+          },
+          "answered": null
+        },
+        {
+          "cmd": "fleet_set_state_cutoffs",
+          "args": {
+            "staleSecs": 360,
+            "stalledSecs": 120
+          },
+          "answered": null
+        },
+        {
+          "cmd": "mandate_list",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "fleet_cli_usage",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "mesh_device_snapshots",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "resource_live_samples",
+          "args": {},
+          "answered": null
+        },
+        {
+          "cmd": "list_remote_sessions",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_dispatch_devices",
+          "args": {},
+          "answered": []
+        },
+        {
+          "cmd": "list_team_slack_bridges",
+          "args": {},
+          "answered": []
+        }
+      ],
+      "argsMismatch": [],
+      "ipcHits": {
+        "list_personas": 1,
+        "get_persona_summaries": 2,
+        "dev_tools_workspace_list": 1,
+        "dev_tools_list_projects": 1,
+        "dev_tools_workspace_set_active": 1,
+        "decision_lanes_snapshot": 1,
+        "lens_scan_products": 1,
+        "dev_tools_pending_counts": 1,
+        "dev_tools_undispatched_ideas": 1,
+        "mandate_list": 2,
+        "fleet_autopilot_status": 1,
+        "fleet_scheduled_tasks": 1,
+        "fleet_claude_accounts_list": 4,
+        "fleet_claude_usage": 4,
+        "fleet_cli_usage": 4,
+        "list_cron_agents": 1,
+        "get_network_status": 1,
+        "fleet_set_auto_hibernate": 1,
+        "fleet_set_state_cutoffs": 1,
+        "fleet_list_sessions": 1,
+        "get_pending_review_counts_by_persona": 1,
+        "list_manual_reviews_page": 2,
+        "get_unread_report_counts_by_persona": 1,
+        "list_teams": 1,
+        "get_team_counts": 1,
+        "get_app_settings_bulk": 1,
+        "mesh_device_snapshots": 1,
+        "resource_live_samples": 1,
+        "dev_servers_list": 1,
+        "list_team_channel": 14,
+        "count_team_channel_kinds": 15,
+        "list_remote_sessions": 1,
+        "list_dispatch_devices": 1,
+        "fleet_queue_snapshot": 1,
+        "list_persona_channel": 24,
+        "list_team_slack_bridges": 1,
+        "list_team_deliberations": 1,
+        "list_team_assignment_steps": 2
+      },
+      "stable": true,
+      "textLength": 1761,
+      "textSample": "Persona Monitor Activity Conversations Map Conversations PROJECTS NEW YOU Personas Desktop 4 Docs Legal Research People Growth Support Data Marketing Finance Infra Sales Ops PERSONAS Release Noter 1 1",
+      "dims": {
+        "document": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main": {
+          "width": 1592,
+          "height": 1032,
+          "scrollWidth": 1592,
+          "scrollHeight": 1032
+        }
+      }
+    }
+  ]
+}

@@ -34,5 +34,12 @@
   "oauth_unknown_error": "অজানা ত্রুটি",
   "ai_search_no_results": "কোনো মিলে যাওয়া টেমপ্লেট পাওয়া যায়নি।",
   "ai_search_coverage": " ({total}টির মধ্যে {searched}টি টেমপ্লেট খোঁজা হয়েছে)",
-  "ai_search_failed": "AI অনুসন্ধান ব্যর্থ হয়েছে: {detail}"
+  "ai_search_failed": "AI অনুসন্ধান ব্যর্থ হয়েছে: {detail}",
+  "run_timed_out": "{minutes} মিনিট পর রান টাইম আউট হয়েছে। অপারেশনটি আটকে গিয়ে থাকতে পারে।",
+  "startup_failed": "স্টার্টআপ ব্যর্থ: {sources} লোড করা যায়নি।",
+  "startup_source_credentials": "ক্রেডেনশিয়াল",
+  "startup_source_personas": "পার্সোনা",
+  "startup_source_recipes": "রেসিপি",
+  "startup_source_teams": "টিম",
+  "startup_source_tools": "টুল"
 }

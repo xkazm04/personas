@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { usePersonaNameMap } from "@/hooks/usePersonaNameMap";
-import { toastCatch } from "@/lib/silentCatch";
 import type { DeployTarget, DeployStatus, SortKey, SortDir, UnifiedDeployment } from './deploymentTypes';
 import { compareValues, mapCloudStatus, mapGitlabStatus } from './deploymentTypes';
 import { SummaryCard } from './DeploymentSubComponents';
@@ -19,6 +18,7 @@ import { useDeploymentTest } from '../hooks/useDeploymentTest';
 import { useConfirmedRemoteAction } from '../hooks/useConfirmedRemoteAction';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Button } from '@/features/shared/components/buttons';
 import EmptyState, { NoResults } from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 
@@ -31,6 +31,8 @@ export function UnifiedDeploymentDashboard() {
   const gitlabAgents = useSystemStore((s) => s.gitlabAgents);
   const gitlabDeploymentStatuses = useSystemStore((s) => s.gitlabDeploymentStatuses);
   const gitlabSelectedProjectId = useSystemStore((s) => s.gitlabSelectedProjectId);
+  const cloudError = useSystemStore((s) => s.cloudError);
+  const gitlabError = useSystemStore((s) => s.gitlabError);
 
   const cloudFetchDeployments = useSystemStore((s) => s.cloudFetchDeployments);
   const cloudPauseDeploy = useSystemStore((s) => s.cloudPauseDeploy);
@@ -59,24 +61,29 @@ export function UnifiedDeploymentDashboard() {
   // region shows ghost rows (fetch running) or the empty state (fetch
   // settled, genuinely nothing). docs/design/overview-loading.md law 1/2.
   const [isFetching, setIsFetching] = useState(true);
+  // The fetch actions never reject: they resolve false and park the reason in
+  // the store's `*Error`. A target whose last fetch failed must not settle into
+  // "No deployments" - which would read an outage as an empty fleet.
+  const [failedTargets, setFailedTargets] = useState<{ cloud: boolean; gitlab: boolean }>({ cloud: false, gitlab: false });
+
+  const loadAll = useCallback(async (): Promise<void> => {
+    const [cloudOk, gitlabOk] = await Promise.all([
+      cloudConfig?.is_connected ? cloudFetchDeployments() : Promise.resolve(true),
+      gitlabConfig?.isConnected && gitlabSelectedProjectId ? gitlabFetchAgents(gitlabSelectedProjectId) : Promise.resolve(true),
+    ]);
+    setFailedTargets({ cloud: !cloudOk, gitlab: !gitlabOk });
+  }, [cloudConfig?.is_connected, gitlabConfig?.isConnected, gitlabSelectedProjectId, cloudFetchDeployments, gitlabFetchAgents]);
 
   useEffect(() => {
     let active = true;
-    const promises: Promise<void>[] = [];
-    if (cloudConfig?.is_connected) {
-      promises.push(cloudFetchDeployments().catch(toastCatch("DeploymentDashboard:fetchCloudDeployments", "Failed to fetch cloud deployments")));
-    }
-    if (gitlabConfig?.isConnected && gitlabSelectedProjectId) {
-      promises.push(gitlabFetchAgents(gitlabSelectedProjectId).catch(toastCatch("DeploymentDashboard:fetchGitlabAgents", "Failed to fetch GitLab agents")));
-    }
-    if (promises.length === 0) {
+    if (!cloudConfig?.is_connected && !(gitlabConfig?.isConnected && gitlabSelectedProjectId)) {
       setIsFetching(false);
       return;
     }
     setIsFetching(true);
-    Promise.all(promises).finally(() => { if (active) setIsFetching(false); });
+    void loadAll().finally(() => { if (active) setIsFetching(false); });
     return () => { active = false; };
-  }, [cloudConfig?.is_connected, gitlabConfig?.isConnected, gitlabSelectedProjectId, cloudFetchDeployments, gitlabFetchAgents]);
+  }, [cloudConfig?.is_connected, gitlabConfig?.isConnected, gitlabSelectedProjectId, loadAll]);
 
   const unified = useMemo<UnifiedDeployment[]>(() => {
     const rows: UnifiedDeployment[] = [];
@@ -138,14 +145,32 @@ export function UnifiedDeploymentDashboard() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      const promises: Promise<void>[] = [];
-      if (cloudConfig?.is_connected) promises.push(cloudFetchDeployments());
-      if (gitlabConfig?.isConnected && gitlabSelectedProjectId) {
-        promises.push(gitlabFetchAgents(gitlabSelectedProjectId));
-      }
-      await Promise.allSettled(promises);
+      await loadAll();
     } finally { setIsRefreshing(false); }
   };
+
+  const failureMessage = [failedTargets.cloud ? cloudError : null, failedTargets.gitlab ? gitlabError : null]
+    .filter((m): m is string => !!m)
+    .join(' ');
+  const loadFailed = failedTargets.cloud || failedTargets.gitlab;
+  const failureNotice = loadFailed ? (
+    <div
+      role="alert"
+      data-testid="deployments-load-failed"
+      className="flex items-center justify-between gap-3 px-6 py-2 typo-body text-foreground border-b border-status-error/30 bg-status-error/10"
+    >
+      <span>{failureMessage}</span>
+      <Button
+        variant="link"
+        size="xs"
+        data-testid="deployments-load-retry"
+        onClick={handleRefresh}
+        loading={isRefreshing}
+      >
+        {t.common.retry}
+      </Button>
+    </div>
+  ) : null;
 
   const handleAction = async (id: string, action: () => Promise<void>) => {
     setBusyId(id);
@@ -269,10 +294,11 @@ export function UnifiedDeploymentDashboard() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto">
+        {failureNotice}
         {!cloudConnected && !gitlabConnected ? (
           <div className="flex items-center justify-center h-full px-6">
             <EmptyState
-              icon={Cloud}
+              art="link"
               title={dt.no_targets_title}
               subtitle={dt.no_targets_hint}
               action={{ label: dt.connect_cloud_cta, onClick: () => setCloudTab('cloud'), icon: Cloud }}
@@ -299,7 +325,7 @@ export function UnifiedDeploymentDashboard() {
                 title={dt.no_match_filters}
                 subtitle={dt.adjust_filters}
               />
-            ) : (
+            ) : loadFailed ? null : (
               <EmptyState
                 icon={Activity}
                 title={dt.no_deployments}

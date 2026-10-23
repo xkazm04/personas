@@ -17,11 +17,14 @@ import type { PartialPersonaUpdate, PersonaOperation } from "@/api/agents/person
 import { buildUpdateInput, operationToPartial } from "@/api/agents/personas";
 import { listExecutionsSummary } from "@/api/agents/executions";
 import type { PersonaHealth } from "@/lib/bindings/PersonaHealth";
+import type { DeletePersonaResult } from "@/lib/bindings/DeletePersonaResult";
 import { createPersona, deletePersona, duplicatePersona, getPersonaDetail, getPersonaSummaries, listPersonas, setPersonaEnabled, updatePersona } from "@/api/agents/personas";
 import { trackRecentAgent, removeRecentAgent } from "@/hooks/agents/useRecentAgents";
 import { classifyUnknownError, categoryLabel } from "@/lib/errorTaxonomy";
 import { storeBus } from "@/lib/storeBus";
 import { autoAssignPersonaIcons } from "@/lib/icons/autoAssignIcons";
+import { createLatestWins } from "../../util/latestWins";
+import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 
 /** Sub-resources fetched via getPersonaDetail, cached by persona ID. */
 export interface PersonaDetailExtras {
@@ -104,8 +107,9 @@ export interface PersonaSlice {
   cancelPendingSwitch: () => void;
 }
 
-let fetchDetailSeq = 0;
-let fetchSummariesSeq = 0;
+// One latest-wins slot per request family (src/stores/util/latestWins.ts).
+const detailLoads = createLatestWins();
+const summaryLoads = createLatestWins();
 const prefetchInflight = new Map<string, Promise<void>>();
 
 /**
@@ -257,10 +261,10 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
   },
 
   fetchPersonaSummaries: async () => {
-    const seq = ++fetchSummariesSeq;
+    const seq = summaryLoads.next();
     try {
       const summaries = await getPersonaSummaries();
-      if (seq !== fetchSummariesSeq) return; // superseded by a newer request
+      if (!summaryLoads.isCurrent(seq)) return; // superseded by a newer request
       const triggerCounts: Record<string, number> = {};
       const lastRun: Record<string, string | null> = {};
       const healthMap: Record<string, PersonaHealth> = {};
@@ -288,9 +292,9 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         personaSummariesRefreshedAt: Date.now(),
       }));
     } catch (err) {
-      if (seq !== fetchSummariesSeq) return; // superseded by a newer request
+      if (!summaryLoads.isCurrent(seq)) return; // superseded by a newer request
       const category = classifyUnknownError(err);
-      logger.warn("fetchPersonaSummaries failed", { category: categoryLabel(category), error: String(err) });
+      logger.warn("fetchPersonaSummaries failed", { category: categoryLabel(category), error: extractMessage(err) });
       // The warn was the ONLY record. A surface cannot render a log line, so an
       // unreadable fleet looked exactly like an idle one.
       set({ personaSummariesError: extractMessage(err) });
@@ -298,12 +302,17 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
   },
 
   fetchDetail: async (id: string) => {
-    const seq = ++fetchDetailSeq;
-    set({ isLoading: true, error: null });
+    const seq = detailLoads.next();
+    // No `isLoading` here. That flag is the ROSTER's busy state (Home's
+    // get-started band and Mission Control read it as "personas are still
+    // loading"); a detail load writing it cleared the roster's busy state
+    // early, and a load superseded by a deselect or a delete returned before
+    // its own clear, stranding the flag at true for the session.
+    set({ error: null });
     try {
       // Single IPC round trip: persona + tools + triggers + subscriptions + automations
       const detail = await getPersonaDetail(id);
-      if (seq !== fetchDetailSeq) return; // superseded by a newer request
+      if (!detailLoads.isCurrent(seq)) return; // superseded by a newer request
 
       // Split detail into base Persona fields and sub-resource extras
       const { tools, triggers, subscriptions, automations, warnings, ...baseFields } = detail;
@@ -321,20 +330,18 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
           selectedPersonaId: id,
           detailCache: nextCache,
           selectedPersona: deriveSelectedPersona(nextPersonas, id, nextCache),
-          isLoading: false,
         };
       });
     } catch (err) {
-      if (seq !== fetchDetailSeq) return; // superseded by a newer request
+      if (!detailLoads.isCurrent(seq)) return; // superseded by a newer request
       const category = classifyUnknownError(err);
-      logger.warn("fetchDetail failed", { personaId: id, category: categoryLabel(category), error: String(err) });
+      logger.warn("fetchDetail failed", { personaId: id, category: categoryLabel(category), error: extractMessage(err) });
       // Clear stale selection so the editor doesn't render with missing data
       set((state) => {
         const nextCache = { ...state.detailCache };
         if (id in nextCache) delete nextCache[id];
         return {
           error: errMsg(err, "Failed to fetch persona"),
-          isLoading: false,
           selectedPersonaId: null,
           detailCache: nextCache,
           selectedPersona: null,
@@ -505,62 +512,71 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
 
   deletePersona: async (id) => {
     set({ error: null });
+    let result: DeletePersonaResult;
     try {
-      const result = await deletePersona(id);
-      removeRecentAgent(id);
-      // Invalidate any in-flight fetchDetail for this persona so it can't
-      // resurrect the deleted persona in state after the delete completes.
-      if (get().selectedPersonaId === id) ++fetchDetailSeq;
-
-      // 2026-05-04 — also drop any in-flight build sessions tied to this
-      // persona so the sidebar's "Draft Builds" list stays in sync. Pre-fix
-      // a deleted persona would still appear in the drafts list as a ghost
-      // session row until the user refreshed the app. We delegate to the
-      // matrixBuildSlice helper so the next-active-session pick + scalar
-      // mirror updates run correctly.
-      const sessionIdsToRemove: string[] = [];
-      for (const [sid, sess] of Object.entries(get().buildSessions)) {
-        if (sess.personaId === id) sessionIdsToRemove.push(sid);
-      }
-      for (const sid of sessionIdsToRemove) {
-        get().removeBuildSession(sid);
-      }
-
-      set((state) => {
-        const nextPersonas = state.personas.filter((p) => p.id !== id);
-        const nextId = state.selectedPersonaId === id ? null : state.selectedPersonaId;
-        const nextCache = { ...state.detailCache };
-        delete nextCache[id];
-        return {
-          personas: nextPersonas,
-          selectedPersonaId: nextId,
-          detailCache: nextCache,
-          selectedPersona: deriveSelectedPersona(nextPersonas, nextId, nextCache),
-        };
-      });
-
-      // Show a summary toast when executions were affected during deletion
-      const stopped = result.executionsCancelled + result.executionsForceCancelled;
-      if (stopped > 0 || result.cancelFailures.length > 0) {
-        const parts: string[] = ["Deleted."];
-        if (stopped > 0) {
-          parts.push(`${stopped} running execution${stopped !== 1 ? "s were" : " was"} force-stopped.`);
-        }
-        if (result.cancelFailures.length > 0) {
-          parts.push(`${result.cancelFailures.length} execution${result.cancelFailures.length !== 1 ? "s" : ""} could not be cancelled.`);
-        }
-        if (result.timeoutReached) {
-          parts.push("Drain timeout was reached.");
-        }
-        const hasFailures = result.cancelFailures.length > 0;
-        storeBus.emit('toast', {
-          message: parts.join(" "),
-          type: hasFailures ? "error" : "success",
-          duration: hasFailures ? 8000 : 5000,
-        });
-      }
+      result = await deletePersona(id);
     } catch (err) {
-      reportError(err, "Failed to delete persona", set);
+      // REJECT, do not resolve. Every caller awaits this and treats a
+      // resolution as "deleted": the editor closed its confirm dialog and reset
+      // the build session, the overview dropped the row from its selection.
+      // State only - the callers that face the user toast it themselves, and
+      // the cleanup callers silence it on purpose.
+      reportError(err, "Failed to delete persona", set, { severity: "state" });
+      throw err;
+    }
+    removeRecentAgent(id);
+    // Invalidate any in-flight fetchDetail for this persona so it can't
+    // resurrect the deleted persona in state after the delete completes.
+    if (get().selectedPersonaId === id) detailLoads.next();
+
+    // 2026-05-04 — also drop any in-flight build sessions tied to this
+    // persona so the sidebar's "Draft Builds" list stays in sync. Pre-fix
+    // a deleted persona would still appear in the drafts list as a ghost
+    // session row until the user refreshed the app. We delegate to the
+    // matrixBuildSlice helper so the next-active-session pick + scalar
+    // mirror updates run correctly.
+    const sessionIdsToRemove: string[] = [];
+    for (const [sid, sess] of Object.entries(get().buildSessions)) {
+      if (sess.personaId === id) sessionIdsToRemove.push(sid);
+    }
+    for (const sid of sessionIdsToRemove) {
+      get().removeBuildSession(sid);
+    }
+
+    set((state) => {
+      const nextPersonas = state.personas.filter((p) => p.id !== id);
+      const nextId = state.selectedPersonaId === id ? null : state.selectedPersonaId;
+      const nextCache = { ...state.detailCache };
+      delete nextCache[id];
+      return {
+        personas: nextPersonas,
+        selectedPersonaId: nextId,
+        detailCache: nextCache,
+        selectedPersona: deriveSelectedPersona(nextPersonas, nextId, nextCache),
+      };
+    });
+
+    // Show a summary toast when executions were affected during deletion
+    const stopped = result.executionsCancelled + result.executionsForceCancelled;
+    if (stopped > 0 || result.cancelFailures.length > 0) {
+      const pl = getActiveTranslations().agents.persona_list;
+      const parts: string[] = [pl.delete_done];
+      if (stopped > 0) {
+        parts.push(interpolate(stopped === 1 ? pl.delete_force_stopped_one : pl.delete_force_stopped_other, { count: stopped }));
+      }
+      if (result.cancelFailures.length > 0) {
+        const failed = result.cancelFailures.length;
+        parts.push(interpolate(failed === 1 ? pl.delete_cancel_failed_one : pl.delete_cancel_failed_other, { count: failed }));
+      }
+      if (result.timeoutReached) {
+        parts.push(pl.delete_drain_timeout);
+      }
+      const hasFailures = result.cancelFailures.length > 0;
+      storeBus.emit('toast', {
+        message: parts.join(" "),
+        type: hasFailures ? "error" : "success",
+        duration: hasFailures ? 8000 : 5000,
+      });
     }
   },
 
@@ -580,16 +596,16 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
     if (id !== prev && prev != null) {
       const { isExecuting, executionPersonaId, queuePosition } = get();
       if (isExecuting && executionPersonaId === prev) {
-        const label = queuePosition != null ? "queued" : "running";
+        const pl = getActiveTranslations().agents.persona_list;
         storeBus.emit('toast', {
-          message: `Execution still ${label} for the previous agent. Switch back to monitor it.`,
-          type: "success",
+          message: queuePosition != null ? pl.execution_still_queued : pl.execution_still_running,
+          type: "warning",
           duration: 5000,
         });
       }
     }
 
-    if (!id) ++fetchDetailSeq; // invalidate any in-flight fetchDetail
+    if (!id) detailLoads.next(); // invalidate any in-flight fetchDetail
     set((state) => ({
       selectedPersonaId: id,
       pendingSelectPersonaId: null,

@@ -3,6 +3,9 @@ import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 export interface AutonomousLogProps {
   incidents: AuditIncident[];
   loading: boolean;
+  /** The read failed: an empty list is then unknown, not "nothing handled". */
+  failed?: boolean;
+  onRetry?: () => void;
   onOpenIncident: (incident: AuditIncident) => void;
 }
 

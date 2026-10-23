@@ -1,0 +1,30 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b85a6d8d-bac7-4b6b-8bb1-1c548c0d5f52",
+  "subject": "guided-tours",
+  "evaluatedAt": "2026-10-16T18:28:08.194Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "guided-tours",
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "reason": "already judged 2026-10-16 at e506a02874 against the current digest sha256-b2:6f44ad03ebd5bd19 rev 4 (registry 11037a6c agrees); no commit or working-tree change to the governed paths since; anchors re-printed and still hold - re-judging would only restamp evaluatedAt"
+    },
+    {
+      "subject": "guided-tours",
+      "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+      "reason": "already judged 2026-10-16 at e506a02874 against the current digest sha256-b2:6f44ad03ebd5bd19 rev 4 (registry 11037a6c agrees); no commit or working-tree change to the governed paths since; anchors re-printed and still hold - re-judging would only restamp evaluatedAt"
+    },
+    {
+      "subject": "guided-tours",
+      "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+      "reason": "already judged 2026-10-16 at e506a02874 against the current digest sha256-b2:6f44ad03ebd5bd19 rev 4 (registry 11037a6c agrees); no commit or working-tree change to the governed paths since; anchors re-printed and still hold - re-judging would only restamp evaluatedAt"
+    },
+    {
+      "subject": "guided-tours",
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "reason": "already judged 2026-10-16 at e506a02874 against the current digest sha256-b2:6f44ad03ebd5bd19 rev 4 (registry 11037a6c agrees); no commit or working-tree change to the governed paths since; anchors re-printed and still hold - re-judging would only restamp evaluatedAt"
+    }
+  ],
+  "consults": []
+}

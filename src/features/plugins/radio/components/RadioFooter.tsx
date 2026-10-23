@@ -6,6 +6,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { PlayStatus } from '@/lib/bindings/PlayStatus';
 import { useMediaSession } from '../hooks/useMediaSession';
+import { claimRadioLaunchDecision } from '../hooks/radioLaunch';
 import { useRadioState } from '../hooks/useRadioState';
 import { somafmSlugForStation, useSomafmMetadata } from '../hooks/useSomafmMetadata';
 import { useYouTubePlayer } from '../hooks/useYouTubePlayer';
@@ -97,14 +98,12 @@ export default function RadioFooter() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [volumeOpen, setVolumeOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  /**
-   * Auto-resume fires exactly once per mount, after the initial radio
-   * state has loaded. The ref prevents the effect from refiring if the
-   * deps change later (e.g. station catalog update).
-   */
-  const autoResumedRef = useRef<boolean>(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  /** Trigger wrappers: a popover treats a press inside its anchor as its own. */
+  const volumeAnchorRef = useRef<HTMLDivElement | null>(null);
+  const detailsAnchorRef = useRef<HTMLDivElement | null>(null);
+  const pickerAnchorRef = useRef<HTMLDivElement | null>(null);
   const ytHostRef = useRef<HTMLDivElement | null>(null);
   const watchdogRef = useRef<number | null>(null);
   const lastReportedRef = useRef<PlayStatus>('stopped');
@@ -230,7 +229,16 @@ export default function RadioFooter() {
     [cancelWatchdog, reportStatus, showUnavailableToast, nowPlaying],
   );
 
+  /**
+   * The IFrame player accepts commands only after its `onReady`. The engine
+   * sync below must re-run then: the radio state usually arrives first (the
+   * IFrame API loads from the network), and without this a station that is
+   * already `playing` at that moment (resume on launch) stayed silent with no
+   * watchdog armed until some unrelated state change.
+   */
+  const [ytReady, setYtReady] = useState(false);
   const ytHandle = useYouTubePlayer(ytHostRef, {
+    onReady: () => setYtReady(true),
     onStateChange: onYtStateChange,
     onError: onYtError,
   });
@@ -286,7 +294,7 @@ export default function RadioFooter() {
 
   // YouTube engine.
   useEffect(() => {
-    const player = ytHandle.current;
+    const player = ytReady ? ytHandle.current : null;
     if (!player || !isYoutube || !nowPlaying) {
       // Switched away from YT — pause the player so audio stops.
       // The handle's `pause()` swallows errors internally for the
@@ -351,7 +359,7 @@ export default function RadioFooter() {
       player.pause();
       cancelWatchdog();
     }
-  }, [isYoutube, nowPlaying, state?.status, state?.stationCursors, state?.currentStationId, ytHandle, armWatchdog, cancelWatchdog]);
+  }, [isYoutube, nowPlaying, state?.status, state?.stationCursors, state?.currentStationId, ytHandle, ytReady, armWatchdog, cancelWatchdog]);
 
   // Volume sync (both engines). Skip the YT player path during a
   // crossfade animation so the rAF loop owns volume exclusively until
@@ -361,10 +369,10 @@ export default function RadioFooter() {
     if (audioRef.current && Math.abs(audioRef.current.volume - state.volume) > 0.01) {
       audioRef.current.volume = state.volume;
     }
-    if (!crossfadingRef.current) {
+    if (!crossfadingRef.current && ytReady) {
       ytHandle.current?.setVolume(state.volume);
     }
-  }, [state?.volume, state, ytHandle]);
+  }, [state?.volume, state, ytHandle, ytReady]);
 
   // Animate the YouTube player volume between two values over a duration.
   // Used by the end-of-track fade-out and start-of-next fade-in, so the
@@ -441,18 +449,20 @@ export default function RadioFooter() {
 
   useEffect(() => () => cancelWatchdog(), [cancelWatchdog]);
 
-  // Auto-resume the persisted station once, on first mount after load.
-  // Only fires if (a) the user opted in via the settings toggle,
-  // (b) there's a persisted current station, and (c) it wasn't already
-  // playing (status === 'stopped' means the prior session was paused
-  // when the app closed — and "paused" carries over via persistence).
+  // The launch decision, once per app launch (see radioLaunch.ts), after the
+  // persisted state has loaded. The backend keeps `status` as it was when the
+  // app quit, so a session that quit mid-song arrives here `playing`:
+  // - setting on: resume the persisted station if it is not already live;
+  // - setting off: a persisted `playing` is silenced, never auto-started.
   useEffect(() => {
-    if (autoResumedRef.current) return;
-    if (!loaded || !autoResume || !state) return;
-    if (!state.currentStationId) return;
-    if (state.status === 'playing' || state.status === 'buffering') return;
-    autoResumedRef.current = true;
-    radioPlay().catch(silentCatch('radio:auto-resume'));
+    if (!loaded || !state) return;
+    if (!claimRadioLaunchDecision()) return;
+    const live = state.status === 'playing' || state.status === 'buffering';
+    if (autoResume) {
+      if (state.currentStationId && !live) radioPlay().catch(silentCatch('radio:auto-resume'));
+    } else if (live) {
+      radioPause().catch(silentCatch('radio:launch-quiet'));
+    }
   }, [loaded, autoResume, state]);
 
   // Reset progress bar whenever the current track or station changes.
@@ -645,7 +655,7 @@ export default function RadioFooter() {
         <SkipForward className="w-3.5 h-3.5" />
       </button>
 
-      <div className="relative">
+      <div ref={volumeAnchorRef} className="relative">
         <button
           type="button"
           onClick={() => setVolumeOpen((v) => !v)}
@@ -663,11 +673,12 @@ export default function RadioFooter() {
             onChange={onVolumeChange}
             onMuteToggle={onMuteToggle}
             onClose={() => setVolumeOpen(false)}
+            anchorRef={volumeAnchorRef}
           />
         )}
       </div>
 
-      <div className="relative flex items-center gap-1.5 max-w-[260px] min-w-0 ml-1">
+      <div ref={detailsAnchorRef} className="relative flex items-center gap-1.5 max-w-[260px] min-w-0 ml-1">
         <button
           type="button"
           onClick={() => setDetailsOpen((v) => !v)}
@@ -721,11 +732,12 @@ export default function RadioFooter() {
             onPrev={onPrev}
             onNext={onNext}
             onClose={() => setDetailsOpen(false)}
+            anchorRef={detailsAnchorRef}
           />
         )}
       </div>
 
-      <div className="relative">
+      <div ref={pickerAnchorRef} className="relative">
         <button
           type="button"
           onClick={() => setPickerOpen((v) => !v)}
@@ -742,6 +754,7 @@ export default function RadioFooter() {
             currentStationId={state?.currentStationId ?? null}
             onPick={pickStation}
             onClose={() => setPickerOpen(false)}
+            anchorRef={pickerAnchorRef}
           />
         )}
       </div>

@@ -121,6 +121,14 @@ export function useBackgroundSnapshot({
   useEffect(() => {
     if (!snapshotId) return;
 
+    // Set by this effect's cleanup. Clearing the timer alone does not stop a
+    // poll that is already awaiting IPC (Tauri `invoke` has no abort): its
+    // late response would still reach the callbacks -- delivering the OLD
+    // job's lines after an id change, or a consumer's setState after unmount
+    // -- and `scheduleNextPoll` would arm a fresh timer that no cleanup is left
+    // to clear, so the superseded session polled on until a terminal status.
+    let disposed = false;
+
     notFoundCountRef.current = 0;
     questionsDeliveredRef.current = false;
     consecutiveRunningRef.current = 0;
@@ -143,6 +151,7 @@ export function useBackgroundSnapshot({
     const syncSnapshot = async () => {
       try {
         const snapshot = await getSnapshotRef.current(snapshotId);
+        if (disposed) return;
         notFoundCountRef.current = 0;
 
         const lines = Array.isArray(snapshot.lines) ? snapshot.lines : [];
@@ -203,6 +212,7 @@ export function useBackgroundSnapshot({
         scheduleNextPoll(backoffRef.current);
       } catch {
         // intentional: non-critical -- polling retries with backoff until maxFailures
+        if (disposed) return;
         notFoundCountRef.current += 1;
         if (notFoundCountRef.current >= failureLimit) {
           onSessionLostRef.current();
@@ -216,6 +226,7 @@ export function useBackgroundSnapshot({
     void syncSnapshot();
 
     return () => {
+      disposed = true;
       clearPollTimer();
     };
     // Callbacks are latched in refs above; only these values identify a

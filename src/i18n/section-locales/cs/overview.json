@@ -63,7 +63,11 @@
     "unknown": "Neznámý",
     "value_delivered_count": "Doručená hodnota",
     "value_delivered_rate": "Míra doručené hodnoty",
-    "value_section_title": "Obchodní hodnota"
+    "value_section_title": "Obchodní hodnota",
+    "prev_p50": "Předchozí p50",
+    "prev_p95": "Předchozí p95",
+    "range_last_days_one": "Poslední den",
+    "range_last_days_other": "Posledních {count} dní"
   },
   "analytics_dashboard": {
     "active_count": "{count} aktivních",
@@ -640,7 +644,13 @@
     "ask_athena_prompt": "Přezkoumávám návrh na optimalizaci flotily pro své agenty: „{title}“. {description} Navrhovaná akce: {action}. {focus}",
     "open_lab": "Otevřít Lab",
     "open_lab_hint": "Otestujte alternativní modely pro {persona} v Labu",
-    "title": "Optimalizace flotily"
+    "title": "Optimalizace flotily",
+    "label_action": "Akce",
+    "label_agent": "Agent",
+    "label_impact": "Dopad",
+    "severity_critical": "Naléhavé",
+    "severity_info": "Poznatek",
+    "severity_warning": "Doporučeno"
   },
   "focused_decision": {
     "accept": "Přijmout",
@@ -898,7 +908,6 @@
     "bulk_acknowledge_count": "Potvrdit {count}",
     "bulk_clear_selection": "Vymazat",
     "bulk_resolve_count": "Vyřešit {count}",
-    "col_days": "Dny",
     "col_incident": "Incident",
     "detail_label_acknowledged": "Potvrzeno",
     "detail_label_created": "Vytvořeno",
@@ -926,10 +935,8 @@
     "filter_source_all": "Všechny zdroje",
     "filter_source_label": "Zdroj",
     "filter_status_acknowledged": "Potvrzené",
-    "filter_status_all": "Vše",
     "filter_status_dismissed": "Zamítnuté",
     "filter_status_in_progress": "Probíhající",
-    "filter_status_label": "Stav",
     "filter_status_open": "Otevřené",
     "filter_status_resolved": "Vyřešené",
     "filters_active_aria": "{count} aktivní filtry",
@@ -939,7 +946,6 @@
     "group_by_none": "Žádné",
     "group_by_severity": "Závažnost",
     "group_by_source": "Zdroj",
-    "group_no_persona": "Bez agenta",
     "groups_collapse_all": "Sbalit vše",
     "groups_expand_all": "Rozbalit vše",
     "guidance_alert": "Spustilo se pravidlo upozornění. Zkontrolujte metriku, která překročila práh.",
@@ -996,7 +1002,6 @@
     "noc_diagnosis_title": "Hlavní příčina",
     "noc_evidence_label": "Důkazy",
     "noc_handled_by": "Vyřešila Athena",
-    "noc_handled_continued": "Automaticky obnoveno",
     "noc_handled_empty": "Zatím nic nebylo vyřešeno autonomně — jakmile budu moct incident bezpečně opravit sama, objeví se tady.",
     "noc_handled_title": "Vyřešeno autonomně",
     "noc_no_diagnosis": "Zatím žádná diagnóza — můžu se na incident podívat za vás.",
@@ -1025,7 +1030,6 @@
     "source_policy": "Zásada",
     "source_provider": "Poskytovatel",
     "source_tool": "Nástroj",
-    "stale_label": "Zaseknuté",
     "subtitle": "Průřezová schránka pro upozornění a chyby",
     "title": "Incidenty",
     "urgency_critical": "Vyžaduje pozornost",
@@ -1097,7 +1101,8 @@
     "stat_total_runs": "Celkem běhů",
     "subtitle": "Žebříček výkonu napříč všemi agenty",
     "this_agent": "Tento agent",
-    "title": "Žebříček agentů"
+    "title": "Žebříček agentů",
+    "sort_hint": "Kliknutím na metriku seřadíte"
   },
   "llm_spend": {
     "by_source": "Náklady podle úrovně",
@@ -1156,7 +1161,6 @@
     "curation_schedule_save": "Uložit plán",
     "curation_schedule_title": "Naplánovat kontrolu paměti",
     "delete_all": "Smazat vše",
-    "delete_all_confirm_body": "Tímto trvale smažete všech {count} vzpomínek. Tuto akci nelze vrátit zpět.",
     "delete_all_confirm_cta": "Smazat vše",
     "delete_all_confirm_title": "Smazat všechny vzpomínky?",
     "form": {
@@ -1182,13 +1186,21 @@
     "reflect_pick_persona": "Reflektovat vzpomínky agenta",
     "reflecting": "Probíhá reflexe…",
     "search_placeholder": "Hledat vzpomínky…",
-    "title": "Vzpomínky"
+    "title": "Vzpomínky",
+    "delete_all_confirm_body_all_agents": "Tím se trvale smaže všech {count} vzpomínek napříč všemi agenty, bez ohledu na aktuální filtr. Tuto akci nelze vrátit zpět."
   },
   "memory_actions": {
     "dismiss_suggestion": "Zavřít návrh",
     "memory_insights": "Poznatky ze vzpomínek",
     "suggestions": "{count} návrhů",
-    "suggestions_one": "{count} návrh"
+    "suggestions_one": "{count} návrh",
+    "kind_throttle": "Pravidlo omezení",
+    "kind_schedule": "Úprava plánu",
+    "kind_alert": "Pravidlo upozornění",
+    "kind_config": "Změna konfigurace",
+    "kind_routing": "Pravidlo směrování",
+    "rules_restored_from_session": "Uložená pravidla akcí paměti se nepodařilo načíst a byla obnovena z této relace.",
+    "rules_unreadable": "Uložená pravidla akcí paměti se nepodařilo načíst a možná bude nutné je vytvořit znovu."
   },
   "memory_card": {
     "cancel": "Zrušit",
@@ -1218,7 +1230,14 @@
     "resolved_toast": "Konflikt vyřešen",
     "retire_blocked_core_toast": "Základní (připnutou) vzpomínku nelze archivovat — vyřešte konflikt ručně",
     "scanned_scope": "v {count} nejnovějších vzpomínkách",
-    "vs": "vs."
+    "vs": "vs.",
+    "kind_duplicate": "Duplikát",
+    "kind_contradiction": "Rozpor",
+    "kind_superseded": "Nahrazeno",
+    "reason_contradiction": "Možná protichůdné pokyny ke stejnému tématu (překryv tématu {pct} %)",
+    "reason_duplicate_cross_agent": "Téměř shodné vzpomínky různých agentů (podobnost {pct} %)",
+    "reason_duplicate_same_agent": "Téměř shodné vzpomínky téhož agenta (podobnost {pct} %)",
+    "reason_superseded": "Novější vzpomínka může nahradit starší ke stejnému tématu (překryv {pct} %)"
   },
   "memory_detail": {
     "category_label": "Kategorie",
@@ -1366,7 +1385,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", poté zkopírujte svůj API klíč z Nastavení. Klíč se ukládá lokálně a sdílí mezi všemi agenty.",
-    "sign_up_free_at": "Zaregistrujte se zdarma na"
+    "sign_up_free_at": "Zaregistrujte se zdarma na",
+    "api_key_label": "Klíč API",
+    "litellm_base_url_label": "Základní URL proxy",
+    "litellm_master_key_label": "Hlavní klíč",
+    "ollama_key_placeholder": "Vložte svůj klíč z ollama.com/settings"
   },
   "predictive_alerts_extra": {
     "all_nominal": "Všechny systémy v normě",
@@ -1887,7 +1910,9 @@
     "p95_latency": "P95 latence",
     "runs": "Běhy",
     "streak": "Série",
-    "successful": "Úspěšné"
+    "successful": "Úspěšné",
+    "daily_trend_hint_one": "{date}: {rate} ({count} běh)",
+    "daily_trend_hint_other": "{date}: {rate} (běhů: {count})"
   },
   "sla": {
     "active_agents": "{count} aktivních agentů",
@@ -2106,5 +2131,15 @@
   "dc_pending_lead": "Každá čekající revize se otevře v Centru rozhodnutí s celým podkladem a stejnými klávesami jako každé jiné rozhodnutí.",
   "dc_pending_list_aria": "Čekající revize",
   "dc_select_review": "Vybrat revizi",
-  "dc_col_decision": "Rozhodnutí"
+  "dc_col_decision": "Rozhodnutí",
+  "ai_healing_overlay": {
+    "collapse": "Sbalit",
+    "expand": "Rozbalit",
+    "status_complete": "Dokončeno",
+    "status_failed": "Selhalo",
+    "status_in_progress": "Probíhá",
+    "step_applying": "Aplikace oprav",
+    "step_completed": "Dokončeno",
+    "step_diagnosing": "Diagnostika"
+  }
 }

@@ -144,7 +144,9 @@
     "color_name_violet": "بنفسجي",
     "contrast_fail": "تباين منخفض",
     "contrast_pass": "مقروء",
-    "contrast_preview": "معاينة التباين"
+    "contrast_preview": "معاينة التباين",
+    "remove_custom_icon_used_by_one": "يستخدمها أيضًا {count} وكيل آخر.",
+    "remove_custom_icon_used_by_other": "يستخدمها أيضًا {count} وكلاء آخرين."
   },
   "general_tools": "الأدوات العامة",
   "glossary_api": "طريقة تسمح لبرنامجين بالتحدث مع بعضهما تلقائياً.",
@@ -160,6 +162,8 @@
   "grid_no_data": "لا توجد بيانات",
   "grid_rows": "صفوف",
   "grid_rows_per_page": "صفوف في الصفحة",
+  "grid_prev_page": "الصفحة السابقة",
+  "grid_next_page": "الصفحة التالية",
   "grid_showing": "عرض {start}–{end} من {total} عنصر",
   "group_older": "أقدم",
   "group_this_month": "هذا الشهر",
@@ -259,7 +263,11 @@
     "schedules": "الجداول الزمنية",
     "teams_label": "الفِرَق",
     "whats_new": "ما الجديد",
-    "whats_new_update": "تحديث — اطّلع على الجديد"
+    "whats_new_update": "تحديث — اطّلع على الجديد",
+    "activity_draft_in_progress": "مسودة قيد الإعداد",
+    "activity_execution_queued": "التنفيذ في الانتظار",
+    "activity_lab_run_in_progress": "تشغيل المختبر قيد التنفيذ",
+    "activity_testing_agent": "اختبار الوكيل"
   },
   "sort_active_asc": "مرتب حسب {label}، تصاعديًا. فعّل الفرز تنازليًا.",
   "sort_active_desc": "مرتب حسب {label}، تنازليًا. فعّل الفرز تصاعديًا.",
@@ -350,5 +358,17 @@
   "rows_show_all": "عرض الكل ({count})",
   "rows_show_fewer": "عرض أقل",
   "rows_showing_all": "يتم عرض الكل ({count})",
-  "rows_showing_first": "يتم عرض أول {count}"
+  "rows_showing_first": "يتم عرض أول {count}",
+  "business_outcome": {
+    "value_delivered_label": "تم التسليم",
+    "value_delivered_title": "أنجزت الشخصية عملًا فعليًا: مخرجًا قابلًا للاستخدام أو رسالة مرسلة أو حالة معدّلة.",
+    "no_input_available_label": "لا مدخلات",
+    "no_input_available_title": "اكتمل التشغيل بسلاسة لكن لم يكن هناك ما يُعالَج: صدر تقرير جاهزية/حالة فقط.",
+    "precondition_failed_label": "محظور",
+    "precondition_failed_title": "موصّل أو بيانات اعتماد أو شرط مسبق مطلوب مفقود أو معطّل. أصلح الإعداد لإزالة الحظر.",
+    "partial_label": "جزئي",
+    "partial_title": "أنجز جزءًا من العمل فقط: حد معدّل الطلبات أو خطأ مؤقت أو حقول ناقصة في بعض العناصر.",
+    "unknown_label": "-",
+    "unknown_title": "لم يُبلَّغ عن أي نتيجة عمل (تنفيذ أقدم، أو لم يُصدر النموذج التقييم)."
+  }
 }

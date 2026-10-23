@@ -340,3 +340,98 @@ describe("useDrive history navigation", () => {
     expect(result.current.history.length).toBe(histLen);
   });
 });
+
+describe("useDrive folder listing is latest-wins", () => {
+  it("a slow listing of the folder you left never paints over the one you are in", async () => {
+    const { mockedTauriInvoke } = await import("@/test/tauriMock");
+    let releaseSlow: (v: DriveEntry[]) => void = () => {};
+    mockedTauriInvoke.mockImplementation(async (cmd: string, args?: unknown) => {
+      const relPath = (args as { relPath?: string } | undefined)?.relPath;
+      if (cmd === "drive_list") {
+        if (relPath === "slow") {
+          return new Promise<DriveEntry[]>((resolve) => {
+            releaseSlow = resolve;
+          });
+        }
+        if (relPath === "fast") return [fileEntry("fast/b.txt", { name: "b.txt" })];
+        return [];
+      }
+      if (cmd === "drive_list_tree")
+        return { name: "", path: "", children: [], hasMoreChildren: false };
+      if (cmd === "drive_storage_info")
+        return { root: "/managed", usedBytes: 0, entryCount: 0, isDev: false };
+      if (cmd === "drive_recent") return [];
+      return undefined;
+    });
+
+    const { result } = renderHook(() => useDrive());
+    act(() => result.current.navigate("slow"));
+    act(() => result.current.navigate("fast"));
+    await waitFor(() =>
+      expect(result.current.entries.map((e) => e.name)).toEqual(["b.txt"]),
+    );
+
+    // The abandoned folder's listing lands last.
+    await act(async () => {
+      releaseSlow([fileEntry("slow/a.txt", { name: "a.txt" })]);
+      await Promise.resolve();
+    });
+
+    expect(result.current.currentPath).toBe("fast");
+    expect(result.current.entries.map((e) => e.name)).toEqual(["b.txt"]);
+    expect(result.current.loading).toBe(false);
+  });
+});
+
+describe("useDrive selection follows the visible list", () => {
+  it("selectRange spans the rows between the two clicks in the SORTED order", async () => {
+    defaultIpcMocks([
+      fileEntry("a.txt", { size: 1 }),
+      fileEntry("b.txt", { size: 3 }),
+      fileEntry("c.txt", { size: 2 }),
+      fileEntry("d.txt", { size: 4 }),
+    ]);
+    const { result } = renderHook(() => useDrive());
+    await waitFor(() => expect(result.current.entries.length).toBe(4));
+
+    act(() => result.current.setSort("size", "desc"));
+    // Visible: d(4) b(3) c(2) a(1). Click d, shift-click c -> d, b, c.
+    act(() => result.current.selectOnly("d.txt"));
+    act(() => result.current.selectRange("c.txt"));
+    expect(Array.from(result.current.selection).sort()).toEqual([
+      "b.txt",
+      "c.txt",
+      "d.txt",
+    ]);
+  });
+
+  it("selectAll under a search filter selects only the matching rows", async () => {
+    defaultIpcMocks([fileEntry("report.txt"), fileEntry("photo.png")]);
+    const { result } = renderHook(() => useDrive());
+    await waitFor(() => expect(result.current.entries.length).toBe(2));
+
+    act(() => result.current.setSearchQuery("report"));
+    act(() => result.current.selectAll());
+    expect(Array.from(result.current.selection)).toEqual(["report.txt"]);
+  });
+});
+
+describe("useDrive listing failure", () => {
+  it("keeps the raw IPC rejection so the view can resolve it", async () => {
+    const { mockedTauriInvoke } = await import("@/test/tauriMock");
+    const appError = { error: "Not found: gone", kind: "not_found" };
+    mockedTauriInvoke.mockImplementation(async (cmd: string) => {
+      if (cmd === "drive_list") throw appError;
+      if (cmd === "drive_list_tree")
+        return { name: "", path: "", children: [], hasMoreChildren: false };
+      if (cmd === "drive_storage_info")
+        return { root: "/managed", usedBytes: 0, entryCount: 0, isDev: false };
+      if (cmd === "drive_recent") return [];
+      return undefined;
+    });
+    const { result } = renderHook(() => useDrive("gone"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).not.toBe("[object Object]");
+    expect(result.current.error).toBeTruthy();
+  });
+});

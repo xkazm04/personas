@@ -9,16 +9,16 @@ import { useSystemStore } from '@/stores/systemStore';
 import { PrimarySoftButton } from './PrimarySoftButton';
 
 const FIELD_OPTIONS = [
-  { value: 'effort', label: 'Effort' },
-  { value: 'impact', label: 'Impact' },
-  { value: 'risk', label: 'Risk' },
-  { value: 'category', label: 'Category' },
-  { value: 'scan_type', label: 'Scan Type' },
+  { value: 'effort', labelKey: 'rule_field_effort' },
+  { value: 'impact', labelKey: 'rule_field_impact' },
+  { value: 'risk', labelKey: 'rule_field_risk' },
+  { value: 'category', labelKey: 'rule_field_category' },
+  { value: 'scan_type', labelKey: 'rule_field_scan_type' },
   // The findings spine — rules can target which SENSOR raised an idea, e.g.
-  // "auto-accept passport_gap" (values: standards_finding · passport_gap ·
-  // llm_cost · sentry_spike · kpi_offtrack). Never matches a scanner idea.
-  { value: 'origin', label: 'Source (sensor)' },
-];
+  // "auto-accept passport_gap" (values: FINDING_ORIGINS in api/devTools). Never
+  // matches a scanner idea.
+  { value: 'origin', labelKey: 'rule_field_origin' },
+] as const;
 
 const NUMERIC_OP_OPTIONS = [
   { value: 'lt', label: '<' },
@@ -41,6 +41,16 @@ interface Condition {
 
 const DEFAULT_CONDITION: Condition = { field: 'effort', op: 'lt', value: '4' };
 const isNumericField = (field: string) => ['effort', 'impact', 'risk'].includes(field);
+
+/** The stored value of one condition. The Rust evaluator matches `in` only
+ *  against a JSON ARRAY (`compare_string`, triage.rs), so the comma list the
+ *  operator types is split here; sent as one string, an `in` rule matched
+ *  nothing, ever. */
+export function conditionValue(c: Condition): number | string | string[] {
+  if (isNumericField(c.field)) return Number(c.value);
+  if (c.op === 'in') return c.value.split(',').map((v) => v.trim()).filter(Boolean);
+  return c.value;
+}
 // The same geometry as ThemedSelect beside it (px-3 py-2, typo-body, primary/15 rule), on the input radius.
 const FIELD_CLASS = 'px-3 py-2 typo-body bg-background/50 border border-primary/15 rounded-input text-foreground focus-ring';
 
@@ -56,7 +66,7 @@ export function TriageRuleForm({ projectId, onClose }: { projectId: string; onCl
     const conditionsJson = JSON.stringify(conditions.map(c => ({
       field: c.field,
       op: c.op,
-      value: isNumericField(c.field) ? Number(c.value) : c.value,
+      value: conditionValue(c),
     })));
     await createTriageRule(ruleName.trim(), conditionsJson, action, projectId);
     onClose();
@@ -86,9 +96,9 @@ export function TriageRuleForm({ projectId, onClose }: { projectId: string; onCl
       />
       {conditions.map((cond, idx) => (
         <div key={idx} className="flex items-center gap-1.5">
-          {idx > 0 && <span className="typo-caption w-8">AND</span>}
+          {idx > 0 && <span className="typo-caption w-8">{t.plugins.dev_triage.rule_condition_and}</span>}
           <ThemedSelect value={cond.field} onChange={e => updateCondition(idx, 'field', e.target.value)} wrapperClassName="w-44">
-            {FIELD_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            {FIELD_OPTIONS.map(f => <option key={f.value} value={f.value}>{t.plugins.dev_triage[f.labelKey]}</option>)}
           </ThemedSelect>
           <ThemedSelect value={cond.op} onChange={e => updateCondition(idx, 'op', e.target.value)} wrapperClassName="w-20">
             {(isNumericField(cond.field) ? NUMERIC_OP_OPTIONS : STRING_OP_OPTIONS).map(o =>
@@ -111,7 +121,7 @@ export function TriageRuleForm({ projectId, onClose }: { projectId: string; onCl
       </Button>
       <div className="flex items-center gap-2">
         <span className="typo-caption">{t.plugins.dev_triage.action_label}</span>
-        <Button variant={action === 'accept' ? 'accent' : 'ghost'} tone="success" size="xs" aria-pressed={action === 'accept'} onClick={() => setAction('accept')}>Accept</Button>
+        <Button variant={action === 'accept' ? 'accent' : 'ghost'} tone="success" size="xs" aria-pressed={action === 'accept'} onClick={() => setAction('accept')}>{t.plugins.dev_triage.rule_action_accept}</Button>
         <Button variant={action === 'reject' ? 'accent' : 'ghost'} tone="error" size="xs" aria-pressed={action === 'reject'} onClick={() => setAction('reject')}>{t.common.reject}</Button>
       </div>
       <div className="flex gap-2 pt-1">

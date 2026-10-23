@@ -9,7 +9,9 @@ import { parseConnectorMetadata, type ConnectorDefinition, type CredentialMetada
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
 import { listProfiles as listTwinProfiles, type TwinProfile } from '@/api/twin/twin';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 interface ConnectorCredentialModalProps {
   connector: SuggestedConnector;
@@ -53,6 +55,7 @@ export function ConnectorCredentialModal({
     [connectorDefinition?.metadata],
   );
   const [twinProfiles, setTwinProfiles] = useState<TwinProfile[] | null>(null);
+  const [twinLoadFailure, setTwinLoadFailure] = useState<{ raw: unknown } | null>(null);
   useEffect(() => {
     if (requiresPicker !== 'twin') return;
     let alive = true;
@@ -60,7 +63,10 @@ export function ConnectorCredentialModal({
       .then((profiles) => {
         if (alive) setTwinProfiles(profiles);
       })
-      .catch(silentCatch('ConnectorCredentialModal:listTwinProfiles'));
+      .catch((err: unknown) => {
+        silentCatch('ConnectorCredentialModal:listTwinProfiles')(err);
+        if (alive) setTwinLoadFailure({ raw: err });
+      });
     return () => {
       alive = false;
     };
@@ -135,6 +141,7 @@ export function ConnectorCredentialModal({
           <button
             type="button"
             onClick={onClose}
+            aria-label={t.common.close}
             className="p-1.5 rounded-card hover:bg-primary/10 transition-colors text-foreground hover:text-foreground/95"
           >
             <X className="w-4 h-4" />
@@ -195,6 +202,15 @@ export function ConnectorCredentialModal({
             <p className="typo-body text-foreground whitespace-pre-line">
               {connector.setup_instructions}
             </p>
+          </div>
+        )}
+
+        {twinLoadFailure && (
+          <div data-testid="twin-picker-load-error" role="alert" className="mb-4">
+            <InlineErrorBanner
+              severity="error"
+              message={resolveErrorTranslated(t, extractMessage(twinLoadFailure.raw)).message}
+            />
           </div>
         )}
 

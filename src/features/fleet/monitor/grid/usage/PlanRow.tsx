@@ -116,6 +116,13 @@ export function PlanRow({
           </Tooltip>
         )}
         <ReloginStatus view={view} />
+        {plan.rotationRank !== null && !plan.isActive && !trouble && (
+          <Tooltip content={t.monitor.usage_rotation_rank_hint}>
+            <span className="flex-shrink-0 whitespace-nowrap typo-caption tabular-nums" data-testid="fleet-usage-rotation-rank">
+              {tx(t.monitor.usage_rotation_rank, { rank: plan.rotationRank })}
+            </span>
+          </Tooltip>
+        )}
       </span>
       {(!trouble || canRemove || showControls || canConfigure) && (
         <span className={STATS_GROUP} data-testid="fleet-usage-stats">

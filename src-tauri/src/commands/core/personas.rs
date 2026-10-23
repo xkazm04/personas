@@ -212,6 +212,30 @@ fn validate_update_persona(input: &UpdatePersonaInput) -> Result<(), AppError> {
     check(errors)
 }
 
+/// `repo::update` plus the wake `set_persona_enabled` records: a save that
+/// carries `enabled: true` for a persona that was OFF is the same switch-on as
+/// the fleet tile's, so it owes the same durable attention wake. The command
+/// palette and the editor header toggle go through `update_persona`, and
+/// without this they waited for the next ordinary tick. A save that leaves the
+/// switch alone, or re-saves an already-enabled persona, records nothing.
+fn update_recording_wake(
+    pool: &crate::db::DbPool,
+    id: &str,
+    input: UpdatePersonaInput,
+) -> Result<Persona, AppError> {
+    let switching_on = input.enabled == Some(true);
+    let was_enabled = if switching_on {
+        repo::get_by_id(pool, id)?.enabled
+    } else {
+        true
+    };
+    let result = repo::update(pool, id, input)?;
+    if switching_on && !was_enabled && result.enabled {
+        crate::engine::subscription::request_wake(pool, id);
+    }
+    Ok(result)
+}
+
 #[tauri::command]
 #[requires(auth)]
 pub fn update_persona(
@@ -223,7 +247,7 @@ pub fn update_persona(
     // G17 (2026-09-08): the editor's save no longer consults the active-persona
     // cap either. See `set_persona_enabled` above — the cap counts personas that
     // are RUNNING and is enforced at dispatch, so no save can be refused by it.
-    let result = repo::update(&state.db, &id, input)?;
+    let result = update_recording_wake(&state.db, &id, input)?;
     // Invalidate cached session AFTER successful DB update
     let pool = state.session_pool.clone();
     let pid = id.clone();
@@ -349,8 +373,8 @@ pub fn sync_capability_parameters(
                 .and_then(|recipe| {
                     serde_json::from_str::<serde_json::Value>(&recipe.prompt_template).ok()
                 })
-                .and_then(|tpl| tpl.get("input_schema").cloned())
-                .filter(|s| s.is_array())
+                .and_then(|tpl| rp::input_schema_of(&tpl).cloned())
+                .map(serde_json::Value::Array)
                 .or_else(|| uc.get("input_schema").cloned().filter(|s| s.is_array()))?;
             Some(serde_json::json!({ "title": title, "input_schema": schema }))
         })
@@ -1168,5 +1192,72 @@ mod drain_tests {
             )
             .unwrap();
         assert_eq!(bystander_events, 1, "unrelated event history is preserved");
+    }
+}
+
+#[cfg(test)]
+mod update_wake_tests {
+    use super::*;
+    use crate::db::init_test_db;
+
+    fn pending_wakes(pool: &crate::db::DbPool) -> String {
+        crate::db::repos::core::settings::get(
+            pool,
+            crate::db::settings_keys::ATTENTION_WAKE_REQUESTS,
+        )
+        .unwrap()
+        .unwrap_or_default()
+    }
+
+    fn mk(pool: &crate::db::DbPool, enabled: bool) -> Persona {
+        repo::create(
+            pool,
+            CreatePersonaInput {
+                name: "Wake Subject".into(),
+                system_prompt: "You are a helpful assistant.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(enabled),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap()
+    }
+
+    fn enable_input(enabled: bool) -> UpdatePersonaInput {
+        UpdatePersonaInput {
+            enabled: Some(enabled),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn an_update_that_switches_a_persona_on_records_the_wake_like_the_fleet_door() {
+        let pool = init_test_db().unwrap();
+        let p = mk(&pool, false);
+        update_recording_wake(&pool, &p.id, enable_input(true)).unwrap();
+        assert!(
+            pending_wakes(&pool).contains(&p.id),
+            "OFF->ON via update must owe a wake"
+        );
+    }
+
+    #[test]
+    fn re_saving_an_enabled_persona_or_switching_off_records_no_wake() {
+        let pool = init_test_db().unwrap();
+        let on = mk(&pool, true);
+        update_recording_wake(&pool, &on.id, enable_input(true)).unwrap();
+        update_recording_wake(&pool, &on.id, enable_input(false)).unwrap();
+        assert!(pending_wakes(&pool).is_empty(), "no OFF->ON flip, no wake");
     }
 }

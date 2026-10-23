@@ -6,9 +6,12 @@ import { PasswordToggleField } from '@/features/shared/components/forms/Password
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import { silentCatch } from '@/lib/silentCatch';
+import { secretSafeErrorCode } from '../libs/secretSafeError';
 
 const logger = createLogger('ByomApiKeyManager');
 
@@ -16,8 +19,7 @@ const logger = createLogger('ByomApiKeyManager');
 // Never surface raw error messages or values from this module — they would leak to
 // Sentry, browser console, or React error boundaries. Log only the settings key.
 function logSecretSafeError(op: string, settingsKey: string, err: unknown): void {
-  const code = err instanceof Error ? err.name : typeof err;
-  logger.error(`${op} failed`, { settingsKey, code });
+  logger.error(`${op} failed`, { settingsKey, code: secretSafeErrorCode(err) });
 }
 
 /** Definition of a provider API key entry that maps to a backend settings_key. */
@@ -111,13 +113,14 @@ export function ByomApiKeyManager() {
 
   // Load all key values in a single bulk IPC instead of N parallel invokes.
   const settingsKeys = useMemo(() => PROVIDER_KEYS.map((def) => def.settingsKey), []);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadNonce, setReloadNonce] = useState(0);
   useEffect(() => {
     let cancelled = false;
+    // A rejected bulk read is NOT "no keys stored": it used to be mapped to {}
+    // so every row rendered as unconfigured and an operator re-entered a key
+    // that already existed. Keep the failure as its own state with a retry.
     getAppSettingsBulk(settingsKeys)
-      .catch((err) => {
-        silentCatch('ByomApiKeyManager:getAppSettingsBulk')(err);
-        return {} as Record<string, string | null>;
-      })
       .then((map) => {
         if (cancelled) return;
         const results: KeyEntry[] = PROVIDER_KEYS.map((def) => {
@@ -133,10 +136,23 @@ export function ByomApiKeyManager() {
           };
         });
         setEntries(results);
+        setLoadFailed(false);
+        setLoading(false);
+      })
+      .catch((err) => {
+        silentCatch('ByomApiKeyManager:getAppSettingsBulk')(err);
+        if (cancelled) return;
+        setLoadFailed(true);
         setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [settingsKeys]);
+  }, [settingsKeys, reloadNonce]);
+
+  const retryLoad = useCallback(() => {
+    setLoading(true);
+    setLoadFailed(false);
+    setReloadNonce((n) => n + 1);
+  }, []);
 
   const updateEntry = useCallback((index: number, patch: Partial<KeyEntry>) => {
     setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)));
@@ -229,6 +245,8 @@ export function ByomApiKeyManager() {
                only the row region ghosts, delayed so a fast fetch never paints
                one. Geometry-matched to KeyEntryRow below. */
             <ByomKeyGhostRows />
+          ) : loadFailed ? (
+            <InlineErrorBanner severity="error" message={s.keys_load_failed} onRetry={retryLoad} />
           ) : entries.map((entry, index) => (
             <KeyEntryRow
               key={entry.def.settingsKey}
@@ -261,6 +279,10 @@ function QwenKeyRow() {
   const [value, setValue] = useState('');
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
+  // A failed keyring write or clear must say so: without this the row only
+  // logged, so a refused key left the editor open with no signal and the user
+  // could believe Qwen was configured. Same badge the settings-key rows use.
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -277,6 +299,7 @@ function QwenKeyRow() {
     const v = value.trim();
     if (!v) return;
     setBusy(true);
+    setFailed(false);
     try {
       await setQwenCredentials(v);
       setConfigured(true);
@@ -284,6 +307,7 @@ function QwenKeyRow() {
       setValue('');
     } catch (err) {
       logSecretSafeError('save', 'qwen-api-key', err);
+      setFailed(true);
     } finally {
       setBusy(false);
     }
@@ -291,6 +315,7 @@ function QwenKeyRow() {
 
   const remove = useCallback(async () => {
     setBusy(true);
+    setFailed(false);
     try {
       await clearQwenCredentials();
       setConfigured(false);
@@ -298,18 +323,21 @@ function QwenKeyRow() {
       setEditing(false);
     } catch (err) {
       logSecretSafeError('delete', 'qwen-api-key', err);
+      setFailed(true);
     } finally {
       setBusy(false);
     }
   }, []);
 
   const showEditor = editing || !configured;
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
 
   return (
     <div className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="typo-body text-foreground">{s.provider_qwen_label}</span>
+          {failed && <ConnectionBadge state="error" />}
           {configured && (
             <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-secondary/40 border border-primary/15 text-foreground">
               <Check className="w-3 h-3" />
@@ -320,7 +348,7 @@ function QwenKeyRow() {
         {configured && !editing && (
           <button
             type="button"
-            onClick={() => void remove()}
+            onClick={() => setConfirmingRemove(true)}
             disabled={busy}
             className="typo-caption p-1.5 rounded-input text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
             title={s.remove_key}
@@ -365,6 +393,19 @@ function QwenKeyRow() {
           </div>
         </div>
       )}
+      {confirmingRemove && (
+        <ConfirmDialog
+          danger
+          title={s.remove_key}
+          body={t.common.confirm_destructive_cannot_undo}
+          confirmLabel={s.remove_key}
+          onConfirm={async () => {
+            await remove();
+            setConfirmingRemove(false);
+          }}
+          onCancel={() => setConfirmingRemove(false)}
+        />
+      )}
     </div>
   );
 }
@@ -389,7 +430,7 @@ function KeyEntryRow({
   onChange: (value: string) => void;
   onSave: () => void;
   onCancel: () => void;
-  onDelete: () => void;
+  onDelete: () => void | Promise<void>;
   onTest: () => void;
 }) {
   const hasValue = !!entry.savedValue;
@@ -397,6 +438,7 @@ function KeyEntryRow({
   const isDirty = entry.value !== entry.savedValue;
   const { t } = useTranslation();
   const s = t.settings.byom;
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   return (
     <div className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2">
@@ -428,7 +470,7 @@ function KeyEntryRow({
           {hasValue && !entry.editing && (
             <button
               type="button"
-              onClick={onDelete}
+              onClick={() => setConfirmingDelete(true)}
               className="typo-caption p-1.5 rounded-input text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all"
               title={s.remove_key}
             >
@@ -530,15 +572,26 @@ function KeyEntryRow({
                 e.stopPropagation();
                 copy('value', entry.savedValue);
               }}
-              aria-label={copiedKey === 'value' ? 'Copied' : 'Copy value'}
+              aria-label={copiedKey === 'value' ? t.common.copied : t.common.copy}
               className="p-1.5 rounded-input text-foreground hover:text-foreground transition-all"
-              // eslint-disable-next-line custom/no-hardcoded-jsx-text
-              title="Copy value"
             >
               {copiedKey === 'value' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
             </button>
           )}
         </div>
+      )}
+      {confirmingDelete && (
+        <ConfirmDialog
+          danger
+          title={s.remove_key}
+          body={t.common.confirm_destructive_cannot_undo}
+          confirmLabel={s.remove_key}
+          onConfirm={async () => {
+            await onDelete();
+            setConfirmingDelete(false);
+          }}
+          onCancel={() => setConfirmingDelete(false)}
+        />
       )}
     </div>
   );

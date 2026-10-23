@@ -18,6 +18,7 @@ import {
 } from '@/api/pipeline/triggers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 
 // --- Helpers ---------------------------------------------------------------
@@ -265,9 +266,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                   </button>
                 </div>
               ) : logs.length === 0 ? (
-                <div className="py-2 typo-body text-foreground">
-                  {t.triggers.no_webhook_requests}
-                </div>
+                <EmptyState art="link" size="sm" title={t.triggers.no_webhook_requests} />
               ) : (
                 <>
                   {logs.map(entry => (

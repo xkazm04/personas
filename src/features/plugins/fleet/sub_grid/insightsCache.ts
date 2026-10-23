@@ -12,8 +12,6 @@ export const SUMMARY_TTL_MS = 15_000;
  *  Claude sessions over days, so cap it so the map doesn't grow unbounded. */
 const MAX_SUMMARY_CACHE_ENTRIES = 50;
 
-let summaryCacheEvictions = 0;
-
 /** Read a session's cached summary, touching it to the MRU end on a hit. */
 export function readSummaryCache(id: string): { summary: FleetTranscriptSummary; at: number } | undefined {
   const entry = SUMMARY_CACHE.get(id);
@@ -32,17 +30,10 @@ export function writeSummaryCache(id: string, entry: { summary: FleetTranscriptS
     const oldestKey = SUMMARY_CACHE.keys().next().value;
     if (oldestKey === undefined) break;
     SUMMARY_CACHE.delete(oldestKey);
-    summaryCacheEvictions++;
   }
-}
-
-/** Test-only / diagnostic accessor for the eviction counter. */
-export function __getInsightsCacheStats(): { size: number; evictions: number } {
-  return { size: SUMMARY_CACHE.size, evictions: summaryCacheEvictions };
 }
 
 /** Test-only: the module-scope cache leaks between vitest cases otherwise. */
 export function __resetInsightsCacheForTests(): void {
   SUMMARY_CACHE.clear();
-  summaryCacheEvictions = 0;
 }

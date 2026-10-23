@@ -16,6 +16,7 @@ import { SchemaEditor } from '../extract/SchemaEditor';
 import { EntityTable } from '../extract/EntityTable';
 import { EntityToolbar } from '../extract/EntityToolbar';
 import { useEntityBrowser } from '../extract/useEntityBrowser';
+import { extractMessage } from '@/lib/silentCatch';
 
 /**
  * Structured-extraction tab: the two-pass flow (infer schema -> review/edit ->
@@ -62,7 +63,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
     try {
       setSchema(await kbInferSchema(kb.id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
     } finally {
       setInferring(false);
     }
@@ -79,7 +80,7 @@ export function ExtractTab({ kb }: { kb: KnowledgeBase }) {
       // recorded that it ever ran. Shape counts only, no corpus content.
       trackInteraction('vector_kb', 'extraction_run', `entityTypes=${schema.entities.length}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
     } finally {
       startingRef.current = false;
       setStarting(false);

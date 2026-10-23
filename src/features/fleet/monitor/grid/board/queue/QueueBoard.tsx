@@ -13,7 +13,6 @@
 // the shared `ScenarioEmptyState` when the fleet holds nothing running or
 // queued. A variant only ever paints rows.
 
-import { ListOrdered } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { GridBoard, type GridBoardProps } from '../GridBoard';
@@ -66,7 +65,7 @@ export function QueueBoard({
   if (queue.model.empty) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center p-4" data-testid="fleet-queue-empty">
-        <ScenarioEmptyState icon={ListOrdered} title={t.monitor.queue_empty_title} description={t.monitor.queue_empty_hint} />
+        <ScenarioEmptyState art="inbox" size="sm" title={t.monitor.queue_empty_title} description={t.monitor.queue_empty_hint} />
       </div>
     );
   }

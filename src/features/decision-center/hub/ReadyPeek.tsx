@@ -1,5 +1,5 @@
 /**
- * ReadyPeek — the `ready` chip's peek: ideas a person accepted that never
+ * ReadyPeek — the Ready chip's peek: ideas a person accepted that never
  * became work, and the bar that sends them, in R2-C's glass.
  *
  * Rehomed from the retired DecisionDock's Dispatch tab. It is the deck's own
@@ -10,6 +10,7 @@
  * strip's `ready` count is re-read so the chip and the list agree.
  */
 import { useEffect } from 'react';
+import { Rocket } from 'lucide-react';
 
 import { DeckAcceptedList } from './ready/DeckAcceptedList';
 import { DeckDispatchBar } from './ready/DeckDispatchBar';
@@ -21,6 +22,7 @@ import { useSystemStore } from '@/stores/systemStore';
 
 import { usePeekKeyboard } from './usePeekKeyboard';
 import { PeekShell } from './visual/PeekShell';
+import { extractMessage } from '@/lib/silentCatch';
 
 const NO_ITEMS: never[] = [];
 const noop = () => undefined;
@@ -37,7 +39,7 @@ export function ReadyPeek({
   const { t } = useTranslation();
   const ctl = useAcceptedDispatch({
     resolveErrorMessage: (err) =>
-      resolveErrorTranslated(t, err instanceof Error ? err.message : String(err)).message,
+      resolveErrorTranslated(t, extractMessage(err)).message,
   });
   // Only Esc and ←/→ mean anything here: the rows are selected, not decided.
   usePeekKeyboard(NO_ITEMS, keyboard, { onOpen: noop, onDecide: noop, onWalk, onClose });
@@ -49,7 +51,7 @@ export function ReadyPeek({
   }, [report, refreshUndispatched]);
 
   return (
-    <PeekShell chip="ready" lamp="success" count={count} anchor={anchor} onClose={onClose}>
+    <PeekShell identity={{ id: 'ready', label: t.monitor.dc_hub_chip_ready, icon: Rocket }} lamp="success" count={count} anchor={anchor} onClose={onClose}>
       <div className="flex min-h-0 flex-1 flex-col px-2 pb-2" data-testid="decision-peek-ready">
         <DeckDispatchBar ctl={ctl} />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">

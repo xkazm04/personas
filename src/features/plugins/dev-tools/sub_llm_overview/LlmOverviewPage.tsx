@@ -23,11 +23,14 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { DevToolsPageHeader } from '../DevToolsPageHeader';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import type { EmptyArtMotif } from '@/features/shared/components/display/emptyArt/EmptyArt';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { toastCatch } from '@/lib/silentCatch';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useLlmPinpoints } from './useLlmPinpoints';
+import { useLlmPinpoints, type LlmPinpointsData } from './useLlmPinpoints';
 import type { LlmPinpoint, LlmWindow } from './llmTracingAdapters';
 import { isOverBudget, overBudgetCount, pinpointsForContext } from './llmTracingAdapters';
 import { LLM_COST_THRESHOLD_USD } from '../sub_triage/findings/findingConfig';
@@ -47,11 +50,13 @@ const WINDOW_TABS: SegmentedTab<LlmWindow>[] = [
 // Layer 1 — projects × connector assignment matrix
 // ---------------------------------------------------------------------------
 
-function LlmMatrix() {
+// llmCreds comes from the page's single useLlmPinpoints instance, as MonMatrix's
+// monCreds does: a second instance here re-ran listCredentials AND the paged
+// tool fetch on every tab open and project switch.
+function LlmMatrix({ llmCreds }: { llmCreds: LlmPinpointsData['llmCreds'] }) {
   const { t } = useTranslation();
   const projects = useSystemStore((s) => s.projects);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
-  const { llmCreds } = useLlmPinpoints();
 
   const assign = useCallback(
     async (projectId: string, credId: string | null) => {
@@ -97,7 +102,16 @@ function LlmMatrix() {
 // Layer 2 — pinpoints table
 // ---------------------------------------------------------------------------
 
-function StateMessage({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle: string }) {
+function StateMessage({ icon, title, subtitle, art }: { icon: ReactNode; title: string; subtitle: string; art?: EmptyArtMotif }) {
+  // A genuine empty (`art` given) draws the shared illustration; failures and
+  // blockers keep the plain icon block.
+  if (art) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <EmptyState art={art} title={title} description={subtitle} />
+      </div>
+    );
+  }
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-2 py-16 text-center px-6">
       <div className="text-primary/40">{icon}</div>
@@ -405,7 +419,7 @@ export default function LlmOverviewPage() {
       ) : (
         <>
       {/* Layer 1 — assignment matrix */}
-      <LlmMatrix />
+      <LlmMatrix llmCreds={data.llmCreds} />
 
       {/* The filter says what it is and how to leave. A filtered table that does
           not announce its filter is a table that lies about its totals. */}
@@ -439,9 +453,10 @@ export default function LlmOverviewPage() {
             subtitle={dt.llm_no_project_sub}
           />
         ) : state === 'empty' ? (
-          <StateMessage icon={<Plug className="w-8 h-8" />} title={dt.llm_empty_title} subtitle={dt.llm_empty_sub} />
+          <StateMessage art="link" icon={<Plug className="w-8 h-8" />} title={dt.llm_empty_title} subtitle={dt.llm_empty_sub} />
         ) : state === 'unmapped' ? (
           <StateMessage
+            art="link"
             icon={<Plug className="w-8 h-8" />}
             title={dt.llm_unmapped_title}
             subtitle={dt.llm_unmapped_sub}
@@ -462,13 +477,14 @@ export default function LlmOverviewPage() {
           <StateMessage
             icon={<AlertCircle className="w-8 h-8 text-red-400/70" />}
             title={dt.llm_error_title}
-            subtitle={error ?? dt.llm_unknown_error}
+            subtitle={inlineErrorCopy(t, error, dt.llm_unknown_error)}
           />
         ) : visiblePinpoints.length === 0 ? (
           /* An empty FILTER is still the empty-calls state, not a blank table:
              the row count changed, the reason the surface has nothing to show
              did not. */
           <StateMessage
+            art="chart"
             icon={<BarChart3 className="w-8 h-8" />}
             title={dt.llm_empty_calls_title}
             subtitle={
@@ -492,6 +508,8 @@ export default function LlmOverviewPage() {
               defaultSortKey="cost"
               defaultSortDir="desc"
               ariaLabel={dt.llm_aria_table}
+              emptyArt="chart"
+              emptyTitle={dt.llm_empty_calls_title}
               tableId="llm-overview-pinpoints"
             />
             {truncated && (

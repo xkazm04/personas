@@ -228,5 +228,22 @@
   "soundings_where_it_sits": "위치. 관련 프로젝트는 굵게 표시",
   "soundings_who_athena": "아테나",
   "soundings_who_chart": "차트",
-  "soundings_yes": "예"
+  "soundings_yes": "예",
+  "dim_label_agents": "에이전트",
+  "dim_label_auth": "인증",
+  "dim_label_ci": "CI",
+  "dim_label_datalinks": "데이터 분석",
+  "dim_label_db": "데이터베이스",
+  "dim_label_goals": "목표",
+  "dim_label_hosting": "호스팅",
+  "dim_label_ideas": "아이디어",
+  "dim_label_kpi": "KPI",
+  "dim_label_llm": "LLM 비용",
+  "dim_label_monitoring": "모니터링",
+  "dim_label_security": "보안",
+  "dim_label_skills": "스킬",
+  "dim_label_support": "지원",
+  "dim_label_tests": "테스트",
+  "scan_dispatched_toast": "아이디어 스캔을 시작했습니다({label})",
+  "scan_drawer_label": "아이디어 스캔({label})"
 }

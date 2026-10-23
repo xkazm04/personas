@@ -130,6 +130,7 @@
       ],
       "resolved": false
     },
+    "agents/sub_glyph/personaCore/PersonaCoreModal.tsx": {"count":1,"sections":[7],"lines":["37"],"contexts":["here. The chunk-boundary addition it misses: `agents/sub_glyph/personaCore/PersonaCoreModal.tsx:37`"],"resolved":false},
     "dist/assets/preload-helper-*.js": {"count":1,"sections":[8],"contexts":["(`dist/assets/preload-helper-*.js`, verified) and absent in `vite dev`, where"],"resolved":false},
     "feature-lazy.tsx": {
       "count": 1,
@@ -241,14 +242,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_editor/components/EditorLazyTabs.tsx"
-    },
-    "src/features/agents/sub_glyph/personaCore/PersonaCoreModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["37"],
-      "contexts": ["here. The chunk-boundary addition it misses: `agents/sub_glyph/personaCore/PersonaCoreModal.tsx:37`"],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/sub_glyph/personaCore/PersonaCoreModal.tsx"
     },
     "src/features/home/components/HomePage.tsx": {
       "count": 2,

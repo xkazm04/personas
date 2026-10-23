@@ -33,7 +33,7 @@ const CAP = 6;
  * which told the eye nothing about which part was the choice. The "Saved" note is the tile's meta.
  */
 export function DecisionLogWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const decisions = useMemo<DecisionRow[]>(() => {
     const raw = config?.decisions;
     if (!Array.isArray(raw)) return [];
@@ -52,9 +52,9 @@ export function DecisionLogWidget({ config, title, span, actions, footer }: Cock
         ...d,
         key: `${d.label}-${i}`,
         index: i,
-        when: d.timestamp ? prettyTime(d.timestamp) : undefined,
+        when: d.timestamp ? prettyTime(d.timestamp, language) : undefined,
       }));
-  }, [config]);
+  }, [config, language]);
 
   const heading = title || t.athena.decision_log_title;
   const c = t.overview.cockpit;
@@ -102,7 +102,7 @@ export function DecisionLogWidget({ config, title, span, actions, footer }: Cock
       actions={actions}
       footer={footer}
       state={empty ? 'empty' : undefined}
-      empty={{ title: t.athena.decision_log_empty }}
+      empty={{ art: 'archive', title: t.athena.decision_log_empty }}
       testId="companion-decision-log-widget"
     >
       <WidgetTable<DecisionRow>
@@ -123,8 +123,11 @@ export function DecisionLogWidget({ config, title, span, actions, footer }: Cock
  * just hh:mm if today, otherwise the date. The widget doesn't
  * own a richer relative-time formatter, and the chat scroll already
  * implies recency.
+ *
+ * The locale is the APP's language, as TimelineWidget's clock does - never the
+ * host OS (`undefined`), which put a Czech UI's times in the machine's format.
  */
-function prettyTime(iso: string): string {
+function prettyTime(iso: string, language: string): string {
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
@@ -134,12 +137,12 @@ function prettyTime(iso: string): string {
       d.getMonth() === now.getMonth() &&
       d.getDate() === now.getDate();
     if (sameDay) {
-      return d.toLocaleTimeString(undefined, {
+      return d.toLocaleTimeString(language, {
         hour: '2-digit',
         minute: '2-digit',
       });
     }
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleDateString(language, {
       month: 'short',
       day: 'numeric',
     });

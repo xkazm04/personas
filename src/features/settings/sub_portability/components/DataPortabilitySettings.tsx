@@ -117,6 +117,7 @@ export default function DataPortabilitySettings() {
           onCredExport={dp.handleCredExport}
           onCredImport={dp.handleCredImport}
           onCredImportWithResolutions={dp.handleCredImportWithResolutions}
+          onCredDismissConflicts={dp.dismissCredImportConflicts}
         />
       ),
     },

@@ -50,7 +50,7 @@ export function LeaderboardSection() {
       <PaneHeader
         label={t.overview.leaderboard.title}
         subtitle={leaderboard.length > 1
-          ? tx(t.overview.leaderboard.section_subtitle, { count: leaderboard.length, avg: fleetAvgScore })
+          ? tx(t.overview.leaderboard.section_subtitle, { count: leaderboard.length, avg: fleetAvgScore ?? '—' })
           : undefined}
       />
       <div className="p-3">

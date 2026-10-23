@@ -36,6 +36,7 @@ import {
 import { revokePairing } from '@/api/auth/pairing';
 import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
+import { extractMessage } from '@/lib/silentCatch';
 import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
 import { useConfirmClick } from '@/features/settings/shared/useConfirmClick';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -46,7 +47,15 @@ import { CreatedKeyDialog } from './CreatedKeyDialog';
 import { ApiKeyAuditDrawer } from './ApiKeyAuditDrawer';
 import { ConnectedAppsSection } from './ConnectedAppsSection';
 import { GigPersonaPolicySection } from './GigPersonaPolicySection';
-import { expiryInfo, isStaleKey, keyState, liveCount } from '../libs/keyLifecycle';
+import {
+  disconnectIds,
+  expiryInfo,
+  isStaleKey,
+  keyState,
+  liveCount,
+  runRetire,
+  type PairingGroup,
+} from '../libs/keyLifecycle';
 
 const HIDDEN_KEY_NAMES = new Set(['system']);
 
@@ -89,7 +98,7 @@ export default function ApiKeysSettings() {
       setKeys(filtered);
       keysCache = filtered;
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(extractMessage(e));
     } finally {
       setLoading(false);
     }
@@ -116,7 +125,7 @@ export default function ApiKeysSettings() {
         await revokeExternalApiKey(id);
         await load();
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(extractMessage(e));
       } finally {
         setActioning(null);
       }
@@ -131,7 +140,7 @@ export default function ApiKeysSettings() {
         await deleteExternalApiKey(id);
         await load();
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(extractMessage(e));
       } finally {
         setActioning(null);
       }
@@ -148,14 +157,19 @@ export default function ApiKeysSettings() {
   const unrevokedCount = visibleKeys.filter((k) => keyState(k) !== 'revoked').length;
   const liveKeys = liveCount(visibleKeys);
 
+  // Disconnect revokes every pairing of the origin, not only the newest: an
+  // older live pairing would otherwise keep the app authenticated and its
+  // origin on the CORS allowlist. Sequential (runRetire), since each revoke
+  // re-derives that allowlist.
   const handleDisconnect = useCallback(
-    async (id: string) => {
-      setActioning(id);
+    async (group: PairingGroup) => {
+      setActioning(group.current?.id ?? null);
       try {
-        await revokePairing(id);
+        const out = await runRetire(disconnectIds(group), revokePairing);
+        if (out.failed.length > 0) setError(out.failed.map((f) => f.message).join('; '));
         await load();
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(extractMessage(e));
       } finally {
         setActioning(null);
       }
@@ -281,10 +295,12 @@ interface ApiKeyRowProps {
   onAudit: () => void;
 }
 
-function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: ApiKeyRowProps) {
+export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: ApiKeyRowProps) {
   const { t, tx } = useTranslation();
   const s = t.settings.api_keys;
   const { armed: confirmDelete, trigger: triggerDelete } = useConfirmClick(onDelete);
+  // Revoke has no re-enable path: arm first, commit on the second click (same as delete).
+  const { armed: confirmRevoke, trigger: triggerRevoke } = useConfirmClick(onRevoke);
 
   const isRevoked = apiKey.revoked_at !== null || !apiKey.enabled;
   const expiry = expiryInfo(apiKey);
@@ -378,13 +394,26 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: ApiKeyRow
         {!isRevoked && (
           <button
             type="button"
-            onClick={onRevoke}
+            onClick={triggerRevoke}
             disabled={actioning}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-amber-400 hover:bg-amber-400/10 transition-colors disabled:opacity-50"
+            className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
+              confirmRevoke
+                ? 'text-status-warning bg-status-warning/10 hover:bg-status-warning/20'
+                : 'text-foreground hover:text-amber-400 hover:bg-amber-400/10'
+            }`}
             title={s.revoke_tooltip}
           >
-            <ShieldOff size={12} />
-            {s.revoke}
+            {confirmRevoke ? (
+              <>
+                <Check size={12} />
+                {s.confirm_delete}
+              </>
+            ) : (
+              <>
+                <ShieldOff size={12} />
+                {s.revoke}
+              </>
+            )}
           </button>
         )}
         <button

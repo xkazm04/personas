@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { AlertCircle, CheckCircle2, Loader2, RotateCcw, Settings2, Wrench } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -14,15 +13,6 @@ import { Collapse } from '@/features/shared/components/display/Collapse';
  * status badge, the stage-aware action buttons, and the customize panel
  * used by `PresetProcessBlueprint` and `PresetProcessHost`.
  */
-
-/** role → friendly template name (from the adoption schema), memoised. */
-export function useLabelByRole(a: PresetAdoptionController): Map<string, string> {
-  return useMemo(() => {
-    const map = new Map<string, string>();
-    a.schemaByRole.forEach((v, role) => map.set(role, v.name));
-    return map;
-  }, [a.schemaByRole]);
-}
 
 export function PresetStatusBadge({ row }: { row: PresetMemberRowState }) {
   const { t } = useTranslation();

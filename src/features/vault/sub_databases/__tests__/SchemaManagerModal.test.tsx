@@ -114,13 +114,9 @@ describe("SchemaManagerModal", () => {
       />,
     );
 
-    // The close button is in the header, after the Pencil (rename) button.
-    // Both have SVGs, so find all buttons and pick the one with the X icon
-    // by matching the p-2 class on the close button (Pencil uses p-0.5).
-    const buttons = screen.getAllByRole("button");
-    const closeButton = buttons.find((b) => b.classList.contains("p-2"));
-    expect(closeButton).toBeTruthy();
-    fireEvent.click(closeButton!);
+    // Found by its accessible name. This used to be found by its `p-2` class,
+    // because the icon-only button had no name at all for anyone to use.
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
@@ -138,6 +134,24 @@ describe("SchemaManagerModal", () => {
     // Console tab should now be active -- the ConsoleTab component renders
     // (we can check that the "Run Query" button appears which is part of ConsoleTab)
     expect(screen.getByText("Run Query")).toBeInTheDocument();
+  });
+
+  it("takes the faded-out panels out of the tab order", () => {
+    render(
+      <SchemaManagerModal
+        credential={makeCredential()}
+        connector={makeConnector()}
+        onClose={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByText("Console"));
+
+    // Both panels stay mounted (state survives a tab switch), but only the
+    // active one may be reachable: the Tables panel is merely transparent.
+    const consolePanel = screen.getByText("Run Query").closest("div.absolute");
+    const tablesPanel = screen.getByTestId("db-tables-tab").closest("div.absolute");
+    expect(consolePanel).not.toHaveAttribute("inert");
+    expect(tablesPanel).toHaveAttribute("inert");
   });
 
   it("falls back to service_type when no connector", () => {

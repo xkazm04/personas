@@ -64,5 +64,37 @@ describe('DecisionLogWidget', () => {
     );
     expect(screen.getByText('Valid')).toBeInTheDocument();
     expect(screen.queryByText('NoChoice')).toBeNull();
+    // The empty-LABEL row is the other half of the filter: its choice and its
+    // rationale must not surface either (a filter on `choice` alone kept it).
+    expect(screen.queryByText('X')).toBeNull();
+    expect(screen.queryByText('no label')).toBeNull();
+  });
+});
+
+/**
+ * `prettyTime` formatted with `toLocale*String(undefined, ...)`, the host OS
+ * locale, while TimelineWidget in the same folder formats with the app's
+ * language. A UI set to German showed the machine's date shape.
+ */
+describe('DecisionLogWidget time follows the app language', () => {
+  it('formats an older decision in the active language, not the host locale', async () => {
+    const { useI18nStore } = await import('@/stores/i18nStore');
+    const before = useI18nStore.getState().language;
+    useI18nStore.setState({ language: 'de' });
+    try {
+      const at = '2026-03-05T14:05:00Z';
+      const expected = new Date(at).toLocaleDateString('de', { month: 'short', day: 'numeric' });
+      // The control: the probe is meaningless if the host already formats as German.
+      const host = Intl.DateTimeFormat().resolvedOptions().locale;
+      expect(expected).not.toBe(new Date(at).toLocaleDateString(host, { month: 'short', day: 'numeric' }));
+      render(
+        <DecisionLogWidget
+          config={{ decisions: [{ label: 'Model tier', choice: 'Sonnet', rationale: 'r', timestamp: at }] }}
+        />,
+      );
+      expect(screen.getByText(expected)).toBeInTheDocument();
+    } finally {
+      useI18nStore.setState({ language: before });
+    }
   });
 });

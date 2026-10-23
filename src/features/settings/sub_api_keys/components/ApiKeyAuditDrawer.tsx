@@ -7,12 +7,13 @@
 import { useEffect, useState } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { listApiKeyAudit, type ApiKeyAuditEntry } from '@/api/auth/externalApiKeys';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 interface ApiKeyAuditDrawerProps {
   keyId: string;
@@ -60,7 +61,7 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
       })
       .catch((e) => {
         silentCatch('ApiKeyAuditDrawer:listApiKeyAudit')(e);
-        if (alive) setError(e instanceof Error ? e.message : String(e));
+        if (alive) setError(extractMessage(e));
       });
     return () => {
       alive = false;
@@ -68,17 +69,18 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
   }, [keyId]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 surface-blur-modal"
-      onClick={onClose}
+    <BaseModal
+      isOpen
+      onClose={onClose}
+      titleId="api-key-audit-title"
+      maxWidthClass="max-w-lg"
+      panelClassName="bg-secondary border border-border/40 rounded-modal shadow-elevation-3 max-h-[85vh] flex flex-col"
+      staggerChildren={false}
+      portal
     >
-      <div
-        className="bg-secondary border border-border/40 rounded-modal shadow-elevation-3 w-full max-w-lg mx-4 max-h-[85vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
           <div className="min-w-0">
-            <h2 className="typo-body text-foreground truncate">{s.audit_title}</h2>
+            <h2 id="api-key-audit-title" className="typo-body text-foreground truncate">{s.audit_title}</h2>
             <p className="typo-caption text-foreground truncate">{keyName}</p>
           </div>
           <button
@@ -141,8 +143,7 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
             </div>
           ) : null}
         </div>
-      </div>
-    </div>
+    </BaseModal>
   );
 }
 

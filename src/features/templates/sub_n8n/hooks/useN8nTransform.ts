@@ -6,7 +6,7 @@ import {
   useCorrelatedCliStream,
   type CliRunPhase,
 } from '@/hooks/execution/useCorrelatedCliStream';
-import { useTranslation } from '@/i18n/useTranslation';
+import { useTranslation, getActiveTranslations } from '@/i18n/useTranslation';
 import { useBackgroundSnapshot } from '@/hooks/utility/data/useBackgroundSnapshot';
 import { usePersistedContext } from '@/hooks/utility/data/usePersistedContext';
 import {
@@ -170,7 +170,7 @@ export function useN8nTransform(
         clearPersistedContext();
         dispatch({
           type: 'TRANSFORM_FAILED',
-          error: 'Transform output was invalid. Please retry or refine your request.',
+          error: getActiveTranslations().templates.n8n.err_transform_invalid,
         });
         return;
       }
@@ -197,7 +197,7 @@ export function useN8nTransform(
     clearPersistedContext();
     dispatch({
       type: 'TRANSFORM_FAILED',
-      error: 'Transform completed but no draft was generated. Please try again.',
+      error: getActiveTranslations().templates.n8n.err_transform_no_draft,
     });
   }, [dispatch, setN8nTransformActive, clearPersistedContext]);
 
@@ -217,7 +217,7 @@ export function useN8nTransform(
     clearPersistedContext();
     dispatch({
       type: 'TRANSFORM_FAILED',
-      error: 'Transform session lost. The backend may have restarted. Please try again.',
+      error: getActiveTranslations().templates.n8n.err_transform_session_lost,
     });
   }, [dispatch, setN8nTransformActive, clearPersistedContext]);
 

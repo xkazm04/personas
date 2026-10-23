@@ -344,11 +344,9 @@ pub fn last_completed(pool: &UserDbPool) -> Result<Option<LastCompleted>, AppErr
 
 /// One cycle by id, or `None`.
 ///
-/// No product caller yet: the journal reads through [`list_recent`] and the
-/// cycle itself holds its own id. Kept (and exercised by this module's tests)
-/// because the Memory-page-v2 detail view is the next consumer and re-deriving
-/// this query at that call site is how a second `phases_json` parser appears.
-#[allow(dead_code)]
+/// The brain viewer's cycle-report detail resolves a `cyc_…` id through this
+/// (`commands/companion/brain.rs`, `get_cycle_report`), so the detail view and
+/// the journal share one `phases_json` reader rather than growing a second.
 pub fn get(pool: &UserDbPool, cycle_id: &str) -> Result<Option<CycleSummary>, AppError> {
     let conn = pool.get()?;
     let row = conn

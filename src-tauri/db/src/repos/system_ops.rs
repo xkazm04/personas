@@ -187,3 +187,100 @@ pub fn list_enabled_event_automations(pool: &DbPool) -> Result<Vec<SystemOpAutom
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(AppError::Database)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn automation<'a>(
+        id: &'a str,
+        trigger_kind: &'a str,
+        next_run_at: Option<&'a str>,
+    ) -> NewAutomation<'a> {
+        NewAutomation {
+            id,
+            op_kind: "context_scan",
+            params_json: "{}",
+            trigger_kind,
+            cron: None,
+            timezone: None,
+            listen_event_type: (trigger_kind == "event").then_some("build.finished"),
+            source_filter: None,
+            next_run_at,
+            label: None,
+            unattended_mode: "auto",
+        }
+    }
+
+    fn ids(rows: &[SystemOpAutomation]) -> Vec<&str> {
+        rows.iter().map(|a| a.id.as_str()).collect()
+    }
+
+    /// The scheduler's whole contract is this filter: a schedule row runs when
+    /// it is enabled AND armed AND its time has come - and nothing else does.
+    /// A row that is disabled, unarmed, in the future or event-triggered must
+    /// never be returned, or the tick fires work the operator switched off.
+    #[test]
+    fn get_due_schedules_returns_only_enabled_armed_overdue_schedules() -> Result<(), AppError> {
+        let pool = crate::init_test_db()?;
+        let now = "2026-10-19T12:00:00+00:00";
+        create(
+            &pool,
+            automation("due-late", "schedule", Some("2026-10-19T11:00:00+00:00")),
+        )?;
+        create(&pool, automation("due-now", "schedule", Some(now)))?;
+        create(
+            &pool,
+            automation("future", "schedule", Some("2026-10-19T13:00:00+00:00")),
+        )?;
+        create(&pool, automation("unarmed", "schedule", None))?;
+        create(
+            &pool,
+            automation("disabled", "schedule", Some("2026-10-19T10:00:00+00:00")),
+        )?;
+        create(
+            &pool,
+            automation("listener", "event", Some("2026-10-19T10:00:00+00:00")),
+        )?;
+        assert!(set_enabled(&pool, "disabled", false)?);
+
+        let due = get_due_schedules(&pool, now)?;
+        assert_eq!(
+            ids(&due),
+            vec!["due-late", "due-now"],
+            "oldest first, nothing else"
+        );
+
+        // Firing re-arms: once mark_run moves next_run_at past `now`, the row
+        // is no longer due.
+        mark_run(
+            &pool,
+            "due-late",
+            "requested",
+            None,
+            Some("2026-10-20T11:00:00+00:00"),
+        )?;
+        assert_eq!(ids(&get_due_schedules(&pool, now)?), vec!["due-now"]);
+        Ok(())
+    }
+
+    /// The event dispatcher reads only enabled listeners; disabling one takes
+    /// it out of the next tick, and a schedule row is never matched against
+    /// bus events.
+    #[test]
+    fn list_enabled_event_automations_skips_disabled_and_schedules() -> Result<(), AppError> {
+        let pool = crate::init_test_db()?;
+        create(&pool, automation("on", "event", None))?;
+        create(&pool, automation("off", "event", None))?;
+        create(
+            &pool,
+            automation("sched", "schedule", Some("2026-10-19T10:00:00+00:00")),
+        )?;
+        assert!(set_enabled(&pool, "off", false)?);
+
+        assert_eq!(ids(&list_enabled_event_automations(&pool)?), vec!["on"]);
+        // A missing id reports false rather than pretending to succeed.
+        assert!(!set_enabled(&pool, "no-such-automation", true)?);
+        Ok(())
+    }
+}

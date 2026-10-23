@@ -553,28 +553,11 @@ const FUZZY_CONNECTOR_ALIASES: &[&str] = &[
     "built in drive",
 ];
 
-fn intent_implies_connectors_with_registry(
-    intent_lower: &str,
-    registry_keywords: &[String],
-) -> Gate {
-    for kw in FUZZY_CONNECTOR_ALIASES {
-        if intent_lower.contains(kw) {
-            return Gate::Open;
-        }
-    }
-    for kw in registry_keywords {
-        if !kw.is_empty() && intent_lower.contains(kw.as_str()) {
-            return Gate::Open;
-        }
-    }
-    Gate::Closed
-}
-
 /// 2026-05-05 — connectors gate with vault-ambiguity guard.
 ///
 /// Returns `Closed` when the intent names a service that has 2+
-/// credentials in the vault, even if `intent_implies_connectors_with_registry`
-/// would otherwise auto-open it. This forces the existing
+/// credentials in the vault, even when a keyword match would otherwise
+/// auto-open it. This forces the existing
 /// connector_category picker to fire so the user can choose between
 /// (e.g.) their 4 GitHub PATs.
 ///
@@ -617,9 +600,13 @@ fn intent_implies_connectors_with_ambiguity(
         }
         if intent_lower.contains(kw.as_str()) {
             any_match = true;
-            // The registry keyword IS the service_type (or close to it).
-            // Match against ambiguous set directly.
-            if ambiguous_services.contains(kw) {
+            // A registry name IS the service_type, but the fallback list also
+            // carries human spellings ("alpha vantage", "leonardo",
+            // "cal.com"); fold those to their service_type before probing,
+            // or an ambiguous service named the way people write it opens
+            // the gate.
+            let svc = canonical_service_type_for_alias(kw).unwrap_or(kw.as_str());
+            if ambiguous_services.contains(svc) {
                 return Gate::Closed;
             }
         }
@@ -643,32 +630,23 @@ fn canonical_service_type_for_alias(alias: &str) -> Option<&'static str> {
         "local drive" | "local-drive" | "local_drive" | "built-in drive" | "built in drive" => {
             Some("local_drive")
         }
+        // The spelled-out forms `gate_seed_for_intent_with_context`'s
+        // fallback list matches, keyed to the connector `name` the vault
+        // stores as service_type.
+        "alpha vantage" | "alphavantage" => Some("alpha_vantage"),
+        "better stack" => Some("betterstack"),
+        "leonardo" | "leonardo ai" => Some("leonardo_ai"),
+        "cal.com" | "calcom" => Some("cal_com"),
+        "gemini" => Some("google_gemini"),
         _ => None,
-    }
-}
-
-/// Same as `gate_seed_for_intent` but consults the connector registry list
-/// (typically from `engine::api_proxy::cached_connector_keywords`) so any
-/// connector added via the catalog UI participates in keyword matching
-/// without a code edit.
-#[allow(dead_code)] // pending: build session still uses the static-keyword variant
-pub fn gate_seed_for_intent_with_registry(
-    intent: &str,
-    registry_keywords: &[String],
-) -> CapabilityGates {
-    let intent_lower = intent.to_lowercase();
-    CapabilityGates {
-        trigger: intent_implies_trigger(&intent_lower),
-        connectors: intent_implies_connectors_with_registry(&intent_lower, registry_keywords),
-        review_policy: intent_implies_review(&intent_lower),
-        memory_policy: intent_implies_memory(&intent_lower),
-        sample_output: intent_implies_sample_output(&intent_lower),
     }
 }
 
 /// 2026-05-05 — gate seed with vault-ambiguity awareness.
 ///
-/// Same as `gate_seed_for_intent_with_registry` but additionally takes
+/// Seeds every gate from the intent, consulting the connector registry list
+/// (typically `engine::api_proxy::cached_connector_keywords`, so a connector
+/// added via the catalog UI participates without a code edit) and
 /// `ambiguous_services` (service_types with 2+ credentials in the vault).
 /// When the intent names an ambiguous service, the connectors gate
 /// stays Closed so the existing connector_category picker fires and
@@ -1425,6 +1403,42 @@ mod tests {
             intent_implies_connectors_with_ambiguity(&intent_solo, &registry, &ambiguous),
             Gate::Closed,
         );
+    }
+
+    // 2026-10-18 — the ambiguity probe compared the MATCHED KEYWORD to the
+    // service_type, so a human spelling ("alpha vantage", "leonardo",
+    // "cal.com", "better stack", "gemini") matched, opened the gate, and was
+    // never recognised as the ambiguous `alpha_vantage` / `leonardo_ai` /
+    // `cal_com` / `betterstack` / `google_gemini` it names. The vault's
+    // several credentials for that service were then picked arbitrarily.
+    #[test]
+    fn connectors_closed_when_a_spelled_out_alias_names_an_ambiguous_service() {
+        let cases: &[(&str, &str)] = &[
+            ("pull daily quotes from alpha vantage", "alpha_vantage"),
+            ("pull daily quotes from alphavantage", "alpha_vantage"),
+            ("generate covers with leonardo", "leonardo_ai"),
+            ("book meetings through cal.com", "cal_com"),
+            ("watch my better stack monitors", "betterstack"),
+            ("draft replies with gemini", "google_gemini"),
+        ];
+        for (intent, service) in cases {
+            let mut ambiguous = std::collections::HashSet::new();
+            ambiguous.insert((*service).to_string());
+            let seed = gate_seed_for_intent_with_context(intent, &[], &ambiguous);
+            assert_eq!(
+                seed.connectors,
+                Gate::Closed,
+                "`{intent}` names ambiguous `{service}`: the picker must fire"
+            );
+            // Control: the same intent with no ambiguity still auto-opens.
+            let clean =
+                gate_seed_for_intent_with_context(intent, &[], &std::collections::HashSet::new());
+            assert_eq!(
+                clean.connectors,
+                Gate::Open,
+                "`{intent}` with one credential"
+            );
+        }
     }
 
     // ── gate_seed_for_intent — composite of the four heuristics ─────────────

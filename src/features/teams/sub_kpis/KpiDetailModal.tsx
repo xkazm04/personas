@@ -369,7 +369,7 @@ function ActionBar({
 }: {
   kpi: DevKpi;
   onMeasureNow: () => Promise<unknown>;
-  onRecordManual: (value: number) => Promise<void>;
+  onRecordManual: (value: number) => Promise<boolean>;
   onSetStatus: (status: 'active' | 'paused' | 'archived') => Promise<unknown>;
   onArchive: () => void;
 }) {
@@ -410,8 +410,9 @@ function ActionBar({
             variant="secondary"
             disabled={manualValue === ''}
             onClick={async () => {
-              await onRecordManual(Number(manualValue));
-              setManualValue('');
+              // Clear only a value that was stored: a failed write keeps it
+              // in the field so the user can retry instead of retyping it.
+              if (await onRecordManual(Number(manualValue))) setManualValue('');
             }}
           >
             {t.kpis.record_button}

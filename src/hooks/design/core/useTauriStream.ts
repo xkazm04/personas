@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import {
   initialArtifactJobState,
@@ -269,7 +269,7 @@ export function useTauriStream<TResult, TQuestion = never>(
     } catch (err) {
       if (generationRef.current !== gen) return;
       cleanup();
-      setError(err instanceof Error ? err.message : startErrorMessage);
+      setError(extractMessage(err) || startErrorMessage);
       setErrorKind('start');
       setPhase('error');
     }

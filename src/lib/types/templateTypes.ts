@@ -37,17 +37,6 @@ export const SANDBOX_POLICY: SandboxPolicy = {
   requireApproval: true,
 };
 
-/** Unrestricted policy for verified built-in templates */
-export const VERIFIED_POLICY: SandboxPolicy = {
-  canEmitEvents: true,
-  canChainTrigger: true,
-  canUseWebhooks: true,
-  canUsePolling: true,
-  maxConcurrent: 5,
-  budgetEnforced: false,
-  requireApproval: false,
-};
-
 /** Verification metadata attached to a template */
 export interface TemplateVerification {
   origin: TemplateOrigin;
@@ -58,34 +47,6 @@ export interface TemplateVerification {
   integrityValid: boolean;
   /** Active sandbox policy (null = unrestricted) */
   sandboxPolicy: SandboxPolicy | null;
-}
-
-// -- Persona Trust (extends template trust to personas) --------------
-
-/** Trust metadata on a persona (persisted in DB) */
-export interface PersonaTrustMetadata {
-  trustLevel: TemplateTrustLevel;
-  origin: TemplateOrigin | 'imported';
-  sourceReviewId: string | null;
-  verifiedAt: string | null;
-}
-
-/** Derive the effective sandbox policy for a persona based on its trust level */
-export function getPersonaSandboxPolicy(trustLevel: TemplateTrustLevel): SandboxPolicy | null {
-  switch (trustLevel) {
-    case 'verified':
-      return null; // no restrictions
-    case 'sandboxed':
-      return SANDBOX_POLICY;
-    case 'untrusted':
-      return {
-        ...SANDBOX_POLICY,
-        canUsePolling: false,
-        canEmitEvents: false,
-      };
-    default:
-      return SANDBOX_POLICY;
-  }
 }
 
 // -- Template Catalog -------------------------------------------------

@@ -41,12 +41,14 @@
   "budget_label": "预算",
   "build_validation": {
     "composite_min_conditions": "组合触发器至少需要 2 个条件。",
+    "composite_window_maximum": "时间窗口最长为 24 小时（86400 秒）。",
     "composite_window_minimum": "时间窗口至少需要 5 秒。",
     "cron_invalid": "cron 表达式无效。",
     "cron_required": "需要提供 cron 表达式。",
     "endpoint_required": "需要端点URL或事件。",
     "event_type_required": "需要提供要监听的事件类型。",
     "interval_minimum": "间隔至少需要 60 秒。",
+    "watch_events_required": "请至少选择一个要监视的文件事件。",
     "watch_path_required": "至少需要提供一个监视路径。"
   },
   "builder": {
@@ -183,6 +185,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} 事件",
   "dead_letter_bulk_retry_title": "重试 every selected 事件 in a single transaction",
   "dead_letter_clear_filters_to_see": "清除 filters to see all dead-lettered 事件",
+  "dead_letter_load_failed_title": "无法加载死信队列",
+  "dead_letter_load_failed_desc": "无法读取队列，因此此处的空列表会产生误导。您的事件并未丢失，请重试。",
   "dead_letter_clear_selection": "清除",
   "dead_letter_discard": "丢弃",
   "dead_letter_discard_title": "永久丢弃此事件",
@@ -623,9 +627,12 @@
     "automation_delete": "删除自动化",
     "automation_enabled": "已启用",
     "automation_failed": "失败",
+    "automation_held": "等待批准",
     "automation_idle": "等待事件触发",
     "automation_next": "下次",
+    "automation_partial": "部分运行",
     "automation_ran": "已运行",
+    "automation_requested": "已请求",
     "automation_run_now": "立即运行",
     "automations_title": "活跃系统事件",
     "cadence_custom": "自定义 cron…",
@@ -945,5 +952,7 @@
   "add_persona_available": "{count} 个可用",
   "add_persona_all_connected": "所有角色均已连接",
   "add_persona_ungrouped": "未分组",
-  "live_status_skipped": "已跳过"
+  "live_status_skipped": "已跳过",
+  "webhooks_load_failed": "无法加载 Webhook 触发器",
+  "webhooks_load_failed_desc": "无法读取列表，在此显示空列表会产生误导。您的触发器并未丢失 - 请重试。"
 }

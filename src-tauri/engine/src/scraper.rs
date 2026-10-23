@@ -38,6 +38,24 @@ struct SsrfSafeHttpClient {
 #[async_trait]
 impl HttpClient for SsrfSafeHttpClient {
     async fn fetch(&self, req: HttpRequest) -> PumperResult<HttpResponse> {
+        // Pre-flight every fetch: the client's DNS resolver only guards
+        // hostnames, so an IP-literal URL (http://169.254.169.254/,
+        // http://127.0.0.1:PORT/) would otherwise be dialled directly. All
+        // scraper fetch paths (run_extract, preview_extract, fetch_readable,
+        // fetch_html_snippet) go through this one door. The check can do a DNS
+        // lookup, so keep it off the async worker.
+        let url = req.url.clone();
+        match tokio::task::spawn_blocking(move || {
+            personas_core::url_safety::validate_url_safety(&url)
+        })
+        .await
+        {
+            Ok(Ok(())) => {}
+            Ok(Err(reason)) => {
+                return Err(PumperError::Http(format!("URL blocked: {reason}")));
+            }
+            Err(e) => return Err(PumperError::Http(format!("URL safety check failed: {e}"))),
+        }
         let method = match req.method {
             HttpMethod::Post => reqwest::Method::POST,
             HttpMethod::Get => reqwest::Method::GET,
@@ -850,6 +868,31 @@ pub async fn scraper_schedule_tick(pool: &DbPool) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// IP-literal targets must be refused before any socket is opened.
+    #[tokio::test]
+    async fn http_client_refuses_ip_literal_internal_targets() {
+        let client = SsrfSafeHttpClient {
+            client: personas_core::url_safety::build_ssrf_safe_client(Duration::from_secs(2)),
+        };
+        for url in [
+            "http://127.0.0.1:9/",
+            "http://169.254.169.254/latest/meta-data/",
+            "http://[::1]:9/",
+        ] {
+            let err = client
+                .fetch(HttpRequest {
+                    url: url.into(),
+                    method: HttpMethod::Get,
+                    headers: Default::default(),
+                    body: None,
+                    no_cache: false,
+                })
+                .await
+                .expect_err(url);
+            assert!(err.to_string().contains("URL blocked"), "{url}: {err}");
+        }
+    }
 
     /// End-to-end proof of the embedding: pumper-core Fetcher + Personas'
     /// SSRF-safe client + HTML→Markdown against a live URL. Network-gated —

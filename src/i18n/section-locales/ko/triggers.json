@@ -41,12 +41,14 @@
   "budget_label": "예산",
   "build_validation": {
     "composite_min_conditions": "복합 트리거는 조건이 2개 이상 필요합니다.",
+    "composite_window_maximum": "시간 윈도우는 최대 24시간(86400초)까지 가능합니다.",
     "composite_window_minimum": "시간 윈도우는 5초 이상이어야 합니다.",
     "cron_invalid": "잘못된 Cron 표현식입니다.",
     "cron_required": "Cron 표현식이 필요합니다.",
     "endpoint_required": "엔드포인트 URL 또는 이벤트가 필요합니다.",
     "event_type_required": "수신할 이벤트 유형이 필요합니다.",
     "interval_minimum": "간격은 60초 이상이어야 합니다.",
+    "watch_events_required": "감시할 파일 이벤트를 하나 이상 선택하세요.",
     "watch_path_required": "감시 경로가 하나 이상 필요합니다."
   },
   "builder": {
@@ -183,6 +185,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} 이벤트",
   "dead_letter_bulk_retry_title": "다시 시도 every selected 이벤트 in a single transaction",
   "dead_letter_clear_filters_to_see": "지우기 filters to see all dead-lettered 이벤트",
+  "dead_letter_load_failed_title": "데드 레터 대기열을 불러오지 못했습니다",
+  "dead_letter_load_failed_desc": "대기열을 읽을 수 없어 여기의 빈 목록은 오해를 일으킬 수 있습니다. 이벤트는 사라지지 않았습니다. 다시 시도하세요.",
   "dead_letter_clear_selection": "지우기",
   "dead_letter_discard": "버리기",
   "dead_letter_discard_title": "이 이벤트를 영구적으로 버리기",
@@ -623,9 +627,12 @@
     "automation_delete": "자동화 삭제",
     "automation_enabled": "활성화됨",
     "automation_failed": "실패",
+    "automation_held": "승인 대기 중",
     "automation_idle": "이벤트 대기 중",
     "automation_next": "다음",
+    "automation_partial": "일부 실행됨",
     "automation_ran": "실행됨",
+    "automation_requested": "요청됨",
     "automation_run_now": "지금 실행",
     "automations_title": "활성 시스템 이벤트",
     "cadence_custom": "사용자 정의 cron…",
@@ -945,5 +952,7 @@
   "add_persona_available": "사용 가능 {count}개",
   "add_persona_all_connected": "모든 페르소나가 이미 연결되어 있습니다",
   "add_persona_ungrouped": "그룹 없음",
-  "live_status_skipped": "건너뜀"
+  "live_status_skipped": "건너뜀",
+  "webhooks_load_failed": "웹훅 트리거를 불러오지 못했습니다",
+  "webhooks_load_failed_desc": "목록을 읽을 수 없어 여기에 빈 목록을 표시하면 오해를 줄 수 있습니다. 트리거는 사라지지 않았습니다 - 다시 시도하세요."
 }

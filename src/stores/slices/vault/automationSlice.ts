@@ -3,21 +3,32 @@ import type { VaultStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
 import type { PersonaAutomation } from "@/lib/bindings/PersonaAutomation";
 import type { AutomationRun } from "@/lib/bindings/AutomationRun";
-import type { CreateAutomationInput } from "@/lib/bindings/CreateAutomationInput";
 import type { UpdateAutomationInput } from "@/lib/bindings/UpdateAutomationInput";
-import type { DeployAutomationInput, DeployAutomationResult, ZapierZap, ZapierWebhookResult } from "@/api/agents/automations";
+import type { DeployAutomationInput, DeployAutomationResult } from "@/api/agents/automations";
 import * as api from "@/api/agents/automations";
+import { storeBus, AccessorKey } from "@/lib/storeBus";
+
+/**
+ * Who renders automations: the persona editor's Automations section reads
+ * `selectedPersona.automations` from the AGENT store (persona detail), while
+ * every write goes through this slice. This slice's `automations` list is
+ * only filled by `fetchAutomations` after a deploy, so on a fresh session it
+ * is empty. Two consequences this file guards against:
+ *   - a write must tell the agent store to refresh (`automation:changed`), or
+ *     the section keeps showing the pre-write row;
+ *   - an action must not require the row to be in THIS list, or it silently
+ *     does nothing (delete used to return early on a miss).
+ */
+function announceChange(personaId: string | null | undefined): void {
+  if (personaId) storeBus.emit("automation:changed", { personaId });
+}
 
 export interface AutomationSlice {
   // State
   automations: PersonaAutomation[];
-  automationRuns: Record<string, AutomationRun[]>;
-  zapierZaps: ZapierZap[];
-  zapierZapsLoading: boolean;
 
   // Actions
   fetchAutomations: (personaId: string) => Promise<void>;
-  createAutomation: (input: CreateAutomationInput) => Promise<PersonaAutomation | null>;
   /**
    * Update an automation. Pass ONLY the fields being changed — omission means
    * "leave alone", `null` on a `double_option` field means CLEAR. `Partial<>` is
@@ -28,19 +39,12 @@ export interface AutomationSlice {
    */
   updateAutomation: (id: string, input: Partial<UpdateAutomationInput>) => Promise<void>;
   deleteAutomation: (id: string) => Promise<void>;
-  triggerAutomation: (id: string, inputData?: string) => Promise<AutomationRun | null>;
   testAutomation: (id: string) => Promise<AutomationRun | null>;
-  fetchAutomationRuns: (automationId: string) => Promise<void>;
   deployAutomation: (input: DeployAutomationInput) => Promise<DeployAutomationResult | null>;
-  fetchZapierZaps: (credentialId: string) => Promise<void>;
-  zapierTestWebhook: (credentialId: string, webhookUrl: string, body?: Record<string, unknown>) => Promise<ZapierWebhookResult | null>;
 }
 
 export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationSlice> = (set, get) => ({
   automations: [],
-  automationRuns: {},
-  zapierZaps: [],
-  zapierZapsLoading: false,
 
   fetchAutomations: async (personaId) => {
     try {
@@ -51,23 +55,13 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
     }
   },
 
-  createAutomation: async (input) => {
-    try {
-      const automation = await api.createAutomation(input);
-      set((state) => ({ automations: [...state.automations, automation] }));
-      return automation;
-    } catch (err) {
-      reportError(err, "Failed to create automation", set);
-      return null;
-    }
-  },
-
   updateAutomation: async (id, input) => {
     try {
       const updated = await api.updateAutomation(id, input);
       set((state) => ({
         automations: state.automations.map((a) => (a.id === id ? updated : a)),
       }));
+      announceChange(updated.personaId);
     } catch (err) {
       reportError(err, "Failed to update automation", set);
     }
@@ -75,61 +69,43 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
 
   deleteAutomation: async (id) => {
     const itemToDelete = get().automations.find((a) => a.id === id);
-    if (!itemToDelete) return;
+    // The owner, for the refresh: the local row when this list has it, else
+    // the selected persona (the only persona whose automations the UI lists).
+    const personaId = itemToDelete?.personaId
+      ?? storeBus.tryGet<string | undefined>(AccessorKey.AGENTS_SELECTED_PERSONA_ID);
 
-    set((state) => ({ automations: state.automations.filter((a) => a.id !== id) }));
+    if (itemToDelete) {
+      set((state) => ({ automations: state.automations.filter((a) => a.id !== id) }));
+    }
     try {
       await api.deleteAutomation(id);
+      announceChange(personaId);
     } catch (err) {
-      // Re-fetch from backend instead of appending stale item to avoid
-      // duplicates if a concurrent fetch already restored the list.
-      const personaId = itemToDelete.personaId;
-      if (personaId) {
-        await get().fetchAutomations(personaId);
-      } else {
-        // No personaId to scope a re-fetch by — reconcile state directly by
-        // restoring the optimistically-removed item so the UI doesn't
-        // silently diverge from the (still-existing) backend row.
-        set((state) => (state.automations.some((a) => a.id === id)
-          ? state
-          : { automations: [...state.automations, itemToDelete] }));
+      if (itemToDelete) {
+        // Re-fetch from backend instead of appending stale item to avoid
+        // duplicates if a concurrent fetch already restored the list.
+        if (itemToDelete.personaId) {
+          await get().fetchAutomations(itemToDelete.personaId);
+        } else {
+          // No personaId to scope a re-fetch by — reconcile state directly by
+          // restoring the optimistically-removed item so the UI doesn't
+          // silently diverge from the (still-existing) backend row.
+          set((state) => (state.automations.some((a) => a.id === id)
+            ? state
+            : { automations: [...state.automations, itemToDelete] }));
+        }
       }
       reportError(err, "Failed to delete automation", set);
     }
   },
 
-  triggerAutomation: async (id, inputData) => {
-    try {
-      const run = await api.triggerAutomation(id, inputData);
-      // Refresh automation to get updated last_triggered_at
-      const personaId = get().automations.find((a) => a.id === id)?.personaId;
-      if (personaId) get().fetchAutomations(personaId);
-      return run;
-    } catch (err) {
-      reportError(err, "Failed to trigger automation", set);
-      return null;
-    }
-  },
-
   testAutomation: async (id) => {
     try {
-      return await api.testAutomationWebhook(id);
+      const automation = get().automations.find((a) => a.id === id);
+      return await api.testAutomationWebhook(id, automation);
     } catch (err) {
       reportError(err, "Automation test failed", set);
       return null;
-    }
-  },
-
-  fetchAutomationRuns: async (automationId) => {
-    try {
-      const runs = await api.getAutomationRuns(automationId);
-      set({
-        automationRuns: { ...get().automationRuns, [automationId]: runs },
-        // Note: automationRuns uses get() intentionally -- runs are keyed by
-        // automationId and concurrent fetches for different IDs are safe.
-      });
-    } catch (err) {
-      reportError(err, "Failed to load automation runs", set);
     }
   },
 
@@ -137,28 +113,10 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
     try {
       const result = await api.deployAutomation(input);
       set((state) => ({ automations: [...state.automations, result.automation] }));
+      announceChange(result.automation.personaId);
       return result;
     } catch (err) {
       reportError(err, "Failed to deploy automation", set);
-      return null;
-    }
-  },
-
-  fetchZapierZaps: async (credentialId) => {
-    set({ zapierZapsLoading: true });
-    try {
-      const zaps = await api.zapierListZaps(credentialId);
-      set({ zapierZaps: zaps, zapierZapsLoading: false });
-    } catch (err) {
-      reportError(err, "Failed to load Zapier zaps", set, { stateUpdates: { zapierZapsLoading: false } });
-    }
-  },
-
-  zapierTestWebhook: async (credentialId, webhookUrl, body) => {
-    try {
-      return await api.zapierTriggerWebhook(credentialId, webhookUrl, body);
-    } catch (err) {
-      reportError(err, "Failed to trigger Zapier webhook", set);
       return null;
     }
   },

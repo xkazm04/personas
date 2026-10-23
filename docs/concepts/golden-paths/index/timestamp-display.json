@@ -88,7 +88,6 @@
       "resolved": false
     },
     "PersonaHealthDashboard.tsx": {"count":4,"sections":[5,7],"lines":["74","71"],"contexts":["`PersonaHealthDashboard.tsx:74` and `StatusPageView.tsx:45` render **`-45s ago`**. A defect three"],"resolved":false},
-    "RelativeTime.test.tsx": {"count":1,"sections":[7],"contexts":["- There is **no `AbsoluteTime.test.tsx` and no `RelativeTime.test.tsx`.** The two primitives this leaf is"],"resolved":false},
     "StatusPageView.tsx": {"count":4,"sections":[5,7],"lines":["45","42"],"contexts":["`PersonaHealthDashboard.tsx:74` and `StatusPageView.tsx:45` render **`-45s ago`**. A defect three"],"resolved":false},
     "TwinPicker.tsx": {
       "count": 2,
@@ -117,10 +116,19 @@
       ],
       "resolved": false
     },
+    "cronHelpers.ts": {
+      "count": 3,
+      "sections": [7,8],
+      "lines": ["14","11","12"],
+      "contexts": ["| **`Intl.RelativeTimeFormat`** | **3** | `LiveRoadmapStatusPill.tsx:30` (**passes `language`**) · `cronHelpers.ts:14` (`undefined`) · `TwinPicker.tsx:66` (`undefined`) |"],
+      "resolved": false
+    },
     "disputes-data.ts": {"count":2,"sections":[],"lines":["166"],"contexts":["(`audit-data.ts:80` takes an ISO string, `disputes-data.ts:166` takes seconds) — and a comment at"],"resolved":false},
     "feature-voting/data.ts": {"count":1,"sections":[],"lines":["176"],"contexts":["`feature-voting/data.ts:176`, plus one catalog-driven); `brainiac/console` has **7**, all hardcoded English,"],"resolved":false},
     "format-date.test.ts": {"count":1,"sections":[],"contexts":["comment naming the exact off-by-one hazard, and has a regression test at `format-date.test.ts`. This repo"],"resolved":false},
+    "format.ts": {"count":2,"sections":[4,7],"lines":["28-64","43-57"],"contexts":["`format.ts:28-64` does, with telemetry, and it is the best answer any of the three repos has."],"resolved":false},
     "knowledgeDenseFormat.ts": {"count":1,"sections":[],"lines":["3"],"contexts":["**5** independent ladders (`src/lib/format.ts:31`, `knowledgeDenseFormat.ts:3`, `HealthIssueRow.tsx:17`,"],"resolved":false},
+    "overview/sub_cron_agents/libs/cronHelpers.ts": {"count":1,"sections":[6],"lines":["8-12"],"contexts":["**For the anti-pattern stated as a convention:** `overview/sub_cron_agents/libs/cronHelpers.ts:8-12` —"],"resolved":false},
     "scripts/census/lib/engine.mjs": {
       "count": 1,
       "sections": [9],
@@ -171,14 +179,6 @@
       "resolvedFrom": "basename",
       "verbatim": "athenaChatVoice.ts"
     },
-    "src/features/companions/curator/blueprint/format.ts": {
-      "count": 2,
-      "sections": [4,7],
-      "lines": ["28-64","43-57"],
-      "contexts": ["`format.ts:28-64` does, with telemetry, and it is the best answer any of the three repos has."],
-      "resolvedFrom": "basename",
-      "verbatim": "format.ts"
-    },
     "src/features/fleet/monitor/PersonaMonitor.tsx": {
       "count": 2,
       "sections": [7],
@@ -228,14 +228,6 @@
       "contexts": ["`overview/sub_activity/libs/executionMetricsHelpers.ts:6`, `overview/sub_usage/components/DayRangePicker.tsx:46`,"],
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_activity/libs/executionMetricsHelpers.ts"
-    },
-    "src/features/overview/sub_cron_agents/libs/cronHelpers.ts": {
-      "count": 4,
-      "sections": [6,7,8],
-      "lines": ["8-12","14","11","12"],
-      "contexts": ["**For the anti-pattern stated as a convention:** `overview/sub_cron_agents/libs/cronHelpers.ts:8-12` —"],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_cron_agents/libs/cronHelpers.ts"
     },
     "src/features/overview/sub_incidents/libs/incidentTaxonomy.ts": {
       "count": 1,
@@ -309,6 +301,14 @@
       "resolvedFrom": "basename",
       "verbatim": "GitOpsVersionHistory.tsx"
     },
+    "src/features/projects/development/goals/triage/triageModel.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["137"],
+      "contexts": ["| Unit-letter only (`3m` / `2h` / `4d`) | **4** | `formatRelativeShort.ts:30` · `MediaStudioPage.tsx:553` · `triageModel.ts:137` · `dimRegistry.ts:266` |"],
+      "resolvedFrom": "basename",
+      "verbatim": "triageModel.ts"
+    },
     "src/features/settings/sub_limits/components/LimitsSettings.tsx": {
       "count": 1,
       "sections": [7],
@@ -368,6 +368,13 @@
       "resolvedFrom": "basename",
       "verbatim": "AbsoluteTime.test.tsx"
     },
+    "src/features/shared/components/display/__tests__/RelativeTime.test.tsx": {
+      "count": 1,
+      "sections": [7],
+      "contexts": ["- There is **no `AbsoluteTime.test.tsx` and no `RelativeTime.test.tsx`.** The two primitives this leaf is"],
+      "resolvedFrom": "basename",
+      "verbatim": "RelativeTime.test.tsx"
+    },
     "src/features/shared/components/display/__tests__/grouping.test.ts": {
       "count": 1,
       "sections": [7],
@@ -411,14 +418,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "factoryData.tsx"
-    },
-    "src/features/teams/sub_goals/triage/triageModel.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["137"],
-      "contexts": ["| Unit-letter only (`3m` / `2h` / `4d`) | **4** | `formatRelativeShort.ts:30` · `MediaStudioPage.tsx:553` · `triageModel.ts:137` · `dimRegistry.ts:266` |"],
-      "resolvedFrom": "basename",
-      "verbatim": "triageModel.ts"
     },
     "src/features/teams/sub_mastermind/lib/PersonaListPopover.tsx": {
       "count": 2,

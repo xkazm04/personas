@@ -24,6 +24,29 @@ use crate::error::AppError;
 /// job longer than the user would tolerate.
 const HTTP_TIMEOUT: Duration = Duration::from_secs(20);
 
+/// Reject a model-supplied id that is not safe to splice into an authenticated
+/// URL path. The id is interpolated into `https://host/.../{id}` and sent with
+/// the user's bearer token, so `/`, `..`, `?`, `#`, `%` or whitespace would
+/// steer the request to another endpoint on the same host. Every real id these
+/// connectors use (UUIDs, snowflakes, hex thread ids, repo slugs) is ASCII
+/// alphanumeric plus `-_.`, so that is all that is allowed.
+fn safe_path_segment<'a>(value: &'a str, name: &str) -> Result<&'a str, AppError> {
+    personas_core::validation::require_non_empty(name, value)?;
+    let ok = value != "."
+        && value != ".."
+        && value.len() <= 200
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.'));
+    if ok {
+        Ok(value)
+    } else {
+        Err(AppError::Validation(format!(
+            "connector_use: `{name}` is not a valid identifier"
+        )))
+    }
+}
+
 pub async fn run(
     pool: &UserDbPool,
     cred_pool: &crate::db::DbPool,
@@ -292,6 +315,7 @@ async fn sentry_get_issue(
         .get("issue_id")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("sentry get_issue: missing `issue_id`".into()))?;
+    let issue_id = safe_path_segment(issue_id, "issue_id")?;
 
     let client = http_client()?;
     let url = format!("https://sentry.io/api/0/issues/{issue_id}/");
@@ -439,10 +463,12 @@ async fn github_list_open_prs(
         .get("owner")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("github list_open_prs: missing `owner`".into()))?;
+    let owner = safe_path_segment(owner, "owner")?;
     let repo = args
         .get("repo")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("github list_open_prs: missing `repo`".into()))?;
+    let repo = safe_path_segment(repo, "repo")?;
     let limit = args
         .get("limit")
         .and_then(|v| v.as_u64())
@@ -676,6 +702,7 @@ async fn gmail_mark_thread_read(
         .get("thread_id")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("gmail mark_thread_read: missing `thread_id`".into()))?;
+    let thread_id = safe_path_segment(thread_id, "thread_id")?;
     let client = http_client()?;
     let url = format!("https://gmail.googleapis.com/gmail/v1/users/me/threads/{thread_id}/modify");
     let resp = client
@@ -766,6 +793,7 @@ async fn discord_list_recent_messages(
         .ok_or_else(|| {
             AppError::Internal("discord list_recent_messages: missing `channel_id`".into())
         })?;
+    let channel_id = safe_path_segment(channel_id, "channel_id")?;
     let limit = args
         .get("limit")
         .and_then(|v| v.as_u64())
@@ -829,6 +857,7 @@ async fn discord_post_message(
         .get("channel_id")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("discord post_message: missing `channel_id`".into()))?;
+    let channel_id = safe_path_segment(channel_id, "channel_id")?;
     let content = args
         .get("content")
         .and_then(|v| v.as_str())
@@ -969,6 +998,7 @@ async fn notion_get_page(
         .get("page_id")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("notion get_page: missing `page_id`".into()))?;
+    let page_id = safe_path_segment(page_id, "page_id")?;
     let client = http_client()?;
     let url = format!("https://api.notion.com/v1/pages/{page_id}");
     let resp = client
@@ -998,6 +1028,7 @@ async fn notion_delete_page(
         .get("page_id")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("notion delete_page: missing `page_id`".into()))?;
+    let page_id = safe_path_segment(page_id, "page_id")?;
     let client = http_client()?;
     let url = format!("https://api.notion.com/v1/pages/{page_id}");
     let resp = client
@@ -1071,9 +1102,16 @@ fn resolve_within(root: &std::path::Path, rel: &str) -> Result<std::path::PathBu
         }
     }
 
-    let joined = root.join(&candidate);
-    let canon = joined.canonicalize().unwrap_or_else(|_| joined.clone());
     let root_canon = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+    // Fall back to the CANONICAL root joined with the (already `..`-free)
+    // relative path. Falling back to `root.join(..)` compared a
+    // non-canonical path (Windows `\?\` prefix, macOS `/var` symlink)
+    // against the canonical root, so every not-yet-existing target was
+    // refused as "outside the drive root" -- including new-file writes.
+    let canon = root_canon
+        .join(&candidate)
+        .canonicalize()
+        .unwrap_or_else(|_| root_canon.join(&candidate));
     if !canon.starts_with(&root_canon) {
         return Err(AppError::Internal(format!(
             "local_drive: rel_path `{rel}` resolves outside the drive root"
@@ -1292,6 +1330,7 @@ async fn elevenlabs_generate_tts(
         .get("voice_id")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("elevenlabs generate_tts: missing `voice_id`".into()))?;
+    let voice_id = safe_path_segment(voice_id, "voice_id")?;
     let text = args
         .get("text")
         .and_then(|v| v.as_str())
@@ -1508,4 +1547,118 @@ async fn personas_db_execute_mutation(pool: &UserDbPool, args: &Value) -> Result
     Ok(format!(
         "## Personas database -- mutation executed\n\nQuery:\n```sql\n{trimmed}\n```\n\nRows affected: **{changed}**."
     ))
+}
+
+#[cfg(test)]
+mod path_segment_tests {
+    use super::safe_path_segment;
+
+    #[test]
+    fn accepts_real_ids() {
+        for ok in [
+            "1234567890",
+            "18c0ffee12ab34cd",
+            "d9824bdc-8445-4327-be8b-5b47500af6ce",
+            "rust-lang",
+            "my_repo.js",
+            "21m00Tcm4TlvDq8ikWAM",
+        ] {
+            assert_eq!(safe_path_segment(ok, "id").unwrap(), ok);
+        }
+    }
+
+    #[test]
+    fn refuses_ids_that_leave_the_path_segment() {
+        for bad in [
+            "",
+            ".",
+            "..",
+            "../../users/me",
+            "a/b",
+            "a?x=1",
+            "a#frag",
+            "a%2Fb",
+            "a b",
+            "a\\b",
+            "x\n",
+        ] {
+            assert!(
+                safe_path_segment(bad, "id").is_err(),
+                "{bad:?} must be refused"
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod pure_guard_tests {
+    use super::{
+        is_single_statement, required_field, resolve_within, truncate_for_episode, upstream_err_md,
+    };
+    use std::collections::HashMap;
+
+    #[test]
+    fn resolve_within_keeps_relative_paths_inside_the_root() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        let canon_root = root.canonicalize().unwrap();
+        let ok = resolve_within(root, "notes/today.md").unwrap();
+        assert!(ok.starts_with(&canon_root));
+        // A leading slash is stripped, not treated as absolute.
+        let stripped = resolve_within(root, "/notes/today.md").unwrap();
+        assert_eq!(ok, stripped);
+        // The empty path is the root itself.
+        assert_eq!(resolve_within(root, "").unwrap(), canon_root);
+    }
+
+    #[test]
+    fn resolve_within_refuses_parent_dir_escapes_even_when_target_is_missing() {
+        let dir = tempfile::tempdir().unwrap();
+        for bad in ["../x", "a/../../x", "a/../b"] {
+            assert!(
+                resolve_within(dir.path(), bad).is_err(),
+                "{bad:?} must be refused"
+            );
+        }
+    }
+
+    #[test]
+    fn is_single_statement_rejects_stacked_statements() {
+        assert!(is_single_statement("DELETE FROM t WHERE id = 1"));
+        assert!(is_single_statement("  DELETE FROM t;  "));
+        assert!(is_single_statement("DELETE FROM t;;"));
+        assert!(!is_single_statement("DELETE FROM t; DROP TABLE u"));
+        assert!(!is_single_statement("SELECT 1; SELECT 2;"));
+    }
+
+    #[test]
+    fn required_field_refuses_missing_and_empty_values() {
+        let mut fields = HashMap::new();
+        fields.insert("token".to_string(), "abc".to_string());
+        fields.insert("blank".to_string(), String::new());
+        assert_eq!(required_field(&fields, "svc", "token").unwrap(), "abc");
+        assert!(required_field(&fields, "svc", "blank").is_err());
+        let err = required_field(&fields, "svc", "absent")
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("svc") && err.contains("absent"), "{err}");
+    }
+
+    #[test]
+    fn truncate_for_episode_is_char_boundary_safe_and_marks_the_cut() {
+        assert_eq!(truncate_for_episode("short", 100), "short");
+        // 'é' is two bytes; a cut at byte 1 must not split it.
+        let cut = truncate_for_episode("éééé", 3);
+        assert!(cut.ends_with('…'));
+        assert!(cut.chars().count() <= 3);
+    }
+
+    #[test]
+    fn upstream_err_md_names_service_status_and_caps_the_body() {
+        let body = "x".repeat(5000);
+        let md = upstream_err_md("Sentry", reqwest::StatusCode::BAD_GATEWAY, &body);
+        assert!(md.starts_with("## Sentry failed"));
+        assert!(md.contains("502"));
+        assert!(md.len() < 800, "body must be capped, got {}", md.len());
+    }
 }

@@ -1,0 +1,182 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d47da0b3-faba-4bac-805e-fd12544883b2",
+ "subject": "fleet-orchestration",
+ "evaluatedAt": "2026-10-16T18:09:14Z",
+ "pairs": [
+  {
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+   "evaluatedRevision": 28,
+   "context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/fleet/queue.rs:996 door_verdict_for, the one admission door, decides on cap, time gate, budget and queue order only; DispatchRequest (src-tauri/src/commands/fleet/queue.rs:190) carries a cwd but no write set and src-tauri/src/commands/fleet/pty.rs:420 allows several sessions per cwd by design, so concurrent sessions in one repo are admitted with no disjointness check and collide unseen. Re-judged against rev 28 (verifier-seat-capacity added; parallel-dispatch and completion-claim-verification amended additively): still true. Anchors moved from :982/:176 after the one-control door commits.",
+   "techniques": [
+    {
+     "technique": "parallel-dispatch",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/fleet/queue.rs:190 DispatchRequest has cwd and no declared write scope; the door at :996 never compares scopes"
+    },
+    {
+     "technique": "session-registry",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/fleet/pty.rs:420 multiple sessions per cwd allowed, so one-writer-per-write-scope is not enforced at the registry"
+    },
+    {
+     "technique": "verifier-seat-capacity",
+     "verdict": "unknown",
+     "evidence": "src-tauri/src/commands/fleet/queue.rs:996 the door carries no verification-debt stock; whether a seat-keyed review queue exists elsewhere (App Master council review) was not read this run"
+    }
+   ]
+  },
+  {
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+   "evaluatedRevision": 28,
+   "context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394",
+   "state": "deviation",
+   "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:95 picks remove-vs-kill from a hand-written {exited, hibernated} pair of the 10-state FleetSessionState (src/lib/bindings/FleetSessionState.ts:16), so the X on an expired row calls killSession, gets KillOutcome::NoChild (src-tauri/src/commands/fleet/registry.rs:551) and the terminal row never leaves; a queued row cannot be cancelled although src-tauri/src/commands/fleet/queue.rs:1736 cancel_dispatch exists and no caller under src/ reaches it. Re-judged against rev 28 (verifier-seat-capacity added; parallel-dispatch and completion-claim-verification amended additively): still true.",
+   "techniques": [
+    {
+     "technique": "session-registry",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:95 consumer re-derives terminal-ness from 2 of 10 states instead of the registry vocabulary"
+    },
+    {
+     "technique": "parallel-dispatch",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/fleet/queue.rs:1736 cancel_dispatch has no caller under src/, so a visible queued entry cannot be withdrawn from the grid"
+    }
+   ]
+  },
+  {
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+   "evaluatedRevision": 28,
+   "context": "d7525012-ab19-4b29-99bb-0d4b6b9e084b",
+   "state": "deviation",
+   "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 'handles the full lifecycle' iterates a hand-typed 7 of the 10 FleetSessionState values, omitting queued, finished and expired that production maps (src/features/plugins/fleet/FleetStatusDots.tsx:36,42,48), so the test certifies coverage it does not check and a new state slips past it. Re-judged against rev 28 (verifier-seat-capacity added; parallel-dispatch and completion-claim-verification amended additively): still true.",
+   "techniques": [
+    {
+     "technique": "session-registry",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:68 closed vocabulary restated by hand in the test rather than derived from src/lib/bindings/FleetSessionState.ts:16"
+    }
+   ]
+  },
+  {
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+   "evaluatedRevision": 28,
+   "context": "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e",
+   "state": "deviation",
+   "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 excludes only exited|hibernated from broadcast targets, so writer-less queued (src-tauri/src/commands/fleet/types.rs:34) and expired rows stay targetable; each write fails at src-tauri/src/commands/fleet/registry.rs:1491 'session writer dropped', and the failure retarget re-selects exactly those rows, which can never succeed. Re-judged against rev 28 (verifier-seat-capacity added; parallel-dispatch and completion-claim-verification amended additively): still true.",
+   "techniques": [
+    {
+     "technique": "parallel-dispatch",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:94 broadcast membership is a hand-written state filter that admits writer-less members"
+    },
+    {
+     "technique": "hibernation-and-resume",
+     "verdict": "realized",
+     "evidence": "src/features/plugins/fleet/fleetTerminalManager.ts:323 MAX_PARKED bounds the parked terminal pool"
+    }
+   ]
+  },
+  {
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+   "evaluatedRevision": 28,
+   "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+   "state": "deviation",
+   "evidence": "src/stores/slices/system/fleetSlice.ts:357 (and :385 on EXITED) stamps lastActivityMs = Date.now() on every FLEET_SESSION_STATE event, a value the payload never carries, while the registry deliberately withholds that stamp for parked completions (src-tauri/src/commands/fleet/registry.rs:696 apply_transition_parked); a finished session reads as just-active and sorts to the top until the next full refresh. Re-judged against rev 28 (verifier-seat-capacity added; parallel-dispatch and completion-claim-verification amended additively): still true.",
+   "techniques": [
+    {
+     "technique": "absent-status-passthrough",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/system/fleetSlice.ts:357 a non-observing projector supplies an activity value the producer did not state"
+    },
+    {
+     "technique": "evidence-outranks-a-liveness-claim",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/system/fleetSlice.ts:385 a terminal EXITED event is recorded as fresh activity"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "fleet-orchestration",
+   "context": "*",
+   "reason": "18 unknown pairs (all confidence probable) and the other rev-26 verdicts left for later runs; budget 5 spent on the highest-score deviations two revisions behind the registry"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-16T18:09:14Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "parallel-dispatch",
+    "session-registry",
+    "verifier-seat-capacity"
+   ],
+   "deviations": 2
+  },
+  {
+   "ts": "2026-10-16T18:09:14Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "session-registry",
+    "parallel-dispatch"
+   ],
+   "deviations": 2
+  },
+  {
+   "ts": "2026-10-16T18:09:14Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "session-registry"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-16T18:09:14Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "parallel-dispatch",
+    "hibernation-and-resume"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-16T18:09:14Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "absent-status-passthrough",
+    "evidence-outranks-a-liveness-claim"
+   ],
+   "deviations": 2
+  }
+ ]
+}

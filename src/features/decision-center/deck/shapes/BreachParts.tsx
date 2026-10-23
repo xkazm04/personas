@@ -1,7 +1,8 @@
 /**
  * The Breach card's sections: why it reached you (the clause, in one plain
- * sentence), what would change if amended (only for an envelope amend, where
- * both sides are known), and the incident sheet a stop breach shows.
+ * sentence), the mandate's state when the card cannot amend it (unsigned,
+ * none, not loaded), what would change if amended (only for an envelope
+ * amend, where both sides are known), and the incident sheet a stop breach shows.
  */
 import type { ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
@@ -12,7 +13,7 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 import type { LaneClause } from '@/lib/bindings/LaneClause';
 import type { MandateSummary } from '@/lib/bindings/MandateSummary';
 import type { DecisionItem } from '../../model/decisionModel';
-import { clauseLine, type BreachPlan } from '../../mandate/breachPlan';
+import { clauseLine, type BreachMandateState, type BreachPlan } from '../../mandate/breachPlan';
 import { FactLine } from '../FactLine';
 import { useUsd } from './SignParts';
 
@@ -20,14 +21,26 @@ const CLAUSE_TONE: Record<LaneClause, string> = {
   stop: 'danger', valve: 'danger', risk: 'warning', merge: 'warning', spend: 'warning', scope: 'accent', unsigned: 'accent', none: 'neutral',
 };
 
-export function ClauseBand({ clause }: { clause: LaneClause }) {
+/** Why it reached you. `line` replaces the clause's generic sentence when the card knows more (the unsigned mandate, named). */
+export function ClauseBand({ clause, line }: { clause: LaneClause; line?: string }) {
   const { t } = useTranslation();
   const m = t.monitor;
   return (
     <p className={`au-yes au-l-${CLAUSE_TONE[clause]} flex max-w-[68ch] flex-col gap-0.5 rounded-r-input py-1.5 pl-3 pr-3`} data-testid="breach-clause" data-clause={clause}>
       <span className="au-ink-lamp typo-label">{m.ml_breach_why}</span>
-      <span className="typo-body text-foreground [text-wrap:pretty]">{clauseLine(m, clause)}</span>
+      <span className="typo-body text-foreground [text-wrap:pretty]">{line ?? clauseLine(m, clause)}</span>
     </p>
+  );
+}
+
+/** The mandate's state when it is not a signed envelope: one sentence under its name. */
+export function MandateState({ state, line }: { state: BreachMandateState; line: string }) {
+  const { t } = useTranslation();
+  return (
+    <section className="flex max-w-[68ch] flex-col gap-1" data-testid="breach-mandate-state" data-state={state.kind}>
+      <span className="typo-eyebrow text-foreground">{t.monitor.ml_breach_mandate}</span>
+      <span className="typo-body text-foreground [text-wrap:pretty]">{line}</span>
+    </section>
   );
 }
 

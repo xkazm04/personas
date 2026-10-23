@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
-import { ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle2, XCircle, Clock, RefreshCw, GitMerge, Settings, Search } from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle2, XCircle, Clock, RefreshCw, GitMerge, Search } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { NoVaultConnected } from '../NoVaultConnected';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -21,7 +22,7 @@ import {
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import SyncResultCard, { type SyncResultSummary } from './SyncResultCard';
 import ConflictDiffView from './ConflictDiffView';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 export default function SyncPanel() {
   const { t, tx } = useTranslation();
@@ -33,7 +34,6 @@ export default function SyncPanel() {
   const setSyncRunning = useSystemStore((s) => s.setObsidianSyncRunning);
   const setLastSyncAt = useSystemStore((s) => s.setObsidianLastSyncAt);
   const setPendingConflicts = useSystemStore((s) => s.setObsidianPendingConflicts);
-  const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
 
   const personas = useAgentStore((s) => s.personas);
 
@@ -114,15 +114,20 @@ export default function SyncPanel() {
         at: new Date().toISOString(),
       });
       setLastSyncAt(new Date().toISOString());
-      addToast(`Push: ${result.created} created, ${result.updated} updated, ${result.skipped} skipped${result.errors.length > 0 ? `, ${result.errors.length} errors` : ''}`, result.errors.length > 0 ? 'error' : 'success');
+      // The per-category breakdown lives in the SyncResultCard rendered below;
+      // the toast is the localized headline, a warning when part of it failed.
+      addToast(
+        tx(t.plugins.obsidian_brain.result_pushed_headline, { count: result.created + result.updated + result.skipped }),
+        result.errors.length > 0 ? 'warning' : 'success',
+      );
       obsidianBrainGetSyncLog(50).then(setSyncLog).catch(silentCatch('SyncPanel:refreshSyncLogAfterPush'));
     } catch (e) {
-      addToast(`Push failed: ${e}`, 'error');
+      toastCatch('SyncPanel:push')(e);
     } finally {
       setPushing(false);
       setSyncRunning(false);
     }
-  }, [selectedPersonaIds, addToast, announce, recordResult, setSyncRunning, setLastSyncAt, t]);
+  }, [selectedPersonaIds, addToast, announce, recordResult, setSyncRunning, setLastSyncAt, t, tx]);
 
   const pullSync = useCallback(async () => {
     setPulling(true);
@@ -142,25 +147,22 @@ export default function SyncPanel() {
         at: new Date().toISOString(),
       });
       setLastSyncAt(new Date().toISOString());
-      addToast(`Pull: ${result.created} created, ${result.updated} updated${result.conflicts.length > 0 ? `, ${result.conflicts.length} conflicts` : ''}`, result.conflicts.length > 0 ? 'error' : 'success');
-      // Lucky-convergence audit trail: both sides edited but ended up
-      // identical. Distinct from a no-op so the user sees the avoided
-      // conflict instead of nothing.
-      if (result.converged && result.converged > 0) {
-        const noun = result.converged === 1 ? 'entry' : 'entries';
-        addToast(
-          `Both sides edited ${result.converged} ${noun} and ended up identical — keeping shared version`,
-          'success',
-        );
-      }
+      // Headline only: the SyncResultCard below carries the breakdown,
+      // including the lucky-convergence count (both sides edited, ended up
+      // identical) that used to get its own English toast.
+      const pulled = result.created + result.updated + result.conflicts.length + (result.converged ?? 0);
+      addToast(
+        tx(t.plugins.obsidian_brain.result_pulled_headline, { count: pulled }),
+        result.conflicts.length > 0 || result.errors.length > 0 ? 'warning' : 'success',
+      );
       obsidianBrainGetSyncLog(50).then(setSyncLog).catch(silentCatch('SyncPanel:refreshSyncLogAfterPull'));
     } catch (e) {
-      addToast(`Pull failed: ${e}`, 'error');
+      toastCatch('SyncPanel:pull')(e);
     } finally {
       setPulling(false);
       setSyncRunning(false);
     }
-  }, [addToast, announce, recordResult, setSyncRunning, setLastSyncAt, setPendingConflicts, t]);
+  }, [addToast, announce, recordResult, setSyncRunning, setLastSyncAt, setPendingConflicts, t, tx]);
 
   const resolveConflict = useCallback(async (conflict: SyncConflict, resolution: ObsidianConflictResolution) => {
     try {
@@ -172,22 +174,13 @@ export default function SyncPanel() {
       });
       addToast(`Conflict resolved (${resolution})`, 'success');
     } catch (e) {
-      addToast(`Resolution failed: ${e}`, 'error');
+      toastCatch('SyncPanel:resolveConflict')(e);
     }
   }, [addToast, setPendingConflicts]);
 
   if (!connected) {
     return (
-      <div className="flex-1 flex items-center justify-center py-20">
-        <EmptyState
-          icon={AlertTriangle}
-          title={t.plugins.obsidian_brain.no_vault_connected}
-          subtitle={t.plugins.obsidian_brain.no_vault_hint}
-          iconColor="text-amber-400/80"
-          iconContainerClassName="bg-amber-500/10 border-amber-500/20"
-          action={{ label: t.plugins.obsidian_brain.tab_setup, onClick: () => setObsidianBrainTab('setup'), icon: Settings }}
-        />
-      </div>
+      <NoVaultConnected />
     );
   }
 
@@ -257,6 +250,7 @@ export default function SyncPanel() {
                   value={personaFilter}
                   onChange={(e) => setPersonaFilter(e.target.value)}
                   placeholder={t.plugins.obsidian_brain.filter_personas}
+                  aria-label={t.plugins.obsidian_brain.filter_personas}
                   className="w-full pl-8 pr-3 py-1.5 rounded-card bg-background/50 border border-primary/12 text-foreground typo-caption placeholder:text-foreground/40 focus-ring transition-all"
                 />
               </div>
@@ -277,10 +271,10 @@ export default function SyncPanel() {
                 </button>
               ))}
               {personas.length === 0 && (
-                <p className="typo-caption text-foreground">{t.plugins.obsidian_brain.no_personas_found}</p>
+                <EmptyState art="agents" size="sm" title={t.plugins.obsidian_brain.no_personas_found} />
               )}
               {personas.length > 0 && filteredPersonas.length === 0 && (
-                <p className="typo-caption text-foreground">{t.plugins.obsidian_brain.no_matches}</p>
+                <EmptyState art="search" size="sm" title={t.plugins.obsidian_brain.no_matches} />
               )}
             </div>
           </div>
@@ -329,7 +323,7 @@ export default function SyncPanel() {
         {syncLog.length === 0 ? (
           /* Settled-only empty state — the initial log fetch is async, so
              don't claim "no activity" before it resolves. */
-          !syncLogLoading && <p className="typo-body text-foreground py-4">{t.plugins.obsidian_brain.no_sync_activity}</p>
+          !syncLogLoading && <EmptyState art="stream" size="sm" title={t.plugins.obsidian_brain.no_sync_activity} />
         ) : (
           <div className="space-y-1 max-h-80 overflow-y-auto">
             {syncLog.map((entry) => (

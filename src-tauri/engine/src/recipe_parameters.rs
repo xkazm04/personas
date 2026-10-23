@@ -81,6 +81,19 @@ fn humanize(name: &str) -> String {
     personas_core::utils::text::humanize_identifier(name, false)
 }
 
+/// The declared input-field array off a parsed recipe payload.
+///
+/// A v3 `RecipeSpec` serializes it as `inputSchema` (camelCase); the pre-v3
+/// use-case shape wrote `input_schema`. The catalog holds rows of both
+/// vintages, so read both - keying off one spelling silently derives nothing
+/// for the other (all 132 seeded payloads are v3). Returns `None` when neither
+/// spelling holds an array.
+pub fn input_schema_of(tpl: &serde_json::Value) -> Option<&Vec<serde_json::Value>> {
+    tpl.get("inputSchema")
+        .and_then(|v| v.as_array())
+        .or_else(|| tpl.get("input_schema").and_then(|v| v.as_array()))
+}
+
 /// Parse an `input_schema` array (`[{name,type,default,options,min,max,description}]`)
 /// into `DerivedParam`s, returning the fields whose type has no persona
 /// ParamType mapping alongside them rather than discarding those fields.

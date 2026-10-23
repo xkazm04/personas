@@ -28,6 +28,21 @@ export function issueState(i: Pick<PersonaHealingIssue, 'is_circuit_breaker' | '
   return 'medium';
 }
 
+/**
+ * The one meaning of "open" on this page: not yet resolved. A pending auto-fix is still open -
+ * its retry has been scheduled, not confirmed (healing.rs writes auto_fixed=1 at schedule time).
+ * The layer-1 card, the section summary and the Open filter all count through this, so the
+ * three figures the operator sees for "open" can no longer be three different sets.
+ */
+export function isOpenIssue(i: Pick<PersonaHealingIssue, 'status'>): boolean {
+  return i.status !== 'resolved';
+}
+
+/** Auto-fixed means the retry confirmed the fix: resolved AND auto_fixed, never a pending retry. */
+export function isAutoFixedIssue(i: Pick<PersonaHealingIssue, 'status' | 'auto_fixed'>): boolean {
+  return i.status === 'resolved' && i.auto_fixed;
+}
+
 /** Row states: a working retry glows, a settled issue recedes. */
 export function issueRowStates(s: IssueState, selected: boolean): KitState[] {
   const st: KitState[] = [];

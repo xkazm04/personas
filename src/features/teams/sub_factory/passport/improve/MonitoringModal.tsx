@@ -60,11 +60,16 @@ export function MonitoringModal({ slug, projectName, passport, onClose }: {
     const boundId = env.bindings.get(bindingKey(def.key, MONITORING_ENV));
     const detected = def.detected(passport);
     const accepted = new Set(def.serviceTypes);
+    const bound = env.credentialById(boundId);
     return {
       def,
       detected,
-      bound: env.credentialById(boundId),
-      state: monitoringState(detected, Boolean(boundId)),
+      bound,
+      // Wired means a credential we can NAME. A binding row whose credential is
+      // gone from the vault (or not loaded yet) used to read as NOT_IMPLEMENTED,
+      // whose Deploy button returns early on `!row.bound` - a dead control, with
+      // no Unbind either, since that also renders only for a resolved credential.
+      state: monitoringState(detected, Boolean(bound)),
       candidates: env.credentials.filter((c) => accepted.has(c.serviceType.toLowerCase())),
       health: env.health,
     };

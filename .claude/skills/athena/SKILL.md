@@ -1,6 +1,6 @@
 ---
 name: athena
-description: Open a terminal channel to Athena — load her identity, constitution and memory from the local companion brain, converse AS her with Claude Code's tools at hand, and write every exchange back as first-class episodes her sleep cycle will consolidate. The supplementary channel for while Personas app development makes the in-app chat unstable. Invoke with `/athena` (optionally `/athena <first message>`).
+description: Open a terminal channel to Athena — load her identity, constitution and memory from the local companion brain, converse AS her with Claude Code's tools at hand, and write every exchange back as first-class episodes her sleep cycle will consolidate. The supplementary channel for while Personas app development makes the in-app chat unstable. Invoke with `/athena` (optionally `/athena <first message>`), or `/athena --standup` to plan and then direct an unattended day of headless App Masters (`--standup resume|end|--plan-only`).
 ---
 
 # Athena — the terminal channel
@@ -72,6 +72,39 @@ description: Open a terminal channel to Athena — load her identity, constituti
   through the sleep cycle's gated phase), facts/procedurals tables, taxonomy, or any app table
   beyond the three writes above (episode node+FTS, session touch, turn row). The brain is
   shared state with a live app — small writes, and only through `brain.py`.
+
+## `--standup` — plan the day, then direct it while the operator is away
+
+> One invocation: interview, arm, run. The operator names projects, Athena scouts them and proposes
+> directions, the topics resolve, the resolved App Masters are armed, and this same session becomes the
+> Director of `/appmaster run` (read `.claude/skills/appmaster/SKILL.md`; below, `AM` is
+> `node .claude/skills/appmaster/appmaster.mjs`). Boot ritual and memory protocol above apply unchanged.
+> Design and decisions: Spark vault `Spark/ideas/athena-standup.md`.
+
+**Files** (home `~/.personas/standup/<YYYY-MM-DD>/`): `PLAN.json`, `PLAN.md`, `AWAY-LOG.md`, `MORNING.md`.
+Pointer `AM standup show`. `PLAN.json`: `{date, armed:[{slug, direction, say, briefEdits?, push:{remote,branch}|null}], off:[{slug, why}], awayRules}`.
+
+### Phases (interactive part: this is the only time `AskUserQuestion` is used)
+A. **Recall.** `AM status --text`, `AM standup show`, the newest earlier `PLAN.json` (its directions become the defaults: keep / change / drop). A loop already running means the standup edits it live (step F re-arms). Ask the operator which projects (multiSelect over the managed set and briefs, plus Other); a name with no brief offers `/appmaster onboard`.
+B. **Scout** each named project (read-only, in parallel; Explore subagents with `model: haiku`): last master note and merges, held runs, open asks, outbox depth, goals, the repo's `git fetch` + ahead/behind (never trust stale refs). One line of evidence per project.
+C. **Direction per project**: ONE `AskUserQuestion` each, the scout line inside the question, 2-4 directions (her recommendation first, multiSelect), Other for the operator's words. "Later" or skip means the project goes to `off` with the reason: **it is not armed**.
+D. **Standing rules.** Show the away rules once and let the operator amend: *delegate* reversible asks (scope, goals, dependency bumps inside the brief); *park for the morning* money, data, schema, secrets, and every push not named in `push`. Pushes happen only to the remote and branch a project's entry names; never a `git push` to a remote the entry does not name (devsecops `origin` also feeds the GitLab showcase: github only).
+E. **Go-gate**: one `AskUserQuestion` listing armed projects with their direction, the off projects with why, the push list. `Arm and run` / `Adjust` / `Plan only` (`--plan-only` ends here after F's file writes and no arming).
+F. **Arm.** Write `PLAN.json` + `PLAN.md`. Per armed project: `AM say --project p --file <direction>` (the master's next context shows it whole); a direction that changes goals, charters or boundaries also edits the brief (`AM onboard --force`, which keeps a `.bak`); a project outside `DEFAULT_MANAGED` gets `"headless": true`. Then `AM standup arm --file PLAN.json`. Bank the decision round as ONE Athena episode (`brain.py append`), emphatic and self-contained. Tell the operator "armed, you can go".
+
+### The away loop (after arming; never `AskUserQuestion` again)
+Run `/appmaster run` exactly as its SKILL.md says (await notifications are the primary wake; restart lost awaits at once). Added duties:
+- **Asks.** Classify each open ask with the plan's `awayRules`. Delegable: answer it yourself with reasoning in `--notes`, line in AWAY-LOG. Parked: leave it open, route the master around it with a `say`, line in AWAY-LOG as `PARKED` with the options. `merge-held` and `verify-red` are parked. The operator returning and talking to you overrides everything below.
+- **Hygiene sweep** every ~20-30 min (the `ScheduleWakeup` fallback): `watch`, `promote`, brakes, held runs, outbox depth; one AWAY-LOG line `HH:MM sweep: ...`.
+- **Drift check** about hourly: compare each armed master's latest note and merges with its `direction`; if it wandered, send a corrective `say` and log `DRIFT p: ... -> said`. Silence when on course.
+- **Pushes**: only the plan's named `push` targets, after `git fetch`, the project's pre-push gate green, and the secret-scan the project already uses. Otherwise queue for the morning.
+- **Stop** on: usage limit mark (no auto-resume; write the report), the operator saying stop, or `AM standup end`. Then `AM end` heartbeats, `AM standup end`.
+
+### Return
+Write `MORNING.md` from AWAY-LOG and `AM status` (per project: moved with SHAs, running/held, parked asks with the operator's options, unpushed commits, what the next standup should decide), print it as the terminal digest, bank ONE closing episode (`brain.py append`), and close with `brain.py gauge`.
+
+### `--standup resume` / `end`
+`resume`: a dead session re-enters the armed plan without an interview: read `AM standup show` + `PLAN.json` + the tail of AWAY-LOG, `AM watch` to restart awaits, continue the away loop. `end`: `AM standup end`, then the Return section.
 
 ## Ending a session
 

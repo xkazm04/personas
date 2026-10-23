@@ -18,11 +18,23 @@ repo:
 # `verified` is a claim the doctor flips to true once it has actually run the command.
 capabilities:
   build: { command: "npm run build", verified: false }
-  test: { command: "npm test", verified: false }
+  test: { command: "npm test", verified: false, note: "the Vitest suite. The Rust suites are separate lanes (`npm run test:rust` for app_lib with `--features desktop`, `npm run test:rust:crates` for the extracted crates), listed under Common Commands in `.claude/CLAUDE.md`." }
   lint: { command: "npm run lint", verified: false }
-  typecheck: { command: "npx tsc --noEmit", verified: false }
+  typecheck: { command: "npx tsc --noEmit", verified: false, note: "the portable form, run through `npx` because `tsc` is not on PATH on Windows. `npm run check` and `npm run build` typecheck through `npm run typecheck:native` (the TS 7 native compiler, same tsconfig), and `npm run gate` answers tsc from a warm daemon. All three are the same typecheck, not three different ones." }
   scan-secrets: { command: "node scripts/secret-scan.mjs", verified: false }
   evals: { command: "npm run test:evals", verified: false }
+
+# Agent guidance — ONE canonical source; every other guidance file points to it and restates
+# nothing. Root CLAUDE.md is the generated context-map projection (its pointer paragraph sits
+# outside the scan's markers); AGENTS.md is the harness-neutral index. Where a projection and the
+# canonical file disagree, the canonical file wins (AGENTS.md says the same).
+guidance:
+  canonical: .claude/CLAUDE.md
+  projections: [AGENTS.md, CLAUDE.md]
+  doneGate: "npm run gate -- --cold"
+  # The full pre-push chain (every project check, then typecheck and eslint). Not part of done:
+  # done is the gate above; this is what must be green before a branch leaves the box.
+  prePushGate: "npm run check"
 
 # Pointers — these subsystems can change format underneath without breaking this contract.
 paths:

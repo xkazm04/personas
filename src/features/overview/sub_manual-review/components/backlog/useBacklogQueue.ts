@@ -30,6 +30,8 @@ export interface BacklogQueue {
   rows: BacklogIdea[];
   counts: TriageCounts | null;
   loading: boolean;
+  /** The newest page read's failure; `rows` is then not an answer, so check it before saying "empty". */
+  error: string | null;
   loadingMore: boolean;
   hasMore: boolean;
   status: BacklogStatus;
@@ -57,7 +59,7 @@ export interface BacklogQueue {
  */
 export function useBacklogQueue(initialStatus: BacklogStatus = 'pending'): BacklogQueue {
   const {
-    triageItems, triageCounts, triageHasMore, triageLoading, triageLoadingMore,
+    triageItems, triageCounts, triageHasMore, triageLoading, triageLoadingMore, triageReadError,
     fetchTriageIdeas, fetchMoreTriageIdeas, acceptIdea, rejectIdea, deleteTriageIdea,
   } = useSystemStore(useShallow((s) => ({
     triageItems: s.triageItems,
@@ -65,6 +67,7 @@ export function useBacklogQueue(initialStatus: BacklogStatus = 'pending'): Backl
     triageHasMore: s.triageHasMore,
     triageLoading: s.triageLoading,
     triageLoadingMore: s.triageLoadingMore,
+    triageReadError: s.triageReadError,
     fetchTriageIdeas: s.fetchTriageIdeas,
     fetchMoreTriageIdeas: s.fetchMoreTriageIdeas,
     acceptIdea: s.acceptIdea,
@@ -152,6 +155,7 @@ export function useBacklogQueue(initialStatus: BacklogStatus = 'pending'): Backl
     rows,
     counts: triageCounts,
     loading: triageLoading,
+    error: triageReadError,
     loadingMore: triageLoadingMore,
     hasMore: triageHasMore,
     status,

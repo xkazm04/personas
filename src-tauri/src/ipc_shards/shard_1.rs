@@ -28,6 +28,7 @@ pub(super) fn shard(
         // dispatch, and every brake on her. Still nothing that acts - the lane
         // has a claim function with no caller, by design.
         commands::curator::curator_requests_list,
+        commands::curator::curator_requests_history,
         commands::curator::curator_request_create,
         commands::curator::curator_request_cancel,
         commands::curator::curator_skills_list,

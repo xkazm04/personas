@@ -13,7 +13,11 @@
     "personas_one": "{count}개 페르소나",
     "personas_other": "{count}개 페르소나",
     "show_all": "전체 {count}개 항목 표시",
-    "total_accesses": "{count}개 합계"
+    "total_accesses": "{count}개 합계",
+    "by_persona": "{name}",
+    "entries_one": "항목 {count}개",
+    "entries_other": "항목 {count}개",
+    "page_of": "{page}/{total} 페이지"
   },
   "auto_cred_extra": {
     "all_fields_captured": "모든 {count}개 필드 캡처됨",
@@ -102,7 +106,19 @@
     "test_to_save": "저장을 활성화하려면 연결 테스트",
     "universal_auto_setup": "범용 자동 설정",
     "universal_auto_setup_hint": "URL과 설명을 제공하면 AI가 사이트를 탐색해 API 자격 증명을 자동으로 발견하고 생성합니다.",
-    "what_do_you_need": "무엇이 필요하신가요?"
+    "what_do_you_need": "무엇이 필요하신가요?",
+    "err_kind_cli_error": "CLI 오류",
+    "err_kind_cli_not_found": "CLI를 찾을 수 없음",
+    "err_kind_env_conflict": "환경 충돌",
+    "err_kind_extraction_failed": "추출 실패",
+    "err_kind_spawn_failed": "실행 실패",
+    "err_kind_timeout": "시간 초과",
+    "field_missing": "{label} (누락됨)",
+    "log_blocked_url": "설정 세션의 안전하지 않은 URL을 차단했습니다",
+    "log_open_url_failed": "URL을 열지 못했습니다: {url}",
+    "log_saved_procedure": "{label}에 저장된 절차를 사용하는 중",
+    "open_url": "열기",
+    "open_url_title": "브라우저에서 {url} 열기"
   },
   "auto_cred": {
     "action_required": "조치 필요",
@@ -534,7 +550,8 @@
     "use_console_hint": "이 키의 값을 확인하려면 콘솔 탭을 사용하세요.",
     "write": "쓰기",
     "write_mode": "쓰기 모드",
-    "suggestion_api_tables": "이 베이스의 테이블과 각 테이블의 레코드 수를 보여줘"
+    "suggestion_api_tables": "이 베이스의 테이블과 각 테이블의 레코드 수를 보여줘",
+    "rename_failed": "자격 증명 이름을 바꾸지 못했습니다. 이전 이름은 그대로 저장되어 있습니다."
   },
   "delete_dialog": {
     "cannot_undo": "이 작업은 취소할 수 없습니다.",
@@ -583,7 +600,7 @@
     "severity_high": "높은 위험",
     "severity_low": "낮은 위험",
     "severity_medium": "중간 위험",
-    "sim_high": "{credentialName} 취소 시 워크스페이스의 {personas}개 페르소나{personaPlural}에 영향을 줍니다.",
+    "sim_high": "{credentialName} 취소 시 워크스페이스의 {personas}개 페르소나에 영향을 줍니다.",
     "sim_low": "이 자격 증명에 의존하는 페르소나나 워크플로가 없습니다. 취소가 안전합니다.",
     "sim_medium": "{credentialName} 취소 시 영향 범위가 제한적입니다.",
     "simulate_revocation": "취소 시뮬레이션",
@@ -642,7 +659,9 @@
     "start_over": "처음부터 다시",
     "technical_details": "기술 세부 정보",
     "title": "자격 증명 설계",
-    "try_again_with": "요청으로 다시 시도"
+    "try_again_with": "요청으로 다시 시도",
+    "instruction_imported": "{label} 자격 증명 (가져옴)",
+    "instruction_template": "{label} 자격 증명"
   },
   "design_phases": {
     "all_steps_complete": "모든 단계 완료 -- 아래 필드를 작성하고 연결을 테스트하세요.",
@@ -698,7 +717,9 @@
     "typical_time": "일반적으로 15-30초",
     "use_template": "사용",
     "verified_setup": "확인된 설정",
-    "view_credential": "자격 증명 보기"
+    "view_credential": "자격 증명 보기",
+    "open": "열기",
+    "step_number": "{n}단계"
   },
   "desktop_discovery": {
     "allowed_binaries": "허용된 바이너리: ",
@@ -783,7 +804,8 @@
     "scheduled_rotation": "예약된 교체",
     "scheduled_rotation_desc": "cron 스케줄로 자격 증명 교체 (예: 매일, 매주).",
     "seconds_10": "10초",
-    "seconds_30": "30초"
+    "seconds_30": "30초",
+    "template_trigger_aria": "{name} 이벤트 트리거"
   },
   "features": {
     "anomaly_detected": "이상 감지: 이전 성공 후 자격 증명이 갑자기 실패합니다. 폐기 가능성이 있습니다.",
@@ -962,7 +984,10 @@
     "no_eligible": "적합한 자격 증명 없음. 자격 증명 목록에서 먼저 MCP 자격 증명을 추가하세요.",
     "no_members": "아직 멤버 없음. 아래에서 추가해 도구 묶기 시작.",
     "pick_credential": "자격 증명 선택…",
-    "pick_error": "자격 증명을 선택하고 짧은 표시 이름을 지정하세요"
+    "pick_error": "자격 증명을 선택하고 짧은 표시 이름을 지정하세요",
+    "remove_member_aria": "{name} 제거",
+    "disable_member": "비활성화",
+    "enable_member": "활성화"
   },
   "graph": {
     "connection_count_one": "{count}개 연결",
@@ -1006,7 +1031,27 @@
     "selected_for_import": "가져오기 위해 선택됨",
     "source_ref": "소스 참조",
     "sync_supported": "동기화 지원",
-    "title": "가져오기 소스"
+    "title": "가져오기 소스",
+    "cli_hint": "{cli} CLI 명령을 실행하고 JSON 출력을 아래에 붙여넣으세요.",
+    "env_hint": ".env 파일의 내용을 아래에 붙여넣으세요.",
+    "err_aws_no_secret_string": "AWS 응답에서 SecretString을 찾을 수 없습니다",
+    "err_aws_parse_failed": "AWS Secrets Manager JSON 출력을 파싱하지 못했습니다",
+    "err_azure_parse_failed": "Azure Key Vault JSON 출력을 파싱하지 못했습니다",
+    "err_doppler_parse_failed": "Doppler JSON 출력을 파싱하지 못했습니다. 다음을 사용하세요: doppler secrets download --format=json",
+    "err_env_missing_separator": "{line}행: '=' 구분자가 없습니다",
+    "err_no_secrets": "입력에서 시크릿을 찾을 수 없습니다",
+    "err_op_expected_array": "op CLI 출력은 JSON 배열이어야 합니다",
+    "err_op_parse_failed": "1Password JSON 출력을 파싱하지 못했습니다. 다음을 사용하세요: op item list --format=json",
+    "placeholder_1password": "다음 명령의 출력을 붙여넣기: op item list --format=json",
+    "placeholder_aws_secrets": "다음 명령의 출력을 붙여넣기: aws secretsmanager get-secret-value --secret-id <name>",
+    "placeholder_azure_keyvault": "다음 명령의 출력을 붙여넣기: az keyvault secret show --vault-name <vault> --name <secret>",
+    "placeholder_doppler": "다음 명령의 출력을 붙여넣기: doppler secrets download --format=json",
+    "source_desc_1password": "op CLI로 1Password에서 가져오기",
+    "source_desc_aws_secrets": "AWS Secrets Manager에서 가져오기",
+    "source_desc_azure_keyvault": "Azure Key Vault에서 가져오기",
+    "source_desc_doppler": "Doppler 시크릿 플랫폼에서 가져오기",
+    "source_desc_env_file": "로컬 .env 파일에서 시크릿 가져오기",
+    "source_label_env_file": ".env 파일"
   },
   "ingest": {
     "rename_credential": "자격 증명 이름 변경",
@@ -1066,7 +1111,11 @@
     "title_databases": "데이터베이스",
     "title_dependencies": "종속성",
     "unverifiable_count": "{count}개 확인 불가",
-    "unverifiable_tooltip": "이 커넥터에는 실시간 프로브가 없습니다 -- 자격 증명은 저장되어 있지만 공급자에 대해 확인된 적이 없습니다"
+    "unverifiable_tooltip": "이 커넥터에는 실시간 프로브가 없습니다 -- 자격 증명은 저장되어 있지만 공급자에 대해 확인된 적이 없습니다",
+    "create_failed": "자격 증명을 만들지 못했습니다",
+    "rotate_result_failed": "{count}개 실패",
+    "rotate_result_refreshed": "{count}개 갱신됨",
+    "rotate_result_skipped": "{count}개 건너뜀"
   },
   "negotiator_extra": {
     "ask_button": "Ask",
@@ -1084,7 +1133,8 @@
     "planning_description": "AI가 개발자 포털을 분석하고 단계별 프로비저닝 계획을 생성하고 있습니다…",
     "start_auto": "자동 프로비저닝 시작",
     "existing_auth_description": "{method}을(를) 통해 {service}에 이미 로그인되어 있습니다. 설정은 해당 세션을 재사용하고 로그인 단계를 건너뜁니다.",
-    "use_existing_auth": "기존 {service} 세션 사용"
+    "use_existing_auth": "기존 {service} 세션 사용",
+    "step_of": "{total}단계 중 {current}단계: {title}"
   },
   "negotiator": {
     "all_steps_completed": "모든 단계 완료",
@@ -1261,7 +1311,11 @@
     "rotate_now": "지금 교체",
     "rotation_failed": "교체 실패: {error}",
     "rotation_paused": "교체 일시 중지",
-    "update_period_failed": "교체 주기 업데이트 실패: {error}"
+    "update_period_failed": "교체 주기 업데이트 실패: {error}",
+    "countdown_days_hours": "{days}일 {hours}시간",
+    "countdown_due_now": "기한 도래",
+    "countdown_hours_minutes": "{hours}시간 {minutes}분",
+    "countdown_minutes": "{minutes}분"
   },
   "schema_configs": {
     "custom": {
@@ -1378,7 +1432,9 @@
     "kv_value_label": "값",
     "kv_value_placeholder": "값",
     "none_configured": "구성된 것 없음.",
-    "required_badge": "필수"
+    "required_badge": "필수",
+    "field_captured": "캡처됨",
+    "select_placeholder": "선택..."
   },
   "setup_kind": {
     "cli_login": "제공업체 CLI는 설치되어 있지만 로그인되어 있지 않습니다 — 터미널에서 로그인 명령을 실행하세요 (예: `vercel login` 또는 `gh auth login`)",
@@ -1607,7 +1663,8 @@
     "extract_export_json": "JSON 내보내기",
     "extract_filter_all": "모든 유형",
     "extract_filter_label": "엔터티 유형으로 필터링",
-    "health_unreachable": "서비스에 연결할 수 없음"
+    "health_unreachable": "서비스에 연결할 수 없음",
+    "oauth_context_lost": "OAuth는 완료되었지만 컨텍스트가 손실되었습니다. 다시 시도해 주세요."
   },
   "subtitle": "자격 증명 추가 방법을 선택하세요",
   "title": "보관함",
@@ -1760,7 +1817,12 @@
     "select_services": "연결할 서비스 선택",
     "selected_count": "{total}개 중 {selected}개 선택됨",
     "sign_in_browser": "브라우저 창에서 Google 계정으로 로그인하세요.",
-    "some_failed": "일부 자격 증명 실패"
+    "some_failed": "일부 자격 증명 실패",
+    "service_gmail_desc": "이메일 보내기, 읽기 및 관리",
+    "service_google_calendar_desc": "캘린더 일정 읽기 및 관리",
+    "service_google_drive_desc": "파일 읽기 및 관리",
+    "service_google_sheets_desc": "스프레드시트 데이터 읽기 및 쓰기",
+    "status_failed": "실패"
   },
   "connector_attention": {
     "title": "확인이 필요한 연결",
@@ -1781,5 +1843,29 @@
     "reconnect_now": "지금 재연결",
     "reconnecting": "재연결 중...",
     "signed_in_as": "{email}(으)로 로그인됨"
+  },
+  "remediation_notify": {
+    "auto_disabled_body": "{name}: 지속적인 치명적 오류가 감지되었습니다. 연쇄 오류를 막기 위해 교체 정책이 비활성화되었습니다.",
+    "auto_disabled_title": "자격 증명 자동 비활성화됨",
+    "critical_title": "자격 증명 위험",
+    "drift_title": "자격 증명 드리프트 감지됨",
+    "rotation_failed_title": "자격 증명 교체 실패",
+    "warning_title": "자격 증명 경고",
+    "reason_backoff_retry": "일시적 실패율이 {pct}입니다(1시간). 지수 백오프를 적용합니다.",
+    "reason_default": "조치 수준: {level}",
+    "reason_disable": "심각: 영구 실패율이 {pct}입니다(1시간). 교체 정책을 자동으로 비활성화합니다.",
+    "reason_preemptive_rotation": "지속적 성능 저하: 실패율이 {pct}입니다(1시간). 선제적 교체를 예약합니다.",
+    "reason_rotate_then_alert": "영구 오류 감지: 영구 실패율이 {pct}입니다(1시간). 교체 및 알림을 진행합니다."
+  },
+  "resource_picker": {
+    "no_matches": "일치하는 항목 없음",
+    "nothing_to_pick": "아직 선택할 항목이 없습니다",
+    "pick_first": "먼저 {dep}을(를) 선택하세요",
+    "picked_count": "{count}개 선택됨",
+    "save_scope": "범위 저장",
+    "scope_title": "{label} 범위",
+    "search_placeholder": "{label} 검색…",
+    "stale_picks_one": "선택 {count}개",
+    "stale_picks_other": "선택 {count}개"
   }
 }

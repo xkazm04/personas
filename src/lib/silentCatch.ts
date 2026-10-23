@@ -89,12 +89,6 @@ export function silentCatch(context: string): (err: unknown) => void {
 }
 
 /**
- * Same as silentCatch but returns `null`, for use in Promise.all / data-fetch
- * chains where a fallback value is needed.
- *
- * Usage:  somePromise.catch(silentCatchNull("theater:getTrace"))
- */
-/**
  * Like silentCatch but also shows an error toast to the user.
  * Use for operations where the user expects feedback (data fetches, actions).
  *
@@ -147,6 +141,12 @@ export function toastCatch(context: string, customMessage?: string): (err: unkno
   };
 }
 
+/**
+ * Same as silentCatch but returns `null`, for use in Promise.all / data-fetch
+ * chains where a fallback value is needed.
+ *
+ * Usage:  somePromise.catch(silentCatchNull("theater:getTrace"))
+ */
 export function silentCatchNull(context: string): (err: unknown) => null {
   return (err: unknown) => {
     const msg = extractMessage(err);

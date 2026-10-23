@@ -8,8 +8,8 @@ import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  SKILL_DIR, runDir, shortId, nowIso, mintId, claudeBin, Refusal,
-  ENV_STRIP, ENV_SET, RUN_LABEL_PREFIX, GLOBAL_CAP, PER_PROJECT_CAP,
+  SKILL_DIR, runDir, shortId, nowIso, mintId, resolveClaudeBin, isFleetShim, Refusal,
+  ENV_STRIP, ENV_SET, RUN_LABEL_PREFIX, GLOBAL_CAP, PER_PROJECT_CAP, projectCap,
   QUIET_MIN, TIMEOUT_MIN, LIVE_RUN_STATES, QUEUE_REASONS, SELF_REPO, COUNCIL, normRoot, repoOf, repoEnv, isReviewRun,
 } from './contract.mjs';
 import { seedCouncil } from './council.mjs';
@@ -96,6 +96,18 @@ export function workerEnv(slug, run = null) {
   const strip = new Set(ENV_STRIP.map((k) => k.toUpperCase()));
   for (const k of Object.keys(env)) if (strip.has(k.toUpperCase())) delete env[k];
   return { ...env, ...ENV_SET, PERSONAS_RUN_LABEL: RUN_LABEL_PREFIX + slug, ...(run ? repoEnv(repoOf(run).root) : {}) };
+}
+
+/**
+ * The env a builder is spawned with for `bin`: workerEnv, plus PERSONAS_RUN_ORIGIN=app_master when the bin
+ * is the fleet shim (it refuses a run with no origin; the door then admits the builder as app_master).
+ * The shim forwards only the door's allowlist, so the four build keys workerEnv sets (CARGO_BUILD_JOBS,
+ * CARGO_TARGET_DIR, CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS, PERSONAS_RUN_LABEL) are what reaches the builder.
+ */
+export function builderEnv(bin, slug, run = null) {
+  const env = workerEnv(slug, run);
+  if (isFleetShim(bin)) env.PERSONAS_RUN_ORIGIN = 'app_master';
+  return env;
 }
 
 /**
@@ -247,14 +259,17 @@ export function renderReviewerPrompt(run, brief = {}, seed = {}, runs = null) {
 /**
  * (run: Run, promptText: string) => {pid, sessionId}
  * Detached, hidden, prompt on STDIN (the Windows argv limit), stdout -> stream.jsonl,
- * stderr -> stderr.log, pid -> pid. APPMASTER_CLAUDE_BIN ending in .js/.mjs/.cjs runs under node.
+ * stderr -> stderr.log, pid -> pid. The bin is resolveClaudeBin's: APPMASTER_CLAUDE_BIN when set, else the
+ * Personas fleet shim while the app is up (the run is admitted through the fleet's one queue and shows in
+ * the Fleet Monitor as origin app_master), else plain `claude`. A bin ending in .js/.mjs/.cjs runs under node.
  */
 export function spawnWorker(run, promptText) {
   if (!run.worktree || !fs.existsSync(run.worktree)) throw new Error(`run ${shortId(run.runId)} has no worktree to run in`);
   const dir = runDir(run.slug, run.runId);
   fs.mkdirSync(dir, { recursive: true });
   const sessionId = run.sessionId || mintId();
-  const bin = claudeBin();
+  const { bin } = resolveClaudeBin();
+  const env = builderEnv(bin, run.slug, run);
   const args = ['-p', '-', '--verbose', '--output-format', 'stream-json', '--dangerously-skip-permissions',
     '--model', run.model, '--session-id', sessionId];
   const [cmd, argv] = /\.(m?js|cjs)$/i.test(bin) ? [process.execPath, [bin, ...args]] : [bin, args];
@@ -263,7 +278,7 @@ export function spawnWorker(run, promptText) {
   let child;
   try {
     child = spawn(cmd, argv, {
-      cwd: run.worktree, env: workerEnv(run.slug, run), detached: true, windowsHide: true,
+      cwd: run.worktree, env, detached: true, windowsHide: true,
       stdio: ['pipe', out, err],
     });
   } finally {
@@ -356,7 +371,8 @@ export function dispatchCore({ flags = {} } = {}) {
   if (run.state === 'running') return run;
   if (run.state !== 'planned') throw new Refusal('run not planned', { runId: run.runId, state: run.state });
   const mine = listRuns(run.slug, { states: ['running'] }).filter((r) => r.runId !== run.runId);
-  if (mine.length >= PER_PROJECT_CAP) throw new Refusal('project cap', { cap: PER_PROJECT_CAP, running: mine.map((r) => shortId(r.runId)) });
+  const cap = projectCap(loadBrief(run.slug));
+  if (mine.length >= cap) throw new Refusal('project cap', { cap, running: mine.map((r) => shortId(r.runId)) });
   // Everything that holds the run's TARGET repo, in EVERY project (two projects writing one repo must
   // not collide): running, exited, verifying (they still own their files until they merge), and a
   // planned run once it has a worktree (a dispatch that crashed after the spawn may have a live
@@ -466,7 +482,15 @@ export function watchRun(run) {
 /** (args) => Array<{runId,runId8,slug,charter,state,pidAlive,streamAgeMin,quiet,timedOut,result?}> */
 export function cmdWatch({ flags = {} } = {}) {
   const slugs = flags.project && flags.project !== true ? [String(flags.project)] : listSlugs();
-  return slugs.flatMap((s) => listRuns(s, { states: LIVE_RUN_STATES })).map(watchRun);
+  // A running or exited run that no live await holds lost its watcher (the low-memory reaper kills
+  // background shells, 2026-10-18 cost a kp night of 5.4 h): `awaitCommand` is what the Director
+  // starts again at once, without an ask (operator, 2026-10-18).
+  return slugs.flatMap((s) => listRuns(s, { states: LIVE_RUN_STATES })).map(watchRun).map((row) => {
+    const run = findRun(row.runId);
+    if (!run || !['running', 'exited'].includes(run.state)) return row;
+    const awaited = Boolean(awaitHolder(run));
+    return { ...row, awaited, ...(awaited ? {} : { awaitCommand: awaitCommandFor(run) }) };
+  });
 }
 
 // ---------------------------------------------------------------- release

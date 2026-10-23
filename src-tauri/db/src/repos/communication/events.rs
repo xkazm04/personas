@@ -190,36 +190,62 @@ row_mapper!(row_to_subscription -> PersonaEventSubscription {
 // Events
 // ============================================================================
 
+/// Validate (type strings, 64 KB payload cap), encrypt and INSERT one pending
+/// event on a connection the caller owns, returning its id.
+///
+/// This is the single INSERT every ingestion path goes through. A caller that
+/// needs the event row to commit together with other writes (a webhook's
+/// trigger bookkeeping, the cloud relay's watermark) passes its open
+/// `Transaction` (it derefs to `Connection`) and reads the row back with
+/// `get_by_id` after the commit; `publish` is the autocommit case.
+pub fn publish_in(
+    conn: &rusqlite::Connection,
+    input: &CreatePersonaEventInput,
+) -> Result<String, AppError> {
+    timed_query!("persona_events", "persona_events::publish_in", {
+        publish_in_untimed(conn, input)
+    })
+}
+
+fn publish_in_untimed(
+    conn: &rusqlite::Connection,
+    input: &CreatePersonaEventInput,
+) -> Result<String, AppError> {
+    validate_event_input(input)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    let project_id = input.project_id.as_deref().unwrap_or("default");
+
+    // Encrypt payload at rest if present
+    let (stored_payload, payload_iv) = encrypt_optional_payload(&input.payload);
+
+    let mut stmt = conn.prepare_cached(
+        "INSERT INTO persona_events
+         (id, project_id, event_type, source_type, source_id, target_persona_id, payload, payload_iv, use_case_id, status, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10)",
+    )?;
+    stmt.execute(params![
+        id,
+        project_id,
+        input.event_type,
+        input.source_type,
+        input.source_id,
+        input.target_persona_id,
+        stored_payload,
+        payload_iv,
+        input.use_case_id,
+        now,
+    ])?;
+    Ok(id)
+}
+
 pub fn publish(pool: &DbPool, input: CreatePersonaEventInput) -> Result<PersonaEvent, AppError> {
-    validate_event_input(&input)?;
-
     timed_query!("persona_events", "persona_events::publish", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        let project_id = input.project_id.unwrap_or_else(|| "default".into());
-
-        // Encrypt payload at rest if present
-        let (stored_payload, payload_iv) = encrypt_optional_payload(&input.payload);
-
-        let conn = pool.conn("events::publish")?;
-        let mut stmt = conn.prepare_cached(
-            "INSERT INTO persona_events
-             (id, project_id, event_type, source_type, source_id, target_persona_id, payload, payload_iv, use_case_id, status, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'pending', ?10)",
-        )?;
-        stmt.execute(params![
-            id,
-            project_id,
-            input.event_type,
-            input.source_type,
-            input.source_id,
-            input.target_persona_id,
-            stored_payload,
-            payload_iv,
-            input.use_case_id,
-            now,
-        ])?;
-
+        let id = {
+            let conn = pool.conn("events::publish")?;
+            publish_in(&conn, &input)?
+        };
         get_by_id(pool, &id)
     })
 }
@@ -579,7 +605,7 @@ pub fn backfill_slot_times_for_source(
             })?;
 
             let mut slots: std::collections::HashSet<String> = std::collections::HashSet::new();
-            for row in rows.flatten() {
+            for row in collect_rows(rows, "events::backfill_slot_times_for_source") {
                 let (raw_payload, payload_iv) = row;
                 let plaintext = match (raw_payload, payload_iv) {
                     (Some(ct), Some(ref iv)) if !iv.is_empty() => {
@@ -783,23 +809,6 @@ pub struct SkippedRateRow {
     pub total: i64,
     /// How many of them were skipped (no subscriber matched).
     pub skipped: i64,
-}
-
-/// Delete every event whose `source_id` matches a specific id. Used when a
-/// trigger is deleted to purge its event history from persona_events. Returns
-/// the number of deleted rows.
-pub fn delete_events_by_source_id(pool: &DbPool, source_id: &str) -> Result<u32, AppError> {
-    timed_query!(
-        "persona_events",
-        "persona_events::delete_events_by_source_id",
-        {
-            let conn = pool.conn("events::delete_events_by_source_id")?;
-            let mut stmt =
-                conn.prepare_cached("DELETE FROM persona_events WHERE source_id = ?1")?;
-            let rows = stmt.execute(params![source_id])?;
-            Ok(rows as u32)
-        }
-    )
 }
 
 /// Delete events emitted by triggers that no longer exist (or whose owning
@@ -1026,7 +1035,7 @@ pub fn list_processing_ids(pool: &DbPool, limit: i64) -> Result<Vec<String>, App
              LIMIT ?1",
         )?;
         let rows = stmt.query_map(params![limit], |row| row.get::<_, String>("id"))?;
-        Ok(rows.flatten().collect())
+        Ok(collect_rows(rows, "events::list_processing_ids"))
     })
 }
 
@@ -1577,33 +1586,6 @@ pub fn get_subscriptions_by_event_type(
     )
 }
 
-/// Bulk-fetch enabled subscriptions for multiple event types in a single query.
-pub fn get_subscriptions_by_event_types(
-    pool: &DbPool,
-    event_types: &[String],
-) -> Result<Vec<PersonaEventSubscription>, AppError> {
-    if event_types.is_empty() {
-        return Ok(Vec::new());
-    }
-    timed_query!(
-        "event_subscriptions",
-        "event_subscriptions::get_subscriptions_by_event_types",
-        {
-            let conn = pool.conn("events::get_subscriptions_by_event_types")?;
-            let mut qb = QueryBuilder::new();
-            qb.where_in("event_type", event_types.to_vec());
-            qb.where_raw(|_| "enabled = 1".to_string(), vec![]);
-            qb.order_by("created_at", "DESC");
-            let sql = qb.build_select(&format!(
-                "SELECT {SUBSCRIPTION_COLUMNS} FROM persona_event_subscriptions"
-            ));
-            let mut stmt = conn.prepare(&sql)?;
-            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_subscription)?;
-            Ok(collect_rows(rows, "get_subscriptions_by_event_types"))
-        }
-    )
-}
-
 pub fn create_subscription(
     pool: &DbPool,
     input: CreateEventSubscriptionInput,
@@ -1930,6 +1912,37 @@ mod tests {
     /// fails at runtime on the first row; this is the only gate that sees it.
     /// It also pins the ALTER-added columns — `payload_iv`, `use_case_id`,
     /// `retry_count` — which no fresh-install DDL alone would prove present.
+    /// `publish_in` is the one INSERT every ingestion path shares, so it owns
+    /// the payload cap: an oversized payload is a validation error and writes
+    /// nothing, while a payload at the cap lands inside the caller's transaction.
+    #[test]
+    fn publish_in_enforces_the_payload_cap_inside_a_transaction() {
+        let pool = crate::init_test_db().unwrap();
+        let mut conn = pool.conn("test:publish_in").unwrap();
+        let input = |len: usize| CreatePersonaEventInput {
+            event_type: "webhook_received".into(),
+            source_type: "webhook".into(),
+            project_id: None,
+            source_id: None,
+            target_persona_id: None,
+            payload: Some("x".repeat(len)),
+            use_case_id: None,
+        };
+        let tx = conn.transaction().unwrap();
+        let err = publish_in(&tx, &input(MAX_PAYLOAD_BYTES + 1)).unwrap_err();
+        assert!(matches!(err, AppError::Validation(_)), "{err:?}");
+        let ok = publish_in(&tx, &input(MAX_PAYLOAD_BYTES)).unwrap();
+        tx.commit().unwrap();
+        let n: i64 = conn
+            .query_row("SELECT COUNT(*) AS n FROM persona_events", [], |r| {
+                r.get("n")
+            })
+            .unwrap();
+        assert_eq!(n, 1);
+        drop(conn);
+        assert!(get_by_id(&pool, &ok).is_ok());
+    }
+
     #[test]
     fn every_projection_prepares_against_the_real_schema() {
         let pool = crate::init_test_db().unwrap();
@@ -2321,6 +2334,23 @@ mod tests {
             event_exists(&pool, &delivered_new),
             "rows inside the window stay"
         );
+    }
+
+    /// A legacy `processed` row is a settled event. The mapper used to read it
+    /// as `Pending`, so the event log listed finished work as queued.
+    #[test]
+    fn legacy_processed_row_is_listed_as_settled_not_pending() {
+        let pool = init_test_db().unwrap();
+        let id = publish_terminal(&pool, "legacy", PersonaEventStatus::Completed);
+        pool.conn("events::legacy_status_tests")
+            .unwrap()
+            .execute(
+                "UPDATE persona_events SET status = 'processed' WHERE id = ?1",
+                params![id],
+            )
+            .unwrap();
+        let got = get_by_id(&pool, &id).unwrap();
+        assert_eq!(got.status, PersonaEventStatus::Completed);
     }
 
     /// The backstop shares the protect-list, not the old allowlist: a cap of 0
@@ -3030,57 +3060,6 @@ mod tests {
     // ========================================================================
     // Fix 1: orphan event cleanup
     // ========================================================================
-
-    #[test]
-    fn test_fix1_delete_events_by_source_id() {
-        let pool = init_test_db().unwrap();
-
-        // Publish 3 events tied to one fake trigger id + 2 events tied to another
-        for i in 0..3 {
-            publish(
-                &pool,
-                CreatePersonaEventInput {
-                    event_type: format!("evt_{i}"),
-                    source_type: "trigger".into(),
-                    source_id: Some("trigger-alpha".into()),
-                    target_persona_id: None,
-                    project_id: None,
-                    payload: None,
-                    use_case_id: None,
-                },
-            )
-            .unwrap();
-        }
-        for i in 0..2 {
-            publish(
-                &pool,
-                CreatePersonaEventInput {
-                    event_type: format!("beta_{i}"),
-                    source_type: "trigger".into(),
-                    source_id: Some("trigger-beta".into()),
-                    target_persona_id: None,
-                    project_id: None,
-                    payload: None,
-                    use_case_id: None,
-                },
-            )
-            .unwrap();
-        }
-
-        let removed = delete_events_by_source_id(&pool, "trigger-alpha").unwrap();
-        assert_eq!(removed, 3);
-
-        // Beta events still there
-        let conn = pool.get().unwrap();
-        let beta_count: i64 = conn
-            .query_row(
-                "SELECT COUNT(*) AS n FROM persona_events WHERE source_id = ?1",
-                params!["trigger-beta"],
-                |row| row.get("n"),
-            )
-            .unwrap();
-        assert_eq!(beta_count, 2);
-    }
 
     #[test]
     fn test_fix1_delete_orphaned_trigger_events_matches_only_orphans() {

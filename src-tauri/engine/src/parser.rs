@@ -3,15 +3,57 @@ use personas_core::types::{ExecutionMetrics, ProtocolMessage, StreamLineType, To
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+// Display fields are cut to a character count with `...` appended, by the
+// crate's one implementation of that cut.
+use crate::str_utils::truncate_owned as truncate_field;
+
 const MAX_TOOL_INPUT_DISPLAY: usize = 500;
 const MAX_TOOL_RESULT_DISPLAY: usize = 200;
 
-/// Truncate a string to `max_len` characters, appending "..." if truncated.
-fn truncate_field(text: &str, max_len: usize) -> String {
-    match text.char_indices().nth(max_len) {
-        Some((byte_offset, _)) => format!("{}...", &text[..byte_offset]),
-        None => text.to_string(),
+/// The display preview of a tool input: its JSON text cut to `max_chars`
+/// characters, exactly as `truncate_field(&serde_json::to_string(value), ..)`
+/// would produce it, but serialized only as far as the preview can show.
+///
+/// A `Write`/`Edit` input carries the whole file body, so serializing it whole
+/// to keep 500 chars was most of the cost of parsing such a line (measured
+/// 2026-10-19, release, 57 KB `Write` line: 41-50 us whole vs 3-4 us capped,
+/// against 57-66 us for the line's own `serde_json` parse). The writer refuses
+/// bytes past `(max_chars + 1) * 4`, which always holds more than `max_chars`
+/// characters, so the cut lands on the same character either way; a code
+/// point split at the byte cap lies past the cut and is dropped.
+fn bounded_json_preview(value: &serde_json::Value, max_chars: usize) -> String {
+    struct Capped {
+        buf: Vec<u8>,
+        cap: usize,
     }
+    impl std::io::Write for Capped {
+        fn write(&mut self, data: &[u8]) -> std::io::Result<usize> {
+            let room = self.cap - self.buf.len();
+            if room == 0 {
+                // Stops the serializer: everything past here is cut anyway.
+                return Err(std::io::Error::other("preview full"));
+            }
+            let take = data.len().min(room);
+            self.buf.extend_from_slice(&data[..take]);
+            Ok(take)
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    let cap = (max_chars + 1) * 4;
+    let mut out = Capped {
+        buf: Vec::with_capacity(cap.min(4096)),
+        cap,
+    };
+    // The only error a `Value` can raise here is the writer's own "full".
+    let _ = serde_json::to_writer(&mut out, value);
+    let text = match std::str::from_utf8(&out.buf) {
+        Ok(s) => std::borrow::Cow::Borrowed(s),
+        Err(e) => String::from_utf8_lossy(&out.buf[..e.valid_up_to()]),
+    };
+    truncate_field(&text, max_chars)
 }
 
 /// P4 fan-out attribution key. Every `assistant`/`user` stream message carries a
@@ -293,17 +335,17 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                                     .and_then(|n| n.as_str())
                                     .unwrap_or("unknown")
                                     .to_string();
-                                let input_json = block
-                                    .get("input")
-                                    .cloned()
-                                    .unwrap_or(serde_json::Value::Null);
+                                // Borrowed, never cloned: a `Write` input carries the
+                                // whole file body, and only 500 chars of it are shown.
+                                let input_json =
+                                    block.get("input").unwrap_or(&serde_json::Value::Null);
 
                                 // Special-case TodoWrite: parse the structured `todos` array
                                 // so the chat can render a checklist instead of a truncated
                                 // JSON preview. Falls through to the generic tool_use path
                                 // if the input shape is unrecognized.
                                 if name == "TodoWrite" {
-                                    if let Some(items) = extract_todo_items(&input_json) {
+                                    if let Some(items) = extract_todo_items(input_json) {
                                         let display =
                                             format!("> Plan updated: {} item(s)", items.len());
                                         if first_type.is_none() {
@@ -317,21 +359,20 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                                     }
                                 }
 
-                                let input_preview =
-                                    serde_json::to_string(&input_json).unwrap_or_default();
-                                let input_preview_truncated =
-                                    truncate_field(&input_preview, MAX_TOOL_INPUT_DISPLAY);
                                 let display = format!("> Using tool: {name}");
                                 if first_type.is_none() {
                                     // Decode here, from the full value: the preview
-                                    // above is a display string and is invalid JSON
+                                    // below is a display string and is invalid JSON
                                     // once the cut appends `...`.
                                     first_type = Some(StreamLineType::AssistantToolUse {
                                         tool_use_id: str_field(block, "id"),
-                                        file_path: decode_file_path(&name, &input_json),
-                                        protocol: decode_protocol_tool(&name, &input_json),
+                                        file_path: decode_file_path(&name, input_json),
+                                        protocol: decode_protocol_tool(&name, input_json),
+                                        input_preview: bounded_json_preview(
+                                            input_json,
+                                            MAX_TOOL_INPUT_DISPLAY,
+                                        ),
                                         tool_name: name,
-                                        input_preview: input_preview_truncated,
                                     });
                                     tool_display = Some(display);
                                 } else if tool_display.is_none() {
@@ -1109,6 +1150,28 @@ struct MessageUsage {
     cache_creation: u64,
 }
 
+/// The fields of an `assistant` line [`StreamUsageTally::observe_line`] reads.
+/// Every other key, `message.content` above all, is skipped unbuilt.
+#[derive(Deserialize)]
+struct UsageProbe {
+    #[serde(rename = "type", default)]
+    kind: Option<serde_json::Value>,
+    #[serde(default)]
+    parent_tool_use_id: Option<serde_json::Value>,
+    #[serde(default)]
+    message: Option<UsageProbeMessage>,
+}
+
+#[derive(Deserialize)]
+struct UsageProbeMessage {
+    #[serde(default)]
+    id: Option<serde_json::Value>,
+    #[serde(default)]
+    model: Option<serde_json::Value>,
+    #[serde(default)]
+    usage: Option<serde_json::Value>,
+}
+
 /// Running record of what a CLI stream spent BEFORE its `result` line.
 ///
 /// Cost and tokens used to come only from the final `result` line, which a
@@ -1135,27 +1198,39 @@ impl StreamUsageTally {
         if !trimmed.starts_with('{') || !trimmed.contains("\"assistant\"") {
             return;
         }
-        let Ok(value) = serde_json::from_str::<serde_json::Value>(trimmed) else {
+        // Typed, so `message.content` (the model's whole reply, a Write's whole
+        // file body) is skipped by the deserializer instead of being built
+        // into a `Value` tree a second time: `parse_stream_line` has already
+        // parsed this same line once. Measured 2026-10-19, release, 57 KB
+        // `Write` line: 49-51 us as a `Value`, 28-30 us typed; 151 B line
+        // 1.5 us -> 0.48 us. The small fields stay `Value` so a field of an
+        // unexpected type reads as absent, exactly as `as_str`/`as_u64` did.
+        let Ok(line) = serde_json::from_str::<UsageProbe>(trimmed) else {
             return;
         };
-        if value.get("type").and_then(|t| t.as_str()) != Some("assistant") {
+        if line.kind.as_ref().and_then(|t| t.as_str()) != Some("assistant") {
             return;
         }
-        let Some(message) = value.get("message") else {
+        let Some(message) = line.message else {
             return;
         };
-        let Some(id) = message.get("id").and_then(|i| i.as_str()) else {
+        let Some(id) = message.id.as_ref().and_then(|i| i.as_str()) else {
             return;
         };
-        if subagent_parent_id(&value).is_none() {
+        let is_subagent = line
+            .parent_tool_use_id
+            .as_ref()
+            .and_then(|v| v.as_str())
+            .is_some_and(|s| !s.is_empty());
+        if !is_subagent {
             self.root_turns.insert(id.to_string());
         }
-        if let Some(m) = message.get("model").and_then(|m| m.as_str()) {
+        if let Some(m) = message.model.as_ref().and_then(|m| m.as_str()) {
             if !m.is_empty() && m != "<synthetic>" {
                 self.model = Some(m.to_string());
             }
         }
-        if let Some(usage) = message.get("usage") {
+        if let Some(usage) = message.usage.as_ref() {
             let n = |k: &str| {
                 usage
                     .get(k)
@@ -1404,18 +1479,6 @@ fn decode_file_path(tool_name: &str, input: &serde_json::Value) -> Option<String
         .map(String::from)
 }
 
-/// Extract a file change from a tool input serialized as JSON.
-///
-/// Only correct for a COMPLETE serialization. The stream pipeline no longer
-/// calls this with `input_preview`: it reads `AssistantToolUse::file_path`,
-/// decoded by the parser from the full value.
-pub fn extract_file_change(tool_name: &str, input_json: &str) -> Option<FileChange> {
-    let change_type = file_change_type(tool_name)?;
-    let value: serde_json::Value = serde_json::from_str(input_json).ok()?;
-    let path = decode_file_path(tool_name, &value)?;
-    Some(FileChange { path, change_type })
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -1424,47 +1487,42 @@ pub fn extract_file_change(tool_name: &str, input_json: &str) -> Option<FileChan
 mod file_change_tests {
     use super::*;
 
+    fn decode(tool_name: &str, input: &str) -> Option<String> {
+        decode_file_path(tool_name, &serde_json::from_str(input).unwrap())
+    }
+
     #[test]
-    fn test_extract_edit() {
-        let result = extract_file_change(
-            "Edit",
-            r#"{"file_path":"/src/main.rs","old_string":"foo","new_string":"bar"}"#,
+    fn test_decode_edit() {
+        let input = r#"{"file_path":"/src/main.rs","old_string":"foo","new_string":"bar"}"#;
+        assert_eq!(decode("Edit", input).as_deref(), Some("/src/main.rs"));
+        assert_eq!(file_change_type("Edit"), Some(FileChangeType::Edit));
+    }
+
+    #[test]
+    fn test_decode_write() {
+        let input = r#"{"file_path":"/new.txt","content":"hello"}"#;
+        assert_eq!(decode("Write", input).as_deref(), Some("/new.txt"));
+        assert_eq!(file_change_type("Write"), Some(FileChangeType::Write));
+    }
+
+    #[test]
+    fn test_decode_read_with_path_key() {
+        assert_eq!(
+            decode("Read", r#"{"path":"/readme.md"}"#).as_deref(),
+            Some("/readme.md")
         );
-        assert!(result.is_some());
-        let fc = result.unwrap();
-        assert_eq!(fc.path, "/src/main.rs");
-        assert_eq!(fc.change_type, FileChangeType::Edit);
+        assert_eq!(file_change_type("Read"), Some(FileChangeType::Read));
     }
 
     #[test]
-    fn test_extract_write() {
-        let result = extract_file_change("Write", r#"{"file_path":"/new.txt","content":"hello"}"#);
-        assert!(result.is_some());
-        let fc = result.unwrap();
-        assert_eq!(fc.path, "/new.txt");
-        assert_eq!(fc.change_type, FileChangeType::Write);
+    fn test_decode_unknown_tool() {
+        assert!(decode("Bash", r#"{"command":"ls","path":"/x"}"#).is_none());
     }
 
     #[test]
-    fn test_extract_read_with_path_key() {
-        let result = extract_file_change("Read", r#"{"path":"/readme.md"}"#);
-        assert!(result.is_some());
-        assert_eq!(result.unwrap().change_type, FileChangeType::Read);
-    }
-
-    #[test]
-    fn test_extract_unknown_tool() {
-        assert!(extract_file_change("Bash", r#"{"command":"ls"}"#).is_none());
-    }
-
-    #[test]
-    fn test_extract_invalid_json() {
-        assert!(extract_file_change("Edit", "not json").is_none());
-    }
-
-    #[test]
-    fn test_extract_no_path() {
-        assert!(extract_file_change("Edit", r#"{"old":"a","new":"b"}"#).is_none());
+    fn test_decode_no_or_empty_path() {
+        assert!(decode("Edit", r#"{"old":"a","new":"b"}"#).is_none());
+        assert!(decode("Edit", r#"{"file_path":""}"#).is_none());
     }
 }
 
@@ -2779,5 +2837,185 @@ mod tool_call_decode_tests {
         assert_eq!(name, "Bash");
         assert_eq!(file_path, None);
         assert_eq!(protocol, None);
+    }
+}
+
+#[cfg(test)]
+mod bounded_preview_tests {
+    use super::*;
+
+    /// The preview the parser produced before it stopped serializing whole
+    /// inputs. Kept as the oracle: the capped writer must cut on the same char.
+    fn whole_then_cut(value: &serde_json::Value, max_chars: usize) -> String {
+        truncate_field(&serde_json::to_string(value).unwrap(), max_chars)
+    }
+
+    #[test]
+    fn the_capped_preview_matches_the_whole_serialization_cut() {
+        let cases = vec![
+            serde_json::Value::Null,
+            serde_json::json!({}),
+            serde_json::json!({"file_path": "/a.rs"}),
+            serde_json::json!({"file_path": "/a.rs", "content": "x".repeat(60_000)}),
+            serde_json::json!({"content": "fn main() {\n\t\"q\"\n}".repeat(3_000)}),
+            // Multi-byte text straddling every byte offset of the cap.
+            serde_json::json!({"content": "\u{1F600}\u{00E9}\u{4E2D}a".repeat(2_000)}),
+            serde_json::json!({"a": "\u{1F600}".repeat(MAX_TOOL_INPUT_DISPLAY)}),
+            serde_json::json!({"nested": [{"k": "v".repeat(700)}, 1, 2.5, true]}),
+        ];
+        for value in &cases {
+            for max in [0usize, 1, 7, 499, 500, 501] {
+                assert_eq!(
+                    bounded_json_preview(value, max),
+                    whole_then_cut(value, max),
+                    "max={max} value head={:.80}",
+                    value.to_string()
+                );
+            }
+        }
+        // Exactly at the boundary: a serialization of max chars is not cut.
+        let exact = serde_json::Value::String("y".repeat(498));
+        assert_eq!(serde_json::to_string(&exact).unwrap().len(), 500);
+        assert_eq!(
+            bounded_json_preview(&exact, 500),
+            whole_then_cut(&exact, 500)
+        );
+        assert!(!bounded_json_preview(&exact, 500).ends_with("..."));
+    }
+
+    #[test]
+    fn a_huge_write_still_previews_its_head_and_decodes_its_path() {
+        let line = serde_json::json!({"type":"assistant","message":{"id":"m1","content":[
+            {"type":"tool_use","id":"t1","name":"Write",
+             "input":{"file_path":"/big.rs","content":"z".repeat(60_000)}}
+        ]}})
+        .to_string();
+        let (st, display) = parse_stream_line(&line);
+        assert_eq!(display.as_deref(), Some("> Using tool: Write"));
+        let StreamLineType::AssistantToolUse {
+            input_preview,
+            file_path,
+            ..
+        } = st
+        else {
+            panic!("expected a tool use, got {st:?}");
+        };
+        assert_eq!(input_preview.chars().count(), MAX_TOOL_INPUT_DISPLAY + 3);
+        assert!(input_preview.contains("zzzz"), "{input_preview:.80}");
+        assert_eq!(file_path.as_deref(), Some("/big.rs"));
+    }
+}
+
+#[cfg(test)]
+mod usage_probe_tests {
+    use super::*;
+
+    /// `observe_line` as it read every line before the typed probe: a whole
+    /// `Value` tree. Kept as the oracle the probe must agree with.
+    fn observe_as_value(t: &mut StreamUsageTally, line: &str) {
+        let trimmed = line.trim();
+        if !trimmed.starts_with('{') || !trimmed.contains("\"assistant\"") {
+            return;
+        }
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(trimmed) else {
+            return;
+        };
+        if value.get("type").and_then(|t| t.as_str()) != Some("assistant") {
+            return;
+        }
+        let Some(message) = value.get("message") else {
+            return;
+        };
+        let Some(id) = message.get("id").and_then(|i| i.as_str()) else {
+            return;
+        };
+        if subagent_parent_id(&value).is_none() {
+            t.root_turns.insert(id.to_string());
+        }
+        if let Some(m) = message.get("model").and_then(|m| m.as_str()) {
+            if !m.is_empty() && m != "<synthetic>" {
+                t.model = Some(m.to_string());
+            }
+        }
+        if let Some(usage) = message.get("usage") {
+            let n = |k: &str| {
+                usage
+                    .get(k)
+                    .and_then(serde_json::Value::as_u64)
+                    .unwrap_or(0)
+            };
+            t.by_message.insert(
+                id.to_string(),
+                MessageUsage {
+                    input: n("input_tokens"),
+                    output: n("output_tokens"),
+                    cache_read: n("cache_read_input_tokens"),
+                    cache_creation: n("cache_creation_input_tokens"),
+                },
+            );
+        }
+    }
+
+    fn odd_lines() -> Vec<String> {
+        let big = "q\"\\n".repeat(20_000);
+        vec![
+            // a root turn whose content is a whole file body
+            serde_json::json!({"type":"assistant","parent_tool_use_id":null,"message":{
+                "id":"m1","model":"claude-x","content":[{"type":"tool_use","id":"t",
+                "name":"Write","input":{"file_path":"/a","content":big}}],
+                "usage":{"input_tokens":3,"output_tokens":4,"cache_read_input_tokens":5,
+                "cache_creation_input_tokens":6}}})
+            .to_string(),
+            // a subagent turn: counted for usage, not as a root turn
+            r#"{"type":"assistant","parent_tool_use_id":"toolu_1","message":{"id":"s1","model":"claude-y","content":[],"usage":{"input_tokens":1}}}"#.into(),
+            // empty parent id means root
+            r#"{"type":"assistant","parent_tool_use_id":"","message":{"id":"r2","usage":{"output_tokens":2}}}"#.into(),
+            // fields of unexpected types read as absent
+            r#"{"type":"assistant","parent_tool_use_id":7,"message":{"id":"w1","model":5,"usage":{"input_tokens":-1,"output_tokens":2.5,"cache_read_input_tokens":"9"}}}"#.into(),
+            r#"{"type":"assistant","message":{"id":"w2","model":"<synthetic>","usage":"none"}}"#.into(),
+            r#"{"type":"assistant","message":{"id":"w3","model":""}}"#.into(),
+            // rejected shapes
+            r#"{"type":"assistant","message":{"id":9,"usage":{"input_tokens":1}}}"#.into(),
+            r#"{"type":"assistant","message":"assistant"}"#.into(),
+            r#"{"type":"assistant","message":null}"#.into(),
+            r#"{"type":"assistant"}"#.into(),
+            r#"{"type":["assistant"],"message":{"id":"x"}}"#.into(),
+            r#"{"type":"user","message":{"id":"assistant","usage":{"input_tokens":1}}}"#.into(),
+            r#"{"type":"assistant","message":{"id":"t1","usage":{"input_tokens":1}"#.into(),
+            "not json \"assistant\"".into(),
+            String::new(),
+        ]
+    }
+
+    #[test]
+    fn the_typed_probe_tallies_exactly_what_the_value_walk_did() {
+        let captured = include_str!("../tests/fixtures/stream_assistant_lines.jsonl");
+        let lines: Vec<String> = captured
+            .lines()
+            .filter(|l| !l.trim_start().starts_with('#'))
+            .map(str::to_string)
+            .chain(odd_lines())
+            .collect();
+        let mut probe = StreamUsageTally::default();
+        let mut oracle = StreamUsageTally::default();
+        for line in &lines {
+            probe.observe_line(line);
+            observe_as_value(&mut oracle, line);
+            assert_eq!(probe.by_message, oracle.by_message, "after {line:.120}");
+            assert_eq!(probe.root_turns, oracle.root_turns, "after {line:.120}");
+            assert_eq!(probe.model, oracle.model, "after {line:.120}");
+        }
+        assert!(probe.by_message.len() >= 5, "the corpus exercised nothing");
+        assert!(probe.by_message.contains_key("s1"));
+        assert!(!probe.root_turns.contains("s1"));
+        assert_eq!(
+            probe.by_message["w1"],
+            MessageUsage {
+                input: 0,
+                output: 0,
+                cache_read: 0,
+                cache_creation: 0
+            }
+        );
     }
 }

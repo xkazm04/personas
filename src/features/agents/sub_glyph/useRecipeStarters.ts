@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState } from "react";
 import { matchRecipesToIntent } from "@/api/recipes/recipes";
 import { silentCatch } from "@/lib/silentCatch";
+import { createLatestWins } from "@/stores/util/latestWins";
 import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
 
 const DEBOUNCE_MS = 300;
@@ -18,26 +19,26 @@ const MIN_LEN = 12;
 
 export function useRecipeStarters(intent: string, topK = 6): RecipeMatch[] {
   const [matches, setMatches] = useState<RecipeMatch[]>([]);
-  const reqId = useRef(0);
+  const latestWins = useRef(createLatestWins()).current;
 
   useEffect(() => {
+    // Every intent change mints a token, the short-intent clear included: an
+    // answer still in flight for the previous intent must not repaint the list.
+    const mine = latestWins.next();
     const trimmed = intent.trim();
     if (trimmed.length < MIN_LEN) {
       setMatches([]);
       return;
     }
-    const mine = ++reqId.current;
     const handle = setTimeout(() => {
       matchRecipesToIntent(trimmed, topK)
         .then((results) => {
-          // Ignore stale responses if the intent changed while in flight.
-          if (mine !== reqId.current) return;
-          setMatches(results);
+          if (latestWins.isCurrent(mine)) setMatches(results);
         })
         .catch(silentCatch("useRecipeStarters.match"));
     }, DEBOUNCE_MS);
     return () => clearTimeout(handle);
-  }, [intent, topK]);
+  }, [intent, topK, latestWins]);
 
   return matches;
 }

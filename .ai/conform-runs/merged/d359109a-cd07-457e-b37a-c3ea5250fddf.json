@@ -1,0 +1,46 @@
+{"schema":"conform-run/1","worker":"d359109a-cd07-457e-b37a-c3ea5250fddf","subject":"supply-chain",
+ "evaluatedAt":"2026-10-22T03:02:06Z",
+ "pairs":[
+  {"context":"969f50a2-b70d-41e3-b573-284a75a67425","subject":"supply-chain","bundle":"software-engineering","state":"deviation",
+   "evidence":"src-tauri/engine/src/prompt/cli_args.rs:107 the one CLI-args builder emits --dangerously-skip-permissions with no setting-sources restriction on every spawn and offers no read-mode, and headless one-shots (context scan, design analysis, revitalize) inherit it via src-tauri/engine/src/cli_process.rs:467, so a read verb spawned in a foreign tree cannot stay a read",
+   "techniques":[
+    {"technique":"reading-is-not-running","verdict":"deviation","evidence":"src-tauri/engine/src/prompt/cli_args.rs:107 skip-permissions is unconditional and the builder has no read flavour that withholds project settings/hooks; consumed by every headless one-shot at src-tauri/engine/src/cli_process.rs:467"},
+    {"technique":"verification-scope","verdict":"partial","evidence":"src-tauri/engine/src/prompt/cli_args.rs:243 DISABLE_UPDATES blocks the CLI's mid-spawn self-update (also :385 on resume), so no unpinned fetch happens inside a run; the claude binary itself is resolved from PATH, unversioned (not judged further)"}],
+   "registryProposal":"Earlier deviations on plugins-dev-tools-context/-projects cite this builder's line as the mechanism; the fix site is here (a read-mode builder variant), so the corpus could name 'one args builder serving both run and read verbs' as a reading-is-not-running sighting: the guard has to live at the shared builder, not at each read caller."},
+  {"context":"83a8a744-2036-4e3e-9654-6fcec82334ff","subject":"supply-chain","bundle":"software-engineering","state":"not-applicable",
+   "evidence":"src-tauri/src/commands/obsidian_brain/revitalize.rs:240 the only spawn is an operator-armed rewrite job in the operator's own chosen vault (reading-is-not-running's knowingly-armed exclusion), and Drive pull writes single-component names validated at src-tauri/src/commands/obsidian_brain/drive.rs:42 - user-owned notes moving as data, with no dependency graph, archive unpack, permission manifest or stranger-authored code crossing",
+   "techniques":[
+    {"technique":"reading-is-not-running","verdict":"not-applicable","evidence":"src-tauri/src/commands/obsidian_brain/revitalize.rs:240 cwd = the operator's own vault for a write job they started; the vault's author has standing (residual: the vault's own .claude settings would load, and the .md-only rule at :175 is prompt-level, not mechanical)"},
+    {"technique":"archive-extraction-safety","verdict":"not-applicable","evidence":"src-tauri/src/commands/obsidian_brain/drive.rs:42 Drive pull is per-file note sync, not an archive; its name containment is realised anyway (separators, drive letters, traversal rejected), and :826 writes in place"}]},
+  {"context":"738f591b-60e9-4701-b786-cf868db66c51","subject":"supply-chain","bundle":"software-engineering","state":"not-applicable",
+   "evidence":"src/features/notepad/NoteArchiveModal.tsx:17 'archive' is a drawer of shipped notes, not an unpacked archive, and src/features/notepad/parts/NoteDispatchBar.tsx:92 dispatch is a gated, operator-armed send into the note's own project; the context crosses no lockfile, archive, permission manifest or code-loading boundary",
+   "techniques":[
+    {"technique":"archive-extraction-safety","verdict":"not-applicable","evidence":"src/features/notepad/NoteArchiveModal.tsx:17 the 'archive' is a list of DB rows in status shipped; nothing is unpacked"},
+    {"technique":"reading-is-not-running","verdict":"not-applicable","evidence":"src/features/notepad/parts/NoteDispatchBar.tsx:92 dispatch is blocked without a project/draft and is an execution the operator arms knowingly, the technique's stated exclusion"}]},
+  {"context":"dc471d31-ae30-4ac9-b015-d51969df458d","subject":"supply-chain","bundle":"software-engineering","state":"not-applicable",
+   "evidence":"src/features/shared/chrome/UpdateBanner.tsx:41 the one inbound-code crossing is the app's own signed self-update (minisign pubkey at src-tauri/tauri.conf.json:61, via src/hooks/utility/data/useAutoUpdater.ts:148), which the golden path routes to packaging/signing-and-trust; CliReadinessBanner.tsx only shows probe guidance and installs nothing",
+   "techniques":[
+    {"technique":"verification-scope","verdict":"not-applicable","evidence":"src-tauri/tauri.conf.json:61 the update artifact is the project's own signed release - packaging's domain, not a third-party fetch"},
+    {"technique":"reading-is-not-running","verdict":"not-applicable","evidence":"src/features/shared/chrome/CliReadinessBanner.tsx:24 presentation of a probe status only; no spawn into any tree"}]}
+ ],
+ "declined":[
+  {"subject":"supply-chain","context":"api-overview","reason":"budget: thin IPC wrappers (network bundle/enclave) whose backend deviations are already recorded on settings-network and pipeline-and-automation; left for a later run"},
+  {"subject":"supply-chain","context":"lib-types","reason":"budget; pure type modules, not read this run"},
+  {"subject":"supply-chain","context":"notepad-overview","reason":"budget; not read"},
+  {"subject":"supply-chain","context":"overview-patterns","reason":"context-map.json lists zero paths for this context; cannot anchor a verdict"},
+  {"subject":"supply-chain","context":"plugins-artist-hooks","reason":"context-map.json lists zero paths for this context; cannot anchor a verdict"},
+  {"subject":"supply-chain","context":"studio","reason":"budget; not read"},
+  {"subject":"supply-chain","context":"team-memory","reason":"budget; not read"},
+  {"subject":"supply-chain","context":"teams-factory-l2","reason":"budget; not read"},
+  {"subject":"supply-chain","context":"teams-teamworkspace","reason":"budget; not read"},
+  {"subject":"supply-chain","context":"templates-draft-editor","reason":"budget; not read"},
+  {"subject":"supply-chain","context":"dev-tools-features","reason":"weak governance row - a coverage question, not judged by default"},
+  {"subject":"supply-chain","context":"plugins-artist-gallery","reason":"weak governance row - not judged by default"},
+  {"subject":"supply-chain","context":"progress-transform","reason":"weak governance row - not judged by default"}
+ ],
+ "consults":[
+  {"ts":"2026-10-22T03:02:06Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running","verification-scope"],"deviations":1},
+  {"ts":"2026-10-22T03:02:06Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running","archive-extraction-safety"],"deviations":0},
+  {"ts":"2026-10-22T03:02:06Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["archive-extraction-safety","reading-is-not-running"],"deviations":0},
+  {"ts":"2026-10-22T03:02:06Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["verification-scope","reading-is-not-running"],"deviations":0}
+ ]}

@@ -20,6 +20,7 @@ export function ComposerConnectorCard({ connector, selected, onToggle }: Compose
   return (
     <button
       type="button"
+      aria-pressed={selected}
       onClick={onToggle}
       className={`group relative flex items-center gap-3 p-3 rounded-card border transition-all text-left ${
         selected

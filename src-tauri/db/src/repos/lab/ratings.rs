@@ -63,22 +63,13 @@ pub fn get_ratings_for_run(pool: &DbPool, run_id: &str) -> Result<Vec<LabUserRat
         let conn = pool.get()?;
         let mut stmt = conn
             .prepare("SELECT * FROM lab_user_ratings WHERE run_id = ?1 ORDER BY created_at DESC")?;
+        // A row that cannot be decoded is an error the caller hears, not a
+        // rating that silently was never given (census `silent-row-skip`).
         let ratings = stmt
             .query_map(params![run_id], row_to_rating)?
-            .filter_map(|r| r.ok())
-            .collect();
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
         Ok(ratings)
-    })
-}
-
-pub fn delete_ratings_for_run(pool: &DbPool, run_id: &str) -> Result<bool, AppError> {
-    timed_query!("lab_ratings", "lab_ratings::delete_ratings_for_run", {
-        let conn = pool.get()?;
-        let count = conn.execute(
-            "DELETE FROM lab_user_ratings WHERE run_id = ?1",
-            params![run_id],
-        )?;
-        Ok(count > 0)
     })
 }
 
@@ -145,6 +136,10 @@ fn composite_and_coverage(
 /// matches zero result rows and silently empties this whole table — that was a
 /// real shipped bug (UAT 2026-07-20: 13 real results rendered as "Not measured").
 ///
+/// The averaged sub-scores (ta/oq/pc) EXCLUDE degraded rows (`heuristic_fallback`
+/// / `timeout`): those carry sentinel scores, and an eval outage must not move a
+/// version rating. They stay in `sample_count`, `degraded_count` and cost.
+///
 /// A row counts as measured when it produced at least one sub-score. That keeps
 /// `failed` scenarios (a low score is still a measurement) and `inconclusive`
 /// ones (surfaced separately via `degraded_count`), while dropping rows that
@@ -194,9 +189,12 @@ pub fn get_version_ratings(
                    MAX(version_number) AS version_number,
                    model_id,
                    MAX(provider) AS provider,
-                   AVG(CAST(ta AS REAL)) AS ta_avg,
-                   AVG(CAST(oq AS REAL)) AS oq_avg,
-                   AVG(CAST(pc AS REAL)) AS pc_avg,
+                   AVG(CASE WHEN COALESCE(eval_method, '') NOT IN ('heuristic_fallback', 'timeout')
+                            THEN CAST(ta AS REAL) END) AS ta_avg,
+                   AVG(CASE WHEN COALESCE(eval_method, '') NOT IN ('heuristic_fallback', 'timeout')
+                            THEN CAST(oq AS REAL) END) AS oq_avg,
+                   AVG(CASE WHEN COALESCE(eval_method, '') NOT IN ('heuristic_fallback', 'timeout')
+                            THEN CAST(pc AS REAL) END) AS pc_avg,
                    AVG(cost) AS cost_avg,
                    AVG(CAST(dur AS REAL)) AS dur_avg,
                    AVG(CAST(in_tok AS REAL)) AS in_tok_avg,
@@ -425,6 +423,40 @@ mod status_vocabulary_tests {
         );
     }
 
+    /// An inconclusive row (heuristic fallback / timeout) carries sentinel
+    /// scores ("nothing expected = 100", confusion-veto zeros). It stays in the
+    /// sample and degraded counts but must not move the averaged sub-scores,
+    /// or an eval outage rewrites a version's rating.
+    #[test]
+    fn heuristic_fallback_rows_do_not_move_version_ratings() {
+        let pool = crate::init_test_db().expect("test db");
+        seed_arena_result(&pool, "passed", Some(80), Some(90));
+        let conn = crate::PoolExt::conn(&pool, "test:ratings_fallback").expect("conn");
+        conn.execute(
+            "INSERT INTO lab_arena_results
+                (id, run_id, scenario_name, model_id, provider, status,
+                 tool_accuracy_score, output_quality_score, protocol_compliance,
+                 cost_usd, duration_ms, eval_method, version_id, version_number, created_at)
+             VALUES ('res-fallback', 'r1', 'sc2', 'haiku', 'anthropic', 'inconclusive',
+                     100, 40, 100, 0.01, 1000, 'heuristic_fallback', 'v1', 1, '2026-01-01')",
+            [],
+        )
+        .unwrap();
+        drop(conn);
+
+        let ratings = get_version_ratings(&pool, "p1").expect("query ok");
+        assert_eq!(ratings.len(), 1);
+        let r = &ratings[0];
+        assert_eq!(
+            r.sample_count, 2,
+            "the degraded row stays in the sample count"
+        );
+        assert_eq!(r.degraded_count, 1);
+        assert_eq!(r.tool_accuracy, Some(80.0));
+        assert_eq!(r.output_quality, Some(90.0));
+        assert_eq!(r.protocol_compliance, Some(70.0));
+    }
+
     /// Economics must see Arena attempts — it was scoped to `lab_eval_results`
     /// alone, which no shipped UI path ever writes.
     #[test]
@@ -541,5 +573,35 @@ mod rating_scale_tests {
                 "rating {bad} must be a Validation error, got {err:?}"
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod row_decode_tests {
+    use super::*;
+
+    /// A rating row whose `feedback` is not text (a BLOB a foreign writer or
+    /// a corrupted page can leave) used to vanish from the run's ratings while
+    /// the call returned `Ok` - the run read as never rated. It must surface.
+    #[test]
+    fn an_undecodable_rating_row_is_an_error_not_a_missing_rating() {
+        let pool = crate::init_test_db().expect("test db");
+        let Ok(conn) = pool.get() else {
+            panic!("pool checkout")
+        };
+        conn.execute(
+            "INSERT INTO lab_user_ratings (id, run_id, scenario_name, rating, feedback)
+             VALUES ('good', 'run-1', 'sc-a', 4, 'fine'),
+                    ('bad', 'run-1', 'sc-b', 2, X'FF00')",
+            [],
+        )
+        .expect("seed ratings");
+        drop(conn);
+
+        let read = get_ratings_for_run(&pool, "run-1");
+        assert!(
+            read.is_err(),
+            "one undecodable row must fail the read, got {read:?}"
+        );
     }
 }

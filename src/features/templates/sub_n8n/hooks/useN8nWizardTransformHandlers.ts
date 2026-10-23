@@ -1,4 +1,5 @@
-import { silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
+import { getActiveTranslations } from "@/i18n/useTranslation";
 import {
   cancelN8nTransform,
   clearN8nTransformSnapshot,
@@ -10,6 +11,8 @@ import { useVaultStore } from '@/stores/vaultStore';
 import { stringifyDraft } from './n8nTypes';
 import type { WizardDeps } from './n8nWizardTypes';
 
+
+const n8nT = () => getActiveTranslations().templates.n8n;
 export function createTransformHandlers(deps: WizardDeps) {
   const { state, dispatch, transform, session, setN8nTransformActive, transformLockRef } = deps;
 
@@ -71,7 +74,7 @@ export function createTransformHandlers(deps: WizardDeps) {
       session.clearPersistedContext();
       dispatch({
         type: 'TRANSFORM_FAILED',
-        error: err instanceof Error ? err.message : 'Failed to generate transformation draft.',
+        error: extractMessage(err) || n8nT().err_generate_failed,
       });
     } finally {
       transformLockRef.current = false;
@@ -102,7 +105,7 @@ export function createTransformHandlers(deps: WizardDeps) {
         }
 
         if (!stopped) {
-          dispatch({ type: 'SET_ERROR', error: 'Unable to confirm transform cancellation. Please wait and try again.' });
+          dispatch({ type: 'SET_ERROR', error: n8nT().err_cancel_unconfirmed });
           return;
         }
 
@@ -116,7 +119,7 @@ export function createTransformHandlers(deps: WizardDeps) {
     } catch (err) {
       dispatch({
         type: 'SET_ERROR',
-        error: err instanceof Error ? err.message : 'Failed to cancel transform. Please try again.',
+        error: extractMessage(err) || n8nT().err_cancel_failed,
       });
     }
   };
@@ -124,7 +127,7 @@ export function createTransformHandlers(deps: WizardDeps) {
   const handleContinueTransform = async () => {
     if (!state.backgroundTransformId || state.transforming || transformLockRef.current) return;
     if (!state.sessionId) {
-      dispatch({ type: 'SET_ERROR', error: 'Transform session is missing. Please restart the import flow.' });
+      dispatch({ type: 'SET_ERROR', error: n8nT().err_session_missing });
       return;
     }
 
@@ -149,7 +152,7 @@ export function createTransformHandlers(deps: WizardDeps) {
       session.clearPersistedContext();
       dispatch({
         type: 'TRANSFORM_FAILED',
-        error: err instanceof Error ? err.message : 'Failed to continue transformation.',
+        error: extractMessage(err) || n8nT().err_continue_failed,
       });
     } finally {
       transformLockRef.current = false;

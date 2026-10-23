@@ -124,7 +124,7 @@ if (import.meta.env?.DEV) {
 // ---------------------------------------------------------------------------
 // Grade thresholds — THE single source of truth for score → grade banding.
 // Consumed by this module's `computeGrade`, the Heartbeats slice, the
-// heartbeats `model.ts`, the Status page header, AND (for its degraded/
+// Status page header, AND (for its degraded/
 // unhealthy cutoffs) the agents health digest. Previously `computeGrade` was
 // duplicated verbatim in three places and re-inlined a fourth; this collapses
 // them so a threshold change lands everywhere at once.
@@ -244,10 +244,9 @@ export function computeGrade(score: number): HealthGrade {
 
 // ---------------------------------------------------------------------------
 // Heartbeats-tab composite (a documented variant of the status-page composite).
-// These sub-score helpers are the SINGLE source consumed by both
-// `computeHeartbeatScore` (the slice's score) and `model.ts`'s `subScores`
-// (the segmented diagnostic bar), so the bar can never disagree with the score
-// it decomposes.
+// These sub-score helpers are the SINGLE source for `computeHeartbeatScore`
+// (the slice's score); any future per-signal breakdown must read them too, so
+// it can never disagree with the score it decomposes.
 // ---------------------------------------------------------------------------
 
 /** Heartbeat success sub-score: success rate is already 0-100. Horizon: bundle window (7d default). */
@@ -309,7 +308,15 @@ export interface CompositeScoreInput {
   healingIssues: PersonaHealingIssue[];
   /** Total cost anomalies detected in the 30-day window (global, not per-persona). */
   costAnomalyCount: number;
-  /** 30 entries, most recent last. Each has date + per-persona success info. */
+  /**
+   * This persona-by-day success series (`HealthBundle.personaDaily`, decided
+   * runs only). It is what each persona's day bar, uptime and trend are read
+   * from. `null` (or absent) when the read failed: every day is then
+   * 'no-data' rather than a borrowed fleet number.
+   */
+  personaDaily?: Array<{ persona_id: string; date: string; success_rate: number; decided: number }> | null;
+  /** 30 entries, most recent last. Supplies the day AXIS (dates) only: its
+   *  `success_rate` is the whole fleet's, never one persona's. */
   dailyPoints: Array<{
     date: string;
     success_rate: number;
@@ -321,7 +328,7 @@ export interface CompositeScoreInput {
 }
 
 export function computeCompositeHealth(input: CompositeScoreInput): CompositeHealthEntry[] {
-  const { personas, slaStats, healingIssues, costAnomalyCount, dailyPoints } = input;
+  const { personas, slaStats, healingIssues, costAnomalyCount, dailyPoints, personaDaily } = input;
 
   // Index helpers
   const slaMap = new Map(slaStats.map(s => [s.persona_id, s]));
@@ -333,8 +340,18 @@ export function computeCompositeHealth(input: CompositeScoreInput): CompositeHea
     healingByPersona.set(issue.persona_id, list);
   }
 
-  // Last 30 daily points
+  // Last 30 daily points: the day axis.
   const last30 = dailyPoints.slice(-30);
+
+  // persona -> date -> that persona's own decided-run success rate.
+  const dailyByPersona = new Map<string, Map<string, number>>();
+  for (const row of personaDaily ?? []) {
+    if (row.decided <= 0) continue;
+    let byDate = dailyByPersona.get(row.persona_id);
+    if (!byDate) { byDate = new Map(); dailyByPersona.set(row.persona_id, byDate); }
+    byDate.set(row.date, row.success_rate);
+  }
+  const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
   const entries: CompositeHealthEntry[] = [];
 
@@ -371,11 +388,15 @@ export function computeCompositeHealth(input: CompositeScoreInput): CompositeHea
       stabilityScore * WEIGHTS.stability,
     );
 
-    // 30-day daily statuses
+    // 30-day daily statuses, from THIS persona's own rate for the day. They
+    // used to read `pt.success_rate`, the fleet's rate, on any day the persona
+    // had a cost row: every active persona painted the same bar and the same
+    // uptime as the whole fleet, so one failing agent hid behind the others.
+    const ownRates = dailyByPersona.get(persona.id);
+    const ownRateOn = (date: string): number | undefined => ownRates?.get(date);
     const dailyStatuses: DayStatus[] = last30.map(pt => {
-      const hasActivity = pt.persona_costs.some(c => c.persona_id === persona.id);
-      if (!hasActivity) return 'no-data';
-      return dayStatusFromRate(pt.success_rate);
+      const rate = ownRateOn(pt.date);
+      return rate === undefined ? 'no-data' : dayStatusFromRate(rate);
     });
 
     // Pad to 30 days if fewer
@@ -390,16 +411,15 @@ export function computeCompositeHealth(input: CompositeScoreInput): CompositeHea
     const daysUp = dailyStatuses.filter(s => s === 'operational' || s === 'degraded').length;
     const uptimePercent = daysWithData > 0 ? daysUp / daysWithData : null;
 
-    // Trend: compare last 7 days success to prior 7 days
-    const recentDays = last30.slice(-7);
-    const priorDays = last30.slice(-14, -7);
-    const avgRecent = recentDays.length > 0
-      ? recentDays.reduce((s, d) => s + d.success_rate, 0) / recentDays.length
+    // Trend: this persona's last 7 axis days against the 7 before, over the
+    // days it actually ran. Either side empty -> no evidence of a change.
+    const ratesIn = (pts: typeof last30) =>
+      pts.map(pt => ownRateOn(pt.date)).filter((r): r is number => r !== undefined);
+    const recentRates = ratesIn(last30.slice(-7));
+    const priorRates = ratesIn(last30.slice(-14, -7));
+    const delta = recentRates.length > 0 && priorRates.length > 0
+      ? mean(recentRates) - mean(priorRates)
       : 0;
-    const avgPrior = priorDays.length > 0
-      ? priorDays.reduce((s, d) => s + d.success_rate, 0) / priorDays.length
-      : avgRecent;
-    const delta = avgRecent - avgPrior;
     const trend: 'improving' | 'stable' | 'degrading' =
       delta > TREND_NEUTRAL_BAND ? 'improving'
         : delta < -TREND_NEUTRAL_BAND ? 'degrading'

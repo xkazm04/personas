@@ -1,0 +1,48 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d504f76f-900c-49d5-aacd-c186e1d12156",
+  "subject": "concurrency-guards",
+  "evaluatedAt": "2026-10-21T17:38:07Z",
+  "pairs": [
+    {
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "subject": "concurrency-guards",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/components/display/UnifiedTable.tsx:228 sort is a caller-owned onSort callback; none of the 32 context files runs an async operation, IPC call or shared write, so no operation reachable twice lives here (UI races are client-state per concurrency-guards.md:39)",
+      "techniques": [
+        {
+          "technique": "guard-key-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:107 onRowClick is forwarded to the caller; the primitive owns no operation identity to key"
+        },
+        {
+          "technique": "single-flight-primitives",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:228 sort neither runs nor persists anything itself; no in-flight work exists to single-flight"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "concurrency-guards",
+      "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7",
+      "reason": "weak-governed row (governance: weak); the match itself is doubtful. Watchtower feed subscribe/watch toggles (src/features/triggers/sub_shared/useSubscribedFeeds.ts) are UI-side async races that the golden path assigns to client-state async-race-guards, so this is a coverage question, not a verdict"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T17:38:07Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "concurrency-guards"
+      ],
+      "techniques": [
+        "guard-key-design",
+        "single-flight-primitives"
+      ],
+      "deviations": 0
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
-import { CheckSquare, Square, X, MessageSquare, Loader2 } from 'lucide-react';
+import { CheckSquare, Square, X, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { createRafCoalescer } from '@/lib/utils/interaction/rafCoalescer';
@@ -122,8 +122,7 @@ export function ReviewInboxPanel({
                     }}
                     role="checkbox"
                     aria-checked={selectedIds.has(review.id)}
-                    // eslint-disable-next-line custom/no-hardcoded-jsx-text
-                    aria-label="Select review"
+                    aria-label={t.overview.dc_select_review}
                     className="flex-shrink-0 w-8 flex items-center justify-center pt-3.5 text-foreground hover:text-muted-foreground transition-colors"
                   >
                     {selectedIds.has(review.id) ? (
@@ -181,7 +180,8 @@ export function ReviewInboxPanel({
               ) : (
                 <div className="flex-1 flex items-center justify-center">
                   <EmptyState
-                    icon={MessageSquare}
+                    art="chat"
+                    size="sm"
                     title={t.overview.review.select_review}
                   />
                 </div>

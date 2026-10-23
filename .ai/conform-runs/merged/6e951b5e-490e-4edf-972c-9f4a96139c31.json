@@ -1,0 +1,63 @@
+{
+  "schema": "conform-run/1",
+  "worker": "6e951b5e-490e-4edf-972c-9f4a96139c31",
+  "subject": "codegen",
+  "evaluatedAt": "2026-10-18T22:52:53.775536+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "codegen",
+      "context": "run-desk",
+      "reason": "withdrawn after review: reviewer (sonnet): Both contexts import generated bindings (`@/lib/bindings/DevTask`, `DevIdea`, `DevProject`, `AutoRunStatus`, `PersonaDesignReview`), which are generated-code artifacts. The cited anchors only show runtime fetching or caching, so they are incidental and don't show that no generated-artifact precondit"
+    },
+    {
+      "subject": "codegen",
+      "context": "templates-generated-gallery-cards",
+      "reason": "withdrawn after review: reviewer (sonnet): Both contexts import generated bindings (`@/lib/bindings/DevTask`, `DevIdea`, `DevProject`, `AutoRunStatus`, `PersonaDesignReview`), which are generated-code artifacts. The cited anchors only show runtime fetching or caching, so they are incidental and don't show that no generated-artifact precondit"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-18T22:52:53.775536+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "codegen"
+      ],
+      "techniques": [
+        "commit-vs-derive-policy",
+        "drift-gating",
+        "generated-file-hygiene",
+        "generator-failure-isolation",
+        "post-merge-regeneration",
+        "task-registry-design",
+        "trigger-wiring"
+      ],
+      "deviations": 0,
+      "context": "run-desk",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-18T22:52:53.775536+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "codegen"
+      ],
+      "techniques": [
+        "commit-vs-derive-policy",
+        "drift-gating",
+        "generated-file-hygiene",
+        "generator-failure-isolation",
+        "post-merge-regeneration",
+        "task-registry-design",
+        "trigger-wiring"
+      ],
+      "deviations": 0,
+      "context": "templates-generated-gallery-cards",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

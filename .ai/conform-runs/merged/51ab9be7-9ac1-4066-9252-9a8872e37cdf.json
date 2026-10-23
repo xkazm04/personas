@@ -1,0 +1,115 @@
+{
+ "schema": "conform-run/1",
+ "worker": "51ab9be7-9ac1-4066-9252-9a8872e37cdf",
+ "subject": "usage-pricing-models",
+ "evaluatedAt": "2026-10-19T08:45:02.248120+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "observability-audit-models",
+   "subject": "usage-pricing-models",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/core/src/models/llm_spend.rs:18 These models record operational usage and provider spend; searches found no billing, graduated, pricing_model, or grouping_key matches in the context directory, so seller-side pricing requirements do not apply.",
+   "techniques": [
+    {
+     "technique": "advance-billing-refuses-retroactive-models",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/models/llm_spend.rs:31 The record describes a completed call's telemetry; no usage-charge billing timing or retroactive pricing model was found."
+    },
+    {
+     "technique": "exact-money-with-one-rounding-boundary",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/models/llm_spend.rs:30 This holds provider-reported spend, which the standard excludes as payer-side cost metering; it is not a seller's priced line."
+    },
+    {
+     "technique": "grouping-key-reruns-the-ladder",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/models/llm_spend.rs:70 Grouping is cost attribution for dashboard rollups, an explicit exclusion in this technique."
+    },
+    {
+     "technique": "inferred-tier-boundary-convention",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/core/src/models/llm_spend.rs:21 These tiers classify call sources rather than numeric price ranges; no pricing ladder was found."
+    }
+   ],
+   "absenceTerms": [
+    "billing",
+    "graduated",
+    "pricing_model"
+   ]
+  },
+  {
+   "context": "overview-usage-charts",
+   "subject": "usage-pricing-models",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_usage/libs/pivotToolUsage.ts:35 The module aggregates invocation counts and renders metrics; searches found no billing, graduated, pricing_model, or grouping_key matches in its directory, so it does not implement seller-side usage pricing.",
+   "techniques": [
+    {
+     "technique": "advance-billing-refuses-retroactive-models",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:41 Period comparison copies historical values into chart series; it does not choose charge timing or collect money."
+    },
+    {
+     "technique": "exact-money-with-one-rounding-boundary",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/components/ChartTooltip.tsx:18 This formats a tooltip string rather than calculating or persisting a charge, so display precision is not a billing rounding boundary."
+    },
+    {
+     "technique": "grouping-key-reruns-the-ladder",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/libs/pivotToolUsage.ts:35 The tool dimension sums measured invocations for reporting; it does not reset a charge's tiers, allowances, or fees."
+    },
+    {
+     "technique": "inferred-tier-boundary-convention",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/components/MetricChart.tsx:29 The reusable primitive accepts a chart renderer; inspection and searches found no tiered charge or numeric pricing ranges."
+    }
+   ],
+   "absenceTerms": [
+    "billing",
+    "graduated",
+    "pricing_model"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-19T08:45:02.248120+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "usage-pricing-models"
+   ],
+   "techniques": [
+    "advance-billing-refuses-retroactive-models",
+    "exact-money-with-one-rounding-boundary",
+    "grouping-key-reruns-the-ladder",
+    "inferred-tier-boundary-convention"
+   ],
+   "deviations": 0,
+   "context": "observability-audit-models",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-19T08:45:02.248120+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "usage-pricing-models"
+   ],
+   "techniques": [
+    "advance-billing-refuses-retroactive-models",
+    "exact-money-with-one-rounding-boundary",
+    "grouping-key-reruns-the-ladder",
+    "inferred-tier-boundary-convention"
+   ],
+   "deviations": 0,
+   "context": "overview-usage-charts",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

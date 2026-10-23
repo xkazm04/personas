@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
-const leaf = (prefix: string) => new Proxy({}, { get: (_o, k) => `${prefix}.${String(k)}` });
+// Two-level keys (t.common.close) render the leaf itself, so it must coerce to its path.
+const leaf = (prefix: string) =>
+  new Proxy({}, { get: (_o, k) => (k === Symbol.toPrimitive ? () => prefix : `${prefix}.${String(k)}`) });
 const t = new Proxy({}, {
   get: (_o, section) => new Proxy({}, { get: (_s, sub) => leaf(`${String(section)}.${String(sub)}`) }),
 });
@@ -74,6 +76,29 @@ describe('team synthesis from the gallery', () => {
     await waitFor(() => expect(onTeamCreated).toHaveBeenCalledWith(result));
     expect(synthesizeTeamFromTemplates).toHaveBeenCalledWith('on-call for deploys', 'Deploy desk');
     expect(screen.getByText('Deploy desk')).toBeTruthy();
+  });
+
+  it('shows the backend reason when the IPC rejects with an AppError object', async () => {
+    // invokeWithTimeout rejects with the serialized AppError, never an Error.
+    synthesizeTeamFromTemplates.mockRejectedValue({
+      error: 'Claude produced no output for team synthesis',
+      kind: 'Internal',
+    });
+    render(<TeamSynthesisPanel isOpen onClose={() => {}} />);
+
+    fireEvent.change(screen.getByPlaceholderText(/team_name_placeholder/), { target: { value: 'Deploy desk' } });
+    fireEvent.change(screen.getByPlaceholderText(/describe_placeholder/), { target: { value: 'on-call for deploys' } });
+    fireEvent.click(screen.getByRole('button', { name: SYNTH_LABEL }));
+
+    await waitFor(() => expect(screen.getByText(/Claude produced no output for team synthesis/)).toBeTruthy());
+    expect(screen.queryByText(/\[object Object\]/)).toBeNull();
+  });
+
+  it('names its close control and labels both fields', () => {
+    render(<TeamSynthesisPanel isOpen onClose={() => {}} />);
+    expect(screen.getByRole('button', { name: 'common.close' })).toBeTruthy();
+    expect(screen.getByLabelText('templates.team_synthesis.team_name_label').tagName).toBe('INPUT');
+    expect(screen.getByLabelText('templates.team_synthesis.describe_team').tagName).toBe('TEXTAREA');
   });
 
   it('refuses to synthesize until both fields are given', () => {

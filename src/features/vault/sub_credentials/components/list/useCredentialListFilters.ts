@@ -1,12 +1,9 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import {
   type HealthFilter,
   type SortKey,
-  type GroupedCredentials,
-  collectAllTags,
   filterAndSortCredentials,
-  groupCredentials,
 } from './credentialListTypes';
 
 export function useCredentialListFilters(
@@ -15,15 +12,10 @@ export function useCredentialListFilters(
   searchTerm?: string,
 ) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [healthFilter, setHealthFilter] = useState<HealthFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [openDropdown, setOpenDropdown] = useState<'health' | 'sort' | null>(null);
-
-  const allTags = useMemo(() => collectAllTags(credentials), [credentials]);
-  const hasFilters = selectedTags.length > 0 || healthFilter !== 'all';
 
   const connectorMap = useMemo(() => {
     const map = new Map<string, ConnectorDefinition>();
@@ -40,25 +32,6 @@ export function useCredentialListFilters(
     }),
     [connectorDefinitions],
   );
-
-  const toggleTag = useCallback((tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
-  }, []);
-
-  const clearFilters = useCallback(() => {
-    setSelectedTags([]);
-    setHealthFilter('all');
-  }, []);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpenDropdown(null);
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
 
   const getConnectorForType = useCallback((type: string): ConnectorDefinition | undefined => {
     const exact = connectorMap.get(type);
@@ -80,35 +53,24 @@ export function useCredentialListFilters(
   const filteredCredentials = useMemo(
     () => filterAndSortCredentials(
       credentials,
-      { searchTerm, selectedTags, healthFilter, categoryFilter, sortKey, sortDirection },
+      { searchTerm, healthFilter, categoryFilter, sortKey, sortDirection },
       getConnectorForType,
     ),
-    [credentials, searchTerm, selectedTags, healthFilter, categoryFilter, sortKey, sortDirection, getConnectorForType],
+    [credentials, searchTerm, healthFilter, categoryFilter, sortKey, sortDirection, getConnectorForType],
   );
 
   const selectedCredential = selectedId ? credentials.find((c) => c.id === selectedId) : undefined;
   const selectedConnector = selectedCredential ? getConnectorForType(selectedCredential.service_type) : undefined;
   const selectedIsDatabase = selectedConnector?.category === 'database';
 
-  const grouped: GroupedCredentials[] = useMemo(
-    () => groupCredentials(filteredCredentials, sortKey, getConnectorForType),
-    [filteredCredentials, sortKey, getConnectorForType],
-  );
-
-  const showFilterBar = credentials.length > 0 && (allTags.length > 0 || credentials.length > 3);
-
   return {
-    selectedId, setSelectedId,
-    selectedTags, selectedCredential, selectedConnector, selectedIsDatabase,
+    setSelectedId,
+    selectedCredential, selectedConnector, selectedIsDatabase,
     healthFilter, setHealthFilter,
     categoryFilter, setCategoryFilter,
     sortKey, setSortKey,
     sortDirection, setSortDirection,
-    openDropdown, setOpenDropdown,
-    allTags, hasFilters,
-    toggleTag, clearFilters,
-    filteredCredentials, grouped,
-    showFilterBar,
+    filteredCredentials,
     getConnectorForType,
   };
 }

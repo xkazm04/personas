@@ -1,0 +1,17 @@
+{"schema": "conform-run/1", "worker": "0b0f264f-2109-4dc4-9a7b-6078e390705d", "subject": "error-handling",
+ "evaluatedAt": "2026-10-21T17:36:40Z",
+ "pairs": [{"context": "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6", "subject": "error-handling", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/utils/apiError.ts:55 classifyError keeps its own prose TRANSIENT/PERMANENT pattern lists for retry policy beside src/lib/errorTaxonomy.ts:4 (declared TS single source of truth), so retry and user copy classify one failure independently and can drift",
+   "evaluatedAgainst": "sha256-b2:d811928687fd4faf", "evaluatedRevision": 17,
+   "techniques": [
+     {"technique": "taxonomy-design", "verdict": "deviation", "evidence": "src/lib/utils/apiError.ts:55 a second frontend classifier (severity from prose patterns) independent of src/lib/errorTaxonomy.ts:4, which tells subsystems to import from it instead of maintaining independent heuristics"},
+     {"technique": "structured-propagation", "verdict": "deviation", "evidence": "src/lib/utils/apiError.ts:57 the app's own InvokeTimeoutError (src/lib/tauriInvoke.ts:134, a typed class carrying backendMayStillBeRunning) has no instanceof branch and is rediscovered as transient from its message text; kind-first path (:146) and cause preservation (:33) are otherwise realized"},
+     {"technique": "crash-capture", "verdict": "conformant", "evidence": "src/lib/utils/crashPersistence.ts:111 sanitizes before the first write, local spool bounded at :36, spool parsed defensively at :122, backend shipping fire-and-forget at :157"},
+     {"technique": "error-doors", "verdict": "conformant", "evidence": "src/lib/utils/staleWhileRevalidate.ts:135 background revalidation failure routed through silentCatch; src/lib/utils/tauri/safeInvoke.ts:80 fallback only for the declared unregistered-command probe, everything else rethrown"},
+     {"technique": "swallowed-error-prevention", "verdict": "conformant", "evidence": "src/lib/utils/parseJson.ts:26 the one empty catch is visibly declared intentional, and the module offers the error-returning safeJsonParse beside it"},
+     {"technique": "user-facing-mapping", "verdict": "not-applicable", "evidence": "src/lib/utils/apiError.ts:195 the context only extracts raw messages; the copy registry lives in src/lib/errors/errorRegistry.ts outside this context"}
+   ],
+   "registryProposal": "lib-utils is a consolidated grab-bag (cron presets, animation, crash persistence, fetch caches, apiError); error-handling governs only 5 of its 17 files, so a whole-context verdict is driven by apiError.ts. Consider letting conform verdicts scope to a file subset for consolidated contexts."}],
+ "declined": [],
+ "consults": [{"ts": "2026-10-21T17:36:40Z", "bundle": "software-engineering", "subjects": ["error-handling"], "techniques": ["taxonomy-design", "structured-propagation", "crash-capture", "error-doors", "swallowed-error-prevention", "user-facing-mapping"], "deviations": 1}]}

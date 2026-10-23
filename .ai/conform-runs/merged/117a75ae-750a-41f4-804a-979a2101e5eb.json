@@ -1,0 +1,218 @@
+{
+  "schema": "conform-run/1",
+  "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+  "subject": "voice-io",
+  "evaluatedAt": "2026-10-17T00:02:26.925365+00:00",
+  "provider": "grok",
+  "model": "grok-4.7",
+  "pairs": [
+    {
+      "context": "vault-catalog-picker",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:31 Picking a connector records a catalog view and calls onPickType; a search of the picker, design, and negotiator trees found no tts, microphone, whisper, dictation, or speechSynthesis.",
+      "techniques": [
+        {
+          "technique": "stt-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:31 The action is choosing a connector type, not opening a microphone."
+        },
+        {
+          "technique": "voice-setup-experience",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/ConnectorCard.tsx:7 The card renders a connector's auth method and license, not a voice install or compare-by-ear step."
+        }
+      ],
+      "absenceTerms": [
+        "tts",
+        "microphone",
+        "whisper",
+        "dictation",
+        "speechSynthesis"
+      ]
+    },
+    {
+      "context": "templates-generated-adoption-ucpicker",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:30 The adoption picker shows calendar and event triggers for a template; a search of the adoption tree found no tts, microphone, whisper, dictation, or speechSynthesis.",
+      "techniques": [
+        {
+          "technique": "stt-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:30 Trigger labels are schedule and event modes, not a listening pipeline."
+        },
+        {
+          "technique": "voice-setup-experience",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPicker.tsx:10 The wizard step renders template use cases. An empty template stays empty; there is no voice setup flow."
+        }
+      ],
+      "absenceTerms": [
+        "tts",
+        "microphone",
+        "whisper",
+        "dictation",
+        "speechSynthesis"
+      ]
+    },
+    {
+      "context": "commands-fleet",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/commands/fleet/transcript.rs:4 Fleet's transcript is a Claude Code JSONL file watched for session liveness; searches for tts, microphone, whisper, dictation, and speechSynthesis under commands/fleet returned nothing.",
+      "techniques": [
+        {
+          "technique": "stt-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/screen_activity.rs:3 Liveness is PTY bytes, not microphone audio."
+        },
+        {
+          "technique": "tts-pipeline",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/screen_activity.rs:21 What is observed is a terminal grid, not a synthesis queue."
+        },
+        {
+          "technique": "transcript-normalization",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/transcript.rs:4 The transcript is a coding-session JSONL log, not dictated speech to rewrite for a reader."
+        },
+        {
+          "technique": "transcript-handoff-receipts",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/transcript.rs:36 Disposition is a filesystem watch for liveness, not a paste into another application's cursor."
+        }
+      ],
+      "absenceTerms": [
+        "tts",
+        "microphone",
+        "whisper",
+        "dictation",
+        "speechSynthesis"
+      ]
+    },
+    {
+      "context": "plugins-fleet-tests",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/fleet/sub_activity/FleetActivityPage.tsx:16 The activity page lists Claude Code session transcripts for project and tool search; the fleet plugin tree has no tts, microphone, whisper, dictation, or speechSynthesis identifiers.",
+      "techniques": [
+        {
+          "technique": "spoken-intent-parsing",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:23 Attention classification keys off a Claude CLI attach failure string, not a parsed spoken command."
+        },
+        {
+          "technique": "transcript-normalization",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/fleet/sub_activity/FleetActivityPage.tsx:16 The transcript is a Claude Code session rollup, not dictated speech to clean."
+        }
+      ],
+      "absenceTerms": [
+        "tts",
+        "microphone",
+        "whisper",
+        "dictation",
+        "speechSynthesis"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "voice-io",
+      "context": "stores-slices-system",
+      "reason": "withdrawn after review: reviewer (sonnet): The deviation rests on a 'retired engine' that I could not find for twin voice: TwinVoiceProfile.ts:5 and twin.rs:151 say elevenlabs is the only provider, so no retired id can reach twinSlice.ts:583. The retired-engine concept lives in the companion TTS code (athena/useTtsVoiceSelection), which is o"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-17T00:02:26.925365+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [
+        "authored-voice-identity",
+        "bounded-playback-wait",
+        "caller-scoped-voice-binding",
+        "engine-abstraction",
+        "on-device-vs-cloud",
+        "speech-ready-text",
+        "transcript-normalization",
+        "tts-pipeline",
+        "voice-setup-experience",
+        "voice-ux-integration"
+      ],
+      "deviations": 1,
+      "context": "stores-slices-system",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-17T00:02:26.925365+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [
+        "stt-pipeline",
+        "voice-setup-experience"
+      ],
+      "deviations": 0,
+      "context": "vault-catalog-picker",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-17T00:02:26.925365+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [
+        "stt-pipeline",
+        "voice-setup-experience"
+      ],
+      "deviations": 0,
+      "context": "templates-generated-adoption-ucpicker",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-17T00:02:26.925365+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [
+        "stt-pipeline",
+        "transcript-handoff-receipts",
+        "transcript-normalization",
+        "tts-pipeline"
+      ],
+      "deviations": 0,
+      "context": "commands-fleet",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    },
+    {
+      "ts": "2026-10-17T00:02:26.925365+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [
+        "spoken-intent-parsing",
+        "transcript-normalization"
+      ],
+      "deviations": 0,
+      "context": "plugins-fleet-tests",
+      "via": "curator-multi:grok",
+      "model": "grok-4.7"
+    }
+  ]
+}

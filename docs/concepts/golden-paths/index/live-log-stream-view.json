@@ -44,6 +44,15 @@
       ],
       "resolved": false
     },
+    ".../commandCenterParts.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["35-38"],
+      "contexts": [
+        "| `src/features/onboarding/components/ExecutionStep.tsx:37-40` · `.../AiHealingStreamOverlay.tsx:104-107` · `.../CreativeStudioPanel.tsx:269-272` · `.../ScanOverlay.tsx:22-25` · `.../TaskOutputPanel.…"
+      ],
+      "resolved": false
+    },
     ".github/workflows/ci.yml": {"count":2,"sections":[7,9],"contexts":["- **`ci.yml` remains red on pre-existing failures**, so §9 does not depend on it."],"resolvedFrom":"basename","verbatim":"ci.yml"},
     "AnalysisModeView.tsx": {"count":1,"sections":[7],"contexts":["`AnalysisModeView.tsx`, `TransformModeView.tsx`, `CliOutputPanel.tsx`. Those"],"resolved":false},
     "CompactTerminal.tsx": {"count":2,"sections":[6,7],"lines":["244-249,1074-1086","70-71,274-297"],"contexts":["(`ExecutionOutput.tsx:53-56,125-141` vs `CompactTerminal.tsx:244-249,1074-1086`)."],"resolved":false},
@@ -340,16 +349,6 @@
       "contexts": ["The worst placement is `shared/components/terminal/TerminalStrip.tsx:57-61`"],
       "resolvedFrom": "suffix",
       "verbatim": "shared/components/terminal/TerminalStrip.tsx"
-    },
-    "src/features/templates/sub_generated/adoption/chronology/commandCenterParts.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["35-38"],
-      "contexts": [
-        "| `src/features/onboarding/components/ExecutionStep.tsx:37-40` · `.../AiHealingStreamOverlay.tsx:104-107` · `.../CreativeStudioPanel.tsx:269-272` · `.../ScanOverlay.tsx:22-25` · `.../TaskOutputPanel.…"
-      ],
-      "resolvedFrom": "elided-suffix",
-      "verbatim": ".../commandCenterParts.tsx"
     },
     "src/features/templates/sub_generated/gallery/modals/TemplatePreviewModal.tsx": {
       "count": 1,

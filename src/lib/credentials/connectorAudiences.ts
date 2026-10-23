@@ -17,12 +17,6 @@
 
 export type Audience = 'developer' | 'support' | 'manager';
 
-export const ALL_AUDIENCES: readonly Audience[] = Object.freeze([
-  'developer',
-  'support',
-  'manager',
-]);
-
 /**
  * Per-connector audience declarations. Bridges builtin connectors that
  * haven't yet had `metadata.audiences` populated. Adding a connector that

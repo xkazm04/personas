@@ -79,12 +79,26 @@ function agentSegment(ref: string): string {
   return parts[0] ?? '';
 }
 
+/**
+ * The persona segment the backend writes into `persona/<slug>/...` refs.
+ * Mirrors `slugify_persona_name` in src-tauri/src/commands/infrastructure/gitlab.rs:
+ * lowercase, EACH space to a dash, then drop everything that is not a letter,
+ * digit or dash. The old `trim + /\s+/ -> '-'` kept punctuation and collapsed
+ * runs, so `My Bot!` looked for `my-bot!` while its branch is `persona/my-bot/..`
+ * and the agent row lost its pipeline chip.
+ */
+export function slugifyPersonaName(name: string): string {
+  return Array.from(name.toLowerCase().replace(/ /g, '-'))
+    .filter((c) => /[\p{Alphabetic}\p{N}-]/u.test(c))
+    .join('');
+}
+
 export function pipelineForAgent<T extends { ref: string }>(
   pipelines: readonly T[],
   agentName: string,
 ): T | null {
-  const wanted = agentName.trim().toLowerCase().replace(/\s+/g, '-');
-  if (!wanted) return null;
+  const wanted = slugifyPersonaName(agentName);
+  if (!wanted.replace(/-/g, '')) return null;
   // Pipelines arrive newest-first from the API, so the first match is the latest.
   return pipelines.find((p) => agentSegment(p.ref) === wanted) ?? null;
 }

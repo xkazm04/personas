@@ -18,7 +18,12 @@ export interface UseIncidentsDataResult {
   loading: boolean;
   /** In flight for the KPI strip ONLY — retires independently of `loading`. */
   summaryLoading: boolean;
-  error: string | null;
+  /**
+   * The list read's failure, kept RAW and resolved at render. `invokeWithTimeout`
+   * rejects with a serialized AppError object, so `String(e)` painted
+   * "[object Object]" into the banner.
+   */
+  error: { raw: unknown } | null;
   refresh: () => Promise<void>;
   /** True when the fetch hit `DEFAULT_LIMIT` — the list may be missing older rows. */
   truncated: boolean;
@@ -44,7 +49,7 @@ export function useIncidentsData(filters: IncidentFilters): UseIncidentsDataResu
   const [summary, setSummary] = useState<AuditIncidentSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [summaryLoading, setSummaryLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ raw: unknown } | null>(null);
   const [truncated, setTruncated] = useState(false);
   // Latest-wins, through the shared primitive rather than a hand-rolled counter
   // (`stale-response-guard`; the census rule `hand-rolled-stale-token` exists to
@@ -73,7 +78,7 @@ export function useIncidentsData(filters: IncidentFilters): UseIncidentsDataResu
       setTruncated(rows.length >= DEFAULT_LIMIT);
       setError(null);
     } catch (e) {
-      if (listLatest.isCurrent(token)) setError(String(e));
+      if (listLatest.isCurrent(token)) setError({ raw: e });
     } finally {
       if (listLatest.isCurrent(token)) setLoading(false);
     }

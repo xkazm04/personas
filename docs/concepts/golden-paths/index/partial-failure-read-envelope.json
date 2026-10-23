@@ -464,6 +464,14 @@
       "resolvedFrom": "basename",
       "verbatim": "useRadioState.ts"
     },
+    "src/features/projects/development/goals/GoalDetailDrawer.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["122"],
+      "contexts": ["silently zero. `useExportPicker.ts:98` guards 2 of 8. `GoalDetailDrawer.tsx:122` guards 1 of 6."],
+      "resolvedFrom": "basename",
+      "verbatim": "GoalDetailDrawer.tsx"
+    },
     "src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts": {
       "count": 2,
       "sections": [7],
@@ -521,14 +529,6 @@
       "contexts": ["- **`usePassportData.ts:150-158`** — five overview reads (`skills`, `usage`, `docRot`,"],
       "resolvedFrom": "basename",
       "verbatim": "usePassportData.ts"
-    },
-    "src/features/teams/sub_goals/GoalDetailDrawer.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["122"],
-      "contexts": ["silently zero. `useExportPicker.ts:98` guards 2 of 8. `GoalDetailDrawer.tsx:122` guards 1 of 6."],
-      "resolvedFrom": "basename",
-      "verbatim": "GoalDetailDrawer.tsx"
     },
     "src/features/teams/sub_teamMemory/useTeamMemories.ts": {"count":2,"sections":[7],"lines":["38"],"contexts":["`ProjectTeamPreviewModal.tsx:99` (3), `useTeamMemories.ts:38` (3), and 42 more."],"resolvedFrom":"basename","verbatim":"useTeamMemories.ts"},
     "src/features/triggers/sub_studio/StudioPatchbay.tsx": {

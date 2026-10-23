@@ -1,6 +1,6 @@
 // DockActTicker: one line in the dock's resting row saying what the stewards
-// just decided ("App Master · personas filed 3 reports as evidence"), shown
-// only under the `lanes` decision surface. A press opens the mandate drawer's
+// just decided ("App Master · personas filed 3 reports as evidence"). A press
+// opens the mandate drawer's
 // act log at the newest act of the line.
 //
 // Push only: it follows `charter-act-recorded` and reads nothing on a clock.
@@ -9,6 +9,11 @@
 // the first act of the session it shows nothing, no placeholder, no lamp
 // (only an empty, zero-width live region waits in the row).
 // The coalescing law is `dockActLine.ts`.
+//
+// It speaks at the dock's own voice (design pass, 2026-10-15): the resting
+// row's caption weight and muted colour, its icon at the row's icon size, and
+// it YIELDS - the composer's placeholder never shrinks for it; the line takes
+// what width is left, truncates, and leaves the row on a narrow dock.
 
 import { useCallback, useRef, useState } from 'react';
 import { ScrollText } from 'lucide-react';
@@ -53,29 +58,31 @@ export function DockActTicker() {
   const { t, tx } = useTranslation();
   const m = t.monitor;
   const { line, names } = useDockActTicker();
-  // The live region is mounted empty (and takes no room, `empty:` cancels the
-  // row's gap) so its first line is a CHANGE a screen reader announces; a
+  // The live region is mounted empty (it is the row's spacer until it speaks)
+  // so its first line is a CHANGE a screen reader announces; a
   // region born with its message is never read. Quiet until there is
   // something to say, and until it can say it with names.
   const text = line && names ? tickText(m, tx, line, names) : null;
 
   return (
-    <span role="status" className="typo-body pointer-events-auto min-w-0 max-w-[60%] flex-shrink empty:-ml-2" data-testid="dock-act-ticker">
+    <span role="status" className="@container/tick typo-label pointer-events-auto flex min-w-0 flex-1 justify-end" data-testid="dock-act-ticker">
       {line && text && (
-        <Tooltip content={<>{text}<br />{m.ml_tick_open}</>} placement="top">
-          <Button
-            variant="ghost"
-            size="xs"
-            onClick={() => requestActLogAt(line.latestActId)}
-            icon={<ScrollText className="h-3.5 w-3.5 text-primary" aria-hidden />}
-            aria-description={m.ml_tick_aria}
-            data-testid="dock-act-ticker-open"
-            data-act={line.latestActId}
-            className="max-w-full [&>span:last-child]:truncate"
-          >
-            {text}
-          </Button>
-        </Tooltip>
+        <span className="hidden min-w-0 max-w-full @[9rem]/tick:flex">
+          <Tooltip content={<>{text}<br />{m.ml_tick_open}</>} placement="top">
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => requestActLogAt(line.latestActId)}
+              icon={<ScrollText className="h-3.5 w-3.5 text-muted transition-colors group-hover/tick:text-foreground" aria-hidden />}
+              aria-description={m.ml_tick_aria}
+              data-testid="dock-act-ticker-open"
+              data-act={line.latestActId}
+              className="group/tick max-w-full [&>span:last-child]:min-w-0 [&>span:last-child]:truncate"
+            >
+              <span className="text-muted transition-colors group-hover/tick:text-foreground">{text}</span>
+            </Button>
+          </Tooltip>
+        </span>
       )}
     </span>
   );

@@ -38,10 +38,16 @@ You are a headless builder dispatched by the App Master of **{{project}}**. Nobo
 
 ## Gates
 
-Run these in the worktree before you finish, and fix what you broke:
+The merge gate runs these after you finish, on your committed branch, and holds the run if one fails:
 {{gates}}
 
-If a gate already fails on `{{baseBranch}}` without your change (check by comparing against the base), say so in the result with the evidence; do not paper over it and do not "fix" unrelated failures beyond your task. A skipped gate is not a pass.
+Spend your time on the change, not on re-running the whole suite:
+
+- While you work, run only the tests that cover the files you touch (the test files beside them, or the runner narrowed to them), plus any test you add. Red first, then green, is enough proof for a new test.
+- Before you finish, run typecheck and lint once, and the narrowed tests once more.
+- Run the full test suite yourself ONLY when your change is wide: a shared test harness or helper, a config or dependency file, a migration, or a module most of the codebase imports. Run it once, not after every edit; the merge gate runs it again anyway.
+
+If a gate already fails on `{{baseBranch}}` without your change (check by comparing against the base), say so in the result with the evidence; do not paper over it and do not "fix" unrelated failures beyond your task. A skipped gate is not a pass. In `result.json`, report each gate as you last ran it, and say "narrowed: <files>" for a test run you narrowed.
 
 ## When you finish
 

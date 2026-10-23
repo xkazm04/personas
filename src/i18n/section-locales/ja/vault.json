@@ -13,7 +13,11 @@
     "personas_one": "{count} 件のペルソナ",
     "personas_other": "{count} 件のペルソナ",
     "show_all": "{count} 件すべてのエントリを表示",
-    "total_accesses": "{count} 件合計"
+    "total_accesses": "{count} 件合計",
+    "by_persona": "{name} による",
+    "entries_one": "{count} 件のエントリ",
+    "entries_other": "{count} 件のエントリ",
+    "page_of": "ページ {page}/{total}"
   },
   "auto_cred_extra": {
     "all_fields_captured": "全{count}フィールドをキャプチャしました",
@@ -102,7 +106,19 @@
     "test_to_save": "保存を有効にするには接続テストを実行してください",
     "universal_auto_setup": "ユニバーサル自動セットアップ",
     "universal_auto_setup_hint": "URLと説明を提供すると、AIがサイトをナビゲートしてAPI認証情報を自動的に発見・作成します。",
-    "what_do_you_need": "何が必要ですか？"
+    "what_do_you_need": "何が必要ですか？",
+    "err_kind_cli_error": "CLI エラー",
+    "err_kind_cli_not_found": "CLI が見つかりません",
+    "err_kind_env_conflict": "環境の競合",
+    "err_kind_extraction_failed": "抽出に失敗しました",
+    "err_kind_spawn_failed": "起動に失敗しました",
+    "err_kind_timeout": "タイムアウト",
+    "field_missing": "{label}（未設定）",
+    "log_blocked_url": "セットアップセッションからの安全でない URL をブロックしました",
+    "log_open_url_failed": "URL を開けませんでした: {url}",
+    "log_saved_procedure": "{label} の保存済み手順を使用しています",
+    "open_url": "開く",
+    "open_url_title": "{url} をブラウザーで開く"
   },
   "auto_cred": {
     "action_required": "操作が必要です",
@@ -534,7 +550,8 @@
     "use_console_hint": "コンソールタブでこのキーの値を確認してください。",
     "write": "書き込み",
     "write_mode": "書き込みモード",
-    "suggestion_api_tables": "このベースのテーブルと、それぞれのレコード件数を一覧表示して"
+    "suggestion_api_tables": "このベースのテーブルと、それぞれのレコード件数を一覧表示して",
+    "rename_failed": "認証情報の名前を変更できませんでした。以前の名前はそのまま保存されています。"
   },
   "delete_dialog": {
     "cannot_undo": "この操作は元に戻せません。",
@@ -583,7 +600,7 @@
     "severity_high": "高リスク",
     "severity_low": "低リスク",
     "severity_medium": "中リスク",
-    "sim_high": "{credentialName} を取り消すと、ワークスペース全体の {personas} persona{personaPlural} に影響します。",
+    "sim_high": "{credentialName} を取り消すと、ワークスペース全体の {personas} persona に影響します。",
     "sim_low": "この認証情報に依存するペルソナやワークフローはありません。失効しても安全です。",
     "sim_medium": "{credentialName} の取り消しは影響範囲が限定的です。",
     "simulate_revocation": "失効をシミュレート",
@@ -642,7 +659,9 @@
     "start_over": "最初からやり直す",
     "technical_details": "技術的詳細",
     "title": "認証情報を設計",
-    "try_again_with": "リクエストで再試行"
+    "try_again_with": "リクエストで再試行",
+    "instruction_imported": "{label} 認証情報（インポート済み）",
+    "instruction_template": "{label} 認証情報"
   },
   "design_phases": {
     "all_steps_complete": "すべてのステップが完了 -- 下のフィールドに入力して接続をテストしてください。",
@@ -698,7 +717,9 @@
     "typical_time": "通常15〜30秒",
     "use_template": "使用",
     "verified_setup": "セットアップを確認済み",
-    "view_credential": "認証情報を表示"
+    "view_credential": "認証情報を表示",
+    "open": "開く",
+    "step_number": "ステップ {n}"
   },
   "desktop_discovery": {
     "allowed_binaries": "許可されているバイナリ: ",
@@ -783,7 +804,8 @@
     "scheduled_rotation": "スケジュールされたローテーション",
     "scheduled_rotation_desc": "cronスケジュール（毎日、毎週など）で認証情報をローテーションします。",
     "seconds_10": "10秒",
-    "seconds_30": "30秒"
+    "seconds_30": "30秒",
+    "template_trigger_aria": "{name} イベントトリガー"
   },
   "features": {
     "anomaly_detected": "異常検出: 以前成功していた認証情報が突然失敗しています。失効の可能性があります。",
@@ -962,7 +984,10 @@
     "no_eligible": "対象の認証情報がありません。まず認証情報リストにMCP認証情報を追加してください。",
     "no_members": "まだメンバーはいません。下にメンバーを追加してツールのバンドルを開始してください。",
     "pick_credential": "認証情報を選択…",
-    "pick_error": "認証情報を選択して短い表示名を付けてください"
+    "pick_error": "認証情報を選択して短い表示名を付けてください",
+    "remove_member_aria": "{name} を削除",
+    "disable_member": "無効にする",
+    "enable_member": "有効にする"
   },
   "graph": {
     "connection_count_one": "{count}件の接続",
@@ -1006,7 +1031,27 @@
     "selected_for_import": "インポート対象として選択済み",
     "source_ref": "ソース参照",
     "sync_supported": "同期対応",
-    "title": "インポート元"
+    "title": "インポート元",
+    "cli_hint": "{cli} CLI コマンドを実行し、JSON 出力を下に貼り付けてください。",
+    "env_hint": "お使いの .env ファイルの内容を下に貼り付けてください。",
+    "err_aws_no_secret_string": "AWS のレスポンスに SecretString が見つかりません",
+    "err_aws_parse_failed": "AWS Secrets Manager の JSON 出力を解析できませんでした",
+    "err_azure_parse_failed": "Azure Key Vault の JSON 出力を解析できませんでした",
+    "err_doppler_parse_failed": "Doppler の JSON 出力を解析できませんでした。次を使用してください: doppler secrets download --format=json",
+    "err_env_missing_separator": "{line} 行目: 「=」区切りがありません",
+    "err_no_secrets": "入力内にシークレットが見つかりません",
+    "err_op_expected_array": "op CLI の出力は JSON 配列である必要があります",
+    "err_op_parse_failed": "1Password の JSON 出力を解析できませんでした。次を使用してください: op item list --format=json",
+    "placeholder_1password": "次の出力を貼り付け: op item list --format=json",
+    "placeholder_aws_secrets": "次の出力を貼り付け: aws secretsmanager get-secret-value --secret-id <name>",
+    "placeholder_azure_keyvault": "次の出力を貼り付け: az keyvault secret show --vault-name <vault> --name <secret>",
+    "placeholder_doppler": "次の出力を貼り付け: doppler secrets download --format=json",
+    "source_desc_1password": "op CLI を使って 1Password からインポート",
+    "source_desc_aws_secrets": "AWS Secrets Manager からインポート",
+    "source_desc_azure_keyvault": "Azure Key Vault からインポート",
+    "source_desc_doppler": "Doppler シークレットプラットフォームからインポート",
+    "source_desc_env_file": "ローカルの .env ファイルからシークレットをインポート",
+    "source_label_env_file": ".env ファイル"
   },
   "ingest": {
     "rename_credential": "認証情報名を変更",
@@ -1066,7 +1111,11 @@
     "title_databases": "データベース",
     "title_dependencies": "依存関係",
     "unverifiable_count": "{count}件 未検証",
-    "unverifiable_tooltip": "このコネクタにはライブプローブがありません -- 認証情報は保存されていますが、プロバイダーに対して確認されたことはありません"
+    "unverifiable_tooltip": "このコネクタにはライブプローブがありません -- 認証情報は保存されていますが、プロバイダーに対して確認されたことはありません",
+    "create_failed": "認証情報の作成に失敗しました",
+    "rotate_result_failed": "{count} 件失敗",
+    "rotate_result_refreshed": "{count} 件更新",
+    "rotate_result_skipped": "{count} 件スキップ"
   },
   "negotiator_extra": {
     "ask_button": "Ask",
@@ -1084,7 +1133,8 @@
     "planning_description": "AIが開発者ポータルを分析し、段階的なプロビジョニングプランを生成しています…",
     "start_auto": "自動プロビジョニングを開始",
     "existing_auth_description": "{method} で {service} に既にサインイン済みです。セットアップはそのセッションを再利用し、サインインの手順を省略します。",
-    "use_existing_auth": "既存の {service} セッションを使用"
+    "use_existing_auth": "既存の {service} セッションを使用",
+    "step_of": "ステップ {current}/{total}: {title}"
   },
   "negotiator": {
     "all_steps_completed": "全ステップ完了",
@@ -1261,7 +1311,11 @@
     "rotate_now": "今すぐローテーション",
     "rotation_failed": "ローテーション失敗: {error}",
     "rotation_paused": "ローテーション停止中",
-    "update_period_failed": "ローテーション期間の更新に失敗: {error}"
+    "update_period_failed": "ローテーション期間の更新に失敗: {error}",
+    "countdown_days_hours": "{days}日{hours}時間",
+    "countdown_due_now": "期限です",
+    "countdown_hours_minutes": "{hours}時間{minutes}分",
+    "countdown_minutes": "{minutes}分"
   },
   "schema_configs": {
     "custom": {
@@ -1378,7 +1432,9 @@
     "kv_value_label": "値",
     "kv_value_placeholder": "値",
     "none_configured": "設定なし。",
-    "required_badge": "必須"
+    "required_badge": "必須",
+    "field_captured": "取得済み",
+    "select_placeholder": "選択..."
   },
   "setup_kind": {
     "cli_login": "プロバイダーの CLI はインストール済みですがサインインしていません — ターミナルでログインコマンドを実行してください（例: `vercel login` または `gh auth login`）",
@@ -1607,7 +1663,8 @@
     "extract_export_json": "JSONをエクスポート",
     "extract_filter_all": "すべての種類",
     "extract_filter_label": "エンティティの種類で絞り込む",
-    "health_unreachable": "サービスに接続できませんでした"
+    "health_unreachable": "サービスに接続できませんでした",
+    "oauth_context_lost": "OAuth は完了しましたが、コンテキストが失われました。もう一度お試しください。"
   },
   "subtitle": "認証情報の追加方法を選択してください",
   "title": "保管庫",
@@ -1760,7 +1817,12 @@
     "select_services": "接続するサービスを選択",
     "selected_count": "{total} 件中 {selected} 件選択済み",
     "sign_in_browser": "ブラウザウィンドウでGoogleアカウントにサインインしてください。",
-    "some_failed": "一部の認証情報が失敗しました"
+    "some_failed": "一部の認証情報が失敗しました",
+    "service_gmail_desc": "メールの送信、閲覧、管理",
+    "service_google_calendar_desc": "カレンダーの予定の閲覧と管理",
+    "service_google_drive_desc": "ファイルの閲覧と管理",
+    "service_google_sheets_desc": "スプレッドシートデータの読み取りと書き込み",
+    "status_failed": "失敗"
   },
   "connector_attention": {
     "title": "対応が必要な接続",
@@ -1781,5 +1843,29 @@
     "reconnect_now": "今すぐ再接続",
     "reconnecting": "再接続中...",
     "signed_in_as": "{email} でサインイン中"
+  },
+  "remediation_notify": {
+    "auto_disabled_body": "{name}: 重大な障害が継続的に検出されました。連鎖的なエラーを防ぐため、ローテーションポリシーを無効にしました。",
+    "auto_disabled_title": "認証情報を自動的に無効化しました",
+    "critical_title": "認証情報が重大な状態です",
+    "drift_title": "認証情報のドリフトを検出しました",
+    "rotation_failed_title": "認証情報のローテーションに失敗しました",
+    "warning_title": "認証情報の警告",
+    "reason_backoff_retry": "一時的な障害率は {pct}（1 時間）です。指数バックオフを適用しています。",
+    "reason_default": "修復レベル: {level}",
+    "reason_disable": "重大: 恒久的な障害率が {pct}（1 時間）です。ローテーションポリシーを自動で無効にしています。",
+    "reason_preemptive_rotation": "継続的な劣化: 障害率は {pct}（1 時間）です。予防的ローテーションを予約しています。",
+    "reason_rotate_then_alert": "恒久的なエラーを検出: 恒久的な障害率は {pct}（1 時間）です。ローテーションと通知を実行中です。"
+  },
+  "resource_picker": {
+    "no_matches": "一致するものがありません",
+    "nothing_to_pick": "選択できる項目がまだありません",
+    "pick_first": "先に {dep} を選択してください",
+    "picked_count": "{count} 件選択済み",
+    "save_scope": "スコープを保存",
+    "scope_title": "{label} のスコープ",
+    "search_placeholder": "{label} を検索…",
+    "stale_picks_one": "{count} 件の選択",
+    "stale_picks_other": "{count} 件の選択"
   }
 }

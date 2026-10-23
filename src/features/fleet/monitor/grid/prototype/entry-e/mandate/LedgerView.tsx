@@ -1,6 +1,6 @@
 // The act log across every mandate (L): the same counted filters and rows as
-// a mandate page's, each row naming its mandate. Enter opens the selected
-// act's mandate page. Opened at an act (the dock ticker's press), it selects
+// a mandate page's, each row naming its project on the bay's colour edge.
+// Enter opens the selected act's mandate page. Opened at an act (the dock ticker's press), it selects
 // that act once the page of acts holds it and scrolls it into view.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -24,6 +24,8 @@ export function LedgerView({ mandates, focusActId = null, onOpen }: {
   const rows = useMemo(() => visibleActs(log, filter), [log, filter]);
   const names = useMemo(() => new Map((mandates ?? []).map((x) => [x.charterId, x.projectName ?? x.title])), [mandates]);
   const titles = useMemo(() => new Map((mandates ?? []).map((x) => [x.charterId, x.title])), [mandates]);
+  const projects = useMemo(() => new Map((mandates ?? []).map((x) => [x.charterId, x.projectId])), [mandates]);
+  const mirrors = useMemo(() => new Map((mandates ?? []).map((x) => [x.charterId, x.mirror ?? null])), [mandates]);
   const host = useRef<HTMLDivElement>(null);
   const focused = useRef(false);
   useEffect(() => {
@@ -51,6 +53,8 @@ export function LedgerView({ mandates, focusActId = null, onOpen }: {
         onSelect={setSelected}
         mandateName={(id) => names.get(id) ?? m.ml_project_unknown}
         mandateTitle={(id) => titles.get(id) ?? null}
+        projectOf={(id) => projects.get(id) ?? null}
+        mirrorOf={(id) => mirrors.get(id) ?? null}
       />
     </div>
   );

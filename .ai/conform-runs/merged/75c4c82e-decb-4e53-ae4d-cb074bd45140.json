@@ -1,0 +1,63 @@
+{"schema": "conform-run/1", "worker": "75c4c82e-decb-4e53-ae4d-cb074bd45140", "subject": "voice-io",
+ "evaluatedAt": "2026-10-21T13:20:00Z",
+ "evaluatedAgainst": "sha256-b2:29f8b158c4d44054", "evaluatedRevision": 23,
+ "pairs": [
+  {"context": "3effd422-2610-4c8a-bc02-53aceafd827c", "subject": "voice-io", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:29f8b158c4d44054", "evaluatedRevision": 23,
+   "evidence": "src-tauri/src/commands/companion/stt.rs:33 companion_stt_transcribe still returns a bare Result<String>, so no-speech crosses IPC as AppError::Internal text (src-tauri/src/companion/stt/whisper.rs:210) and src/features/companions/athena/useLocalDictation.ts:266 shows the raw message - silence, no-speech and engine failure are still not three typed facts; re-checked at rev 23",
+   "techniques": [
+    {"technique": "stt-pipeline", "verdict": "deviation", "evidence": "src-tauri/src/companion/stt/whisper.rs:210 an empty transcript becomes AppError::Internal, the same variant as an engine crash, so the caller cannot tell no-speech from failure"},
+    {"technique": "bounded-playback-wait", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/companion/stt.rs:33 the companion commands return text or audio bytes to the web view; no Rust caller waits on an output device"}
+   ]},
+  {"context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504", "subject": "voice-io", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:29f8b158c4d44054", "evaluatedRevision": 23,
+   "evidence": "src/features/companions/athena/sub_voice/voiceEngineShared.tsx:322 a preview stopped during 'synth' resets state but the awaited synthesize still reaches play() at :330 with no latest-wins gate, so a stopped preview plays anyway; src/features/companions/athena/BubbleReadAloud.tsx:65 still hands raw markdown to synthesize while the chat queue strips it (src/features/companions/athena/chat/athenaChatVoice.ts:132); re-checked at rev 23",
+   "techniques": [
+    {"technique": "tts-pipeline", "verdict": "deviation", "evidence": "src/features/companions/athena/sub_voice/voiceEngineShared.tsx:330 play() runs after a stop with no generation check - stop does not mean now for a pending synthesis"},
+    {"technique": "speech-ready-text", "verdict": "deviation", "evidence": "src/features/companions/athena/BubbleReadAloud.tsx:65 synthesize receives display markdown; stripMarkdownForSpeech is applied per caller, not as the one door before the engine"},
+    {"technique": "on-device-vs-cloud", "verdict": "deviation", "evidence": "src/stores/slices/system/athenaSlice.ts:353 STT defaults to 'browser' Web Speech, which may send room audio off-device, instead of on-device whisper as the default"},
+    {"technique": "bounded-playback-wait", "verdict": "conformant", "evidence": "src/features/companions/athena/chat/athenaChatVoice.ts:80 the sentence queue retires a paused, never-settling clip by generation rather than a wall-clock deadline - the technique's mediated-engine amendment, already realized"},
+    {"technique": "speech-timing-timeline", "verdict": "not-applicable", "evidence": "src/features/companions/athena/audioLevel.ts:6 only the orb glow follows speech, by amplitude; no face, captions or highlighting consume per-sound timings"}
+   ]},
+  {"context": "bcb603ad-ce58-4b76-9623-aa99ace984af", "subject": "voice-io", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:29f8b158c4d44054", "evaluatedRevision": 23,
+   "evidence": "src-tauri/src/companion/tts/kokoro.rs:222 still spawns a fresh sherpa process per utterance, reloading the model on every live reply (real-time-synthesis-budget counts the process boundary in the rate); src-tauri/src/companion/tts/kokoro_installer.rs:44 the install lock is still per-process, not one locked engine home; re-checked at rev 23",
+   "techniques": [
+    {"technique": "real-time-synthesis-budget", "verdict": "deviation", "evidence": "src-tauri/src/companion/tts/kokoro.rs:222 tokio::process::Command::new(&engine) per synthesis call - model load paid every utterance"},
+    {"technique": "voice-setup-experience", "verdict": "deviation", "evidence": "src-tauri/src/companion/tts/kokoro_installer.rs:44 a static in-process InflightGuard guards an engine home shared under ~/.personas, so two processes can install into it at once"},
+    {"technique": "stt-pipeline", "verdict": "deviation", "evidence": "src-tauri/src/companion/stt/whisper.rs:210 no-speech is AppError::Internal, indistinguishable from engine failure"}
+   ]},
+  {"context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a", "subject": "voice-io", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:29f8b158c4d44054", "evaluatedRevision": 23,
+   "evidence": "src-tauri/src/companion/jobs/connector_use.rs:1358 Athena's ElevenLabs generate_tts tool still pins model eleven_turbo_v2_5 in a second vendor adapter outside the companion TTS engine seam (which configures eleven_v3 at src-tauri/src/companion/tts/mod.rs:172), so a retired model fails with no normalization; the path-shaped voice_id half was fixed by 8ead4810f1 (:1333 safe_path_segment), through a second id door beside tts::validate_voice_id",
+   "techniques": [
+    {"technique": "engine-abstraction", "verdict": "deviation", "evidence": "src-tauri/src/companion/jobs/connector_use.rs:1358 an engine model id hard-coded in a connector tool rather than behind the one per-direction interface with retired-engine normalization"},
+    {"technique": "bounded-playback-wait", "verdict": "not-applicable", "evidence": "src-tauri/src/companion/jobs/connector_use.rs:1379 the clip is written to a file in the drive; no device is involved"}
+   ]},
+  {"context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50", "subject": "voice-io", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:29f8b158c4d44054", "evaluatedRevision": 23,
+   "evidence": "src/features/onboarding/components/useTourNarration.ts:102 tour narration still calls play() on a private element with no shared speech arbiter, so it can overlap an Athena read-aloud; :121 caches audio by step key alone so a voice change replays the old voice, and src/features/onboarding/components/TourNarrationButton.tsx:30 renders 'error' like idle; re-checked at rev 23",
+   "techniques": [
+    {"technique": "voice-ux-integration", "verdict": "deviation", "evidence": "src/features/onboarding/components/useTourNarration.ts:102 no arbiter claims the voice before playing; a grep for an arbiter across src finds none"},
+    {"technique": "tts-pipeline", "verdict": "deviation", "evidence": "src/features/onboarding/components/useTourNarration.ts:121 synthesis cache keyed by step id only, not by text+voice+settings"},
+    {"technique": "bounded-playback-wait", "verdict": "not-applicable", "evidence": "src/features/onboarding/components/useTourNarration.ts:106 narration follows the flow and nothing waits on it - the technique's 'nothing waits' exclusion"}
+   ]},
+  {"context": "3f38546e-e970-4837-97f7-f0504aa32daf", "subject": "voice-io", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:29f8b158c4d44054", "evaluatedRevision": 23,
+   "evidence": "src/features/companions/athena/useHoldToTalk.ts:117 still runs whichever option a bare spoken digit names, approve included, with no confirmation echoing the interpretation, and src/features/companions/athena/decision/actionRisk.ts:23 states risk never gates execution; re-checked at rev 23",
+   "techniques": [
+    {"technique": "spoken-intent-parsing", "verdict": "deviation", "evidence": "src/features/companions/athena/useHoldToTalk.ts:117 runDecisionOption(opt) on a parsed digit with no cost-of-being-wrong gate or interpretation echo"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "voice-io", "context": "c06088ef-stores-slices-system", "reason": "strong unknown but priorNotApplicable 16 and budget spent; left for a later run"},
+  {"subject": "voice-io", "context": "*", "reason": "36 probable unknown pairs carry priorNotApplicable 16; not read this run - budget 6 spent re-judging the six live deviations against rev 23"}
+ ],
+ "consults": [
+  {"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["stt-pipeline","bounded-playback-wait"],"deviations":1},
+  {"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["tts-pipeline","speech-ready-text","on-device-vs-cloud","bounded-playback-wait","speech-timing-timeline"],"deviations":3},
+  {"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["real-time-synthesis-budget","voice-setup-experience","stt-pipeline"],"deviations":3},
+  {"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["engine-abstraction","bounded-playback-wait"],"deviations":1},
+  {"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["voice-ux-integration","tts-pipeline","bounded-playback-wait"],"deviations":2},
+  {"ts":"2026-10-21T13:20:00Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["spoken-intent-parsing"],"deviations":1}
+ ]}

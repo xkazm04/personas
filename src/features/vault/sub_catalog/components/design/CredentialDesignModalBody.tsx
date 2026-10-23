@@ -91,6 +91,7 @@ export function CredentialDesignModalBody({
               onInputChange={importFlow.setRawInput}
               onParse={importFlow.parse}
               onBack={importFlow.goBack}
+              error={importFlow.error}
             />
           )}
           {importFlow.phase === 'preview' && importFlow.sourceId && importFlow.parseResult && (

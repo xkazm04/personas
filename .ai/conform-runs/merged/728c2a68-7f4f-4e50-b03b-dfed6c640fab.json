@@ -1,0 +1,4 @@
+{"schema":"conform-run/1","worker":"728c2a68-7f4f-4e50-b03b-dfed6c640fab","subject":"wizard-flows",
+"evaluatedAt":"2026-10-22T00:00:00Z","pairs":[],
+"declined":[{"subject":"wizard-flows","context":"89d44c76-ec4c-4388-843e-503cf6ca2507","reason":"progress-transform is a weak context and the pair is lexical-only (progress/wizard/flows); judging it would manufacture a verdict. Coverage question for the registry, not a conform target."}],
+"consults":[]}

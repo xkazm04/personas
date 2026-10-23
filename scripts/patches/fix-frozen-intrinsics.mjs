@@ -59,10 +59,14 @@ const PATTERN =
   /(?<![\w$.])([A-Za-z_$][\w$]*)\.(toString|constructor|valueOf|toLocaleString)=(?!=)([A-Za-z_$][\w$]*)([;,)}\]])/g;
 
 let patchedAny = false;
+const missing = [];
 for (const rel of TARGETS) {
   const file = resolve(root, rel);
   if (!existsSync(file)) {
-    console.warn(`[fix-frozen-intrinsics] missing (skipped): ${rel}`);
+    // A target that is gone is not "already fixed": the hunk may have moved to a
+    // path this list does not name, and the build would ship it unpatched.
+    console.error(`[fix-frozen-intrinsics] MISSING target: ${rel}`);
+    missing.push(rel);
     continue;
   }
   const src = readFileSync(file, 'utf8');
@@ -92,4 +96,12 @@ if (patchedAny) {
     rmSync(viteCache, { recursive: true, force: true });
     console.log('[fix-frozen-intrinsics] cleared node_modules/.vite (dep cache re-bundles on next dev/build)');
   }
+}
+
+if (missing.length > 0) {
+  console.error(
+    `[fix-frozen-intrinsics] ${missing.length} target(s) absent from the installed tree; ` +
+      'update TARGETS to the new dependency layout (or drop the entry if the fix landed upstream).',
+  );
+  process.exitCode = 1;
 }

@@ -1,0 +1,26 @@
+{"schema":"conform-run/1","worker":"12f11223-2154-446f-bf66-43abded36123","subject":"agent-runtime-assembly","evaluatedAt":"2026-10-21T12:34:21Z",
+"pairs":[
+{"context":"969f50a2-b70d-41e3-b573-284a75a67425","subject":"agent-runtime-assembly","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/engine/src/prompt/cli_args.rs:354 the resume builder deliberately drops the persona's --allowedTools, yet src-tauri/src/engine/runner/mod.rs:842 records tool_roster_source=cli_allowlist for a SessionResume run too, so a resumed persona runs on Claude Code's full default roster while its record says the allowlist was applied",
+ "techniques":[
+  {"technique":"assembly-identity","verdict":"deviation","evidence":"src-tauri/src/engine/runner/mod.rs:842 the roster source is derived from the requested persona roster (runner/mod.rs:805), not from what the resume spawn (runner/mod.rs:2214, build_resume_args with no persona) actually resolved - 'record what was resolved, never what was requested' fails on every continuation"},
+  {"technique":"session-scoped-capability","verdict":"not-applicable","evidence":"src-tauri/engine/src/prompt/cli_args.rs:178 the roster resolves from the persona definition, not from which client is connected; there is no client-surface capability here"},
+  {"technique":"semantic-hook-placement","verdict":"not-applicable","evidence":"src-tauri/engine/src/prompt/cli_args.rs:107 the child runs with --dangerously-skip-permissions and personas composes no hook chain of its own around the call; the hook chain belongs to the CLI"},
+  {"technique":"rewriting-under-a-foreign-gate","verdict":"not-applicable","evidence":"src-tauri/engine/src/prompt/cli_args.rs:107 no rewriting hook is contributed into the CLI and the host gate is switched off, so there are no host rules for a rewrite to escape"}],
+ "registryProposal":"Prior verdict (rev 27, not-applicable, 'assembles text only') was wrong: cli_args.rs assembles the spawn (roster, budget, turns, effort, env). The defect found - a continuation re-assembles the runtime from a narrower input than the fresh run and silently widens the tool roster - has no technique that names it directly; assembly-identity catches only the record half. Candidate rule: a resume/continuation is a re-assembly and must re-apply every capability restriction the fresh assembly applied, or refuse."},
+{"context":"c5228746-931d-4733-9cf7-84519a2c9605","subject":"agent-runtime-assembly","bundle":"software-engineering","state":"not-applicable",
+ "evidence":"src/hooks/design/core/useDesignAnalysis.ts:169 these React hooks start design-studio IPC jobs and render their streams; no hook chain, extension loader, or command rewriter around a model/tool call lives here (re-judged at rev 28: rewriting-under-a-foreign-gate's precondition is absent too)",
+ "techniques":[{"technique":"rewriting-under-a-foreign-gate","verdict":"not-applicable","evidence":"src/hooks/design/core/useDesignAnalysis.ts:169 the hook calls an IPC command; it rewrites no agent command under any host gate"}]},
+{"context":"94b0b4ea-9adb-44d7-8222-4e2345de455b","subject":"agent-runtime-assembly","bundle":"software-engineering","state":"not-applicable",
+ "evidence":"src/features/settings/sub_byom/libs/useByomSettings.ts:168 this context is the operator editor that saves the provider allow/block/routing policy via one IPC write; it does not assemble the code around a model call (re-anchored: the prior anchor :161 was a bare closing paren)",
+ "techniques":[{"technique":"rewriting-under-a-foreign-gate","verdict":"not-applicable","evidence":"src/features/settings/sub_byom/libs/useByomSettings.ts:168 a settings save, no command rewriting"}]},
+{"context":"a7ece012-8300-4780-b286-b9cea81801fc","subject":"agent-runtime-assembly","bundle":"software-engineering","state":"not-applicable",
+ "evidence":"src-tauri/core/src/models/policy_event.rs:8 these are serde shapes for records of work already done; the policy drop they describe is performed by engine dispatch, not here (re-judged at rev 28, no rewriter present)",
+ "techniques":[{"technique":"rewriting-under-a-foreign-gate","verdict":"not-applicable","evidence":"src-tauri/core/src/models/policy_event.rs:8 data models only; nothing executes or rewrites a command"}]}
+],
+"declined":[{"subject":"agent-runtime-assembly","context":"*","reason":"the other 44 pairs (unknown, all with priorNotApplicable=4, or weak/already judged at rev 28) left for later runs; budget spent on the four rev-27 stale verdicts"}],
+"consults":[
+ {"ts":"2026-10-21T12:34:21Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["assembly-identity","session-scoped-capability","semantic-hook-placement","rewriting-under-a-foreign-gate"],"deviations":1},
+ {"ts":"2026-10-21T12:34:21Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["rewriting-under-a-foreign-gate"],"deviations":0},
+ {"ts":"2026-10-21T12:34:21Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["rewriting-under-a-foreign-gate"],"deviations":0},
+ {"ts":"2026-10-21T12:34:21Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["rewriting-under-a-foreign-gate"],"deviations":0}]}

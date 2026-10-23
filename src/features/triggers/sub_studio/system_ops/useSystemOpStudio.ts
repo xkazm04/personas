@@ -40,10 +40,14 @@ export function useSystemOpStudio() {
     catch (err) { toastCatch('SystemOpStudio:remove')(err); }
   }, [refresh]);
 
+  // run_now records last_run_at / last_status on the row (mark_run), so the
+  // panel re-reads it: without this a clicked "Run now" changed nothing on screen.
   const runNow = useCallback(async (id: string): Promise<boolean> => {
-    try { await runSystemOpNow(id); return true; }
+    try { await runSystemOpNow(id); }
     catch (err) { toastCatch('SystemOpStudio:runNow')(err); return false; }
-  }, []);
+    await refresh();
+    return true;
+  }, [refresh]);
 
   return { kinds, automations, loading, refresh, toggle, remove, runNow };
 }

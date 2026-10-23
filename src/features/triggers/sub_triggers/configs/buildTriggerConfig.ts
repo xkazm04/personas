@@ -95,7 +95,11 @@ export function buildTriggerConfig(s: TriggerFormState, t: Translations): BuildR
     const paths = s.watchPaths.filter(p => p.trim());
     if (paths.length === 0) return { ok: false, error: v.watch_path_required };
     config.watch_paths = paths;
-    config.events = s.watchEvents;
+    const events = normalizeWatchEvents(s.watchEvents);
+    // An empty list is not stored: the engine reads `events: []` as "no
+    // filter", i.e. every kind, while the form shows nothing selected.
+    if (events.length === 0) return { ok: false, error: v.watch_events_required };
+    config.events = events;
     config.recursive = s.watchRecursive;
     if (s.globFilter.trim()) config.glob_filter = s.globFilter.trim();
   } else if (s.triggerType === 'clipboard') {
@@ -114,12 +118,38 @@ export function buildTriggerConfig(s: TriggerFormState, t: Translations): BuildR
     if (validConditions.length < 2) return { ok: false, error: v.composite_min_conditions };
     const secs = parseInt(s.windowSeconds);
     if (isNaN(secs) || secs < 5) return { ok: false, error: v.composite_window_minimum };
+    if (secs > COMPOSITE_WINDOW_MAX_SECONDS) return { ok: false, error: v.composite_window_maximum };
     config.conditions = validConditions;
     config.operator = s.compositeOperator;
     config.window_seconds = secs;
   }
 
   return { ok: true, config };
+}
+
+/** Ceiling the backend enforces on a composite window (24 h). Mirrors
+ *  `MAX_COMPOSITE_WINDOW_SECONDS` in core validation; a test reads the Rust
+ *  source so the two cannot drift. */
+export const COMPOSITE_WINDOW_MAX_SECONDS = 86_400;
+
+/**
+ * The file-watcher event kinds the engine can emit. `file_watcher.rs` maps the
+ * OS event to `create` / `modify` / `delete` and drops everything else, and
+ * the `notify` crate reports a rename as `Modify(Name(..))`, so a rename
+ * arrives as `modify`. A config listing only `rename` therefore matched no
+ * event at all and the trigger stayed silent forever.
+ */
+export const ENGINE_WATCH_EVENTS = ['create', 'modify', 'delete'] as const;
+
+/** Map every requested kind onto one the engine emits: `rename` (and `move`)
+ *  become `modify`, unknown kinds are dropped, duplicates collapse. */
+export function normalizeWatchEvents(events: string[]): string[] {
+  const out: string[] = [];
+  for (const raw of events) {
+    const e = raw === 'rename' || raw === 'move' ? 'modify' : raw;
+    if ((ENGINE_WATCH_EVENTS as readonly string[]).includes(e) && !out.includes(e)) out.push(e);
+  }
+  return out;
 }
 
 /** Generate a 32-byte hex secret for webhook HMAC signing. */

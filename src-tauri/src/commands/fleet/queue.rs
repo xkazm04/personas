@@ -115,6 +115,16 @@ pub enum DispatchOrigin {
     /// unknown origin, it shows up as the operator's own dispatch on the one
     /// board that exists to tell producers apart.
     Curator,
+    /// A `/lens-scan` run (bp's product blueprint, or Personas' own drawing
+    /// set) handed to the fleet through the `personas-run` shim on the
+    /// `/fleet/enqueue` door instead of spawning its own `claude -p`. Pinned to
+    /// this device: the repo's `.ai/lens-scan/scan.db` is gitignored and
+    /// cannot travel with a mesh move.
+    LensScan,
+    /// A headless App Master builder (`/appmaster` worker) handed to the fleet
+    /// through the same shim, so its builders count against the ONE cap
+    /// instead of running beside it.
+    AppMaster,
 }
 
 impl DispatchOrigin {
@@ -123,7 +133,7 @@ impl DispatchOrigin {
     /// Exists so the round-trip test cannot be a hand-kept subset of the enum
     /// — which is what it was until 2026-09-24, when `Remote` had never been
     /// in it.
-    pub const ALL: [DispatchOrigin; 11] = [
+    pub const ALL: [DispatchOrigin; 13] = [
         DispatchOrigin::Manual,
         DispatchOrigin::DevRunner,
         DispatchOrigin::DispatchIdeas,
@@ -135,6 +145,8 @@ impl DispatchOrigin {
         DispatchOrigin::Remote,
         DispatchOrigin::Curator,
         DispatchOrigin::Contest,
+        DispatchOrigin::LensScan,
+        DispatchOrigin::AppMaster,
     ];
 
     /// The wire / row token — the same string `serde` writes.
@@ -151,6 +163,8 @@ impl DispatchOrigin {
             DispatchOrigin::Contest => "contest",
             DispatchOrigin::Remote => "remote",
             DispatchOrigin::Curator => "curator",
+            DispatchOrigin::LensScan => "lens_scan",
+            DispatchOrigin::AppMaster => "app_master",
         }
     }
 
@@ -1286,12 +1300,17 @@ pub fn summarize_admissions(admissions: &[Admission]) -> String {
 }
 
 /// The claude id a queued dispatch will bind: the resumed conversation's id
-/// for a `--resume` spawn, a fresh UUID otherwise.
+/// for a `--resume` spawn, the caller's pinned `--session-id <uuid>` (a
+/// fleet-door run, `super::door`), a fresh UUID otherwise.
 fn claude_id_for(args: &[String]) -> String {
-    args.iter()
-        .position(|a| a == "--resume")
-        .and_then(|i| args.get(i + 1))
-        .cloned()
+    let value_of = |flag: &str| {
+        args.iter()
+            .position(|a| a == flag)
+            .and_then(|i| args.get(i + 1))
+            .cloned()
+    };
+    value_of("--resume")
+        .or_else(|| value_of("--session-id").filter(|v| uuid::Uuid::parse_str(v).is_ok()))
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string())
 }
 
@@ -2824,7 +2843,19 @@ mod tests {
             assert_eq!(wire, serde_json::Value::String(o.token().to_string()));
             assert_eq!(DispatchOrigin::parse(Some(o.token())), o);
         }
-        assert_eq!(DispatchOrigin::ALL.len(), 11);
+        assert_eq!(DispatchOrigin::ALL.len(), 13);
+        // The two fleet-door origins (spark one-control) round-trip by their
+        // own tokens, never as the operator's.
+        assert_eq!(
+            DispatchOrigin::parse(Some("lens_scan")),
+            DispatchOrigin::LensScan
+        );
+        assert_eq!(
+            DispatchOrigin::parse(Some("app_master")),
+            DispatchOrigin::AppMaster
+        );
+        assert_eq!(DispatchOrigin::LensScan.token(), "lens_scan");
+        assert_eq!(DispatchOrigin::AppMaster.token(), "app_master");
         // The trap this enum sets: an unrecognised token is NOT an unknown
         // state, it is the operator's own dispatch. A variant that reaches
         // only one of the three mirrors is invisible except as a wrong answer.

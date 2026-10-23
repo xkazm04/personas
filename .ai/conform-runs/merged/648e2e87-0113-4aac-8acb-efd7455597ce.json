@@ -1,0 +1,91 @@
+{
+  "schema": "conform-run/1",
+  "worker": "648e2e87-0113-4aac-8acb-efd7455597ce",
+  "subject": "usage-analytics",
+  "evaluatedAt": "2026-10-16T17:37:14Z",
+  "evaluatedAgainst": "sha256-b2:83367bcb68dbb99a",
+  "evaluatedRevision": 4,
+  "pairs": [
+    {
+      "context": "0a73aef0-7c50-4be1-b990-cbddad3671bd",
+      "subject": "usage-analytics",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:83367bcb68dbb99a",
+      "evaluatedRevision": 4,
+      "evidence": "src/lib/analytics/sink.ts:93 the active sink starts as sentrySink and nothing swaps in noopSink when telemetry is off at boot (src/main.tsx:337 only skips Sentry init), so isSinkDelivering() is true, Sentry silently discards, and src/lib/analytics/activation.ts:141 burns the funnel latch undelivered; navigation also still ships per event (src/lib/analytics/index.ts:38, :43)",
+      "techniques": [
+        {
+          "technique": "sink-abstraction",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/sink.ts:93 composition starts on the live sink and only AccountSettings ever installs noopSink, so a telemetry-off boot is silence by accident (uninitialised Sentry), not the chosen null sink; contract also accepts raw per-event ingestion at src/lib/analytics/sink.ts:71"
+        },
+        {
+          "technique": "activation-and-funnel-honesty",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/activation.ts:138 the delivery latch keys on isSinkDelivering(), which reads sink identity; with telemetry off at boot it returns true, the conversion is dropped by an uninitialised Sentry, and :141 records it reported - a permanently missing funnel row, the exact failure the comment at :132 claims to prevent"
+        },
+        {
+          "technique": "batching-and-quota",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/index.ts:38 every section visit (and :43 every tab switch) is sent as its own Sentry captureMessage beside the session summary; SessionSummary (src/lib/analytics/sink.ts:57) carries no window or vocabulary version and there is no checkpoint/recovered-session path"
+        },
+        {
+          "technique": "coverage-from-registries",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/navCatalog.ts:113 sections are a projection of the nav registry (:60, realized) but the tab-dimension axis is a hand list with no inventory gate, and it already omits kpisTab (src/stores/slices/system/uiSlice.ts:93), twinTab and obsidianBrainTab, which vanish from the ignored report"
+        },
+        {
+          "technique": "event-taxonomy",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/index.ts:188 trackInteraction admits any category/action/label string with no registry or validation; callers already mix grammars (step_complete, create, filter_run, tab_open)"
+        },
+        {
+          "technique": "privacy-scrubbing",
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/index.ts:188 the free-form label field is admissible by type, and the only scrubber is the Sentry beforeSend denylist the sink names at src/lib/analytics/sink.ts:16 - scrubbing downstream by pattern, not allowlist at the source"
+        }
+      ],
+      "registryProposal": "Upward lesson for activation-and-funnel-honesty / sink-abstraction: a delivery latch that asks the composition `is the null sink installed?` is only honest if the null sink is ALSO what boot installs when consent is absent; here consent-off is enforced one layer down (destination never initialised) so the identity check reports delivering. The technique should state that the latch query and the opt-out mechanism must be the same switch. The react--activation-and-funnel-honesty application praises activation.ts and should be corrected with this case."
+    },
+    {
+      "context": "10c96ae7-a356-4555-996b-df92fc5dc8e7",
+      "subject": "usage-analytics",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:83367bcb68dbb99a",
+      "evaluatedRevision": 4,
+      "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/useSkillsAnalytics.ts:1 is an operator-side run log read back from Fleet sessions and dev_scans rows - no emit door, vocabulary, sink or egress of end-user surface visits, which is the precondition the subject governs",
+      "techniques": [],
+      "registryProposal": "Coverage: lexical-only match on analytics/usage/coverage; this context is run-history/performance analytics for dispatched agent skills, closer to delivery-analytics or adoption-measurement than to product usage telemetry."
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-16T17:37:14Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "usage-analytics"
+      ],
+      "techniques": [
+        "sink-abstraction",
+        "activation-and-funnel-honesty",
+        "batching-and-quota",
+        "coverage-from-registries",
+        "event-taxonomy",
+        "privacy-scrubbing"
+      ],
+      "deviations": 6
+    },
+    {
+      "ts": "2026-10-16T17:37:14Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "usage-analytics"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

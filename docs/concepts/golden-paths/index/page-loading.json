@@ -14,10 +14,10 @@
     "E. Hand-rolled loading rows on a UnifiedTable surface",
     "F. Documentation drift that actively causes deviations"
   ],
-  "ruleIds": [],
-  "ruleIdsFrom": "none",
+  "ruleIds": ["loading-gate-hides-chrome","null-fallback-at-view-boundary"],
+  "ruleIdsFrom": "document",
   "sections": [1,2,3,4,5,6,7,8],
-  "citationCount": 104,
+  "citationCount": 105,
   "triggers": [
     "\"I'm adding a new tab/page/panel that fetches data on mount — what do I show while it loads?\"",
     "\"This list flashes an empty state for a split second before rows appear.\"",
@@ -52,6 +52,15 @@
       "contexts": ["| ~~`agents/sub_glyph/GlyphCinemaLayout.tsx:414-425`~~ (deleted 2026-09-23 with the legacy build layouts) | Infinite framer-motion shimmer sweep. |"],
       "resolved": false
     },
+    "agents/sub_glyph/personaCore/PersonaCoreModal.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["34"],
+      "contexts": [
+        "`plugins/dev-tools/sub_runner/RunDeskPage.tsx:215` · `settings/sub_portability/components/ExportSelectionModal.tsx:240` · `plugins/dev-tools/sub_projects/CrossProjectMetadataModal.tsx:344` · `overvie…"
+      ],
+      "resolved": false
+    },
     "agents/sub_model_config/components/EffectiveConfigPanel.tsx": {
       "count": 1,
       "sections": [7],
@@ -69,6 +78,15 @@
       "resolved": false
     },
     "overview/sub_health/components/PersonaHealthDashboard.tsx": {"count":1,"sections":[7],"lines":["149"],"contexts":["| `overview/sub_health/components/PersonaHealthDashboard.tsx:149` | Centred `py-16` text block. |"],"resolved":false},
+    "overview/sub_usage/components/LazyChart.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["47"],
+      "contexts": [
+        "| `agents/sub_editor/components/QuickStatsBar.tsx:26` · `agents/sub_editor/components/PersonaChangeHistory.tsx:73` · `agents/components/allPersonas/PersonaConfigPanel.tsx:508` · `overview/sub_usage/c…"
+      ],
+      "resolved": false
+    },
     "plugins/companion/BrainViewer.tsx": {"count":2,"sections":[6,7],"lines":["400-425","632"],"contexts":["- `plugins/companion/BrainViewer.tsx:400-425` — clean local ghost; cascade at `:356-361`."],"resolved":false},
     "plugins/companion/sub_voice/voiceEngineShared.tsx": {
       "count": 1,
@@ -90,6 +108,7 @@
     },
     "recipes/sub_list/components/RecipeList.tsx": {"count":1,"sections":[7],"lines":["59-65"],"contexts":["| `recipes/sub_list/components/RecipeList.tsx:59-65` | Bespoke `RecipePageFlipLoader` centred in place of the list. |"],"resolved":false},
     "scripts/docs/gen-shared-catalog.mjs": {"count":1,"sections":[8],"lines":["92-96"],"contexts":["`scripts/docs/gen-shared-catalog.mjs:92-96` — `describe()` returns"]},
+    "scripts/perf/cold-load-probe.mjs": {"count":1,"sections":[],"contexts":["measured by `scripts/perf/cold-load-probe.mjs` against the running app; the scan lens that owns both is"]},
     "shared/chrome/DesktopFooter.tsx": {
       "count": 1,
       "sections": [7],
@@ -139,7 +158,7 @@
       "sections": [7],
       "lines": ["102"],
       "contexts": [
-        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` · `settings/components/Setting…"
+        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` (`settings/components/Settings…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_design/DesignHub.tsx"
@@ -149,7 +168,7 @@
       "sections": [7],
       "lines": ["182"],
       "contexts": [
-        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` · `settings/components/Setting…"
+        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` (`settings/components/Settings…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_editor/components/EditorBody.tsx"
@@ -220,16 +239,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_executions/replay/ReplaySandbox.tsx"
     },
-    "src/features/agents/sub_glyph/personaCore/PersonaCoreModal.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["34"],
-      "contexts": [
-        "`plugins/dev-tools/sub_runner/RunDeskPage.tsx:215` · `settings/sub_portability/components/ExportSelectionModal.tsx:240` · `plugins/dev-tools/sub_projects/CrossProjectMetadataModal.tsx:344` · `overvie…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "agents/sub_glyph/personaCore/PersonaCoreModal.tsx"
-    },
     "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx": {
       "count": 1,
       "sections": [7],
@@ -280,7 +289,7 @@
       "sections": [7],
       "lines": ["65"],
       "contexts": [
-        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` · `settings/components/Setting…"
+        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` (`settings/components/Settings…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "home/sub_welcome/WelcomeLayout.tsx"
@@ -383,16 +392,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "overview/sub_observability/components/HealingTimeline.tsx"
     },
-    "src/features/overview/sub_usage/components/LazyChart.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["47"],
-      "contexts": [
-        "| `agents/sub_editor/components/QuickStatsBar.tsx:26` · `agents/sub_editor/components/PersonaChangeHistory.tsx:73` · `agents/components/allPersonas/PersonaConfigPanel.tsx:508` · `overview/sub_usage/c…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_usage/components/LazyChart.tsx"
-    },
     "src/features/personas/sub_foundry/CreatePersonaEntry.tsx": {
       "count": 1,
       "sections": [7],
@@ -480,7 +479,7 @@
       "sections": [7],
       "lines": ["88"],
       "contexts": [
-        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` · `settings/components/Setting…"
+        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` (`settings/components/Settings…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "plugins/fleet/FleetPage.tsx"
@@ -552,9 +551,8 @@
     "src/features/settings/components/SettingsPage.tsx": {
       "count": 1,
       "sections": [7],
-      "lines": ["84"],
       "contexts": [
-        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` · `settings/components/Setting…"
+        "| `home/sub_welcome/WelcomeLayout.tsx:65` · `agents/sub_editor/components/EditorBody.tsx:182` · `agents/sub_design/DesignHub.tsx:102` · `plugins/fleet/FleetPage.tsx:88` (`settings/components/Settings…"
       ],
       "resolvedFrom": "suffix",
       "verbatim": "settings/components/SettingsPage.tsx"

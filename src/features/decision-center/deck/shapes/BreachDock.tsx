@@ -5,6 +5,7 @@
  * gates are green", or the item's own yes) with a hint saying whether it
  * touches the envelope or only this item. An amend on merge or spend arms
  * first and says what leaves; deny swaps the dock for the clause's reasons.
+ * Suspend (`3`) is printed only when there is a mandate to suspend.
  */
 import { Check, PauseCircle, X } from 'lucide-react';
 import { mergeLabel, scopeLabel } from '@/features/fleet/monitor/grid/prototype/entry-e/mandate/mandateCopy';
@@ -44,6 +45,7 @@ export function BreachDock({ item, deck, act, breach }: { item: DecisionItem; de
   const env = plan.amend.kind !== 'item';
   const leaves = env ? plan.arms : item.irreversible;
   const arms = env ? !!plan.arms : !!item.irreversible;
+  const uncovered = breach.state.kind === 'none' || breach.state.kind === 'no-project';
   return (
     <>
       {armed && leaves && <ArmedBox kind={leaves} title={env ? amendLabel : item.title} />}
@@ -58,12 +60,11 @@ export function BreachDock({ item, deck, act, breach }: { item: DecisionItem; de
           disabled={breach.capInvalid}
           onClick={() => breach.amend(act.defaultAccept)}
         />
-        <span className="-mt-1 px-1 typo-caption">{env ? m.ml_breach_amend_env_hint : m.ml_breach_amend_item_hint}</span>
+        <span className="-mt-1 px-1 typo-caption">{env ? m.ml_breach_amend_env_hint : uncovered ? m.ml_breach_amend_item_hint_none : m.ml_breach_amend_item_hint}</span>
         <Verdict k="2" label={m.ml_breach_deny} yes={false} tone="danger" icon={<X className="h-4 w-4" strokeWidth={2.5} aria-hidden />} onClick={breach.deny} />
       </div>
-      {plan.canSuspend
-        ? <Branch k="3" label={m.ml_suspend} hint={m.ml_breach_suspend_hint} icon={<PauseCircle className="h-4 w-4" aria-hidden />} onClick={breach.suspend} />
-        : <span className="px-1 typo-caption">{m.ml_breach_no_mandate}</span>}
+      {/* No mandate to suspend: the body's Mandate section says why, and key 3 is simply absent. */}
+      {plan.canSuspend && <Branch k="3" label={m.ml_suspend} hint={m.ml_breach_suspend_hint} icon={<PauseCircle className="h-4 w-4" aria-hidden />} onClick={breach.suspend} />}
       {item.branches.map((b, i) => (
         <Branch key={b.id} k={String(i + 1 + act.offset)} label={b.label} hint={b.hint} accent={b.tone === 'accent'} onClick={() => act.branch(i + 1 + act.offset)} />
       ))}

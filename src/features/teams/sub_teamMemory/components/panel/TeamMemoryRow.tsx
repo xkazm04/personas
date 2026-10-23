@@ -47,7 +47,8 @@ interface TeamMemoryRowProps {
   memory: TeamMemory;
   onDelete: (id: string) => void;
   onImportanceChange: (id: string, importance: number) => void;
-  onEdit?: (id: string, title: string, content: string, category: string, importance: number) => void;
+  /** Resolves `false` when the write failed; the editor then stays open with the draft. */
+  onEdit?: (id: string, title: string, content: string, category: string, importance: number) => Promise<boolean> | void;
 }
 
 export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, onEdit }: TeamMemoryRowProps) {
@@ -76,7 +77,9 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
         initialContent={memory.content}
         initialCategory={memory.category}
         initialImportance={memory.importance}
-        onSave={(id, t, c, cat, imp) => { onEdit(id, t, c, cat, imp); setEditing(false); }}
+        // Closing before the write answered discarded the draft on a failed
+        // save: the row reverted to the old text and the edit was gone.
+        onSave={async (id, t, c, cat, imp) => { if ((await onEdit(id, t, c, cat, imp)) !== false) setEditing(false); }}
         onCancel={() => setEditing(false)}
       />
     );

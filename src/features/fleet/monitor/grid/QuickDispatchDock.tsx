@@ -97,7 +97,7 @@
 //
 // ## The act ticker (mandate-lanes WP7, 2026-10-15)
 //
-// Under the `lanes` decision surface the resting row also carries ONE line of
+// The resting row also carries ONE line of
 // what the stewards just decided (`DockActTicker`), between the placeholder and
 // the tally (`DockRestingRow`). It lives inside the row's reserved height, so it appearing or
 // changing never moves the board; it is absent until the first act arrives.
@@ -106,12 +106,23 @@
 // The dock is the console and the dispatch mechanism, nothing else. Its content
 // is capped at 800px and centred, so on a wide window the composer stays a
 // readable column instead of a full-width strip.
+//
+
+// ## The plate (polish P2, 2026-10-16)
+//
+// The owner, on the live Monitor: "bottom dispatch dock now does not fit the
+// monitor, please migrate into new design too". Both states now sit on ONE
+// plate of the panel's language (`.ae-dock` + `.ae-plate`, entryE.css), inset
+// by the panel's own gutter, with the command bar's chips for every control
+// and reading (`dock/dockChrome.ts`). The resting row is the plate at 44px;
+// the console is the same plate, grown upward.
 
 import { DockRestingRow } from './DockRestingRow';
 import { DockConsoleShell } from './dock/DockConsoleShell';
 import { DockPanels } from './dock/DockPanels';
 import { DOCK_COLUMN } from './dock/DockParts';
 import { useDockConsole } from './dock/useDockConsole';
+import './prototype/entry-e/entryE.css';
 
 export function QuickDispatchDock() {
   const d = useDockConsole();
@@ -121,7 +132,7 @@ export function QuickDispatchDock() {
 
   return (
     <div
-      className="relative flex-shrink-0 border-t border-border bg-foreground/[0.015]"
+      className="ae-dock relative flex-shrink-0 px-2.5 pb-2 pt-1"
       data-testid="quick-dispatch-dock"
       onKeyDown={(e) => {
         // Escape collapses the dock rather than closing anything global — the
@@ -135,19 +146,19 @@ export function QuickDispatchDock() {
         }
       }}
     >
-      {/* The rail — a light travelling the dock's own top hairline, quicker
-          once the console is armed. Absolutely placed on the border itself, so
-          it occupies no height. */}
-      <span
-        className={`dock-rail pointer-events-none absolute inset-x-0 -top-px z-[4] h-px overflow-hidden ${
-          d.armed ? 'dock-rail-armed' : ''
-        }`}
-        aria-hidden
-      />
-
-      <div ref={c.cardRef} className={`${DOCK_COLUMN} dock-instrument-grid relative pb-2`}>
-        <DockPanels console={d} />
-        <DockConsoleShell console={d} />
+      <div className="ae-plate relative rounded-card">
+        {/* The rail: a light travelling the plate's top edge, quicker once the
+            console is armed. Absolutely placed on the edge, so it occupies no height. */}
+        <span
+          className={`dock-rail pointer-events-none absolute inset-x-3 -top-px z-[4] h-px overflow-hidden ${
+            d.armed ? 'dock-rail-armed' : ''
+          }`}
+          aria-hidden
+        />
+        <div ref={c.cardRef} className={`${DOCK_COLUMN} dock-instrument-grid relative pb-1`}>
+          <DockPanels console={d} />
+          <DockConsoleShell console={d} />
+        </div>
       </div>
     </div>
   );

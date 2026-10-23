@@ -452,5 +452,20 @@
   "use_template": "Usar Plantilla",
   "version_history": "Historial de versiones",
   "view_persona": "Ver persona",
-  "warning": "Advertencia"
+  "warning": "Advertencia",
+  "auto_team_create_failed": "No se pudo crear el equipo",
+  "auto_team_example_1": "Revisar este PR y ejecutar pruebas",
+  "auto_team_example_2": "Escribir una entrada de blog con investigación",
+  "auto_team_example_3": "Analizar comentarios de clientes",
+  "auto_team_example_4": "Crear un flujo de publicación de contenido",
+  "auto_team_no_match": "Ningún agente coincide con tu descripción. Intenta ser más específico.",
+  "team_color_blue": "Azul",
+  "team_color_cyan": "Cian",
+  "team_color_green": "Verde",
+  "team_color_indigo": "Índigo",
+  "team_color_orange": "Naranja",
+  "team_color_pink": "Rosa",
+  "team_color_rose": "Rosado",
+  "team_color_violet": "Violeta",
+  "team_color_yellow": "Amarillo"
 }

@@ -1,0 +1,60 @@
+{
+  "schema": "conform-run/1",
+  "worker": "e94ce47a-18df-4fc2-a07c-4b0330cbb4b9",
+  "subject": "sql-console",
+  "evaluatedAt": "2026-10-16T18:17:30Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "sql-console",
+      "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae",
+      "reason": "existing deviation verdict is current: all 10 sql-console pairs already judged against digest sha256-b2:60a26f15745fd8c1 (= registry index at 11037a6c, revision 1, not stale); the 3 deviations were re-confirmed 2026-10-16 and their anchors were spot-checked again this run and still hold, so re-judging would add no information"
+    },
+    {
+      "subject": "sql-console",
+      "context": "e1bc4bef-5cf0-4bc0-9b12-a26e88065857",
+      "reason": "existing deviation verdict is current: all 10 sql-console pairs already judged against digest sha256-b2:60a26f15745fd8c1 (= registry index at 11037a6c, revision 1, not stale); the 3 deviations were re-confirmed 2026-10-16 and their anchors were spot-checked again this run and still hold, so re-judging would add no information"
+    },
+    {
+      "subject": "sql-console",
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "reason": "existing deviation verdict is current: all 10 sql-console pairs already judged against digest sha256-b2:60a26f15745fd8c1 (= registry index at 11037a6c, revision 1, not stale); the 3 deviations were re-confirmed 2026-10-16 and their anchors were spot-checked again this run and still hold, so re-judging would add no information"
+    },
+    {
+      "subject": "sql-console",
+      "context": "1ff7809a-171b-4baa-9c9b-12d888b017f0",
+      "reason": "existing not-applicable verdict is current: all 10 sql-console pairs already judged against digest sha256-b2:60a26f15745fd8c1 (= registry index at 11037a6c, revision 1, not stale); the 3 deviations were re-confirmed 2026-10-16 and their anchors were spot-checked again this run and still hold, so re-judging would add no information"
+    },
+    {
+      "subject": "sql-console",
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "reason": "existing not-applicable verdict is current: all 10 sql-console pairs already judged against digest sha256-b2:60a26f15745fd8c1 (= registry index at 11037a6c, revision 1, not stale); the 3 deviations were re-confirmed 2026-10-16 and their anchors were spot-checked again this run and still hold, so re-judging would add no information"
+    },
+    {
+      "subject": "sql-console",
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "reason": "existing not-applicable verdict is current: all 10 sql-console pairs already judged against digest sha256-b2:60a26f15745fd8c1 (= registry index at 11037a6c, revision 1, not stale); the 3 deviations were re-confirmed 2026-10-16 and their anchors were spot-checked again this run and still hold, so re-judging would add no information"
+    },
+    {
+      "subject": "sql-console",
+      "context": "d3346f2c-d747-4d85-b6e6-c1450da57ec9",
+      "reason": "existing not-applicable verdict is current: all 10 sql-console pairs already judged against digest sha256-b2:60a26f15745fd8c1 (= registry index at 11037a6c, revision 1, not stale); the 3 deviations were re-confirmed 2026-10-16 and their anchors were spot-checked again this run and still hold, so re-judging would add no information"
+    },
+    {
+      "subject": "sql-console",
+      "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+      "reason": "existing not-applicable verdict is current: all 10 sql-console pairs already judged against digest sha256-b2:60a26f15745fd8c1 (= registry index at 11037a6c, revision 1, not stale); the 3 deviations were re-confirmed 2026-10-16 and their anchors were spot-checked again this run and still hold, so re-judging would add no information"
+    },
+    {
+      "subject": "sql-console",
+      "context": "c4a2fa9d-1b41-4141-894b-c90663aa0433",
+      "reason": "existing not-applicable verdict is current: all 10 sql-console pairs already judged against digest sha256-b2:60a26f15745fd8c1 (= registry index at 11037a6c, revision 1, not stale); the 3 deviations were re-confirmed 2026-10-16 and their anchors were spot-checked again this run and still hold, so re-judging would add no information"
+    },
+    {
+      "subject": "sql-console",
+      "context": "b62fa237-32b4-41c3-bf56-3e498b643da9",
+      "reason": "existing not-applicable verdict is current: all 10 sql-console pairs already judged against digest sha256-b2:60a26f15745fd8c1 (= registry index at 11037a6c, revision 1, not stale); the 3 deviations were re-confirmed 2026-10-16 and their anchors were spot-checked again this run and still hold, so re-judging would add no information"
+    }
+  ],
+  "consults": []
+}

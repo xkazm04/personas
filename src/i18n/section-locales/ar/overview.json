@@ -63,7 +63,11 @@
     "unknown": "غير معروف",
     "value_delivered_count": "القيمة المسلمة",
     "value_delivered_rate": "معدل تسليم القيمة",
-    "value_section_title": "القيمة التجارية"
+    "value_section_title": "القيمة التجارية",
+    "prev_p50": "p50 السابق",
+    "prev_p95": "p95 السابق",
+    "range_last_days_one": "آخر يوم",
+    "range_last_days_other": "آخر {count} يومًا"
   },
   "analytics_dashboard": {
     "active_count": "{count} نشط",
@@ -640,7 +644,13 @@
     "ask_athena_prompt": "أراجع اقتراح تحسين أسطول لوكلائي: «{title}». {description} الإجراء المقترح: {action}. {focus}",
     "open_lab": "فتح المختبر",
     "open_lab_hint": "اختبر نماذج بديلة لـ {persona} في المختبر",
-    "title": "تحسين الأسطول"
+    "title": "تحسين الأسطول",
+    "label_action": "الإجراء",
+    "label_agent": "الوكيل",
+    "label_impact": "التأثير",
+    "severity_critical": "عاجل",
+    "severity_info": "رؤية",
+    "severity_warning": "مقترح"
   },
   "focused_decision": {
     "accept": "قبول",
@@ -898,7 +908,6 @@
     "bulk_acknowledge_count": "إقرار {count}",
     "bulk_clear_selection": "مسح",
     "bulk_resolve_count": "حل {count}",
-    "col_days": "الأيام",
     "col_incident": "الحادثة",
     "detail_label_acknowledged": "تم الإقرار",
     "detail_label_created": "تاريخ الإنشاء",
@@ -926,10 +935,8 @@
     "filter_source_all": "كل المصادر",
     "filter_source_label": "المصدر",
     "filter_status_acknowledged": "تم الإقرار",
-    "filter_status_all": "الكل",
     "filter_status_dismissed": "مرفوضة",
     "filter_status_in_progress": "قيد التنفيذ",
-    "filter_status_label": "الحالة",
     "filter_status_open": "مفتوحة",
     "filter_status_resolved": "محلولة",
     "filters_active_aria": "{count} عوامل تصفية نشطة",
@@ -939,7 +946,6 @@
     "group_by_none": "بلا تجميع",
     "group_by_severity": "الخطورة",
     "group_by_source": "المصدر",
-    "group_no_persona": "بدون وكيل",
     "groups_collapse_all": "طي الكل",
     "groups_expand_all": "توسيع الكل",
     "guidance_alert": "تم تفعيل قاعدة تنبيه. راجع المقياس الذي تجاوز حده.",
@@ -996,7 +1002,6 @@
     "noc_diagnosis_title": "السبب الجذري",
     "noc_evidence_label": "الأدلة",
     "noc_handled_by": "عالجته أثينا",
-    "noc_handled_continued": "استُؤنف تلقائيًا",
     "noc_handled_empty": "لا يوجد شيء تمت معالجته ذاتيًا بعد — عندما أستطيع إصلاح حادث بأمان بنفسي، سيظهر هنا.",
     "noc_handled_title": "تمت المعالجة ذاتيًا",
     "noc_no_diagnosis": "لا يوجد تشخيص بعد — يمكنني التحقيق في هذا الحادث نيابةً عنك.",
@@ -1025,7 +1030,6 @@
     "source_policy": "سياسة",
     "source_provider": "المزوّد",
     "source_tool": "أداة",
-    "stale_label": "متأخر",
     "subtitle": "صندوق وارد متعدد المصادر للتنبيهات والأخطاء",
     "title": "الحوادث",
     "urgency_critical": "يحتاج اهتمامًا الآن",
@@ -1097,7 +1101,8 @@
     "stat_total_runs": "إجمالي التشغيلات",
     "subtitle": "تصنيفات الأداء عبر جميع الوكلاء",
     "this_agent": "هذا الوكيل",
-    "title": "لوحة صدارة الوكلاء"
+    "title": "لوحة صدارة الوكلاء",
+    "sort_hint": "انقر على مقياس للفرز"
   },
   "llm_spend": {
     "by_source": "التكلفة حسب المستوى",
@@ -1156,7 +1161,6 @@
     "curation_schedule_save": "حفظ الجدولة",
     "curation_schedule_title": "جدولة تنقيح الذكريات",
     "delete_all": "حذف الكل",
-    "delete_all_confirm_body": "سيحذف هذا الإجراء {count} ذكريات بشكل دائم. لا يمكن التراجع عن هذا.",
     "delete_all_confirm_cta": "حذف الكل",
     "delete_all_confirm_title": "حذف جميع الذكريات؟",
     "form": {
@@ -1182,13 +1186,21 @@
     "reflect_pick_persona": "تأمّل ذكريات وكيل",
     "reflecting": "جارٍ التأمّل…",
     "search_placeholder": "البحث في الذكريات…",
-    "title": "الذكريات"
+    "title": "الذكريات",
+    "delete_all_confirm_body_all_agents": "سيؤدي هذا إلى حذف جميع الذكريات البالغ عددها {count} نهائيًا عبر جميع الوكلاء، بغض النظر عن عامل التصفية الحالي. لا يمكن التراجع عن هذا الإجراء."
   },
   "memory_actions": {
     "dismiss_suggestion": "رفض الاقتراح",
     "memory_insights": "رؤى الذاكرة",
     "suggestions": "{count} اقتراحات",
-    "suggestions_one": "{count} اقتراح"
+    "suggestions_one": "{count} اقتراح",
+    "kind_throttle": "قاعدة تحديد المعدل",
+    "kind_schedule": "تعديل الجدول",
+    "kind_alert": "قاعدة تنبيه",
+    "kind_config": "تغيير الإعدادات",
+    "kind_routing": "قاعدة التوجيه",
+    "rules_restored_from_session": "تعذّرت قراءة قواعد إجراءات الذاكرة المحفوظة وتمت استعادتها من هذه الجلسة.",
+    "rules_unreadable": "تعذّرت قراءة قواعد إجراءات الذاكرة المحفوظة وقد تحتاج إلى إعادة إنشائها."
   },
   "memory_card": {
     "cancel": "إلغاء",
@@ -1218,7 +1230,14 @@
     "resolved_toast": "تمت معالجة التعارض",
     "retire_blocked_core_toast": "لا يمكن أرشفة ذكرى أساسية مثبّتة — عالِج هذا التعارض يدويًا",
     "scanned_scope": "ضمن أحدث {count} ذكرى",
-    "vs": "مقابل"
+    "vs": "مقابل",
+    "kind_duplicate": "مكرّر",
+    "kind_contradiction": "تناقض",
+    "kind_superseded": "تم استبداله",
+    "reason_contradiction": "تعليمات قد تكون متناقضة حول الموضوع نفسه (تداخل الموضوع {pct}%)",
+    "reason_duplicate_cross_agent": "ذكريات شبه مكررة بين وكلاء مختلفين (تشابه {pct}%)",
+    "reason_duplicate_same_agent": "ذكريات شبه مكررة داخل الوكيل نفسه (تشابه {pct}%)",
+    "reason_superseded": "قد تحل الذاكرة الأحدث محل ذاكرة أقدم حول الموضوع نفسه (تداخل {pct}%)"
   },
   "memory_detail": {
     "category_label": "الفئة",
@@ -1366,7 +1385,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": "، ثم انسخ مفتاح API من الإعدادات. يُخزَّن هذا المفتاح محلياً ويُشارَك بين جميع الوكلاء.",
-    "sign_up_free_at": "اشترك مجاناً على"
+    "sign_up_free_at": "اشترك مجاناً على",
+    "api_key_label": "مفتاح API",
+    "litellm_base_url_label": "عنوان URL الأساسي للوكيل",
+    "litellm_master_key_label": "المفتاح الرئيسي",
+    "ollama_key_placeholder": "الصق مفتاحك من ollama.com/settings"
   },
   "predictive_alerts_extra": {
     "all_nominal": "جميع الأنظمة طبيعية",
@@ -1887,7 +1910,9 @@
     "p95_latency": "التأخر P95",
     "runs": "التشغيلات",
     "streak": "السلسلة",
-    "successful": "ناجح"
+    "successful": "ناجح",
+    "daily_trend_hint_one": "{date}: {rate} ({count} تشغيل)",
+    "daily_trend_hint_other": "{date}: {rate} ({count} عمليات تشغيل)"
   },
   "sla": {
     "active_agents": "{count} وكيل نشط",
@@ -2106,5 +2131,15 @@
   "dc_pending_lead": "تُفتح كل مراجعة معلّقة في مركز القرارات، بقضيتها الكاملة ومفاتيح كل قرار آخر نفسها.",
   "dc_pending_list_aria": "المراجعات المعلّقة",
   "dc_select_review": "تحديد المراجعة",
-  "dc_col_decision": "القرار"
+  "dc_col_decision": "القرار",
+  "ai_healing_overlay": {
+    "collapse": "طي",
+    "expand": "توسيع",
+    "status_complete": "اكتمل",
+    "status_failed": "فشل",
+    "status_in_progress": "قيد التنفيذ",
+    "step_applying": "تطبيق الإصلاحات",
+    "step_completed": "مكتمل",
+    "step_diagnosing": "التشخيص"
+  }
 }

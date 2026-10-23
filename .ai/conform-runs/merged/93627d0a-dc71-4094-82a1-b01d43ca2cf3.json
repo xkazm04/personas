@@ -1,0 +1,36 @@
+{"schema": "conform-run/1", "worker": "93627d0a-dc71-4094-82a1-b01d43ca2cf3", "subject": "webhook-ingestion",
+ "evaluatedAt": "2026-10-16T17:59:17Z",
+ "evaluatedAgainst": "sha256-b2:42ae9b9486b8352d", "evaluatedRevision": 11,
+ "pairs": [
+  {"context": "767b2bb5-4662-4be1-ad24-c881ac334016", "subject": "webhook-ingestion", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:42ae9b9486b8352d", "evaluatedRevision": 11,
+   "evidence": "src-tauri/src/commands/tools/triggers.rs:1745 replay still reads log_entry.body, which src-tauri/src/engine/webhook.rs:313 writes as the literal '[redacted: see encrypted persona_event payload]', so every replay re-signs and re-delivers the redaction marker and reports success (re-confirmed 2026-10-16, unfixed since 2026-09-23; line moved 304->313)",
+   "techniques": [
+    {"technique": "delivery-logging-and-replay", "verdict": "deviation", "evidence": "src-tauri/src/commands/tools/triggers.rs:1745 replay re-delivers the redaction marker set at src-tauri/src/engine/webhook.rs:313; export repeats it at src-tauri/src/commands/tools/triggers.rs:1826; headers are logged verbatim (signature included) at src-tauri/src/engine/webhook.rs:302 with no denylist"},
+    {"technique": "sender-authentication", "verdict": "partial", "evidence": "src-tauri/src/engine/webhook.rs:617 constant-time verify over raw body and :483 fails closed when secretless (realized); no timestamp window anywhere in webhook.rs, and the smee mouth fails OPEN by default - src-tauri/src/engine/smee_relay.rs:440 verifies only when an env secret is set, over re-serialized bytes at :445"},
+    {"technique": "payload-bounds", "verdict": "partial", "evidence": "src-tauri/src/engine/webhook.rs:93 DefaultBodyLimit 1MB enforced while reading, rate limit before HMAC (realized); no content-type discipline, and :483 tells an unauthenticated caller the trigger has no secret configured (oracle the technique's response-minimalism rule forbids)"},
+    {"technique": "duplicate-and-replay-dedup", "verdict": "deviation", "evidence": "src-tauri/src/engine/webhook.rs:638 the direct listener mints a fresh uuid per delivery with no (source, delivery-id) or content-digest mark, so every sender retry becomes a second persona_event; only the smee mouth dedups, in process memory"},
+    {"technique": "ingress-topology", "verdict": "deviation", "evidence": "src-tauri/src/engine/smee_relay.rs:564 the relay mouth publishes through event_repo::publish with its own verify/rate-limit copy instead of the listener's admission door, and writes no webhook_request_log row - three mouths, separate doors (one-validation-door)"},
+    {"technique": "listener-lifecycle", "verdict": "partial", "evidence": "src-tauri/src/engine/webhook.rs:109 graceful shutdown + /health realized; src-tauri/src/engine/background/lifecycle.rs:694 an EADDRINUSE bind failure is downgraded to a warn log while the app continues, the swallowed-bind outcome the technique names"}
+   ],
+   "registryProposal": "The rust--delivery-logging-and-replay application cites triggers.rs:1790/1836 and webhook.rs:244-255; current anchors are triggers.rs:1745/1826 and webhook.rs:302-313 - the application's line citations have drifted and should be re-verified."},
+  {"context": "03e7f46a-3f19-47b8-98a5-398efed815b4", "subject": "webhook-ingestion", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:42ae9b9486b8352d", "evaluatedRevision": 11,
+   "evidence": "src/hooks/realtime/useSmeeRelayStatus.ts:24 the context only subscribes to a backend relay-status event; no inbound delivery endpoint, admission door or delivery record lives here (the ingress is context 767b2bb5)",
+   "techniques": [],
+   "registryProposal": "Technique-shaped resonance: matched on listener/webhook/replay tokens; the golden path's precondition is an exposed inbound endpoint, which a frontend event-bus hook context does not have."},
+  {"context": "1d3f934a-fae4-4cc8-a55c-a098b77b0bee", "subject": "webhook-ingestion", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evaluatedAgainst": "sha256-b2:42ae9b9486b8352d", "evaluatedRevision": 11,
+   "evidence": "src/features/agents/sub_executions/libs/useReplayState.ts:2 'replay' here is a time-scrub of a recorded agent execution timeline, not re-injection of an inbound delivery; no external sender or admission path exists in this context",
+   "techniques": [],
+   "registryProposal": "Lexical false positive on 'replay'/'events': execution-trace replay belongs to time-travel-replay, not webhook-ingestion."}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-16T17:59:17Z", "bundle": "software-engineering", "subjects": ["webhook-ingestion"], "techniques": ["delivery-logging-and-replay", "sender-authentication", "payload-bounds", "duplicate-and-replay-dedup", "ingress-topology", "listener-lifecycle"], "deviations": 3},
+  {"ts": "2026-10-16T17:59:17Z", "bundle": "software-engineering", "subjects": ["webhook-ingestion"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-16T17:59:17Z", "bundle": "software-engineering", "subjects": ["webhook-ingestion"], "techniques": [], "deviations": 0}
+ ]}

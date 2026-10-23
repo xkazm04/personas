@@ -73,9 +73,6 @@ export const importPortabilityBundle = (passphrase?: string, resolutionsJson?: s
     filePathOverride: filePathOverride ?? null,
   });
 
-export const previewCompetitiveImport = () =>
-  invoke<CompetitiveImportPreview[] | null>("preview_competitive_import");
-
 // ============================================================================
 // Encrypted credential export / import
 // ============================================================================

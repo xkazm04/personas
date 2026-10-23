@@ -244,7 +244,9 @@
     "loading_firings": "加载中…",
     "no_firings": "无最近触发",
     "recent_firings": "最近触发",
-    "firings_load_failed": "无法加载最近的触发记录。"
+    "firings_load_failed": "无法加载最近的触发记录。",
+    "triggers_load_failed_one": "无法加载 {count} 个 persona 的触发器。",
+    "triggers_load_failed_other": "无法加载 {count} 个 persona 的触发器。"
   },
   "sr_connecting": "正在连接云端编排器…",
   "sr_deploying": "正在将智能体部署到云端",

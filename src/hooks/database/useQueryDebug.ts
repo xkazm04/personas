@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
 import { EventName } from '@/lib/eventRegistry';
 import { startQueryDebug, cancelQueryDebug } from '@/api/vault/database/dbSchema';
@@ -52,6 +52,18 @@ export function useQueryDebug() {
     },
     [stream],
   );
+
+  // Closing the explorer or switching saved query unmounts this hook while the
+  // model job is still running -- and still spending budget. Cancel it then,
+  // the way ChatTab does for its NL job. Refs, so the cleanup sees the latest.
+  const runningRef = useRef(false);
+  runningRef.current = stream.phase === 'running';
+  useEffect(() => () => {
+    const id = debugIdRef.current;
+    if (id && runningRef.current) {
+      cancelQueryDebug(id).catch(silentCatch('useQueryDebug:cancelOnUnmount'));
+    }
+  }, []);
 
   const cancel = useCallback(async () => {
     if (debugIdRef.current) {

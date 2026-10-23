@@ -148,7 +148,10 @@ export default function IdentitySettings() {
               </div>
 
               <div className="typo-caption text-foreground">
-                Created {<AbsoluteTime timestamp={localIdentity.created_at} variant="date" />}
+                {(() => {
+                  const [before, after] = st.created_on.split('{date}');
+                  return <>{before}<AbsoluteTime timestamp={localIdentity.created_at} variant="date" />{after}</>;
+                })()}
               </div>
             </>
           ) : (

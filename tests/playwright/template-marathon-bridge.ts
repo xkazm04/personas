@@ -85,10 +85,6 @@ export async function health(): Promise<void> {
 export const clickTestId = (testId: string): Promise<unknown> =>
   post('/click-testid', { test_id: testId });
 
-/** Find by visible text — exact match. Returns the first hit's nodes. */
-export const findText = (text: string): Promise<QueryNode[]> =>
-  post('/find-text', { text });
-
 export const query = (selector: string): Promise<QueryNode[]> =>
   post('/query', { selector });
 
@@ -107,33 +103,6 @@ export async function waitForVisible(selector: string, timeoutMs = 10_000): Prom
     await sleep(200);
   }
   throw new Error(`waitForVisible: ${selector} not visible in ${timeoutMs}ms`);
-}
-
-/** Wait until a button labeled `text` is visible + enabled, then click. */
-export async function clickByText(text: string, timeoutMs = 10_000): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const nodes = await findText(text);
-    // Bridge's /find-text returns DOM tag lowercased ("button", "a"), but
-    // older code compared against uppercase — every clickByText silently
-    // hit its 15s timeout because no node ever matched.
-    const button = nodes.find((n) => {
-      const tag = (n.tag ?? '').toLowerCase();
-      return n.visible && (tag === 'button' || tag === 'a');
-    });
-    if (button) {
-      // Click via /eval since /find-text doesn't surface a stable selector
-      // for arbitrary elements. innerText match is asymmetric in case
-      // (CSS-uppercase labels return innerText uppercase even when the
-      // i18n string is "Continue"); rendered case is what we matched on.
-      await post('/eval', {
-        js: `Array.from(document.querySelectorAll('button,a')).find(b => (b.innerText||'').trim() === ${JSON.stringify(text)})?.click();`,
-      });
-      return;
-    }
-    await sleep(200);
-  }
-  throw new Error(`clickByText: "${text}" not found in ${timeoutMs}ms`);
 }
 
 /** Persona executions row shape (read via invokeCommand("list_executions")).
@@ -182,8 +151,19 @@ export async function listPersonaExecutions(personaId: string, limit = 5): Promi
   return ((payload as { executions?: ExecutionRow[] })?.executions) ?? [];
 }
 
-/** Wait for a new completed (or failed) execution row for `personaId`,
- *  scanning rows with `created_at > sinceIso`. */
+/** Every terminal execution status: ExecutionState::TERMINAL in
+ *  src-tauri/core/src/types.rs (pinned by __tests__/template-marathon-bridge.test.ts).
+ *  Waiting only for completed|failed turned an `incomplete` (process died) or
+ *  `cancelled` run into a 10-minute wait reported as "execution-timeout". */
+export const TERMINAL_EXECUTION_STATUSES: readonly string[] = ['completed', 'failed', 'incomplete', 'cancelled'];
+
+/** Whether `row` is a finished execution created after `sinceIso`. */
+export function isSettledExecutionSince(row: ExecutionRow, sinceIso: string): boolean {
+  return row.created_at > sinceIso && TERMINAL_EXECUTION_STATUSES.includes(row.status);
+}
+
+/** Wait for a new finished execution row (any terminal status) for
+ *  `personaId`, scanning rows with `created_at > sinceIso`. */
 export async function waitForExecution(
   personaId: string,
   sinceIso: string,
@@ -192,7 +172,7 @@ export async function waitForExecution(
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const rows = await listPersonaExecutions(personaId, 10);
-    const matched = rows.find((r) => r.created_at > sinceIso && (r.status === 'completed' || r.status === 'failed'));
+    const matched = rows.find((r) => isSettledExecutionSince(r, sinceIso));
     if (matched) return matched;
     await sleep(3_000);
   }
@@ -261,21 +241,6 @@ export async function seedAdoptionAnswers(answers: Record<string, string>): Prom
   if (!result.success) throw new Error(`seedAdoptionAnswers: ${result.error ?? 'unknown'}`);
 }
 
-/** Switch the adoption modal's variant tab. The switcher uses
- *  role="tab" buttons without explicit data-testids, so we click by
- *  visible text label (matches the i18n key
- *  `templates.adopt_modal.layout_tab_persona_layout`). */
-export async function selectAdoptionVariant(variant: 'classic' | 'persona-layout'): Promise<void> {
-  const label = variant === 'persona-layout' ? 'Persona Layout' : 'Classic';
-  // Find the tab in the AdoptionLayoutSwitcher region. innerText match
-  // is asymmetric with CSS uppercasing, but these labels don't use
-  // text-transform — safe to match raw.
-  await post('/eval', {
-    js: `(()=>{const btn = Array.from(document.querySelectorAll('[role="tab"]')).find(b => (b.innerText||'').trim().startsWith(${JSON.stringify(label)})); if(btn) btn.click(); })();`,
-  });
-  await sleep(200);
-}
-
 /** Wait for the build phase to transition into one of the target phases.
  *  The underlying bridge method caps its internal wait at 20s
  *  (src/test/automation/bridge.ts:1618), so we re-invoke in a loop until
@@ -312,13 +277,4 @@ export async function waitForBuildPhase(
     await sleep(500);
   }
   throw new Error(`waitForBuildPhase:timeout (last phase=${lastPhase ?? 'unknown'})`);
-}
-
-/** Cancel any in-flight build session for the given persona — used by
- *  the recovery path when a template's adoption gets stuck. */
-export async function cancelBuildSession(sessionId: string): Promise<void> {
-  await bridgeExec('invokeCommand', {
-    command: 'cancel_build_session',
-    params: { sessionId },
-  }, 30);
 }

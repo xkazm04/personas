@@ -4,6 +4,7 @@
 // eight rows and the audit log is already limited.
 
 import { useEffect, useMemo, useState } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { KeyRound, RefreshCw, ShieldAlert, Unlock, Plus, Pencil, Trash2, HeartPulse, ArrowRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -112,7 +113,9 @@ export default function VaultActivityCard() {
       {showGhost ? (
         <VaultGhostRows />
       ) : rows.length === 0 ? (
-        <div className="px-4 py-6 typo-body text-foreground text-center">{va.empty}</div>
+        <div className="flex justify-center px-4 py-4">
+          <ScenarioEmptyState art="vault" size="sm" title={va.empty} />
+        </div>
       ) : (
         <div className="divide-y divide-primary/5 max-h-64 overflow-y-auto">
           {rows.map((row, index) => {

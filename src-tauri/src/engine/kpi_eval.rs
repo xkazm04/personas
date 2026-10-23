@@ -381,18 +381,28 @@ fn measure_derived(
                 format!("bounces={bounces} cleanMerges={merges} window=7d"),
             )
         }
-        // Failed / total executions of the team's members, last 7 days, %.
+        // Not-succeeded / decided executions of the team's members, last 7
+        // days, %. The decided set is ExecutionState::TERMINAL minus
+        // `cancelled` (core/src/types.rs:41): queued and running runs have no
+        // verdict yet and a cancel is not a failure, so neither may dilute the
+        // denominator; `incomplete` (the process died) is a failure.
         "exec_failure_rate" => {
             let (failed, total): (f64, f64) = conn.query_row(
-                "SELECT SUM(CASE WHEN e.status='failed' THEN 1 ELSE 0 END),
-                        COUNT(*)
+                "SELECT SUM(CASE WHEN e.status IN ('failed','incomplete') THEN 1 ELSE 0 END),
+                        SUM(CASE WHEN e.status IN ('completed','failed','incomplete') THEN 1 ELSE 0 END)
                  FROM persona_executions e
                  JOIN persona_team_members m ON m.persona_id = e.persona_id AND m.team_id = ?1
                  WHERE datetime(e.created_at) > datetime('now','-7 days')",
                 rusqlite::params![team_id],
-                |r| Ok((r.get::<_, Option<f64>>(0)?.unwrap_or(0.0), r.get(1)?)),
+                |r| {
+                    Ok((
+                        r.get::<_, Option<f64>>(0)?.unwrap_or(0.0),
+                        // SUM over zero rows is NULL, unlike the COUNT(*) it replaced.
+                        r.get::<_, Option<f64>>(1)?.unwrap_or(0.0),
+                    ))
+                },
             )?;
-            // Zero executions is no data, not a healthy 0% failure rate.
+            // Zero decided executions is no data, not a healthy 0% failure rate.
             if total <= 0.0 {
                 return Err(AppError::Validation(
                     "exec_failure_rate: no team executions in the last 7 days — insufficient data"

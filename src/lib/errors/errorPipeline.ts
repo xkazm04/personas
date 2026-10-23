@@ -22,6 +22,7 @@ import {
 } from '@/lib/errorTaxonomy';
 import { resolveError, type FriendlyError } from './errorRegistry';
 import { getErrorExplanation, type ErrorExplanation } from './errorExplanation';
+import { extractMessage } from '@/lib/silentCatch';
 
 // ---------------------------------------------------------------------------
 // ClassifiedError — the unified output
@@ -105,7 +106,7 @@ export function classifyErrorFull(raw: string): ClassifiedError {
  * Uses structured `kind` from Tauri errors when available.
  */
 export function classifyUnknownErrorFull(err: unknown): ClassifiedError {
-  const raw = err instanceof Error ? err.message : String(err);
+  const raw = extractMessage(err);
   const category = classifyUnknownError(err);
   return memoizedClassify(raw, category);
 }

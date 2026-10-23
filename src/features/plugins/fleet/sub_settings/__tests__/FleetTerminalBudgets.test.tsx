@@ -21,7 +21,6 @@ const statsBox = vi.hoisted(() => ({
     parked: 4,
     maxParked: 6,
     evictions: 3,
-    webgl: 5,
     webglContexts: 5,
     maxWebgl: 6,
     webglEvictions: 2,

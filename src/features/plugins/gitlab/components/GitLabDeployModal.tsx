@@ -241,7 +241,7 @@ export function GitLabDeployModal({
               {result.credentialsProvisioned > 0 && (
                 <p className="typo-body text-foreground mt-1 flex items-center gap-1.5">
                   <KeyRound className="w-3.5 h-3.5 text-orange-400" />
-                  {result.credentialsProvisioned} credential{result.credentialsProvisioned !== 1 ? 's' : ''} provisioned
+                  {tx(result.credentialsProvisioned === 1 ? t.gitlab.credential_provisioned_count_one : t.gitlab.credential_provisioned_count_other, { count: result.credentialsProvisioned })}
                 </p>
               )}
               {sanitizeExternalUrl(result.webUrl) && (

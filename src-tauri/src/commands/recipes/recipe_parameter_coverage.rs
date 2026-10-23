@@ -71,7 +71,7 @@ pub fn coverage_from_prompt_template(
 ) -> RecipeParameterCoverage {
     let schema: Vec<serde_json::Value> = serde_json::from_str::<serde_json::Value>(prompt_template)
         .ok()
-        .and_then(|tpl| tpl.get("input_schema").and_then(|v| v.as_array()).cloned())
+        .and_then(|tpl| rp::input_schema_of(&tpl).cloned())
         .unwrap_or_default();
 
     let (params, skipped) = rp::params_from_schema(&schema);
@@ -164,6 +164,21 @@ mod tests {
         let cov = coverage_from_prompt_template("r2", &tpl);
         assert_eq!((cov.declared, cov.derived), (2, 2));
         assert!(cov.skipped.is_empty());
+    }
+
+    #[test]
+    fn v3_camel_case_input_schema_is_read() {
+        // Every seeded recipe is a v3 RecipeSpec: `inputSchema`, not `input_schema`.
+        let tpl = serde_json::json!({
+            "inputSchema": [
+                {"name": "window_days", "type": "number", "default": 7},
+                {"name": "sources", "type": "source_definition"}
+            ]
+        })
+        .to_string();
+        let cov = coverage_from_prompt_template("v3", &tpl);
+        assert_eq!((cov.declared, cov.derived), (2, 1));
+        assert_eq!(cov.skipped.len(), 1);
     }
 
     #[test]

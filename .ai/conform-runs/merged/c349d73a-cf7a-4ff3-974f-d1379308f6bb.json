@@ -1,0 +1,142 @@
+{
+ "schema": "conform-run/1",
+ "worker": "c349d73a-cf7a-4ff3-974f-d1379308f6bb",
+ "subject": "chat-transcript",
+ "evaluatedAt": "2026-10-16T17:47:49Z",
+ "pairs": [
+  {
+   "context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0",
+   "subject": "chat-transcript",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/shared/components/editors/MarkdownRenderer.tsx:347 the shared door Athena chat renders model text through loads any model-referenced <img src> on render; CSP still admits http://127.0.0.1:* and googleusercontent, so injected markup can fire GETs at local services",
+   "techniques": [
+    {
+     "technique": "markdown-and-code-rendering",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/editors/MarkdownRenderer.tsx:347 img renders src with no block/proxy/click-to-load policy (links do carry one at :337); remote content loads implicitly"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+   "evaluatedRevision": 5,
+   "registryProposal": "This context is a shared primitive library that contains the transcript sanitizing door (MarkdownRenderer) but is not itself a transcript: only markdown-and-code-rendering genuinely governs it. A per-technique pairing (or routing the door to prompt-safety/output-sanitization) would fit better than the whole subject."
+  },
+  {
+   "context": "b7c818bf-fe04-44ff-aa8d-7cd51e0fc67f",
+   "subject": "chat-transcript",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/components/ChatThread.tsx:25 export has no importer anywhere in src/ (nor ChatMessageContent) and no component reads chatSlice streaming state - the transcript is unmounted, so no live transcript precondition holds",
+   "techniques": [
+    {
+     "technique": "markdown-and-code-rendering",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/components/ChatMessageContent.tsx:202 would load model img src implicitly, but the component is never mounted"
+    },
+    {
+     "technique": "turn-model",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/components/ChatThread.tsx:56 coerces every non-user role to the assistant bubble, but the component is never mounted"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+   "evaluatedRevision": 5,
+   "registryProposal": "Orphan resurrected: commit 1a67c0435a deleted an orphan ChatThread.tsx and the file is back (checkpoint 1adee979e0) still with zero importers - a dead-code finding for this repo, not a chat-transcript one."
+  },
+  {
+   "context": "19f3a6a0-f733-47d1-94b4-a1256c8a92fc",
+   "subject": "chat-transcript",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 the \"Composer\" here is a set of Schedule/Connectors/Events config picker modals, not a transcript write door - no turns, no transcript",
+   "techniques": [
+    {
+     "technique": "composer-turn-queue",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 modal picker shell for agent configuration; nothing is submitted into a running turn"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+   "evaluatedRevision": 5,
+   "registryProposal": "Technique-shaped resonance: matched on composer/channel/event tokens; the subject precondition (an alternating human-and-machine transcript) fails. Route by precondition."
+  }
+ ],
+ "declined": [
+  {
+   "subject": "chat-transcript",
+   "context": "d77a22ee-23cb-42f3-a910-590f8622977f",
+   "reason": "companion-core-store has an empty path list in both the map and context-map.json - nothing to anchor a verdict to; left unknown"
+  },
+  {
+   "subject": "chat-transcript",
+   "context": "1d8a480b-eac4-4110-a60e-47a6ab281c97",
+   "reason": "weak governance row - coverage question, not judged by default"
+  },
+  {
+   "subject": "chat-transcript",
+   "context": "a397f2e9-de1d-495f-8ff4-fabc019646cc",
+   "reason": "weak governance row with empty paths - not judged by default"
+  },
+  {
+   "subject": "chat-transcript",
+   "context": "4eb0030b-e8a2-4993-bfab-81aee6943054",
+   "reason": "budget - left for a later run"
+  },
+  {
+   "subject": "chat-transcript",
+   "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+   "reason": "budget - left for a later run"
+  },
+  {
+   "subject": "chat-transcript",
+   "context": "37cd64d2-bd42-47b9-8c17-7ea1b466135c",
+   "reason": "budget - left for a later run"
+  },
+  {
+   "subject": "chat-transcript",
+   "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+   "reason": "budget - left for a later run"
+  },
+  {
+   "subject": "chat-transcript",
+   "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f",
+   "reason": "budget - left for a later run"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-16T17:47:39Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "chat-transcript"
+   ],
+   "techniques": [
+    "markdown-and-code-rendering"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-16T17:47:39Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "chat-transcript"
+   ],
+   "techniques": [
+    "markdown-and-code-rendering",
+    "turn-model"
+   ],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-16T17:47:39Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "chat-transcript"
+   ],
+   "techniques": [
+    "composer-turn-queue"
+   ],
+   "deviations": 0
+  }
+ ]
+}

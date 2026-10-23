@@ -14,6 +14,8 @@
  *     partial codex use never erases LLM-authored words;
  *   • the serialized shape is exactly the key set `render_law_seed` reads.
  */
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, it, expect } from "vitest";
 import {
   composeManifestSeed,
@@ -243,6 +245,30 @@ describe("composed seed wire shape", () => {
     for (const key of ["identity", "voice", "motivation", "stance", "northStarCommitment"]) {
       expect(key in wire).toBe(false);
     }
+  });
+
+  it("names exactly the keys render_law_seed looks up in manifest.rs", () => {
+    // The key list above is this file's own belief; the seeder is the reader.
+    // A key renamed on either side used to pass both suites while the
+    // operator's words silently stopped reaching `# Mandate` / `# Boundaries`,
+    // so the Rust lookups are read from source here (comments stripped).
+    const raw = readFileSync(
+      resolve(process.cwd(), "src-tauri/src/engine/persona_brain/manifest.rs"),
+      "utf8",
+    ).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+    const start = raw.indexOf("fn render_law_seed(");
+    expect(start, "render_law_seed not found").toBeGreaterThanOrEqual(0);
+    const body = raw.slice(start, raw.indexOf("\n}\n", start));
+    const rustKeys = new Set<string>();
+    // ("Label", "key") lookup tables, and direct `.get("key")` reads.
+    for (const m of body.matchAll(/\("[^"]+",\s*"([A-Za-z]+)"\)/g)) rustKeys.add(m[1]!);
+    for (const m of body.matchAll(/\.get\("([A-Za-z]+)"\)/g)) rustKeys.add(m[1]!);
+
+    const full = narrowManifestSeed({
+      identity: "i", voice: "v", motivation: "m", stance: "s", northStarCommitment: "n",
+      principles: ["p"], constraints: ["c"], decisionPrinciples: ["d"],
+    })!;
+    expect(Object.keys(JSON.parse(JSON.stringify(full))).sort()).toEqual([...rustKeys].sort());
   });
 
   it("opens with `{` so the Rust seeder recognizes it as a legacy core blob", () => {

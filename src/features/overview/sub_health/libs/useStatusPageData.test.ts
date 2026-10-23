@@ -36,6 +36,21 @@ describe('computeGlobalScore — no fabricated 100 on an empty status page', () 
   it('averages real scores when personas exist', () => {
     expect(computeGlobalScore([makeEntry({ score: 80 }), makeEntry({ score: 60 })])).toBe(70);
   });
+
+  it('leaves personas with no SLA data out of the average (their score is a default, not a reading)', () => {
+    const entries = [
+      makeEntry({ score: 95 }),
+      makeEntry({ score: 90 }),
+      // What computeCompositeHealth returns for a dormant persona: grade
+      // 'unknown', score from the formula over defaults.
+      makeEntry({ score: 70, grade: 'unknown', hasSlaData: false, successRate: null }),
+    ];
+    expect(computeGlobalScore(entries)).toBe(93);
+  });
+
+  it('returns null when no persona has SLA data', () => {
+    expect(computeGlobalScore([makeEntry({ score: 70, grade: 'unknown', hasSlaData: false })])).toBeNull();
+  });
 });
 
 describe('computeGlobalUptime — no fabricated 100% on an empty/dormant status page', () => {

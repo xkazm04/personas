@@ -41,6 +41,8 @@ import {
   type GitLabDeploymentStatus,
 } from "@/api/system/gitlab";
 import { silentCatch } from '@/lib/silentCatch';
+import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
+import { createLatestWins } from "../../util/latestWins";
 
 
 export interface GitLabDeploymentMeta {
@@ -84,7 +86,8 @@ export interface GitLabSlice {
     projectId: number,
     variableKeys: string[],
   ) => Promise<number>;
-  gitlabFetchAgents: (projectId: number) => Promise<void>;
+  /** Resolves true when the agent list was read, false when it failed (`gitlabError` carries the reason). */
+  gitlabFetchAgents: (projectId: number) => Promise<boolean>;
   gitlabUndeployAgent: (projectId: number, agentId: string) => Promise<void>;
   gitlabRedeployAgent: (agentName: string) => Promise<GitLabDeployResult>;
   gitlabClearError: () => void;
@@ -133,6 +136,14 @@ export interface GitLabSlice {
   gitlabRollbackFromHistory: (projectId: number, deploymentId: string) => Promise<GitLabDeployResult>;
   fetchUnifiedDeploymentHistory: (limit?: number) => Promise<void>;
 }
+
+// The pipeline viewer polls the active pipeline while the operator clicks
+// between pipelines and job rows; each of those writes used to take whatever
+// resolved last, so a late answer repainted the old pipeline or put job A's
+// log under job B. A select or a clear mints a new view generation; a poll
+// observes it. The job log has its own slot.
+const pipelineViewLatestWins = createLatestWins();
+const jobLogLatestWins = createLatestWins();
 
 const DEPLOY_META_KEY = "gitlab_deployment_meta";
 
@@ -198,7 +209,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     } catch {
       set({ gitlabIsConnecting: false });
       storeBus.emit('toast', {
-        message: "GitLab auto-connect failed — you can reconnect manually from the GitLab panel.",
+        message: getActiveTranslations().deploy_errors.gitlab_auto_connect_failed,
         type: "error",
       });
     }
@@ -321,8 +332,10 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
         }),
       ]);
       set({ gitlabAgents: agents, gitlabDeploymentStatuses: statuses, gitlabError: null });
+      return true;
     } catch (err) {
       set({ gitlabError: translateGitLabError(err) });
+      return false;
     }
   },
 
@@ -349,7 +362,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     const meta = state.gitlabDeploymentMeta[agentName];
     const projectId = meta?.projectId ?? state.gitlabSelectedProjectId;
     if (!projectId) {
-      set({ gitlabError: "No project associated with this agent. Deploy manually first." });
+      set({ gitlabError: getActiveTranslations().deploy_errors.gitlab_no_project });
       throw new Error("No project for redeploy");
     }
 
@@ -361,7 +374,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
         (p) => p.name.toLowerCase() === agentName.toLowerCase(),
       );
       if (!match) {
-        set({ gitlabError: `No persona found matching agent "${agentName}". Deploy manually.` });
+        set({ gitlabError: interpolate(getActiveTranslations().deploy_errors.gitlab_no_persona, { name: agentName }) });
         throw new Error("No persona match for redeploy");
       }
       personaId = match.id;
@@ -379,7 +392,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
         }),
       ]);
       set({ gitlabAgents: agents, gitlabDeploymentStatuses: statuses, gitlabRedeployingAgentId: null });
-      storeBus.emit('toast', { message: "Agent redeployed successfully", type: "success" });
+      storeBus.emit('toast', { message: getActiveTranslations().deploy_errors.gitlab_agent_redeployed, type: "success" });
       return result;
     } catch (err) {
       set({ gitlabRedeployingAgentId: null, gitlabError: translateGitLabError(err) });
@@ -421,24 +434,33 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
   },
 
   gitlabSelectPipeline: async (projectId: number, pipelineId: number) => {
+    const token = pipelineViewLatestWins.next();
+    jobLogLatestWins.next();
     set({ gitlabPipelineLoading: true, gitlabJobLog: null });
     try {
       const [pipeline, jobs] = await Promise.all([
         gitlabGetPipeline(projectId, pipelineId),
         gitlabListPipelineJobs(projectId, pipelineId),
       ]);
+      if (!pipelineViewLatestWins.isCurrent(token)) return;
       set({ gitlabActivePipeline: pipeline, gitlabPipelineJobs: jobs, gitlabPipelineLoading: false, gitlabError: null });
     } catch (err) {
+      if (!pipelineViewLatestWins.isCurrent(token)) return;
       set({ gitlabPipelineLoading: false, gitlabError: translateGitLabError(err) });
     }
   },
 
   gitlabRefreshPipeline: async (projectId: number, pipelineId: number) => {
+    // A poll is an observer, not a new view: it never supersedes a select.
+    const generation = pipelineViewLatestWins.current();
+    const stillShowing = () =>
+      pipelineViewLatestWins.current() === generation && get().gitlabActivePipeline?.id === pipelineId;
     try {
       const [pipeline, jobs] = await Promise.all([
         gitlabGetPipeline(projectId, pipelineId),
         gitlabListPipelineJobs(projectId, pipelineId),
       ]);
+      if (!stillShowing()) return;
       set((state) => ({
         gitlabActivePipeline: pipeline,
         gitlabPipelineJobs: jobs,
@@ -446,26 +468,34 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
         gitlabError: null,
       }));
     } catch (err) {
+      if (!stillShowing()) return;
       set({ gitlabError: translateGitLabError(err) });
     }
   },
 
   gitlabFetchJobLog: async (projectId: number, jobId: number) => {
+    const token = jobLogLatestWins.next();
     set({ gitlabJobLog: null });
     try {
       const log = await gitlabGetJobLog(projectId, jobId);
+      if (!jobLogLatestWins.isCurrent(token)) return;
       set({ gitlabJobLog: log, gitlabError: null });
     } catch (err) {
+      if (!jobLogLatestWins.isCurrent(token)) return;
       set({ gitlabError: translateGitLabError(err) });
     }
   },
 
   gitlabClearPipelineState: () => {
+    pipelineViewLatestWins.next();
+    jobLogLatestWins.next();
     set({
       gitlabPipelines: [],
       gitlabActivePipeline: null,
       gitlabPipelineJobs: [],
       gitlabJobLog: null,
+      // A select dropped by the generation bump above can no longer clear it.
+      gitlabPipelineLoading: false,
     });
   },
 
@@ -509,18 +539,19 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
       // of discovering the missing version during an incident.
       if (!result.tagCreated) {
         storeBus.emit('toast', {
-          message: `Deployed ${persona?.name ?? 'persona'}, but the version tag could not be created — this version won't appear in history and can't be rolled back to. Try deploying again.`,
+          message: interpolate(getActiveTranslations().deploy_errors.gitlab_version_tag_failed, { name: persona?.name ?? getActiveTranslations().deploy_errors.persona_fallback }),
           type: 'warning',
         });
       }
 
       // Refresh version list
       if (persona?.name) {
+        // A failed re-read keeps the last list: `[]` here read as "no versions".
         const versions = await gitlabListPersonaVersions(projectId, persona.name).catch((err) => {
           silentCatch("stores/slices/system/gitlabSlice:gitlabDeployPersonaVersions")(err);
-          return [];
+          return null;
         });
-        set({ gitlabPersonaVersions: versions });
+        if (versions) set({ gitlabPersonaVersions: versions });
       }
 
       return result;
@@ -540,13 +571,15 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     try {
       const result = await gitlabRollbackPersona(projectId, personaName, targetTag);
       // Refresh versions after rollback
+      // A failed re-read keeps the last list: `[]` here read as "no versions"
+      // right after a rollback that landed.
       const versions = await gitlabListPersonaVersions(projectId, personaName).catch((err) => {
         silentCatch("stores/slices/system/gitlabSlice:gitlabRollbackPersonaVersions")(err);
-        return [];
+        return null;
       });
-      set({ gitlabPersonaVersions: versions, gitlabRollingBack: false });
+      set(versions ? { gitlabPersonaVersions: versions, gitlabRollingBack: false } : { gitlabRollingBack: false });
       storeBus.emit('toast', {
-        message: `Rolled back ${personaName} to ${targetTag}`,
+        message: interpolate(getActiveTranslations().deploy_errors.gitlab_rolled_back, { name: personaName, tag: targetTag }),
         type: "success",
       });
       emitDeploymentEvent({ eventType: 'deploy_succeeded', target: 'gitlab', detail: `rollback:${targetTag}` });
@@ -570,7 +603,7 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     try {
       const branches = await gitlabSetupPersonaBranches(projectId, personaName);
       set({ gitlabPersonaBranches: branches, gitlabError: null });
-      storeBus.emit('toast', { message: "Environment branches created", type: "success" });
+      storeBus.emit('toast', { message: getActiveTranslations().deploy_errors.gitlab_branches_created, type: "success" });
       return branches;
     } catch (err) {
       set({ gitlabError: translateGitLabError(err) });
@@ -613,12 +646,15 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
     try {
       const result = await gitlabRollbackFromHistory(projectId, deploymentId);
       // Refresh history after rollback
+      // A failed re-read keeps the last trail instead of blanking it.
       const history = await gitlabListDeploymentHistory(projectId).catch((err) => {
         silentCatch("stores/slices/system/gitlabSlice:gitlabRollbackFromHistoryList")(err);
-        return [];
+        return null;
       });
-      set({ gitlabDeploymentHistory: history, gitlabRollingBackFromHistory: false });
-      storeBus.emit('toast', { message: "Rolled back to previous deployment", type: "success" });
+      set(history
+        ? { gitlabDeploymentHistory: history, gitlabRollingBackFromHistory: false }
+        : { gitlabRollingBackFromHistory: false });
+      storeBus.emit('toast', { message: getActiveTranslations().deploy_errors.gitlab_rolled_back_previous, type: "success" });
       emitDeploymentEvent({ eventType: 'deploy_succeeded', target: 'gitlab', detail: `rollback-from-history:${deploymentId}` });
       return result;
     } catch (err) {

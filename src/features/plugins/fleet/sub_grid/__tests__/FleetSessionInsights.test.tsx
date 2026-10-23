@@ -3,7 +3,7 @@
  * The fleet API is mocked at the module boundary; useTranslation is real.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 
@@ -68,5 +68,25 @@ describe('FleetSessionInsights', () => {
     vi.mocked(fleetApi.readTranscript).mockImplementationOnce(() => Promise.reject(new Error('nope')));
     render(<FleetSessionInsights claudeSessionId="sess1" />);
     expect(await screen.findByText(/Couldn't read/i)).toBeInTheDocument();
+  });
+
+  it('keeps the newer session when an older read resolves after a switch', async () => {
+    // The focus pane re-points one mounted panel at a new session. A read for
+    // the previous session that lands late must not repaint its data here.
+    let resolveOld: (v: FleetTranscriptSummary) => void = () => {};
+    vi.mocked(fleetApi.readTranscript).mockImplementation((id: string) =>
+      id === 'old'
+        ? new Promise<FleetTranscriptSummary>((r) => { resolveOld = r; })
+        : Promise.resolve({ ...SUMMARY, claudeSessionId: 'new', tools: [{ name: 'Grep', count: 1 }] } as FleetTranscriptSummary),
+    );
+    const { rerender } = render(<FleetSessionInsights claudeSessionId="old" />);
+    rerender(<FleetSessionInsights claudeSessionId="new" />);
+    await screen.findByText('Grep');
+
+    await act(async () => {
+      resolveOld({ ...SUMMARY, claudeSessionId: 'old', tools: [{ name: 'Bash', count: 99 }] } as FleetTranscriptSummary);
+    });
+    expect(screen.getByText('Grep')).toBeInTheDocument();
+    expect(screen.queryByText('Bash')).not.toBeInTheDocument();
   });
 });

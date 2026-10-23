@@ -16,6 +16,7 @@ import { useMemo } from 'react';
 import { AlertTriangle, Radar } from 'lucide-react';
 
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { originMeta, useOriginLabel } from './findingOrigins';
 import { TONE_TEXT } from '../triageTones';
@@ -42,6 +43,8 @@ function rateClass(s: SensorStats): string {
 }
 
 export function SensorScoreboard({ projectId = null }: { projectId?: string | null }) {
+  const { t, tx } = useTranslation();
+  const dt = t.plugins.dev_triage;
   const ideas = useSystemStore((s) => s.ideas);
   const originLabel = useOriginLabel();
   const stats = useMemo(() => computeSensorStats(ideas), [ideas]);
@@ -58,9 +61,9 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
     <div className="rounded-card border border-primary/10 bg-card/30 overflow-hidden" data-testid="sensor-scoreboard">
       <div className="px-4 py-2.5 border-b border-primary/10 flex items-center gap-2">
         <Radar className="w-3.5 h-3.5 text-primary/70" />
-        <span className="typo-caption text-foreground">Sensors — did the number move?</span>
-        <Tooltip content={`Of the findings that shipped and were judged, how many cleared or improved. "—" = nothing judged yet. Needs ${MIN_VERDICTS_FOR_CREDIBILITY} verdicts before the rate is worth believing.`}>
-          <span className="ml-auto typo-caption cursor-help">verify rate</span>
+        <span className="typo-caption text-foreground">{dt.sensors_heading}</span>
+        <Tooltip content={tx(dt.sensors_verify_rate_tip, { count: MIN_VERDICTS_FOR_CREDIBILITY })}>
+          <span className="ml-auto typo-caption cursor-help">{dt.sensors_verify_rate}</span>
         </Tooltip>
       </div>
 
@@ -71,7 +74,7 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
       <table className="w-full">
         <thead>
           <tr className="text-left">
-            {['Sensor', 'Raised', 'Shipped', 'Cleared', 'Moved', 'Unchanged', 'Regressed', 'Verify'].map((h) => (
+            {[dt.sensors_col_sensor, dt.sensors_col_raised, dt.sensors_col_shipped, dt.sensors_col_cleared, dt.sensors_col_moved, dt.sensors_col_unchanged, dt.sensors_col_regressed, dt.sensors_col_verify].map((h) => (
               // style-deviation: the operator asked the heads dimmed again at Gate 2. 70% is the doctrine's one muting level (typo-caption's ink) at label size; the old 45% sat on the light-theme legibility floor (census illegible-foreground-alpha). No token pairs label size with the muting.
               <th key={h} className="px-3 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">
                 {h}
@@ -91,10 +94,10 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
                     {Icon && <Icon className="w-3 h-3 text-foreground" aria-hidden />}
                     <span className="typo-caption text-foreground">{originLabel(s.origin)}</span>
                     {noisy && (
-                      <Tooltip content="This sensor's findings ship and the number doesn't move — its threshold is probably wrong, or it's pointing at work that doesn't pay.">
+                      <Tooltip content={dt.sensors_noisy_tip}>
                         <span className={`inline-flex items-center gap-0.5 typo-label cursor-help ${TONE_TEXT.error}`}>
                           <AlertTriangle className="w-3 h-3" aria-hidden />
-                          noisy
+                          {dt.sensors_noisy}
                         </span>
                       </Tooltip>
                     )}
@@ -109,7 +112,7 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
                 <td className={`px-3 py-1.5 tabular-nums ${rateClass(s)}`}>
                   {ratePct(s)}
                   {!s.hasEnoughSignal && s.verifyRate !== null && (
-                    <span className="ml-1 typo-caption">(low n)</span>
+                    <span className="ml-1 typo-caption">{dt.sensors_low_n}</span>
                   )}
                 </td>
               </tr>

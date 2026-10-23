@@ -3,7 +3,7 @@
   "cover_all_shipped": "All milestones shipped",
   "cover_empty": "No milestones yet. Plan the first cut",
   "cover_shipped_count": "{shipped}/{total} shipped",
-  "cover_open_aria": "Open the Ship roadmap for {name}",
+  "cover_open_aria": "Open the roadmap for {name} in the Notepad",
   "certify_cut": "Certify cut",
   "certify_ship": "Certify ship",
   "certify_cut_tooltip": "Certify the cut. Stamps the scope-creep baseline",

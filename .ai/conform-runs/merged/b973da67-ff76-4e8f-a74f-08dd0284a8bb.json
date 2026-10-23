@@ -1,0 +1,189 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b973da67-ff76-4e8f-a74f-08dd0284a8bb",
+  "subject": "wizard-flows",
+  "evaluatedAt": "2026-10-21T12:42:00Z",
+  "pairs": [
+    {
+      "context": "68e3a26f-d83a-447b-a2d0-ad875004506f",
+      "subject": "wizard-flows",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/scraper/ScrapeEditorWizard.tsx:56 the rail has two marker states (check or step number) and no visited set, so a Preview step that an extract edit invalidated looks the same as a step never reached",
+      "techniques": [
+        {
+          "technique": "progress-communication",
+          "verdict": "deviation",
+          "evidence": "src/features/scraper/ScrapeEditorWizard.tsx:56 done-or-number only; no needs-attention state although stepComplete (src/features/scraper/EditorSteps.tsx:49) can turn false after a revisit"
+        },
+        {
+          "technique": "step-state-model",
+          "verdict": "deviation",
+          "evidence": "src/features/scraper/ScrapeEditorWizard.tsx:103 Next advances with no canAdvance guard and the rail at :46 jumps with no canJumpTo; position is screen-local useState at :28 with no visited set (the commit itself is guarded, see commit-boundary)"
+        },
+        {
+          "technique": "commit-boundary",
+          "verdict": "conformant",
+          "evidence": "src/features/scraper/ScrapeEditorModal.tsx:28 the save re-checks canSave inside the transition (courtesy copy: disabled button at ScrapeEditorWizard.tsx:99), and the blocker is named at ScrapeEditorWizard.tsx:85"
+        },
+        {
+          "technique": "branching-and-skipping",
+          "verdict": "conformant",
+          "evidence": "src/features/scraper/useScrapeForm.ts:216 the preview is proven against a url+rules signature, so an earlier edit invalidates exactly its dependent step and nothing else"
+        },
+        {
+          "technique": "snapshot-and-resume",
+          "verdict": "not-applicable",
+          "evidence": "src/features/scraper/ScrapeEditorModal.tsx:33 the only durable write is the final save; the preview dry-run creates nothing, so the zero tier is honest"
+        }
+      ]
+    },
+    {
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "subject": "wizard-flows",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:106 position is an index into a list that re-sorts answered questions to the end on every answer (:101-103), so answering the current question silently swaps the card to another unless an explicit navigation had pinned an id",
+      "techniques": [
+        {
+          "technique": "step-state-model",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:106 activeIdx index over orderedQuestions, reset to 0 on questions.length change at :113 - identity must be a name, not an index"
+        },
+        {
+          "technique": "progress-communication",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:294 answered/total derived from the filtered relevant set, not counted by hand"
+        },
+        {
+          "technique": "branching-and-skipping",
+          "verdict": "unknown",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:224 disabled dims drop questions from the relevant set; whether their retained answers are excluded at commit is decided in ChronologyAdoptionView (another context), unread"
+        }
+      ],
+      "registryProposal": "The 2026-10-13 verdict also cited silent restore of session dim state; that hydration (useAdoptionDimensionModel.tsx:113) reads the system-of-record build session the user explicitly reopened, which snapshot-and-resume does not call an ambush - dropped from the evidence"
+    },
+    {
+      "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8",
+      "subject": "wizard-flows",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStoryThread.tsx:135 answered means only that an answer is present, with no visited set, so template defaults seeded into the answers (ChronologyAdoptionView.tsx:904) show a green check on questions the user never saw",
+      "techniques": [
+        {
+          "technique": "progress-communication",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStoryThread.tsx:143 pending covers both visited-and-skipped and never-reached; needs-attention exists only for vault blocking (:140). Realized parts: blocker named at QuestionnaireBlockedCredentialCta.tsx:27, stable category rail with per-stage counts at QuestionnaireCategoryRail.tsx:102"
+        },
+        {
+          "technique": "step-state-model",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/useQuestionnaireKeyboardNav.ts:88 Enter advances only when the current question is answered; rail indices are render-time and resolved to a question id by the consumer (persona-layout/useAdoptionDimensionModel.tsx:283)"
+        }
+      ],
+      "registryProposal": "The 2026-10-13 deviation (index navigation, no downstream invalidation) does not hold here: navigation resolves to ids, and option narrowing comes from the vault, not from earlier answers. Re-anchored to the visited/valid collapse. The snapshot hook questionnaire/useAdoptionAnswerSnapshot.ts sits in this folder but in no context-map path list (added 2026-09-17), so its silent restore at ChronologyAdoptionView.tsx:618-625 is governed by no pair"
+    },
+    {
+      "context": "5dc3cb6a-6612-4909-995d-86e92394ec94",
+      "subject": "wizard-flows",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:7 the indicator keeps a private VISIBLE_STEPS copy of navigationReducer.ts:63 SURFACED_STEPS and marks completion by position (:58 i < activeIndex), not validity - two authorities over one step vocabulary",
+      "techniques": [
+        {
+          "technique": "progress-communication",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:58 completion derived from position, not from the step precondition predicate"
+        },
+        {
+          "technique": "step-state-model",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:7 a second step list beside SURFACED_STEPS (src/features/templates/sub_n8n/reducers/navigationReducer.ts:63), against one-authority-per-vocabulary; the transition guard itself is realized at navigationReducer.ts:92"
+        },
+        {
+          "technique": "snapshot-and-resume",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/n8n_sessions.rs:226 the only reaper is an explicit per-id delete; no age-based expiry for persisted transform sessions, though restore does clamp to a surfaced step (navigationReducer.ts:66)"
+        }
+      ],
+      "registryProposal": "The 2026-10-13 evidence said the indicator drifts from a five-step model; today both lists read [upload, analyze], so the defect is the duplicated authority, not a present mismatch"
+    }
+  ],
+  "declined": [
+    {
+      "subject": "wizard-flows",
+      "context": "89d44c76-ec4c-4388-843e-503cf6ca2507",
+      "reason": "weak governance, lexical-only match (progress bars are not wizards); a coverage question, not a pair to judge"
+    },
+    {
+      "subject": "wizard-flows",
+      "context": "8650ca36-36fe-4862-98f5-745e866a2687",
+      "reason": "judged not-applicable 2026-10-13 against the current digest; outside budget, not re-read"
+    },
+    {
+      "subject": "wizard-flows",
+      "context": "3a377c10-3b0f-4674-87f9-aae9cb267c99",
+      "reason": "judged not-applicable 2026-10-16 against the current digest; outside budget, not re-read"
+    },
+    {
+      "subject": "wizard-flows",
+      "context": "2a54cdc2-87af-4298-b490-9eb87f230df7",
+      "reason": "judged not-applicable 2026-10-16 against the current digest; outside budget, not re-read"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T12:42:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "wizard-flows"
+      ],
+      "techniques": [
+        "progress-communication",
+        "step-state-model",
+        "commit-boundary",
+        "branching-and-skipping",
+        "snapshot-and-resume"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T12:42:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "wizard-flows"
+      ],
+      "techniques": [
+        "step-state-model",
+        "progress-communication",
+        "branching-and-skipping"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T12:42:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "wizard-flows"
+      ],
+      "techniques": [
+        "progress-communication",
+        "step-state-model"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T12:42:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "wizard-flows"
+      ],
+      "techniques": [
+        "progress-communication",
+        "step-state-model",
+        "snapshot-and-resume"
+      ],
+      "deviations": 1
+    }
+  ]
+}

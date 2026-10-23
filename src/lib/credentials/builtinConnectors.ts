@@ -8,216 +8,41 @@
 
 import type { ConnectorDefinitionBase } from '@/lib/types/types';
 
-import airtable from '../../../scripts/connectors/builtin/airtable.json';
-import alphaVantage from '../../../scripts/connectors/builtin/alpha-vantage.json';
-import asana from '../../../scripts/connectors/builtin/asana.json';
-import azureDevops from '../../../scripts/connectors/builtin/azure-devops.json';
-import notion from '../../../scripts/connectors/builtin/notion.json';
-import clickup from '../../../scripts/connectors/builtin/clickup.json';
-import github from '../../../scripts/connectors/builtin/github.json';
-import gitlab from '../../../scripts/connectors/builtin/gitlab.json';
-import granola from '../../../scripts/connectors/builtin/granola.json';
-import calCom from '../../../scripts/connectors/builtin/cal-com.json';
-import calendly from '../../../scripts/connectors/builtin/calendly.json';
-import supabase from '../../../scripts/connectors/builtin/supabase.json';
-import sentry from '../../../scripts/connectors/builtin/sentry.json';
-import betterstack from '../../../scripts/connectors/builtin/betterstack.json';
-import mixpanel from '../../../scripts/connectors/builtin/mixpanel.json';
-import metabase from '../../../scripts/connectors/builtin/metabase.json';
-import twilioSegment from '../../../scripts/connectors/builtin/twilio-segment.json';
-import monday from '../../../scripts/connectors/builtin/monday.json';
-import linear from '../../../scripts/connectors/builtin/linear.json';
-import posthog from '../../../scripts/connectors/builtin/posthog.json';
-import redash from '../../../scripts/connectors/builtin/redash.json';
-import circleci from '../../../scripts/connectors/builtin/circleci.json';
-import convex from '../../../scripts/connectors/builtin/convex.json';
-import buffer from '../../../scripts/connectors/builtin/buffer.json';
-import linkedin from '../../../scripts/connectors/builtin/linkedin.json';
-import reddit from '../../../scripts/connectors/builtin/reddit.json';
-import apify from '../../../scripts/connectors/builtin/apify.json';
-import xTwitter from '../../../scripts/connectors/builtin/x-twitter.json';
-import youtubeData from '../../../scripts/connectors/builtin/youtube-data.json';
-import deepgram from '../../../scripts/connectors/builtin/deepgram.json';
-import mcpGateway from '../../../scripts/connectors/builtin/mcp_gateway.json';
-import arcade from '../../../scripts/connectors/builtin/arcade.json';
-import slack from '../../../scripts/connectors/builtin/slack.json';
-import discord from '../../../scripts/connectors/builtin/discord.json';
-import telegram from '../../../scripts/connectors/builtin/telegram.json';
-import sendgrid from '../../../scripts/connectors/builtin/sendgrid.json';
-import resend from '../../../scripts/connectors/builtin/resend.json';
-import vercel from '../../../scripts/connectors/builtin/vercel.json';
-import netlify from '../../../scripts/connectors/builtin/netlify.json';
-import cloudflare from '../../../scripts/connectors/builtin/cloudflare.json';
-import figma from '../../../scripts/connectors/builtin/figma.json';
-import hubspot from '../../../scripts/connectors/builtin/hubspot.json';
-import jira from '../../../scripts/connectors/builtin/jira.json';
-import kubernetes from '../../../scripts/connectors/builtin/kubernetes.json';
-import elevenlabs from '../../../scripts/connectors/builtin/elevenlabs.json';
-import leonardoAi from '../../../scripts/connectors/builtin/leonardo-ai.json';
-import googleGemini from '../../../scripts/connectors/builtin/google-gemini.json';
-import confluence from '../../../scripts/connectors/builtin/confluence.json';
-import neon from '../../../scripts/connectors/builtin/neon.json';
-import upstash from '../../../scripts/connectors/builtin/upstash.json';
-import planetscale from '../../../scripts/connectors/builtin/planetscale.json';
-import dropbox from '../../../scripts/connectors/builtin/dropbox.json';
-import twilioSms from '../../../scripts/connectors/builtin/twilio-sms.json';
-import postgres from '../../../scripts/connectors/builtin/postgres.json';
-import mongodb from '../../../scripts/connectors/builtin/mongodb.json';
-import redis from '../../../scripts/connectors/builtin/redis.json';
-import duckdb from '../../../scripts/connectors/builtin/duckdb.json';
-import googleSheets from '../../../scripts/connectors/builtin/google-sheets.json';
-import gmail from '../../../scripts/connectors/builtin/gmail.json';
-import microsoftOutlook from '../../../scripts/connectors/builtin/microsoft-outlook.json';
-import microsoftExcel from '../../../scripts/connectors/builtin/microsoft-excel.json';
-import microsoftCalendar from '../../../scripts/connectors/builtin/microsoft-calendar.json';
-import microsoftTeams from '../../../scripts/connectors/builtin/microsoft-teams.json';
-import onedrive from '../../../scripts/connectors/builtin/onedrive.json';
-import sharepoint from '../../../scripts/connectors/builtin/sharepoint.json';
-import googleAds from '../../../scripts/connectors/builtin/google-ads.json';
-import googleCalendar from '../../../scripts/connectors/builtin/google-calendar.json';
-import canva from '../../../scripts/connectors/builtin/canva.json';
-import penpot from '../../../scripts/connectors/builtin/penpot.json';
-import pipedrive from '../../../scripts/connectors/builtin/pipedrive.json';
-import attio from '../../../scripts/connectors/builtin/attio.json';
-import crisp from '../../../scripts/connectors/builtin/crisp.json';
-import woocommerce from '../../../scripts/connectors/builtin/woocommerce.json';
-import lemonsqueezy from '../../../scripts/connectors/builtin/lemonsqueezy.json';
-import ramp from '../../../scripts/connectors/builtin/ramp.json';
-import awsS3 from '../../../scripts/connectors/builtin/aws-s3.json';
-import cloudflareR2 from '../../../scripts/connectors/builtin/cloudflare-r2.json';
-import backblazeB2 from '../../../scripts/connectors/builtin/backblaze-b2.json';
-import tally from '../../../scripts/connectors/builtin/tally.json';
-import formbricks from '../../../scripts/connectors/builtin/formbricks.json';
-import novu from '../../../scripts/connectors/builtin/novu.json';
-import knock from '../../../scripts/connectors/builtin/knock.json';
-import ntfy from '../../../scripts/connectors/builtin/ntfy.json';
-import obsidian from '../../../scripts/connectors/builtin/obsidian.json';
-import vectorKnowledgeBase from '../../../scripts/connectors/builtin/vector-knowledge-base.json';
-import localMessaging from '../../../scripts/connectors/builtin/local-messaging.json';
-import localDrive from '../../../scripts/connectors/builtin/local-drive.json';
-import codebase from '../../../scripts/connectors/builtin/codebase.json';
-import codebases from '../../../scripts/connectors/builtin/codebases.json';
-import clockify from '../../../scripts/connectors/builtin/clockify.json';
-import toggl from '../../../scripts/connectors/builtin/toggl.json';
-import harvest from '../../../scripts/connectors/builtin/harvest.json';
-import metaAds from '../../../scripts/connectors/builtin/meta-ads.json';
-import linkedinAds from '../../../scripts/connectors/builtin/linkedin-ads.json';
-import googleDrive from '../../../scripts/connectors/builtin/google-drive.json';
-import langfuse from '../../../scripts/connectors/builtin/langfuse.json';
-import helicone from '../../../scripts/connectors/builtin/helicone.json';
-import langsmith from '../../../scripts/connectors/builtin/langsmith.json';
-import tracklight from '../../../scripts/connectors/builtin/tracklight.json';
-import huggingface from '../../../scripts/connectors/builtin/huggingface.json';
-
 /**
  * Builtin connector shape -- extends the shared ConnectorDefinitionBase.
- * JSON files use plain objects; the `as BuiltinConnectorDef[]` cast below
- * coerces the loosely-typed JSON imports into the canonical shape.
  */
 export type BuiltinConnectorDef = ConnectorDefinitionBase;
 
-export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
-  airtable,
-  alphaVantage,
-  asana,
-  azureDevops,
-  notion,
-  clickup,
-  github,
-  gitlab,
-  granola,
-  calCom,
-  calendly,
-  supabase,
-  sentry,
-  betterstack,
-  mixpanel,
-  metabase,
-  twilioSegment,
-  monday,
-  linear,
-  posthog,
-  redash,
-  circleci,
-  convex,
-  buffer,
-  linkedin,
-  reddit,
-  apify,
-  xTwitter,
-  youtubeData,
-  deepgram,
-  mcpGateway,
-  arcade,
-  slack,
-  discord,
-  telegram,
-  sendgrid,
-  resend,
-  vercel,
-  netlify,
-  cloudflare,
-  figma,
-  hubspot,
-  jira,
-  kubernetes,
-  elevenlabs,
-  leonardoAi,
-  googleGemini,
-  confluence,
-  neon,
-  upstash,
-  planetscale,
-  dropbox,
-  twilioSms,
-  postgres,
-  mongodb,
-  redis,
-  duckdb,
-  googleSheets,
-  gmail,
-  microsoftOutlook,
-  microsoftExcel,
-  microsoftCalendar,
-  microsoftTeams,
-  onedrive,
-  sharepoint,
-  googleAds,
-  googleCalendar,
-  canva,
-  penpot,
-  pipedrive,
-  attio,
-  crisp,
-  woocommerce,
-  lemonsqueezy,
-  ramp,
-  awsS3,
-  cloudflareR2,
-  backblazeB2,
-  tally,
-  formbricks,
-  novu,
-  knock,
-  ntfy,
-  obsidian,
-  vectorKnowledgeBase,
-  localMessaging,
-  localDrive,
-  codebase,
-  codebases,
-  clockify,
-  toggl,
-  harvest,
-  metaAds,
-  linkedinAds,
-  googleDrive,
-  langfuse,
-  helicone,
-  langsmith,
-  tracklight,
-  huggingface,
-] as BuiltinConnectorDef[];
+/**
+ * Every seed JSON, discovered rather than listed. The hand-written import list
+ * this replaces had drifted to 100 of the 135 files the Rust seed
+ * (scripts/generate-connector-seed.mjs -> builtin_connectors.rs) ships, so 35
+ * real vault connectors (stripe, n8n, zapier, the cloud and research
+ * connectors, the webhooks...) were invisible here: an import asked for none of
+ * their fields, their template pills read as unknown categories, and three
+ * categories (vision, observability, personalization) looked uncoverable.
+ *
+ * The assertion: each file is one connector object in the seed format (the
+ * seed generator reads the same directory). Four seeds omit
+ * `healthcheck_config` and one omits `services`/`events`, so the optional
+ * collections are defaulted here; the test beside this file checks every
+ * seed for the required scalar keys and a `fields` array.
+ * Sorted by path so the order is stable across platforms.
+ */
+const SEED_MODULES = import.meta.glob<Partial<BuiltinConnectorDef>>(
+  '../../../scripts/connectors/builtin/*.json',
+  { eager: true, import: 'default' },
+);
+
+export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = Object.keys(SEED_MODULES)
+  .sort()
+  .map((path) => ({
+    healthcheck_config: null,
+    metadata: null,
+    services: [],
+    events: [],
+    ...SEED_MODULES[path],
+  }) as BuiltinConnectorDef);
 
 /**
  * Return every category tag claimed by a connector — unions the legacy

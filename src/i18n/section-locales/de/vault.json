@@ -13,7 +13,11 @@
     "personas_one": "{count} Persona",
     "personas_other": "{count} Personas",
     "show_all": "Alle {count} Einträge anzeigen",
-    "total_accesses": "{count} gesamt"
+    "total_accesses": "{count} gesamt",
+    "by_persona": "von {name}",
+    "entries_one": "{count} Eintrag",
+    "entries_other": "{count} Einträge",
+    "page_of": "Seite {page}/{total}"
   },
   "auto_cred_extra": {
     "all_fields_captured": "Alle {count} Felder erfasst",
@@ -102,7 +106,19 @@
     "test_to_save": "Verbindung testen, um Speichern zu aktivieren",
     "universal_auto_setup": "Universelle Auto-Einrichtung",
     "universal_auto_setup_hint": "Geben Sie eine URL und eine Beschreibung an, und die KI navigiert durch die Website, um API-Zugangsdaten automatisch zu erkennen und zu erstellen.",
-    "what_do_you_need": "Was benötigen Sie?"
+    "what_do_you_need": "Was benötigen Sie?",
+    "err_kind_cli_error": "CLI-Fehler",
+    "err_kind_cli_not_found": "CLI nicht gefunden",
+    "err_kind_env_conflict": "Umgebungskonflikt",
+    "err_kind_extraction_failed": "Extraktion fehlgeschlagen",
+    "err_kind_spawn_failed": "Start fehlgeschlagen",
+    "err_kind_timeout": "Zeitüberschreitung",
+    "field_missing": "{label} (fehlt)",
+    "log_blocked_url": "Eine unsichere URL aus der Einrichtungssitzung wurde blockiert",
+    "log_open_url_failed": "URL konnte nicht geöffnet werden: {url}",
+    "log_saved_procedure": "Gespeicherte Prozedur für {label} wird verwendet",
+    "open_url": "Öffnen",
+    "open_url_title": "{url} im Browser öffnen"
   },
   "auto_cred": {
     "action_required": "Aktion erforderlich",
@@ -534,7 +550,8 @@
     "use_console_hint": "Konsolenreiter verwenden, um den Wert dieses Schlüssels zu inspizieren.",
     "write": "Schreiben",
     "write_mode": "Schreibmodus",
-    "suggestion_api_tables": "Liste die Tabellen in dieser Base und die Anzahl der Datensätze je Tabelle"
+    "suggestion_api_tables": "Liste die Tabellen in dieser Base und die Anzahl der Datensätze je Tabelle",
+    "rename_failed": "Die Zugangsdaten konnten nicht umbenannt werden. Der alte Name ist weiterhin gespeichert."
   },
   "delete_dialog": {
     "cannot_undo": "Diese Aktion kann nicht rückgängig gemacht werden.",
@@ -583,7 +600,7 @@
     "severity_high": "Hohes Risiko",
     "severity_low": "Geringes Risiko",
     "severity_medium": "Mittleres Risiko",
-    "sim_high": "Ein Widerruf von {credentialName} würde {personas} Persona{personaPlural} in Ihrem Workspace beeinträchtigen.",
+    "sim_high": "Ein Widerruf von {credentialName} würde {personas} Persona in Ihrem Workspace beeinträchtigen.",
     "sim_low": "Keine Personas oder Workflows hängen von diesen Zugangsdaten ab. Sicher zu widerrufen.",
     "sim_medium": "Ein Widerruf von {credentialName} hat begrenzte Auswirkungen.",
     "simulate_revocation": "Widerruf simulieren",
@@ -642,7 +659,9 @@
     "start_over": "Von vorne beginnen",
     "technical_details": "Technische Details",
     "title": "Zugangsdaten entwerfen",
-    "try_again_with": "Mit Ihrer Anfrage erneut versuchen"
+    "try_again_with": "Mit Ihrer Anfrage erneut versuchen",
+    "instruction_imported": "{label}-Zugangsdaten (importiert)",
+    "instruction_template": "{label}-Zugangsdaten"
   },
   "design_phases": {
     "all_steps_complete": "Alle Schritte abgeschlossen -- füllen Sie die Felder unten aus und testen Sie die Verbindung.",
@@ -698,7 +717,9 @@
     "typical_time": "Typisch 15--30 Sekunden",
     "use_template": "Verwenden",
     "verified_setup": "Verifizierte Einrichtung",
-    "view_credential": "Zugangsdaten ansehen"
+    "view_credential": "Zugangsdaten ansehen",
+    "open": "Öffnen",
+    "step_number": "Schritt {n}"
   },
   "desktop_discovery": {
     "allowed_binaries": "Erlaubte Programmdateien: ",
@@ -783,7 +804,8 @@
     "scheduled_rotation": "Geplante Rotation",
     "scheduled_rotation_desc": "Zugangsdaten nach einem cron-Zeitplan rotieren (z. B. täglich, wöchentlich).",
     "seconds_10": "10 Sekunden",
-    "seconds_30": "30 Sekunden"
+    "seconds_30": "30 Sekunden",
+    "template_trigger_aria": "Ereignisauslöser {name}"
   },
   "features": {
     "anomaly_detected": "Anomalie erkannt: Zugangsdaten schlagen plötzlich nach vorherigem Erfolg fehl. Mögliche Widerrufung.",
@@ -962,7 +984,10 @@
     "no_eligible": "Keine geeigneten Zugangsdaten. Zuerst MCP-Zugangsdaten in der Liste hinzufügen.",
     "no_members": "Noch keine Mitglieder. Unten eines hinzufügen, um Tools zu bündeln.",
     "pick_credential": "Zugangsdaten auswählen…",
-    "pick_error": "Zugangsdaten auswählen und kurzen Anzeigenamen vergeben"
+    "pick_error": "Zugangsdaten auswählen und kurzen Anzeigenamen vergeben",
+    "remove_member_aria": "{name} entfernen",
+    "disable_member": "Deaktivieren",
+    "enable_member": "Aktivieren"
   },
   "graph": {
     "connection_count_one": "{count} Verbindung",
@@ -1006,7 +1031,27 @@
     "selected_for_import": "zum Import ausgewählt",
     "source_ref": "Quellreferenz",
     "sync_supported": "Sync unterstützt",
-    "title": "Importquelle"
+    "title": "Importquelle",
+    "cli_hint": "Führe den CLI-Befehl {cli} aus und füge die JSON-Ausgabe unten ein.",
+    "env_hint": "Füge den Inhalt deiner .env-Datei unten ein.",
+    "err_aws_no_secret_string": "Keine SecretString in der AWS-Antwort gefunden",
+    "err_aws_parse_failed": "AWS-Secrets-Manager-JSON-Ausgabe konnte nicht gelesen werden",
+    "err_azure_parse_failed": "Azure-Key-Vault-JSON-Ausgabe konnte nicht gelesen werden",
+    "err_doppler_parse_failed": "Doppler-JSON-Ausgabe konnte nicht gelesen werden. Verwende: doppler secrets download --format=json",
+    "err_env_missing_separator": "Zeile {line}: Trennzeichen „=“ fehlt",
+    "err_no_secrets": "Keine Secrets in der Eingabe gefunden",
+    "err_op_expected_array": "Ein JSON-Array aus der Ausgabe der op-CLI wurde erwartet",
+    "err_op_parse_failed": "1Password-JSON-Ausgabe konnte nicht gelesen werden. Verwende: op item list --format=json",
+    "placeholder_1password": "Ausgabe einfügen von: op item list --format=json",
+    "placeholder_aws_secrets": "Ausgabe einfügen von: aws secretsmanager get-secret-value --secret-id <name>",
+    "placeholder_azure_keyvault": "Ausgabe einfügen von: az keyvault secret show --vault-name <vault> --name <secret>",
+    "placeholder_doppler": "Ausgabe einfügen von: doppler secrets download --format=json",
+    "source_desc_1password": "Aus 1Password mit der op-CLI importieren",
+    "source_desc_aws_secrets": "Aus AWS Secrets Manager importieren",
+    "source_desc_azure_keyvault": "Aus Azure Key Vault importieren",
+    "source_desc_doppler": "Aus der Doppler-Secrets-Plattform importieren",
+    "source_desc_env_file": "Secrets aus einer lokalen .env-Datei importieren",
+    "source_label_env_file": ".env-Datei"
   },
   "ingest": {
     "rename_credential": "Zugangsdaten umbenennen",
@@ -1066,7 +1111,11 @@
     "title_databases": "Datenbanken",
     "title_dependencies": "Abhängigkeiten",
     "unverifiable_count": "{count} nicht überprüfbar",
-    "unverifiable_tooltip": "Dieser Connector hat keine Live-Prüfung -- Anmeldedaten sind gespeichert, wurden aber nie beim Anbieter überprüft"
+    "unverifiable_tooltip": "Dieser Connector hat keine Live-Prüfung -- Anmeldedaten sind gespeichert, wurden aber nie beim Anbieter überprüft",
+    "create_failed": "Zugangsdaten konnten nicht erstellt werden",
+    "rotate_result_failed": "{count} fehlgeschlagen",
+    "rotate_result_refreshed": "{count} aktualisiert",
+    "rotate_result_skipped": "{count} übersprungen"
   },
   "negotiator_extra": {
     "ask_button": "Ask",
@@ -1084,7 +1133,8 @@
     "planning_description": "KI analysiert das Entwickler-Portal und generiert einen schrittweisen Bereitstellungsplan…",
     "start_auto": "Automatische Bereitstellung starten",
     "existing_auth_description": "Sie sind bei {service} bereits über {method} angemeldet. Die Einrichtung nutzt diese Sitzung und überspringt die Anmeldeschritte.",
-    "use_existing_auth": "Vorhandene {service}-Sitzung verwenden"
+    "use_existing_auth": "Vorhandene {service}-Sitzung verwenden",
+    "step_of": "Schritt {current} von {total}: {title}"
   },
   "negotiator": {
     "all_steps_completed": "Alle Schritte abgeschlossen",
@@ -1261,7 +1311,11 @@
     "rotate_now": "Jetzt rotieren",
     "rotation_failed": "Rotation fehlgeschlagen: {error}",
     "rotation_paused": "Rotation pausiert",
-    "update_period_failed": "Rotationszeitraum konnte nicht aktualisiert werden: {error}"
+    "update_period_failed": "Rotationszeitraum konnte nicht aktualisiert werden: {error}",
+    "countdown_days_hours": "{days} T. {hours} Std.",
+    "countdown_due_now": "Jetzt fällig",
+    "countdown_hours_minutes": "{hours} Std. {minutes} Min.",
+    "countdown_minutes": "{minutes} Min."
   },
   "schema_configs": {
     "custom": {
@@ -1378,7 +1432,9 @@
     "kv_value_label": "Wert",
     "kv_value_placeholder": "wert",
     "none_configured": "Keine konfiguriert.",
-    "required_badge": "PFLICHT"
+    "required_badge": "PFLICHT",
+    "field_captured": "erfasst",
+    "select_placeholder": "Auswählen..."
   },
   "setup_kind": {
     "cli_login": "Die CLI des Anbieters ist installiert, aber nicht angemeldet — führe im Terminal ihren Login-Befehl aus (zum Beispiel `vercel login` oder `gh auth login`)",
@@ -1607,7 +1663,8 @@
     "extract_export_json": "JSON exportieren",
     "extract_filter_all": "Alle Typen",
     "extract_filter_label": "Nach Entitätstyp filtern",
-    "health_unreachable": "Dienst nicht erreichbar"
+    "health_unreachable": "Dienst nicht erreichbar",
+    "oauth_context_lost": "OAuth wurde abgeschlossen, aber der Kontext ging verloren. Bitte versuche es erneut."
   },
   "subtitle": "Wählen Sie, wie Sie Zugangsdaten hinzufügen möchten",
   "title": "Tresor",
@@ -1760,7 +1817,12 @@
     "select_services": "Dienste zum Verbinden auswählen",
     "selected_count": "{selected} von {total} ausgewählt",
     "sign_in_browser": "Melden Sie sich im Browser-Fenster mit Ihrem Google-Konto an.",
-    "some_failed": "Einige Zugangsdaten fehlgeschlagen"
+    "some_failed": "Einige Zugangsdaten fehlgeschlagen",
+    "service_gmail_desc": "E-Mails senden, lesen und verwalten",
+    "service_google_calendar_desc": "Kalenderereignisse lesen und verwalten",
+    "service_google_drive_desc": "Dateien lesen und verwalten",
+    "service_google_sheets_desc": "Tabellendaten lesen und schreiben",
+    "status_failed": "Fehlgeschlagen"
   },
   "connector_attention": {
     "title": "Verbindungen erfordern Aufmerksamkeit",
@@ -1781,5 +1843,29 @@
     "reconnect_now": "Jetzt erneut verbinden",
     "reconnecting": "Verbindung wird hergestellt...",
     "signed_in_as": "Angemeldet als {email}"
+  },
+  "remediation_notify": {
+    "auto_disabled_body": "{name}: Anhaltende kritische Fehler erkannt. Rotationsrichtlinien wurden deaktiviert, um Folgefehler zu vermeiden.",
+    "auto_disabled_title": "Zugangsdaten automatisch deaktiviert",
+    "critical_title": "Zugangsdaten kritisch",
+    "drift_title": "Abweichung bei Zugangsdaten erkannt",
+    "rotation_failed_title": "Rotation der Zugangsdaten fehlgeschlagen",
+    "warning_title": "Warnung zu Zugangsdaten",
+    "reason_backoff_retry": "Vorübergehende Fehlerrate bei {pct} (1 Std.). Exponentielles Backoff wird angewendet.",
+    "reason_default": "Behebungsstufe: {level}",
+    "reason_disable": "Kritisch: {pct} permanente Fehlerrate (1 Std.). Rotationsrichtlinien werden automatisch deaktiviert.",
+    "reason_preemptive_rotation": "Anhaltende Verschlechterung: {pct} Fehlerrate (1 Std.). Vorbeugende Rotation wird geplant.",
+    "reason_rotate_then_alert": "Permanente Fehler erkannt: {pct} permanente Fehlerrate (1 Std.). Rotation und Benachrichtigung laufen."
+  },
+  "resource_picker": {
+    "no_matches": "Keine Treffer",
+    "nothing_to_pick": "Noch nichts zur Auswahl",
+    "pick_first": "Zuerst {dep} auswählen",
+    "picked_count": "{count} ausgewählt",
+    "save_scope": "Bereich speichern",
+    "scope_title": "Bereich {label}",
+    "search_placeholder": "{label} suchen…",
+    "stale_picks_one": "{count} Auswahl",
+    "stale_picks_other": "{count} Auswahlen"
   }
 }

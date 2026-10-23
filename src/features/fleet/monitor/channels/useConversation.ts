@@ -9,6 +9,7 @@ import {
   startTeamAssignment,
 } from '@/api/pipeline/assignments';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { useMonitorVisible } from '../monitorVisibility';
 import type { TeamDeliberation } from '@/lib/bindings/TeamDeliberation';
 import {
   buildConversation,
@@ -34,7 +35,13 @@ import {
 const DELIB_KINDS = ['deliberation'] as const;
 
 export function useConversation(teamId: string | null, focusItemId?: string | null) {
-  const ids = useMemo(() => (teamId ? [teamId] : []), [teamId]);
+  // The Monitor is hidden, not unmounted, on close (`monitorVisibility.ts`), and
+  // each subscription is a key the shared channel poll re-reads every 15s. The
+  // deliberation key has no other subscriber, so a closed Monitor parked on
+  // Conversations kept querying it for nobody. Released while hidden; the cache
+  // stays, and re-subscribing on show refetches a key older than one poll.
+  const visible = useMonitorVisible();
+  const ids = useMemo(() => (teamId && visible ? [teamId] : []), [teamId, visible]);
   useChannelSubscription(ids);
   useChannelSubscription(ids, [...DELIB_KINDS]);
 
@@ -97,9 +104,12 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
     );
     const base = buildConversation(merged);
     // Pending proposals are local-only until Confirm creates the assignment, so
-    // they append at the end rather than living in the channel.
+    // they append at the end rather than living in the channel. Only THIS
+    // team's: the hook outlives a project switch, and a goal routed for one
+    // team rendered in the next one's thread, where Confirm launched it.
     for (const p of proposals) {
-      base.push({ kind: 'proposal', key: `prop:${p.goal}`, at: new Date().toISOString(), proposal: p });
+      if (p.teamId !== teamId) continue;
+      base.push({ kind: 'proposal', key: `prop:${p.goal}`, at: '', proposal: p });
     }
     // Queued prompts are the newest thing in the conversation by definition —
     // they have not been sent yet — so they sit at the very bottom, after the
@@ -112,7 +122,7 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
     const next = reconcileRows(lastRows.current, base);
     lastRows.current = next;
     return next;
-  }, [talk.items, turns.items, proposals, queue]);
+  }, [talk.items, turns.items, proposals, queue, teamId]);
 
   // DEEP LINK ONTO THE LINE. A pop-up's preset used to name a team and stop
   // there, so the reader landed in a clustered, oldest-first conversation and
@@ -154,11 +164,11 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
    * ------------------------------------------------------------------------ */
 
   /** Accept a prompt. Returns the row key so the caller can pose against it. */
-  const enqueue = useCallback((text: string, goal: boolean): string | null => {
+  const enqueue = useCallback((text: string, goal: boolean, onPosted?: () => void): string | null => {
     const body = text.trim();
     if (!body) return null;
     const id = `q-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-    setQueue((q) => [...q, { id, text: body, goal, phase: 'queued' }]);
+    setQueue((q) => [...q, { id, text: body, goal, phase: 'queued', onPosted }]);
     const key = `queued:${id}`;
     setPinKey(key);
     return key;
@@ -208,6 +218,9 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
     const run = batch.goal
       ? decomposeTeamAssignmentGoal(teamId, batch.body).then((steps) => {
           addProposal({
+            // The team the batch was drained for, not the one open when the
+            // decomposition comes back.
+            teamId,
             goal: batch.body,
             steps: steps.map((s) => ({
               title: s.title,
@@ -220,7 +233,12 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
       : sendChannelDirective(teamId, batch.body);
 
     run.then(
-      () => settle(true),
+      () => {
+        settle(true);
+        // Only a landed directive summons anyone: the handoff rides the drain's
+        // success, not the keystroke that enqueued it.
+        for (const cb of batch.afterPost) cb();
+      },
       (e: unknown) => {
         settle(false);
         // The row carries the failure; the toast carries the reason. Both,
@@ -231,18 +249,23 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
   }, [queue, teamId, sendChannelDirective, addProposal]);
 
   const dropProposal = useCallback(
-    (goal: string) => setProposals((ps) => ps.filter((p) => p.goal !== goal)),
-    [],
+    (goal: string) => setProposals((ps) => ps.filter((p) => p.teamId !== teamId || p.goal !== goal)),
+    [teamId],
   );
 
   /** Confirm → the proposal becomes a real, running assignment. */
   const confirmProposal = useCallback(
     async (p: AssignProposal) => {
-      if (!teamId) return;
-      setProposals((ps) => ps.map((x) => (x.goal === p.goal ? { ...x, status: 'launching' } : x)));
+      // The proposal's own team: it is the one the goal was routed for.
+      const owner = p.teamId;
+      const same = (x: AssignProposal) => x.teamId === owner && x.goal === p.goal;
+      setProposals((ps) => ps.map((x) => (same(x) ? { ...x, status: 'launching' } : x)));
       try {
-        const created = await createTeamAssignment({
-          teamId,
+        // A retry after a failed START reuses the assignment the first press
+        // already created: creating again left one orphaned, never-started
+        // assignment per retry beside the one that finally ran.
+        const assignmentId = p.assignmentId ?? (await createTeamAssignment({
+          teamId: owner,
           title: p.goal.slice(0, 60),
           goal: p.goal,
           matchStrategy: 'llm_eval',
@@ -259,19 +282,19 @@ export function useConversation(teamId: string | null, focusItemId?: string | nu
             assignedUseCaseId: null,
             dependsOnIndices: null,
           })),
-        });
-        if (created) {
-          await startTeamAssignment(created.id);
-          // The assignment now speaks for itself in the channel.
-          setProposals((ps) => ps.filter((x) => x.goal !== p.goal));
-          void refreshChannel(channelKey(teamId));
-        }
+        })).id;
+        // Recorded before the start, so a failed start keeps it for the retry.
+        setProposals((ps) => ps.map((x) => (same(x) ? { ...x, assignmentId } : x)));
+        await startTeamAssignment(assignmentId);
+        // The assignment now speaks for itself in the channel.
+        setProposals((ps) => ps.filter((x) => !same(x)));
+        void refreshChannel(channelKey(owner));
       } catch (e) {
         toastCatch('conversation:confirm')(e);
-        setProposals((ps) => ps.map((x) => (x.goal === p.goal ? { ...x, status: 'pending' } : x)));
+        setProposals((ps) => ps.map((x) => (same(x) ? { ...x, status: 'pending' } : x)));
       }
     },
-    [teamId, refreshChannel],
+    [refreshChannel],
   );
 
   const markSeen = useCallback(() => {

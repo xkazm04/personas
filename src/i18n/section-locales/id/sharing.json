@@ -322,5 +322,15 @@
   "conn_state_connecting": "Menghubungkan...",
   "conn_state_failed": "Gagal",
   "conn_state_disconnected": "Terputus",
-  "resources_synced": "{count} disinkronkan"
+  "resources_synced": "{count} disinkronkan",
+  "exposure_auth_required": "Perlu autentikasi",
+  "exposure_open_lan": "Terbuka untuk peer LAN",
+  "open_to_lan_hint": "Perangkat apa pun di jaringan Anda yang terhubung dapat melihat sumber daya ini tanpa membuktikan identitasnya. Biarkan nonaktif kecuali Anda memercayai setiap perangkat di jaringan ini.",
+  "open_to_lan_label": "Terbuka untuk peer LAN tanpa autentikasi",
+  "by_creator": "oleh {name}",
+  "created_on": "Dibuat {date}",
+  "fields_exposed_count_one": "{count} bidang diekspos",
+  "fields_exposed_count_other": "{count} bidang diekspos",
+  "health_latency_ms": "{ms}ms",
+  "health_missed": "{count} terlewat"
 }

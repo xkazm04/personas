@@ -105,6 +105,23 @@ fn is_blocked_hostname(host: &str) -> bool {
     false
 }
 
+/// Async door for [`validate_url_safety`]: it can do a blocking DNS lookup, so
+/// it runs on the blocking pool. Call this before the first request to any
+/// caller-influenced URL - the SSRF-safe client's resolver guards hostnames
+/// only, an IP literal (127.0.0.1, 169.254.169.254) skips it entirely.
+pub async fn validate_url_safety_async(url: &str) -> Result<(), String> {
+    let url = url.to_owned();
+    tokio::task::spawn_blocking(move || validate_url_safety(&url))
+        .await
+        .map_err(|e| {
+            if e.is_panic() {
+                "URL safety check panicked".to_owned()
+            } else {
+                format!("URL safety check failed: {e}")
+            }
+        })?
+}
+
 /// Validate that a URL is safe for outbound HTTP requests.
 ///
 /// Returns `Ok(())` if the URL targets an external host, or `Err(reason)` if
@@ -250,7 +267,8 @@ impl reqwest::dns::Resolve for SsrfSafeDnsResolver {
 }
 
 /// Build a `reqwest::Client` that uses [`SsrfSafeDnsResolver`] to reject
-/// private IPs at connect time, preventing DNS-rebinding SSRF bypasses.
+/// hostnames resolving to private IPs at connect time, preventing
+/// DNS-rebinding SSRF bypasses.
 ///
 /// Also installs a custom redirect policy that re-validates the target IP of
 /// *every* redirect hop via [`is_url_target_private`]. The DNS resolver only
@@ -260,6 +278,18 @@ impl reqwest::dns::Resolve for SsrfSafeDnsResolver {
 /// policy reqwest auto-follows up to 10 hops and would issue the request
 /// straight to cloud-metadata / an internal service after the initial
 /// request already passed the SSRF check.
+///
+/// # What this client does NOT cover: an IP literal in the INITIAL URL
+///
+/// The resolver is consulted only for a hostname. A request whose own URL
+/// carries an IP literal (`http://169.254.169.254/`, `http://127.0.0.1:9420/`)
+/// dials that address directly: no lookup happens, so nothing here can veto
+/// it, and the redirect policy only runs from the first redirect on. Measured
+/// 2026-10-19: a GET to a `127.0.0.1` listener through this client returned
+/// `200 OK`. A caller whose URL is user-, credential- or LLM-influenced MUST
+/// run [`validate_url_safety`] on it first (off the async runtime, it does
+/// blocking DNS); this client then closes the rebinding and redirect gaps that
+/// a pre-flight check alone leaves open. Neither layer is sufficient alone.
 ///
 /// Client construction failure is fail-closed: it panics rather than
 /// silently falling back to a stock `reqwest::Client` with the system DNS

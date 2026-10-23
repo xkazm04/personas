@@ -22,6 +22,7 @@ import { renderSectionRoute, isRoutableSection, isSectionGated } from '@/feature
 import { prefetchSection } from '@/features/shared/chrome/navPrefetch';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { silentCatch } from '@/lib/silentCatch';
+import { getActiveTranslations, interpolate } from '@/i18n/useTranslation';
 import { SectionProfiler } from '@/lib/devlog/SectionProfiler';
 
 // Section PRIMARIES (Home, Overview, Teams canvas, Agents table, Events,
@@ -39,7 +40,7 @@ const CreatePersonaEntry = lazyRetry(() => import('@/features/personas/sub_found
 // Mid-build resume renders the build progress surface directly (not the
 // create-mode chooser) — a session in flight already picked its path.
 const UnifiedBuildEntry = lazyRetry(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
-const GoalsPage = lazyRetry(() => import('@/features/teams/sub_goals/GoalsPage'));
+const GoalsPage = lazyRetry(() => import('@/features/projects/development/goals/GoalsPage'));
 const KPIsPage = lazyRetry(() => import('@/features/teams/sub_kpis/KPIsPage'));
 const FactoryPage = lazyRetry(() => import('@/features/teams/sub_factory/FactoryPage'));
 const ProjectManagerPage = lazyRetry(() => import('@/features/plugins/dev-tools/sub_projects/ProjectManagerPage'));
@@ -194,7 +195,16 @@ export default function PersonasPage() {
     const labels = ['personas', ...prewarm.map(([name]) => name)];
     const failed = labels.filter((_, i) => results[i]?.status === 'rejected');
     if (failed.length > 0) {
-      setError(`Startup failed -- ${failed.join(', ')} could not be loaded`);
+      // Store ids are machine tokens; resolve each to a localized label (errors is a BASE section, always loaded).
+      const te = getActiveTranslations().errors;
+      const sourceLabels: Record<string, string> = {
+        personas: te.startup_source_personas,
+        tools: te.startup_source_tools,
+        credentials: te.startup_source_credentials,
+        recipes: te.startup_source_recipes,
+        teams: te.startup_source_teams,
+      };
+      setError(interpolate(te.startup_failed, { sources: failed.map((n) => sourceLabels[n] ?? n).join(', ') }));
     }
     markStartupPhase('data:settled');
     // Auto-reconnect GitLab if a vault credential exists (non-blocking).
@@ -258,7 +268,7 @@ export default function PersonasPage() {
         : []),
       // Projects (teams) submodule primaries — previously un-prefetched, so a
       // cold first-open paid full chunk fetch+eval behind the route skeleton.
-      () => import('@/features/teams/sub_goals/GoalsPage'),
+      () => import('@/features/projects/development/goals/GoalsPage'),
       () => import('@/features/teams/sub_kpis/KPIsPage'),
       () => import('@/features/plugins/dev-tools/sub_projects/ProjectManagerPage'),
       () => import('@/features/plugins/dev-tools/sub_lifecycle/LifecyclePage'),

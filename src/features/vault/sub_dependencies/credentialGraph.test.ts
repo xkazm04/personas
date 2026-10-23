@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildCredentialGraph, analyzeBlastRadius, toAgentNodeId } from './credentialGraph';
+import { buildCredentialGraph, analyzeBlastRadius, simulateRevocation, toAgentNodeId } from './credentialGraph';
+import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 import type { CredentialMetadata, ConnectorDefinition, Persona, CredentialEvent } from '@/lib/types/types';
 import type { CredentialDependent } from '@/lib/bindings/CredentialDependent';
 
@@ -86,6 +87,38 @@ describe('buildCredentialGraph edge dedupe', () => {
     const edge = graph.edges.find((e) => e.source === 'cred-1');
     // audit_log is known and outranks the unknown 'mystery_link'
     expect(edge?.label).toBe('audit_log');
+  });
+});
+
+describe('simulateRevocation persona grade', () => {
+  function signal(source: PersonaHealthSignal['successRateSource']): PersonaHealthSignal {
+    return {
+      personaId: 'persona-1',
+      grade: 'healthy',
+      successRateSource: source,
+      recentExecutions: 14,
+      dailyBurnRate: 0.5,
+    } as PersonaHealthSignal;
+  }
+  const graph = buildCredentialGraph(
+    [cred],
+    [],
+    [persona],
+    [],
+    new Map<string, CredentialDependent[]>([['cred-1', [dep('tool_connector')]]]),
+  );
+
+  it.each(['unknown', 'proxy'] as const)(
+    'does not report a %s success rate as a healthy persona',
+    (source) => {
+      const sim = simulateRevocation('cred-1', graph, [signal(source)], [cred]);
+      expect(sim?.affectedPersonas[0]?.grade).toBe('unknown');
+    },
+  );
+
+  it('keeps the grade of a persona whose success rate was measured', () => {
+    const sim = simulateRevocation('cred-1', graph, [signal('measured')], [cred]);
+    expect(sim?.affectedPersonas[0]?.grade).toBe('healthy');
   });
 });
 

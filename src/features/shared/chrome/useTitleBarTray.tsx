@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useMemo, useRef } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -71,9 +71,9 @@ export function useTitleBarTray() {
   const openPalette = useCommandPaletteStore((s) => s.openPalette);
   const setMonitorInitialView = useSystemStore((s) => s.setMonitorInitialView);
   /**
-   * The decision badge reads the Decision Center's roster counts — the seven
-   * decision chips, the same number the Activity strip shows — and nothing
-   * else. Counts only: no item source, no triage machinery, no review list.
+   * The decision badge reads the Decision Center's lane counts (the same
+   * numbers the Activity command bar's lane buttons show) and nothing else.
+   * Counts only: no item source, no triage machinery, no review list.
    *
    * It also owns their freshness: `useDecisionCounts` registers the roster's
    * 30 s counts ticker on the shared coordinator (one `dev_tools_pending_counts`
@@ -82,6 +82,27 @@ export function useTitleBarTray() {
    * which read the same command through a second path, is gone with it.
    */
   const decisions = useDecisionCounts();
+
+  // The count is a function of the wall clock, not just of the list: a schedule
+  // that has fired must leave the badge and the day must roll over without the
+  // list being refetched. One timeout to the next moment the answer can change
+  // (the earliest still-upcoming trigger, or midnight) bumps `clockTick`, which recomputes the count against the clock.
+  const [clockTick, setClockTick] = useState(0);
+  useEffect(() => {
+    const nowMs = Date.now();
+    const now = new Date(nowMs);
+    let nextChange = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
+    for (const a of cronAgents) {
+      if (!a.trigger_enabled || !a.persona_enabled || !a.next_trigger_at) continue;
+      const at = new Date(a.next_trigger_at).getTime();
+      // A trigger is counted through its own instant, so it leaves the badge just after.
+      if (at >= nowMs && at + 1 < nextChange) nextChange = at + 1;
+    }
+    // setTimeout clamps to a signed 32-bit delay; a day is well inside it.
+    const delay = Math.max(1000, nextChange - Date.now());
+    const id = setTimeout(() => setClockTick((n) => n + 1), delay);
+    return () => clearTimeout(id);
+  }, [cronAgents, clockTick]);
 
   const todayScheduleCount = useMemo(() => {
     const now = new Date();
@@ -92,16 +113,18 @@ export function useTitleBarTray() {
       const next = new Date(a.next_trigger_at);
       return next >= now && next <= endOfDay;
     }).length;
-  }, [cronAgents]);
+  // clockTick is the clock dependency: the body reads the current time.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cronAgents, clockTick]);
 
   /**
-   * Every decision waiting on a person, across the seven chips. Build questions
-   * and chat are inside it (the roster adds them client-side); `ready` is not
-   * a decision and is not.
+   * Every card waiting on the operator: the lanes (Breach + Sign + Accept +
+   * Talk; Orphans excluded). Build questions and chat are inside it (the
+   * roster adds them client-side). `null` until the first lanes read settles:
+   * the badge then shows its loading ghost, never the roster's chip total,
+   * which counts things the lanes do not (orphans, held, evidence).
    */
-  // Under the `lanes` setting the badge counts the lanes (Breach + Sign +
-  // Accept + Talk, Orphans excluded) instead of the chips.
-  const quickCount = decisions.laneTotal ?? decisions.total;
+  const quickCount = decisions.laneTotal;
   const monitorAttention = unreadReportCount + draftReadyCount;
 
   const notificationsOpen = headerOverlay === 'notifications';
@@ -144,7 +167,8 @@ export function useTitleBarTray() {
   return {
     todayScheduleCount,
     quickCount,
-    decisionCounts: decisions.counts,
+    decisionLanes: decisions.lanes,
+    lanesSettled: decisions.lanesSettled,
     monitorAttention,
     unreadCount,
     running,

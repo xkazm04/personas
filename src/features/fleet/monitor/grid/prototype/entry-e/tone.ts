@@ -9,6 +9,7 @@ import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { SquareState } from '../../fleetGridModel';
 import type { MeterTone } from '../../usageModel';
 import type { TriageTone } from '../../rail/railModel';
+import type { PileKey } from '../../skin/piles';
 
 export type Tone = 'run' | 'warn' | 'err' | 'info' | 'ok' | 'off';
 
@@ -47,6 +48,47 @@ export function sessionLamp(state: FleetSessionState): Lamp {
       return { tone: 'off', lit: false };
     default:
       return { tone: 'off', lit: false };
+  }
+}
+
+/**
+ * What a LINE of a bay wears, from its pile and whether it runs: one rule for
+ * persona and session lines alike (polish P1, the owner's items 4 and 5).
+ *
+ *   needs you      the amber edge and lamp carry it, with the amber need
+ *                  glyph; no background wash (the edge and glyph already say it)
+ *   needs you AND  running: only the need glyph stays amber; the edge, lamp,
+ *                  run glyph and sweep are the run tone, so a working line
+ *                  reads as working and the glyph alone says what it asks
+ *   critical       red edge, lamp and glyph with the stronger wash: an alarm
+ *                  keeps the whole frame even while it runs
+ *   working        the run edge and the sweep
+ */
+export interface LineSignal {
+  /** Tone of the edge, the lamp, the status glyph and the sweep (`--ae-tone`). */
+  tone: Tone;
+  /** `.ae-line` edge classes (entryE.css). */
+  edge: string;
+  /** The ambient run sweep (`ae-sweep`). */
+  sweep: boolean;
+  /** Tone of the need glyph and count, when the line needs the operator. */
+  need: Tone | null;
+}
+
+export function lineSignal(kind: PileKey, running: boolean): LineSignal {
+  switch (kind) {
+    case 'critical':
+      return { tone: 'err', edge: 'is-lit is-critical', sweep: false, need: 'err' };
+    case 'warning':
+      return running
+        ? { tone: 'run', edge: 'is-working', sweep: true, need: 'warn' }
+        : { tone: 'warn', edge: 'is-lit', sweep: false, need: 'warn' };
+    case 'working':
+      return { tone: 'run', edge: 'is-working', sweep: true, need: null };
+    case 'off':
+      return { tone: 'off', edge: 'is-off', sweep: false, need: null };
+    default:
+      return { tone: 'off', edge: '', sweep: false, need: null };
   }
 }
 

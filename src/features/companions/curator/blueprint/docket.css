@@ -123,6 +123,12 @@
 .cb-root .cb-queue .cb-lane-head {
   padding-bottom: var(--space-sm);
 }
+/* Pending | History in the drawer's head: the same toolbar buttons the top
+   bar uses, side by side, the pressed one carrying the top bar's own mark. */
+.cb-root .cb-q-views {
+  display: inline-flex;
+  gap: var(--space-xs);
+}
 
 /* Her, in the drawer that is hers, at the one moment it has room: an EMPTY
    lane, or a lane nobody could read. The same luminance mask as the top bar's

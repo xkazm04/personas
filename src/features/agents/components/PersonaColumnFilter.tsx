@@ -3,6 +3,7 @@ import { Filter, X } from 'lucide-react';
 import { TABLE_HEAD_LABEL } from '@/features/shared/components/display/tableTokens';
 import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaSelectorModal } from '@/features/agents/components/PersonaSelectorModal';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PersonaColumnFilterProps {
   value: string;
@@ -18,6 +19,7 @@ interface PersonaColumnFilterProps {
  * Shows a Filter icon on the right when unfiltered, label + X when filtered.
  */
 export function PersonaColumnFilter({ value, onChange, personas, label = 'Persona' }: PersonaColumnFilterProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const selected = value ? personas.find((p) => p.id === value) : null;
   const isFiltered = !!selected;
@@ -36,6 +38,7 @@ export function PersonaColumnFilter({ value, onChange, personas, label = 'Person
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onChange(''); }}
+          aria-label={t.common.clear}
           className="p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-foreground"
         >
           <X className="w-3 h-3" />

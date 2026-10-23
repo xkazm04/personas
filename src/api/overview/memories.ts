@@ -2,7 +2,6 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaMemory } from "@/lib/bindings/PersonaMemory";
 import type { CreatePersonaMemoryInput } from "@/lib/bindings/CreatePersonaMemoryInput";
-import type { MemoryCategoryInfo } from "@/lib/bindings/MemoryCategoryInfo";
 
 // ============================================================================
 // Memories
@@ -11,10 +10,6 @@ import type { MemoryCategoryInfo } from "@/lib/bindings/MemoryCategoryInfo";
 // -- Category taxonomy --------------------------------------------------------
 
 export type { MemoryCategoryInfo } from "@/lib/bindings/MemoryCategoryInfo";
-
-/** Fetch the canonical list of memory categories from the backend. */
-export const listMemoryCategories = () =>
-  invoke<MemoryCategoryInfo[]>("list_memory_categories");
 
 // -- Dispute claims (Brainiac-adoption P3) ------------------------------------
 // A negative claim (`wrong`/`outdated`) stays OPEN until a human resolves it
@@ -77,12 +72,30 @@ export const createMemory = (input: CreatePersonaMemoryInput) => {
   return invoke<PersonaMemory>("create_memory", { input });
 };
 
-export const getMemoryCount = (personaId?: string, category?: string, search?: string) =>
+export const getMemoryCount = (personaId?: string, category?: string, search?: string, tier?: MemoryTierFilter) =>
   invoke<number>("get_memory_count", {
     personaId: personaId,
     category: category,
     search: search,
+    tier: tier,
   });
+
+/**
+ * How many memories `deleteAllMemories()` will remove: every agent's, every
+ * non-core tier, unfiltered. The count command's general listing hides
+ * working-tier `context` telemetry rows (a category-less count omits them)
+ * that the delete still takes, so those are counted by an explicit
+ * `category=context` read and added; core rows are never counted.
+ */
+export const countDeletableMemories = async (): Promise<number> => {
+  const [active, working, archive, workingContext] = await Promise.all([
+    getMemoryCount(undefined, undefined, undefined, "active"),
+    getMemoryCount(undefined, undefined, undefined, "working"),
+    getMemoryCount(undefined, undefined, undefined, "archive"),
+    getMemoryCount(undefined, "context", undefined, "working"),
+  ]);
+  return active + working + archive + workingContext;
+};
 
 export interface MemoryStats {
   total: number;
@@ -233,12 +246,19 @@ export const reviewMemoriesWithCli = (
   instructions?: string,
   autoApply?: boolean,
 ) =>
-  invoke<MemoryReviewResult>("review_memories_with_cli", {
-    personaId: personaId,
-    threshold: threshold,
-    instructions: instructions,
-    autoApply: autoApply,
-  });
+  invoke<MemoryReviewResult>(
+    "review_memories_with_cli",
+    {
+      personaId: personaId,
+      threshold: threshold,
+      instructions: instructions,
+      autoApply: autoApply,
+    },
+    // The backend gives the review CLI 3 minutes and then, in auto-apply mode,
+    // deletes the low-scored memories. At the 90 s default the wrapper rejected
+    // while that delete was still coming, and a retry ran a second review.
+    { timeoutMs: 240_000 },
+  );
 
 /**
  * Run a memory REFLECTION pass (Memory Engine v2): the LLM consolidates
@@ -256,31 +276,6 @@ export const reflectMemoriesWithCli = (personaId: string, instructions?: string)
     // backend caps it at 8 minutes — give the IPC wrapper headroom.
     { timeoutMs: 540_000 },
   );
-
-/**
- * Enqueue reflection as a background job (async twin of
- * `reflectMemoriesWithCli`; progress arrives via the `persona://job`
- * Tauri event). Returns the job id.
- */
-export const enqueuePersonaMemoryReflection = (personaId: string, instructions?: string) =>
-  invoke<string>("enqueue_persona_memory_reflection", { personaId, instructions });
-
-/**
- * TEAM reflection: consolidate lessons held redundantly by ≥2 members of
- * a team into team-shared insights (published to every member via
- * `home_team_id` when the proposal is applied). Same proposal flow as
- * persona reflection; the proposal row carries `teamId`.
- */
-export const reflectTeamMemoriesWithCli = (teamId: string, instructions?: string) =>
-  invoke<MemoryReviewResult>(
-    "reflect_team_memories_with_cli",
-    { teamId, instructions },
-    { timeoutMs: 540_000 },
-  );
-
-/** Async twin of `reflectTeamMemoriesWithCli` (background job). */
-export const enqueueTeamMemoryReflection = (teamId: string, instructions?: string) =>
-  invoke<string>("enqueue_team_memory_reflection", { teamId, instructions });
 
 // -- Memory Review Proposals (review-and-discard, F4b + F-UI) -----------------
 
@@ -311,30 +306,9 @@ export const listPersonaMemoryReviewProposals = (
     limit: limit,
   });
 
-export const getPersonaMemoryReviewProposal = (proposalId: string) =>
-  invoke<MemoryReviewProposal | null>("get_persona_memory_review_proposal", {
-    proposalId,
-  });
-
 // -- Curation schedule (F-CRON) -----------------------------------------------
 
 export type { PersonaCurationSchedule } from "@/lib/bindings/PersonaCurationSchedule";
-import type { PersonaCurationSchedule } from "@/lib/bindings/PersonaCurationSchedule";
-
-/**
- * Set or update the per-persona curation schedule. Pass an empty/whitespace
- * cronExpr to delete the schedule (curation disabled).
- */
-export const setPersonaCurationSchedule = (personaId: string, cronExpr: string) =>
-  invoke<PersonaCurationSchedule | null>("set_persona_curation_schedule", {
-    personaId,
-    cronExpr,
-  });
-
-export const getPersonaCurationSchedule = (personaId: string) =>
-  invoke<PersonaCurationSchedule | null>("get_persona_curation_schedule", {
-    personaId,
-  });
 
 // -- Memory Tiers -------------------------------------------------------------
 

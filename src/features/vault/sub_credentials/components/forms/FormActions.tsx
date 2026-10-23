@@ -58,7 +58,7 @@ export function FormActions({
             data-testid="vault-schema-cancel"
             className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
           >
-            Cancel
+            {t.common.cancel}
           </button>
           <Tooltip content={saveDisabled && saveDisabledReason ? saveDisabledReason : ''} placement="top" delay={200}>
             <button
@@ -73,7 +73,7 @@ export function FormActions({
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              {isSaving ? 'Saving...' : 'Save Credential'}
+              {isSaving ? t.common.saving : t.vault.auto_cred.save_credential}
             </button>
           </Tooltip>
         </div>

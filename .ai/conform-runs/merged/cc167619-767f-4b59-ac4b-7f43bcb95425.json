@@ -1,0 +1,4 @@
+{"schema":"conform-run/1","worker":"cc167619-767f-4b59-ac4b-7f43bcb95425","subject":"cost-metering",
+"evaluatedAt":"2026-10-22T00:00:00Z","pairs":[],
+"declined":[{"subject":"cost-metering","context":"5ab49df3-3442-4ea6-a405-077dec64850d","reason":"persona-core-codex is a weak context (declared domains barely cover it) and its only unjudged cost-metering pair; weak pairs are not judged by default. The other 18 cost-metering pairs already carry verdicts at the current digest sha256-b2:7247db31eb8f3dce (revision 15), none stale, so there is no work."}],
+"consults":[]}

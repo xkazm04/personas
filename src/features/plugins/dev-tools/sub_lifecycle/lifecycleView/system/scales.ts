@@ -27,8 +27,6 @@ export const GLYPH = {
   xl: 'h-8 w-8',
 } as const;
 
-export type GlyphSize = keyof typeof GLYPH;
-
 /** Key caps (TactileKeys): a rail card's key, the Layer-2 header's key. */
 export const KEY = {
   /** In a rail card's head row, beside the step's name. */
@@ -50,6 +48,3 @@ export const METER = {
   /** The earlier measure's bead. */
   bead: 'h-2.5 w-2.5',
 } as const;
-
-/** The slot a rail key sits in (the key plus its seat travel). */
-export const KEY_SLOT = 'h-12';

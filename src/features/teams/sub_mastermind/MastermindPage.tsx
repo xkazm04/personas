@@ -8,7 +8,7 @@
 //
 // This page owns the data and every surface a reading opens (Improve, goals,
 // KPIs, idea scans, dispatch, previews); SoundingsView owns the chart.
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { GitFork, LifeBuoy } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -32,6 +32,7 @@ import { SkillsWorkbench } from '@/features/teams/sub_factory/passport/improve/S
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { reportDispatchFailure } from './lib/reportDispatchFailure';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -39,7 +40,7 @@ import { useToastStore } from '@/stores/toastStore';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
-import { isOngoing } from '@/features/teams/sub_goals/goalStatus';
+import { isOngoing } from '@/features/projects/development/goals/goalStatus';
 
 import { DataHealthBar } from './lib/DataHealthBar';
 import { DemoNotice } from './lib/DemoNotice';
@@ -65,6 +66,7 @@ import { PersonaListPopover, type PersonaRow } from './lib/PersonaListPopover';
 import { RunnerListPopover } from './lib/RunnerListPopover';
 import type { DimNode, FleetNode, IslandShip, RunnerNode, Scene } from './lib/types';
 import { useSceneSettle } from './lib/useSceneSettle';
+import { useIdeaScanBusy } from './lib/useIdeaScanBusy';
 import { cachedShipSummaries, loadShipSummaries } from './lib/shipSummaries';
 import { lazyRetry } from '@/lib/lazyRetry';
 
@@ -155,26 +157,11 @@ function MastermindInner() {
   // not the canvas's. The canvas only says WHICH row was clicked and WHERE.
   const [improvePopup, setImprovePopup] = useState<{ slug: string; rowKey: string; anchor: DOMRect } | null>(null);
   const [scanPopup, setScanPopup] = useState<{ slug: string; x: number; y: number } | null>(null);
-  // Projects with an idea scan WE dispatched still in flight. Per-project (a
-  // scan for one project must not disable the popover for another), and each
-  // entry carries a safety timeout so a missed terminal event can never wedge
-  // the Ideas dimension until remount.
-  const [busySlugs, setBusySlugs] = useState<ReadonlySet<string>>(new Set());
-  const scanTimers = useRef(new Map<string, number>());
-  const clearScanBusy = useCallback((slug: string) => {
-    const timer = scanTimers.current.get(slug);
-    if (timer !== undefined) { window.clearTimeout(timer); scanTimers.current.delete(slug); }
-    setBusySlugs((prev) => {
-      if (!prev.has(slug)) return prev;
-      const next = new Set(prev);
-      next.delete(slug);
-      return next;
-    });
-  }, []);
-  useEffect(() => {
-    const timers = scanTimers.current;
-    return () => { for (const id of timers.values()) window.clearTimeout(id); timers.clear(); };
-  }, []);
+  // Projects with an idea scan WE dispatched still in flight, keyed by the
+  // scan's job id (see useIdeaScanBusy). Per-project, with a safety timeout so a
+  // missed terminal event can never wedge the Ideas dimension until remount.
+  const ideaScans = useIdeaScanBusy();
+  const { busySlugs } = ideaScans;
   const [demoDismissed, setDemoDismissed] = useState(false);
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [personaMenu, setPersonaMenu] = useState<{ slug: string; x: number; y: number } | null>(null);
@@ -275,15 +262,13 @@ function MastermindInner() {
   // freshness data. When WE dispatched it we know the project, so invalidate
   // only that project's rollup (scoped IPC); otherwise fall back to one batched
   // reload (still ≤1 IPC — the whole family is a single list call).
-  const onScanStatus = useCallback((event: { payload: { status: string } }) => {
-    const { status } = event.payload;
-    if (status === 'completed' || status === 'completed_with_warning' || status === 'failed') {
-      const pending = [...scanTimers.current.keys()];
-      if (pending.length > 0) {
-        for (const slug of pending) { void invalidateScans(slug); clearScanBusy(slug); }
-      } else void loadScans({ fresh: true }); // the world just changed — never join a pre-completion flight
-    }
-  }, [invalidateScans, loadScans, clearScanBusy]);
+  const { settle: settleIdeaScan } = ideaScans;
+  const onScanStatus = useCallback((event: { payload: { job_id: string; status: string } }) => {
+    const settled = settleIdeaScan(event.payload.job_id, event.payload.status);
+    if (!settled) return;
+    if (settled.slug !== null) void invalidateScans(settled.slug);
+    else void loadScans({ fresh: true }); // the world just changed — never join a pre-completion flight
+  }, [settleIdeaScan, invalidateScans, loadScans]);
   useTauriEvent<{ job_id: string; status: string; error?: string }>(EventName.IDEA_SCAN_STATUS, onScanStatus);
 
   const kpiByProject = useMemo(() => {
@@ -620,8 +605,7 @@ function MastermindInner() {
       void fleetRefresh();
       addToast(tx(t.mastermind.dispatch_toast, { name: project.name }), 'success');
     } catch (err) {
-      addToast(t.mastermind.dispatch_error, 'error');
-      toastCatch('mastermind dispatch fleet')(err);
+      reportDispatchFailure(err, t.mastermind.dispatch_error);
       throw err;
     }
   }, [projects, fleetRefresh, addToast, tx, t]);
@@ -633,29 +617,20 @@ function MastermindInner() {
   const runIdeaScan = async ({ agentKeys, contextIds, targetCount }: ScanParams) => {
     if (!scanPopup || busySlugs.has(scanPopup.slug) || agentKeys.length === 0) return;
     const slug = scanPopup.slug;
-    setBusySlugs((prev) => new Set(prev).add(slug));
-    // Safety net: if the terminal IDEA_SCAN_STATUS event never reaches us,
-    // release the project after 3 minutes instead of wedging its Ideas cell.
-    scanTimers.current.set(slug, window.setTimeout(() => clearScanBusy(slug), 180_000));
-    const label = agentKeys.length === 1 ? agentKeys[0] : `${agentKeys.length} agents`;
-    useOverviewStore.getState().processStarted(
-      'idea_scan',
-      undefined,
-      `Idea Scan (${label})`,
-      { section: 'plugins', tab: 'skills' },
-    );
+    ideaScans.begin(slug);
+    const label = agentKeys.length === 1 ? (agentKeys[0] ?? '') : tx(t.common.agent_count_other, { count: agentKeys.length });
     try {
-      await runScan(slug, agentKeys, {
+      const { scan_id } = await runScan(slug, agentKeys, {
         // Empty scope = whole project, which is exactly what run_scan expects.
         contextIds: contextIds.length > 0 ? contextIds : undefined,
         targetCount: targetCount ?? undefined,
       });
-      addToast(`Idea scan dispatched (${label})`, 'success');
+      ideaScans.attach(slug, scan_id, tx(t.mastermind.scan_drawer_label, { label }));
+      addToast(tx(t.mastermind.scan_dispatched_toast, { label }), 'success');
       void invalidateScans(slug);
       setScanPopup(null);
     } catch (err) {
-      useOverviewStore.getState().processEnded('idea_scan', 'failed');
-      clearScanBusy(slug);
+      ideaScans.release(slug);
       toastCatch('mastermind idea scan')(err);
     }
   };

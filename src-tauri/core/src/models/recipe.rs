@@ -985,4 +985,118 @@ mod v3_tests {
         let desc = serde_json::to_value(RecipeDescription::default()).unwrap();
         assert!(desc.get("coreAction").is_some(), "{desc}");
     }
+
+    // -- the shipped seed bundle --------------------------------------------
+
+    /// The bundle `src-tauri/src/engine/recipe_seed.rs` embeds and seeds on
+    /// every boot. Nothing in production calls `validate`, so without this
+    /// test a seed that breaks the contract ships unnoticed.
+    const SEED_BUNDLE: &str = include_str!("../../../../scripts/templates/_recipe_seeds.json");
+
+    /// The catalog's category vocabulary, read the way
+    /// `scripts/generate-connector-seed.mjs` derives
+    /// `personas_db::builtin_connectors::KNOWN_CONNECTOR_CATEGORIES`: each
+    /// connector's plural `categories`, else its singular `category`, else
+    /// `general`. Read from the JSON source because the generated constant
+    /// lives one crate above this one.
+    fn catalog_categories() -> Vec<String> {
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../scripts/connectors/builtin");
+        let mut out: Vec<String> = Vec::new();
+        for entry in std::fs::read_dir(&dir).expect("connector catalog dir") {
+            let path = entry.expect("dir entry").path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let raw = std::fs::read_to_string(&path).expect("connector json");
+            let v: serde_json::Value = serde_json::from_str(&raw).expect("connector parses");
+            let plural: Vec<String> = v
+                .get("categories")
+                .and_then(|c| c.as_array())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|c| c.as_str().map(String::from))
+                        .collect()
+                })
+                .unwrap_or_default();
+            let cats = if plural.is_empty() {
+                vec![v
+                    .get("category")
+                    .and_then(|c| c.as_str())
+                    .unwrap_or("general")
+                    .to_string()]
+            } else {
+                plural
+            };
+            for c in cats {
+                if !out.contains(&c) {
+                    out.push(c);
+                }
+            }
+        }
+        out
+    }
+
+    /// Seeds known to break the contract, with their exact errors. Two-sided:
+    /// a NEW violation fails, and so does an entry here that no longer
+    /// matches (fixed, or broken differently) - delete or update it then.
+    /// council-review: `manual` is not in RECIPE_TRIGGER_KINDS and no
+    /// connector carries a `web_search` category; both wait on an operator
+    /// decision about the vocabulary, not on this test.
+    const KNOWN_INVALID_SEEDS: &[(&str, &[&str])] = &[(
+        "0bd3f5a1-7c42-4f8e-9a6d-2f1b84c7e530",
+        &[
+            "recommendedTrigger.kind 'manual' is not one of: event, time, self_paced",
+            "connectorTypes[1] 'web_search' is not a connector catalog category",
+            "connectorRoles[1] type 'web_search' is not a connector catalog category",
+        ],
+    )];
+
+    #[test]
+    fn every_seeded_recipe_meets_the_v3_contract() {
+        let categories = catalog_categories();
+        assert!(categories.len() > 20, "catalog read found {categories:?}");
+        let cats: Vec<&str> = categories.iter().map(String::as_str).collect();
+
+        let bundle: serde_json::Value = serde_json::from_str(SEED_BUNDLE).expect("bundle parses");
+        let rows = bundle["recipes"].as_array().expect("recipes array");
+        assert!(rows.len() > 100, "seed bundle has {} rows", rows.len());
+
+        let mut failures: Vec<String> = Vec::new();
+        let mut known_seen = 0usize;
+        for row in rows {
+            let id = row["id"].as_str().unwrap_or("?");
+            let payload = row["prompt_template"]
+                .as_str()
+                .expect("prompt_template text");
+            let raw: serde_json::Value = serde_json::from_str(payload).expect("payload parses");
+            assert!(
+                RecipeSpec::looks_like_v3(&raw),
+                "seed {id} is not a v3 payload"
+            );
+            let spec: RecipeSpec = serde_json::from_value(raw).expect("payload is a RecipeSpec");
+            let errors = spec.validation_errors(&cats);
+            match KNOWN_INVALID_SEEDS.iter().find(|(k, _)| *k == id) {
+                Some((_, expected)) => {
+                    known_seen += 1;
+                    if errors != *expected {
+                        failures.push(format!(
+                            "{id} ({}) is allowlisted with {expected:?} but reports {errors:?}: update KNOWN_INVALID_SEEDS",
+                            spec.slug
+                        ));
+                    }
+                }
+                None if !errors.is_empty() => {
+                    failures.push(format!("{id} ({}): {}", spec.slug, errors.join("; ")));
+                }
+                None => {}
+            }
+        }
+        assert_eq!(
+            known_seen,
+            KNOWN_INVALID_SEEDS.len(),
+            "an allowlisted seed id is no longer in the bundle"
+        );
+        assert!(failures.is_empty(), "{}", failures.join("\n"));
+    }
 }

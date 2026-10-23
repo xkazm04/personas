@@ -12,6 +12,7 @@ import type { CloudTrigger } from "@/lib/bindings/CloudTrigger";
 import type { CloudTriggerFiring } from "@/lib/bindings/CloudTriggerFiring";
 import type { CloudDiagnostics } from "@/lib/bindings/CloudDiagnostics";
 import type { SmeeRelay } from "@/lib/bindings/SmeeRelay";
+import type { CloudWebhookRelayStatus } from "@/lib/bindings/CloudWebhookRelayStatus";
 
 export type { CloudConfig } from "@/lib/bindings/CloudConfig";
 export type { SmeeRelay } from "@/lib/bindings/SmeeRelay";
@@ -72,9 +73,6 @@ export const cloudOAuthDisconnect = () =>
 
 export const cloudDeployPersona = (personaId: string, maxMonthlyBudgetUsd?: number) =>
   invoke<CloudDeployment>("cloud_deploy_persona", { personaId, maxMonthlyBudgetUsd: maxMonthlyBudgetUsd });
-
-export const cloudSyncPersona = (personaId: string) =>
-  invoke<void>("cloud_sync_persona", { personaId });
 
 export const cloudListDeployments = () =>
   invoke<CloudDeployment[]>("cloud_list_deployments");
@@ -168,6 +166,15 @@ export const cloudListTriggerFirings = (triggerId: string, limit?: number) =>
     limit: limit,
   });
 
+/**
+ * Current cloud webhook relay counters. The snapshot half of the relay's
+ * snapshot-plus-stream: `cloud-webhook-relay-status` only fires on a relay
+ * tick (15 s active, 60 s idle), so a view that mounts between ticks reads
+ * this first.
+ */
+export const cloudWebhookRelayStatus = () =>
+  invoke<CloudWebhookRelayStatus>("cloud_webhook_relay_status");
+
 // ============================================================================
 // Smee Relay Management
 // ============================================================================
@@ -179,20 +186,11 @@ export interface CreateSmeeRelayInput {
   targetPersonaId?: string | null;
 }
 
-export interface UpdateSmeeRelayInput {
-  label?: string;
-  eventFilter?: string | null;
-  targetPersonaId?: string | null;
-}
-
 export const smeeRelayList = () =>
   invoke<SmeeRelay[]>("smee_relay_list");
 
 export const smeeRelayCreate = (input: CreateSmeeRelayInput) =>
   invoke<SmeeRelay>("smee_relay_create", { input });
-
-export const smeeRelayUpdate = (id: string, input: UpdateSmeeRelayInput) =>
-  invoke<SmeeRelay>("smee_relay_update", { id, input });
 
 export const smeeRelaySetStatus = (id: string, status: 'active' | 'paused') =>
   invoke<SmeeRelay>("smee_relay_set_status", { id, status });

@@ -12,6 +12,7 @@
 // STALE rather than treated as the current truth — the sim may simply be
 // fresher, and the honest move is a re-measure, not a verdict.
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
+import { kpiInstantMs } from './kpiMath';
 
 export interface ConvergenceGap {
   simAt: number;
@@ -36,9 +37,7 @@ export interface Convergence {
   verdict: ConvergenceVerdict;
 }
 
-function ts(s: string): number {
-  return new Date(s.replace(' ', 'T')).getTime();
-}
+const ts = kpiInstantMs;
 
 /** Split a KPI's measurement history into the truth channel and the sim channel. */
 export function splitChannels(measurements: DevKpiMeasurement[]): {

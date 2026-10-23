@@ -1,7 +1,8 @@
 import { StatStrip, Tile } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
-import { figureTile, type FigureConfig } from './figureTile';
+import { figureTile } from './figureTile';
+import { recordsOf } from './narrow';
 
 /**
  * `stat_grid` — N labeled numbers in a compact tile grid; generalizes
@@ -31,7 +32,9 @@ import { figureTile, type FigureConfig } from './figureTile';
  */
 export function StatGridWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
-  const stats = Array.isArray(config?.stats) ? (config.stats as FigureConfig[]) : [];
+  // `figureTile` stringifies every field it renders (FigureConfig is all `unknown`), so the only
+  // narrowing a stat needs is "is a record".
+  const stats = recordsOf(config?.stats);
   return (
     <Tile
       span={span}
@@ -39,7 +42,7 @@ export function StatGridWidget({ config, title, span, actions, footer }: Cockpit
       actions={actions}
       footer={footer}
       state={stats.length === 0 ? 'empty' : undefined}
-      empty={{ title: t.overview.cockpit.widget_empty }}
+      empty={{ art: 'chart', title: t.overview.cockpit.widget_empty }}
       testId="cockpit-stat-grid"
     >
       <StatStrip tiles={stats.map(figureTile)} />

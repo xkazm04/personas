@@ -15,6 +15,29 @@ import { Unmeasured } from './Unmeasured';
 /** The candle track's height in px; `.cb-candles` declares the same number. */
 const CANDLE_H = 18;
 
+/** A stand-in count for the hidden sizer; only its width matters. */
+const UNMEASURED_N = '00,000';
+const FIGURE_STANDIN = '00.0%';
+
+/**
+ * The pairs label, sized for BOTH of its readings.
+ *
+ * The unmeasured and measured sentences differ in length, so at some widths one
+ * wraps to two lines and the other to one. The verdict is an `auto` grid row,
+ * so that difference moved the console, the ledger and the foot the moment the
+ * plan landed (measured in the shot harness at 1400x900: CLS 0.378 across the
+ * unmeasured -> measured transition). The other reading is laid in the same
+ * grid cell, hidden, so the label always holds the taller of the two.
+ */
+function PairsLabel({ shown, other }: { shown: string; other: string }) {
+  return (
+    <span className="cb-lab cb-lab-stack typo-body">
+      <span>{shown}</span>
+      <span className="cb-lab-sizer" aria-hidden="true">{other}</span>
+    </span>
+  );
+}
+
 export function JudgedBlock({ model }: { model: BlueprintModel }) {
   const { w, tx } = useWords();
   const c = model.consumers;
@@ -22,10 +45,15 @@ export function JudgedBlock({ model }: { model: BlueprintModel }) {
     return (
       <div className="cb-vb">
         <div className="cb-vtop">
-          <span className="typo-hero" data-role="cb-verdict-figure">
-            <Unmeasured size="hero" tip={w.verdict_pairs_unmeasured_tip} />
+          <span className="typo-hero cb-lab-stack" data-role="cb-verdict-figure">
+            <span>
+              <Unmeasured size="hero" tip={w.verdict_pairs_unmeasured_tip} />
+            </span>
+            {/* Holds the width a measured share will take, so the label beside
+                it wraps the same way before and after the plan lands. */}
+            <span className="cb-lab-sizer" aria-hidden="true">{FIGURE_STANDIN}</span>
           </span>
-          <span className="cb-lab typo-body">{w.verdict_pairs_unmeasured}</span>
+          <PairsLabel shown={w.verdict_pairs_unmeasured} other={tx(w.verdict_pairs, { n: UNMEASURED_N })} />
         </div>
         <div className="cb-bar cb-tall" data-cb-tip={w.verdict_pairs_unmeasured_tip}>
           <i className="cb-ink-unknown" style={{ flex: 1 }} />
@@ -52,7 +80,7 @@ export function JudgedBlock({ model }: { model: BlueprintModel }) {
         <span className="typo-hero" data-role="cb-verdict-figure">
           {share(c.evaluated, c.pairs) ?? w.not_measured}
         </span>
-        <span className="cb-lab typo-body">{tx(w.verdict_pairs, { n: fmt(c.pairs) })}</span>
+        <PairsLabel shown={tx(w.verdict_pairs, { n: fmt(c.pairs) })} other={w.verdict_pairs_unmeasured} />
       </div>
       <div
         className="cb-bar cb-tall"
@@ -115,7 +143,9 @@ export function ProjectsBlock({ model }: { model: BlueprintModel }) {
             <b>{w.verdict_maps_unmeasured}</b>
           </span>
         </div>
-        <div className="cb-bar">
+        {/* As tall as the candles that replace it, so the plan landing does not
+            move the rows below. */}
+        <div className="cb-bar" style={{ height: CANDLE_H }}>
           <i className="cb-ink-unknown" style={{ flex: 1 }} />
         </div>
         <div className="cb-vfoot typo-caption">

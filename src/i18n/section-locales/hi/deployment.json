@@ -244,7 +244,9 @@
     "loading_firings": "लोड हो रहा है…",
     "no_firings": "कोई हाल की फायरिंग नहीं",
     "recent_firings": "हाल की फायरिंग",
-    "firings_load_failed": "हाल के ट्रिगर लोड नहीं हो सके।"
+    "firings_load_failed": "हाल के ट्रिगर लोड नहीं हो सके।",
+    "triggers_load_failed_one": "{count} पर्सोना के ट्रिगर लोड नहीं हो सके।",
+    "triggers_load_failed_other": "{count} पर्सोना के ट्रिगर लोड नहीं हो सके।"
   },
   "sr_connecting": "क्लाउड ऑर्केस्ट्रेटर से कनेक्ट हो रहा है…",
   "sr_deploying": "Persona को क्लाउड पर डिप्लॉय किया जा रहा है",

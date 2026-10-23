@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
+import { useToastStore } from "@/stores/toastStore";
 
 // ---------------------------------------------------------------------------
 // Mocks -- must be before import of the module under test
@@ -100,7 +101,8 @@ vi.mock("@/api/agents/personaBrain", () => ({
   getPersonaManifest: (...args: unknown[]) => mockGetPersonaManifest(...args),
 }));
 
-vi.mock("@/lib/silentCatch", () => ({
+vi.mock("@/lib/silentCatch", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/silentCatch")>()),
   silentCatch: () => () => {},
 }));
 
@@ -296,6 +298,19 @@ describe("useLifecycle", () => {
       expect(mockHandleTestFailed).toHaveBeenCalledWith("Network error");
     });
 
+    it("carries the backend's reason when IPC rejects with an AppError object", async () => {
+      mockTestBuildDraft.mockRejectedValueOnce({
+        error: "Build session sess-9 is in phase resolving",
+        kind: "validation",
+      });
+      setStoreState({ buildPhase: "draft_ready", buildSessionId: "session-123" });
+
+      const { result } = renderHook(() => useLifecycle({ personaId: "persona-1" }));
+      await act(async () => { await result.current.handleStartTest(); });
+
+      expect(mockHandleTestFailed).toHaveBeenCalledWith("Build session sess-9 is in phase resolving");
+    });
+
     it("reports failures correctly in summary", async () => {
       mockTestBuildDraft.mockResolvedValueOnce({
         tools_tested: 3,
@@ -397,6 +412,21 @@ describe("useLifecycle", () => {
       expect(listenerMap.has("build-test-tool-result")).toBe(true);
     });
 
+    it("detaches a listener that resolves after the hook unmounted", async () => {
+      const { listen } = await import("@tauri-apps/api/event");
+      let resolveListen!: (un: () => void) => void;
+      vi.mocked(listen).mockImplementationOnce(
+        () => new Promise<() => void>((r) => { resolveListen = r; }),
+      );
+      const lateUnlisten = vi.fn();
+
+      const { unmount } = renderHook(() => useLifecycle({ personaId: "persona-1" }));
+      unmount();
+      await act(async () => { resolveListen(lateUnlisten); });
+
+      expect(lateUnlisten).toHaveBeenCalledTimes(1);
+    });
+
     it("filters events by session_id", async () => {
       setStoreState({
         buildPhase: "testing",
@@ -488,6 +518,27 @@ describe("useLifecycle", () => {
       });
 
       expect(mockHandleRejectTest).toHaveBeenCalled();
+    });
+
+    it("a failed refine toasts an error and reports false so the composer can keep the text", async () => {
+      setStoreState({
+        buildPhase: "draft_ready",
+        buildSessionId: "session-123",
+      });
+      mockAnswerBuildQuestion.mockRejectedValueOnce({ error: "session gone", kind: "NotFound" });
+      useToastStore.setState({ toasts: [] });
+
+      const { result } = renderHook(() =>
+        useLifecycle({ personaId: "persona-1" }),
+      );
+
+      let outcome: unknown;
+      await act(async () => {
+        outcome = await result.current.handleRefine("keep this text");
+      });
+
+      expect(outcome).toBe(false);
+      expect(useToastStore.getState().toasts.some((x) => x.type === "error")).toBe(true);
     });
 
     it("only callable when buildPhase is draft_ready or test_complete", async () => {

@@ -1,0 +1,62 @@
+/* The Monitor's project list in bp's dress (spark bp-fidelity, Stage A): bp's manage-projects dialog
+   (bp/src/components/projects.css, the `.pj-*` block) rendered as a page on bp's ground. bp's rules verbatim but
+   for the --bp- token prefix (TOKEN RENAME RULE), the page geometry in place of the dialog's, and the press
+   targets dressed on `.bp-press.pj-bt` (the blueprint's one local button, `blueprint/ui/Press`). Tokens only: no
+   colour, size or family literal (census feature-css-type-literal). Readiness reads by shape and word, never
+   by colour. */
+
+.bp-picker { position: relative; min-height: 100%; isolation: isolate; overflow: hidden; background: var(--bp-paper); color: var(--bp-ink); font: 400 var(--bp-fs-14)/1.4 var(--bp-font-sans); }
+.pj-page { position: relative; z-index: 1; width: min(880px, 100%); margin: 0 auto; padding: 32px 24px 36px; }
+
+.pj-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--bp-ink-4); }
+.pj-head h2 { margin: 0; font: 600 var(--bp-fs-20) var(--bp-font-sans); color: var(--bp-ink-hi); }
+.pj-head .pj-n { font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-4); text-transform: uppercase; color: var(--bp-ink-2); }
+.pj-note { margin: 8px 0 14px; color: var(--bp-ink-2); font-size: var(--bp-fs-14); }
+
+.pj-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.pj-row { border: 1px solid var(--bp-ink-3); padding: 10px 12px; background: var(--bp-panel); }
+.pj-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pj-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.pj-id b { font-size: var(--bp-fs-16); color: var(--bp-ink-hi); font-weight: 600; overflow-wrap: anywhere; }
+.pj-id code, .pj-row code { font: 400 var(--bp-fs-12) var(--bp-font-mono); }
+.pj-id code { color: var(--bp-ink-2); }
+.pj-lv { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; color: var(--bp-ink); border: 1px solid var(--bp-ink-3); padding: 3px 7px; }
+.pj-lv:focus-visible { outline: 2px solid var(--bp-accent); outline-offset: 2px; }
+.pj-lvl-ic { flex: 0 0 auto; display: block; }
+.pj-root { margin-top: 6px; font: 400 var(--bp-fs-12) var(--bp-font-mono); color: var(--bp-ink-2); overflow-wrap: anywhere; }
+.pj-counts { margin: 6px 0 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-1); color: var(--bp-ink); }
+.pj-rel { color: var(--bp-amber-2); }
+
+.pj-check { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 2px 16px; }
+.pj-check li { display: flex; align-items: baseline; gap: 6px; font-size: var(--bp-fs-12); color: var(--bp-ink-2); }
+.pj-check li.ok { color: var(--bp-ink); }
+.pj-check .mk { width: 12px; flex: 0 0 auto; font: 600 var(--bp-fs-12) var(--bp-font-mono); text-align: center; }
+.pj-check .k { flex: 1 1 auto; }
+.pj-check .v { font: 500 var(--bp-fs-12) var(--bp-font-mono); color: inherit; white-space: nowrap; }
+
+.pj-hint { margin: 8px 0 0; padding: 5px 8px; border-left: 3px solid var(--bp-ink-3); font-size: var(--bp-fs-12); color: var(--bp-ink-2); }
+.pj-err { margin: 8px 0 0; padding: 5px 8px; border-left: 3px solid var(--bp-red); font-size: var(--bp-fs-12); color: var(--bp-red-2); overflow-wrap: anywhere; display: flex; flex-direction: column; gap: 2px; }
+.pj-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+/* bp's .pj-bt on the blueprint's press target (blueprint.css's .bp-press reset is not loaded here, so the reset
+   is restated). */
+.bp-press.pj-bt { appearance: none; margin: 0; display: inline-flex; align-items: center; height: var(--bp-h-ctl-sm); padding: 0 10px; border: 1px solid var(--bp-ink-3); border-radius: 0; background: transparent; color: var(--bp-ink); font: 500 var(--bp-fs-12) var(--bp-font-mono); letter-spacing: var(--bp-ls-2); text-transform: uppercase; text-decoration: none; cursor: pointer; }
+.bp-press.pj-bt:hover { border-color: var(--bp-ink); }
+.bp-press.pj-bt:focus-visible { outline: 2px solid var(--bp-accent); outline-offset: 2px; }
+.bp-press.pj-bt:disabled { opacity: 0.55; cursor: default; }
+.bp-press.pj-bt.go { background: var(--bp-accent); border-color: var(--bp-accent); color: var(--bp-on-ink); }
+.bp-press.pj-bt.go:hover { border-color: var(--bp-ink-hi); }
+
+/* Loading (pattern v2): ghost rows in the row's own geometry, under the permanent head. */
+.pj-row.ghost { pointer-events: none; }
+.pj-gb { display: block; height: 12px; background: var(--bp-ink-4); }
+.pj-gb.name { width: 34%; height: 18px; }
+.pj-gb.slug { width: 16%; margin-top: 4px; }
+.pj-gb.chip { width: 96px; height: 24px; }
+.pj-gb.root { width: 48%; margin-top: 8px; }
+.pj-gb.acts { width: 168px; height: var(--bp-h-ctl-sm); margin-top: 10px; }
+.pj-row.ghost .pj-check li { height: 16px; align-items: center; }
+.pj-row.ghost .pj-check .pj-gb { width: 70%; height: 10px; }
+
+/* the shared empty state and banner sit on the paper, in bp's ink */
+.bp-picker .pj-state { border: 1px dashed var(--bp-ink-3); background: var(--bp-panel); color: var(--bp-ink); }

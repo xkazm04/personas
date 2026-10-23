@@ -108,6 +108,13 @@ describe('questionGroupToTriage — one card per session', () => {
     expect(item!.payload).toEqual({ sessionId: 'sess-1', personaId: 'persona-1' });
   });
 
+  it('claims no raise time it does not have', () => {
+    // The group carries no timestamp; an invented one (the epoch) rendered as
+    // "waiting since 56 years ago" on the Decision Center ledger.
+    const item = questionGroupToTriage(session({ questions: [makeBuildQuestion()] }), copy);
+    expect(item!.createdAt).toBe('');
+  });
+
   it('returns null for a session with nothing pending', () => {
     expect(questionGroupToTriage(session({ questions: [] }), copy)).toBeNull();
   });

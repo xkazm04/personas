@@ -5,7 +5,7 @@
  * We drive the modal via its testids and assert the onInstall contract +
  * the "already exists" → prime-overwrite behaviour.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -29,6 +29,12 @@ vi.mock('@/stores/toastStore', () => ({
 }));
 
 import { SkillInstallModal } from '../SkillInstallModal';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
+
+// `plugins` is a code-split i18n section: it reaches the runtime through an
+// async chunk, so a render before it lands reads every label as undefined and
+// a copy assertion races the import. Await it once, before any render.
+beforeAll(() => preloadSectionsAsync('en', ['plugins']));
 
 const ok: SkillInstallResult = { installed: true, targetPath: '/b/.claude/skills/research', fileCount: 3, reason: null };
 const exists: SkillInstallResult = { installed: false, targetPath: '/b/.claude/skills/research', fileCount: 0, reason: 'exists' };

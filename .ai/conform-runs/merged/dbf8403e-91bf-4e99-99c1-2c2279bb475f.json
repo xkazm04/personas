@@ -1,0 +1,161 @@
+{
+  "schema": "conform-run/1",
+  "worker": "dbf8403e-91bf-4e99-99c1-2c2279bb475f",
+  "subject": "chat-transcript",
+  "evaluatedAt": "2026-10-21T12:44:46Z",
+  "pairs": [
+    {
+      "context": "4eb0030b-e8a2-4993-bfab-81aee6943054",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/notepad/overview/NoteOverview.tsx:14 the desk is a re-export of the quest-log journal of note cards; no alternating human/machine turns exist, so the transcript precondition does not hold",
+      "techniques": [
+        {
+          "technique": "turn-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/overview/NoteOverview.tsx:14 the desk is a re-export of the quest-log journal of note cards; no alternating human/machine turns exist, so the transcript precondition does not hold"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+      "evaluatedRevision": 5,
+      "registryProposal": "Matched on markdown/quick/card tokens; the context description is also stale (says 4-column grid, retired 2026-09-23 per NoteOverview.tsx:4). Lexical resonance, not a coverage hole."
+    },
+    {
+      "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/onboarding/components/TourPanelBody.tsx:50 renders one scripted step from a static tour list; the narration is TTS of step text (useTourNarration.ts:12), not a machine turn reporting its own work",
+      "techniques": [
+        {
+          "technique": "turn-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/onboarding/components/TourPanelBody.tsx:50 renders one scripted step from a static tour list; the narration is TTS of step text (useTourNarration.ts:12), not a machine turn reporting its own work"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+      "evaluatedRevision": 5,
+      "registryProposal": "Matched on narration/progress/step: tour narration is scripted voice-over, which progress-narration does not govern; guided-tours is the governing subject."
+    },
+    {
+      "context": "37cd64d2-bd42-47b9-8c17-7ea1b466135c",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/shared/glyph/persona-layout/PersonaLayout.tsx:10 a three-mode (view/adoption/scratch) sigil layout of capability rows; no conversation turns are rendered, so the precondition does not hold",
+      "techniques": [
+        {
+          "technique": "turn-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/glyph/persona-layout/PersonaLayout.tsx:10 a three-mode (view/adoption/scratch) sigil layout of capability rows; no conversation turns are rendered, so the precondition does not hold"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+      "evaluatedRevision": 5
+    },
+    {
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx:199 build questions are answered per cell and the overlay advances or closes, so no transcript of turns is kept (same shape as agents-quick-answer, judged not-applicable)",
+      "techniques": [
+        {
+          "technique": "turn-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx:199 build questions are answered per cell and the overlay advances or closes, so no transcript of turns is kept (same shape as agents-quick-answer, judged not-applicable)"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+      "evaluatedRevision": 5,
+      "registryProposal": "The refine composer plus build Q&A is a machine dialogue with deliberately no transcript. If the registry wants that judged, it is a hitl-approval or plan-review question, not chat-transcript."
+    },
+    {
+      "context": "4be04ef0-88db-4f48-859c-92e6ba4d203f",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/useStructuredQuery.ts:39 a search box that parses free text into query chips; there are no turns or transcript, so the precondition does not hold",
+      "techniques": [
+        {
+          "technique": "turn-model",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/useStructuredQuery.ts:39 a search box that parses free text into query chips; there are no turns or transcript, so the precondition does not hold"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+      "evaluatedRevision": 5,
+      "registryProposal": "Matched on search/filters; search governs this context."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "chat-transcript",
+      "context": "1d8a480b-eac4-4110-a60e-47a6ab281c97",
+      "reason": "glyph-persona-card is weakly governed; the match (layout/composer/card) is the doubtful part, so it is reported as a coverage question and left unjudged"
+    },
+    {
+      "subject": "chat-transcript",
+      "context": "a397f2e9-de1d-495f-8ff4-fabc019646cc",
+      "reason": "overview-messages is weakly governed; it is left unjudged by default, and it is the one weak row worth a deliberate look, since persona messages may be machine-authored records"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T12:44:46Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "chat-transcript"
+      ],
+      "techniques": [
+        "turn-model"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T12:44:46Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "chat-transcript"
+      ],
+      "techniques": [
+        "turn-model"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T12:44:46Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "chat-transcript"
+      ],
+      "techniques": [
+        "turn-model"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T12:44:46Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "chat-transcript"
+      ],
+      "techniques": [
+        "turn-model"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-21T12:44:46Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "chat-transcript"
+      ],
+      "techniques": [
+        "turn-model"
+      ],
+      "deviations": 0
+    }
+  ]
+}

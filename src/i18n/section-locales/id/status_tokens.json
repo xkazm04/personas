@@ -105,7 +105,10 @@
     "pending": "Tertunda",
     "processed": "Diproses",
     "processing": "Memproses",
-    "retrying": "Mencoba ulang"
+    "retrying": "Mencoba ulang",
+    "dead_letter": "Dead letter",
+    "discarded": "Dibuang",
+    "skipped": "Dilewati"
   },
   "execution": {
     "cancelled": "Dibatalkan",

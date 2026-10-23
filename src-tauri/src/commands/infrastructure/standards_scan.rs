@@ -85,12 +85,54 @@ fn norm(value: &str, allowed: &[&str], default: &str) -> String {
     }
 }
 
+/// The shipped ruleset, the same text the prompt embeds.
+const RULESET: &str = include_str!("standards_ruleset.md");
+
+/// `(category, rule_key)` for every rule in the ruleset, in file order. A rule
+/// is a `- **key** —` bullet under a `## <category> —` heading.
+fn ruleset_rules(ruleset: &str) -> Vec<(String, String)> {
+    let mut category = String::new();
+    let mut rules = Vec::new();
+    for line in ruleset.lines() {
+        if let Some(h) = line.strip_prefix("## ") {
+            category = h.split_whitespace().next().unwrap_or("").to_string();
+        } else if let Some(rest) = line.strip_prefix("- **") {
+            if let Some((key, _)) = rest.split_once("**") {
+                if !category.is_empty() {
+                    rules.push((category.clone(), key.to_string()));
+                }
+            }
+        }
+    }
+    rules
+}
+
+/// Whether a reported finding may be persisted. The prompt demands exactly one
+/// finding per ruleset key, so an invented key or a repeat is dropped: both
+/// would otherwise count in the compliance percentage. First report wins.
+fn accept_rule_key(known: &[(String, String)], seen: &mut Vec<String>, key: &str) -> bool {
+    if !known.iter().any(|(_, k)| k == key) || seen.iter().any(|k| k == key) {
+        return false;
+    }
+    seen.push(key.to_string());
+    true
+}
+
+/// Ruleset rules the run never reported, as `(category, rule_key)`.
+fn unreported_rules(known: &[(String, String)], seen: &[String]) -> Vec<(String, String)> {
+    known
+        .iter()
+        .filter(|(_, k)| !seen.contains(k))
+        .cloned()
+        .collect()
+}
+
 // ----------------------------------------------------------------------------
 // Prompt
 // ----------------------------------------------------------------------------
 
 fn build_standards_prompt() -> String {
-    let ruleset = include_str!("standards_ruleset.md");
+    let ruleset = RULESET;
     format!(
         r#"You are a senior engineering-standards auditor. Inspect THIS repository
 (your working directory is the project root) and assess it against the golden
@@ -126,8 +168,8 @@ pub async fn dev_tools_run_standards_scan(
     require_auth(&state).await?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
 
-    // Fresh scan replaces the prior findings.
-    let _ = repo::clear_standards_for_project(&state.db, &project_id);
+    // The prior findings stay until this scan has finished with findings of
+    // its own: see `repo::supersede_standards` in the Ok arm below.
     let scan = repo::create_scan(&state.db, Some(&project_id), "standards", Some("running"))?;
     let scan_id = scan.id.clone();
 
@@ -163,6 +205,12 @@ pub async fn dev_tools_run_standards_scan(
             .await;
             match result {
                 Ok(count) => {
+                    // Swap the verdict only now that a complete one exists.
+                    if let Err(e) =
+                        repo::supersede_standards(&pool, &project_id_task, &scan_id_task)
+                    {
+                        tracing::warn!(error = %e, "failed to retire superseded standards findings");
+                    }
                     let _ = repo::update_scan(
                         &pool,
                         &scan_id_task,
@@ -185,6 +233,8 @@ pub async fn dev_tools_run_standards_scan(
                 }
                 Err(e) => {
                     let msg = format!("{e}");
+                    // Keep the previous verdict as the only one listed.
+                    let _ = repo::discard_scan_standards(&pool, &project_id_task, &scan_id_task);
                     let _ = repo::update_scan(
                         &pool,
                         &scan_id_task,
@@ -203,6 +253,11 @@ pub async fn dev_tools_run_standards_scan(
             }
         },
         move |msg| async move {
+            let _ = repo::discard_scan_standards(
+                &pool_for_panic,
+                &project_id_for_panic,
+                &scan_id_for_panic,
+            );
             let _ = repo::update_scan(
                 &pool_for_panic,
                 &scan_id_for_panic,
@@ -241,6 +296,10 @@ pub async fn dev_tools_list_standards(
 /// (`personas_core::model_class`).
 const STANDARDS_SCAN_CLASS: personas_core::model_class::CallClass =
     personas_core::model_class::CallClass::Synthesis;
+
+/// How long a CLI whose stdout already closed gets to report its exit status
+/// before the scan stops waiting and treats the status as unknown.
+const EXIT_STATUS_GRACE: std::time::Duration = std::time::Duration::from_secs(5);
 
 async fn run_standards_scan(
     pool: &crate::db::DbPool,
@@ -317,6 +376,8 @@ async fn run_standards_scan(
     let mut reader = BufReader::new(stdout).lines();
 
     let mut count = 0i32;
+    let known_rules = ruleset_rules(RULESET);
+    let mut seen_rules: Vec<String> = Vec::new();
     let timeout = std::time::Duration::from_secs(1200);
     let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
         source: "scanner",
@@ -336,6 +397,13 @@ async fn run_standards_scan(
                 for proto in text.lines() {
                     let proto = proto.trim();
                     if let Some(f) = parse_finding(proto) {
+                        if !accept_rule_key(&known_rules, &mut seen_rules, f.rule_key.trim()) {
+                            tracing::warn!(
+                                rule_key = %f.rule_key,
+                                "standards scan: dropped a finding with an unknown or repeated rule_key"
+                            );
+                            continue;
+                        }
                         let category = norm(&f.category, ALLOWED_CATEGORIES, "code_quality");
                         let status = norm(&f.status, ALLOWED_STATUS, "missing");
                         let severity = norm(
@@ -367,15 +435,99 @@ async fn run_standards_scan(
     })
     .await;
 
+    // A stream that ended on its own was the CLI exiting: read how it exited,
+    // briefly, before the kill below reaps whatever is left.
+    let exit = if streamed.is_ok() {
+        tokio::time::timeout(EXIT_STATUS_GRACE, child.wait())
+            .await
+            .ok()
+            .and_then(|r| r.ok())
+    } else {
+        None
+    };
     let _ = child.kill().await;
 
-    if streamed.is_err() && count == 0 {
+    // Only a run that finished cleanly with findings may become the verdict
+    // (the caller supersedes the previous one on Ok). A timed-out run, a CLI
+    // that exited non-zero, or a stream that parsed to nothing is a failure,
+    // and its partial rows are discarded rather than replacing a full verdict.
+    let failure = if streamed.is_err() {
+        Some(format!(
+            "timed out after {}s with {count} finding(s)",
+            timeout.as_secs()
+        ))
+    } else if exit.is_some_and(|s| !s.success()) {
+        Some(format!(
+            "Claude CLI exited with {} after {count} finding(s)",
+            exit.map(|s| s.to_string()).unwrap_or_default()
+        ))
+    } else if count == 0 {
+        Some("produced no findings".to_string())
+    } else {
+        None
+    };
+    if let Some(why) = failure {
         let tail = stderr_buf.lock().map(|s| s.clone()).unwrap_or_default();
         return Err(AppError::Internal(format!(
-            "Standards scan timed out with no findings. {}",
+            "Standards scan {why}. {}",
             tail.chars().take(500).collect::<String>()
         )));
     }
 
+    // A rule the run never reported is filed as `missing` rather than left out:
+    // compliance is computed over the persisted set, so a run that reported 10
+    // of 22 rules would otherwise read as a complete verdict.
+    for (category, rule_key) in unreported_rules(&known_rules, &seen_rules) {
+        match repo::create_standard(
+            pool,
+            project_id,
+            Some(scan_id),
+            &rule_key,
+            &norm(&category, ALLOWED_CATEGORIES, "code_quality"),
+            &rule_key,
+            "missing",
+            "info",
+            Some("Not assessed: this scan run did not report the rule."),
+            Some("Re-run the standards scan."),
+        ) {
+            Ok(_) => count += 1,
+            Err(e) => tracing::warn!(error = %e, "failed to persist unassessed standard"),
+        }
+    }
+
     Ok(count)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ruleset_has_the_22_documented_keys() {
+        let rules = ruleset_rules(RULESET);
+        assert_eq!(rules.len(), 22);
+        assert!(rules
+            .iter()
+            .all(|(c, _)| ALLOWED_CATEGORIES.contains(&c.as_str())));
+        assert!(rules.contains(&("precommit".to_string(), "lint.config".to_string())));
+    }
+
+    #[test]
+    fn invented_and_repeated_rule_keys_are_rejected() {
+        let known = ruleset_rules(RULESET);
+        let mut seen = Vec::new();
+        assert!(accept_rule_key(&known, &mut seen, "docs.readme"));
+        assert!(!accept_rule_key(&known, &mut seen, "docs.readme"), "repeat");
+        assert!(!accept_rule_key(&known, &mut seen, "made.up"), "invented");
+        assert_eq!(seen, vec!["docs.readme".to_string()]);
+    }
+
+    #[test]
+    fn unreported_rules_are_the_ruleset_minus_the_reported() {
+        let known = ruleset_rules(RULESET);
+        let seen = vec!["docs.readme".to_string(), "lint.config".to_string()];
+        let missing = unreported_rules(&known, &seen);
+        assert_eq!(missing.len(), 20);
+        assert!(!missing.iter().any(|(_, k)| k == "docs.readme"));
+    }
 }

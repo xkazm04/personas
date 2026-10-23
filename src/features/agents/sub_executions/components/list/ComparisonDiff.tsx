@@ -9,6 +9,7 @@ import {
   type LineDiffEntry,
 } from '../../libs/comparisonDiffWorkerClient';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import { silentCatch } from '@/lib/silentCatch';
@@ -33,9 +34,14 @@ export function OutputDiffSection({
   const [expanded, setExpanded] = useState(false);
   const [diff, setDiff] = useState<LineDiffEntry[]>([]);
   const [diffLoading, setDiffLoading] = useState(false);
+  // A failed load leaves both logs null and `loading` false, which is exactly
+  // the condition the fetch effect waits for, so without this latch it re-fired
+  // (and re-toasted) in a loop while the section stayed open. Only Retry clears it.
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
+    setLoadFailed(false);
     try {
       const [l, r] = await Promise.all([
         getExecutionLogLines(leftId, personaId, 0, LOG_PAGE_SIZE),
@@ -46,16 +52,17 @@ export function OutputDiffSection({
     } catch (err) {
       logger.warn('Failed to load comparison logs', { error: err });
       useToastStore.getState().addToast(e.failed_to_load_logs, 'error');
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
   }, [leftId, rightId, personaId, e.failed_to_load_logs]);
 
   useEffect(() => {
-    if (expanded && logLeft === null && logRight === null && !loading) {
+    if (expanded && logLeft === null && logRight === null && !loading && !loadFailed) {
       void fetchLogs();
     }
-  }, [expanded, logLeft, logRight, loading, fetchLogs]);
+  }, [expanded, logLeft, logRight, loading, loadFailed, fetchLogs]);
 
   useEffect(() => {
     if (!expanded || (logLeft === null && logRight === null)) {
@@ -86,6 +93,7 @@ export function OutputDiffSection({
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
         className="flex items-center gap-2 typo-body text-foreground hover:text-foreground transition-colors"
       >
         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -103,6 +111,13 @@ export function OutputDiffSection({
           >
             {loading || (diffLoading && diff.length === 0) ? (
               <ContentLoader variant="panel" hint="comparison" />
+            ) : loadFailed ? (
+              <div className="flex items-center gap-3 py-3">
+                <p className="typo-body text-status-error">{e.failed_to_load_logs}</p>
+                <Button variant="secondary" size="sm" onClick={() => { void fetchLogs(); }}>
+                  {t.common.retry}
+                </Button>
+              </div>
             ) : diff.length === 0 ? (
               <p className="typo-body text-foreground py-3">{e.no_log_data}</p>
             ) : (
@@ -179,6 +194,7 @@ export function JsonDiffSection({
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
         className="flex items-center gap-2 typo-body text-foreground hover:text-foreground transition-colors"
       >
         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}

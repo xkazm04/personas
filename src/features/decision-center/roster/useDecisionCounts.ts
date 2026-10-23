@@ -29,7 +29,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { ChipCount, HubChip } from '../model/decisionModel';
 import { buildLaneCounts, laneTotal, type LaneCounts } from '../lanes/laneModel';
 import { refreshLanesSnapshot } from '../lanes/lanesSnapshotSource';
-import { useDecisionSurface, useLanesSnapshot } from '../lanes/useLanesSnapshot';
+import { useLanesSnapshot } from '../lanes/useLanesSnapshot';
 import { buildChipCounts, decisionTotal } from './chipCounts';
 import {
   getPendingCountsStatus,
@@ -37,6 +37,8 @@ import {
   subscribePendingCountsStatus,
 } from './pendingCountsSource';
 import { useChatThreads } from './useChatThreads';
+import { lensCardKinds } from '../lens/lensKinds';
+import { LENS_SCAN_SOURCE, refreshLensScanProducts, useLensScanProducts } from './lensScanSource';
 import { useDecisionCopy } from './useDecisionCopy';
 import { useRosterRefresh } from './useRosterRefresh';
 
@@ -44,14 +46,11 @@ export interface DecisionCountsState {
   counts: Record<HubChip, ChipCount>;
   /** Sum of the seven decision chips (excludes `ready`). */
   total: number;
+  /** The mandate lanes' counts: the operator's decision surface. */
+  lanes: LaneCounts;
   /**
-   * The mandate lanes' counts while the setting is `lanes`; null under `chips`
-   * (nothing reads the snapshot then).
-   */
-  lanes: LaneCounts | null;
-  /**
-   * Breach + Sign + Accept + Talk under `lanes`, once the first snapshot read
-   * settled; null under `chips` and before that read (never a premature 0).
+   * Breach + Sign + Accept + Talk, once the first snapshot read settled; null
+   * before that read (never a premature 0).
    */
   laneTotal: number | null;
   /** The first lanes snapshot read has settled (landed or failed). */
@@ -104,9 +103,10 @@ export function useDecisionCountsCore(chat: ChatCountInput, enabled: boolean): D
     return n;
   });
 
-  const surface = useDecisionSurface();
-  const lanesOn = surface === 'lanes';
-  const lanesState = useLanesSnapshot(enabled && lanesOn);
+  const lanesState = useLanesSnapshot(enabled);
+  // The lens-scan cards sit in fixed lanes; their products are a count source too.
+  const lensState = useLensScanProducts(enabled);
+  const lensKinds = useMemo(() => lensCardKinds(lensState.products ?? []), [lensState.products]);
 
   const counts = useMemo(
     () =>
@@ -124,22 +124,22 @@ export function useDecisionCountsCore(chat: ChatCountInput, enabled: boolean): D
 
   const lanes = useMemo(
     () =>
-      lanesOn
-        ? buildLaneCounts({
-            snapshot: lanesState.snapshot,
-            snapshotFailed: lanesState.failed,
-            questions: questionCount,
-            chat: { n: chat.n, failed: chat.failed },
-          })
-        : null,
-    [lanesOn, lanesState.snapshot, lanesState.failed, questionCount, chat.n, chat.failed],
+      buildLaneCounts({
+        snapshot: lanesState.snapshot,
+        snapshotFailed: lanesState.failed,
+        questions: questionCount,
+        chat: { n: chat.n, failed: chat.failed },
+        lens: { kinds: lensKinds, failed: lensState.failed, source: LENS_SCAN_SOURCE },
+      }),
+    [lanesState.snapshot, lanesState.failed, questionCount, chat.n, chat.failed, lensKinds, lensState.failed],
   );
 
   const refreshCounts = useCallback(() => {
     void refreshDecisionCounts();
-    if (lanesOn) void refreshLanesSnapshot();
+    void refreshLanesSnapshot();
+    void refreshLensScanProducts();
     void refreshReady(refreshUndispatched).finally(() => setReadySettled(true));
-  }, [refreshUndispatched, lanesOn]);
+  }, [refreshUndispatched]);
 
   const loading = enabled && !countsStatus.settled && pending === null;
 
@@ -148,7 +148,7 @@ export function useDecisionCountsCore(chat: ChatCountInput, enabled: boolean): D
       counts,
       total: decisionTotal(counts),
       lanes,
-      laneTotal: lanes && lanesState.settled ? laneTotal(lanes) : null,
+      laneTotal: lanesState.settled ? laneTotal(lanes) : null,
       lanesSettled: lanesState.settled,
       loading,
       refreshCounts,

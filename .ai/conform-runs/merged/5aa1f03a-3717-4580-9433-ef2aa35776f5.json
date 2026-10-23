@@ -1,0 +1,73 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5aa1f03a-3717-4580-9433-ef2aa35776f5",
+ "subject": "fleet-orchestration",
+ "evaluatedAt": "2026-10-22T19:52:16.469Z",
+ "pairs": [
+  {
+   "context": "3effd422-2610-4c8a-bc02-53aceafd827c",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:2504 parse_state_token re-declares the session-state vocabulary by hand and omits Finished and Expired (src-tauri/src/commands/fleet/types.rs:56), so companion_record_fleet_event returns Validation at :71 and the episode is lost for those states",
+   "techniques": [
+    {
+     "technique": "session-registry",
+     "verdict": "deviation: consumer keeps its own copy of the status enum although FleetSessionState derives Deserialize with snake_case",
+     "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:2504 hand-written token match; src-tauri/src/commands/fleet/types.rs:25 the single enum"
+    },
+    {
+     "technique": "absent-status-passthrough",
+     "verdict": "realized in part: an unknown token is rejected loudly, not defaulted",
+     "evidence": "src-tauri/src/commands/companion/fleet_bridge.rs:71 unknown token becomes AppError::Validation"
+    }
+   ],
+   "registryProposal": "session-registry could name the stringly-typed event boundary (frontend ships state as a token string) as a variant of the consumer-copies-the-enum failure; the fix is serde on the shared enum, not a second parser."
+  },
+  {
+   "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 'one verdict in, one backend write out'; src/features/agents/quick-answer/usePendingInteractions.ts:25 only reads fleet monitor data via useSharedMonitorData and creates, dispatches or harvests no session. Re-judged rev 28, unchanged.",
+   "techniques": []
+  },
+  {
+   "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_releases/HomeReleases.tsx:2 a What's New view; the only fleet-adjacent link in the neighbouring tour catalogue is a nav deep link at src/features/home/sub_learning/powerMoves/registry.ts:140. No session, roster, dispatch or harvest. Re-judged rev 28, unchanged.",
+   "techniques": []
+  },
+  {
+   "context": "c5228746-931d-4733-9cf7-84519a2c9605",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/hooks/design/core/useDesignAnalysis.ts:2 drives one persona design analysis through startDesignAnalysis; its only session notion is a trace session (:11 SystemTraceSession), not a fleet session. No registry, dispatch or harvest. Re-judged rev 28; the prior anchor usePersonaCompiler.ts no longer exists.",
+   "techniques": []
+  }
+ ],
+ "declined": [
+  {
+   "subject": "fleet-orchestration",
+   "context": "942d2449-34ab-4f02-af7e-b130269d10ef",
+   "reason": "context fleet-triage-columns lists entry points src/features/fleet/monitor/triage/triageModel.ts and MonitorProjectColumns.tsx that git ls-files no longer has (triageModel.ts now lives under src/features/projects/development/goals/triage and is goal triage); the context map is stale, so there is no code to judge. Left unknown."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T19:52:16.469Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "session-registry",
+    "absent-status-passthrough"
+   ],
+   "deviations": 1
+  }
+ ]
+}

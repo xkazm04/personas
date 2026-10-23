@@ -19,7 +19,7 @@ export function BulkActionBar({
   onBulkAction,
   onDeselect,
 }: BulkActionBarProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <>
       {activeSelectionCount > 0 && (
@@ -32,8 +32,7 @@ export function BulkActionBar({
                 <AlertTriangle className="w-4 h-4 text-amber-400" />
                 <span className="text-foreground">
                   {confirmAction === 'approved' ? t.overview.review.approve : t.overview.review.reject}{' '}
-                  <span className="font-semibold">{activeSelectionCount}</span> review
-                  {activeSelectionCount !== 1 ? 's' : ''}?
+                  {tx(activeSelectionCount === 1 ? t.overview.review.confirm_bulk_one : t.overview.review.confirm_bulk, { count: activeSelectionCount })}
                 </span>
               </div>
               <div className="flex items-center gap-2">

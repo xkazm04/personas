@@ -152,6 +152,7 @@ export function CredentialList({
         onSort={handleSort}
         pageSize={25}
         isLoading={isFetching && displayRows.length === 0}
+        emptyArt="search"
         emptyTitle={t.vault.credential_list.no_match}
         emptyDescription={t.vault.credential_list.no_match_hint}
         className="flex-1"

@@ -160,6 +160,26 @@ impl Drop for CycleClockGuard<'_> {
     }
 }
 
+/// RAII guard that finalizes and persists a cycle's run-budget ledger entry on
+/// EVERY exit. Without it only the success tail persisted, so a failed cycle's
+/// spend never reached `run_budgets` and its un-finished ledger entry was never
+/// swept.
+struct CycleBudgetGuard<'a> {
+    pool: &'a DbPool,
+    cycle_id: &'a str,
+}
+
+impl Drop for CycleBudgetGuard<'_> {
+    fn drop(&mut self) {
+        // Retained 30m in-memory; the row survives restarts for cost-trend dashboards.
+        if let Some(budget) = personas_core::run_budget::ledger().finish(self.cycle_id) {
+            if let Err(e) = personas_db::repos::run_budget::persist(self.pool, &budget) {
+                tracing::warn!(cycle_id = %self.cycle_id, "run-budget persist failed: {e}");
+            }
+        }
+    }
+}
+
 // =============================================================================
 // Evolution loop
 // =============================================================================
@@ -215,6 +235,10 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
         "evolution",
         personas_core::run_budget::evolution_ceiling_usd(),
     );
+    let _budget_guard = CycleBudgetGuard {
+        pool: &pool,
+        cycle_id: &cycle_id,
+    };
 
     // Phase 1: Breeding
     if !try_status_update(&pool, &cycle_id, EvolutionCycleStatus::Breeding, None) {
@@ -627,14 +651,7 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
     if completed {
         clock_guard.finalized = true;
     }
-
-    // P2: finalize + persist the cycle's budget (retained 30m in-memory; the row
-    // survives restarts for cost-trend dashboards).
-    if let Some(budget) = personas_core::run_budget::ledger().finish(&cycle_id) {
-        if let Err(e) = personas_db::repos::run_budget::persist(&pool, &budget) {
-            tracing::warn!(cycle_id = %cycle_id, "run-budget persist failed: {e}");
-        }
-    }
+    // The budget is finalized + persisted by `_budget_guard` as the cycle returns.
 }
 
 // =============================================================================
@@ -756,4 +773,62 @@ pub fn should_evolve(pool: &DbPool, policy: &EvolutionPolicy) -> bool {
         .unwrap_or(0);
 
     exec_count >= policy.min_executions_between as i64
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use personas_db::{init_test_db, PoolExt};
+
+    fn policy_for(persona_id: &str) -> EvolutionPolicy {
+        EvolutionPolicy {
+            id: "pol-budget".into(),
+            persona_id: persona_id.into(),
+            enabled: true,
+            fitness_objective: "{}".into(),
+            mutation_rate: 0.3,
+            variants_per_cycle: 2,
+            improvement_threshold: 0.1,
+            min_executions_between: 5,
+            mutation_strategy: None,
+            last_cycle_at: None,
+            total_cycles: 0,
+            total_promotions: 0,
+            created_at: "2026-01-01T00:00:00Z".into(),
+            updated_at: "2026-01-01T00:00:00Z".into(),
+        }
+    }
+
+    /// A cycle that fails before its end (here: the persona does not exist) must
+    /// still finalize and persist its run-budget row, or the failed cycle's spend
+    /// never reaches `run_budgets` and its ledger entry is never swept.
+    #[tokio::test]
+    async fn failed_cycle_still_persists_its_run_budget() {
+        let pool = init_test_db().unwrap();
+        let cycle_id = "cycle-budget-fail".to_string();
+        run_evolution_cycle(
+            pool.clone(),
+            policy_for("no-such-persona"),
+            cycle_id.clone(),
+        )
+        .await;
+
+        let state = personas_core::run_budget::ledger()
+            .state(&cycle_id)
+            .expect("cycle was registered");
+        assert!(
+            state.finished,
+            "ledger entry must be finished on a failed exit"
+        );
+
+        let conn = pool.conn("test:evolution-budget").unwrap();
+        let n: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) AS n FROM run_budgets WHERE run_id = ?1 AND finished = 1",
+                [&cycle_id],
+                |r| r.get("n"),
+            )
+            .unwrap();
+        assert_eq!(n, 1, "failed cycle must persist a finished run_budgets row");
+    }
 }

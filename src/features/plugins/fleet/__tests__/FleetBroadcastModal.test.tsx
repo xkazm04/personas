@@ -33,6 +33,21 @@ const SESSIONS: FleetSession[] = [
     stateReason: null,
     name: null,
   } as unknown as FleetSession,
+  // Retired-without-running and not-yet-spawned rows have no PTY either.
+  {
+    id: 's-expired',
+    state: 'expired',
+    projectLabel: 'repo-expired',
+    stateReason: null,
+    name: null,
+  } as unknown as FleetSession,
+  {
+    id: 's-queued',
+    state: 'queued',
+    projectLabel: 'repo-queued',
+    stateReason: null,
+    name: null,
+  } as unknown as FleetSession,
   {
     id: 's-dead',
     state: 'exited',
@@ -61,6 +76,12 @@ vi.mock('@/api/fleet/fleet', () => ({
 const addToast = vi.fn();
 vi.mock('@/stores/toastStore', () => ({
   useToastStore: { getState: () => ({ addToast }) },
+}));
+
+const silentReport = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/silentCatch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/silentCatch')>()),
+  silentCatch: (ctx: string) => (err: unknown) => silentReport(ctx, err),
 }));
 
 import * as fleetApi from '@/api/fleet/fleet';
@@ -120,8 +141,10 @@ describe('FleetBroadcastModal — target list and failure handling', () => {
     expect(screen.queryByText('repo-exited')).not.toBeInTheDocument();
     // Hibernated rows look alive in every other list; here they are dead ends.
     expect(screen.queryByText('repo-hibernated')).not.toBeInTheDocument();
+    expect(screen.queryByText('repo-expired')).not.toBeInTheDocument();
+    expect(screen.queryByText('repo-queued')).not.toBeInTheDocument();
     // Derived from the rendered rows, not from a label: one target checkbox
-    // plus the "Append Enter" toggle. Three sessions would give four.
+    // plus the "Append Enter" toggle. Five sessions would give six.
     expect(screen.getAllByRole('checkbox')).toHaveLength(2);
   });
 
@@ -312,5 +335,42 @@ describe('FleetBroadcastModal — which sessions missed it', () => {
 
     await waitFor(() => expect(addToast).toHaveBeenCalled());
     expect(screen.queryByTestId('fleet-broadcast-failed')).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * The toast tells the operator; telemetry must hear it too, or a broadcast that
+ * failed against every session leaves no trace of WHY. One report per send.
+ */
+describe('FleetBroadcastModal — failed writes reach telemetry', () => {
+  beforeEach(() => {
+    silentReport.mockClear();
+    vi.mocked(fleetApi.writeInput).mockReset();
+  });
+
+  it('reports the write failure once with the error the backend returned', async () => {
+    const user = userEvent.setup();
+    const fault = { error: 'session writer dropped', kind: 'internal' };
+    vi.mocked(fleetApi.writeInput).mockRejectedValue(fault);
+    render(<FleetBroadcastModal open onClose={() => {}} />);
+    await user.type(screen.getByTestId('fleet-broadcast-text'), 'hello');
+    await user.click(screen.getByText('repo-a'));
+    await user.click(screen.getByTestId('fleet-broadcast-send'));
+
+    await waitFor(() => expect(silentReport).toHaveBeenCalledTimes(1));
+    expect(silentReport).toHaveBeenCalledWith('FleetBroadcastModal:write', fault);
+  });
+
+  it('reports nothing when every write landed', async () => {
+    const user = userEvent.setup();
+    vi.mocked(fleetApi.writeInput).mockResolvedValue(null);
+    const onClose = vi.fn();
+    render(<FleetBroadcastModal open onClose={onClose} />);
+    await user.type(screen.getByTestId('fleet-broadcast-text'), 'hello');
+    await user.click(screen.getByText('repo-a'));
+    await user.click(screen.getByTestId('fleet-broadcast-send'));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(silentReport).not.toHaveBeenCalled();
   });
 });

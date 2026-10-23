@@ -179,7 +179,7 @@ export function ProjectsLayer({
             state={failed || empty ? 'empty' : undefined}
             empty={failed
               ? { title: w.L.passportsFailed, hint: error, tone: 'error' }
-              : { title: w.L.noProjects, hint: w.L.noProjectsHint, tone: 'info' }}
+              : { art: 'folder', title: w.L.noProjects, hint: w.L.noProjectsHint, tone: 'info' }}
           />
         </Surface>
       </KitHost>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Stethoscope, Wrench } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AthenaComposedBadge } from '@/features/shared/components/feedback/AthenaComposedBadge';
@@ -23,11 +23,16 @@ export function IncidentDiagnosisCard({ incidentId }: { incidentId: string }) {
   const [diagnosis, setDiagnosis] = useState<IncidentDiagnosis | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  // The modal swaps incidents in place (sibling click), so this card outlives
+  // one incident. A diagnosis run started on A must not land on B.
+  const currentId = useRef(incidentId);
+  currentId.current = incidentId;
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setDiagnosis(null);
+    setRunning(false);
     (async () => {
       try {
         const d = await getIncidentDiagnosis(incidentId);
@@ -44,13 +49,15 @@ export function IncidentDiagnosisCard({ incidentId }: { incidentId: string }) {
   }, [incidentId]);
 
   const runDiagnosis = async () => {
+    const forId = incidentId;
     setRunning(true);
     try {
-      setDiagnosis(await diagnoseAuditIncident(incidentId));
+      const result = await diagnoseAuditIncident(forId);
+      if (currentId.current === forId) setDiagnosis(result);
     } catch (err) {
       toastCatch('IncidentDiagnosisCard:diagnose', t.overview.incidents.noc_diagnose_failed)(err);
     } finally {
-      setRunning(false);
+      if (currentId.current === forId) setRunning(false);
     }
   };
 

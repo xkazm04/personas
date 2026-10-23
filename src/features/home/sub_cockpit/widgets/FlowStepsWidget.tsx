@@ -4,6 +4,7 @@ import { Tile, type Tone } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 import type { CockpitWidgetProps } from '../widgetRegistry';
+import { oneOf, recordsOf, textOf } from './narrow';
 import { Cell, WidgetTable, nameCell, type TableColumn } from './widgetTable';
 
 /**
@@ -47,6 +48,18 @@ const NODE: Record<Status, Tone> = {
   blocked: 'error',
 };
 
+const STATUSES = ['done', 'current', 'pending', 'blocked'] as const;
+
+/** Narrow the composed `steps` once: a step without a text label is dropped. */
+function stepsOf(raw: unknown): FlowStep[] {
+  const out: FlowStep[] = [];
+  for (const r of recordsOf(raw)) {
+    const label = textOf(r.label);
+    if (label) out.push({ label, detail: textOf(r.detail), status: oneOf(r.status, STATUSES) });
+  }
+  return out;
+}
+
 function statusOf(step: FlowStep): Status {
   return step.status && step.status in NODE ? step.status : 'pending';
 }
@@ -59,7 +72,7 @@ function statusLabel(t: Translations, s: Status): string {
 export function FlowStepsWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t } = useTranslation();
   const c = t.overview.cockpit;
-  const steps = Array.isArray(config?.steps) ? (config.steps as FlowStep[]) : [];
+  const steps = stepsOf(config?.steps);
   const heading = title ?? c.flow_title;
   const detailed = steps.some((s) => s.detail);
   const rows: FlowRow[] = steps.map((s, i) => ({ ...s, key: `${i}-${s.label}` }));

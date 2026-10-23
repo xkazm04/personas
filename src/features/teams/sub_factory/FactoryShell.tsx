@@ -6,8 +6,6 @@
 // a FactoryHead: the kit Crumbs of the levels above (doors back up), the level's name.
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { saveKpiAssessment } from '@/api/devTools/kpis';
-import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 
 import { Dot, KitHost, Meta, Surface } from '@/features/shared/components/kit';
@@ -20,6 +18,7 @@ import { ProjectsLayer } from './ProjectsLayer';
 import { GroupKpiLayer } from './GroupKpiLayer';
 import { KpiConsole } from './KpiConsole';
 import { useFactoryData } from './factoryData';
+import { useKpiEditAutosave } from './useKpiEditAutosave';
 import { FactoryProjectTabs, type L2Tab } from './l2/FactoryProjectTabs';
 
 export interface GroupsRenderArgs {
@@ -66,22 +65,9 @@ export function FactoryShell({
     setPendingFactoryFocus(null);
   }, [pendingFactoryFocus, setPendingFactoryFocus]);
 
-  // Persist the open KPI's calibration + assessment edits to dev_kpis (debounced).
-  useEffect(() => {
-    if (!kpiId) return;
-    const e = edits[kpiId];
-    if (!e) return;
-    const t = setTimeout(() => {
-      void saveKpiAssessment(kpiId, {
-        warnAt: e.warnAt,
-        critAt: e.critAt,
-        manualRating: e.rating,
-        pros: e.pros,
-        cons: e.cons,
-      }).catch(silentCatch('FactoryShell:saveKpiAssessment'));
-    }, 600);
-    return () => clearTimeout(t);
-  }, [kpiId, edits]);
+  // Persist the open KPI's calibration + assessment edits to dev_kpis
+  // (debounced, flushed when the console closes or the shell unmounts).
+  useKpiEditAutosave(kpiId, edits);
 
   const { projects, reload } = useFactoryData();
   const project = useMemo(() => projects.find((p) => p.id === projectId) ?? null, [projects, projectId]);

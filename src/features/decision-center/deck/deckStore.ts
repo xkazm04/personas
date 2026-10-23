@@ -11,7 +11,7 @@
  * Scopes:
  *  - `chip`   the deck walks that chip's roster queue (compareDecision order).
  *  - `all`    the deck walks every chip's queue (Triage all).
- *  - `lane`   the deck walks one mandate lane (setting `lanes`): the items the
+ *  - `lane`   the deck walks one mandate lane: the items the
  *             backend's lane snapshot put there, in lane order (clause rank,
  *             then age). See `lanes/laneModel`.
  *  - `single` one item the caller already holds, adapted with the roster's own

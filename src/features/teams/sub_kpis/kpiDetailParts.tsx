@@ -17,6 +17,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { ComposedByBadge } from './KPIConnectWizard';
 import { KpiSection } from './KpiDetailSection';
+import { kpiInstantMs } from './kpiMath';
 
 // =============================================================================
 // Data source — the KPI's active binding (or the invitation to create one)
@@ -102,9 +103,7 @@ const W = 360;
 const H = 96;
 const PAD = 8;
 
-function ts(s: string): number {
-  return new Date(s.replace(' ', 'T')).getTime();
-}
+const ts = kpiInstantMs;
 
 export function KpiStoryChart({
   kpi,

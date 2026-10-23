@@ -194,10 +194,20 @@ pub fn get_trending_templates(
 }
 
 #[tauri::command]
-pub fn cleanup_duplicate_reviews(
+pub async fn cleanup_duplicate_reviews(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
+    let state = state.inner().clone();
+    crate::commands::blocking::run_blocking("cleanup_duplicate_reviews", move || {
+        cleanup_duplicate_reviews_blocking(&state)
+    })
+    .await
+}
+
+fn cleanup_duplicate_reviews_blocking(
+    state: &Arc<AppState>,
+) -> Result<serde_json::Value, AppError> {
     let deleted = repo::cleanup_duplicate_reviews(&state.db)?;
     Ok(serde_json::json!({ "deleted": deleted }))
 }
@@ -2509,10 +2519,20 @@ pub fn seed_mock_manual_review(
 /// Uses the `infer_template_category` function to derive a category from
 /// the instruction text and connector names.  Returns the count of updated rows.
 #[tauri::command]
-pub fn backfill_review_categories(
+pub async fn backfill_review_categories(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
+    let state = state.inner().clone();
+    crate::commands::blocking::run_blocking("backfill_review_categories", move || {
+        backfill_review_categories_blocking(&state)
+    })
+    .await
+}
+
+fn backfill_review_categories_blocking(
+    state: &Arc<AppState>,
+) -> Result<serde_json::Value, AppError> {
     let uncategorized = repo::get_uncategorized_reviews(&state.db)?;
     let mut updated = 0i64;
 
@@ -2538,10 +2558,18 @@ pub fn backfill_review_categories(
 /// Converts `["Slack", "GitHub"]` -> `[{ connector_name: "slack", action_label: "Slack", order: 0 }, ...]`
 /// and derives from `suggested_connectors` when no service_flow exists at all.
 #[tauri::command]
-pub fn backfill_service_flow(
+pub async fn backfill_service_flow(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
+    let state = state.inner().clone();
+    crate::commands::blocking::run_blocking("backfill_service_flow", move || {
+        backfill_service_flow_blocking(&state)
+    })
+    .await
+}
+
+fn backfill_service_flow_blocking(state: &Arc<AppState>) -> Result<serde_json::Value, AppError> {
     let reviews = repo::get_reviews_with_design_result(&state.db)?;
     let mut updated = 0i64;
     let mut skipped = 0i64;
@@ -2646,10 +2674,18 @@ pub fn backfill_service_flow(
 /// Matches tools from `suggested_tools` to connectors using name-prefix heuristic:
 /// e.g. tool `slack_send_message` matches connector `slack`.
 #[tauri::command]
-pub fn backfill_related_tools(
+pub async fn backfill_related_tools(
     state: State<'_, Arc<AppState>>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
+    let state = state.inner().clone();
+    crate::commands::blocking::run_blocking("backfill_related_tools", move || {
+        backfill_related_tools_blocking(&state)
+    })
+    .await
+}
+
+fn backfill_related_tools_blocking(state: &Arc<AppState>) -> Result<serde_json::Value, AppError> {
     let reviews = repo::get_reviews_with_design_result(&state.db)?;
     let mut updated = 0i64;
     let mut skipped = 0i64;

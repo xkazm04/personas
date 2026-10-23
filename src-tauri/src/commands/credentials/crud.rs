@@ -197,6 +197,12 @@ pub fn update_credential(
         ..input
     };
     let cred = repo::update_with_fields(&state.db, &id, metadata_input, field_map.as_ref())?;
+    if has_data_change {
+        // Cached resource-picker listings belong to the previous auth fields.
+        crate::engine::resource_listing::invalidate_credential(&id);
+        // A warm MCP stdio process keeps the env it was spawned with.
+        crate::engine::mcp_tools::evict_credential(&id);
+    }
 
     let detail = if has_data_change {
         "credential data changed"
@@ -292,6 +298,8 @@ pub fn delete_credential(state: State<'_, Arc<AppState>>, id: String) -> Result<
     let affected = connector_readiness::credential_dependent_persona_ids(&state.db, &id);
     let result = repo::delete(&state.db, &id)?;
     if result {
+        crate::engine::resource_listing::invalidate_credential(&id);
+        crate::engine::mcp_tools::evict_credential(&id);
         audit_log::insert_warn(&state.db, &id, &name, "delete", None);
         // Deleting a bound credential leaves any persona linked to it with a
         // dead `credentialLinks` id — recompute so `setup_status` flips to
@@ -563,6 +571,8 @@ pub fn update_credential_field(
         &field_value,
         is_sensitive,
     )?;
+    crate::engine::resource_listing::invalidate_credential(&credential_id);
+    crate::engine::mcp_tools::evict_credential(&credential_id);
 
     audit_log::insert_warn(
         &state.db,

@@ -37,7 +37,9 @@ pub async fn fleet_spawn_session(
 ) -> Result<String, String> {
     let _ = (cols, rows);
     let args = args.unwrap_or_default();
-    let with_task = args.iter().any(|a| !a.starts_with('-'));
+    // A `--` separator marks a literal tail (a task that itself starts with `-`).
+    let with_task = args.iter().any(|a| !a.starts_with('-'))
+        || args.iter().skip_while(|a| *a != "--").nth(1).is_some();
     let admission = queue::admit(
         &app,
         DispatchRequest {

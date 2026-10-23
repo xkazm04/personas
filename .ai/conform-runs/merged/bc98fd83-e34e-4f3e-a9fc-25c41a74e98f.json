@@ -1,0 +1,219 @@
+{
+ "schema": "conform-run/1",
+ "worker": "bc98fd83-e34e-4f3e-a9fc-25c41a74e98f",
+ "subject": "module-design",
+ "evaluatedAt": "2026-10-16T02:13:42.594247+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "core",
+   "subject": "module-design",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/core/src/lifecycle.rs:153 The exported macro emits unqualified third-party derive names, requiring callers to supply imports that are absent from its explicit interface.",
+   "techniques": [
+    {
+     "technique": "borrowed-surface",
+     "verdict": "conformant",
+     "evidence": "src-tauri/core/src/crypto.rs:233 SecureString keeps its String private and exposes deliberate operations instead of implicitly forwarding its mutators."
+    },
+    {
+     "technique": "concurrency-at-the-edge",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/cloud/runner.rs:68 The cloud runner drives a long-lived polling session; removing its waiting would require recreating coordination."
+    },
+    {
+     "technique": "declarative-or-sequential",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/cloud/runner.rs:175 Explicit branches emit status events and return different terminal outcomes, fitting sequential effectful control flow."
+    },
+    {
+     "technique": "emitted-code-names-from-a-root",
+     "verdict": "deviation",
+     "evidence": "src-tauri/core/src/lifecycle.rs:153 Serialize, Deserialize and TS are generator-authored names resolved in the invocation's scope rather than through defining-crate re-exports."
+    },
+    {
+     "technique": "io-free-core",
+     "verdict": "conformant",
+     "evidence": "src-tauri/core/src/lifecycle.rs:181 Lifecycle transitions consume state values and return state or error without performing I/O or scheduling."
+    },
+    {
+     "technique": "module-depth",
+     "verdict": "conformant",
+     "evidence": "src-tauri/core/src/topology_graph.rs:60 One operation hides indegree bookkeeping, queue traversal and cycle detection behind a result containing ordering and cycle nodes."
+    }
+   ]
+  },
+  {
+   "context": "hooks-design",
+   "subject": "module-design",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/hooks/design/oauth/useOAuthPolling.ts:141 OAuth give-up policy executes inside the effect that polls, schedules timers and mutates React state, preventing direct value-based testing of that transition.",
+   "techniques": [
+    {
+     "technique": "declarative-or-sequential",
+     "verdict": "conformant",
+     "evidence": "src/hooks/design/credential/negotiatorStepGraph.ts:149 One explicit pass builds visible and skipped collections plus both index mappings, matching the multiple-output rule."
+    },
+    {
+     "technique": "io-free-core",
+     "verdict": "deviation",
+     "evidence": "src/hooks/design/oauth/useOAuthPolling.ts:141 The timeout transition remains in the polling driver; the inspected hook test supplies start/poll functions and mocks external URL opening and document visibility to exercise a decision."
+    }
+   ]
+  },
+  {
+   "context": "recipe-build-models",
+   "subject": "module-design",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/core/src/models/build_session.rs:483 The hydration model represents its documented two-mode vocabulary as arbitrary text, leaving accepted membership outside the type checker.",
+   "techniques": [
+    {
+     "technique": "declarative-or-sequential",
+     "verdict": "conformant",
+     "evidence": "src-tauri/core/src/models/build_session.rs:75 BuildPhase transition rules use an explicit enumerated state match, making state-dependent progression directly readable."
+    },
+    {
+     "technique": "io-free-core",
+     "verdict": "conformant",
+     "evidence": "src-tauri/core/src/models/build_session.rs:69 Transition validation takes ordinary state values and returns a verdict without host dependencies, enabling direct exploration of state pairs."
+    },
+    {
+     "technique": "module-depth",
+     "verdict": "deviation",
+     "evidence": "src-tauri/core/src/models/build_session.rs:483 The adjacent documentation closes membership to interactive and one_shot, but the model does not; the inspected manager rejects unknown strings at runtime, which does not close this model's type."
+    }
+   ]
+  },
+  {
+   "context": "vault-catalog-autocred-ui",
+   "subject": "module-design",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:20 The UI derives completion from backend prose, so changing producer wording requires a coordinated classifier change to preserve progress behavior.",
+   "techniques": [
+    {
+     "technique": "declarative-or-sequential",
+     "verdict": "conformant",
+     "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:86 The field-signature calculation uses a pure map/join pipeline producing one string."
+    },
+    {
+     "technique": "marked-unverifiable-region",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/types.ts:149 Checking only that kind is a string cannot establish the closed kind union or required message, guidance, retryable and context fields; the assertion carries no invariant establishing them."
+    },
+    {
+     "technique": "module-depth",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_catalog/components/design/phases/AnalyzingPhase.tsx:20 Progress knowledge is encoded independently in the UI and credential_design.rs's producer messages, realizing information leakage across the boundary."
+    }
+   ]
+  },
+  {
+   "context": "templates-recipes",
+   "subject": "module-design",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/templates/sub_recipes/libs/substituteBindings.ts:37 Substitution asserts that a changed string retains arbitrary generic type T, although literal or branded string inputs need not retain that type.",
+   "techniques": [
+    {
+     "technique": "declarative-or-sequential",
+     "verdict": "conformant",
+     "evidence": "src/features/templates/sub_recipes/eligibility.ts:36 Connector filtering expresses a pure collection transformation directly, without effectful steps in the pipeline."
+    },
+    {
+     "technique": "marked-unverifiable-region",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_recipes/libs/substituteBindings.ts:37 The unconstrained generic assertion lacks a written validity invariant or an input restriction that excludes string types invalidated by substitution."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-16T02:13:42.594247+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "module-design"
+   ],
+   "techniques": [
+    "borrowed-surface",
+    "concurrency-at-the-edge",
+    "declarative-or-sequential",
+    "emitted-code-names-from-a-root",
+    "io-free-core",
+    "module-depth"
+   ],
+   "deviations": 1,
+   "context": "core",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-16T02:13:42.594247+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "module-design"
+   ],
+   "techniques": [
+    "declarative-or-sequential",
+    "io-free-core"
+   ],
+   "deviations": 1,
+   "context": "hooks-design",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-16T02:13:42.594247+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "module-design"
+   ],
+   "techniques": [
+    "declarative-or-sequential",
+    "io-free-core",
+    "module-depth"
+   ],
+   "deviations": 1,
+   "context": "recipe-build-models",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-16T02:13:42.594247+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "module-design"
+   ],
+   "techniques": [
+    "declarative-or-sequential",
+    "marked-unverifiable-region",
+    "module-depth"
+   ],
+   "deviations": 1,
+   "context": "vault-catalog-autocred-ui",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-16T02:13:42.594247+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "module-design"
+   ],
+   "techniques": [
+    "declarative-or-sequential",
+    "marked-unverifiable-region"
+   ],
+   "deviations": 1,
+   "context": "templates-recipes",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

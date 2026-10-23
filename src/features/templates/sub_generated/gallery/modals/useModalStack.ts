@@ -62,9 +62,12 @@ export function useModalStack<E extends { type: string }>() {
     close,
     replace,
     closeAll,
-    /** Find the most recent entry of a given type (or undefined). */
+    /** Find the most recent entry of a given type (or undefined). The detail
+     *  modal is scoped to the list area, so the trending and recommended
+     *  shelves above it stay clickable and push a second 'detail' entry; the
+     *  modal must show that newest one, not the template it opened with. */
     find: <T extends E['type']>(type: T) =>
-      stack.find((e) => e.type === type) as Extract<E, { type: T }> | undefined,
+      [...stack].reverse().find((e) => e.type === type) as Extract<E, { type: T }> | undefined,
     /** Whether any entry of the given type is on the stack. */
     isOpen: (type: E['type']) => stack.some((e) => e.type === type),
     /** The topmost entry, or undefined if the stack is empty. */

@@ -36,6 +36,22 @@ import { createAthenaSlice, remapLegacyAthenaFields } from "./slices/system/athe
 import { createRadioSlice } from "./slices/system/radioSlice";
 import { silentCatch } from '@/lib/silentCatch';
 
+/**
+ * Persisted keys a newer build no longer owns. The default merge spreads the
+ * stored blob onto the state, so a retired key would ride along as a stray
+ * field (and be written back on the next save) unless it is dropped here.
+ *
+ * `decisionSurface`: the Chips | Lanes dev switch (spark mandate-lanes). Lanes
+ * became the only decision surface at WP10; a stored `'chips'` means nothing.
+ */
+export const RETIRED_PERSISTED_FIELDS = ['decisionSurface'] as const;
+
+export function dropRetiredFields(persisted: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...persisted };
+  for (const key of RETIRED_PERSISTED_FIELDS) delete out[key];
+  return out;
+}
+
 
 export const useSystemStore = create<SystemStore>()(
   persist(
@@ -82,6 +98,8 @@ export const useSystemStore = create<SystemStore>()(
         fleetTerminalCopyOnSelect: state.fleetTerminalCopyOnSelect,
         fleetTerminalTheme: state.fleetTerminalTheme,
         homeTab: state.homeTab,
+        // Notes | Ledger on the one Goals surface.
+        goalsView: state.goalsView,
         // Acknowledged "What's New" version — persisted so the update dot
         // doesn't re-light on every relaunch after the user has seen it.
         whatsNewSeenVersion: state.whatsNewSeenVersion,
@@ -147,7 +165,6 @@ export const useSystemStore = create<SystemStore>()(
         radioAutoResume: state.radioAutoResume,
         collapsedSourceKinds: state.collapsedSourceKinds,
         monitorGroupBy: state.monitorGroupBy,
-        decisionSurface: state.decisionSurface,
         monitorCollapsedGroups: state.monitorCollapsedGroups,
         monitorLiveMode: state.monitorLiveMode,
         homeHiddenSections: state.homeHiddenSections,
@@ -162,7 +179,7 @@ export const useSystemStore = create<SystemStore>()(
        */
       merge: (persisted, current) => ({
         ...current,
-        ...remapLegacyAthenaFields(persisted),
+        ...dropRetiredFields(remapLegacyAthenaFields(persisted)),
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
@@ -183,6 +200,14 @@ export const useSystemStore = create<SystemStore>()(
         // no line and no card. Discard it; the wizard restarts at the intro.
         if (state.athenaOnboardingStep != null && !isCreateAthenaStepId(state.athenaOnboardingStep)) {
           state.athenaOnboardingStep = null;
+        }
+
+        // Goals used to persist nothing, but the Board | Progress switch it had
+        // (`goalsTab`) was retired when Goals became one surface. Anything that is
+        // not a current view (an old 'board' / 'progress', or a bad writer) lands
+        // on Notes. INVARIANT for the cast: JSON.parse output, real type unknown.
+        if (state.goalsView !== 'notes' && state.goalsView !== 'ledger') {
+          state.goalsView = 'notes';
         }
 
         if ((state.sidebarSection as string) === 'goals') {

@@ -46,7 +46,7 @@ export function SubagentTree({ executionId }: { executionId: string }) {
         const a = m.get(ev.task_id);
         if (!a) return m;
         const n = new Map(m);
-        n.set(ev.task_id, { ...a, status: ev.status, tokens: ev.total_tokens, ms: ev.duration_ms });
+        n.set(ev.task_id, { ...a, status: ev.status, tokens: ev.total_tokens ?? undefined, ms: ev.duration_ms ?? undefined });
         return n;
       }),
     // Attributed content. `parent_tool_use_id` is the parent Task call, which is

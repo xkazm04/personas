@@ -29,7 +29,7 @@ export default function AddAppProjectList({
     <KitHost testId="server-add-projects">
       <div className="flex flex-col gap-4">
         {groups.length === 0 && (
-          <Rows count={0} empty={{ title: emptyTitle }}>
+          <Rows count={0} empty={{ title: emptyTitle, art: 'folder' }}>
             {null}
           </Rows>
         )}

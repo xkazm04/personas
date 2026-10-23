@@ -1,0 +1,6 @@
+{"schema": "conform-run/1", "worker": "5cf521bb-e143-447a-8cb4-3459150ee0fe", "subject": "hash-pinned-translation-pipeline",
+ "evaluatedAt": "2026-10-16T17:38:50Z",
+ "pairs": [],
+ "declined": [{"subject": "hash-pinned-translation-pipeline", "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+   "reason": "No work: .ai/registry-map.json (built 2026-10-14T18:25:17Z) lists ZERO pairs for this subject in any of its 219 contexts, although the subject has existed since 2026-09-03 (revision 2, sha256-b2:5fb570c0ab07039a). Worker rules forbid adding a pair, so nothing was judged. Missing-pairing proposal: the matcher missed hash-pinned-translation-pipeline on context 'i18n' (2e1e105a) - its use_when (translating a corpus into many locales, deciding which units a source edit invalidated) fits a 14-locale app whose pipeline is scripts/i18n/translate-extract.mjs + translate-merge.mjs; a glance found no source-hash provenance in git ls-files scripts/i18n, so a future judged pair would likely land as deviation on source-hash-provenance. Add the pair (source: conform) on the next deliberate map build, then judge it."}],
+ "consults": []}

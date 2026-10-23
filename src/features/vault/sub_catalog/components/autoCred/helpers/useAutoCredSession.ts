@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
+import { createLatestWins } from '@/stores/util/latestWins';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useTranslation } from '@/i18n/useTranslation';
@@ -120,6 +121,10 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
   const [phase, setPhase] = useState<AutoCredPhase>('consent');
   const [designResult, setDesignResult] = useState<CredentialDesignResult | null>(null);
   const [logs, setLogs] = useState<BrowserLogEntry[]>([]);
+  // When the current browser run started. The elapsed clock reads this, not
+  // `logs[0].ts`: the log keeps only its last 500 entries, so its first entry
+  // moves forward on a long session and the clock would jump back.
+  const [browserStartedAt, setBrowserStartedAt] = useState<number | null>(null);
   const [extractedValues, setExtractedValues] = useState<ExtractedValues>({});
   const [credentialName, setCredentialName] = useState('');
   const [error, setError] = useState<AutoCredErrorInfo | null>(null);
@@ -129,6 +134,10 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
   const savingRef = useRef(false);
   const [discoveredFields, setDiscoveredFields] = useState<DiscoveredField[] | null>(null);
   const [discoveredConnector, setDiscoveredConnector] = useState<DiscoveredConnector | null>(null);
+  // A healthcheck verdict is a claim about the values it tested. Save is gated
+  // on it and persists it as `healthcheck_passed`, so any edit to a value voids
+  // it, and a check still in flight when a value changes must not land.
+  const [healthcheckGen] = useState(createLatestWins);
 
   /**
    * Initialize a session from a design result, resuming one this connector
@@ -136,6 +145,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
    */
   const init = useCallback((result: CredentialDesignResult) => {
     savingRef.current = false;
+    healthcheckGen.next();
     setDesignResult(result);
     setHealthResult(null);
     setIsSaving(false);
@@ -161,7 +171,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     setIsPartial(false);
     setDiscoveredFields(null);
     setDiscoveredConnector(null);
-  }, [tx, credentialSuffix]);
+  }, [tx, credentialSuffix, healthcheckGen]);
 
   // Record the session whenever it reaches a phase worth coming back to. The
   // healthcheck result is deliberately NOT carried across: it is a live claim
@@ -203,8 +213,12 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
 
     setPhase('browser');
     setLogs([]);
+    setBrowserStartedAt(Date.now());
     setError(null);
     setIsPartial(false);
+    // A re-run replaces every value, so the last verdict tested other values.
+    healthcheckGen.next();
+    setHealthResult(null);
 
     const ctrl = new AbortController();
     abortRef.current = ctrl;
@@ -253,7 +267,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
       // Stay in browser-error so the terminal log remains visible
       setPhase('browser-error');
     }
-  }, [designResult, adapter, ace.err_no_adapter, ace.err_no_adapter_hint, t]);
+  }, [designResult, adapter, ace.err_no_adapter, ace.err_no_adapter_hint, t, healthcheckGen]);
 
   /** Cancel a running browser session */
   const cancelBrowser = useCallback(() => {
@@ -263,20 +277,25 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
 
   /** Update an extracted value before saving */
   const updateValue = useCallback((key: string, value: string) => {
+    healthcheckGen.next();
+    setHealthResult(null);
     setExtractedValues((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  }, [healthcheckGen]);
 
   /** Run healthcheck against extracted values */
   const runHealthcheck = useCallback(async () => {
     if (!designResult) return;
+    const token = healthcheckGen.next();
     setHealthResult(null);
     try {
       const result = await healthcheckPreview(designResult.connector.name, extractedValues);
+      if (!healthcheckGen.isCurrent(token)) return;
       setHealthResult(result);
     } catch (err) {
+      if (!healthcheckGen.isCurrent(token)) return;
       setHealthResult({ success: false, message: err instanceof Error ? err.message : ace.err_healthcheck_failed });
     }
-  }, [ace.err_healthcheck_failed, designResult, extractedValues, healthcheckPreview]);
+  }, [ace.err_healthcheck_failed, designResult, extractedValues, healthcheckPreview, healthcheckGen]);
 
   /**
    * Save the credential.
@@ -330,6 +349,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
   /** Reset entire session */
   const reset = useCallback(() => {
     savingRef.current = false;
+    healthcheckGen.next();
     cancelBrowser();
     // An explicit discard is a decision, unlike an unmount -- forget the
     // harvest rather than offering it back on the next visit.
@@ -345,12 +365,13 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     setIsSaving(false);
     setDiscoveredFields(null);
     setDiscoveredConnector(null);
-  }, [cancelBrowser, designResult]);
+  }, [cancelBrowser, designResult, healthcheckGen]);
 
   return {
     phase,
     designResult,
     logs,
+    browserStartedAt,
     extractedValues,
     credentialName,
     error,

@@ -55,6 +55,9 @@ export function ObservabilityOverview(p: OverviewProps) {
   const runs = s?.totalExecutions ?? 0;
   const ok = s?.successfulExecutions ?? 0;
   const failed = s?.failedExecutions ?? 0;
+  // The rate is over DECIDED runs (completed + failed), as the alert evaluator computes it:
+  // queued, running and cancelled runs are in `runs` but have no outcome yet.
+  const decided = ok + failed;
   const costQ = quantumFor(s ? s.totalCostUsd : 0, 60, 0.1);
   const runQ = quantumFor(runs, 60, 1);
   const chips = sourceChips(p);
@@ -119,8 +122,9 @@ export function ObservabilityOverview(p: OverviewProps) {
           },
           {
             label: x.success_rate,
-            value: s ? <Numeric value={runs > 0 ? (ok / runs) * 100 : 0} unit="percent" precision={1} /> : null,
-            draw: <UnitStrip size="m" label={x.success_rate} segments={runs > 0 ? apportion([{ value: ok, tone: 'success' }, { value: failed, tone: 'error' }], runs / 20) : []} />,
+            // A window with no decided runs has no success rate: "-", never a measured-looking 0.0%.
+            value: s && decided > 0 ? <Numeric value={(ok / decided) * 100} unit="percent" precision={1} /> : null,
+            draw: <UnitStrip size="m" label={x.success_rate} segments={decided > 0 ? apportion([{ value: ok, tone: 'success' }, { value: failed, tone: 'error' }], decided / 20) : []} />,
           },
           {
             label: x.active_personas,

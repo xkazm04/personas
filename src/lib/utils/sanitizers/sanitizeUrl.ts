@@ -69,12 +69,15 @@ function isBlockedIpv6(hostname: string): boolean {
 
 /**
  * Check whether a hostname resolves to a private/local network address.
- * Exported so other sanitizers (e.g. `variableSanitizer.ts`'s URL-type
- * variable validation) can share this single blocklist instead of
- * maintaining their own copy.
+ * Exported so any other sanitizer that validates a host shares this single
+ * blocklist instead of maintaining its own copy.
  */
 export function isBlockedHostname(hostname: string): boolean {
-  return BLOCKED_HOSTNAME_RE.test(hostname) || isBlockedIpv6(hostname);
+  // A fully-qualified name may end in a dot (`localhost.`, `nas.local.`) and
+  // resolves exactly like the bare name; the URL parser keeps that dot for
+  // names (it only folds it away for IPv4), so test the name without it.
+  const name = hostname.endsWith('.') ? hostname.slice(0, -1) : hostname;
+  return BLOCKED_HOSTNAME_RE.test(name) || isBlockedIpv6(name);
 }
 
 /**

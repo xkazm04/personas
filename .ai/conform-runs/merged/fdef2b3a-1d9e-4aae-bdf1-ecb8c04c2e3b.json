@@ -1,0 +1,71 @@
+{
+ "schema": "conform-run/1",
+ "worker": "fdef2b3a-1d9e-4aae-bdf1-ecb8c04c2e3b",
+ "subject": "readiness-passports",
+ "evaluatedAt": "2026-10-18T21:05:42.595649+00:00",
+ "provider": "agy",
+ "model": "gemini-3.8-flash-high",
+ "pairs": [
+  {
+   "context": "teams-factory-passport-improve",
+   "subject": "readiness-passports",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:131 The passport improvement engine computes a single blended percentage across both automation and production readiness dimensions, creating a headline score that conceals the separate questions the two independent axes are meant to answer.",
+   "techniques": [
+    {
+     "technique": "blocker-rollups",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/improve/improvePlan.ts:93 The improve plan flattens individual project gaps into an array instead of inverting into blocker rollups keyed by stable identifier and sorted by projects unlocked."
+    },
+    {
+     "technique": "declined-by-choice",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/improve/StandardsScan.tsx:94 Findings only offer automated remediation without an allow-listed decision-memory overlay to record accepted trade-offs with reason, author, and date."
+    },
+    {
+     "technique": "fingerprint-provenance",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/improve/provenance.ts:8 Provenance is limited to explanatory text for individual dimensions rather than stamping the passport with an immutable commit SHA and ladder versions."
+    },
+    {
+     "technique": "named-vs-capability-metadata",
+     "verdict": "conformant",
+     "evidence": "src/features/teams/sub_factory/passport/improve/deployActions.ts:27 Concrete tooling and language names are retained for prompt grounding while all gating and applicability checks remain capability-shaped."
+    },
+    {
+     "technique": "two-axis-readiness",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:131 Combines dimensions across both automation and production readiness into a single weighted golden percentage headline score."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "readiness-passports",
+   "context": "plugins-dev-tools-projects",
+   "reason": "The Project Manager surface manages dev project CRUD, repository links, team graphs, and pipeline stages; it does not compute, display, or store readiness passports or portfolio readiness assessments."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-18T21:05:42.595649+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "readiness-passports"
+   ],
+   "techniques": [
+    "blocker-rollups",
+    "declined-by-choice",
+    "fingerprint-provenance",
+    "named-vs-capability-metadata",
+    "two-axis-readiness"
+   ],
+   "deviations": 1,
+   "context": "teams-factory-passport-improve",
+   "via": "curator-multi:agy",
+   "model": "gemini-3.8-flash-high"
+  }
+ ]
+}

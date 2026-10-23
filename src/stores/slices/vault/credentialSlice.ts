@@ -36,6 +36,34 @@ const CREDENTIALS_CACHE_TTL_MS = 30_000;
 const credentialsFetch = createCachedFetch({ ttlMs: CREDENTIALS_CACHE_TTL_MS, rethrow: true });
 
 /**
+ * The mirror of the delete tombstones, for create and update. A create or
+ * update that commits while a list fetch is in flight is missing (or stale)
+ * in that fetch's snapshot, and the wholesale overwrite used to drop the new
+ * credential or revert the edit; the 30s freshness window then kept it that
+ * way. Each in-flight fetch registers a log here, every committed write
+ * records its id into all open logs, and the fetch keeps the local row for
+ * those ids. A log only lives as long as its fetch, so it never grows.
+ */
+const openWriteLogs = new Set<Set<string>>();
+
+function recordCommittedWrite(id: string): void {
+  for (const log of openWriteLogs) log.add(id);
+}
+
+function keepLocalWrites(
+  fetched: CredentialMetadata[],
+  local: CredentialMetadata[],
+  written: ReadonlySet<string>,
+): CredentialMetadata[] {
+  const localById = new Map(local.filter((c) => written.has(c.id)).map((c) => [c.id, c]));
+  if (localById.size === 0) return fetched;
+  const out = fetched.map((c) => localById.get(c.id) ?? c);
+  const fetchedIds = new Set(fetched.map((c) => c.id));
+  for (const [id, c] of localById) if (!fetchedIds.has(id)) out.push(c);
+  return out;
+}
+
+/**
  * Server-side OAuth token binding: OAuth flows put a one-time
  * `oauth_session_ref` into the credential data instead of token material.
  * Split it out of the encrypted payload so it rides as the dedicated
@@ -186,18 +214,28 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
   fetchCredentials: async (opts) => {
     if (opts?.force) credentialsFetch.invalidate("credentials");
     return credentialsFetch.run("credentials", async () => {
+      const written = new Set<string>();
+      openWriteLogs.add(written);
       try {
-        const raw = await listCredentials();
+        let raw: Awaited<ReturnType<typeof listCredentials>>;
+        try {
+          raw = await listCredentials();
+        } finally {
+          openWriteLogs.delete(written);
+        }
         const fetched = raw.map(toCredMeta);
         set((state) => {
           const tombstones = state.recentlyDeletedCredentialIds;
+          // A create/update that committed while this fetch was in flight is
+          // missing or stale in its snapshot: keep the local row for it.
+          const withWrites = keepLocalWrites(fetched, state.credentials, written);
           if (tombstones.size === 0) {
-            return { credentials: fetched, error: null };
+            return { credentials: withWrites, error: null };
           }
           // A delete that committed after this fetch started left the row in
           // the snapshot we just received. Filter tombstoned ids out so the
           // wholesale overwrite can't resurrect a credential the user deleted.
-          const credentials = fetched.filter((c) => !tombstones.has(c.id));
+          const credentials = withWrites.filter((c) => !tombstones.has(c.id));
           // Retire tombstones the backend has caught up on — an id no longer
           // present in a fresh snapshot can never be resurrected again, so it
           // need not be tracked. Allocate a new set only if something changes.
@@ -238,6 +276,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
       });
       // Optimistic: append the returned credential instead of re-fetching the full list
       const credMeta = toCredMeta(created);
+      recordCommittedWrite(created.id);
       set((state) => ({
         credentials: [...state.credentials, credMeta],
         error: null,
@@ -277,6 +316,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
       });
       // Optimistic: replace the updated credential in-place instead of re-fetching
       const credMeta = toCredMeta(updated);
+      recordCommittedWrite(id);
       set((state) => ({
         credentials: state.credentials.map((c) => (c.id === id ? credMeta : c)),
         error: null,

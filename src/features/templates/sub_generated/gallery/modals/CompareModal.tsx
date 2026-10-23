@@ -3,7 +3,7 @@ import { X, Download, Play } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
-import { getCategoryMeta } from '../search/filters/searchConstants';
+import { categoryLabel, getCategoryMeta } from '../search/filters/searchConstants';
 import { DIFFICULTY_META } from '../../shared/templateComplexity';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CompareColumn } from '../cards/buildComparison';
@@ -37,7 +37,7 @@ export function CompareModal({ isOpen, onClose, columns, onAdopt, onTryIt }: Com
         return (
           <span className="inline-flex items-center gap-1.5 typo-body text-foreground">
             <meta.icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: meta.color }} />
-            {meta.label}
+            {categoryLabel(t, col.category)}
           </span>
         );
       },

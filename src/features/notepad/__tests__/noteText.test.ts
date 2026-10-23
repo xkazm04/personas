@@ -30,6 +30,14 @@ describe('titleFromText', () => {
     expect(titleFromText('   ', 'Untitled')).toBe('Untitled');
     expect(titleFromText('a'.repeat(80), 'Untitled')).toHaveLength(48);
   });
+
+  it('never cuts an emoji in half when it shortens', () => {
+    // The 47th character is an emoji: two UTF-16 units, so a unit-based slice
+    // kept only its high surrogate.
+    const title = titleFromText(`${'a'.repeat(46)}\u{1F600}${'b'.repeat(20)}`, 'Untitled');
+    expect(title).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/u);
+    expect(title).toBe(`${'a'.repeat(46)}\u{1F600}…`);
+  });
 });
 
 describe('resultSummary', () => {

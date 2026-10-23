@@ -10,12 +10,17 @@ import type { Lamp } from './tone';
 export const PRAGUE = 'Europe/Prague';
 const DAY_MS = 86_400_000;
 
-/** `Tue 23:00` within the coming week, `13 Oct 23:00` beyond it - Prague wall-clock time. */
+/**
+ * The Monitor's clock token (the persona line's next start, `clockText`), in
+ * Prague wall-clock time: `23:00` today, `Tue 23:00` within the coming week,
+ * `13 Oct 23:00` beyond it. 24-hour always; "today" is Prague's day.
+ */
 export function pragueTime(ms: number, language: string, now: number = Date.now()): string {
-  const near = Math.abs(ms - now) < 6 * DAY_MS;
-  const opts: Intl.DateTimeFormatOptions = near
-    ? { timeZone: PRAGUE, weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }
-    : { timeZone: PRAGUE, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
+  const day = (x: number) => new Intl.DateTimeFormat('en-CA', { timeZone: PRAGUE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(x));
+  const time = { timeZone: PRAGUE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' } as const;
+  const opts: Intl.DateTimeFormatOptions = day(ms) === day(now) ? time
+    : Math.abs(ms - now) < 6 * DAY_MS ? { ...time, weekday: 'short' }
+      : { ...time, day: 'numeric', month: 'short' };
   try {
     return new Intl.DateTimeFormat(language, opts).format(new Date(ms));
   } catch {

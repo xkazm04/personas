@@ -41,7 +41,7 @@ export function AutoCredErrorDisplay({
           <div className="flex items-center gap-2">
             <p className="typo-heading text-foreground">{t.vault.auto_cred.browser_error_title}</p>
             <span className={`typo-body px-1.5 py-0.5 rounded-full border ${config!.badgeClass}`}>
-              {config!.label}
+              {t.vault.auto_cred_extra[config!.labelKey]}
             </span>
           </div>
           <p className="typo-body text-foreground mt-1">

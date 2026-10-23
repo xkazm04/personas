@@ -114,6 +114,15 @@
       ],
       "resolved": false
     },
+    "fleet/monitor/channels/ReviewsRail.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["88"],
+      "contexts": [
+        "**Steady-freshness polls that should be `usePolling` (remaining ~24):** `overview/sub_health/libs/useStatusPageData.ts:130` · `overview/sub_incidents/libs/useIncidentsData.ts:67` · `overview/sub_miss…"
+      ],
+      "resolved": false
+    },
     "graph.rs": {
       "count": 1,
       "sections": [8],
@@ -686,16 +695,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "agents/sub_executions/components/CircuitBreakerIndicator.tsx"
     },
-    "src/features/fleet/monitor/channels/ReviewsRail.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["88"],
-      "contexts": [
-        "**Steady-freshness polls that should be `usePolling` (remaining ~24):** `overview/sub_health/libs/useStatusPageData.ts:130` · `overview/sub_incidents/libs/useIncidentsData.ts:67` · `overview/sub_miss…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "fleet/monitor/channels/ReviewsRail.tsx"
-    },
     "src/features/fleet/monitor/useMonitorData.test.ts": {
       "count": 1,
       "sections": [8],
@@ -1028,16 +1027,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "teams/sub_teamWorkspace/teamStudio/boardShared.tsx"
     },
-    "src/features/templates/sub_generated/gallery/cards/useAdoptionCompletionNotifier.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["99"],
-      "contexts": [
-        "**Terminal polls that should be `useBackgroundSnapshot` (9):** `hooks/database/useSchemaProposal.ts:103` · `vault/sub_databases/tabs/ChatTab.tsx:92` · `plugins/dev-tools/sub_context/useUseCases.ts:81…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "templates/sub_generated/gallery/cards/useAdoptionCompletionNotifier.ts"
-    },
     "src/features/templates/sub_n8n/hooks/useN8nTransform.ts": {
       "count": 1,
       "sections": [6],
@@ -1258,6 +1247,15 @@
       ],
       "resolved": false,
       "isDir": true
+    },
+    "templates/sub_generated/gallery/cards/useAdoptionCompletionNotifier.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["99"],
+      "contexts": [
+        "**Terminal polls that should be `useBackgroundSnapshot` (9):** `hooks/database/useSchemaProposal.ts:103` · `vault/sub_databases/tabs/ChatTab.tsx:92` · `plugins/dev-tools/sub_context/useUseCases.ts:81…"
+      ],
+      "resolved": false
     },
     "useCreateTemplateSnapshot.ts": {
       "count": 1,

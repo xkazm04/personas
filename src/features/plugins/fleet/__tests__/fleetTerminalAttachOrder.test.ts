@@ -114,7 +114,6 @@ beforeEach(() => {
   const g = globalThis as Record<string, unknown>;
   (g.__fleetTerminalRegistry__ as Map<string, unknown> | undefined)?.clear();
   (g.__fleetTerminalParked__ as string[] | undefined)?.splice(0);
-  (g.__fleetTerminalWebglOrder__ as string[] | undefined)?.splice(0);
   (g.__fleetTerminalWebglLru__ as string[] | undefined)?.splice(0);
   g.__fleetTerminalOutputListener__ = undefined;
   listenBox.handler = null;

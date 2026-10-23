@@ -3,7 +3,8 @@ import { CheckCircle2, Plug, AlertCircle, ExternalLink, Wrench, Sparkles, Activi
 import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { resolveConnectorRunnability } from '@/features/shared/components/display/connectorRunnability';
 import { DesignCheckbox } from './DesignCheckbox';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SECTION_LABEL } from './helpers';
 import type { AgentIR, SuggestedConnector } from '@/lib/types/designTypes';
 import type { PersonaToolDefinition, CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
@@ -167,19 +168,18 @@ export function ConnectorsSection({
               {/* Credential setup status */}
               {!isGeneral && (
                 isNativeCap ? (
-                  <div
-                    className="flex items-center gap-1.5 typo-body text-violet-400/80"
-                    title={runnability.reason}
-                  >
+                  <Tooltip content={runnability.reason}>
+                  <div className="flex items-center gap-1.5 typo-body text-violet-400/80">
                     <Sparkles className="w-3 h-3" />
                     <span><DebtText k="auto_native_capability_no_credential_needed_0491f8a9" /></span>
                   </div>
+                  </Tooltip>
                 ) : (onConnectorClick && (requiresFields || needsSetup)) || hasCredential ? (
+                  <Tooltip content={runnability.reason}>
                   <button
                     type="button"
                     onClick={() => onConnectorClick?.(item.connector)}
                     className="flex items-center gap-1.5 typo-body text-primary/60 hover:text-primary transition-colors"
-                    title={runnability.reason}
                   >
                     {hasCredential && isHealthy ? (
                       <CheckCircle2 className="w-3 h-3 text-emerald-400" />
@@ -203,22 +203,24 @@ export function ConnectorsSection({
                     </span>
                     {item.connector.setup_url && <ExternalLink className="w-3 h-3" />}
                   </button>
+                  </Tooltip>
                 ) : null
               )}
 
               {/* Verify — only offered when there is actually something to probe. */}
               {!isGeneral && onTestConnector && linkedCred && (
-                <button
-                  type="button"
+                // Button owns the busy state: LoadingSpinner renders null, so
+                // the icon used to vanish for the whole healthcheck.
+                <Button
+                  variant="link"
+                  size="xs"
+                  loading={testingConnectors?.has(item.connector.name)}
+                  icon={<Activity className="w-3 h-3" />}
                   onClick={() => onTestConnector(item.connector.name, linkedCred.id)}
-                  disabled={testingConnectors?.has(item.connector.name)}
-                  className="flex items-center gap-1.5 typo-body text-primary/60 hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="typo-body"
                 >
-                  {testingConnectors?.has(item.connector.name)
-                    ? <LoadingSpinner size="xs" />
-                    : <Activity className="w-3 h-3" />}
-                  <span>{t.agents.connectors.st_test}</span>
-                </button>
+                  {t.agents.connectors.st_test}
+                </Button>
               )}
 
               {/* Tools */}

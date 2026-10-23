@@ -73,7 +73,7 @@ fn deployed_refusal(status: u16, body: &str) -> AppError {
 
 /// Statuses after which a cloud execution will not change again (the same set
 /// `runner::run_cloud_execution` stops on).
-fn is_terminal_execution_status(status: &str) -> bool {
+pub(crate) fn is_terminal_execution_status(status: &str) -> bool {
     matches!(status, "completed" | "failed" | "cancelled" | "error")
 }
 

@@ -86,6 +86,17 @@ const BLOCKING_MUTATION_TIMEOUTS: Partial<Record<CommandName, number>> = {
   // version. Backed by a client-minted idempotency key (see `labImprovePrompt`)
   // so a retry that still happens returns the first attempt's version.
   lab_improve_prompt: LONG_MUTATION_TIMEOUT_MS,
+  // GitLab deploy runs up to ~9 sequential 30s HTTP legs (credential upserts,
+  // project fetch, Duo agent create, AGENTS.md fallback, tags: ~270s worst case).
+  // At the 90s default the wrapper rejected while the backend finished the deploy,
+  // and a retry created a SECOND Duo agent (create_duo_agent is not idempotent).
+  gitlab_deploy_persona: LONG_MUTATION_TIMEOUT_MS,
+  gitlab_deploy_persona_versioned: LONG_MUTATION_TIMEOUT_MS,
+  // Promote materializes the persona, then waits (up to ~150s) for its real
+  // verification run so the setup gate judges a finished run. At the 90s default
+  // the wrapper rejected while the backend was still verifying, and a retry
+  // would promote a second time.
+  promote_build_draft: LONG_MUTATION_TIMEOUT_MS,
 };
 
 /**

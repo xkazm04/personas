@@ -173,6 +173,18 @@ export function useSigning() {
     [resolveRoot],
   );
 
+  /**
+   * Verify a signature record's file at the ABSOLUTE path it was signed under
+   * (`DocumentSignature.file_path`). Not `verifyDriveFile`: that one prepends
+   * the managed root, so a stored absolute path came out as `<root>/<root>/..`
+   * and every history-row "Verify now" failed.
+   */
+  const verifyStoredFile = useCallback(
+    (absPath: string, sidecarJson: string): Promise<VerifyDocumentResult> =>
+      verifyDocument(absPath, sidecarJson),
+    [],
+  );
+
   const removeSignature = useCallback(
     async (id: string) => {
       await deleteDocumentSignature(id);
@@ -226,6 +238,7 @@ export function useSigning() {
     writeSidecarToDrive,
     findSidecarInDrive,
     verifyDriveFile,
+    verifyStoredFile,
     removeSignature,
     exportSidecarJson,
   };

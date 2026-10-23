@@ -3,6 +3,7 @@
 // Pips/bool keep the production widgets (their labels already read well).
 // Exported (via ProjectsPassportWall) for reuse in the Mastermind sidebar.
 import { formatCost } from '@/lib/utils/formatters';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { CellValue } from './passportRows';
 import { AUTOMATION_LABEL, PROD_BAND_LABEL, ENV_LABEL, APP_COST_FILENAME } from './passportModel';
 import { INK, SegBar, TechInk, scoreInk } from './passportInk';
@@ -10,6 +11,8 @@ import { Pips, BoolMark } from './passportWidgets';
 import { COPY, MAX_CHIPS } from './wallConfig';
 
 export function InkWallCell({ value }: { value: CellValue }) {
+  const { t, tx } = useTranslation();
+  const w = t.kpis;
   switch (value.kind) {
     case 'level':
     case 'band': {
@@ -101,9 +104,9 @@ export function InkWallCell({ value }: { value: CellValue }) {
     case 'cost': {
       if (value.state === 'missing') {
         return (
-          <span className="inline-flex flex-col gap-0.5 min-w-0" title={`No ${APP_COST_FILENAME} in the repo. The gear dispatches an agent to create it`} data-testid="app-cost-missing">
+          <span className="inline-flex flex-col gap-0.5 min-w-0" title={tx(w.setup_ink_no_cost_title, { file: APP_COST_FILENAME })} data-testid="app-cost-missing">
             <span className="typo-caption text-foreground/45">NA</span>
-            <span className="typo-label text-foreground/35">no cost file</span>
+            <span className="typo-label text-foreground/35">{w.setup_ink_no_cost}</span>
           </span>
         );
       }
@@ -112,9 +115,9 @@ export function InkWallCell({ value }: { value: CellValue }) {
           <span
             className="typo-caption"
             style={{ color: INK.blue }}
-            title={value.invalid ? `${APP_COST_FILENAME} isn't valid JSON. Fix it by hand` : `${APP_COST_FILENAME} exists. Add your services and monthly costs by hand`}
+            title={tx(value.invalid ? w.setup_ink_invalid_title : w.setup_ink_add_services_title, { file: APP_COST_FILENAME })}
           >
-            {value.invalid ? 'invalid cost file' : 'add services →'}
+            {value.invalid ? w.setup_ink_invalid : w.setup_ink_add_services}
           </span>
         );
       }
@@ -129,9 +132,9 @@ export function InkWallCell({ value }: { value: CellValue }) {
           title={services.map((s) => `${s.name}: ${s.monthly == null ? '?' : s.monthly}${s.note ? ` (${s.note})` : ''}`).join(' · ')}
           data-testid="app-cost-cell"
         >
-          <span className="typo-caption text-foreground/90 tabular-nums">{amount}/mo</span>
+          <span className="typo-caption text-foreground/90 tabular-nums">{tx(w.setup_ink_per_month, { amount })}</span>
           <span className="typo-label text-foreground/45 truncate">
-            {services.length} service{services.length === 1 ? '' : 's'}{unpriced > 0 ? ` · ${unpriced} unpriced` : ''}
+            {tx(services.length === 1 ? w.setup_ink_services_one : w.setup_ink_services_other, { count: services.length })}{unpriced > 0 ? ` · ${tx(w.setup_ink_unpriced, { count: unpriced })}` : ''}
           </span>
         </span>
       );

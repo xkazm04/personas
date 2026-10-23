@@ -10,6 +10,8 @@ describe('rowAccentTone', () => {
     expect(rowAccentTone(false, false, health('healthy'))).toBe('healthy');
     expect(rowAccentTone(false, false, health('degraded'))).toBe('degraded');
     expect(rowAccentTone(false, false, health('failing'))).toBe('failing');
+    // Never ran: no verdict, so it must not wear the verified-healthy green.
+    expect(rowAccentTone(false, false, health('dormant'))).toBe('dormant');
   });
 
   it('lets building win over everything, then draft over health', () => {

@@ -5,7 +5,7 @@ import type { LifecycleSnapshot } from '@/lib/bindings/LifecycleSnapshot';
 
 import { docsDetail, gateDetail, mixWithEvidence, testsDetail } from '../../../journey/__tests__/detailFixtures';
 import { renderLayer1 } from '../../layer1/__tests__/renderLayer1';
-import { LifecycleBody } from '../../LifecycleBody';
+import { ProjectLens } from '../../lens/ProjectLens';
 import { loadStepChunk } from '../stepChunks';
 
 const getLifecycleStepDetail = vi.hoisted(() => vi.fn());
@@ -31,35 +31,32 @@ function snap(projectId: string, overrides: Partial<LifecycleSnapshot> = {}) {
   return mixWithEvidence({ projectId, ...overrides });
 }
 
-describe('Layer 2: the step screen', () => {
-  it('opens in place of Layer 1, and Esc returns with focus on the step key', async () => {
-    renderLayer1(<LifecycleBody />, snap('p-open'));
-    fireEvent.click(screen.getByTestId('lc-node-land'));
+describe('the step screen, the last layer of the Lens', () => {
+  it('opens in place of the project columns, and Esc returns with that step lit', async () => {
+    renderLayer1(<ProjectLens />, snap('p-open'));
+    // A column is selected by its first press and opened by its second (it is lit then).
+    fireEvent.click(screen.getByTestId('lens-col-land'));
+    fireEvent.click(screen.getByTestId('lens-col-land'));
     const screenEl = await screen.findByTestId('lc2-screen');
     expect(screenEl.getAttribute('data-step')).toBe('land');
-    // With the chunk in, the screen mounts in the press's own commit while the rail cross-fades out
-    // under it and the key flies (a shared layout animation jsdom cannot finish, so the rail's exit
-    // never completes here; LifecyclePage.test.tsx asserts the rail is gone under reduced motion).
+    expect(screen.queryByTestId('lens-field')).toBeNull();
     expect(screen.getByTestId('lc2-title').textContent).toBe('Land');
     expect(document.activeElement).toBe(screen.getByTestId('lc2-title'));
 
     fireEvent.keyDown(window, { key: 'Escape' });
-    await screen.findByTestId('lc-journey-track');
-    // The rail is back at once; the step screen fades out over it while the key flies home (a
-    // shared layout animation jsdom cannot finish; stepShell.test.tsx asserts the screen leaves
-    // under reduced motion, where nothing flies).
-    expect(document.activeElement).toBe(screen.getByTestId('lc-node-land'));
+    await screen.findByTestId('lens-field');
+    expect(screen.getByTestId('lens-col-land').getAttribute('aria-selected')).toBe('true');
   });
 
-  it('returns through the Lifecycle button too', async () => {
-    renderLayer1(<LifecycleBody />, snap('p-crumb'), 'record');
-    fireEvent.click(await screen.findByTestId('lc2-back'));
-    await screen.findByTestId('lc-journey-track');
-    expect(document.activeElement).toBe(screen.getByTestId('lc-node-record'));
+  it('opens from a change cell in one press', async () => {
+    renderLayer1(<ProjectLens />, snap('p-cell'));
+    const cell = screen.getByTestId('lens-col-commit').querySelector<HTMLElement>('.lens-cell:not(.is-none)')!;
+    fireEvent.click(cell);
+    expect((await screen.findByTestId('lc2-screen')).getAttribute('data-step')).toBe('commit');
   });
 
   it('walks to the neighbouring steps without returning (arrow keys), and past the last step goes nowhere', async () => {
-    renderLayer1(<LifecycleBody />, snap('p-walk'), 'land');
+    renderLayer1(<ProjectLens />, snap('p-walk'), 'land');
     await screen.findByTestId('lc2-screen');
     fireEvent.keyDown(window, { key: 'ArrowRight' });
     expect(screen.getByTestId('lc2-screen').getAttribute('data-step')).toBe('record');
@@ -72,7 +69,7 @@ describe('Layer 2: the step screen', () => {
   });
 
   it('renders a null metric as N/A, never as 0', async () => {
-    renderLayer1(<LifecycleBody />, snap('p-na'), 'sync');
+    renderLayer1(<ProjectLens />, snap('p-na'), 'sync');
     const instrument = await screen.findByTestId('lc2-instrument');
     expect(instrument.querySelector('[data-na="true"]')?.textContent).toBe('N/A');
     expect(instrument.textContent).not.toMatch(/(^|\D)0\s?%/);
@@ -80,7 +77,7 @@ describe('Layer 2: the step screen', () => {
 
   it('shows a detail read failure as an inline banner and keeps the screen', async () => {
     getLifecycleStepDetail.mockRejectedValue(new Error('stub: not implemented'));
-    renderLayer1(<LifecycleBody />, snap('p-fail'), 'gate');
+    renderLayer1(<ProjectLens />, snap('p-fail'), 'gate');
     await screen.findByText("Could not read this step's run history.");
     expect(screen.getByTestId('lc2-header')).toBeTruthy();
     // The preset is its own lazy chunk, so its empty band arrives a tick after the header.
@@ -88,7 +85,7 @@ describe('Layer 2: the step screen', () => {
   });
 
   it('reads every step detail: a snapshot-only preset still has backlog items and evidence behind Next', async () => {
-    renderLayer1(<LifecycleBody />, snap('p-generic'), 'isolate');
+    renderLayer1(<ProjectLens />, snap('p-generic'), 'isolate');
     await screen.findByTestId('lc2-screen');
     await waitFor(() => expect(getLifecycleStepDetail).toHaveBeenCalledWith('p-generic', 'isolate'));
   });
@@ -96,7 +93,7 @@ describe('Layer 2: the step screen', () => {
 
 describe('presets', () => {
   it('gate: one row per command, did-not-run and timeout distinct from failed, the slowest called out', async () => {
-    renderLayer1(<LifecycleBody />, snap('p-gate'), 'gate');
+    renderLayer1(<ProjectLens />, snap('p-gate'), 'gate');
     const tsc = await screen.findByTestId('lc2-cmd-tsc');
     const outcome = (id: string) => screen.getByTestId(`lc2-cmd-${id}`).querySelector('[data-outcome]')?.getAttribute('data-outcome');
     expect(outcome('tsc')).toBe('passed');
@@ -118,7 +115,7 @@ describe('presets', () => {
 
   it('gate: the commands editor saves through setLifecycleStepParams and says so inline', async () => {
     setLifecycleStepParams.mockResolvedValue({});
-    renderLayer1(<LifecycleBody />, snap('p-edit'), 'gate');
+    renderLayer1(<ProjectLens />, snap('p-edit'), 'gate');
     await screen.findByTestId('lc2-cmd-tsc');
     fireEvent.click(screen.getByTestId('lc2-commands-edit'));
     // Auto-detected params start the draft from the commands the history shows.
@@ -132,7 +129,7 @@ describe('presets', () => {
   });
 
   it('tests: coverage drawn when measured', async () => {
-    renderLayer1(<LifecycleBody />, snap('p-cov'), 'tests');
+    renderLayer1(<ProjectLens />, snap('p-cov'), 'tests');
     const cov = await screen.findByTestId('lc2-coverage');
     expect(cov.textContent).toContain('63%');
     expect(await screen.findByTestId('lc2-coverage-trend')).toBeTruthy();
@@ -144,7 +141,7 @@ describe('presets', () => {
     const health = base.health.map((h) => (h.stepId === 'tests'
       ? { ...h, metrics: h.metrics.map((m) => (m.key === 'coverage_pct' ? { ...m, value: null, samples: 0 } : m)) }
       : h));
-    renderLayer1(<LifecycleBody />, { ...base, projectId: 'p-nocov', health }, 'tests');
+    renderLayer1(<ProjectLens />, { ...base, projectId: 'p-nocov', health }, 'tests');
     const card = await screen.findByTestId('lc2-coverage-na');
     expect(card.textContent).toContain('Coverage not measured, so Tests cannot be green');
     expect(screen.queryByTestId('lc2-coverage')).toBeNull();
@@ -156,7 +153,7 @@ describe('presets', () => {
   });
 
   it('docs: bullets by status, the clean share drawn, and a change opens in a modal', async () => {
-    renderLayer1(<LifecycleBody />, snap('p-docs'), 'docs');
+    renderLayer1(<ProjectLens />, snap('p-docs'), 'docs');
     const broken = await screen.findByTestId('lc2-docs-broken');
     expect(broken.textContent).toContain('docs/features/vault.md');
     expect(broken.textContent).toContain('2 broken references');
@@ -178,7 +175,7 @@ describe('presets', () => {
   });
 
   it('generic: done rate, the tally as the filter chips, and the evidence with its notes', async () => {
-    renderLayer1(<LifecycleBody />, snap('p-land'), 'land');
+    renderLayer1(<ProjectLens />, snap('p-land'), 'land');
     expect((await screen.findByTestId('lc2-done-rate')).textContent).toContain('40%');
     const chips = screen.getByTestId('lc8-timeline').querySelector('[data-kit="ChipRow"]')!;
     expect(chips.textContent).toContain('Skipped');
@@ -192,7 +189,7 @@ describe('presets', () => {
   });
 
   it('generic: an instructed step says so and shows its rule', async () => {
-    renderLayer1(<LifecycleBody />, snap('p-frame'), 'frame');
+    renderLayer1(<ProjectLens />, snap('p-frame'), 'frame');
     expect((await screen.findByTestId('lc2-instructed')).textContent).toContain('Followed by instruction, nothing to measure');
     expect(screen.getByTestId('lc2-rule').textContent).toContain('Rule for frame.');
   });

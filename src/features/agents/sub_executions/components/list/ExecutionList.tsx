@@ -13,6 +13,7 @@ import { ExecutionDetailModal } from '@/features/shared/components/modals/Execut
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
 import { useExecutionList, getSampleInput } from '../../libs/useExecutionList';
 import { deriveExecutionOrigin, type ExecutionOrigin } from '../../libs/executionOrigin';
+import { matchesStatusFilter } from '../../libs/executionStatus';
 import { ActiveChainsBadge } from '../ActiveChainsBadge';
 import { executionRowAccent } from '../table/ExecutionCells';
 import { ExecutionComparison } from './ExecutionComparison';
@@ -70,7 +71,7 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
     // Filtering for origin 'simulation' implies wanting simulations, so it bypasses the toggle.
     if (originFilter && deriveExecutionOrigin(r).origin !== originFilter) return false;
     if (!showSimulations && originFilter !== 'simulation' && r.is_simulation) return false;
-    if (statusFilter === 'running' ? r.status !== 'running' && r.status !== 'pending' : statusFilter !== 'all' && r.status !== statusFilter) return false;
+    if (!matchesStatusFilter(r.status, statusFilter)) return false;
     return capabilityFilter === 'all' || (r.use_case_id ?? '') === capabilityFilter;
   }), [paging.rows, originFilter, showSimulations, statusFilter, capabilityFilter]);
 
@@ -200,6 +201,7 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
             density={density === 'compact' ? 'compact' : 'comfortable'}
             tableId="persona-executions"
             ariaLabel={e.history}
+            emptyArt="runs"
             emptyTitle={t.common.no_results}
             scrollRestoreKey={`persona-executions|${personaId}`}
             className="max-h-[70vh]"

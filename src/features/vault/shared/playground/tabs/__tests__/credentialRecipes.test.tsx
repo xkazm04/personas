@@ -135,4 +135,45 @@ describe('RecipesPanel', () => {
     // The create flow's own textarea, which had no consumer before this.
     await waitFor(() => expect(screen.getByRole('textbox')).toBeTruthy());
   });
+
+  it('says a delete failed even with the create flow closed', async () => {
+    getCredentialRecipes.mockResolvedValue([RECIPE]);
+    deleteRecipe.mockRejectedValue({ error: 'recipe in use', kind: 'Validation' });
+    render(<Harness />);
+    await waitFor(() => expect(screen.getByText('List open PRs')).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(await screen.findByTestId('recipe-delete-confirm-action'));
+    await waitFor(() => expect(screen.getByText('Failed to delete recipe')).toBeTruthy());
+  });
+
+  it('does not delete a recipe on the first click, only after confirming', async () => {
+    deleteRecipe.mockClear();
+    getCredentialRecipes.mockResolvedValue([RECIPE]);
+    render(<Harness />);
+    await waitFor(() => expect(screen.getByText('List open PRs')).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(deleteRecipe).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByTestId('recipe-delete-confirm-action'));
+    await waitFor(() => expect(deleteRecipe).toHaveBeenCalledWith('r-1'));
+  });
+
+  it('draws no settings control that does nothing', async () => {
+    getCredentialRecipes.mockResolvedValue([RECIPE]);
+    render(<Harness />);
+    await waitFor(() => expect(screen.getByText('List open PRs')).toBeTruthy());
+    expect(screen.queryByRole('button', { name: /settings/i })).toBeNull();
+    expect(document.querySelector('[title]')).toBeNull();
+  });
+});
+
+describe('useCredentialRecipes save failure', () => {
+  it("keeps the backend's reason instead of the generic sentence", async () => {
+    draft = { name: 'n', description: null, category: null, prompt_template: 't', input_schema: null, tags: null, sample_inputs: null, example_result: null };
+    getCredentialRecipes.mockReset().mockResolvedValue([]);
+    createRecipe.mockReset().mockRejectedValue({ error: 'a recipe named n already exists', kind: 'Validation' });
+    const h = renderHook(() => useCredentialRecipes('cred-1'));
+    await waitFor(() => expect(h.result.current.isLoading).toBe(false));
+    await act(async () => { await h.result.current.saveDraft(); });
+    expect(h.result.current.error).toBe('a recipe named n already exists');
+  });
 });

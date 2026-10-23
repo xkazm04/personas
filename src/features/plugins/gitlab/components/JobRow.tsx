@@ -4,6 +4,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import type { GitLabJob } from '@/api/system/gitlab';
 import { StatusIcon, statusBg, formatDuration } from './pipelineHelpers';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const LOG_PAINT_LINES = 200;
@@ -54,7 +55,7 @@ function JobLogViewer({ log }: { log: string | null }) {
 
   if (log.length === 0) {
     return (
-      <div className="text-center py-4 typo-body text-foreground">{t.gitlab.no_log_output}</div>
+      <EmptyState art="report" size="sm" title={t.gitlab.no_log_output} />
     );
   }
 

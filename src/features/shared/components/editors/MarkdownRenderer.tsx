@@ -130,7 +130,10 @@ function CodeBlockShell({
             <button
               type="button"
               onClick={() => setCollapsed((c) => !c)}
-              aria-pressed={!collapsed}
+              // It shows or hides the rest of the block: a disclosure, so it
+              // reports aria-expanded (aria-pressed is for an on/off setting,
+              // which is what the wrap toggle beside it is).
+              aria-expanded={!collapsed}
               aria-label={collapsed ? t.shared.code_expand_block : t.shared.code_collapse_block}
               title={collapsed ? t.shared.code_expand_block : t.shared.code_collapse_block}
               className="p-1.5 rounded-lg text-foreground hover:text-foreground/80 hover:bg-secondary/50 transition-colors focus-ring"

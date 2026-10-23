@@ -39,7 +39,7 @@
 //   3. **Best effort.** A failed publish never breaks the tab; it clears the
 //      memo so the next derive retries. The read op answers honestly when the
 //      key is absent, which is the state every install starts in.
-import { setAppSetting } from '@/api/system/settings';
+import { getAppSetting, setAppSetting } from '@/api/system/settings';
 import { silentCatch } from '@/lib/silentCatch';
 
 import { shipVerdict, type ShipMilestoneVM } from '@/lib/milestone/shipModel';
@@ -74,6 +74,10 @@ export interface ReadinessContext {
 /** One milestone's reading (`ship_ops::SnapMilestone`). */
 export interface ReadinessMilestone {
   id: string;
+  /** Owning project (`ship_ops::SnapMilestone.project_id`). Lets a restarted
+   *  session tell which persisted verdicts a project's republish replaces.
+   *  Absent on documents written before the field existed. */
+  projectId?: string;
   verdict: string;
   progress: number;
   criteria: ReadinessCriterion[];
@@ -99,6 +103,7 @@ export function buildReadinessPayload(roadmap: ShipMilestoneVM[]): ReadinessPayl
     version: SHIP_READINESS_DOC_VERSION,
     milestones: roadmap.map((vm) => ({
       id: vm.id,
+      projectId: vm.row.projectId,
       verdict: shipVerdict(vm.criteria),
       progress: Math.round(vm.progress),
       // Projected FIELD BY FIELD, not spread: this is a cross-language
@@ -123,12 +128,56 @@ export function buildReadinessPayload(roadmap: ShipMilestoneVM[]): ReadinessPayl
 // --- debounce + dedupe -------------------------------------------------------
 
 let timer: ReturnType<typeof setTimeout> | null = null;
+/** The newest derived milestones of every project published this session.
+ *  The settings key holds ONE document for the whole app, and each pane hands
+ *  in only its own project's roadmap; without this, opening a second project's
+ *  plan overwrote the first project's verdicts and the read op answered "no
+ *  verdict" for every milestone it had just lost. Keyed by `projectId`, so a
+ *  project's republish replaces its own entries (a deleted milestone drops out)
+ *  and leaves the others alone. */
+const byProject = new Map<string, ReadinessMilestone[]>();
 /** Serialized body of the last snapshot queued. `null` = nothing published yet
  *  (or the last write failed, so the next derive must retry). */
 let lastBody: string | null = null;
 let pending: ReadinessPayload | null = null;
 
-async function writeNow(payload: ReadinessPayload): Promise<void> {
+/** The persisted document's milestones, read ONCE per session. After a restart
+ *  `byProject` is empty, so without this the first publish (one project's
+ *  roadmap) overwrote every other project's persisted verdicts. A failed read
+ *  clears the memo so the next write retries. */
+let stored: Promise<ReadinessMilestone[]> | null = null;
+
+function loadStoredMilestones(): Promise<ReadinessMilestone[]> {
+  stored ??= (async () => {
+    try {
+      const raw = await getAppSetting(SHIP_READINESS_KEY);
+      if (!raw) return [];
+      const doc: { version?: unknown; milestones?: unknown } = JSON.parse(raw);
+      if (doc.version !== SHIP_READINESS_DOC_VERSION || !Array.isArray(doc.milestones)) return [];
+      // Invariant: this document is written only by this module (and read by
+      // `ship_ops::load_readiness`, which ignores unknown fields); each entry is
+      // narrowed to "has a string id" before it is carried forward verbatim.
+      return (doc.milestones as ReadinessMilestone[]).filter((m) => typeof m?.id === 'string');
+    } catch (e) {
+      stored = null;
+      silentCatch('ship readiness seed')(e);
+      return [];
+    }
+  })();
+  return stored;
+}
+
+async function writeNow(fresh: ReadinessPayload): Promise<void> {
+  // Persisted entries survive unless this session has republished them: same id
+  // (replaced) or same project (that project's republish is authoritative, so a
+  // milestone deleted since drops out). Entries with no `projectId` predate the
+  // field and can only be matched by id.
+  const persisted = await loadStoredMilestones();
+  const freshIds = new Set(fresh.milestones.map((m) => m.id));
+  const kept = persisted.filter(
+    (m) => !freshIds.has(m.id) && !(m.projectId && byProject.has(m.projectId)),
+  );
+  const payload: ReadinessPayload = { ...fresh, milestones: [...kept, ...fresh.milestones] };
   const doc = JSON.stringify({ ...payload, publishedAt: new Date().toISOString() });
   try {
     await setAppSetting(SHIP_READINESS_KEY, doc);
@@ -148,7 +197,17 @@ async function writeNow(payload: ReadinessPayload): Promise<void> {
  */
 export function publishShipReadiness(roadmap: ShipMilestoneVM[]): void {
   if (roadmap.length === 0) return;
-  const payload = buildReadinessPayload(roadmap);
+  const grouped = new Map<string, ShipMilestoneVM[]>();
+  for (const vm of roadmap) {
+    const list = grouped.get(vm.row.projectId);
+    if (list) list.push(vm);
+    else grouped.set(vm.row.projectId, [vm]);
+  }
+  for (const [projectId, vms] of grouped) byProject.set(projectId, buildReadinessPayload(vms).milestones);
+  const payload: ReadinessPayload = {
+    version: SHIP_READINESS_DOC_VERSION,
+    milestones: [...byProject.values()].flat(),
+  };
   const body = JSON.stringify(payload);
   if (body === lastBody) return;
   lastBody = body;
@@ -168,4 +227,6 @@ export function __resetShipReadinessPublisherForTests(): void {
   timer = null;
   lastBody = null;
   pending = null;
+  stored = null;
+  byProject.clear();
 }

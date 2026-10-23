@@ -109,7 +109,7 @@ export function ManifestTab({ personaId }: { personaId: string }) {
         isLoading ? (
           <ManifestGhost />
         ) : (
-          <EmptyState icon={FileText} title={m.empty_title} subtitle={m.empty_body} className="py-14" />
+          <EmptyState icon={FileText} size="lg" title={m.empty_title} subtitle={m.empty_body} />
         )
       ) : (
         <DocumentSurface

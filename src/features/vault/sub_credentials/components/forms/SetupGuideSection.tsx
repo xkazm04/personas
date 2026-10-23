@@ -17,6 +17,7 @@ export function SetupGuideSection({ guide, connectorLabel }: SetupGuideSectionPr
       <button
         type="button"
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
         className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left hover:bg-secondary/30 transition-colors"
       >
         {open ? (

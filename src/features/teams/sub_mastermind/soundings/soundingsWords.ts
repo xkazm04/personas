@@ -5,7 +5,7 @@
 // among the geometry, so a copy change meant reading a render.
 import { useTranslation } from '@/i18n/useTranslation';
 
-import type { DimCategory } from '../lib/dimRegistry';
+import type { DimCategory, DimKey } from '../lib/dimRegistry';
 import type { Reason } from './soundingsModel';
 
 export type SoundingsWords = ReturnType<typeof useSoundingsWords>;
@@ -16,6 +16,9 @@ export function useSoundingsWords() {
 
   const bandName = [m.soundings_band_surface, m.soundings_band_shallows, m.soundings_band_midwater, m.soundings_band_deep];
   const bandMean = [m.soundings_band_surface_mean, m.soundings_band_shallows_mean, m.soundings_band_midwater_mean, m.soundings_band_deep_mean];
+
+  /** Localized name of a passport dimension; `DIM_REGISTRY[key].label` is English-only. */
+  const dimLabel = (key: DimKey): string => m[`dim_label_${key}`];
 
   const laneLabel = (lane: DimCategory): string =>
     ({ runtime: m.dim_cat_runtime, delivery: m.dim_cat_delivery, agentic: m.dim_cat_agentic, product: m.dim_cat_product })[lane];
@@ -32,5 +35,5 @@ export function useSoundingsWords() {
     }
   };
 
-  return { m, t, tx, bandName, bandMean, laneLabel, reasonText };
+  return { m, t, tx, bandName, bandMean, laneLabel, dimLabel, reasonText };
 }

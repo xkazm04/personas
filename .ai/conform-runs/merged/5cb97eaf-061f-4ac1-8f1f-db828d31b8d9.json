@@ -1,0 +1,8 @@
+{"schema": "conform-run/1", "worker": "5cb97eaf-061f-4ac1-8f1f-db828d31b8d9", "subject": "deployment-contract",
+ "evaluatedAt": "2026-10-21T18:05:54Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "deployment-contract", "context": "cab45fee-e439-4bff-9924-217b1acc17f8", "reason": "plugins-artist-hooks names code that no longer exists: the Artist plugin was removed client and server in 0697f13438 (2026-09-15), see src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3; context-map.json lists empty file_paths and its entry_points (src/features/plugins/artist/hooks/*) are not in git ls-files. A verdict would be about deleted code; the context should leave the context map on the next scan (a context-map/registry-map coverage defect, not a deployment-contract judgment)."},
+  {"subject": "deployment-contract", "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400", "reason": "plugins-artist-gallery is governance:weak (skipped by rule) and, like plugins-artist-hooks, points at the Artist plugin deleted in 0697f13438 (2026-09-15); nothing to judge."}
+ ],
+ "consults": []}

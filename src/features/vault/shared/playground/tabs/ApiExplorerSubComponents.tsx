@@ -1,12 +1,8 @@
 import { useTranslation } from '@/i18n/useTranslation';
-import { Upload, FileText, Globe, X, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
-import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Upload, FileText, X, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Button } from '@/features/shared/components/buttons';
-import { RequestBuilder } from '../RequestBuilder';
-import { ResponseViewer } from '../ResponseViewer';
 import type { TestProgress } from '../useApiTestRunner';
-import type { ApiEndpoint, ApiProxyResponse } from '@/api/system/apiProxy';
 
 // -- Empty state --------------------------------------------------
 
@@ -15,12 +11,12 @@ export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPast
   const vt = t.vault.playground_extra;
   const sh = t.vault.shared;
   return (
-    <EmptyIllustration
-      icon={Globe}
-      heading={vt.no_endpoints}
+    <ScenarioEmptyState
+      art="link"
+      title={vt.no_endpoints}
       description={vt.no_endpoints_hint}
-      cta={
-        <div className="flex items-center gap-2">
+    >
+        <div className="flex items-center gap-2 mt-4">
           <Button
             variant="accent"
             size="sm"
@@ -39,9 +35,7 @@ export function EmptyState({ onUpload, onPaste }: { onUpload: () => void; onPast
             {sh.paste_openapi}
           </Button>
         </div>
-      }
-      className="py-16"
-    />
+    </ScenarioEmptyState>
   );
 }
 
@@ -85,67 +79,6 @@ interface PasteSpecModalProps {
   onSubmit: () => void;
 }
 
-// -- Request / Response panel ------------------------------------
-
-interface RequestResponsePanelProps {
-  selectedEndpoint: ApiEndpoint;
-  response: ApiProxyResponse | null;
-  sendError: string | null;
-  isSending: boolean;
-  onSend: (method: string, path: string, headers: Record<string, string>, body?: string) => Promise<void>;
-  onClose: () => void;
-}
-
-export function RequestResponsePanel({ selectedEndpoint, response, sendError, isSending, onSend, onClose }: RequestResponsePanelProps) {
-  const { t } = useTranslation();
-  const sh = t.vault.shared;
-  return (
-    <div className="border-t border-primary/25 pt-4">
-      <div className={`grid gap-0 ${response || sendError ? 'grid-cols-[1fr_1px_1fr]' : 'grid-cols-1'}`}>
-        <div className="space-y-4 min-w-0 pr-4">
-          <div className="flex items-center gap-2">
-            <span className="typo-heading uppercase text-blue-400/70">
-              {sh.request_builder}
-            </span>
-            <div className="flex-1" />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="text-foreground hover:text-muted-foreground/80"
-            >
-              {t.common.close}
-            </Button>
-          </div>
-          <RequestBuilder
-            endpoint={selectedEndpoint}
-            onSend={onSend}
-            isSending={isSending}
-          />
-        </div>
-
-        {(response || sendError) && (
-          <div className="bg-primary/25" />
-        )}
-
-        {(response || sendError) && (
-          <div className="min-w-0 pl-4">
-            <span className="typo-heading uppercase text-emerald-400/70 block mb-3">
-              {sh.response}
-            </span>
-            {sendError && (
-              <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 whitespace-pre-wrap">
-                {sendError}
-              </div>
-            )}
-            {response && <ResponseViewer response={response} />}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClose, onSubmit }: PasteSpecModalProps) {
   const { t } = useTranslation();
   const vt = t.vault.playground_extra;
@@ -182,7 +115,7 @@ export function PasteSpecModal({ pasteContent, setPasteContent, isParsing, onClo
           <Button
             variant="accent"
             size="sm"
-            icon={isParsing ? <LoadingSpinner size="xs" /> : <FileText className="w-3 h-3" />}
+            icon={<FileText className="w-3 h-3" />}
             onClick={onSubmit}
             disabled={isParsing || !pasteContent.trim()}
             loading={isParsing}

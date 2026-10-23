@@ -13,10 +13,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { listEnvConnectors, setEnvConnector, type DevProjectEnvConnector } from '@/api/devTools/devTools';
-import { healthcheckCredential, listCredentials } from '@/api/vault/credentials';
+import { listCredentials } from '@/api/vault/credentials';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { silentCatch } from '@/lib/silentCatch';
 import type { EnvKey } from '../passportModel';
+import { cachedHealthcheck } from './credentialHealthCache';
 
 /**
  * Vault service types that can back a database slot. Drawn from the builtin
@@ -81,8 +82,8 @@ export function useEnvConnectors(slug: string, serviceTypes: string[]): EnvConne
         // Health is advisory: a candidate that fails its check is still
         // bindable (the user may be fixing it), it just renders as degraded.
         for (const c of cands) {
-          healthcheckCredential(c.id)
-            .then((r) => { if (alive) setHealth((h) => ({ ...h, [c.id]: r.success })); })
+          cachedHealthcheck(c.id)
+            .then((ok) => { if (alive) setHealth((h) => ({ ...h, [c.id]: ok })); })
             .catch((e) => {
               silentCatch('envConnectors healthcheck')(e);
               if (alive) setHealth((h) => ({ ...h, [c.id]: false }));

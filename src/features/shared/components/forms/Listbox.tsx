@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useId, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Search } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
@@ -16,9 +16,19 @@ interface ListboxChildProps {
   query: string;
 }
 
+/** Props handed to `renderTrigger`. */
+interface ListboxTriggerProps {
+  isOpen: boolean;
+  toggle: () => void;
+  /** Id of the option the arrow keys are on, or undefined. Listbox also sets
+   *  aria-activedescendant on the focused trigger itself; spread this onto a
+   *  custom focus target only if it is not the element that has focus. */
+  activeDescendantId: string | undefined;
+}
+
 interface ListboxProps {
   /** Render the trigger element. Consumer handles click via toggle(). */
-  renderTrigger: (props: { isOpen: boolean; toggle: () => void }) => ReactNode;
+  renderTrigger: (props: ListboxTriggerProps) => ReactNode;
   /** Render the dropdown options. */
   children: (props: ListboxChildProps) => ReactNode;
   /** Total selectable items -- enables ArrowUp/Down keyboard navigation.
@@ -95,6 +105,9 @@ export function Listbox({
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const baseId = useId();
+  const [activeId, setActiveId] = useState<string | undefined>(undefined);
 
   const close = useCallback(() => setOpen(false), []);
   const toggle = useCallback(() => setOpen((prev) => !prev), []);
@@ -178,6 +191,34 @@ export function Listbox({
     return () => document.removeEventListener('keydown', handleKey);
   }, [open, focusIndex, itemCount, onSelectFocused]);
 
+  // Screen-reader view of the arrow-key highlight. Focus stays on the trigger
+  // (or the search input), so the highlight is announced through
+  // aria-activedescendant. Callers render their own options; every
+  // role="option" in the popup gets a stable id here (kept if the caller set
+  // one) and the one at focusIndex is the active descendant.
+  useLayoutEffect(() => {
+    const popup = popupRef.current ?? menuRef.current;
+    if (!open || !popup || focusIndex < 0) {
+      setActiveId(undefined);
+      return;
+    }
+    const options = popup.querySelectorAll<HTMLElement>('[role="option"]');
+    options.forEach((el, i) => { if (!el.id) el.id = `${baseId}-opt-${i}`; });
+    setActiveId(options[focusIndex]?.id || undefined);
+  }, [open, focusIndex, query, itemCount, baseId]);
+
+  // The trigger is rendered by the caller, so the attribute goes on the
+  // element that actually has focus when it is inside this Listbox's trigger.
+  useEffect(() => {
+    const active = document.activeElement as HTMLElement | null;
+    const host = containerRef.current;
+    const popup = popupRef.current ?? menuRef.current;
+    if (!host || !active || !host.contains(active) || popup?.contains(active) || active === searchInputRef.current) return;
+    if (activeId) active.setAttribute('aria-activedescendant', activeId);
+    else active.removeAttribute('aria-activedescendant');
+    return () => active.removeAttribute('aria-activedescendant');
+  }, [activeId]);
+
   // Sticky type-ahead header rendered at the top of the popup.
   const searchHeader = searchable ? (
     <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-foreground/10 bg-secondary/95 px-3 py-2 backdrop-blur-sm">
@@ -200,6 +241,7 @@ export function Listbox({
         }}
         placeholder={searchPlaceholder}
         aria-label={searchAriaLabel ?? ariaLabel}
+        aria-activedescendant={activeId}
         className="w-full bg-transparent typo-body text-foreground outline-none placeholder:text-muted-foreground"
       />
     </div>
@@ -225,7 +267,7 @@ export function Listbox({
       menuPos &&
       createPortal(
         <div
-          ref={menuRef}
+          ref={(el) => { menuRef.current = el; popupRef.current = el; }}
           className={menuClassName ?? 'animate-fade-slide-in rounded-xl shadow-elevation-3 overflow-hidden'}
           style={{
             position: 'fixed',
@@ -247,6 +289,7 @@ export function Listbox({
       )
     ) : (
       <div
+        ref={popupRef}
         className={
           menuClassName
             ?? 'animate-fade-slide-in absolute top-full mt-1 left-0 right-0 glass-sm rounded-xl shadow-elevation-3 z-50 overflow-hidden'
@@ -261,7 +304,7 @@ export function Listbox({
 
   return (
     <div ref={containerRef} className={`relative${className ? ` ${className}` : ''}`}>
-      {renderTrigger({ isOpen: open, toggle })}
+      {renderTrigger({ isOpen: open, toggle, activeDescendantId: activeId })}
       {menu}
     </div>
   );

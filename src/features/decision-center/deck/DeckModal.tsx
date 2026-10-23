@@ -24,7 +24,7 @@ import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { DECISION_CHIPS, modalTypeOf, type ChipCount, type DecisionItem, type HubChip } from '../model/decisionModel';
 import type { DeckRequestScope } from './deckStore';
-import { DECK_TITLE_ID, type DeckVerdict } from './deckTypes';
+import { DECK_TITLE_ID, type DeckLanded, type DeckVerdict } from './deckTypes';
 import { CONTENT_FADE, originMotion, type OriginBox } from './deckMotion';
 import { kindTone, tierOf } from './deckMeta';
 import { DECK_PRIORITY } from './keys';
@@ -59,7 +59,7 @@ export interface DeckModalProps {
   /** The lanes' counts; an empty lane deck offers the others that still hold cards. */
   laneCounts?: LaneCounts | null;
   /** The write. Rejects when it did not land (the caller has toasted). */
-  onDecide: (v: DeckVerdict) => Promise<void>;
+  onDecide: (v: DeckVerdict) => Promise<DeckLanded | void>;
   onBack: () => void;
   /** A card's `links` entry was followed (navigation). */
   onOpenLink: (item: DecisionItem, linkId: string) => void;

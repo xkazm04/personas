@@ -31,6 +31,9 @@ export function ConnectorTableScopeRow({ connector, selected, onChange }: Connec
   const { tables, loading, error, fetchTables } = useTableIntrospection({
     credentialId: connector.credentialId,
     serviceType: connector.name,
+    // Remote introspection runs on first reveal (the `picking` effect below),
+    // not on mount: the picker mounts one row per database connector.
+    autoFetch: false,
   });
   const meta = connector.meta;
 

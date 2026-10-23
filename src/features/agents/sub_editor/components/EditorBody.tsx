@@ -29,7 +29,7 @@ import { usePersonaSwitchGuard } from '../hooks/usePersonaSwitchGuard';
 import { useEditorKeyboard } from '../hooks/useEditorKeyboard';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
 
 export function EditorBody() {
   const { t, tx } = useTranslation();
@@ -128,7 +128,8 @@ export function EditorBody() {
       }
       setShowDeleteConfirm(false);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      // deletePersona rejects with the IPC's AppError object, not an Error.
+      const msg = extractMessage(err);
       toastCatch('EditorBody:deletePersona', tx(t.agents.editor_ui.delete_failed, { message: msg }))(err);
       // Keep the delete confirmation dialog open so the user can retry
     }
@@ -180,7 +181,9 @@ export function EditorBody() {
 
       {saveError && failedTabs.length === 0 && (
         <div className="animate-fade-slide-in mx-6 my-2 rounded-modal px-3 py-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20">
-          <RefreshCw className="w-3.5 h-3.5 text-red-400 animate-spin flex-shrink-0" style={{ animationDuration: '3s' }} />
+          {/* Static: nothing is in flight here ("will retry on next edit"), so
+              a spinning glyph claimed work the app was not doing. */}
+          <RefreshCw className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
           <span className="typo-body text-red-300/90">{t.agents.editor_ui.save_failed_retry}</span>
         </div>
       )}
@@ -207,7 +210,7 @@ export function EditorBody() {
                 />
                 {selectedPersona?.id && (
                   <div className="max-w-3xl 3xl:max-w-4xl 4xl:max-w-5xl mt-4">
-                    <PersonaChangeHistory personaId={selectedPersona.id} />
+                    <PersonaChangeHistory personaId={selectedPersona.id} revision={selectedPersona.updated_at} />
                   </div>
                 )}
               </EditorTabContent>

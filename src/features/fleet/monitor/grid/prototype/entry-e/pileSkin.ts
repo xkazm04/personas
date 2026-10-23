@@ -51,7 +51,7 @@ export function personaLinePileKey(card: PersonaCardModel, projectOff: boolean):
 export const pileOfKey = (key: PileKey): Pile => (key === 'critical' || key === 'warning' ? 'needs' : key);
 
 /** A stable sweep phase per line, so a lane of working lines does not march in step. */
-function sweepDelay(seed: string): string {
+export function sweepDelay(seed: string): string {
   let h = 0;
   for (let i = 0; i < seed.length; i += 1) h = (h * 31 + seed.charCodeAt(i)) | 0;
   return `${-((Math.abs(h) % 32) / 10)}s`;

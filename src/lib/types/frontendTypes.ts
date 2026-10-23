@@ -31,57 +31,11 @@ export interface NotificationChannel {
 // -- Credential Templates -----------------------------------------------
 // Canonical field/event types live in types.ts -- re-export to avoid duplicates.
 export type { CredentialTemplateField, CredentialTemplateEvent } from "./types";
-import type { CredentialTemplateField, CredentialTemplateEvent } from "./types";
-
-export interface CredentialTemplate {
-  id: string;
-  name: string;
-  label: string;
-  icon_url?: string;
-  color: string;
-  category: string;
-  fields: CredentialTemplateField[];
-  healthcheck_config?: {
-    description: string;
-    endpoint?: string;
-    method?: string;
-  };
-  services: CredentialTemplateService[];
-  events: CredentialTemplateEvent[];
-}
-
-export interface CredentialTemplateService {
-  toolName: string;
-  label: string;
-}
-
-// -- Trigger Types ------------------------------------------------------
-
-export type PersonaTriggerType = "manual" | "schedule" | "polling" | "webhook";
 
 // -- Execution Status ---------------------------------------------------
 // Re-export the canonical ExecutionState from the execution module.
 // PersonaExecutionStatus is kept as an alias for backward compatibility.
 export type { ExecutionState as PersonaExecutionStatus } from "@/lib/execution/executionState";
-
-// -- Healing Issue Types ------------------------------------------------
-
-export type HealingIssueSeverity = "low" | "medium" | "high" | "critical";
-export type HealingIssueCategory = "performance" | "reliability" | "security" | "cost" | "quality";
-export type HealingIssueStatus = "detected" | "analyzing" | "resolved" | "ignored";
-
-// -- Manual Review Types ------------------------------------------------
-
-export type ManualReviewSeverity = "info" | "warning" | "critical";
-
-// -- Event Types --------------------------------------------------------
-
-export type PersonaEventType = "execution_completed" | "execution_failed" | "manual_review" | "user_message" | "persona_action" | "emit_event" | "custom";
-export type PersonaEventSourceType = "persona" | "user" | "system" | "scheduler";
-
-// -- Credential Service Types -------------------------------------------
-
-export type CredentialServiceType = "api_key" | "oauth" | "webhook" | "smtp" | "custom";
 
 // -- Memory Categories --------------------------------------------------
 

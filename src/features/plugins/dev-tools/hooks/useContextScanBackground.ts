@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useOverviewStore } from '@/stores/overviewStore';
 import { listen } from '@tauri-apps/api/event';
@@ -24,7 +24,6 @@ export function useContextScanBackground() {
   const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
   const scanCodebase = useSystemStore((s) => s.scanCodebase);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
-  const pendingProjectName = useRef<string | null>(null);
 
   const notifyCompletion = useCallback(async (projectName: string, success: boolean) => {
     const dt = t.plugins.dev_tools;
@@ -46,53 +45,10 @@ export function useContextScanBackground() {
     } catch (err) { silentCatch("features/plugins/dev-tools/hooks/useContextScanBackground:catch1")(err); }
   }, [t, tx]);
 
-  // Listen for scan completion event from backend.
-  //
-  // Track the `listen()` promise itself (not just the resolved unlisten fn)
-  // so that an unmount which fires before the promise resolves still tears
-  // the listener down via `.then((fn) => fn())`. The previous fire-and-forget
-  // pattern (`listen(...).then((fn) => unlisten = fn)`) leaked the listener
-  // forever in that race window: the cleanup ran with `unlisten=null` and
-  // the next mount registered a duplicate. After N flips between Dev Tools
-  // and other tabs, OS notifications and `processEnded()` fired N times per
-  // scan — corrupting Overview metrics.
-  useEffect(() => {
-    // The backend emits a `ContextGenSummary` here, NOT a `{ success }` object.
-    // Its `status` is "completed" or "completed_with_warning" on success — and
-    // the failure path never emits this event at all (it surfaces its own OS
-    // notification). The payload has no `success` field, so the previous
-    // `event.payload.success` read was always `undefined` → falsy → every
-    // SUCCESSFUL scan was reported as a failure (false "scan failed" OS
-    // notification + a bogus 'failed' Overview metric), even when the scan
-    // finished correctly. Derive success from `status` instead.
-    //
-    // We intentionally do NOT fire an OS notification from here: the backend
-    // already sends one authoritatively (`crate::notifications::send`, fired
-    // even when no Dev Tools UI is mounted), so calling notifyCompletion here
-    // would double-notify. This listener only updates in-app state. The
-    // start-failure catch in startBackgroundScan still uses notifyCompletion
-    // because the backend never reaches its notification on that path.
-    const unsub = listen<{ scan_id: string; status?: string; error?: string | null }>(
-      EventName.CONTEXT_GEN_COMPLETE,
-      (event) => {
-        pendingProjectName.current = null;
-        const success = event.payload.status !== 'failed';
-        setContextScanActive(false);
-        setContextScanComplete(success);
-        useOverviewStore.getState().processEnded(
-          'context_scan',
-          success ? 'completed' : 'failed',
-        );
-      },
-    );
-    return () => { unsub.then((fn) => fn()); };
-  }, [setContextScanActive, setContextScanComplete]);
-
   const startBackgroundScan = useCallback(
     async (projectId: string, rootPath: string, projectName: string) => {
       setContextScanActive(true);
       setContextScanComplete(false);
-      pendingProjectName.current = projectName;
       useOverviewStore.getState().processStarted(
         'context_scan',
         undefined,
@@ -100,14 +56,53 @@ export function useContextScanBackground() {
         { section: 'plugins', tab: 'context-map' },
       );
 
+      // The completion listener belongs to the SCAN, not to the component that
+      // started it. It used to live in a mount-scoped useEffect, so a scan
+      // started from AddAppModal (or a page the user then left) lost its only
+      // listener on unmount: the sidebar indicator pulsed until restart and
+      // the Overview `context_scan` process never ended. The global
+      // eventBridge handler settles factory scans only, so nothing else
+      // settles this one. One listener per scan, removed once it settles.
+      //
+      // The backend emits a `ContextGenSummary`: `status` is "completed" or
+      // "completed_with_warning" on success. No OS notification from here: the
+      // backend already sends one authoritatively on completion.
+      let scanId: string | null = null;
+      let settled = false;
+      const settle = (success: boolean) => {
+        if (settled) return;
+        settled = true;
+        setContextScanActive(false);
+        setContextScanComplete(success);
+        useOverviewStore.getState().processEnded('context_scan', success ? 'completed' : 'failed');
+        unlisten.then((fn) => fn()).catch(silentCatch('useContextScanBackground:unlisten'));
+      };
+      const unlisten = listen<{ scan_id: string; status?: string; error?: string | null }>(
+        EventName.CONTEXT_GEN_COMPLETE,
+        (event) => {
+          // Another scan (a Factory cell, a fleet delta scan) finishing must
+          // not settle this one.
+          if (scanId !== null && event.payload.scan_id !== scanId) return;
+          settle(event.payload.status !== 'failed');
+        },
+      );
+      unlisten.catch(silentCatch('useContextScanBackground:listen'));
+
+      // The store's scanCodebase reports a start failure into its own state
+      // (`codebaseScanPhase: 'error'`) and resolves; it never rethrows. Read
+      // that state instead of waiting on a catch that cannot run: a failed
+      // start emits no completion event, so nothing else would settle it.
+      let started: boolean;
       try {
         await scanCodebase(projectId, rootPath);
-        // scanCodebase returns immediately with scan_id — actual completion
-        // comes via context-gen-complete event handled in useEffect above
+        const sys = useSystemStore.getState();
+        started = sys.codebaseScanPhase !== 'error';
+        scanId = sys.activeScanId;
       } catch {
-        pendingProjectName.current = null;
-        setContextScanActive(false);
-        useOverviewStore.getState().processEnded('context_scan', 'failed');
+        started = false;
+      }
+      if (!started) {
+        settle(false);
         await notifyCompletion(projectName, false);
       }
     },

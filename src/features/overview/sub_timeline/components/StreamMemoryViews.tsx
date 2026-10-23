@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useTeamMemories } from '@/features/teams/sub_teamMemory/useTeamMemories';
 import MemoryTimeline from '@/features/teams/sub_teamMemory/components/timeline/MemoryTimeline';
 import RunDiffView from '@/features/teams/sub_teamMemory/components/diff/RunDiffView';
@@ -25,11 +26,17 @@ export function StreamMemoryViews({
 }) {
   // useTeamMemories fetches on mount and owns its own refresh cadence.
   const { memories, stats, onFilterByRun } = useTeamMemories(teamId);
+  // The hook keeps the run filter in a ref (the panel owns the filter UI), so the
+  // timeline's clear control needs the active run mirrored here. Passing a constant
+  // null hid it and left a clicked run filter with no way back.
+  const [activeRun, setActiveRun] = useState<string | null>(null);
+  useEffect(() => { setActiveRun(null); }, [teamId]);
+  const filterRun = (runId: string | null) => { setActiveRun(runId); onFilterByRun(runId); };
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto p-3">
       {mode === 'timeline' ? (
-        <MemoryTimeline memories={memories} stats={stats} onFilterRun={onFilterByRun} activeRunFilter={null} />
+        <MemoryTimeline memories={memories} stats={stats} onFilterRun={filterRun} activeRunFilter={activeRun} />
       ) : (
         <RunDiffView stats={stats} onClose={onExit} />
       )}

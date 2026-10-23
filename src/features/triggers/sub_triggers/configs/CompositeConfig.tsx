@@ -1,8 +1,17 @@
 import { Plus, X } from 'lucide-react';
 import type { CompositeCondition } from '@/lib/utils/platform/triggerConstants';
 import { TriggerFieldGroup } from './TriggerFieldGroup';
+import { COMPOSITE_WINDOW_MAX_SECONDS } from './buildTriggerConfig';
 import { useTranslation } from '@/i18n/useTranslation';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+
+/** The catalog carries this label as an inline "Operator:" prefix; a field
+ *  label takes it without the trailing colon (ASCII, full-width, or the
+ *  French spaced form). */
+function fieldLabel(prefix: string): string {
+  return prefix.replace(/s*[:：]s*$/, '');
+}
 
 export interface CompositeConfigProps {
   compositeConditions: CompositeCondition[];
@@ -66,26 +75,27 @@ export function CompositeConfig({
           <Plus className="w-3.5 h-3.5" /> {t.triggers.composite.add_condition}
         </button>
       </TriggerFieldGroup>
-      <TriggerFieldGroup label={t.triggers.op_all_label ? 'Operator' : 'Operator'}>
+      <TriggerFieldGroup label={fieldLabel(t.triggers.operator_colon)}>
         <div className="flex gap-1.5">
           {([
-            { value: 'all', label: 'ALL (AND)', desc: 'All conditions must match' },
-            { value: 'any', label: 'ANY (OR)', desc: 'At least one condition' },
-            { value: 'sequence', label: 'Sequence', desc: 'Conditions in order' },
+            { value: 'all', label: t.triggers.op_all_label, desc: t.triggers.op_all_desc },
+            { value: 'any', label: t.triggers.op_any_label, desc: t.triggers.op_any_desc },
+            { value: 'sequence', label: t.triggers.op_sequence_label, desc: t.triggers.op_sequence_desc },
           ] as const).map((op) => (
-            <button
-              key={op.value}
-              type="button"
-              onClick={() => setCompositeOperator(op.value)}
-              className={`px-3 py-1.5 rounded-modal typo-body transition-all border ${
-                compositeOperator === op.value
-                  ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-                  : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'
-              }`}
-              title={op.desc}
-            >
-              {op.label}
-            </button>
+            <Tooltip key={op.value} content={op.desc}>
+              <button
+                type="button"
+                aria-pressed={compositeOperator === op.value}
+                onClick={() => setCompositeOperator(op.value)}
+                className={`px-3 py-1.5 rounded-modal typo-body transition-all border ${
+                  compositeOperator === op.value
+                    ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                    : 'bg-secondary/30 text-foreground border-border/30 hover:bg-secondary/50'
+                }`}
+              >
+                {op.label}
+              </button>
+            </Tooltip>
           ))}
         </div>
       </TriggerFieldGroup>
@@ -97,6 +107,7 @@ export function CompositeConfig({
           value={windowSeconds.trim() === '' ? null : Number(windowSeconds)}
           onChange={(v) => { setWindowSeconds(v == null ? '' : String(v)); if (validationError) setValidationError(null); }}
           min={5}
+          max={COMPOSITE_WINDOW_MAX_SECONDS}
           allowEmpty
           placeholder={t.triggers.composite_debounce_placeholder}
           ariaLabel={t.triggers.composite.window_label}

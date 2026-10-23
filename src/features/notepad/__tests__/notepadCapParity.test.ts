@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { NOTE_STATUS_META, noteOccupiesSlot } from '../noteStatusMeta';
+import { NOTE_STATUS_META, noteBodyEditable, noteOccupiesSlot } from '../noteStatusMeta';
 
 // GATE OVER THE ARTIFACT. The pad's "ten notes open" cap is one rule written
 // twice: `count_active_notes` in Rust (what the server REFUSES on) and
@@ -33,5 +33,29 @@ describe('the pad cap <-> count_active_notes parity', () => {
   it('counts exactly the statuses the server counts', () => {
     const pad = Object.keys(NOTE_STATUS_META).filter((s) => noteOccupiesSlot(s as keyof typeof NOTE_STATUS_META));
     expect(pad.sort()).toEqual([...rustActiveStatuses()].sort());
+  });
+});
+
+// Same gate for the second rule written twice: which statuses take a body.
+// `noteBodyEditable` decides the editor's lock and which crash shadows the
+// store replays; `BODY_EDITABLE` decides what `update_note` refuses.
+function rustBodyEditable(): string[] {
+  const src = readFileSync(NOTES_RS, 'utf8');
+  const decl = src.match(/const BODY_EDITABLE: \[NoteStatus; \d+\] = \[([^\]]*)\];/);
+  if (!decl) throw new Error(`No 'const BODY_EDITABLE' in ${NOTES_RS}`);
+  // NoteStatus::InProgress -> in_progress (serde snake_case).
+  return [...decl[1]!.matchAll(/NoteStatus::([A-Za-z]+)/g)].map((m) =>
+    m[1]!.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase(),
+  );
+}
+
+describe('noteBodyEditable <-> update_note BODY_EDITABLE parity', () => {
+  it('finds the Rust status list it claims to gate', () => {
+    expect(rustBodyEditable().length).toBeGreaterThan(0);
+  });
+
+  it('unlocks exactly the statuses the server takes a body in', () => {
+    const pad = Object.keys(NOTE_STATUS_META).filter((s) => noteBodyEditable(s as keyof typeof NOTE_STATUS_META));
+    expect(pad.sort()).toEqual([...rustBodyEditable()].sort());
   });
 });

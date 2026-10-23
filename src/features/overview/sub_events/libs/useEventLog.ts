@@ -11,7 +11,7 @@ import type { SavedView } from '@/lib/bindings/SavedView';
 import type { EventFilterInput } from '@/lib/bindings/EventFilterInput';
 import type { PersonaEvent } from '@/lib/types/types';
 import { createLogger } from '@/lib/log';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 const logger = createLogger('event-log');
 
@@ -107,6 +107,11 @@ export function useEventLog() {
   const [serverResults, setServerResults] = useState<PersonaEvent[]>([]);
   const [serverHasMore, setServerHasMore] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  // A rejected server search, held as its raw cause and resolved at render.
+  // It used to be logged only: the results stayed empty (or kept the PREVIOUS
+  // filter's rows) and the table said "no events match" for a query that never
+  // ran.
+  const [searchError, setSearchError] = useState<{ raw: unknown } | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
 
@@ -236,6 +241,7 @@ export function useEventLog() {
     if (!hasFilters) {
       setServerResults([]);
       setServerHasMore(false);
+      setSearchError(null);
       return;
     }
 
@@ -246,9 +252,14 @@ export function useEventLog() {
       if (controller.signal.aborted) return;
       setServerResults(result.events);
       setServerHasMore(result.has_more);
+      setSearchError(null);
     } catch (err) {
       if (controller.signal.aborted) return;
       logger.error('Event search failed', { error: err });
+      // Rows from an earlier filter are not an answer to this one.
+      setSearchError({ raw: err });
+      setServerResults([]);
+      setServerHasMore(false);
     } finally {
       if (!controller.signal.aborted) {
         setIsSearching(false);
@@ -265,6 +276,7 @@ export function useEventLog() {
       setServerResults([]);
       setServerHasMore(false);
       setIsSearching(false);
+      setSearchError(null);
       return;
     }
 
@@ -412,8 +424,10 @@ export function useEventLog() {
     setSortDirection((d) => (d === 'desc' ? 'asc' : 'desc'));
   };
 
-  // Saved view operations
-  const saveCurrentView = async (name: string) => {
+  // Saved view operations. A failed save or delete used to reach only the log:
+  // the toolbar then closed the name field as if the view existed and the
+  // typed name was lost. Both now toast, and save says whether it landed.
+  const saveCurrentView = async (name: string): Promise<boolean> => {
     const config: Record<string, string> = {};
     if (statusFilter !== 'all') config.status = statusFilter;
     if (typeFilter !== 'all') config.eventType = typeFilter;
@@ -434,8 +448,10 @@ export function useEventLog() {
       });
       setSavedViews((prev) => [view, ...prev]);
       setActiveViewId(view.id);
+      return true;
     } catch (err) {
-      logger.error('Failed to save view', { error: err });
+      toastCatch('useEventLog:saveView')(err);
+      return false;
     }
   };
 
@@ -458,7 +474,7 @@ export function useEventLog() {
       setSavedViews((prev) => prev.filter((v) => v.id !== viewId));
       if (activeViewId === viewId) setActiveViewId(null);
     } catch (err) {
-      logger.error('Failed to delete saved view', { error: err });
+      toastCatch('useEventLog:deleteView')(err);
     }
   };
 
@@ -478,7 +494,7 @@ export function useEventLog() {
     sortDirection, toggleSortDirection,
     selectedEvent, setSelectedEvent,
     selectedPersonaId, setSelectedPersonaId: setPersonaId,
-    isFetching, isRefreshing, isSearching,
+    isFetching, isRefreshing, isSearching, searchError, retrySearch: executeSearch,
     filteredEvents,
     handleRefresh, getPersona,
     // Search

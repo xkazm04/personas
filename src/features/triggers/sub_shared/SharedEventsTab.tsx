@@ -179,7 +179,12 @@ export function SharedEventsTab() {
             className="w-full pl-8 pr-7 py-1.5 typo-caption rounded-input bg-secondary/50 border border-primary/10 text-foreground placeholder:text-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
           />
           {search && (
-            <button type="button" onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2">
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              aria-label={t.triggers.clear_search_label}
+              className="absolute right-2 top-1/2 -translate-y-1/2"
+            >
               <X className="w-3 h-3 text-foreground/60 hover:text-foreground" />
             </button>
           )}

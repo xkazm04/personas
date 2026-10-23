@@ -33,15 +33,18 @@ export const TYPE_ICONS: Record<string, { icon: LucideIcon; color: string; bg: s
   attention: { icon: Eye, color: 'text-teal-400', bg: 'bg-teal-500/10' },
 };
 
-export const FILTER_TABS: { id: ActivityType; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'execution', label: 'Executions' },
-  { id: 'event', label: 'Events' },
-  { id: 'memory', label: 'Memories' },
-  { id: 'review', label: 'Reviews' },
-  { id: 'message', label: 'Messages' },
-  // Label resolved via i18n in ActivityFilters (t.agents.life.activity_filter_attention).
-  { id: 'attention', label: 'Attention' },
+/** The type-tab strip. `labelKey` names the `agents.activity_filters` entry;
+ *  `null` marks the one tab whose label lives elsewhere (attention, resolved
+ *  in ActivityFilters from `agents.life.activity_filter_attention`). */
+export type ActivityFilterLabelKey = 'all' | 'executions' | 'events' | 'memories' | 'reviews' | 'messages';
+export const FILTER_TABS: { id: ActivityType; labelKey: ActivityFilterLabelKey | null }[] = [
+  { id: 'all', labelKey: 'all' },
+  { id: 'execution', labelKey: 'executions' },
+  { id: 'event', labelKey: 'events' },
+  { id: 'memory', labelKey: 'memories' },
+  { id: 'review', labelKey: 'reviews' },
+  { id: 'message', labelKey: 'messages' },
+  { id: 'attention', labelKey: null },
 ];
 
 export function renderImportanceStars(status: string): string {

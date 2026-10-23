@@ -6,6 +6,7 @@ import { kbIngestText } from '@/api/vault/database/vectorKb';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatCount } from '@/lib/utils/formatters';
 import { KbErrorNotice } from '../KbErrorNotice';
+import { extractMessage } from '@/lib/silentCatch';
 
 interface IngestTextModalProps {
   kbId: string;
@@ -33,7 +34,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
       setIngesting(false);
       onIngested();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
       setIngesting(false);
     }
   };

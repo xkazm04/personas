@@ -64,8 +64,8 @@ use tauri::{AppHandle, Emitter, Listener, Manager};
 
 use crate::db::models::{
     FleetSessionJobPayload, FleetSessionJobReceipt, RemoteJob, RemoteJobDirection, RemoteJobStatus,
-    RemoteSessionCommand, REMOTE_JOB_KIND_CLI_MAIL, REMOTE_JOB_KIND_FLEET_SESSION,
-    REMOTE_JOB_KIND_MESH_VERB,
+    RemoteSessionCommand, REMOTE_JOB_KIND_CHARTER_MIRROR, REMOTE_JOB_KIND_CHARTER_VERDICT,
+    REMOTE_JOB_KIND_CLI_MAIL, REMOTE_JOB_KIND_FLEET_SESSION, REMOTE_JOB_KIND_MESH_VERB,
 };
 use crate::db::repos::resources::remote_jobs as repo;
 use crate::engine::event_registry::event_name;
@@ -124,6 +124,9 @@ impl RemoteJobExecutor for AthenaRemoteJobs {
         if job.kind == REMOTE_JOB_KIND_FLEET_SESSION {
             return crate::commands::fleet::remote_exec::admit(&self.app, job).await;
         }
+        if is_charter_kind(&job.kind) {
+            return crate::mesh::charter_mirror::admit(&self.app, job).await;
+        }
         Admission::Accept
     }
 
@@ -161,6 +164,12 @@ impl RemoteJobExecutor for AthenaRemoteJobs {
         // and answers with a receipt. Her master switch does not apply.
         if job.kind == REMOTE_JOB_KIND_MESH_VERB {
             crate::mesh::verbs::execute(app, job, handle).await;
+            return;
+        }
+        // The mandate mirror (WP9): a mirror is stored read-only, a verdict
+        // is applied at home through the mandate doors. Neither is a turn.
+        if is_charter_kind(&job.kind) {
+            crate::mesh::charter_mirror::execute(app, job, handle).await;
             return;
         }
         if athena_switched_off(&app) {
@@ -540,10 +549,19 @@ fn episode_worthy(job: &RemoteJob) -> bool {
     // The device mesh's machine traffic - a verb's receipt, a CLI mail's
     // delivery - is coordination, not something she did or was asked: one
     // episode per toggle or per mail would flood her recall window.
-    if job.kind == REMOTE_JOB_KIND_MESH_VERB || job.kind == REMOTE_JOB_KIND_CLI_MAIL {
+    if job.kind == REMOTE_JOB_KIND_MESH_VERB
+        || job.kind == REMOTE_JOB_KIND_CLI_MAIL
+        || is_charter_kind(&job.kind)
+    {
         return false;
     }
     job.status.is_terminal() || (job.status == RemoteJobStatus::Running && job.last_seq == 1)
+}
+
+/// The mandate mirror's two kinds (WP9): machine traffic, executed by
+/// `crate::mesh::charter_mirror`, never an Athena turn or an episode.
+fn is_charter_kind(kind: &str) -> bool {
+    kind == REMOTE_JOB_KIND_CHARTER_MIRROR || kind == REMOTE_JOB_KIND_CHARTER_VERDICT
 }
 
 // ── Outbound fleet sessions: the harvest ──────────────────────────────────
@@ -880,7 +898,12 @@ mod tests {
     /// or a mailbox delivery is coordination, not a memory.
     #[test]
     fn mesh_verbs_and_cli_mail_earn_no_episode() {
-        for kind in [REMOTE_JOB_KIND_MESH_VERB, REMOTE_JOB_KIND_CLI_MAIL] {
+        for kind in [
+            REMOTE_JOB_KIND_MESH_VERB,
+            REMOTE_JOB_KIND_CLI_MAIL,
+            REMOTE_JOB_KIND_CHARTER_MIRROR,
+            REMOTE_JOB_KIND_CHARTER_VERDICT,
+        ] {
             for status in [RemoteJobStatus::Running, RemoteJobStatus::Completed] {
                 let mut j = job(RemoteJobDirection::Outbound, status, 1);
                 j.kind = kind.into();

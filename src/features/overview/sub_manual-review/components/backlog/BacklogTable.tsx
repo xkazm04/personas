@@ -51,7 +51,8 @@ export function BacklogTable({
   projectOptions: { value: string; label: string }[];
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
-  onToggleSelectAll: () => void;
+  /** Receives the rows the table narrowed to; select-all covers exactly those. */
+  onToggleSelectAll: (seen: BacklogIdea[]) => void;
   onBulkAccept: () => void;
   onBulkReject: () => void;
   /** Send the current selection to Athena for one batch verdict. */
@@ -110,8 +111,6 @@ export function BacklogTable({
     }
   };
 
-  const allSelected = rows.length > 0 && rows.every((i) => selectedIds.has(i.id));
-
   const columns = useBacklogColumns({
     r, selectedIds, onToggleSelect, showProject,
     projectFilter, projectOptions, onProjectFilter: setProjectFilter,
@@ -157,7 +156,6 @@ export function BacklogTable({
         emptyDescription: r.backlog_empty_subtitle,
       }}
       isRowSelected={(i) => selectedIds.has(i.id)}
-      selectAll={allSelected}
       onSelectAll={onToggleSelectAll}
       selectedCount={selectedIds.size}
       bulkActions={bulkActions}

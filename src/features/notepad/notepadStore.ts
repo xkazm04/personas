@@ -43,7 +43,7 @@ import { EventName, typedListen } from '@/lib/eventRegistry';
 import { safeLocalGet, safeLocalRemove, safeLocalSet } from '@/lib/safeLocalStorage';
 import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 
-import { noteOccupiesSlot } from './noteStatusMeta';
+import { noteBodyEditable, noteOccupiesSlot } from './noteStatusMeta';
 import { emitGoalBanner, type GoalBannerKind } from './notifications/goalBanner';
 
 export { NOTE_CAP };
@@ -111,6 +111,27 @@ export interface NotepadStatus {
 
 /** Pending debounce timer per note id. */
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
+
+/** An editable field the debounced writer can carry. */
+type SaveField = 'title' | 'bodyMd' | 'projectId';
+
+/**
+ * The fields edited since the last save that carried them, per note id.
+ *
+ * A save sends THESE and nothing else. The server checks each key on its own
+ * (`update_note` in `src-tauri/db/src/repos/dev/notes.rs`): a body only while
+ * `draft | scoped | cut`, a project only while `draft`, a title anywhere but
+ * `archived`. A patch that always carried all three was refused for every
+ * keystroke on a milestone brief (its untouched `projectId`) and for every
+ * rename of a dispatched note (its untouched `bodyMd`).
+ */
+const unsent = new Map<string, Set<SaveField>>();
+
+function markUnsent(id: string, fields: Iterable<SaveField>): void {
+  const set = unsent.get(id) ?? new Set<SaveField>();
+  for (const f of fields) set.add(f);
+  if (set.size > 0) unsent.set(id, set);
+}
 /** In-flight save promise per note id, so `flush` can await a save already running. */
 const inFlight = new Map<string, Promise<void>>();
 
@@ -296,6 +317,11 @@ export function patchNote(id: string, patch: NotePatch): void {
   };
   notes = { ...notes, [id]: next };
   saveStates = { ...saveStates, [id]: 'dirty' };
+  markUnsent(id, [
+    ...(patch.title !== undefined ? (['title'] as const) : []),
+    ...(patch.bodyMd !== undefined ? (['bodyMd'] as const) : []),
+    ...('projectId' in patch ? (['projectId'] as const) : []),
+  ]);
   emit();
 
   writeShadow(next);
@@ -323,31 +349,47 @@ async function runSave(id: string): Promise<void> {
 
   const note = notes[id];
   if (!note) return;
-  const sent = { title: note.title, bodyMd: note.bodyMd, projectId: note.projectId };
+  const fields = unsent.get(id);
+  if (!fields || fields.size === 0) return;
+  unsent.delete(id);
+  // Only the edited keys travel (see `unsent`). `in` on the wire for
+  // `projectId`, so an edit that CLEARED the project still reaches the server.
+  const sent: NotePatch = {
+    ...(fields.has('title') ? { title: note.title } : {}),
+    ...(fields.has('bodyMd') ? { bodyMd: note.bodyMd } : {}),
+    ...(fields.has('projectId') ? { projectId: note.projectId } : {}),
+  };
 
   setSaveState(id, 'saving');
   const p = (async () => {
     try {
       const row = await notepadApi.updateNote(id, sent);
-      adopt(row);
-      // Compare what was SENT against what memory holds NOW. A keystroke that
-      // landed while the IPC was in flight leaves the note genuinely dirty, and
-      // calling it clean would drop that edit at the next flush — and clear the
-      // shadow that was covering it.
-      const after = notes[id];
-      const settled =
-        !!after &&
-        after.title === sent.title &&
-        after.bodyMd === sent.bodyMd &&
-        after.projectId === sent.projectId;
-      if (settled) {
-        setSaveState(id, 'clean');
-        clearShadow(id);
-      } else {
+      const local = notes[id];
+      // Deleted while the save was in flight: adopting the row would bring it back.
+      if (!local) return;
+      // A keystroke that landed while the IPC was in flight is in `unsent`
+      // again. The row is the copy from BEFORE it, so adopting the row
+      // wholesale put the older text back in the editor, called the note clean
+      // and cleared the shadow covering the newer text. Those fields keep what
+      // memory holds and the note stays dirty for the next save.
+      const again = unsent.get(id);
+      if (again && again.size > 0) {
+        adopt({
+          ...row,
+          ...(again.has('title') ? { title: local.title } : {}),
+          ...(again.has('bodyMd') ? { bodyMd: local.bodyMd } : {}),
+          ...(again.has('projectId') ? { projectId: local.projectId } : {}),
+        });
         setSaveState(id, 'dirty');
         scheduleSave(id);
+      } else {
+        adopt(row);
+        setSaveState(id, 'clean');
+        clearShadow(id);
       }
     } catch (e) {
+      // The edit is still unsaved: the retry must carry the same keys.
+      markUnsent(id, fields);
       setSaveState(id, 'error');
       toastCatch('notepad save')(e);
     } finally {
@@ -370,15 +412,24 @@ export async function flush(id?: string): Promise<void> {
   // Bounded: a flush of every pending note must not open one IPC call per
   // note at once (bounded-parallel-fan-out); four is plenty for a ten-note pad.
   await mapWithConcurrency(ids, 4, async (noteId) => {
+    // DRAIN, not one pass. An edit typed while a save was in flight leaves a
+    // timer behind it: `runSave` hands back the running save, and the newer
+    // text is only rescheduled once that one lands. Returning there let a
+    // close, an archive or a status move run ahead of the operator's last
+    // keystrokes. Ends when nothing is pending, or when a save fails (a failed
+    // save schedules nothing).
+    for (;;) {
       const timer = timers.get(noteId);
       if (timer) {
         clearTimeout(timer);
         timers.delete(noteId);
         await runSave(noteId);
-        return;
+        continue;
       }
       const running = inFlight.get(noteId);
-      if (running) await running;
+      if (!running) return;
+      await running;
+    }
   });
 }
 
@@ -435,11 +486,22 @@ export async function load(): Promise<void> {
 
     for (const row of rows) {
       const shadow = readShadow(row.id);
-      if (shadow && shadow.updatedAt > row.updatedAt && row.status === 'draft') {
-        // Body/title edits are only legal on a draft, so a shadow against a
-        // published note cannot be replayed — it would be refused server-side.
+      // Replayable wherever the server still takes a body: `draft`, and the
+      // milestone brief's `scoped` / `cut` (BODY_EDITABLE in notes.rs). A
+      // draft-only test dropped the unsaved text of every brief that crashed
+      // inside the debounce. A shadow against a published note cannot be
+      // replayed — it would be refused server-side.
+      const replay =
+        shadow && shadow.updatedAt > row.updatedAt && noteBodyEditable(row.status)
+          ? ([
+              ...(shadow.title !== row.title ? (['title'] as const) : []),
+              ...(shadow.bodyMd !== row.bodyMd ? (['bodyMd'] as const) : []),
+            ] satisfies SaveField[])
+          : [];
+      if (shadow && replay.length > 0) {
         nextNotes[row.id] = { ...row, bodyMd: shadow.bodyMd, title: shadow.title };
         recovered.push(row.id);
+        markUnsent(row.id, replay);
       } else {
         nextNotes[row.id] = row;
         if (shadow) clearShadow(row.id);
@@ -855,6 +917,7 @@ export function __resetNotepadStoreForTests(): void {
   for (const timer of timers.values()) clearTimeout(timer);
   timers.clear();
   inFlight.clear();
+  unsent.clear();
   notes = {};
   order = [];
   saveStates = {};

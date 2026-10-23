@@ -1,0 +1,8 @@
+{"schema":"conform-run/1","worker":"4c5a0d18-f143-4cca-90cf-fdfa70e80864","subject":"hitl-approval","evaluatedAt":"2026-10-22T02:50:54Z",
+ "pairs":[],
+ "declined":[
+  {"subject":"hitl-approval","context":"942d2449-34ab-4f02-af7e-b130269d10ef","reason":"the only unjudged governed pair has no code to read: context-map.json lists file_paths [] and both entry_points (src/features/fleet/monitor/triage/MonitorProjectColumns.tsx, triageModel.ts) are absent from git ls-files - the monitor/triage folder was removed; its triage successor src/features/fleet/monitor/grid/rail/railTriageReview.ts belongs to no listed path of this context, and judging it here would grade another context's code. The context needs a rescan (/refresh-context) before any verdict; the rail's severity fall-through to info (railTriageReview.ts:21) is already the recorded overview-manual-review deviation on getSevCfg"},
+  {"subject":"hitl-approval","context":"a38e2b93-2322-4187-befa-c0443c4ca85f","reason":"weak context (glyph-definitions); weak pairs are not judged by default - coverage question, not a verdict"},
+  {"subject":"hitl-approval","context":"11fe7642-7a1a-47c5-8910-499850aa04fe","reason":"weak context (plugins-companion-inbox); weak pairs are not judged by default - coverage question, not a verdict"}
+ ],
+ "consults":[]}

@@ -244,3 +244,43 @@ describe('snapAnimation', () => {
     unregisterAnimation(key);
   });
 });
+
+/**
+ * NaN never settles: `NaN !== NaN`, so an entry whose target or current value is
+ * not finite counted as "still animating" on every frame and the shared loop
+ * re-armed forever (one rAF per frame for the life of the page, the counter
+ * repainting "NaN"). A 0/0 average handed to <AnimatedCounter> is enough.
+ */
+describe('non-finite values', () => {
+  it('snaps to a non-finite target instead of arming the loop', () => {
+    const writes: number[] = [];
+    const key = registerAnimation(5, (v) => writes.push(v));
+    setAnimationTarget(key, NaN);
+    expect(rafQueue.length).toBe(0);
+    expect(Number.isNaN(writes[writes.length - 1])).toBe(true);
+    unregisterAnimation(key);
+  });
+
+  it('snaps out of a non-finite starting value instead of travelling from it', () => {
+    let latest = 0;
+    const key = registerAnimation(NaN, (v) => {
+      latest = v;
+    });
+    setAnimationTarget(key, 42);
+    expect(latest).toBe(42);
+    expect(rafQueue.length).toBe(0);
+    unregisterAnimation(key);
+  });
+
+  it('lets the loop stop when a neighbour holds a non-finite value', () => {
+    const a = registerAnimation(0, () => {});
+    const b = registerAnimation(0, () => {});
+    setAnimationTarget(a, 100);
+    pump();
+    setAnimationTarget(b, NaN);
+    for (let i = 0; i < 500 && rafQueue.length > 0; i++) pump();
+    expect(rafQueue.length).toBe(0);
+    unregisterAnimation(a);
+    unregisterAnimation(b);
+  });
+});

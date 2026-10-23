@@ -300,13 +300,6 @@ export const ARCHETYPE_LABEL: Record<Archetype, string> = { solo: 'Solo', team: 
 export const LIFECYCLE_LABEL: Record<Lifecycle, string> = {
   prototype: 'Prototype', alpha: 'Alpha', beta: 'Beta', ga: 'GA', maintenance: 'Maintenance', deprecated: 'Deprecated',
 };
-export const CRITICALITY_LABEL: Record<Criticality, string> = {
-  experimental: 'Experimental', internal: 'Internal', business: 'Business', 'mission-critical': 'Mission-critical',
-};
-export const INTEGRATION_KIND_LABEL: Record<IntegrationKind, string> = {
-  llm: 'LLM', vcs: 'Version control', auth: 'Auth', payments: 'Payments', email: 'Email', storage: 'Storage',
-  queue: 'Queue', analytics: 'Analytics', search: 'Search', comms: 'Comms', 'ci-cd': 'CI/CD', infra: 'Infra', other: 'Other',
-};
 
 // -- heatmap tint (mirrors the Leaderboard ramp: 80+ emerald / 60+ blue /
 //    40+ amber / <40 red) so the two comparison surfaces read identically. ----
@@ -325,27 +318,9 @@ export function ordinalTint(pos: number): Tint {
   return scoreTint(Math.round(pos * 100));
 }
 
-/** The "absent / gap" tint — a slate marker for a meaningful null (e.g. no
- *  error tracking). Per the passport spec, null is a first-class answer, not
- *  missing data — so it gets its own visible treatment, not a blank cell. */
-export const GAP_TINT: Tint = { text: 'text-slate-400', bg: 'bg-slate-500/10', ring: 'ring-slate-500/20', hex: '#64748b' };
-
 // -- helpers -------------------------------------------------------------------
 
 /** Stable name-ascending sort — the matrix's default column order. */
 export function sortByNameAsc(passports: AppPassport[]): AppPassport[] {
   return [...passports].sort((a, b) => a.identity.name.localeCompare(b.identity.name));
-}
-
-/**
- * The passport's signature insight: a project whose two readiness axes diverge.
- * `automatable` = well-instrumented for agents but not production-trustworthy
- * (a polished prototype); `prod-trusted` = battle-tested but hostile to agents
- * (no docs/context/fast verify). Returns null when the axes are roughly aligned.
- */
-export function readinessSkew(p: AppPassport): { label: string; tone: 'auto' | 'prod' } | null {
-  const d = p.automationReadiness.score - p.productionReadiness.score;
-  if (d >= 22) return { label: 'Automatable · not prod-ready', tone: 'auto' };
-  if (d <= -22) return { label: 'Prod-trusted · low autonomy', tone: 'prod' };
-  return null;
 }

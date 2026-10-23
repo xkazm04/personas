@@ -80,17 +80,10 @@ use personas_core::models::{
 use crate::commands::fleet::queue::DispatchOrigin;
 use crate::commands::fleet::types::{state_to_token, FleetSessionState};
 
-/// Run a blocking read/write off the IPC worker. The curator lane touches
-/// rusqlite AND the filesystem, so a sync command here would block it.
-async fn blocking<T, F>(what: &'static str, f: F) -> Result<T, AppError>
-where
-    T: Send + 'static,
-    F: FnOnce() -> Result<T, AppError> + Send + 'static,
-{
-    tokio::task::spawn_blocking(f)
-        .await
-        .map_err(|e| AppError::Internal(format!("{what}: task failed: {e}")))?
-}
+// Run a blocking read/write off the IPC worker. The curator lane touches
+// rusqlite AND the filesystem, so a sync command here would block it. The
+// repo's one shared helper (`commands/blocking.rs`), not a private copy of it.
+use crate::commands::blocking::run_blocking as blocking;
 
 /// The registry checkout Curator works in, or the typed refusal that names the
 /// missing prerequisite.
@@ -606,6 +599,29 @@ pub async fn curator_requests_list(
     let db = state.db.clone();
     blocking("curator_requests_list", move || {
         repo::list_requests(&db, REQUEST_PAGE)
+    })
+    .await
+}
+
+/// The largest history page one call may ask for.
+const HISTORY_PAGE_MAX: u32 = 100;
+
+/// One page of the lane's settled history, newest first.
+///
+/// The open half stays on [`curator_requests_list`]; this is the part that
+/// only grows, so the queue drawer pages through it on demand instead of
+/// drawing a week of landed rows under the two the operator is waiting on.
+#[tauri::command]
+pub async fn curator_requests_history(
+    state: State<'_, Arc<AppState>>,
+    limit: u32,
+    offset: u32,
+) -> Result<Vec<CuratorRequest>, AppError> {
+    require_auth(&state).await?;
+    let db = state.db.clone();
+    let limit = limit.clamp(1, HISTORY_PAGE_MAX);
+    blocking("curator_requests_history", move || {
+        repo::list_settled_requests(&db, limit, offset)
     })
     .await
 }

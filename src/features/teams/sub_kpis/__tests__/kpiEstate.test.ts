@@ -103,7 +103,7 @@ describe('tallyKpis', () => {
       ],
       NOW,
     );
-    expect(t.lastReadAt).toBe(Date.parse(iso(NOW - 2 * DAY).replace(' ', 'T')));
+    expect(t.lastReadAt).toBe(NOW - 2 * DAY);
   });
 });
 

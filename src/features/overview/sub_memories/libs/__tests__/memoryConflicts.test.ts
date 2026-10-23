@@ -115,8 +115,9 @@ describe('detectConflicts', () => {
     const shared = { title: 'Retry policy', content: 'Retry the webhook twice before alerting' };
     const same = detectConflicts([memory(shared), memory(shared)]);
     const cross = detectConflicts([memory(shared), memory({ ...shared, persona_id: 'persona-b' })]);
-    expect(same[0]?.reason).toContain('same agent');
-    expect(cross[0]?.reason).toContain('different agents');
+    expect(same[0]?.reasonKey).toBe('duplicate_same_agent');
+    expect(cross[0]?.reasonKey).toBe('duplicate_cross_agent');
+    expect(same[0]?.reasonPct).toBeGreaterThanOrEqual(DUPLICATE_THRESHOLD * 100 - 1);
   });
 
   it('flags a negated instruction on the same topic as a contradiction', () => {

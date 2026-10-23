@@ -322,5 +322,15 @@
   "conn_state_connecting": "Připojování...",
   "conn_state_failed": "Selhalo",
   "conn_state_disconnected": "Odpojeno",
-  "resources_synced": "Synchronizováno: {count}"
+  "resources_synced": "Synchronizováno: {count}",
+  "exposure_auth_required": "Vyžaduje ověření",
+  "exposure_open_lan": "Otevřeno pro uzly v síti LAN",
+  "open_to_lan_hint": "Jakékoli zařízení ve vaší síti, které se připojí, uvidí tento zdroj, aniž by prokázalo svou identitu. Ponechte vypnuté, pokud nedůvěřujete všem zařízením v této síti.",
+  "open_to_lan_label": "Otevřeno pro neověřené uzly v síti LAN",
+  "by_creator": "od {name}",
+  "created_on": "Vytvořeno {date}",
+  "fields_exposed_count_one": "Zveřejněno {count} pole",
+  "fields_exposed_count_other": "Zveřejněno polí: {count}",
+  "health_latency_ms": "{ms} ms",
+  "health_missed": "Zmeškáno: {count}"
 }

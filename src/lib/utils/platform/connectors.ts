@@ -49,13 +49,3 @@ export function isDesktopBridge(connector: ConnectorDefinition): boolean {
   const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
   return metadata.connection_mode === 'desktop_bridge';
 }
-
-/**
- * Get the bridge name for a desktop bridge connector (e.g., "vscode", "docker").
- * Returns null if the connector is not a desktop bridge.
- */
-export function getDesktopBridgeName(connector: ConnectorDefinition): string | null {
-  const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
-  if (metadata.connection_mode !== 'desktop_bridge') return null;
-  return typeof metadata.bridge_name === 'string' ? metadata.bridge_name : null;
-}

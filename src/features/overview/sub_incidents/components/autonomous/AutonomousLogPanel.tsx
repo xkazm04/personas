@@ -8,7 +8,7 @@ import { AutonomousLogRegister } from './AutonomousLogRegister';
 import type { AutonomousLogProps } from './autonomousLogTypes';
 
 export function AutonomousLogPanel({
-  incidents, loading, onOpenIncident, onBack,
+  incidents, loading, failed, onRetry, onOpenIncident, onBack,
 }: AutonomousLogProps & { onBack: () => void }) {
   const { t } = useTranslation();
   return (
@@ -23,7 +23,7 @@ export function AutonomousLogPanel({
           {t.overview.incidents.ledger.back_to_inbox}
         </button>
       </div>
-      <AutonomousLogRegister incidents={incidents} loading={loading} onOpenIncident={onOpenIncident} />
+      <AutonomousLogRegister incidents={incidents} loading={loading} failed={failed} onRetry={onRetry} onOpenIncident={onOpenIncident} />
     </div>
   );
 }

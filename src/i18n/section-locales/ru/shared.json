@@ -144,7 +144,9 @@
     "color_name_violet": "Фиолетовый",
     "contrast_fail": "Низкий контраст",
     "contrast_pass": "Читаемо",
-    "contrast_preview": "Предпросмотр контраста"
+    "contrast_preview": "Предпросмотр контраста",
+    "remove_custom_icon_used_by_one": "Также используется еще {count} агентом.",
+    "remove_custom_icon_used_by_other": "Также используется еще агентами: {count}."
   },
   "general_tools": "Общие инструменты",
   "glossary_api": "Способ для двух программ автоматически общаться друг с другом.",
@@ -160,6 +162,8 @@
   "grid_no_data": "Нет данных",
   "grid_rows": "Строки",
   "grid_rows_per_page": "Строк на странице",
+  "grid_prev_page": "Предыдущая страница",
+  "grid_next_page": "Следующая страница",
   "grid_showing": "Показано {start}–{end} из {total} элементов",
   "group_older": "Ранее",
   "group_this_month": "В этом месяце",
@@ -259,7 +263,11 @@
     "schedules": "Расписания",
     "teams_label": "Команды",
     "whats_new": "Что нового",
-    "whats_new_update": "Обновлено — смотрите, что нового"
+    "whats_new_update": "Обновлено — смотрите, что нового",
+    "activity_draft_in_progress": "Черновик в работе",
+    "activity_execution_queued": "Запуск в очереди",
+    "activity_lab_run_in_progress": "Идет запуск в лаборатории",
+    "activity_testing_agent": "Тестирование агента"
   },
   "sort_active_asc": "Сортировка по {label}, по возрастанию. Активируйте, чтобы сортировать по убыванию.",
   "sort_active_desc": "Сортировка по {label}, по убыванию. Активируйте, чтобы сортировать по возрастанию.",
@@ -350,5 +358,17 @@
   "rows_show_all": "Показать все ({count})",
   "rows_show_fewer": "Показать меньше",
   "rows_showing_all": "Показаны все ({count})",
-  "rows_showing_first": "Показаны первые {count}"
+  "rows_showing_first": "Показаны первые {count}",
+  "business_outcome": {
+    "value_delivered_label": "Выполнено",
+    "value_delivered_title": "Персона выполнила реальную работу: создала готовый результат, отправила сообщение или изменила состояние.",
+    "no_input_available_label": "Нет входных данных",
+    "no_input_available_title": "Запуск прошёл без ошибок, но обрабатывать было нечего: выдан только отчёт о готовности/состоянии.",
+    "precondition_failed_label": "Заблокировано",
+    "precondition_failed_title": "Отсутствует или не работает нужный коннектор, учётные данные или предусловие. Исправьте настройку, чтобы снять блокировку.",
+    "partial_label": "Частично",
+    "partial_title": "Выполнена только часть работы: ограничение частоты, временная ошибка или отсутствующие поля у некоторых элементов.",
+    "unknown_label": "-",
+    "unknown_title": "Бизнес-результат не сообщён (более старый запуск или модель не выдала оценку)."
+  }
 }

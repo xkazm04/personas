@@ -1,0 +1,49 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b5e73d05-f984-460c-ade8-e6bf67a8142d",
+  "subject": "concurrency-guards",
+  "evaluatedAt": "2026-10-22T02:50:05Z",
+  "pairs": [
+    {
+      "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7",
+      "subject": "concurrency-guards",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_shared/SubscribeControls.tsx:24 if (busy) return is a per-instance UI re-entry flag (and TestTab.tsx:175 !isTesting gates Publish), the UI-side async race concurrency-guards.md:39 assigns to client-state; subscribeFeed/testEventFlow are IPC calls (src/api/events/sharedEvents.ts:16, src/api/overview/events.ts:47) whose guard and idempotency live in src-tauri, outside this context",
+      "techniques": [
+        {
+          "technique": "single-flight-primitives",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_shared/SubscribeControls.tsx:24 the only in-flight lock is a component-local useState busy flag on one toggle; no operation keyed across callers exists in this context"
+        },
+        {
+          "technique": "idempotency-by-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:82 subscribe is a single IPC call; dedup of the subscription row is a backend property, not realized or owed here"
+        },
+        {
+          "technique": "cross-process-exclusion",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_test/TestTab.tsx:200 the test fire is one IPC request from a single webview; no shared substrate or second process is touched in this context"
+        }
+      ],
+      "registryProposal": "Dispatch said 5 consumer deviations ranked this subject, but Personas has 0 deviations on it: all 5 pairs are UI contexts matched lexically (key/shared/handle/fire), and all judge not-applicable via the client-state room split at concurrency-guards.md:39. Where this repo actually guards duplicate work (the src-tauri engine, db and core crates) no context carries the subject; the matcher should route it by its backend-platform precondition, not by UI vocabulary."
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-22T02:49:53Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "concurrency-guards"
+      ],
+      "techniques": [
+        "single-flight-primitives",
+        "idempotency-by-design",
+        "cross-process-exclusion"
+      ],
+      "deviations": 0
+    }
+  ]
+}

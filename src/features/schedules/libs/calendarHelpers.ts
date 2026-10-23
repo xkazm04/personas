@@ -81,8 +81,8 @@ export function getMonthRange(anchor: Date): { start: Date; end: Date } {
 //
 // Cron parsing and fire-time generation live in the Rust backend
 // (engine/cron.rs). Frontend code requests fire times via the
-// `cron_fire_times_in_range` IPC and the useCalendarEvents /
-// useConflictPreview hooks in `useCronPreview.ts`. The previous
+// `cron_fire_times_in_range` IPC and the useCalendarEvents hook in
+// `useCronPreview.ts`. The previous
 // client-side `parseCronField` + `generateCronFireTimes` +
 // `buildCalendarEvents` + `previewConflicts` were deleted on
 // 2026-05-01 because they re-implemented cron with semantics that
@@ -276,9 +276,9 @@ export function detectConflicts(events: CalendarEvent[]): {
 }
 
 // `previewConflicts` was deleted on 2026-05-01 along with the client-side
-// cron parser. Callers (FrequencyEditor) now use the `useConflictPreview`
-// hook in `useCronPreview.ts` which fetches fire times via the
-// `cron_fire_times_in_range` IPC.
+// cron parser; its successor `useConflictPreview` and the `staggerCron` shift
+// helper went on 2026-10-19 with no caller left after FrequencyEditor was
+// retired (2026-09-17).
 
 // -- Past-slot ↔ real-run matching -------------------------------------------
 //
@@ -301,14 +301,16 @@ export const SLOT_RUN_TOLERANCE_MS = 90_000;
 
 /**
  * Map an execution status token to a past-slot outcome. Terminal success →
- * success; terminal failure (failed / error / cancelled) → failure; anything
- * non-terminal (queued / running) → unknown — a run exists but hasn't resolved,
- * so we don't claim an outcome.
+ * success; every other terminal state (failed / incomplete / cancelled, plus the
+ * legacy `error`) → failure; anything non-terminal (queued / running) →
+ * unknown — a run exists but hasn't resolved, so we don't claim an outcome.
+ * `incomplete` is the process-died state of ExecutionState::TERMINAL
+ * (core/src/types.rs): it has resolved, and not as a success.
  */
 export function classifyRunOutcome(status: string): PastOutcome {
   const s = status.toLowerCase();
   if (s === 'completed') return 'past-success';
-  if (s === 'failed' || s === 'error' || s === 'cancelled') return 'past-failure';
+  if (s === 'failed' || s === 'incomplete' || s === 'error' || s === 'cancelled') return 'past-failure';
   return 'past-unknown';
 }
 

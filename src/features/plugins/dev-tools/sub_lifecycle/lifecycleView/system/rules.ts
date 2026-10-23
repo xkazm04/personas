@@ -4,7 +4,6 @@
 // its budget lines, threshold lines and editor choices against the real values
 // and keeps no copy of its own. A step's own params override a default.
 import type { LifecycleGateKind } from '@/lib/bindings/LifecycleGateKind';
-import type { LifecycleMetricKey } from '@/lib/bindings/LifecycleMetricKey';
 import type { LifecycleRulesView } from '@/lib/bindings/LifecycleRulesView';
 import type { LifecycleStepParams } from '@/lib/bindings/LifecycleStepParams';
 
@@ -28,21 +27,6 @@ export interface StepThresholds {
   docsCleanPct: number;
   doneRatePct: number;
   amberFloorPct: number;
-}
-
-/**
- * The green line a rate is drawn against: the threshold whose NAME says it
- * judges that metric (coverage -> `coverageGreenPct`, docs clean ->
- * `docsCleanPct`, done rate -> `doneRatePct`). A pass rate has no threshold in
- * the rules, so it draws none; a time is not a rate.
- */
-export function greenLineFor(key: LifecycleMetricKey, t: StepThresholds): number | null {
-  switch (key) {
-    case 'coverage_pct': return t.coverageGreenPct;
-    case 'docs_clean_pct': return t.docsCleanPct;
-    case 'done_rate': return t.doneRatePct;
-    default: return null;
-  }
 }
 
 /** The thresholds a step is judged by: its own params where it sets them, the rules' defaults otherwise. */

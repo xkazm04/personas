@@ -138,4 +138,24 @@ describe('useCompanionsStatus', () => {
       1,
     );
   });
+  it('keeps a status-changed event over a read that was already in flight', async () => {
+    // The read leaves before the write, the write's event lands first, and the
+    // older answer resolves last. The event is the newer fact and must stand.
+    let resolveRead!: (v: unknown) => void;
+    invokeMock.mockReturnValue(new Promise((r) => { resolveRead = r; }));
+    const { result } = renderHook(() => useCompanionsStatus());
+    await waitFor(() => expect(handlers.has('companions://status-changed')).toBe(true));
+
+    act(() => {
+      handlers.get('companions://status-changed')?.({ payload: WITH_REGISTRY });
+    });
+    await waitFor(() => expect(result.current.byId('curator')?.eligible).toBe(true));
+
+    await act(async () => {
+      resolveRead(NO_REGISTRY);
+      await Promise.resolve();
+    });
+    expect(result.current.loading).toBe(false);
+    expect(result.current.byId('curator')?.eligible).toBe(true);
+  });
 });

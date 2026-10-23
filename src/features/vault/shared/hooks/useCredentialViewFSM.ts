@@ -5,6 +5,8 @@ import { createLogger } from '@/lib/log';
 import { getAuthMethods } from '@/lib/types/types';
 import { isGoogleOAuthConnector } from '@/lib/utils/platform/connectors';
 import { useCredentialNav, type CredentialNavKey } from './CredentialNavContext';
+import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/en';
 
 const logger = createLogger('credential-view-fsm');
 
@@ -280,52 +282,58 @@ export interface BreadcrumbSegment {
   action: CredentialViewAction | null; // null = current (non-clickable)
 }
 
-/** Derive an ordered breadcrumb trail from the current FSM state. */
-export function getBreadcrumbs(state: CredentialViewState): BreadcrumbSegment[] {
-  const root: BreadcrumbSegment = { label: 'Credentials', action: { type: 'GO_LIST' } };
+/**
+ * Derive an ordered breadcrumb trail from the current FSM state.
+ *
+ * Labels come from the catalog, reusing the keys the sidebar and the type
+ * picker already render for the same destinations. They used to be English
+ * literals here, so the trail read "From Template" / "Graph" in all 14 locales
+ * while the sidebar beside it said "Catalog" / "Dependencies" in the user's.
+ */
+export function getBreadcrumbs(state: CredentialViewState, t: Translations): BreadcrumbSegment[] {
+  const sb = t.sidebar;
+  const v = t.vault;
+  const root: BreadcrumbSegment = { label: sb.credentials, action: { type: 'GO_LIST' } };
+  const addNew: BreadcrumbSegment = { label: sb.add_new, action: { type: 'GO_ADD_NEW' } };
+  const leaf = (label: string): BreadcrumbSegment => ({ label, action: null });
 
   switch (state.view) {
     case 'list':
       return [{ ...root, action: null }];
 
     case 'catalog-browse':
-      return [root, { label: 'From Template', action: null }];
+      return [root, leaf(sb.catalog)];
     case 'catalog-form':
-      return [
-        root,
-        { label: 'From Template', action: { type: 'CANCEL_FORM' } },
-        { label: state.connector.label, action: null },
-      ];
     case 'catalog-auto-setup':
       return [
         root,
-        { label: 'From Template', action: { type: 'CANCEL_FORM' } },
-        { label: state.connector.label, action: null },
+        { label: sb.catalog, action: { type: 'CANCEL_FORM' } },
+        leaf(state.connector.label),
       ];
 
     case 'add-new':
-      return [root, { label: 'Add New', action: null }];
+      return [root, leaf(sb.add_new)];
     case 'add-ai-guide':
-      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'AI Guide', action: null }];
+      return [root, addNew, leaf(v.type_picker.tile_ai_guide)];
     case 'add-mcp':
-      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'MCP Server', action: null }];
+      return [root, addNew, leaf(v.schema_configs.mcp.title)];
     case 'add-custom':
-      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Custom', action: null }];
+      return [root, addNew, leaf(v.connector_categories.custom)];
     case 'add-database':
-      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Database', action: null }];
+      return [root, addNew, leaf(v.type_picker.tile_database)];
     case 'add-desktop':
-      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Desktop App', action: null }];
+      return [root, addNew, leaf(v.type_picker.tile_desktop_app)];
     case 'workspace-connect':
-      return [root, { label: 'Workspace Connect', action: null }];
+      return [root, leaf(v.workspace_connect)];
     case 'foraging':
-      return [root, { label: 'Add New', action: { type: 'GO_ADD_NEW' } }, { label: 'Foraging', action: null }];
+      return [root, addNew, leaf(v.foraging.idle_heading)];
 
     case 'databases':
-      return [{ label: 'Databases', action: null }];
+      return [leaf(sb.databases)];
     case 'graph':
-      return [{ label: 'Graph', action: null }];
+      return [leaf(sb.graph)];
     case 'broker':
-      return [{ label: 'Broker', action: null }];
+      return [leaf(v.manager.title_broker)];
 
     default:
       return [{ ...root, action: null }];
@@ -337,6 +345,7 @@ export function getBreadcrumbs(state: CredentialViewState): BreadcrumbSegment[] 
 export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const nav = useCredentialNav();
+  const { t } = useTranslation();
 
   const navKey = getNavKey(state);
 
@@ -398,7 +407,7 @@ export function useCredentialViewFSM(connectorDefinitions: ConnectorDefinition[]
     return { connector, credentialName, isGoogle, fields };
   }, [state]);
 
-  const breadcrumbs = useMemo(() => getBreadcrumbs(state), [state]);
+  const breadcrumbs = useMemo(() => getBreadcrumbs(state, t), [state, t]);
 
   return {
     state,

@@ -1,0 +1,81 @@
+{
+  "schema": "conform-run/1",
+  "worker": "4b6bde5a-89ad-46bf-b2e3-ed4838ecc33c",
+  "subject": "background-jobs",
+  "evaluatedAt": "2026-10-21T12:45:31Z",
+  "pairs": [
+    {
+      "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+      "subject": "background-jobs",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 the WorkflowJob projection still drops the cancel_outcome JobSnapshot carries (src-tauri/src/background_job.rs:1002) though :134 says the snapshot reports it, and src/api/pipeline/workflows.ts:16 cancel resolves void, so no client can show cancelling or tell cancelled from failed",
+      "techniques": [
+        {
+          "technique": "job-progress-and-cancellation",
+          "verdict": "deviation",
+          "evidence": "src/lib/bindings/WorkflowJob.ts:3 has no cancel_outcome or cancelling state; the two-step cancel acknowledgement and the cancelled terminal state never reach the observer"
+        }
+      ],
+      "registryProposal": "Re-judged at unchanged digest sha256-b2:22ed2a99172ae050 (revision 5, matches registry 145ab09c); the map row reports revisionsBehind 1 although evaluatedRevision equals revision, which looks like a builder arithmetic bug worth checking."
+    },
+    {
+      "context": "33a96a83-6adc-42f7-b57c-839382bcef54",
+      "subject": "background-jobs",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/curator/tick.rs:176 an unreadable registry root (and :199 unreadable brakes) logs and returns from a unit tick, and src-tauri/src/engine/subscription/runner.rs:219 records only latency, so a curator loop that fails every tick looks identical to a healthy idle one on the health surface",
+      "techniques": [
+        {
+          "technique": "loop-supervision",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/background/lifecycle.rs:224 registers CuratorLoopSubscription with the shared runner (named, generation-stoppable) instead of a bare spawn+loop"
+        },
+        {
+          "technique": "tick-isolation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/subscription/runner.rs:153 wraps every tick in catch_unwind with crash event and backoff; no per-tick deadline beyond the overrun warning, not judged further"
+        },
+        {
+          "technique": "adaptive-cadence",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:134 declares a wake signal beside the 60s/180s active/idle intervals, so operator requests skip the poll wait"
+        },
+        {
+          "technique": "loop-health-telemetry",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/subscription/traits.rs:37 tick returns (), so the envelope has no failed vs succeeded-empty vs skipped outcome; tick.rs:176/:199 failures are tracing-only"
+        }
+      ],
+      "registryProposal": "Context is marked governance weak, but the subject genuinely governs it: tick.rs is a supervised loop. The loop-health-telemetry root cause sits in the shared ReactiveSubscription trait (src-tauri/engine/src/subscription/traits.rs:37, another context) and is likely the same deviation for all ~41 subscriptions; a pairing of background-jobs to the engine-subscription context is worth checking."
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-21T12:45:31Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "background-jobs"
+      ],
+      "techniques": [
+        "job-progress-and-cancellation"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T12:45:31Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "background-jobs"
+      ],
+      "techniques": [
+        "loop-supervision",
+        "tick-isolation",
+        "adaptive-cadence",
+        "loop-health-telemetry"
+      ],
+      "deviations": 1
+    }
+  ]
+}

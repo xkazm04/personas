@@ -37,7 +37,3 @@ export interface StreamTeam extends FeedTeam {
  * the correct design, not a limitation.
  */
 export const LIVE_FEED_WINDOW = 600;
-
-/** Row height (px) the virtualizer estimates — keep in sync with the row's
- *  vertical padding/line-height so scroll math is exact. */
-export const MERGED_ROW_HEIGHT = 30;

@@ -11,6 +11,7 @@
 
 import type { Translations } from "@/i18n/en";
 import { getActiveTranslations } from "@/i18n/useTranslation";
+import { extractMessage } from "@/lib/silentCatch";
 
 interface ErrorRule {
   patterns: string[];
@@ -56,7 +57,11 @@ export function translateDeployError(
   targetRules: ErrorRule[],
   prefixStrip: RegExp,
 ): string {
-  const raw = String(err).toLowerCase();
+  // invokeWithTimeout rejects with an AppError OBJECT ({ error, kind }), so
+  // `String(err)` was "[object Object]": no rule matched and that text was the
+  // fallback. Read the message the rejection actually carries.
+  const text = extractMessage(err);
+  const raw = text.toLowerCase();
   const t = getActiveTranslations();
 
   // Target-specific rules first (higher priority)
@@ -70,7 +75,7 @@ export function translateDeployError(
   }
 
   // Fallback
-  return String(err).replace(prefixStrip, '');
+  return text.replace(prefixStrip, '');
 }
 
 // -- Cloud-specific error rules --------------------------------------

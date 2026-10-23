@@ -1,0 +1,28 @@
+{"schema": "conform-run/1", "worker": "e3be0a26-9882-4372-b8b6-1436b4ef6c80", "subject": "deployment-contract",
+ "evaluatedAt": "2026-10-16T17:51:28Z",
+ "pairs": [
+  {"context": "e0a448bc-24d4-4663-ba31-27d4ce378a14", "subject": "deployment-contract", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 re-confirmed 2026-10-16: the deployment smoke test runs local executePersona, not the endpoint the card advertises (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:44) although src/api/system/cloud.ts:49 cloudExecutePersona exists - a pass describes the local twin, never the deployed build",
+   "techniques": [
+    {"technique": "environment-promotion", "verdict": "deviation", "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 the proof obligation is discharged against the local runtime, not the named deployed environment"},
+    {"technique": "deploy-gate-coupling", "verdict": "deviation", "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:59 status 'pass' is derived from a local execution, so a verdict about one target is shown on another's card (failure-not-empty-success)"}
+   ]},
+  {"context": "2b61b648-d166-4255-b7b7-5d32ffdd6751", "subject": "deployment-contract", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1277 re-confirmed 2026-10-16 (anchor moved from :1282): rollback offered at src/features/plugins/gitlab/components/DeploymentHistoryTab.tsx:55 rebuilds the agent from the snapshot prompt plus CURRENT tools/model, and with no snapshot falls back to current persona state (gitlab.rs:1288); same rebuild at gitlab.rs:989 - rollback ships a never-run artifact instead of re-pointing to the last known-good one",
+   "techniques": [
+    {"technique": "environment-promotion", "verdict": "deviation", "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1288 rollback is a rebuild from current state, the rule says roll back by re-pointing to the last known-good build"},
+    {"technique": "deploy-gate-coupling", "verdict": "deviation", "evidence": "src/features/plugins/gitlab/components/GitOpsVersionHistory.tsx:63 the rolled-back definition was never verified; 'which build is serving and what was its verdict' is not answerable"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "deployment-contract", "context": "cab45fee-e439-4bff-9924-217b1acc17f8", "reason": "dead context: the Artist plugin was removed in 0697f13438 (tables retired at src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:34); git ls-files finds no artist file under src/features/plugins, so there is no code to judge. The context map should drop it; the map reports deadContexts: 0, so the dead-context detector missed this"},
+  {"subject": "deployment-contract", "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400", "reason": "weak row AND a dead context: same removal as plugins-artist-hooks (0697f13438), empty file_paths, no code to judge"},
+  {"subject": "deployment-contract", "context": "93359619-794a-4de7-a5bb-c7864e475fe7", "reason": "not re-judged: not-applicable verdict from 2026-10-09 is current against digest sha256-b2:0aecb9f382210cdc revision 4; no reason to re-read"},
+  {"subject": "deployment-contract", "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1", "reason": "not re-judged: not-applicable verdict from 2026-09-23 is current against digest sha256-b2:0aecb9f382210cdc revision 4"}
+ ],
+ "consults": [
+  {"ts": "2026-10-16T17:51:28Z", "bundle": "software-engineering", "subjects": ["deployment-contract"], "techniques": ["environment-promotion", "deploy-gate-coupling"], "deviations": 1},
+  {"ts": "2026-10-16T17:51:28Z", "bundle": "software-engineering", "subjects": ["deployment-contract"], "techniques": ["environment-promotion", "deploy-gate-coupling"], "deviations": 1}
+ ]}

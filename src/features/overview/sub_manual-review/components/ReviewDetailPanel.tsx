@@ -5,11 +5,12 @@ import { Check, X, Send, User, Cloud, ExternalLink, CheckCircle2, XCircle } from
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import Button from '@/features/shared/components/buttons/Button';
 import { useSystemStore } from '@/stores/systemStore';
+import { openExecutionFromLink } from '@/lib/deepLinks/navigationLinks';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
-import { resolveReviewSeverity, parseSuggestedActions, detectAutoResolution } from '../libs/reviewHelpers';
+import { resolveReviewSeverity, parseSuggestedActions, detectAutoResolution, reviewStatusLabel } from '../libs/reviewHelpers';
 import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { AutoResolvedBadge } from './AutoResolvedBadge';
 import { SeverityIndicator, ContextDataPreview } from './ReviewListItem';
@@ -27,7 +28,7 @@ interface ConversationThreadProps {
 }
 
 export function ConversationThread({ review, onAction, isProcessing }: ConversationThreadProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [messages, setMessages] = useState<ReviewMessage[]>([]);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -93,6 +94,12 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
       const msg = await addReviewMessage(review.id, 'user', text);
       setMessages((prev) => [...prev, msg]);
       setInput('');
+    } catch (err) {
+      // This was try/finally with no catch: a failed write was an unhandled
+      // rejection (Enter calls handleSend un-awaited) and the reviewer saw the
+      // button re-enable with no sign the reply never reached the thread. The
+      // draft stays in the box so it can be sent again.
+      toastCatch('ReviewDetailPanel:addReviewMessage')(err);
     } finally { setIsSending(false); }
   }, [input, isSending, review.id]);
 
@@ -102,7 +109,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
   );
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); }
     // Number keys 1-9 select suggested actions when input is empty
     if (!input.trim() && e.key >= '1' && e.key <= '9') {
       const idx = parseInt(e.key) - 1;
@@ -158,6 +165,9 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             <ReviewReportLink contextData={review.context_data} />
             <button
               onClick={() => {
+                // With an execution id, hand it to the Activity list's focus
+                // door (opens that run's detail); without one, the section root.
+                if (review.execution_id && openExecutionFromLink(review.execution_id)) return;
                 useSystemStore.getState().setSidebarSection('overview');
               }}
               className="inline-flex items-center gap-1 typo-caption text-blue-400/70 hover:text-blue-400 transition-colors"
@@ -248,8 +258,8 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                           <button
                             onClick={() => toggleDecision(d.id, 'accepted')}
                             className={`p-1 rounded-card transition-colors ${state === 'accepted' ? 'bg-emerald-500/15 text-emerald-400' : 'text-foreground hover:text-emerald-400/60 hover:bg-emerald-500/5'}`}
-                            title="Accept"
-                            aria-label="Accept"
+                            title={t.overview.review.accept}
+                            aria-label={t.overview.review.accept}
                             aria-pressed={state === 'accepted'}
                           >
                             <CheckCircle2 className="w-4 h-4" />
@@ -257,8 +267,8 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                           <button
                             onClick={() => toggleDecision(d.id, 'rejected')}
                             className={`p-1 rounded-card transition-colors ${state === 'rejected' ? 'bg-red-500/15 text-red-400' : 'text-foreground hover:text-red-400/60 hover:bg-red-500/5'}`}
-                            title="Reject"
-                            aria-label="Reject"
+                            title={t.overview.review.reject}
+                            aria-label={t.overview.review.reject}
                             aria-pressed={state === 'rejected'}
                           >
                             <XCircle className="w-4 h-4" />
@@ -319,7 +329,8 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           <div className="flex items-center gap-2 px-3 py-2 rounded-card bg-secondary/30 border border-primary/10">
             <Check className="w-3.5 h-3.5 text-emerald-400" />
             <span className="typo-body text-foreground">
-              Review {review.status} {review.resolved_at ? <>on <AbsoluteTime timestamp={review.resolved_at} /></> : ''}
+              {tx(t.overview.review.review_status, { status: reviewStatusLabel(t, review.status) })}
+              {review.resolved_at ? <> · <AbsoluteTime timestamp={review.resolved_at} /></> : null}
             </span>
             {review.reviewer_notes && <span className="typo-body text-foreground italic ml-1">-- {review.reviewer_notes}</span>}
           </div>
@@ -360,7 +371,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                 }
                 handleAction('approved', notes);
               }} disabled={actionFiredRef.current} loading={isProcessing} loadingLabel={t.overview.review.processing} variant="accent" tone="success" icon={<Check className="w-3.5 h-3.5" />}>
-                {hasDecisions && acceptedCount > 0 ? `${t.overview.review.approve} (${acceptedCount}/${decisions.length})` : t.overview.review.approve}
+                {hasDecisions && acceptedCount > 0 ? tx(t.overview.review.approve_with_count, { accepted: acceptedCount, total: decisions.length }) : t.overview.review.approve}
               </Button>
               <Button onClick={() => {
                 let notes = input.trim() || undefined;

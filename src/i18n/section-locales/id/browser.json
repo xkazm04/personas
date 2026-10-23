@@ -64,7 +64,8 @@
     "toggle_failed": "Status izin situs ini gagal diubah",
     "writes_ask": "{count} tanya dulu",
     "writes_none": "Halaman yang menentukan",
-    "pattern_chip": "pola"
+    "pattern_chip": "pola",
+    "remove_body": "{origin} akan dihapus, beserta penimpaan situs ini dan pengikatan kredensialnya."
   },
   "add_site": {
     "cancel": "Batal",

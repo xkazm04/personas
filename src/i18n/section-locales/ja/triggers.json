@@ -41,12 +41,14 @@
   "budget_label": "予算",
   "build_validation": {
     "composite_min_conditions": "コンポジットトリガーには少なくとも2つの条件が必要です。",
+    "composite_window_maximum": "時間枠は最大24時間（86400秒）までです。",
     "composite_window_minimum": "時間枠は5秒以上にする必要があります。",
     "cron_invalid": "Cron式が無効です。",
     "cron_required": "Cron式は必須です。",
     "endpoint_required": "エンドポイントURLまたはイベントが必要です。",
     "event_type_required": "リッスンするイベントタイプは必須です。",
     "interval_minimum": "間隔は60秒以上にする必要があります。",
+    "watch_events_required": "監視するファイルイベントを1つ以上選択してください。",
     "watch_path_required": "監視パスを少なくとも1つ指定してください。"
   },
   "builder": {
@@ -183,6 +185,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} イベント",
   "dead_letter_bulk_retry_title": "再試行 every selected イベント in a single transaction",
   "dead_letter_clear_filters_to_see": "クリア filters to see all dead-lettered イベント",
+  "dead_letter_load_failed_title": "デッドレターキューを読み込めませんでした",
+  "dead_letter_load_failed_desc": "キューを読み取れなかったため、ここに空のリストを表示すると誤解を招きます。イベントは失われていません。もう一度お試しください。",
   "dead_letter_clear_selection": "クリア",
   "dead_letter_discard": "破棄",
   "dead_letter_discard_title": "このイベントを永久に破棄",
@@ -623,9 +627,12 @@
     "automation_delete": "自動化を削除",
     "automation_enabled": "有効",
     "automation_failed": "失敗",
+    "automation_held": "承認待ち",
     "automation_idle": "イベント待機中",
     "automation_next": "次回",
+    "automation_partial": "一部実行済み",
     "automation_ran": "実行済み",
+    "automation_requested": "リクエスト済み",
     "automation_run_now": "今すぐ実行",
     "automations_title": "アクティブなシステムイベント",
     "cadence_custom": "カスタム cron…",
@@ -945,5 +952,7 @@
   "add_persona_available": "利用可能: {count}",
   "add_persona_all_connected": "すべてのペルソナが接続済みです",
   "add_persona_ungrouped": "グループなし",
-  "live_status_skipped": "スキップ"
+  "live_status_skipped": "スキップ",
+  "webhooks_load_failed": "Webhook トリガーを読み込めませんでした",
+  "webhooks_load_failed_desc": "一覧を読み取れなかったため、ここに空の一覧を表示すると誤解を招きます。トリガーは失われていません。もう一度お試しください。"
 }

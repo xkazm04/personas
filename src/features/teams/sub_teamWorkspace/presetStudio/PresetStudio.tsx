@@ -109,7 +109,7 @@ export function PresetStudio() {
             (docs/design/overview-loading.md). */}
         {presets === null && <PresetGalleryGhost />}
         {presets && presets.length === 0 && (
-          <EmptyState icon={Layers} title={t.templates.presets.empty_title} description={t.templates.presets.empty_hint} />
+          <EmptyState art="templates" title={t.templates.presets.empty_title} description={t.templates.presets.empty_hint} />
         )}
         {presets && presets.length > 0 && (
           <PresetGalleryShowcase presets={presets} onPick={setChosen} />

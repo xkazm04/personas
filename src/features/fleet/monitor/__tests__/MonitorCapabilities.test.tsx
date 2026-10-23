@@ -9,7 +9,7 @@
  * call count would pass against the exact defect this closes.
  */
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { PersonaCapability } from '@/lib/personas/capabilities';
 
 const executePersona = vi.fn();
@@ -26,6 +26,7 @@ vi.mock('@/features/shared/glyph/CapabilitySigil', () => ({
   CapabilitySigil: () => <span data-testid="sigil" />,
 }));
 
+import { useOverviewStore } from '@/stores/overviewStore';
 import { MonitorCapabilities } from '../MonitorCapabilities';
 import { formatSampleForEditing } from '../MonitorRunSheet';
 
@@ -102,5 +103,31 @@ describe('MonitorCapabilities', () => {
     fireEvent.change(screen.getByTestId('monitor-run-input'), { target: { value: 'just words' } });
     expect(screen.getByTestId('monitor-run-json-warning')).toBeTruthy();
     expect(screen.getByTestId('monitor-run-confirm').hasAttribute('disabled')).toBe(false);
+  });
+});
+
+describe('MonitorCapabilities busy state follows the run', () => {
+  const tile = () => screen.getByText('Triage inbox').closest('button')!;
+
+  async function dispatch() {
+    executePersona.mockResolvedValue({ id: 'exec-1' });
+    render(<MonitorCapabilities personaId="p-1" useCases={[CAP]} />);
+    fireEvent.click(tile());
+    fireEvent.click(screen.getByTestId('monitor-run-confirm'));
+    await waitFor(() => expect(executePersona).toHaveBeenCalledTimes(1));
+  }
+
+  afterEach(() => {
+    act(() => useOverviewStore.setState({ activeProcesses: {}, activeProcessCount: 0 }));
+  });
+
+  it('stays busy while the run is live and frees the tile the moment it fails', async () => {
+    act(() => useOverviewStore.getState().processStarted('execution', 'exec-1', 'Triage', undefined, 'p-1'));
+    await dispatch();
+    await waitFor(() => expect(tile().hasAttribute('disabled')).toBe(true));
+
+    // A run that fails in 2 s must not read Executing for 60 s.
+    act(() => useOverviewStore.getState().processEnded('execution', 'failed', 'exec-1'));
+    await waitFor(() => expect(tile().hasAttribute('disabled')).toBe(false));
   });
 });

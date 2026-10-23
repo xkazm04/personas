@@ -111,3 +111,45 @@ describe('SweepButton — plan weekly', () => {
     expect(screen.getByTestId('findings-sweep')).toBeDisabled();
   });
 });
+
+describe('SweepButton - the manual sweep reports what the scheduled one does', () => {
+  const base = {
+    created: 0, duplicates: 0, dropped: 0, skippedSensors: [] as string[], errors: [] as string[],
+    verified: { cleared: 0, moved: 0, unchanged: 0, regressed: 0, unverifiable: 0 },
+  };
+
+  beforeEach(() => {
+    invokeWithTimeout.mockReset();
+    invokeWithTimeout.mockResolvedValue([]);
+    runFindingSweep.mockReset();
+    addToast.mockReset();
+  });
+
+  async function sweepToast(): Promise<[string, string]> {
+    render(<SweepButton projectId="p1" onSwept={() => {}} />);
+    fireEvent.click(screen.getByTestId('findings-sweep'));
+    await waitFor(() => expect(addToast).toHaveBeenCalled());
+    return addToast.mock.calls.at(-1) as [string, string];
+  }
+
+  it('names write errors and unverifiable findings, and a partial sweep is not success', async () => {
+    runFindingSweep.mockResolvedValue({
+      ...base,
+      created: 2,
+      errors: ['persist: database is locked'],
+      verified: { ...base.verified, unverifiable: 3 },
+    });
+    const [text, tone] = await sweepToast();
+    expect(text).toMatch(/^Sweep — 2 raised/);
+    expect(text).toContain('1 write error(s)');
+    expect(text).toContain('3 unverifiable');
+    expect(tone).toBe('warning');
+  });
+
+  it('an unchanged-only verdict does not wear success', async () => {
+    runFindingSweep.mockResolvedValue({ ...base, verified: { ...base.verified, unchanged: 2 } });
+    const [text, tone] = await sweepToast();
+    expect(text).toContain('2 unchanged');
+    expect(tone).toBe('warning');
+  });
+});

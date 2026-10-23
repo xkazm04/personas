@@ -3,11 +3,7 @@ import * as api from '@/api/events/sharedEvents';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 import type { SharedEventSubscription } from '@/lib/bindings/SharedEventSubscription';
 import type { SharedEventFeedActivity } from '@/lib/bindings/SharedEventFeedActivity';
-import { useDebounce } from '@/hooks/utility/timing/useDebounce';
-import { silentCatch } from '@/lib/silentCatch';
-import { createLogger } from '@/lib/log';
-
-const logger = createLogger('shared-events');
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 /**
  * Shared data + mutation logic for the Marketplace, so the card baseline and the
@@ -18,14 +14,12 @@ export function useSharedEvents() {
   const [subscriptions, setSubscriptions] = useState<SharedEventSubscription[]>([]);
   const [activity, setActivity] = useState<SharedEventFeedActivity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
-  const debouncedSearch = useDebounce(search, 300);
 
-  // Stale-response guard: a category/search change refires `load`, and the two
-  // browseCatalog calls can resolve out of order — without this token the slower
-  // (stale-query) response clobbers the catalog with the wrong results. Sibling
-  // `useSubscribedFeeds` uses the same latch pattern.
+  // Stale-response guard: a refresh re-runs `load` while the mount load may
+  // still be in flight; the slower response must not clobber the newer one.
+  // Search and category filtering happen client-side in SharedEventsTab, so
+  // the catalog is always read unfiltered (the hook's own server-side
+  // search/category state had no caller and was removed).
   const loadSeqRef = useRef(0);
   const load = useCallback(async () => {
     const seq = ++loadSeqRef.current;
@@ -33,7 +27,7 @@ export function useSharedEvents() {
     // Catalog, watch-toggles, and last-change cells are independent lists.
     // Paint rows as soon as browseCatalog returns; merge subs/activity later.
     const catP = api
-      .browseCatalog(category || undefined, debouncedSearch || undefined)
+      .browseCatalog()
       .then((cat) => {
         if (seq !== loadSeqRef.current) return;
         setCatalog(cat);
@@ -61,7 +55,7 @@ export function useSharedEvents() {
         setLoading(false);
       }
     }
-  }, [category, debouncedSearch]);
+  }, []);
 
   useEffect(() => {
     void load();
@@ -75,7 +69,9 @@ export function useSharedEvents() {
     try {
       await api.refreshCatalog();
     } catch (err) {
-      silentCatch('features/triggers/sub_shared/useSharedEvents:refresh')(err);
+      // Refresh, Watch and Unwatch are user presses: a failure is owed to the
+      // user. They used to log only, so a failed toggle just snapped back.
+      toastCatch('features/triggers/sub_shared/useSharedEvents:refresh')(err);
       return;
     }
     await load();
@@ -86,7 +82,7 @@ export function useSharedEvents() {
       const sub = await api.subscribeFeed(entryId);
       setSubscriptions((prev) => [sub, ...prev]);
     } catch (e) {
-      logger.error('Subscribe failed', { entryId, error: String(e) });
+      toastCatch('features/triggers/sub_shared/useSharedEvents:subscribe')(e);
     }
   }, []);
 
@@ -95,7 +91,7 @@ export function useSharedEvents() {
       await api.unsubscribeFeed(subId);
       setSubscriptions((prev) => prev.filter((s) => s.id !== subId));
     } catch (e) {
-      logger.error('Unsubscribe failed', { subId, error: String(e) });
+      toastCatch('features/triggers/sub_shared/useSharedEvents:unsubscribe')(e);
     }
   }, []);
 
@@ -120,12 +116,7 @@ export function useSharedEvents() {
 
   return {
     catalog,
-    subscriptions,
     loading,
-    search,
-    setSearch,
-    category,
-    setCategory,
     categories,
     refresh,
     subscribe,
@@ -134,5 +125,3 @@ export function useSharedEvents() {
     activityBySlug,
   };
 }
-
-export type UseSharedEvents = ReturnType<typeof useSharedEvents>;

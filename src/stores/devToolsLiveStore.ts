@@ -90,7 +90,16 @@ export const useDevToolsLiveStore = create<DevToolsLiveState>((set, get) => ({
         // The counter is monotonic, so any change means at least one push was
         // lost. We cannot know WHICH table lost it, which is exactly why the
         // answer is "refetch the slice" rather than a targeted repair.
-        set((s) => ({ lastSeenCdcDrops: dropped, shipRevision: s.shipRevision + 1 }));
+        //
+        // The lifecycle tables ride the same lossy channel (`db/src/cdc.rs`
+        // maps `dev_lifecycle_*` to DEV_TOOLS_LIFECYCLE_CHANGED) and this read
+        // CONSUMES the shared baseline: bumping only `shipRevision` would mark
+        // a lost lifecycle push as seen with nobody refetching it.
+        set((s) => ({
+          lastSeenCdcDrops: dropped,
+          shipRevision: s.shipRevision + 1,
+          lifecycleRevision: s.lifecycleRevision + 1,
+        }));
       }
     } catch (e) {
       // A failed reconcile leaves `lastSeenCdcDrops` untouched, so the next

@@ -162,10 +162,19 @@ describe('sanitizeIconUrl', () => {
     expect(sanitizeIconUrl('https://[fe80::1]/a.png')).toBeNull();
     expect(sanitizeIconUrl('https://[fc00::1]/a.png')).toBeNull();
   });
+
+  // `new URL()` keeps a trailing dot on a NAME (it folds it away only for
+  // IPv4), and `localhost.` resolves to loopback just like `localhost`.
+  it('blocks a private name written fully qualified, with a trailing dot', () => {
+    expect(sanitizeIconUrl('https://localhost./a.png')).toBeNull();
+    expect(sanitizeIconUrl('https://LOCALHOST./a.png')).toBeNull();
+    expect(sanitizeIconUrl('https://printer.local./a.png')).toBeNull();
+    expect(sanitizeIconUrl('https://example.com./a.png')).toBe('https://example.com./a.png');
+  });
 });
 
 // `isBlockedHostname` is the shared blocklist: `sanitizeIconUrl` uses it for
-// image sources and `variableSanitizer` for URL-type template variables. It
+// image sources (and any other host validation should reuse it). It
 // covered RFC1918 and named loopback but not 169.254.0.0/16 - IPv4 link-local,
 // and the range the cloud metadata services answer on - nor any IPv6 private
 // range beyond a literal `[::1]`.

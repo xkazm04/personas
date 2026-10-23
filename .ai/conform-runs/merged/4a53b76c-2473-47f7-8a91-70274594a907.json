@@ -1,0 +1,131 @@
+{
+  "schema": "conform-run/1",
+  "worker": "4a53b76c-2473-47f7-8a91-70274594a907",
+  "subject": "prompt-assembly",
+  "evaluatedAt": "2026-10-15T16:11:19.025Z",
+  "pairs": [
+    {
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+      "evaluatedRevision": 44,
+      "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/brain/reflection.rs:182 renders stored episodes under their own `## {role}` markers and the prompt ends on the last turn (no end marker, no task restatement), so a reviewing reader can continue the conversation instead of reflecting on it; also recall_synthesis.rs:235 / consolidation.rs:1254 render episode text raw and unfenced, and :149/:220 open with role claims across four hand-built builders with no shared assembler",
+      "techniques": [
+        {
+          "technique": "foreign-harness-history-folding",
+          "verdict": "deviation (rev 44 fourth case: a reviewing reader)",
+          "evidence": "src-tauri/src/companion/brain/reflection.rs:178 emits `## {role} — {created}` turn-shaped transcript as the final prompt section; no end-of-transcript marker or restated task after it (contrast recall_synthesis.rs:285 and profile_synthesis.rs:306, which close with Output/END sections)"
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation (unchanged)",
+          "evidence": "src-tauri/src/companion/brain/reflection.rs:146 build_reflection_prompt, recall_synthesis.rs:217, consolidation.rs:1166, profile_synthesis.rs:289 are four independent String builders with no shared assembler"
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation (unchanged)",
+          "evidence": "src-tauri/src/companion/brain/recall_synthesis.rs:235 interpolates ep.content untrimmed and unfenced into the prompt"
+        }
+      ],
+      "registryProposal": "foreign-harness-history-folding's fourth case is evidenced here on an in-product conversation (Athena's own episodes), not only a foreign harness: the rule 'a transcript read for review is never in the reader's own role markers' fires on reflection.rs and consolidation.rs. A decision-rule line separating 'foreign' from 'any conversation the reader did not have' is already in the text; consider an application from this repo."
+    },
+    {
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+      "evaluatedRevision": 44,
+      "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/prompt/assemble.rs:112 assemble_prompt still returns a bare String and the runner appends layers after it returns (src-tauri/src/engine/runner/mod.rs:1488 format!(\"{prompt_text}{mem_section}\"); src-tauri/engine/src/prepared_run_cache.rs:156 same), so late layers sit outside budget, fence and fingerprint; append_spawn_time_section (assemble.rs:1236) is a named post-return append, not a section input. Re-judged against revision 44; verdict unchanged (the rev 43->44 amendment touches only foreign-harness-history-folding, which does not govern this context)",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation: door does not seal",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:112 returns String; src-tauri/src/engine/runner/mod.rs:1488 appends after return"
+        },
+        {
+          "technique": "fingerprinting-and-cache-keys",
+          "verdict": "deviation: appends sit outside any fingerprint",
+          "evidence": "src-tauri/engine/src/prepared_run_cache.rs:156 appends mem_section to cached prompt_text"
+        }
+      ]
+    },
+    {
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+      "evaluatedRevision": 44,
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:227 still opens the build prompt with a competence claim ('You are a senior AI agent architect. The user wants:') and :229 interpolates volatile \"{intent}\"{lang_preamble}{context_section} ahead of the standing framework text, so no two builds share a byte-stable prefix. Re-judged against revision 44; verdict unchanged",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation: volatile layers lead the stable ones",
+          "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:229"
+        }
+      ]
+    },
+    {
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+      "evaluatedRevision": 44,
+      "context": "b0e9ba6b-7737-43ec-b551-9bcc1b71d76f",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/athena_reaction.rs:650 interpolates signal title/detail and channel history (model- and persona-authored text) with no boundary, and :665 places those volatile {blocks} ahead of the standing 'YOUR DECISIONS' doctrine. Re-judged against revision 44 (anchors re-read); verdict unchanged",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation: volatile blocks precede standing doctrine",
+          "evidence": "src-tauri/src/companion/athena_reaction.rs:665"
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation: untrusted text unfenced",
+          "evidence": "src-tauri/src/companion/athena_reaction.rs:650"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "prompt-assembly",
+      "context": "3effd422-2610-4c8a-bc02-53aceafd827c",
+      "reason": "commands-companion: anchor fleet_bridge.rs:572 re-read and still a call-site format!; not re-judged in full (budget); carried verdict stands, stale only by the rev 44 amendment which does not govern it"
+    },
+    {
+      "subject": "prompt-assembly",
+      "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+      "reason": "commands-design: not re-read this run; rev 44 change does not govern it"
+    },
+    {
+      "subject": "prompt-assembly",
+      "context": "17f44718-7d6d-4579-91bf-86191e29595a",
+      "reason": "commands-recipes: not re-read this run; rev 44 change does not govern it"
+    },
+    {
+      "subject": "prompt-assembly",
+      "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+      "reason": "not-applicable verdicts (agents-deployment, agents-editor, display-data-formatters, home-cockpit-widgets, studio) not re-read; preconditions unrelated to the rev 44 change"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-15T16:11:19.026Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "prompt-assembly"
+      ],
+      "techniques": [
+        "foreign-harness-history-folding",
+        "layered-composition",
+        "variable-interpolation",
+        "fingerprinting-and-cache-keys"
+      ],
+      "deviations": 4
+    }
+  ]
+}

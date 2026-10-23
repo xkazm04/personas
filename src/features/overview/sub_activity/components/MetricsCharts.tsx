@@ -133,8 +133,8 @@ export const MetricsCharts = memo(function MetricsCharts({
                   <R.YAxis tick={axisTick} tickFormatter={MS_AXIS_FORMATTER} />
                   <R.Tooltip content={TOOLTIP_CONTENT} />
                   <R.Legend iconType="circle" iconSize={6} wrapperStyle={legendStyle} />
-                  {compareEnabled && <R.Line type="monotone" dataKey="prev_p50" name="Prev p50" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}
-                  {compareEnabled && <R.Line type="monotone" dataKey="prev_p95" name="Prev p95" stroke="#f59e0b" strokeWidth={1} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}
+                  {compareEnabled && <R.Line type="monotone" dataKey="prev_p50" name={t.overview.activity.prev_p50} stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}
+                  {compareEnabled && <R.Line type="monotone" dataKey="prev_p95" name={t.overview.activity.prev_p95} stroke="#f59e0b" strokeWidth={1} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}
                   <R.Line type="monotone" dataKey="p50" name="p50" stroke="#3b82f6" strokeWidth={2} dot={false} />
                   <R.Line type="monotone" dataKey="p95" name="p95" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
                   <R.Line type="monotone" dataKey="p99" name="p99" stroke="#ef4444" strokeWidth={1} dot={false} strokeDasharray="2 2" />

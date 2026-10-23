@@ -34,5 +34,12 @@
   "oauth_unknown_error": "未知错误",
   "ai_search_no_results": "未找到匹配的模板。",
   "ai_search_coverage": " （已搜索 {total} 个模板中的 {searched} 个）",
-  "ai_search_failed": "AI 搜索失败：{detail}"
+  "ai_search_failed": "AI 搜索失败：{detail}",
+  "run_timed_out": "运行在 {minutes} 分钟后超时，操作可能已停滞。",
+  "startup_failed": "启动失败：无法加载{sources}。",
+  "startup_source_credentials": "凭据",
+  "startup_source_personas": "角色",
+  "startup_source_recipes": "配方",
+  "startup_source_teams": "团队",
+  "startup_source_tools": "工具"
 }

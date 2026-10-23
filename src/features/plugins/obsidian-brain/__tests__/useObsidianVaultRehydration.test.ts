@@ -53,6 +53,23 @@ describe('useObsidianVaultRehydration', () => {
     expect(useSystemStore.getState().obsidianConnected).toBe(true);
   });
 
+  it('refreshes connector definitions fetched before the vault came back', async () => {
+    getConfig.mockResolvedValue(CONFIG);
+    const { useObsidianVaultRehydration } = await load();
+    const { useVaultStore } = await import('@/stores/vaultStore');
+    const fetchConnectorDefinitions = vi.fn().mockResolvedValue(undefined);
+    // A list fetched while no vault was connected (obsidian_memory filtered out).
+    useVaultStore.setState({
+      connectorDefinitions: [{ id: 'c1', name: 'github' }] as never,
+      fetchConnectorDefinitions,
+    });
+
+    renderHook(() => useObsidianVaultRehydration());
+    await vi.runAllTimersAsync();
+
+    expect(fetchConnectorDefinitions).toHaveBeenCalledTimes(1);
+  });
+
   it('does not clobber a vault activated earlier in the session', async () => {
     getConfig.mockResolvedValue(CONFIG);
     const { useSystemStore, useObsidianVaultRehydration } = await load();

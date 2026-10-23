@@ -14,5 +14,16 @@
   "url_empty": "오케스트레이터 URL을 입력하세요.",
   "credentials_revoked": "자격 증명이 만료되었거나 취소되었습니다. 클라우드 오케스트레이터에 다시 연결해 주세요.",
   "reconnect_exhausted": "여러 번 시도했지만 클라우드 오케스트레이터에 연결할 수 없습니다. 연결을 확인하고 다시 시도해 주세요. 마지막 오류: {cause}",
-  "reconnect_disconnected": "연결 확인 결과 연결이 끊긴 것으로 나타났습니다"
+  "reconnect_disconnected": "연결 확인 결과 연결이 끊긴 것으로 나타났습니다",
+  "gitlab_agent_redeployed": "에이전트를 다시 배포했습니다",
+  "gitlab_auto_connect_failed": "GitLab 자동 연결에 실패했습니다. GitLab 패널에서 직접 다시 연결할 수 있습니다.",
+  "gitlab_branches_created": "환경 브랜치를 만들었습니다",
+  "gitlab_no_persona": "에이전트 \"{name}\"와(과) 일치하는 persona를 찾을 수 없습니다. 직접 배포해 주세요.",
+  "gitlab_no_project": "이 에이전트와 연결된 프로젝트가 없습니다. 먼저 직접 배포해 주세요.",
+  "gitlab_rolled_back": "{name}을(를) {tag}(으)로 롤백했습니다",
+  "gitlab_rolled_back_previous": "이전 배포로 롤백했습니다",
+  "gitlab_version_tag_failed": "{name}을(를) 배포했지만 버전 태그를 만들지 못했습니다. 이 버전은 기록에 표시되지 않으며 롤백할 수 없습니다. 다시 배포해 주세요.",
+  "oauth_timed_out_error": "OAuth 인증 시간이 초과되었습니다. 다시 시도해 주세요.",
+  "oauth_timed_out_toast": "OAuth 인증 시간이 초과되었습니다. 다시 시도해 주세요.",
+  "persona_fallback": "persona"
 }

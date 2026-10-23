@@ -23,7 +23,7 @@ import type {
   SidebarSection,
   HomeTab,
   TeamsTab,
-  GoalsTab,
+  GoalsView,
   EditorTab,
   DesignSubTab,
   OverviewTab,
@@ -84,7 +84,7 @@ const HOME_TABS = exact<HomeTab>({ welcome: true, cockpit: true, roadmap: true, 
 // See docs/concepts/golden-paths/query-latency-instrumentation.md.
 const OVERVIEW_TABS = exact<OverviewTab>({ home: true, incidents: true, observability: true, executions: true, 'manual-review': true, messages: true, events: true, timeline: true, memories: true, 'memory-graph': true });
 const TEAMS_TABS = exact<TeamsTab>({ workspace: true, goals: true, kpis: true, factory: true, projects: true, lifecycle: true, contest: true, mastermind: true, features: true, whitelist: true, webview: true });
-const GOALS_TABS = exact<GoalsTab>({ board: true, progress: true });
+const GOALS_TABS = exact<GoalsView>({ notes: true, ledger: true });
 const TEMPLATE_TABS = exact<TemplateTab>({ n8n: true, generated: true, explore: true, recipes: true, presets: true });
 const AGENT_TABS = exact<AgentTab>({ all: true, create: true, groups: true, cloud: true });
 const EDITOR_TABS = exact<EditorTab>({ activity: true, matrix: true, 'use-cases': true, lab: true, settings: true, chat: true, design: true, assertions: true });
@@ -114,7 +114,7 @@ export const TAB_DIMENSIONS: readonly TabDimension[] = [
   { key: 'homeTab', store: 'system', section: 'home', values: HOME_TABS },
   { key: 'overviewTab', store: 'overview', section: 'overview', values: OVERVIEW_TABS },
   { key: 'teamsTab', store: 'system', section: 'teams', values: TEAMS_TABS },
-  { key: 'goalsTab', store: 'system', section: 'teams', values: GOALS_TABS },
+  { key: 'goalsView', store: 'system', section: 'teams', values: GOALS_TABS },
   { key: 'templateTab', store: 'system', section: 'design-reviews', values: TEMPLATE_TABS },
   { key: 'agentTab', store: 'system', section: 'personas', values: AGENT_TABS },
   { key: 'editorTab', store: 'system', section: 'personas', values: EDITOR_TABS },

@@ -1,0 +1,32 @@
+{"schema": "conform-run/1", "worker": "8eb451f8-999d-443f-a060-aabaed37dc2b", "subject": "hitl-approval",
+ "evaluatedAt": "2026-10-16T17:08:30Z",
+ "pairs": [
+  {"context": "cbb061cf-5c61-49d4-80d8-98b8f9b40600", "subject": "hitl-approval", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9", "evaluatedRevision": 22,
+   "evidence": "src/features/browser/twinDraftLane.ts:352 confirmSubmit presses the page's form submit from the app's own toolbar after an in-app confirm, so the app owns this externally visible transition, yet it writes no record and the only ledger row stays the insert-time placement (:264) - a sent form is indistinguishable from an abandoned draft",
+   "techniques": [
+    {"technique": "decision-records", "verdict": "deviation", "evidence": "src/features/browser/twinDraftLane.ts:358 submitTarget succeeds and the lane goes idle with no record of who submitted what, when, on which text; the placement rule (:259) only covers the case where the page's own button is the gate and the app never sees it pressed"},
+    {"technique": "review-queues", "verdict": "conformant", "evidence": "src/features/browser/webview/PendingApprovalBar.tsx:4 the bar deliberately carries no deciding control and points at the orb, so a browser approval has exactly one decision surface"},
+    {"technique": "consent-gates", "verdict": "conformant", "evidence": "src-tauri/src/commands/companion/approvals/approval_autopilot.rs:90 browser_act / browser_login / browser_request_site are never auto-fired, so each page write is per-action consent on the orb"}
+   ]},
+  {"context": "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b", "subject": "hitl-approval", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9", "evaluatedRevision": 22,
+   "evidence": "src-tauri/src/browser_bridge/mcp.rs:420 a page tool's gate class is derived from reversible/side_effects the CALLING AGENT echoes in its own call args, not from the scanned or live manifest, so an agent passing reversible:true,side_effects:internal turns any un-overridden page tool to auto; the whitelist's tighten-only overrides (src/features/browser/whitelist/SitePolicyFields.tsx:11 'the class the page's own manifest implied') are the only brake and the operator is told the class comes from the page",
+   "techniques": [
+    {"technique": "gate-state-machines", "verdict": "deviation", "evidence": "src-tauri/src/browser_bridge/mcp.rs:420 the gated party supplies the input that decides whether the gate arms (the tool description at :290 claims the gate re-derives the class from the page's manifest)"},
+    {"technique": "author-advisories-yield-to-the-users-mode", "verdict": "conformant", "evidence": "src-tauri/src/browser_bridge/policy.rs:214 an operator override may only tighten the page-manifest (author-tier) class; a loosening override is refused loudly as refused_loosening"},
+    {"technique": "consent-gates", "verdict": "conformant", "evidence": "src-tauri/src/browser_bridge/policy.rs:144 the Whitelist row is re-read on every navigation, so the page's revoke controls (src/features/browser/whitelist/useWhitelistActions.ts:42 toggle, :79 delete) take effect at the gate; src-tauri/src/commands/companion/approvals/approval_exec_browser.rs:602 an agent's request may widen to one concrete origin only, never a pattern"}
+   ],
+   "registryProposal": "Coverage gap in the PROJECT context map, not the corpus: src-tauri/src/browser_bridge/ (mcp.rs, policy.rs, backend.rs - the substrate that enforces this context's policy) belongs to no context, so no pair can be anchored on it directly; this verdict anchors there because the consequence lands on the policy this page curates. Upward note for gate-state-machines: a 'derive class from declared manifest flags' gate needs an explicit rule that the flags are read from the system's own capture (scan report or live page), never from the request echo."}
+ ],
+ "declined": [
+  {"subject": "hitl-approval", "context": "942d2449-34ab-4f02-af7e-b130269d10ef", "reason": "fleet-triage-columns has zero paths in the map and its described files (triageModel for fleet, MonitorProjectColumns) do not exist in git ls-files; nothing to read"},
+  {"subject": "hitl-approval", "context": "c413de7d-1182-4abc-8a08-9c8832254c62", "reason": "overview-director's description (Director coaching, stale-sweep) does not match its four mission-control file paths; the governing match is doubtful until the context is rescanned"},
+  {"subject": "hitl-approval", "context": "fbfcd99a-a333-42da-b85e-2ec1f560b4be", "reason": "agents-connectors: 25 files carry no approval/consent/grant vocabulary; a not-applicable would need a full read this run did not budget for"}
+ ],
+ "consults": [
+  {"ts": "2026-10-16T17:08:30Z", "bundle": "software-engineering", "subjects": ["hitl-approval"], "techniques": ["decision-records", "review-queues", "consent-gates"], "deviations": 1},
+  {"ts": "2026-10-16T17:08:30Z", "bundle": "software-engineering", "subjects": ["hitl-approval"], "techniques": ["gate-state-machines", "author-advisories-yield-to-the-users-mode", "consent-gates"], "deviations": 1}
+ ]}

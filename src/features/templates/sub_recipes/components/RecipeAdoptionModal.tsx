@@ -4,6 +4,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Recipe, BindingValue, RecipeBinding, BindingKind, Eligibility } from '../types';
@@ -90,14 +91,16 @@ export function RecipeAdoptionModal({ recipe, onClose, onAdopted }: RecipeAdopti
                 : t.recipes_catalog.modal_subtitle_no_persona}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full text-foreground hover:text-foreground hover:bg-foreground/10 cursor-pointer"
-            title={t.common.close}
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <Tooltip content={t.common.close}>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t.common.close}
+              className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full text-foreground hover:text-foreground hover:bg-foreground/10 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Body */}
@@ -256,11 +259,12 @@ interface BindingFieldProps {
 }
 
 function BindingField({ binding, value, onChange, error }: BindingFieldProps) {
+  const { t } = useTranslation();
   const labelEl = (
     <div className="flex items-baseline gap-1.5 mb-1">
       <span className="typo-caption text-foreground">{binding.label}</span>
       {binding.required && (
-        <span className="typo-label text-status-warning/85">required</span>
+        <span className="typo-label text-status-warning/85">{t.common.required}</span>
       )}
     </div>
   );

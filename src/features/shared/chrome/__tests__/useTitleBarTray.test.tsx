@@ -2,23 +2,28 @@
  * The title-bar dock and the count it puts on the decision capsule.
  *
  * That number is the app's one at-a-glance answer to "is anything waiting on
- * me". It is the Decision Center roster's total — the seven decision chips the
- * Activity strip shows — read through the counts-only reader, so the badge and
- * the strip cannot disagree. What is pinned here:
- *  • the badge IS the roster total for a fixture (build questions and chat are
- *    inside it; manual reviews are not added a second time; `ready` is not a
- *    decision);
- *  • pressing it opens the Monitor on its Activity view (the hub), not the
- *    Quick Answer deck;
- *  • the tooltip reads the total back as its seven chips, and a chip whose
- *    source failed says so rather than printing 0;
- *  • the tray owns no counts ticker of its own any more;
- *  • the capsule's own rules: a zero collapses, a big number abbreviates.
+ * me". Since the mandate-lanes cutover (WP10) it is the lanes' total (Breach +
+ * Sign + Accept + Talk; Orphans excluded), the same numbers the Activity
+ * command bar's lane buttons show, read through the counts-only reader. What
+ * is pinned here:
+ *  - the badge IS the lanes total for a snapshot fixture (build questions and
+ *    chat are inside it; orphans, held and evidence items are not);
+ *  - before the first lanes read settles the badge shows a ghost, never the
+ *    roster's chip total (residue item 3);
+ *  - pressing it opens the Monitor on its Activity view (the hub);
+ *  - the tooltip reads the total back as its four lanes, so its rows sum to
+ *    the badge, and a lane whose source failed says so rather than printing 0
+ *    (residue item 2);
+ *  - the tray owns no counts ticker of its own any more;
+ *  - the capsule's own rules: a zero collapses, a big number abbreviates.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, act } from '@testing-library/react';
 
 import { buildChipCounts, decisionTotal } from '@/features/decision-center/roster/chipCounts';
+import { buildLaneCounts, laneTotal } from '@/features/decision-center/lanes/laneModel';
+import type { DecisionLanesSnapshot } from '@/lib/bindings/DecisionLanesSnapshot';
+import type { LaneEntry } from '@/lib/bindings/LaneEntry';
 import type { PendingCounts } from '@/lib/bindings/PendingCounts';
 
 (globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
@@ -56,7 +61,32 @@ const roster = {
   pendingFailed: false,
   questions: 0,
   chat: 0,
+  /** The lanes snapshot; null = the first read has not settled. */
+  snapshot: null as DecisionLanesSnapshot | null,
+  snapshotFailed: false,
 };
+
+// A test fixture: the lane strings are the binding's own values.
+const entry = (itemId: string, lane: string): LaneEntry => ({
+  itemId, itemKind: itemId.split(':')[0]!, lane, clause: 'none', charterId: 'ch-1',
+  coalesceKey: `ch-1:${lane}:none`, irreversible: null, projectId: 'dp-1',
+} as LaneEntry);
+
+/** A snapshot holding `n` items per lane (orphan, held and evidence included, to prove they are left out). */
+function snapshot(n: Partial<Record<string, number>>, failedSources: string[] = []): DecisionLanesSnapshot {
+  const items: LaneEntry[] = [];
+  for (const [lane, k] of Object.entries(n)) for (let i = 0; i < (k ?? 0); i++) items.push(entry(`idea:${lane}-${i}`, lane));
+  return { items, charters: [], failedSources, generatedAt: '2026-10-15T00:00:00Z' } as DecisionLanesSnapshot;
+}
+
+function rosterLanes() {
+  return buildLaneCounts({
+    snapshot: roster.snapshot,
+    snapshotFailed: roster.snapshotFailed,
+    questions: roster.questions,
+    chat: { n: roster.chat, failed: false },
+  });
+}
 const refreshCounts = vi.fn();
 
 function rosterCounts() {
@@ -69,12 +99,19 @@ function rosterCounts() {
   });
 }
 
-// The real chip arithmetic over a fixture: the badge must print exactly what
-// the roster's own law (`buildChipCounts` + `decisionTotal`) computes.
+// The real lane arithmetic over a fixture: the badge must print exactly what
+// the lanes' own law (`buildLaneCounts` + `laneTotal`) computes. The chip
+// counts ride along, as the real reader returns them, to prove the badge
+// never reads them.
 vi.mock('@/features/decision-center/roster/useDecisionCounts', () => ({
   useDecisionCounts: () => {
     const counts = rosterCounts();
-    return { counts, total: decisionTotal(counts), loading: false, refreshCounts };
+    const lanes = rosterLanes();
+    const settled = roster.snapshot !== null || roster.snapshotFailed;
+    return {
+      counts, total: decisionTotal(counts), lanes, laneTotal: settled ? laneTotal(lanes) : null,
+      lanesSettled: settled, loading: false, refreshCounts,
+    };
   },
 }));
 
@@ -142,6 +179,11 @@ vi.mock('@/i18n/useTranslation', () => ({
         dc_consumers_chip_reports: 'Reports',
         dc_consumers_chip_chat: 'Chat',
         dc_consumers_chip_failed: 'unavailable',
+        ml_lane_breach: 'Breach',
+        ml_lane_sign: 'Sign',
+        ml_lane_accept: 'Accept',
+        ml_lane_talk: 'Talk',
+        ml_lane_orphan: 'Orphans',
         titlebar: 'Activity',
         titlebar_attention: '{count} need you',
         titlebar_tooltip: '{count} need you',
@@ -193,54 +235,38 @@ beforeEach(() => {
   roster.pendingFailed = false;
   roster.questions = 0;
   roster.chat = 0;
+  roster.snapshot = snapshot({});
+  roster.snapshotFailed = false;
 });
 
 afterEach(cleanup);
 
 // --- tests -----------------------------------------------------------------
 
-describe('the decision badge is the roster total', () => {
-  it('equals the roster total for a fixture spanning every chip', () => {
-    roster.pending = counts({
-      manualReviews: 2,
-      companionApprovals: 1,
-      ideas: 7,
-      goalAcceptance: 1,
-      openIncidents: 3,
-      blockingIncidents: 1,
-      unreadReports: 4,
-      councilDecidable: 1,
-    });
+describe('the decision badge is the lanes total', () => {
+  it('equals Breach + Sign + Accept + Talk for a snapshot fixture, orphans and held left out', () => {
+    // The roster's chips hold more: the badge must not read them.
+    roster.pending = counts({ manualReviews: 2, ideas: 7, openIncidents: 3, unreadReports: 4, companionApprovals: 1 });
+    roster.snapshot = snapshot({ breach: 3, sign: 1, accept: 2, talk: 0, orphan: 4, held: 2, evidence: 5 });
     roster.questions = 2;
     roster.chat = 1;
 
     render(<TitleBarDock />);
 
-    const expected = decisionTotal(rosterCounts());
-    // gates 2+1+2, proposals 1, backlog 7, incidents 3, council 1, reports 4,
-    // chat 1 — and NOT the 5 ready ideas, which are not a decision.
-    expect(expected).toBe(22);
-    expect(decisionBadge()).toBe(String(expected));
+    // breach 3 + 2 questions, sign 1, accept 2, talk 1 (chat).
+    expect(laneTotal(rosterLanes())).toBe(9);
+    expect(decisionBadge()).toBe('9');
   });
 
-  it('does NOT add manual reviews a second time', () => {
-    // `pendingReviewCount` is the very overview field the badge once added on
-    // top of a total that already held it.
-    roster.pending = counts({ manualReviews: 3, ideas: 7 });
-    overviewState.pendingReviewCount = 3;
-    roster.questions = 2;
+  it('shows a ghost, not the roster total, before the first lanes read settles', () => {
+    roster.pending = counts({ ideas: 7 });
+    roster.snapshot = null;
 
     render(<TitleBarDock />);
 
-    expect(decisionBadge()).toBe('12');
-  });
-
-  it('counts questions alone before the first backend read lands', () => {
-    roster.questions = 4;
-
-    render(<TitleBarDock />);
-
-    expect(decisionBadge()).toBe('4');
+    expect(decisionBadge()).toBe('');
+    expect(screen.getByTestId('titlebar-human-review-pending')).toBeTruthy();
+    expect(screen.getByTestId('titlebar-human-review').getAttribute('aria-label')).toBe('Decisions');
   });
 });
 
@@ -265,34 +291,41 @@ describe('pressing the badge opens the Decision Center hub', () => {
   });
 });
 
-describe('the badge tooltip reads the total back as its chips', () => {
-  it('lists the seven decision chips in strip order with their counts', () => {
-    roster.pending = counts({ ideas: 7, unreadReports: 4 });
+describe('the badge tooltip reads the total back as its lanes', () => {
+  it('lists the four lanes in bar order, and they sum to the badge', () => {
+    roster.snapshot = snapshot({ breach: 2, accept: 4, orphan: 3 });
     roster.chat = 2;
+    const lanes = rosterLanes();
 
-    render(<TitleBarDecisionTooltip heading="13 decisions waiting" counts={rosterCounts()} />);
+    render(<TitleBarDecisionTooltip heading="8 decisions waiting" lanes={lanes} settled />);
 
     const text = screen.getByTestId('titlebar-decision-tooltip').textContent ?? '';
-    expect(text).toBe(
-      '13 decisions waitingGates0Proposals0Backlog7Incidents0Council0Reports4Chat2',
-    );
+    expect(text).toBe('8 decisions waitingBreach2Sign0Accept4Talk2');
+    expect(laneTotal(lanes)).toBe(8);
   });
 
-  it('says a chip is unavailable when its source did not answer, never 0', () => {
-    roster.pendingFailed = true;
+  it('says a lane is unavailable when its source did not answer, never 0', () => {
+    roster.snapshot = snapshot({ breach: 1 }, ['reviews']);
 
-    render(<TitleBarDecisionTooltip heading="Decisions" counts={rosterCounts()} />);
+    render(<TitleBarDecisionTooltip heading="Decisions" lanes={rosterLanes()} settled />);
 
     const text = screen.getByTestId('titlebar-decision-tooltip').textContent ?? '';
-    expect(text).toContain('Backlogunavailable');
-    // Chat is derived client-side and did answer.
-    expect(text).toContain('Chat0');
+    expect(text).toContain('Breachunavailable');
+    // Talk is fed by the chat derivation alone, which did answer.
+    expect(text).toContain('Talk0');
+  });
+
+  it('prints only its heading before the first lanes read settles', () => {
+    render(<TitleBarDecisionTooltip heading="Decisions" lanes={rosterLanes()} settled={false} />);
+
+    expect(screen.getByTestId('titlebar-decision-tooltip').textContent).toBe('Decisions');
   });
 });
 
 describe('the capsule renders a count the way the dock says it does', () => {
   it('collapses to a bare glyph at zero', () => {
-    roster.pending = counts();
+    roster.pending = counts({ ideas: 3 });
+    roster.snapshot = snapshot({ orphan: 3 });
 
     render(<TitleBarDock />);
 
@@ -302,7 +335,7 @@ describe('the capsule renders a count the way the dock says it does', () => {
   });
 
   it('abbreviates past 99', () => {
-    roster.pending = counts({ ideas: 140 });
+    roster.snapshot = snapshot({ breach: 140 });
 
     render(<TitleBarDock />);
 
@@ -344,6 +377,25 @@ describe('the badge does not run a counts poll of its own', () => {
     // second path. The counts reader (mocked here) registers the roster's
     // coordinated ticker instead; the tray itself registers nothing.
     expect(registerTicker).not.toHaveBeenCalled();
+  });
+});
+
+describe('the schedules badge follows the wall clock', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('drops a schedule once it has fired, without the cron list being refetched', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 21, 10, 0, 0));
+    const at = (h: number, m: number) => new Date(2026, 9, 21, h, m, 0).toISOString();
+    const cron = (id: string, next: string) => ({ id, trigger_enabled: true, persona_enabled: true, next_trigger_at: next });
+    overviewState.cronAgents = [cron('a', at(10, 30)), cron('b', at(15, 0))];
+
+    render(<TitleBarDock />);
+    expect(screen.getByTestId('titlebar-schedules')).toHaveAttribute('aria-label', '2 today');
+
+    act(() => { vi.advanceTimersByTime(60 * 60 * 1000); });
+    // 11:00: the 10:30 schedule has fired; only the 15:00 one is still ahead.
+    expect(screen.getByTestId('titlebar-schedules')).toHaveAttribute('aria-label', '1 today');
   });
 });
 

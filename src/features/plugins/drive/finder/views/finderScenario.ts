@@ -3,6 +3,8 @@ import { AlertTriangle, FolderOpen, FolderPlus, RotateCcw, Search, Tag } from "l
 
 import type ScenarioEmptyState from "@/features/shared/components/feedback/ScenarioEmptyState";
 import type { useTranslation } from "@/i18n/useTranslation";
+import { resolveErrorTranslated } from "@/i18n/useTranslatedError";
+import { extractMessage } from "@/lib/silentCatch";
 import type { DriveApi, FinderViewProps } from "../types";
 
 export type FinderEmptyVariant =
@@ -23,7 +25,7 @@ export function finderEmptyVariant(
   pendingCreate: unknown,
 ): FinderEmptyVariant | "ghost" | null {
   if (drive.loading && drive.entries.length === 0) return "ghost";
-  if (drive.error) return "unreadable";
+  if (drive.error != null) return "unreadable";
   if (drive.visibleEntries.length > 0 || pendingCreate) return null;
   return drive.searchQuery.trim().length >= 2 ? "search-empty" : "empty";
 }
@@ -70,14 +72,18 @@ export function finderScenario(variant: FinderEmptyVariant, args: FinderScenario
         iconColor: "text-status-error",
         iconContainerClassName: "bg-status-error/10 border-status-error/20",
         title: f.unreadable_title,
-        subtitle: tx(f.unreadable_body, { error: args.error ?? drive.error ?? "" }),
+        subtitle: tx(f.unreadable_body, {
+          // drive.error is the raw IPC rejection (an AppError object): resolve
+          // it here, at render. It used to be String()-ed in useDrive, so an
+          // unreadable folder said "[object Object]".
+          error: args.error ?? (drive.error != null ? resolveErrorTranslated(t, extractMessage(drive.error)).message : ""),
+        }),
         action: { label: f.retry, icon: RotateCcw, onClick: args.onRetry ?? (() => drive.refresh()) },
       };
     case "search-empty":
       return {
         icon: Search,
-        iconColor: "text-foreground",
-        iconContainerClassName: "bg-secondary/40 border-primary/10",
+        art: "search",
         title: f.search_empty_title,
         subtitle: f.search_empty_body,
         action: {
@@ -91,16 +97,14 @@ export function finderScenario(variant: FinderEmptyVariant, args: FinderScenario
     case "recursive-empty":
       return {
         icon: Search,
-        iconColor: "text-foreground",
-        iconContainerClassName: "bg-secondary/40 border-primary/10",
+        art: "search",
         title: tx(f.recursive_empty, { query: drive.recursiveQuery ?? "" }),
         action: { label: f.recursive_clear, onClick: () => drive.clearRecursiveSearch() },
       };
     case "tagged-empty":
       return {
         icon: Tag,
-        iconColor: "text-primary",
-        iconContainerClassName: "bg-primary/10 border-primary/20",
+        art: "folder",
         title: tx(f.tagged_empty_title, { tag: args.tagName ?? "" }),
         subtitle: f.tagged_empty_body,
       };
@@ -108,8 +112,7 @@ export function finderScenario(variant: FinderEmptyVariant, args: FinderScenario
       const { onRequestCreate } = args;
       return {
         icon: FolderOpen,
-        iconColor: "text-primary",
-        iconContainerClassName: "bg-primary/10 border-primary/20",
+        art: "folder",
         title: f.empty_folder_title,
         subtitle: f.empty_folder_body,
         action: onRequestCreate

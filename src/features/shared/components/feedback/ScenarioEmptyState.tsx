@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react';
-import { Key, Zap, Bot, Play, Radio, Link, ListChecks, SearchX, RotateCcw, CheckCircle2, type LucideIcon } from 'lucide-react';
+import { Key, Zap, Bot, Play, Radio, Link, ListChecks, SearchX, RotateCcw, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { MotionizedGlyph, type TracedGlyph } from '@/features/shared/components/display/MotionizedGlyph';
 import { StepGuideRow, type StepGuide } from './StepGuideRow';
+import { Button } from '@/features/shared/components/buttons';
+import { EmptyArt, type EmptyArtMotif, type EmptyArtSize } from '@/features/shared/components/display/emptyArt/EmptyArt';
+import { motifForIcon } from '@/features/shared/components/display/emptyArt/iconMotif';
 
 // -- Scenario Variants --------------------------------------------
 
@@ -26,6 +29,17 @@ interface ScenarioConfig {
 }
 
 /** Style config per scenario (icons + colors only -- text comes from translations). */
+/** The illustration each scenario draws (EmptyArt). */
+const SCENARIO_ART: Record<ScenarioEmptyStateVariant, EmptyArtMotif> = {
+  'credentials-need-agents': 'agents',
+  'triggers-manual-only': 'bolt',
+  'dashboard-no-executions': 'launch',
+  'subscriptions-empty': 'stream',
+  'connectors-empty': 'link',
+  'use-cases-empty': 'templates',
+  'no-results': 'search',
+};
+
 const SCENARIO_STYLES: Record<ScenarioEmptyStateVariant, Omit<ScenarioConfig, 'title' | 'subtitle' | 'steps'> & { hasSteps?: boolean }> = {
   'credentials-need-agents': { icon: Key, iconColor: 'text-emerald-400/80', iconContainerClassName: 'bg-emerald-500/10 border-emerald-500/20' },
   'triggers-manual-only': { icon: Zap, iconColor: 'text-amber-400/80', iconContainerClassName: 'bg-amber-500/10 border-amber-500/20' },
@@ -79,6 +93,17 @@ interface ScenarioEmptyStateProps {
    * rather than a shared registry: each glyph is ~10-16KB gzipped of path data.
    */
   glyph?: TracedGlyph;
+  /**
+   * The small animated illustration (EmptyArt motif). Omit it and the state
+   * still gets one when its `variant` or its `icon` maps to a motif; an icon
+   * with no motif (errors, warnings) keeps the plain badge.
+   */
+  art?: EmptyArtMotif;
+  /**
+   * `sm` for a panel, card or dense list (56px art, heading + caption),
+   * `md` the default, `lg` for a page's first-run state (120px art).
+   */
+  size?: EmptyArtSize;
   title?: string;
   subtitle?: string;
   description?: string;
@@ -101,9 +126,14 @@ interface ScenarioEmptyStateProps {
   stepActions?: (undefined | (() => void))[];
 }
 
+/**
+ * @catalog THE empty state: animated EmptyArt illustration (from `art`, the icon or the variant), a heading-over-body type ramp, actions; sizes sm/md/lg. NoResults and InboxZero wrap it.
+ */
 export default function ScenarioEmptyState({
   icon,
   glyph,
+  art,
+  size = 'md',
   title,
   subtitle,
   description,
@@ -119,7 +149,9 @@ export default function ScenarioEmptyState({
   const scenarioConfigs = useScenarioConfigs();
   const scenario = variant ? scenarioConfigs[variant] : null;
 
-  const Icon = glyph ? undefined : icon ?? scenario?.icon;
+  // glyph > explicit art > the explicit icon's motif > the scenario's art > a badge.
+  const motif = glyph ? undefined : art ?? (icon ? motifForIcon(icon) : variant ? SCENARIO_ART[variant] : undefined);
+  const Icon = glyph || motif ? undefined : icon ?? scenario?.icon;
   const resolvedTitle = title ?? scenario?.title ?? '';
   const detailText = subtitle ?? description ?? scenario?.subtitle;
   const resolvedIconColor = iconColor ?? scenario?.iconColor ?? 'text-foreground';
@@ -128,44 +160,53 @@ export default function ScenarioEmptyState({
 
   return (
     <div
-      className={`animate-fade-slide-in py-8 flex flex-col items-center justify-center text-center gap-3 ${className ?? ''}`}
+      data-testid="scenario-empty-state"
+      className={`animate-fade-slide-in flex flex-col items-center justify-center text-center ${size === 'sm' ? 'py-5' : 'py-8'} ${className ?? ''}`}
     >
       {glyph && (
         <MotionizedGlyph data={glyph.data} viewBox={glyph.viewBox} spread={1} className="w-32 h-32 -mb-1" />
       )}
+      {motif && <EmptyArt motif={motif} size={size} className={size === 'sm' ? 'mb-3' : 'mb-4'} />}
       {Icon && (
-        <div className={`w-14 h-14 rounded-xl border flex items-center justify-center ${resolvedContainerClass}`}>
+        <div className={`w-14 h-14 mb-4 rounded-xl border flex items-center justify-center ${resolvedContainerClass}`}>
           <Icon className={`w-6 h-6 ${resolvedIconColor}`} />
         </div>
       )}
-      {resolvedTitle && <h3 className="typo-heading-lg text-foreground/90">{resolvedTitle}</h3>}
-      {detailText && <p className="typo-body-lg text-foreground max-w-[40ch]">{detailText}</p>}
+      {/* The type ramp: the title is a bold heading three steps up the scale,
+          the description a regular body line, so the two never read as one
+          block. Hierarchy from size and weight, never from dimmed ink. */}
+      {resolvedTitle && (
+        <h3 className={`${size === 'sm' ? 'typo-heading' : 'typo-heading-lg'} text-foreground`}>{resolvedTitle}</h3>
+      )}
+      {detailText && (
+        <p className={`${size === 'lg' ? 'typo-body-lg text-foreground' : size === 'sm' ? 'typo-caption' : 'typo-body text-foreground'} mt-1.5 max-w-[46ch]`}>{detailText}</p>
+      )}
 
       {/* Step guide for multi-step scenarios */}
-      {steps && <StepGuideRow steps={steps} stepActions={stepActions} />}
+      {steps && <div className="mt-4"><StepGuideRow steps={steps} stepActions={stepActions} /></div>}
 
-      {children ? <div className="pt-1">{children}</div> : null}
+      {children ? <div className="mt-4">{children}</div> : null}
       {(action || secondaryAction) && (
-        <div className="flex items-center gap-3 mt-1">
+        <div className="flex items-center gap-3 mt-5">
           {action && (
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size={size === 'sm' ? 'sm' : 'md'}
               onClick={action.onClick}
-              className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors focus-ring"
+              icon={action.icon ? <action.icon className="w-3.5 h-3.5" /> : undefined}
             >
-              {action.icon && <action.icon className="w-3.5 h-3.5" />}
               {action.label}
-            </button>
+            </Button>
           )}
           {secondaryAction && (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size={size === 'sm' ? 'sm' : 'md'}
               onClick={secondaryAction.onClick}
-              className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl text-foreground hover:text-foreground hover:bg-primary/8 border border-primary/10 transition-colors focus-ring"
+              icon={secondaryAction.icon ? <secondaryAction.icon className="w-3.5 h-3.5" /> : undefined}
             >
-              {secondaryAction.icon && <secondaryAction.icon className="w-3.5 h-3.5" />}
               {secondaryAction.label}
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -187,13 +228,16 @@ interface NoResultsProps {
   /** Override the default Reset filters label. */
   resetLabel?: string;
   className?: string;
+  /** Filtered-to-zero reads as "adjust", not as a first run: small by default. */
+  size?: EmptyArtSize;
 }
 
-export function NoResults({ onReset, title, subtitle, resetLabel, className }: NoResultsProps) {
+export function NoResults({ onReset, title, subtitle, resetLabel, className, size = 'sm' }: NoResultsProps) {
   const { t } = useTranslation();
   return (
     <ScenarioEmptyState
       variant="no-results"
+      size={size}
       title={title}
       subtitle={subtitle}
       className={className}
@@ -229,12 +273,10 @@ export function InboxZero({ title, subtitle, celebrate = false, className }: Inb
   const animate = celebrate && !reduceMotion;
   return (
     <ScenarioEmptyState
-      icon={CheckCircle2}
+      art="inbox"
       title={title}
       subtitle={subtitle}
-      iconColor="text-emerald-400"
-      iconContainerClassName={`bg-emerald-500/10 border-emerald-500/20${animate ? ' animate-inbox-zero-pop' : ''}`}
-      className={className}
+      className={`${animate ? 'animate-inbox-zero-pop ' : ''}${className ?? ''}`}
     />
   );
 }

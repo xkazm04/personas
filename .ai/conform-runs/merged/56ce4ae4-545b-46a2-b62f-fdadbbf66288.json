@@ -1,0 +1,51 @@
+{"schema": "conform-run/1", "worker": "56ce4ae4-545b-46a2-b62f-fdadbbf66288", "subject": "native-shell-integration",
+ "evaluatedAt": "2026-10-16T17:35:00Z",
+ "evaluatedAgainst": "sha256-b2:0ab230f2977430e7", "evaluatedRevision": 4,
+ "pairs": [
+  {"context": "35c52f59-9612-47c4-8662-0ebb3c821771", "subject": "native-shell-integration", "bundle": "software-engineering",
+   "state": "deviation", "evaluatedAgainst": "sha256-b2:0ab230f2977430e7", "evaluatedRevision": 4,
+   "evidence": "src/features/notepad/notepadActions.ts:162 sends project.root_path as the write target to fleet_write_dispatch_brief, whose native side only checks is_dir on it (src-tauri/src/commands/fleet/external.rs:93), so a corrupted renderer can write brief content under any directory on disk - while :176 of the same function already sends project.id to installSystemSkill and lets the native side resolve the root",
+   "techniques": [
+    {"technique": "native-side-owns-the-target-set", "verdict": "deviation", "evidence": "src/features/notepad/notepadActions.ts:162 rule one: a target (root_path) crosses instead of the project identity used at :176; rule two is realised for the relative part only (src-tauri/src/commands/fleet/external.rs:60 resolve_inside refuses non-Normal components), the root itself is unbounded"},
+    {"technique": "non-stealing-overlay", "verdict": "not-applicable", "evidence": "src/features/notepad/NotepadOverlayHost.tsx:423 the pad is an in-document fixed div under the title bar, not a host window over another application"},
+    {"technique": "query-transparent-overlay", "verdict": "not-applicable", "evidence": "src/features/notepad/NotepadOverlayHost.tsx:423 no surface over a foreign application, so no point query can hit it"},
+    {"technique": "observer-perturbation", "verdict": "not-applicable", "evidence": "src/features/notepad/NotepadOverlayHost.tsx:423 the surface covers only the product's own document"},
+    {"technique": "permission-gate-vector", "verdict": "not-applicable", "evidence": "src/features/notepad/notepadActions.ts:11 the context's native calls are companion/fleet/devTools commands; no out-of-band host grant is read or required"},
+    {"technique": "layout-resolved-input-synthesis", "verdict": "not-applicable", "evidence": "src/features/notepad/notepadActions.ts:12 delivery is a file brief plus a fleet dispatch, no synthesized input into a foreign application"}
+   ],
+   "registryProposal": "Revision 4's native-side-owns-the-target-set reaches UI caller contexts whose native side lives elsewhere (src-tauri/src/commands/fleet/); the map pairs this subject only with frontend contexts, so the Rust fleet-commands context that owns the handlers is unpaired - the matcher missed it (repo says dispatch brief / spawn / cwd where the technique says target set / allow-list)."},
+  {"context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394", "subject": "native-shell-integration", "bundle": "software-engineering",
+   "state": "deviation", "evaluatedAgainst": "sha256-b2:0ab230f2977430e7", "evaluatedRevision": 4,
+   "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:84 spawns a claude process with the renderer-supplied root_path as cwd; fleet_spawn_session (src-tauri/src/commands/fleet/commands.rs:33) takes any string, admission only requires it non-empty (src-tauri/src/commands/fleet/queue.rs:1101) and the command carries no require_auth, so the executing command's target is chosen by the less trusted side instead of a project id the native side resolves",
+   "techniques": [
+    {"technique": "native-side-owns-the-target-set", "verdict": "deviation", "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:84 the rule-five inversion names the bound as a project root the native side resolved from its own records; kill/remove/write already take a native-issued session id (src/features/plugins/fleet/useFleetOverlayActions.ts:6) and the spawn uses no shell (src-tauri/src/commands/fleet/pty.rs:537 CommandBuilder::new(&claude_exe))"},
+    {"technique": "non-stealing-overlay", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/FleetTerminalOverlay.tsx:294 the terminal grid is an in-document fixed div under the app header, not a host window over other applications"},
+    {"technique": "query-transparent-overlay", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/FleetTerminalOverlay.tsx:294 no surface over a foreign application"},
+    {"technique": "observer-perturbation", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/FleetTerminalOverlay.tsx:294 the overlay covers only the product's own document"},
+    {"technique": "layout-resolved-input-synthesis", "verdict": "not-applicable", "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:6 writeInput writes text to a PTY the product owns, not a synthesized chord into a foreign application"}
+   ]},
+  {"context": "37cd64d2-bd42-47b9-8c17-7ea1b466135c", "subject": "native-shell-integration", "bundle": "software-engineering",
+   "state": "not-applicable", "evaluatedAgainst": "sha256-b2:0ab230f2977430e7", "evaluatedRevision": 4,
+   "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 the editor is an absolute layer over the in-page sigil; none of the context's 10 files imports @/api or @tauri-apps, so it reaches no native capability and no native command - revision 4's command-target technique has nothing to bound here either",
+   "techniques": [
+    {"technique": "native-side-owns-the-target-set", "verdict": "not-applicable", "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:4 imports are in-app glyph modules only; the context invokes no native command"},
+    {"technique": "non-stealing-overlay", "verdict": "not-applicable", "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 in-document layer, not a host window"}
+   ]},
+  {"context": "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0", "subject": "native-shell-integration", "bundle": "software-engineering",
+   "state": "not-applicable", "evaluatedAgainst": "sha256-b2:0ab230f2977430e7", "evaluatedRevision": 4,
+   "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 the fullest surface is a document overlay below the title bar; none of the context's 33 files imports @/api or @tauri-apps, so no host capability, foreign window, synthesized input or native command crosses here",
+   "techniques": [
+    {"technique": "native-side-owns-the-target-set", "verdict": "not-applicable", "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 presentational primitives; no native command is invoked anywhere in the context"},
+    {"technique": "non-stealing-overlay", "verdict": "not-applicable", "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 in-document surface, not a host window over another application"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "native-shell-integration", "context": "107445f8-c266-4671-8160-f854bd79319e", "reason": "capability-presence-contract may bite: src/hooks/utility/data/useAutoUpdater.ts:2 calls @tauri-apps/plugin-updater directly while the plugin is an optional Cargo feature (src-tauri/Cargo.toml:344) and an Android config exists; whether a mobile shell mounts UpdateBanner (and so reports failed for an absent capability) was not traced - left unknown rather than guessed"}
+ ],
+ "consults": [
+  {"ts": "2026-10-16T17:35:00Z", "bundle": "software-engineering", "subjects": ["native-shell-integration"], "techniques": ["native-side-owns-the-target-set", "non-stealing-overlay", "query-transparent-overlay", "observer-perturbation", "permission-gate-vector", "layout-resolved-input-synthesis"], "deviations": 1},
+  {"ts": "2026-10-16T17:35:00Z", "bundle": "software-engineering", "subjects": ["native-shell-integration"], "techniques": ["native-side-owns-the-target-set", "non-stealing-overlay", "query-transparent-overlay", "observer-perturbation", "layout-resolved-input-synthesis"], "deviations": 1},
+  {"ts": "2026-10-16T17:35:00Z", "bundle": "software-engineering", "subjects": ["native-shell-integration"], "techniques": ["native-side-owns-the-target-set", "non-stealing-overlay"], "deviations": 0},
+  {"ts": "2026-10-16T17:35:00Z", "bundle": "software-engineering", "subjects": ["native-shell-integration"], "techniques": ["native-side-owns-the-target-set", "non-stealing-overlay"], "deviations": 0}
+ ]
+}

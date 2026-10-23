@@ -1,0 +1,29 @@
+{"schema":"conform-run/1","worker":"b4a6bb6b-a0a1-490d-b8be-f56800b32410","subject":"companion-runtime",
+ "evaluatedAt":"2026-10-21T12:47:00Z",
+ "pairs":[
+  {"context":"3effd422-2610-4c8a-bc02-53aceafd827c","subject":"companion-runtime","bundle":"software-engineering","state":"deviation",
+   "evidence":"src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:374 the executor still matches the action as a &str (:223) ending in `other => Err(unknown action)`, so a kind added to ALLOWED_ACTIONS (src-tauri/src/companion/dispatcher/catalog.rs:11, 60 entries, all with arms today) without an arm compiles and fails only when approved; src-tauri/src/companion/dispatcher/tests.rs:583 still pins membership only (re-confirmed 2026-10-21)",
+   "techniques":[{"technique":"action-catalog-single-source","verdict":"deviation","evidence":"src-tauri/src/commands/companion/approvals/approval_lifecycle.rs:374 string match with a runtime `unknown action` arm instead of an executor derived from the one catalog declaration"}]},
+  {"context":"9e46b252-8eb1-4a15-a627-f7e342f1d85a","subject":"companion-runtime","bundle":"software-engineering","state":"deviation",
+   "evidence":"src-tauri/src/companion/brain/cockpit.rs:3 lets compose_cockpit overwrite the singleton spec and src-tauri/src/commands/companion/consolidate.rs:336 exposes get/pin/unpin with no cockpit reset, while src-tauri/src/companion/brain/dashboard.rs:176 reset_dashboard is still #[allow(dead_code)] with no command (untouched by the 10-19 dead-code sweep); a model-composed arrangement has no one-action way back to default (re-confirmed 2026-10-21)",
+   "techniques":[{"technique":"action-catalog-single-source","verdict":"deviation","evidence":"src-tauri/src/companion/brain/dashboard.rs:176 reset exists but is unreachable; 'anything a model can compose, a person can reset' unmet for cockpit and dashboard"}]},
+  {"context":"50bf2ad0-3da7-4405-991a-6e22695903a2","subject":"companion-runtime","bundle":"software-engineering","state":"deviation",
+   "evidence":"src/api/companion.ts:436 still types the dev-op status as a bare string (tokens only in the :430 comment), so src/features/companions/athena/DevOpLedger.tsx:103 renders an unknown status as its raw token and :112 as a grey dot in a co-deployed bundle; a sixth backend status fails nothing (re-confirmed 2026-10-21; anchor moved from :425)",
+   "techniques":[{"technique":"action-catalog-single-source","verdict":"deviation","evidence":"src/features/companions/athena/DevOpLedger.tsx:103 tolerant fallback on a surface that ships with its producer, where the technique requires exhaustive"}]},
+  {"context":"bcb603ad-ce58-4b76-9623-aa99ace984af","subject":"companion-runtime","bundle":"software-engineering","state":"deviation",
+   "evidence":"src-tauri/src/companion/proactive/triggers.rs:75 collect_all still folds every trigger Err into an empty Vec with no log (also :328 and src-tauri/src/companion/proactive/incident_triggers.rs:99), so a failed goal/backlog/incident read is indistinguishable from nothing-to-report and the tick warn at src-tauri/src/commands/companion/mod.rs:658 never sees it; conversation_resume latches at triggers.rs:207 before reading; credential_triggers.rs:106 is the in-repo contrast that logs (re-confirmed 2026-10-21; the 10-19/10-21 proactive fixes do not touch this)",
+   "techniques":[{"technique":"signal-economy-contract","verdict":"deviation","evidence":"src-tauri/src/companion/proactive/triggers.rs:75 unwrap_or_default erases a failed pressure read"},{"technique":"autonomous-cycle-hosting","verdict":"deviation","evidence":"src-tauri/src/companion/proactive/triggers.rs:207 latch set before the read, so a failed first read loses welcome-back for the process lifetime"}]}
+ ],
+ "declined":[
+  {"subject":"companion-runtime","context":"2651f2ce-7fc1-4331-8b31-61e783e9746a","reason":"weak context (companions-page); skill rule: never evaluate weak pairs by default - a coverage question, not a verdict"},
+  {"subject":"companion-runtime","context":"b0e9ba6b-7737-43ec-b551-9bcc1b71d76f","reason":"over budget this run; host-seam deviation judged 2026-10-10 at the current digest, not stale"},
+  {"subject":"companion-runtime","context":"5ed4c95e-037f-459e-ba3e-aa1300fd7504","reason":"over budget; spot-check 2026-10-21 still counts 25 of 60 ALLOWED_ACTIONS without a case in athenaLabels.ts, existing verdict stands"},
+  {"subject":"companion-runtime","context":"d77a22ee-23cb-42f3-a910-590f8622977f","reason":"over budget; same label gap (25/60) still present, existing verdict stands"},
+  {"subject":"companion-runtime","context":"3f38546e-e970-4837-97f7-f0504aa32daf","reason":"over budget; same label gap still present, existing verdict stands"}
+ ],
+ "consults":[
+  {"ts":"2026-10-21T12:47:00Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1},
+  {"ts":"2026-10-21T12:47:00Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1},
+  {"ts":"2026-10-21T12:47:00Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1},
+  {"ts":"2026-10-21T12:47:00Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["signal-economy-contract","autonomous-cycle-hosting"],"deviations":1}
+ ]}

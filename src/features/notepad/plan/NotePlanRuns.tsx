@@ -84,7 +84,7 @@ function plainSummary(raw: string | null): string | null {
   }
 }
 
-function RunRow({ run, onCompose }: { run: DevNoteRun; onCompose: () => void }) {
+function RunRow({ run, onCompose }: { run: DevNoteRun; onCompose?: () => void }) {
   const { t } = useTranslation();
   const { label, Icon } = kindMeta(run.kind, t);
   const ingest = run.kind === 'ship_milestone' ? parseIngestSummary(run.summaryJson) : null;
@@ -110,7 +110,7 @@ function RunRow({ run, onCompose }: { run: DevNoteRun; onCompose: () => void }) 
       {ingest ? (
         // Proposed additions render as PROPOSALS. `ShipRunSummary` surfaces them
         // and offers no way to apply them, which is the ingest door's own rule.
-        <ShipRunSummary summary={ingest} onDismiss={onCompose} />
+        <ShipRunSummary summary={ingest} onCompose={onCompose} />
       ) : text ? (
         <p className="typo-caption text-foreground/70 mt-1.5 whitespace-pre-wrap">{text}</p>
       ) : null}
@@ -120,9 +120,10 @@ function RunRow({ run, onCompose }: { run: DevNoteRun; onCompose: () => void }) 
 
 export function NotePlanRuns({ noteId, onCompose }: {
   noteId: string;
-  /** The "Compose" shortcut a summary's dismiss offers — a proposed addition is
-   *  acted on by opening the composer, never by the panel applying it. */
-  onCompose: () => void;
+  /** The "Compose scope" shortcut a ship run's summary offers — a proposed
+   *  addition is acted on by opening the composer, never by the panel applying
+   *  it. Absent once the milestone has shipped: its scope is a record. */
+  onCompose?: () => void;
 }) {
   const { t } = useTranslation();
   const [runs, setRuns] = useState<DevNoteRun[]>([]);

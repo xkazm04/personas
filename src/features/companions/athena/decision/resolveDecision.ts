@@ -23,6 +23,9 @@ import { companionSendMessage, companionRecordUxSignal } from '@/api/companion';
 import { useAthenaStore } from '../athenaStore';
 import type { DecisionOption, PendingDecision } from './types';
 
+/** Decision ids whose picked option is still writing (see runDecisionOption). */
+const inFlight = new Set<string>();
+
 /**
  * Run one option's action, AWAIT it, and only on success clear the pending
  * decision + record the hands-free UX signal. This is a consent surface, so the
@@ -39,14 +42,27 @@ import type { DecisionOption, PendingDecision } from './types';
 export async function runDecisionOption(option: DecisionOption): Promise<void> {
   const store = useAthenaStore.getState();
   const source = store.pendingDecision?.source ?? 'unknown';
-  // Clear any previous failure so a retry doesn't render a stale error.
-  if (store.decisionError) store.setDecisionError(null);
+  // One answer per decision while its write is in flight. Five doors call this
+  // (bubble chip, chat card, chat variant body, `;` leader key, spoken digit)
+  // and none disables itself while the write is awaited, so a double click -
+  // or Approve then Reject - fired two writes for one decision.
+  const decisionId = store.pendingDecision?.id ?? null;
+  if (decisionId !== null) {
+    if (inFlight.has(decisionId)) return;
+    inFlight.add(decisionId);
+  }
   try {
-    await option.run();
-  } catch (err) {
-    silentCatch('companion/resolveDecision:run')(err);
-    useAthenaStore.getState().setDecisionError('run-failed');
-    return; // keep the decision pending; do NOT record it as resolved
+    // Clear any previous failure so a retry doesn't render a stale error.
+    if (store.decisionError) store.setDecisionError(null);
+    try {
+      await option.run();
+    } catch (err) {
+      silentCatch('companion/resolveDecision:run')(err);
+      useAthenaStore.getState().setDecisionError('run-failed');
+      return; // keep the decision pending; do NOT record it as resolved
+    }
+  } finally {
+    if (decisionId !== null) inFlight.delete(decisionId);
   }
   // F3 — he resolved a decision hands-free via the orb (vs falling through to chat).
   companionRecordUxSignal(

@@ -94,27 +94,6 @@ pub fn get(pool: &DbPool, id: &str) -> Result<TeamDeliberation, AppError> {
     .map_err(AppError::Database)
 }
 
-/// The single active (non-terminal) deliberation for a team, if any.
-pub fn get_active_for_team(
-    pool: &DbPool,
-    team_id: &str,
-) -> Result<Option<TeamDeliberation>, AppError> {
-    timed_query!("deliberation", "deliberation::get_active_for_team", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM team_deliberations
-             WHERE team_id = ?1 AND parent_id IS NULL
-               AND status IN ('open','converging','escalated','paused','awaiting_action','tracking')
-             ORDER BY datetime(updated_at) DESC LIMIT 1",
-        )?;
-        let mut rows = stmt.query_map(params![team_id], |r| row_to_deliberation(r))?;
-        match rows.next() {
-            Some(row) => Ok(Some(row.map_err(AppError::Database)?)),
-            None => Ok(None),
-        }
-    })
-}
-
 /// Top-level deliberations for a team, newest-first — the board/channel read.
 /// Tracks (children) are excluded; they surface nested under their parent.
 pub fn list_for_team(pool: &DbPool, team_id: &str) -> Result<Vec<TeamDeliberation>, AppError> {

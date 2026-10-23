@@ -3,6 +3,8 @@ import { Play, Plus, ListChecks } from 'lucide-react';
 import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DevToolsPageHeader } from '../DevToolsPageHeader';
 import { Button } from '@/features/shared/components/buttons';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -18,7 +20,7 @@ import { TaskModal, type TaskDraft } from './TaskModal';
 import { AutoRunBanner } from './AutoRunBanner';
 import { RunDeskControls } from './RunDeskControls';
 import {
-  useTaskQueue, normalizeStatus, TASK_STATUSES,
+  useTaskQueue, normalizeStatus, resolveQueueBody, TASK_STATUSES,
   type TaskStatus, type TaskStatusFilter,
 } from './useTaskQueue';
 import type { DevTask } from '@/lib/bindings/DevTask';
@@ -125,10 +127,14 @@ export default function RunDeskPage() {
   );
 
   const handleCreateTask = useCallback(
-    (data: TaskDraft) => {
-      Promise.resolve(createTask(data))
-        .then(() => reload())
-        .catch(toastCatch('RunDeskPage:createTask'));
+    async (data: TaskDraft) => {
+      try {
+        await createTask(data);
+      } catch (err) {
+        toastCatch('RunDeskPage:createTask')(err);
+        throw err; // the modal keeps the draft open
+      }
+      reload();
     },
     [createTask, reload],
   );
@@ -150,6 +156,7 @@ export default function RunDeskPage() {
   const overallProgress = total > 0 ? (settled / total) * 100 : 0;
 
   const filters: TaskStatusFilter[] = useMemo(() => ['all', ...TASK_STATUSES], []);
+  const queueBody = resolveQueueBody({ loading: queue.loading, error: queue.error, rowCount: tasks.length });
 
   return (
     <ContentBox>
@@ -168,7 +175,7 @@ export default function RunDeskPage() {
           onAutoRunStarted={() => setAutoRunToken((n) => n + 1)}
         />
 
-        <AutoRunBanner projectId={projectId} refreshToken={autoRunToken} onRunFinished={reload} />
+        <AutoRunBanner projectId={projectId} refreshToken={autoRunToken} />
 
         <div className="space-y-5">
           {/* Status filter chips — fed by L0 counts, so they stay truthful
@@ -242,35 +249,31 @@ export default function RunDeskPage() {
               {tx(dr.task_queue_count, { count: total })}
             </h3>
 
-            {queue.loading ? (
+            {queueBody === 'loading' ? (
               <div className="flex justify-center py-16">
                 <LoadingSpinner size="sm" />
               </div>
-            ) : tasks.length === 0 ? (
-              <div className="text-center py-20 border border-dashed border-primary/10 rounded-modal">
-                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
-                  <Play className="w-7 h-7 text-amber-400/50" />
-                </div>
-                <p className="text-md text-foreground mb-1">{dr.no_tasks_queued}</p>
-                <p className="text-md text-foreground mb-4">{dr.no_tasks_queued_sub}</p>
-                <div className="flex justify-center gap-2">
-                  <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowModal(true)}>
-                    {dr.new_task}
-                  </Button>
-                  <Button
-                    variant="accent"
-                    tone="warning"
-                    size="sm"
-                    icon={<ListChecks className="w-3.5 h-3.5" />}
-                    onClick={() => {
+            ) : queueBody === 'error' ? (
+              <InlineErrorBanner message={queue.error ?? t.common.unknown_error} onRetry={reload} />
+            ) : queueBody === 'empty' ? (
+              <div className="border border-dashed border-primary/10 rounded-modal">
+                <EmptyState
+                  icon={Play}
+                  art="runs"
+                  size="lg"
+                  title={dr.no_tasks_queued}
+                  description={dr.no_tasks_queued_sub}
+                  action={{
+                    label: dr.batch_from_accepted,
+                    icon: ListChecks,
+                    onClick: () => {
                       Promise.resolve(batchFromAcceptedIdeas())
                         .then(() => reload())
                         .catch(toastCatch('RunDeskPage:batchFromAccepted', dr.batch_from_accepted_error));
-                    }}
-                  >
-                    {dr.batch_from_accepted}
-                  </Button>
-                </div>
+                    },
+                  }}
+                  secondaryAction={{ label: dr.new_task, icon: Plus, onClick: () => setShowModal(true) }}
+                />
               </div>
             ) : (
               <div className="space-y-4">

@@ -87,6 +87,12 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
   // the 'adopting' stage. The backend also single-flights per preset, but this
   // avoids the doomed second request (and its error toast) entirely.
   const adoptingRef = useRef(false);
+  // A retry in flight. Rows of the retried roles show the live progress
+  // events, not the previous result's failures (the result overlay below
+  // would otherwise pin every retried row to 'failed' until the retry lands),
+  // and a second press while one runs is dropped.
+  const [retrying, setRetrying] = useState(false);
+  const retryingRef = useRef(false);
 
   // Reset whenever the preset changes (gallery switches presets without
   // unmounting). Kick the schema fetch in the background so the customize
@@ -191,7 +197,9 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
   const retry = useCallback(async () => {
     if (!result) return;
     const failedRoles = result.failed_members.map((f) => f.role);
-    if (failedRoles.length === 0) return;
+    if (failedRoles.length === 0 || retryingRef.current) return;
+    retryingRef.current = true;
+    setRetrying(true);
     setHandoffRepaired(false);
     setRows((prev) =>
       prev.map((r) =>
@@ -228,6 +236,9 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
     } catch (err) {
       silentCatch('usePresetAdoption:retry')(err);
       addToast(t.templates.presets.toast_retry_failure, 'error');
+    } finally {
+      retryingRef.current = false;
+      setRetrying(false);
     }
   }, [result, preset.id, overrides, fetchPersonas, fetchTeams, addToast, t, tx]);
 
@@ -302,7 +313,7 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
   // Map result.failed_members onto row state in case any failures arrived
   // faster than the progress events (very small race window).
   const rowsWithResult = useMemo(() => {
-    if (!result) return rows;
+    if (!result || retrying) return rows;
     const failedByRole = new Map(result.failed_members.map((f) => [f.role, f]));
     return rows.map((r) => {
       const fail = failedByRole.get(r.role);
@@ -311,7 +322,7 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
       }
       return r;
     });
-  }, [rows, result]);
+  }, [rows, result, retrying]);
 
   // True once an adoption/retry landed a team whose handoff wiring failed and
   // the user hasn't repaired it yet — drives the modal's warning + repair CTA.
@@ -330,6 +341,7 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
     schemaByRole,
     handoffNeedsRepair,
     repairingHandoff,
+    retrying,
     // setters / actions
     setOverrides,
     setExpandedRoles,

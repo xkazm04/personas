@@ -1,23 +1,31 @@
-import { memo } from 'react';
-import { ExternalLink, AlertCircle, Pin, User } from 'lucide-react';
-import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
-import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/personaIndex';
 import { eventFamily, FAMILY_TEXT } from '@/lib/channel/eventModel';
 import { payloadSummary } from '@/features/teams/sub_collab/payloadView';
-import { STEP_VERB, STEP_TONE, AUTHOR_KIND_META, authorName, itemAccent, avatarBgFor, isAuthorKind } from '@/features/teams/sub_collab/collabRender';
+import { STEP_TONE, AUTHOR_KIND_META, SLACK_BRAND, isAuthorKind } from '@/features/teams/sub_collab/collabRender';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
-import { cleanName } from '../grid/fleetGridModel';
-import { MERGED_ROW_HEIGHT, type TaggedItem } from './types';
 
-/* The compact one-line row used by the combined Timeline. */
+/* The compact resolution of one channel item, shared by the live pop-ups
+ * (`live/liveModel.projectChannelItem`). The one-line row component that used
+ * to live here rendered the merged Timeline, which moved to
+ * `overview/sub_timeline` with its own row; nothing rendered this one. */
+
+/** Translated copy `resolveCompact` needs for the kinds that carry no label of
+ *  their own. `memory` is a template with a `{label}` slot; `stepVerb` is keyed
+ *  by step-layer kind; `channel` / `athena` / `director` name the author voices. */
+export interface CompactLabels {
+  directive: string;
+  memory: string;
+  channel: string;
+  athena: string;
+  director: string;
+  stepVerb: Record<string, string>;
+}
 
 /** Resolve the compact event label + tone + one-line message for any item.
  *  Exported so the live-mode corner overlay projects messages identically. */
-export function resolveCompact(item: TeamChannelItem): { event: string; tone: string; message: string | null; artifact: { url: string; label: string } | null; isError: boolean; alert: boolean } {
+export function resolveCompact(item: TeamChannelItem, labels: CompactLabels): { event: string; tone: string; message: string | null; artifact: { url: string; label: string } | null; isError: boolean; alert: boolean } {
   if (item.kind === 'step') {
     return {
-      event: STEP_VERB[item.label] ?? item.label,
+      event: labels.stepVerb[item.label] ?? item.label,
       tone: STEP_TONE[item.label] ?? 'text-foreground/55',
       message: item.body,
       artifact: null,
@@ -30,87 +38,16 @@ export function resolveCompact(item: TeamChannelItem): { event: string; tone: st
     return { event: item.label, tone: FAMILY_TEXT[eventFamily(item.label)] ?? FAMILY_TEXT.other!, message: summary, artifact, isError: false, alert: false };
   }
   if (item.kind === 'memory') {
-    return { event: `memory · ${item.label}`, tone: 'text-amber-300/80', message: item.body, artifact: null, isError: false, alert: false };
+    return { event: labels.memory.replace('{label}', item.label), tone: 'text-amber-300/80', message: item.body, artifact: null, isError: false, alert: false };
   }
   if (item.kind === 'directive') {
-    return { event: 'directive', tone: 'text-status-success', message: item.body, artifact: null, isError: false, alert: false };
+    return { event: labels.directive, tone: 'text-status-success', message: item.body, artifact: null, isError: false, alert: false };
   }
   // Every voiced author kind (persona / athena / director / slack) resolves from
   // the shared meta — which is why `slack` needs no special case here and, more
   // importantly, cannot silently fall through to the generic persona voice.
-  const meta = isAuthorKind(item.kind) ? AUTHOR_KIND_META[item.kind] : AUTHOR_KIND_META.persona;
-  return { event: meta.label, tone: meta.tag, message: item.body, artifact: null, isError: false, alert: false };
+  const kind = isAuthorKind(item.kind) ? item.kind : 'persona';
+  const meta = AUTHOR_KIND_META[kind];
+  const voice = kind === 'athena' ? labels.athena : kind === 'director' ? labels.director : kind === 'slack' ? SLACK_BRAND : labels.channel;
+  return { event: voice, tone: meta.tag, message: item.body, artifact: null, isError: false, alert: false };
 }
-
-/**
- * One compact merged-feed row: a team-colour rail + badge, the source persona,
- * the event chip, and a one-line message — clickable to open the full detail.
- * STATIC (no per-row mount animation) because the Timeline virtualizes it:
- * rows mount/unmount as you scroll, so an entry animation would re-fire on
- * every scroll. `memo` keeps re-renders to rows whose props actually changed;
- * height is fixed to {@link MERGED_ROW_HEIGHT} for exact virtualizer math.
- */
-export const MergedRow = memo(function MergedRow({
-  tagged,
-  showTeam,
-  personaIndex,
-  onOpen,
-}: {
-  tagged: TaggedItem;
-  showTeam: boolean;
-  personaIndex: ReturnType<typeof usePersonaIndex>;
-  onOpen: (item: TeamChannelItem) => void;
-}) {
-  const { item, team } = tagged;
-  const persona = item.personaId ? personaIndex.get(item.personaId) : undefined;
-  const accent = itemAccent(item, persona);
-  const source = authorName(item, persona);
-  const { event, tone, message, artifact, isError, alert } = resolveCompact(item);
-
-  // Author differentiation — Athena (autonomous) and your directives must NOT
-  // read as the same actor. Each non-persona author gets its own avatar + tint.
-  // Slack joins them: an external human must not borrow a persona sprite, so
-  // its meta is resolved BEFORE the persona branch below (the read-model parks
-  // the Slack user id in `personaId`, which could otherwise collide).
-  const authorMeta =
-    item.kind === 'athena' || item.kind === 'director' || item.kind === 'slack'
-      ? AUTHOR_KIND_META[item.kind]
-      : null;
-  const avatarBg = avatarBgFor(item.kind);
-  const rowTint = item.kind === 'athena'
-    ? 'bg-violet-500/[0.05]'
-    : item.kind === 'directive'
-      ? 'bg-emerald-500/[0.04]'
-      : item.kind === 'slack'
-        ? 'bg-teal-500/[0.04]'
-        : '';
-
-  return (
-    <button
-      type="button"
-      onClick={() => onOpen(item)}
-      style={{ height: MERGED_ROW_HEIGHT, ...(alert ? { boxShadow: 'inset 2px 0 0 var(--color-status-warning, #f59e0b)' } : { boxShadow: `inset 2px 0 0 ${team.teamColor}` }) }}
-      className={`w-full text-left flex items-center gap-2 rounded-card px-2.5 hover:bg-foreground/[0.04] transition-colors ${rowTint}`}
-    >
-      {showTeam && (
-        <span className="inline-flex items-center gap-1 flex-shrink-0 typo-caption text-foreground" title={team.teamName}>
-          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: team.teamColor }} />
-          <span className="max-w-[88px] truncate">{cleanName(team.teamName)}</span>
-        </span>
-      )}
-      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full flex-shrink-0 ${avatarBg}`}>
-        {authorMeta ? <authorMeta.Icon className={`w-3 h-3 ${authorMeta.iconColor}`} />
-          : persona ? <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" />
-          : item.kind === 'directive' ? <User className="w-3 h-3 text-emerald-400" />
-          : item.kind === 'memory' ? <Pin className="w-3 h-3 text-amber-300/80" />
-          : alert ? <AlertCircle className="w-3 h-3 text-status-warning" />
-          : <span className="typo-caption text-foreground">·</span>}
-      </span>
-      <span className="typo-caption flex-shrink-0 max-w-[110px] truncate" style={{ color: accent }}>{source}</span>
-      <span className={`typo-caption uppercase tracking-wider flex-shrink-0 ${tone}`}>{event}</span>
-      {message && <span className={`typo-caption truncate ${isError ? 'text-status-error/80' : 'text-foreground/55'}`}>{message}</span>}
-      {artifact && <span className="inline-flex items-center gap-0.5 typo-caption text-status-info flex-shrink-0"><ExternalLink className="w-3 h-3" />{artifact.label}</span>}
-      <span className="ml-auto typo-caption text-foreground flex-shrink-0"><RelativeTime timestamp={item.at} /></span>
-    </button>
-  );
-});

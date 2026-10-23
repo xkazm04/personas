@@ -7,17 +7,24 @@
 import type { Archetype } from "@/api/archetypes";
 import type { EffortLevel } from "@/lib/models/modelCatalog";
 import type { LucideIcon } from "lucide-react";
+import type { Translations } from "@/i18n/useTranslation";
 
 export type { Archetype, EffortLevel };
+
+/** A string-valued key of the `agents` i18n section (display copy resolved at the render site). */
+export type AgentsKey = {
+  [K in keyof Translations["agents"]]: Translations["agents"][K] extends string ? K : never;
+}[keyof Translations["agents"]];
 
 export type ModelTier = "haiku" | "sonnet" | "opus";
 export type TraitAxis = "rigor" | "autonomy" | "communication" | "reliability" | "temperament";
 
 export interface CharacterTrait {
   id: string;
-  label: string;
+  /** Keys of the `agents` i18n section; the render site resolves them. */
+  labelKey: AgentsKey;
   axis: TraitAxis;
-  blurb: string;
+  blurbKey: AgentsKey;
   /** How many of the 120 corpus personas embody it — drives ordering within an axis. */
   count: number;
   icon: LucideIcon;

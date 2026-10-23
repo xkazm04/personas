@@ -4,7 +4,7 @@
  * Extracted from `WhitelistPage` so the page is data + layout and this is the
  * gate's mutation surface: each action calls one command, adopts the row the
  * command answers with (no refetch round-trip), and resolves its own failure
- * copy. The three variants never call an API — they receive these.
+ * copy. The ledger never calls an API — it receives these.
  *
  * SCAN AND CONFIRM RE-READ REGARDLESS OF OUTCOME. The row, not the call's
  * return value, carries `scan_status` / `scan_report` / `scan_tier`, so a
@@ -76,7 +76,10 @@ export function useWhitelistActions(): WhitelistActions {
   const onRemove = useCallback(
     async (site: BrowserSite) => {
       try {
-        if (await browserApi.deleteSite(site.origin)) forgetSite(site.origin);
+        // `false` means the row was already gone (an agent or another window
+        // removed it): the ledger converges on Rust either way.
+        await browserApi.deleteSite(site.origin);
+        forgetSite(site.origin);
       } catch (err) {
         toastCatch('browser delete site', w.remove_failed)(err);
       }

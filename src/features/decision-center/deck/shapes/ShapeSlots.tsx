@@ -16,6 +16,7 @@ import { ClaimBody, ClaimRail } from './ClaimBody';
 import { ValveStep } from './ShapeNotes';
 import { SignBody, SignRail } from './SignBody';
 import { SignDock } from './SignDock';
+import { LensDock } from './LensDock';
 import type { ShapeController } from './useShapeController';
 
 export function shapeBody(item: DecisionItem, ctl: ShapeController | undefined, act: DeckActions, state: CardState): ReactNode | null {
@@ -37,12 +38,13 @@ export function shapeDock(item: DecisionItem, ctl: ShapeController | undefined, 
   if (act.readOnly) return null;
   if (ctl?.shape === 'sign') return <SignDock item={item} deck={deck} act={act} sign={ctl.sign} />;
   if (ctl?.shape === 'breach' && ctl.breach.plan) return <BreachDock item={item} deck={deck} act={act} breach={ctl.breach} />;
+  if (ctl?.shape === 'lens' && ctl.openLens) return <LensDock item={item} act={act} onOpen={ctl.openLens} />;
   return null;
 }
 
 /** What a shape adds to the ledger rail, or null. */
 export function shapeRail(item: DecisionItem, ctl: ShapeController | undefined): ReactNode | null {
-  if (ctl?.shape === 'sign') return <SignRail item={item} />;
+  if (ctl?.shape === 'sign') return <SignRail item={item} sign={ctl.sign} />;
   if (ctl?.shape === 'claim') return <ClaimRail item={item} />;
   return null;
 }

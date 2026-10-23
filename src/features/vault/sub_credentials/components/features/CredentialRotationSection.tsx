@@ -142,9 +142,7 @@ export function CredentialRotationSection({
                 icon={History}
                 title={t.vault.rotation_section.history_empty_title}
                 subtitle={t.vault.rotation_section.history_empty_subtitle}
-                iconColor="text-violet-400/70"
-                iconContainerClassName="bg-violet-500/10 border-violet-500/20"
-                className="py-6"
+                size="sm"
               />
             ) : (
               <div

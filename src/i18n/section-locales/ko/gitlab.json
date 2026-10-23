@@ -121,5 +121,12 @@
   "view_logs": "로그",
   "yesterday": "어제",
   "your_tier": "(현재 등급)",
-  "agent_pipeline_title": "{ref}의 {agent} 파이프라인: {status}"
+  "agent_pipeline_title": "{ref}의 {agent} 파이프라인: {status}",
+  "pipeline_count_one": "{count}개 파이프라인",
+  "pipeline_count_other": "{count}개 파이프라인",
+  "notify_title_success": "파이프라인 성공",
+  "notify_title_failed": "파이프라인 실패",
+  "notify_title_canceled": "파이프라인 취소됨",
+  "notify_title_other": "파이프라인 {status}",
+  "notify_body": "{ref}의 파이프라인 #{id} 상태가 {status}(으)로 바뀌었습니다"
 }

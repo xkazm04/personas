@@ -82,6 +82,24 @@ describe('switchLanguage', () => {
     expect(readPath(t.common, leaf!.path)).toBe(leaf!.ja);
   });
 
+  // Latest pick wins. A cold locale's switch awaits real chunk imports; a
+  // switch started after it must not be overwritten when the cold one lands.
+  it('does not let a slower, older switch overwrite a newer pick of English', async () => {
+    const older = switchLanguage('cs');
+    const newer = switchLanguage('en');
+    await Promise.all([older, newer]);
+    expect(useI18nStore.getState().language).toBe('en');
+  });
+
+  it('does not let a slower, older switch overwrite a newer warm pick', async () => {
+    await switchLanguage('ja'); // warm: ja's route sections are now cached
+    useI18nStore.setState({ language: 'en' });
+    const older = switchLanguage('ko');
+    const newer = switchLanguage('ja');
+    await Promise.all([older, newer]);
+    expect(useI18nStore.getState().language).toBe('ja');
+  });
+
   it('is a no-op when the language is already active', async () => {
     useI18nStore.setState({ language: 'ja' });
     await switchLanguage('ja');

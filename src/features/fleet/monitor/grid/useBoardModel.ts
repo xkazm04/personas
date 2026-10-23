@@ -14,7 +14,8 @@ import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaCardModel } from '../monitorModel';
 import { groupFleet, tallyStates, type SquareState, type TeamGroup } from './fleetGridModel';
 import { filterCards, isBoardFilterActive, NO_BOARD_FILTER, type BoardFilter } from './boardFilter';
-import { contestOfGroupKey, type SessionGrouping } from './fleetSessionModel';
+import { compareSessions, contestOfGroupKey, type SessionGrouping } from './fleetSessionModel';
+import { claimByPersona, personaHomes } from './sessionHome';
 import { columnRows, remoteRows, type ColumnRow } from './gridGeometry';
 import { deviceColumnId, NO_REMOTE, withOrphansOnDevices, type RemoteGrouping } from './remote/remoteBoardModel';
 import type { DeviceAgent } from '@/lib/bindings/DeviceAgent';
@@ -204,7 +205,7 @@ export function useBoardModel(
   cards: PersonaCardModel[],
   personas: Persona[],
   teams: PersonaTeam[],
-  sessionGroups: SessionGrouping,
+  placed: SessionGrouping,
   filter: BoardFilter = NO_BOARD_FILTER,
   /** Sessions this device sent to paired devices. A filtered board carries none. */
   remote: RemoteGrouping = NO_REMOTE,
@@ -215,6 +216,13 @@ export function useBoardModel(
   const grouped = useMemo(() => groupFleet(visible, personas, teams), [visible, personas, teams]);
   const totals = useMemo(() => tallyStates(cards), [cards]);
   const filtered = isBoardFilterActive(filter);
+  // A session a persona dispatched into a worktree of its own (the in-app App
+  // Master's workers) joins the bay that persona lives in (`sessionHome.ts`).
+  const homes = useMemo(() => personaHomes(personas), [personas]);
+  const sessionGroups = useMemo((): SessionGrouping => {
+    const claimed = claimByPersona(placed.byTeam, placed.ungrouped, homes, compareSessions);
+    return claimed.byTeam === placed.byTeam ? placed : { ...placed, ...claimed };
+  }, [placed, homes]);
 
   // Sessions bound to a team that has no rendered column (every one of its
   // personas is missing from the fleet) would otherwise vanish, so they fall

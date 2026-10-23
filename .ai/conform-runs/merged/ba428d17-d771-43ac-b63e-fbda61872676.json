@@ -1,0 +1,4 @@
+{"schema":"conform-run/1","worker":"ba428d17-d771-43ac-b63e-fbda61872676","subject":"rate-limiting",
+"evaluatedAt":"2026-10-22T00:00:00Z","pairs":[],
+"declined":[{"subject":"rate-limiting","context":"742be60e-3ddf-4160-b7cb-4c5cac5965a0","reason":"Only unjudged rate-limiting pair. Context plugins-research-lab-shared has empty paths in the map and context-map.json lists no files; git ls-files shows no arXiv/Crossref client source. The match came from generic tokens (client, get, tokens), so it is likely technique-shaped resonance. Left unknown rather than guessed."}],
+"consults":[]}

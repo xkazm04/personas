@@ -17,7 +17,17 @@
  *    item itself, which arms only when the item is irreversible.
  *
  * The clause diff ("what would change if amended") exists only for the three
- * envelope amends, where both sides are known. React-free.
+ * envelope amends, where both sides are known.
+ *
+ * The card's head reads `breachOutcomes`: one "If you <verb>" line per
+ * numbered verdict the dock prints (amend, deny, then suspend when there is a
+ * mandate to suspend), in the dock's order, so the head never promises a pair
+ * of verdicts the dock does not have. The item's own branches (4-9) carry
+ * their hint inside their button and get no line.
+ *
+ * `mandateStateOf` says what is true about the item's mandate when the card
+ * cannot amend it: unsigned (which project, what signing would change), no
+ * mandate at all (the Orphans lane), or a mandate that did not load. React-free.
  */
 import type { TriageReasonPrompt } from '@/features/agents/quick-answer/triage/triageTypes';
 import type { DecideScope } from '@/lib/bindings/DecideScope';
@@ -25,7 +35,10 @@ import type { LaneClause } from '@/lib/bindings/LaneClause';
 import type { MandateSummary } from '@/lib/bindings/MandateSummary';
 import type { MergePolicy } from '@/lib/bindings/MergePolicy';
 
-import type { MonitorCopy } from '../deck/deckMeta';
+import { mergeLabel, scopeLabel } from '@/features/fleet/monitor/grid/prototype/entry-e/mandate/mandateCopy';
+
+import type { Interpolate, MonitorCopy } from '../deck/deckMeta';
+import { noEffect, yesOutcome, type Outcome } from '../deck/outcome';
 import type { DecisionItem } from '../model/decisionModel';
 import { scopeForKind } from './scopeForKind';
 
@@ -108,4 +121,70 @@ export function denyPrompt(m: MonitorCopy, clause: LaneClause): TriageReasonProm
     skipLabel: m.ml_deny_skip,
     freeText: true,
   };
+}
+
+/** What the card can truthfully say about the item's mandate. */
+export type BreachMandateState =
+  | { kind: 'signed' }
+  | { kind: 'unsigned'; project: string }
+  | { kind: 'none'; project: string }
+  | { kind: 'no-project' }
+  | { kind: 'unread' };
+
+/**
+ * The item's mandate as the card knows it: a summary from `mandate_list`, or
+ * only the snapshot's charter id (the summary did not load), or no charter.
+ * `projectName` is the project's name when the caller could resolve it.
+ */
+export function mandateStateOf(
+  charterId: string | null,
+  mandate: MandateSummary | null,
+  projectId: string | null,
+  projectName: string | null,
+  unknownProject: string,
+): BreachMandateState {
+  if (mandate) {
+    if (mandate.envelope.envelopeVersion > 0) return { kind: 'signed' };
+    return { kind: 'unsigned', project: mandate.projectName ?? projectName ?? unknownProject };
+  }
+  if (charterId) return { kind: 'unread' };
+  if (!projectId) return { kind: 'no-project' };
+  return { kind: 'none', project: projectName ?? unknownProject };
+}
+
+/** The mandate state in one plain sentence, or null for a signed mandate (the envelope speaks for itself). */
+export function mandateStateLine(m: MonitorCopy, tx: Interpolate, state: BreachMandateState): string | null {
+  switch (state.kind) {
+    case 'signed': return null;
+    case 'unsigned': return tx(m.ml_breach_state_unsigned, { project: state.project });
+    case 'none': return tx(m.ml_breach_state_none, { project: state.project });
+    case 'no-project': return m.ml_breach_state_no_project;
+    case 'unread': return m.ml_breach_state_unread;
+  }
+}
+
+export interface BreachOutcomeContext {
+  /** The project whose mandate a suspend would hold. */
+  project: string;
+  /** The cap a spend amend would set, as typed; null until typed. */
+  cap: number | null;
+  usd: (usd: number) => string;
+}
+
+/** One outcome line per numbered verdict in the Breach dock, in its order: amend, deny, suspend. */
+export function breachOutcomes(m: MonitorCopy, tx: Interpolate, item: DecisionItem, plan: BreachPlan, ctx: BreachOutcomeContext): Outcome[] {
+  const a = plan.amend;
+  let amend: Outcome;
+  switch (a.kind) {
+    case 'scope': amend = { verb: m.ml_breach_out_widen_verb, effect: tx(m.ml_breach_out_widen, { scope: scopeLabel(m, a.scope) }) }; break;
+    case 'merge': amend = { verb: m.ml_breach_out_merge_verb, effect: tx(m.ml_breach_out_merge, { policy: mergeLabel(m, a.to) }) }; break;
+    case 'spend': amend = { verb: m.ml_breach_out_spend_verb, effect: tx(m.ml_breach_out_spend, { cap: ctx.usd(ctx.cap ?? a.from ?? 0) }) }; break;
+    case 'item': amend = yesOutcome(m, tx, item); break;
+  }
+  const out: Outcome[] = [
+    amend,
+    { verb: m.ml_breach_out_deny_verb, effect: tx(m.ml_breach_out_deny, { effect: noEffect(m, item.kind) }) },
+  ];
+  if (plan.canSuspend) out.push({ verb: m.ml_breach_out_suspend_verb, effect: tx(m.ml_breach_out_suspend, { project: ctx.project }) });
+  return out;
 }

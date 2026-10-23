@@ -1,0 +1,178 @@
+{
+  "schema": "conform-run/1",
+  "worker": "9b276dfd-4bc8-46d6-8b14-89bf34daae5a",
+  "subject": "streaming-output",
+  "evaluatedAt": "2026-10-16T22:17:35.316223+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [
+    {
+      "context": "output-stream-parser",
+      "subject": "streaming-output",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/parser.rs:516 Unrecognized well-formed events lose their payload and display representation, preventing the required forwarding of unknown events with raw data.",
+      "techniques": [
+        {
+          "technique": "buffering-and-backpressure",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2874 After the cumulative cap, the branch skips every subsequent record before parsing, shedding newest output and terminal events instead of retaining a live tail."
+        },
+        {
+          "technique": "sink-reversibility-decides-the-commit",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2851 This parsing caller uses the reader that appends clip markers inside the bytes, then passes the modified line to the provider parser; the out-of-band clip API is bypassed."
+        },
+        {
+          "technique": "stream-parsing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/parser.rs:516 Unknown well-formed events become a payload-free Unknown; the runner also omits Unknown from its structured event channel."
+        }
+      ]
+    },
+    {
+      "context": "hooks-execution",
+      "subject": "streaming-output",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/execution/cliStreamBuffer.ts:115 Once armed, the intermediate queue accumulates output without an entry or byte budget until its animation-frame flush runs.",
+      "techniques": [
+        {
+          "technique": "buffering-and-backpressure",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/cliStreamBuffer.ts:115 Only the pre-arm hold buffer is capped; the armed queue has no admission budget or eviction accounting."
+        },
+        {
+          "technique": "cancellation-and-finalization",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/useExecutionSummary.ts:98 A non-live trace without an authoritative status or terminal event defaults to completed, converting missing termination evidence into success."
+        },
+        {
+          "technique": "phase-derivation",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/useAiHealingStream.ts:160 An unrecognized healing phase retains the previous specific phase instead of degrading to a generic claim."
+        },
+        {
+          "technique": "render-throttling",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/cliStreamBuffer.ts:134 dispose marks the buffer disposed and clears queued output without a trailing flush, including teardown paths that preserve execution state."
+        },
+        {
+          "technique": "run-attribution",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:273 Asynchronous recovery appends the captured run's lines to the current store without rechecking the active execution identity."
+        }
+      ]
+    },
+    {
+      "context": "companion-narration-ops",
+      "subject": "streaming-output",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/narrationTimeline.ts:46 Each distinct narration event extends the in-memory turn log without an entry or byte budget, so long turns can accumulate unbounded live state.",
+      "techniques": [
+        {
+          "technique": "buffering-and-backpressure",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/narrationTimeline.ts:46 Deduplication provides no memory budget; the presentation's five-row limit does not bound this stored array."
+        },
+        {
+          "technique": "cancellation-and-finalization",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/athenaChatStream.ts:180 The error exit clears accumulated narration instead of attaching it to a settled record with a failed outcome."
+        },
+        {
+          "technique": "run-attribution",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/athenaChatStream.ts:60 CLI and terminal handling use conversation identity without comparing the event's turnId to the live turn, allowing an old turn's events to affect its successor."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "streaming-output",
+      "context": "recipes-playground",
+      "reason": "No files were supplied, and filename and identifier searches across src and src-tauri found neither RecipePlaygroundModal nor useRecipeTestRunner; the current recipe catalog files did not establish where the described playground implementation lives."
+    },
+    {
+      "subject": "streaming-output",
+      "context": "triggers-studio",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor studioCommit.ts:8 is a header comment that does not itself show streaming is absent. The claim of no streaming matches under the triggers directory is also doubtful: useRoutingState.ts:60 mentions 'LiveStream', and I did not confirm that nothing in the context consumes incremental output."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T22:17:35.316223+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "streaming-output"
+      ],
+      "techniques": [
+        "buffering-and-backpressure",
+        "cancellation-and-finalization",
+        "emit-behind-the-revision-window",
+        "mid-turn-steering",
+        "phase-derivation",
+        "render-throttling",
+        "run-attribution",
+        "sink-reversibility-decides-the-commit",
+        "stream-parsing"
+      ],
+      "deviations": 0,
+      "context": "triggers-studio",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-16T22:17:35.316223+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "streaming-output"
+      ],
+      "techniques": [
+        "buffering-and-backpressure",
+        "sink-reversibility-decides-the-commit",
+        "stream-parsing"
+      ],
+      "deviations": 1,
+      "context": "output-stream-parser",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-16T22:17:35.316223+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "streaming-output"
+      ],
+      "techniques": [
+        "buffering-and-backpressure",
+        "cancellation-and-finalization",
+        "phase-derivation",
+        "render-throttling",
+        "run-attribution"
+      ],
+      "deviations": 1,
+      "context": "hooks-execution",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-16T22:17:35.316223+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "streaming-output"
+      ],
+      "techniques": [
+        "buffering-and-backpressure",
+        "cancellation-and-finalization",
+        "run-attribution"
+      ],
+      "deviations": 1,
+      "context": "companion-narration-ops",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

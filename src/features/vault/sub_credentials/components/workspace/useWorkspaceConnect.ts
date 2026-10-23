@@ -5,6 +5,7 @@ import { OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/Cred
 import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
 import type { WorkspaceProvider, WorkspaceService } from './workspaceProviders';
 import { aggregateScopes } from './workspaceProviders';
+import { extractMessage } from '@/lib/silentCatch';
 
 export type ProvisionStatus = 'idle' | 'pending' | 'created' | 'failed';
 
@@ -95,7 +96,8 @@ export function useWorkspaceConnect(provider: WorkspaceProvider): WorkspaceConne
           states[i] = {
             ...state,
             status: 'failed',
-            error: err instanceof Error ? err.message : 'Unknown error',
+            // The store rethrows the IPC AppError object, never an Error.
+            error: extractMessage(err),
           };
         }
         setProvisionStates([...states]);

@@ -1,0 +1,47 @@
+{"schema": "conform-run/1", "worker": "d8d2e1c0-93bb-4c76-b3d2-39a89f464309", "subject": "cost-metering",
+ "evaluatedAt": "2026-10-21T12:19:00Z",
+ "pairs": [
+  {"context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b", "subject": "cost-metering", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce", "evaluatedRevision": 15,
+   "evidence": "src/features/agents/sub_lab/libs/labAggregation.ts:113 totalTokens is inputTokens + outputTokens, offered (:89 doc) as the token-hunger signal cost hides, but the parser extracts cache classes (src-tauri/engine/src/parser.rs:450) the lab row never carries, and per-cell cost is a non-optional f64 (src-tauri/engine/src/test_runner/types.rs:120), so a failed or unpriced cell sums into a model's totalCost as $0 (re-checked 2026-10-21 after 70b362cc63/0af92b6abb: anchor moved from :108, defect unchanged)",
+   "techniques": [
+    {"technique": "unit-classes-are-open", "verdict": "deviation", "evidence": "src/features/agents/sub_lab/libs/labAggregation.ts:113 cache read/creation units neither nested nor counted as residual in the cross-model token comparison"},
+    {"technique": "usage-ledgers", "verdict": "deviation", "evidence": "src-tauri/engine/src/test_runner/types.rs:120 cost_usd: f64 turns unknown cell cost into a definite zero"}]},
+  {"context": "208f50de-5d3b-4345-9fed-1c106a7a36e9", "subject": "cost-metering", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce", "evaluatedRevision": 15,
+   "evidence": "src/lib/utils/platform/pricing.ts:81 an unrecognised model prices at $0 (only a logger.warn at :80, no counter), so CostBreakdownBar (src/features/agents/sub_executions/detail/inspector/CostBreakdownBar.tsx:28) shows a $0 total whenever the run carries no actualCostUsd; the :46 unknown-model chip marks it but does not replace the zero with the declared conservative default price-tables requires (re-checked 2026-10-21: re-anchored to the pricer)",
+   "techniques": [
+    {"technique": "price-tables", "verdict": "deviation", "evidence": "src/lib/utils/platform/pricing.ts:81 unknown -> 0 with an uncounted warn; a third price authority beside src-tauri/engine/src/cost.rs and src-tauri/engine/src/http_engine/config.rs"},
+    {"technique": "spend-observability", "verdict": "realized-in-part", "evidence": "src/features/agents/sub_executions/detail/inspector/CostBreakdownBar.tsx:46 the default-priced state is surfaced on the row as a chip"}]},
+  {"context": "e8fa2ff7-145d-4c58-af83-1239b87d2c24", "subject": "cost-metering", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce", "evaluatedRevision": 15,
+   "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:112 the total renders bare with no window or unpriced/floor caveat, :114 sums only input+output tokens, :115 counts error calls not failed-call spend, :51 cuts by_trigger to 8 with no remainder, and by_model is still never rendered in sub_activity (re-checked 2026-10-21 after ba71b13937, which fixed only the failed-read empty state; anchors shifted +4)",
+   "techniques": [
+    {"technique": "spend-observability", "verdict": "deviation", "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:51 slices do not reach the total and there is no row drill-down"},
+    {"technique": "unit-classes-are-open", "verdict": "deviation", "evidence": "src/features/overview/sub_activity/components/LlmSpendSection.tsx:114 cache classes dropped from the token total"}]},
+  {"context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b", "subject": "cost-metering", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce", "evaluatedRevision": 15,
+   "evidence": "src-tauri/db/src/repos/llm_spend.rs:83 the headless ledger's only row constructor still parses the stream's result event, so a killed or timed-out spawn writes no row, and :30 swallows a failed insert with an uncounted warn; the curator daily cap sums this ledger (:135), so failed spend and dropped writes stay invisible to it (re-checked 2026-10-21 after aaf8159ca2, an index-only change; anchor :85 -> :83)",
+   "techniques": [
+    {"technique": "usage-ledgers", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/llm_spend.rs:83 no failed-leg writer; :30 dropped writes uncounted"},
+    {"technique": "budget-enforcement", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/llm_spend.rs:135 the cap enforces against a success-only sum"}]},
+  {"context": "320d2cea-9761-4233-97c1-ee2eaf4d6c17", "subject": "cost-metering", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce", "evaluatedRevision": 15,
+   "evidence": "src-tauri/db/src/repos/execution/executions.rs:2382 SUMs cost_usd under COALESCE(..,0.0), so unpriced rows (kept None by coerce_f64 :210) vanish from the month figure the gate enforces; get_monthly_spend (:2371) returns a bare f64 with no period window or floor flag, and unattended consumers swallow a ledger error as $0 (src-tauri/src/engine/background/scheduler.rs:889, src-tauri/src/engine/execution.rs:3045 unwrap_or(0.0)). Realized: one MONTHLY_SPEND_PREDICATE (:2369) counting failed/cancelled rows (re-checked 2026-10-21 after the 10-19..10-21 db-repos-execution fixes, none touching spend; anchors shifted)",
+   "techniques": [
+    {"technique": "usage-ledgers", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/execution/executions.rs:2371 no period boundary returned with the total"},
+    {"technique": "budget-enforcement", "verdict": "deviation", "evidence": "src-tauri/src/engine/execution.rs:3045 undeclared, uncounted fail-open when the ledger read fails"},
+    {"technique": "unit-classes-are-open", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/execution/executions.rs:2382 an unpriced row sums as zero rather than marking the total a floor"}]}
+ ],
+ "declined": [
+  {"subject": "cost-metering", "context": "5ab49df3-3442-4ea6-a405-077dec64850d", "reason": "governance weak: the only unknown cost-metering pair; weak rows are a coverage question, not judged by default"},
+  {"subject": "cost-metering", "context": "2fb16136-586e-478d-823f-38434d2d5b9a", "reason": "weak row, already judged at rev 15, but b2c51639f4 (10-20) made metrics.rs accept an explicit start/end window, which may answer its period-window claim - re-check first next run"},
+  {"subject": "cost-metering", "context": "4810daf8-0549-4899-95d2-99c81cde6455", "reason": "judged at current rev 15; anchor file changed only by 53fe95d69f (day-label timezone fix), not the cited defect; outside budget"}
+ ],
+ "consults": [
+  {"ts":"2026-10-21T12:19:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["unit-classes-are-open","usage-ledgers"],"deviations":1},
+  {"ts":"2026-10-21T12:19:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["price-tables","spend-observability"],"deviations":1},
+  {"ts":"2026-10-21T12:19:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["spend-observability","unit-classes-are-open"],"deviations":1},
+  {"ts":"2026-10-21T12:19:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","budget-enforcement"],"deviations":1},
+  {"ts":"2026-10-21T12:19:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","budget-enforcement","unit-classes-are-open"],"deviations":1}
+ ]}

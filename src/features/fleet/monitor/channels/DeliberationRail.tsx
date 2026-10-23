@@ -1,215 +1,104 @@
-import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, CircleDot, GitBranch, Merge, Play, SkipForward, Square, Wand2 } from 'lucide-react';
+import { useEffect, useMemo } from 'react';
+import { GitBranch, Merge, Play, SkipForward, Square } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
-import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
+import { Branch } from '@/features/decision-center/deck/DeckDock';
+import { digitOf, isTypingTarget, plain } from '@/features/decision-center/deck/keys';
+import { useAppKeyboard, ROUTE_DECISION_PRIORITY } from '@/lib/keyboard/AppKeyboardProvider';
 import { useTeamDeliberations } from '@/features/teams/sub_deliberations/useTeamDeliberations';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
-
-/** A capability a persona asked to run, as the engine stores it on the row. */
-interface PendingAction { persona_id?: string; use_case_id?: string; rationale?: string }
-/** The converged proposal, as the engine stores it on the row. */
-interface Proposal { title?: string; objective?: string; summary?: string }
-
-/** Deliberation status -> the caption key that names it in the user's words.
- *  The raw enum used to render here verbatim (`awaiting_action`), which is the
- *  one string on this rail that was never translated. Keys already existed for
- *  every status on `deliberation.*`; this rail just never reached for them. */
-const STATUS_KEY = {
-  open: 'status_open',
-  converging: 'status_converging',
-  resolved: 'status_resolved',
-  escalated: 'status_escalated',
-  awaiting_action: 'status_awaiting_action',
-  action_running: 'status_action_running',
-  tracking: 'status_tracking',
-  paused: 'status_paused',
-  aborted: 'status_aborted',
-} as const;
+import '@/features/decision-center/deck/aurora.css';
+import { Engraved, Lamp } from '../grid/prototype/entry-e/parts';
+import { DeliberationDecisions, type PendingAction } from './DeliberationDecisions';
+import { deliberationLook, deliberationStatusLabel, type DeliberationProposal } from './deliberationStatus';
 
 /* ----------------------------------------------------------------------------
- * DELIBERATION RAIL — the focused deliberation's controls (plan D1).
+ * DELIBERATION RAIL - the driven deliberation's controls (plan D1, WP12).
  *
- * The conversation shows a deliberation as a CARD: topic, status, round, cost,
- * turns. What it deliberately does NOT show is the machinery — because a card
- * that also carried advance / run-to-budget / split / merge / escalation would
- * be a dashboard wedged into a chat, which is exactly what Briefing's thesis
- * rejects. Focus a deliberation and the machinery appears HERE.
- *
- * This is what lets `sub_deliberations/DeliberationsPane` be deleted without
- * losing anything: every control it had — advance, run-to-budget + stop,
- * parallel-track split/merge, the gated capability approve/skip, the escalation
- * decision, and proposal → assignment — lives in this rail.
+ * The thread shows a deliberation as a band; its machinery lives HERE, which
+ * is what let `sub_deliberations/DeliberationsPane` be deleted: advance, run
+ * to budget and stop, split / run all tracks / merge, the gated capability,
+ * the escalation decision, proposal to assignment, the agenda. Drawn in the
+ * dock's grammar: one state head (lamp, status, topic, round and the spend
+ * meter), every run control a deck `Branch` with its digit, the agenda as
+ * lamp rows. Engine-written JSON is parsed once and never thrown from.
  * -------------------------------------------------------------------------- */
 
-export function DeliberationRail({ teamId, deliberationId }: { teamId: string; deliberationId: string }) {
+const icon = (I: typeof Play) => <I className="h-4 w-4" aria-hidden />;
+
+export function DeliberationRail({ teamId, deliberationId, keys = false }: { teamId: string; deliberationId: string; keys?: boolean }) {
   const { t, tx } = useTranslation();
-  const personaIndex = usePersonaIndex();
+  const m = t.monitor;
   const d = useTeamDeliberations(teamId);
-  const [note, setNote] = useState('');
-
-  // Focusing a card in the conversation selects it in the hook, which is what
-  // loads its agenda / tracks / pending action. Depend on the SETTER, not on
-  // the whole hook value: `d` changes identity on every poll tick, and the
-  // only thing that kept this effect from re-firing six times a minute was
-  // useState's own bail-out on an unchanged id.
+  // Depend on the SETTER: `d` changes identity on every poll tick.
   const { setSelectedId } = d;
-  useEffect(() => {
-    setSelectedId(deliberationId);
-  }, [deliberationId, setSelectedId]);
-
+  useEffect(() => { setSelectedId(deliberationId); }, [deliberationId, setSelectedId]);
   const detail = d.detail;
+  const pending = useMemo(() => parseJsonOrDefault<PendingAction | null>(detail?.pendingAction, null), [detail?.pendingAction]);
+  const proposal = useMemo(() => parseJsonOrDefault<DeliberationProposal | null>(detail?.resolution, null), [detail?.resolution]);
+  const terminal = detail ? ['resolved', 'aborted'].includes(detail.status) : true;
 
-  // Engine-written JSON, parsed ONCE per raw string and never thrown from: a
-  // malformed blob used to take the whole rail down mid-render, because the
-  // parse sat unguarded in the component body.
-  const pending = useMemo(
-    () => parseJsonOrDefault<PendingAction | null>(detail?.pendingAction, null),
-    [detail?.pendingAction],
-  );
-  const proposal = useMemo(
-    () => parseJsonOrDefault<Proposal | null>(detail?.resolution, null),
-    [detail?.resolution],
-  );
+  const controls = useMemo(() => {
+    if (terminal) return [];
+    const list = [
+      { label: m.delib_advance, icon: icon(Play), run: () => { if (!d.advancing) void d.advance(deliberationId); } },
+      d.running
+        ? { label: m.delib_stop, icon: icon(Square), run: () => d.stopRun() }
+        : { label: m.delib_run_budget, icon: icon(SkipForward), run: () => { if (!d.advancing) void d.runToBudget(deliberationId); } },
+      { label: m.delib_split, icon: icon(GitBranch), run: () => { if (!d.trackBusy) void d.split(deliberationId); } },
+    ];
+    if (d.tracks.length > 0) {
+      list.push(
+        { label: m.delib_run_tracks, icon: icon(Play), run: () => { if (!d.trackBusy) void d.runAllTracks(deliberationId); } },
+        { label: m.delib_merge, icon: icon(Merge), run: () => { if (!d.trackBusy) void d.merge(deliberationId); } },
+      );
+    }
+    return list;
+  }, [terminal, d, deliberationId, m]);
 
-  if (!detail) {
-    return <p className="typo-caption text-foreground opacity-45 p-2">{t.monitor.delib_loading}</p>;
-  }
+  useAppKeyboard((e) => {
+    if (isTypingTarget(e.target) || !plain(e) || e.shiftKey || document.querySelector('[role="dialog"]')) return false;
+    const c = controls[(digitOf(e) ?? 0) - 1];
+    if (!c) return false;
+    c.run();
+    e.preventDefault();
+    return true;
+  }, { enabled: keys, priority: ROUTE_DECISION_PRIORITY });
 
+  if (!detail) return <p className="p-2 typo-caption">{m.delib_loading}</p>;
   const spent = Number(detail.costSpentUsd ?? 0);
   const budget = Number(detail.costBudgetUsd ?? 5);
-  const statusKey = STATUS_KEY[detail.status as keyof typeof STATUS_KEY];
-  const statusLabel = statusKey ? t.deliberation[statusKey] : detail.status;
-  const terminal = ['resolved', 'aborted'].includes(detail.status);
-
-  const btn = 'inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-border typo-caption text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-40';
+  const share = budget > 0 ? Math.min(1, spent / budget) : 0;
 
   return (
-    <div className="space-y-3">
-      <div>
-        <p className="typo-body text-foreground">{detail.topic}</p>
-        <p className="typo-caption text-foreground opacity-50 mt-0.5">
-          {statusLabel} · {tx(t.monitor.delib_round, { round: Number(detail.round) })} ·{' '}
-          <Numeric value={spent} precision={2} /> / <Numeric value={budget} precision={2} />
-        </p>
+    <div className="au-scope flex flex-col gap-3" data-testid="deliberation-rail">
+      <div className="flex flex-col gap-1">
+        <span className="flex items-center gap-2">
+          <Lamp lamp={deliberationLook(detail.status).lamp} />
+          <Engraved>{m.conv_card_deliberation} · {deliberationStatusLabel(t, detail.status)}</Engraved>
+        </span>
+        <span className="typo-heading text-foreground">{detail.topic}</span>
+        <span className="mt-1 flex items-center gap-3">
+          <span className="typo-data tabular-nums text-foreground">{tx(m.delib_round, { round: Number(detail.round) })}</span>
+          <span className={`ae-bar ${share > 0.8 ? 'ae-t-warn' : 'ae-t-agent'} min-w-0 flex-1`} aria-hidden><i style={{ width: `${share * 100}%` }} /></span>
+          <span className="typo-data tabular-nums text-foreground"><Numeric value={spent} precision={2} /> / <Numeric value={budget} precision={2} /></span>
+        </span>
       </div>
-
-      {/* Run controls — a deliberation is bounded by BUDGET, not by turn count. */}
-      {!terminal && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button type="button" className={btn} disabled={d.advancing} onClick={() => void d.advance(deliberationId)}>
-            <Play className="w-3 h-3" /> {t.monitor.delib_advance}
-          </button>
-          {d.running ? (
-            <button type="button" className={btn} onClick={() => d.stopRun()}>
-              <Square className="w-3 h-3" /> {t.monitor.delib_stop}
-            </button>
-          ) : (
-            <button type="button" className={btn} disabled={d.advancing} onClick={() => void d.runToBudget(deliberationId)}>
-              <Play className="w-3 h-3" /> {t.monitor.delib_run_budget}
-            </button>
-          )}
-          <button type="button" className={btn} disabled={d.trackBusy} onClick={() => void d.split(deliberationId)}>
-            <GitBranch className="w-3 h-3" /> {t.monitor.delib_split}
-          </button>
-          {d.tracks.length > 0 && (
-            <>
-              <button type="button" className={btn} disabled={d.trackBusy} onClick={() => void d.runAllTracks(deliberationId)}>
-                <Play className="w-3 h-3" /> {t.monitor.delib_run_tracks}
-              </button>
-              <button type="button" className={btn} disabled={d.trackBusy} onClick={() => void d.merge(deliberationId)}>
-                <Merge className="w-3 h-3" /> {t.monitor.delib_merge}
-              </button>
-            </>
-          )}
+      {controls.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          {controls.map((c, i) => <Branch key={c.label} k={String(i + 1)} label={c.label} icon={c.icon} accent={i === 0} onClick={c.run} />)}
         </div>
       )}
-
-      {/* Gated capability — a persona asked to DO something; the human decides. */}
-      {pending && (
-        <div className="rounded-card border border-amber-400/30 bg-amber-400/[0.07] p-2">
-          <p className="typo-caption text-amber-300 mb-1">{t.monitor.delib_capability}</p>
-          <p className="typo-caption text-foreground opacity-80">
-            {personaIndex.get(pending.persona_id ?? '')?.name.replace(/^T:\s*/, '') ?? pending.persona_id}
-            {pending.rationale ? ` — ${pending.rationale}` : ''}
-          </p>
-          <div className="flex items-center gap-1.5 mt-1.5">
-            <button type="button" className={btn} disabled={d.actionBusy} onClick={() => void d.approveAction(deliberationId)}>
-              <CheckCircle2 className="w-3 h-3" /> {t.monitor.delib_approve_run}
-            </button>
-            <button type="button" className={btn} disabled={d.actionBusy} onClick={() => void d.skipAction(deliberationId)}>
-              <SkipForward className="w-3 h-3" /> {t.monitor.delib_skip}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Escalation — the team is stuck and wants a decision. */}
-      {detail.status === 'escalated' && (
-        <div className="rounded-card border border-status-warning/30 bg-status-warning/[0.07] p-2">
-          <p className="typo-caption text-status-warning mb-1">{t.monitor.delib_escalated}</p>
-          <textarea
-            rows={2}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={t.monitor.delib_decision_placeholder}
-            className="w-full px-2 py-1 rounded-input bg-secondary/30 border border-border typo-caption text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40 resize-none"
-          />
-          <div className="flex items-center gap-1.5 mt-1.5">
-            <button type="button" className={btn} disabled={d.decisionBusy} onClick={() => void d.resolveEscalation(deliberationId, 'resume', note)}>
-              {t.monitor.delib_resume}
-            </button>
-            <button type="button" className={btn} disabled={d.decisionBusy} onClick={() => void d.resolveEscalation(deliberationId, 'resolve', note)}>
-              {t.monitor.delib_resolve}
-            </button>
-            <button type="button" className={btn} disabled={d.decisionBusy} onClick={() => void d.resolveEscalation(deliberationId, 'abort', note)}>
-              {t.monitor.delib_abort}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* The payoff — a deliberation that converged becomes real work. */}
-      {proposal?.title && (
-        <div className="rounded-card border border-status-success/30 bg-status-success/[0.07] p-2">
-          <p className="typo-caption text-status-success mb-1">{t.monitor.delib_proposal}</p>
-          <p className="typo-caption text-foreground">{proposal.title}</p>
-          {proposal.summary && <p className="typo-caption text-foreground opacity-75 mt-0.5">{proposal.summary}</p>}
-          {!detail.spawnedAssignmentId && (
-            <div className="flex items-center gap-1.5 mt-1.5">
-              <button type="button" className={btn} onClick={() => void d.approve(deliberationId)}>
-                <Wand2 className="w-3 h-3" /> {t.monitor.delib_approve_run}
-              </button>
-              <button type="button" className={btn} onClick={() => void d.dismiss(deliberationId)}>
-                {t.monitor.delib_dismiss}
-              </button>
-            </div>
-          )}
-          {detail.spawnedAssignmentId && (
-            <p className="typo-caption text-status-success mt-1">{t.monitor.delib_spawned}</p>
-          )}
-        </div>
-      )}
-
-      {/* Agenda — the termination model. A deliberation ends when the agenda is
-          resolved, not when a turn budget runs out. */}
+      <DeliberationDecisions d={d} detail={detail} id={deliberationId} pending={pending} proposal={proposal} />
       {d.agenda.length > 0 && (
-        <div>
-          <p className="typo-label text-foreground opacity-45 mb-1">{t.monitor.delib_agenda}</p>
-          <div className="space-y-1">
-            {d.agenda.map((a) => (
-              <div key={a.id} className="flex items-start gap-1.5">
-                {a.status === 'resolved' ? (
-                  <CheckCircle2 className="w-3 h-3 mt-0.5 flex-shrink-0 text-status-success" />
-                ) : (
-                  <CircleDot className="w-3 h-3 mt-0.5 flex-shrink-0 text-foreground opacity-40" />
-                )}
-                <span className={`typo-caption ${a.status === 'resolved' ? 'text-foreground opacity-50 line-through' : 'text-foreground'}`}>
-                  {a.item}
-                </span>
-              </div>
-            ))}
-          </div>
+        <div className="flex flex-col gap-1">
+          <Engraved>{m.delib_agenda}</Engraved>
+          {d.agenda.map((a) => (
+            <span key={a.id} className="flex items-start gap-2 typo-body text-foreground">
+              <Lamp lamp={{ tone: a.status === 'resolved' ? 'ok' : 'off', lit: false }} className="mt-1.5" />
+              <span className={a.status === 'resolved' ? 'line-through decoration-foreground/40' : ''}>{a.item}</span>
+            </span>
+          ))}
         </div>
       )}
     </div>

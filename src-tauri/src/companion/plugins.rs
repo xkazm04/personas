@@ -15,7 +15,7 @@
 //! a single canonical set, not a user-curated subset of a vault).
 
 use chrono::Utc;
-use rusqlite::{params, OptionalExtension};
+use rusqlite::params;
 use serde::Serialize;
 
 use crate::db::UserDbPool;
@@ -89,17 +89,4 @@ pub fn list_enabled(pool: &UserDbPool) -> Result<Vec<String>, AppError> {
         .query_map([], |row| row.get::<_, String>(0))?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(rows)
-}
-
-#[allow(dead_code)]
-pub fn is_enabled(pool: &UserDbPool, plugin_name: &str) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let row: Option<i32> = conn
-        .query_row(
-            "SELECT enabled FROM companion_plugin_toggle WHERE plugin_name = ?1",
-            params![plugin_name],
-            |r| r.get(0),
-        )
-        .optional()?;
-    Ok(row == Some(1))
 }

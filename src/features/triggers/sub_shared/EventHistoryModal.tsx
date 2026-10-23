@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ExternalLink, History, Tag } from 'lucide-react';
+import { ExternalLink, Tag } from 'lucide-react';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -54,15 +54,23 @@ export function EventHistoryModal({ entry, onClose }: Props) {
   const [changes, setChanges] = useState<SharedEventChange[] | null>(null);
   // Impact runs (verdicts of dispatched fleet sessions), grouped per firing.
   const [runsByFiring, setRunsByFiring] = useState<Map<string, SharedEventImpactRun[]>>(new Map());
+  // A failed read is not an empty history: "No changes recorded yet" over a
+  // failed listFirings told the user the feed never changed.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let alive = true;
+    setLoadFailed(false);
     api
       .listFirings(entry.slug, 100)
       .then((rows) => { if (alive) setChanges(rows); })
       .catch((e) => {
         silentCatch('features/triggers/sub_shared/EventHistoryModal:load')(e);
-        if (alive) setChanges([]);
+        if (alive) {
+          setChanges([]);
+          setLoadFailed(true);
+        }
       });
     api
       .listImpactRuns(entry.id, 200)
@@ -80,7 +88,7 @@ export function EventHistoryModal({ entry, onClose }: Props) {
         silentCatch('features/triggers/sub_shared/EventHistoryModal:loadImpact')(e);
       });
     return () => { alive = false; };
-  }, [entry.slug, entry.id]);
+  }, [entry.slug, entry.id, reloadKey]);
 
   return (
     <DetailModal
@@ -100,11 +108,23 @@ export function EventHistoryModal({ entry, onClose }: Props) {
             <span className="sr-only">{m.history_loading}</span>
             <HistoryGhostRows />
           </>
+        ) : loadFailed ? (
+          <EmptyState
+            art="archive"
+            size="sm"
+            title={t.triggers.could_not_load_history}
+            action={{
+              label: t.common.retry,
+              onClick: () => {
+                setChanges(null);
+                setReloadKey((k) => k + 1);
+              },
+            }}
+          />
         ) : changes.length === 0 ? (
           <EmptyState
-            icon={History}
-            iconColor="text-sky-400"
-            iconContainerClassName="bg-sky-500/10 border-sky-500/20"
+            art="archive"
+            size="sm"
             title={m.history_empty_title}
             subtitle={m.history_empty_hint}
           />

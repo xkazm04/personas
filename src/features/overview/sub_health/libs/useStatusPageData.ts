@@ -5,9 +5,13 @@ import { storeBus, AccessorKey } from '@/lib/storeBus';
 import { getSlaDashboard } from '@/api/overview/sla';
 import { getHealthBundle } from '@/api/overview/health';
 import { log } from '@/lib/log';
+// IPC rejects with a serialized AppError OBJECT, never an Error, so the old
+// `instanceof Error ? .message : String(x)` ladder put "[object Object]" in the banner.
+import { extractMessage } from '@/lib/silentCatch';
 import type { PersonaSlaStats } from '@/lib/bindings/PersonaSlaStats';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import type { Persona } from '@/lib/bindings/Persona';
+import type { PersonaDailyReliability } from '@/lib/bindings/PersonaDailyReliability';
 import { computeCompositeHealth, type CompositeHealthEntry } from './compositeHealthScore';
 
 interface StatusPageState {
@@ -30,13 +34,20 @@ interface StatusPageState {
 }
 
 /**
- * Average composite score across personas, or null when there are none.
- * Extracted as a pure function so the "no personas at all" honesty fix is
- * unit-testable without mounting the hook (store/IPC free).
+ * Average composite score across the personas that have SLA data, or null when
+ * none do. Extracted as a pure function so the honesty rules are unit-testable
+ * without mounting the hook (store/IPC free).
+ *
+ * A persona with no SLA row carries `grade: 'unknown'`, but its `score` is
+ * still the weighted formula run over defaults (success 0, latency/healing/
+ * stability 100), which lands near 70. Averaging that in lets every dormant
+ * persona drag a healthy fleet toward "degraded" with a number nobody measured,
+ * the same rule `computeGlobalUptime` below already applies to no-data days.
  */
 export function computeGlobalScore(entries: CompositeHealthEntry[]): number | null {
-  if (entries.length === 0) return null;
-  return Math.round(entries.reduce((s, e) => s + e.score, 0) / entries.length);
+  const measured = entries.filter((e) => e.hasSlaData);
+  if (measured.length === 0) return null;
+  return Math.round(measured.reduce((s, e) => s + e.score, 0) / measured.length);
 }
 
 /**
@@ -63,6 +74,12 @@ export function useStatusPageData() {
 
   const [slaStats, setSlaStats] = useState<PersonaSlaStats[]>([]);
   const [healingIssues, setHealingIssues] = useState<PersonaHealingIssue[]>([]);
+  // Each persona's own day-by-day success series, from the same health bundle.
+  // null = not read (or the read failed): the day bars then say 'no-data'.
+  const [personaDaily, setPersonaDaily] = useState<PersonaDailyReliability[] | null>(null);
+  // A failed daily read greys every bar, which must not pass for "no activity":
+  // it joins the combined error below so the banner says it.
+  const [dailyError, setDailyError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Per-source errors — a rejected SLA or healing fetch previously vanished
@@ -93,7 +110,7 @@ export function useStatusPageData() {
         setSlaStats(slaResult.value.persona_stats);
         setSlaError(null);
       } else {
-        const msg = slaResult.reason instanceof Error ? slaResult.reason.message : String(slaResult.reason);
+        const msg = extractMessage(slaResult.reason);
         log.warn('useStatusPageData', 'Failed to load SLA stats', { error: msg });
         setSlaError(msg);
       }
@@ -105,15 +122,24 @@ export function useStatusPageData() {
           setHealingIssues(bundle.healingIssues ?? []);
           setHealingError(null);
         }
+        if (bundle.errors.personaDaily) {
+          log.warn('useStatusPageData', 'Failed to load per-persona daily series', { error: bundle.errors.personaDaily });
+          setPersonaDaily(null);
+          setDailyError(bundle.errors.personaDaily);
+        } else {
+          setPersonaDaily(bundle.personaDaily ?? []);
+          setDailyError(null);
+        }
       } else {
-        const msg = healingResult.reason instanceof Error ? healingResult.reason.message : String(healingResult.reason);
+        const msg = extractMessage(healingResult.reason);
         log.warn('useStatusPageData', 'Failed to load healing issues', { error: msg });
         setHealingError(msg);
+        setDailyError(msg);
       }
 
       setLastRefreshedAt(Date.now());
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       log.warn('useStatusPageData', 'Failed to load status page data', { error: msg });
       setError(msg);
     } finally {
@@ -189,8 +215,9 @@ export function useStatusPageData() {
       healingIssues,
       costAnomalyCount: executionDashboard?.cost_anomalies?.length ?? 0,
       dailyPoints,
+      personaDaily,
     });
-  }, [executionDashboard, slaStats, healingIssues]);
+  }, [executionDashboard, slaStats, healingIssues, personaDaily]);
 
   // A score computed over a partial read is not a lower-confidence score — it is
   // a WRONG one, and wrong in the flattering direction.
@@ -218,7 +245,7 @@ export function useStatusPageData() {
   // Combined error: the hard fetchExecutionDashboard failure takes priority,
   // then whichever per-source fetch rejected — so the existing error banner
   // fires for a partial failure instead of only a total one.
-  const combinedError = error ?? slaError ?? healingError;
+  const combinedError = error ?? slaError ?? healingError ?? dailyError;
 
   return useMemo((): StatusPageState & { refresh: () => Promise<void> } => ({
     entries,

@@ -54,20 +54,33 @@ jobs:
           set -euo pipefail
           SHA="${{ github.sha }}"
           echo "Commit: $SHA  (publish=${PUBLISHING:-false})"
-          RUNS=$(gh api "repos/${{ github.repository }}/actions/workflows/ci.yml/runs?head_sha=$SHA&per_page=10"                    --jq '[.workflow_runs[] | {status,conclusion}]' 2>/dev/null || echo '[]')
-          echo "CI runs for this SHA: $RUNS"
-          CONCLUSION=$(echo "$RUNS" | jq -r 'map(select(.status=="completed")) | .[0].conclusion // "none"')
-          echo "CI conclusion: $CONCLUSION"
+          # ci.yml runs in two lanes since 2026-10-15 (see its header). A push
+          # runs the FAST lane - Linux only, Vitest scoped to what changed - so
+          # a green push run is not evidence that this commit builds and passes
+          # on Windows and macOS. Publishing needs a green FULL lane: a
+          # successful run on this SHA that contains a successful Windows leg
+          # of rust-tests, which only the full lane has. (A run's own
+          # conclusion cannot tell the lanes apart; its jobs can.)
+          RUNS=$(gh api "repos/${{ github.repository }}/actions/workflows/ci.yml/runs?head_sha=$SHA&per_page=20" \
+                   --jq '[.workflow_runs[] | select(.status=="completed") | {id,event,conclusion}]' 2>/dev/null || echo '[]')
+          echo "Completed CI runs for this SHA: $RUNS"
+          FULL_GREEN=""
+          for ID in $(echo "$RUNS" | jq -r '.[] | select(.conclusion=="success") | .id'); do
+            WIN=$(gh api "repos/${{ github.repository }}/actions/runs/$ID/jobs?per_page=100" \
+                    --jq '[.jobs[] | select(.name | startswith("rust-tests (windows")) | .conclusion] | first // "absent"' 2>/dev/null || echo error)
+            echo "  run $ID: windows leg of rust-tests = $WIN"
+            if [ "$WIN" = "success" ]; then FULL_GREEN="$ID"; break; fi
+          done
           if [ "${PUBLISHING:-false}" != "true" ]; then
-            echo "::notice::Build-validation run — not gating on CI (conclusion: $CONCLUSION)."
+            echo "::notice::Build-validation run — not gating on CI (green full lane: ${FULL_GREEN:-none})."
             exit 0
           fi
-          if [ "$CONCLUSION" != "success" ]; then
-            echo "::error::Refusing to PUBLISH from a commit whose CI conclusion is '$CONCLUSION'."
-            echo "Run CI to green on this SHA, or re-dispatch with publish=false for a validation build."
+          if [ -z "$FULL_GREEN" ]; then
+            echo "::error::Refusing to PUBLISH: no green FULL-lane CI run on this commit. A push runs only the fast lane."
+            echo "Dispatch CI on this commit (Actions > CI > Run workflow, which runs the full lane), or wait for the 3-hourly scheduled run, or re-dispatch with publish=false for a validation build."
             exit 1
           fi
-          echo "::notice::CI is green for this commit — publish permitted."
+          echo "::notice::Full-lane CI is green for this commit (run $FULL_GREEN) — publish permitted."
 
   # ─── Job 1: Resolve version + (optionally) bump, commit, tag, push ───
   version:

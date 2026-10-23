@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, FolderGit2, Check, Loader2, Wrench, Plus } from 'lucide-react';
+import { ChevronDown, FolderGit2, Check, Loader2, Plus } from 'lucide-react';
 import { listProjects } from '@/api/devTools/devTools';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { useSystemStore } from '@/stores/systemStore';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
+import { extractMessage } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
 const logger = createLogger('devtools-project-dropdown');
 
@@ -47,7 +50,9 @@ export function DevToolsProjectDropdown({
   const placeholder = placeholderProp ?? t.shared.devtools_select_project;
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Raw rejection, resolved at render: invokeWithTimeout rejects with an
+  // AppError OBJECT, so `String(err)` rendered "[object Object]" here.
+  const [error, setError] = useState<{ raw: unknown } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,8 +70,8 @@ export function DevToolsProjectDropdown({
         setProjects(sorted);
       } catch (err) {
         if (cancelled) return;
-        logger.error('Failed to load DevTools projects', { error: String(err) });
-        setError(String(err));
+        logger.error('Failed to load DevTools projects', { error: extractMessage(err) });
+        setError({ raw: err });
         setProjects([]);
       } finally {
         if (!cancelled) setLoading(false);
@@ -145,29 +150,23 @@ export function DevToolsProjectDropdown({
           ) : error ? (
             <div className="px-4 py-6 text-center">
               <p className="typo-body text-rose-400/80 mb-1">{t.shared.devtools_load_failed}</p>
-              <p className="typo-caption text-foreground">{error}</p>
+              <p className="typo-caption text-foreground">{resolveErrorTranslated(t, extractMessage(error.raw)).message}</p>
             </div>
           ) : projects.length === 0 ? (
-            <div className="px-5 py-6 text-center">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                <Wrench className="w-5 h-5 text-primary/60" />
-              </div>
-              <p className="typo-body text-foreground mb-1">{t.shared.devtools_no_projects}</p>
-              <p className="typo-caption text-foreground mb-3">
-                {t.shared.devtools_no_projects_hint}
-              </p>
-              {/* No codebases registered → send the user straight to Connectors
-                  to add a Codebase connector instead of leaving them with a
-                  dead-end hint. */}
-              <button
-                type="button"
-                onClick={() => useSystemStore.getState().setSidebarSection('credentials')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-primary/15 border border-primary/30 text-foreground hover:bg-primary/25 transition-colors"
-              >
-                <Plus className="w-3 h-3" />
-                {t.shared.devtools_no_projects_action}
-              </button>
-            </div>
+            // No codebases registered → send the user straight to Connectors
+            // to add a Codebase connector instead of leaving them with a
+            // dead-end hint.
+            <EmptyState
+              art="folder"
+              size="sm"
+              title={t.shared.devtools_no_projects}
+              description={t.shared.devtools_no_projects_hint}
+              action={{
+                label: t.shared.devtools_no_projects_action,
+                icon: Plus,
+                onClick: () => useSystemStore.getState().setSidebarSection('credentials'),
+              }}
+            />
           ) : (
             <div className="max-h-64 overflow-y-auto py-1">
               {projects.map((project, i) => {
@@ -177,6 +176,8 @@ export function DevToolsProjectDropdown({
                   <button
                     key={project.id}
                     type="button"
+                    role="option"
+                    aria-selected={isSelected}
                     data-testid={`devtools-project-option-${project.id}`}
                     onClick={() => {
                       onSelect(project);

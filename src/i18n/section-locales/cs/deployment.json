@@ -244,7 +244,9 @@
     "loading_firings": "Načítání…",
     "no_firings": "Žádná nedávná spuštění",
     "recent_firings": "Nedávná spuštění",
-    "firings_load_failed": "Poslední aktivace se nepodařilo načíst."
+    "firings_load_failed": "Poslední aktivace se nepodařilo načíst.",
+    "triggers_load_failed_one": "Nepodařilo se načíst spouštěče pro {count} personu.",
+    "triggers_load_failed_other": "Nepodařilo se načíst spouštěče pro {count} person."
   },
   "sr_connecting": "Připojování ke cloudovému orchestrátoru…",
   "sr_deploying": "Nasazování persony do cloudu",

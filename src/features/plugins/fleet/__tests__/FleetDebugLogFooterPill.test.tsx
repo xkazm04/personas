@@ -4,7 +4,7 @@
  * until a recording is actually running (so it never clutters the footer), and
  * when it IS running it stops the recorder — the reachable-stop guarantee.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -40,6 +40,12 @@ vi.mock('@/api/fleet/fleet', () => ({
 
 import * as fleetApi from '@/api/fleet/fleet';
 import { FleetDebugLogFooterPill } from '../FleetDebugLogFooterPill';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
+
+// `plugins` is a code-split i18n section: it reaches the runtime through an
+// async chunk, so a render before it lands reads every label as undefined and
+// a copy assertion races the import. Await it once, before any render.
+beforeAll(() => preloadSectionsAsync('en', ['plugins']));
 
 const status = (o: Partial<FleetDebugLogStatus> = {}): FleetDebugLogStatus => ({
   active: false,
@@ -74,7 +80,11 @@ describe('FleetDebugLogFooterPill', () => {
   });
 
   it('stops the recorder when clicked', async () => {
+    // The mount-time status refresh adopts whatever the backend reports, so an
+    // "armed" fixture must say armed on BOTH sides: a backend that answers idle
+    // disarms the store under the click, and the test then exercises start.
     store.fleetDebugLogActive = true;
+    vi.mocked(fleetApi.debugLogStatus).mockResolvedValue(status({ active: true, events: 3, path: 'C:/x/a.log' }));
     render(<FleetDebugLogFooterPill />);
     await userEvent.click(screen.getByTestId('footer-debug-log-stop'));
     await waitFor(() => expect(fleetApi.debugLogStop).toHaveBeenCalled());

@@ -30,6 +30,7 @@ import type { DevProject } from '@/lib/bindings/DevProject';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { FLEET_STATE_META, type FleetStateMeta } from '@/features/plugins/fleet/fleetStateMeta';
+import { labelledTeam, teamBySlug } from './sessionHome';
 
 const META_BY_STATE = new Map<FleetSessionState, FleetStateMeta>(FLEET_STATE_META.map((m) => [m.id, m]));
 /** Attention-first rank — the canonical table's own order. */
@@ -148,6 +149,8 @@ export function groupSessions(sessions: FleetSession[], projects: DevProject[]):
   for (const p of projects) {
     if (p.root_path && p.team_id) teamByRoot.set(normPath(p.root_path), p.team_id);
   }
+  // A dispatched builder runs in a worktree of its own: its label names the project (`sessionHome.ts`).
+  const bySlug = teamBySlug(projects);
 
   const byTeam = new Map<string, FleetSession[]>();
   const runGroups = new Map<string, FleetSession[]>();
@@ -166,7 +169,7 @@ export function groupSessions(sessions: FleetSession[], projects: DevProject[]):
       push(runGroups, contestGroupKey(contestId, s.contestProjectId?.trim() || null), s);
       continue;
     }
-    const teamId = s.cwd ? teamByRoot.get(normPath(s.cwd)) : undefined;
+    const teamId = (s.cwd ? teamByRoot.get(normPath(s.cwd)) : undefined) ?? labelledTeam(s, bySlug);
     if (teamId) push(byTeam, teamId, s);
     else ungrouped.push(s);
   }
@@ -183,7 +186,7 @@ export function groupSessions(sessions: FleetSession[], projects: DevProject[]):
 }
 
 /** Attention-first, then newest — the same reading order the fleet surfaces use. */
-function compareSessions(a: FleetSession, b: FleetSession): number {
+export function compareSessions(a: FleetSession, b: FleetSession): number {
   const ra = STATE_RANK.get(a.state) ?? 99;
   const rb = STATE_RANK.get(b.state) ?? 99;
   if (ra !== rb) return ra - rb;

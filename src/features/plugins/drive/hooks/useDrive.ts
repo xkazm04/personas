@@ -21,6 +21,7 @@ import {
 } from "@/api/drive";
 import { createModuleCache } from "@/hooks/utility/data/useModuleSubscription";
 import { silentCatch, toastCatch } from "@/lib/silentCatch";
+import { createLatestWins } from "@/stores/util/latestWins";
 import { kindBucketWeight, visualForEntry } from "../designTokens";
 
 // localStorage key holding the user's preferred view-state (viewMode +
@@ -148,7 +149,9 @@ export interface UseDriveResult {
   // Entries
   entries: DriveEntry[];
   loading: boolean;
-  error: string | null;
+  /** The raw rejection of the last listing (an AppError object over IPC), or
+   *  null. Resolved to copy at render, never stringified here. */
+  error: unknown;
   refresh: () => void;
   tree: DriveTreeNode | null;
   refreshTree: () => void;
@@ -259,7 +262,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     () => driveEntriesCache.get(initialPath) ?? [],
   );
   const [loading, setLoading] = useState(() => !driveEntriesCache.has(initialPath));
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [tree, setTree] = useState<DriveTreeNode | null>(() => driveTreeCache);
   const [storage, setStorage] = useState<DriveStorageInfo | null>(() => driveStorageCache);
   const [recent, setRecent] = useState<DriveEntry[]>(() => driveRecentCache);
@@ -311,7 +314,15 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     };
   }, []);
 
+  // Latest-wins for the folder listing. driveList is uncancellable: on a quick
+  // A -> B navigation (or a mutation refresh racing a nav), A's listing could
+  // land after B's and paint A's files under B's breadcrumb, where Delete and
+  // Move act on what the user sees. A superseded response still warms its own
+  // path's cache entry; it just never touches the visible state.
+  const [listingLatest] = useState(createLatestWins);
+
   const refresh = useCallback(() => {
+    const token = listingLatest.next();
     setLoading(true);
     setError(null);
     // Warm nav: this path was already listed this session (or a prior
@@ -325,17 +336,20 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     }
     driveList(currentPath)
       .then((list) => {
-        setEntries(list);
         pathCacheRef.current.set(currentPath, list);
         driveEntriesCache.set(currentPath, list);
+        if (listingLatest.isCurrent(token)) setEntries(list);
       })
       .catch((e) => {
         silentCatch("useDrive:refresh")(e);
-        setError(e instanceof Error ? e.message : String(e));
+        if (!listingLatest.isCurrent(token)) return;
+        setError(e);
         if (!cached) setEntries([]);
       })
-      .finally(() => setLoading(false));
-  }, [currentPath]);
+      .finally(() => {
+        if (listingLatest.isCurrent(token)) setLoading(false);
+      });
+  }, [currentPath, listingLatest]);
 
   const cachedEntriesFor = useCallback((path: string): DriveEntry[] | null => {
     return pathCacheRef.current.get(path) ?? null;
@@ -412,53 +426,53 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   // without this a result that resolves AFTER the user cleared/navigated/started
   // a newer search would resurrect stale results (or overwrite the newer ones).
   // Every clear path bumps this so any in-flight search's late result is dropped.
-  const recursiveSearchSeq = useRef(0);
+  const [recursiveSearchSeq] = useState(createLatestWins);
 
   // Recursive search — escalation path when the local folder filter has
   // no hits. Driven by the consumer (DriveFileList CTA), not auto-fired.
   const runRecursiveSearch = useCallback(async () => {
     const q = searchQuery.trim();
     if (q.length < 2) return;
-    const seq = ++recursiveSearchSeq.current;
+    const seq = recursiveSearchSeq.next();
     setRecursiveLoading(true);
     try {
       const results = await driveSearch(q);
-      if (seq !== recursiveSearchSeq.current) return; // superseded or cleared — drop
+      if (!recursiveSearchSeq.isCurrent(seq)) return; // superseded or cleared — drop
       setRecursiveResults(results);
       setRecursiveQuery(q);
     } catch (e) {
-      if (seq !== recursiveSearchSeq.current) return;
+      if (!recursiveSearchSeq.isCurrent(seq)) return;
       toastCatch("drive:search")(e);
     } finally {
-      if (seq === recursiveSearchSeq.current) setRecursiveLoading(false);
+      if (recursiveSearchSeq.isCurrent(seq)) setRecursiveLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, recursiveSearchSeq]);
 
   const clearRecursiveSearch = useCallback(() => {
-    recursiveSearchSeq.current++; // invalidate any in-flight search
+    recursiveSearchSeq.next(); // invalidate any in-flight search
     setRecursiveResults(null);
     setRecursiveQuery(null);
     setRecursiveLoading(false);
-  }, []);
+  }, [recursiveSearchSeq]);
 
   // Drop recursive results when the user changes path or clears the query —
   // the results are tied to "what was the user searching for at the
   // moment of escalation," and stale results would mislead the next view.
   useEffect(() => {
-    recursiveSearchSeq.current++; // a path change must drop any in-flight result too
+    recursiveSearchSeq.next(); // a path change must drop any in-flight result too
     setRecursiveResults(null);
     setRecursiveQuery(null);
     setRecursiveLoading(false);
-  }, [currentPath]);
+  }, [currentPath, recursiveSearchSeq]);
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
-      recursiveSearchSeq.current++; // clearing the query invalidates an in-flight search
+      recursiveSearchSeq.next(); // clearing the query invalidates an in-flight search
       setRecursiveResults(null);
       setRecursiveQuery(null);
       setRecursiveLoading(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, recursiveSearchSeq]);
 
   // Navigation
   const navigate = useCallback(
@@ -488,76 +502,9 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     if (parent !== currentPath) navigate(parent);
   }, [currentPath, navigate]);
 
-  // Selection
-  const isSelected = useCallback((path: string) => selection.has(path), [selection]);
-
-  const selectOnly = useCallback((path: string) => {
-    setSelection(new Set([path]));
-    lastAnchorRef.current = path;
-  }, []);
-
-  const toggleSelect = useCallback((path: string, additive: boolean) => {
-    let added = true;
-    setSelection((prev) => {
-      if (!additive) return new Set([path]);
-      const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path);
-        added = false;
-      } else {
-        next.add(path);
-      }
-      return next;
-    });
-    // Only update the anchor when the path was added (or replaced the selection).
-    // Anchoring on a deselect would make the next shift-click measure range from
-    // the just-removed item — surprising behavior.
-    if (added) lastAnchorRef.current = path;
-  }, []);
-
-  const selectRange = useCallback(
-    (path: string) => {
-      const anchor = lastAnchorRef.current;
-      if (!anchor) {
-        selectOnly(path);
-        return;
-      }
-      const indexOf = (p: string) => entries.findIndex((e) => e.path === p);
-      const a = indexOf(anchor);
-      const b = indexOf(path);
-      if (a < 0 || b < 0) {
-        selectOnly(path);
-        return;
-      }
-      const [lo, hi] = a < b ? [a, b] : [b, a];
-      const next = new Set<string>();
-      for (let i = lo; i <= hi; i++) {
-        const e = entries[i];
-        if (e) next.add(e.path);
-      }
-      setSelection(next);
-    },
-    [entries, selectOnly],
-  );
-
-  const clearSelection = useCallback(() => setSelection(new Set()), []);
-
-  const selectAll = useCallback(() => {
-    setSelection(new Set(entries.map((e) => e.path)));
-  }, [entries]);
-
-  // Sort + search
-  const setSort = useCallback(
-    (key: SortKey, dir?: SortDir) => {
-      const nextDir =
-        dir ?? (key === sortKey ? (sortDir === "asc" ? "desc" : "asc") : "asc");
-      setSortKeyRaw(key);
-      setSortDirRaw(nextDir);
-      writePersistedViewState({ sortKey: key, sortDir: nextDir });
-    },
-    [sortKey, sortDir],
-  );
-
+  // What the user is looking at: name filter + kind filter + sort, folders
+  // first. Declared ahead of the selection helpers because range and
+  // select-all must work over THIS list, never the raw backend order.
   const visibleEntries = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     let filtered = q
@@ -611,6 +558,83 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     });
     return sorted;
   }, [entries, searchQuery, kindFilter, viewMode, sortKey, sortDir]);
+
+  // Selection
+  const isSelected = useCallback((path: string) => selection.has(path), [selection]);
+
+  const selectOnly = useCallback((path: string) => {
+    setSelection(new Set([path]));
+    lastAnchorRef.current = path;
+  }, []);
+
+  const toggleSelect = useCallback((path: string, additive: boolean) => {
+    let added = true;
+    setSelection((prev) => {
+      if (!additive) return new Set([path]);
+      const next = new Set(prev);
+      if (next.has(path)) {
+        next.delete(path);
+        added = false;
+      } else {
+        next.add(path);
+      }
+      return next;
+    });
+    // Only update the anchor when the path was added (or replaced the selection).
+    // Anchoring on a deselect would make the next shift-click measure range from
+    // the just-removed item — surprising behavior.
+    if (added) lastAnchorRef.current = path;
+  }, []);
+
+  const selectRange = useCallback(
+    (path: string) => {
+      const anchor = lastAnchorRef.current;
+      if (!anchor) {
+        selectOnly(path);
+        return;
+      }
+      // Range over the VISIBLE order. Over `entries` (backend order, no
+      // filter) a shift-click under any other sort picked different files
+      // than the ones between the two clicks, and under a search or kind
+      // filter it swept in files the user could not see, which Delete then
+      // removed.
+      const indexOf = (p: string) => visibleEntries.findIndex((e) => e.path === p);
+      const a = indexOf(anchor);
+      const b = indexOf(path);
+      if (a < 0 || b < 0) {
+        selectOnly(path);
+        return;
+      }
+      const [lo, hi] = a < b ? [a, b] : [b, a];
+      const next = new Set<string>();
+      for (let i = lo; i <= hi; i++) {
+        const e = visibleEntries[i];
+        if (e) next.add(e.path);
+      }
+      setSelection(next);
+    },
+    [visibleEntries, selectOnly],
+  );
+
+  const clearSelection = useCallback(() => setSelection(new Set()), []);
+
+  // Select-all takes what is shown: with a filter active, hidden files stay
+  // out of the selection (and out of reach of a following Delete).
+  const selectAll = useCallback(() => {
+    setSelection(new Set(visibleEntries.map((e) => e.path)));
+  }, [visibleEntries]);
+
+  // Sort + search
+  const setSort = useCallback(
+    (key: SortKey, dir?: SortDir) => {
+      const nextDir =
+        dir ?? (key === sortKey ? (sortDir === "asc" ? "desc" : "asc") : "asc");
+      setSortKeyRaw(key);
+      setSortDirRaw(nextDir);
+      writePersistedViewState({ sortKey: key, sortDir: nextDir });
+    },
+    [sortKey, sortDir],
+  );
 
   // Clipboard
   const copySelection = useCallback(() => {

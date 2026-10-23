@@ -1,0 +1,44 @@
+{"schema":"conform-run/1","worker":"dfc0292f-bd22-4118-9098-0b426830e3f5","subject":"client-fetch-cache",
+"evaluatedAt":"2026-10-21T12:00:00Z",
+"pairs":[
+{"context":"208f50de-5d3b-4345-9fed-1c106a7a36e9","subject":"client-fetch-cache","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/agents/sub_executions/detail/inspector/useTraceData.ts:74 re-judged after ddca92e4dd: the trace still lives in hook state, TraceInspector mounts only on the trace tab (ExecutionDetail.tsx:134), so every return to the tab starts null and refetches cold",
+"techniques":[
+{"technique":"warm-remount-caches","verdict":"deviation","evidence":"src/features/agents/sub_executions/detail/inspector/useTraceData.ts:74 useState trace with no module-scoped last-result map; unmount discards the data the user just saw"},
+{"technique":"swr-design","verdict":"deviation","evidence":"src/api/agents/executions.ts:129 getExecutionTrace is a bare invoke with no fresh window or stale ceiling, so the tab paints a ghost instead of the held trace"}]},
+{"context":"e0ea6f08-ebdf-4c9e-aab4-969eee32f573","subject":"client-fetch-cache","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/teams/sub_mastermind/lib/sceneStore.ts:317 re-judged after db4a19c2d4: flights.run('goals') is still keyed without projectIds, so the modal's one-project fresh reload (MastermindGoalsModal.tsx:87) replaces the portfolio fan-out and narrows lastGoalProjectIds to one project",
+"techniques":[
+{"technique":"cache-key-discipline","verdict":"deviation","evidence":"src/features/teams/sub_mastermind/lib/sceneStore.ts:317 the flight key 'goals' omits the projectIds axis that changes the answer; a non-fresh call with different ids joins the wrong flight"},
+{"technique":"in-flight-dedup","verdict":"deviation","evidence":"src/features/teams/sub_mastermind/lib/sceneStore.ts:187 the registry sits at the store seam and its comment claims family keys cover every answer-changing argument, but loadGoals takes projectIds"},
+{"technique":"swr-design","verdict":"realized","evidence":"src/features/teams/sub_mastermind/lib/sceneStore.ts:193 FAMILY_FRESH_MS names a fresh window keyed by idsKey; a failed reload over held data goes stale via failedReload (sceneStore.ts:344)"}]},
+{"context":"fd092e44-fcec-4418-8337-ed2b7b2c8473","subject":"client-fetch-cache","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/teams/sub_teamMemory/useTeamMemories.ts:103 re-judged after be4cdff954: a team switch still resets only filters, not memories/total/stats, and the pane stays mounted, so team B paints team A's rows until B lands and keeps them on failure (MemoryPanelList.tsx:121 shows the failure only when rows are empty)",
+"techniques":[
+{"technique":"warm-remount-caches","verdict":"deviation","evidence":"src/features/teams/sub_teamMemory/useTeamMemories.ts:103 the identity-change effect neither clears the held list nor keys it by teamId"},
+{"technique":"swr-design","verdict":"deviation","evidence":"src/features/teams/sub_teamMemory/components/panel/MemoryPanelList.tsx:121 a failed refresh over rows reports nothing beside the stale paint, and those rows can belong to another team"}]},
+{"context":"9fca099d-94e4-4fd0-8460-3cf5d8c85acf","subject":"client-fetch-cache","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:77 re-judged after 06229f782d: readinessScore is still memoized on a WeakMap keyed only by the review object while it reads the installed-connector and credential sets, so the first score is reused after those sets change",
+"techniques":[
+{"technique":"parse-and-derive-caches","verdict":"deviation","evidence":"src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:77 the derivation's ambient inputs are neither promoted into the key nor removed; the injected verify callback at line 54 has the same shape"},
+{"technique":"cache-key-discipline","verdict":"deviation","evidence":"src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:18 key is review identity only; the vault sets are an answer-changing axis left out"}]},
+{"context":"0a6ae5fd-fb42-446c-9602-0d2abdd220d5","subject":"client-fetch-cache","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/vault/shared/playground/tabs/ExecutionsTab.tsx:27 re-judged after b6251893b0 (which fixed the failure copy, not the caching): the audit list is still component state loaded per mount through a bare invoke, discarded on unmount and refetched cold on the next visit",
+"techniques":[
+{"technique":"warm-remount-caches","verdict":"deviation","evidence":"src/features/vault/shared/playground/tabs/ExecutionsTab.tsx:27 useState entries with no module-scoped map keyed by credentialId"},
+{"technique":"swr-design","verdict":"deviation","evidence":"src/api/vault/credentials.ts:131 getCredentialAuditLog has no fresh window, stale ceiling or revalidation; the failure path is now honest (ExecutionsTab.tsx:62) but there is no held truth to keep visible"}]}
+],
+"declined":[
+{"subject":"client-fetch-cache","context":"a38e2b93-2322-4187-befa-c0443c4ca85f","reason":"glyph-definitions is a weak context (static glyph definitions, no fetching); a coverage question, not a pair to judge"},
+{"subject":"client-fetch-cache","context":"e0563a39-fb7e-485f-a698-f9c4dc1004a7","reason":"triggers-test is weak; its deviation's anchor files changed 2026-10-20 (a7c0b5b21f claims the failed-history fix) so the verdict may be outdated, but weak pairs are not judged by default"},
+{"subject":"client-fetch-cache","context":"b39776f5-3909-41e3-b69f-14c9a6c70bec","reason":"verdict current (digest unchanged, anchor file untouched since 2026-09-15); over budget"},
+{"subject":"client-fetch-cache","context":"b4439e30-fcff-4095-97dd-d9d7da2247dd","reason":"verdict current (anchor file untouched since 2026-09-17); over budget"},
+{"subject":"client-fetch-cache","context":"283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0","reason":"not-applicable verdict current; nothing to re-judge"}
+],
+"consults":[
+{"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["warm-remount-caches","swr-design"],"deviations":1},
+{"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["cache-key-discipline","in-flight-dedup","swr-design"],"deviations":1},
+{"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["warm-remount-caches","swr-design"],"deviations":1},
+{"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["parse-and-derive-caches","cache-key-discipline"],"deviations":1},
+{"ts":"2026-10-21T12:00:00Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["warm-remount-caches","swr-design"],"deviations":1}
+]}

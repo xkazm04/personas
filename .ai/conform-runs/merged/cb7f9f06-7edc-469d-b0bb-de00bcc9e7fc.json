@@ -1,0 +1,9 @@
+{"schema": "conform-run/1", "worker": "cb7f9f06-7edc-469d-b0bb-de00bcc9e7fc", "subject": "realtime-events",
+ "evaluatedAt": "2026-10-22T03:12:24Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "realtime-events", "context": "03e7f46a-3f19-47b8-98a5-398efed815b4", "reason": "already judged deviation 2026-10-21 against the current digest sha256-b2:a0685592373df03f (revision 6, registry 82801d41); re-checked: src/hooks/lab/useLabEvents.ts:54 still subscribes to 'lab-arena-status', src-tauri/engine/src/test_runner/modes.rs:228 still emits it as a bare literal, and it is still absent from src/lib/eventRegistry.ts and src-tauri/core/src/events.rs (last touched 2026-10-20, before the verdict) - verdict stands, nothing to re-write"},
+  {"subject": "realtime-events", "context": "2fb16136-586e-478d-823f-38434d2d5b9a", "reason": "context is governance: weak (match on generic tokens events/subscribe/generate); skill rule: weak pairs are not judged by default - a coverage question, not a verdict"},
+  {"subject": "realtime-events", "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7", "reason": "context is governance: weak (match on generic tokens subscribe/events/event); skill rule: weak pairs are not judged by default - a coverage question, not a verdict"}
+ ],
+ "consults": []}

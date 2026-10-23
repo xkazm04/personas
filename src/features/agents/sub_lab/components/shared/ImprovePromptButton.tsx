@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Wand2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { buildTestMetadataForDesignContext } from '../../libs/labFeedbackLoop';
-import { parseDesignContext, serializeDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
+import { parseDesignContext, serializeDesignContext } from '@/features/agents/shared/designContext';
 import { useTranslation } from '@/i18n/useTranslation';
 
 
@@ -40,16 +40,35 @@ function getModelsTested(runId: string, mode: string): string[] {
   return Array.isArray(run.modelsTested) ? run.modelsTested : [];
 }
 
-/** Average the three sub-scores across results; null when nothing was scored. */
-function avgScores(results: Array<Record<string, unknown>>) {
+export type LabMetricKey = 'ta' | 'oq' | 'pc';
+type LabMetricAverages = Record<LabMetricKey, number | null>;
+
+/**
+ * Average the three sub-scores across results; null when there are no results.
+ * A metric no row scored is null, never 0 - sandbox runs omit tool accuracy,
+ * and a fabricated 0 made it the "weakest area" of every such run.
+ */
+export function avgScores(results: Array<Record<string, unknown>>): LabMetricAverages | null {
   if (results.length === 0) return null;
   const avg = (key: string) => {
     const scored = results.filter((r) => (r[key] as number | null) != null);
     return scored.length > 0
       ? Math.round(scored.reduce((s, r) => s + (r[key] as number), 0) / scored.length)
-      : 0;
+      : null;
   };
   return { ta: avg('toolAccuracyScore'), oq: avg('outputQualityScore'), pc: avg('protocolCompliance') };
+}
+
+/** The lowest SCORED metric the "Improve" hint names; null when none was scored. */
+export function weakestMetric(scores: LabMetricAverages | null): { key: LabMetricKey; v: number } | null {
+  if (!scores) return null;
+  const keys: LabMetricKey[] = ['ta', 'oq', 'pc'];
+  let weakest: { key: LabMetricKey; v: number } | null = null;
+  for (const key of keys) {
+    const v = scores[key];
+    if (v != null && (weakest === null || v < weakest.v)) weakest = { key, v };
+  }
+  return weakest;
 }
 
 /**
@@ -158,14 +177,13 @@ export function ImprovePromptButton({ personaId, runId, mode, disabled }: Improv
   }
 
   // Idle: show a preview of the weakest area the brief will target.
-  const scores = avgScores(getResultsForRun(runId, mode));
-  const weakest = scores
-    ? [
-        { label: lab.vr_metric_tool, v: scores.ta },
-        { label: lab.vr_metric_quality, v: scores.oq },
-        { label: lab.vr_metric_protocol, v: scores.pc },
-      ].reduce((a, b) => (b.v < a.v ? b : a))
-    : null;
+  const metricLabel: Record<LabMetricKey, string> = {
+    ta: lab.vr_metric_tool,
+    oq: lab.vr_metric_quality,
+    pc: lab.vr_metric_protocol,
+  };
+  const weakestScore = weakestMetric(avgScores(getResultsForRun(runId, mode)));
+  const weakest = weakestScore ? { label: metricLabel[weakestScore.key], v: weakestScore.v } : null;
 
   return (
     <div className="flex items-center gap-3">

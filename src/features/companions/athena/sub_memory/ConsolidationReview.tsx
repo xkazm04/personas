@@ -13,7 +13,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 
@@ -65,7 +65,7 @@ export function ConsolidationReview({
     companionListConsolidationRuns(20)
       .then(setRuns)
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : String(err));
+        setError(extractMessage(err));
         setRuns([]);
         silentCatch('companion_list_consolidation_runs')(err);
       });
@@ -83,7 +83,7 @@ export function ConsolidationReview({
       setActiveRunId(id);
       loadRuns();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
       silentCatch('companion_run_consolidation')(err);
     } finally {
       setRunning(false);
@@ -316,7 +316,7 @@ function RunDetail({
     companionGetConsolidationItems(runId)
       .then(setItems)
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : String(err));
+        setError(extractMessage(err));
         setItems([]);
         silentCatch('companion_get_consolidation_items')(err);
       });
@@ -421,7 +421,7 @@ function ItemCard({
       await companionApplyConsolidationItem(item.id, edits);
       onResolved();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
       silentCatch('companion_apply_consolidation_item')(err);
     } finally {
       setBusy(null);
@@ -445,7 +445,7 @@ function ItemCard({
       await companionRejectConsolidationItem(item.id);
       onResolved();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
       silentCatch('companion_reject_consolidation_item')(err);
     } finally {
       setBusy(null);

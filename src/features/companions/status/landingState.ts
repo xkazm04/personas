@@ -14,8 +14,3 @@ export function landingStateOf(status: CompanionStatusDto): LandingState {
   if (!status.enabled) return "off";
   return "active";
 }
-
-/** True when the companion is doing its work right now. */
-export function isCompanionActive(status: CompanionStatusDto): boolean {
-  return landingStateOf(status) === "active";
-}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ShieldAlert, ShieldCheck, ChevronDown, ChevronUp, History } from 'lucide-react';
-import { listen } from '@tauri-apps/api/event';
+import type { Event } from '@tauri-apps/api/event';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 import { getCircuitBreakerStatus } from '@/api/agents/executions';
 import type { CircuitBreakerStatus } from '@/lib/bindings/CircuitBreakerStatus';
@@ -120,16 +121,15 @@ export function CircuitBreakerIndicator() {
     };
   }, []);
 
-  // Real-time global breaker trip — auto-expand + amber ring-pulse
-  useEffect(() => {
-    let cancelled = false;
-    let unlistenFn: (() => void) | null = null;
-    listen<CircuitBreakerStatus>(EventName.CIRCUIT_BREAKER_GLOBAL_TRIPPED, (event) => {
-      setStatus(event.payload);
-      triggerTripAttention();
-    }).then((fn) => { if (cancelled) fn(); else unlistenFn = fn; });
-    return () => { cancelled = true; unlistenFn?.(); };
+  // Real-time global breaker trip — auto-expand + amber ring-pulse.
+  // useTauriEvent, not a raw listen(): the two hand-rolled subscriptions here
+  // had no .catch on listen() (an unhandled rejection) and no cancelled guard
+  // inside the handler, both of which the shared hook carries.
+  const onGlobalTripped = useCallback((event: Event<CircuitBreakerStatus>) => {
+    setStatus(event.payload);
+    triggerTripAttention();
   }, [triggerTripAttention]);
+  useTauriEvent<CircuitBreakerStatus>(EventName.CIRCUIT_BREAKER_GLOBAL_TRIPPED, onGlobalTripped);
 
   // Also fire the attention pulse when polled status flips into globalPaused
   useEffect(() => {
@@ -140,14 +140,8 @@ export function CircuitBreakerIndicator() {
   }, [status?.globalPaused, triggerTripAttention]);
 
   // Listen for individual circuit breaker transitions — refresh status on any change
-  useEffect(() => {
-    let cancelled = false;
-    let unlistenFn: (() => void) | null = null;
-    listen<CircuitTransitionEvent>(EventName.CIRCUIT_BREAKER_TRANSITION, () => {
-      fetchStatus();
-    }).then((fn) => { if (cancelled) fn(); else unlistenFn = fn; });
-    return () => { cancelled = true; unlistenFn?.(); };
-  }, [fetchStatus]);
+  const onTransition = useCallback(() => { void fetchStatus(); }, [fetchStatus]);
+  useTauriEvent<CircuitTransitionEvent>(EventName.CIRCUIT_BREAKER_TRANSITION, onTransition);
 
   // Nothing to reserve: this lives in an overlay slot that occupies no layout
   // space, and the healthy state below renders null anyway — so a pulsing
@@ -191,6 +185,7 @@ export function CircuitBreakerIndicator() {
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
         className="flex items-center gap-2 w-full px-3 py-2 text-left"
       >
         {status.globalPaused ? (
@@ -323,6 +318,7 @@ export function CircuitBreakerIndicator() {
                 <button
                   type="button"
                   onClick={() => setShowHistory((v) => !v)}
+                  aria-expanded={showHistory}
                   className="flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground"
                 >
                   <History className="w-3 h-3" />

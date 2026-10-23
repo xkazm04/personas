@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Dot, Meta } from '@/features/shared/components/kit';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import type { ObservabilityWords } from '../libs/useObservabilityWords';
+import { isAutoFixedIssue, isOpenIssue } from '../libs/issueModel';
 
 const WEEK = 7 * 24 * 60 * 60 * 1000;
 
@@ -19,8 +20,8 @@ export function HealingIssueSummary({ issues, w }: { issues: PersonaHealingIssue
     const byCat = new Map<string, number>();
     for (const i of thisWeek) byCat.set(i.category, (byCat.get(i.category) ?? 0) + 1);
     return {
-      open: issues.filter((i) => i.status !== 'resolved').length,
-      autoFixed: thisWeek.filter((i) => i.auto_fixed).length,
+      open: issues.filter(isOpenIssue).length,
+      autoFixed: thisWeek.filter(isAutoFixedIssue).length,
       trend: thisWeek.length < lastWeek ? 'improving' : thisWeek.length > lastWeek ? 'degrading' : 'stable',
       recurring: [...byCat.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]),
     } as const;

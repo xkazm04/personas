@@ -42,7 +42,7 @@ export function RotateAllButton({
       {isRotatingAll
         ? t.vault.manager.refreshing
         : rotateAllResult
-          ? `${rotateAllResult.rotated} refreshed${rotateAllResult.failed > 0 ? `, ${rotateAllResult.failed} failed` : ''}${rotateAllResult.skipped > 0 ? ` \u00b7 ${rotateAllResult.skipped} skipped` : ''}`
+          ? `${tx(t.vault.manager.rotate_result_refreshed, { count: rotateAllResult.rotated })}${rotateAllResult.failed > 0 ? `, ${tx(t.vault.manager.rotate_result_failed, { count: rotateAllResult.failed })}` : ''}${rotateAllResult.skipped > 0 ? ` · ${tx(t.vault.manager.rotate_result_skipped, { count: rotateAllResult.skipped })}` : ''}`
           : rotatableCount > 0
             ? tx(t.vault.manager.rotate_count, { count: rotatableCount })
             : t.vault.manager.rotate}

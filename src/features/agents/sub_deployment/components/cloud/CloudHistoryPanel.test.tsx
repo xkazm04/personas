@@ -140,3 +140,22 @@ describe('CloudHistoryPanel: failed cold load is not an empty result', () => {
     expect(screen.queryByTestId('cloud-history-load-failed')).toBeNull();
   });
 });
+
+describe('CloudHistoryPanel: the 50-row window is disclosed', () => {
+  it('says "Showing 50 of 300" when the page is full and the stats total is larger', async () => {
+    const page = Array.from({ length: 50 }, (_, i) => ({ ...exec, id: `ex-${i}` }));
+    listMock.mockResolvedValue(page);
+    statsMock.mockResolvedValue({ ...stats, totalExecutions: 300n });
+    render(<CloudHistoryPanel />);
+    await act(async () => { await captured.poll!(); });
+    expect(screen.getByTestId('cloud-history-window').textContent).toBe('Showing 50 of 300');
+  });
+
+  it('shows no truncation cue when the list holds every run', async () => {
+    listMock.mockResolvedValue([exec]);
+    statsMock.mockResolvedValue(stats);
+    render(<CloudHistoryPanel />);
+    await act(async () => { await captured.poll!(); });
+    expect(screen.queryByTestId('cloud-history-window')).toBeNull();
+  });
+});

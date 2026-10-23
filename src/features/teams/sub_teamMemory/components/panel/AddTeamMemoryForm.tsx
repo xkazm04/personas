@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Plus, X, ChevronDown } from 'lucide-react';
 import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput';
 import { IMPORTANCE_MIN, IMPORTANCE_MAX, IMPORTANCE_DEFAULT } from '../../libs/memoryConstants';
@@ -11,7 +11,8 @@ const CATEGORIES = ['observation', 'decision', 'context', 'learning'] as const;
 
 interface AddTeamMemoryFormProps {
   teamId: string;
-  onSubmit: (input: CreateTeamMemoryInput) => void;
+  /** Resolves `false` when the write failed; the form then keeps the draft. */
+  onSubmit: (input: CreateTeamMemoryInput) => Promise<boolean> | void;
 }
 
 export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFormProps) {
@@ -22,9 +23,15 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
   const [category, setCategory] = useState<string>('observation');
   const [importance, setImportance] = useState(IMPORTANCE_DEFAULT);
 
-  const handleSubmit = () => {
-    if (!title.trim() || !content.trim()) return;
-    onSubmit({
+  // One write per draft: the form now stays open until the write answers.
+  const submittingRef = useRef(false);
+
+  const handleSubmit = async () => {
+    if (!title.trim() || !content.trim() || submittingRef.current) return;
+    submittingRef.current = true;
+    // Cleared only once the write LANDED: clearing first discarded a typed
+    // memory whenever the save failed, leaving a toast and an empty form.
+    const ok = await Promise.resolve(onSubmit({
       team_id: teamId,
       run_id: null,
       member_id: null,
@@ -34,7 +41,8 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
       category,
       importance,
       tags: 'manual',
-    });
+    })).finally(() => { submittingRef.current = false; });
+    if (ok === false) return;
     setTitle('');
     setContent('');
     setCategory('observation');
@@ -146,7 +154,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
         type="button"
         className="w-full typo-body py-1.5 rounded-card bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 transition-colors disabled:opacity-40"
         disabled={!title.trim() || !content.trim()}
-        onClick={handleSubmit}
+        onClick={() => { void handleSubmit(); }}
       >
         {t.pipeline.save_memory}
       </button>

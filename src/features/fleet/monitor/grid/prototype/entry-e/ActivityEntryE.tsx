@@ -71,7 +71,6 @@ import {
 } from './activityLazy';
 import { MandateDrawer, useMandateDrawer } from './mandate/MandateDrawer';
 import { useMandateKeys } from './mandate/useMandateKeys';
-import { useDecisionSurface } from '@/features/decision-center/lanes/useLanesSnapshot';
 import { useMonitorVisible } from '../../../monitorVisibility';
 import './entryE.css';
 
@@ -93,11 +92,10 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
   const filter = usePanelFilter(surface);
   const workspaces = useWorkspaceScope(surface);
   useResourceSamples();
-  // The mandate drawer (setting `lanes`): register (M), mandate page, act log (L).
+  // The mandate drawer: register (M), mandate page, act log (L).
   const mandates = useMandateDrawer();
-  const lanesOn = useDecisionSurface() === 'lanes';
   const visible = useMonitorVisible();
-  useMandateKeys(lanesOn && visible && mandates.view === null, mandates);
+  useMandateKeys(visible && mandates.view === null, mandates);
   const stewardDoors = useMemo(
     () => ({ onOpenMandate: mandates.openMandate, onOpenRegister: mandates.openRegister }),
     [mandates.openMandate, mandates.openRegister],
@@ -178,7 +176,7 @@ function ActivityEntryEImpl(props: ActivitySurfaceProps) {
         </Suspense>
       )}
       {confirm.dialog}
-      {lanesOn && <MandateDrawer view={mandates.view} onView={mandates.setView} onClose={mandates.close} />}
+      <MandateDrawer view={mandates.view} onView={mandates.setView} onClose={mandates.close} />
     </div>
   );
 }

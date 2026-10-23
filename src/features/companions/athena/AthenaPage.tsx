@@ -27,6 +27,11 @@ const DecisionsPanel = lazy(() => import('./sub_decisions/DecisionsPanel'));
  * why the Companions router mounts it as ONE branch: switching between her
  * tabs never re-mounts her surface. (The former Dashboard tab was retired —
  * Cockpit is the dynamic dashboard surface now.)
+ *
+ * The Suspense fallback is the 150ms-delayed body ghost: a warm chunk never
+ * paints it, a cold one (298-331 ms measured 2026-10-20) shows calm rows under
+ * the permanent header instead of a blank body. Each panel staggers its own
+ * deep parts in after it mounts.
  */
 export default function AthenaPage() {
   const { t } = useTranslation();
@@ -46,7 +51,7 @@ export default function AthenaPage() {
       <ContentBody centered={tab !== 'memory'}>
         <div key={tab} className="animate-fade-slide-in h-full">
           <ErrorBoundary name="Companion">
-            <Suspense fallback={<RouteChunkSkeleton />}>
+            <Suspense fallback={<RouteChunkSkeleton variant="body" />}>
               {tab === 'create-athena' && <CreateAthenaPanel />}
               {tab === 'setup' && <SetupPanel />}
               {tab === 'memory' && <MemoryPanel />}

@@ -39,14 +39,17 @@ export const RUBRIC: RubricDim[] = [
     // on a README; teams need structure; orgs need managed source→doc coupling.
     key: 'docs', label: 'Documentation', weight: 2,
     pos: (p) => scalePos(DOCS_SCALE, p.automationReadiness.artifacts.docs),
-    target: { solo: 0.34, team: 0.67, org: 1 },
+    // Targets are named RUNGS, not decimals: 0.34 / 0.67 sat a hair above
+    // scalePos's 1/3 and 2/3, so a solo README or team docs/ tree was never
+    // "met" at the very rung this comment promises.
+    target: { solo: scalePos(DOCS_SCALE, 'readme'), team: scalePos(DOCS_SCALE, 'structured'), org: 1 },
   },
   {
     // 4-rung memory ladder: adhoc=0.33, curated=0.67, governed=1. Governed
     // needs the P3 review/decay loop, so org targets curated until it ships.
     key: 'memory', label: 'Agent memory', weight: 1,
     pos: (p) => scalePos(MEMORY_SCALE, p.automationReadiness.artifacts.memory),
-    target: { solo: 0.34, team: 0.67, org: 0.67 },
+    target: { solo: scalePos(MEMORY_SCALE, 'adhoc'), team: scalePos(MEMORY_SCALE, 'curated'), org: scalePos(MEMORY_SCALE, 'curated') },
   },
   {
     key: 'selfverify', label: 'Self-verify locally', weight: 3,

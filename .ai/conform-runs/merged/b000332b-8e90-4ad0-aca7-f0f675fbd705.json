@@ -1,0 +1,5 @@
+{"schema":"conform-run/1","worker":"b000332b-8e90-4ad0-aca7-f0f675fbd705","subject":"settings",
+ "evaluatedAt":"2026-10-22T00:00:00Z",
+ "pairs":[],
+ "declined":[{"subject":"settings","context":"742be60e-3ddf-4160-b7cb-4c5cac5965a0","reason":"plugins-research-lab-shared is a weakly governed context with no live paths in the map; judging it would manufacture a verdict against a doubtful match. Coverage question for the registry, not a conform target."}],
+ "consults":[]}

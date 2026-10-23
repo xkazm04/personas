@@ -87,6 +87,7 @@ function CouncilReportModal({ runId, onClose }: { runId: string; onClose: () => 
       {state.status === 'missing' && (
         <ScenarioEmptyState
           icon={FileX}
+          size="sm"
           title={t.overview.reader_no_full_report}
           subtitle={t.overview.reader_no_full_report_hint}
         />

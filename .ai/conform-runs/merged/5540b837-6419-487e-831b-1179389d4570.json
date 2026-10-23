@@ -1,0 +1,5 @@
+{"schema": "conform-run/1", "worker": "5540b837-6419-487e-831b-1179389d4570", "subject": "invariant-placement",
+ "evaluatedAt": "2026-10-16T17:52:31Z",
+ "pairs": [],
+ "declined": [{"subject": "invariant-placement", "context": "(none)", "reason": "no-op: .ai/registry-map.json (generatedAt 2026-10-14T18:25:17Z, 219 contexts, 1890 pairs, 0 orphans) lists invariant-placement in no context, subjectIndex, or orphan; --subject has zero pairs to judge and this worker may not add one. The ranking '1 consumer deviation' is not visible in this map (likely another consumer's, or a verdict lost at an earlier rebuild - a 2026-09-24 consult here cited invariant-placement/placement-precedes-gate). Registry finding: the matcher may be missing this subject here - the repo's census ratchet (scripts/census/rules.json), check:* gates and CLAUDE.md's 'gate the specific doors' doctrine are invariant-placement-shaped; a deliberate /conform pairing pass should consider adding it to the census/quality-gates context."}],
+ "consults": []}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import {
   Play,
   Terminal,
@@ -6,11 +7,14 @@ import {
   XCircle,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import { useAgentStore } from "@/stores/agentStore";
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { getExecution } from '@/api/agents/executions';
+import { isTerminalState } from '@/lib/execution/executionState';
 
 export function ExecutionStep({
   personaId,
@@ -21,7 +25,7 @@ export function ExecutionStep({
   personaName: string;
   onComplete: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const executePersona = useAgentStore((s) => s.executePersona);
   const executionOutput = useAgentStore((s) => s.executionOutput);
   // The execution THIS step started. We must NOT key completion off the global
@@ -31,6 +35,9 @@ export function ExecutionStep({
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
   const [executionError, setExecutionError] = useState<string | null>(null);
+  // Terminal status of a run that ended without completing. Held as the raw
+  // token and worded at render, so a language switch re-words it.
+  const [endedStatus, setEndedStatus] = useState<string | null>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const unlistenRef = useRef<UnlistenFn | null>(null);
 
@@ -51,26 +58,30 @@ export function ExecutionStep({
     if (!startedExecId) return;
 
     let cancelled = false;
+    let settled = false;
     let unlisten: UnlistenFn | null = null;
+
+    // First terminal state wins, whether it arrives as an event or from the
+    // reconcile read below.
+    const settle = (status: string) => {
+      if (cancelled || settled || !isTerminalState(status)) return;
+      settled = true;
+      setFinished(true);
+      if (status === 'completed') {
+        onComplete();
+      } else {
+        setEndedStatus(status);
+      }
+    };
 
     // `execution-complete` was never emitted by anything in the tree — this
     // step waited forever on a first run. The engine's status stream is
     // `execution-status` (every transition), so completion is the first
     // TERMINAL state seen for this execution id.
-    const TERMINAL = new Set(['completed', 'failed', 'incomplete', 'cancelled']);
     listen<{ execution_id: string; status: string }>(
       EventName.EXECUTION_STATUS,
       (event) => {
-        if (cancelled) return;
-        if (!TERMINAL.has(event.payload.status)) return;
-        if (event.payload.execution_id === startedExecId) {
-          setFinished(true);
-          if (event.payload.status === 'completed') {
-            onComplete();
-          } else {
-            setExecutionError(`Execution ${event.payload.status}`);
-          }
-        }
+        if (event.payload.execution_id === startedExecId) settle(event.payload.status);
       },
     )
       .then((fn) => {
@@ -81,6 +92,13 @@ export function ExecutionStep({
         }
         unlisten = fn;
         unlistenRef.current = fn;
+        // The listener attaches only after executePersona resolved AND this
+        // effect ran, so a run that reached its terminal state in between
+        // (a fast failure, a missing credential) emitted into nothing and the
+        // step spun forever. Read the row once now that we are listening.
+        getExecution(startedExecId, personaId)
+          .then((row) => settle(row.status))
+          .catch(silentCatch('onboarding/ExecutionStep:reconcileStatus'));
       })
       .catch(silentCatch('onboarding/ExecutionStep:listenExecutionComplete'));
 
@@ -90,11 +108,14 @@ export function ExecutionStep({
       unlisten = null;
       unlistenRef.current = null;
     };
-  }, [startedExecId, onComplete]);
+  }, [startedExecId, personaId, onComplete]);
 
   const handleRun = async () => {
     setStarted(true);
+    setFinished(false);
+    setStartedExecId(null);
     setExecutionError(null);
+    setEndedStatus(null);
     const execId = await executePersona(personaId);
     if (!execId) {
       setExecutionError(t.onboarding.execution_failed);
@@ -138,10 +159,24 @@ export function ExecutionStep({
               transition is announced to screen readers (UAT P6 F-A11Y-BUILD-PETALS). */}
           <div className="flex items-center gap-2" role="status" aria-live="polite">
             {finished ? (
-              executionError ? (
+              executionError || endedStatus ? (
                 <>
                   <XCircle className="w-4 h-4 text-red-400" />
-                  <span className="typo-body text-red-400">{executionError}</span>
+                  <span className="typo-body text-red-400">{executionError ?? tx(t.onboarding.execution_ended, { status: tokenLabel(t, 'execution', endedStatus ?? 'unknown') })}</span>
+                  {/* A failed first run used to leave no control at all: Run was
+                      gone and Finish only appears on success, so the only way
+                      out was closing onboarding. */}
+                  <Button
+                    variant="accent"
+                    tone="success"
+                    size="sm"
+                    onClick={() => void handleRun()}
+                    icon={<Play className="w-3.5 h-3.5" />}
+                    data-testid="onboarding-execution-retry"
+                    className="ml-auto"
+                  >
+                    {t.onboarding.run_agent}
+                  </Button>
                 </>
               ) : (
                 <>

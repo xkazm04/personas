@@ -6,11 +6,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { RecipeCreateFlow } from './RecipeCreateFlow';
 import { RecipeListItem } from './RecipeListItem';
 import type { CredentialRecipesState } from './useCredentialRecipes';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 interface RecipesPanelProps {
   state: CredentialRecipesState;
-  /** Opens the create flow seeded with the request the user just ran. */
-  onOpenPlayground?: (recipeId: string) => void;
 }
 
 /**
@@ -21,7 +20,7 @@ interface RecipesPanelProps {
  * copy, because a full panel's worth was already translated into all 14
  * locales and rendered by nothing.
  */
-export function RecipesPanel({ state, onOpenPlayground }: RecipesPanelProps) {
+export function RecipesPanel({ state }: RecipesPanelProps) {
   const { t } = useTranslation();
   const sh = t.vault.shared;
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -63,6 +62,12 @@ export function RecipesPanel({ state, onOpenPlayground }: RecipesPanelProps) {
         />
       )}
 
+      {/* A failed delete sets the same error slot the create flow renders, so
+          with the flow closed it was set and shown nowhere. */}
+      {state.error && !state.isCreating && (
+        <InlineErrorBanner message={state.error} onDismiss={state.clearError} />
+      )}
+
       {/* A fetch never hides rendered rows: the empty state is settled-only. */}
       {!state.isLoading && state.recipes.length === 0 && !state.isCreating && (
         <EmptyIllustration
@@ -81,7 +86,6 @@ export function RecipesPanel({ state, onOpenPlayground }: RecipesPanelProps) {
               recipe={recipe}
               isExpanded={expandedId === recipe.id}
               onToggleExpand={() => setExpandedId(expandedId === recipe.id ? null : recipe.id)}
-              onOpenPlayground={() => onOpenPlayground?.(recipe.id)}
               onDelete={() => void state.remove(recipe.id)}
             />
           ))}

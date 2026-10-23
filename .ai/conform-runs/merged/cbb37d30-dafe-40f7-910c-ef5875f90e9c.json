@@ -1,0 +1,144 @@
+{
+ "schema": "conform-run/1",
+ "worker": "cbb37d30-dafe-40f7-910c-ef5875f90e9c",
+ "subject": "voice-io",
+ "evaluatedAt": "2026-10-22T03:09:18Z",
+ "pairs": [
+  {
+   "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/stores/slices/system/twinSlice.ts:616 reads the stored twin voice profile (raw ElevenLabs model_id/voice_id) with no retired-engine normalization door, and :625 exposes ElevenLabs-only knobs (stability/similarityBoost/style) as the slice API, so a retired model id reaches any future consumer unnormalized; today the profile has no reader or writer outside the slice at all",
+   "techniques": [
+    {
+     "technique": "engine-abstraction",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/system/twinSlice.ts:616 stored voice config read raw with no one-door normalization; src-tauri/db/src/repos/twin.rs:864 pins provider 'elevenlabs' in the row, and twinSlice.ts:625 shapes the store interface by one engine's parameters rather than by what callers need"
+    },
+    {
+     "technique": "speech-ready-text",
+     "verdict": "conformant",
+     "evidence": "src/stores/slices/system/tourSlice.ts:219 tour narration is a separate field authored for the ear (plain, 1-3 sentences, localized), so no markdown reaches synthesis from this source"
+    },
+    {
+     "technique": "voice-ux-integration",
+     "verdict": "conformant",
+     "evidence": "src/stores/slices/system/tourSlice.ts:224 a step without narration stays a text coach-mark, and the on-screen description is always present, so voice remains a channel over a working text flow"
+    }
+   ],
+   "registryProposal": "A store slice holding ElevenLabs-shaped voice config that nothing reads is a dead-code finding more than a voice-io one; engine-abstraction could say whether an unread persisted voice reference still owes a read door (this verdict assumes yes, since the storage outlives the engine regardless of when a reader arrives)."
+  },
+  {
+   "context": "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/radio/components/RadioFooter.tsx:87 the radio plays third-party music streams through an <audio> element; re-checked at rev 23, none of its 14 files captures or transcribes speech or synthesizes the product's own text, so neither voice-io pipeline exists here",
+   "techniques": [],
+   "registryProposal": "voice-ux-integration's arbiter rule (at most one voice, global mute) covers speech only; it is silent on non-speech media the product itself plays (a background radio) while the assistant speaks. Personas has no ducking/pause of radio under Athena speech (no hit for duck/pauseRadio outside the radio plugin). Worth a sentence on whether the arbiter should also own ducking product-played media under speech."
+  },
+  {
+   "context": "7741725e-8124-4899-b17e-8e39e7fcf1ed",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/studio/StudioBuildSettings.tsx:95 'voice' in Studio is a written-style picker (concise/balanced/teaching); re-checked at rev 23, none of the context's 17 existing files captures, transcribes, synthesizes or plays audio",
+   "techniques": []
+  },
+  {
+   "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/cloud/sync/mod.rs:1 is the desktop-to-cloud sync writer; re-checked at rev 23, its 4 files carry no audio capture, transcription, synthesis or engine adapter (only text hit: rows.rs:980 a 'no transcripts' comment)",
+   "techniques": []
+  },
+  {
+   "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/executionPlayer/ExecutionMiniPlayer.tsx:37 the 'player' is a progress/result view of an execution; re-checked at rev 23, a grep of all 34 context files for speech/tts/whisper/microphone/audio/voice is empty",
+   "techniques": []
+  }
+ ],
+ "declined": [
+  {
+   "subject": "voice-io",
+   "context": "commands-companion",
+   "reason": "deviation judged 2026-10-21 against the current digest (rev 23); not stale, re-reading adds nothing"
+  },
+  {
+   "subject": "voice-io",
+   "context": "companion-chat-bubbles",
+   "reason": "current deviation at rev 23, judged 2026-10-21"
+  },
+  {
+   "subject": "voice-io",
+   "context": "companion-proactive",
+   "reason": "current deviation at rev 23, judged 2026-10-21"
+  },
+  {
+   "subject": "voice-io",
+   "context": "remaining stale not-applicable pairs (core, engine-core-infrastructure, output-stream-parser, webhook-ingestion, commands-design, commands-fleet, engine-build-session, hooks-realtime, pipeline-and-automation, plugins-fleet-tests, settings-network, templates-generated-adoption-ucpicker, test-runner-lab, vault-catalog-*, companion-narration-ops)",
+   "reason": "over this run's budget of 5; left for a later --stale run"
+  },
+  {
+   "subject": "voice-io",
+   "context": "21 probable-confidence unknown pairs with priorNotApplicable",
+   "reason": "ranked last by the skill (priorNotApplicable=21); not read this run"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T03:09:18Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [
+    "engine-abstraction",
+    "speech-ready-text",
+    "voice-ux-integration"
+   ],
+   "deviations": 1
+  },
+  {
+   "ts": "2026-10-22T03:09:18Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-22T03:09:18Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-22T03:09:18Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-22T03:09:18Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

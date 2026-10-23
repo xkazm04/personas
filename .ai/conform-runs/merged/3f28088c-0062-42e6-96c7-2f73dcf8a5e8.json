@@ -1,0 +1,21 @@
+{"schema":"conform-run/1","worker":"3f28088c-0062-42e6-96c7-2f73dcf8a5e8","subject":"copy-quality-gates","evaluatedAt":"2026-10-16T17:37:34Z",
+ "pairs":[
+  {"context":"b164f847-45d6-4c9e-85bc-a1308375085d","subject":"copy-quality-gates","bundle":"localization","state":"not-applicable",
+   "evidence":"src-tauri/db/src/repos/communication/manual_reviews.rs:52 SQLite repo that persists human-in-the-loop execution review rows; it neither authors nor gates source-language catalog copy, so the subject's precondition (a pipeline proving catalog copy before it becomes the source) does not hold - 'review' matched lexically",
+   "techniques":[],
+   "registryProposal":"technique-shaped resonance: use_when tokens 'reviews/review/human' (anchored-model-review, reviewer-calibration-and-sampling) match HITL approval repos; route by the subject's precondition (catalog copy), the governing subject here is hitl-approval"},
+  {"context":"50f50f97-be0e-4a93-8f1c-c0b967cd45d0","subject":"copy-quality-gates","bundle":"localization","state":"not-applicable",
+   "evidence":"src/features/plugins/dev-tools/sub_triage/findings/types.ts:10 FindingDraft is a dev-issue record from Sentry/KPI/coverage sensors, not a copy finding; no string catalog is extracted, linted or gated here - 'findings/rule' matched lexically",
+   "techniques":[],
+   "registryProposal":"lexical resonance on 'finding/rule' (every-finding-cites-an-anchor, severity-as-declared-data); triage-queues/codebase-scanning govern this context, not copy gates"},
+  {"context":"3619ab0d-0367-43d0-b4eb-ec39c1302d65","subject":"copy-quality-gates","bundle":"localization","state":"not-applicable",
+   "evidence":"src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:17 a connector-catalog picker UI that consumes strings; 'catalog' here is the connector catalog, not a message catalog, and no copy gate or copy authoring lives in this context",
+   "techniques":[],
+   "registryProposal":"matcher miss: copy-quality-gates is not paired with the i18n context 2e1e105a-866c-4039-9620-7ed5d0d30b17, where the repo's real source-copy gates live (scripts/i18n/check-escapes.mjs, scripts/i18n/check-untranslated.mjs, check:i18n:strict, census rules on hardcoded JSX text); pair it there and judge it - the 'catalog' token collides with connector-catalog vocabulary"}
+ ],
+ "declined":[],
+ "consults":[
+  {"ts":"2026-10-16T17:37:34Z","bundle":"localization","subjects":["copy-quality-gates"],"techniques":[],"deviations":0},
+  {"ts":"2026-10-16T17:37:34Z","bundle":"localization","subjects":["copy-quality-gates"],"techniques":[],"deviations":0},
+  {"ts":"2026-10-16T17:37:34Z","bundle":"localization","subjects":["copy-quality-gates"],"techniques":[],"deviations":0}
+ ]}

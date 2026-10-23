@@ -22,15 +22,15 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { DockLandingPill } from '../DockLandingPill';
+import { Lamp } from '../prototype/entry-e/parts';
+import { DOCK_READING } from './dockChrome';
 import { formatEstimateCost, formatEstimateMinutes } from '../dockEstimate';
 import type { DockConsole } from './useDockConsole';
 
 /** One column, centred — the dock's content never spreads past this. */
 export const DOCK_COLUMN = 'mx-auto w-full max-w-[800px]';
 
-/** The readout's shared pill chrome: one border, one fill, one height. */
-const PILL =
-  "typo-code flex items-center gap-1 whitespace-nowrap rounded-pill border border-card-border bg-card-bg px-2 py-0.5 text-muted [[data-theme^='light']_&]:border-primary/35 [[data-theme^='light']_&]:bg-secondary/50";
+const PILL = DOCK_READING;
 
 /**
  * WHAT IT COSTS · IS IT READY · WHERE IN THE LINE — the three readings that
@@ -54,28 +54,26 @@ export function DockReadout({ console: d }: { console: DockConsole }) {
       >
         <span className={PILL} data-testid="quick-dispatch-gauge-cost">
           ≈
-          <b className="font-semibold tabular-nums text-foreground">
-            {armed ? formatEstimateCost(estimate.cost) : '—'}
-          </b>
+          <span className="typo-data tabular-nums text-foreground">
+            {armed ? formatEstimateCost(estimate.cost) : '-'}
+          </span>
         </span>
       </Tooltip>
       <Tooltip content={c.quickT.estimate_eta_label} placement="top">
         <span className={PILL} data-testid="quick-dispatch-gauge-eta">
           ~
-          <b className="font-semibold tabular-nums text-foreground">
-            {armed ? formatEstimateMinutes(estimate.minutes) : '—'}
-          </b>
+          <span className="typo-data tabular-nums text-foreground">
+            {armed ? formatEstimateMinutes(estimate.minutes) : '-'}
+          </span>
         </span>
       </Tooltip>
+      {/* IS IT READY, as a lamp: dark on STANDBY, lit green once ARMED. */}
       <span
-        className={`typo-label whitespace-nowrap rounded-pill border px-2 py-0.5 ${
-          armed
-            ? 'border-status-success/45 bg-status-success/10 text-status-success'
-            : `border-card-border bg-card-bg text-muted [[data-theme^='light']_&]:border-primary/35 [[data-theme^='light']_&]:bg-secondary/50`
-        }`}
+        className={`${DOCK_READING} ${armed ? 'is-lit ae-t-ok text-foreground' : 'ae-t-off'}`}
         data-testid="quick-dispatch-status-pill"
       >
-        {armed ? c.quickT.status_armed : c.quickT.status_standby}
+        <Lamp lamp={{ tone: armed ? 'ok' : 'off', lit: armed }} />
+        <span>{armed ? c.quickT.status_armed : c.quickT.status_standby}</span>
       </span>
       <DockLandingPill landing={landing} />
     </span>
@@ -91,7 +89,7 @@ export function DockTarget({ console: d, className = '' }: { console: DockConsol
   const { c } = d;
   return (
     <span
-      className={`min-w-0 flex-1 truncate text-right font-mono text-xs ${
+      className={`min-w-0 flex-1 truncate text-right typo-code ${
         c.projectChip ? 'text-foreground' : 'text-muted'
       } ${className}`}
       dir="rtl"
@@ -114,7 +112,7 @@ export function DockCollapse({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       aria-label={t.monitor.grid_dock_collapse}
       data-testid="quick-dispatch-dock-collapse"
-      className="h-6 w-6 flex-shrink-0 text-muted hover:text-foreground"
+      className="h-7 w-7 flex-shrink-0 rounded-input text-foreground"
     >
       <ChevronDown className="h-3.5 w-3.5" aria-hidden />
     </Button>

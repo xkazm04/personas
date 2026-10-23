@@ -41,7 +41,9 @@ export function ExportReportButton({ mode, run, results }: ExportReportButtonPro
 
   const handleCopyMarkdown = useCallback(async () => {
     const md = generateMarkdownReport(mode, run, results, personaName);
-    await copyText(md);
+    // copyText resolves false when the clipboard refused the write (already
+    // reported through silentCatch); only a write that landed says "Copied".
+    if (!(await copyText(md))) return;
     setCopyState('copied');
     setTimeout(() => setCopyState('idle'), 2000);
   }, [mode, run, results, personaName]);

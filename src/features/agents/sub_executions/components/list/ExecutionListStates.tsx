@@ -1,5 +1,6 @@
 import { AlertCircle, Play, Rocket, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
 const ACTION_BTN = 'mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors';
 
@@ -44,12 +45,11 @@ export function ExecutionListFirstRun({ onTryIt }: { onTryIt: () => void }) {
   const { t } = useTranslation();
   const e = t.agents.executions;
   return (
-    <StateCard
+    <ScenarioEmptyState
       icon={Rocket}
-      tone="neutral"
       title={e.agent_ready}
-      body={e.agent_ready_subtitle}
-      action={<button type="button" onClick={onTryIt} className={ACTION_BTN}><Play className="w-3.5 h-3.5" />{e.try_it_now}</button>}
+      subtitle={e.agent_ready_subtitle}
+      action={{ label: e.try_it_now, onClick: onTryIt, icon: Play }}
     />
   );
 }

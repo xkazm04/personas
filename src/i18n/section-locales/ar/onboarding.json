@@ -607,5 +607,7 @@
   "waiting_for_output": "في انتظار الناتج…",
   "what_testing_checks": "ما يتحقق منه الاختبار:",
   "what_to_explore": "ما تستكشفه",
-  "your_agent_fallback": "وكيلك"
+  "your_agent_fallback": "وكيلك",
+  "approve_failed": "تعذّرت الموافقة على {name}. يمكنك الموافقة عليه لاحقًا من الموصلات.",
+  "execution_ended": "التنفيذ {status}"
 }

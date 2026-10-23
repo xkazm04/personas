@@ -1,0 +1,83 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5d8d7fec-6086-4dcd-baf2-8f4a832eaa11",
+ "subject": "machine-authored-documentation",
+ "evaluatedAt": "2026-10-21T23:46:21.638605+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "lib-harness",
+   "subject": "machine-authored-documentation",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/harness/guide-generator.ts:88 The harness publishes a guide containing model-authored material without semantic, structural, and human-read acceptance gates for that document.",
+   "techniques": [
+    {
+     "technique": "declared-truth-boundary",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/harness/guide-generator.ts:199 The guide presents supplied summaries rather than a derived causal traversal, impact estimate, or confidence figure; content correctness is assessed under three-gate acceptance."
+    },
+    {
+     "technique": "evidence-without-verdict",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/harness/guide-generator.ts:230 These are named mechanical code-gate results, not a capture instrument asserting that a human reviewed the document."
+    },
+    {
+     "technique": "packaged-surface-evaluation",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/harness/executor.ts:168 The executor operates on the project being migrated; the inspected harness does not publish a document-generator benchmark or compare installable generator configurations."
+    },
+    {
+     "technique": "preregistered-kill-criterion",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/harness/scenario-parser.ts:16 This scenario executes codebase migration tasks, not an aesthetic experiment deciding whether to build an expensive document-generator component."
+    },
+    {
+     "technique": "rescored-baseline-uplift",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/harness/plan-builder.ts:76 The statistic counts current feature statuses; it does not claim generator uplift against an earlier scored candidate set."
+    },
+    {
+     "technique": "stale-artifact-on-failed-write",
+     "verdict": "not-applicable",
+     "evidence": "src/lib/harness/guide-generator.ts:87 Guide persistence uses direct writes, and the inspected path has no downstream document inspector consuming a preserve-on-failure atomic output."
+    },
+    {
+     "technique": "three-gate-acceptance",
+     "verdict": "deviation",
+     "evidence": "src/lib/harness/orchestrator.ts:218 Completion uses model-reported feature passes and required code gates, then saves the guide; neither the explicit documentation task nor the model-derived guide receives document-specific semantic, structural, and human-read gates."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "machine-authored-documentation",
+   "context": "teams-goals",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-21T23:46:21.638605+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "machine-authored-documentation"
+   ],
+   "techniques": [
+    "declared-truth-boundary",
+    "evidence-without-verdict",
+    "packaged-surface-evaluation",
+    "preregistered-kill-criterion",
+    "rescored-baseline-uplift",
+    "stale-artifact-on-failed-write",
+    "three-gate-acceptance"
+   ],
+   "deviations": 1,
+   "context": "lib-harness",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

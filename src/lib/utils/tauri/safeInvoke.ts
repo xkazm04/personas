@@ -3,16 +3,21 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 /**
  * Tauri's canonical "the IPC command isn't registered" error string.
  *
- * Examples:
- *   `Command "list_projects" not found`
- *   `Command list_projects not found.`
+ * The real one, from tauri-2.11.2 `src/webview/mod.rs:1905,1911` (the version
+ * Cargo.lock pins; 2.12.x is identical):
+ *   `format!("Command {command} not found")` -> `Command list_projects not found`
+ * The name is NOT quoted. Until 2026-10-19 this regex REQUIRED quotes, so it
+ * matched only the hand-written examples in its own test and never the string
+ * Tauri sends: every `safeInvoke` fallback was unreachable and Drive's KB probe
+ * reported the expected absence of the `ml` commands on every lite-build mount.
+ * A quoted name is still accepted.
  *
- * Anchored at start-of-string and requires the literal `Command ` prefix
- * with a quoted command name token, so it won't accidentally match user-
- * facing not-found errors that just happen to contain the substring.
+ * Anchored at both ends, the `Command ` prefix and exactly ONE name token
+ * (`plugin:x|y` included) before ` not found`, so a user-facing sentence such as
+ * "Command output file not found" still does not match.
  */
 const TAURI_COMMAND_NOT_FOUND_RE =
-  /^Command [^"]*"[\w_]+"[^"]* not found(?:\.|$)/i;
+  /^Command\s+(?:"[\w:|.-]+"|[\w:|.-]+)\s+not found\.?$/i;
 
 /**
  * True iff `err` is specifically Tauri's "the IPC command isn't registered"

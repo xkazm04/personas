@@ -1,6 +1,8 @@
 import { memo, useMemo } from 'react';
 import { formatRelativeTime, normalizeTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useRelativeTimeTick } from '@/hooks/utility/timing/relativeTimeTicker';
+import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import { Tooltip } from './Tooltip';
 
 /**
@@ -15,6 +17,22 @@ const FORMATS: Record<AbsoluteTimeVariant, Intl.DateTimeFormatOptions> = {
   // "compact" — short numeric, good for dense tables (e.g. 5/24/26, 3:00 PM)
   compact: { month: 'numeric', day: 'numeric', year: '2-digit', hour: 'numeric', minute: '2-digit' },
 };
+
+// One formatter per (locale, variant). Constructing an Intl.DateTimeFormat is
+// the expensive half of formatting: measured 60.8 us to construct + format vs
+// 1.3 us to reuse one (node, `cs`, datetime), so a 200-row table paid ~12 ms per
+// render for formatters it threw away. 14 locales x 4 variants fits the cap.
+const formatterCache = createModuleCache<string, Intl.DateTimeFormat>({ maxSize: 64 });
+
+function formatterFor(locale: string, variant: AbsoluteTimeVariant): Intl.DateTimeFormat {
+  const key = `${locale}|${variant}`;
+  let fmt = formatterCache.get(key);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat(locale, FORMATS[variant]);
+    formatterCache.set(key, fmt);
+  }
+  return fmt;
+}
 
 interface AbsoluteTimeProps {
   /** ISO date string or epoch ms. */
@@ -74,11 +92,25 @@ export const AbsoluteTime = memo(function AbsoluteTime({
     return typeof timestamp === 'number' ? timestamp : Date.parse(normalizeTimestamp(timestamp));
   }, [timestamp]);
 
-  if (Number.isNaN(ms)) return <span className={className}>{fallback}</span>;
+  // Not `Number.isNaN`: Infinity and any |ms| past 8.64e15 are numbers too, and
+  // Intl.DateTimeFormat#format THROWS RangeError for them.
+  if (!Number.isFinite(ms) || Number.isNaN(new Date(ms).getTime())) {
+    return <span className={className}>{fallback}</span>;
+  }
 
-  const label = new Intl.DateTimeFormat(locale, FORMATS[variant]).format(ms);
+  const label = formatterFor(locale, variant).format(ms);
   const span = <span className={className}>{label}</span>;
 
   if (!showRelativeTooltip) return span;
-  return <Tooltip content={formatRelativeTime(new Date(ms).toISOString(), fallback)}>{span}</Tooltip>;
+  // An ELEMENT, not a string: the tooltip mounts it only while shown, so the
+  // "2h ago" is computed at hover time and ticks while open. A string computed
+  // here froze at the row's first render, because this component is memoised
+  // and a fixed timestamp never changes its props - a row painted an hour ago
+  // still said "now" on hover.
+  return <Tooltip content={<LiveRelative ms={ms} fallback={fallback} />}>{span}</Tooltip>;
 });
+
+function LiveRelative({ ms, fallback }: { ms: number; fallback: string }) {
+  useRelativeTimeTick(ms);
+  return <>{formatRelativeTime(new Date(ms).toISOString(), fallback)}</>;
+}

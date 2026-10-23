@@ -244,7 +244,9 @@
     "loading_firings": "লোড হচ্ছে…",
     "no_firings": "কোনো সাম্প্রতিক ফায়ারিং নেই",
     "recent_firings": "সাম্প্রতিক ফায়ারিং",
-    "firings_load_failed": "সাম্প্রতিক ট্রিগার লোড করা যায়নি।"
+    "firings_load_failed": "সাম্প্রতিক ট্রিগার লোড করা যায়নি।",
+    "triggers_load_failed_one": "{count}টি পারসোনার ট্রিগার লোড করা যায়নি।",
+    "triggers_load_failed_other": "{count}টি পারসোনার ট্রিগার লোড করা যায়নি।"
   },
   "sr_connecting": "ক্লাউড অর্কেস্ট্রেটরে সংযুক্ত হচ্ছে…",
   "sr_deploying": "ক্লাউডে পার্সোনা ডিপ্লয় হচ্ছে",

@@ -6,6 +6,7 @@ import { createLogger } from '@/lib/log';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
 import type { ExecutionAnnotation } from '@/lib/bindings/ExecutionAnnotation';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
+import { isFailedExecutionStatus, isSuccessExecutionStatus } from '../../libs/executionStatus';
 
 const logger = createLogger('execution-list');
 
@@ -32,7 +33,11 @@ export function useExecutionCompare(
   const [details, setDetails] = useState<Record<string, PersonaExecution>>({});
 
   const hydrate = useCallback(async (executionId: string) => {
-    if (details[executionId]) return details[executionId];
+    // Only a landed run is immutable. A snapshot taken while the run was still
+    // queued/running is re-read on the next open, or the detail modal and the
+    // compare view would keep showing `running` and $0 after it finished.
+    const cached = details[executionId];
+    if (cached && (isSuccessExecutionStatus(cached.status) || isFailedExecutionStatus(cached.status))) return cached;
     const detail = await getExecution(executionId, personaId);
     setDetails((prev) => ({ ...prev, [executionId]: detail }));
     return detail;

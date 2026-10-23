@@ -579,13 +579,19 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       queuedNotes: [],
     });
     useAthenaStore.getState().pulseForwardAck();
+    let failed = false;
     try {
       const result = await webbuildSessionSend(id, text, rt.effort, rt.style, rt.mcp);
       const q = result.question?.trim() || null;
       const reply = result.reply.trim() || 'Done.';
       const beats = splitReply(reply);
+      // A Stop that interrupted nothing bumped `turnSeq` and released the dock; this
+      // send is then a ghost and the user may be mid-way through a newer turn.
+      // Its words are still real and join the transcript, but its decision card,
+      // plan phases and autonomy flips belong to the turn it was sent for.
+      const live = turnSeq.get(id) === seq;
       patch(id, {
-        reply,
+        ...(live ? { reply } : {}),
         messages: [
           ...(get().runtimes[id]?.messages ?? []),
           ...beats.map((text, i) => ({
@@ -594,14 +600,18 @@ export const useStudioStore = create<StudioStore>((set, get) => {
             ts: Date.now(),
           })),
         ],
-        question: q,
-        options: q ? (result.options ?? []) : [],
-        decisionArea: q ? (result.area ?? null) : null,
-        decisionSelector: q ? (result.selector ?? null) : null,
-        ...(result.phases && result.phases.length > 0 ? { phases: result.phases } : {}),
+        ...(live
+          ? {
+              question: q,
+              options: q ? (result.options ?? []) : [],
+              decisionArea: q ? (result.area ?? null) : null,
+              decisionSelector: q ? (result.selector ?? null) : null,
+              ...(result.phases && result.phases.length > 0 ? { phases: result.phases } : {}),
+            }
+          : {}),
       });
       useAthenaStore.getState().pulseMessageReaction();
-      const cur = get().runtimes[id];
+      const cur = live ? get().runtimes[id] : undefined;
       if (q && cur?.autonomous) patch(id, { autonomous: false, resumeAuto: true });
       else if (!q && cur?.resumeAuto) patch(id, { resumeAuto: false, autonomous: true });
     } catch (e) {
@@ -613,14 +623,21 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       const reply = detail
         ? `Something went wrong with that change.\n\n${detail}`
         : 'Something went wrong with that change.';
+      failed = true;
+      // The waiting notes rode inside this failed send and were cleared when it
+      // started: hand them back ahead of any typed since, or they are lost
+      // (QUEUED_NOTES_MAX refuses new notes; it never drops queued ones).
+      const since = get().runtimes[id]?.queuedNotes ?? [];
+      // A ghost (fenced off by `turnSeq`) still records the failure and returns its
+      // notes, but must not switch off the live turn's autonomy or replace its reply.
+      const live = turnSeq.get(id) === seq;
       patch(id, {
-        reply,
+        ...(live ? { reply, autonomous: false, resumeAuto: false } : {}),
         messages: [
           ...(get().runtimes[id]?.messages ?? []),
           { id: crypto.randomUUID(), text: reply, ts: Date.now() },
         ],
-        autonomous: false,
-        resumeAuto: false,
+        queuedNotes: [...queued, ...since],
       });
       toastCatch('build instruction')(e);
     } finally {
@@ -639,8 +656,9 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         const cur = get().runtimes[id];
         // Queue pump (Athena's pattern): notes that waited out this turn go
         // with the next one on their own, instead of sitting until the user
-        // happens to send something. One pumped turn per finished turn.
-        if (cur && !cur.autonomous && !cur.question && !haltedByUser.has(id) && (cur.queuedNotes?.length ?? 0) > 0) {
+        // happens to send something. One pumped turn per finished turn. A failed
+        // turn pumps nothing: its notes wait for the user, like the chain does.
+        if (cur && !failed && !cur.autonomous && !cur.question && !haltedByUser.has(id) && (cur.queuedNotes?.length ?? 0) > 0) {
           const timer = window.setTimeout(() => {
             const r = get().runtimes[id];
             if (r && !r.busy && !r.autonomous && (r.queuedNotes?.length ?? 0) > 0) void runTurn(id, QUEUED_NOTES_TURN);

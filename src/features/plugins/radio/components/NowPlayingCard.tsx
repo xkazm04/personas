@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { ExternalLink, Loader2, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { NowPlaying } from '@/lib/bindings/NowPlaying';
 import type { PlayStatus } from '@/lib/bindings/PlayStatus';
 import type { StreamMetadata } from '@/lib/bindings/StreamMetadata';
+import { openExternalUrl } from '@/api/system/system';
+import { silentCatch } from '@/lib/silentCatch';
 import EqualizerBars from './EqualizerBars';
 
 interface NowPlayingCardProps {
@@ -17,6 +20,8 @@ interface NowPlayingCardProps {
   onPrev: () => void;
   onNext: () => void;
   onClose: () => void;
+  /** Wrapper holding the trigger that toggles this popover. */
+  anchorRef: RefObject<HTMLElement | null>;
 }
 
 function formatTime(sec: number): string {
@@ -43,6 +48,7 @@ export default function NowPlayingCard({
   onPrev,
   onNext,
   onClose,
+  anchorRef,
 }: NowPlayingCardProps) {
   const isPlaying = status === 'playing' || status === 'buffering';
   const isBuffering = status === 'buffering';
@@ -62,20 +68,9 @@ export default function NowPlayingCard({
   const { t, tx } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('mousedown', onDocClick);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDocClick);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [onClose]);
+  // The anchor holds the trigger: a press on it is not "outside", so the
+  // trigger's own toggle closes the popover instead of re-opening it.
+  useClickOutside([ref, anchorRef], true, onClose);
 
   const accent = nowPlaying.station.accentColor;
   const tracks =
@@ -247,15 +242,17 @@ export default function NowPlayingCard({
 
       {nowPlaying.station.sourceUrl && (
         <div className="border-t border-primary/8 px-4 py-2">
-          <a
-            href={nowPlaying.station.sourceUrl}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/90 transition-colors"
+          <button
+            type="button"
+            onClick={() => {
+              const url = nowPlaying.station.sourceUrl;
+              if (url) openExternalUrl(url).catch(silentCatch('radio:open-source'));
+            }}
+            className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/90 transition-colors focus-ring"
           >
             <ExternalLink className="w-3 h-3" />
             {nowPlaying.station.sourceLabel ?? t.radio.open_source}
-          </a>
+          </button>
         </div>
       )}
     </div>

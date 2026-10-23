@@ -23,9 +23,14 @@ import type { DeckController } from './useDeck';
 import { ReasonPrompt } from './ReasonPrompt';
 import { focusComposer } from './keys';
 import { Keycap } from './parts';
+import { useVerdictPairFit } from './useVerdictPairFit';
 
-export function Verdict({ k, label, yes, tone, icon, armed, disabled, onClick }: {
-  k: string; label: string; yes: boolean; tone: 'success' | 'danger' | 'accent'; icon: ReactNode; armed?: boolean; disabled?: boolean; onClick: () => void;
+export function Verdict({ k, label, yes, tone, icon, armed, disabled, pair, onClick }: {
+  /** The key printed inside the button; omitted where no key reaches it (a card in a thread, WP12). */
+  k?: string; label: string; yes: boolean; tone: 'success' | 'danger' | 'accent'; icon: ReactNode; armed?: boolean; disabled?: boolean;
+  /** One of the yes | no pair: the verb never wraps, and the pair measures whether it fits side by side. */
+  pair?: boolean;
+  onClick: () => void;
 }) {
   const { t, tx } = useTranslation();
   return (
@@ -37,11 +42,14 @@ export function Verdict({ k, label, yes, tone, icon, armed, disabled, onClick }:
       disabled={disabled}
       aria-label={armed ? tx(t.monitor.dc_deck_confirm_aria, { label }) : label}
       data-armed={armed ? '' : undefined}
+      data-verdict={pair ? '' : undefined}
       className={`au-verdict au-sheen au-lift au-l-${tone} ${yes ? 'au-verdict-yes' : 'au-verdict-no'} au-ink-lamp min-w-0 justify-start! rounded-input px-3! hover:bg-transparent [&>span:last-child]:flex [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1 [&>span:last-child]:items-center [&>span:last-child]:gap-2`}
       icon={icon}
     >
-      <span className="min-w-0 flex-1 text-left typo-heading">{armed ? t.monitor.dc_deck_confirm : label}</span>
-      <Keycap>{k}</Keycap>
+      <span className={`min-w-0 flex-1 text-left typo-heading ${pair ? 'overflow-hidden whitespace-nowrap' : ''}`}>
+        <span data-verdict-text={pair ? '' : undefined}>{armed ? t.monitor.dc_deck_confirm : label}</span>
+      </span>
+      {k && <Keycap>{k}</Keycap>}
     </Button>
   );
 }
@@ -114,6 +122,24 @@ export function Links({ item, act }: { item: DecisionItem; act: DeckActions }) {
   );
 }
 
+/**
+ * The yes | no pair. The verbs keep their full words on ONE line each: the
+ * pair stands side by side while both fit and stacks when either would wrap
+ * (measured in the reader's language, `useVerdictPairFit`), and an item that
+ * arms first (A ↵) always stacks.
+ */
+function VerdictPair({ item, deck, act }: { item: DecisionItem; deck: DeckController; act: DeckActions }) {
+  const v = item.verdictLabels;
+  const arms = armsAccept(item);
+  const fit = useVerdictPairFit([v.accept, v.reject, deck.armed ?? '']);
+  return (
+    <div ref={fit.ref} className={`grid gap-2 ${arms || fit.stacked ? 'grid-cols-1' : 'grid-cols-2'}`} data-testid="deck-verdict-pair" data-stacked={arms || fit.stacked ? '' : undefined}>
+      <Verdict k={arms ? 'A ↵' : 'A'} label={v.accept} yes tone="success" icon={<Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />} armed={deck.armed === 'accept'} pair onClick={act.accept} />
+      <Verdict k="R" label={v.reject} yes={false} tone="danger" icon={<X className="h-4 w-4" strokeWidth={2.5} aria-hidden />} armed={deck.armed === 'reject'} pair onClick={act.reject} />
+    </div>
+  );
+}
+
 export function DeckDock({ item, deck, act, rating, onRate }: {
   item: DecisionItem;
   deck: DeckController;
@@ -154,16 +180,10 @@ export function DeckDock({ item, deck, act, rating, onRate }: {
       </>
     );
   }
-  const arms = armsAccept(item);
-  // The verbs keep their full words: a long pair (Send back + A ↵) stacks rather than wraps.
-  const wide = arms || v.accept.length + v.reject.length > 16;
   return (
     <>
       {item.irreversible && deck.armed === 'accept' && <ArmedBox kind={item.irreversible} title={item.title} />}
-      <div className={`grid gap-2 ${wide ? 'grid-cols-1' : 'grid-cols-2'}`}>
-        <Verdict k={arms ? 'A ↵' : 'A'} label={v.accept} yes tone="success" icon={check} armed={deck.armed === 'accept'} onClick={act.accept} />
-        <Verdict k="R" label={v.reject} yes={false} tone="danger" icon={<X className="h-4 w-4" strokeWidth={2.5} aria-hidden />} armed={deck.armed === 'reject'} onClick={act.reject} />
-      </div>
+      <VerdictPair item={item} deck={deck} act={act} />
       {item.branches.map((b, i) => (
         <Branch key={b.id} k={String(i + 1 + act.offset)} label={b.label} hint={b.hint} accent={b.tone === 'accent'} onClick={() => act.branch(i + 1 + act.offset)} />
       ))}

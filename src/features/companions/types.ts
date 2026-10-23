@@ -37,12 +37,6 @@ export const COMPANIONS_PAGES = [
 ] as const;
 export type CompanionsPage = (typeof COMPANIONS_PAGES)[number];
 
-/** Which companion a page belongs to; `landing` belongs to none. */
-export function companionOfPage(page: CompanionsPage): CompanionId | null {
-  const head = page.split(":")[0] ?? "";
-  return (COMPANION_IDS as readonly string[]).includes(head) ? (head as CompanionId) : null;
-}
-
 /** Athena's own tab id, for the pages that still switch on it. */
 export function athenaTabOfPage(page: CompanionsPage): string | null {
   return page.startsWith("athena:") ? page.slice("athena:".length) : null;

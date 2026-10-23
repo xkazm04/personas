@@ -46,6 +46,7 @@
     "FleetListPopover.tsx": {"count":1,"sections":[7],"contexts":["`NodeContextMenu.tsx` · `TeamToolbar.tsx` · `FleetListPopover.tsx` ·"],"resolved":false},
     "ModuleBadge.tsx": {"count":2,"sections":[],"lines":["18-42","73"],"contexts":["`ModuleBadge.tsx:18-42` and `DashboardScopeBar.tsx:42-50` are the same pair,"],"resolved":false},
     "NodeContextMenu.tsx": {"count":2,"sections":[7],"contexts":["`NodeContextMenu.tsx` · `TeamToolbar.tsx` · `FleetListPopover.tsx` ·"],"resolved":false},
+    "PopupIconSelector.tsx": {"count":1,"sections":[8],"lines":["25-26"],"contexts":["which is why `PopupIconSelector.tsx:25-26` (dismissal + clamp, no focus, no role)"],"resolved":false},
     "ProjectFilter.tsx": {"count":1,"sections":[7],"contexts":["`HomeCustomizePopover.tsx` · `MetricHelpPopover.tsx` · `ProjectFilter.tsx` ·"],"resolved":false},
     "QuickAnswerPopover.tsx": {"count":2,"sections":[5,7],"lines":["1-13"],"contexts":["- **Naming a full-app deck a popover.** `QuickAnswerPopover.tsx:1-13` documents"],"resolved":false},
     "TeamToolbar.tsx": {"count":2,"sections":[7],"lines":["36"],"contexts":["`NodeContextMenu.tsx` · `TeamToolbar.tsx` · `FleetListPopover.tsx` ·"],"resolved":false},
@@ -68,7 +69,7 @@
     "src/": {"count":2,"sections":[3,7],"contexts":["`package.json:106` at `^0.27.19` and has **zero imports anywhere in `src/`** —"],"resolved":false,"isDir":true},
     "src/design/focus-contract.test.ts": {"count":1,"sections":[7],"contexts":["(`src/design/focus-contract.test.ts`) — the mechanism this corpus needs,"],"resolved":false},
     "src/features/agents/components/PersonaSelector.tsx": {"count":1,"sections":[7],"contexts":["**The 23 with no Escape:** `PersonaSelector.tsx` · `UseCaseFixtureDropdown.tsx` ·"],"resolvedFrom":"basename","verbatim":"PersonaSelector.tsx"},
-    "src/features/agents/components/PopupIconSelector.tsx": {"count":2,"sections":[6,8],"lines":["25-26"],"contexts":["- `src/features/agents/components/PopupIconSelector.tsx:25-26` — the smallest"]},
+    "src/features/agents/components/PopupIconSelector.tsx": {"count":1,"sections":[6],"lines":["25-26"],"contexts":["- `src/features/agents/components/PopupIconSelector.tsx:25-26` — the smallest"],"resolved":false},
     "src/features/agents/components/allPersonas/PersonaOverviewFilterHeader.tsx": {
       "count": 3,
       "sections": [4,6,7],

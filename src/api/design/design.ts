@@ -43,9 +43,6 @@ export const getActiveDesignConversation = (personaId: string) =>
 export const createDesignConversation = (personaId: string, title: string, messages: string) =>
   invoke<DesignConversation>("create_design_conversation", { personaId, title, messages });
 
-export const appendDesignConversationMessage = (id: string, messages: string, lastResult?: string | null) =>
-  invoke<DesignConversation>("append_design_conversation_message", { id, messages, lastResult: lastResult });
-
 /** Append a single message server-side (O(1) IPC payload). */
 export const appendSingleDesignMessage = (id: string, messageJson: string, lastResult?: string | null) =>
   invoke<AppendMessageResult>("append_single_design_message", { id, messageJson, lastResult: lastResult });

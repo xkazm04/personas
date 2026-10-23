@@ -1,0 +1,384 @@
+{
+  "schema": "conform-run/1",
+  "worker": "a262eef9-13c9-41cd-b5f1-46253aa27a94",
+  "subject": "fleet-orchestration",
+  "evaluatedAt": "2026-10-21T17:29:55Z",
+  "pairs": [
+    {
+      "context": "1bad7967-29dc-4e12-b99a-cb5177b4fb9b",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:327 list_by_run (the harvest roster read at src-tauri/src/commands/fleet/commands.rs:589) drops any row failing map_row via filter_map(Result::ok), as does list_rehydratable on restart (:255), so a corrupt member silently leaves the run denominator and the booted fleet while the queue read (:461) surfaces the same failure. Re-judged at rev 28: unchanged.",
+      "techniques": [
+        {
+          "technique": "result-harvest",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:327 a member that fails to map is dropped from the roster; the technique requires accounts to sum to the roster and a misfit to fail loudly"
+        },
+        {
+          "technique": "durable-fleet-state",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/fleet_sessions.rs:255 restart rehydration skips unreadable rows instead of declaring them, so a session vanishes on boot"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28
+    },
+    {
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/engine/build_session/fanout.rs:1354 a capability lane that fails while siblings succeed is only a tracing::warn, assemble_agent_ir reads lanes (:958) without res.error, and only all-lanes-failed is refused (:1365), so a persona with silently unresolved capabilities reaches DraftReady with no partial account. Re-judged at rev 28: unchanged.",
+      "techniques": [
+        {
+          "technique": "result-harvest",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:1365 partial failure is not a first-class outcome: only total failure is refused"
+        },
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fanout.rs:118 the lane brief orders 'do NOT ask clarifying questions - pick sensible defaults', giving the worker no failure channel for an unresolvable capability"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28
+    },
+    {
+      "context": "35c52f59-9612-47c4-8662-0ebb3c821771",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/notepad/notepadActions.ts:186 dispatchNoteToFleet launches a write-capable /note-task session with cwd = project.root_path (the shared repo root), declares no write set or isolated workspace, and the admission door (src-tauri/src/commands/fleet/queue.rs:996 door_verdict_for) decides on cap, time gate, budget and queue order only, so two notes dispatched into one repo can collide on files. Re-judged at rev 28: unchanged.",
+      "techniques": [
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/queue.rs:996 no write-set disjointness check at the one admission door; the technique makes overlap a dispatch-time rejection or a queueing decision"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28
+    },
+    {
+      "context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 spawns a Fleet session for a finding with no dispatch-key check and discards the returned session id, so the task row created at :80 is never bound to the session; a re-fired signal opens a duplicate and nothing can find the session again. Re-judged at rev 28: unchanged.",
+      "techniques": [
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 no key derived from the work (idea id) is checked or persisted; the technique treats an unnamed spawn as a failed dispatch"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28
+    },
+    {
+      "context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:77 normalizeStatus maps any status outside TASK_STATUSES (:16) to queued, substituting an active waiting state for a value the transport did not state. Re-judged at rev 28: unchanged; anchor moved from :60.",
+      "techniques": [
+        {
+          "technique": "absent-status-passthrough",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:77 a layer that did not observe the state substitutes queued instead of passing the absence through"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28
+    }
+  ],
+  "declined": [
+    {
+      "subject": "fleet-orchestration",
+      "context": "fbfcd99a-a333-42da-b85e-2ec1f560b4be",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "8650ca36-36fe-4862-98f5-745e866a2687",
+      "reason": "stale not-applicable verdict outside this run budget of 5; left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "03960450-6979-4412-9de3-35c897fe56d2",
+      "reason": "current deviation verdict at rev 28; nothing to re-judge"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+      "reason": "stale not-applicable verdict outside this run budget of 5; left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "12d5948a-76a4-4db1-ac6a-ac554eb12020",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "3effd422-2610-4c8a-bc02-53aceafd827c",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95",
+      "reason": "current deviation verdict at rev 28; nothing to re-judge"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+      "reason": "stale not-applicable verdict outside this run budget of 5; left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "bcb603ad-ce58-4b76-9623-aa99ace984af",
+      "reason": "stale deviation verdict outside this run budget of 5; left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "468953eb-0204-4013-b366-9357b2161138",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "reason": "stale not-applicable verdict outside this run budget of 5; left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "0f1b56ac-cd96-4355-993e-dc445a20e63e",
+      "reason": "current deviation verdict at rev 28; nothing to re-judge"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "743a0ae5-b7d0-46a6-a915-cb82c7834bf8",
+      "reason": "current not-applicable verdict at rev 28; nothing to re-judge"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394",
+      "reason": "current deviation verdict at rev 28; nothing to re-judge"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e",
+      "reason": "current deviation verdict at rev 28; nothing to re-judge"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "942d2449-34ab-4f02-af7e-b130269d10ef",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+      "reason": "stale not-applicable verdict outside this run budget of 5; left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+      "reason": "stale not-applicable verdict outside this run budget of 5; left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "4560e824-e952-45a9-8aef-fe88d721952e",
+      "reason": "stale not-applicable verdict outside this run budget of 5; left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "c5228746-931d-4733-9cf7-84519a2c9605",
+      "reason": "stale not-applicable verdict outside this run budget of 5; left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "ba0d4722-bfde-40aa-8e1d-52591719f834",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "3084d603-7cdb-41cd-bbad-8f24a8015b3e",
+      "reason": "stale deviation verdict outside this run budget of 5; left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "ca705961-f138-494a-b0fe-f882c674d25a",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "2418ddaf-0e6e-446f-968f-28a4bf6e7120",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "738f591b-60e9-4701-b786-cf868db66c51",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "959baa73-f18f-42c8-8569-466939b9050d",
+      "reason": "current deviation verdict at rev 28; nothing to re-judge"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "a7ece012-8300-4780-b286-b9cea81801fc",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "a3b615d2-05d8-47bd-ad92-672c6b42b0f3",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "c413de7d-1182-4abc-8a08-9c8832254c62",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "ef73ca1c-fc54-4b9c-83ec-390c54929192",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "5e531c95-b6d9-46f5-a33d-d07001fee61e",
+      "reason": "stale not-applicable verdict outside this run budget of 5; left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "fbc22b36-e0c9-486e-a9d9-838ac272ed2f",
+      "reason": "weak context: a coverage question, not judged by default"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "d7525012-ab19-4b29-99bb-0d4b6b9e084b",
+      "reason": "current deviation verdict at rev 28; nothing to re-judge"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+      "reason": "stale deviation verdict outside this run budget of 5; left for the next --stale pass"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "56a0fd55-279d-428b-b2f6-7c89154abd6f",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae",
+      "reason": "current deviation verdict at rev 28; nothing to re-judge"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "reason": "current deviation verdict at rev 28; nothing to re-judge"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "7741725e-8124-4899-b17e-8e39e7fcf1ed",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "f71df7d8-fb1c-4151-bba3-00fe164a537b",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "fd961ee9-bf7c-4ec7-90c3-a728045d3d44",
+      "reason": "unread: outside this run budget of 5"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "5dc3cb6a-6612-4909-995d-86e92394ec94",
+      "reason": "current not-applicable verdict at rev 28; nothing to re-judge"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "6a81750d-fdbf-4518-bae6-689303e1a884",
+      "reason": "current deviation verdict at rev 28; nothing to re-judge"
+    },
+    {
+      "subject": "fleet-orchestration",
+      "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
+      "reason": "current not-applicable verdict at rev 28; nothing to re-judge"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T17:29:55Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "result-harvest",
+        "durable-fleet-state"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T17:29:55Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "result-harvest",
+        "brief-carries-the-session"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T17:29:55Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "parallel-dispatch"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T17:29:55Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "parallel-dispatch"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T17:29:55Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "fleet-orchestration"
+      ],
+      "techniques": [
+        "absent-status-passthrough"
+      ],
+      "deviations": 1
+    }
+  ]
+}

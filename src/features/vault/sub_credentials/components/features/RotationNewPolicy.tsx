@@ -6,6 +6,7 @@ import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
 import { PillGroup } from '@/features/shared/components/forms/PillGroup';
 import { useTranslation } from '@/i18n/useTranslation';
+import { extractMessage } from '@/lib/silentCatch';
 
 const ROTATION_STATUS = STATUS_COLORS.rotation!;
 
@@ -76,7 +77,7 @@ export function RotationNewPolicy({
             });
             await onRefresh();
           } catch (err) {
-            onError(tx(t.vault.rotation_section.enable_failed, { error: err instanceof Error ? err.message : 'Unknown error' }));
+            onError(tx(t.vault.rotation_section.enable_failed, { error: extractMessage(err) }));
           } finally {
             setIsEnablingPolicy(false);
           }

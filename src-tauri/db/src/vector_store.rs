@@ -142,12 +142,6 @@ impl SqliteVectorStore {
         Ok(rows)
     }
 
-    /// Delete vectors by chunk IDs.
-    pub fn delete_by_chunks(&self, kb_id: &str, chunk_ids: &[String]) -> Result<usize, AppError> {
-        let conn = self.pool.get()?;
-        delete_vectors_by_chunks(&conn, kb_id, chunk_ids)
-    }
-
     /// Count vectors in a knowledge base.
     pub fn count(&self, kb_id: &str) -> Result<usize, AppError> {
         let conn = self.pool.get()?;

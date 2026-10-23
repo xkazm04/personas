@@ -19,19 +19,21 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getLifecycle } from '@/api/devTools/lifecycle';
 import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
 import type { LifecycleSnapshot } from '@/lib/bindings/LifecycleSnapshot';
-import { resolveError } from '@/lib/errors/errorRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { useDevToolsLiveStore } from '@/stores/devToolsLiveStore';
+import { errorText } from '../lifecycleView/system/errorText';
 
-// One entry per project opened this session; the cap names the bound.
-const snapshotCache = createModuleCache<string, LifecycleSnapshot>({ maxSize: 32 });
+// One entry per project read this session; the cap names the bound. The portfolio reads every
+// project at once (Lens L1), so the cap is past a real portfolio, not past one visit.
+const SNAPSHOT_CAP = 128;
+const snapshotCache = createModuleCache<string, LifecycleSnapshot>({ maxSize: SNAPSHOT_CAP });
 // Requests in flight, deleted on settle: bounded by the requests open at once.
 const inFlight = new Map<string, { revision: number; promise: Promise<LifecycleSnapshot> }>();
 // Each cached copy's JSON, so an identical reply keeps the cached object.
-const snapshotJson = createModuleCache<string, string>({ maxSize: 32 });
+const snapshotJson = createModuleCache<string, string>({ maxSize: SNAPSHOT_CAP });
 // When each project's copy last arrived, so a hover sweep does not refetch a fresh copy.
-const fetchedAt = createModuleCache<string, number>({ maxSize: 32 });
+const fetchedAt = createModuleCache<string, number>({ maxSize: SNAPSHOT_CAP });
 /** An intent prefetch skips a copy younger than this; a mount always revalidates. */
 const PREFETCH_FRESH_MS = 15_000;
 
@@ -52,6 +54,19 @@ function loadSnapshot(projectId: string, revision: number, force: boolean): Prom
   const settle = () => { if (inFlight.get(projectId) === entry) inFlight.delete(projectId); };
   promise.then(settle, settle);
   return promise;
+}
+
+/** The warm copy of a project's snapshot, or null; never fetches. */
+export function peekLifecycleSnapshot(projectId: string): LifecycleSnapshot | null {
+  return snapshotCache.get(projectId) ?? null;
+}
+
+/**
+ * Read one project's snapshot through the same cache and in-flight join the page uses, so a
+ * portfolio read warms every project the reader opens next. Same-data replies keep their object.
+ */
+export function readLifecycleSnapshot(projectId: string, revision: number): Promise<LifecycleSnapshot> {
+  return loadSnapshot(projectId, revision, false);
 }
 
 /** Warm a project's snapshot before the page mounts. Quiet: a failure is logged, and the mount retries. */
@@ -109,7 +124,7 @@ export function useLifecycleSnapshot(projectId: string | null): UseLifecycleSnap
         if (!latestWins.isCurrent(token)) return;
         silentCatch('lifecycle:getLifecycle')(err);
         // The page shows this sentence, so it goes through the product's own wording.
-        setError(resolveError(err instanceof Error ? err.message : String(err)).message);
+        setError(errorText(err));
         setLoading(false);
       });
   }, [projectId, revision, gen, latestWins]);

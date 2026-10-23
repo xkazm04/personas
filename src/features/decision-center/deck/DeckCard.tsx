@@ -38,6 +38,14 @@ import { CouncilNote } from './shapes/ShapeNotes';
 import { shapeBody, shapeDock, shapeRail } from './shapes/ShapeSlots';
 import type { ShapeController } from './shapes/useShapeController';
 
+/** A lane shape's own outcome lines, or undefined for the card's verdict pair. */
+function shapeOutcomes(item: DecisionItem, shape: ShapeController | undefined, L: { open: string; open_effect: string; open_release_effect: string }) {
+  if (shape?.shape === 'breach') return shape.breach.outcomes ?? undefined;
+  // A lens-scan card has one gesture, open; its verdicts are the sheet's.
+  if (shape?.shape === 'lens') return [{ verb: L.open.toLowerCase(), effect: item.kind === 'release' ? L.open_release_effect : L.open_effect }];
+  return undefined;
+}
+
 const STAMP: Record<Exclude<Leave, 'walk'>, { lamp: string; icon: LucideIcon }> = {
   accept: { lamp: 'au-l-success', icon: Check },
   reject: { lamp: 'au-l-danger', icon: X },
@@ -146,7 +154,7 @@ export function DeckCard({ item, deck, act, state, titleId, onClose, shape }: {
       <span className="au-spine" aria-hidden />
       <div className="flex min-h-0 flex-1 gap-2 p-3 pl-0">
         <div className="flex min-w-0 flex-1 flex-col">
-          <CardHeader item={item} titleId={titleId} />
+          <CardHeader item={item} titleId={titleId} outcomes={shapeOutcomes(item, shape, t.decisionCenter.lens)} />
           {item.kind === 'council' && <div className="pl-[5.75rem] pr-8 pt-3"><CouncilNote /></div>}
           <FoldContext.Provider value={state.folds}>{body}</FoldContext.Provider>
         </div>

@@ -53,6 +53,11 @@ pub const PROTOCOL_VERSION: u32 = 4;
 /// Maximum message size (16 MB) to prevent memory exhaustion from malicious peers.
 const MAX_MESSAGE_SIZE: u32 = 16 * 1024 * 1024;
 
+/// Ceiling for a frame read BEFORE the peer has authenticated (Hello,
+/// HelloAck, HelloConfirm). Real handshake frames are under 2 KB; an
+/// unauthenticated stream must not be able to claim more than this.
+pub const MAX_HANDSHAKE_MESSAGE_SIZE: u32 = 64 * 1024;
+
 /// Handshake nonce length in bytes (before base64).
 pub const NONCE_LEN: usize = 32;
 
@@ -489,6 +494,19 @@ pub fn encode(msg: &Message) -> Result<Vec<u8>, AppError> {
 
 /// Decode a message from a reader (reads length prefix then payload).
 pub async fn decode<R: AsyncRead + Unpin>(reader: &mut R) -> Result<Message, AppError> {
+    decode_with_limit(reader, MAX_MESSAGE_SIZE).await
+}
+
+/// Decode a pre-authentication frame: same wire format as [`decode`], but a
+/// claimed length above [`MAX_HANDSHAKE_MESSAGE_SIZE`] is refused.
+pub async fn decode_handshake<R: AsyncRead + Unpin>(reader: &mut R) -> Result<Message, AppError> {
+    decode_with_limit(reader, MAX_HANDSHAKE_MESSAGE_SIZE).await
+}
+
+async fn decode_with_limit<R: AsyncRead + Unpin>(
+    reader: &mut R,
+    max: u32,
+) -> Result<Message, AppError> {
     let mut len_buf = [0u8; 4];
     reader
         .read_exact(&mut len_buf)
@@ -496,18 +514,26 @@ pub async fn decode<R: AsyncRead + Unpin>(reader: &mut R) -> Result<Message, App
         .map_err(|e| AppError::Internal(format!("Failed to read message length: {e}")))?;
     let len = u32::from_be_bytes(len_buf);
 
-    if len > MAX_MESSAGE_SIZE {
+    if len > max {
         return Err(AppError::Validation(format!(
             "Message too large: {} bytes (max {})",
-            len, MAX_MESSAGE_SIZE
+            len, max
         )));
     }
 
-    let mut payload = vec![0u8; len as usize];
-    reader
-        .read_exact(&mut payload)
+    // Grow the buffer as bytes actually arrive: a peer that claims `len` and
+    // then stalls holds only what it has sent, not the claimed size.
+    let mut payload = Vec::with_capacity((len as usize).min(8 * 1024));
+    let read = reader
+        .take(u64::from(len))
+        .read_to_end(&mut payload)
         .await
         .map_err(|e| AppError::Internal(format!("Failed to read message payload: {e}")))?;
+    if read != len as usize {
+        return Err(AppError::Internal(
+            "Failed to read message payload: unexpected end of stream".into(),
+        ));
+    }
 
     rmp_serde::from_slice(&payload)
         .map_err(|e| AppError::Internal(format!("MessagePack decode error: {e}")))
@@ -541,6 +567,24 @@ mod tests {
         let vk = key.verifying_key();
         let peer_id = crate::identity::public_key_to_peer_id(&vk);
         (peer_id, B64.encode(vk.as_bytes()), key)
+    }
+
+    #[tokio::test]
+    async fn handshake_decode_refuses_oversized_claim_without_reading_payload() {
+        // Claims 1 MB, sends nothing further: must be refused on the prefix.
+        let bytes = (1024u32 * 1024).to_be_bytes();
+        let mut r: &[u8] = &bytes;
+        let err = decode_handshake(&mut r).await.expect_err("must refuse");
+        assert!(matches!(err, AppError::Validation(_)), "{err:?}");
+    }
+
+    #[tokio::test]
+    async fn handshake_decode_accepts_small_frame_and_rejects_truncated() {
+        let framed = encode(&Message::Ping).unwrap();
+        let mut r: &[u8] = &framed;
+        assert!(matches!(decode_handshake(&mut r).await, Ok(Message::Ping)));
+        let mut short: &[u8] = &framed[..framed.len() - 1];
+        assert!(decode_handshake(&mut short).await.is_err());
     }
 
     fn sign(key: &SigningKey, msg: &[u8]) -> String {

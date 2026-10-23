@@ -15,10 +15,10 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { ManualReviewItem } from '@/lib/types/types';
 import { seedMockManualReview, gcStaleManualReviews, deleteAllManualReviews } from '@/api/overview/reviews';
-import { resolveReviewRow } from '@/lib/decisions/rowWrites';
+import { isDecisionConflict, resolveReviewRow } from '@/lib/decisions/rowWrites';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { toastCatch } from '@/lib/silentCatch';
-import { FILTER_LABELS, resolveReviewQueueView, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
+import { reviewStatusLabel, resolveReviewQueueView, shouldAutoOpenFirstReview, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useManualReviewQueue } from '../hooks/useManualReviewQueue';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
@@ -27,6 +27,7 @@ import { BulkActionBar } from './BulkActionBar';
 import { dashboardItem } from '@/lib/utils/animation/animationPresets';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { createLogger } from "@/lib/log";
+import { IS_MOBILE } from '@/lib/utils/platform/platform';
 
 const logger = createLogger("manual-review");
 import { ReviewInboxPanel } from './ReviewInboxPanel';
@@ -36,7 +37,7 @@ import { useBacklogQueue } from './backlog/useBacklogQueue';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
 import { PendingDecisionList } from './PendingDecisionList';
 import { useReloadOnDeckClose } from '../libs/decisionDeckDoors';
-import { resolveInPool } from '../libs/bulkResolve';
+import { resolveInPool, summarizeBulkOutcome } from '../libs/bulkResolve';
 
 /**
  * Shape a raw `PersonaManualReview` row (as returned by the layered
@@ -176,7 +177,11 @@ export default function ManualReviewList() {
   });
 
   const activeReview = useMemo(() => filteredReviews.find((r) => r.id === activeReviewId) ?? null, [filteredReviews, activeReviewId]);
-  useEffect(() => { if (!activeReview && filteredReviews.length > 0) setActiveReviewId(filteredReviews[0]!.id); }, [activeReview, filteredReviews]);
+  useEffect(() => {
+    if (shouldAutoOpenFirstReview({ hasActive: activeReview != null, visibleCount: filteredReviews.length, isMobile: IS_MOBILE })) {
+      setActiveReviewId(filteredReviews[0]!.id);
+    }
+  }, [activeReview, filteredReviews]);
   useEffect(() => { setSelectedIds(new Set()); setConfirmAction(null); }, [filter, sourceFilter, selectedPersonaId]);
   const selectablePendingIds = useMemo(() => new Set(filteredReviews.filter((r) => r.status === 'pending').map((r) => r.id)), [filteredReviews]);
 
@@ -227,12 +232,20 @@ export default function ManualReviewList() {
       // Refresh L0 counts + L1 page so the acted-on row leaves the list.
       reloadQueue();
     } catch (err) {
-      toastCatch('manualReview:resolve')(err);
+      // A lost compare-and-swap is not a failed write: the review IS decided,
+      // by somebody else (Athena resolves approvals unattended). It used to
+      // toast as a generic failure, which reads as "try again" on a row that
+      // can no longer be decided; the Backlog already says "decided elsewhere".
+      if (isDecisionConflict(err)) {
+        useToastStore.getState().addToast(t.overview.dc_decided_elsewhere, 'warning');
+      } else {
+        toastCatch('manualReview:resolve')(err);
+      }
       // Re-read regardless: a conflict means somebody else's verdict is the
       // truth, and the list must show it rather than the row we tried to write.
       reloadQueue();
     } finally { setIsProcessing(false); }
-  }, [activeReview, allReviews, isProcessing, filteredReviews, reloadQueue]);
+  }, [activeReview, allReviews, isProcessing, filteredReviews, reloadQueue, t]);
 
   // ---- Pending → the Decision Deck ----------------------------------------
   //
@@ -255,9 +268,13 @@ export default function ManualReviewList() {
       // Athena resolving approvals unattended overnight, losing a
       // compare-and-swap on part of a batch is routine, not exotic. Count them
       // and say so.
-      const failed = results.filter((r) => r.status === 'failed').length;
+      // A lost compare-and-swap is "decided elsewhere", not "still pending".
+      const { failed, decidedElsewhere } = summarizeBulkOutcome(results, isDecisionConflict);
       if (failed > 0) {
         useToastStore.getState().addToast(tx(t.overview.review.bulk_partial_failure, { count: failed }), 'warning', 4000);
+      }
+      if (decidedElsewhere > 0) {
+        useToastStore.getState().addToast(t.overview.dc_decided_elsewhere, 'warning', 4000);
       }
       setSelectedIds(new Set());
       setConfirmAction(null);
@@ -384,7 +401,7 @@ export default function ManualReviewList() {
       <>
       <FilterBar<FilterStatus>
         options={(['all', 'pending', 'approved', 'rejected'] as FilterStatus[]).map((id) => ({
-          id, label: FILTER_LABELS[id], badge: statusCounts[id] ?? 0,
+          id, label: reviewStatusLabel(t, id), badge: statusCounts[id] ?? 0,
         }))}
         value={filter} onChange={setFilter} badgeStyle="paren" layoutIdPrefix="review-filter"
         trailing={

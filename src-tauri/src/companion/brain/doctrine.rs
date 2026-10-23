@@ -28,8 +28,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 #[cfg(feature = "ml")]
-use chrono::Utc;
-#[cfg(feature = "ml")]
 use rusqlite::params;
 
 #[cfg(feature = "ml")]

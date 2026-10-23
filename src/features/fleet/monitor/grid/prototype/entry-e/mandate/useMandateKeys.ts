@@ -1,4 +1,4 @@
-// The Activity surface's mandate keys (setting `lanes`): `M` opens the
+// The Activity surface's mandate keys: `M` opens the
 // register, `L` the act log. Route rung, like the board's own cursor, so any
 // overlay above the board (a peek, the deck, a modal) takes the key first;
 // and inert while any dialog is up.

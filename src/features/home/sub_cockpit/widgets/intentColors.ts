@@ -8,8 +8,6 @@ import type { Translations } from '@/i18n/en';
  * warning), never by which way it moved. Draw a tone with the kit: `<Mark tone>`, `<Dot tone>`,
  * a row's `mark`, or `toneText(tone)` on a text span (`k-toned t-<tone>`, the variable a Mark reads).
  */
-export type CockpitIntent = 'default' | 'info' | 'good' | 'warn' | 'bad';
-
 const INTENT_TONE: Record<string, Tone> = {
   default: 'neutral',
   info: 'info',

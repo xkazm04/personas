@@ -142,9 +142,13 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
   const handleValuesChanged = useCallback(
     (_key: string, _value: string) => {
       health.invalidate();
+      // A completed consent is bound to the values it ran with: its session
+      // ref redeems that client's tokens at save, so any edit drops it (both
+      // flows, as the catalog form's onValuesChanged does).
       if (oauth.completedAt) oauth.reset();
+      if (universalOAuth.completedAt) universalOAuth.reset();
     },
-    [health, oauth],
+    [health, oauth, universalOAuth],
   );
 
   const handleOAuthConsent = useCallback(
@@ -232,6 +236,17 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     setPrefetchedAuthDetections(undefined);
   }, [design, oauth, universalOAuth, health]);
 
+  const loadTemplate = useCallback(
+    (template: CredentialDesignResult, initialValues?: Record<string, string>) => {
+      design.loadTemplate(template);
+      // Same slot the negotiator's captured values use: it feeds the preview
+      // form's initialValues and the required-field check, so an import's
+      // values land in the form instead of being retyped.
+      setNegotiatorValues(initialValues ?? {});
+    },
+    [design],
+  );
+
   // -- Context value --
   const contextValue: CredentialDesignContextValue | null = design.result
     ? buildContextValue({
@@ -280,7 +295,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
     resetAll,
     startRefinement,
     refinementCount,
-    loadTemplate: design.loadTemplate,
+    loadTemplate,
     invalidateHealth: health.invalidate,
   };
 }

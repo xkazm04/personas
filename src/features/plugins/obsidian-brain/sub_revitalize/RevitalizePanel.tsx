@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { AlertTriangle, MoonStar, Trash2, GitMerge, Wand2, Settings } from 'lucide-react';
+import { AlertTriangle, MoonStar, Trash2, GitMerge, Wand2 } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
-import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { NoVaultConnected } from '../NoVaultConnected';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -11,6 +11,7 @@ import RevitalizeProgress from './RevitalizeProgress';
 import RevitalizeSummaryCard from './RevitalizeSummaryCard';
 import RevitalizeHistoryTable from './RevitalizeHistoryTable';
 import { useRevitalizeJob } from './useRevitalizeJob';
+import { extractMessage } from '@/lib/silentCatch';
 
 export default function RevitalizePanel() {
   const { t, tx } = useTranslation();
@@ -18,7 +19,6 @@ export default function RevitalizePanel() {
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const vaultName = useSystemStore((s) => s.obsidianVaultName);
-  const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
 
   const { running, lines, error, summary, start, cancel, dismissSummary } = useRevitalizeJob();
 
@@ -29,16 +29,7 @@ export default function RevitalizePanel() {
 
   if (!connected) {
     return (
-      <div className="flex-1 flex items-center justify-center py-20">
-        <EmptyState
-          icon={AlertTriangle}
-          title={ob.no_vault_connected}
-          subtitle={ob.no_vault_hint}
-          iconColor="text-amber-400/80"
-          iconContainerClassName="bg-amber-500/10 border-amber-500/20"
-          action={{ label: ob.tab_setup, onClick: () => setObsidianBrainTab('setup'), icon: Settings }}
-        />
-      </div>
+      <NoVaultConnected />
     );
   }
 
@@ -56,7 +47,7 @@ export default function RevitalizePanel() {
       });
       addToast(tx(ob.revitalize_started_toast, { name: vaultName ?? '' }), 'success');
     } catch (e) {
-      addToast(tx(ob.revitalize_start_failed, { error: String(e) }), 'error');
+      addToast(tx(ob.revitalize_start_failed, { error: extractMessage(e) }), 'error');
     }
   };
 

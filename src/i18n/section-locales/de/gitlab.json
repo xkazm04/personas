@@ -121,5 +121,12 @@
   "view_logs": "Protokolle",
   "yesterday": "gestern",
   "your_tier": "(Ihres)",
-  "agent_pipeline_title": "Pipeline für {agent} auf {ref}: {status}"
+  "agent_pipeline_title": "Pipeline für {agent} auf {ref}: {status}",
+  "pipeline_count_one": "{count} Pipeline",
+  "pipeline_count_other": "{count} Pipelines",
+  "notify_title_success": "Pipeline erfolgreich",
+  "notify_title_failed": "Pipeline fehlgeschlagen",
+  "notify_title_canceled": "Pipeline abgebrochen",
+  "notify_title_other": "Pipeline {status}",
+  "notify_body": "Pipeline #{id} auf {ref} hat jetzt den Status {status}"
 }

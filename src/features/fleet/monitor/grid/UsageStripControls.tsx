@@ -18,13 +18,17 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { Button } from '@/features/shared/components/buttons';
 import type { ClaudeAccountsSnapshot } from '@/lib/bindings/ClaudeAccountsSnapshot';
+import type { RotateStrategy } from '@/lib/bindings/RotateStrategy';
+
+const STRATEGIES: readonly RotateStrategy[] = ['soonest_reset', 'coolest'];
 
 export function UsageStripControls({
   snapshot, onSave,
 }: {
   snapshot: ClaudeAccountsSnapshot;
-  onSave: (enabled: boolean, thresholdPct: number) => void;
+  onSave: (enabled: boolean, thresholdPct: number, strategy?: RotateStrategy) => void;
 }) {
   const { t, tx } = useTranslation();
   const [draft, setDraft] = useState<number | null>(null);
@@ -73,6 +77,26 @@ export function UsageStripControls({
             data-testid="fleet-usage-rotate-threshold"
           />
           <span className="opacity-60">%</span>
+        </span>
+      </Tooltip>
+
+      <Tooltip content={t.monitor.usage_auto_rotate_strategy_hint}>
+        <span className="inline-flex flex-shrink-0" data-testid="fleet-usage-rotate-strategy">
+          <span role="radiogroup" aria-label={t.monitor.usage_auto_rotate_strategy_aria} className="inline-flex items-center gap-1">
+            {STRATEGIES.map((s) => (
+              <Button
+                key={s}
+                size="sm"
+                variant={autoRotate.strategy === s ? 'accent' : 'ghost'}
+                role="radio"
+                aria-checked={autoRotate.strategy === s}
+                onClick={() => { if (s !== autoRotate.strategy) onSave(autoRotate.enabled, shown, s); }}
+                data-testid={`fleet-usage-strategy-${s === 'coolest' ? 'coolest' : 'soonest'}`}
+              >
+                {s === 'coolest' ? t.monitor.usage_auto_rotate_strategy_coolest : t.monitor.usage_auto_rotate_strategy_soonest}
+              </Button>
+            ))}
+          </span>
         </span>
       </Tooltip>
     </div>

@@ -5,7 +5,6 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { markNotepadPhase } from './notepadTiming';
 
-
 /**
  * What the pad looks like in the instant between the click and the chunk.
  *
@@ -24,12 +23,6 @@ import { markNotepadPhase } from './notepadTiming';
  */
 export default function NotepadShell() {
   const { t } = useTranslation();
-
-  // The shell mounting is the moment the screen first changes under the click.
-  // If this number is large the problem is upstream of every chunk.
-  useEffect(() => {
-    markNotepadPhase('shell');
-  }, []);
 
   // The shell mounting is the moment the screen first changes under the click.
   // If this number is large the problem is upstream of every chunk.

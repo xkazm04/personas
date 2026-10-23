@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import { incidentDaysOpen, severityRank } from './incidentTaxonomy';
+import { incidentStateRank } from './incidentStatus';
 
 /**
  * Sort + paginate the incident list for the ledger surfaces.
@@ -50,15 +51,6 @@ const DEFAULT_DIR: Record<IncidentSortKey, SortDirection> = {
   age: 'desc',
 };
 
-/** Open first, then acknowledged/in-progress, then closed — triage order. */
-const STATE_RANK: Record<string, number> = {
-  open: 0,
-  acknowledged: 1,
-  in_progress: 2,
-  resolved: 3,
-  dismissed: 4,
-};
-
 function compare(a: AuditIncident, b: AuditIncident, key: IncidentSortKey): number {
   switch (key) {
     // Every case is written DESCENDING-first, because `sorted` negates the
@@ -75,7 +67,7 @@ function compare(a: AuditIncident, b: AuditIncident, key: IncidentSortKey): numb
     case 'persona':
       return (b.personaName ?? '').localeCompare(a.personaName ?? '');
     case 'state':
-      return (STATE_RANK[a.status] ?? 9) - (STATE_RANK[b.status] ?? 9);
+      return incidentStateRank(a.status) - incidentStateRank(b.status);
     case 'age':
       return incidentDaysOpen(b.createdAt) - incidentDaysOpen(a.createdAt);
     case 'created':

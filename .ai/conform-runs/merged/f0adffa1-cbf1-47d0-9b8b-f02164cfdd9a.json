@@ -1,0 +1,28 @@
+{"schema":"conform-run/1","worker":"f0adffa1-cbf1-47d0-9b8b-f02164cfdd9a","subject":"client-fetch-cache","evaluatedAt":"2026-10-22T02:57:09Z",
+"pairs":[
+{"context":"b39776f5-3909-41e3-b69f-14c9a6c70bec","subject":"client-fetch-cache","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/src/commands/live_roadmap.rs:43 re-judged 10-22, unchanged since 10-13: one 1h TTL is the whole policy - past it the home view blocks on the network instead of painting and revalidating, and the failure rescue (live_roadmap.rs:229) paints a disk copy of any age because no stale ceiling exists",
+ "techniques":[
+  {"technique":"swr-design","verdict":"deviation","evidence":"src-tauri/src/commands/live_roadmap.rs:43 a single CACHE_TTL names no stale zone and no stale ceiling; the rescue at live_roadmap.rs:229 serves any age"},
+  {"technique":"swr-design","verdict":"realized (failure keeps stale truth visible)","evidence":"src/features/home/sub_releases/useLiveRoadmap.ts:77 a failed fetch keeps the shown roadmap and flips the pill to stale instead of claiming fresh"}]},
+{"context":"b4439e30-fcff-4095-97dd-d9d7da2247dd","subject":"client-fetch-cache","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:133 re-judged 10-22 after 297869f804/893072d77a (neither touched the picker): a failed reopen refresh still overwrites the shown list with [] while the previous selection ids stay selected and exportable, and the modal paints its no-results state (ExportSelectionModal.tsx:304)",
+ "techniques":[
+  {"technique":"swr-design","verdict":"deviation","evidence":"src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:133 the failure path evicts the previous list (settle with []), the opposite of never evict on failed revalidation"},
+  {"technique":"warm-remount-caches","verdict":"realized (reopen keeps prior rows while in flight)","evidence":"src/features/settings/sub_portability/components/export-prototype/useExportPicker.ts:115 reopen marks scopes pending and keeps the already-rendered rows"}]}
+],
+"declined":[
+ {"subject":"client-fetch-cache","context":"208f50de-5d3b-4345-9fed-1c106a7a36e9","reason":"re-judged 2026-10-21 against the current digest; no commit since touches its anchor"},
+ {"subject":"client-fetch-cache","context":"e0ea6f08-ebdf-4c9e-aab4-969eee32f573","reason":"re-judged 2026-10-21 against the current digest; the only later sub_mastermind commit (a34633e58c) is a toast fix, not the flights key"},
+ {"subject":"client-fetch-cache","context":"9fff7e41-4fc5-4c31-846b-c04ca1c79757","reason":"re-judged 2026-10-21; the later 12d731054c deleted unreachable files, not the hook-state list"},
+ {"subject":"client-fetch-cache","context":"fd092e44-fcec-4418-8337-ed2b7b2c8473","reason":"re-judged 2026-10-21 against the current digest; no later commit"},
+ {"subject":"client-fetch-cache","context":"9fca099d-94e4-4fd0-8460-3cf5d8c85acf","reason":"re-judged 2026-10-21; the later 079f0ebc5b is keyboard access, not the WeakMap key"},
+ {"subject":"client-fetch-cache","context":"e0563a39-fb7e-485f-a698-f9c4dc1004a7","reason":"weak context, re-judged 2026-10-21; not re-read"},
+ {"subject":"client-fetch-cache","context":"0a6ae5fd-fb42-446c-9602-0d2abdd220d5","reason":"re-judged 2026-10-21 against the current digest; no later commit"},
+ {"subject":"client-fetch-cache","context":"283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0","reason":"not-applicable 2026-10-13 against the current digest; layout primitives issue no requests"},
+ {"subject":"client-fetch-cache","context":"a38e2b93-2322-4187-befa-c0443c4ca85f","reason":"weak context (governance: weak); matched on 'definitions/shared/route', a coverage doubt, not judged by rule"}
+],
+"consults":[
+ {"ts":"2026-10-22T02:57:09Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["swr-design"],"deviations":1},
+ {"ts":"2026-10-22T02:57:09Z","bundle":"software-engineering","subjects":["client-fetch-cache"],"techniques":["swr-design","warm-remount-caches"],"deviations":1}
+]}

@@ -23,7 +23,7 @@
  * renders the kit's error band once, and the surfaces read `failed` to hide actions that cannot
  * work without the bridge.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { HealthCheckItem, HealthCheckSection } from '@/api/system/system';
 import {
@@ -31,6 +31,7 @@ import {
   healthCheckEnvironment, healthCheckLocal, healthCheckSubscriptions,
 } from '@/api/system/system';
 import { silentCatch } from '@/lib/silentCatch';
+import { createKeyedLatestWins } from '@/stores/util/latestWins';
 
 import { HEALTH_SECTION_IDS, type HealthSectionId } from './healthModel';
 
@@ -77,15 +78,17 @@ export interface HealthBoard {
 
 export function useHealthSections(): HealthBoard {
   const [board, setBoard] = useState<Board>(cold);
-  const gen = useRef<Partial<Record<HealthSectionId, number>>>({});
-  const inFlight = useRef<Partial<Record<HealthSectionId, boolean>>>({});
+  // Latest wins per section. A re-run asked for while that section's check is
+  // still in flight used to be DROPPED (an in-flight flag returned early), so
+  // the reason for the re-run - a sign-in, a saved key, a finished install -
+  // was answered by the check that started before it. Every re-run now
+  // starts, and only the newest reply per section is kept.
+  const [latest] = useState(() => createKeyedLatestWins<HealthSectionId>());
 
   const runSection = useCallback((id: HealthSectionId) => {
-    if (inFlight.current[id]) return;
-    inFlight.current[id] = true;
-    const mine = (gen.current[id] = (gen.current[id] ?? 0) + 1);
+    const mine = latest.next(id);
     const fresh = (patch: Partial<HealthSectionState>) => {
-      if (gen.current[id] !== mine) return;
+      if (!latest.isCurrent(id, mine)) return;
       setBoard((prev) => ({ ...prev, [id]: { ...prev[id], ...patch, loading: false } }));
     };
     FETCHERS[id]()
@@ -93,9 +96,8 @@ export function useHealthSections(): HealthBoard {
       .catch((err) => {
         silentCatch(`features/overview/components/health/useHealthSections:${id}`)(err);
         fresh({ failed: true });
-      })
-      .finally(() => { inFlight.current[id] = false; });
-  }, []);
+      });
+  }, [latest]);
 
   const runAll = useCallback(() => {
     for (const id of HEALTH_SECTION_IDS) runSection(id);

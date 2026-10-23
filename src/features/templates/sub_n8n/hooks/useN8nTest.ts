@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useCorrelatedCliStream } from '@/hooks/execution/useCorrelatedCliStream';
 import { EventName } from '@/lib/eventRegistry';
-import { useTranslation } from '@/i18n/useTranslation';
+import { useTranslation, getActiveTranslations, interpolate } from '@/i18n/useTranslation';
 import type { N8nImportAction } from './useN8nImportReducer';
 
 export interface N8nTestApi {
@@ -33,7 +33,7 @@ export function useN8nTest(
       if (message) {
         dispatch({
           type: 'SET_ADJUSTMENT',
-          text: `Fix: The test execution failed with: ${message.slice(0, 200)}. Please adjust the persona to fix this issue.`,
+          text: interpolate(getActiveTranslations().templates.n8n.test_fix_adjustment, { message: message.slice(0, 200) }),
         });
       }
     },

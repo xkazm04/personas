@@ -330,6 +330,16 @@
       "resolvedFrom": "suffix",
       "verbatim": "plugins/fleet/FleetPairDevice.tsx"
     },
+    "src/features/projects/development/goals/GoalDetailDrawer.tsx": {
+      "count": 1,
+      "sections": [5],
+      "lines": ["281"],
+      "contexts": [
+        "| **`window.confirm(...)` / bare `confirm(...)`** | Unstyled, unthemed, blocks the WebView, ignores the modal stack, and cannot render an impact list. **5 survivors**: `ReferenceBoard.tsx:104` (clear…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "GoalDetailDrawer.tsx"
+    },
     "src/features/settings/shared/useConfirmClick.ts": {
       "count": 3,
       "sections": [3,6],
@@ -402,16 +412,6 @@
       "contexts": ["at `skillsWorkbenchData.ts:255`, and neither tells the operator."],
       "resolvedFrom": "basename",
       "verbatim": "skillsWorkbenchData.ts"
-    },
-    "src/features/teams/sub_goals/GoalDetailDrawer.tsx": {
-      "count": 1,
-      "sections": [5],
-      "lines": ["281"],
-      "contexts": [
-        "| **`window.confirm(...)` / bare `confirm(...)`** | Unstyled, unthemed, blocks the WebView, ignores the modal stack, and cannot render an impact list. **5 survivors**: `ReferenceBoard.tsx:104` (clear…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "GoalDetailDrawer.tsx"
     },
     "src/features/teams/sub_kpis/KpiDetailModal.tsx": {
       "count": 1,

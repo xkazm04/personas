@@ -13,11 +13,6 @@ import {
 export type Standards = StandardsConfig;
 export { parseStandards, serializeStandards };
 
-/** Is `standards_config` already fully golden (every action enabled)? */
-export function isGolden(raw: string | null | undefined): boolean {
-  return applicableStandardsActions(raw).length === 0;
-}
-
 export interface StandardsAction {
   id: string;
   label: string;

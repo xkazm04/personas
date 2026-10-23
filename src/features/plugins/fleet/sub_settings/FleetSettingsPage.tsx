@@ -14,6 +14,7 @@ import { FleetStateCutoffSettings } from './FleetStateCutoffSettings';
 import { FleetProcessScanner } from './FleetProcessScanner';
 import { FleetHookBanner } from './FleetHookBanner';
 import { FleetHookEntries } from './FleetHookEntries';
+import { useTranslation } from '@/i18n/useTranslation';
 import { debtText } from '@/i18n/DebtText';
 
 
@@ -27,6 +28,7 @@ import { debtText } from '@/i18n/DebtText';
  *  - per-event presence checklist
  */
 export default function FleetSettingsPage() {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<FleetHookStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const applyStatus = useSystemStore((s) => s.fleetApplyHookStatus);
@@ -52,11 +54,11 @@ export default function FleetSettingsPage() {
       setStatus(next);
       applyStatus(next);
     } catch (e) {
-      toastCatch('FleetSettingsPage:install', 'Failed to install Claude Code hooks')(e);
+      toastCatch('FleetSettingsPage:install', t.plugins.fleet.hooks_install_failed)(e);
     } finally {
       setBusy(false);
     }
-  }, [busy, applyStatus]);
+  }, [busy, applyStatus, t]);
 
   const handleUninstall = useCallback(async () => {
     if (busy) return;
@@ -66,11 +68,11 @@ export default function FleetSettingsPage() {
       setStatus(next);
       applyStatus(next);
     } catch (e) {
-      toastCatch('FleetSettingsPage:uninstall', 'Failed to uninstall Claude Code hooks')(e);
+      toastCatch('FleetSettingsPage:uninstall', t.plugins.fleet.hooks_uninstall_failed)(e);
     } finally {
       setBusy(false);
     }
-  }, [busy, applyStatus]);
+  }, [busy, applyStatus, t]);
 
   const installed = status?.installed ?? false;
 

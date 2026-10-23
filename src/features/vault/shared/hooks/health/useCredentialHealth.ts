@@ -7,6 +7,7 @@ import { encryptWithSessionKey } from '@/lib/utils/platform/crypto';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from "@/stores/vaultStore";
 import { createModuleCache, useModuleSubscription } from '@/hooks/utility/data/useModuleSubscription';
+import { silentCatch, extractMessage } from '@/lib/silentCatch';
 
 // -- Types -------------------------------------------------------------
 
@@ -156,7 +157,9 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
       if (!(targetMode === 'preview' && unmountedRef.current)) {
         resultCache.set(key, {
           success: false,
-          message: e instanceof Error ? e.message : 'Healthcheck failed',
+          // invokeWithTimeout rejects with a serialized AppError object, never
+          // an Error, so an instanceof ladder dropped every backend reason.
+          message: extractMessage(e) || 'Healthcheck failed',
           // A throw at the IPC boundary means no probe verdict was ever
           // produced: the command timed out, the machine is offline, the
           // transport died. That is `unreachable`, NOT `failed` -- a rejected
@@ -199,11 +202,18 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
         };
         if (hcResult.success) patch.healthcheck_last_success_at = nowIso;
 
-        const updatedRaw = await credApi.patchCredentialMetadata(key, patch);
-        const updated = toCredentialMetadata(updatedRaw);
-        useVaultStore.setState((s) => ({
-          credentials: s.credentials.map((c) => (c.id === key ? updated : c)),
-        }));
+        // Persisting is bookkeeping, not part of the verdict: a failed patch
+        // (DB busy, IPC timeout) must not throw into `check`'s catch, which
+        // would repaint a probe that answered as `unreachable`.
+        try {
+          const updatedRaw = await credApi.patchCredentialMetadata(key, patch);
+          const updated = toCredentialMetadata(updatedRaw);
+          useVaultStore.setState((s) => ({
+            credentials: s.credentials.map((c) => (c.id === key ? updated : c)),
+          }));
+        } catch (err) {
+          silentCatch('useCredentialHealth:persistVerdict')(err);
+        }
       }
 
       return hcResult;

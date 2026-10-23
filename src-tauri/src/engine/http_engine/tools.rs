@@ -430,20 +430,41 @@ async fn http_get_guarded(client: &Client, raw: &str) -> Result<String, String> 
         .await
         .map_err(|e| format!("request failed: {e}"))?;
     let status = resp.status();
-    let bytes = resp
-        .bytes()
+    // Read chunk by chunk and stop at the cap: a multi-GB body must never be
+    // fully buffered just to be sliced to 16 KiB afterwards.
+    let mut resp = resp;
+    let mut body: Vec<u8> = Vec::new();
+    let mut was_truncated = false;
+    while let Some(chunk) = resp
+        .chunk()
         .await
-        .map_err(|e| format!("read failed: {e}"))?;
-    let slice = &bytes[..bytes.len().min(HTTP_GET_MAX_BYTES)];
-    let truncated = if bytes.len() > HTTP_GET_MAX_BYTES {
-        " …[truncated]"
-    } else {
-        ""
-    };
+        .map_err(|e| format!("read failed: {e}"))?
+    {
+        if append_capped(&mut body, &chunk, HTTP_GET_MAX_BYTES) {
+            was_truncated = true;
+            break;
+        }
+    }
+    let slice = &body[..];
+    let truncated = if was_truncated { " …[truncated]" } else { "" };
     Ok(format!(
         "HTTP {status}\n{}{truncated}",
         String::from_utf8_lossy(slice)
     ))
+}
+
+/// Append `chunk` to `buf` without letting `buf` exceed `max`. Returns true
+/// when bytes were dropped, i.e. the body is longer than the cap and the caller
+/// should stop reading.
+fn append_capped(buf: &mut Vec<u8>, chunk: &[u8], max: usize) -> bool {
+    let room = max.saturating_sub(buf.len());
+    if chunk.len() > room {
+        buf.extend_from_slice(&chunk[..room]);
+        true
+    } else {
+        buf.extend_from_slice(chunk);
+        false
+    }
 }
 
 // The private-IP predicate that used to live here (`is_blocked_ip`) was deleted
@@ -471,6 +492,23 @@ mod tests {
 
     /// An IP literal never reaches a DNS resolver, so the client's resolver
     /// cannot veto it. `validate_url_safety` is the only layer that sees it.
+    #[test]
+    fn append_capped_never_exceeds_the_cap_and_flags_truncation() {
+        let mut buf = Vec::new();
+        assert!(!append_capped(&mut buf, b"abcd", 6));
+        assert_eq!(buf, b"abcd");
+        // Exactly filling the cap is not truncation.
+        assert!(!append_capped(&mut buf, b"ef", 6));
+        assert_eq!(buf, b"abcdef");
+        // One more byte is.
+        assert!(append_capped(&mut buf, b"g", 6));
+        assert_eq!(buf, b"abcdef");
+        // A single oversized chunk is clipped to the cap, not held whole.
+        let mut big = Vec::new();
+        assert!(append_capped(&mut big, &[7u8; 1000], 16));
+        assert_eq!(big.len(), 16);
+    }
+
     #[tokio::test]
     async fn blocks_ip_literal_targets() {
         let client = tool_client();

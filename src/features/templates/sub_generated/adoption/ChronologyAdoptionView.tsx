@@ -23,7 +23,6 @@ import { useBuild } from "@/features/agents/components/matrix/useBuild";
 import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
-import { useToastStore } from "@/stores/toastStore";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
@@ -46,7 +45,7 @@ import type { EventSubscription } from "@/features/agents/shared/quickConfig/qui
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { UseCaseErrorPolicy } from "@/lib/types/frontendTypes";
 import { resolveIconForTemplate } from "@/lib/icons/templateIconResolver";
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useHydratedDesignResult } from './useHydratedDesignResult';
 
 
@@ -1146,7 +1145,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         } catch (err) { silentCatch("features/templates/sub_generated/adoption/ChronologyAdoptionView:catch3")(err); }
 
         // Show progress dot on design-reviews sidebar
-        useSystemStore.getState().setTemplateAdoptActive(true);
+        useSystemStore.getState().setTemplateAdoptActive(true, review.id);
 
         setSeeded(true);
         seedDone.current = true;
@@ -1162,10 +1161,11 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
             .catch(silentCatch("ChronologyAdoptionView:cleanupOrphanedDraft"));
           setPersonaId(null);
         }
-        useToastStore.getState().addToast(
-          `Failed to start template adoption: ${err instanceof Error ? err.message : 'Unknown error'}. Please try again.`,
-          'error',
-        );
+        // invokeWithTimeout rejects with an AppError object, so the old
+        // `instanceof Error` ladder showed "Unknown error" for every IPC
+        // failure. toastCatch carries the backend reason and the renderer
+        // resolves it to friendly, translated copy.
+        toastCatch("ChronologyAdoptionView:startAdoption")(err);
         // Leave seedDone=false so the next render can retry the seed.
       } finally {
         seedInFlight.current = false;
@@ -1225,7 +1225,8 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
             });
           })
           .catch(silentCatch("ChronologyAdoptionView:adjustStatusUpdate"));
-        // The wrapper owns the long (660s) timeout — see adjustAdoptionDraft.
+        // The wrapper owns the long timeout (above the CLI runner's hard
+        // ceiling) — see adjustAdoptionDraft.
         await adjustAdoptionDraft(sessionId);
       } catch (err) {
         // Non-fatal: backend keeps the deterministic base IR on failure.

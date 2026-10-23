@@ -232,7 +232,12 @@ pub(super) fn rebuild_table_from_live_ddl(
     // The table name appears once in its own CREATE before any FK clause can
     // name another table, so the first occurrence is the one to rename.
     let staged = transformed.replacen(table, &staging, 1);
-    if !staged.contains(&format!("TABLE {staging}")) {
+    // SQLite stores a table this helper already rebuilt as `CREATE TABLE
+    // "name"` (ALTER TABLE ... RENAME quotes it), so a second rebuild of the
+    // same table must accept the quoted form.
+    if !staged.contains(&format!("TABLE {staging}"))
+        && !staged.contains(&format!("TABLE \"{staging}\""))
+    {
         return Err(AppError::Internal(format!(
             "rebuild of `{table}`: could not address the staging table in its DDL; refusing"
         )));

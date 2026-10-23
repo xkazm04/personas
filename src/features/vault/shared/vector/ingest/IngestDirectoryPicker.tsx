@@ -5,6 +5,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { kbIngestDirectory, kbPickDirectory } from '@/api/vault/database/vectorKb';
 import { useTranslation } from '@/i18n/useTranslation';
 import { KbErrorNotice } from '../KbErrorNotice';
+import { extractMessage } from '@/lib/silentCatch';
 
 interface IngestDirectoryPickerProps {
   kbId: string;
@@ -47,7 +48,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
       const selected = await kbPickDirectory();
       if (selected) setDirPath(selected);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
     } finally {
       setBrowsing(false);
     }
@@ -82,7 +83,7 @@ export function IngestDirectoryPicker({ kbId, onClose, onIngestStarted }: Ingest
       setIngesting(false);
       onIngestStarted(jobId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
       setIngesting(false);
     }
   };

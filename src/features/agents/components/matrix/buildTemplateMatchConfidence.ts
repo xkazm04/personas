@@ -15,24 +15,39 @@
  */
 import type { CompanionTemplateMatch } from '@/api/companion';
 
-const MIN_KEYWORD_LEN = 3;
+// The keyword rules below mirror `extract_keywords` in
+// src-tauri/src/commands/companion/templates.rs (MIN_KEYWORD_LEN, STOP_WORDS,
+// the split, the cap) so the presentation gate agrees with what the matcher
+// actually searched on. The parity test reads the Rust source.
+export const MIN_KEYWORD_LEN = 3;
+/** The matcher searches on the first 8 keywords only (`.take(8)`). */
+export const MAX_KEYWORDS = 8;
 
-// Mirrors STOP_WORDS in src-tauri/src/commands/companion/templates.rs so the
-// presentation gate agrees with what the matcher actually searched on.
-const STOP_WORDS = new Set([
+export const STOP_WORDS = new Set([
   'the', 'and', 'for', 'with', 'from', 'into', 'that', 'this', 'want', 'need',
   'would', 'could', 'should', 'have', 'has', 'are', 'you', 'your', 'but', 'can',
   'all', 'any', 'one', 'two', 'three', 'what', 'when', 'who', 'why', 'how',
 ]);
 
-/** Distinct, lowercased, stop-word-filtered keywords from an intent string. */
+const utf8 = new TextEncoder();
+
+/**
+ * Distinct, lowercased, stop-word-filtered keywords from an intent string.
+ *
+ * Split on anything that is not a letter or digit in ANY script (Rust's
+ * `char::is_alphanumeric`), and measure length in UTF-8 bytes (Rust's
+ * `str::len`). An ASCII-only split cut "úkolů" into the fragment "kol" and
+ * turned a Chinese intent into no keywords at all, so the gate hid every
+ * match the backend had found for it.
+ */
 export function intentKeywords(text: string): string[] {
   return Array.from(
     new Set(
       text
-        .toLowerCase()
-        .split(/[^a-z0-9]+/)
-        .filter((w) => w.length >= MIN_KEYWORD_LEN && !STOP_WORDS.has(w)),
+        .split(/[^\p{Alphabetic}\p{N}]+/u)
+        .map((w) => w.toLowerCase())
+        .filter((w) => utf8.encode(w).length >= MIN_KEYWORD_LEN && !STOP_WORDS.has(w))
+        .slice(0, MAX_KEYWORDS),
     ),
   );
 }

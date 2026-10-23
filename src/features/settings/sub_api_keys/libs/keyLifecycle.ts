@@ -4,6 +4,7 @@
  * Moved out of ApiKeysSettings.tsx unchanged so they can be pinned by tests.
  */
 import type { ExternalApiKey } from '@/api/auth/externalApiKeys';
+import { extractMessage } from '@/lib/silentCatch';
 
 // A key is considered "stale" (probably forgotten) when it's older than the
 // grace window AND either never used or unused for the inactivity window.
@@ -112,6 +113,17 @@ export function retirePlan(keys: readonly ExternalApiKey[], now: number = Date.n
   return groupPairings(keys, now).flatMap((g) => g.retirable);
 }
 
+/**
+ * Every key Disconnect must revoke for one paired origin: all of its
+ * non-revoked pairings, not only `current`. Re-pairing never retires the older
+ * pairings, and the CORS allowlist keeps an origin while ANY active key names
+ * it (`list_paired_origins`), so revoking only the newest one leaves the app
+ * connected through the next-newest live key.
+ */
+export function disconnectIds(group: PairingGroup): string[] {
+  return group.keys.map((k) => k.id);
+}
+
 export interface RetireOutcome {
   retired: string[];
   failed: { id: string; message: string }[];
@@ -132,7 +144,7 @@ export async function runRetire(
       await revokeFn(id);
       out.retired.push(id);
     } catch (e) {
-      out.failed.push({ id, message: e instanceof Error ? e.message : String(e) });
+      out.failed.push({ id, message: extractMessage(e) });
     }
   }
   return out;

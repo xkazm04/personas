@@ -51,7 +51,8 @@ vi.mock('@/i18n/useTranslation', () => ({
   }),
 }));
 
-vi.mock('@/lib/silentCatch', () => ({
+vi.mock('@/lib/silentCatch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/silentCatch')>()),
   toastCatch: () => (err: unknown) => mocks.toastCatchError(err),
   silentCatch: () => () => {},
   silentCatchNull: () => () => null,

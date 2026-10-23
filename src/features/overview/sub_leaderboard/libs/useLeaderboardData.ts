@@ -4,32 +4,26 @@ import { useShallow } from 'zustand/react/shallow';
 import { computeLeaderboard, type LeaderboardEntry } from './leaderboardScoring';
 
 /** Fleet-wide averages used as a benchmark to contextualize a single agent.
- *  `dimensionValues` is aligned to `LeaderboardEntry.dimensions` order. */
+ *  `dimensionValues` is aligned to `LeaderboardEntry.dimensions` order; each
+ *  slot averages only the agents measured on that dimension (null if none). */
 export interface FleetBenchmark {
-  dimensionValues: number[]; // [success, health, speed, cost, activity], 0-100
-  successRate: number;
-  avgLatencyMs: number;
-  dailyBurnRate: number;
-  totalExecutions: number;
-  recentExecutions: number;
+  dimensionValues: (number | null)[]; // [success, health, speed, cost, activity], 0-100
 }
 
-function computeFleetBenchmark(entries: LeaderboardEntry[]): FleetBenchmark | null {
+export function computeFleetBenchmark(entries: LeaderboardEntry[]): FleetBenchmark | null {
   if (entries.length === 0) return null;
-  const n = entries.length;
   const dimCount = entries[0]!.dimensions.length;
-  const dimensionValues = Array.from({ length: dimCount }, (_, i) =>
-    Math.round(entries.reduce((sum, e) => sum + (e.dimensions[i]?.value ?? 0), 0) / n),
-  );
-  const avg = (pick: (e: LeaderboardEntry) => number) => entries.reduce((sum, e) => sum + pick(e), 0) / n;
-  return {
-    dimensionValues,
-    successRate: avg((e) => e.successRate),
-    avgLatencyMs: avg((e) => e.avgLatencyMs),
-    dailyBurnRate: avg((e) => e.dailyBurnRate),
-    totalExecutions: avg((e) => e.totalExecutions),
-    recentExecutions: avg((e) => e.recentExecutions),
-  };
+  const dimensionValues = Array.from({ length: dimCount }, (_, i) => averageOf(
+    entries.map((e) => e.dimensions[i]?.value ?? null),
+  ));
+  return { dimensionValues };
+}
+
+/** Rounded mean of the measured values, or null when none were measured. */
+function averageOf(values: (number | null)[]): number | null {
+  const measured = values.filter((v): v is number => v !== null);
+  if (measured.length === 0) return null;
+  return Math.round(measured.reduce((sum, v) => sum + v, 0) / measured.length);
 }
 
 export function useLeaderboardData() {
@@ -46,10 +40,11 @@ export function useLeaderboardData() {
     [healthSignals],
   );
 
-  const fleetAvgScore = useMemo(() => {
-    if (leaderboard.length === 0) return 0;
-    return Math.round(leaderboard.reduce((sum, e) => sum + e.compositeScore, 0) / leaderboard.length);
-  }, [leaderboard]);
+  // Over the ranked agents only; null when none has enough coverage to score.
+  const fleetAvgScore = useMemo(
+    () => averageOf(leaderboard.map((e) => e.compositeScore)),
+    [leaderboard],
+  );
 
   const fleetBenchmark = useMemo(() => computeFleetBenchmark(leaderboard), [leaderboard]);
 

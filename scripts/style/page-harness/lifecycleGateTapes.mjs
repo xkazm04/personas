@@ -13,11 +13,11 @@
 //   (`null`); every other run printed a short passing log (the wildcard).
 //
 // Shots (the step is opened with --steps, see lifecycleSurfaces.tsx):
-//   gate rows          click=[data-testid=lc-node-gate];wait=900
+//   gate rows          click=[data-testid=lens-col-gate];click=[data-testid=lens-col-gate];wait=900
 //   viewer, failed     ...;click=[data-testid=lc2-spark-eslint] div[data-bar]:last-of-type;wait=900
 //   viewer, not run    ...;click=[data-testid=lc2-spark-clippy] div[data-bar]:last-of-type;wait=900
 //   sorted by slowest  ...;click=[data-testid=lc6-gate-toolbar] .k-seg button:nth-child(2);wait=600
-//   tests              click=[data-testid=lc-node-tests];wait=900
+//   tests              click=[data-testid=lens-col-tests];click=[data-testid=lens-col-tests];wait=900
 // Fixture CODE, no personal data. The unit tests use journey/__tests__/gateFixtures.ts.
 //
 //   plugins/lifecycle/gate   the detail tape with the wave-6 gate runs and run outputs

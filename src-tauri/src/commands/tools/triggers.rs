@@ -520,7 +520,11 @@ pub async fn validate_trigger(
                 label: "Webhook listener".into(),
                 passed: webhook_alive,
                 message: if webhook_alive {
-                    format!("Active on http://localhost:9420/webhook/{}", trigger.id)
+                    format!(
+                        "Active on {}/webhook/{}",
+                        local_webhook_base_url(),
+                        trigger.id
+                    )
                 } else {
                     "Webhook server is not running -- webhook won't receive events".into()
                 },
@@ -1249,14 +1253,27 @@ pub struct WebhookStatus {
     pub base_url: String,
 }
 
+/// Base URL of the local webhook server. The port is the one the server
+/// actually binds (`engine::webhook::webhook_port`, which honours
+/// `PERSONAS_WEBHOOK_PORT`), never the default port as a literal: with a
+/// second instance on the same device, a hardcoded port made this instance
+/// report, replay into and print curl commands for the OTHER instance's
+/// server.
+fn local_webhook_base_url() -> String {
+    format!(
+        "http://localhost:{}",
+        crate::engine::webhook::webhook_port()
+    )
+}
+
 /// Get the webhook server status.
 #[tauri::command]
 pub fn get_webhook_status(state: State<'_, Arc<AppState>>) -> Result<WebhookStatus, AppError> {
     require_auth_sync(&state)?;
     Ok(WebhookStatus {
         listening: state.scheduler.is_webhook_alive(),
-        port: 9420,
-        base_url: "http://localhost:9420".into(),
+        port: crate::engine::webhook::webhook_port(),
+        base_url: local_webhook_base_url(),
     })
 }
 
@@ -1538,8 +1555,16 @@ pub struct RecentScheduleRun {
     pub retry_at: Option<String>,
 }
 
+/// Newest runs kept PER schedule trigger. A `*/5` trigger writes 2016 runs in
+/// the 168h window, so this holds one such trigger whole while a chatty trigger
+/// can no longer push every other trigger's history out of the result.
+const RECENT_RUNS_PER_TRIGGER: i64 = 2100;
+/// Safety cap on the whole payload, applied after the per-trigger cap.
+const RECENT_RUNS_TOTAL: i64 = 5000;
+
 /// List executions fired by schedule triggers within the last `hours` (default
-/// 24, capped at 168). Newest first, capped at 200 rows. Simulations excluded.
+/// 24, capped at 168). Newest first; at most [`RECENT_RUNS_PER_TRIGGER`] per
+/// trigger and [`RECENT_RUNS_TOTAL`] overall. Simulations excluded.
 #[tauri::command]
 pub fn list_recent_schedule_runs(
     state: State<'_, Arc<AppState>>,
@@ -1549,35 +1574,50 @@ pub fn list_recent_schedule_runs(
 
     let hours = hours.unwrap_or(24).clamp(1, 168);
     let conn = state.db.get()?;
+    query_recent_schedule_runs(&conn, hours, RECENT_RUNS_PER_TRIGGER, RECENT_RUNS_TOTAL)
+}
+
+fn query_recent_schedule_runs(
+    conn: &rusqlite::Connection,
+    hours: u32,
+    per_trigger: i64,
+    total: i64,
+) -> Result<Vec<RecentScheduleRun>, AppError> {
     let cutoff = (chrono::Utc::now() - chrono::Duration::hours(hours as i64)).to_rfc3339();
 
     let mut stmt = conn.prepare(
-        "SELECT
-            e.id            AS execution_id,
-            e.persona_id    AS persona_id,
-            p.name          AS persona_name,
-            p.icon          AS persona_icon,
-            p.color         AS persona_color,
-            e.trigger_id    AS trigger_id,
-            e.status        AS status,
-            e.created_at    AS created_at,
-            e.started_at    AS started_at,
-            e.completed_at  AS completed_at,
-            e.duration_ms   AS duration_ms,
-            e.cost_usd      AS cost_usd,
-            e.error_message AS error_message,
-            sr.retry_at     AS retry_at
-         FROM persona_executions e
-         JOIN persona_triggers t ON t.id = e.trigger_id AND t.trigger_type = 'schedule'
-         JOIN personas p ON p.id = e.persona_id
-         LEFT JOIN scheduled_retries sr ON sr.execution_id = e.id
-         WHERE e.created_at >= ?1
-           AND COALESCE(e.is_simulation, 0) = 0
-         ORDER BY e.created_at DESC
-         LIMIT 200",
+        "SELECT * FROM (
+            SELECT
+                e.id            AS execution_id,
+                e.persona_id    AS persona_id,
+                p.name          AS persona_name,
+                p.icon          AS persona_icon,
+                p.color         AS persona_color,
+                e.trigger_id    AS trigger_id,
+                e.status        AS status,
+                e.created_at    AS created_at,
+                e.started_at    AS started_at,
+                e.completed_at  AS completed_at,
+                e.duration_ms   AS duration_ms,
+                e.cost_usd      AS cost_usd,
+                e.error_message AS error_message,
+                sr.retry_at     AS retry_at,
+                ROW_NUMBER() OVER (
+                    PARTITION BY e.trigger_id ORDER BY e.created_at DESC
+                ) AS trigger_rank
+             FROM persona_executions e
+             JOIN persona_triggers t ON t.id = e.trigger_id AND t.trigger_type = 'schedule'
+             JOIN personas p ON p.id = e.persona_id
+             LEFT JOIN scheduled_retries sr ON sr.execution_id = e.id
+             WHERE e.created_at >= ?1
+               AND COALESCE(e.is_simulation, 0) = 0
+         )
+         WHERE trigger_rank <= ?2
+         ORDER BY created_at DESC
+         LIMIT ?3",
     )?;
 
-    let rows = stmt.query_map([&cutoff], |row| {
+    let rows = stmt.query_map(rusqlite::params![cutoff, per_trigger, total], |row| {
         Ok(RecentScheduleRun {
             execution_id: row.get("execution_id")?,
             persona_id: row.get("persona_id")?,
@@ -1597,6 +1637,60 @@ pub fn list_recent_schedule_runs(
     })?;
 
     Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
+#[cfg(test)]
+mod recent_runs_tests {
+    use super::*;
+    use crate::db::init_test_db;
+
+    fn seed(conn: &rusqlite::Connection) {
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at)
+             VALUES ('p1', 'P', 'sp', datetime('now'), datetime('now'))",
+            [],
+        )
+        .unwrap();
+        for t in ["chatty", "quiet"] {
+            conn.execute(
+                "INSERT INTO persona_triggers (id, persona_id, trigger_type, config, enabled, created_at, updated_at)
+                 VALUES (?1, 'p1', 'schedule', '{}', 1, datetime('now'), datetime('now'))",
+                [t],
+            )
+            .unwrap();
+        }
+    }
+
+    fn run(conn: &rusqlite::Connection, id: &str, trigger: &str, age_min: i64) {
+        let at = (chrono::Utc::now() - chrono::Duration::minutes(age_min)).to_rfc3339();
+        conn.execute(
+            "INSERT INTO persona_executions (id, persona_id, trigger_id, status, created_at)
+             VALUES (?1, 'p1', ?2, 'completed', ?3)",
+            rusqlite::params![id, trigger, at],
+        )
+        .unwrap();
+    }
+
+    /// A chatty trigger filling the cap must not hide the quiet trigger's older run.
+    #[test]
+    fn a_chatty_trigger_does_not_starve_a_quiet_one() -> Result<(), AppError> {
+        let pool = init_test_db()?;
+        let conn = pool.get()?;
+        seed(&conn);
+        for i in 0..30 {
+            run(&conn, &format!("c{i}"), "chatty", i + 1);
+        }
+        run(&conn, "q-old", "quiet", 120);
+
+        let runs = query_recent_schedule_runs(&conn, 24, 5, 10)?;
+        assert!(
+            runs.iter().any(|r| r.execution_id == "q-old"),
+            "quiet run dropped"
+        );
+        assert_eq!(runs.iter().filter(|r| r.trigger_id == "chatty").count(), 5);
+        assert_eq!(runs[0].execution_id, "c0", "newest first");
+        Ok(())
+    }
 }
 
 // -- Dev seed: mock schedule trigger -------------------------------------------
@@ -1743,7 +1837,11 @@ pub async fn replay_webhook_request(
     };
 
     let body_bytes = log_entry.body.unwrap_or_default();
-    let url = format!("http://localhost:9420/webhook/{}", log_entry.trigger_id);
+    let url = format!(
+        "{}/webhook/{}",
+        local_webhook_base_url(),
+        log_entry.trigger_id
+    );
 
     let mut req = crate::SHARED_HTTP
         .post(&url)
@@ -1796,7 +1894,11 @@ pub fn webhook_request_to_curl(
     require_auth_sync(&state)?;
     let log_entry = webhook_log_repo::get_by_id(&state.db, &log_id)?;
 
-    let url = format!("http://localhost:9420/webhook/{}", log_entry.trigger_id);
+    let url = format!(
+        "{}/webhook/{}",
+        local_webhook_base_url(),
+        log_entry.trigger_id
+    );
     let mut parts = vec![format!("curl -X {} '{}'", log_entry.method, url)];
 
     // Add headers (skip content-length and host as curl handles them)

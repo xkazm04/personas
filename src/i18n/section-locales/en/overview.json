@@ -15,7 +15,6 @@
     "all_personas": "All Personas"
   },
   "incidents": {
-    "stale_label": "Stale",
     "sort_newest": "Newest",
     "sort_oldest": "Oldest",
     "a11y_position": "{current} of {total}",
@@ -40,7 +39,6 @@
     "guidance_default": "Review the details below, then resolve or dismiss it.",
     "groups_collapse_all": "Collapse all",
     "groups_expand_all": "Expand all",
-    "group_no_persona": "No agent",
     "group_by_label": "Group by",
     "group_by_agent": "Agent",
     "group_by_severity": "Severity",
@@ -58,8 +56,6 @@
     "kpi_resolved": "Resolved",
     "kpi_critical": "Critical",
     "distribution_aria": "Open incidents by severity",
-    "filter_status_label": "Status",
-    "filter_status_all": "All",
     "filter_status_open": "Open",
     "filter_status_acknowledged": "Acked",
     "filter_status_resolved": "Resolved",
@@ -71,7 +67,6 @@
     "filter_persona_label": "Agent",
     "filter_persona_any": "any",
     "col_incident": "Incident",
-    "col_days": "Days",
     "filters_active_aria": "{count} active filters",
     "filters_clear_all": "Clear filters",
     "action_acknowledge": "Ack",
@@ -136,7 +131,6 @@
     "noc_handled_by": "Handled by Athena",
     "noc_handled_title": "Handled autonomously",
     "noc_handled_empty": "Nothing handled autonomously yet — when I can safely fix an incident myself, it will land here.",
-    "noc_handled_continued": "Auto-resumed",
     "noc_evidence_label": "Evidence",
     "noc_proposed_label": "Proposed fix",
     "noc_proposal_pending": "Waiting for your decision in Athena's Approvals",
@@ -189,7 +183,6 @@
     "title": "Memories",
     "delete_all": "Delete all",
     "delete_all_confirm_title": "Delete all memories?",
-    "delete_all_confirm_body": "This permanently deletes all {count} memories. This cannot be undone.",
     "delete_all_confirm_cta": "Delete all",
     "created_success": "Memory created successfully",
     "no_memories": "No memories yet",
@@ -227,7 +220,8 @@
     "reflect": "Reflect",
     "reflecting": "Reflecting...",
     "reflect_hint": "Consolidate related memories into durable insights — the result is a proposal you review before anything changes",
-    "reflect_pick_persona": "Reflect memories for an agent"
+    "reflect_pick_persona": "Reflect memories for an agent",
+    "delete_all_confirm_body_all_agents": "This permanently deletes all {count} memories across all agents, whatever the current filter shows. This cannot be undone."
   },
   "memory_review": {
     "keep_prefix": "Keep “",
@@ -745,7 +739,8 @@
     "hint_cost": "Lower cost per run with a cheaper model or shorter context.",
     "hint_activity": "Trigger or schedule this agent more often to raise activity.",
     "improve_agent": "Improve this agent",
-    "section_subtitle": "{count} agents · fleet avg {avg}"
+    "section_subtitle": "{count} agents · fleet avg {avg}",
+    "sort_hint": "Click a metric to sort"
   },
   "observability_extra": {
     "auto_refresh_on": "Auto-refresh on",
@@ -937,7 +932,11 @@
     "all_statuses": "All statuses",
     "col_status": "Status",
     "col_id": "ID",
-    "execution_label": "Execution"
+    "execution_label": "Execution",
+    "prev_p50": "Prev p50",
+    "prev_p95": "Prev p95",
+    "range_last_days_one": "Last day",
+    "range_last_days_other": "Last {count} days"
   },
   "analytics_dashboard": {
     "issues_found": "{count} issues found",
@@ -1018,7 +1017,9 @@
     "healed": "{count} healed",
     "agent": "Agent",
     "runs": "Runs",
-    "streak": "Streak"
+    "streak": "Streak",
+    "daily_trend_hint_one": "{date}: {rate} ({count} run)",
+    "daily_trend_hint_other": "{date}: {rate} ({count} runs)"
   },
   "realtime_page": {
     "title": "Event Bus Monitor",
@@ -1108,7 +1109,14 @@
     "dismiss_suggestion": "Dismiss suggestion",
     "memory_insights": "Memory Insights",
     "suggestions": "{count} suggestions",
-    "suggestions_one": "{count} suggestion"
+    "suggestions_one": "{count} suggestion",
+    "kind_throttle": "Throttle Rule",
+    "kind_schedule": "Schedule Adjustment",
+    "kind_alert": "Alert Rule",
+    "kind_config": "Config Change",
+    "kind_routing": "Routing Rule",
+    "rules_restored_from_session": "Your saved memory-action rules could not be read and were restored from this session.",
+    "rules_unreadable": "Your saved memory-action rules could not be read and may need to be re-created."
   },
   "memory_conflict": {
     "memory_a": "Memory A",
@@ -1133,7 +1141,14 @@
     "count_contradiction_one": "{count} contradiction",
     "count_duplicate": "{count} duplicates",
     "count_duplicate_one": "{count} duplicate",
-    "count_superseded": "{count} superseded"
+    "count_superseded": "{count} superseded",
+    "kind_duplicate": "Duplicate",
+    "kind_contradiction": "Contradiction",
+    "kind_superseded": "Superseded",
+    "reason_contradiction": "Potentially contradictory instructions on the same topic ({pct}% topic overlap)",
+    "reason_duplicate_cross_agent": "Near-duplicate memories across different agents ({pct}% similar)",
+    "reason_duplicate_same_agent": "Near-duplicate memories within the same agent ({pct}% similar)",
+    "reason_superseded": "Newer memory may supersede an older one on the same topic ({pct}% overlap)"
   },
   "observability_charts": {
     "cost_over_time": "Cost Over Time",
@@ -1563,7 +1578,11 @@
   "popup_fields": {
     "sign_up_free_at": "Sign up free at",
     "ollama_domain": "ollama.com",
-    "ollama_key_instructions": ", then copy your API key from Settings. This key is stored locally and shared across all agents."
+    "ollama_key_instructions": ", then copy your API key from Settings. This key is stored locally and shared across all agents.",
+    "api_key_label": "API Key",
+    "ollama_key_placeholder": "Paste your key from ollama.com/settings",
+    "litellm_base_url_label": "Proxy Base URL",
+    "litellm_master_key_label": "Master Key"
   },
   "usage_filters": {
     "time_range_label": "Time range"
@@ -1591,7 +1610,13 @@
     "ask_athena_hint": "Forward this suggestion to Athena to investigate",
     "ask_athena_prompt": "I'm reviewing a fleet optimization suggestion for my agents: \"{title}\". {description} Suggested action: {action}. {focus}",
     "ask_athena_focus_persona": "Please look into the agent \"{persona}\" and, if it would help, open its Lab to test alternative models, then report back what you find.",
-    "ask_athena_focus_general": "Please look into this and recommend what to change."
+    "ask_athena_focus_general": "Please look into this and recommend what to change.",
+    "severity_critical": "Urgent",
+    "severity_warning": "Suggested",
+    "severity_info": "Insight",
+    "label_impact": "Impact",
+    "label_action": "Action",
+    "label_agent": "Agent"
   },
   "attention_loop": {
     "title": "Attention Loop",
@@ -2106,5 +2131,15 @@
     "loop_off": "Attention loop is off",
     "no_schedule": "No scheduled runs",
     "per_day": "{value} per day"
+  },
+  "ai_healing_overlay": {
+    "status_failed": "Failed",
+    "status_complete": "Complete",
+    "status_in_progress": "In Progress",
+    "step_diagnosing": "Diagnosing",
+    "step_applying": "Applying Fixes",
+    "step_completed": "Completed",
+    "expand": "Expand",
+    "collapse": "Collapse"
   }
 }

@@ -1,4 +1,4 @@
-import { fireEvent, render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import type { DiscoveredPeer } from '@/api/network/discovery';
@@ -49,6 +49,13 @@ describe('PeerDetailDrawer keyboard handling', () => {
     const onClose = vi.fn();
     render(<PeerDetailDrawer peer={peer} isTrusted={false} onClose={onClose} onConnect={vi.fn()} onDisconnect={vi.fn()} />);
     fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives the icon-only close button an accessible name', () => {
+    const onClose = vi.fn();
+    render(<PeerDetailDrawer peer={peer} isTrusted onClose={onClose} onConnect={vi.fn()} onDisconnect={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'close' }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

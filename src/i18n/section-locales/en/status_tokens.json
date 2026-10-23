@@ -66,7 +66,10 @@
     "processing": "Processing",
     "processed": "Processed",
     "failed": "Failed",
-    "retrying": "Retrying"
+    "retrying": "Retrying",
+    "skipped": "Skipped",
+    "dead_letter": "Dead letter",
+    "discarded": "Discarded"
   },
   "automation": {
     "pending": "Pending",

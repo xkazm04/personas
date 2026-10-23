@@ -311,7 +311,7 @@ pub fn match_event_listeners(
 }
 
 /// Simple matching: exact match or prefix wildcard (trailing `*`).
-fn source_filter_matches(filter: &str, source_id: Option<&str>) -> bool {
+pub fn source_filter_matches(filter: &str, source_id: Option<&str>) -> bool {
     let source = match source_id {
         Some(s) => s,
         None => return false, // No source_id can't match a filter

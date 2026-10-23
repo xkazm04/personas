@@ -9,7 +9,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { liveSourceFor } from './liveExternal';
 import {
-  LiveAvatar, TYPE_ICON, authorAccent, authorName, liveMessageType,
+  LiveAvatar, TYPE_ICON, authorAccent, authorName, liveAuthorLabels, liveMessageType,
   type LiveMessage, type LiveVariantProps,
 } from './liveModel';
 
@@ -97,6 +97,7 @@ export function IslandCapsule({ m, waiting, remainingMs, lifetimeMs, paused, onD
   m: LiveMessage; waiting: number; remainingMs: number; lifetimeMs: number; paused: boolean;
   onDismiss: (id: string) => void; onOpen: OpenFn;
 }) {
+  const { t } = useTranslation();
   const accent = authorAccent(m);
   return (
     <div
@@ -115,7 +116,7 @@ export function IslandCapsule({ m, waiting, remainingMs, lifetimeMs, paused, onD
       >
         <RingedAvatar m={m} size="sm" />
         <span className="typo-title max-w-[30%] flex-shrink-0 truncate" style={{ color: accent }}>
-          {authorName(m)}
+          {authorName(m, liveAuthorLabels(t))}
         </span>
         {m.context && <span className="typo-caption max-w-[30%] flex-shrink-0 truncate text-foreground">{m.context}</span>}
         {m.message && <span className="typo-body min-w-0 flex-1 truncate text-foreground">{m.message}</span>}
@@ -135,6 +136,7 @@ export function IslandCard({ m, index, withActions, reducedMotion, onDismiss, on
   m: LiveMessage; index: number; withActions: boolean; reducedMotion: boolean;
   onDismiss: (id: string) => void; onOpen: OpenFn;
 }) {
+  const { t } = useTranslation();
   const accent = authorAccent(m);
   const actions = withActions ? liveSourceFor(m)?.renderActions?.(m) : null;
   return (
@@ -152,7 +154,7 @@ export function IslandCard({ m, index, withActions, reducedMotion, onDismiss, on
         <RingedAvatar m={m} size="md" />
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-center gap-2">
-            <span className="typo-title truncate" style={{ color: accent }}>{authorName(m)}</span>
+            <span className="typo-title truncate" style={{ color: accent }}>{authorName(m, liveAuthorLabels(t))}</span>
             <EventChip m={m} />
           </span>
           <span className="typo-caption mt-0.5 flex items-center gap-1.5 text-foreground">

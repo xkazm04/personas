@@ -21,9 +21,12 @@ pub static SHARED_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
         .expect("Failed to build shared HTTP client")
 });
 
-/// HTTP client with an SSRF-safe DNS resolver that rejects private/internal IPs
-/// at connection time. Used by the API proxy and any other path where the target
-/// URL is influenced by user-supplied credential data.
+/// HTTP client with an SSRF-safe DNS resolver that rejects hostnames resolving
+/// to private/internal IPs at connection time. Used by the API proxy and any
+/// other path where the target URL is influenced by user-supplied credential
+/// data. It does NOT veto an IP literal in the request's own URL: run
+/// [`crate::url_safety::validate_url_safety`] first (see
+/// [`crate::url_safety::build_ssrf_safe_client`]).
 pub static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> =
     LazyLock::new(|| crate::url_safety::build_ssrf_safe_client(HTTP_TIMEOUT));
 

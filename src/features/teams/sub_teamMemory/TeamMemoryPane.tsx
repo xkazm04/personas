@@ -17,7 +17,6 @@ export function TeamMemoryPane({ teamId, onClose }: { teamId: string; onClose: (
     <TeamMemoryPanel
       key={teamId}
       teamId={teamId}
-      layout="pane"
       memories={data.memories}
       total={data.total}
       stats={data.stats}

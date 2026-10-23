@@ -9,5 +9,20 @@
   "domain_revenue": "Ventes et marketing",
   "adopt_failed": "Impossible d'ouvrir {name}.",
   "adopt_no_template": "{name} n'a pas de modèle source à adopter.",
-  "adopt_not_found": "{name} n'est pas encore dans la galerie de modèles."
+  "adopt_not_found": "{name} n'est pas encore dans la galerie de modèles.",
+  "l2_all_domains": "Tous les domaines",
+  "l2_col_capabilities": "Capacités",
+  "l2_col_focus": "Focus",
+  "l2_col_name": "Nom",
+  "l2_col_tools": "Outils",
+  "l2_col_type": "Type",
+  "l2_counts": "{templates} modèles · {recipes} recettes",
+  "l2_filter_all": "Tous",
+  "l2_filter_placeholder": "Filtrer par nom…",
+  "l2_filter_recipes": "Recettes",
+  "l2_filter_templates": "Modèles",
+  "l2_kind_recipe": "Recette",
+  "l2_kind_template": "Modèle",
+  "l2_no_matches": "Aucun résultat.",
+  "l2_shown": "{shown} sur {total} affichés"
 }

@@ -27,6 +27,7 @@ export function ReadingCard({ station, dimKey, stations, g, card, h }: {
   const node = station.island.nodes.find((n) => n.key === dimKey);
   if (!node) return null;
   const def = DIM_REGISTRY[dimKey];
+  const dimName = m[`dim_label_${dimKey}`];
   const b = BAND_OF[node.status];
   const catLabel = { runtime: m.dim_cat_runtime, delivery: m.dim_cat_delivery, agentic: m.dim_cat_agentic, product: m.dim_cat_product }[categoryOf(dimKey)];
   const errors = station.island.monitorErrors;
@@ -41,7 +42,7 @@ export function ReadingCard({ station, dimKey, stations, g, card, h }: {
     <div className="sd-card-body" key={`${station.island.slug}:${dimKey}`} style={{ '--c': STATUS_COLOR[node.status] } as CSSProperties}>
       <div className="sd-c-head">
         <span className="sd-c-over typo-label">{`${station.island.name} · ${catLabel}`}</span>
-        <h2 className="sd-c-title typo-heading-lg" id="sd-card-title">{node.label}</h2>
+        <h2 className="sd-c-title typo-heading-lg" id="sd-card-title">{dimName}</h2>
         <span className="sd-c-status"><StatusMark status={node.status} /><span>{statusWord(node.status)}</span></span>
       </div>
       <div className="sd-c-body">
@@ -89,7 +90,7 @@ export function ReadingCard({ station, dimKey, stations, g, card, h }: {
         g={g}
         card={card}
         me={station.index}
-        label={tx(m.soundings_across, { dim: node.label })}
+        label={tx(m.soundings_across, { dim: dimName })}
         markFor={(s) => {
           const q = s.island.nodes.find((n) => n.key === dimKey);
           return q ? { status: q.status, band: BAND_OF[q.status] } : null;

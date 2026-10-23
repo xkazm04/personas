@@ -1,0 +1,29 @@
+{"schema":"conform-run/1","worker":"9e0ad266-f0be-4330-96cb-79df6e9a90b0","subject":"agent-instruction-files","evaluatedAt":"2026-10-22T03:02:40Z",
+"pairs":[
+{"context":"d7525012-ab19-4b29-99bb-0d4b6b9e084b","subject":"agent-instruction-files","bundle":"software-engineering","state":"deviation","evaluatedAgainst":"sha256-b2:25b61236a62604b0","evaluatedRevision":31,
+"evidence":"src-tauri/src/commands/infrastructure/skill_files.rs:1207 the install modal's single-file <name>.md path copies a skill into the target repo's .claude/skills with no provenance sidecar and no registry refresh, so the fork is listed local_only (skill_files.rs:697) and library updates or local edits to it are undetectable - the copy regime without its drift check",
+"techniques":[
+{"technique":"single-source-topology","verdict":"deviation","evidence":"src-tauri/src/commands/infrastructure/skill_files.rs:1207 single-file copy skips write_provenance (done for directory skills at :1187), so this copy-regime fork carries no drift check"},
+{"technique":"listing-tier-by-initiator","verdict":"deviation","evidence":"src-tauri/src/commands/infrastructure/skill_files.rs:1187 the installer stamps provenance but writes no listing tier into the consumer's local settings, so every installed skill lands fully listed by default (same gap as fleet-session-grid's SkillLibraryDrawer)"},
+{"technique":"sibling-floor-ownership","verdict":"realized","evidence":"src/features/plugins/fleet/sub_skills/useSkillData.ts:78 the drawer enumerates the global and project skill sets with descriptions, and useSkillData.ts:113 previews a re-install diff before overwrite"}
+]},
+{"context":"059fdee0-40da-434a-a5cb-874bc9179a31","subject":"agent-instruction-files","bundle":"software-engineering","state":"not-applicable","evaluatedAgainst":"sha256-b2:25b61236a62604b0","evaluatedRevision":31,
+"evidence":"src-tauri/src/engine/system_ops.rs:318 the context only schedules the context scan and delegates the CLAUDE.md fence write to commands/infrastructure (judged under workspace-governance); llm_topology.rs:82 assembles app-authored persona instructions - nothing here authors, loads or spawns against a repo-owned instruction file",
+"techniques":[]},
+{"context":"c5f662f2-458b-4b5d-b03b-e4acf8f54049","subject":"agent-instruction-files","bundle":"software-engineering","state":"not-applicable","evaluatedAgainst":"sha256-b2:25b61236a62604b0","evaluatedRevision":31,
+"evidence":"src/features/plugins/dev-tools/sub_projects/pipeline/standardsConfig.ts:4 the project surface stores the standards policy as an opaque DB JSON column; the prose it becomes is assembled engine-side (team_context.rs), so this UI owns no instruction file",
+"techniques":[],
+"registryProposal":"src-tauri/src/engine/runner/team_context.rs:365 renders that config into a ~9k-char STANDARDS & BRANCHING POLICY block injected into every team execution - functionally an always-loaded floor in app-assembled form, asserting 'pre-commit gates that must pass: lint' (:345) in prose with no gate. It falls between agent-instruction-files (repo-owned) and prompt-assembly; consider whether line-earning/enforcement-demotion should explicitly cover app-injected standing briefs, and pair the engine-runner context to this subject."},
+{"context":"f71df7d8-fb1c-4151-bba3-00fe164a537b","subject":"agent-instruction-files","bundle":"software-engineering","state":"not-applicable","evaluatedAgainst":"sha256-b2:25b61236a62604b0","evaluatedRevision":31,
+"evidence":"src-tauri/db/src/repos/resources/teams.rs:23 shared_instructions is a SQLite column read by the app's prompt assembler; these repos persist app state and never author, load or deliver a repo-owned instruction file",
+"techniques":[]}
+],
+"declined":[
+{"subject":"agent-instruction-files","context":"*","reason":"57 other probable-confidence unknown pairs left for later runs (budget 4); none are strong-confidence, and the weak-governed rows (plugins-artist-gallery, glyph-persona-card, capability-config-view, glyph-definitions, persona-glyph-layout, overview-messages, personas-page) are a coverage question - the lexical match on 'agent/persona/instruction' vocabulary resonates with app-composed persona prompts, not repo-owned instruction files"}
+],
+"consults":[
+{"ts":"2026-10-22T03:02:40Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["single-source-topology","listing-tier-by-initiator","sibling-floor-ownership"],"deviations":1},
+{"ts":"2026-10-22T03:02:40Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0},
+{"ts":"2026-10-22T03:02:40Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0},
+{"ts":"2026-10-22T03:02:40Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0}
+]}

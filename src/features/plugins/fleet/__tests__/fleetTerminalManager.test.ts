@@ -119,10 +119,6 @@ function resetManager(): void {
   const g = globalThis as Record<string, unknown>;
   (g.__fleetTerminalRegistry__ as Map<string, unknown> | undefined)?.clear();
   (g.__fleetTerminalParked__ as string[] | undefined)?.splice(0);
-  // Both keys alias the SAME array (the two budget implementations that landed
-  // in parallel each named it), so splicing either clears it; splice both so a
-  // future rename of one can't silently leave the ledger dirty between tests.
-  (g.__fleetTerminalWebglOrder__ as string[] | undefined)?.splice(0);
   (g.__fleetTerminalWebglLru__ as string[] | undefined)?.splice(0);
   g.__fleetTerminalEvictions__ = 0;
   g.__fleetTerminalWebglEvictions__ = 0;
@@ -380,6 +376,33 @@ describe('hydration handshake', () => {
     host.remove();
   });
 
+  it('contains an emulator that throws while painting the notice', async () => {
+    // The notice is written from inside the subscribe's rejection handler. A
+    // throw there escaped as an unhandled rejection and skipped the report of
+    // the subscribe failure itself - the one event that says the session died.
+    const escaped: unknown[] = [];
+    const onUnhandled = (reason: unknown) => escaped.push(reason);
+    process.on('unhandledRejection', onUnhandled);
+    try {
+      setFleetTerminalDeadNotice('Session is gone.');
+      vi.mocked(fleetApi.subscribeTerminal).mockRejectedValueOnce(new Error('session not found'));
+      const host = attach('h-throws');
+      const m = registryMap().get('h-throws')!;
+      m.term.write = () => {
+        throw new Error('emulator disposed');
+      };
+      await settle();
+      await settle();
+      expect(escaped).toEqual([]);
+      expect(m.deadNoticeShown).toBe(true);
+      detachTerminal('h-throws');
+      host.remove();
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+      setFleetTerminalDeadNotice('');
+    }
+  });
+
   it('ignores chunks for a session with no terminal in the registry', () => {
     // The backend only emits for subscribed sessions, but a dispose racing an
     // in-flight chunk must be a no-op rather than a throw inside the ONE shared
@@ -472,7 +495,7 @@ describe('WebGL renderer budget', () => {
     // repair, not a demotion — and the head MUST move, or the budget loop
     // freezes the UI thread exactly the way the parked LRU once did.
     const g = globalThis as Record<string, unknown>;
-    const order = g.__fleetTerminalWebglOrder__ as string[];
+    const order = g.__fleetTerminalWebglLru__ as string[];
     const budget = getFleetTerminalStats().maxWebgl;
     for (let i = 0; i < budget; i += 1) order.push(`ghost-${i}`);
 
@@ -554,6 +577,31 @@ describe('repaint nudge', () => {
     host.remove();
   });
 
+  it('settles back to the grid the emulator holds NOW when a fit lands mid-wiggle', async () => {
+    let releaseWiggle!: () => void;
+    vi.mocked(fleetApi.subscribeTerminal).mockResolvedValueOnce('');
+    // The empty ring's wiggle is the first resize this session sends (the
+    // snapshot resolves before the fit's frame): hold it open so a real fit
+    // can land inside it.
+    vi.mocked(fleetApi.resizeSession).mockImplementationOnce(
+      () => new Promise<null>((r) => (releaseWiggle = () => r(null))),
+    );
+    const host = attach('n-fit');
+    const m = registryMap().get('n-fit')!;
+    await flushFrames();
+    expect(vi.mocked(fleetApi.resizeSession).mock.calls[0]).toEqual(['n-fit', 79, 24]);
+    m.term.cols = 120;
+    configureFleetTerminals({ fontSize: 17 });
+    await flushFrames();
+    releaseWiggle();
+    await settle();
+    const calls = vi.mocked(fleetApi.resizeSession).mock.calls.filter(([id]) => id === 'n-fit');
+    // The child must end on the width the emulator draws, not the pre-fit one.
+    expect(calls[calls.length - 1]).toEqual(['n-fit', 120, 24]);
+    detachTerminal('n-fit');
+    host.remove();
+  });
+
   it('leaves a session alone when its ring already holds a frame', async () => {
     vi.mocked(fleetApi.subscribeTerminal).mockResolvedValueOnce('a frame');
     const host = attach('n2');
@@ -608,6 +656,64 @@ describe('disposeTerminal', () => {
   });
 });
 
+/**
+ * The backend's subscribe flag is flipped by two async commands that run as
+ * independent tasks, so nothing on the Rust side orders them. A pane that
+ * remounts on the same session sends unsubscribe then subscribe a microtask
+ * apart; if they land the other way round the pane paints its snapshot and
+ * freezes. The manager must not issue the next flip before the last settled.
+ */
+describe('subscription ordering', () => {
+  const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+  it('holds a re-attach subscribe until the detach unsubscribe has settled', async () => {
+    const host = attach('ord-1');
+    await settle();
+    expect(vi.mocked(fleetApi.subscribeTerminal)).toHaveBeenCalledTimes(1);
+
+    let releaseUnsub!: () => void;
+    vi.mocked(fleetApi.unsubscribeTerminal).mockImplementationOnce(
+      () => new Promise<null>((r) => (releaseUnsub = () => r(null))),
+    );
+    detachTerminal('ord-1', host);
+    attachTerminal('ord-1', host);
+    await settle();
+
+    // The unsubscribe is still in flight: a subscribe sent now could be
+    // applied BEFORE it and leave the session unsubscribed under a live pane.
+    expect(vi.mocked(fleetApi.subscribeTerminal)).toHaveBeenCalledTimes(1);
+
+    releaseUnsub();
+    await settle();
+    expect(vi.mocked(fleetApi.subscribeTerminal)).toHaveBeenCalledTimes(2);
+    expect(registryMap().get('ord-1')?.attached).toBe(true);
+
+    detachTerminal('ord-1');
+    host.remove();
+  });
+
+  it('holds a detach unsubscribe until the in-flight subscribe has settled', async () => {
+    let resolveSnapshot!: (s: string) => void;
+    vi.mocked(fleetApi.subscribeTerminal).mockImplementationOnce(
+      () => new Promise<string>((r) => (resolveSnapshot = r)),
+    );
+    const host = attach('ord-2');
+    await settle();
+    vi.mocked(fleetApi.unsubscribeTerminal).mockClear();
+
+    detachTerminal('ord-2', host);
+    await settle();
+    expect(vi.mocked(fleetApi.unsubscribeTerminal)).not.toHaveBeenCalled();
+
+    resolveSnapshot('late');
+    await settle();
+    expect(vi.mocked(fleetApi.unsubscribeTerminal)).toHaveBeenCalledWith('ord-2');
+    // The superseded snapshot is still voided by the generation check.
+    expect(registryMap().get('ord-2')?.term.written).toEqual([]);
+    host.remove();
+  });
+});
+
 describe('accelerated-renderer budget', () => {
   const glLru = () => (globalThis as Record<string, unknown>).__fleetTerminalWebglLru__ as string[];
 
@@ -619,7 +725,7 @@ describe('accelerated-renderer budget', () => {
 
     const stats = getFleetTerminalStats();
     expect(stats.maxWebgl).toBe(6);
-    expect(stats.webgl).toBe(6);
+    expect(stats.webglContexts).toBe(6);
     expect(glLru()).toEqual(['g3', 'g4', 'g5', 'g6', 'g7', 'g8']);
     // The two oldest were dropped to the DOM fallback, deliberately, and counted.
     expect(registryMap().get('g1')?.webgl).toBeNull();
@@ -658,11 +764,11 @@ describe('accelerated-renderer budget', () => {
 
   it('returns the budget when a pane detaches, so parked terminals cost no context', () => {
     const hosts = ['p1', 'p2'].map((id) => attach(id));
-    expect(getFleetTerminalStats().webgl).toBe(2);
+    expect(getFleetTerminalStats().webglContexts).toBe(2);
 
     detachTerminal('p1');
 
-    expect(getFleetTerminalStats().webgl).toBe(1);
+    expect(getFleetTerminalStats().webglContexts).toBe(1);
     expect(glLru()).toEqual(['p2']);
     hosts.forEach((h) => h.remove());
   });

@@ -8,6 +8,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import { ProjectList } from './ProjectList';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { extractMessage } from '@/lib/silentCatch';
 
 
 interface DevProject {
@@ -33,7 +35,9 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
   const ps = t.vault.picker_section;
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  // The raw rejection, resolved at render: listProjects rejects with a
+  // serialized AppError OBJECT, which `String(err)` painted as "[object Object]".
+  const [loadError, setLoadError] = useState<{ raw: unknown } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -49,8 +53,8 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
       const result = await listProjects('active');
       setProjects(result);
     } catch (err) {
-      logger.error('Failed to load projects', { error: String(err) });
-      setLoadError(err instanceof Error ? err.message : String(err));
+      logger.error('Failed to load projects', { error: extractMessage(err) });
+      setLoadError({ raw: err });
     } finally {
       setLoading(false);
     }
@@ -130,7 +134,7 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
           </div>
           <div className="space-y-1">
             <p className="typo-body text-foreground"><DebtText k="auto_couldn_t_load_projects_c5a25bd3" /></p>
-            <p className="typo-caption text-foreground max-w-xs break-words">{loadError}</p>
+            <p className="typo-caption text-foreground max-w-xs break-words">{resolveErrorTranslated(t, extractMessage(loadError.raw)).message}</p>
           </div>
           <button
             type="button"

@@ -54,6 +54,23 @@ pub struct PushHandle {
     /// Per-project last successful consolidator run timestamp. Used to
     /// enforce [`DEBOUNCE_INTERVAL`].
     debounce: RwLock<HashMap<String, Instant>>,
+    /// Per-project "raw push events consolidated through" mark. The push path
+    /// must NOT advance `last_pulse_at`: that column is the watermark the
+    /// scheduler hands the git/ledger/obsidian watchers, and a push never runs
+    /// them, so stamping it skipped every commit made between the last tick
+    /// and the push. This in-memory mark stops one push re-feeding the
+    /// previous push's events instead (lost on restart: at worst one tick
+    /// window is re-fed).
+    consumed_through: RwLock<HashMap<String, chrono::DateTime<chrono::Utc>>>,
+}
+
+/// Where the push path starts reading the raw log: the later of the watcher
+/// watermark and what an earlier push already consolidated.
+fn push_cutoff(
+    watch_since: chrono::DateTime<chrono::Utc>,
+    consumed: Option<chrono::DateTime<chrono::Utc>>,
+) -> chrono::DateTime<chrono::Utc> {
+    consumed.map_or(watch_since, |c| c.max(watch_since))
 }
 
 /// Build the axum router. Mounted under prefix `project-tracking` in
@@ -70,6 +87,7 @@ pub fn init(pool: UserDbPool, app_handle: AppHandle) {
         pool,
         app_handle,
         debounce: RwLock::new(HashMap::new()),
+        consumed_through: RwLock::new(HashMap::new()),
     });
     let _ = PUSH_HANDLE.set(handle);
 }
@@ -263,7 +281,13 @@ async fn run_out_of_cadence_for_project(
     // SQLite Statement is !Send so we drop the conn + stmt before the
     // first await point on the consolidator call.
     let events: Vec<EventPayload> = {
-        let since = subscription::watch_since(&sub);
+        let consumed = handle
+            .consumed_through
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(project_id)
+            .copied();
+        let since = push_cutoff(subscription::watch_since(&sub), consumed);
         let conn = handle.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT payload_json FROM engine_cli_event
@@ -304,8 +328,28 @@ async fn run_out_of_cadence_for_project(
 
     consolidator::run_for_project(&handle.pool, &sub, snapshot, Some(&handle.app_handle)).await?;
 
-    // Advance the watermark (mirrors scheduler::run_project) so the next
-    // push/tick consolidates only the NEW slice instead of overlapping ranges.
-    subscription::update_last_pulse_at(&handle.pool, &sub.project_id, consumed_through)?;
+    // Record what THIS path consolidated; never touch `last_pulse_at` (see
+    // `PushHandle::consumed_through`).
+    handle
+        .consumed_through
+        .write()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(sub.project_id.clone(), consumed_through);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{TimeZone, Utc};
+
+    #[test]
+    fn push_cutoff_never_precedes_the_watcher_watermark_and_follows_earlier_pushes() {
+        let tick = Utc.with_ymd_and_hms(2026, 1, 1, 10, 0, 0).unwrap();
+        let push = Utc.with_ymd_and_hms(2026, 1, 1, 10, 30, 0).unwrap();
+        assert_eq!(push_cutoff(tick, None), tick);
+        assert_eq!(push_cutoff(tick, Some(push)), push);
+        // A tick that moved past an older push mark wins.
+        assert_eq!(push_cutoff(push, Some(tick)), push);
+    }
 }

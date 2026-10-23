@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FileUp, Plus } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
+import { resolveError } from '@/lib/errors/errorRegistry';
+import { extractMessage } from '@/lib/silentCatch';
 import { Button } from '@/features/shared/components/buttons';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
@@ -27,6 +30,7 @@ export default function ProfilesAtelier() {
 
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const twinProfilesLoading = useSystemStore((s) => s.twinProfilesLoading);
+  const twinProfilesError = useSystemStore((s) => s.twinProfilesError);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const fetchTwinProfiles = useSystemStore((s) => s.fetchTwinProfiles);
   const setActiveTwin = useSystemStore((s) => s.setActiveTwin);
@@ -60,6 +64,17 @@ export default function ProfilesAtelier() {
     activate(id);
     setTwinTab(TWIN_SLOTS[slot].destination);
   };
+
+  // A failed read leaves the roster empty too; it must not pass for a first run.
+  if (!twinProfilesLoading && sorted.length === 0 && twinProfilesError != null) {
+    return (
+      <ErrorBanner
+        variant="panel"
+        message={resolveError(extractMessage(twinProfilesError)).message}
+        onRetry={() => void fetchTwinProfiles({ force: true })}
+      />
+    );
+  }
 
   // First run: no roster to show, so the explainer IS the page.
   if (!twinProfilesLoading && sorted.length === 0) {

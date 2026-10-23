@@ -5,7 +5,7 @@
 // rows exist or their order.
 import {
   CI_LABEL, TESTS_LABEL, SECURITY_LABEL,
-  OBSERVABILITY_LABEL, GRAPH_LABEL, EVALS_LABEL, MIGRATIONS_LABEL, INTEGRATION_KIND_LABEL,
+  OBSERVABILITY_LABEL, GRAPH_LABEL, EVALS_LABEL, MIGRATIONS_LABEL,
   MEMORY_LABEL, DOCS_LABEL, DESIGN_SYSTEM_LABEL,
   CI_SCALE, TESTS_SCALE, SECURITY_SCALE, OBSERVABILITY_SCALE, GRAPH_SCALE, EVALS_SCALE, MIGRATIONS_SCALE,
   MEMORY_SCALE, DOCS_SCALE, DESIGN_SYSTEM_SCALE,
@@ -222,11 +222,6 @@ export const SECTIONS: SectionSpec[] = [
   },
 ];
 
-/** Flat list of every row (with its section) — handy for variant A's table body. */
-export const ALL_ROWS: Array<{ section: SectionSpec; row: RowSpec }> = SECTIONS.flatMap((section) =>
-  section.rows.map((row) => ({ section, row })),
-);
-
 // -- sort key for a cell (variant A: click a row label → order columns by it) --
 
 export function cellSortValue(v: CellValue): number {
@@ -242,11 +237,4 @@ export function cellSortValue(v: CellValue): number {
     case 'env': return v.slots.filter((s) => s.label).length;
     case 'cost': return v.state === 'known' ? 100 : v.state === 'empty' ? 40 : 0;
   }
-}
-
-/** The integration-kind tally for a passport — feeds the Wall's "visa" summary. */
-export function integrationKindCounts(p: AppPassport): Array<{ label: string; count: number }> {
-  const m = new Map<string, number>();
-  for (const i of p.stack.integrations) m.set(i.kind, (m.get(i.kind) ?? 0) + 1);
-  return [...m.entries()].map(([kind, count]) => ({ label: INTEGRATION_KIND_LABEL[kind as keyof typeof INTEGRATION_KIND_LABEL] ?? kind, count }));
 }

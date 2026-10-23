@@ -62,12 +62,12 @@ describe('the lane strip', () => {
   const ready = { n: 0, lamp: 'neutral' as const, failed: false };
   const refs = { current: {} };
 
-  it('prints each key and counts each lane', () => {
+  it('names each key and counts each lane', () => {
     const lc = buildLaneCounts({ snapshot: SNAP, snapshotFailed: false, questions: 1, chat: { n: 0, failed: false } });
     render(<LaneStrip counts={lc} settled ready={ready} open={null} refs={refs} onLane={vi.fn()} onReady={vi.fn()} />);
     expect(screen.getByTestId('decision-lane-breach').getAttribute('data-count')).toBe('3');
-    expect(screen.getByTestId('decision-lane-breach').textContent).toContain('1');
-    expect(screen.getByTestId('decision-lane-orphan').textContent).toContain('O');
+    expect(screen.getByTestId('decision-lane-breach').getAttribute('aria-keyshortcuts')).toBe('1');
+    expect(screen.getByTestId('decision-lane-orphan').getAttribute('aria-keyshortcuts')).toBe('O');
     expect(screen.getByTestId('decision-lane-talk').hasAttribute('data-zero')).toBe(true);
   });
 

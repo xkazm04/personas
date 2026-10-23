@@ -51,4 +51,10 @@ describe('ColorPicker', () => {
     render(<ColorPicker value={DEFAULT_PERSONA_COLOR} onChange={vi.fn()} />);
     expect(screen.queryByTitle(/reset/i)).toBeNull();
   });
+  it('names the native colour well (it is a focusable control of its own)', () => {
+    render(<ColorPicker value="#10b981" onChange={vi.fn()} />);
+    const well = document.querySelector('input[type="color"]') as HTMLInputElement;
+    expect(well.getAttribute('aria-label')).toBeTruthy();
+    expect(screen.getByLabelText(well.getAttribute('aria-label')!)).toBe(well);
+  });
 });

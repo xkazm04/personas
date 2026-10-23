@@ -23,6 +23,28 @@ managed projects moving without the app (`DEFAULT_MANAGED` pof, ascent, kp, plus
 marked `"headless": true`; ten on 2026-10-07): same role, same decision contract, but the clock
 is a Claude Code session and the record is a file journal.
 
+## Which claude a builder runs
+
+`resolveClaudeBin` (`.claude/skills/appmaster/lib/contract.mjs`) picks the bin each builder is
+spawned with (spark one-control, WP5):
+
+1. **`APPMASTER_CLAUDE_BIN`** when set - always wins (the tests point it at a node fake).
+2. **The Personas fleet shim** `scripts/fleet/personas-run.mjs` (resolved from the repo the skill
+   lives in) when the app's local-http handshake is readable - the shim's own
+   `handshakeCandidates`/`readHandshake`, so `PERSONAS_DATA_DIR/local-http.json` then
+   `~/.personas/local-http.json`. The builder is then admitted through the app's `/fleet/enqueue`
+   door: the fleet's ONE queue, cap and five-hour window govern it and the Fleet Monitor shows it
+   with origin `app_master`. `builderEnv` adds `PERSONAS_RUN_ORIGIN=app_master`; the door forwards
+   only its allowlist, which carries the four keys `workerEnv` sets (`CARGO_BUILD_JOBS`,
+   `CARGO_TARGET_DIR`, `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS`, `PERSONAS_RUN_LABEL`) plus
+   `APPMASTER_*`, on a credential-free base env.
+3. **Plain `claude`** otherwise, with ONE stderr warning per process naming why (no handshake, or
+   the shim missing). This is the app-closed case the skill was built for.
+
+`GLOBAL_CAP` and `PER_PROJECT_CAP` still apply on top: through the shim they are this loop's
+ceiling under the fleet's own cap, never above it. The app clears its handshake on a clean exit,
+so a stale file only survives a crash; the shim then exits 3 and the run settles `failed`.
+
 ## What it is
 
 ```
@@ -198,7 +220,7 @@ reach can merge; `verify` is where that is caught, before anything leaves the ma
 | Builder goes quiet or runs long | Flagged `quiet` / `timedOut` in `watch` and the digest; never killed. Only `release --kill`, on the operator's word. |
 | Usage limit | A builder's output matching `LIMIT_SIGNATURES` (scanned on stderr and non-conversation stream lines only, so a repo that mentions "usage limit" does not trip it) writes the global mark from `watch` or `settle`; `settle` releases that run; `dispatch` refuses while the mark stands (a mark whose `resetsAt` has passed reads as cleared); the loop stops. |
 | Memory short (free GB, not used %) | `dispatch` refuses and the loop pauses dispatch and master wakes, still verifies; `settle` takes the single machine-wide gate slot and WAITS (bounded) for headroom, then refuses leaving the run untouched. A short sleep, never a long one: a sibling process holding memory is transient. `status --text` names who is using it. |
-| App starts mid-run | The app's stale sweep (`STALE_AFTER_SECS`, `src-tauri/src/commands/fleet/stale.rs:65`, 6 min) marks fleet sessions stale, but these builders write no `fleet_sessions` rows, so it cannot touch them. Replay the outbox only after `--dry-run`. |
+| App starts mid-run | A builder dispatched while the app was DOWN ran plain `claude` (see *Which claude a builder runs*): it writes no `fleet_sessions` row, so the app's stale sweep (`STALE_AFTER_SECS`, `src-tauri/src/commands/fleet/stale.rs:65`, 6 min) cannot touch it. A builder dispatched while the app was UP went through the fleet shim and IS a `fleet_sessions` row (origin `app_master`, run label `fleet-door:app_master:cli-master:<slug>`); door sessions are exempt from the silence sweep. A restart takes the session down like any fleet session; the shim retries the door for `PERSONAS_RUN_RECONNECT_MS` (10 min), then exits with the session's code or 1 (lost), and `settle` verifies by git as for any dead builder. Replay the outbox only after `--dry-run`. |
 | Merge held | Branch kept, ask raised and queued; the operator decides. |
 | Invalid decision | `decide` refuses with the errors; the Director sends them back to the same master once, then parks the project for the wake and reports it. |
 | No slot for a dispatch (caps, lane, paths, memory) | `dispatch` exits 2 with `queued: true`; the run waits in `_queue.jsonl` and the next `promote` (after any settle, or by hand) starts it in order. Never dropped silently: only `promote`, `queue drop` or `release` take it out. |
@@ -223,7 +245,10 @@ more builder. Two builders of one project are safe only if they do not collide, 
   other, case-insensitively, and an empty list is the whole repo.
 - **At decide.** Two dispatches need non-empty, pairwise-disjoint `paths` and no shared idea;
   a dispatch may not name a charter or an idea that a started run of an earlier wake still
-  carries (one builder per charter, as when the cap was one). `model` must be one of
+  carries (one builder per charter, as when the cap was one). The exception is
+  `PARALLEL_CHARTERS` (`accepted-idea-delivery`): it may be dispatched twice in one wake, or
+  beside its own live run, when the paths are provably disjoint (operator, 2026-10-18, after a kp
+  session measured feature work running one builder at a time). `model` must be one of
   `BUILDER_MODEL_CHOICES`. Any violation is `invalid decision` with the errors.
 - **At dispatch.** The run's paths must not overlap any live run of the project: running,
   exited, verifying, and planned once it has a worktree (a crash after the spawn may have left
@@ -485,3 +510,15 @@ own gate, independent of the app's mandate.
 6. Check the merged SHAs against `dev_tasks` and the ideas' outcomes.
 7. Asks raised headless are not in Approvals (no door); answered ones are in `asks.jsonl`.
 8. Then decide whether the in-app master takes over (`/master <p> run`) or this one continues.
+
+## The standup arm list (`/athena --standup`)
+
+`/athena --standup` interviews the operator, resolves a direction per named project and writes a night plan
+(`~/.personas/standup/<date>/PLAN.json`). Arming it runs `AM standup arm --file PLAN.json`, which records
+`.claude/master/_standup/active.json` (`{version, date, planPath, armed:[slug], status}`). While `status` is `armed`
+only the listed projects are **woken**: `status` reports `armed`/`due` per project, `context` is not requested for
+the others, and `promote` leaves their queued runs queued (`not armed (standup)`). Everything that is accounting
+and never a wake is untouched (`listSlugs`: caps, path overlap, `await`, `settle`, `watch`, the gate record), so a
+builder that was running when the list changed is still awaited and settled. No `active.json`, or `status: ended`
+(`AM standup end`), restores the old behaviour exactly: every managed project wakes. Code: `lib/standup.mjs`,
+test `test/standup.test.mjs`.

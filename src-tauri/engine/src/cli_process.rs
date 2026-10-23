@@ -951,6 +951,20 @@ pub async fn capture_output(
     })
 }
 
+/// The scrubbed child environment for [`CliProcessDriver::spawn_scrubbed`]:
+/// nothing inherited, then only what a CLI needs to locate itself and its
+/// login ([`PROBE_INHERITED_ENV`], the set [`capture_output`] uses). `scrub` is
+/// opt-in per call: every other `CliProcessDriver` spawn still inherits the
+/// parent's environment, exactly as before.
+fn apply_scrubbed_env(cmd: &mut Command) {
+    cmd.env_clear();
+    for key in PROBE_INHERITED_ENV {
+        if let Ok(val) = std::env::var(key) {
+            cmd.env(key, val);
+        }
+    }
+}
+
 // =============================================================================
 // CliProcessDriver -- unified CLI subprocess lifecycle
 // =============================================================================
@@ -1004,6 +1018,23 @@ impl CliProcessDriver {
         })
     }
 
+    /// [`spawn`](Self::spawn) with a CHOSEN environment instead of the parent's
+    /// plus a delta: `env_clear()`, then only what a CLI needs to locate itself
+    /// and its login (the same allowlist [`capture_output`] gives a probe), then
+    /// `cli_args.env_overrides`. For a long-lived child that is a node script
+    /// and not an agent session (lens-scan's `drive.mjs`): it must not inherit
+    /// the bearer tokens this process carries (`PERSONAS_API_KEY`).
+    pub fn spawn_scrubbed(cli_args: &CliArgs, exec_dir: PathBuf) -> Result<Self, std::io::Error> {
+        let child = Self::build_and_spawn_with(cli_args, Some(&exec_dir), true)?;
+        let pid = child.id();
+        Ok(Self {
+            child,
+            exec_dir,
+            owns_exec_dir: false,
+            pid,
+        })
+    }
+
     /// Build and spawn a CLI process using the parent process's current working
     /// directory.  The directory is NOT cleaned up automatically.
     ///
@@ -1021,6 +1052,17 @@ impl CliProcessDriver {
         })
     }
 
+    /// Spawn through the chokepoint and hand back the bare child, for a caller
+    /// that owns the process lifetime itself (a pool keyed by credential). The
+    /// child gets the same argv, stdio and kill_on_drop as every driver spawn;
+    /// only the driver's exec-dir cleanup is the caller's.
+    pub fn spawn_child(
+        cli_args: &CliArgs,
+        exec_dir: &PathBuf,
+    ) -> Result<tokio::process::Child, std::io::Error> {
+        Self::build_and_spawn(cli_args, exec_dir)
+    }
+
     /// Internal: configure and spawn a `tokio::process::Command` from `CliArgs`.
     ///
     /// stderr is sent to null to prevent buffer-full deadlocks on Windows
@@ -1036,6 +1078,16 @@ impl CliProcessDriver {
     fn build_and_spawn_core(
         cli_args: &CliArgs,
         exec_dir: Option<&PathBuf>,
+    ) -> Result<tokio::process::Child, std::io::Error> {
+        Self::build_and_spawn_with(cli_args, exec_dir, false)
+    }
+
+    /// `scrub`: start from an empty environment plus [`PROBE_INHERITED_ENV`]
+    /// instead of the parent's whole environment.
+    fn build_and_spawn_with(
+        cli_args: &CliArgs,
+        exec_dir: Option<&PathBuf>,
+        scrub: bool,
     ) -> Result<tokio::process::Child, std::io::Error> {
         let mut cmd = Command::new(&cli_args.command);
         cmd.args(&cli_args.args)
@@ -1061,6 +1113,9 @@ impl CliProcessDriver {
             cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
         }
 
+        if scrub {
+            apply_scrubbed_env(&mut cmd);
+        }
         for key in &cli_args.env_removals {
             cmd.env_remove(key);
         }

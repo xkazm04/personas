@@ -1,0 +1,15 @@
+/* The mandate drawer inside the Monitor's panel language (entryE.css).
+
+   The kit lays the drawer's lists and facts out; these rules only seat its
+   parts in the panel: a column head reads as the panel's engraved eyebrow
+   (`.ae-engrave`), and a key/value block inside a plate starts on the plate's
+   own edge instead of the kit's 40px reading line, which belongs to a page. */
+
+.ml-sheet .k-rowhead > span {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--foreground) 68%, transparent);
+}
+
+.ml-plate .k-kv { --gutter: 0px; padding-right: 0; padding-bottom: 0; }
+.ml-plate .k-kv__item { padding-right: 0; }

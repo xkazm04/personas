@@ -9,7 +9,7 @@
  * Backend: `simulate_build_draft` + `get_simulation_artefacts`
  * (`src-tauri/src/commands/design/build_simulate.rs`).
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Play, X } from "lucide-react";
 import { BaseModal } from "@/lib/ui/BaseModal";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -19,7 +19,14 @@ import {
   type SimulationArtefacts,
   type SimulatedExecution,
 } from "@/api/agents/buildSession";
-import { silentCatch } from "@/lib/silentCatch";
+import { extractMessage, silentCatch } from "@/lib/silentCatch";
+import { resolveErrorTranslated } from "@/i18n/useTranslatedError";
+import { awaitExecutionResult } from "@/features/agents/sub_deployment/hooks/awaitExecutionResult";
+import { createLatestWins } from "@/stores/util/latestWins";
+
+/** How long the panel waits for a dry-run to finish before showing the row as
+ *  it stands. Matches the IPC ceiling `simulateBuildDraft` itself allows. */
+const SIM_WAIT_BUDGET_MS = 180_000;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -101,7 +108,12 @@ export function BuildSimulatePanel({
   const [isRunning, setIsRunning] = useState(false);
   const [execution, setExecution] = useState<SimulatedExecution | null>(null);
   const [artefacts, setArtefacts] = useState<SimulationArtefacts | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // The raw rejection: `invokeWithTimeout` rejects with a serialized AppError
+  // object, never an `Error`, so it is resolved to copy at render.
+  const [error, setError] = useState<{ raw: unknown } | null>(null);
+  // A run outlives the modal: closing it (or starting another) makes the
+  // in-flight wait inert instead of writing into a fresh panel.
+  const runs = useRef(createLatestWins()).current;
 
   // Default-select the first capability when the modal opens or the draft changes.
   useEffect(() => {
@@ -113,13 +125,14 @@ export function BuildSimulatePanel({
   // Reset transient state when modal closes.
   useEffect(() => {
     if (!isOpen) {
+      runs.next();
       setExecution(null);
       setArtefacts(null);
       setError(null);
       setInputOverride("");
       setSelectedId(null);
     }
-  }, [isOpen]);
+  }, [isOpen, runs]);
 
   const selectedUseCase = useMemo(
     () => useCases.find((u) => u.id === selectedId) ?? null,
@@ -133,22 +146,36 @@ export function BuildSimulatePanel({
     setExecution(null);
     setArtefacts(null);
 
+    const token = runs.next();
     try {
-      const exec = await simulateBuildDraft(
+      const started = await simulateBuildDraft(
         sessionId,
         selectedId,
         inputOverride.trim() || null,
       );
+      if (!runs.isCurrent(token)) return;
+      setExecution(started);
+
+      // `simulate_build_draft` returns after the spawn, not after the run: the
+      // row is still queued/running and has written no reviews or memories.
+      // Reading artefacts now always showed an empty preview.
+      const finished = await awaitExecutionResult(started, started.persona_id, {
+        timeoutMs: SIM_WAIT_BUDGET_MS,
+        isCancelled: () => !runs.isCurrent(token),
+      });
+      if (!runs.isCurrent(token)) return;
+      const exec = finished ?? started;
       setExecution(exec);
 
       const art = await getSimulationArtefacts(exec.id);
+      if (!runs.isCurrent(token)) return;
       setArtefacts(art);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setError(msg);
+      if (!runs.isCurrent(token)) return;
+      setError({ raw: e });
       silentCatch("BuildSimulatePanel.handleRun")(e);
     } finally {
-      setIsRunning(false);
+      if (runs.isCurrent(token)) setIsRunning(false);
     }
   };
 
@@ -268,7 +295,7 @@ export function BuildSimulatePanel({
                   className="p-3 rounded-card border border-orange-400/40 bg-orange-500/10 typo-body text-orange-200"
                 >
                   <strong>{t.agents.build_simulate.error_label}:</strong>{" "}
-                  {error}
+                  {simulateErrorCopy(t, error.raw)}
                 </div>
               )}
 
@@ -292,6 +319,15 @@ export function BuildSimulatePanel({
       </div>
     </BaseModal>
   );
+}
+
+/** A known failure reads as its translated copy; an unclassified one keeps the
+ *  backend's own reason (a dry-run's validation text names the capability),
+ *  which beats a generic "Something went wrong". */
+function simulateErrorCopy(t: Parameters<typeof resolveErrorTranslated>[0], raw: unknown): string {
+  const text = extractMessage(raw);
+  const resolved = resolveErrorTranslated(t, text);
+  return resolved.category === "unclassified" && text ? text : resolved.message;
 }
 
 // ---------------------------------------------------------------------------

@@ -292,20 +292,27 @@ fn make_backup_name() -> String {
     )
 }
 
+/// Copy identity.md to a timestamped backup under `root`. Fails closed: both
+/// writers must refuse to overwrite identity.md when the backup did not land,
+/// or the returned name points at a file that does not exist. Returns the
+/// backup file name (empty when there was no prior file).
+fn backup_identity(path: &std::path::Path, root: &std::path::Path) -> Result<String, AppError> {
+    if !path.exists() {
+        return Ok(String::new());
+    }
+    let name = make_backup_name();
+    std::fs::copy(path, root.join(&name))
+        .map_err(|e| AppError::Internal(format!("identity backup failed: {e}")))?;
+    Ok(name)
+}
+
 /// Full-content write of identity.md with a timestamped backup. The intake's
 /// first-draft path (`{content}`) and the user's direct BrainViewer edit both
 /// use this. Returns the backup file name (empty when there was no prior file).
 pub fn write_full(content: &str) -> Result<String, AppError> {
     let path = identity_path()?;
     let root = crate::companion::disk::brain_root()?;
-    let backup = if path.exists() {
-        let name = make_backup_name();
-        std::fs::copy(&path, root.join(&name))
-            .map_err(|e| AppError::Internal(format!("identity backup failed: {e}")))?;
-        name
-    } else {
-        String::new()
-    };
+    let backup = backup_identity(&path, &root)?;
     std::fs::write(&path, content)?;
     Ok(backup)
 }
@@ -337,13 +344,7 @@ pub fn apply_diffs_on_disk(
     }
 
     let root = crate::companion::disk::brain_root()?;
-    let backup = if path.exists() {
-        let name = make_backup_name();
-        let _ = std::fs::copy(&path, root.join(&name));
-        name
-    } else {
-        String::new()
-    };
+    let backup = backup_identity(&path, &root)?;
     bump_updated(&mut lines, &sim_clock::now().to_rfc3339());
     let mut out = lines.join("\n");
     if !out.ends_with('\n') {
@@ -356,6 +357,21 @@ pub fn apply_diffs_on_disk(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn backup_fails_closed_when_the_copy_cannot_land() -> Result<(), AppError> {
+        let dir = std::env::temp_dir().join(format!("idbak-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir)?;
+        let file = dir.join("identity.md");
+        std::fs::write(&file, "x")?;
+        let missing_root = dir.join("no-such-dir");
+        assert!(backup_identity(&file, &missing_root).is_err());
+        let name = backup_identity(&file, &dir)?;
+        assert!(dir.join(&name).exists());
+        assert_eq!(backup_identity(&dir.join("absent.md"), &dir)?, "");
+        std::fs::remove_dir_all(&dir)?;
+        Ok(())
+    }
 
     fn doc() -> Vec<String> {
         let md = "---\ntype: identity\nupdated: \"2026-01-01\"\n---\n\n# About Michal\n\n## Who he is\n- (seeded from intake interview)\n\n## How he works\n- likes terse replies (ep_aa11)\n- (rhythms, patterns)\n\n# About me\n\n## What I've gotten wrong\n- (catalogue of corrections)\n";

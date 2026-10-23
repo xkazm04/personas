@@ -38,14 +38,19 @@ export const RelativeTime = memo(function RelativeTime({
   // the same way, so the whole surface stays in one language.
   const { language } = useTranslation();
 
-  const isoStr = typeof timestamp === 'number'
-    ? new Date(timestamp).toISOString()
+  // One validity decision for the label, the ticker AND the tooltip. A numeric
+  // epoch used to go straight into `new Date(n).toISOString()`, which THROWS
+  // RangeError for NaN or anything past +/-8.64e15 and took the whole subtree
+  // down with it; an unparseable string reached the tooltip as the literal
+  // "Invalid Date" while the label beside it correctly showed the fallback.
+  const ms = typeof timestamp === 'number'
+    ? timestamp
     : timestamp
-      ? normalizeTimestamp(timestamp)
-      : timestamp;
-
-  const ms = isoStr ? Date.parse(isoStr) : NaN;
-  useRelativeTimeTick(Number.isNaN(ms) ? null : ms);
+      ? Date.parse(normalizeTimestamp(timestamp))
+      : NaN;
+  const valid = Number.isFinite(ms) && !Number.isNaN(new Date(ms).getTime());
+  const isoStr = valid ? new Date(ms).toISOString() : null;
+  useRelativeTimeTick(valid ? ms : null);
 
   const relative = format === 'elapsed' ? formatElapsedCompact(isoStr, fallback) : formatRelativeTime(isoStr, fallback);
 

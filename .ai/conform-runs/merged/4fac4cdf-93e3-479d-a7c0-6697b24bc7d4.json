@@ -1,0 +1,48 @@
+{"schema": "conform-run/1", "worker": "4fac4cdf-93e3-479d-a7c0-6697b24bc7d4", "subject": "table",
+ "evaluatedAt": "2026-10-21T17:31:26Z",
+ "pairs": [
+  {"context": "66bc7a14-bf15-41d7-8d9a-900aa670f47e", "subject": "table", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:325 the matrix's default column order collates names with no reader locale and no identity tiebreaker, so two projects sharing a name fall in storage order and can swap columns between rescans; the wall ships in 14 locales.",
+   "techniques": [
+     {"technique": "sorting", "verdict": "deviation", "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:325 localeCompare(name) with no locale argument and no identity.slug final term; the order is neither total nor reader-collated"},
+     {"technique": "loading-and-empty-states", "verdict": "realized", "evidence": "src/features/teams/sub_factory/passport/usePassportData.ts:374 the cold state starts loading:true (never empty-before-settled), and :471 a failed rescan keeps the loaded passports and sets error rather than clearing rows"},
+     {"technique": "export-escapes-for-its-consumer", "verdict": "not-applicable", "evidence": "src/features/teams/sub_factory/passport/passportExport.ts:32 the only export is a markdown report of fixed label cells, not a CSV a spreadsheet opens"},
+     {"technique": "sorting", "verdict": "note", "evidence": "src/features/teams/sub_factory/passport/passportRows.ts:227 cellSortValue (the row-label sort key) has no production caller, only tests; ProjectsPassportWall sorts by score instead"}
+   ]},
+  {"context": "7901fd6c-0346-430b-aefe-fc4cd623b167", "subject": "table", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:94 the type filter and every column sort run over the backend's top-8-by-runs window (DEFAULT_LIMIT :22, tool_audit_log.rs:144 ORDER BY total_runs DESC LIMIT), so 'slowest tool' or a type filter answers only for the busiest eight while the panel claims 'per tool'; and a fetch failure sets rows [] (:67), rendering the no-data empty state at :206.",
+   "techniques": [
+     {"technique": "client-server-split", "verdict": "deviation", "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:94 client filter below a server-truncated window (src-tauri/db/src/repos/resources/tool_audit_log.rs:144), unlabeled as within-window"},
+     {"technique": "filtering", "verdict": "deviation", "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:94 the tool_type predicate is applied to 8 loaded rows, so a type with fewer runs than the top eight reads as absent"},
+     {"technique": "sorting", "verdict": "deviation", "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:134 an absent avg_duration (rendered as an em dash) sorts as a real 0 ms, and the comparators carry no identity tiebreaker"},
+     {"technique": "loading-and-empty-states", "verdict": "deviation", "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:67 error lands [] and renders the empty state at :206 (error is empty); :204 loading renders a blank box with no chrome, and every since/persona change re-enters it, hiding rendered rows"},
+     {"technique": "performance", "verdict": "realized", "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:98 the column model and sorted rows are memoised; the window is bounded server-side to 8 rows, no virtualization needed"}
+   ]},
+  {"context": "4eb0030b-e8a2-4993-bfab-81aee6943054", "subject": "table", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/notepad/overview/NoteOverview.tsx:14 the desk is a re-export of the journal and its notes render as identity-dominant cards one project at a time (:12); there is no column model or cross-record attribute comparison, the golden path's own 'cards, not a table' case.",
+   "techniques": []},
+  {"context": "336089a8-bb18-449c-a62e-ca76b02097fb", "subject": "table", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "tests/playwright/template-marathon-bridge.ts:2 the context is Playwright helpers driving the app over the test-automation HTTP bridge; it renders no surface, so no table exists for the subject to govern.",
+   "techniques": []},
+  {"context": "cbb061cf-5c61-49d4-80d8-98b8f9b40600", "subject": "table", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/browser/webview/WebviewPage.tsx:2 the context is an embedded page host (tab strip, address bar, approval bar); its only collection is the address-suggestion listbox at AddressSuggestions.tsx:49, a one-attribute list, not a comparison table.",
+   "techniques": []}
+ ],
+ "declined": [
+  {"subject": "table", "context": "cc76d419-f457-4fe4-833c-6869efbc9287", "reason": "hooks-utility-interaction holds the generic windowing hook (useVirtualList.ts:4) whose table decisions (row keys, aria-rowcount/rowindex) are made by its consumer UnifiedTable in display-table-primitives; judging the hook alone could cite one of eleven techniques, below the evidence floor"},
+  {"subject": "table", "context": "89eddf81-0c57-441d-a07d-de36bf022cb5", "reason": "display-data-formatters is a mixed bag (time/number formatters, modals, terminal, FilterBar); its table-relevant parts are golden-path column conventions (Numeric, TruncateWithTooltip) rather than techniques, so a verdict would rest on under half the subject"},
+  {"subject": "table", "context": "2651f2ce-7fc1-4331-8b31-61e783e9746a", "reason": "weak governance row; left as a coverage question, not judged by default"},
+  {"subject": "table", "context": "37cd64d2-bd42-47b9-8c17-7ea1b466135c", "reason": "weak governance row; left as a coverage question, not judged by default"}
+ ],
+ "consults": [
+  {"ts": "2026-10-21T17:31:26Z", "bundle": "software-engineering", "subjects": ["table"], "techniques": ["sorting", "loading-and-empty-states", "export-escapes-for-its-consumer"], "deviations": 1},
+  {"ts": "2026-10-21T17:31:26Z", "bundle": "software-engineering", "subjects": ["table"], "techniques": ["client-server-split", "filtering", "sorting", "loading-and-empty-states", "performance"], "deviations": 4},
+  {"ts": "2026-10-21T17:31:26Z", "bundle": "software-engineering", "subjects": ["table"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-21T17:31:26Z", "bundle": "software-engineering", "subjects": ["table"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-21T17:31:26Z", "bundle": "software-engineering", "subjects": ["table"], "techniques": [], "deviations": 0}
+ ]}

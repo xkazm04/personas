@@ -20,7 +20,9 @@
  */
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Inbox, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { EmptyArt, type EmptyArtMotif } from './emptyArt/EmptyArt';
+import { motifForIcon } from './emptyArt/iconMotif';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { TruncateWithTooltip } from './TruncateWithTooltip';
 import { DataGridPager } from './DataGridPager';
@@ -101,6 +103,8 @@ export interface DataGridProps<T> {
   loadingLabel?: string;
   /** Empty state */
   emptyIcon?: React.ComponentType<{ className?: string }>;
+  /** The small animated illustration above the empty title (EmptyArt). Defaults to `emptyIcon`'s motif, else `inbox`. */
+  emptyArt?: EmptyArtMotif;
   /**
    * **Always pass an already-translated, surface-specific title** ("No
    * credentials yet", not "No data") — omitting it falls back to the generic
@@ -194,6 +198,7 @@ export function DataGrid<T>({
   onRetry,
   loadingLabel,
   emptyIcon: EmptyIcon,
+  emptyArt,
   emptyTitle,
   emptyDescription,
   getRowClassName,
@@ -276,7 +281,8 @@ export function DataGrid<T>({
   // Still drives the bulk-toolbar slide-up (reduced-motion aware).
   const { shouldAnimate } = useMotion();
 
-  const Icon = EmptyIcon || Inbox;
+  const emptyMotif: EmptyArtMotif =
+    emptyArt ?? motifForIcon(EmptyIcon) ?? 'inbox';
 
   /* -- Grid --------------------------------------------------------- */
   return (
@@ -297,8 +303,18 @@ export function DataGrid<T>({
                 {/* Geometry and treatment mirror the per-row select cell so the
                     header box reads as the same control, not a clipped one. */}
                 <div
+                  role="checkbox"
+                  aria-checked={!!selectAll}
+                  aria-label={t.shared.table_select_all}
+                  tabIndex={0}
                   onClick={onSelectAll}
-                  className={`w-4 h-4 shrink-0 rounded border transition-all flex items-center justify-center cursor-pointer ${
+                  onKeyDown={(e) => {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                      e.preventDefault();
+                      onSelectAll();
+                    }
+                  }}
+                  className={`focus-ring w-4 h-4 shrink-0 rounded border transition-all flex items-center justify-center cursor-pointer ${
                     selectAll
                       ? 'bg-primary/80 border-primary/60'
                       : 'border-primary/25 hover:border-primary/50'
@@ -341,7 +357,7 @@ export function DataGrid<T>({
                   // for the chevron, and ellipsizes its label; the open list carries
                   // every option in full.
                   wrapperClassName="flex-1 min-w-0"
-                  className="!pl-2 !pr-7 !py-0 -mx-2 !rounded-interactive !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground ${TABLE_HEAD_LABEL} whitespace-nowrap [&>span]:block [&>span]:truncate"
+                  className={`!pl-2 !pr-7 !py-0 -mx-2 !rounded-interactive !border-transparent !bg-transparent hover:!bg-secondary/30 hover:!text-foreground ${TABLE_HEAD_LABEL} whitespace-nowrap [&>span]:block [&>span]:truncate`}
                 />
               </div>
             );
@@ -417,15 +433,13 @@ export function DataGrid<T>({
         <ErrorBanner variant="panel" message={error} onRetry={onRetry} />
       ) : data.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-10 h-10 rounded-xl bg-secondary/30 border border-primary/10 flex items-center justify-center mb-3">
-            <Icon className="w-5 h-5 text-foreground/90" />
-          </div>
+          <EmptyArt motif={emptyMotif} size="sm" className="mb-3" />
           {/* No hardcoded English fallback: an untranslated default leaks into
               all 14 locales. `shared.grid_no_data` is the shared translated
               last resort — always pass a specific `emptyTitle` instead. */}
           <p className="typo-heading text-foreground">{emptyTitle ?? t.shared.grid_no_data}</p>
           {emptyDescription && (
-            <p className="typo-body text-foreground mt-1 max-w-xs">{emptyDescription}</p>
+            <p className="typo-caption mt-1 max-w-[46ch]">{emptyDescription}</p>
           )}
         </div>
       ) : (

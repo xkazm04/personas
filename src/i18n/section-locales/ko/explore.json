@@ -9,5 +9,20 @@
   "domain_revenue": "영업 및 마케팅",
   "adopt_failed": "{name}을(를) 열 수 없습니다.",
   "adopt_no_template": "{name}에는 채택할 소스 템플릿이 없습니다.",
-  "adopt_not_found": "{name}은(는) 아직 템플릿 갤러리에 없습니다."
+  "adopt_not_found": "{name}은(는) 아직 템플릿 갤러리에 없습니다.",
+  "l2_all_domains": "모든 도메인",
+  "l2_col_capabilities": "기능",
+  "l2_col_focus": "초점",
+  "l2_col_name": "이름",
+  "l2_col_tools": "도구",
+  "l2_col_type": "유형",
+  "l2_counts": "템플릿 {templates}개 · 레시피 {recipes}개",
+  "l2_filter_all": "전체",
+  "l2_filter_placeholder": "이름으로 필터…",
+  "l2_filter_recipes": "레시피",
+  "l2_filter_templates": "템플릿",
+  "l2_kind_recipe": "레시피",
+  "l2_kind_template": "템플릿",
+  "l2_no_matches": "일치하는 항목이 없습니다.",
+  "l2_shown": "{total}개 중 {shown}개 표시"
 }

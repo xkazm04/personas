@@ -193,6 +193,9 @@ function CollapsibleBody({
         <button
           type="button"
           onClick={toggle}
+          // A disclosure announces whether it is open; the rotating chevron
+          // said so only to sighted users.
+          aria-expanded={!collapsed}
           className={`flex-1 min-w-0 flex items-center gap-2.5 ${HEADER_PAD[size]} text-left hover:bg-secondary/20 transition-colors select-none`}
         >
           <motion.span

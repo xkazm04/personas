@@ -46,6 +46,20 @@ describe('PersonaOverviewBatchBar', () => {
     expect(screen.getByRole('menuitem', { name: /alpha/i })).toBeTruthy();
   });
 
+  it('dismisses the home-team menu on an outside press or Escape, not an inside one', () => {
+    store.teams = [{ id: 't1', name: 'Alpha', color: null }];
+    render(<PersonaOverviewBatchBar count={2} onDelete={() => {}} onClear={() => {}} onMoveToGroup={async () => {}} />);
+    const trigger = screen.getByRole('button', { name: /set home team/i });
+    fireEvent.click(trigger);
+    fireEvent.mouseDown(screen.getByRole('menu'));
+    expect(screen.getByRole('menu')).toBeTruthy();
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByRole('menu')).toBeNull();
+    fireEvent.click(trigger);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
   it('fires archive once for two clicks while the first is in flight', async () => {
     const gate = deferred();
     const onArchive = vi.fn(() => gate.promise);

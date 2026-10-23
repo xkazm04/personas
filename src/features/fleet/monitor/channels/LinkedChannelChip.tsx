@@ -1,6 +1,6 @@
 import { Hash } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { AUTHOR_KIND_META } from '@/features/teams/sub_collab/collabRender';
+import { SLACK_BRAND } from '@/features/teams/sub_collab/collabRender';
 import type { TeamSlackBridge } from '@/lib/channel/teamBridge';
 
 /**
@@ -16,7 +16,7 @@ export function LinkedChannelChip({ bridge }: { bridge: TeamSlackBridge | undefi
   const { t } = useTranslation();
   if (!bridge) return null;
 
-  const label = bridge.channel || AUTHOR_KIND_META.slack.label;
+  const label = bridge.channel || SLACK_BRAND;
   return (
     <span
       title={t.monitor.conv_bridge_title}

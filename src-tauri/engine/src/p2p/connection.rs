@@ -603,7 +603,7 @@ impl ConnectionManager {
         // Wait for HelloAck (with timeout to prevent hanging on unresponsive peers)
         let response = tokio::time::timeout(
             std::time::Duration::from_secs(10),
-            protocol::decode(&mut recv),
+            protocol::decode_handshake(&mut recv),
         )
         .await
         .map_err(|_| {
@@ -625,6 +625,8 @@ impl ConnectionManager {
                             remote_id, version, PROTOCOL_VERSION
                         )));
                     }
+                    // Peer-supplied, like the mDNS TXT name: same cap.
+                    let display_name = super::mdns::sanitise_display_name(&display_name);
                     (remote_id, display_name, public_key_b64, nonce, signature)
                 }
                 _ => {
@@ -778,7 +780,7 @@ impl ConnectionManager {
         // Read Hello (with timeout to prevent hanging on unresponsive peers)
         let hello = tokio::time::timeout(
             std::time::Duration::from_secs(10),
-            protocol::decode(&mut recv),
+            protocol::decode_handshake(&mut recv),
         )
         .await
         .map_err(|_| {
@@ -800,6 +802,8 @@ impl ConnectionManager {
                             peer_id, version, PROTOCOL_VERSION
                         )));
                     }
+                    // Peer-supplied, like the mDNS TXT name: same cap.
+                    let display_name = super::mdns::sanitise_display_name(&display_name);
                     (peer_id, display_name, public_key_b64, nonce, signature)
                 }
                 _ => {
@@ -858,7 +862,7 @@ impl ConnectionManager {
         // Require the third leg before the connection counts as established.
         let confirm = tokio::time::timeout(
             std::time::Duration::from_secs(10),
-            protocol::decode(&mut recv),
+            protocol::decode_handshake(&mut recv),
         )
         .await
         .map_err(|_| {

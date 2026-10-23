@@ -119,21 +119,6 @@ pub fn get_sync_states_by_type(
     )
 }
 
-pub fn delete_sync_state(
-    pool: &DbPool,
-    entity_type: &str,
-    entity_id: &str,
-) -> Result<bool, AppError> {
-    timed_query!("obsidian_sync_state", "obsidian_sync::delete_sync_state", {
-        let conn = pool.get()?;
-        let rows = conn.execute(
-            "DELETE FROM obsidian_sync_state WHERE entity_type = ?1 AND entity_id = ?2",
-            params![entity_type, entity_id],
-        )?;
-        Ok(rows > 0)
-    })
-}
-
 pub fn insert_sync_log(pool: &DbPool, entry: &SyncLogEntry) -> Result<(), AppError> {
     timed_query!("obsidian_sync_log", "obsidian_sync::insert_sync_log", {
         let conn = pool.get()?;

@@ -102,6 +102,9 @@ function messageAttentionToDecision(message: ProactiveMessage): PendingDecision 
       useAthenaStore.getState().removeProactive(message.id);
     } catch (err) {
       silentCatch('companion/decision:message-engage')(err);
+      // Propagate, as the credential engage does: a swallowed failure clears
+      // the bubble as resolved while the nudge stays pending.
+      throw err;
     }
   };
 
@@ -140,6 +143,7 @@ function messageAttentionToDecision(message: ProactiveMessage): PendingDecision 
           useAthenaStore.getState().removeProactive(message.id);
         } catch (err) {
           silentCatch('companion/decision:message-dismiss')(err);
+          throw err;
         }
       },
     },
@@ -213,6 +217,7 @@ function credentialReauthToDecision(message: ProactiveMessage): PendingDecision 
           useAthenaStore.getState().removeProactive(message.id);
         } catch (err) {
           silentCatch('companion/decision:credential-dismiss')(err);
+          throw err;
         }
       },
     },
@@ -466,10 +471,9 @@ function IdleQueue() {
 export function DecisionDriver() {
   const counts = useDecisionCounts();
   const pendingCounts = useSystemStore((s) => s.pendingCounts);
-  // Under the `lanes` setting a lane read that answered zero for the operator
-  // (Breach + Sign + Accept + Talk) loads nothing: there is nothing for the orb.
-  const lanesIdle = counts.lanes !== null
-    && counts.laneTotal === 0
+  // A lane read that answered zero for the operator (Breach + Sign + Accept +
+  // Talk) loads nothing: there is nothing for the orb.
+  const lanesIdle = counts.laneTotal === 0
     && !counts.lanes.breach.failed
     && !counts.lanes.talk.failed;
   const load = lanesIdle ? NO_LOAD : orbLoad(pendingCounts, counts.counts.gates.failed);

@@ -49,6 +49,7 @@ import { formatCountdown } from './usageModel';
 import { AccountRows } from './AccountRows';
 import { StripFrame } from './UsageStripShell';
 import { UsageStripControls } from './UsageStripControls';
+import type { RotateStrategy } from '@/lib/bindings/RotateStrategy';
 import { useUsageActions } from './usageStripActions';
 import { useUsageClock } from './usageBits';
 import { SIM_VAULT_LOGINS, useSimPlans } from './simulation';
@@ -92,11 +93,12 @@ export const UsageStrip = memo(function UsageStrip({
     [simulated, sim, actions],
   );
   const onSaveRotate = useCallback(
-    (on: boolean, pct: number) => {
+    (on: boolean, pct: number, strategy?: RotateStrategy) => {
       if (!simulated) {
-        void actions.saveAutoRotate(on, pct);
+        void actions.saveAutoRotate(on, pct, strategy);
       } else if (sim.snapshot) {
-        sim.setAutoRotate({ ...sim.snapshot.autoRotate, enabled: on, thresholdPct: pct });
+        const cur = sim.snapshot.autoRotate;
+        sim.setAutoRotate({ ...cur, enabled: on, thresholdPct: pct, strategy: strategy ?? cur.strategy });
       }
     },
     [simulated, sim, actions],

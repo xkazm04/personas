@@ -1,0 +1,150 @@
+{
+  "schema": "conform-run/1",
+  "worker": "3f248d37-eb86-442d-9567-f7a65d88281b",
+  "subject": "chat-transcript",
+  "evaluatedAt": "2026-10-17T01:58:28.172554+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [
+    {
+      "context": "companion-core-store",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/companions/athena/athenaStore.ts:1301 Queued prompts receive identities and survive restart as drafts, but lack versioned editing and drain individually into separate machine turns.",
+      "techniques": [
+        {
+          "technique": "composer-turn-queue",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/athenaStore.ts:1305 The store shifts one prompt, and athenaChatQueue.ts:61-62 sends it alone per completion; consecutive plain follow-ups are not combined, and queued entries expose no versioned edit operation."
+        },
+        {
+          "technique": "progress-narration",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/athenaStore.ts:1386 athenaChatStream.ts:173-180 invokes this reset on error without attaching the narration to a failed turn, erasing the failure's activity detail from the store."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "chat-transcript",
+      "context": "template-gallery-search",
+      "reason": "withdrawn after review: reviewer (sonnet): The primary anchor TemplateSearchBar.tsx:34 is just a useStructuredQuery hook call and doesn't show that a transcript is absent, so it is incidental. The technique anchors describe chips and facets, but the 'absence' rests only on a grep for three terms."
+    },
+    {
+      "subject": "chat-transcript",
+      "context": "template-adoption-persona-layout",
+      "reason": "withdrawn after review: reviewer (sonnet): The primary anchor PersonaLayoutAdoption.tsx:155 is a PersonaLayout props block (mode=\"adoption\") and doesn't show that conversational turns, composer or transcript are absent, so it is incidental."
+    },
+    {
+      "subject": "chat-transcript",
+      "context": "onboarding-components",
+      "reason": "withdrawn after review: reviewer (sonnet): The primary anchor TourPanelBody.tsx:49 is a getLocalizedTourSteps call and doesn't show absence. The directory also holds ExecutionStep.tsx, which renders streamed agent output lines from executionOutput, plus TourNarrativeDeck.tsx and GuidedTour.tsx with live narration captions. The 'no transcript"
+    },
+    {
+      "subject": "chat-transcript",
+      "context": "notepad-overview",
+      "reason": "withdrawn after review: reviewer (sonnet): The cited files (notepad/thread/threadActions.ts and NoteThreadPopover.tsx) are not in the notepad-overview context file list, which covers overview/* only. The code's own comment at threadActions.ts:80-90 says stamping the verdict when the card isn't loaded is intentional, so 'approved' is not a pl"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-17T01:58:28.172554+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "chat-transcript"
+      ],
+      "techniques": [
+        "composer-turn-queue",
+        "immutable-model-cached-layout",
+        "inline-structured-rows",
+        "markdown-and-code-rendering",
+        "progress-narration",
+        "transcript-scroll",
+        "turn-metadata",
+        "turn-model",
+        "virtual-filtered-channel"
+      ],
+      "deviations": 0,
+      "context": "template-gallery-search",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-17T01:58:28.172554+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "chat-transcript"
+      ],
+      "techniques": [
+        "composer-turn-queue",
+        "immutable-model-cached-layout",
+        "inline-structured-rows",
+        "markdown-and-code-rendering",
+        "progress-narration",
+        "transcript-scroll",
+        "turn-metadata",
+        "turn-model",
+        "virtual-filtered-channel"
+      ],
+      "deviations": 0,
+      "context": "template-adoption-persona-layout",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-17T01:58:28.172554+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "chat-transcript"
+      ],
+      "techniques": [
+        "composer-turn-queue",
+        "immutable-model-cached-layout",
+        "inline-structured-rows",
+        "markdown-and-code-rendering",
+        "progress-narration",
+        "transcript-scroll",
+        "turn-metadata",
+        "turn-model",
+        "virtual-filtered-channel"
+      ],
+      "deviations": 0,
+      "context": "onboarding-components",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-17T01:58:28.172554+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "chat-transcript"
+      ],
+      "techniques": [
+        "composer-turn-queue",
+        "progress-narration"
+      ],
+      "deviations": 1,
+      "context": "companion-core-store",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    },
+    {
+      "ts": "2026-10-17T01:58:28.172554+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "chat-transcript"
+      ],
+      "techniques": [
+        "inline-structured-rows",
+        "markdown-and-code-rendering",
+        "turn-model"
+      ],
+      "deviations": 1,
+      "context": "notepad-overview",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

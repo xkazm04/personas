@@ -14,10 +14,11 @@ export default function UpdateBanner() {
     dismissUpdate,
   } = useAutoUpdater();
   const { t } = useTranslation();
-  // Number of personas mid-execution. Installing restarts the app, which
-  // silently kills running runs — so warn before that happens.
+  // Runs the restart would kill: those mid-execution AND those queued (a queued
+  // run starts the moment the last running one ends). Warn before that happens.
   const runningCount = useOverviewStore(
-    (s) => Object.values(s.activeProcesses).filter((p) => p.status === "running").length,
+    (s) =>
+      Object.values(s.activeProcesses).filter((p) => p.status === "running" || p.status === "queued").length,
   );
   const [confirmPending, setConfirmPending] = useState(false);
   // When set, install is deferred until every running task finishes; the

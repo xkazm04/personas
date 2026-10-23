@@ -1,0 +1,50 @@
+{
+  "schema": "conform-run/1",
+  "worker": "c9ef8d8c-fa9d-4d6a-8b5c-65c8995f2691",
+  "subject": "motion",
+  "evaluatedAt": "2026-10-16T18:21:40Z",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "motion",
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "reason": "no work: already judged deviation on 2026-10-16 against sha256-b2:8d9b3eabe2f3b534 rev 10, which is the registry index digest at 11037a6c (revisionsBehind 0); every evidence anchor re-printed 2026-10-16 and still says what the verdict claims, so a re-judgment would duplicate a current verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "ab849301-d5ce-4d91-a12e-0e87a0417585",
+      "reason": "no work: already judged deviation on 2026-10-12 against sha256-b2:8d9b3eabe2f3b534 rev 10, which is the registry index digest at 11037a6c (revisionsBehind 0); every evidence anchor re-printed 2026-10-16 and still says what the verdict claims, so a re-judgment would duplicate a current verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "reason": "no work: already judged deviation on 2026-10-16 against sha256-b2:8d9b3eabe2f3b534 rev 10, which is the registry index digest at 11037a6c (revisionsBehind 0); every evidence anchor re-printed 2026-10-16 and still says what the verdict claims, so a re-judgment would duplicate a current verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6",
+      "reason": "no work: already judged deviation on 2026-10-16 against sha256-b2:8d9b3eabe2f3b534 rev 10, which is the registry index digest at 11037a6c (revisionsBehind 0); every evidence anchor re-printed 2026-10-16 and still says what the verdict claims, so a re-judgment would duplicate a current verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "36783fec-01fa-40d5-8620-cf65ae691d27",
+      "reason": "no work: already judged deviation on 2026-10-16 against sha256-b2:8d9b3eabe2f3b534 rev 10, which is the registry index digest at 11037a6c (revisionsBehind 0); every evidence anchor re-printed 2026-10-16 and still says what the verdict claims, so a re-judgment would duplicate a current verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20",
+      "reason": "no work: already judged deviation on 2026-10-12 against sha256-b2:8d9b3eabe2f3b534 rev 10, which is the registry index digest at 11037a6c (revisionsBehind 0); every evidence anchor re-printed 2026-10-16 and still says what the verdict claims, so a re-judgment would duplicate a current verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "b4439e30-fcff-4095-97dd-d9d7da2247dd",
+      "reason": "no work: already judged deviation on 2026-10-16 against sha256-b2:8d9b3eabe2f3b534 rev 10, which is the registry index digest at 11037a6c (revisionsBehind 0); every evidence anchor re-printed 2026-10-16 and still says what the verdict claims, so a re-judgment would duplicate a current verdict"
+    },
+    {
+      "subject": "motion",
+      "context": "a576c14f-1edd-4da4-8d11-527161a3b5b3",
+      "reason": "no work: already judged deviation on 2026-10-16 against sha256-b2:8d9b3eabe2f3b534 rev 10, which is the registry index digest at 11037a6c (revisionsBehind 0); every evidence anchor re-printed 2026-10-16 and still says what the verdict claims, so a re-judgment would duplicate a current verdict"
+    }
+  ],
+  "consults": []
+}

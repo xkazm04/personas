@@ -15,15 +15,27 @@ export interface MandateDrawerRequest {
 
 interface RequestState {
   pending: MandateDrawerRequest | null;
+  /** A request to open the orphanage (the Orphans lane button, WP6); bumps per press. */
+  orphans: number | null;
   request: (actId: string) => void;
+  requestOrphans: () => void;
   consume: () => void;
+  consumeOrphans: () => void;
 }
 
 export const useMandateDrawerRequest = create<RequestState>((set) => ({
   pending: null,
+  orphans: null,
   request: (actId) => set((s) => ({ pending: { actId, seq: (s.pending?.seq ?? 0) + 1 } })),
+  requestOrphans: () => set((s) => ({ orphans: (s.orphans ?? 0) + 1 })),
   consume: () => set({ pending: null }),
+  consumeOrphans: () => set({ orphans: null }),
 }));
+
+/** Ask the mandate drawer to open the orphanage (the Orphans lane button). */
+export function requestOrphanage(): void {
+  useMandateDrawerRequest.getState().requestOrphans();
+}
 
 /** Ask the mandate drawer to open the act log at one act. */
 export function requestActLogAt(actId: string): void {

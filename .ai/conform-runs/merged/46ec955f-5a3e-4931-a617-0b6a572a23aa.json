@@ -1,0 +1,32 @@
+{
+  "schema": "conform-run/1",
+  "worker": "46ec955f-5a3e-4931-a617-0b6a572a23aa",
+  "subject": "admission-queue",
+  "evaluatedAt": "2026-10-19T09:17:44.092465+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "admission-queue",
+      "context": "overview-manual-review",
+      "reason": "withdrawn after review: reviewer (sonnet): The backend claim holds: dispatch.rs:1120 calls review_repo::create, and manual_reviews.rs:52-86 inserts a 'pending' row with no depth check, even though IDEA_BACKLOG_CAP exists for dev_ideas. But both anchors are Rust producer code outside this context, which is only the React inbox UI under sub_ma"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-19T09:17:44.092465+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "admission-queue"
+      ],
+      "techniques": [
+        "depth-bounds-and-shed"
+      ],
+      "deviations": 1,
+      "context": "overview-manual-review",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}

@@ -352,10 +352,25 @@ fn projects_dir() -> Option<PathBuf> {
     dirs::home_dir().map(|h| h.join(".claude").join("projects"))
 }
 
+/// A Claude session id is a UUID; accept the safe filename-stem alphabet only
+/// (no separators, no dots), bounded in length.
+fn is_session_id(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= 128
+        && id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+}
+
 /// Locate `<claude_session_id>.jsonl` under `~/.claude/projects`. The real
 /// layout is `projects/<encoded-project>/<id>.jsonl`; we also check a direct
 /// child defensively.
 fn find_transcript(claude_session_id: &str) -> Option<PathBuf> {
+    // The id arrives over IPC and is joined into a path: refuse anything that
+    // is not an id, so `../../x` cannot walk out of `~/.claude/projects`.
+    if !is_session_id(claude_session_id) {
+        return None;
+    }
     let projects = projects_dir()?;
     let filename = format!("{claude_session_id}.jsonl");
 
@@ -1174,6 +1189,24 @@ pub async fn fleet_session_recap(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn session_ids_cannot_carry_path_syntax() {
+        assert!(is_session_id("3f2c9b7e-1a44-4c2d-9e0b-5d6a7c8b9a10"));
+        for bad in [
+            "",
+            "..",
+            "../../secret",
+            "a/b",
+            r"a\b",
+            "a.b",
+            "C:x",
+            "x\0y",
+        ] {
+            assert!(!is_session_id(bad), "{bad:?} accepted");
+            assert!(find_transcript(bad).is_none(), "{bad:?} resolved");
+        }
+    }
 
     fn lines(raw: &[&str]) -> Vec<String> {
         raw.iter().map(|s| s.to_string()).collect()

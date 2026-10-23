@@ -1,0 +1,41 @@
+{"schema": "conform-run/1", "worker": "19b298ea-84af-4d34-9283-f671997cccf4", "subject": "translation-pipeline-topology",
+ "evaluatedAt": "2026-10-16T17:45:00Z",
+ "pairs": [
+  {"context": "2e1e105a-866c-4039-9620-7ed5d0d30b17", "subject": "translation-pipeline-topology", "bundle": "localization",
+   "state": "deviation",
+   "evidence": "src/i18n/locales.manifest.ts:13 claims no other file enumerates locales, but two switchers keep hand-made lists and the onboarding one (src/features/onboarding/components/AppearanceStep.tsx:13) already omits bn/id/vi, so 3 of 14 shipped locales cannot be picked at onboarding",
+   "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0", "evaluatedRevision": 12,
+   "techniques": [
+    {"technique": "language-registry-single-source", "verdict": "deviation", "evidence": "src/features/home/sub_welcome/LanguageSwitcher.tsx:16 and src/features/onboarding/components/AppearanceStep.tsx:13 declare their own language tables instead of deriving from LOCALES; per-language font config also sprawls into src/stores/i18nStore.ts:20 - the one-line-diff test fails (adding a locale touches 3+ files)"},
+    {"technique": "canonical-fallback-serving", "verdict": "deviation", "evidence": "src/features/onboarding/components/AppearanceStep.tsx:13 offers 11 of 14 served locales (published bn/id/vi work unreachable from that switcher); per-key fallback itself is realized by the deep-merge loader (src/features/home/sub_releases/i18n/useReleasesTranslation.ts:7)"},
+    {"technique": "canonical-and-derived-split", "verdict": "deviation", "evidence": ".claude/rules/i18n.md:164 makes medium-quality machine translation the committed bar for gap-fill; scripts/i18n/translate-merge.mjs gates only key and placeholder parity, so unreviewed subagent output lands in the reviewed catalog with no marker separating it"},
+    {"technique": "source-identical-value-audit", "verdict": "realized", "evidence": "scripts/i18n/check-untranslated.mjs:17 per-locale \"<lang>:<key>\" allowlist (with *: wildcard for locale-independent classes), gated at pre-commit by lefthook.yml:85"},
+    {"technique": "pseudo-localization-readiness", "verdict": "realized", "evidence": "src/i18n/pseudoLocale.ts:2 dev-only pseudo-locale synthesized from English with no engine"},
+    {"technique": "prompt-context-contract", "verdict": "partial", "evidence": "scripts/i18n/plan-gaps.mjs:60 attaches per-key translator notes to gap chunks; surface, glossary terms and placeholder map are still left to the subagent (per the registry's own personas application)"}
+   ],
+   "registryProposal": "canonical-and-derived-split names this desktop app as committing catalogs because every string went through the review wave first; its gap-fill path (.claude/rules/i18n.md:164, translate-extract -> Sonnet subagent -> translate-merge) has no review wave, so the technique's cited example is only half-true. Correct the sighting, and consider whether a bundled offline app needs a sanctioned third shape: machine output committed but provenance-marked per key. Separately: home-welcome (src/features/home/sub_welcome/LanguageSwitcher.tsx) and onboarding-components (src/features/onboarding/components/AppearanceStep.tsx) hold the two shadow language lists but carry no translation-pipeline-topology pair; the matcher missed them because they use switcher/picker vocabulary, not translation/pipeline."},
+  {"context": "b39776f5-3909-41e3-b69f-14c9a6c70bec", "subject": "translation-pipeline-topology", "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_releases/i18n/useReleasesTranslation.ts:7 is a display-shape adapter over the main i18n loader; it owns no locale data, list, store or pipeline step, so the topology precondition is unmet",
+   "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0", "evaluatedRevision": 12, "techniques": []},
+  {"context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0", "subject": "translation-pipeline-topology", "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/api/pipeline/triggers.ts:3 the context is IPC wrappers for persona triggers/scheduler/teams; 'pipeline' here is agent automation, not translation, so no translated content is stored or moved",
+   "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0", "evaluatedRevision": 12, "techniques": []},
+  {"context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2", "subject": "translation-pipeline-topology", "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/lib/credentials/builtinConnectors.ts:2 the 'catalog' is a connector definition catalog, not a string catalog; no locale registry, translation store or MT request lives here",
+   "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0", "evaluatedRevision": 12, "techniques": []}
+ ],
+ "declined": [
+  {"subject": "translation-pipeline-topology", "context": "7826a48f-5883-4f26-8476-c3c515bda745", "reason": "budget (4 pairs); probable-confidence, priorNotApplicable 4 - workflow parsers, likely not-applicable but unread"},
+  {"subject": "translation-pipeline-topology", "context": "835ed922-2ebd-425b-a542-dbe5996e1e78", "reason": "budget; probable-confidence, priorNotApplicable 4, unread"},
+  {"subject": "translation-pipeline-topology", "context": "969f50a2-b70d-41e3-b573-284a75a67425", "reason": "budget; probable-confidence, priorNotApplicable 4, unread"},
+  {"subject": "translation-pipeline-topology", "context": "8a57c65c-06fd-45c9-9d32-d50c89c4c705", "reason": "budget; probable-confidence, priorNotApplicable 4, unread"}
+ ],
+ "consults": [
+  {"ts": "2026-10-16T17:45:00Z", "bundle": "localization", "subjects": ["translation-pipeline-topology"], "techniques": ["language-registry-single-source", "canonical-fallback-serving", "canonical-and-derived-split", "source-identical-value-audit", "pseudo-localization-readiness", "prompt-context-contract"], "deviations": 3},
+  {"ts": "2026-10-16T17:45:00Z", "bundle": "localization", "subjects": ["translation-pipeline-topology"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-16T17:45:00Z", "bundle": "localization", "subjects": ["translation-pipeline-topology"], "techniques": [], "deviations": 0},
+  {"ts": "2026-10-16T17:45:00Z", "bundle": "localization", "subjects": ["translation-pipeline-topology"], "techniques": [], "deviations": 0}
+ ]}

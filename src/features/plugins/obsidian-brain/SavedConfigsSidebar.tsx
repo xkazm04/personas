@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { BookMarked, Check, Trash2 } from 'lucide-react';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -9,6 +10,7 @@ import {
   type ObsidianVaultConfig,
 } from '@/api/obsidianBrain';
 import { useSavedVaultConfigs } from './useSavedVaultConfigs';
+import { extractMessage } from '@/lib/silentCatch';
 
 interface SavedConfigsSidebarProps {
   /** Called after a config is activated (e.g. to reload panel state). */
@@ -38,17 +40,19 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
         addToast(tx(t.plugins.obsidian_brain.vault_switched_to, { name: config.vaultName }), 'success');
         onSelect?.(config);
       } catch (e) {
-        addToast(tx(t.plugins.obsidian_brain.vault_activate_failed, { error: String(e) }), 'error');
+        addToast(tx(t.plugins.obsidian_brain.vault_activate_failed, { error: extractMessage(e) }), 'error');
       }
     },
     [addToast, onSelect, setObsidianConnected, setObsidianVaultName, setObsidianVaultPath, fetchConnectorDefinitions, t, tx],
   );
 
   const removeConfig = useCallback(
-    (e: React.MouseEvent, config: ObsidianVaultConfig) => {
+    async (e: React.MouseEvent, config: ObsidianVaultConfig) => {
       e.stopPropagation();
-      remove(config.vaultPath);
-      addToast(tx(t.plugins.obsidian_brain.vault_removed_from_saved, { name: config.vaultName }), 'success');
+      // A failed write rolls the roster back and toasts; only confirm a removal that persisted.
+      if (await remove(config.vaultPath)) {
+        addToast(tx(t.plugins.obsidian_brain.vault_removed_from_saved, { name: config.vaultName }), 'success');
+      }
     },
     [addToast, remove, t, tx],
   );
@@ -66,9 +70,7 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
       </div>
 
       {configs.length === 0 ? (
-        <p className="typo-caption text-foreground px-1 py-2">
-          {emptyHint ?? t.plugins.obsidian_brain.saved_vaults_empty_hint}
-        </p>
+        <EmptyState art="vault" size="sm" title={emptyHint ?? t.plugins.obsidian_brain.saved_vaults_empty_hint} />
       ) : (
         <div className="space-y-1.5 overflow-y-auto">
           {configs.map((cfg) => {
@@ -103,8 +105,8 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => removeConfig(e, cfg)}
-                  className="absolute top-1.5 right-1.5 p-1 rounded-input opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/10 text-foreground hover:text-red-400 focus-ring"
+                  onClick={(e) => void removeConfig(e, cfg)}
+                  className="absolute top-1.5 right-1.5 p-1 rounded-input opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-red-500/10 text-foreground hover:text-red-400 focus-ring"
                   title={tx(t.plugins.obsidian_brain.remove_vault_aria, { name: cfg.vaultName })}
                   aria-label={tx(t.plugins.obsidian_brain.remove_vault_aria, { name: cfg.vaultName })}
                 >

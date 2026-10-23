@@ -67,6 +67,11 @@ export interface BlueprintProps {
    */
   queue?: ReactNode;
   /**
+   * The queue's settled history, behind the drawer head's History switch. A
+   * node for the queue's reason; mounted only while it is showing.
+   */
+  queueHistory?: ReactNode;
+  /**
    * What is in her way, what her running cost, and whether the ecosystem grew.
    *
    * DATA rather than a node, unlike the console and the queue, because the
@@ -97,6 +102,7 @@ export function Blueprint({
   words,
   console: operatorConsole,
   queue,
+  queueHistory,
   gaps,
   onDrawerChange,
   phase = 'unrun',
@@ -229,7 +235,7 @@ export function Blueprint({
           onPromptChange={state.setPromptValue}
           onPromptCommit={state.commitPrompt}
         />
-        <QueueDrawer open={state.queue.open} onClose={state.closeQueue}>
+        <QueueDrawer open={state.queue.open} onClose={state.closeQueue} history={queueHistory}>
           {queue}
         </QueueDrawer>
         <GapsDrawer open={state.gaps.open} onClose={state.closeGaps} reading={reading} />

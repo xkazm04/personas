@@ -27,8 +27,10 @@ vi.mock('@/api/fleet/fleet', () => ({
   revokeCompanionDevice: vi.fn(),
 }));
 
+// copyText's real contract: resolves true on a landed write, false on a refused
+// one (it reports the failure itself and never rejects).
 vi.mock('@/hooks/utility/interaction/useCopyToClipboard', () => ({
-  copyText: vi.fn().mockResolvedValue(undefined),
+  copyText: vi.fn().mockResolvedValue(true),
 }));
 
 const addToast = vi.fn();
@@ -37,6 +39,7 @@ vi.mock('@/stores/toastStore', () => ({
 }));
 
 import * as fleetApi from '@/api/fleet/fleet';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { FleetPairDevice } from '../FleetPairDevice';
 
 beforeEach(() => {
@@ -193,5 +196,45 @@ describe('FleetPairDevice — copy confirmation timer', () => {
     // displayed a one-time-use pairing token.
     expect(clearSpy.mock.calls.some((c) => c[0] === armed[0])).toBe(true);
     setSpy.mockRestore();
+  });
+});
+
+describe('FleetPairDevice — copy confirmation is earned', () => {
+  it('does not claim the link was copied when the clipboard refused the write', async () => {
+    vi.mocked(fleetApi.pairDevice).mockResolvedValue({
+      url: 'http://192.168.1.5:8765/#tok',
+      qrSvg: '<svg/>',
+    } as never);
+    vi.mocked(copyText).mockResolvedValueOnce(false);
+    const user = userEvent.setup();
+
+    render(<FleetPairDevice />);
+    await user.click(screen.getByTestId('fleet-pair-generate'));
+    const copyBtn = await screen.findByTestId('fleet-pair-copy');
+    await user.click(copyBtn);
+
+    await waitFor(() => expect(vi.mocked(copyText)).toHaveBeenCalledWith('http://192.168.1.5:8765/#tok'));
+    // Still the plain Copy affordance: the clipboard does not hold the link.
+    expect(copyBtn).not.toHaveAccessibleName(/copied/i);
+  });
+});
+
+describe('FleetPairDevice - a failed device read is not "nothing paired"', () => {
+  it('shows an error with Retry instead of the empty state, and recovers', async () => {
+    vi.mocked(fleetApi.companionDevices).mockReset().mockRejectedValueOnce(new Error('db locked')).mockResolvedValue(STATUS);
+    const user = userEvent.setup();
+
+    render(<FleetPairDevice />);
+    await user.click(await screen.findByRole('button', { name: /retry/i }));
+
+    expect(await screen.findByTestId('fleet-pair-devices')).toBeTruthy();
+    expect(screen.queryByText(/no devices paired/i)).toBeNull();
+  });
+
+  it('does not claim the list is empty while the read has failed', async () => {
+    vi.mocked(fleetApi.companionDevices).mockReset().mockRejectedValue(new Error('db locked'));
+    render(<FleetPairDevice />);
+    await screen.findByRole('button', { name: /retry/i });
+    expect(screen.queryByText(/no devices paired/i)).toBeNull();
   });
 });

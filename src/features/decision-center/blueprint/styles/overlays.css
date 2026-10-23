@@ -1,0 +1,63 @@
+/* overlays.css - what floats on the drawing, re-ported from bp src/components/blueprint.css (#hov, #dcard, .op,
+   #selbar, .btn): the hover card, the on-plan decision card and the selection bar. Every colour and size is a --bp-*
+   token (theme/bp-tokens.css); corners square as in bp. */
+
+/* ---------- the hover card: 360 px, a 3 px lens rule on top */
+.bp-hov { position: absolute; z-index: 5; width: 360px; pointer-events: none; background: var(--bp-card); border: 1px solid var(--bp-ink-2); border-top: 3px solid var(--bp-lens, var(--bp-ink)); padding: 10px 14px 11px; box-shadow: 0 14px 44px var(--bp-shadow); font-family: var(--bp-font-sans); animation: bp-hov-in 0.14s ease-out; }
+@keyframes bp-hov-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .bp-hov { animation: none; } }
+.bp-hov .k { font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); letter-spacing: var(--bp-ls-3); color: var(--bp-ink-2); text-transform: uppercase; }
+.bp-hov .n { font: 600 var(--bp-fs-26)/1.05 var(--bp-font-sans); color: var(--bp-ink-hi); margin: 5px 0 6px; letter-spacing: 0.01em; }
+.bp-hov .n.q { font-size: var(--bp-fs-19); line-height: 1.2; }
+.bp-hov .s { font: 400 var(--bp-fs-15)/1.35 var(--bp-font-sans); color: var(--bp-ink); }
+.bp-hov .e { font: 500 var(--bp-fs-13)/1.35 var(--bp-font-mono); color: var(--bp-lens, var(--bp-ink)); margin-top: 5px; }
+.bp-hov .t { font: 400 var(--bp-fs-14)/1.35 var(--bp-font-sans); color: var(--bp-red-2); margin-top: 5px; }
+.bp-hov .t .w { color: var(--bp-amber-2); }
+.bp-hov .sw { font: 400 var(--bp-fs-14)/1.35 var(--bp-font-sans); color: var(--bp-mint-2); margin-top: 5px; }
+.bp-hov .sw.q { color: var(--bp-amber-2); }
+.bp-hov .bar { display: flex; height: 8px; margin-top: 8px; border: 1px solid var(--bp-ink-3); }
+.bp-hov .bar i { display: block; height: 100%; background: var(--bp-ink); }
+.bp-hov .bar i.a85 { opacity: 0.85; }
+.bp-hov .bar i.a50 { opacity: 0.5; }
+.bp-hov .bar i.a25 { opacity: 0.25; }
+.bp-hov .bar i.a08 { opacity: 0.08; }
+.bp-hov .bar i.dep { background: var(--bp-red); opacity: 0.4; }
+.bp-hov .h { font: 400 var(--bp-fs-13)/1.35 var(--bp-font-sans); color: var(--bp-ink-2); margin-top: 6px; }
+
+/* ---------- the decision card: 372 px, a 4 px amber rule on top (red when the risk is high) */
+.bp-dcard { position: absolute; left: 0; top: 0; z-index: 7; width: 372px; background: var(--bp-card-hi); border: 1px solid var(--bp-ink); border-top: 4px solid var(--bp-amber); box-shadow: 0 22px 60px var(--bp-shadow); padding: 12px 14px; font-family: var(--bp-font-sans); color: var(--bp-ink); animation: bp-dc-in 0.2s ease-out; }
+@keyframes bp-dc-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .bp-dcard { animation: none; } }
+.bp-dcard.u-high { border-top-color: var(--bp-red); }
+.bp-dcard .k { display: flex; justify-content: space-between; align-items: center; font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); letter-spacing: var(--bp-ls-3); color: var(--bp-ink-2); text-transform: uppercase; gap: 8px; }
+.bp-dcard .x { border: 1px solid var(--bp-ink-3); color: var(--bp-ink-2); font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); padding: 0 6px; height: 22px; }
+.bp-dcard .x:hover { border-color: var(--bp-ink); color: var(--bp-ink-hi); }
+.bp-dcard h3 { margin: 7px 0 4px; font: 600 var(--bp-fs-20)/1.2 var(--bp-font-sans); color: var(--bp-ink-hi); }
+.bp-dcard .psum { margin: 0 0 6px; font: 400 var(--bp-fs-14)/1.4 var(--bp-font-sans); color: var(--bp-ink); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.bp-dcard .by { font: 400 var(--bp-fs-14)/1.4 var(--bp-font-sans); color: var(--bp-ink-2); }
+.bp-dcard .by b { color: var(--bp-ink); font-weight: 500; }
+.bp-dcard .meta { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 8px 0 2px; font: 500 var(--bp-fs-13)/1.3 var(--bp-font-mono); color: var(--bp-amber-2); }
+.bp-dcard .op { display: block; width: 100%; text-align: left; background: color-mix(in srgb, var(--bp-ink) 6%, transparent); border: 1px solid var(--bp-ink-3); padding: 7px 9px 7px 36px; margin-top: 6px; position: relative; line-height: 1.3; transition: background 0.12s, border-color 0.12s; }
+.bp-dcard .op:hover, .bp-dcard .op:focus-visible { background: color-mix(in srgb, var(--bp-accent) 16%, transparent); border-color: var(--bp-accent); }
+.bp-dcard .op .no { position: absolute; left: 8px; top: 7px; width: 20px; height: 20px; border: 1.5px solid var(--bp-ink-2); display: grid; place-items: center; font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); color: var(--bp-ink); font-style: normal; text-transform: uppercase; }
+.bp-dcard .op b { display: block; font: 600 var(--bp-fs-14)/1.3 var(--bp-font-sans); color: var(--bp-ink-hi); letter-spacing: 0.01em; }
+.bp-dcard .op span { display: block; color: var(--bp-ink-2); font: 400 var(--bp-fs-13)/1.3 var(--bp-font-sans); margin-top: 1px; }
+.bp-dcard .op.rec { border-color: var(--bp-mint); box-shadow: inset 3px 0 0 var(--bp-mint); }
+.bp-dcard .op.rec .no { background: var(--bp-mint); color: var(--bp-on-mint); border-color: var(--bp-mint); }
+.bp-dcard .op:disabled { cursor: default; }
+.bp-dcard .fx { margin-top: 8px; font: 400 var(--bp-fs-13)/1.35 var(--bp-font-sans); color: var(--bp-mint-2); min-height: 18px; }
+.bp-dcard .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); color: var(--bp-ink-2); letter-spacing: var(--bp-ls-2); }
+.bp-dcard .nav .bp-press { border: 1px solid var(--bp-ink-3); color: var(--bp-ink); height: 26px; padding: 0 8px; font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); }
+.bp-dcard .nav .bp-press:hover { border-color: var(--bp-ink); }
+
+/* ---------- the selection bar: centred over the plan, above the level ladder, a 3 px accent rule at its foot */
+.bp-selbar { position: absolute; left: 0; right: 0; margin: 0 auto; width: fit-content; bottom: calc(var(--bp-bb) + 38px); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; max-width: min(760px, calc(100% - 120px)); background: var(--bp-card); border: 1px solid var(--bp-ink); border-bottom: 3px solid var(--bp-accent); padding: 7px 10px; box-shadow: 0 14px 40px var(--bp-shadow); z-index: 6; font-family: var(--bp-font-sans); }
+.bp-selbar .sel-sum { font: 400 var(--bp-fs-14)/1.3 var(--bp-font-sans); color: var(--bp-ink); margin-right: 4px; }
+.bp-selbar .sel-sum b { font: 500 var(--bp-fs-14)/1.3 var(--bp-font-mono); color: var(--bp-ink-hi); }
+.bp-selbar .sel-items { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 4px 6px; order: 1; }
+.bp-selbar .sel-item { font: 500 var(--bp-fs-12)/1.2 var(--bp-font-mono); color: var(--bp-ink-2); border: 1px solid var(--bp-ink-4); padding: 2px 6px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bp-selbar .btn { border: 1px solid var(--bp-ink-3); background: var(--bp-panel); font: 400 var(--bp-fs-13)/1 var(--bp-font-sans); letter-spacing: 0.05em; text-transform: uppercase; padding: 0 10px; height: 30px; white-space: nowrap; color: var(--bp-ink); display: inline-flex; align-items: center; gap: 6px; }
+.bp-selbar .btn:hover { border-color: var(--bp-ink); }
+.bp-selbar .btn.go { background: var(--bp-mint-2); border-color: var(--bp-mint-2); color: var(--bp-on-mint); font-weight: 600; }
+.bp-selbar .btn.no { border-color: var(--bp-red); color: var(--bp-red-2); }
+.bp-selbar .btn kbd { font: 500 var(--bp-fs-12)/1 var(--bp-font-mono); border: 1px solid currentColor; padding: 1px 4px; }

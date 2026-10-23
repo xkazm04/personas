@@ -27,4 +27,11 @@ describe('applyDesignContextMutation', () => {
     expect(await second).toEqual({ applied: true });
     expect(state.personas[0].design_context).toBe('start:A:B');
   });
+
+  it('reports the message of an IPC AppError rejection as the reason', async () => {
+    state.selectedPersona = persona;
+    state.applyPersonaOp.mockRejectedValueOnce({ error: 'Persona is locked', kind: 'Conflict' });
+
+    expect(await applyDesignContextMutation('persona-1', (ctx) => ctx)).toEqual({ applied: false, reason: 'Persona is locked' });
+  });
 });

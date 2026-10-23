@@ -117,7 +117,10 @@ export function useTeamMemories(teamId: string) {
 
   const onLoadMore = useCallback(async () => {
     const { category, search, runId } = filtersRef.current;
-    const token = listWinsRef.current.next();
+    // Peek, never mint: a page APPENDS to the list the current refresh owns.
+    // Minting here superseded that refresh's in-flight count/stats, which then
+    // dropped as stale and left `total` at the previous filter's value.
+    const token = listWinsRef.current.current();
     try {
       const next = await listTeamMemories(teamId, runId, category, search, PAGE_SIZE, memories.length);
       // A page computed against an offset the list no longer has would append
@@ -129,31 +132,41 @@ export function useTeamMemories(teamId: string) {
     }
   }, [teamId, memories.length]);
 
-  const onCreate = useCallback((input: CreateTeamMemoryInput) => {
-    createTeamMemory(input)
+  /** The re-read after a write that already SUCCEEDED. Its failure is a list
+   *  failure (the pane paints `loadFailed`), never the write's: chaining it
+   *  inside the write's promise recorded one click as both `ok` and `failed`
+   *  and toasted a save error for a memory that was saved. */
+  const refreshAfterWrite = useCallback((context: string) => {
+    refresh().catch(toastCatch(context));
+  }, [refresh]);
+
+  /** Resolves `true` once the write landed, `false` when it failed: the form
+   *  that typed the draft keeps it on `false` instead of discarding it. */
+  const onCreate = useCallback((input: CreateTeamMemoryInput): Promise<boolean> => {
+    return createTeamMemory(input)
       .then(() => {
         trackInteraction(IX_CATEGORY, 'create', IX_OK);
         addToast(t.pipeline.memory_created, 'success');
-        return refresh();
-      })
-      .catch((err) => {
+        refreshAfterWrite('teamMemory/useTeamMemories:createRefresh');
+        return true;
+      }, (err) => {
         trackInteraction(IX_CATEGORY, 'create', IX_FAILED);
         toastCatch('teamMemory/useTeamMemories:create')(err);
+        return false;
       });
-  }, [addToast, refresh, t]);
+  }, [addToast, refreshAfterWrite, t]);
 
   const onDelete = useCallback((id: string) => {
     deleteTeamMemory(id)
       .then(() => {
         trackInteraction(IX_CATEGORY, 'delete', IX_OK);
         addToast(t.pipeline.memory_deleted, 'success');
-        return refresh();
-      })
-      .catch((err) => {
+        refreshAfterWrite('teamMemory/useTeamMemories:deleteRefresh');
+      }, (err) => {
         trackInteraction(IX_CATEGORY, 'delete', IX_FAILED);
         toastCatch('teamMemory/useTeamMemories:delete')(err);
       });
-  }, [addToast, refresh, t]);
+  }, [addToast, refreshAfterWrite, t]);
 
   const onImportanceChange = useCallback((id: string, importance: number) => {
     // Optimistic — the dots respond instantly; a failed write rolls back via refresh.
@@ -167,18 +180,20 @@ export function useTeamMemories(teamId: string) {
     });
   }, [refresh]);
 
-  const onEdit = useCallback((id: string, title: string, content: string, category: string, importance: number) => {
-    updateTeamMemory(id, title, content, category, importance)
+  /** Same outcome contract as `onCreate`: the open editor stays open on `false`. */
+  const onEdit = useCallback((id: string, title: string, content: string, category: string, importance: number): Promise<boolean> => {
+    return updateTeamMemory(id, title, content, category, importance)
       .then(() => {
         trackInteraction(IX_CATEGORY, 'edit', IX_OK);
         addToast(t.pipeline.memory_updated, 'success');
-        return refresh();
-      })
-      .catch((err) => {
+        refreshAfterWrite('teamMemory/useTeamMemories:editRefresh');
+        return true;
+      }, (err) => {
         trackInteraction(IX_CATEGORY, 'edit', IX_FAILED);
         toastCatch('teamMemory/useTeamMemories:edit')(err);
+        return false;
       });
-  }, [addToast, refresh, t]);
+  }, [addToast, refreshAfterWrite, t]);
 
   return { memories, total, stats, isFetching, loadFailed, onRetry, onFilter, onFilterByRun, onLoadMore, onCreate, onDelete, onImportanceChange, onEdit };
 }

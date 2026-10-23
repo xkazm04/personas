@@ -12,6 +12,7 @@
  */
 
 import { Check, Sun } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   TEXT_SCALES,
   BRIGHTNESS_ICON_OPACITY_BY_INDEX,
@@ -19,6 +20,7 @@ import {
   type BrightnessLevel,
   type ThemeDefinition,
   type ThemeId,
+  type AppearanceLevelKey,
 } from '@/stores/themeStore';
 
 // ── Density variant ────────────────────────────────────────────────────
@@ -82,6 +84,7 @@ export function TextScalePicker({
   testIdPrefix?: string;
 }) {
   const d = DENSITY[density];
+  const { t } = useTranslation();
   return (
     <div className={`grid grid-cols-3 ${d.outerGap}`}>
       {TEXT_SCALES.map((scale) => {
@@ -104,7 +107,7 @@ export function TextScalePicker({
               Aa
             </span>
             <span className={`${d.textScaleLabelSize} ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>
-              {scale.label}
+              {t.settings.appearance[scale.labelKey]}
             </span>
             {isActive && (
               <div className={`absolute ${d.checkPosition}`}>
@@ -122,8 +125,8 @@ export function TextScalePicker({
 
 interface BrightnessLevelDef {
   id: BrightnessLevel;
-  label: string;
-  description: string;
+  labelKey: AppearanceLevelKey;
+  descriptionKey: `${AppearanceLevelKey}_desc`;
 }
 
 export function BrightnessPicker({
@@ -142,6 +145,7 @@ export function BrightnessPicker({
   showDescription?: boolean;
 }) {
   const d = DENSITY[density];
+  const { t } = useTranslation();
   return (
     <div className={`grid grid-cols-3 ${d.outerGap}`}>
       {levels.map((level, i) => {
@@ -162,10 +166,10 @@ export function BrightnessPicker({
           >
             <Sun className={`${d.brightnessSwatchIconSize} ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-foreground'}`} />
             <span className={`${density === 'compact' ? 'text-[11px]' : 'typo-caption'} ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
-              {level.label}
+              {t.settings.appearance[level.labelKey]}
             </span>
             {showDescription && (
-              <span className="typo-body text-foreground">{level.description}</span>
+              <span className="typo-body text-foreground">{t.settings.appearance[level.descriptionKey]}</span>
             )}
             {isActive && (
               <div className={`absolute ${d.checkPosition}`}>

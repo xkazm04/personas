@@ -14,5 +14,16 @@
   "url_empty": "Vui lòng nhập URL điều phối.",
   "credentials_revoked": "Thông tin xác thực đã hết hạn hoặc bị thu hồi. Vui lòng kết nối lại với bộ điều phối đám mây.",
   "reconnect_exhausted": "Không thể kết nối với bộ điều phối đám mây sau nhiều lần thử. Hãy kiểm tra kết nối và thử lại. Lỗi gần nhất: {cause}",
-  "reconnect_disconnected": "Kiểm tra kết nối báo là đã ngắt kết nối"
+  "reconnect_disconnected": "Kiểm tra kết nối báo là đã ngắt kết nối",
+  "gitlab_agent_redeployed": "Đã triển khai lại agent thành công",
+  "gitlab_auto_connect_failed": "GitLab tự động kết nối không thành công. Bạn có thể kết nối lại thủ công từ bảng GitLab.",
+  "gitlab_branches_created": "Đã tạo các nhánh môi trường",
+  "gitlab_no_persona": "Không tìm thấy persona nào khớp với agent \"{name}\". Hãy triển khai thủ công.",
+  "gitlab_no_project": "Agent này chưa được liên kết với dự án nào. Hãy triển khai thủ công trước.",
+  "gitlab_rolled_back": "Đã khôi phục {name} về {tag}",
+  "gitlab_rolled_back_previous": "Đã khôi phục về bản triển khai trước đó",
+  "gitlab_version_tag_failed": "Đã triển khai {name}, nhưng không thể tạo thẻ phiên bản. Phiên bản này sẽ không xuất hiện trong lịch sử và không thể khôi phục về. Hãy thử triển khai lại.",
+  "oauth_timed_out_error": "Ủy quyền OAuth đã hết thời gian chờ. Vui lòng thử lại.",
+  "oauth_timed_out_toast": "Ủy quyền OAuth đã hết thời gian chờ. Vui lòng thử lại.",
+  "persona_fallback": "persona"
 }

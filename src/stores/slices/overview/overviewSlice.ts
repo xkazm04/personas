@@ -15,6 +15,7 @@ import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
 import { listAllExecutions, countExecutions } from "@/api/agents/executions";
 import type { ExecutionCounts } from "@/lib/bindings/ExecutionCounts";
 import { getExecutionDashboard, getOverviewBundle } from "@/api/overview/observability";
+import { fetchWindowKey, type FetchWindow } from "@/features/overview/libs/fetchWindow";
 import { listHealingIssues } from "@/api/overview/healing";
 import { getPendingReviewCount, listManualReviews } from "@/api/overview/reviews";
 import { resolveReviewRow } from "@/lib/decisions/rowWrites";
@@ -51,6 +52,10 @@ export interface OverviewSlice {
    *  next page is requested at. */
   globalExecutionsOffset: number;
   globalExecutionsWarning: string | null;
+  /** Non-null when the last fetchGlobalExecutions rejected; cleared by the next
+   *  success. The Activity ledger reads it so a failed read with nothing on
+   *  screen is not the "No executions yet" onboarding state. */
+  globalExecutionsError: string | null;
   /** Rows the NEXT request will ask for. With offset paging this is the page
    *  size, not a growing window: "load more" now fetches 50 more rows from
    *  where the list ends instead of re-fetching everything from row 0
@@ -81,6 +86,8 @@ export interface OverviewSlice {
   // State -- execution dashboard (canonical metrics source)
   executionDashboard: ExecutionDashboardData | null;
   executionDashboardDays: number | null;
+  /** fetchWindowKey of the window `executionDashboard` was fetched for ('' = days-only). */
+  executionDashboardWindowKey: string;
   executionDashboardLoading: boolean;
   executionDashboardError: string | null;
 
@@ -137,10 +144,10 @@ export interface OverviewSlice {
    *  same commit as the pipeline bookkeeping. Returns true iff every source
    *  succeeded (the pipeline's cache-gate needs this). Architect perf scan,
    *  Phase B follow-up. */
-  runDashboardWave1: (days: number, personaId?: string) => Promise<boolean>;
+  runDashboardWave1: (days: number, personaId?: string, window?: FetchWindow | null) => Promise<boolean>;
   /** Coalesced replacement for the pipeline's wave 2 (observabilityMetrics +
    *  healingIssues). Same shape as `runDashboardWave1`. */
-  runDashboardWave2: (days: number, personaId?: string) => Promise<boolean>;
+  runDashboardWave2: (days: number, personaId?: string, window?: FetchWindow | null) => Promise<boolean>;
   /** `reset` refetches the window already on screen from row 0 (a poll or a
    *  filter change); otherwise the next page is appended at the current
    *  offset. */
@@ -151,8 +158,8 @@ export interface OverviewSlice {
   fetchPendingReviewCount: () => Promise<void>;
   fetchCloudReviews: () => Promise<void>;
   respondToCloudReview: (reviewId: string, executionId: string, decision: string, message: string) => Promise<void>;
-  fetchObservabilityMetrics: (days?: number, personaId?: string) => Promise<void>;
-  fetchExecutionDashboard: (days?: number) => Promise<void>;
+  fetchObservabilityMetrics: (days?: number, personaId?: string, window?: FetchWindow | null) => Promise<void>;
+  fetchExecutionDashboard: (days?: number, window?: FetchWindow | null) => Promise<void>;
 }
 
 // -- Execution dashboard derivation --------------------------------------
@@ -252,6 +259,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   globalExecutionsHasMore: false,
   globalExecutionsOffset: 0,
   globalExecutionsWarning: null,
+  globalExecutionsError: null,
   globalExecutionsLimit: GLOBAL_PAGE_SIZE,
   globalExecutionCounts: { total: 0, running: 0, completed: 0, failed: 0, cancelled: 0, incomplete: 0 },
   manualReviews: [],
@@ -263,6 +271,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   observabilityError: null,
   executionDashboard: null,
   executionDashboardDays: null,
+  executionDashboardWindowKey: '',
   executionDashboardLoading: false,
   executionDashboardError: null,
   pipelineErrors: {},
@@ -303,12 +312,12 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   }),
   clearPipelineErrors: () => set({ pipelineErrors: {} }),
 
-  runDashboardWave1: async (days, personaId) => {
+  runDashboardWave1: async (days, personaId, window) => {
     const seq = ++fetchGlobalSeq;
     const limit = GLOBAL_PAGE_SIZE; // wave 1 always calls fetchGlobalExecutions(reset=true, ...)
     const [dashSettled, globalSettled] = await Promise.allSettled([
       measureStoreAction('fetchExecutionDashboard', () =>
-        withRetry(() => getExecutionDashboard(days), "Failed to load execution dashboard"),
+        withRetry(() => getExecutionDashboard(days, window), "Failed to load execution dashboard"),
       ),
       listAllExecutions(limit, 0, undefined, personaId),
     ]);
@@ -320,6 +329,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
     if (dashSettled.status === 'fulfilled') {
       patch.executionDashboard = dashSettled.value;
       patch.executionDashboardDays = days;
+      patch.executionDashboardWindowKey = fetchWindowKey(window);
       patch.executionDashboardError = null;
       pipelineResults.push({ source: 'executionDashboard', error: null });
     } else {
@@ -367,13 +377,14 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
     return allOk;
   },
 
-  runDashboardWave2: async (days, personaId) => {
+  runDashboardWave2: async (days, personaId, window) => {
     const dashboard = get().executionDashboard;
-    const canReuseDashboard = !personaId && dashboard && get().executionDashboardDays === days;
+    const canReuseDashboard = !personaId && dashboard && get().executionDashboardDays === days
+      && get().executionDashboardWindowKey === fetchWindowKey(window);
 
     const [obsSettled, healingSettled] = await Promise.allSettled([
-      withRetry(() => getOverviewBundle(days, personaId), "Failed to load observability metrics"),
-      listHealingIssues(undefined, undefined, 100),
+      withRetry(() => getOverviewBundle(days, personaId, window), "Failed to load observability metrics"),
+      listHealingIssues(personaId, undefined, 100),
     ]);
 
     let allOk = true;
@@ -410,6 +421,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
 
     if (healingSettled.status === 'fulfilled') {
       patch.healingIssues = healingSettled.value as PersonaHealingIssue[];
+      patch.healingScopePersonaId = personaId ?? null;
       pipelineResults.push({ source: 'healingIssues', error: null });
     } else {
       allOk = false;
@@ -461,10 +473,12 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
         globalExecutionsHasMore: rawCount >= limit && merged.length < MAX_GLOBAL_LIMIT,
         globalExecutionsOffset: merged.length,
         globalExecutionsWarning: null,
+        globalExecutionsError: null,
       });
     } catch (err) {
       if (seq !== fetchGlobalSeq) return; // superseded by a newer request
-      reportError(err, "Failed to fetch global executions", set);
+      const message = reportError(err, "Failed to fetch global executions", set);
+      set({ globalExecutionsError: message });
     }
   },
 
@@ -604,15 +618,16 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
     }
   },
 
-  fetchObservabilityMetrics: async (days = 30, personaId?: string) => {
+  fetchObservabilityMetrics: async (days = 30, personaId?: string, window?: FetchWindow | null) => {
     try {
       // When no persona filter is active, derive the summary from the
       // execution dashboard (already loaded) to avoid a redundant SQL scan.
       const dashboard = get().executionDashboard;
-      const canReuseDashboard = !personaId && dashboard && get().executionDashboardDays === days;
+      const canReuseDashboard = !personaId && dashboard && get().executionDashboardDays === days
+        && get().executionDashboardWindowKey === fetchWindowKey(window);
 
       const bundle = await withRetry(
-        () => getOverviewBundle(days, personaId),
+        () => getOverviewBundle(days, personaId, window),
         "Failed to load observability metrics",
       );
       const summary = canReuseDashboard
@@ -637,16 +652,16 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
     }
   },
 
-  fetchExecutionDashboard: async (days = 30) => {
+  fetchExecutionDashboard: async (days = 30, window?: FetchWindow | null) => {
     set({ executionDashboardLoading: true });
     try {
       const data = await measureStoreAction('fetchExecutionDashboard', () =>
         withRetry(
-          () => getExecutionDashboard(days),
+          () => getExecutionDashboard(days, window),
           "Failed to load execution dashboard",
         ),
       );
-      set({ executionDashboard: data, executionDashboardDays: days, executionDashboardError: null, executionDashboardLoading: false });
+      set({ executionDashboard: data, executionDashboardDays: days, executionDashboardWindowKey: fetchWindowKey(window), executionDashboardError: null, executionDashboardLoading: false });
     } catch (err) {
       const classified = err instanceof ApiError ? err : classifyError(err, "Failed to load execution dashboard");
       const prefix = classified.isTransient ? '[Temporary] ' : '';

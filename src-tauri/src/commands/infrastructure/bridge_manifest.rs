@@ -1,25 +1,24 @@
 //! Tauri commands for the declarative bridge-manifest dispatcher.
 //!
-//! Surfaces three commands:
+//! Surfaces two commands:
 //! - `bridge_manifest_list_all` — return all bundled manifests (read from
 //!   the repo-relative `scripts/bridges/` directory).
 //! - `bridge_manifest_describe` — return a single manifest by id.
-//! - `bridge_manifest_dispatch` — invoke an action on a bridge with params.
+//!
+//! `bridge_manifest_dispatch` was retired: zero callers, and it spawned
+//! binaries named by manifests read from the launch cwd.
 //!
 //! See `engine/bridge_manifest/DESIGN.md` for the architectural rationale.
 
 #![cfg(feature = "desktop")]
 
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use tauri::State;
 use ts_rs::TS;
 
 use crate::engine::bridge_manifest::{self, BridgeManifest};
-use crate::engine::desktop_bridges::BridgeActionResult;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
@@ -98,23 +97,4 @@ pub fn bridge_manifest_describe(
         .into_iter()
         .find(|m| m.id == id)
         .ok_or_else(|| AppError::NotFound(format!("bridge manifest '{id}' not found")))
-}
-
-#[tauri::command]
-pub async fn bridge_manifest_dispatch(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-    action: String,
-    params: HashMap<String, Value>,
-) -> Result<BridgeActionResult, AppError> {
-    require_auth_sync(&state)?;
-
-    let dir = manifests_dir()?;
-    let manifests = bridge_manifest::load_manifests_from_dir(&dir);
-    let manifest = manifests
-        .into_iter()
-        .find(|m| m.id == id)
-        .ok_or_else(|| AppError::NotFound(format!("bridge manifest '{id}' not found")))?;
-
-    bridge_manifest::dispatch(&manifest, &action, &params).await
 }

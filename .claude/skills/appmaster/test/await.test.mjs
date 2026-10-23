@@ -209,6 +209,19 @@ test('dispatch prints a ready-to-run awaitCommand for the Director', () => {
   assert.equal(S.loadRun('disp', run.runId).awaitCommand, undefined, 'printed, not journaled');
 });
 
+test('watch names a live run whose await is gone, with the command that restarts it', () => {
+  const { run } = scenario('orphan');   // exited, no await lock: its watcher was reaped
+  const row = W.cmdWatch({ flags: { project: 'orphan' } }).find((r) => r.runId === run.runId);
+  assert.equal(row.awaited, false);
+  assert.equal(row.awaitCommand, W.awaitCommandFor(run));
+  assert.ok(W.takeAwaitLock(run, new Date(Date.now() + 60000).toISOString()));
+  try {
+    const held = W.cmdWatch({ flags: { project: 'orphan' } }).find((r) => r.runId === run.runId);
+    assert.equal(held.awaited, true);
+    assert.equal(held.awaitCommand, undefined);
+  } finally { W.releaseAwaitLock(run); S.updateRun(run, { state: 'released' }); }
+});
+
 test('the CLI binds await and beats after it (the app is down here: still exit 0)', () => {
   assert.deepEqual(CLI.COMMANDS.await, ['./lib/await.mjs', 'cmdAwait']);
   assert.ok(CLI.BEAT_AFTER.includes('await') && CLI.BEAT_AFTER_REFUSAL.includes('await'));

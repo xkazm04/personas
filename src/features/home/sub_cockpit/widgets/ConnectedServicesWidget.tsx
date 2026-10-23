@@ -111,7 +111,7 @@ export function ConnectedServicesWidget({ config, title, span, actions, footer }
       actions={<><KitButton tone="quiet" onClick={openConnections}>{t.sidebar.manage}</KitButton>{actions}</>}
       footer={footer}
       state={rows.length === 0 ? 'empty' : undefined}
-      empty={{ title: noConnections }}
+      empty={{ art: 'link', title: noConnections }}
       testId="cockpit-connected-services"
     >
       <WidgetTable<ServiceRowData>

@@ -155,6 +155,15 @@
       ],
       "resolved": false
     },
+    "ReviewsRail.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["136"],
+      "contexts": [
+        "The primitive layer is 100% of the problem: **all 23 `UnifiedTable`/`DataGrid`/`FacetedDecisionTable` call sites** are in files with no error affordance of any kind, because none of the three primiti…"
+      ],
+      "resolved": false
+    },
     "SubscriptionsPanel.tsx": {
       "count": 1,
       "sections": [],
@@ -202,6 +211,14 @@
       "sections": [7],
       "contexts": [
         "`agents/components/PersonaSelector.tsx` · `agents/components/PersonaSelectorModal.tsx` · `fleet/monitor/channels/Stream.tsx` · `overview/sub_director/components/AddToScopeModal.tsx` · `overview/sub_k…"
+      ],
+      "resolved": false
+    },
+    "fleet/monitor/live/liveDevHarness.ts": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "| `fleet/monitor/live/liveDevHarness.ts` | Subscribed in production code (`LiveChannelOverlay.tsx:21`) and **not** `import.meta.env.DEV`-gated, unlike the five seed buttons. `emitMockLiveMessage()` (…"
       ],
       "resolved": false
     },
@@ -448,16 +465,6 @@
       "resolvedFrom": "basename",
       "verbatim": "MonitorDrawer.tsx"
     },
-    "src/features/fleet/monitor/channels/ReviewsRail.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["136"],
-      "contexts": [
-        "The primitive layer is 100% of the problem: **all 23 `UnifiedTable`/`DataGrid`/`FacetedDecisionTable` call sites** are in files with no error affordance of any kind, because none of the three primiti…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "ReviewsRail.tsx"
-    },
     "src/features/fleet/monitor/live/LiveChannelOverlay.tsx": {
       "count": 1,
       "sections": [7],
@@ -467,15 +474,6 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "LiveChannelOverlay.tsx"
-    },
-    "src/features/fleet/monitor/live/liveDevHarness.ts": {
-      "count": 1,
-      "sections": [7],
-      "contexts": [
-        "| `fleet/monitor/live/liveDevHarness.ts` | Subscribed in production code (`LiveChannelOverlay.tsx:21`) and **not** `import.meta.env.DEV`-gated, unlike the five seed buttons. `emitMockLiveMessage()` (…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "fleet/monitor/live/liveDevHarness.ts"
     },
     "src/features/home/sub_cockpit/widgets/TemplateSuggestionsWidget.tsx": {
       "count": 1,
@@ -765,15 +763,6 @@
       "resolvedFrom": "basename",
       "verbatim": "kpiDetailParts.tsx"
     },
-    "src/features/teams/sub_teamWorkspace/TeamList.tsx": {
-      "count": 1,
-      "sections": [7],
-      "contexts": [
-        "| `vault/sub_credentials/components/list/EmptyStateView.tsx` · `plugins/research-lab/shared/EmptyState.tsx` · `overview/sub_leaderboard/components/EmptyStates.tsx` · `vault/shared/playground/tabs/{Ap…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "teams/sub_teamWorkspace/TeamList.tsx"
-    },
     "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx": {
       "count": 1,
       "sections": [7],
@@ -810,15 +799,6 @@
       ],
       "resolvedFrom": "suffix",
       "verbatim": "templates/sub_recipes/components/RecipesBrowseList.tsx"
-    },
-    "src/features/templates/sub_recipes/mockRecipes.ts": {
-      "count": 1,
-      "sections": [7],
-      "contexts": [
-        "| `templates/sub_recipes/mockRecipes.ts` | `MOCK_RECIPES` re-exported from the feature barrel (`index.ts:16`) with no render consumer — an eight-recipe fake catalog one import away from a real surfac…"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "templates/sub_recipes/mockRecipes.ts"
     },
     "src/features/triggers/sub_cloud_webhooks/CloudWebhooksTab.tsx": {
       "count": 2,
@@ -939,6 +919,22 @@
       ],
       "resolvedFrom": "basename",
       "verbatim": "en.json"
+    },
+    "teams/sub_teamWorkspace/TeamList.tsx": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "| `vault/sub_credentials/components/list/EmptyStateView.tsx` · `plugins/research-lab/shared/EmptyState.tsx` · `overview/sub_leaderboard/components/EmptyStates.tsx` · `vault/shared/playground/tabs/{Ap…"
+      ],
+      "resolved": false
+    },
+    "templates/sub_recipes/mockRecipes.ts": {
+      "count": 1,
+      "sections": [7],
+      "contexts": [
+        "| `templates/sub_recipes/mockRecipes.ts` | `MOCK_RECIPES` re-exported from the feature barrel (`index.ts:16`) with no render consumer — an eight-recipe fake catalog one import away from a real surfac…"
+      ],
+      "resolved": false
     },
     "vault/shared/playground/tabs/{ApiExplorerSubComponents,McpToolResultDisplay}.tsx": {
       "count": 1,

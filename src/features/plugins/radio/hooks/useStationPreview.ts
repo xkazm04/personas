@@ -3,6 +3,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
 import type { RadioState } from '@/lib/bindings/RadioState';
 import { radioPause, radioPlay, radioSetStation } from '@/api/radio';
+import { markRadioDriven } from './radioLaunch';
 
 export interface StationPreview {
   /** Station id currently auditioning (playing or buffering), else null. */
@@ -32,12 +33,17 @@ export function useStationPreview(state: RadioState | null): StationPreview {
 
   const currentId = state?.currentStationId ?? null;
   const status = state?.status ?? 'stopped';
-  const isActive = status === 'playing' || status === 'buffering';
+  // The footer engines mount only while the radio is enabled; with it off a
+  // `playing` the backend still holds is silence, not a preview in progress.
+  const isActive = radioEnabled && (status === 'playing' || status === 'buffering');
   const previewingId = isActive ? currentId : null;
-  const bufferingId = status === 'buffering' ? currentId : null;
+  const bufferingId = radioEnabled && status === 'buffering' ? currentId : null;
 
   const preview = useCallback(
     (stationId: string) => {
+      // The footer this mounts must not read the preview's fresh `playing` as
+      // a status persisted from the last session.
+      markRadioDriven();
       if (!radioEnabled) setRadioEnabled(true);
       if (currentId === stationId && isActive) {
         radioPause().catch(silentCatch('radio:preview-pause'));

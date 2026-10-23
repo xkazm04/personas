@@ -50,7 +50,7 @@ form. Its chrome was consolidated (2026-05) to a single header:
 ```
  PersonaLayoutAdoption
  ├── topSlot — ONE bordered header band:
- │     ├── CapabilityTabBar (mini-sigil tab per capability; multi-cap only)
+ │     ├── CapabilityTagSwitcher (one tag per capability + include/skip toggle)
  │     └── question-order stepper (QuestionnaireHeaderBand, bare)
  ├── Persona Sigil (hero) — PERSONA metadata band hidden (hideMetadataBand)
  │     └── center overlay = the flow's PRIMARY ACTION:

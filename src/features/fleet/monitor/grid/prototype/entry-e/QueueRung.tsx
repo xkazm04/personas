@@ -1,12 +1,13 @@
 // One rung of the queue ladder. Full (Runway): grip, a big rank numeral, the
 // title, a meta line (origin, project, estimated start, not-before gate) and the
-// wait drawn as a bar, with the four verbs at the right. Compact (Lanes):
-// the Board tile every other lane card wears (`pileSkin`): a queued session is
-// resting glass (`sessionPileKey`, so a row the door reports in any other
-// state is drawn by the same fold), the origin glyph on the Board's puck, the
-// title, then the estimated start and - for a deferred rung - the amber
-// not-before cue. The verbs float over the rung's right edge on hover or
-// focus instead of reserving their width, so the title keeps the lane.
+// wait drawn as a bar, with the four verbs at the right: a ladder on purpose,
+// its own grammar. Compact (Lanes, a peer bay): the 36px line every bay row
+// wears (WP11 C, `SessionLine` / `LineParts`): grip, rank, the origin glyph in
+// the persona face's frame, the title, the estimated start as the lead token
+// and the amber not-before gate after it, the lamp at the right edge. State is
+// the session fold (`sessionTail`), so a row the door reports in any other
+// state is drawn like that session. The verbs float over the rung's right edge
+// on hover or focus instead of reserving their width, so the title keeps the lane.
 //
 // Device mesh: a LOCAL rung also offers "Move to…" (the paired devices), and
 // while a move is in flight or was refused the rung says so on a line of its
@@ -14,7 +15,7 @@
 // it has no local session menu and nothing to move.
 
 import { memo, type ReactNode } from 'react';
-import { ChevronDown, ChevronUp, Clock, X, Zap } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, Hourglass, X, Zap } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useFormattedDate } from '@/hooks/utility/data/useFormattedDate';
 import { Button } from '@/features/shared/components/buttons';
@@ -22,7 +23,12 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { QueueItem } from '../../board/queue/useQueueModel';
 import { useSessionFacts } from '../shared';
 import { useSessionMenu } from './SessionMenu';
-import { pileSkin, sessionPileKey } from './pileSkin';
+import { pileOfKey } from './pileSkin';
+import { Lamp } from './parts';
+import { GlyphFace, LineHead, Tok, TOK_ICON, TOK_TYPE } from './LineParts';
+import { lineStyle, sessionLineClass, SESSION_LINE_H } from './SessionLine';
+import { sessionTail } from './sessionTailModel';
+import { clockText } from './personaTailModel';
 import { moveOutcomeKey } from '@/stores/slices/network/meshSlice';
 import { MoveToMenu } from './devices/MoveToMenu';
 import { MeshOutcomeLine, useMeshOutcome } from './devices/MeshOutcomeLine';
@@ -45,7 +51,7 @@ export const QueueRung = memo(function QueueRung({
   /** The rung is on a paired device's queue. */
   peer?: boolean;
 }) {
-  const { t, tx } = useTranslation();
+  const { t, tx, language } = useTranslation();
   const m = t.monitor;
   const f = useSessionFacts()(item.session, item);
   const sessionMenu = useSessionMenu(item.session);
@@ -88,31 +94,42 @@ export const QueueRung = memo(function QueueRung({
   );
 
   if (compact) {
-    const skin = pileSkin(sessionPileKey(item.session), item.sessionId);
+    // The 36px line every bay row wears (`LineParts`): the queued state as the
+    // lead token (hourglass + estimated start, in the persona line's clock,
+    // `clockText`; the sentence keeps the long form), the not-before gate after it
+    // (it leaves first in a narrow lane), the lamp at the right edge. The move
+    // outcome takes a second row only while a move is pending or was refused.
+    const tail = sessionTail({ state: item.session.state, exitCode: item.session.exitCode, startedAt: f.startedAt, now });
+    const sentence = [tx(m.queue_rank_aria, { rank }), f.label, eta, ...(gated ? [tx(m.queue_not_before, { time: gate })] : [])].join(' · ');
     return (
-      <div
-        tabIndex={0}
-        onContextMenu={menu.onContextMenu}
-        onKeyDown={menu.onKeyDown}
-        aria-label={`${tx(m.queue_rank_aria, { rank })}, ${f.label}, ${eta}`}
-        aria-busy={moving || undefined}
-        data-pile={skin.pile}
-        className={`${skin.className} ae-row is-inert flex min-w-0 items-center gap-2 py-1.5 pl-1 pr-1.5 ${flash ? 'is-flash' : ''} ${lifted ? 'ae-dragging' : ''}`}
-        style={skin.style}
-      >
-        {grip}
-        <span className="w-6 flex-shrink-0 text-center typo-data tabular-nums">{rank}</span>
-        <span className="fb-face fb-ink ae-puck" aria-hidden><Origin className="h-4 w-4" /></span>
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate typo-heading">{f.label}</span>
-          <span className="flex min-w-0 items-center gap-1.5 typo-label">
-            <span className="min-w-0 flex-1 truncate tabular-nums">{eta}</span>
-            {gateTag}
+      <Tooltip content={sentence} placement="right" delay={450}>
+        <div
+          tabIndex={0}
+          onContextMenu={menu.onContextMenu}
+          onKeyDown={menu.onKeyDown}
+          aria-label={`${tx(m.queue_rank_aria, { rank })}, ${f.label}, ${eta}`}
+          aria-busy={moving || undefined}
+          data-pile={pileOfKey(tail.kind)}
+          data-kind={tail.kind}
+          className={`${sessionLineClass(tail)} is-inert flex min-w-0 flex-col ${flash ? 'is-flash' : ''} ${lifted ? 'ae-dragging' : ''}`}
+          style={{ ...lineStyle(item.sessionId), height: undefined, minHeight: SESSION_LINE_H }}
+        >
+          <span className="flex w-full min-w-0 items-center gap-1.5 pl-1 pr-2.5" style={{ height: SESSION_LINE_H }}>
+            {grip}
+            <span className="w-4 flex-shrink-0 text-center typo-data tabular-nums text-foreground" aria-hidden>{rank}</span>
+            <GlyphFace Icon={Origin} />
+            <LineHead
+              name={f.label}
+              lead={<Tok><Hourglass className={TOK_ICON} aria-hidden />{item.estimatedStartMs !== null ? clockText(item.estimatedStartMs, language, now) : m.queue_no_estimate}</Tok>}
+              leadTestId="queue-rung-eta"
+              after={gated ? <Tok className={`${TOK_TYPE} ae-sep text-status-warning`}><Clock className={TOK_ICON} aria-hidden />{clockText(item.notBeforeMs!, language, now)}</Tok> : null}
+            />
+            <span className="ml-auto flex flex-shrink-0 items-center pl-1"><Lamp lamp={tail.lamp} /></span>
           </span>
-          {moveLine}
-        </span>
-        {verbs}
-      </div>
+          {moveLine && <span className="pb-1 pl-12">{moveLine}</span>}
+          {verbs}
+        </div>
+      </Tooltip>
     );
   }
 

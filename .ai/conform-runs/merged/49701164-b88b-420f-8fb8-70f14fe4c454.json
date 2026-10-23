@@ -1,0 +1,75 @@
+{
+ "schema": "conform-run/1",
+ "worker": "49701164-b88b-420f-8fb8-70f14fe4c454",
+ "subject": "terminal-multiplexing",
+ "evaluatedAt": "2026-10-22T19:52:03.629Z",
+ "pairs": [
+  {
+   "context": "2de6333f-8375-404b-8fdc-fe0fb15d4f95",
+   "subject": "terminal-multiplexing",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/fleet/commands.rs:201 fleet_write_input frames only payloads that end in CR/LF (text.chars().count() > 1 && ends_with), so a multi-line payload without a trailing newline goes through write_input raw and each internal newline reaches the composer as a keystroke; no separate paste verb; re-read 2026-10-22 at rev 7",
+   "techniques": [
+    {
+     "technique": "keystroke-injection",
+     "verdict": "not realized",
+     "evidence": "src-tauri/src/commands/fleet/commands.rs:201 paste-vs-press inferred from payload shape; one-authority-per-vocabulary broken"
+    }
+   ]
+  },
+  {
+   "context": "4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e",
+   "subject": "terminal-multiplexing",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:138 Enter-off broadcast sends raw multi-line text (payload = pressEnter ? text+CR : text) and src-tauri/src/commands/fleet/commands.rs:201 brackets nothing, so internal newlines arrive as keystrokes; still live 2026-10-22",
+   "techniques": [
+    {
+     "technique": "keystroke-injection",
+     "verdict": "not realized",
+     "evidence": "src/features/plugins/fleet/FleetBroadcastModal.tsx:138 raw payload through the shape-inferring door"
+    }
+   ]
+  },
+  {
+   "context": "d7525012-ab19-4b29-99bb-0d4b6b9e084b",
+   "subject": "terminal-multiplexing",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/fleet/__tests__/FleetBroadcastPayload.test.tsx:115 asserts the unframed draft\nonly payload and src/features/plugins/fleet/__tests__/SkillLibraryDrawer.test.tsx:124 pins text+CR in one write as the submit contract, freezing the shape-inferred door; unchanged 2026-10-22",
+   "techniques": [
+    {
+     "technique": "keystroke-injection",
+     "verdict": "not realized",
+     "evidence": "src/features/plugins/fleet/__tests__/FleetBroadcastPayload.test.tsx:115 test pins the defect"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "terminal-multiplexing",
+   "context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394",
+   "reason": "Existing conformant verdict (rev 7) left as is: cites 5 of 12 techniques, right at the evidence floor, and several anchors have drifted (FleetTerminalOverlay.tsx 249/93 now hold the filter and budget lines correctly, but fleetAttention.ts:103, FleetOverlayTile.tsx:123 and sub_grid/FleetGridPage.tsx:84 moved to :75/:127/:88; useFleetOverlayActions.ts:148 is :149). Re-anchor and widen on a dedicated pass."
+  },
+  {
+   "subject": "terminal-multiplexing",
+   "context": "2651f2ce-7fc1-4331-8b31-61e783e9746a",
+   "reason": "weak context (companions-page): match is doubtful, a coverage question not a verdict"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T19:52:03.630Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "terminal-multiplexing"
+   ],
+   "techniques": [
+    "keystroke-injection"
+   ],
+   "deviations": 3
+  }
+ ]
+}

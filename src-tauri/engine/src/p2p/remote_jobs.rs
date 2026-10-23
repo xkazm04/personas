@@ -13,8 +13,14 @@
 //! device-mesh): `mesh_verb` (one closed `MeshVerbPayload`, answered with a
 //! `MeshVerbReceipt`) and `cli_mail` (a small `CliMailPayload` the receiver
 //! stores and completes on arrival - the CLI mailbox, read back through
-//! [`RemoteJobs::list_cli_mail`]). The mesh's latest-wins snapshots are not
-//! jobs; they pass the same pairing gate here and live in [`super::mesh`].
+//! [`RemoteJobs::list_cli_mail`]). The mandate mirror adds two (spark
+//! mandate-lanes, WP9): `charter_mirror` (a charter's home device sends a
+//! paired peer a `CharterMirrorPayload`, stored read-only there) and
+//! `charter_verdict` (a peer sends a `CharterVerdictPayload` home, answered
+//! with a `CharterVerdictReceipt`). Both are executed by the app layer
+//! (`crate::mesh::charter_mirror`), behind the same pairing gate. The mesh's
+//! latest-wins snapshots are not jobs; they pass the same pairing gate here
+//! and live in [`super::mesh`].
 //!
 //! ```text
 //!  A (originator)                              B (runner, a PAIRED device)
@@ -86,10 +92,12 @@ use tokio::sync::RwLock;
 
 use personas_core::error::AppError;
 use personas_db::models::{
-    CliMail, CliMailPayload, FleetSessionJobPayload, FleetSessionJobReceipt, MeshVerbPayload,
-    MeshVerbReceipt, RemoteJob, RemoteJobDirection, RemoteJobStatus, RemoteSessionCommand,
-    RemoteSessionOutputChunk, RemoteSessionView, CLI_MAIL_MAX_BYTES, REMOTE_JOB_KIND_CLI_MAIL,
-    REMOTE_JOB_KIND_FLEET_SESSION, REMOTE_JOB_KIND_INSTRUCTION, REMOTE_JOB_KIND_MESH_VERB,
+    CharterMirrorPayload, CharterVerdictPayload, CharterVerdictReceipt, CliMail, CliMailPayload,
+    FleetSessionJobPayload, FleetSessionJobReceipt, MeshVerbPayload, MeshVerbReceipt, RemoteJob,
+    RemoteJobDirection, RemoteJobStatus, RemoteSessionCommand, RemoteSessionOutputChunk,
+    RemoteSessionView, CLI_MAIL_MAX_BYTES, REMOTE_JOB_KIND_CHARTER_MIRROR,
+    REMOTE_JOB_KIND_CHARTER_VERDICT, REMOTE_JOB_KIND_CLI_MAIL, REMOTE_JOB_KIND_FLEET_SESSION,
+    REMOTE_JOB_KIND_INSTRUCTION, REMOTE_JOB_KIND_MESH_VERB,
 };
 use personas_db::repos::resources::owned_devices as owned_devices_repo;
 use personas_db::repos::resources::remote_jobs as repo;
@@ -252,6 +260,30 @@ impl RemoteJobHandle {
             .detail
             .clone()
             .unwrap_or_else(|| format!("{} {fallback}", receipt.verb));
+        self.jobs
+            .report_result(&self.job_id, status, summary, Some(receipt_json))
+            .await
+    }
+
+    /// Finish a `charter_verdict` job with its receipt: `completed` when the
+    /// home applied the verdict, `failed` (with the reason) when it did not.
+    /// Idempotent like [`Self::complete`].
+    pub async fn finish_charter_verdict(
+        &self,
+        receipt: &CharterVerdictReceipt,
+    ) -> Result<(), AppError> {
+        let receipt_json = serde_json::to_string(receipt)?;
+        let (status, summary) = if receipt.applied {
+            (RemoteJobStatus::Completed, "Applied at home.".to_string())
+        } else {
+            (
+                RemoteJobStatus::Failed,
+                receipt
+                    .reason
+                    .clone()
+                    .unwrap_or_else(|| "The home device did not apply it.".into()),
+            )
+        };
         self.jobs
             .report_result(&self.job_id, status, summary, Some(receipt_json))
             .await
@@ -484,6 +516,48 @@ impl RemoteJobs {
             peer_id,
             REMOTE_JOB_KIND_MESH_VERB,
             &format!("Mesh verb: {}", payload.verb()),
+            Some(payload_json),
+        )
+        .await
+    }
+
+    /// Mirror one charter to a paired peer (this device is its home). Same
+    /// outbox as every job: an offline peer gets it when it wakes.
+    pub async fn send_charter_mirror(
+        self: &Arc<Self>,
+        peer_id: &str,
+        payload: &CharterMirrorPayload,
+    ) -> Result<RemoteJob, AppError> {
+        let payload_json = serde_json::to_string(payload)?;
+        let label = payload
+            .charter
+            .project_name
+            .as_deref()
+            .unwrap_or(&payload.charter.charter_id);
+        let instruction: String = format!("Mandate mirror: {label}")
+            .chars()
+            .take(300)
+            .collect();
+        self.send_job(
+            peer_id,
+            REMOTE_JOB_KIND_CHARTER_MIRROR,
+            &instruction,
+            Some(payload_json),
+        )
+        .await
+    }
+
+    /// Send one verdict on a mirrored charter to its home device.
+    pub async fn send_charter_verdict(
+        self: &Arc<Self>,
+        home_peer_id: &str,
+        payload: &CharterVerdictPayload,
+    ) -> Result<RemoteJob, AppError> {
+        let payload_json = serde_json::to_string(payload)?;
+        self.send_job(
+            home_peer_id,
+            REMOTE_JOB_KIND_CHARTER_VERDICT,
+            &format!("Mandate verdict: {}", payload.verdict.door()),
             Some(payload_json),
         )
         .await
@@ -1005,7 +1079,7 @@ impl RemoteJobs {
                 job_id: job_id.to_string(),
                 status: status.as_str().to_string(),
                 summary,
-                receipt_json: receipt_of(&job),
+                receipt_json: receipt_of(&self.pool, &job),
             },
         )
         .await;
@@ -1218,7 +1292,10 @@ impl RemoteJobs {
                     ));
                 }
             }
-            REMOTE_JOB_KIND_MESH_VERB | REMOTE_JOB_KIND_CLI_MAIL => {
+            REMOTE_JOB_KIND_MESH_VERB
+            | REMOTE_JOB_KIND_CLI_MAIL
+            | REMOTE_JOB_KIND_CHARTER_MIRROR
+            | REMOTE_JOB_KIND_CHARTER_VERDICT => {
                 if let Some(problem) = mesh_payload_problem(&job.kind, job.payload_json.as_deref())
                 {
                     return Ok(refuse(&problem));
@@ -1388,6 +1465,9 @@ impl RemoteJobs {
                         REMOTE_JOB_KIND_MESH_VERB => {
                             serde_json::from_str::<MeshVerbReceipt>(receipt).is_ok()
                         }
+                        REMOTE_JOB_KIND_CHARTER_VERDICT => {
+                            serde_json::from_str::<CharterVerdictReceipt>(receipt).is_ok()
+                        }
                         _ => false,
                     };
                 if readable {
@@ -1535,7 +1615,7 @@ impl RemoteJobs {
             frames.push(Message::RemoteJobResult {
                 job_id: job_id.to_string(),
                 status: job.status.as_str().to_string(),
-                receipt_json: receipt_of(&job),
+                receipt_json: receipt_of(&self.pool, &job),
                 summary: job.summary.unwrap_or_default(),
             });
         }
@@ -1707,7 +1787,10 @@ fn validate_job(
                 AppError::Validation(format!("The session description is not readable: {e}"))
             })?;
         }
-        REMOTE_JOB_KIND_MESH_VERB | REMOTE_JOB_KIND_CLI_MAIL => {
+        REMOTE_JOB_KIND_MESH_VERB
+        | REMOTE_JOB_KIND_CLI_MAIL
+        | REMOTE_JOB_KIND_CHARTER_MIRROR
+        | REMOTE_JOB_KIND_CHARTER_VERDICT => {
             if let Some(problem) = mesh_payload_problem(kind, payload_json) {
                 return Err(AppError::Validation(problem));
             }
@@ -1763,6 +1846,22 @@ fn mesh_payload_problem(kind: &str, payload_json: Option<&str>) -> Option<String
             Ok(mail) => cli_mail_problem(&mail),
             Err(e) => Some(format!("The request carried no readable mail: {e}")),
         },
+        REMOTE_JOB_KIND_CHARTER_MIRROR => {
+            match serde_json::from_str::<CharterMirrorPayload>(payload) {
+                Ok(mirror) => mirror.problem(),
+                Err(e) => Some(format!(
+                    "The request carried no readable mandate mirror: {e}"
+                )),
+            }
+        }
+        REMOTE_JOB_KIND_CHARTER_VERDICT => {
+            match serde_json::from_str::<CharterVerdictPayload>(payload) {
+                Ok(verdict) => verdict.problem(),
+                Err(e) => Some(format!(
+                    "The request carried no readable mandate verdict: {e}"
+                )),
+            }
+        }
         _ => Some(format!("Unknown remote job kind '{kind}'")),
     }
 }
@@ -1790,8 +1889,13 @@ fn cli_mail_problem(mail: &CliMailPayload) -> Option<String> {
 
 /// A stored receipt, re-serialized for the wire: the one that belongs to the
 /// job's kind.
-fn receipt_of(job: &RemoteJob) -> Option<String> {
+fn receipt_of(pool: &DbPool, job: &RemoteJob) -> Option<String> {
     match job.kind.as_str() {
+        // `map_job` does not type this receipt: it travels as stored.
+        REMOTE_JOB_KIND_CHARTER_VERDICT => repo::get_receipt_json(pool, &job.id)
+            .map_err(|e| tracing::warn!(job_id = %job.id, "Could not read a verdict receipt: {e}"))
+            .ok()
+            .flatten(),
         REMOTE_JOB_KIND_MESH_VERB => job
             .mesh_receipt
             .as_ref()
@@ -2549,5 +2653,175 @@ mod tests {
         // 'é' is two bytes; a cut at byte 3 must fall back to byte 2.
         assert_eq!(truncate("aéb".to_string(), 3), "aé");
         assert_eq!(truncate("abc".to_string(), 10), "abc");
+    }
+
+    // -- The mandate mirror's two kinds (spark mandate-lanes, WP9) ------------
+
+    fn mirror_payload(charter_id: &str, act_charter: &str) -> CharterMirrorPayload {
+        use personas_db::models::{
+            CharterAct, CharterActor, MandateEnvelope, MandateLoad, MandateSummary,
+        };
+        CharterMirrorPayload {
+            charter: MandateSummary {
+                charter_id: charter_id.into(),
+                title: "App master".into(),
+                project_id: "proj".into(),
+                project_name: Some("Proj".into()),
+                steward_persona_id: "steward".into(),
+                steward_name: Some("Steward".into()),
+                status: "active".into(),
+                scope_rung: 2,
+                source: "kp-hire".into(),
+                envelope: MandateEnvelope::default(),
+                load: MandateLoad::default(),
+                updated_at: "2026-10-15T00:00:00Z".into(),
+                reread: None,
+                origin: None,
+                mirror: None,
+            },
+            acts: vec![CharterAct {
+                id: "act-1".into(),
+                charter_id: act_charter.into(),
+                envelope_version: 1,
+                item_kind: "mandate".into(),
+                item_id: charter_id.into(),
+                verdict: "signed".into(),
+                actor: CharterActor::Operator,
+                scope: None,
+                reversible: true,
+                cost_usd: None,
+                shown_json: None,
+                env_change: None,
+                reverted_at: None,
+                revert_act_id: None,
+                origin_device: None,
+                created_at: "2026-10-15T00:00:00Z".into(),
+            }],
+            sent_at_ms: 1.0,
+        }
+    }
+
+    /// A home device mirroring to a paired peer that is offline queues the
+    /// mirror in the durable outbox, payload intact, like every other job.
+    #[tokio::test]
+    async fn a_mandate_mirror_to_an_offline_peer_waits_in_the_outbox() {
+        let pool = test_pool();
+        let jobs = service(pool.clone());
+        pair(&pool, "peer-a", "Laptop");
+        let job = jobs
+            .send_charter_mirror("peer-a", &mirror_payload("c1", "c1"))
+            .await
+            .expect("queued, not refused");
+        assert_eq!(job.status, RemoteJobStatus::Queued);
+        assert_eq!(job.kind, REMOTE_JOB_KIND_CHARTER_MIRROR);
+        let stored: CharterMirrorPayload =
+            serde_json::from_str(job.payload_json.as_deref().unwrap()).unwrap();
+        assert_eq!(stored.charter.charter_id, "c1");
+        assert_eq!(
+            repo::list_queued_for_peer(&pool, "peer-a").unwrap().len(),
+            1
+        );
+    }
+
+    /// A mirror carrying another mandate's act is refused at the sender with
+    /// nothing written, and at the receiver before anything is persisted.
+    #[tokio::test]
+    async fn a_stray_mandate_mirror_is_refused_on_both_ends() {
+        let pool = test_pool();
+        let jobs = service(pool.clone());
+        pair(&pool, "peer-a", "Laptop");
+        let stray = mirror_payload("c1", "c2");
+        assert!(matches!(
+            jobs.send_charter_mirror("peer-a", &stray).await,
+            Err(AppError::Validation(_))
+        ));
+        let replies = jobs
+            .handle_message(
+                "peer-a",
+                Message::RemoteJobRequest {
+                    job_id: "mirror-1".into(),
+                    kind: REMOTE_JOB_KIND_CHARTER_MIRROR.into(),
+                    instruction: "Mandate mirror: Proj".into(),
+                    origin_display_name: "Laptop".into(),
+                    payload_json: Some(serde_json::to_string(&stray).unwrap()),
+                },
+            )
+            .await
+            .unwrap();
+        assert!(matches!(
+            &replies[0],
+            Message::RemoteJobAck {
+                accepted: false,
+                ..
+            }
+        ));
+        assert!(repo::get(&pool, "mirror-1").unwrap().is_none());
+    }
+
+    /// A verdict from a device that was never paired is refused like any
+    /// other job: the mandate mirror opens no new trust path.
+    #[tokio::test]
+    async fn a_mandate_verdict_from_an_unpaired_peer_is_refused() {
+        let pool = test_pool();
+        let jobs = service(pool.clone());
+        let verdict = CharterVerdictPayload {
+            charter_id: "c1".into(),
+            verdict: personas_db::models::CharterVerdict::Suspend,
+            seen_envelope_version: 1,
+        };
+        let replies = jobs
+            .handle_message(
+                "stranger-peer",
+                Message::RemoteJobRequest {
+                    job_id: "verdict-1".into(),
+                    kind: REMOTE_JOB_KIND_CHARTER_VERDICT.into(),
+                    instruction: "Mandate verdict: suspend".into(),
+                    origin_display_name: "Stranger".into(),
+                    payload_json: Some(serde_json::to_string(&verdict).unwrap()),
+                },
+            )
+            .await
+            .unwrap();
+        assert!(matches!(
+            &replies[0],
+            Message::RemoteJobAck {
+                accepted: false,
+                ..
+            }
+        ));
+        assert!(repo::get(&pool, "verdict-1").unwrap().is_none());
+    }
+
+    /// A verdict outside the closed grammar does not parse, so it is refused
+    /// before the executor is reached.
+    #[tokio::test]
+    async fn a_mandate_verdict_outside_the_grammar_is_refused() {
+        let pool = test_pool();
+        let jobs = service(pool.clone());
+        pair(&pool, "peer-a", "Laptop");
+        let replies = jobs
+            .handle_message(
+                "peer-a",
+                Message::RemoteJobRequest {
+                    job_id: "verdict-2".into(),
+                    kind: REMOTE_JOB_KIND_CHARTER_VERDICT.into(),
+                    instruction: "Mandate verdict: adopt".into(),
+                    origin_display_name: "Laptop".into(),
+                    payload_json: Some(
+                        r#"{"charterId":"c1","verdict":{"kind":"adopt"},"seenEnvelopeVersion":1}"#
+                            .into(),
+                    ),
+                },
+            )
+            .await
+            .unwrap();
+        assert!(matches!(
+            &replies[0],
+            Message::RemoteJobAck {
+                accepted: false,
+                ..
+            }
+        ));
+        assert!(repo::get(&pool, "verdict-2").unwrap().is_none());
     }
 }

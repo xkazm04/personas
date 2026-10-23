@@ -55,7 +55,9 @@
     "gp:index": "node scripts/census/build-golden-path-index.mjs",
     "check": "npm run check:contracts && npm run check:command-registration && npm run check:command-features && npm run check:test-cells && npm run check:bindings && npm run check:glyphs && npm run check:tiers && npm run check:tauri-configs && npm run check:csp-hosts && npm run check:corpus && npm run check:recipe-index && npm run check:evidence && npm run check:doc-map && npm run check:promise-pins && npm run check:i18n:escapes && npm run census:check && npm run typecheck:native && eslint --cache --cache-location node_modules/.cache/eslint/full/ src/",
     "check:fast": "npm run check:contracts && npm run check:command-registration && npm run check:command-features && npm run check:test-cells && npm run check:bindings && npm run check:glyphs && npm run check:tauri-configs && npm run check:csp-hosts && npm run check:corpus && npm run check:recipe-index && npm run check:evidence && npm run check:doc-map && npm run check:promise-pins && npm run check:i18n:escapes && node scripts/gate/gate.mjs --gates tsc,eslint,census",
+    "check:all": "node scripts/ci/run-check-chain.mjs check",
     "gate": "node scripts/gate/gate.mjs",
+    "verify:affected": "node scripts/ci/verify-affected.mjs",
     "gate:status": "node scripts/gate/gate.mjs --status",
     "gate:stop": "node scripts/gate/gate.mjs --stop",
     "gate:parity": "node scripts/gate/parity.mjs",
@@ -152,6 +154,9 @@
   },
   "dependencies": {
     "@crabnebula/tauri-plugin-drag": "^2.1.0",
+    "@fontsource/caveat": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans-condensed": "^5.3.0",
     "@sentry/react": "^10.52.0",
     "@tanstack/react-virtual": "^3.13.24",
     "@tauri-apps/api": "^2.11.0",
@@ -212,7 +217,7 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.2",
     "typescript-native": "npm:typescript@7.0.2",
-    "vite": "^8.0.11",
+    "vite": "^8.3.4",
     "vitest": "^4.1.5"
   }
 }

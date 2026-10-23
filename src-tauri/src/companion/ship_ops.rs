@@ -118,6 +118,11 @@ struct SnapContext {
 #[serde(rename_all = "camelCase", default)]
 struct SnapMilestone {
     id: String,
+    /// The owning project. Empty on snapshots written before the field existed.
+    /// The frontend publisher uses it to keep other projects' persisted verdicts
+    /// across a restart; here it stops an entry filed under another project from
+    /// answering for this one.
+    project_id: String,
     /// The overall fold: `nogo` > `setup` > `warn` > `go`.
     verdict: String,
     progress: i64,
@@ -140,7 +145,11 @@ struct SnapDoc {
 /// verdict — which is the honest answer and the one this op gave for its whole
 /// life before the snapshot existed. Inventing a verdict from the shape of the
 /// cut is the one thing that must never happen here.
-fn load_readiness(sys_db: &DbPool, milestone_id: &str) -> Option<(SnapMilestone, Option<String>)> {
+fn load_readiness(
+    sys_db: &DbPool,
+    milestone_id: &str,
+    project_id: &str,
+) -> Option<(SnapMilestone, Option<String>)> {
     let raw =
         crate::db::repos::core::settings::get(sys_db, crate::db::settings_keys::SHIP_READINESS)
             .ok()
@@ -162,7 +171,7 @@ fn load_readiness(sys_db: &DbPool, milestone_id: &str) -> Option<(SnapMilestone,
     let published = doc.published_at.clone();
     doc.milestones
         .into_iter()
-        .find(|m| m.id == milestone_id)
+        .find(|m| m.id == milestone_id && (m.project_id.is_empty() || m.project_id == project_id))
         .map(|m| (m, published))
 }
 
@@ -564,7 +573,7 @@ pub fn describe_ship_milestone(sys_db: &DbPool, query: &str) -> String {
     // so the verdict arrives THROUGH the op like everything else — pulled when
     // it is needed, never pushed ahead of the question.
     out.push(String::new());
-    match load_readiness(sys_db, &m.id) {
+    match load_readiness(sys_db, &m.id, &m.project_id) {
         Some((snap, published_at)) => {
             let age = match snapshot_age_hours(published_at.as_deref()) {
                 None => "publish time unknown".to_string(),
@@ -829,6 +838,34 @@ mod tests {
             !out.contains("verdict go"),
             "a neighbour's verdict must not leak: {out}"
         );
+    }
+
+    /// A persisted entry is filed under its project. One filed under a DIFFERENT
+    /// project than the milestone's must not answer for it, while one filed under
+    /// the right project (or an old one with no project) still does.
+    #[test]
+    fn a_snapshot_entry_filed_under_another_project_does_not_answer() {
+        let db = crate::db::init_test_db().unwrap();
+        let id = seed(&db, Some("ship it"));
+        let set = |doc: &str| {
+            crate::db::repos::core::settings::set(
+                &db,
+                crate::db::settings_keys::SHIP_READINESS,
+                doc,
+            )
+            .unwrap();
+        };
+        set(
+            r#"{"version":1,"milestones":[{"id":"ms-1","projectId":"p-OTHER","verdict":"go","progress":100}]}"#,
+        );
+        let out = describe_ship_milestone(&db, &id);
+        assert!(out.contains("LIVE READING — not available"), "{out}");
+        set(
+            r#"{"version":1,"milestones":[{"id":"ms-1","projectId":"p1","verdict":"warn","progress":10}]}"#,
+        );
+        assert!(describe_ship_milestone(&db, &id).contains("ship verdict warn"));
+        set(r#"{"version":1,"milestones":[{"id":"ms-1","verdict":"nogo","progress":10}]}"#);
+        assert!(describe_ship_milestone(&db, &id).contains("ship verdict nogo"));
     }
 
     /// An unknown document version is ignored, not guessed at. The version

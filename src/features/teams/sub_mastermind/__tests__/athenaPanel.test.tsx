@@ -1,7 +1,7 @@
 // Athena's composed panel (WP3): it persists per project, restores when that
 // project is focused, degrades to no-panel on a spec version this build does
 // not understand, and resets ONE project without touching the others.
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // eslint-disable-next-line no-restricted-imports
 import { invoke } from '@tauri-apps/api/core';
 import { render, renderHook, screen, act } from '@testing-library/react';
@@ -12,6 +12,7 @@ import {
   loadAthenaPanels,
   saveAthenaPanel,
   removeAthenaPanel,
+  WRITE_DEBOUNCE_MS,
   __resetLayoutStoreForTests,
 } from '../lib/layoutStore';
 import { useAthenaPanels } from '../lib/useLayout';
@@ -57,17 +58,23 @@ describe('Athena canvas panels', () => {
     __resetLayoutStoreForTests();
     __resetCanvasFocusForTests();
   });
+  afterEach(() => { vi.useRealTimers(); });
 
   it('persists per project and restores across a remount', async () => {
     await hydrateLayout();
+    // Faked only around the debounce: hydrate's IPC path runs on real timers.
+    vi.useFakeTimers();
     act(() => {
       saveAthenaPanel('proj_1', panel('Tests'));
       saveAthenaPanel('proj_2', panel('Ideas'));
     });
     expect(Object.keys(loadAthenaPanels()).sort()).toEqual(['proj_1', 'proj_2']);
 
-    // The store's write-through is debounced; let it land in the DB row.
-    await new Promise((r) => { setTimeout(r, 700); });
+    // The store's write-through is debounced; land it by the store's own
+    // constant. A real 700 ms sleep cost 700 ms a run and broke the moment the
+    // debounce passed it.
+    await vi.advanceTimersByTimeAsync(WRITE_DEBOUNCE_MS);
+    vi.useRealTimers();
     expect(dbValue).toBeTruthy();
 
     // Simulate an app restart against the same DB row.

@@ -1,0 +1,87 @@
+{
+ "schema": "conform-run/1",
+ "worker": "8607e57d-bcc0-40aa-b760-11545643c364",
+ "subject": "observability-telemetry",
+ "evaluatedAt": "2026-10-17T21:16:10.739658+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "system-health",
+   "subject": "observability-telemetry",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/logging.rs:460 The native crash store writes unbounded, unscrubbed panic text directly to its final filename, risking secret persistence and partially written evidence.",
+   "techniques": [
+    {
+     "technique": "crash-record-storage",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/core/frontend_crashes.rs:25 report_frontend_crash forwards IPC strings directly into this INSERT without storage-boundary sanitization or field-length limits; frontend scrubbing cannot enforce the store's gate."
+    },
+    {
+     "technique": "log-architecture",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/infrastructure/system/mod.rs:26 The full caller-supplied URL enters persistent logging; the inspected JSONL field collector and writer preserve strings without scrubbing, allowing URL credentials or query tokens onto disk."
+    },
+    {
+     "technique": "rotation-and-retention",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/logging.rs:407 Native crash pruning runs when the hook is installed, while the inspected panic writer adds files without enforcing the cap on insertion."
+    }
+   ]
+  },
+  {
+   "context": "overview-components",
+   "subject": "observability-telemetry",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/components/health/SystemHealthPanel.tsx:139 The crash viewer is gated by import.meta.env.DEV, leaving production users without this in-product path to stored crash evidence.",
+   "techniques": [
+    {
+     "technique": "diagnostic-access",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/components/health/SystemHealthPanel.tsx:48 This flag controls the crash viewer mount at line 139, so the viewer is unavailable in production builds."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "observability-telemetry",
+   "context": "overview-observability",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-17T21:16:10.739658+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "observability-telemetry"
+   ],
+   "techniques": [
+    "crash-record-storage",
+    "log-architecture",
+    "rotation-and-retention"
+   ],
+   "deviations": 1,
+   "context": "system-health",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  },
+  {
+   "ts": "2026-10-17T21:16:10.739658+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "observability-telemetry"
+   ],
+   "techniques": [
+    "diagnostic-access"
+   ],
+   "deviations": 1,
+   "context": "overview-components",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

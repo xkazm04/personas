@@ -56,6 +56,15 @@
       ],
       "resolved": false
     },
+    "KpiProposalsPanel.tsx": {
+      "count": 3,
+      "sections": [5,7],
+      "lines": ["60-72","69"],
+      "contexts": [
+        "- **A bounded `for` loop with `await sleep` as a terminal poll.** `KpiProposalsPanel.tsx:60-72` (40 × 3s = a hard 120s ceiling) and `FactoryOverviewTab.tsx:311-322` (150 × 2s = 300s). Past the ceilin…"
+      ],
+      "resolved": false
+    },
     "artist/ffmpeg.rs": {
       "count": 1,
       "sections": [7],
@@ -424,16 +433,6 @@
       "contexts": ["an invalidation signal and re-read the fusing command — `AutoRunBanner.tsx:44-60`"],
       "resolvedFrom": "basename",
       "verbatim": "AutoRunBanner.tsx"
-    },
-    "src/features/teams/sub_factory/KpiProposalsPanel.tsx": {
-      "count": 3,
-      "sections": [5,7],
-      "lines": ["60-72","69"],
-      "contexts": [
-        "- **A bounded `for` loop with `await sleep` as a terminal poll.** `KpiProposalsPanel.tsx:60-72` (40 × 3s = a hard 120s ceiling) and `FactoryOverviewTab.tsx:311-322` (150 × 2s = 300s). Past the ceilin…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "KpiProposalsPanel.tsx"
     },
     "src/features/teams/sub_factory/l2/FactoryOverviewTab.tsx": {
       "count": 4,

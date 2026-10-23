@@ -49,3 +49,20 @@ describe("deployTarget — locale-reactive error resolution", () => {
     expect(translateCloudError("Cloud error: something totally novel")).toBe("something totally novel");
   });
 });
+
+describe("deployTarget — IPC rejection shape", () => {
+  // invokeWithTimeout rejects with a serialized AppError OBJECT, never a
+  // string or an Error. `String(obj)` is "[object Object]": no rule could
+  // match and the fallback rendered that text in the deploy panels.
+  it("matches a rule against the message inside an AppError object", () => {
+    activeDeployErrors = { not_reachable: "Could not reach the server." };
+    const appError = { error: "Cloud error: connection refused by host", kind: "network" };
+    expect(translateCloudError(appError)).toBe("Could not reach the server.");
+  });
+
+  it("falls back to the AppError's own text, never [object Object]", () => {
+    activeDeployErrors = {};
+    const appError = { error: "GitLab error: project 42 is archived", kind: "internal" };
+    expect(translateGitLabError(appError)).toBe("project 42 is archived");
+  });
+});

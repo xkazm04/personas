@@ -228,5 +228,22 @@
   "soundings_where_it_sits": "它所在的位置。相关项目以粗体显示",
   "soundings_who_athena": "雅典娜",
   "soundings_who_chart": "图表",
-  "soundings_yes": "是"
+  "soundings_yes": "是",
+  "dim_label_agents": "智能体",
+  "dim_label_auth": "身份验证",
+  "dim_label_ci": "CI",
+  "dim_label_datalinks": "数据分析",
+  "dim_label_db": "数据库",
+  "dim_label_goals": "目标",
+  "dim_label_hosting": "托管",
+  "dim_label_ideas": "创意",
+  "dim_label_kpi": "KPI",
+  "dim_label_llm": "LLM 成本",
+  "dim_label_monitoring": "监控",
+  "dim_label_security": "安全",
+  "dim_label_skills": "技能",
+  "dim_label_support": "支持",
+  "dim_label_tests": "测试",
+  "scan_dispatched_toast": "创意扫描已发送（{label}）",
+  "scan_drawer_label": "创意扫描（{label}）"
 }

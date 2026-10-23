@@ -41,12 +41,14 @@
   "budget_label": "Anggaran",
   "build_validation": {
     "composite_min_conditions": "Pemicu komposit memerlukan minimal 2 kondisi.",
+    "composite_window_maximum": "Jendela waktu maksimal 24 jam (86400 detik).",
     "composite_window_minimum": "Jendela waktu harus minimal 5 detik.",
     "cron_invalid": "Ekspresi cron tidak valid.",
     "cron_required": "Ekspresi cron wajib diisi.",
     "endpoint_required": "URL endpoint atau event diperlukan.",
     "event_type_required": "Jenis peristiwa yang akan didengarkan wajib diisi.",
     "interval_minimum": "Interval harus minimal 60 detik.",
+    "watch_events_required": "Pilih setidaknya satu peristiwa file untuk dipantau.",
     "watch_path_required": "Setidaknya satu jalur pemantauan diperlukan."
   },
   "builder": {
@@ -183,6 +185,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} peristiwa",
   "dead_letter_bulk_retry_title": "Coba lagi every selected peristiwa in a single transaction",
   "dead_letter_clear_filters_to_see": "Bersihkan filters to see all dead-lettered peristiwa",
+  "dead_letter_load_failed_title": "Tidak dapat memuat antrean dead letter",
+  "dead_letter_load_failed_desc": "Antrean tidak dapat dibaca, jadi daftar kosong di sini akan menyesatkan. Event Anda tidak hilang - coba lagi.",
   "dead_letter_clear_selection": "Bersihkan",
   "dead_letter_discard": "Buang",
   "dead_letter_discard_title": "Buang peristiwa ini secara permanen",
@@ -623,9 +627,12 @@
     "automation_delete": "Hapus otomasi",
     "automation_enabled": "Diaktifkan",
     "automation_failed": "gagal",
+    "automation_held": "ditahan untuk persetujuan",
     "automation_idle": "menunggu acaranya",
     "automation_next": "berikutnya",
+    "automation_partial": "berjalan sebagian",
     "automation_ran": "berjalan",
+    "automation_requested": "diminta",
     "automation_run_now": "Jalankan sekarang",
     "automations_title": "Acara sistem aktif",
     "cadence_custom": "cron kustom…",
@@ -945,5 +952,7 @@
   "add_persona_available": "{count} tersedia",
   "add_persona_all_connected": "Semua persona sudah terhubung",
   "add_persona_ungrouped": "Tanpa grup",
-  "live_status_skipped": "Dilewati"
+  "live_status_skipped": "Dilewati",
+  "webhooks_load_failed": "Pemicu webhook tidak dapat dimuat",
+  "webhooks_load_failed_desc": "Daftar tidak dapat dibaca, sehingga daftar kosong di sini akan menyesatkan. Pemicu Anda tidak hilang - coba lagi."
 }

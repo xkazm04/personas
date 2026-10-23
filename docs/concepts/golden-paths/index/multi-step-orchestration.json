@@ -36,6 +36,15 @@
   ],
   "citations": {
     ".github/workflows/ci.yml": {"count":2,"sections":[9],"contexts":["Not `ci.yml` — there is no `personas.db` on a CI runner, and per the §9 calibration `ci.yml` is red"],"resolvedFrom":"basename","verbatim":"ci.yml"},
+    "AssignmentReplay.tsx": {
+      "count": 1,
+      "sections": [6],
+      "contexts": [
+        "| 10 | **A wired per-job step UI** | **2 of 6 wired, 1 dead, and ours is real** | `brainiac`'s ingest module hits a real `/v1/pipeline/runs` (`console/app/console/modules/ingest/Module.tsx:22-30` → `…"
+      ],
+      "resolved": false
+    },
+    "ConversationCards.tsx": {"count":2,"sections":[0,7],"lines":["123-124"],"contexts":["| two rendered Pause/Resume buttons | `GoalsMissions.tsx:257,:266`; `ConversationCards.tsx:123-124` |"],"resolved":false},
     "DependencyBadge.tsx": {
       "count": 1,
       "sections": [6],
@@ -474,15 +483,7 @@
       ],
       "resolved": false
     },
-    "src/features/fleet/monitor/channels/ConversationCards.tsx": {
-      "count": 2,
-      "sections": [0,7],
-      "lines": ["123-124"],
-      "contexts": ["| two rendered Pause/Resume buttons | `GoalsMissions.tsx:257,:266`; `ConversationCards.tsx:123-124` |"],
-      "resolvedFrom": "basename",
-      "verbatim": "ConversationCards.tsx"
-    },
-    "src/features/teams/sub_goals/GoalTaskTable.tsx": {
+    "src/features/projects/development/goals/GoalTaskTable.tsx": {
       "count": 1,
       "sections": [6],
       "contexts": [
@@ -492,15 +493,6 @@
       "verbatim": "GoalTaskTable.tsx"
     },
     "src/features/teams/sub_goals/GoalsMissions.tsx": {"count":1,"sections":[],"contexts":["`src/features/teams/sub_goals/GoalsMissions.tsx`, the four `TeamAssignment*` ts-rs bindings)."],"resolved":false},
-    "src/features/teams/sub_teamWorkspace/teamStudio/AssignmentReplay.tsx": {
-      "count": 1,
-      "sections": [6],
-      "contexts": [
-        "| 10 | **A wired per-job step UI** | **2 of 6 wired, 1 dead, and ours is real** | `brainiac`'s ingest module hits a real `/v1/pipeline/runs` (`console/app/console/modules/ingest/Module.tsx:22-30` → `…"
-      ],
-      "resolvedFrom": "basename",
-      "verbatim": "AssignmentReplay.tsx"
-    },
     "src/lib/bindings/TeamAssignmentStatus.ts": {"count":1,"sections":[0],"contexts":["doc comment, and ships as `src/lib/bindings/TeamAssignmentStatus.ts`."]},
     "src/stores/slices/pipeline/assignmentSlice.ts": {"count":1,"sections":[],"contexts":["(`src/stores/slices/pipeline/assignmentSlice.ts`, `src/api/pipeline/assignments.ts`,"]},
     "store/dependencyStore.ts": {

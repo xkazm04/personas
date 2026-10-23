@@ -63,7 +63,11 @@
     "unknown": "অজানা",
     "value_delivered_count": "প্রদত্ত মূল্য",
     "value_delivered_rate": "মূল্য-প্রদানের হার",
-    "value_section_title": "ব্যবসায়িক মূল্য"
+    "value_section_title": "ব্যবসায়িক মূল্য",
+    "prev_p50": "আগের p50",
+    "prev_p95": "আগের p95",
+    "range_last_days_one": "গত ১ দিন",
+    "range_last_days_other": "গত {count} দিন"
   },
   "analytics_dashboard": {
     "active_count": "{count}টি সক্রিয়",
@@ -640,7 +644,13 @@
     "ask_athena_prompt": "আমি আমার এজেন্টগুলির জন্য একটি ফ্লিট অপ্টিমাইজেশন পরামর্শ পর্যালোচনা করছি: \"{title}\"। {description} প্রস্তাবিত পদক্ষেপ: {action}। {focus}",
     "open_lab": "Lab খুলুন",
     "open_lab_hint": "Lab-এ {persona}-এর জন্য বিকল্প মডেল পরীক্ষা করুন",
-    "title": "ফ্লিট অপ্টিমাইজেশন"
+    "title": "ফ্লিট অপ্টিমাইজেশন",
+    "label_action": "পদক্ষেপ",
+    "label_agent": "এজেন্ট",
+    "label_impact": "প্রভাব",
+    "severity_critical": "জরুরি",
+    "severity_info": "অন্তর্দৃষ্টি",
+    "severity_warning": "প্রস্তাবিত"
   },
   "focused_decision": {
     "accept": "গ্রহণ করুন",
@@ -898,7 +908,6 @@
     "bulk_acknowledge_count": "{count} স্বীকার",
     "bulk_clear_selection": "মুছুন",
     "bulk_resolve_count": "{count} সমাধান",
-    "col_days": "দিন",
     "col_incident": "ঘটনা",
     "detail_label_acknowledged": "স্বীকৃত",
     "detail_label_created": "তৈরি",
@@ -926,10 +935,8 @@
     "filter_source_all": "সব উৎস",
     "filter_source_label": "উৎস",
     "filter_status_acknowledged": "স্বীকৃত",
-    "filter_status_all": "সব",
     "filter_status_dismissed": "খারিজ",
     "filter_status_in_progress": "চলমান",
-    "filter_status_label": "স্থিতি",
     "filter_status_open": "খোলা",
     "filter_status_resolved": "সমাধান হয়েছে",
     "filters_active_aria": "{count} সক্রিয় ফিল্টার",
@@ -939,7 +946,6 @@
     "group_by_none": "কোনোটি নয়",
     "group_by_severity": "গুরুত্ব",
     "group_by_source": "উৎস",
-    "group_no_persona": "কোনো এজেন্ট নেই",
     "groups_collapse_all": "সব সংকুচিত করুন",
     "groups_expand_all": "সব প্রসারিত করুন",
     "guidance_alert": "একটি সতর্কতা নিয়ম সক্রিয় হয়েছে। সীমা অতিক্রমকারী মেট্রিক পর্যালোচনা করুন।",
@@ -996,7 +1002,6 @@
     "noc_diagnosis_title": "মূল কারণ",
     "noc_evidence_label": "প্রমাণ",
     "noc_handled_by": "Athena দ্বারা সামলানো",
-    "noc_handled_continued": "স্বয়ংক্রিয়ভাবে পুনরায় চালু",
     "noc_handled_empty": "এখনও কিছু স্বয়ংক্রিয়ভাবে সামলানো হয়নি — যখন আমি নিরাপদে নিজে কোনো ঘটনা ঠিক করতে পারব, তখন সেটি এখানে দেখা যাবে।",
     "noc_handled_title": "স্বয়ংক্রিয়ভাবে সামলানো হয়েছে",
     "noc_no_diagnosis": "এখনও কোনো নির্ণয় নেই — আমি আপনার হয়ে এই ঘটনাটি খতিয়ে দেখতে পারি।",
@@ -1025,7 +1030,6 @@
     "source_policy": "নীতি",
     "source_provider": "প্রদানকারী",
     "source_tool": "টুল",
-    "stale_label": "পুরোনো",
     "subtitle": "সতর্কতা ও ত্রুটির জন্য ক্রস-সোর্স ইনবক্স",
     "title": "ঘটনা",
     "urgency_critical": "এখনই মনোযোগ দিন",
@@ -1097,7 +1101,8 @@
     "stat_total_runs": "মোট রান",
     "subtitle": "সব এজেন্ট জুড়ে পারফরম্যান্স র্যাংকিং",
     "this_agent": "এই এজেন্ট",
-    "title": "এজেন্ট লিডারবোর্ড"
+    "title": "এজেন্ট লিডারবোর্ড",
+    "sort_hint": "সাজাতে একটি মেট্রিকে ক্লিক করুন"
   },
   "llm_spend": {
     "by_source": "স্তর অনুযায়ী খরচ",
@@ -1156,7 +1161,6 @@
     "curation_schedule_save": "সময়সূচি সংরক্ষণ করুন",
     "curation_schedule_title": "স্মৃতি কিউরেশনের সময়সূচি",
     "delete_all": "সব মুছুন",
-    "delete_all_confirm_body": "এটি স্থায়ীভাবে সব {count}টি স্মৃতি মুছে দেবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
     "delete_all_confirm_cta": "সব মুছুন",
     "delete_all_confirm_title": "সব স্মৃতি মুছবেন?",
     "form": {
@@ -1182,13 +1186,21 @@
     "reflect_pick_persona": "একটি এজেন্টের স্মৃতির প্রতিফলন করুন",
     "reflecting": "প্রতিফলন চলছে…",
     "search_placeholder": "মেমরি অনুসন্ধান…",
-    "title": "স্মৃতি"
+    "title": "স্মৃতি",
+    "delete_all_confirm_body_all_agents": "বর্তমান ফিল্টারে যা-ই দেখানো হোক, এটি সব এজেন্টের সমস্ত {count}টি মেমরি স্থায়ীভাবে মুছে ফেলবে। এটি আর ফেরানো যাবে না।"
   },
   "memory_actions": {
     "dismiss_suggestion": "পরামর্শ বরখাস্ত করুন",
     "memory_insights": "স্মৃতির অন্তর্দৃষ্টি",
     "suggestions": "{count}টি পরামর্শ",
-    "suggestions_one": "{count}টি পরামর্শ"
+    "suggestions_one": "{count}টি পরামর্শ",
+    "kind_throttle": "থ্রটল নিয়ম",
+    "kind_schedule": "সময়সূচি সমন্বয়",
+    "kind_alert": "সতর্কতা নিয়ম",
+    "kind_config": "কনফিগারেশন পরিবর্তন",
+    "kind_routing": "রাউটিং নিয়ম",
+    "rules_restored_from_session": "আপনার সংরক্ষিত মেমরি-অ্যাকশন নিয়মগুলো পড়া যায়নি এবং এই সেশন থেকে পুনরুদ্ধার করা হয়েছে।",
+    "rules_unreadable": "আপনার সংরক্ষিত মেমরি-অ্যাকশন নিয়মগুলো পড়া যায়নি এবং নতুন করে তৈরি করতে হতে পারে।"
   },
   "memory_card": {
     "cancel": "বাতিল",
@@ -1218,7 +1230,14 @@
     "resolved_toast": "দ্বন্দ্ব মিটেছে",
     "retire_blocked_core_toast": "মূল (পিন করা) স্মৃতি সংরক্ষণাগারে পাঠানো যাবে না — এই দ্বন্দ্ব নিজে মেটান",
     "scanned_scope": "সাম্প্রতিকতম {count}টি স্মৃতির মধ্যে",
-    "vs": "বনাম"
+    "vs": "বনাম",
+    "kind_duplicate": "ডুপ্লিকেট",
+    "kind_contradiction": "বিরোধ",
+    "kind_superseded": "প্রতিস্থাপিত",
+    "reason_contradiction": "একই বিষয়ে সম্ভাব্য পরস্পরবিরোধী নির্দেশ (বিষয়ের মিল {pct}%)",
+    "reason_duplicate_cross_agent": "ভিন্ন এজেন্টের মধ্যে প্রায় অভিন্ন স্মৃতি (মিল {pct}%)",
+    "reason_duplicate_same_agent": "একই এজেন্টের মধ্যে প্রায় অভিন্ন স্মৃতি (মিল {pct}%)",
+    "reason_superseded": "নতুন স্মৃতি একই বিষয়ের পুরোনো স্মৃতিকে প্রতিস্থাপন করতে পারে (মিল {pct}%)"
   },
   "memory_detail": {
     "category_label": "বিভাগ",
@@ -1366,7 +1385,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", তারপর সেটিংস থেকে আপনার API কী কপি করুন। এই কী স্থানীয়ভাবে সংরক্ষিত এবং সমস্ত এজেন্টের মধ্যে শেয়ার করা হয়।",
-    "sign_up_free_at": "বিনামূল্যে সাইন আপ করুন"
+    "sign_up_free_at": "বিনামূল্যে সাইন আপ করুন",
+    "api_key_label": "API কী",
+    "litellm_base_url_label": "প্রক্সি বেস URL",
+    "litellm_master_key_label": "মাস্টার কী",
+    "ollama_key_placeholder": "ollama.com/settings থেকে আপনার কী পেস্ট করুন"
   },
   "predictive_alerts_extra": {
     "all_nominal": "সব সিস্টেম স্বাভাবিক",
@@ -1887,7 +1910,9 @@
     "p95_latency": "P95 লেটেন্সি",
     "runs": "রান",
     "streak": "স্ট্রিক",
-    "successful": "সফল"
+    "successful": "সফল",
+    "daily_trend_hint_one": "{date}: {rate} ({count}টি রান)",
+    "daily_trend_hint_other": "{date}: {rate} ({count}টি রান)"
   },
   "sla": {
     "active_agents": "{count} সক্রিয় এজেন্ট",
@@ -2106,5 +2131,15 @@
   "dc_pending_lead": "প্রতিটি অপেক্ষমাণ রিভিউ ডিসিশন সেন্টারে খোলে, পূর্ণ বিবরণ ও অন্য সব সিদ্ধান্তের মতো একই কী নিয়ে।",
   "dc_pending_list_aria": "অপেক্ষমাণ রিভিউ",
   "dc_select_review": "রিভিউ বেছে নিন",
-  "dc_col_decision": "সিদ্ধান্ত"
+  "dc_col_decision": "সিদ্ধান্ত",
+  "ai_healing_overlay": {
+    "collapse": "সংকুচিত করুন",
+    "expand": "প্রসারিত করুন",
+    "status_complete": "সম্পন্ন",
+    "status_failed": "ব্যর্থ",
+    "status_in_progress": "চলমান",
+    "step_applying": "সমাধান প্রয়োগ করা হচ্ছে",
+    "step_completed": "সম্পন্ন হয়েছে",
+    "step_diagnosing": "নির্ণয় করা হচ্ছে"
+  }
 }

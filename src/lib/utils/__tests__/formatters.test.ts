@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { formatPercent, formatCount, formatNumeric, formatCompactNumber, compactWithTitle, formatCost, formatTimestamp, formatRelativeTime, formatElapsedCompact, getStatusEntry, EXECUTION_STATUS_MAP } from '../formatters';
+import { formatPercent, formatCount, formatNumeric, formatCompactNumber, compactWithTitle, formatCost, formatDuration, formatElapsed, formatTimestamp, formatRelativeTime, formatElapsedCompact, getStatusEntry, EXECUTION_STATUS_MAP } from '../formatters';
 import { preloadSectionsAsync } from '@/i18n/useTranslation';
 import { useI18nStore } from '@/stores/i18nStore';
 
@@ -305,5 +305,62 @@ describe('formatCost', () => {
     expect(formatCost(undefined, { precision: 'auto', language: 'en' })).toBe('\u2014');
     // ...and an exact zero is still a measurement at that same precision.
     expect(formatCost(0, { precision: 2, language: 'en' })).toBe('$0.00');
+  });
+});
+
+describe('formatCost outside the happy range', () => {
+  // `usd < 0.01` is true for EVERY negative number, so a refund, a credit or a
+  // cost delta of -$12.30 rendered as "<$0.01" -- a claim of "less than a cent"
+  // regardless of magnitude (golden path number-and-cost-formatting 7.C(iv)).
+  it('keeps the magnitude and the sign of a negative amount', () => {
+    expect(formatCost(-12.3, { precision: 2, language: 'en' })).toBe('-$12.30');
+    expect(formatCost(-0.0042, { precision: 4, language: 'en' })).toBe('-$0.0042');
+    expect(formatCost(-0.5, { precision: 'auto', language: 'en' })).toBe('-$0.500');
+  });
+
+  it('bounds a tiny negative from below instead of claiming it is under a cent', () => {
+    expect(formatCost(-0.004, { precision: 2, language: 'en' })).toBe('>-$0.01');
+    expect(formatCost(-0.00004, { precision: 'auto', language: 'en' })).toBe('>-$0.001');
+  });
+
+  // NaN failed every comparison and reached Intl verbatim: "$NaN". A cost that
+  // is not a number is not a measurement, same as null.
+  it('renders a non-finite amount as absent, never "$NaN"', () => {
+    expect(formatCost(NaN, { language: 'en' })).toBe('—');
+    expect(formatCost(Infinity, { precision: 'auto', language: 'en' })).toBe('—');
+  });
+});
+
+describe('formatDuration sign and non-finite input', () => {
+  // ComparisonTable renders a step's duration DELTA as
+  // `{delta > 0 ? '+' : ''}{formatDuration(delta)}`. A positive delta took the
+  // ladder ("+1m 5s"); a negative one failed `ms < 1000` and printed raw
+  // milliseconds ("-65000ms"), so the same table spoke two units.
+  it('formats a negative duration through the same ladder as a positive one', () => {
+    expect(formatDuration(65_000)).toBe('1m 5s');
+    expect(formatDuration(-65_000)).toBe('-1m 5s');
+    expect(formatDuration(-1_500)).toBe('-1s');
+    expect(formatDuration(-250)).toBe('-250ms');
+    expect(formatDuration(-1_500, { precision: 'decimal' })).toBe('-1.5s');
+  });
+
+  it('renders a non-finite duration as absent, never "NaNms"', () => {
+    expect(formatDuration(NaN)).toBe('—');
+    expect(formatDuration(Number(undefined))).toBe('—');
+    expect(formatDuration(Infinity, { unit: 's' })).toBe('—');
+  });
+});
+
+describe('formatElapsed outside the happy range', () => {
+  it('renders a non-finite elapsed time as absent, never "NaNs" or "NaN:NaN"', () => {
+    expect(formatElapsed(NaN)).toBe('—');
+    expect(formatElapsed(NaN, 'clock')).toBe('—');
+  });
+
+  // Elapsed time is measured from a start to now; a start ahead of now is clock
+  // skew, and the clock form used to print "-1:-1".
+  it('clamps a negative elapsed time to zero', () => {
+    expect(formatElapsed(-500)).toBe('0s');
+    expect(formatElapsed(-61_000, 'clock')).toBe('00:00');
   });
 });

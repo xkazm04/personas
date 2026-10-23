@@ -1,0 +1,76 @@
+{
+  "schema": "conform-run/1",
+  "worker": "8ff65c57-5dca-4cd4-a1ca-c477699f8e43",
+  "subject": "fleet-orchestration",
+  "evaluatedAt": "2026-10-21T12:20:17Z",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "agents-executions-components",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28,
+      "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:260 a member past the poll deadline returns early with status left 'running' (set at :235; BulkRunStatus :39 has no timed-out/cut-off class) while the batch phase flips to 'completed' at :318, so the roster never accounts the cut-off member; the idempotency key at :244 embeds Date.now() so a repeated batch is not deduped. Re-judged against rev 28.",
+      "techniques": [
+        {"technique": "result-harvest", "verdict": "deviation", "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:260 a member still running at the deadline stays 'running' (the comment at :201 says 'stays pending'; the code set 'running' at :235) and phase becomes 'completed' at :318: no timed-out/cut-off account, so accounts do not sum to the roster with predicates"},
+        {"technique": "parallel-dispatch", "verdict": "deviation", "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:244 the idempotency key is per attempt (Date.now()), not per work item, so a re-issued batch double-dispatches the same members"}
+      ]
+    },
+    {
+      "context": "fleet-monitor-channels",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28,
+      "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:55 derivePresence sets 'working' only inside PRESENCE_WORK_WINDOW_MS (:35) and otherwise sets nothing, so an expired budget silently becomes no-presence instead of unknown; src/features/fleet/monitor/channels/types.ts:21 re-declares the 'working'|'waiting' union as PresenceMap instead of deriving from PresenceStatus (useTeamChannel.ts:25). Anchor moved from :67 to :55 after the 2026-10-19 refactor; re-judged against rev 28.",
+      "techniques": [
+        {"technique": "evidence-outranks-a-liveness-claim", "verdict": "deviation", "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:55 an expired staleness budget lands on absence (persona reads as idle) rather than on unknown, the exact landing the technique forbids"},
+        {"technique": "absent-status-passthrough", "verdict": "deviation", "evidence": "src/features/teams/sub_collab/useTeamChannel.ts:25 PresenceStatus has no 'not stated / unknown' member, so the projector has nowhere honest to put an unobserved state"},
+        {"technique": "session-registry", "verdict": "deviation", "evidence": "src/features/fleet/monitor/channels/types.ts:21 PresenceMap hand-restates the status union a second time instead of Map<string, PresenceStatus>"}
+      ]
+    },
+    {
+      "context": "fleet-monitor-shell",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28,
+      "evidence": "src/features/fleet/monitor/monitorModel.ts:25 ExecState is a display fold of the persona-execution ActiveProcessStatus (closed union src/stores/slices/processActivitySlice.ts:19, exhaustively keyed in PROCESS_STATUS_META at monitorModel.ts:125); the shell registers, dispatches, sweeps and harvests nothing, so the subject's precondition (owning a session fleet) is unmet. Re-judged against rev 28; the one consumer-side rule (derive from the closed vocabulary) is met.",
+      "techniques": [
+        {"technique": "session-registry", "verdict": "conformant", "evidence": "src/features/fleet/monitor/monitorModel.ts:125 PROCESS_STATUS_META: Record<ActiveProcessStatus, ...> forces a compile error on a new status; the fold at :363 derives from counts over that union"}
+      ],
+      "registryProposal": "A read-only consumer view (a monitor folding a registry's closed vocabulary into card colours) meets the subject's one consumer obligation but cannot reach the evidence floor (half of 19 techniques), so it can only be judged not-applicable. The golden path could state whether consumer-only surfaces are governed by session-registry's consumer rule alone, which would make 'conformant' reachable for them."
+    },
+    {
+      "context": "notepad-plan",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+      "evaluatedRevision": 28,
+      "evidence": "src/features/notepad/plan/ShipDispatch.tsx:129 dispatches a write-capable Fleet worker into project.root_path (the shared repo root) with a criterion brief (e.g. :66-71 'fix them... run tests') that restates no invariant (commit/push/branch discipline) and never says what the worker cannot see; dispatchRowToFleet spawns then names in two steps (src/features/teams/sub_factory/passport/passportFleet.tsx:66-67), so a failed rename leaves an anonymous worker the key check at :64 cannot find and a retry spawns a duplicate. Corrects prior evidence: the goal brief (:31) dispatches via ShipMilestoneComposer.tsx:161, not :129. Re-judged against rev 28.",
+      "techniques": [
+        {"technique": "brief-carries-the-session", "verdict": "deviation", "evidence": "src/features/notepad/plan/ShipDispatch.tsx:66 the criterion brief carries scope ('surgical, scoped to these contexts') but no restated invariants and no 'you cannot see the conversation that produced this' line"},
+        {"technique": "parallel-dispatch", "verdict": "deviation", "evidence": "src/features/teams/sub_factory/passport/passportFleet.tsx:66 spawnSession into the shared repo root with no declared write set or isolated worktree; identity is stamped by a separate renameSession at :67, so the dedupe key checked at :64 is not minted with the session"}
+      ]
+    }
+  ],
+  "declined": [
+    {"subject": "fleet-orchestration", "context": "lib-harness", "reason": "stale (rev 26) deviation; budget of 4 spent on the strong-confidence stale pairs first; next run"},
+    {"subject": "fleet-orchestration", "context": "home-welcome", "reason": "stale (rev 26) strong not-applicable; not re-read this run, so not restamped"},
+    {"subject": "fleet-orchestration", "context": "home-learning", "reason": "stale (rev 26) strong not-applicable; not re-read this run, so not restamped"},
+    {"subject": "fleet-orchestration", "context": "home-cockpit-widgets", "reason": "stale (rev 26) strong not-applicable; not re-read this run, so not restamped"},
+    {"subject": "fleet-orchestration", "context": "personas-page", "reason": "weak-governance row; a coverage question, not judged"}
+  ],
+  "consults": [
+    {"ts": "2026-10-21T12:20:17Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": ["result-harvest", "parallel-dispatch"], "deviations": 1, "context": "agents-executions-components", "via": "curator-worker", "model": "claude-opus-5-5"},
+    {"ts": "2026-10-21T12:20:17Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": ["evidence-outranks-a-liveness-claim", "absent-status-passthrough", "session-registry", "lifecycle-signals"], "deviations": 1, "context": "fleet-monitor-channels", "via": "curator-worker", "model": "claude-opus-5-5"},
+    {"ts": "2026-10-21T12:20:17Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": ["session-registry"], "deviations": 0, "context": "fleet-monitor-shell", "via": "curator-worker", "model": "claude-opus-5-5"},
+    {"ts": "2026-10-21T12:20:17Z", "bundle": "software-engineering", "subjects": ["fleet-orchestration"], "techniques": ["brief-carries-the-session", "parallel-dispatch"], "deviations": 1, "context": "notepad-plan", "via": "curator-worker", "model": "claude-opus-5-5"}
+  ]
+}

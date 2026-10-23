@@ -41,12 +41,14 @@
   "budget_label": "Presupuesto",
   "build_validation": {
     "composite_min_conditions": "Los disparadores compuestos necesitan al menos 2 condiciones.",
+    "composite_window_maximum": "La ventana de tiempo puede ser de como máximo 24 horas (86400 segundos).",
     "composite_window_minimum": "La ventana de tiempo debe ser de al menos 5 segundos.",
     "cron_invalid": "La expresión cron no es válida.",
     "cron_required": "Se requiere una expresión cron.",
     "endpoint_required": "Se requiere una URL de endpoint o un evento.",
     "event_type_required": "Se requiere el tipo de evento a escuchar.",
     "interval_minimum": "El intervalo debe ser de al menos 60 segundos.",
+    "watch_events_required": "Selecciona al menos un evento de archivo para vigilar.",
     "watch_path_required": "Se requiere al menos una ruta a vigilar."
   },
   "builder": {
@@ -183,6 +185,8 @@
   "dead_letter_bulk_retry_summary": "Retried {success} of {total} eventoos",
   "dead_letter_bulk_retry_title": "Reintentar every selected evento in a single transaction",
   "dead_letter_clear_filters_to_see": "Borrar filters to see all dead-lettered eventoos",
+  "dead_letter_load_failed_title": "No se pudo cargar la cola de mensajes fallidos",
+  "dead_letter_load_failed_desc": "No se pudo leer la cola, así que una lista vacía aquí sería engañosa. Tus eventos no se han perdido: inténtalo de nuevo.",
   "dead_letter_clear_selection": "Borrar",
   "dead_letter_discard": "Descartar",
   "dead_letter_discard_title": "Descartar este evento permanentemente",
@@ -623,9 +627,12 @@
     "automation_delete": "Eliminar automatización",
     "automation_enabled": "Habilitado",
     "automation_failed": "fallido",
+    "automation_held": "retenido para aprobación",
     "automation_idle": "esperando su evento",
     "automation_next": "siguiente",
+    "automation_partial": "ejecutado parcialmente",
     "automation_ran": "ejecutado",
+    "automation_requested": "solicitado",
     "automation_run_now": "Ejecutar ahora",
     "automations_title": "Eventos del sistema activos",
     "cadence_custom": "cron personalizado…",
@@ -945,5 +952,7 @@
   "add_persona_available": "{count} disponibles",
   "add_persona_all_connected": "Todas las personas ya están conectadas",
   "add_persona_ungrouped": "Sin grupo",
-  "live_status_skipped": "Omitido"
+  "live_status_skipped": "Omitido",
+  "webhooks_load_failed": "No se pudieron cargar los disparadores de webhook",
+  "webhooks_load_failed_desc": "No se pudo leer la lista, así que mostrarla vacía sería engañoso. Tus disparadores no han desaparecido - inténtalo de nuevo."
 }

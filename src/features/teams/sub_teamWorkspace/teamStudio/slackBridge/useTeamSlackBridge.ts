@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
+import { usePipelineStore } from '@/stores/pipelineStore';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { useVaultStore } from '@/stores/vaultStore';
 import { getPersonaDetail } from '@/api/agents/personas';
 import { listConnectorResources, type ResourceItem } from '@/api/credentials/scopedResources';
@@ -51,10 +53,19 @@ export function useTeamSlackBridge(teamId: string) {
   const credentials = useVaultStore((s) => s.credentials);
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
 
-  const members = useMemo(
-    () => personas.filter((p) => p.home_team_id === teamId),
-    [personas, teamId],
-  );
+  // Carrier candidates are the team's ROSTER (persona_team_members rows) plus
+  // any persona filed under the team (home_team_id). Membership and home are
+  // different facts: a persona added through the studio's Add-member menu or
+  // the auto-team builder gets a membership row and no home, so filtering on
+  // home alone told a team with members "add a persona first" and hid a bridge
+  // the engine (which scans every enabled persona) was already running.
+  const teamMembers = usePipelineStore((s) => s.teamMembers);
+  const members = useMemo(() => {
+    const rosterIds = new Set(
+      teamMembers.filter((m) => m.team_id === teamId).map((m) => m.persona_id),
+    );
+    return personas.filter((p) => p.home_team_id === teamId || rosterIds.has(p.id));
+  }, [personas, teamMembers, teamId]);
 
   const slackCredentials = useMemo(
     () => credentials.filter((c) => c.service_type === 'slack'),
@@ -73,10 +84,10 @@ export function useTeamSlackBridge(teamId: string) {
   const [legacyBlob, setLegacyBlob] = useState(false);
 
   const memberIds = useMemo(() => members.map((m) => m.id).join(','), [members]);
-  const loadSeq = useRef(0);
+  const [loadSeq] = useState(createLatestWins);
 
   const hydrate = useCallback(async () => {
-    const seq = ++loadSeq.current;
+    const seq = loadSeq.next();
     setLoading(true);
     const ids = memberIds ? memberIds.split(',') : [];
     const entries = await Promise.all(
@@ -90,7 +101,7 @@ export function useTeamSlackBridge(teamId: string) {
         }
       }),
     );
-    if (seq !== loadSeq.current) return;
+    if (!loadSeq.isCurrent(seq)) return;
     const map = Object.fromEntries(entries);
     setChannelsByPersona(map);
     // First member carrying a bridge for this team wins, mirroring the engine.
@@ -104,7 +115,7 @@ export function useTeamSlackBridge(teamId: string) {
         : { ...EMPTY_FORM, personaId: ids[0] ?? '' },
     );
     setLoading(false);
-  }, [memberIds, teamId]);
+  }, [memberIds, teamId, loadSeq]);
 
   useEffect(() => {
     void hydrate();

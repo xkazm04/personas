@@ -6,6 +6,7 @@ import {
   hiddenFailedCount,
   resolveFocusAction,
   selectAutoHealTargets,
+  settleAttemptStatus,
   type AnalyzedFailure,
   type HealingAttempt,
 } from '../selfHealing';
@@ -80,6 +81,32 @@ describe('selectAutoHealTargets', () => {
  * is the loaded 40-row window. L0 could report 12 failed while the panel showed
  * nothing, and a backlog handoff for a row past page 1 never fired.
  */
+describe('settleAttemptStatus', () => {
+  const child = (parent: string, status: string, attemptNo: number): DevTask =>
+    ({ id: `${parent}-r${attemptNo}`, parent_task_id: parent, status, attempt: attemptNo }) as unknown as DevTask;
+
+  it('stays healing while the retry row is queued, running or not yet loaded', () => {
+    const a = attempt('t1', 1);
+    expect(settleAttemptStatus(a, [])).toBe('healing');
+    expect(settleAttemptStatus(a, [child('t1', 'queued', 2)])).toBe('healing');
+    expect(settleAttemptStatus(a, [child('t1', 'running', 2)])).toBe('healing');
+  });
+
+  it('reports healed when the newest retry completed', () => {
+    expect(settleAttemptStatus(attempt('t1', 1), [child('t1', 'completed', 2)])).toBe('healed');
+  });
+
+  it('reports failed when the newest retry failed or was cancelled', () => {
+    expect(settleAttemptStatus(attempt('t1', 1), [child('t1', 'failed', 2)])).toBe('failed');
+    expect(settleAttemptStatus(attempt('t1', 1), [child('t1', 'cancelled', 2)])).toBe('failed');
+  });
+
+  it('reads the newest child, not an older one, and ignores retries of other tasks', () => {
+    const tasks = [child('t1', 'failed', 2), child('t1', 'completed', 3), child('other', 'failed', 9)];
+    expect(settleAttemptStatus(attempt('t1', 2), tasks)).toBe('healed');
+  });
+});
+
 describe('hiddenFailedCount', () => {
   it('returns null when the window already holds every failure', () => {
     expect(hiddenFailedCount(3, 3)).toBeNull();

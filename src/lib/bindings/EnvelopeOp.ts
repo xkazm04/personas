@@ -3,4 +3,4 @@
 /**
  * Which envelope door an act went through.
  */
-export type EnvelopeOp = "sign" | "amend" | "suspend" | "resume" | "revert";
+export type EnvelopeOp = "sign" | "amend" | "suspend" | "resume" | "revert" | "drop" | "keep" | "draft" | "adopt";

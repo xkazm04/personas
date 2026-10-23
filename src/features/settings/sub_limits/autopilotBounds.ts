@@ -47,7 +47,7 @@ export const AUTOPILOT_MEMORY_PER_AGENT_DEFAULT = 1500;
 export const FLEET_MAX_PARALLEL_SESSIONS_KEY = 'fleet.max_parallel_sessions';
 export const FLEET_MAX_PARALLEL_SESSIONS_MIN = 1;
 export const FLEET_MAX_PARALLEL_SESSIONS_MAX = 30;
-export const FLEET_MAX_PARALLEL_SESSIONS_DEFAULT = 10;
+export const FLEET_MAX_PARALLEL_SESSIONS_DEFAULT = 16;
 
 /** A bounded numeric setting, as one row of the Autopilot section. */
 export interface AutopilotBound {

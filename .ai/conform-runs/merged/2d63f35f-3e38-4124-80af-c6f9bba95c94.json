@@ -1,0 +1,28 @@
+{"schema":"conform-run/1","worker":"2d63f35f-3e38-4124-80af-c6f9bba95c94","subject":"companion-runtime","evaluatedAt":"2026-10-21T18:04:11Z",
+"pairs":[
+{"context":"b0e9ba6b-7737-43ec-b551-9bcc1b71d76f","subject":"companion-runtime","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/Cargo.toml:14 lists no companion crate and src-tauri/src/companion/disk.rs:23 imports crate::db directly (111 of 162 companion files reach crate::db); src-tauri/src/companion/session/turn.rs:70 takes app: &AppHandle as the turn sink, so the second consumer .claude/skills/athena/brain.py:16 re-implements the episode write by parity contract instead of calling the turn (re-confirmed 2026-10-21, unchanged since 2026-10-10)",
+ "techniques":[{"technique":"host-seam-contracts","verdict":"deviation","evidence":"src-tauri/src/companion/disk.rs:23 runtime file imports the host db layer; the rule says such a file has already broken portability, and a second consumer exists (.claude/skills/athena/brain.py:16)"}]},
+{"context":"5ed4c95e-037f-459e-ba3e-aa1300fd7504","subject":"companion-runtime","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/companions/athena/athenaLabels.ts:115 default arm title-cases the raw slug in the bundle that ships with the catalog; 25 of the 60 unique ALLOWED_ACTIONS (src-tauri/src/companion/dispatcher/catalog.rs:11) still have no case and src/features/companions/athena/ApprovalCard.tsx:40 renders that guess with nothing failing (re-confirmed 2026-10-21, count unchanged since 10-16)",
+ "techniques":[{"technique":"action-catalog-single-source","verdict":"deviation","evidence":"src/features/companions/athena/athenaLabels.ts:115 co-deployed surface falls back instead of being exhaustive or pinned by a source-reading test"}]},
+{"context":"d77a22ee-23cb-42f3-a910-590f8622977f","subject":"companion-runtime","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/companions/athena/athenaLabels.ts:115 falls back to titleCase(action) in a bundle that ships with the catalog, and no test compares its cases to the 60 ALLOWED_ACTIONS at src-tauri/src/companion/dispatcher/catalog.rs:11 (25 unlabeled; no test imports athenaLabels) (re-confirmed 2026-10-21)",
+ "techniques":[{"technique":"action-catalog-single-source","verdict":"deviation","evidence":"src/features/companions/athena/athenaLabels.ts:115 unpinned co-deployed fallback hides kind-label drift"}]},
+{"context":"3f38546e-e970-4837-97f7-f0504aa32daf","subject":"companion-runtime","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/decision-center/roster/decisionAdapters.ts:375 titles each approval with actionLabel, which src/features/companions/athena/decision/rosterDecisions.ts:101 voices as the orb prompt; the co-deployed titleCase fallback (src/features/companions/athena/athenaLabels.ts:115) is unpinned, so 25 of 60 kinds are voiced as synthesized slugs with no failing check (re-confirmed 2026-10-21)",
+ "techniques":[{"technique":"action-catalog-single-source","verdict":"deviation","evidence":"src/features/companions/athena/athenaLabels.ts:115 surface tolerant where it should be exhaustive (one artifact)"}]}
+],
+"declined":[
+{"subject":"companion-runtime","context":"2651f2ce-7fc1-4331-8b31-61e783e9746a","reason":"weak governance row (companions-page, lexical-only); judging it would manufacture a verdict - left as a coverage question"},
+{"subject":"companion-runtime","context":"3effd422-2610-4c8a-bc02-53aceafd827c","reason":"already judged 2026-10-21 against the current digest; no re-read needed this run"},
+{"subject":"companion-runtime","context":"9e46b252-8eb1-4a15-a627-f7e342f1d85a","reason":"already judged 2026-10-21 against the current digest"},
+{"subject":"companion-runtime","context":"50bf2ad0-3da7-4405-991a-6e22695903a2","reason":"already judged 2026-10-21 against the current digest"},
+{"subject":"companion-runtime","context":"bcb603ad-ce58-4b76-9623-aa99ace984af","reason":"already judged 2026-10-21 against the current digest"}
+],
+"consults":[
+{"ts":"2026-10-21T18:04:11Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["host-seam-contracts"],"deviations":1},
+{"ts":"2026-10-21T18:04:11Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1},
+{"ts":"2026-10-21T18:04:11Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1},
+{"ts":"2026-10-21T18:04:11Z","bundle":"software-engineering","subjects":["companion-runtime"],"techniques":["action-catalog-single-source"],"deviations":1}
+]}

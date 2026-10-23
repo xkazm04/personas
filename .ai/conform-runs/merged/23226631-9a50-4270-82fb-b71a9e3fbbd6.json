@@ -1,0 +1,35 @@
+{"schema": "conform-run/1", "worker": "23226631-9a50-4270-82fb-b71a9e3fbbd6", "subject": "wizard-flows",
+ "evaluatedAt": "2026-10-16T17:38:37Z",
+ "pairs": [
+  {"context": "3a377c10-3b0f-4674-87f9-aae9cb267c99", "subject": "wizard-flows", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:65 the context's only interview engine has zero callers in src (TrainingStudio.tsx:43 is rendered only by its own test; entry point TrainingAtelier.tsx no longer exists), so no live staged flow remains in this context - the live twin interview is src/features/plugins/twin/experience/ExperienceBody.tsx:60 useSetupSession, outside it",
+   "techniques": [
+    {"technique": "ai-driven-elicitation", "verdict": "not-applicable", "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:65 dead hook; were it live, :205 'catch { return null; }' renders a failed follow-up generation as 'no follow-up needed' (failure-not-empty-success)"},
+    {"technique": "step-state-model", "verdict": "not-applicable", "evidence": "src/features/plugins/twin/sub_training/TrainingStudio.tsx:43 the live-in-tests studio is an unsequenced Q&A board with batch save, not a stepped flow"},
+    {"technique": "snapshot-and-resume", "verdict": "not-applicable", "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:65 no mounted flow to resume"}
+   ],
+   "registryProposal": "Coverage hole in the consumer's context map, not the corpus: src/features/plugins/twin/setup/ (useSetupSession.ts, a persisted backend-owned question queue - the live successor of this context's interview) belongs to NO context in context-map.json, so wizard-flows/ai-driven-elicitation cannot be paired with the code it actually governs. This context's keywords ('wizard','interview') also describe retired code; rescan the context map."},
+  {"context": "2a54cdc2-87af-4298-b490-9eb87f230df7", "subject": "wizard-flows", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_presets/usePresetAdoption.ts:30 the only staged surface is preview|adopting|done over ONE screen (PresetPreviewModal.tsx:142 preview, :183 customize as an inline collapsible), every decision shown at once - the golden path's 'show them at once' case, not a sequenced wizard; ExploreView/BentoGrid are browsing and the described draft-editor tabs are not in this context's files",
+   "techniques": [
+    {"technique": "step-state-model", "verdict": "not-applicable", "evidence": "src/features/templates/sub_presets/usePresetAdoption.ts:30 three lifecycle stages, no steps to declare"},
+    {"technique": "commit-boundary", "verdict": "realized (resonance only)", "evidence": "src/features/templates/sub_presets/usePresetAdoption.ts:136 synchronous double-fire guard; :205 retry re-runs only failed members with per-member status rows"},
+    {"technique": "progress-communication", "verdict": "not-applicable", "evidence": "src/features/templates/sub_presets/PresetPreviewModal.tsx:142 single preview screen, no step rail"}
+   ],
+   "registryProposal": "Technique-shaped resonance: usePresetAdoption.ts is a single-screen review+multi-part apply that realizes commit-boundary's partial-failure doctrine well (per-part outcomes, retry-only-failed, handoff-repair as a named compensating action) without being a wizard. commit-boundary's partial-failure section may deserve a home outside wizard-flows (e.g. a bulk-apply / batch-commit subject) so non-wizard multi-part commits can be judged against it; the matcher paired this context on 'draft/wizard/committed' tokens from a stale description."}
+ ],
+ "declined": [
+  {"subject": "wizard-flows", "context": "89d44c76-ec4c-4388-843e-503cf6ca2507", "reason": "governance: weak, grounding lexical-only (progress bar components matched on 'progress/wizard/flows'); weak contexts are not judged by default - coverage question, the subject almost certainly does not govern a loader primitive"},
+  {"subject": "wizard-flows", "context": "68e3a26f-d83a-447b-a2d0-ad875004506f", "reason": "already judged deviation 2026-10-13 against the current digest (revisionsBehind 0); not stale, not re-read this run"},
+  {"subject": "wizard-flows", "context": "b88ef121-d028-4999-bf34-6e44aed99959", "reason": "already judged deviation 2026-10-13 against the current digest; not re-read this run"},
+  {"subject": "wizard-flows", "context": "e76afaf6-ba3b-4341-b1ad-f444f08da8b8", "reason": "already judged deviation 2026-10-13 against the current digest; not re-read this run"},
+  {"subject": "wizard-flows", "context": "5dc3cb6a-6612-4909-995d-86e92394ec94", "reason": "already judged deviation 2026-10-13 against the current digest; not re-read this run"},
+  {"subject": "wizard-flows", "context": "8650ca36-36fe-4862-98f5-745e866a2687", "reason": "already judged not-applicable 2026-10-13 against the current digest; not re-read this run"}
+ ],
+ "consults": [
+  {"ts": "2026-10-16T17:38:37Z", "bundle": "software-engineering", "subjects": ["wizard-flows"], "techniques": ["ai-driven-elicitation", "step-state-model", "snapshot-and-resume"], "deviations": 0},
+  {"ts": "2026-10-16T17:38:37Z", "bundle": "software-engineering", "subjects": ["wizard-flows"], "techniques": ["step-state-model", "commit-boundary", "progress-communication"], "deviations": 0}
+ ]
+}

@@ -18,6 +18,7 @@ import {
   groupPairings,
   retirePlan,
   runRetire,
+  disconnectIds,
 } from './keyLifecycle';
 
 const NOW = Date.parse('2026-09-23T12:00:00Z');
@@ -196,6 +197,35 @@ describe('case 6: runRetire keeps going past a failure', () => {
   it('a non-Error rejection still yields a message', async () => {
     const out = await runRetire(['x'], () => Promise.reject('nope'));
     expect(out).toEqual({ retired: [], failed: [{ id: 'x', message: 'nope' }] });
+  });
+  it('a serialized AppError rejection yields its text, not "[object Object]"', async () => {
+    // invokeWithTimeout rejects with the backend's serialized AppError object.
+    const appError = { error: 'Not found: external api key', kind: 'not_found', category: 'user' };
+    const out = await runRetire(['y'], () => Promise.reject(appError));
+    expect(out.failed).toEqual([{ id: 'y', message: 'Not found: external api key' }]);
+  });
+});
+
+describe('case 7: Disconnect cuts the origin off, not just its newest pairing', () => {
+  it('revoking disconnectIds leaves the origin with no live key and no group', async () => {
+    const ship = paired(SHIP, 3, { expired: false, baseDaysAgo: 3 });
+    const benchDead = paired(BENCH, 1, { expired: true, baseDaysAgo: 5 });
+    const regular = key();
+    let table = [regular, ...ship, ...benchDead];
+    const shipGroup = groupPairings(table, NOW).find((g) => g.origin === SHIP)!;
+    expect(shipGroup.current).not.toBeNull();
+
+    const revokeFn = vi.fn(async (id: string) => {
+      table = table.map((k) => (k.id === id ? { ...k, revoked_at: iso(NOW) } : k));
+    });
+    await runRetire(disconnectIds(shipGroup), revokeFn);
+
+    const liveForShip = table.filter((k) => k.bound_origin === SHIP && keyState(k, NOW) === 'live');
+    expect(liveForShip).toEqual([]);
+    expect(groupPairings(table, NOW).map((g) => g.origin)).toEqual([BENCH]);
+    // Nothing outside the origin is touched.
+    expect(revokeFn.mock.calls.map((c) => c[0]).sort()).toEqual(ship.map((k) => k.id).sort());
+    expect(keyState(table.find((k) => k.id === regular.id)!, NOW)).toBe('live');
   });
 });
 

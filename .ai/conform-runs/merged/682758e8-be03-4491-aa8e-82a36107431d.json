@@ -1,0 +1,21 @@
+{"schema":"conform-run/1","worker":"682758e8-be03-4491-aa8e-82a36107431d","subject":"agent-runtime-assembly",
+"evaluatedAt":"2026-10-22T12:00:00Z",
+"pairs":[
+{"context":"a6843b83-43a1-4eab-ae40-26f23b949a0d","subject":"agent-runtime-assembly","bundle":"software-engineering","state":"not-applicable",
+ "evidence":"src/hooks/execution/usePersonaExecution.ts:2 these are React hooks that listen to Tauri events a spawned CLI run emits; the model/tool-call hook chain, extension loading and checkpoint store the subject assembles are not in this context",
+ "techniques":[]},
+{"context":"a3b615d2-05d8-47bd-ad92-672c6b42b0f3","subject":"agent-runtime-assembly","bundle":"software-engineering","state":"not-applicable",
+ "evidence":"src-tauri/engine/src/parser.rs:167 parse_stream_line classifies one stdout line of an external CLI; the host does not own the agent loop here, so hook placement, assembly identity and checkpoint custody have no surface in the parser/protocol files",
+ "techniques":[],
+ "registryProposal":"output-stream-parser matched on stream/tool vocabulary; the subject's precondition (the host assembles the loop around the model call) fails for a host that only drives a vendor CLI and parses its output. Consider stating that explicitly in the golden path's scope section."},
+{"context":"8650ca36-36fe-4862-98f5-745e866a2687","subject":"agent-runtime-assembly","bundle":"software-engineering","state":"not-applicable",
+ "evidence":"src/features/agents/sub_tool_runner/libs/useToolRunner.ts:95 the tool runner is a UI that calls invoke_tool_direct over IPC for a single tool; no agent loop, hook chain or session store is assembled in this context",
+ "techniques":[]}
+],
+"declined":[
+{"subject":"agent-runtime-assembly","context":"core","reason":"already judged deviation at revision 28"},
+{"subject":"agent-runtime-assembly","context":"companion-brain","reason":"not read this run; brain files are memory/retrieval, runtime assembly lives in companion/session; left unknown"},
+{"subject":"agent-runtime-assembly","context":"commands-core","reason":"not read this run; left unknown rather than guessed"},
+{"subject":"agent-runtime-assembly","context":"fleet-session-grid","reason":"not read this run; left unknown"}
+],
+"consults":[{"ts":"2026-10-22T12:00:00Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":[],"deviations":0}]}

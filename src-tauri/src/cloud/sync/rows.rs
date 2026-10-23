@@ -1075,18 +1075,28 @@ pub struct Tombstone {
     pub persona_id: String,
 }
 
-/// Persona deletions recorded after `cursor_prev` (RFC3339), oldest first.
+/// The tombstone read, shared with the cursor contract in
+/// `mod::process_tombstones`: rows recorded after the cursor (`?1`) and no
+/// later than the pass horizon (`?2`), oldest first. `deleted_at` is written by
+/// `datetime('now')` (whole seconds, space separator) and the cursor is RFC3339,
+/// so both sides go through `datetime()`.
+pub(super) const TOMBSTONES_SQL: &str = "SELECT persona_id FROM persona_tombstones \
+     WHERE datetime(deleted_at) > datetime(?1) AND datetime(deleted_at) <= datetime(?2) \
+     ORDER BY deleted_at ASC";
+
+/// Persona deletions recorded in `(cursor_prev, horizon]`, oldest first.
 /// `persona_tombstones` is persona-scoped; the sync writer cascades each delete
 /// across the synced child tables (mirroring the local `ON DELETE CASCADE`).
-pub fn fetch_tombstones(pool: &DbPool, cursor_prev: &str) -> Result<Vec<Tombstone>, AppError> {
+pub fn fetch_tombstones(
+    pool: &DbPool,
+    cursor_prev: &str,
+    horizon: &str,
+) -> Result<Vec<Tombstone>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT persona_id FROM persona_tombstones \
-         WHERE datetime(deleted_at) > datetime(?1) ORDER BY deleted_at ASC",
-    )?;
-    let it = stmt.query_map(params![cursor_prev], |r| {
+    let mut stmt = conn.prepare(TOMBSTONES_SQL)?;
+    let it = stmt.query_map(params![cursor_prev, horizon], |r| {
         Ok(Tombstone {
-            persona_id: r.get(0)?,
+            persona_id: r.get("persona_id")?,
         })
     })?;
     it.collect::<Result<Vec<_>, _>>()

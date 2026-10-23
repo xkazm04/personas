@@ -255,6 +255,15 @@ pub fn run() {
                 // registry that is never dropped, so `kill_on_drop` cannot reach
                 // them; end them here or they outlive the app.
                 companion::session::kill_all_warm_sessions();
+                // Pooled MCP stdio children also live in a static that is never
+                // dropped; kill them here too (bounded, so exit cannot hang).
+                tauri::async_runtime::block_on(async {
+                    let _ = tokio::time::timeout(
+                        engine::mcp_tools::STDIO_POOL_SHUTDOWN_BUDGET,
+                        engine::mcp_tools::shutdown_stdio_pool(),
+                    )
+                    .await;
+                });
                 if let Some(state) = app_handle.try_state::<Arc<AppState>>() {
                     state.webbuild_servers.shutdown();
                     state.webbuild_servers.stop_all();

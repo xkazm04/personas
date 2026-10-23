@@ -53,13 +53,18 @@ pub struct ConversationRow {
     pub message_count: i64,
 }
 
+// `unread_count` compares as TIME, not text: episodes are written RFC3339
+// (`2026-10-19T09:00:00…+00:00`, `brain::episodic::append_episode`) while
+// `mark_read` stamps `datetime('now')` (`2026-10-19 10:00:00`). As strings,
+// `'T'` (0x54) sorts after `' '` (0x20), so every episode from the read's own
+// UTC day counted as unread again the moment the list was re-fetched.
 const SELECT_COLS: &str = "\
     s.id, s.title, s.status, s.origin, s.pinned, s.last_active_at, s.created_at, s.last_read_at, \
     (SELECT COUNT(*) FROM companion_node n \
        WHERE n.kind='episode' AND n.session_id = s.id) AS message_count, \
     (SELECT COUNT(*) FROM companion_node n \
        WHERE n.kind='episode' AND n.session_id = s.id \
-         AND (s.last_read_at IS NULL OR n.created_at > s.last_read_at)) AS unread_count";
+         AND (s.last_read_at IS NULL OR julianday(n.created_at) > julianday(s.last_read_at))) AS unread_count";
 
 fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ConversationRow> {
     Ok(ConversationRow {

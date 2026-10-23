@@ -21,7 +21,8 @@ vi.mock('@/stores/vaultStore', () => ({
 // Hoisted: the i18n module calls silentCatch while it is being imported, which
 // happens before a plain top-level const would be initialised.
 const { mockSilentCatch } = vi.hoisted(() => ({ mockSilentCatch: vi.fn((_scope: string) => vi.fn()) }));
-vi.mock('@/lib/silentCatch', () => ({
+vi.mock('@/lib/silentCatch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/silentCatch')>()),
   silentCatch: (scope: string) => mockSilentCatch(scope),
 }));
 
@@ -58,6 +59,43 @@ describe('useHealthCheck — a failed check leaves a trace', () => {
     // The badge renders `error` the same as `idle`, so the breadcrumb is the
     // only durable evidence the door threw.
     expect(mockSilentCatch).toHaveBeenCalledWith('useHealthCheck:run');
+  });
+
+  it('reads the message out of a serialized AppError, the shape invokeWithTimeout really rejects with', async () => {
+    select(personaA);
+    mockFeasibility.mockRejectedValueOnce({ error: 'feasibility door unreachable', kind: 'Internal' });
+    const { result } = renderHook(() => useHealthCheck());
+
+    await act(async () => {
+      await result.current.runHealthCheck(personaA);
+    });
+    expect(result.current.phase).toBe('error');
+    expect(result.current.error).toBe('feasibility door unreachable');
+  });
+});
+
+describe('useHealthCheck — latest run wins', () => {
+  it('drops a slower earlier run that resolves after a newer one', async () => {
+    select(personaA);
+    let releaseFirst: (v: unknown) => void = () => {};
+    mockFeasibility
+      .mockImplementationOnce(() => new Promise((r) => { releaseFirst = r; }))
+      .mockResolvedValueOnce({ overall: 'ready', confirmed_capabilities: [], issues: [] });
+    const { result } = renderHook(() => useHealthCheck());
+
+    let first: Promise<unknown> = Promise.resolve();
+    await act(async () => {
+      first = result.current.runHealthCheck(personaA);
+      await result.current.runHealthCheck(personaA);
+    });
+    expect(result.current.result?.result.status).toBe('ready');
+
+    await act(async () => {
+      releaseFirst({ overall: 'blocked', confirmed_capabilities: [], issues: ['Tool x is not installed'] });
+      await first;
+    });
+    expect(await first).toBeNull();
+    expect(result.current.result?.result.status).toBe('ready');
   });
 });
 

@@ -253,7 +253,6 @@ impl ConcurrencyTracker {
     }
 
     /// Update the global maximum concurrent executions.
-    #[allow(dead_code)]
     pub fn set_global_max_concurrent(&mut self, max: usize) {
         self.global_max_concurrent = max;
     }

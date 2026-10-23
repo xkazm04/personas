@@ -63,7 +63,11 @@
     "unknown": "Desconocido",
     "value_delivered_count": "Valor entregado",
     "value_delivered_rate": "Tasa de valor entregado",
-    "value_section_title": "Valor de negocio"
+    "value_section_title": "Valor de negocio",
+    "prev_p50": "p50 anterior",
+    "prev_p95": "p95 anterior",
+    "range_last_days_one": "Último día",
+    "range_last_days_other": "Últimos {count} días"
   },
   "analytics_dashboard": {
     "active_count": "{count} activas",
@@ -640,7 +644,13 @@
     "ask_athena_prompt": "Estoy revisando una sugerencia de optimización de flota para mis agentes: «{title}». {description} Acción sugerida: {action}. {focus}",
     "open_lab": "Abrir Lab",
     "open_lab_hint": "Prueba modelos alternativos para {persona} en el Lab",
-    "title": "Optimización de flota"
+    "title": "Optimización de flota",
+    "label_action": "Acción",
+    "label_agent": "Agente",
+    "label_impact": "Impacto",
+    "severity_critical": "Urgente",
+    "severity_info": "Observación",
+    "severity_warning": "Sugerido"
   },
   "focused_decision": {
     "accept": "Aceptar",
@@ -898,7 +908,6 @@
     "bulk_acknowledge_count": "Reconocer {count}",
     "bulk_clear_selection": "Limpiar",
     "bulk_resolve_count": "Resolver {count}",
-    "col_days": "Días",
     "col_incident": "Incidente",
     "detail_label_acknowledged": "Reconocido",
     "detail_label_created": "Creado",
@@ -926,10 +935,8 @@
     "filter_source_all": "Todas las fuentes",
     "filter_source_label": "Fuente",
     "filter_status_acknowledged": "Reconocidos",
-    "filter_status_all": "Todos",
     "filter_status_dismissed": "Descartados",
     "filter_status_in_progress": "En progreso",
-    "filter_status_label": "Estado",
     "filter_status_open": "Abiertos",
     "filter_status_resolved": "Resueltos",
     "filters_active_aria": "{count} filtros activos",
@@ -939,7 +946,6 @@
     "group_by_none": "Ninguno",
     "group_by_severity": "Gravedad",
     "group_by_source": "Fuente",
-    "group_no_persona": "Sin agente",
     "groups_collapse_all": "Contraer todo",
     "groups_expand_all": "Expandir todo",
     "guidance_alert": "Se activó una regla de alerta. Revisa la métrica que superó su umbral.",
@@ -996,7 +1002,6 @@
     "noc_diagnosis_title": "Causa raíz",
     "noc_evidence_label": "Evidencia",
     "noc_handled_by": "Gestionado por Athena",
-    "noc_handled_continued": "Reanudado automáticamente",
     "noc_handled_empty": "Aún no hay nada gestionado de forma autónoma — cuando pueda arreglar un incidente por mí misma con seguridad, aparecerá aquí.",
     "noc_handled_title": "Gestionado de forma autónoma",
     "noc_no_diagnosis": "Sin diagnóstico todavía — puedo investigar este incidente por usted.",
@@ -1025,7 +1030,6 @@
     "source_policy": "Política",
     "source_provider": "Proveedor",
     "source_tool": "Herramienta",
-    "stale_label": "Pendiente",
     "subtitle": "Bandeja multiorigen para alertas y errores",
     "title": "Incidentes",
     "urgency_critical": "Requiere atención ahora",
@@ -1097,7 +1101,8 @@
     "stat_total_runs": "Ejecuciones totales",
     "subtitle": "Rankings de rendimiento en todos los agentes",
     "this_agent": "Este agente",
-    "title": "Clasificación de agentes"
+    "title": "Clasificación de agentes",
+    "sort_hint": "Haz clic en una métrica para ordenar"
   },
   "llm_spend": {
     "by_source": "Coste por nivel",
@@ -1156,7 +1161,6 @@
     "curation_schedule_save": "Guardar programación",
     "curation_schedule_title": "Programar curación de memorias",
     "delete_all": "Eliminar todo",
-    "delete_all_confirm_body": "Esto elimina permanentemente las {count} memorias. Esta acción no se puede deshacer.",
     "delete_all_confirm_cta": "Eliminar todo",
     "delete_all_confirm_title": "¿Eliminar todas las memorias?",
     "form": {
@@ -1182,13 +1186,21 @@
     "reflect_pick_persona": "Reflexionar sobre los recuerdos de un agente",
     "reflecting": "Reflexionando…",
     "search_placeholder": "Buscar memorias…",
-    "title": "Memorias"
+    "title": "Memorias",
+    "delete_all_confirm_body_all_agents": "Esto elimina de forma permanente las {count} memorias de todos los agentes, sea cual sea el filtro actual. No se puede deshacer."
   },
   "memory_actions": {
     "dismiss_suggestion": "Descartar sugerencia",
     "memory_insights": "Perspectivas de memoria",
     "suggestions": "{count} sugerencias",
-    "suggestions_one": "{count} sugerencia"
+    "suggestions_one": "{count} sugerencia",
+    "kind_throttle": "Regla de limitación",
+    "kind_schedule": "Ajuste de programación",
+    "kind_alert": "Regla de alerta",
+    "kind_config": "Cambio de configuración",
+    "kind_routing": "Regla de enrutamiento",
+    "rules_restored_from_session": "No se pudieron leer tus reglas de acción de memoria guardadas y se restauraron desde esta sesión.",
+    "rules_unreadable": "No se pudieron leer tus reglas de acción de memoria guardadas y quizá haya que volver a crearlas."
   },
   "memory_card": {
     "cancel": "Cancelar",
@@ -1218,7 +1230,14 @@
     "resolved_toast": "Conflicto resuelto",
     "retire_blocked_core_toast": "No se puede archivar un recuerdo esencial (fijado): resuelve este conflicto a mano",
     "scanned_scope": "en las {count} memorias más recientes",
-    "vs": "vs"
+    "vs": "vs",
+    "kind_duplicate": "Duplicado",
+    "kind_contradiction": "Contradicción",
+    "kind_superseded": "Reemplazado",
+    "reason_contradiction": "Instrucciones posiblemente contradictorias sobre el mismo tema ({pct} % de solapamiento)",
+    "reason_duplicate_cross_agent": "Recuerdos casi duplicados entre distintos agentes ({pct} % de similitud)",
+    "reason_duplicate_same_agent": "Recuerdos casi duplicados dentro del mismo agente ({pct} % de similitud)",
+    "reason_superseded": "Un recuerdo más reciente puede reemplazar a uno anterior sobre el mismo tema ({pct} % de solapamiento)"
   },
   "memory_detail": {
     "category_label": "Categoría",
@@ -1366,7 +1385,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", luego copie su clave API desde Configuración. Esta clave se almacena localmente y se comparte entre todos los agentes.",
-    "sign_up_free_at": "Regístrate gratis en"
+    "sign_up_free_at": "Regístrate gratis en",
+    "api_key_label": "Clave de API",
+    "litellm_base_url_label": "URL base del proxy",
+    "litellm_master_key_label": "Clave maestra",
+    "ollama_key_placeholder": "Pega tu clave de ollama.com/settings"
   },
   "predictive_alerts_extra": {
     "all_nominal": "Todos los sistemas nominales",
@@ -1887,7 +1910,9 @@
     "p95_latency": "Latencia P95",
     "runs": "Ejecuciones",
     "streak": "Racha",
-    "successful": "Exitoso"
+    "successful": "Exitoso",
+    "daily_trend_hint_one": "{date}: {rate} ({count} ejecución)",
+    "daily_trend_hint_other": "{date}: {rate} ({count} ejecuciones)"
   },
   "sla": {
     "active_agents": "{count} agentes activos",
@@ -2106,5 +2131,15 @@
   "dc_pending_lead": "Cada revisión pendiente se abre en el Centro de decisiones, con su caso completo y las mismas teclas que cualquier otra decisión.",
   "dc_pending_list_aria": "Revisiones pendientes",
   "dc_select_review": "Seleccionar revisión",
-  "dc_col_decision": "Decisión"
+  "dc_col_decision": "Decisión",
+  "ai_healing_overlay": {
+    "collapse": "Contraer",
+    "expand": "Expandir",
+    "status_complete": "Completado",
+    "status_failed": "Fallido",
+    "status_in_progress": "En curso",
+    "step_applying": "Aplicando correcciones",
+    "step_completed": "Completado",
+    "step_diagnosing": "Diagnosticando"
+  }
 }

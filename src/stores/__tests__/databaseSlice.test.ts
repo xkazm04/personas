@@ -194,4 +194,38 @@ describe("databaseSlice", () => {
       ).rejects.toThrow("Query syntax error");
     });
   });
+
+  describe("per-credential fetches", () => {
+    it("fetching one database keeps the other databases' rows", async () => {
+      mockInvokeMap({
+        list_db_schema_tables: [makeTable({ id: "a-1", credential_id: "cred-a" })],
+        list_db_saved_queries: [makeQuery({ id: "qa-1", credential_id: "cred-a" })],
+      });
+      await useVaultStore.getState().fetchDbSchemaTables("cred-a");
+      await useVaultStore.getState().fetchDbSavedQueries("cred-a");
+
+      mockInvokeMap({
+        list_db_schema_tables: [makeTable({ id: "b-1", credential_id: "cred-b" })],
+        list_db_saved_queries: [makeQuery({ id: "qb-1", credential_id: "cred-b" })],
+      });
+      await useVaultStore.getState().fetchDbSchemaTables("cred-b");
+      await useVaultStore.getState().fetchDbSavedQueries("cred-b");
+
+      const state = useVaultStore.getState();
+      expect(state.dbSchemaTables.map((t) => t.id).sort()).toEqual(["a-1", "b-1"]);
+      expect(state.dbSavedQueries.map((q) => q.id).sort()).toEqual(["qa-1", "qb-1"]);
+    });
+
+    it("a refetch replaces only that database's rows", async () => {
+      useVaultStore.setState({
+        dbSavedQueries: [
+          makeQuery({ id: "qa-old", credential_id: "cred-a" }),
+          makeQuery({ id: "qb-1", credential_id: "cred-b" }),
+        ],
+      });
+      mockInvokeMap({ list_db_saved_queries: [makeQuery({ id: "qa-new", credential_id: "cred-a" })] });
+      await useVaultStore.getState().fetchDbSavedQueries("cred-a");
+      expect(useVaultStore.getState().dbSavedQueries.map((q) => q.id).sort()).toEqual(["qa-new", "qb-1"]);
+    });
+  });
 });

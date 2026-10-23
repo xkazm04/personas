@@ -1,0 +1,20 @@
+{"schema":"conform-run/1","worker":"9640126c-236c-4871-b8f2-5ff1c48cafca","subject":"agent-memory",
+"evaluatedAt":"2026-10-15T12:00:00Z",
+"pairs":[
+{"context":"companion-proactive","subject":"agent-memory","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src-tauri/src/companion/proactive/rollup.rs:1 the 'rollup' is an end-of-day audit digest card composed deterministically from the turn ledger and delivered as a notification, not a pass that supersedes accreted memory items; the pipeline (triggers, quiet hours, budget.rs:1 attention cap) writes no memory store, so rollup-compaction and the other memory-pipeline techniques have no precondition here",
+"evaluatedAgainst":"sha256-b2:4f054116d66a9495","evaluatedRevision":51,
+"techniques":[{"technique":"rollup-compaction","verdict":"not-applicable","evidence":"src-tauri/src/companion/proactive/rollup.rs:1 digest card over the ledger, no store family is merged or superseded"}],
+"registryProposal":"Matcher resonance on the token 'rollup' (why: rollup, budget, writes): daily-digest notification rollups are not rollup-compaction. Consider a not-when line in rollup-compaction naming report/digest cards."},
+{"context":"mcp-server","subject":"agent-memory","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src-tauri/src/mcp_server/vault.rs:1 the sidecar only walks and TF-IDF-searches an Obsidian vault on the filesystem for external MCP clients; it captures, consolidates, decays and injects nothing for an agent, so the memory pipeline's preconditions do not hold in this context (the agent memory pipeline lives in src-tauri/src/companion/brain/)",
+"evaluatedAgainst":"sha256-b2:4f054116d66a9495","evaluatedRevision":51,
+"techniques":[],
+"registryProposal":"Matched on generic tokens (search, write, notes); a note-vault search tool is markdown-vault territory, not agent-memory."}
+],
+"declined":[
+{"subject":"agent-memory","context":"companion","reason":"Context files are infrastructure (disk layout, util, model routing, wake window); disk.rs:1 only declares the brain directory layout and the memory techniques are exercised in companion-brain, already judged. Neither conformant nor not-applicable could be argued with an honest anchor, left unknown."},
+{"subject":"agent-memory","context":"plugins-obsidian-brain","reason":"UI for vault sync settings (SetupPanel.tsx:63 syncMemories toggle); the memory-bearing logic is on the Rust side. Not read deeply enough to argue not-applicable, left for a run that reads the sync commands."},
+{"subject":"agent-memory","context":"(rest of 148 pairs)","reason":"Map holds 148 agent-memory pairs, none with confidence strong and state unknown (all 'probable'); budget is 3-6. Note: 98 pairs map-wide are stale; per-pair digest in the map (7770d30ff5df3c25) differs from the index now (4f054116d66a9495, revision 51 vs map revision 48), so the written digests are the index's."}
+],
+"consults":[{"ts":"2026-10-15T12:00:00Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["rollup-compaction","probe-without-write-back","durable-store-failure-posture"],"deviations":0}]}

@@ -64,6 +64,15 @@
       "resolved": false
     },
     "overview/sub_certification/components/GroundingTable.tsx": {"count":1,"sections":[7],"lines":["76"],"contexts":["- `overview/sub_certification/components/GroundingTable.tsx:76` — `getRowKey` using `Math.random()`."],"resolved":false},
+    "overview/sub_incidents/components/IncidentTableHeader.tsx": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["52-54"],
+      "contexts": [
+        "| `overview/sub_incidents/components/IncidentTableHeader.tsx:52-54` | An entire separate header component exists solely to reimplement the column header band, plus own tracker and ghost rows. |"
+      ],
+      "resolved": false
+    },
     "overview/sub_patterns/KnowledgeTree.tsx": {"count":1,"sections":[6],"lines":["355"],"contexts":["- `overview/sub_patterns/KnowledgeTree.tsx:355` — the bulk-action path through to `DataGrid`'s floating toolbar."],"resolved":false},
     "plugins/twin/sub_tone/ToneConsole.tsx": {
       "count": 1,
@@ -184,16 +193,6 @@
       "contexts": ["5. **Wire filters into the column, not above the table** — `filterOptions` + `filterValue` + `onFilterChange`, or `filterComponent` for bespoke controls (`EventLogList.tsx:152-159`)."],
       "resolvedFrom": "basename",
       "verbatim": "EventLogList.tsx"
-    },
-    "src/features/overview/sub_incidents/components/IncidentTableHeader.tsx": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["52-54"],
-      "contexts": [
-        "| `overview/sub_incidents/components/IncidentTableHeader.tsx:52-54` | An entire separate header component exists solely to reimplement the column header band, plus own tracker and ghost rows. |"
-      ],
-      "resolvedFrom": "suffix",
-      "verbatim": "overview/sub_incidents/components/IncidentTableHeader.tsx"
     },
     "src/features/overview/sub_leaderboard/components/LeaderboardMatrixView.tsx": {
       "count": 2,

@@ -228,5 +228,22 @@
   "soundings_where_it_sits": "أين يقع. المشاريع المرتبطة بخط عريض",
   "soundings_who_athena": "أثينا",
   "soundings_who_chart": "الرسم البياني",
-  "soundings_yes": "نعم"
+  "soundings_yes": "نعم",
+  "dim_label_agents": "الوكلاء",
+  "dim_label_auth": "المصادقة",
+  "dim_label_ci": "CI",
+  "dim_label_datalinks": "تحليل البيانات",
+  "dim_label_db": "قاعدة البيانات",
+  "dim_label_goals": "الأهداف",
+  "dim_label_hosting": "الاستضافة",
+  "dim_label_ideas": "الأفكار",
+  "dim_label_kpi": "KPI",
+  "dim_label_llm": "تكلفة LLM",
+  "dim_label_monitoring": "المراقبة",
+  "dim_label_security": "الأمان",
+  "dim_label_skills": "المهارات",
+  "dim_label_support": "الدعم",
+  "dim_label_tests": "الاختبارات",
+  "scan_dispatched_toast": "تم إرسال مسح الأفكار ({label})",
+  "scan_drawer_label": "مسح الأفكار ({label})"
 }

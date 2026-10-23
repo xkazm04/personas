@@ -1,6 +1,6 @@
 /**
- * What an empty deck offers instead of a blank: the other chips (or, under the
- * `lanes` setting, the other lanes) that still hold cards, each with its count
+ * What an empty deck offers instead of a blank: the other chips (or, for a
+ * lane deck, the other lanes) that still hold cards, each with its count
  * and a printed digit. Picking one opens the deck there (`switchDeckChip` /
  * `switchDeckLane`).
  */

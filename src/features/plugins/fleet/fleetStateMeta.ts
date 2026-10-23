@@ -78,7 +78,36 @@ export function laneOfState(state: FleetSessionState): FleetAttentionLane {
   return 'done';
 }
 
-export const FLEET_LANE_ORDER: FleetAttentionLane[] = ['needs_you', 'working', 'parked', 'done'];
+/**
+ * A row with no process behind it — a TOMBSTONE. Its X dismisses the row
+ * (`removeSession`) instead of killing it, it has nothing to hibernate, and a
+ * tile shows a status block rather than attaching a terminal.
+ *
+ * `expired` belongs here: it waited in the queue and was retired without ever
+ * running (no PID, no PTY). Three hand-written `exited || hibernated` copies
+ * left it out, so its X called `killSession`, the backend reported no child,
+ * and the row could never leave the list. `queued` does NOT belong: it is still
+ * a live dispatch the queue will promote on this id, and removing it here would
+ * strand that dispatch.
+ */
+export function isTombstoneState(state: FleetSessionState): boolean {
+  return state === 'exited' || state === 'hibernated' || state === 'expired';
+}
+
+/** Whether a broadcast can reach the row: a live PTY writer exists. Tombstones
+ *  have none and a queued row has none YET, so a write fails either way. */
+export function isBroadcastTargetState(state: FleetSessionState): boolean {
+  return !isTombstoneState(state) && state !== 'queued';
+}
+
+/** Whether Sleep can free anything: a tombstone has no process, and a queued
+ *  row has none YET (the backend returns `false` for both, so the control
+ *  would be a silent no-op). */
+export function canHibernateState(state: FleetSessionState): boolean {
+  return !isTombstoneState(state) && state !== 'queued';
+}
+
+export const FLEET_LANE_ORDER: FleetAttentionLane[] =['needs_you', 'working', 'parked', 'done'];
 
 /** `plugins.fleet` key per lane — resolved by the component that renders it. */
 export const FLEET_LANE_LABEL_KEY: Record<FleetAttentionLane, keyof FleetTranslations> = {

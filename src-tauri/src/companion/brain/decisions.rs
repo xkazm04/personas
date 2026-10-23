@@ -12,9 +12,8 @@
 
 use rusqlite::params;
 use serde::Serialize;
-use uuid::Uuid;
 
-use crate::companion::brain::sim_clock;
+use crate::companion::brain::{sim_clock, util};
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
@@ -58,15 +57,7 @@ pub fn save_batch(
     let now = sim_clock::now().to_rfc3339();
     let mut ids = Vec::with_capacity(decisions.len());
     for d in decisions {
-        let id = format!(
-            "dec_{}",
-            Uuid::new_v4()
-                .simple()
-                .to_string()
-                .chars()
-                .take(10)
-                .collect::<String>()
-        );
+        let id = format!("dec_{}", util::short_id(10));
         let result = conn.execute(
             "INSERT INTO companion_design_decision
              (id, session_id, persona_context, label, choice, rationale, decision_timestamp, created_at)

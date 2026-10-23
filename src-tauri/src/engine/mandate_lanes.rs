@@ -6,7 +6,15 @@
 //! (`roster/decisionAdapters.ts`, `quick-answer/triage/triageAdapters.ts`):
 //! `review:<id>`, `idea:<id>`, `incident:<id>`, `report:<id>`,
 //! `council:<subjectId>`, `approval:<id>`, `policy:<id>`, `evolution:<id>`,
-//! `goal:<goal_id>`, plus `mandate:<charterId>` for a draft charter's Sign entry.
+//! `goal:<goal_id>`, plus `mandate:<charterId>` for a draft charter's Sign entry
+//! and `mandate-reread:<charterId>` for a signed mandate whose use asks to be
+//! read again (WP6, `engine::mandate_reread_view`).
+//!
+//! The routing itself is [`routed`]: every pending item read and routed ONCE,
+//! which the snapshot, the re-read, the Scopes section and the orphanage all
+//! build on, so they never disagree about where an item went. Items archived
+//! from the Orphans lane (`orphan_archive`, WP6) are left out of it while they
+//! are still orphans.
 //!
 //! **Not in the snapshot, by design:** build-session questions
 //! (`question:<sessionId>:<keys>`) and chat threads (`message`) are derived on
@@ -27,9 +35,10 @@ use personas_engine::mandate_router::{
     RouterAct,
 };
 
-use crate::db::models::IncidentFilters;
+use crate::db::models::{IncidentFilters, MandateReread, MandateSummary};
 use crate::db::repos::communication::{manual_reviews, reports};
 use crate::db::repos::core::charter_acts::{self, ItemActState};
+use crate::db::repos::core::orphan_archive;
 use crate::db::repos::dev::council;
 use crate::db::repos::dev_tools;
 use crate::db::repos::execution::{audit_incidents, policy_proposals};
@@ -63,6 +72,8 @@ pub(crate) mod source {
     pub const APPROVALS: &str = "approvals";
     /// The act log: without it, filed items cannot be told from fresh ones.
     pub const ACTS: &str = "acts";
+    /// The orphan archive: without it, archived orphans would reappear.
+    pub const ARCHIVE: &str = "archive";
 }
 
 /// Whether a council subject waits on the operator NOW. A Rust copy of the
@@ -78,10 +89,41 @@ pub(crate) fn council_decidable(
     state == "ready" && (tier == Some("major") || kind == "architecture") && mode != Some("lite")
 }
 
-/// One item before routing: its frontend id and what the router reads.
+/// One item before routing: its frontend id, what the router reads, and
+/// what a reader of the orphanage and the Scopes section is shown.
 struct Pending {
     id: String,
     input: RouteInput,
+    title: Option<String>,
+    created_at: Option<String>,
+    /// The persona that raised it, where the source names one.
+    persona_id: Option<String>,
+}
+
+impl Pending {
+    fn new(id: String, input: RouteInput) -> Self {
+        Self {
+            id,
+            input,
+            title: None,
+            created_at: None,
+            persona_id: None,
+        }
+    }
+
+    fn by(mut self, persona_id: &str) -> Self {
+        self.persona_id = Some(persona_id.to_string());
+        self
+    }
+
+    fn shown(mut self, title: Option<&str>, created_at: Option<&str>) -> Self {
+        self.title = title
+            .map(str::trim)
+            .filter(|t| !t.is_empty())
+            .map(str::to_string);
+        self.created_at = created_at.map(str::to_string);
+        self
+    }
 }
 
 fn project_input(kind: RouteKind, id: &str, project_id: Option<&str>) -> RouteInput {
@@ -107,24 +149,31 @@ fn collect(
     };
 
     match manual_reviews::list_page(pool, None, Some("pending"), None, REVIEW_LIMIT) {
-        Ok((rows, _)) => out.extend(rows.iter().map(|r| Pending {
-            id: format!("review:{}", r.id),
-            input: review_input(r, book),
+        Ok((rows, _)) => out.extend(rows.iter().map(|r| {
+            Pending::new(format!("review:{}", r.id), review_input(r, book))
+                .shown(Some(&r.title), Some(&r.created_at))
+                .by(&r.persona_id)
         })),
         Err(e) => fail(source::REVIEWS, e),
     }
     match dev_tools::list_ideas(pool, None, Some("pending"), None, Some(IDEA_LIMIT), None) {
-        Ok(rows) => out.extend(rows.iter().map(|r| Pending {
-            id: format!("idea:{}", r.id),
-            input: project_input(RouteKind::Idea, &r.id, r.project_id.as_deref()),
+        Ok(rows) => out.extend(rows.iter().map(|r| {
+            Pending::new(
+                format!("idea:{}", r.id),
+                project_input(RouteKind::Idea, &r.id, r.project_id.as_deref()),
+            )
+            .shown(Some(&r.title), Some(&r.created_at))
         })),
         Err(e) => fail(source::IDEAS, e),
     }
     match policy_proposals::list(pool, true, PROPOSAL_LIMIT) {
         // A policy proposal is fleet-wide: it belongs to no project.
-        Ok(rows) => out.extend(rows.iter().map(|r| Pending {
-            id: format!("policy:{}", r.id),
-            input: RouteInput::new(RouteKind::Policy, r.id.clone()),
+        Ok(rows) => out.extend(rows.iter().map(|r| {
+            Pending::new(
+                format!("policy:{}", r.id),
+                RouteInput::new(RouteKind::Policy, r.id.clone()),
+            )
+            .shown(None, Some(&r.created_at))
         })),
         Err(e) => fail(source::POLICY, e),
     }
@@ -132,17 +181,17 @@ fn collect(
         Ok(rows) => out.extend(rows.iter().map(|r| {
             let mut input = RouteInput::new(RouteKind::Evolution, r.id.clone());
             input.project_id = book.project_of_persona(&r.persona_id);
-            Pending {
-                id: format!("evolution:{}", r.id),
-                input,
-            }
+            Pending::new(format!("evolution:{}", r.id), input).by(&r.persona_id)
         })),
         Err(e) => fail(source::EVOLUTION, e),
     }
     match dev_tools::list_pending_acceptance(pool) {
-        Ok(rows) => out.extend(rows.iter().map(|r| Pending {
-            id: format!("goal:{}", r.goal_id),
-            input: project_input(RouteKind::GoalClaim, &r.goal_id, Some(&r.project_id)),
+        Ok(rows) => out.extend(rows.iter().map(|r| {
+            Pending::new(
+                format!("goal:{}", r.goal_id),
+                project_input(RouteKind::GoalClaim, &r.goal_id, Some(&r.project_id)),
+            )
+            .shown(Some(&r.title), r.completed_at.as_deref())
         })),
         Err(e) => fail(source::GOALS, e),
     }
@@ -159,16 +208,16 @@ fn collect(
         since: None,
     };
     match audit_incidents::list(pool, &incident_filters, INCIDENT_LIMIT, 0) {
-        Ok(rows) => out.extend(rows.iter().map(|r| Pending {
-            id: format!("incident:{}", r.id),
-            input: incident_input(r, book),
+        Ok(rows) => out.extend(rows.iter().map(|r| {
+            Pending::new(format!("incident:{}", r.id), incident_input(r, book))
+                .shown(Some(&r.title), Some(&r.created_at))
         })),
         Err(e) => fail(source::INCIDENTS, e),
     }
     match reports::list_unread(pool, None, Some(REPORT_LIMIT)) {
-        Ok(rows) => out.extend(rows.iter().map(|r| Pending {
-            id: format!("report:{}", r.id),
-            input: report_input(r, book),
+        Ok(rows) => out.extend(rows.iter().map(|r| {
+            Pending::new(format!("report:{}", r.id), report_input(r, book))
+                .shown(r.title.as_deref(), Some(&r.created_at))
         })),
         Err(e) => fail(source::REPORTS, e),
     }
@@ -178,9 +227,12 @@ fn collect(
                 .filter(|s| {
                     council_decidable(&s.state, s.tier.as_deref(), &s.kind, s.mode.as_deref())
                 })
-                .map(|s| Pending {
-                    id: format!("council:{}", s.id),
-                    input: project_input(RouteKind::Council, &s.id, Some(&s.project_id)),
+                .map(|s| {
+                    Pending::new(
+                        format!("council:{}", s.id),
+                        project_input(RouteKind::Council, &s.id, Some(&s.project_id)),
+                    )
+                    .shown(Some(&s.title), None)
                 }),
         ),
         Err(e) => fail(source::COUNCIL, e),
@@ -191,10 +243,7 @@ fn collect(
         Ok(rows) => out.extend(rows.iter().map(|r| {
             let mut input = RouteInput::new(RouteKind::Approval, r.id.clone());
             input.irreversible = approval_irreversible(&r.action);
-            Pending {
-                id: format!("approval:{}", r.id),
-                input,
-            }
+            Pending::new(format!("approval:{}", r.id), input)
         })),
         Err(e) => fail(source::APPROVALS, e),
     }
@@ -225,11 +274,26 @@ fn lane_of(book: &LaneBook, input: &RouteInput, acted: Option<&ItemActState>) ->
     }
 }
 
-/// Build the snapshot. `Err` only when the mandates cannot be read.
-pub(crate) fn build_snapshot(
-    pool: &DbPool,
-    user_db: &UserDbPool,
-) -> Result<DecisionLanesSnapshot, AppError> {
+/// One pending item with the lane the router (and the act log) gave it.
+pub(crate) struct RoutedItem {
+    /// EXACTLY the frontend `DecisionItem.id`.
+    pub(crate) id: String,
+    pub(crate) input: RouteInput,
+    pub(crate) route: Route,
+    pub(crate) title: Option<String>,
+    pub(crate) created_at: Option<String>,
+    pub(crate) persona_id: Option<String>,
+}
+
+/// Every pending item routed once, with the book it was routed against.
+pub(crate) struct Routed {
+    pub(crate) book: LaneBook,
+    pub(crate) items: Vec<RoutedItem>,
+    pub(crate) failed: Vec<String>,
+}
+
+/// Read and route every pending item. `Err` only when the mandates cannot be read.
+pub(crate) fn routed(pool: &DbPool, user_db: &UserDbPool) -> Result<Routed, AppError> {
     let book = LaneBook::load(pool)?;
     let mut pending = Vec::new();
     let mut failed = Vec::new();
@@ -261,13 +325,118 @@ pub(crate) fn build_snapshot(
         }
     }
 
+    let archived = orphan_archive::archived_ids(pool).unwrap_or_else(|e| {
+        tracing::warn!(error = %e, "decision_lanes_snapshot: orphan archive unreadable");
+        failed.push(source::ARCHIVE.to_string());
+        Default::default()
+    });
+
+    let items = pending
+        .into_iter()
+        .filter_map(|p| {
+            let acted = acts
+                .get(p.input.kind.wire())
+                .and_then(|m| m.get(&p.input.item_id));
+            let route = lane_of(&book, &p.input, acted);
+            // Archived from the Orphans lane: out of every lane while it is
+            // still an orphan. Once a mandate holds its project it routes again.
+            if route.lane == Lane::Orphan && archived.contains(&p.id) {
+                return None;
+            }
+            Some(RoutedItem {
+                id: p.id,
+                input: p.input,
+                route,
+                title: p.title,
+                created_at: p.created_at,
+                persona_id: p.persona_id,
+            })
+        })
+        .collect();
+    Ok(Routed {
+        book,
+        items,
+        failed,
+    })
+}
+
+/// `mandate-reread:<charterId>`: a signed mandate asking to be read again.
+pub(crate) const REREAD_PREFIX: &str = "mandate-reread:";
+
+/// Build the snapshot. `Err` only when the mandates cannot be read.
+pub(crate) fn build_snapshot(
+    pool: &DbPool,
+    user_db: &UserDbPool,
+) -> Result<DecisionLanesSnapshot, AppError> {
+    let r = routed(pool, user_db)?;
+    let rereads = crate::engine::mandate_reread_view::rereads(pool, &r);
+    let mut snapshot = snapshot_of(r, &rereads);
+    // Mandates mirrored from their home device (WP9) are never routed here:
+    // this device holds none of their items. Only their Sign entries join,
+    // so a draft or a re-read waiting on the home shows in this device's
+    // lanes too, and a verdict on it is sent home.
+    match crate::db::repos::core::charter_mirror::list(pool) {
+        Ok(mirrored) => add_mirrored(&mut snapshot, &mirrored),
+        Err(e) => {
+            tracing::warn!(error = %e, "lanes: mirrored mandates unreadable");
+            snapshot.failed_sources.push("mirrored_mandates".into());
+        }
+    }
+    Ok(snapshot)
+}
+
+/// The Sign entries of mirrored mandates: a draft, or a signed one whose home
+/// asked for a re-read. Their charters count nothing held (their items are on
+/// the home device). A charter id the snapshot already holds is left alone:
+/// a home never takes a mirror of its own charter.
+pub(crate) fn add_mirrored(snapshot: &mut DecisionLanesSnapshot, mirrored: &[MandateSummary]) {
+    for s in mirrored {
+        if snapshot
+            .charters
+            .iter()
+            .any(|c| c.charter_id == s.charter_id)
+        {
+            continue;
+        }
+        let sign = |item_id: String, why: &str| LaneEntry {
+            item_id,
+            item_kind: "mandate".to_string(),
+            lane: Lane::Sign,
+            clause: LaneClause::None,
+            charter_id: Some(s.charter_id.clone()),
+            coalesce_key: format!("{}:sign:{why}", s.charter_id),
+            irreversible: None,
+            project_id: Some(s.project_id.clone()),
+        };
+        if s.status == "draft" {
+            snapshot
+                .items
+                .push(sign(format!("mandate:{}", s.charter_id), "none"));
+        } else if s.reread.is_some() {
+            snapshot
+                .items
+                .push(sign(format!("{REREAD_PREFIX}{}", s.charter_id), "reread"));
+        }
+        snapshot.charters.push(LaneCharter {
+            charter_id: s.charter_id.clone(),
+            project_id: s.project_id.clone(),
+            status: s.status.clone(),
+            envelope_version: s.envelope.envelope_version,
+            held: 0,
+        });
+    }
+}
+
+fn snapshot_of(r: Routed, rereads: &HashMap<String, MandateReread>) -> DecisionLanesSnapshot {
+    let Routed {
+        book,
+        items: routed,
+        failed,
+    } = r;
     let mut held: HashMap<String, u32> = HashMap::new();
-    let mut items: Vec<LaneEntry> = Vec::with_capacity(pending.len());
-    for p in pending {
-        let acted = acts
-            .get(p.input.kind.wire())
-            .and_then(|m| m.get(&p.input.item_id));
-        let r = lane_of(&book, &p.input, acted);
+    let mut items: Vec<LaneEntry> = Vec::with_capacity(routed.len());
+    for p in routed {
+        let r = p.route;
         if r.lane == Lane::Held {
             if let Some(c) = &r.charter_id {
                 *held.entry(c.clone()).or_default() += 1;
@@ -298,6 +467,23 @@ pub(crate) fn build_snapshot(
             project_id: Some(s.project_id.clone()),
         });
     }
+    // A signed mandate whose use asks for a second reading (WP6).
+    for s in book
+        .summaries
+        .iter()
+        .filter(|s| rereads.contains_key(&s.charter_id))
+    {
+        items.push(LaneEntry {
+            item_id: format!("{REREAD_PREFIX}{}", s.charter_id),
+            item_kind: "mandate".to_string(),
+            lane: Lane::Sign,
+            clause: LaneClause::None,
+            charter_id: Some(s.charter_id.clone()),
+            coalesce_key: format!("{}:sign:reread", s.charter_id),
+            irreversible: None,
+            project_id: Some(s.project_id.clone()),
+        });
+    }
 
     let charters = book
         .summaries
@@ -311,12 +497,12 @@ pub(crate) fn build_snapshot(
         })
         .collect();
 
-    Ok(DecisionLanesSnapshot {
+    DecisionLanesSnapshot {
         items,
         charters,
         failed_sources: failed,
         generated_at: chrono::Utc::now().to_rfc3339(),
-    })
+    }
 }
 
 #[cfg(test)]

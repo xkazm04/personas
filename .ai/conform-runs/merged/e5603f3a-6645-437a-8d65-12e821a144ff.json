@@ -1,0 +1,82 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e5603f3a-6645-437a-8d65-12e821a144ff",
+ "subject": "ci-execution-trust",
+ "evaluatedAt": "2026-10-18T22:16:33.350531+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [
+  {
+   "context": "api-pipeline",
+   "subject": "ci-execution-trust",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/api/pipeline/teams.ts:142 These files expose persona-team orchestration through Tauri IPC rather than CI delivery configuration, and searches found no pull_request, runs-on, or buildkite constructs in this context.",
+   "techniques": [
+    {
+     "technique": "control-plane-execution-boundary",
+     "verdict": "not-applicable",
+     "evidence": "src/api/pipeline/scheduler.ts:17 This starts the application's scheduler through IPC, not a hosted or self-run CI delivery system."
+    },
+    {
+     "technique": "injected-code-scope-ladder",
+     "verdict": "not-applicable",
+     "evidence": "src/api/pipeline/triggers.ts:103 The handler-editing API concerns persona event behavior, not machine-, repository-, or step-level build hooks."
+    },
+    {
+     "technique": "job-instruction-signing",
+     "verdict": "not-applicable",
+     "evidence": "src/api/pipeline/assignments.ts:40 This forwards a local assignment identifier through IPC rather than delivering externally authored CI instructions to internal runners."
+    },
+    {
+     "technique": "measure-apply-split",
+     "verdict": "not-applicable",
+     "evidence": "src/api/pipeline/workflows.ts:13 Reading application job output does not create a contributor-code measurement job with repository write credentials."
+    },
+    {
+     "technique": "secret-materialization-discipline",
+     "verdict": "not-applicable",
+     "evidence": "src/api/pipeline/teamMemories.ts:29 The inspected API operations manage application data and execution identifiers; they do not materialize CI publishing or deployment credentials."
+    },
+    {
+     "technique": "untrusted-contribution-lanes",
+     "verdict": "not-applicable",
+     "evidence": "src/api/pipeline/teamDeliberations.ts:106 This approval starts a persona-team assignment, not an approved revision of an outside repository contribution."
+    }
+   ],
+   "absenceTerms": [
+    "pull_request",
+    "runs-on",
+    "buildkite"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "ci-execution-trust",
+   "context": "commands-execution",
+   "reason": "absence contradicted: src-tauri/src/commands/tools/automation_design.rs:126 contains 'runs-on' (1 hit(s) in the context's directories)"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-18T22:16:33.350531+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "ci-execution-trust"
+   ],
+   "techniques": [
+    "control-plane-execution-boundary",
+    "injected-code-scope-ladder",
+    "job-instruction-signing",
+    "measure-apply-split",
+    "secret-materialization-discipline",
+    "untrusted-contribution-lanes"
+   ],
+   "deviations": 0,
+   "context": "api-pipeline",
+   "via": "curator-multi:codex",
+   "model": "gpt-6.1-sol"
+  }
+ ]
+}

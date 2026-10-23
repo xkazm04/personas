@@ -1,0 +1,36 @@
+{"schema": "conform-run/1", "worker": "f7b33d0d-90b5-4ed6-bdf0-4d58c5540ca2", "subject": "analytics-time-windows",
+ "evaluatedAt": "2026-10-16T17:31:42Z",
+ "evaluatedAgainst": "sha256-b2:9b81f64365c4edae", "evaluatedRevision": 6,
+ "pairs": [
+  {"context": "7901fd6c-0346-430b-aefe-fc4cd623b167", "subject": "analytics-time-windows", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 splits the doubled read by array position, but the dashboard series carries only observed days (src-tauri/db/src/repos/execution/metrics.rs:1414 builds dates from non-empty buckets, no densify anywhere), so a quiet day shifts the cut and part of the current period is drawn and summed as the previous one",
+   "evaluatedAgainst": "sha256-b2:9b81f64365c4edae", "evaluatedRevision": 6,
+   "techniques": [
+    {"technique": "half-open-interval-policy", "verdict": "deviation", "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 positional split on a sparse series - the technique's named dense-series failure; same cut duplicated at src/features/overview/libs/computeTrends.ts:43, so the trend badges carry it too"},
+    {"technique": "canonical-zone-single-source", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/execution/metrics.rs:1263 buckets the dashboard by UTC DATE(created_at) while the sibling Overview heatmap buckets by the client's local day (metrics.rs:2237), two zones feeding the same Overview surface"},
+    {"technique": "range-precedence-resolution", "verdict": "deviation", "evidence": "src/features/overview/sub_activity/libs/useExecutionMetrics.ts:39 passes a bare day count down (fetchDays) and each layer re-derives the range - the backend from datetime('now', '-N days') - instead of a resolved window value with bounds and zone"},
+    {"technique": "baseline-as-window-start", "verdict": "not-applicable", "evidence": "src/features/overview/sub_activity/libs/useExecutionMetrics.ts:99 compares flow metrics (cost, completed, failed counts), which the technique excludes: events have no as-of state, only a prior total"},
+    {"technique": "cohort-matched-comparison", "verdict": "not-applicable", "evidence": "src/features/overview/libs/computeTrends.ts:116 trends are whole-population sums/averages of executions, not per-entity movement over a changing population"}
+   ],
+   "registryProposal": "The ranked anchors for this context's deviation live outside its paths (useExecutionMetrics.ts in sub_activity, computeTrends.ts in overview/libs, metrics.rs in db): the context owns the splitter, not the read that makes it wrong. A verdict here cannot be fixed inside the context's own files; the comparison pipeline spans three contexts and the map has no context that owns it end to end."},
+  {"context": "56a0fd55-279d-428b-b2f6-7c89154abd6f", "subject": "analytics-time-windows", "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src/features/schedules/libs/calendarHelpers.ts:43 snaps day boundaries in the local zone and dayKey (:154) keys with the same local getters; week/month ranges are calendar-unit arithmetic with exclusive ends (:64, :76) iterated as cursor < end (:135)",
+   "evaluatedAgainst": "sha256-b2:9b81f64365c4edae", "evaluatedRevision": 6,
+   "techniques": [
+    {"technique": "canonical-zone-single-source", "verdict": "conformant", "evidence": "src/features/schedules/libs/calendarHelpers.ts:43 setHours(0,0,0,0) snaps in local time and :154 keys buckets with the same local getters - one zone for snap and key"},
+    {"technique": "calendar-arithmetic", "verdict": "conformant", "evidence": "src/features/schedules/libs/calendarHelpers.ts:76 month range from new Date(y, m+1, 0) and setDate day steps, no 86400/30-day literals; weeks align to a named weekday (Sunday) rather than epoch division"},
+    {"technique": "half-open-interval-policy", "verdict": "conformant", "evidence": "src/features/schedules/libs/calendarHelpers.ts:64 end = start + 7 days exclusive, consumed as cursor < end (:135) and cursor < endMs in src/features/schedules/libs/useCronPreview.ts:278"},
+    {"technique": "baseline-as-window-start", "verdict": "not-applicable", "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:53 renders one week/month range with no period comparison"},
+    {"technique": "cohort-matched-comparison", "verdict": "not-applicable", "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:53 no period delta exists in the calendar"},
+    {"technique": "range-precedence-resolution", "verdict": "not-applicable", "evidence": "src/features/schedules/components/ScheduleCalendar.tsx:53 single-source range (view + anchor), which the technique exempts from needing a resolver"}
+   ],
+   "registryProposal": "Week start is hardcoded to Sunday (calendarHelpers.ts:62) in an app shipping 14 locales; canonical-zone-single-source says week alignment travels with the zone/locale decision but no decision rule says whether a consistent fixed weekday is acceptable or a deviation when locale varies. Worth one decision rule."}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-16T17:31:42Z", "bundle": "software-engineering", "subjects": ["analytics-time-windows"], "techniques": ["half-open-interval-policy", "canonical-zone-single-source", "range-precedence-resolution", "baseline-as-window-start", "cohort-matched-comparison"], "deviations": 3},
+  {"ts": "2026-10-16T17:31:42Z", "bundle": "software-engineering", "subjects": ["analytics-time-windows"], "techniques": ["canonical-zone-single-source", "calendar-arithmetic", "half-open-interval-policy"], "deviations": 0}
+ ]
+}

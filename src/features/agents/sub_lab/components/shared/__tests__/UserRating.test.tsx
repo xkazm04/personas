@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { UserRating, scoreToThumb, thumbToScore } from '../UserRating';
 
 /**
@@ -48,5 +48,25 @@ describe('UserRating rating scale', () => {
     fireEvent.click(screen.getAllByRole('button')[1]);
     fireEvent.click(screen.getByText('Save'));
     expect(onRate).toHaveBeenCalledWith(3, undefined);
+  });
+});
+
+describe('UserRating only says Saved when the write landed', () => {
+  it('keeps Save on offer when onRate resolves false', async () => {
+    const onRate = vi.fn().mockResolvedValue(false);
+    render(<UserRating onRate={onRate} />);
+    fireEvent.click(screen.getAllByRole('button')[2]);
+    fireEvent.click(screen.getByText('Save'));
+    await waitFor(() => expect(onRate).toHaveBeenCalled());
+    await Promise.resolve();
+    expect(screen.getByText('Save')).toBeTruthy();
+  });
+
+  it('hides Save once onRate resolves true', async () => {
+    const onRate = vi.fn().mockResolvedValue(true);
+    render(<UserRating onRate={onRate} />);
+    fireEvent.click(screen.getAllByRole('button')[2]);
+    fireEvent.click(screen.getByText('Save'));
+    await waitFor(() => expect(screen.queryByText('Save')).toBeNull());
   });
 });

@@ -76,7 +76,7 @@ export function ObservabilityPlanWidget({ config, title, span, actions, footer }
       actions={actions}
       footer={footer}
       state={!errorHandling && !successMetric ? 'empty' : undefined}
-      empty={{ title: a.observability_plan_empty }}
+      empty={{ art: 'chart', title: a.observability_plan_empty }}
       testId="companion-observability-plan-widget"
     >
       <KeyValueGrid items={items} min="260px" />

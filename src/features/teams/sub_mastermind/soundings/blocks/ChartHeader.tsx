@@ -1,6 +1,7 @@
 // The chart's top bar: where you are (crumbs), what you are reading (the
 // waterline sentence), the help door, and the hairline of station marks that
 // keeps every project visible even while one is open.
+import type { DimKey } from '../../lib/dimRegistry';
 import { stationSpan } from '../soundingsGeometry';
 import { useSoundingsModel } from '../context';
 import { FILE } from '../useSoundingsNav';
@@ -8,7 +9,7 @@ import { ReadingLine } from './ReadingLine';
 
 export function ChartHeader() {
   const { stations, n, geo, nav, words, liftedKey } = useSoundingsModel();
-  const { m } = words;
+  const { m, dimLabel } = words;
   const { level, cur, curStation, goL0, closeCard, setHelpOpen } = nav;
   const { g } = geo;
 
@@ -26,7 +27,7 @@ export function ChartHeader() {
           <>
             <span className="sd-sep" aria-hidden>{'›'}</span>
             <button type="button" aria-current="location">
-              {liftedKey === FILE ? m.soundings_details : curStation.island.nodes.find((x) => x.key === liftedKey)?.label}
+              {liftedKey === FILE ? m.soundings_details : dimLabel(liftedKey as DimKey)}
             </button>
           </>
         )}

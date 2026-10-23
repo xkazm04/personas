@@ -3,7 +3,6 @@ import AdoptionWizardModal from '../../adoption/AdoptionWizardModal';
 import { RebuildModal } from './RebuildModal';
 import { composeRebuildDirection } from './RebuildDimensionTargets';
 import { TemplatePreviewModal } from './TemplatePreviewModal';
-import { RecommendedModal } from './RecommendedModal';
 import { CatalogCredentialModal } from './CatalogCredentialModal';
 import type { TemplateModal } from '../cards/reviewParseCache';
 import type { ModalStackActions } from './useModalStack';
@@ -30,8 +29,6 @@ interface TemplateModalsProps {
   onViewFlows: (review: PersonaDesignReview) => void;
   rebuild: ReturnType<typeof useBackgroundRebuild>;
   preview: ReturnType<typeof useBackgroundPreview>;
-  recommendedTemplates: PersonaDesignReview[];
-  setExpandedRow: (id: string | null) => void;
   credentialModalTarget: CredentialModalTarget | null;
   onCredentialSave: (values: Record<string, string>) => Promise<void>;
   onCredentialModalClose: () => void;
@@ -42,8 +39,6 @@ export function TemplateModals({
   onPersonaCreated,
   rebuild,
   preview,
-  recommendedTemplates,
-  setExpandedRow,
   credentialModalTarget,
   onCredentialSave,
   onCredentialModalClose,
@@ -94,18 +89,6 @@ export function TemplateModals({
         hasStarted={preview.hasStarted}
         onStartPreview={(rId, rName, draftJson) => preview.startPreview(rId, rName, draftJson)}
         onRetryPreview={(draftJson) => preview.retryPreview(draftJson)}
-      />
-
-      {/* Recommended Modal */}
-      <RecommendedModal
-        isOpen={modals.isOpen('recommended')}
-        onClose={() => modals.close('recommended')}
-        recommendedTemplates={recommendedTemplates}
-        onSelectTemplate={(t) => {
-          modals.close('recommended');
-          setExpandedRow(t.id);
-          modals.open({ type: 'detail', review: t });
-        }}
       />
 
       {/* Connector Credential Modal */}

@@ -1,3 +1,4 @@
+import { onRowActivateKey } from './rowActivation';
 import { memo, useCallback } from 'react';
 import {
   CheckSquare,
@@ -9,6 +10,7 @@ import {
   Workflow,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { isCliRunSettled, type CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
 import { resolveConnectorStatuses } from '../../shared/useConnectorReadiness';
@@ -20,7 +22,6 @@ import { ExpandedRowContent } from './ExpandedRowContent';
 import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
 import type { TemplateModal } from './reviewParseCache';
-import type { ModalStackActions } from '../modals/useModalStack';
 
 interface ComfortableRowProps {
   review: PersonaDesignReview;
@@ -30,7 +31,9 @@ interface ComfortableRowProps {
   credentialServiceTypes: Set<string>;
   /** Authoritative per-connector verdicts, resolved once for the whole gallery. */
   connectorReadiness: ConnectorReadinessMap;
-  modals: ModalStackActions<TemplateModal>;
+  /** `modals.open` itself (stable), not the stack object, which is a new
+   *  object on every gallery render and would defeat the row memo. */
+  openModal: (entry: TemplateModal) => void;
   // Takes (id, currentIsExpanded) so parents can pass a stable reference
   // without per-row closures. The row itself constructs the call inside
   // a memoized handler.
@@ -56,7 +59,7 @@ function ComfortableRowImpl({
   isAiResult,
   credentialServiceTypes,
   connectorReadiness,
-  modals,
+  openModal,
   onToggleExpand,
   onViewFlows,
   onDeleteReview,
@@ -71,7 +74,7 @@ function ComfortableRowImpl({
   compareDisabled,
   onToggleCompare,
 }: ComfortableRowProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const { connectors, flowCount } = getCachedLightFields(review);
   const designResult = isExpanded ? getCachedDesignResult(review) : null;
 
@@ -96,6 +99,10 @@ function ComfortableRowImpl({
     <>
       <div
         onClick={handleToggle}
+        onKeyDown={onRowActivateKey(handleToggle)}
+        tabIndex={0}
+        role="button"
+        aria-expanded={isExpanded}
         className="group flex items-center border-b border-primary/5 hover:bg-secondary/30 cursor-pointer transition-colors"
         data-testid={`template-row-${review.id}`}
       >
@@ -140,22 +147,25 @@ function ComfortableRowImpl({
                   </span>
                 )}
                 {review.adoption_count > 0 && (
-                  <span
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded bg-emerald-500/10 text-emerald-400/70 border border-emerald-500/15"
-                    title={`Adopted ${review.adoption_count} time${review.adoption_count !== 1 ? 's' : ''}`}
+                  <Tooltip
+                    content={tx(
+                      review.adoption_count === 1 ? t.common.adoption_count_one : t.common.adoption_count_other,
+                      { count: review.adoption_count },
+                    )}
                   >
-                    <Download className="w-2.5 h-2.5" />
-                    {review.adoption_count}
-                  </span>
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded bg-emerald-500/10 text-emerald-400/70 border border-emerald-500/15">
+                      <Download className="w-2.5 h-2.5" />
+                      {review.adoption_count}
+                    </span>
+                  </Tooltip>
                 )}
                 {flowCount > 0 && (
-                  <span
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded bg-violet-500/10 text-violet-400/70 border border-violet-500/15 flex-shrink-0"
-                    title={`${flowCount} flow${flowCount !== 1 ? 's' : ''}`}
-                  >
-                    <Workflow className="w-2.5 h-2.5" />
-                    {flowCount}
-                  </span>
+                  <Tooltip content={`${flowCount} ${t.templates.expanded.flows}`}>
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded bg-violet-500/10 text-violet-400/70 border border-violet-500/15 flex-shrink-0">
+                      <Workflow className="w-2.5 h-2.5" />
+                      {flowCount}
+                    </span>
+                  </Tooltip>
                 )}
               </div>
               {/* Second line: instruction (no truncation) */}
@@ -193,12 +203,12 @@ function ComfortableRowImpl({
             <RowActionMenu
               reviewId={review.id}
               onDelete={onDeleteReview}
-              onViewDetails={() => modals.open({ type: 'detail', review })}
+              onViewDetails={() => openModal({ type: 'detail', review })}
               onRebuild={() => {
                 if (rebuildReviewId !== review.id || rebuildPhase === 'completed' || rebuildPhase === 'failed') {
                   onResetRebuild();
                 }
-                modals.open({ type: 'rebuild', review });
+                openModal({ type: 'rebuild', review });
               }}
             />
           </div>
@@ -213,12 +223,12 @@ function ComfortableRowImpl({
             allConnectorsReady={allConnectorsReady}
             readinessStatuses={readinessStatuses}
             credentialServiceTypes={credentialServiceTypes}
-            onAdopt={() => modals.open({ type: 'adopt', review })}
+            onAdopt={() => openModal({ type: 'adopt', review })}
             onTryIt={() => {
               if (previewReviewId !== review.id || isCliRunSettled(previewPhase)) {
                 onResetPreview();
               }
-              modals.open({ type: 'preview', review });
+              openModal({ type: 'preview', review });
             }}
             onAddCredential={(name) => onAddCredential(name, review)}
             onViewFlows={onViewFlows}

@@ -161,8 +161,8 @@
       "resolvedFrom": "suffix",
       "verbatim": "sanitizers/sanitizeHtml.ts"
     },
-    "src/lib/utils/sanitizers/variableSanitizer.ts": {"count":1,"sections":[9],"contexts":["matches in `sanitizeHtml.ts` and `variableSanitizer.ts`, which are documentation *of this"],"resolvedFrom":"basename","verbatim":"variableSanitizer.ts"},
     "src/test/": {"count":1,"sections":[7],"contexts":["`react/no-danger`. No test in `src/test/` or `src-tauri/tests/` asserts on"],"resolved":false,"isDir":true},
-    "teams/sub_canvas/components/nodes/StickyNoteNode.tsx": {"count":2,"sections":[7],"lines":["150"],"contexts":["renderers. One of them, `teams/sub_canvas/components/nodes/StickyNoteNode.tsx:150`, was"],"resolved":false}
+    "teams/sub_canvas/components/nodes/StickyNoteNode.tsx": {"count":2,"sections":[7],"lines":["150"],"contexts":["renderers. One of them, `teams/sub_canvas/components/nodes/StickyNoteNode.tsx:150`, was"],"resolved":false},
+    "variableSanitizer.ts": {"count":1,"sections":[9],"contexts":["matches in `sanitizeHtml.ts` and `variableSanitizer.ts`, which are documentation *of this"],"resolved":false}
   }
 }

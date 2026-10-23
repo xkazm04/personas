@@ -54,24 +54,21 @@ pub fn list_tool_calls_for_result(
     )
 }
 
-/// Dual-write tool calls into the `lab_tool_calls` child table alongside the
-/// JSON-array column writes inside each lab repo's `create_result`. Failures
-/// are logged and swallowed during this transition phase: the JSON column
-/// remains the canonical source until the cutover step (step 6), so a partial
-/// child-table write does not corrupt user data — analytics simply underreport
-/// until the next backfill or run replay.
+/// Write a result's tool calls into the `lab_tool_calls` child table. The
+/// child rows are the ONLY copy: the JSON columns were dropped (ADR
+/// 2026-05-02-lab-tool-calls-child-table, step 7), so a failed insert must fail
+/// the caller. Call it inside the same transaction as the parent result insert
+/// so a failure rolls the parent back too.
 ///
 /// `result_kind` must match the CHECK constraint on `lab_tool_calls`: one of
 /// `'arena'`, `'ab'`, `'matrix'`, `'consensus'`, `'eval'`, `'test_run'`.
-///
-/// ADR: 2026-05-02-lab-tool-calls-child-table.
 pub(crate) fn write_tool_calls_child_rows(
     conn: &rusqlite::Connection,
     result_kind: &str,
     result_id: &str,
     tool_calls_expected: Option<&Json<Vec<String>>>,
     tool_calls_actual: Option<&Json<Vec<String>>>,
-) {
+) -> Result<(), AppError> {
     for (variant, tools_opt) in [
         ("expected", tool_calls_expected),
         ("actual", tool_calls_actual),
@@ -79,7 +76,7 @@ pub(crate) fn write_tool_calls_child_rows(
         let Some(tools) = tools_opt else { continue };
         for (sequence, tool_name) in tools.iter().enumerate() {
             let id = uuid::Uuid::new_v4().to_string();
-            if let Err(e) = conn.execute(
+            conn.execute(
                 "INSERT OR IGNORE INTO lab_tool_calls
                     (id, result_kind, result_id, sequence, tool_name, variant)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
@@ -91,17 +88,10 @@ pub(crate) fn write_tool_calls_child_rows(
                     tool_name,
                     variant
                 ],
-            ) {
-                tracing::warn!(
-                    result_kind = %result_kind,
-                    result_id = %result_id,
-                    variant = %variant,
-                    error = %e,
-                    "Failed to dual-write lab_tool_calls; JSON column remains canonical"
-                );
-            }
+            )?;
         }
     }
+    Ok(())
 }
 
 /// Single-query active progress lookup across every persona-scoped lab run
@@ -165,6 +155,18 @@ pub fn get_all_active_progress(
     })
 }
 
+/// Every lab table whose rows are a run with a status machine driven by an
+/// in-process task: each carries `status`, `error` and `completed_at`.
+const REAPED_RUN_TABLES: [&str; 7] = [
+    "lab_arena_runs",
+    "lab_ab_runs",
+    "lab_matrix_runs",
+    "lab_eval_runs",
+    "lab_consensus_runs",
+    "genome_breeding_runs",
+    "evolution_cycles",
+];
+
 /// Fail any lab run left non-terminal by an unclean shutdown.
 ///
 /// The lab run tables are driven by tokio tasks that die with the
@@ -183,19 +185,18 @@ pub fn get_all_active_progress(
 /// button stayed wedged. `genome_breeding_runs` is keyed by `project_id` and
 /// carries no `progress_json`, so it is reaped here but cannot join the
 /// persona-scoped `get_all_active_progress` UNION above.
+///
+/// `evolution_cycles` joined the list on 2026-10-18 for the same reason: a
+/// cycle is driven by a spawned task (`engine::evolution::run_evolution_cycle`)
+/// and opens at `breeding`, so a restart mid-cycle left it at
+/// `breeding`/`evaluating`/`promoting` forever. The list is pinned against the
+/// schema by `reaped_tables_are_every_run_table_in_the_schema`, not by hand.
 pub fn recover_interrupted_lab_runs(pool: &DbPool) -> Result<usize, AppError> {
     timed_query!("lab_runs", "lab_runs::recover_interrupted_lab_runs", {
         let conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
         let mut total = 0usize;
-        for table in [
-            "lab_arena_runs",
-            "lab_ab_runs",
-            "lab_matrix_runs",
-            "lab_eval_runs",
-            "lab_consensus_runs",
-            "genome_breeding_runs",
-        ] {
+        for table in REAPED_RUN_TABLES {
             let sql = format!(
                 "UPDATE {table}
                     SET status = 'failed',
@@ -400,5 +401,167 @@ mod consensus_and_genome_reaper_tests {
             active.is_empty(),
             "a reaped consensus run must not re-hydrate as active: {active:?}",
         );
+    }
+}
+
+#[cfg(test)]
+mod reaper_coverage_tests {
+    use super::*;
+    use std::collections::BTreeSet;
+
+    /// The reaper's table list is derived from nothing, so it is pinned here
+    /// against the schema: every lab-area table (`lab_*`, `genome_*`,
+    /// `evolution_*`) that carries a run status machine - `status`, `error`
+    /// and `completed_at` together - must be reaped, and nothing else may be.
+    /// `evolution_cycles` was the table this found missing.
+    #[test]
+    fn reaped_tables_are_every_run_table_in_the_schema() {
+        let pool = crate::init_test_db().expect("test db");
+        let Ok(conn) = pool.get() else {
+            panic!("pool checkout")
+        };
+        let mut stmt = conn
+            .prepare(
+                "SELECT m.name FROM sqlite_master m
+                  WHERE m.type = 'table'
+                    AND (substr(m.name, 1, 4) = 'lab_'
+                         OR substr(m.name, 1, 7) = 'genome_'
+                         OR substr(m.name, 1, 10) = 'evolution_')
+                    AND (SELECT COUNT(*) FROM pragma_table_info(m.name) c
+                          WHERE c.name IN ('status', 'error', 'completed_at')) = 3",
+            )
+            .expect("prepare");
+        let in_schema: BTreeSet<String> = stmt
+            .query_map([], |r| r.get::<_, String>("name"))
+            .expect("query")
+            .collect::<Result<_, _>>()
+            .expect("rows");
+        let reaped: BTreeSet<String> = REAPED_RUN_TABLES.iter().map(|t| t.to_string()).collect();
+        assert!(
+            !in_schema.is_empty(),
+            "the schema walk found no run table at all"
+        );
+        assert_eq!(
+            in_schema, reaped,
+            "a run table the boot reaper does not know about survives a restart non-terminal"
+        );
+    }
+
+    /// A cycle killed mid-`breeding` by a restart is failed with the restart
+    /// reason; a completed one is untouched.
+    #[test]
+    fn a_killed_evolution_cycle_is_reaped() {
+        let pool = crate::init_test_db().expect("test db");
+        let Ok(conn) = pool.get() else {
+            panic!("pool checkout")
+        };
+        conn.execute_batch("PRAGMA foreign_keys = OFF;")
+            .expect("fk off");
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO evolution_cycles (id, policy_id, persona_id, status, started_at)
+             VALUES ('orphan-cycle', 'pol-1', 'p1', 'evaluating', ?1),
+                    ('done-cycle', 'pol-1', 'p1', 'completed', ?1)",
+            params![now],
+        )
+        .expect("seed cycles");
+        drop(conn);
+
+        assert_eq!(recover_interrupted_lab_runs(&pool).expect("reap"), 1);
+
+        let Ok(conn) = pool.get() else {
+            panic!("pool checkout")
+        };
+        let (status, error, completed_at): (String, Option<String>, Option<String>) = conn
+            .query_row(
+                "SELECT status, error, completed_at FROM evolution_cycles WHERE id = 'orphan-cycle'",
+                [],
+                |r| Ok((r.get("status")?, r.get("error")?, r.get("completed_at")?)),
+            )
+            .expect("read orphan");
+        assert_eq!(status, "failed");
+        assert_eq!(error.as_deref(), Some("Interrupted by app restart"));
+        assert!(completed_at.is_some(), "a reaped cycle is stamped terminal");
+        let done: String = conn
+            .query_row(
+                "SELECT status FROM evolution_cycles WHERE id = 'done-cycle'",
+                [],
+                |r| r.get("status"),
+            )
+            .expect("read done");
+        assert_eq!(done, "completed");
+    }
+
+    /// The child rows are the ONLY copy of a result's tool calls (the JSON
+    /// columns were dropped), so a failed child write must fail the whole
+    /// result write and leave no parent row behind.
+    #[test]
+    fn a_failed_tool_call_write_rolls_back_the_result() -> Result<(), Box<dyn std::error::Error>> {
+        use crate::models::{CreateArenaResultInput, CreateLabResultBaseInput, CreatePersonaInput};
+        let pool = crate::init_test_db().unwrap();
+        let persona = crate::repos::core::personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Lab Atomic".into(),
+                system_prompt: "x".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .unwrap();
+        let run = super::arena::create_run(&pool, &persona.id, "[]", None, None, None).unwrap();
+        pool.get()?.execute_batch(
+            "CREATE TRIGGER fail_tool_call_insert BEFORE INSERT ON lab_tool_calls
+                 BEGIN SELECT RAISE(ABORT, 'injected'); END;",
+        )?;
+
+        let input = CreateArenaResultInput {
+            run_id: run.id.clone(),
+            version_id: None,
+            version_number: None,
+            base: CreateLabResultBaseInput {
+                scenario_name: "s".into(),
+                model_id: "m".into(),
+                provider: "anthropic".into(),
+                status: "completed".into(),
+                output_preview: None,
+                tool_calls_expected: None,
+                tool_calls_actual: Some(Json(vec!["read_file".into()])),
+                tool_accuracy_score: None,
+                output_quality_score: None,
+                protocol_compliance: None,
+                input_tokens: 0,
+                output_tokens: 0,
+                cost_usd: 0.0,
+                duration_ms: 0,
+                error_message: None,
+                rationale: None,
+                suggestions: None,
+                eval_method: None,
+            },
+        };
+        assert!(super::arena::create_result(&pool, &input).is_err());
+        let rows: i64 =
+            pool.get()?
+                .query_row("SELECT COUNT(*) AS n FROM lab_arena_results", [], |r| {
+                    r.get("n")
+                })?;
+        assert_eq!(
+            rows, 0,
+            "parent row must roll back with the failed child write"
+        );
+        Ok(())
     }
 }

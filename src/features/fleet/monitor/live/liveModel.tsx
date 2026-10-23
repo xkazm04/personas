@@ -9,10 +9,11 @@
 
 import { Sparkles, Compass, User, AlertCircle, Hash, Scale, MessagesSquare, type LucideIcon } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
-import { resolveCompact } from '../channels/MergedRow';
+import { resolveCompact, type CompactLabels } from '../channels/MergedRow';
 import type { TaggedItem } from '../channels/types';
 import type { Persona } from '@/lib/bindings/Persona';
-import { avatarBgFor, AUTHOR_KIND_META, slackAuthorName } from '@/features/teams/sub_collab/collabRender';
+import type { Translations } from '@/i18n/generated/types';
+import { avatarBgFor, AUTHOR_KIND_META, channelCopyLabels, slackAuthorName } from '@/features/teams/sub_collab/collabRender';
 import { cleanName } from '../grid/fleetGridModel';
 
 /** Where a live message came from. Absent = `channel` (a team-channel item). */
@@ -105,11 +106,32 @@ export function LiveAvatar({ m, size = 'sm' }: { m: LiveMessage; size?: keyof ty
   );
 }
 
+/** Translated author names for the operator, Athena and the director. */
+export interface LiveAuthorLabels { you: string; athena: string; director: string }
+
+/** The author labels read from the active locale's monitor section. */
+export function liveAuthorLabels(t: { monitor: { live_author_you: string; live_author_athena: string; live_author_director: string } }): LiveAuthorLabels {
+  return { you: t.monitor.live_author_you, athena: t.monitor.live_author_athena, director: t.monitor.live_author_director };
+}
+
+/** The compact-event labels read from the active locale's monitor section. */
+export function compactLabels(t: Pick<Translations, 'monitor'>): CompactLabels {
+  const c = channelCopyLabels(t);
+  return {
+    directive: t.monitor.live_event_directive,
+    memory: t.monitor.live_event_memory,
+    channel: c.channel,
+    athena: c.athena,
+    director: c.director,
+    stepVerb: c.stepVerb,
+  };
+}
+
 /** Author display name for a live message. */
-export function authorName(m: LiveMessage): string {
-  if (m.kind === 'directive') return 'You';
-  if (m.kind === 'athena') return 'Athena';
-  if (m.kind === 'director') return 'Director';
+export function authorName(m: LiveMessage, labels: LiveAuthorLabels): string {
+  if (m.kind === 'directive') return labels.you;
+  if (m.kind === 'athena') return labels.athena;
+  if (m.kind === 'director') return labels.director;
   // Slack authors ride in on `personaName` (set by projectChannelItem from the
   // bridged display name) — never "You", never a persona.
   return m.personaName;
@@ -170,9 +192,9 @@ export interface LiveVariantProps {
  *  (event label / tone / message / alert) is delegated to the channel's shared
  *  `resolveCompact`, so a corner pop-up always says exactly what the Timeline
  *  row says. `now` stamps the arrival for the auto-timeout. */
-export function projectChannelItem(tagged: TaggedItem, persona: Persona | undefined, now: number): LiveMessage {
+export function projectChannelItem(tagged: TaggedItem, persona: Persona | undefined, now: number, labels: CompactLabels): LiveMessage {
   const { item, team } = tagged;
-  const { event, tone, message, alert } = resolveCompact(item);
+  const { event, tone, message, alert } = resolveCompact(item, labels);
   return {
     id: item.id,
     teamId: team.teamId,

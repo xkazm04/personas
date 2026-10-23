@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAthenaEnabled } from '@/features/companions/status/useAthenaEnabled';
+import { useSilenceRadioWhenDisabled } from '@/features/plugins/radio/hooks/useSilenceRadioWhenDisabled';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { FooterDivider, FooterSlot } from './FooterSlot';
 import {
@@ -29,6 +30,8 @@ export default function DesktopFooter() {
   // null still reserves its width, so gating only the icon would leave a
   // separator with nothing on either side of it.
   const { enabled: athenaEnabled } = useAthenaEnabled();
+  // Radio off => the engines unmount; keep the backend status honest about it.
+  useSilenceRadioWhenDisabled(radioEnabled);
   if (IS_MOBILE) return null;
 
   // PORTAL, not an in-place render — this is load-bearing, not tidiness.
@@ -82,17 +85,25 @@ export default function DesktopFooter() {
       {/* Center cluster, absolute-centered so left/right cluster widths don't
           shift it. In grid mode it carries section navigation — the sidebar is
           covered then, and this is the only way to reach another module without
-          first dismissing the grid. That takes precedence over radio: one is
-          navigation, the other is a nicety. */}
-      {fleetGridOpen ? (
+          first dismissing the grid. Navigation takes the visible slot; radio is
+          hidden (not unmounted) meanwhile. */}
+      {fleetGridOpen && (
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
           <FooterSlot reserve={false}><FooterSectionNav /></FooterSlot>
         </div>
-      ) : radioEnabled ? (
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
+      )}
+      {/* RadioFooter owns the playback engines (audio element + YouTube player),
+          so it stays MOUNTED while the grid is open and is only hidden — the
+          music continues behind the grid, and unmounting would silence it while
+          the backend kept reporting 'playing'. Turning radio off unmounts it on
+          purpose; useSilenceRadioWhenDisabled then pauses the backend. */}
+      {radioEnabled && (
+        <div
+          className={`absolute left-1/2 -translate-x-1/2 items-center ${fleetGridOpen ? 'hidden' : 'flex'}`}
+        >
           <FooterSlot reserve={false}><RadioFooter /></FooterSlot>
         </div>
-      ) : null}
+      )}
 
       {/* Right cluster: notepad, debug-recorder stop + fleet toggle, system
           load, onboarding/tour resume, then the plugin-owned context selectors

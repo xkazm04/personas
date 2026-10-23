@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { GitCommitVertical } from 'lucide-react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
 import { RunMarker, type RunGroup } from './TimelineControls';
 import { ManualGroup } from './TimelineItem';
 import { useRunDiffSummaries } from '../../libs/useRunDiffSummaries';
+import { teamRunCounts } from '../../libs/memoryDiff';
 
 interface TimelineEntry {
   type: 'run' | 'manual';
@@ -83,10 +85,7 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
     [timeline],
   );
   const diffSummaries = useRunDiffSummaries(runIdsChronological);
-  const runCounts = useMemo(() => {
-    if (!stats?.run_counts) return new Map<string, number>();
-    return new Map(stats.run_counts);
-  }, [stats]);
+  const runCounts = useMemo(() => new Map(teamRunCounts(stats)), [stats]);
 
   const toggleRun = (runId: string) => {
     setExpandedRuns((prev) => { const next = new Set(prev); if (next.has(runId)) next.delete(runId); else next.add(runId); return next; });
@@ -94,10 +93,7 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
 
   if (timeline.length === 0) {
     return (
-      <div className="text-center py-4">
-        <GitCommitVertical className="w-6 h-6 mx-auto mb-1.5 text-foreground" />
-        <p className="typo-body text-foreground">{pt.no_timeline_data}</p>
-      </div>
+      <ScenarioEmptyState art="archive" size="sm" title={pt.no_timeline_data} />
     );
   }
 

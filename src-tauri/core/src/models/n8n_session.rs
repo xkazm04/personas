@@ -188,3 +188,47 @@ pub struct UpdateN8nSessionInput {
     pub transform_id: Option<Option<String>>,
     pub questions_json: Option<Option<String>>,
 }
+
+#[cfg(test)]
+mod session_status_tests {
+    use super::SessionStatus;
+    use rusqlite::types::{FromSql, ToSql, ToSqlOutput, ValueRef};
+
+    /// The serde rename, `as_str` (what `ToSql` writes) and the `FromSql`
+    /// match are three spellings of the status column.
+    #[test]
+    fn session_status_tokens_agree_with_serde_and_round_trip_through_sql() {
+        for v in [
+            SessionStatus::Draft,
+            SessionStatus::Analyzing,
+            SessionStatus::Transforming,
+            SessionStatus::AwaitingAnswers,
+            SessionStatus::Editing,
+            SessionStatus::Confirmed,
+            SessionStatus::Failed,
+            SessionStatus::Interrupted,
+        ] {
+            match v {
+                SessionStatus::Draft
+                | SessionStatus::Analyzing
+                | SessionStatus::Transforming
+                | SessionStatus::AwaitingAnswers
+                | SessionStatus::Editing
+                | SessionStatus::Confirmed
+                | SessionStatus::Failed
+                | SessionStatus::Interrupted => {}
+            }
+            let wire = serde_json::to_value(v).unwrap();
+            assert_eq!(wire.as_str(), Some(v.as_str()), "{v:?}");
+            let stored = match v.to_sql().unwrap() {
+                ToSqlOutput::Borrowed(ValueRef::Text(b)) => b.to_vec(),
+                other => panic!("unexpected sql output {other:?}"),
+            };
+            assert_eq!(
+                SessionStatus::column_result(ValueRef::Text(&stored)).unwrap(),
+                v
+            );
+        }
+        assert!(SessionStatus::column_result(ValueRef::Text(b"awaitingAnswers")).is_err());
+    }
+}

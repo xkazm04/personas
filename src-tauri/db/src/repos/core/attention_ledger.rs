@@ -816,6 +816,59 @@ impl WorkerHandle {
     }
 }
 
+/// One code dispatch's authoring branch: the charter it served, the branch its
+/// worker was given (`stats_json.branch`, stamped by the dispatch) and when the
+/// dispatch started.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DispatchBranch {
+    pub charter_id: String,
+    pub branch: String,
+    pub started_at: String,
+}
+
+/// The authoring branches of the code dispatches started at or after `since`
+/// (RFC 3339), newest first, at most `limit`. A row counts when it names a
+/// charter (its `responsibility_id`, else `stats_json.charterId`) and a
+/// non-empty branch; the merge detection reads these.
+pub fn recent_dispatch_branches(
+    pool: &DbPool,
+    since: &str,
+    limit: u32,
+) -> Result<Vec<DispatchBranch>, AppError> {
+    timed_query!(
+        "persona_attention_ledger",
+        "attention_ledger::recent_dispatch_branches",
+        {
+            let conn = pool.conn("attention_ledger::recent_dispatch_branches")?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT charter_id, branch, started_at FROM (
+                    SELECT COALESCE(responsibility_id,
+                                    json_extract(stats_json, '$.charterId')) AS charter_id,
+                           TRIM(json_extract(stats_json, '$.branch')) AS branch,
+                           started_at, id
+                    FROM persona_attention_ledger
+                    WHERE kind = 'attention' AND started_at >= ?1
+                      AND json_valid(stats_json)
+                      AND json_type(stats_json, '$.branch') = 'text')
+                 WHERE charter_id IS NOT NULL AND branch != ''
+                 ORDER BY started_at DESC, id DESC
+                 LIMIT ?2",
+            )?;
+            let rows = stmt.query_map(params![since, limit], |r| {
+                Ok(DispatchBranch {
+                    charter_id: r.get("charter_id")?,
+                    branch: r.get("branch")?,
+                    started_at: r.get("started_at")?,
+                })
+            })?;
+            Ok(collect_rows(
+                rows,
+                "attention_ledger::recent_dispatch_branches",
+            ))
+        }
+    )
+}
+
 /// The `(persona_id, responsibility_id)` of the newest attention pass that
 /// dispatched the worker `worker_id`, or `None` when no pass names it (a
 /// manual session, a trigger-fired execution). This is how a finished run is

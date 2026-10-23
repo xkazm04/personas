@@ -1,0 +1,107 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d6d60d55-5c41-46fe-a14f-e1cbb62517c8",
+ "subject": "fleet-orchestration",
+ "evaluatedAt": "2026-10-22T15:29:33.671Z",
+ "pairs": [
+  {
+   "context": "468953eb-0204-4013-b366-9357b2161138",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/core/src/run_budget.rs:85 PERSONAS_RUN_BUDGET_ENFORCE defaults false, so the run-level total for multi-spawn runs only warns (run_budget.rs:21) and is booked at completion not reserved at admission; parallel-dispatch wants a run total reserved at the door and overflow deferred, so a fan-out can overspend its ceiling unchecked. (src-tauri/core/src/limits.rs:56 stream_timeout_ms is derived from the engine ceiling with a finalize margin, which does realize soft-under-hard for a single execution.)",
+   "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+   "evaluatedRevision": 28,
+   "techniques": [
+    {
+     "technique": "parallel-dispatch",
+     "verdict": "deviation",
+     "evidence": "src-tauri/core/src/run_budget.rs:85 enforcement off by default; ledger records post-spawn cost only (run_budget.rs:190)"
+    },
+    {
+     "technique": "soft-budget-under-the-hard-cap",
+     "verdict": "realized for single execution",
+     "evidence": "src-tauri/core/src/limits.rs:56 stream deadline clamped below ENGINE_MAX_EXECUTION_SECS with a 60s finalize margin"
+    }
+   ]
+  },
+  {
+   "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/companion/brain/fleet.rs:3 states Athena does not own the Fleet registry and is only a consumer writing episodes and a digest; no session is created, dispatched or harvested here, so the orchestrator precondition fails. Re-judged rev 28, unchanged.",
+   "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+   "evaluatedRevision": 28,
+   "techniques": []
+  },
+  {
+   "context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx:97 only switches navigation to the fleet monitor (sys.setMonitorInitialView); the cockpit widgets are chat cards that create, track, dispatch and harvest no session. Re-judged rev 28, unchanged.",
+   "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+   "evaluatedRevision": 28,
+   "techniques": []
+  },
+  {
+   "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/display/UnifiedTable.tsx:2 the context is generic table/list display primitives with no session registry, dispatch or harvest concept. Re-judged rev 28, unchanged.",
+   "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+   "evaluatedRevision": 28,
+   "techniques": []
+  },
+  {
+   "context": "8650ca36-36fe-4862-98f5-745e866a2687",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_design/DesignHub.tsx:52 SUB_TABS are authoring panels over one persona draft, and src/features/agents/sub_tool_runner/libs/useToolRunner.ts:95 invokes a single tool call; no concurrent-session registry, dispatch or harvest. Re-judged rev 28, unchanged.",
+   "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+   "evaluatedRevision": 28,
+   "techniques": []
+  }
+ ],
+ "declined": [
+  {
+   "subject": "fleet-orchestration",
+   "context": "3effd422-2610-4c8a-bc02-53aceafd827c",
+   "reason": "commands-companion: fleet_bridge.rs is 2813 lines; only the consumer bridge head and parse_state_token (closed token set, unknown rejected at :71/:2504) were read, not enough to cover half the techniques; left unknown"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "c5228746-931d-4733-9cf7-84519a2c9605",
+   "reason": "hooks-design: stale NA, budget; prior anchor usePersonaCompiler.ts no longer exists, re-anchor next run"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
+   "reason": "agents-quick-answer: stale NA, budget exhausted"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+   "reason": "home-learning: stale NA, budget exhausted"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T15:29:33.671Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "parallel-dispatch",
+    "soft-budget-under-the-hard-cap",
+    "session-registry",
+    "absent-status-passthrough"
+   ],
+   "deviations": 1
+  }
+ ]
+}

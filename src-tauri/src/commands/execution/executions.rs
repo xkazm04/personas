@@ -128,14 +128,18 @@ pub fn list_all_executions(
 /// Return precise counts for the Activity filter badges (total / running /
 /// completed / failed), optionally scoped to a persona. Unlike
 /// `list_all_executions` this is not paginated, so the frontend can display
-/// accurate totals regardless of how many rows have been loaded.
+/// accurate totals regardless of how many rows have been loaded. It covers the
+/// same `ACTIVITY_LIST_WINDOW_DAYS` window as the list, so a badge never counts
+/// runs the ledger cannot page to.
 #[tauri::command]
 pub fn count_executions(
     state: State<'_, Arc<AppState>>,
     persona_id: Option<String>,
 ) -> Result<ExecutionCounts, AppError> {
     require_auth_sync(&state)?;
-    repo::count_all_global(&state.db, persona_id.as_deref())
+    let cutoff =
+        (chrono::Utc::now() - chrono::Duration::days(ACTIVITY_LIST_WINDOW_DAYS)).to_rfc3339();
+    repo::count_all_global(&state.db, persona_id.as_deref(), Some(&cutoff))
 }
 
 #[tauri::command]

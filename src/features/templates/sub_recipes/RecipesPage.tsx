@@ -2,7 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { usePipelineStore } from '@/stores/pipelineStore';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { RECIPE_PAGE_SIZE } from '@/api/recipes/recipes';
 import { RecipesBrowseList } from './components/RecipesBrowseList';
 import { RecipeDetailPanel } from './components/RecipeDetailPanel';
@@ -43,22 +46,32 @@ export function RecipesPage() {
   // DB before the frontend renders; this fetch lands one viewport-sized
   // page into the store instead of hydrating the whole catalog (1000+)
   // just to paint 20 table rows. `isLoading` is only the cold-empty
-  // flag — a rejected fetch releases it so the empty state can appear.
+  // flag — a rejected fetch releases it, and the failure is held in state
+  // and shown inline with Retry: the empty state alone reads as "no recipes
+  // match", a claim about a catalog that never arrived, and nobody pressed
+  // anything that would justify a toast.
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadFailure, setLoadFailure] = useState<unknown>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   useEffect(() => {
     let cancelled = false;
+    setLoadFailure(null);
     fetchRecipes({ limit: RECIPE_PAGE_SIZE, offset: 0 })
-      .catch(silentCatch('RecipesPage.fetchRecipes'))
+      .catch((err: unknown) => {
+        silentCatch('RecipesPage.fetchRecipes')(err);
+        if (!cancelled) setLoadFailure(err);
+      })
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
-  }, [fetchRecipes]);
+  }, [fetchRecipes, loadAttempt]);
 
   const handleLoadMore = useCallback(() => {
     if (isLoadingMore || !recipesHasMore) return;
     setIsLoadingMore(true);
     fetchRecipes({ limit: RECIPE_PAGE_SIZE, offset: definitions.length, append: true })
-      .catch(silentCatch('RecipesPage.fetchRecipes.more'))
+      .catch(toastCatch('RecipesPage.fetchRecipes.more'))
       .finally(() => setIsLoadingMore(false));
   }, [isLoadingMore, recipesHasMore, fetchRecipes, definitions.length]);
 
@@ -101,8 +114,16 @@ export function RecipesPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="flex-1 min-h-0"
+            className="flex-1 min-h-0 flex flex-col"
           >
+            {loadFailure != null && (
+              <InlineErrorBanner
+                compact
+                className="mb-2"
+                message={resolveErrorTranslated(t, extractMessage(loadFailure)).message}
+                onRetry={() => { setIsLoading(true); setLoadAttempt((n) => n + 1); }}
+              />
+            )}
             <RecipesBrowseList
               recipes={recipes}
               isLoading={isLoading}
@@ -110,6 +131,7 @@ export function RecipesPage() {
               onSearchChange={setSearch}
               onOpenDetail={(id) => setSelectedRecipeId(id)}
               hasMoreRemote={recipesHasMore}
+              isLoadingMore={isLoadingMore}
               onLoadMore={handleLoadMore}
             />
           </motion.div>

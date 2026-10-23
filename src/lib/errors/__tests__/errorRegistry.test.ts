@@ -11,7 +11,7 @@ vi.mock('@sentry/react', () => ({
   addBreadcrumb: (...args: unknown[]) => addBreadcrumb(...args),
 }));
 
-import { resolveError, friendlySeverity, extractAuthorizeUrl } from '../errorRegistry';
+import { resolveError, extractAuthorizeUrl } from '../errorRegistry';
 
 describe('resolveError', () => {
   beforeEach(() => {
@@ -115,13 +115,5 @@ describe('resolveError — structured AppError variants (gap closure)', () => {
     expect(extractAuthorizeUrl('open https://x.io/a?b=1 to grant consent')).toBe('https://x.io/a?b=1');
     expect(extractAuthorizeUrl('Authorization required for tool x — no url here')).toBeNull();
     expect(extractAuthorizeUrl(null)).toBeNull();
-  });
-});
-
-describe('friendlySeverity', () => {
-  it('maps known severities and passes unknown codes through', () => {
-    expect(friendlySeverity('critical')).toBe('Needs immediate attention');
-    expect(friendlySeverity('low')).toBe('Informational');
-    expect(friendlySeverity('bizarre')).toBe('bizarre');
   });
 });

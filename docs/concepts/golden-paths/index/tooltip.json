@@ -40,6 +40,7 @@
     "DispatchTable.tsx": {"count":2,"sections":[7,9],"lines":["106"],"contexts":["`DispatchTable.tsx:106` · `PersonaCoachingTable.tsx:163,211` · `contextMapPerf.tsx:261,317`"],"resolved":false},
     "EdgeDeleteTooltip.tsx": {"count":2,"sections":[5,9],"contexts":["- **Naming an anchored popover `*Tooltip`.** `EdgeDeleteTooltip.tsx` has a delete action,"],"resolved":false},
     "ExecutionListRow.tsx": {"count":3,"sections":[7,9],"lines":["71,78,140,141,224","191"],"contexts":["High-traffic remainder: `ExecutionListRow.tsx:71,78,140,141,224` ·"],"resolved":false},
+    "FleetStatusLegend.tsx": {"count":1,"sections":[7],"lines":["40"],"contexts":["`FleetStatusLegend.tsx:40`, `plugins/companion/Bubble.tsx:215`,"],"resolved":false},
     "GateBreakdown.tsx": {"count":1,"sections":[7],"lines":["29"],"contexts":["`GateBreakdown.tsx:29` (`step.tail`) · `PersonaOverviewCells.tsx:160` (names behind"],"resolved":false},
     "GlyphTestCompleteCore.tsx": {"count":1,"sections":[7],"lines":["82"],"contexts":["`GlyphTestCompleteCore.tsx:82` · `UseCaseRow.tsx:134,192` · `ArenaPanelColosseum.tsx:799`"],"resolved":false},
     "GlyphTopBar.tsx": {"count":1,"sections":[7],"lines":["45"],"contexts":["`UseCaseRow.tsx:134,156,192` · `GlyphTopBar.tsx:45` · `MessageDetailModal.tsx:945` ·"],"resolved":false},
@@ -50,6 +51,7 @@
     "PersonaParametersCard.tsx": {"count":1,"sections":[7],"lines":["60"],"contexts":["behind a \"+N\" overflow) · `PersonaOverviewColumns.tsx:41` · `PersonaParametersCard.tsx:60`"],"resolved":false},
     "PersonaSquare.tsx": {"count":1,"sections":[7],"lines":["27"],"contexts":["· `PersonaSquare.tsx:27` · `PersonaMonitor.tsx:256` · `ReviewListItem.tsx:14,24,33` · …"],"resolved":false},
     "QuestionPanel.tsx": {"count":1,"sections":[7],"lines":["45"],"contexts":["· `QuestionPanel.tsx:45` · `GlyphCapabilityPreview.tsx:229,242,253` ·"],"resolved":false},
+    "ReadinessTrend.tsx": {"count":1,"sections":[7],"lines":["17"],"contexts":["`ConnectorStatusCard.tsx:75`, `ReadinessTrend.tsx:17`."],"resolved":false},
     "StandardsCard.tsx": {"count":1,"sections":[7],"lines":["54"],"contexts":["· `GroundingTable.tsx:63` · `StandardsCard.tsx:54` · `SensorScoreboard.tsx:53`."],"resolved":false},
     "UseCaseDetailPanel.tsx": {"count":1,"sections":[9],"contexts":["`GlyphCapabilityPreview.tsx` · `UseCaseDetailPanel.tsx` · `ConnectorStatusCard.tsx` ·"],"resolved":false},
     "UseCaseRow.tsx": {"count":2,"sections":[7],"lines":["134,156,192","134,192"],"contexts":["`UseCaseRow.tsx:134,156,192` · `GlyphTopBar.tsx:45` · `MessageDetailModal.tsx:945` ·"],"resolved":false},
@@ -75,6 +77,7 @@
     "overview/sub_analytics/ExecutionHeatmap.tsx": {"count":1,"sections":[7],"lines":["444"],"contexts":["| `overview/sub_analytics/ExecutionHeatmap.tsx:444` | **justified** (SVG `<rect>` trigger), reasoning at `:440-442` |"],"resolved":false},
     "overview/sub_certification/GateBreakdown.tsx": {"count":1,"sections":[7],"lines":["29"],"contexts":["`overview/sub_certification/GateBreakdown.tsx:29` (the gate log tail, available nowhere"],"resolved":false},
     "plugins/companion/Bubble.tsx": {"count":1,"sections":[7],"lines":["215"],"contexts":["`FleetStatusLegend.tsx:40`, `plugins/companion/Bubble.tsx:215`,"],"resolved":false},
+    "plugins/fleet/FleetStatusLegend.tsx": {"count":1,"sections":[7],"lines":["40"],"contexts":["| `plugins/fleet/FleetStatusLegend.tsx:40` | CSS-only but **has `group-focus-within`** — the best hand-roll |"],"resolved":false},
     "scripts/census/rules.json": {"count":1,"sections":[9],"contexts":["**The positive control is deliberately NOT proposed for `rules.json`.** A census baseline"],"resolvedFrom":"basename","verbatim":"rules.json"},
     "scripts/census/run-census.mjs": {"count":1,"sections":[9],"lines":["19-38"],"contexts":["contract (`run-census.mjs:19-38`) was exercised against this exact rule:"],"resolvedFrom":"basename","verbatim":"run-census.mjs"},
     "shared-facts.json": {"count":3,"sections":[7,9],"contexts":["`shared-facts.json`; everything else was measured during"],"resolved":false},
@@ -311,7 +314,7 @@
       "resolvedFrom": "suffix",
       "verbatim": "plugins/fleet/FleetFooterPopover.tsx"
     },
-    "src/features/plugins/fleet/FleetStatusLegend.tsx": {"count":3,"sections":[6,7],"lines":["40"],"contexts":["- `src/features/plugins/fleet/FleetStatusLegend.tsx:40` — the only CSS-only hover surface"]},
+    "src/features/plugins/fleet/FleetStatusLegend.tsx": {"count":1,"sections":[6],"lines":["40"],"contexts":["- `src/features/plugins/fleet/FleetStatusLegend.tsx:40` — the only CSS-only hover surface"],"resolved":false},
     "src/features/plugins/fleet/sub_settings/FleetProcessRow.tsx": {
       "count": 1,
       "sections": [3],
@@ -441,7 +444,6 @@
       "resolvedFrom": "suffix",
       "verbatim": "shared/glyph/persona-layout/UseCaseRow.tsx"
     },
-    "src/features/teams/sub_factory/passport/ReadinessTrend.tsx": {"count":1,"sections":[7],"lines":["17"],"contexts":["`ConnectorStatusCard.tsx:75`, `ReadinessTrend.tsx:17`."],"resolvedFrom":"basename","verbatim":"ReadinessTrend.tsx"},
     "src/features/teams/sub_teamWorkspace/presetStudio/PresetProcessBlueprint.tsx": {
       "count": 1,
       "sections": [7],

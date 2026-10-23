@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { Plus, Trash2, Save } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -66,7 +67,7 @@ export function ModelRoutingSection() {
     <div className="space-y-4">
       <p className="typo-caption text-foreground">{s.routing_subtitle}</p>
 
-      {rules.length === 0 && <p className="typo-body text-foreground">{s.routing_empty}</p>}
+      {rules.length === 0 && <ScenarioEmptyState art="link" size="sm" title={s.routing_empty} />}
 
       <div className="space-y-2">
         {rules.map((rule, i) => (

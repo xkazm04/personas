@@ -1,4 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
+import { createLatestWins } from '@/stores/util/latestWins';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   countElements,
   detectPlatformLabel,
@@ -16,27 +18,41 @@ export function useUrlImport(
   onContentPaste: ((content: string, sourceName: string) => void) | undefined,
   mountedRef: React.RefObject<boolean>,
 ) {
-  const [urlValue, setUrlValue] = useState('');
+  const { t, tx } = useTranslation();
+  const n = t.templates.n8n;
+  const [urlValue, setUrlValueState] = useState('');
   const [urlFetching, setUrlFetching] = useState(false);
   const [urlPreview, setUrlPreview] = useState<FilePreview | null>(null);
   const validatedUrlRef = useRef<{ content: string; sourceName: string } | null>(null);
+  // One token per fetch; editing the URL mints a new one too, so a response
+  // for the address the user already replaced is dropped instead of painting
+  // its workflow under the new URL (and being imported by Continue).
+  const [latestFetch] = useState(createLatestWins);
+
+  const setUrlValue = useCallback((value: string) => {
+    latestFetch.next();
+    validatedUrlRef.current = null;
+    setUrlFetching(false); // the in-flight fetch, if any, is abandoned
+    setUrlValueState(value);
+  }, [latestFetch]);
 
   const handleUrlFetch = useCallback(async () => {
     const trimmed = urlValue.trim();
     if (!trimmed || !URL_PATTERN.test(trimmed)) {
-      setUrlPreview({ kind: 'error', fileName: 'url', message: 'Enter a valid HTTP/HTTPS URL.' });
+      setUrlPreview({ kind: 'error', fileName: 'url', message: n.import_err_url_invalid });
       return;
     }
 
     let parsed: URL;
     try { parsed = new URL(trimmed); }
-    catch { setUrlPreview({ kind: 'error', fileName: 'url', message: 'URL appears invalid.' }); return; }
+    catch { setUrlPreview({ kind: 'error', fileName: 'url', message: n.import_err_url_malformed }); return; }
 
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-      setUrlPreview({ kind: 'error', fileName: 'url', message: 'Only HTTP/HTTPS URLs are supported.' });
+      setUrlPreview({ kind: 'error', fileName: 'url', message: n.import_err_url_protocol });
       return;
     }
 
+    const token = latestFetch.next();
     setUrlFetching(true);
     setUrlPreview(null);
     validatedUrlRef.current = null;
@@ -44,37 +60,39 @@ export function useUrlImport(
     try {
       const rawUrl = resolveRawUrl(trimmed);
       const resp = await fetch(rawUrl, { signal: AbortSignal.timeout(15_000) });
+      if (!latestFetch.isCurrent(token)) return;
       if (!resp.ok) {
-        setUrlPreview({ kind: 'error', fileName: 'url', message: `Fetch failed: ${resp.status} ${resp.statusText}` });
+        setUrlPreview({ kind: 'error', fileName: 'url', message: tx(n.import_err_fetch_status, { status: resp.status, statusText: resp.statusText }) });
         return;
       }
       const text = await resp.text();
+      if (!latestFetch.isCurrent(token)) return;
       if (!text.trim()) {
-        setUrlPreview({ kind: 'error', fileName: 'url', message: 'URL returned empty content.' });
+        setUrlPreview({ kind: 'error', fileName: 'url', message: n.import_err_url_empty });
         return;
       }
       if (text.length > MAX_PASTE_LENGTH) {
-        setUrlPreview({ kind: 'error', fileName: 'url', message: `Content too large (${formatFileSize(text.length)}). Maximum 5 MB.` });
+        setUrlPreview({ kind: 'error', fileName: 'url', message: tx(n.import_err_content_too_large, { size: formatFileSize(text.length), max: formatFileSize(MAX_PASTE_LENGTH) }) });
         return;
       }
 
       let json: Record<string, unknown>;
       try { json = JSON.parse(text.trim()) as Record<string, unknown>; }
       catch {
-        setUrlPreview({ kind: 'error', fileName: 'url', message: 'URL content is not valid JSON.' });
+        setUrlPreview({ kind: 'error', fileName: 'url', message: n.import_err_url_not_json });
         return;
       }
 
       const { count } = countElements(json);
       if (count === 0) {
-        setUrlPreview({ kind: 'error', fileName: 'url', message: 'No recognized workflow structure in fetched content.' });
+        setUrlPreview({ kind: 'error', fileName: 'url', message: n.import_err_no_structure_url });
         return;
       }
 
       const sourceName = fileNameFromUrl(trimmed);
       const platform = detectPlatformLabel(json);
       const workflowName = typeof json.name === 'string' && json.name ? json.name
-        : typeof json.title === 'string' && json.title ? json.title : 'Imported Workflow';
+        : typeof json.title === 'string' && json.title ? json.title : n.import_name_imported;
 
       setUrlPreview({
         kind: 'valid', fileName: sourceName, fileSize: formatFileSize(text.length),
@@ -82,12 +100,14 @@ export function useUrlImport(
       });
       validatedUrlRef.current = { content: text.trim(), sourceName };
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown fetch error';
-      setUrlPreview({ kind: 'error', fileName: 'url', message: msg.includes('timeout') ? 'Request timed out (15s).' : `Fetch failed: ${msg}` });
+      if (!latestFetch.isCurrent(token)) return;
+      const msg = err instanceof Error ? err.message : n.import_err_fetch_unknown;
+      setUrlPreview({ kind: 'error', fileName: 'url', message: msg.includes('timeout') ? n.import_err_timeout : tx(n.import_err_fetch_failed, { message: msg }) });
     } finally {
-      if (mountedRef.current) setUrlFetching(false);
+      // A superseded fetch must not end a newer one's busy state.
+      if (mountedRef.current && latestFetch.isCurrent(token)) setUrlFetching(false);
     }
-  }, [urlValue, mountedRef]);
+  }, [urlValue, mountedRef, latestFetch, n, tx]);
 
   const handleUrlImport = useCallback(() => {
     const validated = validatedUrlRef.current;

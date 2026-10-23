@@ -262,35 +262,3 @@ export const STATE_LOCKED = {
 
 /** Border for inactive / disabled elements — alias for BORDER_SUBTLE. */
 export const STATE_INACTIVE_BORDER = BORDER_SUBTLE;
-
-// -- Simple mode tokens -------------------------------------------------
-
-export type SimpleStatus = 'good' | 'warning' | 'problem';
-
-/**
- * Appearance vocabulary for one simple-mode status level.
- *
- * Carries no `label`. It used to, with the literal English 'Good' / 'Attention' /
- * 'Problem' baked in — display copy inside a design-token module, and the one
- * surface aimed at the least technical users was the one surface that could not
- * be translated. The copy now lives where every other machine token's copy does,
- * `status_tokens.simple`, read through `tokenLabel(t, 'simple', level)`.
- */
-export interface SimpleStatusToken {
-  color: string;
-  bg: string;
-  dot: string;
-}
-
-export const SIMPLE_MODE = {
-  /** Reduced three-level status palette for simple mode -- derived from STATUS_PALETTE */
-  STATUS: {
-    good:    { color: STATUS_PALETTE.success.text, bg: STATUS_PALETTE.success.bg, dot: STATUS_PALETTE.success.icon },
-    warning: { color: STATUS_PALETTE.warning.text, bg: STATUS_PALETTE.warning.bg, dot: STATUS_PALETTE.warning.icon },
-    problem: { color: STATUS_PALETTE.error.text,   bg: STATUS_PALETTE.error.bg,   dot: STATUS_PALETTE.error.icon },
-  } satisfies Record<SimpleStatus, SimpleStatusToken>,
-  /** Card style for simple mode -- larger, rounder, more breathing room */
-  CARD: `rounded-xl border ${BORDER_DEFAULT} bg-background/60 p-5 shadow-elevation-1`,
-  /** Minimum touch target for simple mode interactive elements */
-  MIN_TARGET: 'min-h-[44px] min-w-[44px]',
-} as const;

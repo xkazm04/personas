@@ -27,6 +27,7 @@ use crate::db::DbPool;
 use crate::engine::event_registry::event_name;
 use crate::engine::ExecutionEngine;
 use crate::ActiveProcessRegistry;
+use personas_core::utils::process::NoWindow;
 
 // ============================================================================
 // Node status helpers
@@ -626,33 +627,68 @@ async fn run_command_node(
     // without this a timed-out step detaches instead of stopping.
     command.kill_on_drop(true);
 
+    // tokio inherits stdio by default, so without `piped()` the child's output
+    // never reached `NodeOutcome` (every node's output was "" and a failure read
+    // "Exit code N: "). `no_window()` stops `cmd /C` opening a console per node;
+    // stdin is closed so a command that reads it sees EOF instead of hanging.
+    command
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .no_window();
+
     // Inject predecessor output as PIPELINE_INPUT env var
     if let Some(ref input_val) = input {
         command.env("PIPELINE_INPUT", input_val.to_string());
     }
 
     let output = match tokio::time::timeout(std::time::Duration::from_secs(300), async {
+        use tokio::io::AsyncReadExt;
         let mut child = command.spawn()?;
+        let mut child_stdout = child.stdout.take();
+        let mut child_stderr = child.stderr.take();
+        // The pipes are drained WHILE the child runs: a `try_wait` loop that only
+        // reads after exit deadlocks as soon as the child fills a pipe buffer.
+        let read_stdout = async {
+            let mut buf = Vec::new();
+            if let Some(s) = child_stdout.as_mut() {
+                s.read_to_end(&mut buf).await?;
+            }
+            Ok::<_, std::io::Error>(buf)
+        };
+        let read_stderr = async {
+            let mut buf = Vec::new();
+            if let Some(s) = child_stderr.as_mut() {
+                s.read_to_end(&mut buf).await?;
+            }
+            Ok::<_, std::io::Error>(buf)
+        };
         // Poll exit status with try_wait (non-consuming) so we can check
-        // for cancellation between polls. Once exited, wait_with_output
-        // drains stdout/stderr exactly once.
-        loop {
-            if cancelled.load(Ordering::Relaxed) {
-                let _ = child.kill().await;
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::Interrupted,
-                    "Pipeline cancelled by user",
-                ));
-            }
-            match child.try_wait() {
-                Ok(Some(_)) => break,
-                Ok(None) => {
-                    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        // for cancellation between polls.
+        let wait = async {
+            loop {
+                if cancelled.load(Ordering::Relaxed) {
+                    let _ = child.kill().await;
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::Interrupted,
+                        "Pipeline cancelled by user",
+                    ));
                 }
-                Err(e) => return Err(e),
+                match child.try_wait() {
+                    Ok(Some(status)) => return Ok(status),
+                    Ok(None) => {
+                        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                    }
+                    Err(e) => return Err(e),
+                }
             }
-        }
-        child.wait_with_output().await
+        };
+        let (status, stdout, stderr) = tokio::try_join!(wait, read_stdout, read_stderr)?;
+        Ok::<_, std::io::Error>(std::process::Output {
+            status,
+            stdout,
+            stderr,
+        })
     })
     .await
     {
@@ -1256,6 +1292,82 @@ fn build_node_input(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A hung (deadlocked) node must fail the test, not stall the suite.
+    const PIPE_DRAIN_DEADLINE: std::time::Duration = std::time::Duration::from_secs(60);
+
+    fn command_member() -> PersonaTeamMember {
+        PersonaTeamMember {
+            id: "m1".into(),
+            team_id: "t1".into(),
+            persona_id: "p1".into(),
+            role: "worker".into(),
+            position_x: 0.0,
+            position_y: 0.0,
+            config: None,
+            created_at: "2026-10-20T00:00:00Z".into(),
+        }
+    }
+
+    async fn run_command(command: &str) -> (NodeOutcome, serde_json::Value) {
+        let config = NodeConfig {
+            node_type: Some("command".into()),
+            command: Some(command.into()),
+            ..Default::default()
+        };
+        let mut statuses = vec![serde_json::json!({ "member_id": "m1" })];
+        let outcome = run_command_node(
+            &config,
+            &command_member(),
+            None,
+            &Arc::new(AtomicBool::new(false)),
+            &mut statuses,
+        )
+        .await;
+        (outcome, statuses.remove(0))
+    }
+
+    /// `run_command_node` spawned with inherited stdio, so `wait_with_output`
+    /// returned empty buffers: the node's output (PIPELINE_INPUT for its
+    /// successors) was always "" and a failure carried no stderr.
+    #[tokio::test]
+    async fn command_node_captures_stdout() {
+        let (outcome, status) = run_command("echo captured-output").await;
+        match outcome {
+            NodeOutcome::Completed(Some(out)) => assert!(out.contains("captured-output"), "{out}"),
+            _ => panic!("expected a completed node: {status}"),
+        }
+        assert!(status["output"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("captured-output"));
+    }
+
+    #[tokio::test]
+    async fn failing_command_node_reports_stderr() {
+        let (outcome, status) = run_command("echo boom-on-stderr 1>&2 && exit 3").await;
+        assert!(matches!(outcome, NodeOutcome::Failed { cancelled: false }));
+        let error = status["error"].as_str().unwrap_or_default();
+        assert!(error.contains("boom-on-stderr"), "{error}");
+    }
+
+    /// Output larger than a pipe buffer must not deadlock a node that waits for
+    /// the child to exit before reading.
+    #[tokio::test]
+    async fn command_node_drains_output_larger_than_a_pipe_buffer() {
+        let big = if cfg!(target_os = "windows") {
+            "for /L %i in (1,1,6000) do @echo 0123456789012345678901234567890123456789"
+        } else {
+            "i=0; while [ $i -lt 6000 ]; do echo 0123456789012345678901234567890123456789; i=$((i+1)); done"
+        };
+        let (outcome, _) = tokio::time::timeout(PIPE_DRAIN_DEADLINE, run_command(big))
+            .await
+            .expect("a full pipe must not hang the node");
+        match outcome {
+            NodeOutcome::Completed(Some(out)) => assert!(out.len() > 240_000, "{}", out.len()),
+            _ => panic!("expected a completed node"),
+        }
+    }
 
     #[test]
     fn test_evaluate_condition_equals_match() {

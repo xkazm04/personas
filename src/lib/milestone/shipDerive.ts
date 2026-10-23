@@ -9,7 +9,7 @@
 // name-keyed join silently drops contexts out of the footprint. That footprint
 // feeds two exit criteria and therefore the ship verdict: a milestone could
 // read GO because a context quietly vanished from its own scope.
-import { isComplete } from '@/features/teams/sub_goals/goalStatus';
+import { isComplete } from '@/features/projects/development/goals/goalStatus';
 
 import type { ShipContext, ShipGoal, ShipMember } from './shipModel';
 

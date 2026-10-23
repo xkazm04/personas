@@ -1,0 +1,63 @@
+{
+ "schema": "conform-run/1",
+ "worker": "4d0dd7a9-4e5a-4124-9de6-95ed8ca64aae",
+ "subject": "mcp-tools",
+ "evaluatedAt": "2026-10-22T19:54:20.562Z",
+ "pairs": [
+  {
+   "context": "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b",
+   "subject": "mcp-tools",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/browser_bridge/mcp.rs:653 returns page snapshot text to the scan/agent turn as a bare capped text block with no fence or source attribution, so a hostile page speaks into a model whose only mitigation is the write gate; auth, TTL and strict-mcp-config are realized",
+   "techniques": [
+    {
+     "technique": "client-integration",
+     "verdict": "realized",
+     "evidence": "src-tauri/src/commands/browser/sites.rs:369 passes --mcp-config plus --strict-mcp-config so the bridge is the turn only toolset, and the session is revoked on every failure path"
+    },
+    {
+     "technique": "authentication-and-scoping",
+     "verdict": "realized",
+     "evidence": "src-tauri/src/browser_bridge/mod.rs:54 expires each per-turn session token after 30 min and mcp.rs:134 rejects tools/call without it; sites.rs:69 refuses loosening so the human and agent doors answer alike"
+    },
+    {
+     "technique": "untrusted-result-handling",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/browser_bridge/mcp.rs:653 emits page text unfenced and unattributed; only the effect-class gate (policy.rs:174) stands behind it, the framing layer is absent"
+    }
+   ],
+   "registryProposal": "Context file list for site-whitelist-management is UI plus Tauri commands; the MCP server it consumes lives in src-tauri/src/browser_bridge, a path no context map row seems to own, so the standard has no direct pair onto the bridge server itself. Consider a browser-bridge context."
+  },
+  {
+   "context": "cbb061cf-5c61-49d4-80d8-98b8f9b40600",
+   "subject": "mcp-tools",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/browser/webview/PendingApprovalBar.tsx:5 the context is React UI (tabs, address bar, lease badge) that decides nothing and speaks no MCP wire; grep finds one MCP mention in src/features/browser, in types.ts, so no tool boundary exists in these files",
+   "techniques": []
+  }
+ ],
+ "declined": [
+  {
+   "subject": "mcp-tools",
+   "context": "all other unknown pairs (agents-*, stores*, vault-*, plugins-*, db*, p2p*, etc.)",
+   "reason": "left unjudged: budget of 3-6 pairs, and most are UI/store/storage contexts whose MCP relevance is a lexical resonance; a 22-technique subject needs real code reads per context, not skims"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T19:54:20.562Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "mcp-tools"
+   ],
+   "techniques": [
+    "client-integration",
+    "authentication-and-scoping",
+    "untrusted-result-handling"
+   ],
+   "deviations": 1
+  }
+ ]
+}

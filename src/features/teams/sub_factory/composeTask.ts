@@ -4,8 +4,9 @@
 // status until it settles, surface the streamed log + the final result.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { getKpiComposeStatus, type KpiComposeStatus } from '@/api/devTools/kpis';
+import { cancelKpiCompose, getKpiComposeStatus, type KpiComposeStatus } from '@/api/devTools/kpis';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 import type { KpiCategory, MeasureKind } from './factoryModel';
 
@@ -40,13 +41,23 @@ export const DERIVED_METRICS: { id: string; label: string; hint: string }[] = [
 
 export type ComposePhase = 'idle' | 'running' | 'done' | 'error';
 
-/** Drive one compose/propose background task: start it, poll, expose log + result. */
+/** Drive one compose/propose background task: start it, poll, expose log + result.
+ *
+ *  Abandoning a RUNNING task (reset, a new run, unmount) cancels it on the
+ *  backend. Stopping only the poll left the agent spending on a result nothing
+ *  would read: a `kpi_measure` result is applied only by the modal's Apply.
+ *  `running` names the task this hook still owns, so a poll that was already
+ *  in flight when the task was abandoned lands on nothing. */
 export function useComposeTask() {
   const [phase, setPhase] = useState<ComposePhase>('idle');
   const [lines, setLines] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<KpiComposeStatus | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const running = useRef<string | null>(null);
+  // Each run and each abandon mints a generation, so a start() that resolves
+  // after the task was abandoned (closed while still starting) is cancelled too.
+  const generation = useRef(createLatestWins());
 
   const stop = useCallback(() => {
     if (timer.current) {
@@ -55,11 +66,21 @@ export function useComposeTask() {
     }
   }, []);
 
-  useEffect(() => stop, [stop]);
+  /** Stop polling and, if a task is still running, cancel it on the backend. */
+  const abandon = useCallback(() => {
+    stop();
+    generation.current.next();
+    const id = running.current;
+    running.current = null;
+    if (id) void cancelKpiCompose(id).catch(silentCatch('useComposeTask:cancelKpiCompose'));
+  }, [stop]);
+
+  useEffect(() => abandon, [abandon]);
 
   const run = useCallback(
     async (start: () => Promise<{ task_id: string }>) => {
-      stop();
+      abandon();
+      const token = generation.current.next();
       setPhase('running');
       setLines([]);
       setError(null);
@@ -68,19 +89,28 @@ export function useComposeTask() {
       try {
         taskId = (await start()).task_id;
       } catch (e) {
+        if (!generation.current.isCurrent(token)) return;
         setError(errMsg(e));
         setPhase('error');
         return;
       }
+      if (!generation.current.isCurrent(token)) {
+        void cancelKpiCompose(taskId).catch(silentCatch('useComposeTask:cancelKpiCompose'));
+        return;
+      }
+      running.current = taskId;
       timer.current = setInterval(() => {
         void getKpiComposeStatus(taskId)
           .then((s) => {
+            if (running.current !== taskId) return; // abandoned while this poll was in flight
             setLines(s.lines ?? []);
             setStatus(s);
             if (s.status === 'completed') {
+              running.current = null;
               stop();
               setPhase('done');
             } else if (s.status === 'failed' || s.status === 'cancelled' || s.status === 'not_found') {
+              running.current = null;
               stop();
               setError(s.error ?? 'Composition failed.');
               setPhase('error');
@@ -89,16 +119,16 @@ export function useComposeTask() {
           .catch(silentCatch('useComposeTask:getKpiComposeStatus'));
       }, 1500);
     },
-    [stop],
+    [abandon, stop],
   );
 
   const reset = useCallback(() => {
-    stop();
+    abandon();
     setPhase('idle');
     setLines([]);
     setError(null);
     setStatus(null);
-  }, [stop]);
+  }, [abandon]);
 
   return { phase, lines, error, status, run, reset };
 }

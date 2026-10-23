@@ -99,6 +99,7 @@ function FilterableSelect({
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownPos = useAnchoredPortalPosition(containerRef, open, { flip: true, maxMenuHeight: 220, gap: 4, bottomMargin: 8 });
 
   const close = useCallback(() => { setOpen(false); setQuery(''); }, []);
@@ -135,6 +136,20 @@ function FilterableSelect({
   const handleSelect = (val: string) => {
     onValueChange?.(val);
     close();
+    // The chosen option unmounts with the menu; without this, keyboard focus
+    // falls to <body> and the user has to tab back from the top of the page.
+    triggerRef.current?.focus();
+  };
+
+  // Escape closes the open menu - from the search field (portalled) or from the
+  // trigger - and is CLAIMED: stopPropagation keeps the same key from also
+  // closing the modal or panel this select sits in.
+  const handleEscape = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Escape' || !open) return;
+    e.preventDefault();
+    e.stopPropagation();
+    close();
+    triggerRef.current?.focus();
   };
 
   const baseClasses = [
@@ -148,9 +163,10 @@ function FilterableSelect({
   ].join(' ');
 
   return (
-    <div ref={containerRef} className={`relative ${wrapperClassName}`}>
+    <div ref={containerRef} className={`relative ${wrapperClassName}`} onKeyDown={handleEscape}>
       {/* Trigger */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((p) => !p)}
         disabled={disabled}
@@ -176,6 +192,7 @@ function FilterableSelect({
       {open && dropdownPos && createPortal(
         <div
           ref={dropdownRef}
+          onKeyDown={handleEscape}
           // z must clear portal-mode BaseModals (Z_INDEX_PORTAL_BASE = 10000 +
           // depth*10) so the options never render UNDER the modal they're in.
           className="fixed z-[10200] rounded-xl shadow-elevation-3 overflow-hidden border border-primary/15"

@@ -52,6 +52,20 @@ const rules = agents
   .map((a) => `  { agentKey: '${a.key}', keywords: /${a.match}/i },`)
   .join('\n');
 
+// Display copy per lens, straight from the same TOML. SCAN_AGENTS reads the
+// entries it has no hand-authored literal for from here, so a lens added to the
+// TOML needs no second copy of its English text in a .ts module.
+const copy = Object.fromEntries(
+  agents.map((a) => [
+    a.key,
+    {
+      label: a.label ?? a.key,
+      description: a.description ?? '',
+      examples: (a.examples ?? '').split(/,\s*/).filter(Boolean),
+    },
+  ]),
+);
+
 const body = `// GENERATED FILE — do not edit.
 // Source: src-tauri/src/commands/infrastructure/scan_agents.toml (\`match\` field
 // per agent), emitted by scripts/skills/gen-scan-match-rules.mjs. One rule per
@@ -62,6 +76,9 @@ const body = `// GENERATED FILE — do not edit.
 export const SCAN_MATCH_RULES: { agentKey: string; keywords: RegExp }[] = [
 ${rules}
 ];
+
+/** Display copy per scan lens (label, description, examples), from the same TOML. */
+export const SCAN_LENS_COPY: Record<string, { label: string; description: string; examples: string[] }> = ${JSON.stringify(copy, null, 2)};
 `;
 
 writeFileSync(OUT, body, 'utf8');

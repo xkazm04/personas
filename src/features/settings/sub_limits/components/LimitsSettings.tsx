@@ -6,7 +6,8 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { SettingsScaffold, type SettingsSection } from '@/features/shared/components/layout/settings/SettingsScaffold';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
 import { setAppSetting } from '@/api/system/settings';
-import { toastCatch } from '@/lib/silentCatch';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { getMetricsChartData } from '@/api/overview/observability';
 import { formatCost } from '@/lib/utils/formatters';
@@ -171,12 +172,14 @@ export default function LimitsSettings() {
   const roster = useAppSetting(ROSTER_KEY, String(ROSTER_DEFAULT), isValidRoster);
   const setMaxParallel = useOverviewStore((st) => st.setMaxParallelExecutions);
   const [monthly, setMonthly] = useState<MonthSpend[]>([]);
-  const [spendError, setSpendError] = useState<string | null>(null);
+  // The raw rejection, resolved to copy at render: invokeWithTimeout rejects
+  // with an AppError object, which `String(e)` rendered as "[object Object]".
+  const [spendFailure, setSpendFailure] = useState<{ raw: unknown } | null>(null);
   const [spendLoading, setSpendLoading] = useState(true);
 
   const loadSpend = useCallback(async () => {
     setSpendLoading(true);
-    setSpendError(null);
+    setSpendFailure(null);
     try {
       // Daily cost points over ~6 months, bucketed into the trailing 5
       // calendar months so the table shows the bigger spending picture
@@ -184,7 +187,7 @@ export default function LimitsSettings() {
       const data = await getMetricsChartData(MONTHLY_SPEND_DAYS);
       setMonthly(bucketMonthlySpend(data.chart_points)); // index 0 = current month (descending)
     } catch (e) {
-      setSpendError(e instanceof Error ? e.message : String(e));
+      setSpendFailure({ raw: e });
     } finally {
       setSpendLoading(false);
     }
@@ -227,11 +230,14 @@ export default function LimitsSettings() {
   // Persist the cap, then push it into the store so the FleetActivityStrip's
   // capacity gauge updates immediately (the backend hot-applies the live
   // engine cap; no restart and no round-trip event needed for the UI).
-  const saveConcurrency = useCallback(async () => {
-    await concurrency.save();
-    const n = Number.parseInt(concurrency.value, 10);
-    if (Number.isFinite(n) && n > 0) setMaxParallel(n);
-  }, [concurrency, setMaxParallel]);
+  // Keyed on `saved`, which useAppSetting raises only after the write landed:
+  // `save()` resolves on a failed write too, so pushing after `await save()`
+  // showed the gauge a cap the backend had refused.
+  const concurrencySaved = concurrency.saved;
+  useEffect(() => {
+    if (concurrencySaved && concurrencyNum > 0) setMaxParallel(concurrencyNum);
+  }, [concurrencySaved, concurrencyNum, setMaxParallel]);
+  const saveConcurrency = concurrency.save;
 
   const rosterDirty = !roster.saved && roster.loaded && !roster.loadFailed;
   const rosterNum = useMemo(() => {
@@ -389,10 +395,10 @@ export default function LimitsSettings() {
       icon: <Gauge className="w-4 h-4 text-primary/60" />,
       content: (
         <div className="space-y-3">
-          {spendError && (
+          {spendFailure && (
             <div className="flex items-center gap-2 typo-caption text-red-400 bg-red-400/10 rounded p-2">
               <AlertTriangle size={14} />
-              {spendError}
+              {resolveErrorTranslated(t, extractMessage(spendFailure.raw)).message}
             </div>
           )}
 
@@ -452,7 +458,7 @@ export default function LimitsSettings() {
         </div>
       ),
     },
-  ], [s, tx, concurrency, concurrencyNum, concurrencyDirty, saveConcurrency, roster, rosterNum, rosterDirty, ceiling, ceilingNum, isDirty, spendError, monthly, maxSpend, totalSpend, isOverBudget, isApproaching]);
+  ], [s, t, tx, concurrency, concurrencyNum, concurrencyDirty, saveConcurrency, roster, rosterNum, rosterDirty, ceiling, ceilingNum, isDirty, spendFailure, monthly, maxSpend, totalSpend, isOverBudget, isApproaching]);
 
   if (!ceiling.loaded || !concurrency.loaded) return null;
 

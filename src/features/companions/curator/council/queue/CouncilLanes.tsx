@@ -88,7 +88,7 @@ export function CouncilLanes({ rootRef }: { rootRef: RefObject<HTMLElement | nul
       </header>
       <div role="tabpanel" id={`${tabs}-panel-${filter}`} aria-labelledby={`${tabs}-tab-${filter}`} className="ln-scroll">
         {empty ? (
-          <ScenarioEmptyState icon={CheckCircle2} title={emptyTitle[filter]} subtitle={w.empty_sub} />
+          <ScenarioEmptyState icon={CheckCircle2} size="sm" title={emptyTitle[filter]} subtitle={w.empty_sub} />
         ) : (
           <>
             <LanesHead members={members} threshold={threshold} />

@@ -40,7 +40,9 @@ struct ContainsConfig {
 
 #[derive(Deserialize)]
 struct NotContainsConfig {
-    /// Patterns/phrases that must NOT appear in the output.
+    /// Patterns/phrases that must NOT appear in the output. `phrases` is the
+    /// key rows saved before 72ded76585 carry; read it rather than fail them all.
+    #[serde(alias = "phrases")]
     patterns: Vec<String>,
     #[serde(default)]
     case_sensitive: bool,
@@ -682,6 +684,22 @@ mod tests {
         let result = evaluate_one(&a, "Found SSN: 123-45-6789");
         assert!(!result.passed);
         assert!(result.explanation.contains("SSN"));
+    }
+
+    /// Rows saved by the settings UI before 72ded76585 carry `phrases`, not
+    /// `patterns`. They must evaluate (a forbidden phrase still fails) instead
+    /// of failing every run as an invalid config.
+    #[test]
+    fn test_not_contains_reads_legacy_phrases_key() {
+        let a = make_assertion(
+            AssertionType::NotContains,
+            r#"{"phrases": ["SSN"], "case_sensitive": false}"#,
+        );
+        let ok = evaluate_one(&a, "The report is ready for review");
+        assert!(ok.passed, "{}", ok.explanation);
+        let bad = evaluate_one(&a, "Found ssn: 123-45-6789");
+        assert!(!bad.passed);
+        assert!(bad.explanation.contains("SSN"));
     }
 
     #[test]

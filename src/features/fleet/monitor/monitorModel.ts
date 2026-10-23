@@ -253,6 +253,13 @@ export interface MonitorBadgeCounts {
   messages: Record<string, number>;
 }
 
+/** Translated names for the cards of reviews/messages whose persona is gone. */
+export interface OrphanLabels { unassigned: string; unknownPersona: string }
+
+/** English fallback for callers that pass no labels (tests); the app passes the
+ *  active locale's `t.monitor.orphan_*` through `useMonitorFeeds`. */
+const DEFAULT_ORPHAN_LABELS: OrphanLabels = { unassigned: 'Unassigned', unknownPersona: 'Unknown persona' };
+
 /**
  * Build the full Monitor model: one card per persona (fleet-wide, including
  * idle personas) plus leftover app-level processes.
@@ -268,6 +275,7 @@ export function buildMonitorModel(
   activeProcesses: Record<string, ActiveProcess>,
   healthMap: Record<string, PersonaHealth>,
   badgeCounts?: MonitorBadgeCounts,
+  orphanLabels: OrphanLabels = DEFAULT_ORPHAN_LABELS,
 ): MonitorModel {
   const reviewsByPersona = groupBy(reviews, (r) => r.persona_id || 'unassigned');
   const messagesByPersona = groupBy(unreadMessages, (m) => m.persona_id || 'unassigned');
@@ -350,7 +358,9 @@ export function buildMonitorModel(
     const attentionCount = reviewCount + messageCount;
     const hasAttention = attentionCount > 0 || queued > 0 || inputRequired > 0 || draftReady > 0;
     const recentStatuses = health?.recentStatuses ?? [];
-    const lastFailed = recentStatuses[0] === 'failed';
+    // `incomplete` is a run whose process died - not a success, and not one
+    // the operator chose to stop (that is `cancelled`, which stays calm).
+    const lastFailed = recentStatuses[0] === 'failed' || recentStatuses[0] === 'incomplete';
     const execState: ExecState =
       running > 0 ? 'running'
         : lastFailed ? 'failed'
@@ -394,7 +404,7 @@ export function buildMonitorModel(
     const revs = reviewsByPersona.get(key) ?? [];
     const msgs = messagesByPersona.get(key) ?? [];
     const sample = revs[0];
-    const name = key === 'unassigned' ? 'Unassigned' : (sample?.persona_name || 'Unknown persona');
+    const name = key === 'unassigned' ? orphanLabels.unassigned : (sample?.persona_name || orphanLabels.unknownPersona);
     cards.push(makeCard(
       key, name, sample?.persona_icon ?? null, sample?.persona_color ?? null, null,
       revs, msgs, [], undefined,
@@ -463,36 +473,6 @@ export function primaryDrawerSection(card: PersonaCardModel): DrawerSection {
   if (key === 'attention') return (card.reviews.length || card.reviewCount) > 0 ? 'reviews' : 'messages';
   if (key === 'idle') return 'capabilities';
   return 'activity';
-}
-
-/** Tone of a single recent-run outcome token, for the health micro-bar. */
-export type HealthTone = 'success' | 'fail' | 'other' | 'none';
-
-export function healthTone(status: string | undefined): HealthTone {
-  if (!status) return 'none';
-  if (status === 'completed') return 'success';
-  if (status === 'failed') return 'fail';
-  if (status === 'cancelled') return 'other';
-  return 'other';
-}
-
-export const HEALTH_TONE_CLASS: Record<HealthTone, string> = {
-  success: 'bg-emerald-400/80',
-  fail: 'bg-red-400/80',
-  other: 'bg-amber-400/70',
-  none: 'bg-foreground/15',
-};
-
-/**
- * Build the health micro-bar segments for a card: a fixed-length array
- * (oldest→newest, left→right for natural reading) padded with `none` so every
- * card's bar is the same width. `recentStatuses` arrives newest-first, so we
- * take the first `length`, reverse to oldest-first, then left-pad.
- */
-export function healthSegments(card: PersonaCardModel, length: number): HealthTone[] {
-  const recent = card.recentStatuses.slice(0, length).map(healthTone).reverse();
-  const pad = length - recent.length;
-  return pad > 0 ? [...Array<HealthTone>(pad).fill('none'), ...recent] : recent;
 }
 
 // --- small helpers ----------------------------------------------------------

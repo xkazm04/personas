@@ -1,0 +1,50 @@
+{"schema": "conform-run/1", "worker": "82a819fd-85e0-481f-b364-0cfffe02cbbc", "subject": "motion",
+ "evaluatedAt": "2026-10-16T17:09:20Z",
+ "pairs": [
+  {"context": "a576c14f-1edd-4da4-8d11-527161a3b5b3", "subject": "motion", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534", "evaluatedRevision": 10,
+   "evidence": "src/features/teams/sub_teamWorkspace/TeamList.tsx:528 and src/features/teams/sub_teamWorkspace/presetStudio/PresetStudio.tsx:141 hide ghosts behind a 120ms+ animationDelay, but src/styles/globals.css:4921 sets animation: none on .animate-fade-in (selector :4912) under prefers-reduced-motion, deleting the window so ghosts flash on warm loads - re-verified 2026-10-16 after 9c5077abb6/d95892df27, globals anchor moved 4893->4921",
+   "techniques": [
+    {"technique": "reduced-motion-mechanics", "verdict": "deviation", "evidence": "src/styles/globals.css:4921 animation: none deletes the timing-load-bearing invisibility window the ghost delay at src/features/teams/sub_teamWorkspace/TeamList.tsx:528 relies on"},
+    {"technique": "preset-vocabulary", "verdict": "deviation", "evidence": "src/styles/globals.css:2001 .animate-fade-in declares no reduced variant marking its delay as timing-load-bearing; the fallback is improvised by the global rule"}]},
+  {"context": "b4439e30-fcff-4095-97dd-d9d7da2247dd", "subject": "motion", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534", "evaluatedRevision": 10,
+   "evidence": "src/features/settings/sub_portability/components/ExportSelectionModal.tsx:328 keeps ghost rows invisible through a 120ms+ animationDelay on animate-fade-in, but src/styles/globals.css:4921 (selector :4912) sets animation: none under prefers-reduced-motion, so ghosts flash on every fast load - re-verified 2026-10-16 after 369a767974, anchors moved 331->328 and 4893->4921",
+   "techniques": [
+    {"technique": "reduced-motion-mechanics", "verdict": "deviation", "evidence": "src/styles/globals.css:4921 animation: none collapses the invisibility window set at src/features/settings/sub_portability/components/ExportSelectionModal.tsx:328"}]},
+  {"context": "cc76d419-f457-4fe4-833c-6869efbc9287", "subject": "motion", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534", "evaluatedRevision": 10,
+   "evidence": "src/hooks/utility/interaction/useMotion.ts:153 the reduced clone collapses every transition to exact duration 0 and :143 strips delay, deleting timing-load-bearing invisibility windows and risking completion events that never fire - re-verified 2026-10-16, delay anchor moved 133->143",
+   "techniques": [
+    {"technique": "reduced-motion-mechanics", "verdict": "deviation", "evidence": "src/hooks/utility/interaction/useMotion.ts:153 out.duration = 0 is exact zero, not epsilon; :143 drops delay keys unconditionally (the merged live resolver at :49 is the conformant half)"}]},
+  {"context": "ef4a1671-8bf4-44b2-9ae9-cb2533b780a6", "subject": "motion", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534", "evaluatedRevision": 10,
+   "evidence": "src/lib/utils/rafAnimationEngine.ts:71 the shared spring engine reads only the OS media query, ignoring the in-app Reduce Motion toggle that src/hooks/utility/interaction/useMotion.ts:49 merges in, so in-app-toggle users get full spring travel on every scripted counter - re-verified unchanged 2026-10-16",
+   "techniques": [
+    {"technique": "reduced-motion-mechanics", "verdict": "deviation", "evidence": "src/lib/utils/rafAnimationEngine.ts:71 a second resolver reads one of two composite signals - the fan-out the technique forbids"},
+    {"technique": "performance-discipline", "verdict": "conformant", "evidence": "src/lib/utils/rafAnimationEngine.ts:71 one shared rAF engine re-evaluates the preference per tick inside the loop, not per registration"}]},
+  {"context": "36783fec-01fa-40d5-8620-cf65ae691d27", "subject": "motion", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534", "evaluatedRevision": 10,
+   "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:32 inlines an off-ladder 1.1s pathLength draw and :40 an unnamed 320/22 spring with no preset and no fallback; pathLength is outside the framer reduce property set, so the draw runs full-length even under OS reduced motion - re-verified unchanged 2026-10-16",
+   "techniques": [
+    {"technique": "reduced-motion-mechanics", "verdict": "deviation", "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:32 pathLength animates outside the property set src/App.tsx:387 MotionConfig reducedMotion reaches"},
+    {"technique": "preset-vocabulary", "verdict": "deviation", "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:40 bespoke spring inlined at the call site with no named preset or declared fallback"}]},
+  {"context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd", "subject": "motion", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:8d9b3eabe2f3b534", "evaluatedRevision": 10,
+   "evidence": "src/features/shared/components/display/MotionizedGlyph.tsx:113 the IntersectionObserver bumps runKey on every re-entry into view, replaying the staggered-draw entrance on scroll-back and tab return - the scroll-reveal replay the technique names as a glitch; re-verified unchanged 2026-10-16",
+   "techniques": [
+    {"technique": "one-shot-guarding", "verdict": "deviation", "evidence": "src/features/shared/components/display/MotionizedGlyph.tsx:113 re-entry triggers a replay instead of consulting a seen-record"},
+    {"technique": "unprompted-motion-lifecycle", "verdict": "deviation", "evidence": "src/features/shared/components/display/MotionizedGlyph.tsx:113 a scroll-triggered reveal must be one-shot; coming back into view is re-reading, not arrival"}]}
+ ],
+ "declined": [
+  {"subject": "motion", "context": "ab849301-d5ce-4d91-a12e-0e87a0417585", "reason": "budget (6 pairs); verdict re-verified 2026-10-12, anchor files untouched since, digest current - not re-read this run"},
+  {"subject": "motion", "context": "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20", "reason": "budget (6 pairs); verdict re-verified 2026-10-12, anchor files untouched since, digest current - not re-read this run"}
+ ],
+ "consults": [
+  {"ts": "2026-10-16T17:09:20Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["reduced-motion-mechanics", "preset-vocabulary"], "deviations": 1},
+  {"ts": "2026-10-16T17:09:20Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["reduced-motion-mechanics"], "deviations": 1},
+  {"ts": "2026-10-16T17:09:20Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["reduced-motion-mechanics"], "deviations": 1},
+  {"ts": "2026-10-16T17:09:20Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["reduced-motion-mechanics", "performance-discipline"], "deviations": 1},
+  {"ts": "2026-10-16T17:09:20Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["reduced-motion-mechanics", "preset-vocabulary"], "deviations": 1},
+  {"ts": "2026-10-16T17:09:20Z", "bundle": "software-engineering", "subjects": ["motion"], "techniques": ["one-shot-guarding", "unprompted-motion-lifecycle"], "deviations": 1}
+ ]}

@@ -11,7 +11,7 @@
 //     answers to "what is this for" and the operator would have no way to know
 //     which one a run read.
 //
-// The list is fetched when the popover OPENS, not on mount. A pad full of
+// The list is fetched each time the popover OPENS, not on mount. A pad full of
 // brainstorm notes should cost no milestone IPC at all, and the picker is the
 // one control that needs this data.
 import { useCallback, useEffect, useState } from 'react';
@@ -66,7 +66,10 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
     : (rows ?? []).filter((m) => m.status !== 'shipped' && !linked.has(m.id));
 
   const fetchRows = useCallback(() => {
-    if (!projectId || rows) return;
+    // Asked again on EVERY open: a milestone created elsewhere (Ship tab) while
+    // this picker stayed mounted must be offered. The rows already held stay on
+    // screen until the fresh list lands.
+    if (!projectId) return;
     const token = wins.next();
     listMilestones(projectId)
       .then((list) => {
@@ -83,7 +86,7 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
         silentCatch('notepad milestone picker')(e);
         setListFailed(true);
       });
-  }, [projectId, rows, wins]);
+  }, [projectId, wins]);
 
   return (
     <Listbox
@@ -108,6 +111,8 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
         <div className="py-1 min-w-[16rem]">
           <button
             type="button"
+            role="option"
+            aria-selected={false}
             onClick={() => { onCreate(); close(); }}
             className={`w-full text-left px-3 py-2 typo-caption flex items-center gap-2 transition-colors hover:bg-secondary/50 focus-ring ${focusIndex === 0 ? 'bg-secondary/50' : ''}`}
             data-testid="notepad-milestone-new"
@@ -132,6 +137,8 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
             <button
               key={m.id}
               type="button"
+              role="option"
+              aria-selected={false}
               onClick={() => { onPick(m.id); close(); }}
               className={`w-full text-left px-3 py-2 typo-caption flex items-center gap-2 min-w-0 transition-colors hover:bg-secondary/50 focus-ring ${focusIndex === i + 1 ? 'bg-secondary/50' : ''}`}
             >

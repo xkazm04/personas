@@ -496,15 +496,15 @@ The agent runs on a platform with built-in communication protocols. When composi
        ```
        {{"clarifying_question": {{"scope": "field", "capability_id": "uc_...", "field": "suggested_trigger", "question": "How should <capability_title> fire?", "options": ["A: On demand — I'll run it manually", "B: On a schedule (pick a cadence)", "C: When <best-fit event in plain English> happens", "D: When another persona emits an event"]}}}}
        ```
-       Offer AT LEAST TWO option variants. When the intent suggests an event trigger (words like "whenever", "on new", "when X arrives"), still ASK — but order the best-fit event first (C) and keep "On demand" (A) visible as an escape hatch for users who prefer manual control. The only legitimate skip is when the intent LITERALLY names a cadence ("every morning", "daily digest", "weekly", "cron …"). Otherwise the user must choose. Never collapse trigger selection silently.
+       Offer AT LEAST TWO option variants. When the intent literally contains an event phrase ("whenever", "when a ", "when an ", "when new ", "on new ", "as soon as", "react to", "listen for", "incoming ", "arrives"), the trigger gate counts it as answered: resolve it as that event trigger without asking. Vaguer event wording ("when something happens") still gets the question — order the best-fit event first (C) and keep "On demand" (A) visible as an escape hatch. The other legitimate skip is when the intent LITERALLY names a cadence ("every morning", "every week", "daily digest", "weekly at 5pm", "cron …"). A bare "weekly" / "monthly" that modifies a noun ("a weekly report") is NOT a cadence. Otherwise the user must choose. Never collapse trigger selection silently.
 
     d. **Review policy (human-in-the-loop)** — If the capability produces output that affects the user or third parties (sends a message, writes to shared storage, modifies an external system), ASK:
        ```
        {{"clarifying_question": {{"scope": "field", "capability_id": "uc_...", "field": "review_policy", "question": "Should <capability_title> wait for your approval before publishing its output?", "options": ["Never — auto-publish; I can undo/discard myself", "On low confidence — only pause when unsure", "Always — I want to sign off every run"]}}}}
        ```
-       Skip only if intent says "automatically", "no review", "without asking", "auto-publish", etc. **Also skip when rule 26's simple-periodic-report fast-path applies** — for periodic informational digests delivered to the user themselves there is nothing to gate.
+       Skip only if intent says "automatically", "no review", "without asking", "auto-publish", etc. (the literal phrases the review gate recognises). A periodic digest is NOT a skip case: the review question is still asked.
 
-    e. **Memory policy** — When memory makes sense for this capability (the user might want it to learn preferences, remember vetoed items, accumulate context), DO NOT ask whether to use memory — assume yes and ASK what to remember. The persona is expected to consult memory on every run when enabled, so the substance of the question is "what kind of facts should it carry forward?". Skip entirely when rule 26's simple-periodic-report fast-path applies (stateless informational digests have nothing to memorize) or when the intent literally says "stateless" / "each independently". Default shape:
+    e. **Memory policy** — When memory makes sense for this capability (the user might want it to learn preferences, remember vetoed items, accumulate context), DO NOT ask whether to use memory — assume yes and ASK what to remember. The persona is expected to consult memory on every run when enabled, so the substance of the question is "what kind of facts should it carry forward?". Skip entirely only when the intent literally says "stateless" / "each independently" (the phrases the memory gate recognises); a periodic digest is NOT a skip case. Default shape:
        ```
        {{"clarifying_question": {{"scope": "field", "capability_id": "uc_...", "field": "memory_policy", "question": "What should <capability_title> remember between runs? (Leave empty if it doesn't need memory.)", "options": ["User preferences and corrections", "Items I've already approved or rejected", "Recurring context (people, projects, topics I care about)", "Nothing — each run is independent"]}}}}
        ```
@@ -660,7 +660,7 @@ The agent runs on a platform with built-in communication protocols. When composi
 
     **HARD ROUND CAP — RELIABILITY-CRITICAL.** After the optional single mission round, you get **EXACTLY ONE Phase-C clarifying round**. In that one round emit **AT MOST 4** clarifying_questions — the most decision-critical only: connector_category (incl. the development/repo connector for code intents), suggested_trigger, review_policy, and at most one genuine ambiguity/contradiction. **Resolve every other field with a sensible default rather than asking.** Do NOT open a second Phase-C round: once the user answers this batch, resolve ALL remaining fields with defaults and proceed to `persona_resolution`. Opening 3+ question rounds destabilizes IR generation and frequently HANGS the build — a stalled build is far worse for the user than a default they can refine later. If more than 4 fields feel unresolved, you are over-asking: pick the 3-4 that change the persona's behavior most and default the rest.
 
-26. **Simple-periodic-report fast-path — RESOLVE WITHOUT ASKING.** When the intent describes a capability matching ALL THREE of these signals, you MUST resolve `review_policy`, `memory_policy`, and `error_handling` directly with the safe defaults below — do NOT emit clarifying_questions for them. The user wrote a one-sentence intent for a routine periodic task; asking them to triage approval/memory policies on every such persona is friction with no upside.
+26. **Simple-periodic-report fast-path — RESOLVE WITHOUT ASKING.** When the intent describes a capability matching ALL THREE of these signals, you MUST resolve `error_handling` (and the trigger, connectors and destination as described below) directly with the safe defaults below — do NOT emit clarifying_questions for them. `review_policy` and `memory_policy` are NOT part of this fast-path: the runtime gates keep them closed for periodic reports (decision of 2026-05-04), so ask them per rule 16d/16e.
 
     The three signals (all required):
     a. **Schedule trigger** — explicit cadence ("every morning", "every weekday at 8am", "each evening", "every Monday", "once an hour", "every two hours", "daily", "weekly at 5pm", "cron …").
@@ -669,15 +669,13 @@ The agent runs on a platform with built-in communication protocols. When composi
 
     When all three match, default these fields without asking:
     - `suggested_trigger.value` → `{{"trigger_type": "schedule", "config": {{"cron": "<derived from cadence>"}}, "description": "<plain-English version of the cadence>"}}`. Derive the cron from the cadence keyword in the intent ("every weekday at 8am" → `0 8 * * 1-5`, "every Monday at 8am" → `0 8 * * 1`, "every Friday at 5pm" → `0 17 * * 5`, "once an hour during work hours" → `0 9-17 * * 1-5`, etc.). Do NOT emit a `clarifying_question` for `suggested_trigger` when the cadence is literally named in the intent — Rule 16c's "ALWAYS emit" carve-out is overridden here.
-    - `review_policy.value` → `{{"mode": "never", "context": "Informational periodic digest — output is delivered to the user, no third-party impact, nothing to gate."}}`
-    - `memory_policy.value` → `{{"enabled": false, "context": "Each periodic run is independent of the previous; the digest does not learn from prior runs."}}`
     - `persona.error_handling` (if not yet resolved) → `"On any tool failure: log the error and skip the failing source. The next scheduled run will retry naturally. Never block the digest entirely on a single source's outage."`
     - `connectors` — when the intent unambiguously names a connector ("my Gmail" → `["gmail"]`, "Linear issues" → `["linear"]`, "Notion page" → `["notion"]`, "local drive" → `["local_drive"]`, etc.) AND that connector appears in `## Available Connectors`, resolve directly without emitting a `clarifying_question`. The user typed the service name into the intent — they have already answered. Rule 16a's "ALWAYS emit connector_category" carve-out is overridden here.
     - `destination` — same logic as `connectors`. When the intent says "save to a Notion page", "post to Notion" (note: persona-owned page, not external broadcast), "write to my local drive", "append to my Airtable", resolve the destination directly with the named connector.
 
-    Net effect: a simple periodic report should emit ZERO `clarifying_question` events. The build session goes intent → behavior_core → capability_enumeration → resolutions (trigger/connectors/review/memory/error/destination all defaulted) → agent_ir.
+    Net effect: a simple periodic report emits NO clarifying_question for trigger, connectors, destination or error handling; only the review and memory questions (rule 16d/16e) remain.
 
-    **Worked example.** For R01 — "Every weekday at 8am, summarize my unread Gmail messages from the last 24 hours into a short digest" — you should emit ZERO clarifying_questions. Schedule (every weekday at 8am) + informational (summarize/digest) + no external publish. Resolve directly: trigger=schedule cron `0 8 * * 1-5`, connectors=`["gmail"]`, review_policy=never (with rule 26 context), memory_policy=disabled (with rule 26 context), error_handling=safe default, then proceed to `agent_ir`.
+    **Worked example.** For R01 — "Every weekday at 8am, summarize my unread Gmail messages from the last 24 hours into a short digest" — you should NOT ask about trigger, connectors or error handling. Schedule (every weekday at 8am) + informational (summarize/digest) + no external publish. Resolve directly: trigger=schedule cron `0 8 * * 1-5`, connectors=`["gmail"]`, error_handling=safe default; review_policy and memory_policy are still asked per rule 16d/16e.
 
     **When this rule does NOT apply** (still ASK per rule 16):
     - Capability has external-publishing pattern → ASK review_policy. The user might want to approve drafts.
@@ -806,6 +804,55 @@ mod tests {
             personas_core::model_ids::HAIKU_CURRENT
         )));
         assert!(!MODEL_TIER_RULE.contains("{{"));
+    }
+
+    /// The prompt and the gate heuristics are a pair (see gates.rs): every
+    /// literal skip phrase the prompt promises must open its gate, and the
+    /// 2026-05-04 decision (periodic reports still ask review/memory) must not
+    /// be contradicted by a rule 26 fast-path.
+    #[test]
+    fn prompt_skip_phrases_agree_with_the_gates() {
+        use personas_engine::build_session::gates::{gate_seed_for_intent_with_context, Gate};
+        let none = std::collections::HashSet::new();
+        let seed = |i: &str| gate_seed_for_intent_with_context(i, &[], &none);
+        for p in [
+            "automatically",
+            "no review",
+            "without asking",
+            "auto-publish",
+        ] {
+            assert_eq!(
+                seed(&format!("post it {p}")).review_policy,
+                Gate::Open,
+                "{p}"
+            );
+        }
+        for p in ["stateless", "each independently"] {
+            assert_eq!(seed(&format!("run {p}")).memory_policy, Gate::Open, "{p}");
+        }
+        for p in [
+            "whenever",
+            "on new ",
+            "as soon as",
+            "listen for",
+            "every week",
+            "daily digest",
+            "weekly at 5pm",
+            "cron",
+        ] {
+            assert_eq!(seed(&format!("do it {p} thing")).trigger, Gate::Open, "{p}");
+        }
+        // A bare noun-modifying "weekly" is not a cadence.
+        assert_eq!(seed("draft a weekly report").trigger, Gate::Closed);
+        // A periodic digest keeps both policy gates closed, so the prompt must
+        // not tell the model to skip them.
+        let periodic = seed("every weekday at 8am summarize my Gmail into a digest");
+        assert_eq!(periodic.review_policy, Gate::Closed);
+        assert_eq!(periodic.memory_policy, Gate::Closed);
+        let p = prompt_with_context(None);
+        assert!(!p.contains("rule 26's simple-periodic-report fast-path applies"));
+        assert!(!p.contains("resolve `review_policy`, `memory_policy`"));
+        assert!(!p.contains("ZERO `clarifying_question` events"));
     }
 
     #[test]

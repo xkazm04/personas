@@ -105,7 +105,13 @@ vi.mock('../plan/ShipCriteriaPanel', () => ({
   ShipCriteriaList: () => <div data-testid="ship-criteria-list" />,
 }));
 vi.mock('../plan/NotePlanRuns', () => ({
-  NotePlanRuns: () => <div data-testid="note-runs-list" />,
+  // Surfaces only whether the pane handed the list a compose door, and a way
+  // to use it: what the list does with it is `NotePlanRuns.test.tsx`'s subject.
+  NotePlanRuns: ({ onCompose }: { onCompose?: () => void }) => (
+    <div data-testid="note-runs-list">
+      {onCompose && <input type="button" data-testid="runs-compose" onClick={onCompose} />}
+    </div>
+  ),
 }));
 
 const note = (over: Partial<DevNote> = {}): DevNote =>
@@ -191,6 +197,20 @@ describe('NotePlanPane', () => {
     // record should read like one.
     expect(screen.getByTestId('notepad-body-plan').tagName).not.toBe('TEXTAREA');
     expect(screen.queryByTestId('note-plan-compose')).toBeNull();
+
+    // Nor through the runs tab: a run summary's compose action is not offered.
+    fireEvent.click(screen.getByRole('tab', { name: 'Runs' }));
+    expect(screen.getByTestId('note-runs-list')).toBeInTheDocument();
+    expect(screen.queryByTestId('runs-compose')).toBeNull();
+  });
+
+  it("a run summary's compose action opens the composer on the plan tab", () => {
+    current = planValue();
+    pane();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Runs' }));
+    fireEvent.click(screen.getByTestId('runs-compose'));
+    expect(screen.getByTestId('ship-milestone-composer')).toBeInTheDocument();
   });
 
   it('paints its chrome while the milestone is still loading, and ghosts only the scope', () => {

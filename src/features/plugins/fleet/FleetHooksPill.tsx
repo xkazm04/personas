@@ -3,6 +3,7 @@ import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { installHooks } from '@/api/fleet/fleet';
+import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -18,6 +19,7 @@ import { DebtText, debtText } from '@/i18n/DebtText';
  * header controls without a separate banner row.
  */
 export function FleetHooksPill() {
+  const { t } = useTranslation();
   const installed = useSystemStore((s) => s.fleetHooksInstalled);
   const port = useSystemStore((s) => s.fleetHookPort);
   const applyStatus = useSystemStore((s) => s.fleetApplyHookStatus);
@@ -33,11 +35,11 @@ export function FleetHooksPill() {
       applyStatus(status);
       refresh();
     } catch (e) {
-      toastCatch('FleetHooksPill:install', 'Failed to install Claude Code hooks')(e);
+      toastCatch('FleetHooksPill:install', t.plugins.fleet.hooks_install_failed)(e);
     } finally {
       setInstalling(false);
     }
-  }, [installing, installed, applyStatus, refresh]);
+  }, [installing, installed, applyStatus, refresh, t]);
 
   if (installing) {
     return (

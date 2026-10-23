@@ -99,25 +99,25 @@ export function trustPercent(score: number): TrustPercent {
 /**
  * Persona "needs attention" reasons. Used by all variants to flag
  * personas that should pop visually before the user even hovers.
- * `label` is a non-displayed fallback kept for this signature's callers (the
- * triggers studio reads only null / not null); surfaces show the localized
- * reason keyed by `kind`.
+ * Surfaces show the localized reason keyed by `kind` (the triggers studio reads
+ * only null / not null). There is deliberately no English `label` here: it had
+ * zero readers, and an English literal on a flag is one render away from a
+ * hardcoded string on screen.
  */
 export interface AttentionFlag {
   kind: 'setup' | 'disabled' | 'low_trust';
-  label: string;
   tone: 'warn' | 'bad';
 }
 
 export function attentionFor(p: Persona): AttentionFlag | null {
   if (p.setup_status === 'needs_credentials') {
-    return { kind: 'setup', label: 'Setup required', tone: 'warn' };
+    return { kind: 'setup', tone: 'warn' };
   }
   if (p.enabled === false) {
-    return { kind: 'disabled', label: 'Paused', tone: 'warn' };
+    return { kind: 'disabled', tone: 'warn' };
   }
   if (p.trust_score < 0.5) {
-    return { kind: 'low_trust', label: 'Low trust', tone: 'bad' };
+    return { kind: 'low_trust', tone: 'bad' };
   }
   return null;
 }

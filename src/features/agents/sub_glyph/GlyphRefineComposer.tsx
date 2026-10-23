@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { RefreshCw } from "lucide-react";
 import { debtText } from '@/i18n/DebtText';
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 interface GlyphRefineComposerProps {
@@ -15,6 +16,7 @@ interface GlyphRefineComposerProps {
 }
 
 export function GlyphRefineComposer({ onSubmit, onCancel, initialText }: GlyphRefineComposerProps) {
+  const { t } = useTranslation();
   const [text, setText] = useState(initialText ?? "");
   return (
     <motion.div
@@ -45,14 +47,14 @@ export function GlyphRefineComposer({ onSubmit, onCancel, initialText }: GlyphRe
           className="flex-1 px-3 py-1.5 rounded-full bg-primary/25 hover:bg-primary/40 border border-primary/40 typo-body text-foreground disabled:opacity-40 cursor-pointer flex items-center justify-center gap-1.5"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          Refine
+          {t.common.refine}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="px-3 py-1.5 rounded-full border border-border/40 hover:border-foreground/30 typo-body text-foreground"
         >
-          Cancel
+          {t.common.cancel}
         </button>
       </div>
     </motion.div>

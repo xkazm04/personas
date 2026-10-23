@@ -1,7 +1,7 @@
 import { memo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Search, X, Send, GraduationCap, Clock } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Button } from '@/features/shared/components/buttons';
 import { SearchAutocomplete, BROWSE_PREFIX } from './SearchAutocomplete';
 import { getCategoryMeta } from '../filters/searchConstants';
 import { DIFFICULTY_META, SETUP_META } from '../../../shared/templateComplexity';
@@ -29,7 +29,7 @@ function SearchChipInputImpl({
   autocompletePrefix, autocompleteQuery,
   aiSearchMode, aiSearchLoading, onAiSearchSubmit, availableCategories,
 }: SearchChipInputProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [activeDescendant, setActiveDescendant] = useState<string | undefined>(undefined);
   // Focusing an empty input opens the same chip groups the prefix DSL reaches,
   // so category / difficulty / setup are pickable without knowing the syntax.
@@ -44,10 +44,10 @@ function SearchChipInputImpl({
         ? 'border-indigo-500/20 focus-within:border-indigo-500/40 focus-within:ring-1 focus-within:ring-indigo-500/20'
         : 'border-primary/10 focus-within:border-violet-500/30 focus-within:ring-1 focus-within:ring-violet-500/20'
     }`}>
+      {/* The glyph stays put while an AI search runs: the busy state belongs to
+          the Send control the user pressed, and AiSearchStatusBar says it in words. */}
       <div className="pl-3 flex-shrink-0">
-        {aiSearchMode && aiSearchLoading
-          ? <LoadingSpinner className="text-indigo-400" />
-          : <Search className="w-4 h-4 text-foreground" />}
+        <Search className="w-4 h-4 text-foreground" aria-hidden="true" />
       </div>
 
       {chips.map((chip, i) => {
@@ -77,7 +77,7 @@ function SearchChipInputImpl({
             {Icon && <Icon className="w-3 h-3" style={{ color: chipColor }} />}
             {chip.label}
             <button type="button" onClick={() => removeChip(i)}
-              aria-label={`Remove ${chip.label} filter`}
+              aria-label={tx(t.templates.search.remove_filter_aria, { label: chip.label })}
               className="ml-0.5 p-0.5 hover:text-white transition-colors rounded-full hover:bg-white/10">
               <X className="w-2.5 h-2.5" aria-hidden="true" />
             </button>
@@ -120,12 +120,18 @@ function SearchChipInputImpl({
                 <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             )}
-            <button type="button" onClick={() => onAiSearchSubmit?.(inputValue.trim())}
-              disabled={!inputValue.trim() || aiSearchLoading}
-              className="p-1.5 rounded-card bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              aria-label={t.templates.search.search_with_ai_aria}>
-              {aiSearchLoading ? <LoadingSpinner size="sm" /> : <Send className="w-3.5 h-3.5" aria-hidden="true" />}
-            </button>
+            <Button
+              variant="accent"
+              tone="agent"
+              size="icon-sm"
+              onClick={() => onAiSearchSubmit?.(inputValue.trim())}
+              disabled={!inputValue.trim()}
+              loading={aiSearchLoading}
+              aria-label={t.templates.search.search_with_ai_aria}
+              data-testid="template-ai-search-send"
+            >
+              <Send className="w-3.5 h-3.5" aria-hidden="true" />
+            </Button>
           </>
         ) : (
           (inputValue || chips.length > 0) && (

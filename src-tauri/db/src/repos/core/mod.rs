@@ -1,6 +1,7 @@
 pub mod attention_ledger;
 pub mod build_sessions;
 pub mod charter_acts;
+pub mod charter_mirror;
 pub mod curation_schedule;
 pub mod design_conversations;
 pub mod episodes;
@@ -10,6 +11,7 @@ pub mod memories;
 pub mod memory_claims;
 pub mod memory_reaper;
 pub mod memory_review_proposal;
+pub mod orphan_archive;
 pub mod persona_tombstones;
 pub mod personas;
 pub mod responsibilities;

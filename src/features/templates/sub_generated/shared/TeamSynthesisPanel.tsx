@@ -4,6 +4,7 @@ import { synthesizeTeamFromTemplates } from '@/api/overview/intelligence/teamSyn
 import type { TeamSynthesisResult } from '@/api/overview/intelligence/teamSynthesis';
 import { BaseModal } from './BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
+import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
 
 interface TeamSynthesisPanelProps {
   isOpen: boolean;
@@ -16,7 +17,9 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
   const [query, setQuery] = useState('');
   const [teamName, setTeamName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // The raw rejection, resolved at render: invokeWithTimeout rejects with a
+  // serialized AppError object, which `String(err)` printed as "[object Object]".
+  const [error, setError] = useState<{ raw: unknown } | null>(null);
   const [result, setResult] = useState<TeamSynthesisResult | null>(null);
 
   const handleSynthesize = useCallback(async () => {
@@ -29,7 +32,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
       setResult(res);
       onTeamCreated?.(res);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError({ raw: err });
     } finally {
       setLoading(false);
     }
@@ -65,7 +68,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               </p>
             </div>
           </div>
-          <button type="button" onClick={handleClose} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
+          <button type="button" onClick={handleClose} aria-label={t.common.close} className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors">
             <X className="w-4 h-4 text-foreground" />
           </button>
         </div>
@@ -75,10 +78,11 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
           {!result ? (
             <>
               <div>
-                <label className="typo-body text-foreground block mb-1.5">
+                <label htmlFor="team-synthesis-name" className="typo-body text-foreground block mb-1.5">
                   {t.templates.team_synthesis.team_name_label}
                 </label>
                 <input
+                  id="team-synthesis-name"
                   type="text"
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
@@ -89,10 +93,11 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               </div>
 
               <div>
-                <label className="typo-body text-foreground block mb-1.5">
+                <label htmlFor="team-synthesis-query" className="typo-body text-foreground block mb-1.5">
                   {t.templates.team_synthesis.describe_team}
                 </label>
                 <textarea
+                  id="team-synthesis-query"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={t.templates.team_synthesis.describe_placeholder}
@@ -105,7 +110,7 @@ export function TeamSynthesisPanel({ isOpen, onClose, onTeamCreated }: TeamSynth
               {error && (
                 <div className="flex items-start gap-2.5 p-3 rounded-modal bg-red-500/10 border border-red-500/20">
                   <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                  <p className="typo-body text-red-400/80">{error}</p>
+                  <p className="typo-body text-red-400/80">{inlineErrorCopy(t, error.raw)}</p>
                 </div>
               )}
             </>

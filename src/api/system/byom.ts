@@ -41,12 +41,6 @@ export const deleteByomPolicy = () =>
 export const listProviderAuditLog = (limit?: number) =>
   invoke<ProviderAuditEntry[]>("list_provider_audit_log", { limit: limit });
 
-export const listProviderAuditByPersona = (personaId: string, limit?: number) =>
-  invoke<ProviderAuditEntry[]>("list_provider_audit_by_persona", {
-    personaId,
-    limit: limit,
-  });
-
 export const getProviderUsageStats = () =>
   invoke<ProviderUsageStats[]>("get_provider_usage_stats");
 

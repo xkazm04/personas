@@ -1,6 +1,7 @@
 import { AlertTriangle, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface StalenessIndicatorProps {
   /** Epoch ms when this data source was last successfully fetched. */
@@ -74,13 +75,15 @@ export function StalenessIndicator({ fetchedAt, hasError, label }: StalenessIndi
     ? tx(t.common.staleness_tooltip_labeled, { label, age: ageText }) + failedSuffix
     : tx(t.common.staleness_tooltip, { age: ageText }) + failedSuffix;
 
+  // The age arm used to carry the label and the failure in a native `title=`,
+  // the one place the comment above says it must not go. It now uses the
+  // shared Tooltip (themed, portal-placed) with the same sentence.
   return (
-    <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-500/10 text-amber-400/80 border border-amber-500/20"
-      title={title}
-    >
-      <Clock className="w-3 h-3" />
-      {ageText}
-    </span>
+    <Tooltip content={title}>
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md typo-caption bg-amber-500/10 text-status-warning border border-amber-500/20">
+        <Clock className="w-3 h-3" aria-hidden="true" />
+        {ageText}
+      </span>
+    </Tooltip>
   );
 }

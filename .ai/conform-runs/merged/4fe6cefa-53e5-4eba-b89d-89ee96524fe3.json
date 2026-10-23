@@ -1,0 +1,13 @@
+{"schema":"conform-run/1","worker":"4fe6cefa-53e5-4eba-b89d-89ee96524fe3","subject":"companion-identity",
+"evaluatedAt":"2026-10-22T00:00:00Z",
+"pairs":[
+{"context":"2651f2ce-7fc1-4331-8b31-61e783e9746a","subject":"companion-identity","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/features/companions/CompanionsPage.tsx:24 the context is a route switch that lazy-loads AthenaPage (:56); it reads, writes and approves no constitution, self-model or capability inventory, so the identity precondition is unmet here.",
+"techniques":[]},
+{"context":"5ab49df3-3442-4ea6-a405-077dec64850d","subject":"companion-identity","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/features/agents/sub_glyph/personaCore/usePersonaCore.ts:1 this is the persona (agent) configuration backbone - model tier, traits, temperament - not a companion self-model; the lexical match on identity/edits is a resonance, and no companion constitution or identity document is touched.",
+"techniques":[],
+"registryProposal":"Matcher paired companion-identity with a persona-configuration UI on the tokens companion/identity/edits (lexical-only); consider a precondition note in the golden path that it governs a companion's own self-model, not agent configuration screens."}
+],
+"declined":[],
+"consults":[{"ts":"2026-10-22T00:00:00Z","bundle":"software-engineering","subjects":["companion-identity"],"techniques":[],"deviations":0}]}

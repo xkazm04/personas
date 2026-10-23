@@ -5,13 +5,17 @@
    set into a plate; a LAMP is the light behind the glass. Dark glass is calm and
    still readable; only a lit lamp tints its window. Nothing moves on its own. */
 
-.ae-root {
+/* `.ae-dock`: the dispatch dock sits under the panel, outside `.ae-root`, and
+   speaks the same plates, windows and lamps (QuickDispatchDock, polish P2). */
+.ae-root, .ae-dock {
   --ae-edge: color-mix(in srgb, var(--foreground) 9%, transparent);
   --ae-edge-hi: color-mix(in srgb, var(--foreground) 20%, transparent);
   --ae-glass: color-mix(in srgb, var(--foreground) 2.5%, transparent);
   --ae-glass-hi: color-mix(in srgb, var(--foreground) 5.5%, transparent);
   --ae-well: color-mix(in srgb, var(--background) 70%, transparent);
   --ae-tone: color-mix(in srgb, var(--foreground) 40%, transparent);
+}
+.ae-root {
   background:
     radial-gradient(120% 60% at 50% -10%, color-mix(in srgb, var(--primary) 7%, transparent), transparent 60%),
     linear-gradient(180deg, color-mix(in srgb, var(--background) 45%, transparent), color-mix(in srgb, var(--background) 70%, transparent));
@@ -209,14 +213,46 @@
 .ae-line { position: relative; border-top: 1px solid var(--ae-edge); transition: background-color 120ms ease; }
 .ae-line:first-child { border-top-color: transparent; }
 .ae-line:hover { background-color: var(--ae-glass-hi); }
-.ae-line.is-lit {
-  background-image: linear-gradient(90deg, color-mix(in srgb, var(--ae-tone) 16%, transparent), transparent 70%);
-  box-shadow: inset 2px 0 0 var(--ae-tone);
-}
+/* Needs you is the amber edge, lamp and glyph, and NO wash: three marks were
+   already saying it (polish P1, the owner's item 4). */
+.ae-line.is-lit { box-shadow: inset 2px 0 0 var(--ae-tone); }
 .ae-line.is-selected { background-color: color-mix(in srgb, var(--primary) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent); }
 .ae-line.is-off { opacity: 0.5; filter: grayscale(1); }
 .ae-line.is-over { box-shadow: inset 2px 0 0 var(--status-warning); }
 .ae-line.is-flash { animation: ae-flash 900ms ease-out 3; }
+/* A persona line (`PersonaLine`, WP11 V1): a run keeps the tone edge without
+   the wash, so a busy bay stays calm and needs-you stays the loudest thing on
+   it; critical outranks needs-you with a stronger wash and a wider edge. */
+.ae-line.is-working { box-shadow: inset 2px 0 0 var(--ae-tone); }
+.ae-line.is-lit.is-critical {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--ae-tone) 28%, transparent), transparent 80%);
+  box-shadow: inset 3px 0 0 var(--ae-tone);
+}
+/* A fleet row (a session, a device's session, a queue rung) stands on a fine
+   dot ground, so a bay's processes read apart from its plain persona rows.
+   Dots, not a hatch: a hatch already means "off" on this panel (.ae-win.is-off). */
+.ae-line.is-fleet {
+  --ae-dots: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--foreground) 13%, transparent) 0.75px, transparent 1.1px);
+  background-image: var(--ae-dots);
+  background-size: 5px 5px;
+}
+.ae-line.is-fleet.is-lit.is-critical {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--ae-tone) 28%, transparent), transparent 80%), var(--ae-dots);
+  background-size: auto, 5px 5px;
+}
+.ae-line:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+/* Every other row of a bay wears the same line (WP11 C: `SessionLine`,
+   `RemoteLine`, a compact `QueueRung`; `LineParts.tsx`). A capped holder that
+   also runs keeps the amber over-cap edge over its run edge; an inert line (a
+   rung, an ended session) keeps the default cursor; a lifted rung is opaque. */
+.ae-line.is-over.is-working { box-shadow: inset 2px 0 0 var(--status-warning); }
+.ae-line.is-inert { cursor: default; }
+.ae-line.ae-dragging { background-color: color-mix(in oklab, var(--background) 92%, var(--foreground)); }
+/* The persona line's row measures itself: in the narrowest columns its
+   "+n more" count leaves (the tooltip lists every reason), so the name keeps
+   its floor beside the figure and the lamp (`PersonaTail.tsx`). */
+.ae-prow { container-type: inline-size; }
+@container (width < 280px) { .ae-pmore { display: none; } }
 
 /* The bay's roster drawn as its states: a 3px bar under the nameplate. */
 .ae-share { display: flex; height: 3px; gap: 1px; border-radius: 2px; overflow: hidden; background: var(--ae-edge); }
@@ -280,7 +316,8 @@
 /* A queue rung's verbs float over its right edge, on a puck of the page
    colour, only on hover or keyboard focus: hidden, they take no width and no
    pointer, so the title keeps the lane. */
-.ae-pile .ae-reveal.ae-float {
+.ae-pile .ae-reveal.ae-float,
+.ae-line .ae-reveal.ae-float {
   position: absolute;
   top: 50%;
   right: 4px;
@@ -314,6 +351,22 @@
     background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--fb-tone) 22%, transparent), transparent);
     animation: ae-sweep 3.2s linear infinite;
     animation-delay: var(--fb-sd, 0s);
+  }
+}
+/* A running LINE keeps the session card's ambient sweep, as a faint wash in
+   the line's tone (`ae-sweep`, set on running session lines), under the same
+   two gates. The line clips it. */
+.ae-line.ae-sweep { overflow: hidden; }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="reduce"]) .ae-moving .ae-line.ae-sweep::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 40%;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--ae-tone) 12%, transparent), transparent);
+    animation: ae-sweep 3.2s linear infinite;
+    animation-delay: var(--ae-sd, 0s);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -410,9 +463,21 @@
 .ae-bar.is-projected > i { background-image: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--background) 45%, transparent) 4px 6px); }
 .ae-bar.is-empty { background: transparent; border: 1px dashed color-mix(in srgb, var(--foreground) 18%, transparent); height: 4px; }
 .ae-bar > b { position: absolute; top: -2px; bottom: -2px; width: 1px; background: color-mix(in srgb, var(--foreground) 75%, transparent); }
+/* A schedule item (SchedulePlate): the name over the next start and its
+   switch, two rows in one plan-row frame, a hairline between items. */
+.ae-plan.is-stack { flex-direction: column; align-items: stretch; gap: 2px; cursor: default; }
+.ae-plan.is-stack + .ae-plan.is-stack { border-top-color: color-mix(in srgb, var(--foreground) 8%, transparent); border-top-left-radius: 0; border-top-right-radius: 0; }
 /* The Button primitive wraps its children in one inline span; the row's flex
    layout lives inside it, so that span has to take the row's width. */
 .ae-plan > span { flex: 1 1 auto; min-width: 0; }
+
+/* The dispatch dock's command well (DockCommandRow): a window that lights in
+   the run tone while the operator is typing in it. */
+.ae-dock-well:focus-within {
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--primary) 9%, transparent), transparent 60%);
+  box-shadow: inset 2px 0 0 var(--primary);
+}
 
 /* The plan popup is portalled to <body>, outside .ae-root: it cannot lean on
    the root's --ae-* variables, and .ae-plate's `position: relative` would beat

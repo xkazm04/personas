@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   History,
   RotateCcw,
@@ -15,8 +15,10 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { GitLabDeploymentRecord } from '@/api/system/gitlab';
+import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { currentDeploymentIds } from './deploymentHistory';
 
 
 interface DeploymentHistoryTabProps {
@@ -24,7 +26,7 @@ interface DeploymentHistoryTabProps {
 }
 
 export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [filterPersonaId, setFilterPersonaId] = useState<string>('');
   const [confirmRollback, setConfirmRollback] = useState<string | null>(null);
 
@@ -34,6 +36,8 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
   const rollingBack = useSystemStore((s) => s.gitlabRollingBackFromHistory);
   const fetchHistory = useSystemStore((s) => s.gitlabFetchDeploymentHistory);
   const rollbackFromHistory = useSystemStore((s) => s.gitlabRollbackFromHistory);
+  // Current = newest record PER PERSONA, not the newest row of a mixed list.
+  const currentIds = useMemo(() => currentDeploymentIds(history), [history]);
 
   const loadHistory = useCallback(() => {
     if (projectId) {
@@ -108,7 +112,7 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
         <History className="w-4 h-4 text-amber-400" />
         <h3 className="typo-body text-foreground">{t.gitlab.deployment_timeline}</h3>
         <span className="ml-auto typo-caption text-foreground">
-          {history.length} deployment{history.length !== 1 ? 's' : ''}
+          {tx(history.length === 1 ? t.gitlab.deployment_count_one : t.gitlab.deployment_count_other, { count: history.length })}
         </span>
       </div>
 
@@ -122,15 +126,12 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
 
       {/* Empty state */}
       {!loading && history.length === 0 && (
-        <div className="text-center py-8">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-            <Rocket className="w-6 h-6 text-amber-400/60" />
-          </div>
-          <p className="typo-body text-foreground">{t.gitlab.no_deployments}</p>
-          <p className="typo-body text-foreground mt-1">
-            {t.gitlab.deploy_to_build_history}
-          </p>
-        </div>
+        <EmptyState
+          icon={Rocket}
+          size="sm"
+          title={t.gitlab.no_deployments}
+          description={t.gitlab.deploy_to_build_history}
+        />
       )}
 
       {/* Timeline */}
@@ -139,11 +140,11 @@ export function DeploymentHistoryTab({ projectId }: DeploymentHistoryTabProps) {
           {/* Vertical timeline line */}
           <div className="absolute left-[18px] top-4 bottom-4 w-px bg-primary/10" />
 
-          {history.map((record, idx) => (
+          {history.map((record) => (
             <DeploymentRow
               key={record.id}
               record={record}
-              isLatest={idx === 0}
+              isLatest={currentIds.has(record.id)}
               isConfirming={confirmRollback === record.id}
               rollingBack={rollingBack}
               onRollback={() => handleRollback(record)}
@@ -177,7 +178,7 @@ function DeploymentRow({
   onRollback,
   onCancelRollback,
 }: DeploymentRowProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const timeAgo = formatRelativeTime(record.createdAt, '-', { dateFallbackDays: 30 });
   const isRollback = !!record.rolledBackFrom;
 
@@ -241,7 +242,7 @@ function DeploymentRow({
             {record.credentialsProvisioned > 0 && (
               <p className="typo-caption text-foreground mt-1 flex items-center gap-1">
                 <KeyRound className="w-3 h-3 text-orange-400/70" />
-                {record.credentialsProvisioned} credential{record.credentialsProvisioned !== 1 ? 's' : ''} provisioned
+                {tx(record.credentialsProvisioned === 1 ? t.gitlab.credential_provisioned_count_one : t.gitlab.credential_provisioned_count_other, { count: record.credentialsProvisioned })}
               </p>
             )}
 

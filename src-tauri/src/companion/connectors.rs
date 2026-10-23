@@ -6,14 +6,14 @@
 //! `list_enabled_for_prompt` on every turn so Athena's awareness stays
 //! in sync with the sidebar UI without additional plumbing.
 //!
-//! v1 scope: awareness only. We *list* the enabled connectors in the
-//! prompt so Athena can reference them ("you have GitHub attached, want
-//! me to look at your repos?") but she doesn't actually invoke them
-//! yet — the `use_connector` op lands in a follow-up phase that needs
-//! careful sandboxing of which credential payloads are passed through.
+//! Athena acts on a pinned connector through the `use_connector` op: a
+//! read capability runs as a background job
+//! (`companion::jobs::connector_use`), a write capability becomes an
+//! approval card (`requires_approval` below). [`capabilities_for`] is the
+//! registry both the prompt and the executors read.
 
 use chrono::Utc;
-use rusqlite::{params, OptionalExtension};
+use rusqlite::params;
 use serde::Serialize;
 
 use crate::db::UserDbPool;
@@ -358,31 +358,44 @@ pub fn replace_all(pool: &UserDbPool, names: &[String]) -> Result<(), AppError> 
     }
     // Insert new names. ON CONFLICT preserves existing rows untouched.
     for name in names {
-        let _ = tx.execute(
+        tx.execute(
             "INSERT INTO companion_active_connector (connector_name, enabled, created_at, updated_at)
              VALUES (?1, 1, ?2, ?2)
              ON CONFLICT(connector_name) DO NOTHING",
             params![name, now],
-        );
+        )?;
     }
     tx.commit()?;
     Ok(())
 }
 
-/// Lightweight existence check for the prompt builder — returns true
-/// iff at least one enabled connector is pinned. Used to skip
-/// rendering the prompt section entirely on empty state.
-#[allow(dead_code)]
-pub fn has_any_enabled(pool: &UserDbPool) -> Result<bool, AppError> {
-    let conn = pool.get()?;
-    let row: Option<i64> = conn
-        .query_row(
-            "SELECT 1 FROM companion_active_connector WHERE enabled = 1 LIMIT 1",
-            params![],
-            |r| r.get::<_, i64>(0),
-        )
-        .optional()?;
-    Ok(row.is_some())
+#[cfg(test)]
+mod replace_all_tests {
+    use super::*;
+
+    /// A pin insert that fails must reach the caller, and the transaction must
+    /// not commit the rest of the set around the hole.
+    #[test]
+    fn replace_all_surfaces_a_failed_insert_and_rolls_back() {
+        let pool = crate::db::init_test_user_db().unwrap();
+        replace_all(&pool, &["github".to_string()]).unwrap();
+        crate::db::PoolExt::conn(&pool, "test:connectors_refuse_slack")
+            .unwrap()
+            .execute_batch(
+                "CREATE TRIGGER refuse_slack BEFORE INSERT ON companion_active_connector
+                 WHEN NEW.connector_name = 'slack'
+                 BEGIN SELECT RAISE(ABORT, 'refused'); END;",
+            )
+            .unwrap();
+        let res = replace_all(&pool, &["sentry".to_string(), "slack".to_string()]);
+        assert!(res.is_err(), "failed insert was swallowed");
+        let names: Vec<String> = list(&pool)
+            .unwrap()
+            .into_iter()
+            .map(|c| c.connector_name)
+            .collect();
+        assert_eq!(names, vec!["github".to_string()], "tx must roll back");
+    }
 }
 
 #[cfg(test)]

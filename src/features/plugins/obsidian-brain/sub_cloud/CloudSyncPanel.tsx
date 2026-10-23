@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowUpFromLine, ArrowDownToLine, HardDrive, User, AlertTriangle, CheckCircle2, LogIn, Globe, Settings } from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, HardDrive, User, CheckCircle2, LogIn, Globe } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import { NoVaultConnected } from '../NoVaultConnected';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -16,7 +16,7 @@ import {
   getGoogleDriveStatus,
   type DriveSyncResult,
 } from '@/api/obsidianBrain';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 // Module-scoped flag (docs/design/overview-loading.md, law 1 / "warm-cache-
 // on-remount"). Drive connection status itself is store-backed and survives
@@ -44,7 +44,6 @@ export default function CloudSyncPanel() {
   const setLastDriveSyncAt = useSystemStore((s) => s.setObsidianLastDriveSyncAt);
   const setDriveStorage = useSystemStore((s) => s.setObsidianDriveStorage);
   const setDriveFileCount = useSystemStore((s) => s.setObsidianDriveFileCount);
-  const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
 
   const driveConnected = useSystemStore((s) => s.obsidianDriveConnected);
   const driveEmail = useSystemStore((s) => s.obsidianDriveEmail);
@@ -99,7 +98,7 @@ export default function CloudSyncPanel() {
       await loginWithGoogleDrive();
       addToast('Authorizing Google Drive — finish in the browser window', 'success');
     } catch (e) {
-      addToast(`Drive connection failed: ${e}`, 'error');
+      toastCatch('CloudSyncPanel:connectDrive')(e);
     } finally {
       setConnecting(false);
     }
@@ -122,7 +121,7 @@ export default function CloudSyncPanel() {
         setDriveFileCount(s.manifestFileCount);
       }).catch(silentCatch('CloudSyncPanel:refreshStatusAfterPush'));
     } catch (e) {
-      addToast(`Drive push failed: ${e}`, 'error');
+      toastCatch('CloudSyncPanel:pushToDrive')(e);
     } finally {
       setPushing(false);
       setDriveSyncRunning(false);
@@ -141,7 +140,7 @@ export default function CloudSyncPanel() {
         result.errors.length > 0 ? 'error' : 'success',
       );
     } catch (e) {
-      addToast(`Drive pull failed: ${e}`, 'error');
+      toastCatch('CloudSyncPanel:pullFromDrive')(e);
     } finally {
       setPulling(false);
       setDriveSyncRunning(false);
@@ -151,16 +150,7 @@ export default function CloudSyncPanel() {
   // Not connected to local vault
   if (!connected) {
     return (
-      <div className="flex-1 flex items-center justify-center py-20">
-        <EmptyState
-          icon={AlertTriangle}
-          title={t.plugins.obsidian_brain.no_vault_connected}
-          subtitle={t.plugins.obsidian_brain.no_vault_cloud_hint}
-          iconColor="text-amber-400/80"
-          iconContainerClassName="bg-amber-500/10 border-amber-500/20"
-          action={{ label: t.plugins.obsidian_brain.tab_setup, onClick: () => setObsidianBrainTab('setup'), icon: Settings }}
-        />
-      </div>
+      <NoVaultConnected cloud />
     );
   }
 

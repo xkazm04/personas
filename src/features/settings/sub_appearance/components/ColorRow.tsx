@@ -20,7 +20,7 @@ export function ColorRow({
   derivedValue: string | undefined;
   onChange: (color: string | null) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
@@ -40,7 +40,7 @@ export function ColorRow({
             : 'border-primary/15 hover:border-primary/30 hover:scale-105'
         }`}
         style={{ backgroundColor: displayValue }}
-        title={`Pick ${label}`}
+        title={tx(t.settings.appearance.color_pick_title, { label })}
         aria-expanded={open}
         aria-haspopup="true"
       />
@@ -59,14 +59,14 @@ export function ColorRow({
         </button>
       )}
       {!isOverridden && (
-        <span className="text-[10px] text-foreground flex-shrink-0">auto</span>
+        <span className="text-[10px] text-foreground flex-shrink-0">{t.settings.appearance.color_auto}</span>
       )}
 
       <AnimatePresence>
         {open && (
           <motion.div
             role="region"
-            aria-label={`${label} color picker`}
+            aria-label={tx(t.settings.appearance.color_picker_aria, { label })}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.96 }}

@@ -1,6 +1,7 @@
-// Phase 2 barrel — types, seed catalog, eligibility, and the page entry
-// component mounted from `DesignReviewsPage` when the templates sidebar's
-// "Recipes" entry is active.
+// Recipes catalog barrel - the page entry mounted from `DesignReviewsPage`
+// when the templates sidebar's "Recipes" entry is active, plus the catalog's
+// types. Hooks and libs are imported by path inside the feature; nothing
+// outside it consumes them.
 
 export type {
   Recipe,
@@ -13,15 +14,4 @@ export type {
   AdoptionMetadata,
 } from './types';
 
-export { MOCK_RECIPES } from './mockRecipes';
-export { resolveEligibility } from './eligibility';
-export {
-  useAvailableConnectors,
-  usePersonaConnectors,
-  useNoPersonaSelected,
-  useRecipeEligibility,
-  useRecipeEligibilityMap,
-} from './useEligibility';
-
 export { RecipesPage } from './RecipesPage';
-export { useAdoption, recipeToUseCase } from './libs/useAdoption';

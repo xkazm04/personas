@@ -21,6 +21,12 @@ export interface ChatInputBarProps {
   onChange: (value: string) => void;
   onSubmit: () => void;
   placeholder?: string;
+  /**
+   * Accessible name for the field. Defaults to `placeholder`, which every caller
+   * already translates: a placeholder vanishes once the user types, so the field
+   * keeps a persistent name instead of relying on it visually.
+   */
+  ariaLabel?: string;
   /** Disables the text input AND the send button (mirrors a turn already in flight). */
   disabled?: boolean;
   /** Shows the send button's loading spinner. */
@@ -96,6 +102,7 @@ export function ChatInputBar({
   onChange,
   onSubmit,
   placeholder,
+  ariaLabel,
   disabled,
   busy,
   size = 'md',
@@ -191,6 +198,7 @@ export function ChatInputBar({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={placeholder}
+          aria-label={ariaLabel ?? placeholder}
           disabled={disabled}
           {...typeahead.comboboxProps}
           className={`${fieldClass} resize-none overflow-y-auto scrollbar-thin py-1 leading-relaxed`}
@@ -203,6 +211,7 @@ export function ChatInputBar({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={placeholder}
+          aria-label={ariaLabel ?? placeholder}
           disabled={disabled}
           autoFocus={autoFocus}
           {...typeahead.comboboxProps}

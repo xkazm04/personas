@@ -21,7 +21,8 @@ import { useObservabilityWords, type ObservabilityWords } from '../libs/useObser
 
 interface HealingIssueModalProps {
   issue: PersonaHealingIssue;
-  onResolve: (id: string) => Promise<void>;
+  /** `true` once the backend recorded the resolution; the slice reports a failure itself. */
+  onResolve: (id: string) => Promise<boolean>;
   onClose: () => void;
 }
 
@@ -40,8 +41,9 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
     if (resolving) return;
     setResolving(true);
     try {
-      await onResolve(issue.id);
-      setResolved(true);
+      // The store catches and reports a failed resolve, so only its answer
+      // can tell success from failure: never show "Issue resolved" on false.
+      if (await onResolve(issue.id)) setResolved(true);
     } catch (err) {
       silentCatch('HealingIssueModal:resolve')(err);
     } finally {

@@ -14,7 +14,7 @@
 //   doc-rot item on Docs, and Land's and Record's own change history (Land's
 //   skips carry the notes its Next panel counts; Record is done every time).
 //
-// The shooter opens a step with `--steps "click=[data-testid=lc-node-<id>]"`.
+// The shooter opens a step with `--steps "click=[data-testid=lens-col-<id>];click=[data-testid=lens-col-<id>]"`.
 // Fixture CODE, no personal data. Mirrors journey/__tests__/detailFixtures.ts.
 //
 //   plugins/lifecycle/detail         every step's detail; coverage measured

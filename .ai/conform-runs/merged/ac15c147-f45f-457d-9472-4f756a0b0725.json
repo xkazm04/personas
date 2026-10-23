@@ -1,0 +1,13 @@
+{"schema":"conform-run/1","worker":"ac15c147-f45f-457d-9472-4f756a0b0725","subject":"time-travel-replay",
+ "evaluatedAt":"2026-10-16T17:26:16Z",
+ "pairs":[{"context":"1d3f934a-fae4-4cc8-a55c-a098b77b0bee","subject":"time-travel-replay","bundle":"software-engineering",
+  "state":"deviation",
+  "evidence":"src/hooks/execution/useReplayTimeline.ts:265 apportions lines evenly when the log has no recorded tempo, and the per-line `recorded` flag (useReplayTimeline.ts:22) is read by nothing outside the hook, so lines animate in at invented moments with no per-element estimate mark and the readout (TimelineScrubber.tsx:193) prints exact time over reconstructed ground",
+  "techniques":[
+   {"technique":"estimate-labeling","verdict":"deviation","evidence":"src/hooks/execution/useReplayTimeline.ts:22 `recorded` is computed per line but never rendered (no consumer outside the hook); TimelineScrubber.tsx:193 formatMs prints 1.2s/ms precision regardless of tempo provenance, and the replay has no provenance summary before play"},
+   {"technique":"timeline-derivation","verdict":"deviation","evidence":"src/hooks/execution/useReplayTimeline.ts:265 no-tempo fallback spaces lines proportionally over totalMs - the 'proportional-looking spacing over apportioned timestamps' the standard refuses; gaps with recorded tempo are disclosed (TimelineScrubber.tsx:138)"},
+   {"technique":"transport-and-time-mapping","verdict":"conformant","evidence":"src/hooks/execution/useReplayTimeline.ts:494 skip-silence is a toggle-style control gated on recorded tempo and confined to the silence the playhead is inside"},
+   {"technique":"accrual-overlays","verdict":"conformant","evidence":"src/features/agents/sub_executions/replay/ReplayCostPanel.tsx:46 cost re-accrues with position (useReplayTimeline.ts:413) and is prefixed ~ as an estimate against the real total"}
+  ]}],
+ "declined":[],
+ "consults":[{"ts":"2026-10-16T17:26:16Z","bundle":"software-engineering","subjects":["time-travel-replay"],"techniques":["estimate-labeling","timeline-derivation","transport-and-time-mapping","accrual-overlays"],"deviations":1}]}

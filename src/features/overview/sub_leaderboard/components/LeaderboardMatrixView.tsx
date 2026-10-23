@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ExternalLink, Info, ChevronDown } from 'lucide-react';
+import { ExternalLink, ChevronDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { TableSkeleton, type TableSkeletonColumn } from '@/features/shared/components/layout/TableSkeleton';
@@ -63,15 +63,9 @@ export function LeaderboardMatrixPlaceholder() {
   );
 }
 
-// Prototype-local copy — extracted to en.json at consolidation.
+// Rank column glyph: language-neutral, so it stays out of the catalog.
 const COPY = {
   rank: '#',
-  agent: 'Agent',
-  fleetAvg: 'Fleet avg',
-  sortHint: 'Click a metric to sort',
-  tied: 'tied',
-  speedCaveat:
-    'Identical for every agent — latency is mapped fleet-wide, not per-agent (known bug). This column can’t differentiate until per-persona latency is plumbed through.',
 };
 
 const MEDAL_STYLE: Record<string, string> = {
@@ -103,6 +97,7 @@ export function LeaderboardMatrixView({
   const { t } = useTranslation();
   const reduce = useReducedMotion();
   const lb = t.overview.leaderboard;
+  const notMeasured = t.overview.mission_layers.state_unmeasured;
   const [sortKey, setSortKey] = useState<RankKey>('overall');
   const [visibleCount, setVisibleCount] = useState(VISIBLE_CAP);
 
@@ -117,13 +112,6 @@ export function LeaderboardMatrixView({
   // genuinely new persona id ripples in.
   const enter = useRevealTracker();
 
-  // Surface the known latency-mapping gap: if every agent has the same speed
-  // score, the column is non-differentiating and we flag it inline.
-  const speedAllEqual = useMemo(() => {
-    const vals = new Set(leaderboard.map((e) => metricValue(e, 'speed')));
-    return leaderboard.length > 1 && vals.size === 1;
-  }, [leaderboard]);
-
   return (
     <div className="max-w-5xl mx-auto w-full">
       {/* Heatmap legend + sort hint */}
@@ -136,7 +124,7 @@ export function LeaderboardMatrixView({
             </span>
           ))}
         </div>
-        <span className="typo-caption text-foreground">{COPY.sortHint}</span>
+        <span className="typo-caption text-foreground">{lb.sort_hint}</span>
       </div>
 
       <div className="overflow-x-auto rounded-modal border border-primary/[0.08] bg-secondary/[0.03] shadow-elevation-1">
@@ -144,13 +132,12 @@ export function LeaderboardMatrixView({
           <thead>
             <tr className="bg-primary/[0.03]">
               <th className="w-12 px-2 py-3 text-center typo-caption text-foreground">{COPY.rank}</th>
-              <th className="px-3 py-3 text-left typo-caption text-foreground">{COPY.agent}</th>
+              <th className="px-3 py-3 text-left typo-caption text-foreground">{t.overview.sla_card.agent}</th>
               {RANK_OPTIONS.map((opt) => {
                 const active = sortKey === opt.key;
-                const flagged = opt.key === 'speed' && speedAllEqual;
                 const headline = opt.key === 'overall';
                 return (
-                  <th key={opt.key} className={`px-2 py-2 align-bottom ${headline ? 'border-r border-primary/10' : ''}`}>
+                  <th key={opt.key} aria-sort={active ? 'descending' : undefined} className={`px-2 py-2 align-bottom ${headline ? 'border-r border-primary/10' : ''}`}>
                     <button
                       type="button"
                       onClick={() => setSortKey(opt.key)}
@@ -160,12 +147,6 @@ export function LeaderboardMatrixView({
                       <ChevronDown className={`w-3 h-3 transition-opacity ${active ? 'opacity-100' : 'opacity-0'}`} />
                     </button>
                     <div className={`mx-auto mt-1 h-0.5 w-6 rounded-full transition-colors ${active ? 'bg-primary' : 'bg-transparent'}`} />
-                    {flagged && (
-                      <span title={COPY.speedCaveat} className="mt-0.5 flex items-center justify-center gap-1 typo-caption text-amber-400 cursor-help">
-                        <Info className="w-3 h-3 flex-shrink-0" aria-hidden />
-                        <span className="leading-none">{COPY.tied}</span>
-                      </span>
-                    )}
                   </th>
                 );
               })}
@@ -190,6 +171,8 @@ export function LeaderboardMatrixView({
                     <span className={`inline-flex items-center justify-center min-w-[2rem] px-1.5 py-0.5 rounded-card border typo-caption tabular-nums ${MEDAL_STYLE[entry.medal]}`}>
                       {entry.rank}
                     </span>
+                  ) : entry.rank === null ? (
+                    <Unmeasured label={notMeasured} />
                   ) : (
                     <span className="typo-caption text-foreground tabular-nums">{entry.rank}</span>
                   )}
@@ -211,6 +194,7 @@ export function LeaderboardMatrixView({
                     value={metricValue(entry, opt.key)}
                     emphasized={sortKey === opt.key}
                     headline={opt.key === 'overall'}
+                    notMeasured={notMeasured}
                   />
                 ))}
               </tr>
@@ -235,14 +219,17 @@ export function LeaderboardMatrixView({
             <tr className="bg-primary/[0.02]">
               <td className="border-t-2 border-dashed border-primary/20" />
               <td className="px-3 py-1.5 align-middle border-t-2 border-dashed border-primary/20">
-                <span className="typo-caption text-foreground uppercase tracking-wide">{COPY.fleetAvg}</span>
+                <span className="typo-caption text-foreground uppercase tracking-wide">{lb.fleet_average}</span>
               </td>
               {RANK_OPTIONS.map((opt) => {
-                const v = Math.round(fleetValue(opt.key, fleetAvgScore, fleetBenchmark));
-                const tint = scoreTint(v);
+                const v = fleetValue(opt.key, fleetAvgScore, fleetBenchmark);
                 return (
                   <td key={opt.key} className={`px-2 py-1.5 text-center border-t-2 border-dashed border-primary/20 ${opt.key === 'overall' ? 'border-r border-primary/10' : ''}`}>
-                    <span className={`typo-body font-mono tabular-nums ${tint.text}`}>{v}</span>
+                    {v === null ? (
+                      <Unmeasured label={notMeasured} />
+                    ) : (
+                      <span className={`typo-body font-mono tabular-nums ${scoreTint(Math.round(v)).text}`}>{Math.round(v)}</span>
+                    )}
                   </td>
                 );
               })}
@@ -254,7 +241,29 @@ export function LeaderboardMatrixView({
   );
 }
 
-function MetricCell({ value, emphasized, headline }: { value: number; emphasized?: boolean; headline?: boolean }) {
+/** An absent measurement: a dash for the eye, the words for a screen reader.
+ *  Never a 0 or a neutral 50 (registry scoring-rubrics / unmeasured-honesty). */
+function Unmeasured({ label }: { label: string }) {
+  return (
+    <span className="typo-caption text-foreground">
+      <span aria-hidden>—</span>
+      <span className="sr-only">{label}</span>
+    </span>
+  );
+}
+
+function MetricCell({ value, emphasized, headline, notMeasured }: {
+  value: number | null; emphasized?: boolean; headline?: boolean; notMeasured: string;
+}) {
+  if (value === null) {
+    return (
+      <td className={`px-1.5 py-1 align-middle text-center border-t border-primary/[0.06] ${headline ? 'border-r border-primary/10' : ''}`}>
+        <div className={`rounded-card px-2 py-1 ${emphasized ? 'ring-1 ring-primary/40' : ''}`}>
+          <Unmeasured label={notMeasured} />
+        </div>
+      </td>
+    );
+  }
   const tint = scoreTint(value);
   return (
     <td className={`px-1.5 py-1 align-middle border-t border-primary/[0.06] ${headline ? 'border-r border-primary/10' : ''}`}>

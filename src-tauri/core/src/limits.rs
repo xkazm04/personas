@@ -85,17 +85,6 @@ pub const STARTUP_SILENCE_SECS: u64 = 180;
 pub const VECTOR_INSERT_BATCH: usize = 500;
 
 // =============================================================================
-// Knowledge-base ingestion
-// =============================================================================
-
-/// Hash algorithm used to fingerprint document contents for dedup. SHA-256
-/// is overkill for collision resistance at our scale, but it's already
-/// brought in by `bundle.rs` and ts-rs friends, so adding a faster hash
-/// would mean a second dep + a second migration. Not worth it until
-/// dedup-throughput becomes a measured bottleneck.
-pub const KB_CONTENT_HASH_ALGORITHM: &str = "sha256";
-
-// =============================================================================
 // Backfill / scheduler
 // =============================================================================
 

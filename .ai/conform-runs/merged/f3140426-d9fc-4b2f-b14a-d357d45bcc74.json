@@ -1,0 +1,40 @@
+{"schema":"conform-run/1","worker":"f3140426-d9fc-4b2f-b14a-d357d45bcc74","subject":"retrieval",
+ "evaluatedAt":"2026-10-21T12:27:58Z",
+ "pairs":[
+  {"context":"1092db16-982f-4d99-b71b-14e6cf704a4f","subject":"retrieval","bundle":"software-engineering","state":"deviation",
+   "evaluatedAgainst":"sha256-b2:a49d27f889212d3f","evaluatedRevision":19,
+   "evidence":"src-tauri/src/commands/credentials/vector_kb.rs:985 the KB pane floors the vector pool with the packer's uncalibrated MAX_VECTOR_DISTANCE and BM25 at :999 only re-ranks that floored pool, so a lexical-only hit (identifier, error code) never reaches the slice - re-confirmed 2026-10-21 at registry 145ab09c rev 19",
+   "techniques":[
+    {"technique":"hybrid-lane-fusion","verdict":"deviation","evidence":"src-tauri/src/commands/credentials/vector_kb.rs:995 BM25 is a re-ranker inside the vector candidate pool, not a lane unioned in; lexical blind spot of the vector lane is never covered"},
+    {"technique":"relevance-floors","verdict":"deviation","evidence":"src-tauri/src/commands/credentials/vector_kb.rs:985 floor borrowed from the companion packer (src-tauri/core/src/retrieval/mod.rs:50), not calibrated for this consumer; BM25 failure at :1037 degrades to vector-only with only a log line, no degraded flag in KbSearchResponse"}]},
+  {"context":"9e46b252-8eb1-4a15-a627-f7e342f1d85a","subject":"retrieval","bundle":"software-engineering","state":"deviation",
+   "evaluatedAgainst":"sha256-b2:a49d27f889212d3f","evaluatedRevision":19,
+   "evidence":"src-tauri/src/companion/brain/retrieval.rs:267 unwrap_or_default turns an embedder/vector failure into zero hits (and src-tauri/src/companion/prompt/recall.rs:27 does the same to a whole failed retrieve), so a degraded slice reaches the model as an honest empty; recall_for at src-tauri/src/companion/prompt/build.rs:177 runs every turn with no trigger decision - re-confirmed 2026-10-21 rev 19",
+   "techniques":[
+    {"technique":"relevance-floors","verdict":"deviation","evidence":"src-tauri/src/companion/brain/retrieval.rs:267 three-way empty collapsed: lane outage indistinguishable from nothing-qualified"},
+    {"technique":"retrieval-triggering","verdict":"deviation","evidence":"src-tauri/src/companion/prompt/build.rs:177 retrieval unconditional per turn, no skip/retrieve decision or reason code"},
+    {"technique":"embedding-lifecycle","verdict":"deviation","evidence":"src-tauri/src/companion/prompt/recall.rs:27 retrieve() error becomes Recall::default, so embedder absence/failure is not a named mode"},
+    {"technique":"hybrid-lane-fusion","verdict":"realized","evidence":"src-tauri/src/companion/brain/retrieval.rs:273 always-include fact tier plus recency (:262) and keyword lanes (:368, :391) alongside vector"}]},
+  {"context":"dc7c4f48-e819-47d0-80be-6afb942d28fd","subject":"retrieval","bundle":"software-engineering","state":"deviation",
+   "evaluatedAgainst":"sha256-b2:a49d27f889212d3f","evaluatedRevision":19,
+   "evidence":"src-tauri/core/src/retrieval/mod.rs:50 MAX_VECTOR_DISTANCE=1.30 is a felt floor (:48 'calibrate ... if it proves too loose/tight'; src-tauri/src/companion/brain/retrieval.rs:168 says it was set blind) shared by the packer (retrieval.rs:309) and the KB pane (vector_kb.rs:985) - re-confirmed 2026-10-21 rev 19",
+   "techniques":[
+    {"technique":"relevance-floors","verdict":"deviation","evidence":"src-tauri/core/src/retrieval/mod.rs:50 one constant, not per-lane/per-model/calibrated, and it names no path it was calibrated on"},
+    {"technique":"retrieval-evaluation","verdict":"deviation","evidence":"src-tauri/core/src/retrieval/mod.rs:48 the floor's own doc defers calibration to a debug log; no labeled query set backs it"}]},
+  {"context":"0b0ee725-52a2-4656-9e13-07c5204de60e","subject":"retrieval","bundle":"software-engineering","state":"deviation",
+   "evaluatedAgainst":"sha256-b2:a49d27f889212d3f","evaluatedRevision":19,
+   "evidence":"src-tauri/db/src/lib.rs:895 the FTS drift check counts kb_chunks_fts, an external-content table (:981 content='kb_chunks') whose COUNT is answered from kb_chunks itself, so the rebuild at :903 can never fire and a never-indexed chunk stays invisible to BM25 with no signal - re-anchored 2026-10-21 (lines moved -4 by 353c496b93) rev 19",
+   "techniques":[
+    {"technique":"chunking-and-indexing","verdict":"deviation","evidence":"src-tauri/db/src/lib.rs:895 drift is assumed detected but the comparison is structurally vacuous for external-content FTS5"}]}
+ ],
+ "declined":[
+  {"subject":"retrieval","context":"876c0b4e-6472-4544-a21b-56e7529fb6b3","reason":"not-applicable verdict from 2026-10-16 is at current rev 19 and its anchored files are unchanged; not re-read this run"},
+  {"subject":"retrieval","context":"b39776f5-3909-41e3-b69f-14c9a6c70bec","reason":"not-applicable at current rev 19; low-yield, left as is"},
+  {"subject":"retrieval","context":"stores/vault/mastermind N/A pairs","reason":"seven further not-applicable verdicts (2026-10-10/16) not re-read; the stores and stores-util pairs read rev 17 and may deserve a /conform --stale pass"}
+ ],
+ "consults":[
+  {"ts":"2026-10-21T12:27:58Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["hybrid-lane-fusion","relevance-floors"],"deviations":1},
+  {"ts":"2026-10-21T12:27:58Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["relevance-floors","retrieval-triggering","embedding-lifecycle","hybrid-lane-fusion"],"deviations":1},
+  {"ts":"2026-10-21T12:27:58Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["relevance-floors","retrieval-evaluation"],"deviations":1},
+  {"ts":"2026-10-21T12:27:58Z","bundle":"software-engineering","subjects":["retrieval"],"techniques":["chunking-and-indexing"],"deviations":1}
+ ]}

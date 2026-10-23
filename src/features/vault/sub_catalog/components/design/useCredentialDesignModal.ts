@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useCredentialDesignOrchestrator } from '@/features/vault/sub_catalog/components/design/useCredentialDesignOrchestrator';
 import { useSystemStore } from "@/stores/systemStore";
 import { useVaultStore } from "@/stores/vaultStore";
@@ -9,6 +10,7 @@ import type { CredentialDesignModalProps } from '@/features/vault/sub_catalog/co
 import { filterTemplateConnectors, buildTemplateResult } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 
 export function useCredentialDesignModal({ open, initialInstruction, onClose, onComplete }: CredentialDesignModalProps) {
+  const { t, tx } = useTranslation();
   const orch = useCredentialDesignOrchestrator();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const { navigate } = useCredentialNav();
@@ -110,20 +112,26 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
 
     const result = buildTemplateResult(template);
     orch.loadTemplate(result);
-    orch.setInstruction(`${template.label} credential`);
+    orch.setInstruction(tx(t.vault.design_modal.instruction_template, { label: template.label }));
     orch.invalidateHealth();
     setShowTemplates(false);
   };
 
   const handleImportComplete = () => {
-    const results = importFlow.buildResults();
-    if (results.length === 0) return;
-    const first = results[0]!;
-    orch.loadTemplate(first);
-    orch.setInstruction(`${first.connector.label} credential (imported)`);
+    const batches = importFlow.buildBatches();
+    if (batches.length === 0) return;
+    const first = batches[0]!;
+    orch.loadTemplate(first.result, first.values);
+    orch.setInstruction(tx(t.vault.design_modal.instruction_imported, { label: first.result.connector.label }));
     orch.invalidateHealth();
     setShowImport(false);
-    importFlow.reset();
+    if (batches.length === 1) {
+      importFlow.reset();
+    } else {
+      // The other service groups stay selected: reopening Import offers them
+      // next instead of dropping them.
+      importFlow.deselectIds(first.secretIds);
+    }
   };
 
   return {

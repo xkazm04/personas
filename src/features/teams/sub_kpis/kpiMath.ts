@@ -24,6 +24,20 @@ export type KpiTrack = 'on-track' | 'off-track' | 'met' | 'unmeasured' | 'unpace
 export type OffTrackReason = 'floor' | 'crit' | 'pace';
 
 /**
+ * Epoch ms of a KPI timestamp. The KPI tables write `datetime('now')`
+ * ("YYYY-MM-DD HH:MM:SS", UTC with NO zone marker), which `new Date()` reads
+ * as LOCAL time, so every reading landed hours off for any viewer outside UTC
+ * (a UTC-4 viewer saw a fresh reading 4 h in the future). Same normalisation
+ * as `normalizeTimestamp` in `@/lib/utils/formatters`, kept here so the pure
+ * KPI models stay free of that module's store import. A zoned string and a
+ * date-only `target_date` pass through unchanged. NaN when unparsable.
+ */
+export function kpiInstantMs(s: string): number {
+  const iso = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(s) ? `${s.replace(' ', 'T')}Z` : s;
+  return Date.parse(iso);
+}
+
+/**
  * Mirror of `engine/kpi_derivation.rs::kpi_floor_breached`. A measured business
  * metric (traffic/value, higher-is-better) sitting at or below zero is treated
  * as maximally off-track — there is no pace toward a target when the floor
@@ -53,7 +67,7 @@ export function kpiFloorBreached(kpi: DevKpi): boolean {
  * `unpaced` is a finer reading of the not-off-track side (see `KpiTrack`) and
  * changes no derivation behavior.
  */
-export function kpiTrack(kpi: DevKpi, toleranceFrac = 0.1): KpiTrack {
+export function kpiTrack(kpi: DevKpi, toleranceFrac = 0.1, now = Date.now()): KpiTrack {
   const { current_value: cur, target_value: target, baseline_value: baseline, direction } = kpi;
   if (cur == null) return 'unmeasured';
   if (kpiFloorBreached(kpi)) return 'off-track';
@@ -70,9 +84,8 @@ export function kpiTrack(kpi: DevKpi, toleranceFrac = 0.1): KpiTrack {
   }
 
   if (kpi.target_date && baseline != null) {
-    const start = new Date(kpi.created_at.replace(' ', 'T')).getTime();
-    const end = new Date(kpi.target_date.replace(' ', 'T')).getTime();
-    const now = Date.now();
+    const start = kpiInstantMs(kpi.created_at);
+    const end = kpiInstantMs(kpi.target_date);
     if (end > start) {
       const frac = Math.min(1, Math.max(0, (now - start) / (end - start)));
       const span = target - baseline;
@@ -87,6 +100,17 @@ export function kpiTrack(kpi: DevKpi, toleranceFrac = 0.1): KpiTrack {
   // verdict; otherwise nothing was evaluated and saying "on track" would be a
   // claim we cannot support.
   return kpi.crit_at != null ? 'on-track' : 'unpaced';
+}
+
+/**
+ * The verdict a past reading earned AT THE TIME it was taken. Pace is a
+ * function of time: judging an old value with `kpiTrack` alone compares it to
+ * TODAY's expected point on the baseline-to-target line, so a reading that was
+ * on pace in week 2 reads off-track in week 12. History (the weekly river, the
+ * ledger's state changes) must judge each value at its own instant.
+ */
+export function kpiTrackAt(kpi: DevKpi, value: number, atMs: number): KpiTrack {
+  return kpiTrack({ ...kpi, current_value: value }, 0.1, atMs);
 }
 
 /** Which of the three triggers put this KPI off-track (null when on-track/met/
@@ -164,7 +188,7 @@ export function paceDescriptor(kpi: DevKpi): PaceDescriptor {
   const progressPct = kpiProgressPct(kpi);
   let daysLeft: number | null = null;
   if (kpi.target_date) {
-    const end = new Date(kpi.target_date.replace(' ', 'T')).getTime();
+    const end = kpiInstantMs(kpi.target_date);
     if (Number.isFinite(end)) daysLeft = Math.round((end - Date.now()) / 86_400_000);
   }
   return { track, progressPct, daysLeft };

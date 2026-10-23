@@ -6,6 +6,7 @@
 // is deliberately absent from this surface: injections already carry the
 // access signal, and a thumbs-up button would just farm noise.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { CheckCircle2, Flag, ShieldQuestion } from 'lucide-react';
 
 import {
@@ -38,6 +39,11 @@ export function MemoryClaimsSection({ memoryId, onResolved }: {
   const md = t.overview.memory_detail;
   const addToast = useToastStore((s) => s.addToast);
   const [claims, setClaims] = useState<MemoryClaim[]>([]);
+  // Which memory `claims` was READ for. Until a read for the current memory
+  // succeeds there is no list to show: not "no disputes" (a failed or pending
+  // read), and not the previous memory's claims (whose open set would drive
+  // the deprecate button for THIS memory).
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -53,7 +59,11 @@ export function MemoryClaimsSection({ memoryId, onResolved }: {
   const reload = useCallback(() => {
     const token = latest.next();
     listMemoryClaims(memoryId)
-      .then((rows) => { if (latest.isCurrent(token)) setClaims(rows); })
+      .then((rows) => {
+        if (!latest.isCurrent(token)) return;
+        setClaims(rows);
+        setLoadedFor(memoryId);
+      })
       .catch(toastCatch('MemoryClaimsSection:list'));
   }, [memoryId, latest]);
   useEffect(() => {
@@ -63,7 +73,8 @@ export function MemoryClaimsSection({ memoryId, onResolved }: {
     return () => { latest.next(); };
   }, [reload, latest]);
 
-  const open = claims.filter((c) => c.resolution === null && c.verdict !== 'helpful');
+  const shown = loadedFor === memoryId ? claims : [];
+  const open = shown.filter((c) => c.resolution === null && c.verdict !== 'helpful');
 
   const file = async (verdict: ClaimVerdict) => {
     setBusy(true);
@@ -111,13 +122,15 @@ export function MemoryClaimsSection({ memoryId, onResolved }: {
         )}
       </div>
 
-      {claims.length === 0 && (
-        <p className="typo-caption text-foreground mb-2">{md.claims_empty}</p>
+      {loadedFor === memoryId && claims.length === 0 && (
+        <div className="mb-2 flex justify-center">
+          <ScenarioEmptyState art="report" size="sm" title={md.claims_empty} />
+        </div>
       )}
 
-      {claims.length > 0 && (
+      {shown.length > 0 && (
         <ul className="space-y-1 mb-2">
-          {claims.map((c) => (
+          {shown.map((c) => (
             <li key={c.id} className="flex items-start gap-2 typo-caption">
               <span className={`px-1.5 py-0.5 typo-label rounded border flex-shrink-0 ${VERDICT_TW[c.verdict] ?? ''}`}>
                 {verdictLabel(c.verdict)}

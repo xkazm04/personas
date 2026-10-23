@@ -322,5 +322,15 @@
   "conn_state_connecting": "Connecting...",
   "conn_state_failed": "Failed",
   "conn_state_disconnected": "Disconnected",
-  "resources_synced": "{count} synced"
+  "resources_synced": "{count} synced",
+  "open_to_lan_label": "Open to unauthenticated LAN peers",
+  "open_to_lan_hint": "Any device on your network that connects can see this resource without proving its identity. Leave off unless you trust every device on this network.",
+  "exposure_auth_required": "Auth required",
+  "exposure_open_lan": "Open to LAN peers",
+  "created_on": "Created {date}",
+  "fields_exposed_count_one": "{count} field exposed",
+  "fields_exposed_count_other": "{count} fields exposed",
+  "by_creator": "by {name}",
+  "health_missed": "{count} missed",
+  "health_latency_ms": "{ms}ms"
 }

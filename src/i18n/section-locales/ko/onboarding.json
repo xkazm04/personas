@@ -607,5 +607,7 @@
   "waiting_for_output": "출력을 기다리는 중…",
   "what_testing_checks": "테스트 확인 항목:",
   "what_to_explore": "살펴볼 항목",
-  "your_agent_fallback": "내 에이전트"
+  "your_agent_fallback": "내 에이전트",
+  "approve_failed": "{name}을(를) 승인하지 못했습니다. 나중에 커넥터에서 승인할 수 있습니다.",
+  "execution_ended": "실행 {status}"
 }

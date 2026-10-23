@@ -66,7 +66,7 @@ export function PersonaReadyWidget({ config, title, span, actions, footer }: Coc
 
   const heading = title || t.athena.persona_ready_title;
   if (!summary) {
-    return <Tile span={span} title={heading} actions={actions} footer={footer} state="empty" empty={{ title: t.athena.persona_ready_empty }} />;
+    return <Tile span={span} title={heading} actions={actions} footer={footer} state="empty" empty={{ art: 'agents', title: t.athena.persona_ready_empty }} />;
   }
 
   const handleCommit = () => {

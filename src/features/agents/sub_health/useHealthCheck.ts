@@ -28,7 +28,8 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { getPersonaConfigWarnings } from '@/api/pipeline/triggers';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { DesignContextData } from '@/lib/types/frontendTypes';
 import type { DryRunResult, DryRunIssue, PersonaHealthCheck, HealthScore } from './types';
@@ -313,7 +314,11 @@ export function useHealthCheck(): UseHealthCheckReturn {
   const [result, setResult] = useState<PersonaHealthCheck | null>(null);
   const score = useMemo(() => result ? computeHealthScore(result.result.issues) : null, [result]);
   const [error, setError] = useState<string | null>(null);
-  const genRef = useRef(0);
+  // One latest-wins slot per hook instance: a newer run (or reset) makes every
+  // in-flight run inert before it can write state.
+  const latestRef = useRef<ReturnType<typeof createLatestWins> | null>(null);
+  if (latestRef.current === null) latestRef.current = createLatestWins();
+  const latest = latestRef.current;
 
   // A verdict belongs to the persona it was computed for. Both consumers (the
   // editor HealthBadge and the Arena herald) sit inside a component tree that is
@@ -329,7 +334,7 @@ export function useHealthCheck(): UseHealthCheckReturn {
     checkedPersonaId !== null && selectedPersonaId !== null && selectedPersonaId !== checkedPersonaId;
 
   const runHealthCheck = useCallback(async (persona: Persona): Promise<PersonaHealthCheck | null> => {
-    const gen = ++genRef.current;
+    const gen = latest.next();
     setCheckedPersonaId(persona.id);
     setPhase('running');
     setResult(null);
@@ -338,11 +343,11 @@ export function useHealthCheck(): UseHealthCheckReturn {
     try {
       const json = JSON.stringify(personaToDesignContext(persona));
 
-      if (gen !== genRef.current) return null;
+      if (!latest.isCurrent(gen)) return null;
 
       const raw = await testDesignFeasibility(json);
 
-      if (gen !== genRef.current) return null;
+      if (!latest.isCurrent(gen)) return null;
 
       const creds = useVaultStore.getState().credentials;
       const credentials = creds.map((c) => ({ id: c.id, service_type: c.service_type }));
@@ -394,7 +399,7 @@ export function useHealthCheck(): UseHealthCheckReturn {
         checkedAt: new Date().toISOString(),
       };
 
-      if (gen !== genRef.current) return null;
+      if (!latest.isCurrent(gen)) return null;
 
       setResult(check);
       setPhase('done');
@@ -405,13 +410,15 @@ export function useHealthCheck(): UseHealthCheckReturn {
       // nothing), so without a breadcrumb the only evidence that the feasibility
       // door threw was a user who noticed the badge never changed.
       silentCatch('useHealthCheck:run')(err);
-      if (gen !== genRef.current) return null;
-      const msg = err instanceof Error ? err.message : String(err);
+      if (!latest.isCurrent(gen)) return null;
+      // invokeWithTimeout rejects with a serialized AppError object, never an
+      // Error, so `err instanceof Error ? … : String(err)` stored "[object Object]".
+      const msg = extractMessage(err);
       setError(msg);
       setPhase('error');
       return null;
     }
-  }, []);
+  }, [latest]);
 
   const markIssueResolved = useCallback((issueId: string) => {
     setResult((prev) => {
@@ -428,12 +435,12 @@ export function useHealthCheck(): UseHealthCheckReturn {
   }, []);
 
   const reset = useCallback(() => {
-    genRef.current++;
+    latest.next();
     setCheckedPersonaId(null);
     setPhase('idle');
     setResult(null);
     setError(null);
-  }, []);
+  }, [latest]);
 
   if (staleForSelection) {
     return { phase: 'idle', result: null, score: null, error: null, runHealthCheck, markIssueResolved, reset };

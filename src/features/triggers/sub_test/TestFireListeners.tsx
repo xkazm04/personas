@@ -30,6 +30,8 @@ interface TestFireListenersProps {
   targetPersonaId: string | null;
   /** Whether a fire has completed, so the rows may report an outcome. */
   fired: boolean;
+  /** The fired event's source_id (null for a test fire), for source-filtered listeners. */
+  sourceId?: string | null;
 }
 
 export function TestFireListeners({
@@ -37,6 +39,7 @@ export function TestFireListeners({
   personaName,
   targetPersonaId,
   fired,
+  sourceId = null,
 }: TestFireListenersProps) {
   const { t, tx } = useTranslation();
   const tr = t.triggers;
@@ -57,7 +60,7 @@ export function TestFireListeners({
         <ul className="space-y-1">
           {listeners.map((row) => {
             const delivery = fired
-              ? deliveryForListener(row, targetPersonaId)
+              ? deliveryForListener(row, targetPersonaId, sourceId)
               : row.enabled
                 ? null
                 : 'disabled';

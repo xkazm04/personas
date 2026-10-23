@@ -5,7 +5,7 @@ import { useAthenaStore } from '@/features/companions/athena/athenaStore';
 
 import { estateDetail, estateSnapshot } from '../../../../journey/__tests__/docsFixtures';
 import { renderLayer1 } from '../../../layer1/__tests__/renderLayer1';
-import { LifecycleBody } from '../../../LifecycleBody';
+import { ProjectLens } from '../../../lens/ProjectLens';
 import { loadStepChunk } from '../../../layer2/stepChunks';
 
 const getLifecycleStepDetail = vi.hoisted(() => vi.fn());
@@ -24,7 +24,7 @@ beforeEach(() => {
 
 // The detail cache is module-scoped and keyed by project, so each test names its own project.
 async function openDocs(projectId: string) {
-  renderLayer1(<LifecycleBody />, estateSnapshot(projectId), 'docs');
+  renderLayer1(<ProjectLens />, estateSnapshot(projectId), 'docs');
   // The first open of a file pays for the preset chunk's import; under a full parallel run that can pass a second.
   return screen.findByTestId('lcx7-estate', {}, { timeout: 5000 });
 }

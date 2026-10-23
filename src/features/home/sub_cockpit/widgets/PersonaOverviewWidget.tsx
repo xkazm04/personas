@@ -95,7 +95,7 @@ export function PersonaOverviewWidget({ config, title, span, actions, footer }: 
   const heading = title ?? t.athena.persona_overview_eyebrow_default;
 
   if (!hero) {
-    return <Tile span={span} title={heading} actions={actions} footer={footer} state="empty" empty={{ title: t.athena.persona_overview_empty }} />;
+    return <Tile span={span} title={heading} actions={actions} footer={footer} state="empty" empty={{ art: 'agents', title: t.athena.persona_overview_empty }} />;
   }
 
   const c = t.overview.cockpit;

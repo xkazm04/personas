@@ -22,9 +22,11 @@ pub(crate) mod persona_chat;
 pub(crate) mod redact;
 mod rows;
 
+use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
+use futures_util::FutureExt;
 use serde::Serialize;
 use tauri::AppHandle;
 use tokio::sync::{Mutex, Notify};
@@ -840,13 +842,33 @@ async fn delete_persona_cascade(client: &SyncClient, persona_id: &str) -> Result
     Ok(())
 }
 
-/// Process persona tombstones since the cursor: cascade-delete each in the
-/// cloud, then advance the cursor only if all deletes succeeded (so a failure
-/// is retried next pass). Fault-isolated like a table — returns its outcome.
+/// How far behind wall-clock the tombstone pass reads. A tombstone is stamped
+/// `datetime('now')` (whole seconds) inside the delete's transaction and is
+/// only visible once that commits, so the newest second is never complete when
+/// the pass reads it.
+const TOMBSTONE_SETTLE: chrono::Duration = chrono::Duration::seconds(30);
+
+/// The upper bound of one tombstone read: every tombstone stamped at or before
+/// it has committed by the time the pass reads, so the cursor can move there
+/// without passing a row the read did not see.
+fn tombstone_horizon(now: chrono::DateTime<chrono::Utc>) -> String {
+    (now - TOMBSTONE_SETTLE).to_rfc3339()
+}
+
+/// Process persona tombstones in `(cursor, horizon]`: cascade-delete each in
+/// the cloud, then advance the cursor to the horizon only if all deletes
+/// succeeded (so a failure is retried next pass). Fault-isolated like a table
+/// — returns its outcome.
+///
+/// The cursor used to be the pass's wall-clock start, read BEFORE the fetch: a
+/// delete committed after the fetch but stamped in the same second (or any
+/// earlier one) fell at or below the new cursor and was never read again, so
+/// the persona stayed in the cloud forever. The cursor write's failure was also
+/// dropped (`let _ =`), so a pass reported clean while its watermark was lost.
 async fn process_tombstones(pool: &DbPool, client: &SyncClient) -> LastTable {
     let cursor_prev = cursor::get_cursor(pool, "tombstones", false);
-    let tick_start = now_rfc3339();
-    let tombstones = match rows::fetch_tombstones(pool, &cursor_prev) {
+    let horizon = tombstone_horizon(chrono::Utc::now());
+    let tombstones = match rows::fetch_tombstones(pool, &cursor_prev, &horizon) {
         Ok(t) => t,
         Err(e) => {
             return LastTable {
@@ -872,12 +894,31 @@ async fn process_tombstones(pool: &DbPool, client: &SyncClient) -> LastTable {
         deleted += 1;
     }
 
-    let _ = cursor::set_cursor(pool, "tombstones", &tick_start);
+    let error = match cursor::set_cursor(pool, "tombstones", &horizon) {
+        Ok(()) => None,
+        Err(e) => {
+            tracing::warn!(error = %e, "cloud sync: tombstone cursor not saved");
+            Some(e.to_string())
+        }
+    };
     LastTable {
         remote: "deletes".into(),
         rows: deleted,
-        error: None,
+        error,
     }
+}
+
+/// Take the single pass slot: flips the `syncing` flag (so a concurrent
+/// `status()` reflects the in-flight pass) and returns `true`, or returns
+/// `false` when a pass already holds it. `run_sync_once` clears the flag on its
+/// one exit path after the claim.
+async fn claim_pass() -> bool {
+    let mut rt = RUNTIME.lock().await;
+    if rt.syncing {
+        return false;
+    }
+    rt.syncing = true;
+    true
 }
 
 /// Run one full sync pass. No-op when sync is disabled or no Supabase JWT is
@@ -899,14 +940,33 @@ pub async fn run_sync_once(state: &Arc<AppState>) {
         }
     };
 
-    // Flip the syncing flag so a concurrent status() call reflects the in-flight
-    // pass. Reset on every exit path below.
-    RUNTIME.lock().await.syncing = true;
+    // One pass at a time: a manual "Sync now" during the ~45s loop pass (or a
+    // retry after the IPC timeout) would otherwise double-count `total` and let
+    // the first finisher clear `syncing` under the other. The pass in flight is
+    // already doing the work, so the late caller just reports its status.
+    if !claim_pass().await {
+        return;
+    }
 
     let report = match SyncClient::new(jwt) {
         Ok(client) => {
             let device_id = cursor::resolve_device_id(&pool);
-            collect_pass(&pool, &state.user_db, &client, &device_id).await
+            // A panic in a pass must not leave `syncing` latched, which would
+            // now refuse every later pass.
+            match AssertUnwindSafe(collect_pass(&pool, &state.user_db, &client, &device_id))
+                .catch_unwind()
+                .await
+            {
+                Ok(report) => report,
+                Err(_) => SyncReport {
+                    tables: vec![LastTable {
+                        remote: "pass".into(),
+                        rows: 0,
+                        error: Some("sync pass panicked".into()),
+                    }],
+                    total: 0,
+                },
+            }
         }
         Err(e) => SyncReport {
             tables: vec![LastTable {
@@ -980,6 +1040,17 @@ pub fn spawn_sync_loop(_app: AppHandle, state: Arc<AppState>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A second pass cannot start while one holds the slot, and the slot is
+    /// reusable once the first finishes.
+    #[tokio::test]
+    async fn only_one_pass_holds_the_slot() {
+        assert!(claim_pass().await, "first claim takes the slot");
+        assert!(!claim_pass().await, "an overlapping pass is refused");
+        RUNTIME.lock().await.syncing = false;
+        assert!(claim_pass().await, "the slot is free after the pass ends");
+        RUNTIME.lock().await.syncing = false;
+    }
 
     #[test]
     fn report_clean_when_no_table_errors() {
@@ -1167,6 +1238,22 @@ mod tests {
         assert_eq!(
             notes_due(Some((first, due)), late),
             (t0, t0 + NOTES_MAX_WAIT)
+        );
+    }
+
+    /// The tombstone horizon trails the clock by the settle window and stays
+    /// RFC3339, so the `datetime()` comparison in `TOMBSTONES_SQL` reads it.
+    #[test]
+    fn the_tombstone_horizon_trails_the_clock() {
+        let now = chrono::DateTime::parse_from_rfc3339("2026-10-20T12:00:05.100Z")
+            .expect("fixed instant")
+            .with_timezone(&chrono::Utc);
+        let h = tombstone_horizon(now);
+        let parsed = chrono::DateTime::parse_from_rfc3339(&h).expect("RFC3339");
+        assert_eq!(now - parsed.with_timezone(&chrono::Utc), TOMBSTONE_SETTLE);
+        assert!(
+            rows::TOMBSTONES_SQL.contains("<= datetime(?2)"),
+            "bounded read"
         );
     }
 

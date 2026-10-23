@@ -87,6 +87,7 @@ export function HealthcheckResultDisplay({
           <button
             type="button"
             onClick={() => setShowDetails(!showDetails)}
+            aria-expanded={showDetails}
             className="w-full flex items-center gap-1.5 px-3 py-1.5 typo-body text-status-error/40 hover:text-status-error/60 transition-colors"
           >
             <ChevronDown className={`w-3 h-3 transition-transform ${showDetails ? 'rotate-180' : ''}`} />

@@ -13,7 +13,6 @@
  * source must appear below, and every section that appears nowhere in source
  * must be recorded as dead in the script's UNREFERENCED_SECTIONS registry.
  */
-import type { Language } from '@/stores/i18nStore';
 import { useSystemStore } from '@/stores/systemStore';
 import type { SidebarSection } from '@/lib/types/types';
 import type { TranslationSection } from './englishSections';
@@ -34,6 +33,9 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   'radio',
   // Persona Monitor is reachable from the always-mounted titlebar button.
   'monitor',
+  // `decisionCenter` — the product blueprint drawing set opens over the Decision Deck, which is a global
+  // OverlayIsland (so is the `monitor` section it reads): there is no route that does not reach it.
+  'decisionCenter',
   // `deliberation` — the Monitor's Conversations view renders deliberation
   // status captions from it (DeliberationRail), so it rides with `monitor`.
   'deliberation',
@@ -155,11 +157,4 @@ export function sectionsForRoute(section: SidebarSection): readonly TranslationS
 export function useActiveI18nSections(): readonly TranslationSection[] {
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
   return sectionsForRoute(sidebarSection);
-}
-
-export function preloadI18nForCurrentRoute(
-  preload: (language: Language, sections: readonly TranslationSection[]) => void,
-  language: Language,
-): void {
-  preload(language, sectionsForRoute(useSystemStore.getState().sidebarSection));
 }

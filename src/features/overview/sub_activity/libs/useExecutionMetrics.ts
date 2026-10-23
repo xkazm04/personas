@@ -5,8 +5,10 @@ import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overvi
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/libs/periodComparison';
 import { computePeriodTrends } from '@/features/overview/libs/computeTrends';
-import { resolveTimeRange, type TimeRange } from '@/lib/types/timeRange';
-import { fmtDate } from './executionMetricsHelpers';
+import { formatTimeRangeLabel, type TimeRange } from '@/lib/types/timeRange';
+import { useTranslation } from '@/i18n/useTranslation';
+import { buildFetchWindow } from '@/features/overview/libs/fetchWindow';
+import { fmtDate, summarizeCurrentWindow } from './executionMetricsHelpers';
 
 type TimeWindow = 1 | 7 | 30 | 90;
 
@@ -26,6 +28,7 @@ type TimeWindow = 1 | 7 | 30 | 90;
  *   `trends` (null when compare is disabled or chart data is empty).
  */
 export function useExecutionMetrics() {
+  const { t, tx, language } = useTranslation();
   const { dayRange, customDateRange, effectiveDays, compareEnabled, previousPeriodDays } = useOverviewFilterValues();
   const { setDayRange, setCustomDateRange, setCompareEnabled } = useOverviewFilterActions();
   const { data, loading, error, fetchExecutionDashboard } = useOverviewStore(useShallow((s) => ({
@@ -44,16 +47,40 @@ export function useExecutionMetrics() {
     }
     return { kind: 'rolling-days', days: effectiveDays };
   }, [customDateRange, effectiveDays]);
-  const activeRangeLabel = useMemo(() => resolveTimeRange(activeRange).label, [activeRange]);
+  const activeRangeLabel = useMemo(
+    () => formatTimeRangeLabel(
+      activeRange,
+      {
+        oneDay: t.overview.activity.range_last_days_one,
+        manyDays: (n) => tx(t.overview.activity.range_last_days_other, { count: n }),
+      },
+      language,
+    ),
+    [activeRange, t, tx, language],
+  );
 
   // Lifecycle fetch is handled by useExecutionDashboardPipeline; load is for manual retry.
-  const load = useCallback(() => fetchExecutionDashboard(fetchDays), [fetchExecutionDashboard, fetchDays]);
+  const load = useCallback(
+    () => fetchExecutionDashboard(fetchDays, buildFetchWindow(customDateRange, compareEnabled)),
+    [fetchExecutionDashboard, fetchDays, customDateRange, compareEnabled],
+  );
+
+  // The selected window only. With Compare on, `data` spans 2x the window;
+  // its summary fields and its full series must not reach a tile or a chart
+  // labelled with the single window (see summarizeCurrentWindow).
+  const summary = useMemo(
+    // A custom range ends on its chosen day, not today: anchor the compare cut there.
+    () => (data
+      ? summarizeCurrentWindow(data, effectiveDays, compareEnabled, customDateRange ? Date.parse(`${customDateRange[1]}T12:00:00Z`) : undefined)
+      : null),
+    [data, effectiveDays, compareEnabled, customDateRange],
+  );
 
   const { chartData, personaCostData, personaNames } = useMemo(() => {
-    if (!data) return { chartData: [], personaCostData: [], personaNames: [] as string[] };
+    if (!data || !summary) return { chartData: [], personaCostData: [], personaNames: [] as string[] };
 
     const totalCostByPersona = new Map<string, number>();
-    for (const pt of data.daily_points) {
+    for (const pt of summary.dailyPoints) {
       for (const pc of pt.persona_costs) {
         totalCostByPersona.set(pc.persona_name, (totalCostByPersona.get(pc.persona_name) || 0) + pc.cost);
       }
@@ -66,6 +93,8 @@ export function useExecutionMetrics() {
     const chartRows: Array<Record<string, string | number>> = [];
     const personaCostRows: Array<Record<string, string | number>> = [];
 
+    // chartRows keep the whole fetched series: the compare merge and the
+    // trend split each need both periods. The cost stack is the window only.
     for (const pt of data.daily_points) {
       chartRows.push({
         date: fmtDate(pt.date), rawDate: pt.date,
@@ -74,7 +103,9 @@ export function useExecutionMetrics() {
         successRate: pt.success_rate * 100,
         p50: pt.p50_duration_ms, p95: pt.p95_duration_ms, p99: pt.p99_duration_ms,
       });
+    }
 
+    for (const pt of summary.dailyPoints) {
       const row: Record<string, string | number> = { date: fmtDate(pt.date) };
       let otherCost = 0;
       for (const pc of pt.persona_costs) {
@@ -92,7 +123,7 @@ export function useExecutionMetrics() {
     if (hasOther) names.push('Other');
 
     return { chartData: chartRows, personaCostData: personaCostRows, personaNames: names };
-  }, [data]);
+  }, [data, summary]);
 
   const comparedChartData = useMemo(() => {
     if (!compareEnabled || chartData.length === 0) return chartData;
@@ -105,16 +136,16 @@ export function useExecutionMetrics() {
   );
 
   const anomalyDates = useMemo(
-    () => new Set(data?.cost_anomalies.map((a) => fmtDate(a.date)) ?? []),
-    [data],
+    () => new Set(summary?.anomalies.map((a) => fmtDate(a.date)) ?? []),
+    [summary],
   );
 
   const overallSuccessRatePct = useMemo(
     () => resolveMetricPercent(
       SUCCESS_RATE_IDENTITIES.executionDashboardSummary,
-      { ratio: data?.overall_success_rate ?? 0 },
+      { ratio: summary?.successRatio ?? undefined },
     ),
-    [data],
+    [summary],
   );
 
   // Stale-while-revalidate flags: distinguish a cold fetch (no data yet —
@@ -124,7 +155,7 @@ export function useExecutionMetrics() {
   const isRefreshing     = loading && data !== null;
 
   return {
-    data, loading, error, load,
+    data, summary, loading, error, load,
     isInitialLoading, isRefreshing,
     days, setDayRange, customDateRange, setCustomDateRange,
     compareEnabled, setCompareEnabled,

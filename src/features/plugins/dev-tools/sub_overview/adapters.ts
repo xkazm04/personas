@@ -38,8 +38,10 @@ export interface MonitoringStats {
    * on every attempt) — render as "—", not "0", so a project with real
    * unresolved errors doesn't read as healthy. */
   unresolvedIssues: number | null;
-  eventsLast24h: number;
-  eventsLastWeek: number;
+  /** `null` when the stats request failed or answered something other than a
+   * bucket list: an unread window is not a quiet one. */
+  eventsLast24h: number | null;
+  eventsLastWeek: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -85,6 +87,12 @@ export function parseGitLabUrl(url: string): { path: string } | null {
 // GitHub adapter
 // ---------------------------------------------------------------------------
 
+function assertListOk(what: string, res: { status: number; body: string }): void {
+  if (res.status >= 400) {
+    throw new Error(`${what} request failed (${res.status}): ${res.body.slice(0, 200)}`);
+  }
+}
+
 export async function fetchGitHubStats(
   credentialId: string,
   owner: string,
@@ -117,6 +125,10 @@ export async function fetchGitHubStats(
     `/repos/${owner}/${repo}/pulls?state=open&per_page=100`,
     headers,
   );
+  // A failed sub-request is a failed read, not a zero: open issues are derived
+  // by SUBTRACTING the PR count, so a 403/429 on /pulls read as "0 PRs" and
+  // inflated open issues by every open PR, under a tile tinted as measured.
+  assertListOk('GitHub pulls', prRes);
   const prData = JSON.parse(prRes.body);
   const openPrs = Array.isArray(prData) ? prData.length : 0;
   // A full page (exactly per_page items) means there may be more beyond it —
@@ -131,7 +143,8 @@ export async function fetchGitHubStats(
     `/repos/${owner}/${repo}/commits?since=${weekAgo}&per_page=100`,
     headers,
   );
-  const commitsData = JSON.parse(commitsRes.body);
+  // 409 is GitHub's answer for an empty repository: genuinely zero commits.
+  const commitsData = commitsRes.status === 409 ? [] : (assertListOk('GitHub commits', commitsRes), JSON.parse(commitsRes.body));
   const commitsLastWeek = Array.isArray(commitsData) ? commitsData.length : 0;
   const commitsLastWeekCapped = commitsLastWeek === 100;
 
@@ -182,6 +195,7 @@ export async function fetchGitLabStats(
     `/api/v4/projects/${encoded}/merge_requests?state=opened&per_page=100`,
     headers,
   );
+  assertListOk('GitLab merge requests', mrRes);
   const mrData = JSON.parse(mrRes.body);
   const openMRs = Array.isArray(mrData) ? mrData.length : 0;
 
@@ -193,6 +207,7 @@ export async function fetchGitLabStats(
     `/api/v4/projects/${encoded}/repository/commits?since=${weekAgo}&per_page=100`,
     headers,
   );
+  assertListOk('GitLab commits', commitsRes);
   const commitsData = JSON.parse(commitsRes.body);
   const commitsLastWeek = Array.isArray(commitsData) ? commitsData.length : 0;
 
@@ -347,24 +362,26 @@ export async function fetchSentryStats(
   const day = now - 86400;
   const week = now - 7 * 86400;
 
-  let eventsLast24h = 0;
-  let eventsLastWeek = 0;
+  let eventsLast24h: number | null = null;
+  let eventsLastWeek: number | null = null;
 
   try {
+    // Hourly buckets. Per-day buckets are aligned to UTC midnight, so the
+    // ">= now - 24h" filter kept only TODAY's bucket and "24h" read as
+    // "since UTC midnight" (15 hours of events at 15:00 UTC).
     const statsRes = await executeApiRequest(
       credentialId,
       'GET',
-      `/api/0/projects/${orgSlug}/${projectSlug}/stats/?stat=received&since=${week}&until=${now}&resolution=1d`,
+      `/api/0/projects/${orgSlug}/${projectSlug}/stats/?stat=received&since=${week}&until=${now}&resolution=1h`,
       headers,
     );
-    const statsData = JSON.parse(statsRes.body);
+    const statsData: unknown = statsRes.status < 400 ? JSON.parse(statsRes.body) : null;
     if (Array.isArray(statsData)) {
-      eventsLastWeek = statsData.reduce((sum: number, [, count]: [number, number]) => sum + count, 0);
-      // Last bucket is last 24h
-      if (statsData.length > 0) {
-        const lastBuckets = statsData.filter(([ts]: [number, number]) => ts >= day);
-        eventsLast24h = lastBuckets.reduce((sum: number, [, count]: [number, number]) => sum + count, 0);
-      }
+      const buckets = statsData as [number, number][];
+      eventsLastWeek = buckets.reduce((sum, [, count]) => sum + count, 0);
+      eventsLast24h = buckets
+        .filter(([ts]) => ts >= day)
+        .reduce((sum, [, count]) => sum + count, 0);
     }
   } catch (err) { silentCatch("features/plugins/dev-tools/sub_overview/adapters:catch1")(err); }
 

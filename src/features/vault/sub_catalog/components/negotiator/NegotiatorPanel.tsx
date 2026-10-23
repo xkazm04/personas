@@ -11,6 +11,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { PHASE_VARIANTS, PHASE_TRANSITION } from './negotiatorMotion';
 
+const NO_DETECTIONS: AuthDetectionInfo[] = [];
+
 interface NegotiatorPanelProps {
   designResult: CredentialDesignResult;
   onComplete: (capturedValues: Record<string, string>) => void;
@@ -24,22 +26,28 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
   const neg = t.vault.negotiator;
   const negx = t.vault.negotiator_extra;
   const hasPrefetched = prefetchedAuthDetections !== undefined;
-  const [authDetections, setAuthDetections] = useState<AuthDetectionInfo[]>(hasPrefetched ? prefetchedAuthDetections : []);
-  const [authDetectLoading, setAuthDetectLoading] = useState(!hasPrefetched);
+  // Own detect result; null while it has not answered. Derived below rather
+  // than copied into state, so a prefetch that lands AFTER the panel opened
+  // (which cancels the own detect) still clears loading and is still read.
+  // 'failed' keeps a refused detect distinct from "no services found"; both
+  // render as no detections, but only one of them is an answer.
+  const [ownDetections, setOwnDetections] = useState<AuthDetectionInfo[] | 'failed' | null>(null);
   useEffect(() => {
     if (hasPrefetched) return;
     let cancelled = false;
     detectAuthenticatedServices()
       .then((detections) => {
-        if (cancelled) return;
-        setAuthDetections(toAuthDetectionInfo(detections));
+        if (!cancelled) setOwnDetections(toAuthDetectionInfo(detections));
       })
-      .catch(silentCatch('NegotiatorPanel:detectAuthenticatedServices'))
-      .finally(() => {
-        if (!cancelled) setAuthDetectLoading(false);
+      .catch((err) => {
+        silentCatch('NegotiatorPanel:detectAuthenticatedServices')(err);
+        if (!cancelled) setOwnDetections('failed');
       });
     return () => { cancelled = true; };
   }, [hasPrefetched]);
+  const authDetections =
+    prefetchedAuthDetections ?? (ownDetections === 'failed' ? null : ownDetections) ?? NO_DETECTIONS;
+  const authDetectLoading = !hasPrefetched && ownDetections === null;
 
   const matchingAuth = useMemo(() => {
     if (authDetections.length === 0) return [];
@@ -123,6 +131,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
           <button
             type="button"
             onClick={handleClose}
+            aria-label={t.common.close}
             className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground transition-colors duration-snap"
           >
             <X className="w-3.5 h-3.5" />

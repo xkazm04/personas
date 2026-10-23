@@ -120,4 +120,23 @@ describe('comparisonDiffWorkerClient caches', () => {
     await computeLineDiffOffThread(pairs[0]!.left, pairs[0]!.right, () => undefined).promise;
     expect(__getComparisonCacheStats().lineEvictions).toBe(evictionsBefore);
   });
+
+  // The cached path honoured `cancel()` and the no-worker fallback did not, so
+  // an unmounted/retargeted OutputDiffSection still had its chunk handler fire
+  // for the abandoned pair. Both paths now behave the same.
+  it('a cancelled job never delivers its chunk, cached or freshly computed', async () => {
+    const fresh: unknown[] = [];
+    const freshJob = computeLineDiffOffThread('x\ny', 'x\nz', (c) => fresh.push(c));
+    freshJob.cancel();
+    await freshJob.promise;
+    await Promise.resolve();
+    expect(fresh).toHaveLength(0);
+
+    const cached: unknown[] = [];
+    const cachedJob = computeLineDiffOffThread('x\ny', 'x\nz', (c) => cached.push(c));
+    cachedJob.cancel();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(cached).toHaveLength(0);
+  });
 });

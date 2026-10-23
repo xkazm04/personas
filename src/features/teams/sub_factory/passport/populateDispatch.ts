@@ -172,12 +172,12 @@ export function buildPopulateBrief(
     `- project_id: ${proj.id}`,
     `- Root: ${proj.root_path}`,
     proj.github_url ? `- Repo: ${proj.github_url}` : '- Repo: no remote recorded',
-    proj.tech_stack ? `- Stack: ${proj.tech_stack}` : '',
+    proj.tech_stack ? `- Stack: ${proj.tech_stack}` : null,
     '',
     '## Bridge',
     '',
     gates.bridgePort
-      ? `- Try \`http://127.0.0.1:${gates.bridgePort}/dev-tools\` first. If it stops answering, probe 17400-17415 — the port is chosen at startup and moves when it is taken. EVERY request needs the local token: read \`{port, token}\` from \`~/.personas/local-http.json\` and send \`X-Personas-Local-Token: <token>\`; a bare request is a 401, not a down app.`
+      ? `- Try \`http://127.0.0.1:${gates.bridgePort}/dev-tools\` first. If it stops answering, probe 17400-17415 — the port is chosen at startup and moves when it is taken. EVERY request needs the local token: read \`{port, token}\` from \`$PERSONAS_DATA_DIR/local-http.json\` when that variable is set (an isolated instance), else \`~/.personas/local-http.json\`, and send \`X-Personas-Local-Token: <token>\`; a bare request is a 401, not a down app.`
       : '- The bridge was NOT bound when this brief was written. Probe 17400-17415; if nothing answers, Personas is not running and this run cannot proceed.',
     '',
     '## Scope',
@@ -207,7 +207,10 @@ export function buildPopulateBrief(
     'service types are enough to name a binding; the operator completes it on',
     'the passport wall.',
   ]
-    .filter((line) => line !== '')
+    // Drop only the ABSENT optional lines. Filtering '' here also stripped every
+    // separator, so each paragraph ran on as a lazy continuation of the list
+    // item above it (the SKIP rule read as part of the KPIs bullet).
+    .filter((line): line is string => line !== null)
     .join('\n')
     .replace(/\n{3,}/g, '\n\n');
 }

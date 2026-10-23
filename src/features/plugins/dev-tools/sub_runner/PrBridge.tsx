@@ -38,6 +38,8 @@ function writeDoneSteps(taskId: string, steps: Set<PrStep>): void {
   } catch (err) { silentCatch("features/plugins/dev-tools/sub_runner/PrBridge:catch1")(err); }
 }
 import { Button } from '@/features/shared/components/buttons';
+import { porcelainPaths } from './porcelainPaths';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useSystemStore } from '@/stores/systemStore';
 import { openProjectManager } from '@/features/companions/athena/guidance/appActions';
 import { useToastStore } from '@/stores/toastStore';
@@ -47,7 +49,7 @@ import { SCAN_AGENTS } from '../constants/scanAgents';
 import type { DevIdea } from '@/lib/bindings/DevIdea';
 import type { DevTask } from '@/lib/bindings/DevTask';
 import type { DevProject } from '@/lib/bindings/DevProject';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { detectRepoProvider } from '../sub_overview/adapters';
 
 
@@ -152,6 +154,14 @@ function slugifyForBranch(raw: string, maxLength = 50): string {
 // PR content builder
 // ---------------------------------------------------------------------------
 
+/**
+ * The one scale `effort`, `impact` and `risk` are stored on. Mirrors
+ * `personas_core::models::IDEA_SCALE_MAX` (pinned by prBridgeContent.test.ts):
+ * migration e45 moved every producer onto it, and the PR body went on
+ * printing "/10" beside 1-5 numbers, so a top-risk idea read as "Risk: 5/10".
+ */
+export const IDEA_SCALE_MAX = 5;
+
 interface PrContent {
   branchName: string;
   commitMessage: string;
@@ -161,7 +171,7 @@ interface PrContent {
   agentEmoji: string | null;
 }
 
-function buildPrContent(
+export function buildPrContent(
   task: DevTask,
   idea: DevIdea | null,
   taskIdShort: string,
@@ -200,9 +210,9 @@ function buildPrContent(
   if (idea) {
     const metadata: string[] = [];
     if (idea.category) metadata.push(`**Category:** ${idea.category}`);
-    if (typeof idea.effort === 'number') metadata.push(`**Effort:** ${idea.effort}/10`);
-    if (typeof idea.impact === 'number') metadata.push(`**Impact:** ${idea.impact}/10`);
-    if (typeof idea.risk === 'number') metadata.push(`**Risk:** ${idea.risk}/10`);
+    if (typeof idea.effort === 'number') metadata.push(`**Effort:** ${idea.effort}/${IDEA_SCALE_MAX}`);
+    if (typeof idea.impact === 'number') metadata.push(`**Impact:** ${idea.impact}/${IDEA_SCALE_MAX}`);
+    if (typeof idea.risk === 'number') metadata.push(`**Risk:** ${idea.risk}/${IDEA_SCALE_MAX}`);
     if (metadata.length > 0) bodyParts.push(metadata.join('  \u00B7  '));
     if (idea.description) bodyParts.push(`### Description\n${idea.description}`);
     if (idea.reasoning) bodyParts.push(`### Agent reasoning\n${idea.reasoning}`);
@@ -242,11 +252,13 @@ export function PrBridge({ task }: { task: DevTask }) {
   const dt = t.plugins.dev_tools;
   const project = useActiveProject();
   const idea = useSourceIdea(task);
-  const { createBranch, commitChanges } = useDevToolsActions();
+  const { createBranch, commitChanges, getGitStatus } = useDevToolsActions();
   const addToast = useToastStore((s) => s.addToast);
 
   const [expanded, setExpanded] = useState(false);
   const [preparing, setPreparing] = useState(false);
+  // Files `git status` reports in the project root; non-null while the consent dialog is open.
+  const [pendingFiles, setPendingFiles] = useState<string[] | null>(null);
   const [opening, setOpening] = useState(false);
   const [doneSteps, setDoneSteps] = useState<Set<PrStep>>(() => readDoneSteps(task.id));
   // Re-read when the surfaced task id changes (different completed task expanded).
@@ -320,7 +332,8 @@ export function PrBridge({ task }: { task: DevTask }) {
     const lines: string[] = [
       `# Branch + commit for "${content.prTitle.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`,
       `git checkout -b ${content.branchName}`,
-      `git add -A`,
+      `# Stage ONLY the files that belong to this task (git status --short lists what is dirty):`,
+      `# git add -- <path> <path> ...`,
       `git commit -m "$(cat <<'COMMIT_EOF'`,
       content.commitMessage,
       `COMMIT_EOF`,
@@ -349,16 +362,44 @@ export function PrBridge({ task }: { task: DevTask }) {
     }
   };
 
+  // Step 1: show what is dirty in the project root. The commit stages exactly
+  // the files `git status` lists (paths passed to the backend), so the operator
+  // confirms that list before anything is branched or staged.
   const handlePrepareBranch = async () => {
     if (!project) return;
     setPreparing(true);
     try {
-      await createBranch(project.id, content.branchName);
-      await commitChanges(project.id, content.commitMessage, true);
+      const status = await getGitStatus(project.id);
+      if (status.changedFiles.length === 0) {
+        await runPrepare([]);
+      } else {
+        setPendingFiles(status.changedFiles);
+      }
+    } catch (err) {
+      addToast(tx(dt.pr_bridge_branch_failed, { message: extractMessage(err) }), 'error');
+    } finally {
+      setPreparing(false);
+    }
+  };
+
+  // Step 2: runs only after the operator confirmed the listed files.
+  const runPrepare = async (paths: string[]) => {
+    if (!project) return;
+    setPreparing(true);
+    try {
+      // The backend answers a failed git step with Ok{success:false, message: stderr},
+      // not a rejection, so an unread result reported a failed checkout as prepared.
+      const branch = await createBranch(project.id, content.branchName);
+      if (!branch.success) throw new Error(branch.message);
+      // Exactly the confirmed files; with none listed, the old stage-all (a no-op commit).
+      const commit = await commitChanges(project.id, content.commitMessage, true, paths.length ? paths : undefined);
+      if (!commit.success) throw new Error(commit.message);
       addToast(tx(dt.pr_bridge_branch_prepared, { branch: content.branchName }), 'success');
       markDone('prepare');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      // IPC rejects with a serialised AppError object, never an Error, so the
+      // old `instanceof Error` ladder printed "[object Object]".
+      const msg = extractMessage(err);
       addToast(tx(dt.pr_bridge_branch_failed, { message: msg }), 'error');
     } finally {
       setPreparing(false);
@@ -383,6 +424,19 @@ export function PrBridge({ task }: { task: DevTask }) {
 
   return (
     <div className="border-t border-primary/10 bg-primary/3">
+      {pendingFiles && (
+        <ConfirmDialog
+          title={dt.pr_bridge_prepare}
+          body={pendingFiles.join(' · ')}
+          confirmLabel={dt.pr_bridge_prepare}
+          onConfirm={async () => {
+            const confirmed = porcelainPaths(pendingFiles);
+            setPendingFiles(null);
+            await runPrepare(confirmed);
+          }}
+          onCancel={() => setPendingFiles(null)}
+        />
+      )}
       {/* Collapsible header */}
       <button
         type="button"

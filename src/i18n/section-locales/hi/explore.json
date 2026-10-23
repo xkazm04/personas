@@ -9,5 +9,20 @@
   "domain_revenue": "बिक्री और मार्केटिंग",
   "adopt_failed": "{name} नहीं खोला जा सका।",
   "adopt_no_template": "{name} के पास अपनाने के लिए कोई स्रोत टेम्पलेट नहीं है।",
-  "adopt_not_found": "{name} अभी तक टेम्पलेट गैलरी में नहीं है।"
+  "adopt_not_found": "{name} अभी तक टेम्पलेट गैलरी में नहीं है।",
+  "l2_all_domains": "सभी डोमेन",
+  "l2_col_capabilities": "क्षमताएँ",
+  "l2_col_focus": "फ़ोकस",
+  "l2_col_name": "नाम",
+  "l2_col_tools": "टूल",
+  "l2_col_type": "प्रकार",
+  "l2_counts": "{templates} टेम्पलेट · {recipes} रेसिपी",
+  "l2_filter_all": "सभी",
+  "l2_filter_placeholder": "नाम से फ़िल्टर करें…",
+  "l2_filter_recipes": "रेसिपी",
+  "l2_filter_templates": "टेम्पलेट",
+  "l2_kind_recipe": "रेसिपी",
+  "l2_kind_template": "टेम्पलेट",
+  "l2_no_matches": "कोई मिलान नहीं।",
+  "l2_shown": "{total} में से {shown} दिखाए गए"
 }

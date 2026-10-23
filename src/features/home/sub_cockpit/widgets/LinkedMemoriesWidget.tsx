@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { listMemoriesByExecution } from '@/api/overview/memories';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
-import { silentCatch } from '@/lib/silentCatch';
-import { Tile, UnitStrip, type Tone } from '@/features/shared/components/kit';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { KitButton, Tile, UnitStrip, type Tone } from '@/features/shared/components/kit';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
@@ -44,23 +45,35 @@ export function LinkedMemoriesWidget({ config, title, span, actions, footer }: C
 
   const [memories, setMemories] = useState<PersonaMemory[]>([]);
   const [loading, setLoading] = useState(true);
+  // A thrown list call used to become `[]`, which rendered "No memories recorded for this
+  // execution" - a claim about the run the widget never got to read. Its sibling
+  // LinkedDecisionsWidget already splits the two; this keeps the rejection value for the resolver.
+  const [error, setError] = useState<{ raw: unknown } | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   useEffect(() => {
     if (!executionId) {
       setMemories([]);
+      setError(null);
       setLoading(false);
       return;
     }
     let cancelled = false;
+    setError(null);
+    setLoading(true);
     listMemoriesByExecution(executionId)
       .then((rows) => { if (!cancelled) setMemories(rows); })
       .catch((err) => {
         silentCatch('LinkedMemoriesWidget:listMemoriesByExecution')(err);
-        if (!cancelled) setMemories([]);
+        if (!cancelled) {
+          setMemories([]);
+          setError({ raw: err });
+        }
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [executionId]);
+  }, [executionId, attempt]);
 
   const heading = title ?? c.linked_memories_title;
   const columns = useMemo<TableColumn<PersonaMemory>[]>(() => [
@@ -107,14 +120,20 @@ export function LinkedMemoriesWidget({ config, title, span, actions, footer }: C
     },
   ], [c.col_category, c.col_memory, c.linked_memories_importance, t, tx]);
 
+  const failure = error ? resolveErrorTranslated(t, extractMessage(error.raw) || null) : null;
   return (
     <Tile
       span={span}
       title={heading}
-      count={loading ? undefined : memories.length}
+      count={loading || failure ? undefined : memories.length}
       actions={actions}
       footer={footer}
       testId="cockpit-widget-linked_memories"
+      error={failure ? {
+        title: failure.message,
+        hint: failure.suggestion,
+        action: <KitButton onClick={retry}>{t.common.retry}</KitButton>,
+      } : undefined}
     >
       <WidgetTable<PersonaMemory>
         columns={columns}

@@ -1,0 +1,44 @@
+{"schema": "conform-run/1", "worker": "2ba0470f-d435-4b3c-b925-3a25da2bf5b1", "subject": "codebase-scanning",
+ "evaluatedAt": "2026-10-16T17:48:30Z",
+ "pairs": [
+  {"context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a", "subject": "codebase-scanning", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:242 a source file that fails read_to_string (non-UTF-8, locked) is dropped from the TODO sensor without a count, so the report's 'N total' markers carries no denominator of files actually read and an unread file reads as clean",
+   "techniques": [
+    {"technique": "the-tree-is-not-the-population", "verdict": "deviation", "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:215 walk errors are skipped silently and SKIP_DIRS exclusions are never counted, so the published file total has no excluded-count beside it"},
+    {"technique": "sensor-pipeline", "verdict": "deviation", "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:242 per-file read failure is tolerated but not recorded as a skip, so the failed read and an empty file are spelled the same; cap and early-stop ARE disclosed at :334 and :295"},
+    {"technique": "rule-precision-discipline", "verdict": "deviation", "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:283 the marker rule is a bare substring match (HACK/XXX inside identifiers) with false positives accepted in a comment and no measured precision recorded"},
+    {"technique": "finding-lifecycle", "verdict": "not-applicable", "evidence": "src-tauri/src/companion/jobs/scan_codebase.rs:169 only a one-line summary is persisted; findings are a chat report, not filed work items"}
+   ]},
+  {"context": "9967adb9-e895-4dcd-b296-ab49a19ab122", "subject": "codebase-scanning", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:59 a standards scan that ended in 'error' is handled exactly like 'complete' and its error payload discarded; since the backend clears prior rows first (standards_scan.rs:130) a failed scan renders as 'No scan yet' (:101) or as a partial compliance % presented as the result",
+   "techniques": [
+    {"technique": "sensor-pipeline", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:59 failure and completion collapse into one refetch, so a scan that could not run and one that found nothing are spelled the same"},
+    {"technique": "llm-assisted-scanning", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:73 compliance % is computed over whatever rows exist with no count of rules expected vs assessed, so a model run that errored mid-stream yields a confident score; unknown statuses ARE clamped to a conservative 0 here"}
+   ]},
+  {"context": "4cfcafbc-1964-4d65-994f-66c4cd1f8820", "subject": "codebase-scanning", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:79 'completed_with_warning' (e.g. 'Scan exceeded 30-minute timeout but partial results were saved', context_generation.rs:2061) collapses to success, so the sidebar indicator and the Overview process metric record a partial context scan as complete",
+   "techniques": [
+    {"technique": "incremental-scanning", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:81 setContextScanComplete takes a boolean, so a partial scan cannot be labelled partial on this surface (ContextMapPage.tsx:326 does distinguish it)"},
+    {"technique": "verify-after-generate", "verdict": "unknown", "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:104 this context only launches the generator; the post-generation audit lives in the backend context, not judged here"}
+   ]},
+  {"context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba", "subject": "codebase-scanning", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/stores/slices/system/devToolsScannerSlice.ts:88 the store only dispatches the scan to the backend and caches results; no gathering, emission or verification runs in this 30-file system-store context (its client-side score clamp at :14 mirrors the backend's protocol clamp)",
+   "techniques": []}
+ ],
+ "declined": [
+  {"subject": "codebase-scanning", "context": "17f44718-7d6d-4579-91bf-86191e29595a", "reason": "commands-recipes: probable match on 'generate/match/pattern' vocabulary; recipe matching is not code scanning on its face, left unread this run within budget"},
+  {"subject": "codebase-scanning", "context": "2dcda6bf-9982-422b-b63f-1481c414cdab", "reason": "plugins-dev-tools-llm-overview: LLM tracing/monitoring surface, more likely governed by observability subjects; unread within budget"},
+  {"subject": "codebase-scanning", "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91", "reason": "overview-patterns: context has zero file paths in context-map.json, nothing to read"},
+  {"subject": "codebase-scanning", "context": "cab45fee-e439-4bff-9924-217b1acc17f8", "reason": "plugins-artist-hooks: context has zero file paths in context-map.json, nothing to read"},
+  {"subject": "codebase-scanning", "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400", "reason": "plugins-artist-gallery: weak-governance row and zero paths; coverage question, not judged by default"}
+ ],
+ "consults": [
+  {"ts": "2026-10-16T17:48:30Z", "bundle": "software-engineering", "subjects": ["codebase-scanning"], "techniques": ["the-tree-is-not-the-population", "sensor-pipeline", "rule-precision-discipline", "finding-lifecycle"], "deviations": 1},
+  {"ts": "2026-10-16T17:48:30Z", "bundle": "software-engineering", "subjects": ["codebase-scanning"], "techniques": ["sensor-pipeline", "llm-assisted-scanning"], "deviations": 1},
+  {"ts": "2026-10-16T17:48:30Z", "bundle": "software-engineering", "subjects": ["codebase-scanning"], "techniques": ["incremental-scanning", "verify-after-generate"], "deviations": 1},
+  {"ts": "2026-10-16T17:48:30Z", "bundle": "software-engineering", "subjects": ["codebase-scanning"], "techniques": [], "deviations": 0}
+ ]}

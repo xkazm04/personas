@@ -3,7 +3,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 import { mixWithEvidence } from '../../../journey/__tests__/detailFixtures';
 import { renderLayer1 } from '../../layer1/__tests__/renderLayer1';
-import { LifecycleBody } from '../../LifecycleBody';
+import { ProjectLens } from '../../lens/ProjectLens';
 import { loadStepChunk } from '../../layer2/stepChunks';
 import { __resetHistoryCacheForTests } from '../useLifecycleHistory';
 import { gateDetailByMeasure, sixMeasures } from './historyFixtures';
@@ -30,7 +30,7 @@ const selected = (id: string) => (row(id).getAttribute('data-kit-state') ?? '').
 
 describe('Layer 2 history strip (in the band)', () => {
   it('draws the step’s verdict row and shows a picked Measure’s runs in the command rows', async () => {
-    renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-strip' }), 'gate');
+    renderLayer1(<ProjectLens />, mixWithEvidence({ projectId: 'p-strip' }), 'gate');
     const strip = await screen.findByTestId('lc2-strip');
     await waitFor(() => expect(within(strip).getAllByTestId(/^lc2-strip-col-\d+$/)).toHaveLength(6));
     expect(strip.querySelectorAll('[data-history-row="gate"] [data-cell]')).toHaveLength(6);
@@ -55,7 +55,7 @@ describe('Layer 2 history strip (in the band)', () => {
   });
 
   it('keeps Left / Right in the strip for Measures, and Esc there returns to now before leaving the step', async () => {
-    renderLayer1(<LifecycleBody />, mixWithEvidence({ projectId: 'p-strip-keys' }), 'gate');
+    renderLayer1(<ProjectLens />, mixWithEvidence({ projectId: 'p-strip-keys' }), 'gate');
     const picker = await screen.findByTestId('lc2-strip-picker');
     picker.focus();
     fireEvent.keyDown(picker, { key: 'ArrowLeft' });

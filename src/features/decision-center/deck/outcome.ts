@@ -15,7 +15,20 @@ import { tierLabel, tierOf, yesDoes, type Interpolate, type MonitorCopy } from '
 
 export interface Outcome { verb: string; effect: string }
 
-function noOfKind(m: MonitorCopy, kind: DecisionKind): string {
+/**
+ * A card's outcome lines, one per verdict the dock prints, in the dock's
+ * order. Most cards have the pair (yes, then no); a lane shape whose dock
+ * offers other verbs builds its own list (the Breach card: amend, deny,
+ * suspend, `breachOutcomes`), and the head renders whatever it is given.
+ */
+export type Outcomes = readonly Outcome[];
+
+export function outcomePair(m: MonitorCopy, tx: Interpolate, item: DecisionItem): Outcomes {
+  return [yesOutcome(m, tx, item), noOutcome(m, item)];
+}
+
+/** What the no side does to an item of this kind, in one sentence. */
+export function noEffect(m: MonitorCopy, kind: DecisionKind): string {
   switch (kind) {
     case 'review': return m.dc_deck_no_review;
     case 'question': return m.dc_deck_no_question;
@@ -29,6 +42,9 @@ function noOfKind(m: MonitorCopy, kind: DecisionKind): string {
     case 'report': return m.dc_deck_no_report;
     case 'message': return m.dc_deck_no_chat;
     case 'mandate': return m.ml_sign_no;
+    case 'build':
+    case 'evidence':
+    case 'release': return m.dc_deck_no_lens;
   }
 }
 
@@ -40,7 +56,8 @@ export function yesOutcome(m: MonitorCopy, tx: Interpolate, item: DecisionItem):
 }
 
 export function noOutcome(m: MonitorCopy, item: DecisionItem): Outcome {
-  const effect = noOfKind(m, item.kind);
+  // A re-read has no drop: its other verb signs the edited envelope (WP6).
+  const effect = item.kind === 'mandate' && item.payload?.reread ? m.ml_reread_no : noEffect(m, item.kind);
   if (modalTypeOf(item.kind) === 'chat') return { verb: m.dc_deck_verb_done, effect };
   if (item.kind === 'report') return { verb: m.dc_deck_verb_later, effect };
   return { verb: item.verdictLabels.reject.toLowerCase(), effect };

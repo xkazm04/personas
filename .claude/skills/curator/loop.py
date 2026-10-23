@@ -554,6 +554,49 @@ def declared_domains(root: pathlib.Path | None = None) -> set[str] | None:
     return names or None
 
 
+def _json_by_mtime(path: pathlib.Path, _cache: dict = {}) -> dict | None:
+    """Parse a JSON file once per on-disk version: the plan loop asks per candidate."""
+    try:
+        mtime = path.stat().st_mtime_ns
+    except OSError:
+        return None
+    hit = _cache.get(str(path))
+    if hit is None or hit[0] != mtime:
+        try:
+            hit = _cache[str(path)] = (mtime, json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            return None
+    return hit[1]
+
+
+def conform_has_no_work(slug: str, domain: str, root: pathlib.Path) -> bool:
+    """True when `/conform --subject <slug>` would provably find nothing to judge.
+
+    The projection ranks by consumer-deviation counts, and a fresh `deviation`
+    verdict does not lower that score, so a subject judged an hour ago comes back
+    at the top of the next projection. Measured 2026-10-16: pool 2's last 15
+    claims in a row declined "already judged 2026-10-16 against current subject
+    digest" (sql-console, motion, guided-tours, plan-entitlements ...), and
+    `packaging` - zero pairs in this repo's map - kept being planned.
+
+    No work means: the map lists no pair for the subject, or every pair carries a
+    verdict whose `evaluatedAgainst` equals the subject's digest in the registry's
+    index NOW (not the map's cached copy, which lags a registry sync). Any unknown
+    or stale pair is work. Unreadable inputs mean UNKNOWN, and filter nothing.
+    """
+    rmap = _json_by_mtime(PERSONAS_ROOT / ".ai" / "registry-map.json")
+    index = _json_by_mtime(root / "knowledge" / domain / "index.json")
+    if rmap is None or index is None:
+        return False
+    current = (index.get("subjects", {}).get(slug) or {}).get("digest")
+    if not current:
+        return False
+    pairs = [s for c in rmap.get("contexts", []) for s in c.get("subjects", [])
+             if s.get("subject") == slug and s.get("bundle", domain) == domain]
+    return all(p.get("state") not in (None, "unknown") and p.get("evaluatedAgainst") == current
+               for p in pairs)
+
+
 def derive_plan_argument(row, root: pathlib.Path) -> tuple[str, str | None] | None:
     """(argument, cwd override) for an engine whose item cannot carry its own, else None.
 
@@ -573,6 +616,8 @@ def derive_plan_argument(row, root: pathlib.Path) -> tuple[str, str | None] | No
         # `knowledge.domains` omits recruiting and `scope.does_not` excludes it.
         declared = declared_domains()
         if declared is not None and row["domain"] not in declared:
+            return None
+        if conform_has_no_work(slug, row["domain"], root):
             return None
         return f"--subject {slug}", str(PERSONAS_ROOT)
     index = root / "knowledge" / row["domain"] / "index.json"
@@ -703,7 +748,8 @@ def conform_run_protocol(claim: dict) -> str:
         "`.ai/consults.jsonl` (the merger appends your `consults`), do not write the step-5 "
         "run-result file (this file is the result), and do not add a pair (name a missing "
         "pairing in `registryProposal`). Change no other file. Do NOT commit, push, stash, or "
-        "touch any file you did not write."
+        "touch any file you did not write: the driver commits the map after the merger has folded your "
+        "run file in, because only then does the map change exist."
     )
 
 
@@ -1734,6 +1780,23 @@ def _is_merger(pid: int) -> bool:
         return True
 
 
+def commit_conform(run_names: list[str], subject: str = "") -> dict:
+    """Commit the merged conform state in THIS repo, on its current branch, never pushed.
+
+    Operator decision 2026-10-15: conform results are committed, not left for a human to read
+    first. It is the DRIVER that commits, not the worker: the map only exists after the merger
+    has folded the run file in (the worker never writes it), and several workers share one
+    checkout, so a worker-side commit would race the merger. Reuses multi.commit_repo's
+    isolated-index ritual: explicit paths, no deletions, a sibling's dirty file never staged.
+    """
+    import multi
+    names = [n for n in run_names if (PERSONAS_ROOT / CONFORM_RUNS_REL / "merged" / n).exists()]
+    msg = ("chore(registry-map): conform verdicts" + (f" for {subject}" if subject else "")
+           + "\n\nCommitted by the curator driver after the merger folded "
+           + (", ".join(names) or "its run files") + " in.")
+    return multi.commit_repo(PERSONAS_ROOT, names, msg)
+
+
 def merge_runs(registry: pathlib.Path, only: list[str] | None = None, reapply: bool = False,
                dry: bool = False, wait_ms: int = MERGE_WAIT_MS, _retry: bool = True,
                project: pathlib.Path | None = None) -> dict:
@@ -2183,6 +2246,7 @@ class Pool:
                                    wait_ms=MERGE_RETRY_WAIT_MS if w.get("merging") else MERGE_WAIT_MS)
                 if merge.get("ok"):
                     self.map_digest = map_digest()
+                    self.log("conform_commit", dispatch=w["dispatch_id"], **commit_conform([run_name]))
             action, evidence = judge_conform(
                 merge, run_name, limited=limited, timed_out=bool(w.get("timed_out")), exit_code=exit_code,
                 out_tail=tail, tmp_left=tmp.exists() and not run_path.exists(), timeout_min=w["timeout_min"])
@@ -2490,6 +2554,7 @@ def main() -> int:
     p.add_argument("--only", help="comma-separated run file names in .ai/conform-runs/")
     p.add_argument("--reapply", action="store_true", help="re-fold the merged/ archive (recovery after a revert)")
     p.add_argument("--dry", action="store_true")
+    p.add_argument("--commit", action="store_true", help="after a good merge, commit the map, detail, consults and the merged run files (never pushes)")
     p = sub.add_parser("run-pool", help="N workers, RAM-scaled: conform in parallel, registry lanes serial")
     p.add_argument("--max", type=int, default=MAX_WORKERS, help=f"worker ceiling (default {MAX_WORKERS}); memory may allow fewer")
     p.add_argument("--lane", help="ladder lanes this pool drives (default: plan)")
@@ -2563,6 +2628,8 @@ def main() -> int:
         root = registry_root(c)
         only = [x.strip() for x in a.only.split(",") if x.strip()] if a.only else None
         out = merge_runs(root, only=only, reapply=a.reapply, dry=a.dry)
+        if a.commit and out.get("ok") and not a.dry:
+            out["commit"] = commit_conform(only or [])
         print(json.dumps(out, indent=2, default=str))
         return 0 if out.get("ok") else 1
 

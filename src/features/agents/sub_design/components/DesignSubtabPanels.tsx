@@ -148,7 +148,7 @@ export function DesignConnectorsPanel() {
 function SectionEmpty({ icon, title }: { icon: typeof Plug; title: string }) {
   return (
     <div className="py-12">
-      <EmptyState icon={icon} title={title} />
+      <EmptyState icon={icon} art="link" size="sm" title={title} />
     </div>
   );
 }

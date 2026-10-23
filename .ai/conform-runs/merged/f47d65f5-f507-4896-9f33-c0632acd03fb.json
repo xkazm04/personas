@@ -1,0 +1,39 @@
+{
+ "schema": "conform-run/1",
+ "worker": "f47d65f5-f507-4896-9f33-c0632acd03fb",
+ "subject": "realtime-events",
+ "evaluatedAt": "2026-10-22T20:02:59.169Z",
+ "pairs": [
+  {
+   "context": "03e7f46a-3f19-47b8-98a5-398efed815b4",
+   "subject": "realtime-events",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/hooks/lab/useLabEvents.ts:54 subscribes to the literal \"lab-arena-status\" (also ab/matrix/eval), emitted as a bare literal at src-tauri/engine/src/test_runner/modes.rs:228 and absent from src/lib/eventRegistry.ts and src-tauri/core/src/events.rs; the gate (scripts/check-event-registry.mjs:268) sees only literal listen(x) and event_name::CONST, so a rename on either side silently stops Lab progress and completion",
+   "techniques": []
+  }
+ ],
+ "declined": [
+  {
+   "subject": "realtime-events",
+   "context": "2fb16136-586e-478d-823f-38434d2d5b9a",
+   "reason": "weak context (commands-communication); match is doubtful, reported as coverage question rather than judged"
+  },
+  {
+   "subject": "realtime-events",
+   "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7",
+   "reason": "weak context (triggers-test); match is doubtful, reported as coverage question rather than judged"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T20:02:59.169Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "realtime-events"
+   ],
+   "techniques": [],
+   "deviations": 1
+  }
+ ]
+}

@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
 import type { DevKpi } from '@/lib/bindings/DevKpi';
+import type { DevGoal } from '@/lib/bindings/DevGoal';
+import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
 
 // Bypass IPC token wait.
 (globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
@@ -23,7 +25,7 @@ vi.mock('@/stores/systemStore', () => ({
 // The real editor pulls the whole system store; this test only proves the
 // steering panel hands it the right project + pre-linked KPI.
 const editorProps: Record<string, unknown>[] = [];
-vi.mock('../../sub_goals/GoalEditorModal', () => ({
+vi.mock('../../../projects/development/goals/GoalEditorModal', () => ({
   GoalEditorModal: (props: Record<string, unknown>) => {
     editorProps.push(props);
     return <div data-testid="goal-editor-stub" />;
@@ -115,5 +117,41 @@ describe('KpiSteeringPanel — off-track with no linked goals', () => {
     );
     // on-track + no goals → the panel renders nothing at all.
     expect(screen.queryByTestId('kpi-steering-create-goal')).toBeNull();
+  });
+});
+
+describe('KpiSteeringPanel — outcome trace of a shipped goal', () => {
+  const goal = {
+    id: 'g1', title: 'Grow signups', kpi_id: 'kpi-1', status: 'done', progress: 100,
+    target_date: null, completed_at: '2026-09-10 12:00:00', created_at: '2026-09-01 00:00:00',
+  } as DevGoal;
+  const reading = (id: string, at: string, value: number, over: Partial<DevKpiMeasurement> = {}) =>
+    ({ id, kpi_id: 'kpi-1', value, measured_at: at, source: 'manual', env: 'production', evidence: null, note: null, ...over }) as DevKpiMeasurement;
+
+  it('a simulated reading after completion is not the outcome', () => {
+    render(
+      <KpiSteeringPanel
+        kpi={kpi()}
+        linkedGoals={[goal]}
+        measurements={[
+          reading('pre', '2026-09-09 00:00:00', 10),
+          reading('sim', '2026-09-11 00:00:00', 90, { env: 'local', source: 'simulation' }),
+          reading('ai', '2026-09-12 00:00:00', 80, { source: 'ai-compose' }),
+        ]}
+      />,
+    );
+    expect(screen.getByText(en.kpis.steering_outcome_pending)).toBeTruthy();
+  });
+
+  it('a real reading after completion is', () => {
+    render(
+      <KpiSteeringPanel
+        kpi={kpi()}
+        linkedGoals={[goal]}
+        measurements={[reading('pre', '2026-09-09 00:00:00', 10), reading('post', '2026-09-11 00:00:00', 30)]}
+      />,
+    );
+    expect(screen.queryByText(en.kpis.steering_outcome_pending)).toBeNull();
+    expect(screen.getByText(en.kpis.steering_outcome_improved, { exact: false })).toBeTruthy();
   });
 });

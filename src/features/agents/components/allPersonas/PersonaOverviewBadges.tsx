@@ -8,17 +8,19 @@ import { useTranslation } from '@/i18n/useTranslation';
 /* -- Health style map (also exported so filter dropdowns can stay in sync) --
    Labels resolve through i18n via `labelKey` into `t.agents.status`. */
 
-export type HealthLabelKey = 'healthy' | 'degraded' | 'failing';
+export type HealthLabelKey = 'healthy' | 'degraded' | 'failing' | 'dormant';
 
 export const HEALTH_STYLES: Record<string, { bg: string; text: string; labelKey: HealthLabelKey }> = {
   healthy: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', labelKey: 'healthy' },
   degraded: { bg: 'bg-amber-500/10', text: 'text-amber-400', labelKey: 'degraded' },
   failing: { bg: 'bg-red-500/10', text: 'text-red-400', labelKey: 'failing' },
+  // Never ran: no verdict either way, so it must not read as a verified Healthy.
+  dormant: { bg: 'bg-foreground/10', text: 'text-foreground', labelKey: 'dormant' },
 };
 
 /* -- Row accent ------------------------------------------------------- */
 
-export type RowAccentTone = 'building' | 'draft' | 'failing' | 'degraded' | 'healthy';
+export type RowAccentTone = 'building' | 'draft' | 'failing' | 'degraded' | 'dormant' | 'healthy';
 
 /**
  * ONE priority rule for the left-edge accent a persona row or card carries:
@@ -36,6 +38,7 @@ export function rowAccentTone(
   if (draft) return 'draft';
   if (health?.status === 'failing') return 'failing';
   if (health?.status === 'degraded') return 'degraded';
+  if (health?.status === 'dormant') return 'dormant';
   return 'healthy';
 }
 

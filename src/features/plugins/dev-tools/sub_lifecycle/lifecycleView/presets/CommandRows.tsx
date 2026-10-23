@@ -100,7 +100,7 @@ export function CommandRows({ rows, loading, unavailable, measureId = null, view
             count={shown.length}
             columns={columns}
             nameHead={dl.lc2_col_command}
-            empty={{ title: unavailable ? dl.lc2_runs_unavailable : dl.lc2_runs_empty, hint: unavailable ? undefined : dl.lc2_runs_empty_hint }}
+            empty={{ art: unavailable ? undefined : 'runs', title: unavailable ? dl.lc2_runs_unavailable : dl.lc2_runs_empty, hint: unavailable ? undefined : dl.lc2_runs_empty_hint }}
           >
             {shown.map((r) => <CommandLine key={r.commandId} row={r} measureId={measureId} slots={slots} budget={budget} onOpen={onOpen} />)}
           </Rows>

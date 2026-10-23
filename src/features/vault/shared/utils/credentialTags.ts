@@ -3,7 +3,7 @@ import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 
 // -- Tag color presets ------------------------------------------------
 
-export const TAG_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+const TAG_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   production:  { bg: 'bg-red-500/10',    text: 'text-red-400',    border: 'border-red-500/20' },
   staging:     { bg: 'bg-amber-500/10',   text: 'text-amber-400',  border: 'border-amber-500/20' },
   development: { bg: 'bg-blue-500/10',    text: 'text-blue-400',   border: 'border-blue-500/20' },
@@ -47,17 +47,6 @@ export function getCredentialTags(credential: CredentialMetadata): string[] {
 // the defect: anything that hands you the whole blob to rewrite invites the
 // lost update, and widening the caller's type does not fix it. If you need to
 // change one metadata key, send that one key.
-
-/** Collect all unique tags across all credentials */
-export function collectAllTags(credentials: CredentialMetadata[]): string[] {
-  const set = new Set<string>();
-  for (const cred of credentials) {
-    for (const tag of getCredentialTags(cred)) {
-      set.add(tag);
-    }
-  }
-  return [...set].sort();
-}
 
 // -- Suggested tags (pre-populated autocomplete) ----------------------
 

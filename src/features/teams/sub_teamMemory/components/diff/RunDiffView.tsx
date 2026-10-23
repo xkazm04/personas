@@ -4,8 +4,9 @@ import { GitCompareArrows } from 'lucide-react';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
 import { listTeamMemoriesByRun } from '@/api/pipeline/teamMemories';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { extractMessage } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
-import { computeMemoryDiff, type MemoryRunDiff } from '../../libs/memoryDiff';
+import { computeMemoryDiff, teamRunCounts, type MemoryRunDiff } from '../../libs/memoryDiff';
 import DiffHeader from './DiffHeader';
 import DiffContent from './DiffContent';
 
@@ -17,15 +18,14 @@ interface RunDiffViewProps {
 export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
   const { t } = useTranslation();
   const pt = t.pipeline;
-  const runs = useMemo<[string, number][]>(
-    () => (stats?.run_counts ?? []).map(([id, c]) => [id, Number(c)]),
-    [stats],
-  );
+  const runs = useMemo(() => teamRunCounts(stats), [stats]);
   const [runA, setRunA] = useState<string>('');
   const [runB, setRunB] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [diff, setDiff] = useState<MemoryRunDiff | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // The caught value, kept RAW and read at render: `invokeWithTimeout` rejects
+  // with an AppError OBJECT, never an `Error`.
+  const [error, setError] = useState<{ raw: unknown } | null>(null);
 
   // Seed the pair ONCE. `runs` is derived from `stats`, which the panel refetches
   // after every create/edit/delete and every filter change -- so this effect used
@@ -68,11 +68,12 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
       setDiff(computeMemoryDiff(memoriesA, memoriesB));
     } catch (err) {
       if (!latestWinsRef.current.isCurrent(token)) return;
-      // The RAW message is stored and translated at render time: pulling `t`
+      // The RAW error is stored and translated at render time: pulling `t`
       // into this callback's deps would put a value that changes on every
       // language load into the auto-compare effect below, which fires on
-      // `handleCompare` identity.
-      setError(err instanceof Error ? err.message : String(err));
+      // `handleCompare` identity. `String(err)` on the IPC's AppError object
+      // read "[object Object]", which no registry rule matches.
+      setError({ raw: err });
     } finally {
       if (latestWinsRef.current.isCurrent(token)) setLoading(false);
     }
@@ -111,7 +112,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
           empty diff, which reads as "nothing changed" and gets acted on. */}
       {error && !loading && (
         <div className="typo-caption text-red-400/80 px-2 py-1.5 rounded-card bg-red-500/10 flex items-center justify-between gap-2">
-          <span>{resolveErrorTranslated(t, error).message}</span>
+          <span>{resolveErrorTranslated(t, extractMessage(error.raw)).message}</span>
           <button
             type="button"
             onClick={() => { void handleCompare(); }}

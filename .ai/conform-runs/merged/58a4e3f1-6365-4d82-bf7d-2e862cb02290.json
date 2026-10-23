@@ -1,0 +1,175 @@
+{
+  "schema": "conform-run/1",
+  "worker": "58a4e3f1-6365-4d82-bf7d-2e862cb02290",
+  "subject": "multi-project",
+  "evaluatedAt": "2026-10-21T12:31:38.099Z",
+  "pairs": [
+    {
+      "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_mastermind/lib/liveState.ts:104 re-judged after db4a19c2d4/0bdb0cc93c: a project whose Sentry stats fetch FAILED is still just left out of the map, the same absent key as a project with no monitoring bound, so a broken credential renders as readiness-only calm (unwatched is not quiet)",
+      "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
+      "evaluatedRevision": 3,
+      "techniques": [
+        {
+          "technique": "passive-signal-ingestion",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/liveState.ts:104 per-project fetch failure collapses into an absent key, indistinguishable from never-configured at :95; the family-level FamilyStatus at sceneStore.ts:36 is realized but not per project"
+        },
+        {
+          "technique": "project-identity-and-joins",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:70 scans grouped by r.project_id, never by name"
+        },
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:82 failStatus turns a failed reload over held data into stale, not failed or empty"
+        }
+      ]
+    },
+    {
+      "context": "ca705961-f138-494a-b0fe-f882c674d25a",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_mastermind/lib/IdeaScanPopover.tsx:120 unchanged by the 10-19 refactors: a failed listContexts is swallowed by silentCatch, contexts stays [] and :236 shows 'Run a context scan first to enable scoping' - could-not-read rendered as never-scanned",
+      "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
+      "evaluatedRevision": 3,
+      "techniques": [
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/IdeaScanPopover.tsx:236 the empty-scope copy is shown for a failed read as well as for no contexts (level parity with reality)"
+        },
+        {
+          "technique": "passive-signal-ingestion",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/DataHealthBar.tsx:32 failed scene families are named beside a Retry, not rendered as a silent partial"
+        }
+      ]
+    },
+    {
+      "context": "d7b7eb04-730f-4450-9a68-affc95f93267",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/teams/sub_factory/l2/factoryL2Data.ts:102 overturns the 10-03 not-applicable: L2 is the drill's matrix level, and a failed groups+contexts read only clears loading, so FactoryOverviewTab.tsx:82-83 says 'No contexts scanned yet' and to run a Full scan - could-not-read rendered as never-scanned",
+      "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
+      "evaluatedRevision": 3,
+      "techniques": [
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/l2/FactoryOverviewTab.tsx:82 the empty state fires on !loading with no contexts and no failed flag for the map read, while the goals tile at :96 already renders null on goalsFailed (7420fdde80) - parity is half done"
+        },
+        {
+          "technique": "per-project-tabs-and-state",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/l2/FactoryProjectTabs.tsx:21 L2Tab is a sub-view switcher inside one already-selected project, not a portfolio working set"
+        }
+      ],
+      "registryProposal": "portfolio-drill-hierarchy level parity names stale and unmeasured but not a failed matrix read; the realistic case here is the whole matrix failing to load and rendering the onboarding empty state. Consider naming could-not-read vs never-measured at the matrix level explicitly."
+    },
+    {
+      "context": "9967adb9-e895-4dcd-b296-ab49a19ab122",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/dev-tools/sub_overview/useOverviewData.ts:102 re-affirmed after the 10-19/10-20 overview fixes: the page reads ONE global activeProjectId and renders that member project's own repo/Sentry vitals - member-level diagnostics, not portfolio registry, drill, comparison or lifecycle",
+      "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
+      "evaluatedRevision": 3,
+      "techniques": [
+        {
+          "technique": "portfolio-drill-hierarchy",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_overview/useOverviewData.ts:104 one project looked up from the store; no wall or matrix above it in this context"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "multi-project",
+      "context": "d5c5e7fe-6353-41eb-800b-dc11adee0775",
+      "reason": "judged 2026-10-10 against the current digest (rev 3, 0 behind); not re-read this run"
+    },
+    {
+      "subject": "multi-project",
+      "context": "a4174786-a5fb-4145-a1b3-f02826fac64a",
+      "reason": "judged 2026-10-10 against the current digest; not re-read this run"
+    },
+    {
+      "subject": "multi-project",
+      "context": "c5f662f2-458b-4b5d-b03b-e4acf8f54049",
+      "reason": "judged 2026-10-10 against the current digest; not re-read this run"
+    },
+    {
+      "subject": "multi-project",
+      "context": "7741725e-8124-4899-b17e-8e39e7fcf1ed",
+      "reason": "judged 2026-10-10 against the current digest; not re-read this run"
+    },
+    {
+      "subject": "multi-project",
+      "context": "54236947-3775-4d0a-8e14-1a709dd4d8bc",
+      "reason": "judged 2026-10-10 against the current digest; not re-read this run"
+    },
+    {
+      "subject": "multi-project",
+      "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b",
+      "reason": "weak context with an empty file_paths list in context-map.json and a lexical-only match (project/projects); a coverage question, not a pair to judge"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-21T12:31:38.099Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "multi-project"
+      ],
+      "techniques": [
+        "passive-signal-ingestion",
+        "project-identity-and-joins",
+        "portfolio-drill-hierarchy"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T12:31:38.099Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "multi-project"
+      ],
+      "techniques": [
+        "portfolio-drill-hierarchy",
+        "passive-signal-ingestion"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T12:31:38.099Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "multi-project"
+      ],
+      "techniques": [
+        "portfolio-drill-hierarchy",
+        "per-project-tabs-and-state"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-21T12:31:38.099Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "multi-project"
+      ],
+      "techniques": [
+        "portfolio-drill-hierarchy"
+      ],
+      "deviations": 0
+    }
+  ]
+}

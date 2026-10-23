@@ -55,8 +55,12 @@ function useSystemLoad(): SystemLoad {
   useEffect(() => {
     if (!visible) return; // pause polling when the window is hidden
     let cancelled = false;
+    // A read slower than POLL_MS must not stack a second call behind it.
+    let inFlight = false;
 
     const tick = async () => {
+      if (inFlight) return;
+      inFlight = true;
       try {
         const m = await getSystemMetrics();
         if (cancelled) return;
@@ -79,6 +83,8 @@ function useSystemLoad(): SystemLoad {
       } catch (err) {
         // Best-effort gauge — a transient IPC miss shouldn't surface to the user.
         silentCatch('features/shared/components/layout/SystemLoadFooterIcon:poll')(err);
+      } finally {
+        inFlight = false;
       }
     };
 

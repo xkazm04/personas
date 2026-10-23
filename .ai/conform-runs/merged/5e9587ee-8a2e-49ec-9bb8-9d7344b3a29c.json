@@ -1,0 +1,157 @@
+{
+  "schema": "conform-run/1",
+  "worker": "5e9587ee-8a2e-49ec-9bb8-9d7344b3a29c",
+  "subject": "retrieval",
+  "evaluatedAt": "2026-10-16T18:24:02Z",
+  "evaluatedAgainst": "sha256-b2:a49d27f889212d3f",
+  "evaluatedRevision": 19,
+  "pairs": [
+    {
+      "context": "532bbf10-3fd3-4b57-a8ea-95a957645697",
+      "subject": "retrieval",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/db/src/repos/core/memories.rs:97 the memory search forwarded at src/stores/slices/overview/memorySlice.ts:117 is a LIKE predicate over title/content with a caller-chosen sort - an exact filter over a paginated list, no relevance ranking, floors or period vote; search governs - re-judged against rev 19",
+      "techniques": []
+    },
+    {
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "subject": "retrieval",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/stores/slices/system/devToolsContextSlice.ts:50 fetches context groups over IPC for CRUD display; no slice in the context (obsidianBrainSlice, ambientContextSlice included) issues a query against a corpus or ranks by relevance - re-judged against rev 19",
+      "techniques": []
+    },
+    {
+      "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573",
+      "subject": "retrieval",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/teams/sub_mastermind/lib/deriveScene.ts:115 consumes a backend-computed similarity matrix and draws pairs >=0.5 as canvas edges - no query, no slice packed for a consumer; the cut is an edge threshold, not a relevance floor - re-judged against rev 19",
+      "techniques": []
+    },
+    {
+      "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+      "subject": "retrieval",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/home/sub_releases/roadmapItems.ts:32 the lanes are fixed now/next/later priority buckets of a small curated roadmap list - no query and no corpus too large to hand over whole - re-judged against rev 19",
+      "techniques": []
+    },
+    {
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+      "subject": "retrieval",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_databases/tabs/TableListSidebar.tsx:122 table search is a substring includes() over an already-loaded list, and src/features/vault/sub_databases/tabs/ChatTab.tsx:164 hands the NL question to the backend for SQL generation - no ranking, floors or fusion in this context; search and sql-console govern - re-judged against rev 19",
+      "techniques": []
+    },
+    {
+      "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae",
+      "subject": "retrieval",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_databases/hooks/useDbQueryRunner.ts:45 executeDbQuery runs operator-written SQL verbatim against an external database - an exact predicate query with no relevance ranking; sql-console governs - re-judged against rev 19",
+      "techniques": []
+    }
+  ],
+  "declined": [
+    {
+      "subject": "retrieval",
+      "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+      "reason": "budget: not-applicable at rev 17, 2 revisions behind; rev 18-19 (named-period-vote, cass applications) did not change the precondition - re-judge next run"
+    },
+    {
+      "subject": "retrieval",
+      "context": "0aded02d-f5c5-4e24-8366-90783fb343b1",
+      "reason": "budget: not-applicable at rev 17, 2 revisions behind; precondition unchanged at rev 19 - re-judge next run"
+    },
+    {
+      "subject": "retrieval",
+      "context": "1092db16-982f-4d99-b71b-14e6cf704a4f",
+      "reason": "already judged deviation against rev 19 (current) on 2026-10-16; not re-read"
+    },
+    {
+      "subject": "retrieval",
+      "context": "9e46b252-8eb1-4a15-a627-f7e342f1d85a",
+      "reason": "already judged deviation against rev 19 (current) on 2026-10-16; not re-read"
+    },
+    {
+      "subject": "retrieval",
+      "context": "dc7c4f48-e819-47d0-80be-6afb942d28fd",
+      "reason": "already judged deviation against rev 19 (current) on 2026-10-16; not re-read"
+    },
+    {
+      "subject": "retrieval",
+      "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+      "reason": "already judged deviation against rev 19 (current) on 2026-10-16; not re-read"
+    },
+    {
+      "subject": "retrieval",
+      "context": "876c0b4e-6472-4544-a21b-56e7529fb6b3",
+      "reason": "already judged not-applicable against rev 19 (current) on 2026-10-16; not re-read"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-16T18:24:02Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "retrieval"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "532bbf10-3fd3-4b57-a8ea-95a957645697"
+    },
+    {
+      "ts": "2026-10-16T18:24:02Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "retrieval"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba"
+    },
+    {
+      "ts": "2026-10-16T18:24:02Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "retrieval"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "e0ea6f08-ebdf-4c9e-aab4-969eee32f573"
+    },
+    {
+      "ts": "2026-10-16T18:24:02Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "retrieval"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec"
+    },
+    {
+      "ts": "2026-10-16T18:24:02Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "retrieval"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7"
+    },
+    {
+      "ts": "2026-10-16T18:24:02Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "retrieval"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae"
+    }
+  ]
+}

@@ -452,5 +452,20 @@
   "use_template": "Dùng mẫu",
   "version_history": "Lịch sử phiên bản",
   "view_persona": "Xem tác nhân",
-  "warning": "Cảnh báo"
+  "warning": "Cảnh báo",
+  "auto_team_create_failed": "Không thể tạo nhóm",
+  "auto_team_example_1": "Xem xét PR này và chạy kiểm tra",
+  "auto_team_example_2": "Viết bài blog kèm nghiên cứu",
+  "auto_team_example_3": "Phân tích phản hồi của khách hàng",
+  "auto_team_example_4": "Xây dựng quy trình xuất bản nội dung",
+  "auto_team_no_match": "Không có agent nào khớp với mô tả của bạn. Hãy thử mô tả cụ thể hơn.",
+  "team_color_blue": "Xanh dương",
+  "team_color_cyan": "Xanh lơ",
+  "team_color_green": "Xanh lá",
+  "team_color_indigo": "Chàm",
+  "team_color_orange": "Cam",
+  "team_color_pink": "Hồng",
+  "team_color_rose": "Hồng đậm",
+  "team_color_violet": "Tím",
+  "team_color_yellow": "Vàng"
 }

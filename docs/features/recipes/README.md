@@ -293,10 +293,12 @@ wholesale or leave it be.
 ### 3. The mode-2 "Run now" handoff
 
 `pipelineStore.pendingPlaygroundRecipeId` / `setPendingPlayground` /
-`consumePendingPlayground` (`stores/slices/pipeline/recipeSlice.ts`) — its only
-writer (`CommandPanelComposer.tsx`, the legacy composer's "Run now") was deleted
-2026-09-23; it is now read only by the orphaned `RecipeManager` and written by
-nothing. See the build-sheet section above.
+`consumePendingPlayground` — its only writer (`CommandPanelComposer.tsx`, the
+legacy composer's "Run now") was deleted 2026-09-23, and the slot itself was
+removed from `stores/slices/pipeline/recipeSlice.ts` on 2026-10-20 with the
+slice's other zero-caller actions (create/update/delete/link/unlink/
+fetchPersonaRecipes; Recipes UI calls `@/api/recipes/recipes` directly). See the
+build-sheet section above.
 
 ## Recipe outcome attribution
 

@@ -1,9 +1,11 @@
 import type { SidebarSection, CredentialMetadata } from '@/lib/types/types';
+import type { SystemHealthReport } from '@/lib/bindings/SystemHealthReport';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 import type { Tier } from '@/lib/constants/uiModes';
 import { NAV_SECTIONS, passesGates, type NavSectionEntry } from '@/lib/navigation/registry';
+import type { useTranslation } from '@/i18n/useTranslation';
 
 // -- Navigation destinations (registry-derived) ------------------------
 
@@ -225,6 +227,9 @@ export interface AgentActionCallbacks {
   onQuickEdit: (id: string) => void;
 }
 
+/** The translation handles the agent-action rows read their copy from. */
+export type AgentActionCopy = Pick<ReturnType<typeof useTranslation>, 't' | 'tx'>;
+
 export function agentActionItems(
   personas: Persona[],
   callbacks: AgentActionCallbacks,
@@ -235,39 +240,41 @@ export function agentActionItems(
     health: React.ReactNode;
     edit: React.ReactNode;
   },
+  copy: AgentActionCopy,
 ): PaletteItem[] {
+  const { t, tx } = copy;
   const items: PaletteItem[] = [];
 
   for (const p of personas) {
     items.push({
       id: `cmd:run:${p.id}`,
       kind: 'agent-action',
-      label: `Run ${p.name}`,
-      description: 'Execute ad-hoc',
+      label: tx(t.chrome.palette_run_agent, { name: p.name }),
+      description: t.chrome.palette_run_hint,
       icon: icons.run,
       onSelect: () => callbacks.onRun(p.id),
     });
     items.push({
       id: `cmd:toggle:${p.id}`,
       kind: 'agent-action',
-      label: `${p.enabled ? 'Disable' : 'Enable'} ${p.name}`,
-      description: p.enabled ? 'Currently on' : 'Currently off',
+      label: tx(p.enabled ? t.chrome.palette_disable_agent : t.chrome.palette_enable_agent, { name: p.name }),
+      description: p.enabled ? t.chrome.palette_state_on : t.chrome.palette_state_off,
       icon: icons.toggle,
       onSelect: () => callbacks.onToggle(p.id, !p.enabled),
     });
     items.push({
       id: `cmd:duplicate:${p.id}`,
       kind: 'agent-action',
-      label: `Duplicate ${p.name}`,
-      description: 'Clone agent',
+      label: tx(t.chrome.palette_duplicate_agent, { name: p.name }),
+      description: t.chrome.palette_duplicate_hint,
       icon: icons.duplicate,
       onSelect: () => callbacks.onDuplicate(p.id),
     });
     items.push({
       id: `cmd:edit:${p.id}`,
       kind: 'agent-action',
-      label: `Quick Edit ${p.name}`,
-      description: 'Description & model',
+      label: tx(t.chrome.palette_quick_edit_agent, { name: p.name }),
+      description: t.chrome.palette_quick_edit_hint,
       icon: icons.edit,
       onSelect: () => callbacks.onQuickEdit(p.id),
       staysOpen: true,
@@ -275,8 +282,8 @@ export function agentActionItems(
     items.push({
       id: `cmd:open:${p.id}`,
       kind: 'agent-action',
-      label: `Open ${p.name}`,
-      description: 'Full editor',
+      label: tx(t.chrome.palette_open_agent, { name: p.name }),
+      description: t.chrome.palette_open_hint,
       icon: icons.edit,
       onSelect: () => callbacks.onNavigate(p.id),
     });
@@ -286,8 +293,8 @@ export function agentActionItems(
   items.push({
     id: 'cmd:health-check',
     kind: 'agent-action',
-    label: 'Run Health Check',
-    description: 'System diagnostics',
+    label: t.chrome.palette_health_check,
+    description: t.chrome.palette_health_check_hint,
     icon: icons.health,
     onSelect: () => callbacks.onHealthCheck(),
   });
@@ -295,3 +302,14 @@ export function agentActionItems(
   return items;
 }
 
+
+// -- Health check verdict ----------------------------------------------
+
+/**
+ * Toast tone for a finished palette health check. The report's `allOk` is the
+ * verdict; a palette that toasts success over a failing machine tells the user
+ * nothing is wrong when something is.
+ */
+export function healthCheckToastTone(report: Pick<SystemHealthReport, 'allOk'>): 'success' | 'warning' {
+  return report.allOk ? 'success' : 'warning';
+}

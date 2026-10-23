@@ -9,5 +9,20 @@
   "domain_revenue": "المبيعات والتسويق",
   "adopt_failed": "تعذر فتح {name}.",
   "adopt_no_template": "لا يوجد قالب مصدر لـ {name} لاعتماده.",
-  "adopt_not_found": "{name} غير موجود في معرض القوالب بعد."
+  "adopt_not_found": "{name} غير موجود في معرض القوالب بعد.",
+  "l2_all_domains": "كل المجالات",
+  "l2_col_capabilities": "القدرات",
+  "l2_col_focus": "التركيز",
+  "l2_col_name": "الاسم",
+  "l2_col_tools": "الأدوات",
+  "l2_col_type": "النوع",
+  "l2_counts": "{templates} قالبًا · {recipes} وصفة",
+  "l2_filter_all": "الكل",
+  "l2_filter_placeholder": "التصفية حسب الاسم…",
+  "l2_filter_recipes": "الوصفات",
+  "l2_filter_templates": "القوالب",
+  "l2_kind_recipe": "وصفة",
+  "l2_kind_template": "قالب",
+  "l2_no_matches": "لا توجد نتائج مطابقة.",
+  "l2_shown": "عرض {shown} من {total}"
 }

@@ -1,3 +1,4 @@
+import { extractMessage } from '@/lib/silentCatch';
 import { useState } from 'react';
 import { ListChecks } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
@@ -102,7 +103,7 @@ export function AthenaShipGoalsCard({
         JSON.stringify({ message }),
       );
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(extractMessage(err));
     } finally {
       setBusy(false);
     }

@@ -70,7 +70,7 @@ export function RunnerPhaseTimeline({
                               <div
                                 className="animate-phase-shimmer absolute inset-0 pointer-events-none"
                                 style={{
-                                  background: 'linear-gradient(90deg, transparent, hsl(var(--primary) / 0.12), transparent)',
+                                  background: 'linear-gradient(90deg, transparent, color-mix(in srgb, var(--primary) 12%, transparent), transparent)',
                                   width: '60%',
                                 }}
                               />

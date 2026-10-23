@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import type { DryRunReport } from '@/lib/bindings/DryRunReport';
 import { dryRunPersona } from '@/api/agents/executions';
 import { resolveError } from '@/lib/errors/errorRegistry';
+import { extractMessage } from '@/lib/silentCatch';
 
 interface UseDryRunOptions {
   personaId: string;
@@ -37,7 +38,7 @@ export function useDryRun({ personaId, getInputData, useCaseId }: UseDryRunOptio
       const result = await dryRunPersona(personaId, inputData, useCaseId);
       setReport(result);
     } catch (e) {
-      const raw = e instanceof Error ? e.message : typeof e === 'string' ? e : String(e);
+      const raw = extractMessage(e);
       setErrorMessage(resolveError(raw).message);
     } finally {
       setLoading(false);

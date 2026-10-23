@@ -20,8 +20,10 @@
 //! once `obsidian_drive_*` commands are registered.
 #![allow(dead_code, private_interfaces)]
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Component, Path};
+use std::sync::{Mutex, OnceLock};
+use std::time::Duration;
 
 /// Validate that a Google Drive `file.name` is safe to use as a local filename.
 ///
@@ -76,6 +78,11 @@ use crate::error::AppError;
 
 use super::markdown::compute_content_hash;
 use super::vault_fs::{relative_path, walk_markdown_files, ErrorPolicy, WalkOptions};
+
+/// Per-request ceiling for one Drive call (a single note up/download).
+const DRIVE_REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
+/// Connection-establishment ceiling for the Drive client.
+const DRIVE_CONNECT_TIMEOUT: Duration = Duration::from_secs(15);
 
 // ============================================================================
 // Types
@@ -194,11 +201,15 @@ fn drive_err(e: impl std::fmt::Display) -> AppError {
 /// compile-time `googleapis.com` literal, and the token rides in
 /// `Authorization`, which reqwest strips across a host change.
 ///
-/// KNOWN GAP, left as-is by the Wave-2 `http` lane because closing it is a
-/// behaviour change rather than a client swap: this builder states NO
-/// `.timeout()`, so a stalled Google connection hangs the sync with no
-/// deadline (golden path `outbound-http-call.md` §7.C).
+/// Every request carries a per-call deadline ([`DRIVE_REQUEST_TIMEOUT`]) so a
+/// stalled Google connection fails that one file instead of hanging the whole
+/// sequential sync. The sync as a whole stays unbounded (it grows with the
+/// vault); the IPC wrapper waits the 30-minute ceiling for that reason.
 fn drive_client(token: &str) -> Result<reqwest::Client, AppError> {
+    build_drive_client(token, DRIVE_REQUEST_TIMEOUT)
+}
+
+fn build_drive_client(token: &str, timeout: Duration) -> Result<reqwest::Client, AppError> {
     let mut headers = reqwest::header::HeaderMap::new();
     headers.insert(
         reqwest::header::AUTHORIZATION,
@@ -207,6 +218,8 @@ fn drive_client(token: &str) -> Result<reqwest::Client, AppError> {
     );
     reqwest::Client::builder()
         .default_headers(headers)
+        .connect_timeout(DRIVE_CONNECT_TIMEOUT)
+        .timeout(timeout)
         .build()
         .map_err(drive_err)
 }
@@ -474,6 +487,50 @@ pub async fn save_manifest(
 // High-level sync operations (called by Tauri commands)
 // ============================================================================
 
+/// Vault names with a push or pull in flight (single-flight per vault).
+///
+/// Push and pull share one remote manifest, read at the start and rewritten at
+/// the end, so a second run that overlaps the first would upload the same
+/// files twice and the later `save_manifest` would overwrite the earlier one.
+fn sync_busy() -> &'static Mutex<HashSet<String>> {
+    static B: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+    B.get_or_init(|| Mutex::new(HashSet::new()))
+}
+
+/// Claim on one vault's Drive sync, released on `Drop` so an early return or a
+/// panic cannot leave the vault refusing every later sync until restart.
+#[must_use = "dropping the claim releases it"]
+struct SyncClaim {
+    vault: String,
+}
+
+impl SyncClaim {
+    fn acquire(vault: &str) -> Result<Self, AppError> {
+        let inserted = sync_busy()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(vault.to_string());
+        if inserted {
+            Ok(Self {
+                vault: vault.to_string(),
+            })
+        } else {
+            Err(AppError::Validation(format!(
+                "a Drive sync is already running for vault {vault:?}; wait for it to finish"
+            )))
+        }
+    }
+}
+
+impl Drop for SyncClaim {
+    fn drop(&mut self) {
+        sync_busy()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(&self.vault);
+    }
+}
+
 /// Push local vault files to Google Drive.
 ///
 /// Walks the local vault directory, compares content hashes against the manifest,
@@ -484,6 +541,7 @@ pub async fn push_to_drive(
     vault_name: &str,
     folders_to_sync: &[String],
 ) -> Result<DriveSyncResult, AppError> {
+    let _claim = SyncClaim::acquire(vault_name)?;
     let client = drive_client(token)?;
     let vault_folder_id = ensure_vault_folder(&client, vault_name).await?;
     let (manifest_id, mut manifest) = load_manifest(&client, &vault_folder_id).await?;
@@ -637,6 +695,7 @@ pub async fn pull_from_drive(
     vault_name: &str,
     folders_to_sync: &[String],
 ) -> Result<DriveSyncResult, AppError> {
+    let _claim = SyncClaim::acquire(vault_name)?;
     let client = drive_client(token)?;
     let vault_folder_id = ensure_vault_folder(&client, vault_name).await?;
     let (manifest_id, mut manifest) = load_manifest(&client, &vault_folder_id).await?;
@@ -851,4 +910,61 @@ fn walk_markdown_files_relative(
         .into_iter()
         .map(|path| (relative_path(dir, &path), path))
         .collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Test-only: outer guard so a missing client deadline fails, not hangs.
+    const OUTER_GUARD: Duration = Duration::from_secs(5);
+    const TEST_DEADLINE: Duration = Duration::from_millis(200);
+    const IPC_CEILING: Duration = Duration::from_secs(10 * 60);
+
+    /// A Drive call against a server that accepts and never answers must fail
+    /// at the client deadline instead of hanging the sequential sync.
+    #[tokio::test]
+    async fn stalled_drive_call_fails_at_the_client_deadline() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let _held = tokio::spawn(async move {
+            // Hold the accepted socket open without ever replying.
+            let _conn = listener.accept().await;
+            tokio::time::sleep(Duration::from_secs(30)).await;
+        });
+        let client = build_drive_client("t", TEST_DEADLINE).unwrap();
+        // The outer guard keeps a missing client deadline a failure, not a hang.
+        let res = tokio::time::timeout(
+            OUTER_GUARD,
+            client.get(format!("http://{addr}/stall")).send(),
+        )
+        .await
+        .expect("the client deadline must fire before the 5 s outer guard");
+        let err = res.unwrap_err();
+        assert!(err.is_timeout(), "expected a timeout, got {err}");
+    }
+
+    /// A second sync of a vault that is already syncing is refused (not run
+    /// alongside), another vault is unaffected, and dropping the claim frees
+    /// the vault again.
+    #[test]
+    fn a_second_sync_of_the_same_vault_is_refused_until_the_first_ends() {
+        let first = SyncClaim::acquire("vault-single-flight-test").unwrap();
+        assert!(matches!(
+            SyncClaim::acquire("vault-single-flight-test"),
+            Err(AppError::Validation(_))
+        ));
+        let other = SyncClaim::acquire("vault-single-flight-other").unwrap();
+        drop(first);
+        let again = SyncClaim::acquire("vault-single-flight-test");
+        assert!(again.is_ok(), "released claim must free the vault");
+        drop(other);
+    }
+
+    #[test]
+    fn production_deadlines_stay_far_below_the_ipc_ceiling() {
+        // One stalled call must fail well inside the 30 min wrapper budget.
+        assert!(DRIVE_REQUEST_TIMEOUT < IPC_CEILING);
+        assert!(DRIVE_CONNECT_TIMEOUT < DRIVE_REQUEST_TIMEOUT);
+    }
 }

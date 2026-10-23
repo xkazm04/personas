@@ -27,6 +27,7 @@ import {
   TRAIT_CATALOG,
   traitById,
 } from "../catalog";
+import en from "@/i18n/locales/en.json";
 import { ARCHETYPE_GLYPHS } from "../archetypeGlyphData";
 import { MentalityCard } from "../MentalityCard";
 import { EFFORT_LEVELS, EFFORT_OPTIONS } from "@/lib/models/modelCatalog";
@@ -108,7 +109,7 @@ describe("persona-core catalog integrity", () => {
   it("carries a blurb for every effort tier the vocabulary defines", () => {
     // Blurbs are this surface's own copy, keyed by id in a separate map — a
     // level added upstream must not arrive with an empty tooltip.
-    expect(EFFORT_TIERS.filter((e) => !e.blurb).map((e) => e.id)).toEqual([]);
+    expect(EFFORT_TIERS.filter((e) => !e.blurbKey).map((e) => e.id)).toEqual([]);
   });
 
   it("maps exactly the archetype icons the shipped catalog uses", () => {
@@ -270,6 +271,13 @@ describe("persona-core theming", () => {
 // --------------------------------------------------------------------------
 const listArchetypes = vi.fn();
 vi.mock("@/api/archetypes", () => ({ listArchetypes: () => listArchetypes() }));
+// The agents section is lazy-loaded at runtime; resolve the real English catalog
+// synchronously so rendered copy (trait/axis labels) is the shipped text.
+vi.mock("@/i18n/useTranslation", async (importActual) => {
+  const actual = await importActual<typeof import("@/i18n/useTranslation")>();
+  const enJson = (await import("@/i18n/locales/en.json")).default;
+  return { ...actual, useTranslation: () => ({ t: enJson, tx: actual.interpolate, language: "en" }) };
+});
 
 import { usePersonaCore } from "../usePersonaCore";
 
@@ -463,7 +471,7 @@ describe("AxisTraitGrid accessibility", () => {
     const groups = screen.getAllByRole("group");
     expect(groups.length).toBe(TRAIT_AXES.length);
     for (const axis of TRAIT_AXES) {
-      expect(screen.getByRole("group", { name: new RegExp(axis.short, "i") })).toBeTruthy();
+      expect(screen.getByRole("group", { name: new RegExp(en.agents[axis.labelKey], "i") })).toBeTruthy();
     }
   });
 
@@ -596,7 +604,9 @@ describe("config tile semantics", () => {
 // What the surface reports about itself.
 // --------------------------------------------------------------------------
 import { personaCoreSelectionLabel } from "../usePersonaCore";
-import { PersonaCoreModal } from "../PersonaCoreModal";
+import { PersonaCoreBody } from "../PersonaCoreBody";
+import { recordPersonaCoreClose } from "../coreAnalytics";
+import type { PersonaCore } from "../types";
 import { setAnalyticsSink, noopSink, type InteractionEvent } from "@/lib/analytics/sink";
 
 describe("persona-core selection label", () => {
@@ -637,7 +647,7 @@ describe("persona-core selection label", () => {
   });
 });
 
-describe("PersonaCoreModal analytics", () => {
+describe("persona-core close analytics", () => {
   const events: InteractionEvent[] = [];
 
   beforeEach(() => {
@@ -648,7 +658,12 @@ describe("PersonaCoreModal analytics", () => {
   });
   afterEach(() => setAnalyticsSink(noopSink));
 
-  it("records the settled selection when the user closes the modal", async () => {
+  // The live host (the Sheet · Cinema core layer) wires the body's Done to
+  // recordPersonaCoreClose; render the body the same way.
+  const renderBody = (core: PersonaCore, onClose: () => void) =>
+    render(<PersonaCoreBody core={core} onDone={() => { recordPersonaCoreClose(core); onClose(); }} onCrashReset={onClose} />);
+
+  it("records the settled selection when the user closes the configurator", async () => {
     // Before this, every choice left the component tree only as prose folded
     // into the build intent, so nothing downstream could answer which
     // archetypes or traits people actually pick.
@@ -657,7 +672,7 @@ describe("PersonaCoreModal analytics", () => {
     act(() => result.current.toggleTrait("terse"));
 
     const onClose = vi.fn();
-    render(<PersonaCoreModal core={result.current} isOpen onClose={onClose} />);
+    renderBody(result.current, onClose);
     fireEvent.click(screen.getByTestId("persona-core-done"));
 
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -673,7 +688,7 @@ describe("PersonaCoreModal analytics", () => {
     const { result } = renderHook(() => usePersonaCore("build-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    render(<PersonaCoreModal core={result.current} isOpen onClose={() => {}} />);
+    renderBody(result.current, () => {});
     fireEvent.click(screen.getByTestId("persona-core-done"));
 
     expect(events).toHaveLength(1);

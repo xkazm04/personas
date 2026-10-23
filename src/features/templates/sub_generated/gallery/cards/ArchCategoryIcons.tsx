@@ -1,3 +1,5 @@
+import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { deriveArchCategories, userHasCategoryCredential } from '../../shared/architecturalCategories';
 
 interface ArchCategoryIconsProps {
@@ -6,6 +8,7 @@ interface ArchCategoryIconsProps {
 }
 
 export function ArchCategoryIcons({ connectors, credentialServiceTypes }: ArchCategoryIconsProps) {
+  const { t } = useTranslation();
   if (connectors.length === 0) return null;
 
   return (
@@ -14,11 +17,8 @@ export function ArchCategoryIcons({ connectors, credentialServiceTypes }: ArchCa
         const hasIt = userHasCategoryCredential(cat.key, credentialServiceTypes);
         const CatIcon = cat.icon;
         return (
-          <div
-            key={cat.key}
-            className="relative flex-shrink-0"
-            title={`${cat.label}${hasIt ? ' (ready)' : ''}`}
-          >
+          <Tooltip key={cat.key} content={hasIt ? `${cat.label} · ${t.templates.connector_readiness.ready}` : cat.label}>
+          <div className="relative flex-shrink-0">
             <div
               className={`w-7 h-7 rounded-card flex items-center justify-center transition-all ${
                 hasIt ? '' : 'grayscale opacity-60'
@@ -35,6 +35,7 @@ export function ArchCategoryIcons({ connectors, credentialServiceTypes }: ArchCa
               }`}
             />
           </div>
+          </Tooltip>
         );
       })}
     </div>

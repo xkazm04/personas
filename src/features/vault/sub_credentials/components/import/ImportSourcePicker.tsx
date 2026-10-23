@@ -1,5 +1,5 @@
 import { FileText, KeyRound, Cloud, Shield, Lock, ArrowLeft } from 'lucide-react';
-import { IMPORT_SOURCES, type ImportSourceId } from './importHelpers';
+import { IMPORT_SOURCES, importSourceLabel, importSourceDescription, type ImportSourceId } from './importHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 
@@ -55,9 +55,9 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
               </div>
               <div className="min-w-0">
                 <p className="typo-body text-foreground group-hover:text-primary transition-colors">
-                  {source.label}
+                  {importSourceLabel(vi, source)}
                 </p>
-                <p className="typo-body text-foreground">{source.description}</p>
+                <p className="typo-body text-foreground">{importSourceDescription(vi, source.id)}</p>
                 {source.syncSupported && (
                   <StatusBadge accent="cyan" size="sm" className="mt-1">
                     {vi.sync_supported}

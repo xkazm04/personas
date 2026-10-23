@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as api from '@/api/devTools/useCases';
 import type { DevUseCase } from '@/lib/bindings/DevUseCase';
 import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage } from '@/lib/silentCatch';
 
 /** Poll cadence while a feature scan is in flight. */
 const SCAN_POLL_MS = 2_000;
@@ -54,7 +55,7 @@ export function useUseCases(projectId: string | null): UseCasesState {
       })
       .catch((err: unknown) => {
         silentCatch('useUseCases:listUseCases')(err);
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
+        if (!cancelled) setError(extractMessage(err));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -105,13 +106,11 @@ export function useUseCases(projectId: string | null): UseCasesState {
   const scan = useCallback(async () => {
     if (!projectId || scanning) return;
     setError(null);
-    try {
-      const { scan_id } = await api.scanUseCases(projectId);
-      scanIdRef.current = scan_id;
-      setScanning(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
+    // A start failure rejects: `error` has no reader on either surface, so the
+    // old catch-and-store left the Scan button and Factory's toastCatch silent.
+    const { scan_id } = await api.scanUseCases(projectId);
+    scanIdRef.current = scan_id;
+    setScanning(true);
   }, [projectId, scanning]);
 
   const cancelScan = useCallback(async () => {

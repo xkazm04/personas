@@ -60,6 +60,63 @@ function actLog(ago) {
   ];
 }
 
+/**
+ * The rows the roster reads for the cards the snapshot routes to an operator
+ * lane, with the SAME ids (`review:r1` is review row `r1`): the lane button
+ * counts the snapshot, the peek lists roster rows joined to it, so a snapshot
+ * entry with no row behind it is a count the peek cannot show (residue item 1:
+ * "Breach 4" over "Nothing waiting here" was this gap, not a code bug).
+ * Shapes are the ts-rs bindings' (ManualReview page, DevIdea, AuditIncident,
+ * PendingAcceptanceGoal, PersonaReport).
+ */
+export const CARD_CMDS = [
+  'list_manual_reviews_page', 'dev_tools_triage_ideas', 'list_audit_incidents',
+  'dev_tools_list_pending_acceptance', 'list_unread_reports',
+];
+function cardRows(ago) {
+  const review = (id, personaId, title, description, severity, minutes) => ({
+    id, execution_id: null, persona_id: personaId, title, description, severity, context_data: null,
+    suggested_actions: null, status: 'pending', reviewer_notes: null, resolved_at: null, created_at: ago(minutes),
+    updated_at: ago(minutes), use_case_id: null, assignment_id: null, step_id: null,
+  });
+  const idea = {
+    id: 'd1', project_id: 'dp-docs', context_id: null, scan_type: 'docs', category: 'maintenance',
+    title: 'Generate the CLI reference from the command registry',
+    description: 'The CLI page is written by hand and drifted twice this month. Generating it from the registry keeps it true.',
+    reasoning: 'Raised by the docs scan after the second drift.', status: 'pending', effort: 3, impact: 6, risk: 2,
+    priority: null, provider: 'claude', model: 'opus', rejection_reason: null, origin: 'scan', use_case_id: null,
+    evidence: null, dedup_key: null, goal_id: null, verify_state: null, verify_checked_at: null, verify_evidence: null,
+    plan: null, completeness: null, created_at: ago(300), updated_at: ago(300),
+  };
+  const incident = {
+    id: 'i1', sourceTable: 'tool_execution_audit_log', sourceId: 'src-i1', dedupKey: 'audit:i1', personaId: 'p-board-2',
+    personaName: 'Incident Scribe', executionId: 'exec-i1', severity: 'critical', kind: 'credential_expired',
+    title: 'Release Noter: GitHub token expired', detail: 'Three runs in a row failed with 401 from the GitHub connector.',
+    status: 'open', acknowledgedAt: null, acknowledgedBy: null, resolvedAt: null, resolutionNote: null, continuedAt: null,
+    createdAt: ago(40),
+  };
+  const goal = {
+    goal_id: 'g1', title: 'Crash-free sessions above 99.5%', summary: 'The updater fix shipped; the last 14 days read 99.7%.',
+    project_id: 'dp-personas', project_name: 'personas', team_id: null, team_name: null, kpi_id: null, kpi_name: null,
+    kpi_unit: null, kpi_current: null, kpi_target: null, kpi_baseline: null, kpi_direction: null, completed_at: ago(200),
+  };
+  const report = (id, title, minutes) => ({
+    id, persona_id: 'p-board-4', execution_id: `exec-${id}`, title, content: `# ${title}\n\nNothing failed this week.`,
+    content_type: 'markdown', priority: 'normal', is_read: false, metadata: null, created_at: ago(minutes), read_at: null,
+    thread_id: null, use_case_id: null,
+  });
+  return [
+    { cmd: 'list_manual_reviews_page', response: { rows: [
+      review('r1', 'p-board-0', 'Ship the vault export format change?', 'The 1.1 export drops the legacy field.', 'high', 25),
+      review('r2', 'p-board-3', 'Publish the docs for the new CLI?', 'The reference page is regenerated.', 'low', 90),
+    ], hasMore: false, nextCursor: null } },
+    { cmd: 'dev_tools_triage_ideas', response: { ideas: [idea], cursor: null, hasMore: false, counts: { pending: 1, accepted: 0, rejected: 0 } } },
+    { cmd: 'list_audit_incidents', response: [incident] },
+    { cmd: 'dev_tools_list_pending_acceptance', response: [goal] },
+    { cmd: 'list_unread_reports', response: [report('p1', 'Docs release digest, week 41', 60), report('p2', 'Nightly gate report', 15)] },
+  ];
+}
+
 /** The router filings the ticker variants push on `charter-act-recorded`, oldest first (createdAt is set at push time). */
 export const TICKER_ACTS = ['a9', 'a8', 'a1'].map((id, i) => ({
   id, charterId: 'ch-personas', envelopeVersion: 2, itemKind: 'report', itemId: `report:${id}`, verdict: 'filed as evidence',
@@ -102,6 +159,7 @@ export function mandateLanesTapes({ RECORDED_AT }) {
     { cmd: 'charter_acts_list', response: acts },
     { cmd: 'dev_tools_pending_counts', response: pending },
     { cmd: 'dev_tools_get_autopilot_mode', response: 'full' },
+    ...cardRows(ago),
   ];
   const tape = (module) => () => {
     const t = base();

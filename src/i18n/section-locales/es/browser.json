@@ -64,7 +64,8 @@
     "toggle_failed": "No se pudo cambiar si este sitio está permitido",
     "writes_ask": "{count} preguntan primero",
     "writes_none": "La página decide",
-    "pattern_chip": "patrón"
+    "pattern_chip": "patrón",
+    "remove_body": "Se quitará {origin}, junto con los ajustes personalizados de este sitio y su vínculo de credenciales."
   },
   "add_site": {
     "cancel": "Cancelar",

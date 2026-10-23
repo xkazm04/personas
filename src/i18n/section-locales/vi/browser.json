@@ -64,7 +64,8 @@
     "toggle_failed": "Không thể thay đổi trạng thái cho phép của trang này",
     "writes_ask": "{count} hỏi trước",
     "writes_none": "Trang tự quyết định",
-    "pattern_chip": "mẫu"
+    "pattern_chip": "mẫu",
+    "remove_body": "{origin} sẽ bị gỡ bỏ, cùng với các ghi đè của trang này và liên kết thông tin xác thực của nó."
   },
   "add_site": {
     "cancel": "Hủy",

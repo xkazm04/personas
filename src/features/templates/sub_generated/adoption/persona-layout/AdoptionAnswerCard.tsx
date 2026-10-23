@@ -289,17 +289,12 @@ export function AdoptionAnswerCard({
           isStackable={stackable}
           isBlocked={isBlocked}
           isAutoDetected={isAutoDetected}
-          activeIdx={activeIdx}
-          totalCount={orderedQuestions.length}
-          isAtEnd={activeIdx === orderedQuestions.length - 1}
-          canSubmit={false}
           onAnswerUpdated={onAnswerUpdated}
           onAddCredential={onAddCredential}
           filteredOptions={filteredOptions?.[activeQuestion.id]}
           dynamicState={dynamicOptions?.[activeQuestion.id]}
           onRetryDynamic={onRetryDynamic}
           useCaseTitleById={useCaseTitleById}
-          compact
         />
       </div>
     </ComposerPickerShell>

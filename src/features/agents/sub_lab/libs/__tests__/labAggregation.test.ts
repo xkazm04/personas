@@ -181,6 +181,32 @@ describe('aggregateArenaResults', () => {
 
 // -- A/B --
 
+describe('composite over partially measured dimensions', () => {
+  it('does not fold a dimension no row scored into a zero (sandbox arena model)', () => {
+    const out = aggregateArenaResults([
+      arenaResult('sandboxed', 'anthropic', { ta: null, oq: 80, pc: 80 }),
+      arenaResult('full', 'anthropic', { ta: 70, oq: 70, pc: 70 }),
+    ]);
+    const sandboxed = out.aggregates.find((a) => a.modelId === 'sandboxed')!;
+    expect(sandboxed.compositeScore).toBe(80);
+    expect(out.bestModelId).toBe('sandboxed');
+    // The 0 in avgToolAccuracy is a placeholder; the modal must not draw it as a score.
+    expect(sandboxed.toolAccuracyScored).toBe(false);
+  });
+
+  it('applies the same rule to A/B and Matrix', () => {
+    const ab = aggregateAbResults([abResult('v1', 1, { ta: null, oq: 90, pc: 60 })]);
+    expect(ab.versionAggs[0]!.compositeScore).toBe(80); // (90*0.4 + 60*0.2) / 0.6
+    const mx = aggregateMatrixResults([matrixResult('current', { ta: null, oq: 90, pc: 60 })]);
+    expect(mx.variantAggs[0]!.compositeScore).toBe(80);
+  });
+
+  it('stays 0 when nothing at all was scored', () => {
+    const out = aggregateArenaResults([arenaResult('m', 'anthropic', { ta: null, oq: null, pc: null })]);
+    expect(out.aggregates[0]!.compositeScore).toBe(0);
+  });
+});
+
 describe('aggregateAbResults', () => {
   it('returns empty aggregation for empty input', () => {
     const out = aggregateAbResults([]);

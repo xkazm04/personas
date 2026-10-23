@@ -161,7 +161,7 @@ export function DecisionStage({
             </StageItem>
           ) : (
             <motion.div key="none" className="fu-question fu-glass" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <ScenarioEmptyState title={F.nothingWaiting} subtitle={F.nothingWaitingSub} />
+              <ScenarioEmptyState art="inbox" size="sm" title={F.nothingWaiting} subtitle={F.nothingWaitingSub} />
             </motion.div>
           )}
         </AnimatePresence>

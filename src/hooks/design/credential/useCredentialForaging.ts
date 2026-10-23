@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { createLogger } from "@/lib/log";
-import { isTauriError } from "@/lib/types/tauriError";
+import { extractMessage } from "@/lib/silentCatch";
 
 const logger = createLogger("credential-foraging");
 import {
@@ -8,18 +8,6 @@ import {
   importForagedCredential,
   type ForagingScanResult,
 } from "@/api/vault/foraging";
-
-/**
- * `scan_credential_sources` / `import_foraged_credential` migrated from
- * `Result<_, String>` to `Result<_, AppError>` -- the IPC rejection is now the
- * structured `{ error, kind, ... }` envelope rather than a plain string, so
- * `String(err)` would render `"[object Object]"`. Read `.error` first.
- */
-function describeError(err: unknown): string {
-  if (isTauriError(err)) return err.error;
-  if (err instanceof Error) return err.message;
-  return String(err);
-}
 
 export type ForagingPhase = "idle" | "scanning" | "results" | "importing" | "done" | "error";
 
@@ -41,7 +29,9 @@ export function useCredentialForaging() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [imported, setImported] = useState<Map<string, { id: string; name: string }>>(new Map());
   const [importingIds, setImportingIds] = useState<Set<string>>(new Set());
-  const [error, setError] = useState<string | null>(null);
+  // The raw rejection is kept and read into text only when returned, so the
+  // panel's resolveErrorTranslated sees the backend's own message.
+  const [failure, setFailure] = useState<unknown>(null);
   const [partialImportError, setPartialImportError] = useState(false);
   const scanningRef = useRef(false);
   const importingRef = useRef(false);
@@ -50,7 +40,7 @@ export function useCredentialForaging() {
     if (scanningRef.current) return;
     scanningRef.current = true;
     setPhase("scanning");
-    setError(null);
+    setFailure(null);
     setPartialImportError(false);
     setScanResult(null);
     setSelected(new Set());
@@ -65,7 +55,7 @@ export function useCredentialForaging() {
       setSelected(new Set());
       setPhase("results");
     } catch (err) {
-      setError(describeError(err));
+      setFailure(err);
       setPhase("error");
     } finally {
       scanningRef.current = false;
@@ -126,7 +116,7 @@ export function useCredentialForaging() {
             const result = await importForagedCredential(cred.id, name, cred.service_type);
             newImported.set(cred.id, { id: result.id, name: result.name });
           } catch (err) {
-            logger.error('Failed to import credential', { label: cred.label, error: describeError(err) });
+            logger.error('Failed to import credential', { label: cred.label, error: extractMessage(err) });
             hadError = true;
           }
           setImportingIds((prev) => {
@@ -153,7 +143,7 @@ export function useCredentialForaging() {
     selected,
     imported,
     importingIds,
-    error,
+    error: failure == null ? null : extractMessage(failure),
     partialImportError,
     scan,
     toggleSelect,

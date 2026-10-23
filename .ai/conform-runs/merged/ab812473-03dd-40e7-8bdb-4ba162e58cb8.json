@@ -1,0 +1,111 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ab812473-03dd-40e7-8bdb-4ba162e58cb8",
+  "subject": "model-routing",
+  "evaluatedAt": "2026-10-16T17:53:38Z",
+  "pairs": [
+    {
+      "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b",
+      "subject": "model-routing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/engine/src/failover.rs:770 silently filters blocked providers so an emptied chain never enters the loop and surfaces as the generic src-tauri/src/engine/runner/mod.rs:2401 message instead of policy-exhausted naming the eliminating rules; src-tauri/db/src/byom.rs:305 stores the edited policy as bare unversioned JSON that no audit row cites (src/lib/bindings/ProviderAuditEntry.ts:6) - re-verified 2026-10-16, runner anchor moved 2398->2401",
+      "techniques": [
+        {
+          "technique": "routing-policy",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/failover.rs:770 filter drops blocked candidates with no empty-chain check before src-tauri/src/engine/runner/mod.rs:2401 falls back to the circuit-breaker message - failure-not-empty-success unmet"
+        },
+        {
+          "technique": "policy-governance",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:161 applies the edit in place via src-tauri/db/src/byom.rs:305 settings::set with no version; src/lib/bindings/ProviderAuditEntry.ts:6 carries routing/compliance rule names but no policy version, so an audit cannot tell a violated rule from one that did not exist yet"
+        }
+      ],
+      "registryProposal": "Missing pairing: the code that actually makes routing decisions - src-tauri/engine/src/failover.rs (build_failover_chain_with_policy), the BYOM evaluator and src-tauri/src/engine/runner/mod.rs:2070 - is not paired with model-routing in any context; the map only reaches it through the settings UI context. A Rust engine context should carry model-routing at strong confidence."
+    },
+    {
+      "context": "ba0d4722-bfde-40aa-8e1d-52591719f834",
+      "subject": "model-routing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_lab/components/shared/ScenarioDetailPanel.tsx:155 only displays a result modelId; the context renders Lab results and makes no routing decision (no class, tier, effort or policy) - re-verified 2026-10-16",
+      "techniques": []
+    },
+    {
+      "context": "9fff7e41-4fc5-4c31-846b-c04ca1c79757",
+      "subject": "model-routing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/sub_incidents/components/IncidentsFilterBar.tsx:20 only lists provider_audit_log as an incident source kind; the inbox triages persisted failures and makes no routing decision - re-verified 2026-10-16",
+      "techniques": []
+    },
+    {
+      "context": "54236947-3775-4d0a-8e14-1a709dd4d8bc",
+      "subject": "model-routing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/teams/sub_factory/addKpiPrimitives.tsx:14 TIER_OPTS is KPI importance, not a capability tier; the Factory page routes no model calls - re-verified 2026-10-16",
+      "techniques": []
+    },
+    {
+      "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+      "subject": "model-routing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:5 routing here commits persona->persona chain triggers; no class, tier, effort, provider or model selection - re-verified 2026-10-16",
+      "techniques": []
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-16T17:53:38Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "model-routing"
+      ],
+      "techniques": [
+        "routing-policy",
+        "policy-governance"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-16T17:53:38Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "model-routing"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-16T17:53:38Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "model-routing"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-16T17:53:38Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "model-routing"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-16T17:53:38Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "model-routing"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

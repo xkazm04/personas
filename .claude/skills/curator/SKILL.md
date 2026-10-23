@@ -1,6 +1,6 @@
 ---
 name: curator
-version: 1.1.0
+version: 1.2.0
 description: Drive Curator's work loop from a terminal instead of from the Personas app - read her real ladder out of the same SQLite database, claim the next piece of work, spawn a headless Claude worker at it in the knowledge registry, judge what came back, settle it honestly, and keep going until the subscription's usage limit or a brake stops her. The alternative driver for while the app is closed or its fleet is unavailable. Invoke with `/curator` (status) or `/curator loop`.
 ---
 
@@ -37,7 +37,7 @@ queue before her plan. Two situations need it and both have happened: the app is
 owns the standing lane, or her plan is still the one projected from an older checkout and
 only the queue file is current.
 
-`next --engine conform,deepen,apply,reconcile` filters the PLAN lane the same way (skip, never reorder). `--engine conform` is the one that cannot publish registry content: `conform` workers run in this repo, write only their own run file under `.ai/conform-runs/` and are told never to commit or push, while `apply` and `deepen` workers commit in the registry and may push its default branch. Use it when the registry's `main` carries commits that are not Curator's.
+`next --engine conform,deepen,apply,reconcile` filters the PLAN lane the same way (skip, never reorder). `--engine conform` is the one that cannot publish registry content: `conform` workers run in this repo, write only their own run file under `.ai/conform-runs/` and are told never to commit or push (the DRIVER commits their merged result, below), while `apply` and `deepen` workers commit in the registry and may push its default branch. Use it when the registry's `main` carries commits that are not Curator's.
 
 `next --terminal-owns` waives ONLY the `curator_enabled` brake, for when the operator switched
 the app's tick off precisely so this terminal drives her (quiet hours and backpressure still
@@ -55,13 +55,17 @@ in THIS repo. **It never writes `.ai/registry-map.json`.** It writes ONE run fil
 lock, keeps the newer verdict when two disagree and records the older in
 `.ai/conform-detail.json`, refuses `unknown` and anchors on a blank line, appends the run's
 `consults` to `.ai/consults.jsonl`, and archives the file in `.ai/conform-runs/merged/`. A file
-merged twice changes nothing. The worker is told not to commit or push, so the operator reads
-and commits the map diff.
+merged twice changes nothing. The worker is told not to commit or push: the map only changes when the merger runs, and
+several workers share one checkout. Operator decision 2026-10-15: the DRIVER commits the result
+(`loop.py merge --only <dispatch-id>.json --commit`, and `run-pool` does it after every merge) on
+the current branch, never pushed, through `multi.commit_repo`'s isolated-index ritual.
 
 `conform` items are also filtered by scope: the scan ranks a subject without knowing which
 bundles this repo consumes, so `loop.py` skips any item whose domain is not in
 `.ai/manifest.yaml` `knowledge.domains` (an unreadable or absent declaration filters nothing).
 Measured 2026-10-05: `recruiting/candidate-consent-and-retention` idled for exactly this reason.
+
+`conform` items are also skipped when there is nothing left to judge (`conform_has_no_work`): the map lists no pair for the subject, or every pair already holds a verdict whose `evaluatedAgainst` equals the subject's digest in the registry's index right now. A fresh `deviation` does not lower a subject's projection score, so without this check a re-projection put subjects judged an hour earlier straight back on top. Measured 2026-10-16: pool 2's last 15 claims all declined "already judged against current subject digest", and `packaging`, which has no pairs here, kept being planned. The skip leaves the item planned and never settles it.
 
 There is **no bare worker form**: every pass goes through the ladder, because a run that
 picked its own subject would be a person using her credentials rather than her loop.
@@ -553,6 +557,16 @@ which merges, settles and claims the next. Settle every report before launching 
 follows a `node_modules` junction), LF checkouts, real installs so hooks run, explicit remote and branch on every push
 (stray branches were created on three origins by guessing), Personas to a named branch only.
 
+**Disk hygiene (v1.2.0, the part that cost 200 GB).** The 2026-10-14 night left 337 folders in `$WT_ROOT` in
+thirteen hours, about 200 GB: every claim's project clone with its own install, `.next` and cargo `target`, because
+`integrate.sh` removed the registry worktree on landing and nothing removed the clone. Now `fin.sh` reaps the
+claim's `cn<k>-*` entries right after settling, through the registry's disk lane
+(`scripts/hygiene-disk.mjs --reap`): a clone goes only when every commit is on its remotes and nothing but install
+noise is dirty, and whatever it keeps is printed with the reason. Workers build with `CARGO_INCREMENTAL=0` (a
+one-shot build gains nothing from an incremental cache) and put any separate target dir at `cn<k>-target`. Do not
+widen past what the disk can hold either: at ~1.2 GB a clone (153 GB over 127 of them, measured), 240 claims is
+most of the free drive if the reap stops working, so the end-of-night check below is not optional.
+
 **Width follows the machine, not a constant.** Before every refill run `node night/width.mjs --running <n>`. It
 counts free RAM against a reserve (a running worker is charged twice, it has not finished growing), stops dispatching above
 60% memory in use, and holds the width under the core budget minus any compiler processes sibling sessions are running.
@@ -570,7 +584,10 @@ in a worker's stream is how it shows.
    the code, never `census --update`. Copy the `.ai` conform map files in, commit, push, delete the merged branches.
 4. Sweep every origin for `cur/*` and `curator/*` branches (`git cherry` = patch-equivalent means merged); delete the
    merged ones; ship the stragglers (a flaky-gate commit sitting on a branch is the usual one).
-5. Report in the Ending-a-session order, plus what is still local-only.
+5. Leave the disk as you found it: `node $REGISTRY/scripts/hygiene-disk.mjs --scratch $WT_ROOT --idle-hours 0` and
+   read its `disk.md`. No `cn*` entry of tonight should remain except rows kept with a reason (unpushed work);
+   `--reap` the rest now that step 4 has pushed them, and list what stays in the report.
+6. Report in the Ending-a-session order, plus what is still local-only and how much disk the night still holds.
 
 ## Ending a session
 

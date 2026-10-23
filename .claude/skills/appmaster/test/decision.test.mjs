@@ -307,4 +307,41 @@ test('decide refuses to dispatch a charter (or an idea) a started run of an earl
   S.updateRun(running, { state: 'released' });
 });
 
+// delivery is a PARALLEL charter: two runs of it at once on disjoint paths (operator, 2026-10-18)
+const DCHARTERS = [{ slug: 'accepted-idea-delivery', priority: 1 }, { slug: 'technical-decision-capture', priority: null }];
+const dBrief = demoBrief(DCHARTERS);
+const del = (paths, over = {}) => ({ charterSlug: 'accepted-idea-delivery', reason: 'r', brief: 'b', ideaIds: [], paths, ...over });
+const dDecision = (wakeId, dispatch, defer = [{ charterSlug: 'technical-decision-capture', reason: 'nothing new' }]) =>
+  valid(wakeId, { dispatch, defer, asks: [], ideaVerdicts: [] });
+
+test('validateDecision: a parallel charter may be dispatched twice on disjoint paths, never also deferred', () => {
+  const c = { slug: 'demo', wakeId: 'w', brief: dBrief };
+  assert.deepEqual(V.validateDecision(dDecision('w', [del(['src/a/']), del(['src/b/'])]), c), { ok: true, errors: [] });
+  const overlap = V.validateDecision(dDecision('w', [del(['src/a/']), del(['src/a/x.ts'])]), c);
+  assert.ok(overlap.errors.some((e) => /overlapping paths/.test(e)), JSON.stringify(overlap.errors));
+  const deferredToo = V.validateDecision(dDecision('w', [del(['src/a/'])], [{ charterSlug: 'accepted-idea-delivery', reason: 'r' }, { charterSlug: 'technical-decision-capture', reason: 'r' }]), c);
+  assert.ok(deferredToo.errors.some((e) => /appears 2 times .*never also deferred/.test(e)), JSON.stringify(deferredToo.errors));
+  const notParallel = V.validateDecision(valid('w', { dispatch: [{ ...valid('w').dispatch[0], paths: ['a/'] }, { ...valid('w').dispatch[0], paths: ['b/'] }], defer: valid('w').defer }), ctx('w'));
+  assert.ok(notParallel.errors.some((e) => /codebase-architecture-review" appears 2 times/.test(e)), 'other charters stay once per wake');
+});
+
+test('decide: a delivery may run beside its own live run on disjoint paths, and waits when they may overlap', async () => {
+  S.saveBrief('demo', dBrief);
+  const running = S.saveRun({ ...S.newRun(project, { wakeId: 'w-earlier-d', charterSlug: 'accepted-idea-delivery', reason: 'r', brief: 'b', ideaIds: [], model: 'm', paths: ['src/a/'] }), state: 'running' });
+  try {
+    const w1 = newWake();
+    const ok = await V.cmdDecide({ flags: { project: 'demo', wake: w1, file: writeFile('d-par-ok.json', dDecision(w1, [del(['src/b/'])])) } });
+    assert.equal(ok.runIds.length, 1);
+    S.updateRun(S.loadRun('demo', ok.runIds[0]), { state: 'released' });
+    const w2 = newWake();
+    await assert.rejects(V.cmdDecide({ flags: { project: 'demo', wake: w2, file: writeFile('d-par-clash.json', dDecision(w2, [del(['src/a/x.ts'])])) } }), (e) => {
+      assert.ok(e.extra.errors.some((x) => /accepted-idea-delivery already has live run .* not provably disjoint/.test(x)), JSON.stringify(e.extra.errors));
+      return true;
+    });
+  } finally {
+    S.updateRun(running, { state: 'released' });
+    S.saveBrief('demo', brief);
+  }
+});
+
 test('cleanup', () => { fs.rmSync(env.tmp, { recursive: true, force: true }); });

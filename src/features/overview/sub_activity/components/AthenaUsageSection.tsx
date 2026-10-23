@@ -10,6 +10,7 @@ import { useScaledFontSize } from '@/stores/themeStore';
 import { fmtCost, fmtDate } from '../libs/executionMetricsHelpers';
 import { ChartTooltipContent } from './MetricsCards';
 import { useAthenaUsage } from '../libs/useAthenaUsage';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 // Stable tooltip element — Recharts compares by reference identity.
 const TOOLTIP_CONTENT = <ChartTooltipContent />;
@@ -22,8 +23,10 @@ const COST_AXIS_FORMATTER = (v: number) => `$${v.toFixed(2)}`;
  * `companion_get_usage_dashboard` via {@link useAthenaUsage}.
  */
 interface AthenaUsageSectionProps {
-  /** Fleet total cost for the same window — the headline comparison. */
-  fleetCost: number;
+  /** Fleet total cost for the same window — the headline comparison. Null
+   *  while the fleet figure is not known (loading or failed): the comparison
+   *  is then withheld rather than drawn against a $0 fleet. */
+  fleetCost: number | null;
 }
 
 /** Friendly label for a (origin, triggerKind) action bucket. */
@@ -51,7 +54,7 @@ function useActionLabel() {
 
 export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }: AthenaUsageSectionProps) {
   const { t, tx, language } = useTranslation();
-  const { data, loading } = useAthenaUsage();
+  const { data, loading, error, reload } = useAthenaUsage();
   const sf = useScaledFontSize();
   const actionLabel = useActionLabel();
   const a = t.overview.athena;
@@ -92,6 +95,9 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
             />
           ))}
         </div>
+      ) : error && !loading ? (
+        // A failed read is not "Athena did nothing": say it failed.
+        <InlineErrorBanner compact message={t.overview.observability.error_recovery.panel_failed} onRetry={reload} />
       ) : !hasActivity ? (
         <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-6 text-center">
           <Bot className="w-5 h-5 text-foreground mx-auto mb-1.5" />
@@ -120,6 +126,7 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
           </div>
 
           {/* Athena vs fleet headline */}
+          {fleetCost !== null && (
           <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-3 space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="typo-body text-foreground">{a.vs_fleet}</span>
@@ -134,6 +141,7 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
               />
             </div>
           </div>
+          )}
 
           {/* Cost by action type */}
           {topActions.length > 0 && (

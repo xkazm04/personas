@@ -8,7 +8,7 @@ import { PeerDetailDrawer } from './PeerDetailDrawer';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 
 const logger = createLogger("peer-list");
@@ -54,7 +54,7 @@ export function PeerList() {
       await connectToPeer(peerId);
       addToast(st.peer_connected_toast, 'success');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       logger.warn('Failed to connect to peer', { peerId, error: msg });
       addToast(st.peer_connect_failed_toast, 'error');
     } finally {
@@ -71,7 +71,7 @@ export function PeerList() {
       await disconnectPeer(peerId);
       addToast(st.peer_disconnected_toast, 'success');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractMessage(err);
       logger.warn('Failed to disconnect', { peerId, error: msg });
       addToast(st.peer_disconnect_failed_toast, 'error');
     }

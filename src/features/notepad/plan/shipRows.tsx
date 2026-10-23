@@ -11,7 +11,7 @@
 import type { ReactNode } from 'react';
 import { CircleDashed, CirclePlus, Target } from 'lucide-react';
 
-import { goalStatusMeta } from '@/features/teams/sub_goals/goalStatus';
+import { goalStatusMeta } from '@/features/projects/development/goals/goalStatus';
 
 import { PLAN_INK } from './planInk';
 import { motion, useReducedMotion } from 'framer-motion';

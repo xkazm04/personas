@@ -1,7 +1,7 @@
 /**
- * The `decisionSurface` setting drives every counts reader without a reload:
- * under `chips` nothing reads the lanes snapshot; flipped to `lanes`, the same
- * mounted reader reads it once and names the lane total.
+ * Every counts reader reads the lanes snapshot (the lanes are the only
+ * decision surface since the mandate-lanes cutover, WP10) and names the lane
+ * total once the first read settles; never a premature 0 before it.
  */
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -53,36 +53,39 @@ beforeEach(() => {
   resetPendingCountsSource();
   resetDecisionCountsSource();
   resetLanesSnapshotSource();
-  useSystemStore.setState({ pendingCounts: null, undispatchedIdeas: null, decisionSurface: 'chips' });
+  useSystemStore.setState({ pendingCounts: null, undispatchedIdeas: null });
   useAgentStore.setState({ buildSessions: {} });
   mockPendingCounts.mockResolvedValue(pendingCounts());
   mockUndispatched.mockResolvedValue([]);
   mockSnapshot.mockResolvedValue(SNAP);
 });
 
-describe('lane counts under the decisionSurface setting', () => {
-  it('reads nothing under chips, then the lane total once switched to lanes', async () => {
+describe('lane counts', () => {
+  it('names no lane total before the first snapshot read settles, then the total', async () => {
+    let land: (s: DecisionLanesSnapshot) => void = () => undefined;
+    mockSnapshot.mockReturnValue(new Promise<DecisionLanesSnapshot>((r) => { land = r; }));
     const { result } = renderHook(() => useDecisionCounts());
-    act(() => result.current.refreshCounts());
-    await waitFor(() => expect(result.current.counts.backlog.n).toBe(7));
-    expect(result.current.lanes).toBeNull();
     expect(result.current.laneTotal).toBeNull();
-    expect(mockSnapshot).not.toHaveBeenCalled();
-
-    act(() => useSystemStore.setState({ decisionSurface: 'lanes' }));
-    await waitFor(() => expect(result.current.lanes?.accept.n).toBe(1));
+    act(() => land(SNAP));
+    await waitFor(() => expect(result.current.lanes.accept.n).toBe(1));
     // breach 1 review; accept 1 report; talk 2 chat. Orphans are not in the total.
     expect(result.current.laneTotal).toBe(4);
-    expect(result.current.lanes?.orphan.n).toBe(1);
-    // The chip total is untouched by the switch.
-    expect(result.current.total).toBeGreaterThan(0);
+    expect(result.current.lanes.orphan.n).toBe(1);
+  });
+
+  it('a refresh re-reads the snapshot with the chip counts', async () => {
+    const { result } = renderHook(() => useDecisionCounts());
+    await waitFor(() => expect(result.current.laneTotal).toBe(4));
+    const reads = mockSnapshot.mock.calls.length;
+    act(() => result.current.refreshCounts());
+    await waitFor(() => expect(result.current.counts.backlog.n).toBe(7));
+    expect(mockSnapshot.mock.calls.length).toBeGreaterThan(reads);
   });
 
   it('a failed snapshot read is failed, never zero', async () => {
     mockSnapshot.mockRejectedValue(new Error('no db'));
-    useSystemStore.setState({ decisionSurface: 'lanes' });
     const { result } = renderHook(() => useDecisionCounts());
-    await waitFor(() => expect(result.current.lanes?.breach.failed).toBe(true));
-    expect(result.current.lanes?.talk.failed).toBe(false);
+    await waitFor(() => expect(result.current.lanes.breach.failed).toBe(true));
+    expect(result.current.lanes.talk.failed).toBe(false);
   });
 });

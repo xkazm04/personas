@@ -9,6 +9,6 @@ import type { FleetBenchmark } from '../libs/useLeaderboardData';
 export interface LeaderboardViewProps {
   leaderboard: LeaderboardEntry[];
   fleetBenchmark: FleetBenchmark | null;
-  fleetAvgScore: number;
+  fleetAvgScore: number | null;
   onNavigateToAgent: (personaId: string) => void;
 }

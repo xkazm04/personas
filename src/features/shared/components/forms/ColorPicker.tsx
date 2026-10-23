@@ -135,6 +135,7 @@ export function ColorPicker({ value, onChange, size = 'md', ...fieldProps }: Col
       <div className="flex items-center gap-2">
         <input
           type="color"
+          aria-label={t.shared.forms_extra.choose_color}
           value={HEX_RE.test(value) ? value : DEFAULT_PERSONA_COLOR}
           onChange={(e) => onChange(e.target.value)}
           className={`${s.nativeInput} rounded-lg cursor-pointer border border-primary/15 bg-transparent`}

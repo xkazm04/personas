@@ -6,9 +6,10 @@
 // Queue / Deploy now, and "queue for all N projects that need this" batch.
 //
 // When the Database and Monitoring rows were given their own modals they
-// stopped routing to that popover — and silently lost all five features.
-// Extracting the body means a modal can carry it verbatim instead of
-// re-implementing a worse version; `DeployPopover` is now the shell plus this.
+// stopped routing to that popover. The body was extracted so a modal COULD
+// carry it verbatim; today only `DeployPopover` mounts it (the shell plus
+// this). Monitoring reaches the same operations via `useImproveActions`, and
+// the Database row has no action, ladder or connector spec to show.
 //
 // The OPERATIONS live in `useImproveActions`, not here — Console v2 renders the
 // same ones in the modal's own visual language, and "queue for all N projects"

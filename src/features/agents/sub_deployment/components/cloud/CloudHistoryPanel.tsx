@@ -14,13 +14,15 @@ import { formatDuration, formatCost, classifyExecutionStatus, matchesErrorCluste
 import { formatNumeric } from '@/lib/utils/formatters';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { Button } from '@/features/shared/components/buttons';
 
 const EXEC_CASCADE_ROWS = 14;
+/** Page size requested from the orchestrator; a full page means older runs may exist. */
+const EXEC_PAGE_LIMIT = 50;
 
 const SUCCESS_CARD_COLOR = { success: 'emerald', warning: 'amber', error: 'red' } as const;
 /** No runs in the window (null rate) renders neutral, not as the red alarm. */
@@ -77,7 +79,7 @@ export function CloudHistoryPanel() {
     setIsLoading(true);
     try {
       const [execs, st] = await Promise.all([
-        cloudListExecutions(filterPersona || undefined, filterStatus || undefined, 50),
+        cloudListExecutions(filterPersona || undefined, filterStatus || undefined, EXEC_PAGE_LIMIT),
         cloudExecutionStats(filterPersona || undefined, period),
       ]);
       if (!latestWins.isCurrent(seq)) return;
@@ -144,9 +146,10 @@ export function CloudHistoryPanel() {
       evictCache();
       setOutputMap((prev) => ({ ...prev, [execId]: { lines, loading: false } }));
     } catch (e) {
+      silentCatch('features/deployment/components/cloud/CloudHistoryPanel:output')(e);
       setOutputMap((prev) => ({
         ...prev,
-        [execId]: { lines: [], loading: false, error: e instanceof Error ? e.message : t.deployment.history.fetch_output_failed },
+        [execId]: { lines: [], loading: false, error: extractMessage(e) || t.deployment.history.fetch_output_failed },
       }));
     } finally {
       fetchingRef.current.delete(execId);
@@ -203,6 +206,14 @@ export function CloudHistoryPanel() {
   const visibleExecutions = errorCluster
     ? executions.filter((e) => matchesErrorCluster(e, errorCluster))
     : executions;
+  // A full page against a larger stats total means the list is a window, not
+  // the history. The stats total ignores the status filter and the error
+  // drill-down, so the cue is shown only when neither narrows the list.
+  const statsTotal = stats ? Number(stats.totalExecutions) : 0;
+  const windowTotal =
+    !filterStatus && !errorCluster && executions.length >= EXEC_PAGE_LIMIT && statsTotal > executions.length
+      ? statsTotal
+      : null;
   const clearFilters = () => {
     setFilterPersona('');
     setFilterStatus('');
@@ -395,6 +406,11 @@ export function CloudHistoryPanel() {
       ) : (
         <div className="space-y-1">
           <SectionHeading className="typo-caption mb-2">{dt.history.execution_history} ({visibleExecutions.length})</SectionHeading>
+          {windowTotal != null && (
+            <p className="typo-caption text-foreground mb-2" data-testid="cloud-history-window">
+              {tx(t.overview.execution_list.showing, { count: executions.length, total: windowTotal })}
+            </p>
+          )}
           {visibleExecutions.map((exec, index) => (
             // One-shot entrance cascade; rows past the first viewport render
             // plainly (folded into hasEntered); entered ids never replay.

@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
+import { useAthenaStore } from '@/features/companions/athena/athenaStore';
+
 import {
+  markRowResolvedLocally,
   noteSuggestionCards,
+  openSuggestionCountFor,
   parseNoteSuggestionRows,
   pendingSuggestionsFor,
 } from '../athena/noteSuggestions';
@@ -118,5 +122,70 @@ describe('pendingSuggestionsFor', () => {
 
   it('returns nothing when no note is selected', () => {
     expect(pendingSuggestionsFor(cards, null)).toEqual([]);
+  });
+});
+
+/**
+ * The local projection of a resolved row. Accepting one block must take only
+ * that block off the note: its siblings on the same card are still Athena's
+ * open proposals, and the ask-wait baseline counts them.
+ */
+describe('markRowResolvedLocally', () => {
+  const seed = () =>
+    useAthenaStore.setState({
+      chatCards: [
+        {
+          id: 'card-1',
+          kind: 'note_suggestions',
+          config: {
+            note_id: 'n1',
+            note_title: 'A',
+            rows: [
+              { row_id: 'r1', kind: 'section', anchor: null, body_md: 'one', outcome: null },
+              { row_id: 'r2', kind: 'edit', anchor: null, body_md: 'two', outcome: null },
+            ],
+          },
+        },
+        {
+          id: 'card-2',
+          kind: 'note_suggestions',
+          config: {
+            note_id: 'n1',
+            note_title: 'A',
+            rows: [{ row_id: 'r1', kind: 'question', anchor: null, body_md: 'same id, other card', outcome: null }],
+          },
+        },
+      ],
+    });
+
+  it('resolves the one row on the one card and leaves every sibling open', () => {
+    seed();
+    expect(openSuggestionCountFor('n1')).toBe(3);
+
+    markRowResolvedLocally('card-1', 'r1', 'accepted');
+
+    const cards = noteSuggestionCards(useAthenaStore.getState().chatCards);
+    expect(cards[0]?.rows.map((r) => [r.rowId, r.outcome])).toEqual([
+      ['r1', 'accepted'],
+      ['r2', null],
+    ]);
+    expect(cards[1]?.rows[0]?.outcome).toBeNull();
+    expect(openSuggestionCountFor('n1')).toBe(2);
+
+    // Same row id on another card: only that card moves.
+    markRowResolvedLocally('card-2', 'r1', 'rejected');
+    const after = noteSuggestionCards(useAthenaStore.getState().chatCards);
+    expect(after[1]?.rows.map((r) => [r.rowId, r.bodyMd, r.outcome])).toEqual([
+      ['r1', 'same id, other card', 'rejected'],
+    ]);
+    expect(after[0]?.rows.map((r) => r.outcome)).toEqual(['accepted', null]);
+    expect(openSuggestionCountFor('n1')).toBe(1);
+  });
+
+  it('changes nothing for a card that is not in the transcript', () => {
+    seed();
+    const before = useAthenaStore.getState().chatCards;
+    markRowResolvedLocally('card-gone', 'r1', 'rejected');
+    expect(useAthenaStore.getState().chatCards).toEqual(before);
   });
 });

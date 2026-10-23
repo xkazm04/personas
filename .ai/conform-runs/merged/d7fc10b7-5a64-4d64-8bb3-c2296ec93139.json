@@ -1,0 +1,18 @@
+{"schema":"conform-run/1","worker":"d7fc10b7-5a64-4d64-8bb3-c2296ec93139","subject":"terminal-multiplexing","evaluatedAt":"2026-10-21T12:22:32Z",
+"pairs":[
+{"context":"2de6333f-8375-404b-8fdc-fe0fb15d4f95","subject":"terminal-multiplexing","bundle":"software-engineering","state":"deviation",
+ "evidence":"src-tauri/src/commands/fleet/commands.rs:201 fleet_write_input still infers paste-vs-press from payload shape (len>1 and trailing newline), so a multi-line payload without a trailing newline is written raw and each internal newline submits a partial prompt; re-verified 2026-10-21, unchanged since 2026-10-16",
+ "techniques":[{"technique":"keystroke-injection","verdict":"deviation","evidence":"src-tauri/src/commands/fleet/keys.rs:88 parse_plan, the one key-notation authority that would make paste and press separate verbs, still has no production caller (keys.rs:87 cfg_attr(not(test), allow(dead_code)))"}]},
+{"context":"4bdc9d46-06f1-4eb7-98f5-f6546aa5ef6e","subject":"terminal-multiplexing","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/plugins/fleet/FleetBroadcastModal.tsx:138 an Enter-off multi-line broadcast is sent as raw text and src-tauri/src/commands/fleet/commands.rs:201 frames only newline-terminated payloads, so each internal newline submits a partial prompt; still live 2026-10-21 after ten fleet commits since 10-16",
+ "techniques":[{"technique":"keystroke-injection","verdict":"deviation","evidence":"src/features/plugins/fleet/FleetBroadcastModal.tsx:138 paste and press are one concatenated write chosen by a toggle, not two verbs through one notation door"}]},
+{"context":"d7525012-ab19-4b29-99bb-0d4b6b9e084b","subject":"terminal-multiplexing","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/plugins/fleet/__tests__/FleetBroadcastModal.test.tsx:122 and src/features/plugins/fleet/__tests__/SkillLibraryDrawer.test.tsx:124 assert one write of text + CR as the submit contract, and src/features/plugins/fleet/__tests__/FleetBroadcastPayload.test.tsx:115 asserts the unframed 'draft\nonly' payload, freezing the defect rather than a framed paste",
+ "techniques":[{"technique":"keystroke-injection","verdict":"deviation","evidence":"src/features/plugins/fleet/__tests__/FleetBroadcastPayload.test.tsx:115 the Enter-off multi-line send is pinned as raw text, not a bracketed paste"}]}
+],
+"declined":[{"subject":"terminal-multiplexing","context":"06ef5a64-1796-4637-a4d9-f860bbe67562","reason":"recipes-playground has no code to read: its context-map file_paths are empty and git ls-files finds no RecipePlaygroundModal/useRecipeTestRunner/RecipeOutputSection (deleted by 450f1c9e5c 'delete the never-mounted recipe manager tree'); a verdict needs an anchor that resolves, so it is left for the context rescan to retire"}],
+"consults":[
+{"ts":"2026-10-21T12:22:32Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":1},
+{"ts":"2026-10-21T12:22:32Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":1},
+{"ts":"2026-10-21T12:22:32Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":["keystroke-injection"],"deviations":1}
+]}

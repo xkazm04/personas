@@ -37,6 +37,8 @@ pub mod doc_status;
 /// The Features page's ONE read: every context's role, every feature's council
 /// and scenarios, joined in memory from bulk reads rather than per feature.
 pub mod feature_board;
+/// `dev_goals.met_when` read side: a mandate intent's conditions for "met".
+pub mod goal_met_when;
 /// `dev_goals`, `dev_goal_signals`, `dev_goal_items`, `dev_goal_dependencies`.
 pub mod goals;
 /// `dev_ideas.plan` — the execution plan an analysing model left for an
@@ -45,6 +47,9 @@ pub mod goals;
 pub mod ideas;
 /// `dev_kpis`, `dev_kpi_measurements`, `dev_kpi_bindings`.
 pub mod kpis;
+/// The lens-scan store, read side: a product repo's `.ai/lens-scan/scan.db`, opened
+/// read-only in place (spark one-control, WP2). Writes belong to lens-scan's `store.mjs`.
+pub mod lens_scan;
 /// `dev_lifecycle_versions` and `dev_lifecycle_evidence` - Lifecycle v2: each
 /// project's versioned development practice and the per-task evidence of it.
 pub mod lifecycle;

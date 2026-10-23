@@ -7,9 +7,10 @@ import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import { useTranslation } from '@/i18n/useTranslation';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { ConnectorStatus, ConnectorReadiness, ConnectorTestResult } from './connectorTypes';
-import { deriveReadiness, restoreHealthcheck, isStaleResult } from './connectorTypes';
+import { deriveReadiness, restoreHealthcheck, isStaleResult, isUnreachable, summarizeTestAll } from './connectorTypes';
 
 export function useConnectorStatuses() {
   const { t, tx } = useTranslation();
@@ -22,6 +23,9 @@ export function useConnectorStatuses() {
   const [statuses, setStatuses] = useState<ConnectorStatus[]>([]);
   const [testingAll, setTestingAll] = useState(false);
   const inFlightTestsRef = useRef<Set<string>>(new Set());
+  // Persona epoch: bumped on every persona switch so a probe still in flight for
+  // the previous persona cannot paint its result onto the new persona's same-named row.
+  const personaEpochRef = useRef(createLatestWins());
   const lastAutoTestedCredentialRef = useRef<Map<string, string>>(new Map());
 
   const tools = useMemo(() => selectedPersona?.tools ?? [], [selectedPersona?.tools]);
@@ -45,10 +49,16 @@ export function useConnectorStatuses() {
   // even when a perfectly viable candidate sat in the vault.
   const credentialsByServiceType = useMemo(() => {
     const map = new Map<string, (typeof credentials)[number]>();
+    // Newest wins, matching the runner (`get_by_service_type ... ORDER BY
+    // created_at DESC`, then `.first()`). Taking the first in store order made the
+    // row name and auto-test a credential the run never injects whenever the
+    // store list was not newest-first (an optimistic create appends).
+    const newer = (a: (typeof credentials)[number] | undefined, b: (typeof credentials)[number]) =>
+      !a || (b.created_at ?? '') > (a.created_at ?? '');
     for (const cred of credentials) {
-      if (!map.has(cred.service_type)) map.set(cred.service_type, cred);
+      if (newer(map.get(cred.service_type), cred)) map.set(cred.service_type, cred);
       for (const tag of connectorCategoryTags(cred.service_type)) {
-        if (!map.has(tag)) map.set(tag, cred);
+        if (newer(map.get(tag), cred)) map.set(tag, cred);
       }
     }
     return map;
@@ -60,12 +70,28 @@ export function useConnectorStatuses() {
     return map;
   }, [credentials]);
 
+  // Which persona the current rows were built for. The hook stays mounted
+  // across a persona switch (the Connectors sub-tab is not keyed by persona),
+  // so rows carried over by connector NAME handed persona B persona A's
+  // credential, name and result for every connector the two share.
+  const builtForPersonaRef = useRef<string | null>(null);
+  const personaId = selectedPersona?.id ?? null;
+
   // Build connector statuses
   useEffect(() => {
+    const samePersona = builtForPersonaRef.current === personaId;
+    builtForPersonaRef.current = personaId;
     if (requiredCredTypes.length === 0) { setStatuses([]); return; }
     setStatuses((prev) => {
       const prevByName = new Map<string, ConnectorStatus>();
-      for (const p of prev) prevByName.set(p.name, p);
+      if (samePersona) {
+        for (const p of prev) {
+          // A row whose credential left the vault is not carried either: it
+          // kept naming (and testing) a credential that no longer exists.
+          if (p.credentialId && !credentialsByIdMap.has(p.credentialId)) continue;
+          prevByName.set(p.name, p);
+        }
+      }
 
       return requiredCredTypes.map((credType) => {
         const matchedCred = credentialsByServiceType.get(credType) ?? null;
@@ -91,17 +117,33 @@ export function useConnectorStatuses() {
           credentialName: existing?.credentialName ?? linkedCred?.name ?? matchedCred?.name ?? null,
           testing: existing?.testing ?? false,
           result: existing?.result ?? restoreHealthcheck(resolvedCred),
+          lastVerdict: existing?.lastVerdict ?? null,
           linkError: existing?.linkError ?? null,
         };
       });
     });
-  }, [requiredCredTypes, credentials, credentialLinks, credentialsByServiceType, credentialsByIdMap]);
+  }, [personaId, requiredCredTypes, credentials, credentialLinks, credentialsByServiceType, credentialsByIdMap]);
 
-  useEffect(() => { void fetchCredentials().catch(toastCatch("useConnectorStatuses:initialFetchCredentials", "Failed to load credentials. Connector statuses may be incomplete.")); }, [fetchCredentials]);
+  // The vault slice exposes no loaded flag, so an empty list cannot tell "none"
+  // from "not yet". Track the first fetch here: until it settles an empty vault
+  // must not read as N missing connectors (the amber "execution blocked" banner
+  // flashed on every cold mount). A non-empty list is already proof of a load.
+  const [fetchSettled, setFetchSettled] = useState(false);
+  const credentialsLoaded = fetchSettled || credentials.length > 0;
+  useEffect(() => {
+    let live = true;
+    // A failed fetch is reported by toastCatch (it tells the user statuses may be
+    // incomplete); either way the attempt is over, so the claim can be shown.
+    void fetchCredentials()
+      .catch(toastCatch("useConnectorStatuses:initialFetchCredentials", "Failed to load credentials. Connector statuses may be incomplete."))
+      .finally(() => { if (live) setFetchSettled(true); });
+    return () => { live = false; };
+  }, [fetchCredentials]);
 
   useEffect(() => {
     lastAutoTestedCredentialRef.current.clear();
     inFlightTestsRef.current.clear();
+    personaEpochRef.current.next();
   }, [selectedPersona?.id]);
 
   const updateStatus = useCallback((name: string, updates: Partial<ConnectorStatus>) => {
@@ -115,20 +157,34 @@ export function useConnectorStatuses() {
   const testConnector = useCallback(async (name: string, credentialId: string): Promise<ConnectorTestResult | null> => {
     if (inFlightTestsRef.current.has(name)) return null;
     inFlightTestsRef.current.add(name);
-    updateStatus(name, { testing: true, result: null });
+    const epoch = personaEpochRef.current;
+    const token = epoch.current();
+    // Clearing `result` for the spinner must not lose the last real verdict: keep
+    // it aside, so an unreachable attempt can be shown beside it.
+    setStatuses((prev) => prev.map((s) => {
+      if (s.name !== name) return s;
+      const verdict = s.result && !isUnreachable(s.result) ? s.result : s.lastVerdict ?? null;
+      return { ...s, testing: true, result: null, lastVerdict: verdict };
+    }));
     try {
       const result = await healthcheckCredential(credentialId);
-      updateStatus(name, { testing: false, result });
+      if (epoch.isCurrent(token)) {
+        // A real verdict supersedes the kept one; an unreachable attempt does not.
+        updateStatus(name, isUnreachable(result)
+          ? { testing: false, result }
+          : { testing: false, result, lastVerdict: null });
+      }
       return result;
     } catch (err) {
       const result: ConnectorTestResult = {
         success: false,
         message: err instanceof Error ? err.message : t.agents.connectors.test_healthcheck_failed_default,
       };
-      updateStatus(name, { testing: false, result });
+      if (epoch.isCurrent(token)) updateStatus(name, { testing: false, result });
       return result;
     } finally {
-      inFlightTestsRef.current.delete(name);
+      // A switch already cleared the set; the name may now belong to the new persona's probe.
+      if (epoch.isCurrent(token)) inFlightTestsRef.current.delete(name);
     }
   }, [healthcheckCredential, updateStatus, t]);
 
@@ -176,7 +232,7 @@ export function useConnectorStatuses() {
     // CHANGED. Restored healthchecks make this baseline free — before they were
     // persisted there was nothing to diff against, so the notification could
     // only ever say "tested N connectors", which tells the user nothing.
-    const baseline = new Map(testable.map((s) => [s.name, s.result?.success ?? null]));
+    const baseline = new Map(testable.map((s) => [s.name, s.result]));
     try {
       const outcomes = await Promise.all(
         testable.map(async (status) => ({
@@ -185,26 +241,17 @@ export function useConnectorStatuses() {
         })),
       );
 
-      let recovered = 0;
-      let regressed = 0;
-      let failing = 0;
-      for (const { name, result } of outcomes) {
-        if (!result) continue;
-        const before = baseline.get(name) ?? null;
-        if (result.success) {
-          if (before === false) recovered++;
-        } else if (before === true) {
-          regressed++;
-        } else {
-          failing++;
-        }
-      }
+      // Verdicts only: an unreachable probe (success === false, but no verdict)
+      // used to count as "newly failing" against a passing baseline. It is
+      // reported on its own ("N couldn't be reached") instead.
+      const { recovered, regressed, failing, unreachable } = summarizeTestAll(outcomes, baseline);
 
       const persona = selectedPersona?.name ?? t.agents.connectors.test_persona_fallback;
       const parts: string[] = [];
       if (recovered > 0) parts.push(tx(t.agents.connectors.test_diff_recovered, { count: recovered }));
       if (regressed > 0) parts.push(tx(t.agents.connectors.test_diff_regressed, { count: regressed }));
       if (failing > 0) parts.push(tx(t.agents.connectors.test_diff_failing, { count: failing }));
+      if (unreachable > 0) parts.push(tx(t.agents.connectors.test_diff_unreachable, { count: unreachable }));
 
       sendAppNotification(
         t.agents.connectors.test_complete_notification_title,
@@ -235,6 +282,9 @@ export function useConnectorStatuses() {
       // and reported success, and the link was gone on the next mount.
       const outcome = await mutateCredentialLink(selectedPersona.id, connectorName, credentialId);
       if (!outcome.applied) {
+        // The queue resolves rather than throws, so this is the only place the
+        // lost write can be counted; the row's linkError reaches no telemetry.
+        silentCatch('useConnectorStatuses:linkCredential')(new Error(outcome.reason));
         // Revert optimistic update -- the link was never persisted
         setStatuses((prev) =>
           prev.map((s) =>
@@ -256,11 +306,14 @@ export function useConnectorStatuses() {
 
   const readinessCounts = useMemo(() => {
     const counts: Record<ConnectorReadiness, number> = {
-      unlinked: 0, linked_untested: 0, healthy: 0, unverifiable: 0, unhealthy: 0,
+      unlinked: 0, linked_untested: 0, healthy: 0, unverifiable: 0, unreachable: 0, unhealthy: 0,
     };
     for (const s of statuses) counts[deriveReadiness(s)]++;
+    // Before the vault has loaded every link resolves to null: that is "unknown",
+    // not "missing", so no count may claim execution is blocked yet.
+    if (!credentialsLoaded) counts.unlinked = 0;
     return counts;
-  }, [statuses]);
+  }, [statuses, credentialsLoaded]);
 
   /** Rows whose only evidence is a restored healthcheck older than the cutoff. */
   const staleCount = useMemo(
@@ -276,6 +329,7 @@ export function useConnectorStatuses() {
     credentials,
     testingAll,
     readinessCounts,
+    credentialsLoaded,
     fetchCredentials,
     testConnector,
     handleTestAll,

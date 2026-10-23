@@ -15,7 +15,7 @@ import { ArrowUp, Sparkles } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { Translations } from '@/i18n/generated/types';
-import { goalStatusLabel, goalStatusMeta } from '@/features/teams/sub_goals/goalStatus';
+import { goalStatusLabel, goalStatusMeta } from '@/features/projects/development/goals/goalStatus';
 import { deriveCutTally } from '@/lib/milestone/shipDerive';
 import {
   bucketLabel,

@@ -1,0 +1,31 @@
+{"schema": "conform-run/1", "worker": "39030afc-d468-4b92-8e28-a27e7f78deab", "subject": "native-shell-integration",
+ "evaluatedAt": "2026-10-21T12:39:42Z",
+ "pairs": [
+  {"context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394", "subject": "native-shell-integration", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:85 spawns a claude session with the renderer-supplied root_path as cwd; fleet_spawn_session (src-tauri/src/commands/fleet/commands.rs:33) takes any string with no require_auth and admission only checks non-empty (src-tauri/src/commands/fleet/queue.rs:1101), so the less trusted side chooses where an executing process runs - re-confirmed 2026-10-21, prior anchor :84 was one line high",
+   "techniques": [{"technique": "native-side-owns-the-target-set", "verdict": "deviation", "evidence": "src-tauri/src/commands/fleet/queue.rs:1101 the only bound on the executing command's working directory is non-emptiness; rule five's fallback (a project root the native side resolved from its own records) is not taken"}]},
+  {"context": "35c52f59-9612-47c4-8662-0ebb3c821771", "subject": "native-shell-integration", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/features/notepad/notepadActions.ts:162 sends project.root_path as the write root to fleet_write_dispatch_brief, whose native side only checks is_dir (src-tauri/src/commands/fleet/external.rs:93) before writing under it, so a corrupted renderer picks any directory on disk - while :176 of the same function already sends project.id and lets the native side resolve the root; re-confirmed 2026-10-21",
+   "techniques": [{"technique": "native-side-owns-the-target-set", "verdict": "deviation", "evidence": "src-tauri/src/commands/fleet/external.rs:93 the write root is a renderer string tested only for being a directory; resolve_inside bounds the relative path but not the root (rule one: send an identity, not a target)"}]},
+  {"context": "876c0b4e-6472-4544-a21b-56e7529fb6b3", "subject": "native-shell-integration", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:553 kb_ingest_files gates renderer-supplied paths only with a deny-list of sensitive prefixes (validate_path_safety), so any unlisted location is ingested and made searchable; the extension allow-list is applied only later, after the read (src-tauri/engine/src/chunker.rs:339) - re-anchored from the chunker to the real gate",
+   "techniques": [{"technique": "native-side-owns-the-target-set", "verdict": "deviation", "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:553 a deny-list is the gate rather than the backstop (rule two); and :612 kb_ingest_directory lets caller-supplied patterns replace the native extension allow-list, so the positive rule is the caller's"}]},
+  {"context": "107445f8-c266-4671-8160-f854bd79319e", "subject": "native-shell-integration", "bundle": "software-engineering", "state": "deviation",
+   "evidence": "src/hooks/utility/data/useAutoUpdater.ts:207 the 6-hourly update poller is skipped only in DEV, not on a mobile build where the updater plugin is compiled out (src-tauri/Cargo.toml:268 ties it to the desktop feature), so the absent capability is called every 6h and filed as a failure via silentCatch at :123 - Sentry noise indistinguishable from a dead update endpoint",
+   "techniques": [
+     {"technique": "capability-presence-contract", "verdict": "deviation", "evidence": "src/hooks/utility/data/useAutoUpdater.ts:207 the compile-out (src-tauri/Cargo.toml:268) is not mirrored by a declared presence class the hook reads; the build and the frontend disagree, which the technique names as the failure of compiling out without declaring the class"},
+     {"technique": "native-owned-stream", "verdict": "not-applicable", "evidence": "src/hooks/utility/data/useAutoUpdater.ts:208 the context owns a timed 6-hourly poll, not a long-lived stream; no subscriber here waits on frames"}],
+   "registryProposal": "useEngineCapabilities.ts:68 leaves the installed-providers set empty when the local health check rejects (unknown read as absent). That is unknown-is-not-a-value, but the capability is an external executable, which the golden path routes to a different subject; the subject could name which subject owns 'installed-tool presence' so the next judge does not have to guess"}
+ ],
+ "declined": [
+  {"subject": "native-shell-integration", "context": "511ca12f-50df-4941-84e1-e2d74a3dff85", "reason": "weak context with no paths; a coverage question, not a pair to judge"},
+  {"subject": "native-shell-integration", "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91", "reason": "map row carries no paths; outside this run's budget"},
+  {"subject": "native-shell-integration", "context": "743a0ae5-b7d0-46a6-a915-cb82c7834bf8", "reason": "budget: unread this run (priorNotApplicable 4)"},
+  {"subject": "native-shell-integration", "context": "55d6d7cb-b016-4d73-8386-b5c18beafdae", "reason": "budget: unread this run; likely candidate for native-side-owns-the-target-set (SQL console executes a caller string)"}
+ ],
+ "consults": [
+  {"ts":"2026-10-21T12:39:42Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set"],"deviations":1},
+  {"ts":"2026-10-21T12:39:42Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set"],"deviations":1},
+  {"ts":"2026-10-21T12:39:42Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set"],"deviations":1},
+  {"ts":"2026-10-21T12:39:42Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["capability-presence-contract","native-owned-stream"],"deviations":1}
+ ]}

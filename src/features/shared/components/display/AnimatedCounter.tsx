@@ -5,6 +5,9 @@ import {
   setAnimationTarget,
   unregisterAnimation,
 } from '@/lib/utils/rafAnimationEngine';
+// The app's hook: it reads the OS media query AND the in-app Appearance toggle
+// (<html data-motion="reduce">). The local copy this replaced read only the OS.
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 export type AnimatedCounterMode = 'fade' | 'roll';
 
@@ -142,17 +145,23 @@ function RollCounter({ text, className, title }: { text: string; className?: str
         whiteSpace: 'nowrap',
       }}
     >
-      {positions.map((char, i) => {
-        if (!/^[0-9]$/.test(char)) {
-          // Static slot for separators and currency glyphs.
-          return (
-            <span key={`s-${i}-${char}`} style={{ display: 'inline-block' }}>
-              {char}
-            </span>
-          );
-        }
-        return <RollSlot key={`r-${i}`} digit={Number(char)} />;
-      })}
+      {/* Each RollSlot stacks all ten digits and is aria-hidden, so without this
+          the only glyphs a screen reader could reach were the separators: "1,234"
+          read as ",". The value is spoken once here and the drawing is hidden. */}
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true" style={{ display: 'inline-flex', alignItems: 'baseline' }}>
+        {positions.map((char, i) => {
+          if (!/^[0-9]$/.test(char)) {
+            // Static slot for separators and currency glyphs.
+            return (
+              <span key={`s-${i}-${char}`} style={{ display: 'inline-block' }}>
+                {char}
+              </span>
+            );
+          }
+          return <RollSlot key={`r-${i}`} digit={Number(char)} />;
+        })}
+      </span>
     </span>
   );
 }
@@ -188,23 +197,4 @@ function RollSlot({ digit }: { digit: number }) {
       </motion.span>
     </span>
   );
-}
-
-/* Minimal prefers-reduced-motion hook — avoids pulling in framer-motion's
- * useReducedMotion (which has additional behavior we don't need here). */
-function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return false;
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const handler = () => setReduced(mq.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
-  return reduced;
 }

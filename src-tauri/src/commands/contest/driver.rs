@@ -729,18 +729,34 @@ pub enum ChainFrom {
     Aggregate,
 }
 
-fn claim_chain(dir: &Path) -> bool {
-    chain_busy()
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .insert(dir.to_path_buf())
+/// The per-contest chain claim, released on `Drop` so a panic (or an early
+/// return) between claim and release cannot leave the contest refusing every
+/// step until restart.
+#[must_use = "dropping the claim releases it"]
+struct ChainClaim {
+    dir: PathBuf,
 }
 
-fn release_chain(dir: &Path) {
-    chain_busy()
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .remove(dir);
+impl ChainClaim {
+    /// `None` when a chain already holds the claim for `dir`.
+    fn acquire(dir: &Path) -> Option<Self> {
+        let inserted = chain_busy()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(dir.to_path_buf());
+        inserted.then(|| Self {
+            dir: dir.to_path_buf(),
+        })
+    }
+}
+
+impl Drop for ChainClaim {
+    fn drop(&mut self) {
+        chain_busy()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(&self.dir);
+    }
 }
 
 pub fn chain_is_busy(dir: &Path) -> bool {
@@ -769,11 +785,10 @@ fn refuse_while_chain_runs(dir: &Path) -> Result<(), AppError> {
 /// Run the chain from `from` in the background; a no-op while one runs.
 /// Returns whether it started.
 pub fn spawn_chain(app: AppHandle, ctx: Ctx, from: ChainFrom) -> bool {
-    if !claim_chain(&ctx.paths.dir) {
+    let Some(claim) = ChainClaim::acquire(&ctx.paths.dir) else {
         return false;
-    }
+    };
     tauri::async_runtime::spawn(async move {
-        let dir = ctx.paths.dir.clone();
         let run = std::panic::AssertUnwindSafe(run_chain(&app, &ctx, from)).catch_unwind();
         if run.await.is_err() {
             tracing::error!(contest = %ctx.contest_id(), "contest: chain panicked");
@@ -785,7 +800,7 @@ pub fn spawn_chain(app: AppHandle, ctx: Ctx, from: ChainFrom) -> bool {
             )
             .await;
         }
-        release_chain(&dir);
+        drop(claim);
         // A judge seat that settled while this chain still held the claim
         // (e.g. it failed at once) could not start the aggregate; look again.
         if arena::read_sidecar(&ctx.paths).chain.step == ContestChainStep::Judging {
@@ -909,16 +924,16 @@ pub async fn run_step(
             }
         },
         ContestStep::Aggregate => {
-            if !claim_chain(&ctx.paths.dir) {
+            let Some(claim) = ChainClaim::acquire(&ctx.paths.dir) else {
                 return Err(AppError::Validation(CHAIN_BUSY.into()));
-            }
+            };
             let res = async {
                 let db = db_of(app)?;
                 let instrument = node::require_instrument(&db, ctx.root())?;
                 aggregate_to_ready(app, ctx, &instrument).await
             }
             .await;
-            release_chain(&ctx.paths.dir);
+            drop(claim);
             if let Err(e) = &res {
                 let _ = set_chain(app, ctx, ContestChainStep::Failed, Some(short_reason(e))).await;
             }
@@ -1014,6 +1029,8 @@ pub async fn ensure_reattached(app: &AppHandle) {
     if REATTACHED.swap(true, Ordering::SeqCst) {
         return;
     }
+    // A failed sweep un-latches so the next contest_list/contest_get retries
+    // it, instead of leaving restored seats unwatched until the next restart.
     // The sync part (the fleet's DB restore, the project list, the walk of
     // every arena) runs on the blocking pool, never on a runtime worker.
     let handle = app.clone();
@@ -1040,6 +1057,7 @@ pub async fn ensure_reattached(app: &AppHandle) {
         Ok(Ok(c)) => c,
         Ok(Err(e)) => {
             tracing::warn!(error = %e, "contest: re-attach could not list projects");
+            REATTACHED.store(false, Ordering::SeqCst);
             return;
         }
         Err(e) => {
@@ -1047,6 +1065,7 @@ pub async fn ensure_reattached(app: &AppHandle) {
                 panicked = e.is_panic(),
                 "contest: the re-attach walk failed"
             );
+            REATTACHED.store(false, Ordering::SeqCst);
             return;
         }
     };
@@ -1232,6 +1251,24 @@ mod tests {
         assert_eq!(calls.load(Ordering::SeqCst), 3, "gave up after 3 tries");
     }
 
+    /// A panic inside a claimed scope must still release the claim, or the
+    /// contest refuses every step until restart.
+    #[test]
+    fn a_panic_inside_a_claim_releases_it() {
+        let (_tmp, paths) = arena();
+        let dir = paths.dir.clone();
+        let caught = std::panic::catch_unwind(move || {
+            let _claim = ChainClaim::acquire(&dir).expect("idle contest can be claimed");
+            panic!("aggregate blew up");
+        });
+        assert!(caught.is_err());
+        assert!(
+            !chain_is_busy(&paths.dir),
+            "the claim leaked past the panic"
+        );
+        assert!(ChainClaim::acquire(&paths.dir).is_some());
+    }
+
     /// `contest_launch` from the UI while a chain holds the claim is refused,
     /// the way `run_step` is: a judge launch that raced the running chain with
     /// every judge completed used to log a warning and strand the contest in
@@ -1240,9 +1277,9 @@ mod tests {
     fn a_launch_is_refused_while_a_chain_runs() {
         let (_tmp, paths) = arena();
         assert!(refuse_while_chain_runs(&paths.dir).is_ok(), "idle: allowed");
-        assert!(claim_chain(&paths.dir));
+        let claim = ChainClaim::acquire(&paths.dir).expect("idle contest can be claimed");
         let refused = refuse_while_chain_runs(&paths.dir);
-        release_chain(&paths.dir);
+        drop(claim);
         match refused {
             Err(AppError::Validation(msg)) => assert!(msg.contains("already running"), "{msg}"),
             other => panic!("a launch during a running chain was let through: {other:?}"),

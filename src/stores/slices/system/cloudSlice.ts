@@ -32,6 +32,7 @@ import {
 } from "@/api/system/cloud";
 import { listDeploymentHistoryAll } from "@/api/system/gitlab";
 import { silentCatch } from '@/lib/silentCatch';
+import { getActiveTranslations } from "@/i18n/useTranslation";
 
 
 export interface CloudReconnectState {
@@ -116,7 +117,8 @@ export interface CloudSlice {
   /** Reset reconnect state (called when reconnection succeeds or user manually acts). */
   cloudClearReconnect: () => void;
   // Deployment actions
-  cloudFetchDeployments: () => Promise<void>;
+  /** Resolves true when the list was read, false when it failed (`cloudError` carries the reason). */
+  cloudFetchDeployments: () => Promise<boolean>;
   /**
    * Reconcile server-side deployments against the local audit trail and surface
    * any orphans (running remotely with no local record). READ-ONLY — never
@@ -198,7 +200,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
           void get().cloudReconcileDeployments();
         } catch (err) {
           if (isAuthError(err)) {
-            set({ cloudError: "Credentials expired or revoked. Please reconnect to the cloud orchestrator." });
+            set({ cloudError: getActiveTranslations().deploy_errors.credentials_revoked });
           }
           // Network / unreachable errors -- stay disconnected silently
         }
@@ -279,8 +281,8 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       pendingOAuthTimeoutRef = setTimeout(() => {
         pendingOAuthTimeoutRef = null;
         if (!get().cloudPendingOAuthState) return;
-        set({ cloudPendingOAuthState: null, cloudError: "OAuth authorization timed out. Please try again." });
-        storeBus.emit('toast', { message: "OAuth authorization timed out -- please retry.", type: "error" });
+        set({ cloudPendingOAuthState: null, cloudError: getActiveTranslations().deploy_errors.oauth_timed_out_error });
+        storeBus.emit('toast', { message: getActiveTranslations().deploy_errors.oauth_timed_out_toast, type: "error" });
       }, PENDING_OAUTH_TIMEOUT_MS);
       return result;
     } catch (err) {
@@ -342,8 +344,10 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
         cloudGetBaseUrl(),
       ]);
       set({ cloudDeployments: deployments, cloudBaseUrl: baseUrl });
+      return true;
     } catch (err) {
       set({ cloudError: translateCloudError(err) });
+      return false;
     }
   },
 
@@ -382,8 +386,11 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
     }
   },
 
+  // The per-deployment actions below write ONLY after the server answers, so a
+  // failure has nothing to undo. They used to restore a snapshot taken when the
+  // action started, which rolled back any sibling action that succeeded in the
+  // meantime (pause A ok + pause B failed showed A active again).
   cloudAdoptOrphan: async (deploymentId: string) => {
-    const prevOrphans = get().cloudOrphanDeployments;
     try {
       await cloudAdoptDeployment(deploymentId);
       set((state) => {
@@ -394,12 +401,11 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
         return { cloudOrphanDeployments: remaining, cloudReconcileDismissed: remaining.length > 0 && state.cloudReconcileDismissed };
       });
     } catch (err) {
-      reportError(err, "Failed to adopt deployment", set, { stateUpdates: { cloudOrphanDeployments: prevOrphans, cloudError: translateCloudError(err) } });
+      reportError(err, "Failed to adopt deployment", set, { stateUpdates: { cloudError: translateCloudError(err) } });
     }
   },
 
   cloudUndeployOrphan: async (deploymentId: string) => {
-    const prevOrphans = get().cloudOrphanDeployments;
     try {
       await cloudUndeploy(deploymentId);
       set((state) => {
@@ -412,7 +418,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       });
       emitDeploymentEvent({ eventType: 'agent_undeployed', target: 'cloud', detail: deploymentId });
     } catch (err) {
-      reportError(err, "Failed to undeploy orphaned deployment", set, { stateUpdates: { cloudOrphanDeployments: prevOrphans, cloudError: translateCloudError(err) } });
+      reportError(err, "Failed to undeploy orphaned deployment", set, { stateUpdates: { cloudError: translateCloudError(err) } });
     }
   },
 
@@ -445,7 +451,6 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
   },
 
   cloudPauseDeploy: async (deploymentId: string) => {
-    const prevDeployments = get().cloudDeployments;
     try {
       const updated = await cloudPauseDeployment(deploymentId);
       set((state) => ({
@@ -455,12 +460,11 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       }));
       emitDeploymentEvent({ eventType: 'deploy_paused', target: 'cloud', detail: deploymentId });
     } catch (err) {
-      reportError(err, "Failed to pause deployment", set, { stateUpdates: { cloudDeployments: prevDeployments, cloudError: translateCloudError(err) } });
+      reportError(err, "Failed to pause deployment", set, { stateUpdates: { cloudError: translateCloudError(err) } });
     }
   },
 
   cloudResumeDeploy: async (deploymentId: string) => {
-    const prevDeployments = get().cloudDeployments;
     try {
       const updated = await cloudResumeDeployment(deploymentId);
       set((state) => ({
@@ -470,12 +474,11 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       }));
       emitDeploymentEvent({ eventType: 'deploy_resumed', target: 'cloud', detail: deploymentId });
     } catch (err) {
-      reportError(err, "Failed to resume deployment", set, { stateUpdates: { cloudDeployments: prevDeployments, cloudError: translateCloudError(err) } });
+      reportError(err, "Failed to resume deployment", set, { stateUpdates: { cloudError: translateCloudError(err) } });
     }
   },
 
   cloudRemoveDeploy: async (deploymentId: string) => {
-    const prevDeployments = get().cloudDeployments;
     try {
       await cloudUndeploy(deploymentId);
       set((state) => ({
@@ -483,7 +486,7 @@ export const createCloudSlice: StateCreator<SystemStore, [], [], CloudSlice> = (
       }));
       emitDeploymentEvent({ eventType: 'agent_undeployed', target: 'cloud', detail: deploymentId });
     } catch (err) {
-      reportError(err, "Failed to remove deployment", set, { stateUpdates: { cloudDeployments: prevDeployments, cloudError: translateCloudError(err) } });
+      reportError(err, "Failed to remove deployment", set, { stateUpdates: { cloudError: translateCloudError(err) } });
     }
   },
 

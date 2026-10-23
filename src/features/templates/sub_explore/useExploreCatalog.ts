@@ -37,6 +37,17 @@ export interface ExploreRecipe {
 interface RawRecipe {
   id: string; name: string; description: string; category: string;
   sourceTemplateId: string | null; tags: string[]; toolCount: number;
+  connectorTypes?: string[];
+}
+
+/**
+ * The "Tools" column counts what a row plugs into. A template's is its
+ * service flow; a v3 recipe declares `connectorTypes` and has no
+ * `tool_requirements` (null in all 132 seeds), so the index's `toolCount` is 0
+ * for every recipe and the column read "-" down the whole recipe half.
+ */
+function recipeToolCount(r: RawRecipe): number {
+  return Math.max(r.toolCount, Array.isArray(r.connectorTypes) ? r.connectorTypes.length : 0);
 }
 
 // Recipes are static — map once at module load.
@@ -48,8 +59,8 @@ export const RECIPES: ExploreRecipe[] = (recipeIndex as unknown as RawRecipe[]).
   category: r.category,
   sourceTemplateId: r.sourceTemplateId,
   tags: r.tags,
-  toolCount: r.toolCount,
-  weight: Math.max(0.2, Math.min(1, r.toolCount / 5)),
+  toolCount: recipeToolCount(r),
+  weight: Math.max(0.2, Math.min(1, recipeToolCount(r) / 5)),
 }));
 
 const RECIPES_BY_TEMPLATE: Record<string, ExploreRecipe[]> = (() => {

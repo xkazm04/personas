@@ -890,7 +890,20 @@ describe('useUnifiedTriage — goals reach the same spine', () => {
     mockPendingAcceptance.mockRejectedValue(new Error('command not found'));
     const { result } = await mount();
     expect(result.current.items.map((i) => i.kind)).toEqual(['idea']);
-    expect(mockToastCatch).toHaveBeenCalledWith('Could not load goals awaiting acceptance', expect.any(Error));
+    // Reported once, inline - not also as a toast over the surface that shows it.
+    expect(result.current.failures.map((f) => f.source)).toEqual(['goals']);
+    expect(mockToastCatch).not.toHaveBeenCalled();
+  });
+
+  it('never toasts a failed background read of any owned source', async () => {
+    mockTriageIdeas.mockRejectedValue(new Error('ideas down'));
+    mockPolicyList.mockRejectedValue(new Error('policy down'));
+    mockPromotionList.mockRejectedValue(new Error('evolution down'));
+    mockPendingAcceptance.mockRejectedValue(new Error('goals down'));
+    const { result } = await mount();
+
+    expect(result.current.failures.map((f) => f.source).sort()).toEqual(['evolution', 'goals', 'ideas', 'policy']);
+    expect(mockToastCatch).not.toHaveBeenCalled();
   });
 });
 

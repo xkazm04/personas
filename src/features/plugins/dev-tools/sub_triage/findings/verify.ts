@@ -11,7 +11,7 @@
 //        → compare the primary metric against the `evidence` we stored when we
 //          raised it → MOVED (materially better) / REGRESSED (worse) / UNCHANGED
 //
-// The five emitters are the five probes. That's the whole design.
+// The emitters are the probes (E1-E8, see emitters.ts). That's the whole design.
 //
 // HONESTY RULES (these matter more than the happy path):
 //   1. We never invent a `cleared`. If we can't compare (no evidence, no metric,

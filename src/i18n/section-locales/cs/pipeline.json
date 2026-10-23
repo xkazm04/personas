@@ -452,5 +452,20 @@
   "use_template": "Použít šablonu",
   "version_history": "Historie verzí",
   "view_persona": "Zobrazit personu",
-  "warning": "Varování"
+  "warning": "Varování",
+  "auto_team_create_failed": "Tým se nepodařilo vytvořit",
+  "auto_team_example_1": "Zkontroluj tento PR a spusť testy",
+  "auto_team_example_2": "Napiš blogový příspěvek s rešerší",
+  "auto_team_example_3": "Analyzuj zpětnou vazbu zákazníků",
+  "auto_team_example_4": "Vytvoř pipeline pro publikování obsahu",
+  "auto_team_no_match": "Vašemu popisu neodpovídají žádní agenti. Zkuste být konkrétnější.",
+  "team_color_blue": "Modrá",
+  "team_color_cyan": "Azurová",
+  "team_color_green": "Zelená",
+  "team_color_indigo": "Indigo",
+  "team_color_orange": "Oranžová",
+  "team_color_pink": "Růžová",
+  "team_color_rose": "Červenorůžová",
+  "team_color_violet": "Fialová",
+  "team_color_yellow": "Žlutá"
 }

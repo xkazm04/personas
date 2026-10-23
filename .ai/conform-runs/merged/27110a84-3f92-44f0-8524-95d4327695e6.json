@@ -1,0 +1,195 @@
+{
+ "schema": "conform-run/1",
+ "worker": "27110a84-3f92-44f0-8524-95d4327695e6",
+ "subject": "native-shell-integration",
+ "evaluatedAt": "2026-10-22T03:09:33Z",
+ "pairs": [
+  {
+   "context": "ca705961-f138-494a-b0fe-f882c674d25a",
+   "subject": "native-shell-integration",
+   "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:716 vault projection/import take only a project id (src/features/teams/sub_mastermind/lib/MemorySection.tsx:36); the native side resolves the write root from stored config and deletes only notes it stamped with personas_id (:850), so the renderer cannot pick a directory or a deletion set",
+   "techniques": [
+    {
+     "technique": "native-side-owns-the-target-set",
+     "verdict": "realized",
+     "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:716 target dir derived natively from settings + project slug; :850 deletion set limited to native-stamped notes not in the active set"
+    },
+    {
+     "technique": "capability-presence-contract",
+     "verdict": "realized",
+     "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:708 an absent vault returns vaultConfigured=false rather than an error or an empty success, and src/features/teams/sub_mastermind/lib/MemorySection.tsx:77 hides the vault actions when none is configured"
+    },
+    {
+     "technique": "native-owned-stream",
+     "verdict": "realized",
+     "evidence": "src/features/teams/sub_mastermind/lib/FleetPreviewPanel.tsx:50 embeds FleetTerminalPane, whose output the Rust reader keeps buffering regardless of view attachment (src/features/plugins/fleet/FleetTerminalPane.tsx:38)"
+    },
+    {
+     "technique": "non-stealing-overlay",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:47 popovers are in-document layers inside the canvas shell, not native windows over foreign apps"
+    },
+    {
+     "technique": "query-transparent-overlay",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_mastermind/lib/ListPopover.tsx:47 no surface is placed over another application"
+    },
+    {
+     "technique": "permission-gate-vector",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_mastermind/lib/MemorySection.tsx:9 only app-owned commands are reached; no OS-granted capability"
+    },
+    {
+     "technique": "layout-resolved-input-synthesis",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_mastermind/lib/MemorySection.tsx:9 no input is synthesized into a foreign application"
+    }
+   ],
+   "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+   "evaluatedRevision": 4
+  },
+  {
+   "context": "a576c14f-1edd-4da4-8d11-527161a3b5b3",
+   "subject": "native-shell-integration",
+   "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src-tauri/src/commands/core/gallery.rs:260 the outward publish and the rollback delete (src/features/teams/sub_teamWorkspace/useAutoTeam.ts:157) send only a team id; the native side re-derives the payload and refuses a delete while a pipeline runs (src-tauri/src/commands/teams/teams.rs:71); no other native-only capability is reached",
+   "techniques": [
+    {
+     "technique": "native-side-owns-the-target-set",
+     "verdict": "realized",
+     "evidence": "src-tauri/src/commands/core/gallery.rs:260 publish builds name/blueprint natively from the team id; src-tauri/src/commands/teams/teams.rs:71 delete by id with a native-side refusal while a pipeline runs"
+    },
+    {
+     "technique": "capability-presence-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/TeamPublishButton.tsx:6 every command reached is answered on every host; nothing host-absent is offered"
+    },
+    {
+     "technique": "non-stealing-overlay",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_teamWorkspace/presetStudio/PresetConnectionGraph.tsx:88 setFocus is in-graph hover state, not window focus; no native overlay"
+    },
+    {
+     "technique": "native-owned-stream",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:4 request/response calls only; the view holds no long-lived stream"
+    },
+    {
+     "technique": "permission-gate-vector",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:4 app-owned DB commands only; no OS grant"
+    },
+    {
+     "technique": "layout-resolved-input-synthesis",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:4 no input synthesis into a foreign app"
+    }
+   ],
+   "registryProposal": "not a registry defect: context-map.json still lists src/features/teams/sub_teamWorkspace/TeamList.tsx, CreateTeamForm.tsx and teamStudio/AssignmentReplay.tsx, which no longer exist - a context rescan is owed",
+   "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+   "evaluatedRevision": 4
+  },
+  {
+   "context": "19f3a6a0-f733-47d1-94b4-a1256c8a92fc",
+   "subject": "native-shell-integration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 the pickers are in-document modals; no file in the context imports @/api or @tauri-apps (only stores and the read-only useTableIntrospection hook at composer/ConnectorTableScopeRow.tsx:18), so no native capability, destructive command, overlay or stream crosses here",
+   "techniques": [
+    {
+     "technique": "native-side-owns-the-target-set",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ConnectorTableScopeRow.tsx:18 the only native reach is an information read (table introspection), which the technique's discriminator excludes"
+    },
+    {
+     "technique": "non-stealing-overlay",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 modal picker inside the document, not a native surface"
+    },
+    {
+     "technique": "capability-presence-contract",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerEventPickerModal.tsx:16 reads the agent store only; no host capability"
+    },
+    {
+     "technique": "native-owned-stream",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerEventPickerModal.tsx:16 no stream subscription"
+    },
+    {
+     "technique": "permission-gate-vector",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerEventPickerModal.tsx:16 no OS grant consulted"
+    }
+   ],
+   "registryProposal": "matcher resonance on command/picker/shell: an in-document composer shares vocabulary with this subject but not its precondition (a native process holding capabilities the view cannot reach); route by precondition",
+   "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
+   "evaluatedRevision": 4
+  }
+ ],
+ "declined": [
+  {
+   "subject": "native-shell-integration",
+   "context": "fc62a53a-85f9-4491-8b54-9b5f1795ef91",
+   "reason": "overview-patterns has no paths in context-map.json or the registry map; nothing to read"
+  },
+  {
+   "subject": "native-shell-integration",
+   "context": "511ca12f-50df-4941-84e1-e2d74a3dff85",
+   "reason": "capability-config-view is weakly governed with no paths; a coverage question, not judged by default"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-22T03:09:33Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "native-shell-integration"
+   ],
+   "techniques": [
+    "native-side-owns-the-target-set",
+    "capability-presence-contract",
+    "native-owned-stream",
+    "non-stealing-overlay",
+    "query-transparent-overlay",
+    "permission-gate-vector",
+    "layout-resolved-input-synthesis"
+   ],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-22T03:09:33Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "native-shell-integration"
+   ],
+   "techniques": [
+    "native-side-owns-the-target-set",
+    "capability-presence-contract",
+    "non-stealing-overlay",
+    "native-owned-stream",
+    "permission-gate-vector",
+    "layout-resolved-input-synthesis"
+   ],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-22T03:09:33Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "native-shell-integration"
+   ],
+   "techniques": [
+    "native-side-owns-the-target-set",
+    "non-stealing-overlay",
+    "capability-presence-contract",
+    "native-owned-stream",
+    "permission-gate-vector"
+   ],
+   "deviations": 0
+  }
+ ]
+}

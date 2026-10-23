@@ -9,7 +9,9 @@ import { FleetStateSparkline } from './FleetStateSparkline';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { debtText } from '@/i18n/DebtText';
 import { useTranslation } from '@/i18n/useTranslation';
+import { FleetKillConfirm } from './FleetKillConfirm';
 import { formatAgo } from './relativeAgo';
+import { canHibernateState, isTombstoneState } from './fleetStateMeta';
 
 
 /**
@@ -88,22 +90,34 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
     if (!editing) onActivate(session.id);
   }, [session.id, onActivate, editing]);
 
+  const [confirmKill, setConfirmKill] = useState(false);
+
+  const doKill = useCallback(async () => {
+    setConfirmKill(false);
+    try {
+      await killSession(session.id);
+    } catch (err) {
+      toastCatch('FleetSessionCard:close', f.close_failed)(err);
+    }
+  }, [session.id, f.close_failed]);
+
   const handleClose = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
+      if (!isTombstoneState(session.state)) {
+        // Ending a live process is irreversible: ask first (hibernate parks it).
+        setConfirmKill(true);
+        return;
+      }
       try {
-        if (session.state === 'exited' || session.state === 'hibernated') {
-          // No live process — just drop the row (the placeholder).
-          await removeSession(session.id);
-          onRemovedLocal(session.id);
-        } else {
-          await killSession(session.id);
-        }
+        // No live process: just drop the row (the placeholder), one click.
+        await removeSession(session.id);
+        onRemovedLocal(session.id);
       } catch (err) {
-        toastCatch('FleetSessionCard:close', 'Failed to close session')(err);
+        toastCatch('FleetSessionCard:close', f.close_failed)(err);
       }
     },
-    [session.id, session.state, onRemovedLocal],
+    [session.id, session.state, onRemovedLocal, f.close_failed],
   );
 
   // PARK, DON'T KILL. The row's only process control was the X, so an operator
@@ -112,7 +126,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
   // policy already calls it, and the overlay tile already offers it. Live rows
   // only: an exited or hibernated row has no process to free, and its X is
   // already "remove from list".
-  const canHibernate = session.state !== 'exited' && session.state !== 'hibernated';
+  const canHibernate = canHibernateState(session.state);
 
   const handleHibernate = useCallback(
     async (e: React.MouseEvent) => {
@@ -155,6 +169,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
   }, [draft, session.id, session.name, patchSession]);
 
   return (
+    <>
     <button
       type="button"
       onClick={handleOpen}
@@ -269,7 +284,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
             role="button"
             tabIndex={0}
             data-testid={`fleet-session-close-${session.id}`}
-            aria-label={session.state === 'exited' || session.state === 'hibernated' ? 'Remove from list' : 'Kill session'}
+            aria-label={isTombstoneState(session.state) ? f.dismiss_session : f.kill_session}
             onClick={handleClose}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -284,6 +299,14 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
         </>
       )}
     </button>
+    {confirmKill && (
+      <FleetKillConfirm
+        label={session.name ?? session.projectLabel}
+        onConfirm={doKill}
+        onCancel={() => setConfirmKill(false)}
+      />
+    )}
+    </>
   );
 }
 

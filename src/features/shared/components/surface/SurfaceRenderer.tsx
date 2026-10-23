@@ -342,6 +342,7 @@ function SurfaceTable({ block }: { block: Extract<SurfaceBlock, { type: 'table' 
         data={rows}
         getRowKey={(row) => row.__surfaceKey}
         emptyTitle={t.shared.surface.table_empty}
+        emptyArt="report"
       />
     </div>
   );

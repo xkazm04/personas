@@ -241,6 +241,10 @@ const usedPrefixes = new Set();
 for (const file of files) {
   let src;
   try { src = readFileSync(file, 'utf8'); } catch { continue; }
+  // Optional chaining is a read like any other: `t?.cockpit?.inbox` reaches the
+  // same keys as `t.cockpit.inbox`. Without this a section read only through an
+  // optional `t` looked dead and was reported for deletion.
+  src = src.replace(/\?\.(?=[A-Za-z_$])/g, '.');
 
   let m;
   while ((m = T_REF_RE.exec(src)) !== null) {

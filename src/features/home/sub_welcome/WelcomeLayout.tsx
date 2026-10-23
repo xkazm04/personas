@@ -1,4 +1,5 @@
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
+import { lazyRetry } from '@/lib/lazyRetry';
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
 import { GhostRows, KitHost, Section, Surface } from '@/features/shared/components/kit';
@@ -10,7 +11,7 @@ import ResumeSection from './ResumeSection';
 import SinceYouLeftBriefing from './SinceYouLeftBriefing';
 import { useTranslation } from '@/i18n/useTranslation';
 
-const LanguageCards = lazy(() => import('./LanguageSwitcher').then(m => ({ default: m.LanguageCardGrid })));
+const LanguageCards = lazyRetry(() => import('./LanguageSwitcher').then(m => ({ default: m.LanguageCardGrid })));
 
 interface WelcomeLayoutProps {
   greeting: string;

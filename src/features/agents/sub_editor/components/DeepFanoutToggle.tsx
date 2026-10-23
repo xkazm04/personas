@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Network } from 'lucide-react';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useTranslation } from '@/i18n/useTranslation';
-import { updatePersona, buildUpdateInput } from '@/api/agents/personas';
 import { probeCliCapabilities } from '@/api/agents/evolution';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { silentCatch } from '@/lib/silentCatch';
+import { useAgentStore } from '@/stores/agentStore';
 
 type Param = { key?: string; value?: unknown; type?: string };
 
@@ -68,15 +68,24 @@ export function DeepFanoutToggle({
     };
   }, []);
 
-  const toggle = () => {
+  const updatePersona = useAgentStore((s) => s.updatePersona);
+
+  const toggle = async () => {
     const next = !on;
     setOn(next);
-    updatePersona(personaId, buildUpdateInput({ parameters: writeDeepFanout(parameters, next) })).catch(
-      (err: unknown) => {
-        setOn(!next);
-        toastCatch('Deep fan-out toggle')(err);
-      },
-    );
+    // Through the store, not the raw IPC wrapper: the raw write left the
+    // store's persona row (the `parameters` prop this reads) on the old value,
+    // so leaving and re-opening the Settings tab re-read it and showed the
+    // switch OFF while the persisted flag was ON - and the next write built
+    // its JSON from that stale copy. The store action also reports a failure
+    // (Sentry + toast), so this catch rolls the optimistic switch back and
+    // leaves only a breadcrumb.
+    try {
+      await updatePersona(personaId, { parameters: writeDeepFanout(parameters, next) });
+    } catch (err) {
+      setOn(!next);
+      silentCatch('DeepFanoutToggle:updatePersona')(err);
+    }
   };
 
   return (

@@ -6,7 +6,7 @@
  * Null scores (unscored / failed executions) are excluded from averages
  * instead of being treated as 0.
  */
-import { compositeScore } from '@/lib/eval/evalFramework';
+import { compositeScoreFromRow } from '@/lib/eval/evalFramework';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';
 import type { LabMatrixResult } from '@/lib/bindings/LabMatrixResult';
@@ -46,20 +46,22 @@ function addToAccum(a: Accum, ta: number | null, oq: number | null, pc: number |
 }
 
 function finalizeAccum(a: Accum) {
-  const avgTA = a.toolAccuracyCount > 0 ? a.toolAccuracy / a.toolAccuracyCount : 0;
-  const avgOQ = a.outputQualityCount > 0 ? a.outputQuality / a.outputQualityCount : 0;
-  const avgPC = a.protocolComplianceCount > 0 ? a.protocolCompliance / a.protocolComplianceCount : 0;
+  const avgTA = a.toolAccuracyCount > 0 ? a.toolAccuracy / a.toolAccuracyCount : null;
+  const avgOQ = a.outputQualityCount > 0 ? a.outputQuality / a.outputQualityCount : null;
+  const avgPC = a.protocolComplianceCount > 0 ? a.protocolCompliance / a.protocolComplianceCount : null;
   const n = a.count || 1;
   return {
-    avgToolAccuracy: Math.round(avgTA),
-    avgOutputQuality: Math.round(avgOQ),
-    avgProtocolCompliance: Math.round(avgPC),
-    // composite = round(avgTA * 0.4 + avgOQ * 0.4 + avgPC * 0.2). This single
-    // number sorts Arena `bestModelId`, A/B `winnerId`, and Matrix variant
-    // rank below — see `compositeScore` JSDoc for the canonical formula and
-    // the golden test that pins it. Null/unscored individual rows were
-    // excluded from the averages above (see `addToAccum`), not coerced to 0.
-    compositeScore: compositeScore(avgTA, avgOQ, avgPC),
+    avgToolAccuracy: Math.round(avgTA ?? 0),
+    avgOutputQuality: Math.round(avgOQ ?? 0),
+    avgProtocolCompliance: Math.round(avgPC ?? 0),
+    // This single number sorts Arena `bestModelId`, A/B `winnerId`, and Matrix
+    // variant rank below. It is renormalised over the dimensions that were
+    // measured (`compositeScoreFromRow`, the backend's `renormalized_composite`):
+    // a dimension NO row scored - sandbox cells never carry tool accuracy - is
+    // absent, not a zero at weight 0.4. Folding it to 0 scored a sandbox model
+    // at 80/80 as 48 on the summary card while its own rows passed at 80.
+    // 0 only when not one dimension was scored.
+    compositeScore: compositeScoreFromRow(avgTA, avgOQ, avgPC) ?? 0,
     totalCost: a.totalCost,
     totalTokens: a.totalTokens,
     avgDuration: Math.round(a.totalDuration / n),
@@ -75,6 +77,9 @@ export interface ArenaModelAggregate {
   avgToolAccuracy: number;
   avgOutputQuality: number;
   avgProtocolCompliance: number;
+  /** False when no row scored tool accuracy (sandbox runs): `avgToolAccuracy`
+   *  is then a placeholder 0, not a measurement, and must not render as one. */
+  toolAccuracyScored: boolean;
   compositeScore: number;
   totalCost: number;
   /** Prompt + completion tokens across the group. Cost is price-weighted and
@@ -115,7 +120,7 @@ export function aggregateArenaResults(results: LabArenaResult[]): ArenaAggregati
 
   const aggregates: ArenaModelAggregate[] = modelOrder.map((mid) => {
     const acc = modelAccums.get(mid)!;
-    return { modelId: mid, provider: acc.provider, ...finalizeAccum(acc) };
+    return { modelId: mid, provider: acc.provider, toolAccuracyScored: acc.toolAccuracyCount > 0, ...finalizeAccum(acc) };
   });
   aggregates.sort((a, b) => b.compositeScore - a.compositeScore);
 

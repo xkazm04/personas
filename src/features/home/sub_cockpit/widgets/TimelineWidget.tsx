@@ -4,6 +4,7 @@ import { Tile } from '@/features/shared/components/kit';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 import { intentTone, toneLabel } from './intentColors';
+import { oneOf, recordsOf, textOf } from './narrow';
 import { Cell, WidgetTable, nameCell, type TableColumn } from './widgetTable';
 
 /**
@@ -63,10 +64,22 @@ function clockTimes(events: readonly TimelineEvent[], language: string): Array<s
   });
 }
 
+const INTENTS = ['info', 'good', 'warn', 'bad'] as const;
+
+/** Narrow the composed `events` once: an event without a text label is dropped. */
+function eventsOf(raw: unknown): TimelineEvent[] {
+  const out: TimelineEvent[] = [];
+  for (const r of recordsOf(raw)) {
+    const label = textOf(r.label);
+    if (label) out.push({ label, detail: textOf(r.detail), timestamp: textOf(r.timestamp), intent: oneOf(r.intent, INTENTS) });
+  }
+  return out;
+}
+
 export function TimelineWidget({ config, title, span, actions, footer }: CockpitWidgetProps) {
   const { t, language } = useTranslation();
   const c = t.overview.cockpit;
-  const events = Array.isArray(config?.events) ? (config.events as TimelineEvent[]) : [];
+  const events = eventsOf(config?.events);
   const heading = title ?? c.timeline_title;
   const detailed = events.some((e) => e.detail);
 

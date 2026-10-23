@@ -35,6 +35,7 @@ export class StubDoor {
     this.appVersion = appVersion;
     this.features = features;
     this.token = crypto.randomBytes(16).toString('hex');
+    this.ownsDataDir = !dataDir;
     this.dataDir = dataDir || fs.mkdtempSync(path.join(os.tmpdir(), 'mesh-stub-'));
     this.agents = agents.map((a) => ({ projectId: null, projectEnabled: null, dominant: null, running: false, ...a }));
     this.projects = projects;
@@ -85,6 +86,8 @@ export class StubDoor {
       this.server.closeAllConnections?.();
       await new Promise((r) => this.server.close(r));
     }
+    // A data dir this door created is this door's to remove (rmSync does not follow links).
+    if (this.ownsDataDir) fs.rmSync(this.dataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 
   /** The env a CLI on this "machine" runs with. */

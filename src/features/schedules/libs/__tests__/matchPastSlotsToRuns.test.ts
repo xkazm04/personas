@@ -20,6 +20,13 @@ describe('classifyRunOutcome', () => {
     expect(classifyRunOutcome('queued')).toBe('past-unknown');
     expect(classifyRunOutcome('COMPLETED')).toBe('past-success'); // case-insensitive
   });
+
+  it('a run whose process died (incomplete) is a terminal non-success, never unresolved', () => {
+    // ExecutionState::TERMINAL (core/src/types.rs) holds incomplete beside
+    // completed / failed / cancelled. Reading it as "hasn't resolved yet"
+    // painted a dead run as the neutral unverified slot.
+    expect(classifyRunOutcome('incomplete')).toBe('past-failure');
+  });
 });
 
 describe('matchPastSlotsToRuns', () => {

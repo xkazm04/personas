@@ -7,11 +7,11 @@
 
 import fs from 'node:fs';
 import {
-  ASK_KINDS, BUILDER_MODEL_CHOICES, COUNCIL, FEATURE_SLUG_RE, LIVE_RUN_STATES, MAX_ASKS, MAX_DISPATCH, MODELS, PLAN, REVIEW_CHARTERS,
+  ASK_KINDS, BUILDER_MODEL_CHOICES, COUNCIL, FEATURE_SLUG_RE, LIVE_RUN_STATES, MAX_ASKS, MAX_DISPATCH, MODELS, projectCap, PARALLEL_CHARTERS, PLAN, REVIEW_CHARTERS,
   SELF_REPO, UX, VERDICT_STATUSES, WAKE_MAX, WAKE_MIN, Refusal, canonical, isReviewRun, nowIso, resolveModel, shortId,
 } from './contract.mjs';
 import { charactersOf, councilEvents, councilJournal, roundsUsed } from './council.mjs';
-import { specError, overlappingPairs } from './paths.mjs';
+import { specError, overlappingPairs, pathsOverlap } from './paths.mjs';
 import { listRuns, loadAsks, loadBrief, loadWake, newRun, queueOutbox, raiseAsk, saveWake } from './store.mjs';
 import { briefCharters, resolveManaged, openDb, q, useCasesOf, councilRunsOf, uxPendingOf, withBriefBase } from './dbread.mjs';
 import { brakes } from './brakes.mjs';
@@ -135,7 +135,8 @@ export function validateDecision(decision, { slug, wakeId, brief, planWake = fal
   else if (wakeId && d.wakeId !== wakeId) errors.push(`wakeId "${d.wakeId}" does not match the wake "${wakeId}"${slug ? ` of ${slug}` : ''}`);
 
   const dispatch = checkArray(d, 'dispatch', errors);
-  if (dispatch.length > MAX_DISPATCH) errors.push(`dispatch has ${dispatch.length} entries; at most ${MAX_DISPATCH} per wake`);
+  const maxDispatch = brief ? projectCap(brief) : MAX_DISPATCH;
+  if (dispatch.length > maxDispatch) errors.push(`dispatch has ${dispatch.length} entries; at most ${maxDispatch} per wake`);
   const several = dispatch.length > 1;
   const seenDispatchIdeas = new Map();
   dispatch.forEach((x, i) => {
@@ -250,7 +251,11 @@ export function validateDecision(decision, { slug, wakeId, brief, planWake = fal
   }
   for (const [s, n] of count) {
     if (n === 0) errors.push(`charter "${s}" is missing: every charter appears exactly once in dispatch or defer`);
-    if (n > 1) errors.push(`charter "${s}" appears ${n} times across dispatch and defer; exactly once`);
+    if (n <= 1) continue;
+    // a parallel charter may be dispatched twice in one wake (disjoint paths are checked above)
+    const dispatched = dispatch.filter((x) => isObj(x) && x.charterSlug === s).length;
+    if (PARALLEL_CHARTERS.includes(s) && dispatched === n) continue;
+    errors.push(`charter "${s}" appears ${n} times across dispatch and defer; exactly once${PARALLEL_CHARTERS.includes(s) ? ' (or dispatched several times on disjoint paths, never also deferred)' : ''}`);
   }
   return { ok: errors.length === 0, errors };
 }
@@ -366,8 +371,16 @@ export async function cmdDecide({ flags = {} } = {}) {
   const stateOf = (r) => (queued.has(r.runId) ? `queued at position ${queued.get(r.runId).position}` : r.state);
   const clash = [];
   decision.dispatch.forEach((x, i) => {
-    const same = live.find((r) => r.charterSlug === x.charterSlug);
-    if (same) clash.push(`dispatch[${i}]: charter ${x.charterSlug} already has live run ${shortId(same.runId)} (${stateOf(same)}); defer it until that run settles`);
+    // a parallel charter (delivery) may run beside its own live run when both declare disjoint
+    // paths in the same repo, or target different repos; anything unprovable waits as before
+    const besideOk = (r) => PARALLEL_CHARTERS.includes(x.charterSlug)
+      && (targetRootKey(brief, r.repo) !== targetRootKey(brief, x.repo)
+        || (Array.isArray(x.paths) && x.paths.length > 0 && (r.paths ?? []).length > 0 && !pathsOverlap(x.paths, r.paths)));
+    const same = live.find((r) => r.charterSlug === x.charterSlug && !besideOk(r));
+    if (same) {
+      const why = PARALLEL_CHARTERS.includes(x.charterSlug) ? ' and their paths are not provably disjoint' : '';
+      clash.push(`dispatch[${i}]: charter ${x.charterSlug} already has live run ${shortId(same.runId)} (${stateOf(same)})${why}; defer it until that run settles`);
+    }
     for (const id of x.ideaIds ?? []) {
       const carrier = live.find((r) => (r.ideaIds ?? []).includes(id));
       if (carrier) clash.push(`dispatch[${i}]: idea ${id} is already carried by live run ${shortId(carrier.runId)} (${stateOf(carrier)})`);

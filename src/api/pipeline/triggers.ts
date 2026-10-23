@@ -9,6 +9,8 @@ import type { WebhookStatus } from "@/lib/bindings/WebhookStatus";
 import type { CronAgent } from "@/lib/bindings/CronAgent";
 import type { RecentScheduleRun } from "@/lib/bindings/RecentScheduleRun";
 import type { WebhookRequestLog } from "@/lib/bindings/WebhookRequestLog";
+import type { TriggerCleanupResult } from "@/lib/bindings/TriggerCleanupResult";
+import type { RenameEventTypeResult } from "@/lib/bindings/RenameEventTypeResult";
 
 // ============================================================================
 // Triggers
@@ -94,30 +96,15 @@ export const linkPersonaToEvent = (
 export const unlinkPersonaFromEvent = (triggerId: string) =>
   invoke<boolean>("unlink_persona_from_event", { triggerId });
 
-/** Update a single handler's text. Creates the eventHandlers map if needed. */
-export const updatePersonaEventHandler = (
-  personaId: string,
-  eventType: string,
-  handlerText: string,
-) =>
-  invoke<boolean>("update_persona_event_handler", {
-    personaId,
-    eventType,
-    handlerText,
-  });
-
 // ============================================================================
 // Trigger / event cleanup (Fix 1 + Fix 4a)
 // Self-healing sweep for dead trigger audit rows + missing auto-listeners.
 // See docs/design/event-routing-proposal.md
 // ============================================================================
 
-export interface TriggerCleanupResult {
-  orphaned_triggers_deleted: number;
-  orphaned_events_deleted: number;
-  auto_listeners_backfilled: number;
-  source_triggers_scanned: number;
-}
+// The wire shape is the ts-rs binding (`commands/tools/triggers.rs`), not a
+// hand-copied interface that can drift from it.
+export type { TriggerCleanupResult };
 
 /**
  * One-shot cleanup for the trigger / event subsystem. Deletes triggers whose
@@ -133,14 +120,11 @@ export const cleanupDeadTriggerEvents = () =>
 // See docs/design/event-routing-proposal.md + src-tauri/src/db/repos/resources/triggers.rs
 // ============================================================================
 
-export interface RenameEventTypeResult {
-  events_updated: number;
-  subscriptions_updated: number;
-  trigger_publishers_updated: number;
-  trigger_listeners_updated: number;
-  handler_keys_updated: number;
-  persona_handlers_updated: number;
-}
+// The binding, not a hand copy: the Rust struct is `rename_all = "camelCase"`
+// (db/src/repos/resources/triggers/event_wiring.rs), and the copy that stood
+// here spelled all six fields snake_case, so every read of the result was
+// typed `number` and was `undefined` at runtime.
+export type { RenameEventTypeResult };
 
 /**
  * Atomically rename an event type everywhere it's referenced:
@@ -266,9 +250,6 @@ export const dryRunTrigger = (id: string) =>
 
 export const listCronAgents = () =>
   invoke<CronAgent[]>("list_cron_agents");
-
-export const seedMockCronAgent = () =>
-  invoke<CronAgent>("seed_mock_cron_agent", {});
 
 export const listRecentScheduleRuns = (hours?: number) =>
   invoke<RecentScheduleRun[]>("list_recent_schedule_runs", { hours });

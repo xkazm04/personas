@@ -1,6 +1,6 @@
 /** ConfigTiles — icon-forward, low-text configuration controls. Conflict / model
  *  are icon TILES, effort is an ascending stepped METER — symbols and alignment
- *  instead of segmented rows of words. (Disposition uses PolaritySlider.)
+ *  instead of segmented rows of words.
  *
  *  Two different a11y contracts live here on purpose. Model and effort are
  *  mutually exclusive, so they are radiogroups with roving tabindex: a screen
@@ -120,10 +120,11 @@ function IconTile({ icon: Icon, label, active, color, onClick, testid, blurb, co
 }
 
 export function ConflictTiles({ core }: { core: PersonaCore }) {
+  const { t } = useTranslation();
   return (
     <div className="grid grid-cols-2 gap-1.5">
       {CONFLICT_STYLES.map((c) => (
-        <IconTile key={c.id} icon={c.icon} label={c.label} blurb={c.blurb} color={CONFLICT_ACCENT}
+        <IconTile key={c.id} icon={c.icon} label={t.agents[c.labelKey]} blurb={t.agents[c.blurbKey]} color={CONFLICT_ACCENT}
           active={core.state.conflictStyle === c.id} onClick={() => core.setConflict(c.id)} testid={`core-conflict-${c.id}`} />
       ))}
     </div>
@@ -141,7 +142,7 @@ export function ModelTiles({ core }: { core: PersonaCore }) {
   return (
     <div role="radiogroup" aria-label={t.agents.core_model_label} className="flex gap-1.5">
       {MODEL_TIERS.map((m) => (
-        <IconTile key={m.id} icon={m.icon} label={m.label} blurb={m.blurb} color={ACCENT}
+        <IconTile key={m.id} icon={m.icon} label={m.label} blurb={t.agents[m.blurbKey]} color={ACCENT}
           costLabel={`×${m.relativeCost}`}
           costAria={tx(t.agents.core_model_cost, { multiple: String(m.relativeCost) })}
           radio={option(m.id)}
@@ -163,7 +164,7 @@ export function EffortMeter({ core }: { core: PersonaCore }) {
         const on = i <= idx;
         const h = 12 + i * 6; // ascending
         return (
-          <Tooltip key={e.id} content={e.blurb}>
+          <Tooltip key={e.id} content={t.agents[e.blurbKey]}>
             <button type="button" onClick={() => core.setEffort(e.id)} data-testid={`core-effort-${e.id}`} {...option(e.id)}
               className="flex-1 flex flex-col items-center gap-1 cursor-pointer group">
               {/* The OFF bar is a semantic class, not an inline literal-white

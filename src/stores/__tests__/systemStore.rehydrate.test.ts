@@ -312,3 +312,47 @@ describe('systemStore onRehydrateStorage — Athena stops being a plugin', () =>
     expect(useSystemStore.getState().companionsPage).toBe('landing');
   });
 });
+
+describe('systemStore merge — retired persisted fields', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    _resetDedupCacheForTests();
+  });
+
+  it('drops a stored decisionSurface (the retired Chips | Lanes switch) and keeps its siblings', async () => {
+    seedPersistedSystemStore({ decisionSurface: 'chips', monitorGroupBy: 'group' });
+    await useSystemStore.persist.rehydrate();
+    const s = useSystemStore.getState() as unknown as Record<string, unknown>;
+    expect(s).not.toHaveProperty('decisionSurface');
+    expect(s.monitorGroupBy).toBe('group');
+  });
+
+  it('never writes the retired key back on the next save', async () => {
+    seedPersistedSystemStore({ decisionSurface: 'lanes' });
+    await useSystemStore.persist.rehydrate();
+    useSystemStore.setState({ monitorGroupBy: 'none' });
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as { state?: Record<string, unknown> };
+    expect(stored.state).toBeDefined();
+    expect(stored.state).not.toHaveProperty('decisionSurface');
+  });
+});
+
+describe('systemStore onRehydrateStorage — goalsView', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    _resetDedupCacheForTests();
+    useSystemStore.setState({ goalsView: 'notes' });
+  });
+
+  it('keeps a persisted ledger view', async () => {
+    seedPersistedSystemStore({ goalsView: 'ledger' });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState().goalsView).toBe('ledger');
+  });
+
+  it.each(['board', 'progress', 42])('maps the retired or unknown value %s to notes', async (legacy) => {
+    seedPersistedSystemStore({ goalsView: legacy });
+    await useSystemStore.persist.rehydrate();
+    expect(useSystemStore.getState().goalsView).toBe('notes');
+  });
+});

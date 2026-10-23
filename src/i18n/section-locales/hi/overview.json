@@ -63,7 +63,11 @@
     "unknown": "अज्ञात",
     "value_delivered_count": "वितरित मूल्य",
     "value_delivered_rate": "मूल्य-वितरण दर",
-    "value_section_title": "व्यावसायिक मूल्य"
+    "value_section_title": "व्यावसायिक मूल्य",
+    "prev_p50": "पिछला p50",
+    "prev_p95": "पिछला p95",
+    "range_last_days_one": "पिछला 1 दिन",
+    "range_last_days_other": "पिछले {count} दिन"
   },
   "analytics_dashboard": {
     "active_count": "{count} सक्रिय",
@@ -640,7 +644,13 @@
     "ask_athena_prompt": "मैं अपने एजेंट्स के लिए एक फ्लीट अनुकूलन सुझाव की समीक्षा कर रहा हूँ: \"{title}\"। {description} सुझाया गया कार्य: {action}। {focus}",
     "open_lab": "लैब खोलें",
     "open_lab_hint": "लैब में {persona} के लिए वैकल्पिक मॉडल परखें",
-    "title": "फ्लीट अनुकूलन"
+    "title": "फ्लीट अनुकूलन",
+    "label_action": "कार्रवाई",
+    "label_agent": "एजेंट",
+    "label_impact": "प्रभाव",
+    "severity_critical": "अत्यावश्यक",
+    "severity_info": "अंतर्दृष्टि",
+    "severity_warning": "सुझाया गया"
   },
   "focused_decision": {
     "accept": "स्वीकार करें",
@@ -898,7 +908,6 @@
     "bulk_acknowledge_count": "{count} स्वीकारें",
     "bulk_clear_selection": "साफ़ करें",
     "bulk_resolve_count": "{count} हल करें",
-    "col_days": "दिन",
     "col_incident": "घटना",
     "detail_label_acknowledged": "स्वीकृत",
     "detail_label_created": "बनाया गया",
@@ -926,10 +935,8 @@
     "filter_source_all": "सभी स्रोत",
     "filter_source_label": "स्रोत",
     "filter_status_acknowledged": "स्वीकृत",
-    "filter_status_all": "सभी",
     "filter_status_dismissed": "खारिज",
     "filter_status_in_progress": "प्रगति में",
-    "filter_status_label": "स्थिति",
     "filter_status_open": "खुली",
     "filter_status_resolved": "हल",
     "filters_active_aria": "{count} सक्रिय फ़िल्टर",
@@ -939,7 +946,6 @@
     "group_by_none": "कोई नहीं",
     "group_by_severity": "गंभीरता",
     "group_by_source": "स्रोत",
-    "group_no_persona": "कोई एजेंट नहीं",
     "groups_collapse_all": "सभी संक्षिप्त करें",
     "groups_expand_all": "सभी विस्तृत करें",
     "guidance_alert": "एक अलर्ट नियम सक्रिय हुआ। उस मीट्रिक को देखें जिसने सीमा पार की।",
@@ -996,7 +1002,6 @@
     "noc_diagnosis_title": "मूल कारण",
     "noc_evidence_label": "साक्ष्य",
     "noc_handled_by": "Athena द्वारा संभाला गया",
-    "noc_handled_continued": "स्वतः फिर से शुरू",
     "noc_handled_empty": "अभी तक कुछ भी स्वायत्त रूप से नहीं संभाला गया — जब मैं किसी घटना को सुरक्षित रूप से स्वयं ठीक कर सकूँगी, तो वह यहाँ दिखेगी।",
     "noc_handled_title": "स्वायत्त रूप से संभाला गया",
     "noc_no_diagnosis": "अभी कोई निदान नहीं — मैं आपके लिए इस घटना की जाँच कर सकती हूँ।",
@@ -1025,7 +1030,6 @@
     "source_policy": "नीति",
     "source_provider": "प्रदाता",
     "source_tool": "टूल",
-    "stale_label": "पुराना",
     "subtitle": "अलर्ट और त्रुटियों के लिए क्रॉस-सोर्स इनबॉक्स",
     "title": "घटनाएँ",
     "urgency_critical": "अभी ध्यान दें",
@@ -1097,7 +1101,8 @@
     "stat_total_runs": "कुल रन",
     "subtitle": "सभी एजेंटों में प्रदर्शन रैंकिंग",
     "this_agent": "यह एजेंट",
-    "title": "एजेंट लीडरबोर्ड"
+    "title": "एजेंट लीडरबोर्ड",
+    "sort_hint": "क्रमबद्ध करने के लिए किसी मीट्रिक पर क्लिक करें"
   },
   "llm_spend": {
     "by_source": "स्तर के अनुसार लागत",
@@ -1156,7 +1161,6 @@
     "curation_schedule_save": "शेड्यूल सहेजें",
     "curation_schedule_title": "स्मृति समीक्षा शेड्यूल करें",
     "delete_all": "सभी हटाएं",
-    "delete_all_confirm_body": "यह सभी {count} स्मृतियां स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।",
     "delete_all_confirm_cta": "सभी हटाएं",
     "delete_all_confirm_title": "सभी स्मृतियां हटाएं?",
     "form": {
@@ -1182,13 +1186,21 @@
     "reflect_pick_persona": "किसी एजेंट की स्मृतियों पर चिंतन करें",
     "reflecting": "चिंतन जारी…",
     "search_placeholder": "memories खोजें…",
-    "title": "स्मृतियाँ"
+    "title": "स्मृतियाँ",
+    "delete_all_confirm_body_all_agents": "यह सभी एजेंटों की सभी {count} मेमोरी को स्थायी रूप से हटा देगा, चाहे मौजूदा फ़िल्टर कुछ भी दिखा रहा हो। इसे पूर्ववत नहीं किया जा सकता।"
   },
   "memory_actions": {
     "dismiss_suggestion": "सुझाव खारिज करें",
     "memory_insights": "मेमोरी अंतर्दृष्टि",
     "suggestions": "{count} सुझाव",
-    "suggestions_one": "{count} सुझाव"
+    "suggestions_one": "{count} सुझाव",
+    "kind_throttle": "थ्रॉटल नियम",
+    "kind_schedule": "शेड्यूल समायोजन",
+    "kind_alert": "अलर्ट नियम",
+    "kind_config": "कॉन्फ़िगरेशन बदलाव",
+    "kind_routing": "रूटिंग नियम",
+    "rules_restored_from_session": "सहेजे गए मेमोरी-एक्शन नियम पढ़े नहीं जा सके और इस सत्र से बहाल कर दिए गए।",
+    "rules_unreadable": "सहेजे गए मेमोरी-एक्शन नियम पढ़े नहीं जा सके और उन्हें दोबारा बनाना पड़ सकता है।"
   },
   "memory_card": {
     "cancel": "रद्द करें",
@@ -1218,7 +1230,14 @@
     "resolved_toast": "टकराव सुलझा",
     "retire_blocked_core_toast": "मुख्य (पिन की गई) स्मृति संग्रहीत नहीं की जा सकती — यह टकराव स्वयं सुलझाएँ",
     "scanned_scope": "हाल की {count} स्मृतियों में",
-    "vs": "बनाम"
+    "vs": "बनाम",
+    "kind_duplicate": "डुप्लिकेट",
+    "kind_contradiction": "विरोधाभास",
+    "kind_superseded": "प्रतिस्थापित",
+    "reason_contradiction": "एक ही विषय पर संभावित रूप से विरोधाभासी निर्देश (विषय ओवरलैप {pct}%)",
+    "reason_duplicate_cross_agent": "अलग-अलग एजेंटों में लगभग समान मेमोरी (समानता {pct}%)",
+    "reason_duplicate_same_agent": "एक ही एजेंट में लगभग समान मेमोरी (समानता {pct}%)",
+    "reason_superseded": "नई मेमोरी उसी विषय की पुरानी मेमोरी की जगह ले सकती है (ओवरलैप {pct}%)"
   },
   "memory_detail": {
     "category_label": "श्रेणी",
@@ -1366,7 +1385,11 @@
   "popup_fields": {
     "ollama_domain": "ollama.com",
     "ollama_key_instructions": ", फिर सेटिंग्स से अपनी API कुंजी कॉपी करें। यह कुंजी स्थानीय रूप से संग्रहीत है और सभी एजेंट्स में साझा की जाती है।",
-    "sign_up_free_at": "मुफ़्त में साइन अप करें"
+    "sign_up_free_at": "मुफ़्त में साइन अप करें",
+    "api_key_label": "API कुंजी",
+    "litellm_base_url_label": "प्रॉक्सी बेस URL",
+    "litellm_master_key_label": "मास्टर कुंजी",
+    "ollama_key_placeholder": "ollama.com/settings से अपनी कुंजी पेस्ट करें"
   },
   "predictive_alerts_extra": {
     "all_nominal": "सभी सिस्टम सामान्य",
@@ -1887,7 +1910,9 @@
     "p95_latency": "P95 विलंबता",
     "runs": "रन",
     "streak": "स्ट्रीक",
-    "successful": "सफल"
+    "successful": "सफल",
+    "daily_trend_hint_one": "{date}: {rate} ({count} रन)",
+    "daily_trend_hint_other": "{date}: {rate} ({count} रन)"
   },
   "sla": {
     "active_agents": "{count} सक्रिय एजेंट",
@@ -2106,5 +2131,15 @@
   "dc_pending_lead": "हर लंबित समीक्षा डिसीज़न सेंटर में अपने पूरे ब्योरे और अन्य निर्णयों जैसी ही कुंजियों के साथ खुलती है।",
   "dc_pending_list_aria": "लंबित समीक्षाएँ",
   "dc_select_review": "समीक्षा चुनें",
-  "dc_col_decision": "निर्णय"
+  "dc_col_decision": "निर्णय",
+  "ai_healing_overlay": {
+    "collapse": "संक्षिप्त करें",
+    "expand": "विस्तृत करें",
+    "status_complete": "पूर्ण",
+    "status_failed": "विफल",
+    "status_in_progress": "प्रगति में",
+    "step_applying": "सुधार लागू किए जा रहे हैं",
+    "step_completed": "पूर्ण हुआ",
+    "step_diagnosing": "निदान हो रहा है"
+  }
 }

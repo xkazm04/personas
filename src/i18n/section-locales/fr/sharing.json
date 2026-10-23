@@ -322,5 +322,15 @@
   "conn_state_connecting": "Connexion...",
   "conn_state_failed": "Échec",
   "conn_state_disconnected": "Déconnecté",
-  "resources_synced": "{count} synchronisé(s)"
+  "resources_synced": "{count} synchronisé(s)",
+  "exposure_auth_required": "Authentification requise",
+  "exposure_open_lan": "Ouvert aux pairs du réseau local",
+  "open_to_lan_hint": "Tout appareil de votre réseau qui se connecte peut voir cette ressource sans prouver son identité. Laissez désactivé, sauf si vous faites confiance à tous les appareils de ce réseau.",
+  "open_to_lan_label": "Ouvert aux pairs du réseau local non authentifiés",
+  "by_creator": "par {name}",
+  "created_on": "Créé le {date}",
+  "fields_exposed_count_one": "{count} champ exposé",
+  "fields_exposed_count_other": "{count} champs exposés",
+  "health_latency_ms": "{ms} ms",
+  "health_missed": "{count} manqué(s)"
 }

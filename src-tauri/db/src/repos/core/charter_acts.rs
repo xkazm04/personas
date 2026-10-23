@@ -175,6 +175,65 @@ pub fn append(pool: &DbPool, act: &NewCharterAct) -> Result<CharterAct, AppError
     })
 }
 
+/// Whether `charter_id` already holds an act on this item (any actor, any
+/// verdict, reverted or not). The cheap pre-check before work that would
+/// only produce a duplicate.
+pub fn has_item_act(
+    pool: &DbPool,
+    charter_id: &str,
+    item_kind: &str,
+    item_id: &str,
+) -> Result<bool, AppError> {
+    timed_query!("charter_acts", "charter_acts::has_item_act", {
+        let conn = pool.conn("charter_acts::has_item_act")?;
+        Ok(item_act_exists_in(&conn, charter_id, item_kind, item_id)?)
+    })
+}
+
+fn item_act_exists_in(
+    conn: &Connection,
+    charter_id: &str,
+    item_kind: &str,
+    item_id: &str,
+) -> rusqlite::Result<bool> {
+    Ok(conn
+        .query_row(
+            "SELECT 1 AS one FROM charter_acts
+             WHERE charter_id = ?1 AND item_kind = ?2 AND item_id = ?3 LIMIT 1",
+            params![charter_id, item_kind, item_id],
+            |_| Ok(true),
+        )
+        .optional()?
+        .unwrap_or(false))
+}
+
+/// [`append`], at most once per `(charter_id, item_kind, item_id)`: `Ok(None)`
+/// when the charter already holds an act on that item, decided inside the same
+/// immediate transaction as the insert, so two detections racing write one row.
+/// `NotFound` when no such charter exists.
+pub fn append_once(pool: &DbPool, act: &NewCharterAct) -> Result<Option<CharterAct>, AppError> {
+    timed_query!("charter_acts", "charter_acts::append_once", {
+        let mut conn = pool.conn("charter_acts::append_once")?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let version: Option<i64> = tx
+            .query_row(
+                "SELECT envelope_version FROM persona_responsibilities WHERE id = ?1",
+                [&act.charter_id],
+                |r| r.get("envelope_version"),
+            )
+            .optional()?;
+        let Some(version) = version else {
+            return Err(AppError::NotFound(format!("Charter {}", act.charter_id)));
+        };
+        if item_act_exists_in(&tx, &act.charter_id, &act.item_kind, &act.item_id)? {
+            return Ok(None);
+        }
+        let created = insert_in(&tx, act, version, None)?;
+        tx.commit()?;
+        Ok(Some(created))
+    })
+}
+
 pub(crate) fn get_in(conn: &Connection, id: &str) -> Result<Option<CharterAct>, AppError> {
     let mut stmt =
         conn.prepare_cached(&format!("SELECT {COLUMNS} FROM charter_acts WHERE id = ?1"))?;
@@ -237,6 +296,99 @@ pub(crate) fn count_for_charter_in(conn: &Connection, charter_id: &str) -> Resul
         [charter_id],
         |r| r.get("n"),
     )?)
+}
+
+/// The `verdict` of the envelope acts that count as the operator READING the
+/// mandate: a signature (first or re-signed) and a re-read kept as signed.
+pub const READ_VERDICTS: [&str; 2] = ["signed", "kept"];
+
+/// Standing decision acts (by the router or a steward, on an item: not an
+/// envelope act, not a revert) of one charter.
+pub(crate) fn decision_count_in(conn: &Connection, charter_id: &str) -> Result<i64, AppError> {
+    Ok(conn.query_row(
+        "SELECT COUNT(*) AS n FROM charter_acts
+         WHERE charter_id = ?1 AND actor != 'operator' AND reverted_at IS NULL
+           AND item_kind NOT IN ('mandate', 'act.revert')",
+        [charter_id],
+        |r| r.get("n"),
+    )?)
+}
+
+/// What the re-read law and the Scopes section count on one charter.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct CharterTally {
+    /// Standing decision acts (router or steward, on an item).
+    pub decisions: i64,
+    /// Those acts by the scope they were taken under (`None` scope is not counted here).
+    pub by_scope: std::collections::HashMap<String, i64>,
+    /// Standing router or steward acts on `merge` items since the mandate was
+    /// last read (signed or kept); all time when it never was.
+    pub merges_since_read: i64,
+    /// The newest signature or keep, when there is one.
+    pub last_read_at: Option<String>,
+}
+
+/// Every charter's tally, in three grouped reads.
+pub fn tallies(pool: &DbPool) -> Result<std::collections::HashMap<String, CharterTally>, AppError> {
+    let read_in = format!("'{}', '{}'", READ_VERDICTS[0], READ_VERDICTS[1]);
+    timed_query!("charter_acts", "charter_acts::tallies", {
+        let conn = pool.conn("charter_acts::tallies")?;
+        let mut out: std::collections::HashMap<String, CharterTally> =
+            std::collections::HashMap::new();
+        {
+            let mut stmt = conn.prepare(&format!(
+                "SELECT charter_id, MAX(created_at) AS at FROM charter_acts
+                 WHERE item_kind = 'mandate' AND verdict IN ({read_in})
+                 GROUP BY charter_id"
+            ))?;
+            let rows = stmt.query_map([], |r| {
+                Ok((r.get::<_, String>("charter_id")?, r.get::<_, String>("at")?))
+            })?;
+            for (c, at) in collect_rows(rows, "charter_acts::tallies(read)") {
+                out.entry(c).or_default().last_read_at = Some(at);
+            }
+        }
+        {
+            let mut stmt = conn.prepare(
+                "SELECT charter_id, scope, COUNT(*) AS n FROM charter_acts
+                 WHERE actor != 'operator' AND reverted_at IS NULL
+                   AND item_kind NOT IN ('mandate', 'act.revert')
+                 GROUP BY charter_id, scope",
+            )?;
+            let rows = stmt.query_map([], |r| {
+                Ok((
+                    r.get::<_, String>("charter_id")?,
+                    r.get::<_, Option<String>>("scope")?,
+                    r.get::<_, i64>("n")?,
+                ))
+            })?;
+            for (c, scope, n) in collect_rows(rows, "charter_acts::tallies(scope)") {
+                let t = out.entry(c).or_default();
+                t.decisions += n;
+                if let Some(s) = scope {
+                    *t.by_scope.entry(s).or_default() += n;
+                }
+            }
+        }
+        {
+            let mut stmt = conn.prepare(&format!(
+                "SELECT a.charter_id, COUNT(*) AS n FROM charter_acts a
+                 WHERE a.item_kind = 'merge' AND a.actor != 'operator' AND a.reverted_at IS NULL
+                   AND a.created_at > COALESCE((
+                       SELECT MAX(k.created_at) FROM charter_acts k
+                       WHERE k.charter_id = a.charter_id AND k.item_kind = 'mandate'
+                         AND k.verdict IN ({read_in})), '')
+                 GROUP BY a.charter_id"
+            ))?;
+            let rows = stmt.query_map([], |r| {
+                Ok((r.get::<_, String>("charter_id")?, r.get::<_, i64>("n")?))
+            })?;
+            for (c, n) in collect_rows(rows, "charter_acts::tallies(merge)") {
+                out.entry(c).or_default().merges_since_read = n;
+            }
+        }
+        Ok(out)
+    })
 }
 
 /// Stamp an act reverted, once. Returns whether a row changed: `false` when it

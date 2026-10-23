@@ -1,0 +1,17 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d5f266fd-9906-48d6-81c3-1d2e87823daa",
+ "subject": "data-access",
+ "evaluatedAt": "2026-10-19T09:35:48.632662+00:00",
+ "provider": "codex",
+ "model": "gpt-6.1-sol",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "data-access",
+   "context": "recipes-playground",
+   "reason": "The context has no current implementation to judge: context-map.json:8803 lists empty file_paths, its entry points reference the absent src/features/recipes/sub_playground directory, and searches of src and src-tauri found neither RecipePlaygroundModal nor useRecipeTestRunner. docs/features/recipes/README.md:261 documents deletion of this tree; line 273 explains that API wrappers and Rust commands remain."
+  }
+ ],
+ "consults": []
+}

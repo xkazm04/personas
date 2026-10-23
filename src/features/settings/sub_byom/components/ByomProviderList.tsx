@@ -9,7 +9,7 @@ import { ProviderSparkline } from './ProviderSparkline';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 
 // Centralized sparkline colors so a future palette migration touches one site.
 // These are raw Tailwind 500-shade hex values — there is no theme-aware CSS
@@ -132,7 +132,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
           <ProviderSparkline
             data={trends?.executions ?? []}
             color={SPARKLINE_COLORS.executions}
-            label="daily"
+            label={s.sparkline_daily}
           />
         </div>
         <div className="space-y-1">
@@ -141,7 +141,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
           <ProviderSparkline
             data={trends?.cost ?? []}
             color={SPARKLINE_COLORS.cost}
-            label="daily"
+            label={s.sparkline_daily}
           />
         </div>
         <div className="space-y-1">
@@ -150,7 +150,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
           <ProviderSparkline
             data={trends?.duration ?? []}
             color={SPARKLINE_COLORS.duration}
-            label="daily"
+            label={s.sparkline_daily}
           />
         </div>
       </div>
@@ -194,10 +194,11 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
     const transient: ConnectionTestResult = { state: 'testing' };
     healthCache.set(providerId, transient);
     setTestResults((prev) => ({ ...prev, [providerId]: transient }));
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(s.test_timed_out)), 5000),
-      );
+      const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(s.test_timed_out)), 5000);
+      });
       const result = await Promise.race([testProviderConnection(providerId), timeout]);
       const next: ConnectionTestResult = {
         state: result.reachable ? 'pass' : 'fail',
@@ -209,11 +210,18 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
     } catch (err) {
       const next: ConnectionTestResult = {
         state: 'fail',
-        result: { provider_id: providerId, reachable: false, latency_ms: null, version: null, error: err instanceof Error ? err.message : s.test_ipc_failed },
+        // invokeWithTimeout rejects with a serialized AppError OBJECT, not an
+        // Error, so an `instanceof Error` ladder dropped every backend reason
+        // (an expired session, a refused probe) to the generic fallback.
+        result: { provider_id: providerId, reachable: false, latency_ms: null, version: null, error: extractMessage(err) || s.test_ipc_failed },
         ts: Date.now(),
       };
       healthCache.set(providerId, next);
       setTestResults((prev) => ({ ...prev, [providerId]: next }));
+    } finally {
+      // The race's loser keeps its timer otherwise: one live 5 s timeout per
+      // test, rejecting into nothing after the probe already answered.
+      if (timer !== undefined) clearTimeout(timer);
     }
   }, [s]);
 
@@ -341,8 +349,6 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
         ) : (
           <EmptyState
             icon={CloudCog}
-            iconColor="text-cyan-400/80"
-            iconContainerClassName="bg-cyan-500/10 border-cyan-500/20"
             title={s.usage_empty_title}
             description={s.usage_empty_description}
             action={onAddKey ? { label: s.usage_empty_action, onClick: onAddKey, icon: KeyRound } : undefined}

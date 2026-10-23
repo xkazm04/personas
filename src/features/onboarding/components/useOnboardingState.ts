@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from "@/stores/systemStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -10,7 +11,7 @@ import {
   approveDesktopCapabilities,
   type DiscoveredApp,
 } from '@/api/system/desktop';
-import { toastCatch, silentCatch } from '@/lib/silentCatch';
+import { toastCatch, silentCatch, extractMessage } from '@/lib/silentCatch';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { trackInteraction } from '@/lib/sentry';
 import * as Sentry from '@sentry/react';
@@ -42,11 +43,20 @@ function prioritizeZeroCredential(reviews: PersonaDesignReview[]): PersonaDesign
 /** Observable load state for the onboarding template list. */
 export type TemplateLoadPhase = 'loading' | 'loaded' | 'empty' | 'error';
 
+/**
+ * A failed load, kept RAW. The IPC layer rejects with a serialized AppError
+ * object, not an `Error`, so stringifying it here rendered "[object Object]";
+ * the step resolves it to translated copy at render instead.
+ */
+export interface LoadFailure {
+  raw: unknown;
+}
+
 export interface TemplateLoadState {
   phase: TemplateLoadPhase;
   /** Which backend path produced the current template list (for diagnostics). */
   source: 'trending' | 'fallback' | null;
-  error: string | null;
+  error: LoadFailure | null;
 }
 
 /** Observable scan state for desktop app discovery. */
@@ -54,7 +64,7 @@ export type DiscoveryScanPhase = 'scanning' | 'success' | 'error';
 
 export interface DiscoveryScanState {
   phase: DiscoveryScanPhase;
-  error: string | null;
+  error: LoadFailure | null;
 }
 
 function countTemplateLoad(phase: TemplateLoadPhase, source: 'trending' | 'fallback' | null) {
@@ -66,6 +76,7 @@ function countTemplateLoad(phase: TemplateLoadPhase, source: 'trending' | 'fallb
 }
 
 export function useOnboardingState() {
+  const { t, tx } = useTranslation();
   const onboardingActive = useSystemStore((s) => s.onboardingActive);
   const onboardingStep = useSystemStore((s) => s.onboardingStep);
   const onboardingStepCompleted = useSystemStore((s) => s.onboardingStepCompleted);
@@ -136,12 +147,11 @@ export function useOnboardingState() {
       .catch((err) => {
         silentCatch('useOnboardingState:discoverDesktopApps')(err);
         if (cancelled) return;
-        const message = err instanceof Error ? err.message : String(err);
         setDiscoveredApps([]);
-        setDiscoveryState({ phase: 'error', error: message });
+        setDiscoveryState({ phase: 'error', error: { raw: err } });
         Sentry.addBreadcrumb({
           category: 'onboarding.discover',
-          message: `Desktop discovery failed: ${message}`,
+          message: `Desktop discovery failed: ${extractMessage(err)}`,
           level: 'error',
         });
         Sentry.captureException(err, {
@@ -169,12 +179,12 @@ export function useOnboardingState() {
       // re-enabling the button with no feedback violates least-surprise.
       toastCatch(
         `useOnboardingState:approveApp:${connectorName}`,
-        `Could not approve ${connectorName}. You can approve it later from Connectors.`,
+        tx(t.onboarding.approve_failed, { name: connectorName }),
       )(err);
     } finally {
       setApprovingApp(null);
     }
-  }, []);
+  }, [t, tx]);
 
   const handleNextFromAppearance = useCallback(() => {
     trackInteraction('onboarding', 'step_complete', 'appearance');
@@ -224,8 +234,11 @@ export function useOnboardingState() {
       if (cancelled) return;
 
       if (reviews.length > 0) {
-        // Zero-credential quick-wins first, then trim to the 3 we show.
-        setTemplates(prioritizeZeroCredential(reviews).slice(0, 3));
+        // Zero-credential quick-wins first. The WHOLE pool is kept: the picker
+        // ranks it by the desktop apps approved one step earlier and only then
+        // trims to what it shows. Trimming here first meant an app-matching
+        // template ranked 4th or lower could never be recommended.
+        setTemplates(prioritizeZeroCredential(reviews));
         setTemplateLoadState({ phase: 'loaded', source, error: null });
         countTemplateLoad('loaded', source);
         return;
@@ -233,8 +246,7 @@ export function useOnboardingState() {
 
       setTemplates([]);
       if (trendingErr && fallbackErr) {
-        const msg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
-        setTemplateLoadState({ phase: 'error', source: null, error: msg });
+        setTemplateLoadState({ phase: 'error', source: null, error: { raw: fallbackErr } });
         countTemplateLoad('error', null);
       } else {
         setTemplateLoadState({ phase: 'empty', source, error: null });

@@ -1,0 +1,26 @@
+{"schema":"conform-run/1","worker":"3b78e827-940d-4f7a-9b19-dc14c3094af8","subject":"breach-alerting-and-attribution","evaluatedAt":"2026-10-21T12:31:48Z",
+"pairs":[
+{"context":"4810daf8-0549-4899-95d2-99c81cde6455","subject":"breach-alerting-and-attribution","bundle":"llm-observability","state":"deviation",
+"evidence":"src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:53 still fetches an UNSCOPED 1-day bundle (and useObservabilityData.ts:70 evaluates against the tab's range/persona) for every rule, under the rule.id cooldown the persona-scoped Rust evaluator also reads, so a wrong-scope client fire both misreports the value and mutes the correct server alert for an hour",
+"techniques":[
+{"technique":"scoped-dedup-keys","verdict":"deviation","evidence":"src/features/overview/sub_observability/libs/useGlobalAlertEvaluator.ts:53 a persona-scoped rule is evaluated against project-wide data, then shares the rule.id cooldown with the scoped evaluator at src-tauri/src/commands/execution/alert_evaluator.rs:170 - scope is in the key but not in the detection, so the wrong-scope fire consumes the scoped rule's cooldown"},
+{"technique":"top-contributor-attribution","verdict":"deviation","evidence":"src/stores/slices/overview/alertSlice.ts:152 the fired message is a bare 'metric is value (threshold)' with no contributor breakdown - the homework alert; this obligation does not lapse for a local reader"},
+{"technique":"off-request-path-delivery","verdict":"conformant","evidence":"src-tauri/src/commands/execution/alert_evaluator.rs:358 server evaluation runs in a spawned task; the client loop is a background interval, never inside an admission path"},
+{"technique":"identity-scope-attribution-refusal","verdict":"not-applicable","evidence":"src/stores/slices/overview/alertSlice.ts:499 delivery is an in-app toast to the single local operator - no broadcast audience, so the payload-bounding rule lapses per the golden path's audience precondition"},
+{"technique":"notification-channel-security","verdict":"not-applicable","evidence":"src/stores/slices/overview/alertSlice.ts:499 alerts never leave the process as webhooks in this context; no operator-supplied destination to sign or vet"}],
+"registryProposal":"The subject's techniques assume one evaluator; a recurring field shape here is TWO evaluators (client + server) sharing one cooldown key with different scope semantics. scoped-dedup-keys could name it: when more than one evaluator writes the same dedup key, each must evaluate the identical scope, or the less-scoped one silently suppresses the authoritative one."},
+{"context":"532bbf10-3fd3-4b57-a8ea-95a957645697","subject":"breach-alerting-and-attribution","bundle":"llm-observability","state":"deviation",
+"evidence":"src/stores/slices/overview/alertSlice.ts:467 evaluateRule still ignores rule.persona_id and runs on whatever snapshot the caller passed, then :448 reads the rule.id cooldown shared with the scoped server evaluator, so a wrong-scope client fire misreports the value and suppresses the true alert",
+"techniques":[
+{"technique":"scoped-dedup-keys","verdict":"deviation","evidence":"src/stores/slices/overview/alertSlice.ts:448 cooldown keyed on rule.id (1h, :213) is consumed by an evaluation at :467 that never applies the rule's persona scope"},
+{"technique":"top-contributor-attribution","verdict":"deviation","evidence":"src/stores/slices/overview/alertSlice.ts:152 formatAlertMessage emits value-vs-threshold only; no top contributors (e.g. which persona/model drove a cost breach) are computed or carried"},
+{"technique":"off-request-path-delivery","verdict":"conformant","evidence":"src/stores/slices/overview/alertSlice.ts:499 toasts are set optimistically and persistence runs as fire-and-forget promises after, never blocking evaluation"},
+{"technique":"identity-scope-attribution-refusal","verdict":"not-applicable","evidence":"src/stores/slices/overview/alertSlice.ts:499 the only sink is the local operator's own toast stack - no broadcast audience to refuse identity to"},
+{"technique":"notification-channel-security","verdict":"not-applicable","evidence":"src/stores/slices/overview/alertSlice.ts:499 no outbound webhook sink in this slice"}]}
+],
+"declined":[
+{"subject":"breach-alerting-and-attribution","context":"2fb16136-586e-478d-823f-38434d2d5b9a","reason":"weak context (commands-communication); matched only on alert/notification vocabulary - left as a coverage question, not judged"}],
+"consults":[
+{"ts":"2026-10-21T12:31:48Z","bundle":"llm-observability","subjects":["breach-alerting-and-attribution"],"techniques":["scoped-dedup-keys","top-contributor-attribution","off-request-path-delivery","identity-scope-attribution-refusal","notification-channel-security"],"deviations":2},
+{"ts":"2026-10-21T12:31:48Z","bundle":"llm-observability","subjects":["breach-alerting-and-attribution"],"techniques":["scoped-dedup-keys","top-contributor-attribution","off-request-path-delivery","identity-scope-attribution-refusal","notification-channel-security"],"deviations":2}]
+}

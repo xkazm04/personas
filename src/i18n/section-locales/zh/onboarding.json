@@ -607,5 +607,7 @@
   "waiting_for_output": "等待输出…",
   "what_testing_checks": "测试检查内容：",
   "what_to_explore": "探索内容",
-  "your_agent_fallback": "您的智能体"
+  "your_agent_fallback": "您的智能体",
+  "approve_failed": "无法批准 {name}。您可以稍后在“连接器”中批准。",
+  "execution_ended": "执行{status}"
 }

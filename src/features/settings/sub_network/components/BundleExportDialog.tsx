@@ -526,6 +526,8 @@ function ResourceCheckItem({
   return (
     <button
       type="button"
+      role="checkbox"
+      aria-checked={checked}
       onClick={onToggle}
       className={`w-full rounded-card border p-2.5 flex items-center gap-2.5 text-left transition-colors ${
         checked

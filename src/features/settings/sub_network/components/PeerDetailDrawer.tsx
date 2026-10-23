@@ -14,6 +14,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import type { DiscoveredPeer, ConnectionState, PeerManifestEntry } from '@/api/network/discovery';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolvePeerConnectionState } from './peerConnectionState';
 import { BaseModal } from '@/lib/ui/BaseModal';
 
 interface PeerDetailDrawerProps {
@@ -52,7 +53,7 @@ export function PeerDetailDrawer({
   }, [peer.peer_id, fetchPeerManifest]);
   useTypedTauriEvent(EventName.P2P_MANIFEST_SYNC_PROGRESS, onSyncProgress);
 
-  const state = connectionState ?? (peer.is_connected ? 'Connected' : 'Disconnected');
+  const state = resolvePeerConnectionState(peer, connectionState);
   const isConnected = state === 'Connected';
   const stateLabel = {
     Connected: st.conn_state_connected,
@@ -122,6 +123,7 @@ export function PeerDetailDrawer({
           <button
             type="button"
             onClick={onClose}
+            aria-label={st.close}
             className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground transition-colors"
           >
             <X className="w-4 h-4" />

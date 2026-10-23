@@ -45,7 +45,7 @@ describe('useToolRunner', () => {
     await act(async () => { resolve(ok); await first; });
   });
 
-  it('clears the 120s watchdog once the run settles', async () => {
+  it('leaves no timer behind once the run settles', async () => {
     vi.useFakeTimers();
     invokeMock.mockResolvedValue(ok);
     const { result } = renderHook(() => useToolRunner('p1'));

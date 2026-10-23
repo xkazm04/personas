@@ -5,6 +5,7 @@ use crate::models::{
     CreateSharedEventSubscriptionInput, SharedEventCatalogEntry, SharedEventChange,
     SharedEventFeedActivity, SharedEventSubscription,
 };
+use crate::repos::utils::collect_rows;
 use crate::DbPool;
 use personas_core::error::AppError;
 
@@ -60,7 +61,7 @@ pub fn list_catalog(
             .map(|v| v as &dyn rusqlite::types::ToSql)
             .collect();
         let rows = stmt.query_map(params_refs.as_slice(), row_to_catalog)?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "shared_events::list_catalog"))
     })
 }
 
@@ -183,9 +184,9 @@ pub fn max_firing_seq(pool: &DbPool, slug: &str) -> Result<i64, AppError> {
     timed_query!("shared_events", "shared_events::max_firing_seq", {
         let conn = pool.get()?;
         let max: i64 = conn.query_row(
-            "SELECT COALESCE(MAX(seq), 0) FROM shared_event_firings WHERE slug = ?1",
+            "SELECT COALESCE(MAX(seq), 0) AS max_seq FROM shared_event_firings WHERE slug = ?1",
             params![slug],
-            |r| r.get(0),
+            |r| r.get("max_seq"),
         )?;
         Ok(max)
     })
@@ -209,7 +210,7 @@ pub fn list_firings_after(
              LIMIT ?3",
         )?;
         let rows = stmt.query_map(params![slug, after_seq, limit], row_to_firing)?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "shared_events::list_firings_after"))
     })
 }
 
@@ -230,7 +231,7 @@ pub fn list_firings(
              LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![slug, limit], row_to_firing)?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "shared_events::list_firings"))
     })
 }
 
@@ -296,7 +297,7 @@ pub fn change_activity(pool: &DbPool) -> Result<Vec<SharedEventFeedActivity>, Ap
                 last_payload: row.get("last_payload")?,
             })
         })?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "shared_events::change_activity"))
     })
 }
 
@@ -310,7 +311,7 @@ pub fn list_subscriptions(pool: &DbPool) -> Result<Vec<SharedEventSubscription>,
         let mut stmt =
             conn.prepare("SELECT * FROM shared_event_subscriptions ORDER BY created_at DESC")?;
         let rows = stmt.query_map([], row_to_subscription)?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
+        Ok(collect_rows(rows, "shared_events::list_subscriptions"))
     })
 }
 
@@ -324,7 +325,10 @@ pub fn list_enabled_subscriptions(pool: &DbPool) -> Result<Vec<SharedEventSubscr
             "SELECT * FROM shared_event_subscriptions WHERE enabled = 1 ORDER BY created_at DESC",
         )?;
             let rows = stmt.query_map([], row_to_subscription)?;
-            Ok(rows.filter_map(|r| r.ok()).collect())
+            Ok(collect_rows(
+                rows,
+                "shared_events::list_enabled_subscriptions",
+            ))
         }
     )
 }
@@ -419,22 +423,6 @@ pub fn set_error(
             params![subscription_id, error, now],
         )?;
         Ok(())
-    })
-}
-
-pub fn toggle_enabled(
-    pool: &DbPool,
-    subscription_id: &str,
-    enabled: bool,
-) -> Result<SharedEventSubscription, AppError> {
-    timed_query!("shared_events", "shared_events::toggle_enabled", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE shared_event_subscriptions SET enabled = ?2, updated_at = ?3 WHERE id = ?1",
-            params![subscription_id, enabled as i32, now],
-        )?;
-        get_subscription(pool, subscription_id)
     })
 }
 
