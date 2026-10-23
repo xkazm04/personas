@@ -37355,6 +37355,37 @@
           "evidence": "src/features/plugins/dev-tools/sub_triage/findings/dispatch.ts:85 Fleet receives the prompt through an app-controlled interactive session, while Runner execution is followed to termination; the technique explicitly excludes executors whose runs can be watched."
         }
       ]
+    },
+    "959baa73-f18f-42c8-8569-466939b9050d/remediation-roadmaps": {
+      "context": "notepad-plan",
+      "subject": "remediation-roadmaps",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-23",
+      "evaluatedTs": "2026-10-23T21:35:48.053Z",
+      "techniques": [
+        {
+          "technique": "sandbox-to-tracker-commit",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/plan/NotePlanLedger.tsx:171 Bucket assignments directly trigger database persistence via ship.setItem on click without a two-phase sandbox model."
+        },
+        {
+          "technique": "weighted-upside-ranking",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/plan/ShipGoalRail.tsx:67 Candidate goals are sorted alphabetically instead of computing priority from weight, headroom, and achievability."
+        },
+        {
+          "technique": "invitational-framing",
+          "verdict": "conformant",
+          "evidence": "src/features/notepad/plan/ShipCriteriaPanel.tsx:69 Exit criteria present observational derived evidence prose rather than imperative commands, preserving operator agency."
+        }
+      ],
+      "withdrawn": {
+        "worker": "becd7a4f-2bd9-4ff0-bef7-da561ef2262b",
+        "state": "deviation",
+        "at": "2026-10-23T21:36:10.120951+00:00",
+        "reason": "reviewer (sonnet): The cited lines do persist each setItem call straight to the database, but the same context has a draft|scoped|cut milestone lifecycle (NotePlanPane.tsx:11) with an explicit commit step in ShipCertifyModal.tsx. The \"no sandbox phase before an explicit commit\" claim is therefore contradicted, and the"
+      }
     }
   }
 }
