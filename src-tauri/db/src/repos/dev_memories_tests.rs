@@ -371,3 +371,115 @@ fn app_master_proposal_is_a_declared_source_kind() {
         "a near-miss spelling is refused, not silently accepted"
     );
 }
+
+// ---------------------------------------------------------------------------
+// Decay-scored packing (sweep #357)
+//
+// The injection budget used to be spent in query order and stopped at the
+// first line that did not fit, so a stale high-importance note could consume
+// it and drop the constraint recorded this morning. These pin that the budget
+// now goes to the most valuable survivors.
+// ---------------------------------------------------------------------------
+
+fn mem(id: &str, category: &str, importance: i32, content: &str, age_days: i64) -> DevMemory {
+    let ts = (chrono::Utc::now() - chrono::Duration::days(age_days)).to_rfc3339();
+    DevMemory {
+        id: id.to_string(),
+        project_id: "p".to_string(),
+        category: category.to_string(),
+        title: id.to_string(),
+        content: content.to_string(),
+        importance,
+        source_kind: "task_outcome".to_string(),
+        source_id: Some(id.to_string()),
+        created_at: ts.clone(),
+        updated_at: ts,
+    }
+}
+
+#[test]
+fn a_fresh_constraint_beats_an_old_padded_observation() {
+    let now = chrono::Utc::now();
+    // The observation is recorded at max importance and is 200 days old; the
+    // constraint is lower-importance and fresh. Under the old category-then-
+    // importance order with a one-line budget, the observation was already
+    // second — but it is the SIZE that used to matter: it fit first in query
+    // order for any caller that did not sort by category.
+    let rows = vec![
+        mem("old-note", "learned", 10, &"padding ".repeat(30), 200),
+        mem(
+            "new-rule",
+            "constraint",
+            6,
+            "never touch the shared index",
+            0,
+        ),
+    ];
+    let packed = pack_by_decay(&rows, 120, now);
+    assert_eq!(packed.len(), 1, "budget fits exactly one line");
+    assert_eq!(packed[0].id, "new-rule");
+}
+
+#[test]
+fn between_two_constraints_the_higher_decay_score_wins() {
+    let now = chrono::Utc::now();
+    let rows = vec![
+        mem("stale", "constraint", 8, "x", 900),
+        mem("recent", "constraint", 8, "y", 5),
+    ];
+    let packed = pack_by_decay(&rows, 40, now);
+    assert_eq!(packed.len(), 1);
+    assert_eq!(packed[0].id, "recent", "equal importance, fresher wins");
+
+    // And the score itself is ordered, not just the pick.
+    assert!(decay_score(&rows[1], now) > decay_score(&rows[0], now));
+}
+
+#[test]
+fn a_constraint_outlives_an_observation_of_equal_age_and_importance() {
+    let now = chrono::Utc::now();
+    // Same importance, same age: only the category half-life separates them,
+    // which is the whole point of reusing the persona-memory table.
+    let constraint = mem("c", "constraint", 5, "x", 120);
+    let observation = mem("o", "learned", 5, "x", 120);
+    assert!(decay_score(&constraint, now) > decay_score(&observation, now));
+}
+
+#[test]
+fn an_oversized_entry_is_skipped_not_a_full_stop() {
+    let now = chrono::Utc::now();
+    let rows = vec![
+        mem("huge", "constraint", 10, &"z".repeat(500), 0),
+        mem("small", "constraint", 9, "fits", 0),
+    ];
+    // The budget admits the top-ranked entry unconditionally, then keeps
+    // packing; a middle entry that does not fit must not discard the rest.
+    let rows2 = vec![
+        mem("first", "constraint", 10, "fits", 0),
+        mem("huge", "constraint", 9, &"z".repeat(500), 0),
+        mem("last", "constraint", 8, "fits", 0),
+    ];
+    assert_eq!(pack_by_decay(&rows, 50, now).len(), 1);
+    let packed = pack_by_decay(&rows2, 60, now);
+    let ids: Vec<&str> = packed.iter().map(|m| m.id.as_str()).collect();
+    assert_eq!(ids, vec!["first", "last"]);
+}
+
+#[test]
+fn packing_is_deterministic_for_equal_scores() {
+    let now = chrono::Utc::now();
+    let rows = vec![
+        mem("b-id", "constraint", 5, "x", 0),
+        mem("a-id", "constraint", 5, "x", 0),
+    ];
+    let first = pack_by_decay(&rows, 30, now);
+    let again = pack_by_decay(&rows, 30, now);
+    assert_eq!(first[0].id, again[0].id);
+    assert_eq!(first[0].id, "a-id", "ties break on id, not on input order");
+}
+
+#[test]
+fn an_empty_project_still_renders_nothing() {
+    assert!(render_for_prompt(&[], 900).is_none());
+    assert!(pack_by_decay(&[], 900, chrono::Utc::now()).is_empty());
+}

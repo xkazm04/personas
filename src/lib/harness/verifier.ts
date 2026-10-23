@@ -26,6 +26,19 @@ export const PERSONAS_GATES: VerificationGate[] = [
     timeoutMs: 120_000,
   },
   {
+    // `GateType` has carried `'test'` since the type was written, and until now
+    // no built-in gate ever used it — so `requiredFailures` could not count a
+    // red suite, and an area whose tsc and eslint were clean reported
+    // `area-completed` with unit tests failing. A type the orchestrator can
+    // name but never runs is a claim the harness makes about work it never
+    // checked; this is the gate that makes the type true.
+    name: 'test',
+    type: 'test',
+    required: true,
+    command: 'npm run test -- --run',
+    timeoutMs: 600_000,
+  },
+  {
     name: 'build',
     type: 'build',
     required: false,
@@ -183,6 +196,19 @@ function parseGateErrors(type: string, output: string): string[] {
       for (const line of lines) {
         if (/\d+:\d+\s+error/.test(line)) {
           errors.push(line.trim());
+        }
+      }
+      break;
+    }
+    case 'test': {
+      // Vitest names each failure on a `FAIL <file> > <suite> > <case>` line and
+      // repeats the count in its summary. Both are kept: the FAIL lines say
+      // WHICH cases broke, the summary line says how many, and an area report
+      // that only carried one of the two would be read as the other.
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (/^(FAIL|×|✕)\s/.test(trimmed) || /Tests?\s+\d+\s+failed/.test(trimmed)) {
+          errors.push(trimmed);
         }
       }
       break;
