@@ -1,6 +1,6 @@
 ---
 name: curator
-version: 1.2.0
+version: 1.3.0
 description: Drive Curator's work loop from a terminal instead of from the Personas app - read her real ladder out of the same SQLite database, claim the next piece of work, spawn a headless Claude worker at it in the knowledge registry, judge what came back, settle it honestly, and keep going until the subscription's usage limit or a brake stops her. The alternative driver for while the app is closed or its fleet is unavailable. Invoke with `/curator` (status) or `/curator loop`.
 ---
 
@@ -26,8 +26,8 @@ description: Drive Curator's work loop from a terminal instead of from the Perso
 /curator release-stranded      release every open dispatch whose worker process is provably gone
 /curator pool                  run-pool: several conform workers at once, RAM-scaled, until a brake
 /curator pool stop|status      ask a running pool to stop after its workers settle / read it
-/curator --multi [N]           N rounds; each round codex, grok and agy judge DIFFERENT conform subjects at once
-/curator --multi report        the provider-by-topic scoreboard the rounds built
+/curator --multi [N]           N rounds; each round several Claude seats judge DIFFERENT conform subjects at once
+/curator --multi report        the seat-by-topic scoreboard the rounds built
 /curator --multi night         unattended: rounds back to back across every consumer repo, reviewed and committed
 ```
 
@@ -269,9 +269,10 @@ To stop it NOW instead: end the pool pid from `run-pool --status`, end its worke
 `loop.py release-stranded`. If the map is ever reverted under a run (a sibling's hook stash
 that failed to restore), `loop.py merge --reapply` folds the `merged/` archive back in.
 
-## --multi - several providers, one round at a time
+## --multi - several Claude seats, one round at a time
 
-`/curator --multi` widens conform coverage with models that are not Claude. Its code is
+`/curator --multi` widens conform coverage with parallel headless Claude seats (Claude only, operator
+2026-10-24: no other CLI is used). Its code is
 `multi.py`, reached through `loop.py multi <cmd>`; the SESSION reviews every round before
 starting the next.
 
@@ -295,13 +296,12 @@ settles finished ones from their files, and RELEASES a seat that left no answer 
 back, unscored), because nothing says whether the seat or the driver's death ended it. `start`
 and `round` both refuse while an unfinished round exists.
 
-**Seats.** `codex` (codex-cli, `gpt-6.1-sol`, effort high), `grok` (grok-cli, `grok-4.7`, high) and
-`agy` (Antigravity CLI, the newest `gemini-X.Y-flash-high` that `agy models` lists). `--providers`
-narrows them. Each round rotates which seat takes the top-ranked subject, and prefers a different
-registry category for each seat, so the scoreboard sees every provider on every kind of topic.
+**Seats.** `claude` only: a headless `claude -p` per seat (`PROVIDERS` in `multi.py`, default
+`claude-opus-5-5`, effort high; `--seat-model` overrides). `--per-provider` is how many seats run at
+once (default 3). Each round prefers a different registry category for each seat.
 
-**Why conform only.** A conform verdict can be checked mechanically against the code, so a weaker
-model's answer is evidence to verify rather than a change to trust. Registry-writing lanes
+**Why conform only.** A conform verdict can be checked mechanically against the code, so a seat's
+answer is evidence to verify rather than a change to trust. Registry-writing lanes
 (apply, deepen, reconcile) are not offered to these seats.
 
 **Where the subject comes from.** First her plan (in-scope `conform` items). When that is dry for
@@ -312,11 +312,11 @@ FILED into the operator's request queue (`conform --subject <slug>`, the note na
 instruction) and claimed through the queue lane, so every seat has a real ledger row. A subject
 `--multi` has tried is not retried (`state.json` `tried`).
 
-**What makes a weaker seat safe.**
+**What makes a seat's answer safe.**
 - The orchestrator builds the dossier: the golden path, every technique file, and up to five pairs
   with each context's REAL file list from `context-map.json`. The seat resolves nothing itself.
-- Seats are read-only and return one JSON object through their CLI's schema flag (codex
-  `--output-schema` in a `read-only` sandbox, grok `--json-schema`, agy `--json-schema`).
+- Seats are read-only (Edit/Write/Agent disallowed, `--no-session-persistence`) and return one JSON
+  object through `--json-schema` (read from the envelope's `structured_output`).
   `multi.py` writes the run file; the registry's merger stays the map's only writer.
 - `validate()` checks every anchor: a tracked file, a non-blank line, and the seat's verbatim
   `quote` of that line. A quote found up to three lines away, or uniquely elsewhere in the file,
@@ -325,20 +325,13 @@ instruction) and claimed through the queue lane, so every seat has a real ledger
   dossier is REFUSED. A conformant pair below /conform's evidence floor, or one that calls a
   technique a deviation, is declined with the reason. A refused pair becomes a `declined` row,
   never a verdict.
-- **Whole-answer refusals.** A seat that provably opened nothing (codex ran no command, grok
-  answered in one turn), or whose `notes` disclaim the answer (draft, not verified, do not keep).
+- **Whole-answer refusals.** A seat that provably opened nothing (answered in one turn), or whose `notes` disclaim the answer (draft, not verified, do not keep).
 - **The floor counts DISTINCT anchors.** One line reused for several techniques is one piece of
   evidence, and a conformant pair also needs at least two techniques shown realized.
 - **Smears.** One anchor outside every context it is pinned on, carried by two or more pairs, is
   a repo-wide fact and a verdict about none of them: all those pairs are declined.
 
-Each rule above was a measured failure, not a guess (round 1-2, 2026-10-12):
-| Seat | What it did | Rule it produced |
-|---|---|---|
-| grok 4.7 | with `--json-schema` it answered in ONE turn, opened no file, and its notes said "DRAFT ONLY - do not keep"; its one surviving verdict echoed the stale verdict the dossier showed it | grok runs without `--json-schema`; read-proof; self-disclaimer; "an earlier verdict is a claim to re-check" |
-| agy flash | four `conformant` verdicts reached the floor by anchoring 5-6 `not-applicable` techniques each on `mod tests {` or one vitest include line | distinct-anchor floor; two realized techniques |
-| codex gpt-6.1-sol | pinned one true repo-wide finding (`lefthook.yml:32`) on four UI contexts with one sentence | smear rule; "judge each context by its own code" |
-| the validator | refused codex's good round-3 answer whole because its notes honestly said "enforcement was not verified" and "no placeholder anchors" | the disclaimer rule reads only statements about the ANSWER; `revalidate` lands what a wrong rule refused |
+Each rule above was a measured failure of an earlier seat, not a guess (rounds 1-2, 2026-10-12).
 
 **A validator rule can be wrong too.** When the review finds the refusal was the rule's fault, fix
 the rule, then `multi revalidate` the kept raw answer: it re-judges under the current validator,
@@ -362,18 +355,13 @@ its claim is released, its filed request cancelled, its partial answer thrown aw
 `state.json` `dropped` keeps it out of later rounds. The other seats continue. `multi
 reset-dropped` brings a provider back once its window resets.
 
-**Cleanup is part of the round, not an afterthought.** After the round settles, `multi.py` deletes:
-the round's raw directory (prompts, stdout, the schema), each provider's own session files for
-that seat (grok `~/.grok/sessions/<cwd>/<id>` by the session id the round assigned it, plus that
-session's lines in the cwd's shared `prompt_history.jsonl` - only its own `session_id`, because the
-operator's grok history lives in the same file; agy
-`~/.gemini/antigravity-cli/{annotations,brain,conversations,presence}/<id>*` by its conversation id;
-codex runs `--ephemeral` and writes none), and any provider junk that appeared at the repo root
-(`.grok/`, `.agents/`, `.gemini/`, `.codex/`, `tmp*.{txt,json,md,...}`). Anything else new in the
-repo is LISTED in the round summary and never deleted, because siblings write this checkout too.
-What stays: `rounds/<n>.json` (the summary) and one `scoreboard.jsonl` row per seat. `--keep-raw`
-keeps the raw directory for the review; `multi clean` then deletes it, and the driver logs
-(`round.out`, `finish*.out`) once no round is pending.
+**Cleanup is part of the round, not an afterthought.** After the round settles, `multi.py` deletes the
+round's raw directory (prompts, stdout, the schema) and any `tmp*.{txt,json,md,...}` junk that appeared
+at the repo root; seats write no session files. Anything else new in the repo is LISTED in the round
+summary and never deleted, because siblings write this checkout too. What stays: `rounds/<n>.json`
+(the summary) and one `scoreboard.jsonl` row per seat. `--keep-raw` keeps the raw directory for the
+review; `multi clean` then deletes it, and the driver logs (`round.out`, `finish*.out`) once no round
+is pending.
 
 **Between rounds the session reviews, then hardens.** Read `rounds/<n>.json`: per seat, what came
 back, what was accepted, every repair and refusal. Spot-check two accepted anchors per seat by
@@ -382,14 +370,6 @@ real). A refusal pattern that repeats across seats is a defect in the brief or t
 fix it before the next round. A seat that is merely weak is a scoreboard fact, not a defect.
 `multi report` aggregates the scoreboard by provider and by provider x category; carry the feel
 into memory once there are enough rounds to say something.
-
-**The feel after the first five rounds (2026-10-12, n = 5 seats each, one repo, all
-`software-engineering` subjects - a weak prior, not a ranking):**
-| Seat | Kept / returned | Avg wall | Reads as |
-|---|---|---|---|
-| agy `gemini-3.8-flash-high` | 20 / 25 (4 withdrawn) | ~7.5 min | fastest; strongest on llm-agent subjects (orchestration, companion, memory, eval); padded its one test-harness conformant run, then followed the distinct-anchor rule cleanly |
-| codex `gpt-6.1-sol` high | 18 / 25 (4 withdrawn, 4 revalidated) | ~11.5 min | most exhaustive (78+ commands, every technique file); best on UI and standards subjects; over-reaches with repo-wide findings unless told to judge each context by its own code |
-| grok `grok-4.7` high | 14 / 20 (1 withdrawn, 1 lost) | ~15 min | slowest, but precise once it can use tools: real security (`bundle.rs` fail-open allowlist) and module-design findings; useless under `--json-schema` |
 
 
 ## --multi night - unattended coverage across every consumer repo
@@ -455,8 +435,8 @@ no failed commit, no reviewer failure, no timeout; 4 memory waits (~20 min) near
 
 | Finding | Rule it produced |
 |---|---|
-| a quarter of agy's 90 not-applicable verdicts were withdrawn (codex 6%, grok 13%): the absence they claimed was one grep away - a `#[cfg(test)]` module, an `e.mcp` read, a prompt constant | every not-applicable names its `absence_terms`; the validator re-runs that search over the context's directories and any hit refuses it; the reviewer sees the terms and judges whether they were the right ones |
-| deviations are reliable: codex 5%, grok 2% withdrawn | none - this is the seats' strength; route deviation-heavy subjects to them when routing exists |
+| a quarter of one seat's 90 not-applicable verdicts were withdrawn: the absence they claimed was one grep away - a `#[cfg(test)]` module, an `e.mcp` read, a prompt constant | every not-applicable names its `absence_terms`; the validator re-runs that search over the context's directories and any hit refuses it; the reviewer sees the terms and judges whether they were the right ones |
+| deviations are reliable: 2-5% withdrawn | none - this is the seats' strength; route deviation-heavy subjects to them when routing exists |
 | consult-check recorded a `missed` row on every conform-ledger commit; the next round committed it as found, which drew another - 7 needless commits per repo and 48 false misses | fixed in the registry (`b6b67b76`: a commit of only the conform ledger is skipped); the false rows were dropped, matched to our commits by timestamp |
 | an "about code outside the context" rule replayed on the night caught 0 of the reviewer's 4 off-context withdrawals and would have refused 7 good deviations (a test, a store, an engine the context relies on) | NOT adopted - measured before building; the reviewer judges scope better than a path rule |
 | each round waits for its slowest seat: 27% of seat time idle | fixed: continuous slots (below) |
@@ -468,8 +448,8 @@ repo; no reviewer error, no memory wait.
 | Finding | Rule it produced |
 |---|---|
 | the detached driver had NO console, so every console child (the claude reviewer for minutes, each git and node call) opened a visible window on the operator's desktop - a probe proved it | the driver launches with CREATE_NO_WINDOW (a hidden console its children inherit), every Popen in the driver defaults to CREATE_NO_WINDOW, and the scheduled task runs `pythonw` on a launcher instead of a `.cmd` |
-| codex: "Selected model is at capacity" was settled `blocked` and its subject marked tried | provider-side failures (capacity, overload, 5xx, reset) release the claim, return the subject and back the slot off 5 min |
-| agy picked registry jargon as absence terms (`dated-capability-matrix`, `orientation-tax`) so the grep could never hit; its not-applicable was still withdrawn 29%, deviation 19% (codex 16%/3%, grok 15%/8%) | jargon terms are refused; `PROVIDER_POLICY` stops accepting not-applicable from agy (its brief says so up front); agy keeps its deviations and conformants |
+| a seat's "Selected model is at capacity" was settled `blocked` and its subject marked tried | provider-side failures (capacity, overload, 5xx, reset) release the claim, return the subject and back the slot off 5 min |
+| a seat picked registry jargon as absence terms (`dated-capability-matrix`, `orientation-tax`) so the grep could never hit | jargon terms are refused; `PROVIDER_POLICY` can stop accepting a state from a seat (its brief says so up front) |
 | `.git/COMMIT_EDITMSG` is one file per checkout: a sibling committing in the same instant swapped our message in systedo-case (our 3 conform files landed as `refactor(app): ...`) | the commit is found by its exact paths and reported as ours with the true message in `git notes --ref=curator`; a shared branch is never rewritten |
 | goat's map has outlived its tree: seats find 1-2 real pairs and honestly decline | none in the driver - goat needs a context scan and a map rebuild |
 

@@ -60,7 +60,7 @@ class Anchors(unittest.TestCase):
 class Validate(unittest.TestCase):
     def test_read_nothing_refuses_the_whole_answer(self):
         v = M.validate(answer(pair("ctx-a", "deviation", [tech("t1", "deviation")])), DOSSIER, FILES,
-                       "grok answered in 1 turn(s): no file was opened")
+                       "claude answered in 1 turn(s): no file was opened")
         self.assertEqual(v["pairs"], [])
         self.assertEqual(len(v["declined"]), 2)
 
@@ -97,7 +97,7 @@ class Validate(unittest.TestCase):
 
 class Absence(unittest.TestCase):
     """not-applicable must name its search, and the driver re-runs it (night 2026-10-12: 26% of
-    agy's not-applicable verdicts were withdrawn, most one grep away from contradiction)."""
+    one seat's not-applicable verdicts were withdrawn, most one grep away from contradiction)."""
 
     def setUp(self):
         import subprocess
@@ -135,7 +135,7 @@ class Absence(unittest.TestCase):
         self.assertEqual(v["pairs"][0]["absenceTerms"], ["websocket", "stream"])
 
     def test_registry_jargon_is_not_a_search(self):
-        """agy, 2026-10-13: terms like `dated-capability-matrix` can never appear in code, so a
+        """2026-10-13: terms like `dated-capability-matrix` can never appear in code, so a
         grep for them 'proves' every absence."""
         self.d["techniques"] = [{"slug": "dated-capability-matrix"}, {"slug": "output-normalization"}]
         self.assertEqual(M.jargon_terms(self.d, ["dated-capability-matrix", "capability-matrix", "spawnSync",
@@ -144,16 +144,18 @@ class Absence(unittest.TestCase):
         v = self.na(["dated-capability-matrix", "output-normalization", "websocket"])
         self.assertEqual(v["pairs"], [])  # one real term left: below the two-term floor
 
-    def test_provider_policy_refuses_agy_not_applicable(self):
+    def test_provider_policy_refuses_a_restricted_state(self):
         a = {"subject": "s", "notes": "", "declined": [], "pairs": [{
             "context": "feat", "state": "not-applicable", "anchor": "src/feature/a.ts:1",
             "quote": "export const a = 1; // the main entry", "consequence": "nothing in this context serves tools",
             "techniques": [], "registryProposal": "", "absence_terms": ["websocket", "stream"]}]}
-        self.assertEqual(M.validate(a, self.d, self.files, provider="agy")["pairs"], [])
-        self.assertEqual(len(M.validate(a, self.d, self.files, provider="codex")["pairs"]), 1)
-        self.assertIn("not accepted", M.brief({**self.d, "repo_root": str(self.dir), "golden": "g",
-                                               "applications": [], "techniques": [{"slug": "t1", "file": "f", "use_when": []}],
-                                               "pairs": []}, "agy"))
+        from unittest import mock
+        with mock.patch.dict(M.PROVIDER_POLICY, {"restricted": {"not-applicable": "decline"}}):
+            self.assertEqual(M.validate(a, self.d, self.files, provider="restricted")["pairs"], [])
+            self.assertEqual(len(M.validate(a, self.d, self.files, provider="claude")["pairs"]), 1)
+            self.assertIn("not accepted", M.brief({**self.d, "repo_root": str(self.dir), "golden": "g",
+                                                   "applications": [], "techniques": [{"slug": "t1", "file": "f", "use_when": []}],
+                                                   "pairs": []}, "restricted"))
 
     def test_no_terms_is_declined(self):
         self.assertEqual(self.na([])["pairs"], [])
@@ -268,10 +270,36 @@ class Commit(unittest.TestCase):
         self.assertIn("detached", M.commit_repo(self.dir, [], "conform: x").get("skipped", ""))
 
 
+class ClaudeSeat(unittest.TestCase):
+    def test_only_claude_seats_exist(self):
+        self.assertEqual(list(M.PROVIDERS), ["claude"])
+
+    def test_envelope_structured_output_is_the_answer(self):
+        import json
+        env = {"type": "result", "subtype": "success", "is_error": False, "num_turns": 9, "session_id": "s1",
+               "result": "", "structured_output": {"subject": "x", "pairs": [], "declined": [], "notes": ""}}
+        r = M.read_seat("claude", pathlib.Path("."), json.dumps(env))
+        self.assertEqual(r["answer"]["subject"], "x")
+        self.assertIsNone(r["read_nothing"])
+        self.assertIsNone(r["error"])
+        one = M.read_seat("claude", pathlib.Path("."), json.dumps({**env, "num_turns": 1}))
+        self.assertIn("1 turn", one["read_nothing"])
+
+    def test_seat_cannot_write(self):
+        import tempfile
+        d = pathlib.Path(tempfile.mkdtemp(prefix="curator-seat-"))
+        (d / "p.md").write_text("judge", encoding="utf-8")
+        (d / "s.json").write_text("{}", encoding="utf-8")
+        argv, stdin, _ = M.seat_command("claude", "m", "high", d / "p.md", d / "s.json", d, "sid", str(d))
+        self.assertEqual(stdin, "judge")
+        self.assertIn("Edit", argv[argv.index("--disallowedTools") + 1])
+        self.assertIn("--no-session-persistence", argv)
+
+
 class Night(unittest.TestCase):
     def test_the_detached_child_runs_in_the_foreground(self):
         import argparse
-        a = argparse.Namespace(providers="codex", timeout_min=35, per_provider=1, terminal_owns=True, repos=None,
+        a = argparse.Namespace(providers="claude", timeout_min=35, per_provider=1, terminal_owns=True, repos=None,
                                review="claude", reviewer_model="sonnet", until="06:30", max_rounds=0)
         self.assertIn("--foreground", M.night_argv(a))
 

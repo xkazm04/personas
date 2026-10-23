@@ -73,12 +73,10 @@ HOME = pathlib.Path.home()
 # Providers
 # --------------------------------------------------------------------------
 
-# The seats the operator named on 2026-10-12. `model` is what the CLI is asked for; `flash`
-# for agy means the newest flash slug `agy models` lists, resolved at run time.
+# Claude seats only (operator, 2026-10-24): every seat is a headless `claude -p`. `--per-provider`
+# sets how many run at once; `--seat-model` overrides the model for a run.
 PROVIDERS = {
-    "codex": {"label": "codex-cli", "model": "gpt-6.1-sol", "effort": "high"},
-    "grok": {"label": "grok-cli", "model": "grok-4.7", "effort": "high"},
-    "agy": {"label": "agy-cli", "model": "latest-flash", "effort": "high"},
+    "claude": {"label": "claude-cli", "model": "claude-opus-5-5", "effort": "high"},
 }
 
 # Phrases a provider prints when its plan's quota, not the work, ended the run.
@@ -87,57 +85,30 @@ LIMIT_SIGNATURES = L.LIMIT_SIGNATURES + (
     "too many requests", "insufficient_quota", "credits", "upgrade your plan",
 )
 
+# Tools a seat may not use: it judges, it never writes. The merger is the map's only writer.
+SEAT_DISALLOWED = "Edit,Write,NotebookEdit,MultiEdit,Agent,Task,WebFetch,WebSearch"
+
 
 def bin_of(name: str) -> str | None:
-    if name == "agy":
-        local = pathlib.Path(os.environ.get("LOCALAPPDATA", "")) / "agy" / "bin" / "agy.exe"
-        return str(local) if local.exists() else shutil.which("agy")
-    if name == "grok":
-        local = HOME / ".grok" / "bin" / "grok.exe"
-        return shutil.which("grok") or (str(local) if local.exists() else None)
-    return shutil.which(name)
-
-
-def agy_flash_model() -> str:
-    """The newest `gemini-X.Y-flash-high` slug agy offers (the operator asked for the latest flash)."""
-    b = bin_of("agy")
+    if name != "claude":
+        return None
     try:
-        out = subprocess.run([b, "models"], capture_output=True, text=True, encoding="utf-8",
-                             errors="replace", timeout=60).stdout
-    except Exception:
-        out = ""
-    found = re.findall(r"gemini-(\d+)\.(\d+)-flash-high", out)
-    if not found:
-        return "gemini-3.8-flash-high"
-    major, minor = max((int(a), int(b)) for a, b in found)
-    return f"gemini-{major}.{minor}-flash-high"
+        return L.claude_bin()
+    except SystemExit:
+        return None
 
 
 def seat_command(name: str, model: str, effort: str, prompt_file: pathlib.Path, schema_file: pathlib.Path,
                  seat_dir: pathlib.Path, session_id: str, repo: str) -> tuple[list[str], str | None, dict]:
-    """(argv, stdin text, extra env). Every seat is told to stay read-only; codex's sandbox enforces it."""
-    b = bin_of(name)
+    """(argv, stdin text, extra env). The seat is read-only by its disallowed tools and its brief;
+    `--no-session-persistence` leaves no session file to clean up."""
+    if name != "claude":
+        raise ValueError(name)
     prompt = prompt_file.read_text(encoding="utf-8")
-    if name == "codex":
-        # --ephemeral: no session files to clean. read-only sandbox: no file can be written.
-        # Prompt on stdin (`-`); a closed stdin is required or it waits for more input.
-        return ([b, "exec", "--json", "--skip-git-repo-check", "--ephemeral", "-s", "read-only",
-                 "-C", repo, "-m", model, "-c", f'model_reasoning_effort="{effort}"',
-                 "--output-schema", str(schema_file), "-o", str(seat_dir / "last.json"), "-"], prompt, {})
-    if name == "grok":
-        # Our own session id, so its session directory can be deleted exactly. No subagents:
-        # grok's subagents run in git worktrees under ~/.grok/worktrees.
-        # NO --json-schema: measured round 1 (2026-10-12), it makes grok answer in ONE turn with no
-        # tool call - it judged five pairs without opening a file and wrote "DRAFT ONLY - do not keep".
-        return ([b, "--prompt-file", str(prompt_file), "-m", model, "--effort", effort,
-                 "--output-format", "json", "--always-approve",
-                 "--permission-mode", "bypassPermissions", "--no-subagents", "--disable-web-search",
-                 "-s", session_id, "--cwd", repo], None, {"GROK_MEMORY": "0", "GROK_AGENT_DASHBOARD": "0"})
-    if name == "agy":
-        # agy blocks on an open stdin pipe on Windows, so the prompt rides as -p (contest's adapter).
-        return ([b, "-p", prompt, "--model", model, "--output-format", "json", "--json-schema", str(schema_file),
-                 "--dangerously-skip-permissions", "--disable-slash-commands", "--print-timeout", "2h"], None, {})
-    raise ValueError(name)
+    return ([bin_of(name), "--print", "--output-format", "json", "--model", model, "--effort", effort,
+             "--json-schema", schema_file.read_text(encoding="utf-8"),
+             "--dangerously-skip-permissions", "--disallowedTools", SEAT_DISALLOWED,
+             "--no-session-persistence"], prompt, {})
 
 
 # --------------------------------------------------------------------------
@@ -184,7 +155,7 @@ def repo_by_root(root) -> dict:
 VERDICTS = ["conformant", "deviation", "not-applicable", "unknown"]
 TECH_VERDICTS = ["conformant", "deviation", "not-applicable", "unread"]
 
-# Strict-mode shape (codex requires every property required and no extras).
+# Strict-mode shape: every property required and no extras.
 _anchor = {"type": "string", "description": "repo-relative path:line, e.g. src/lib/foo.ts:41"}
 _quote = {"type": "string", "description": "the exact text of that line, copied verbatim"}
 SCHEMA = {
@@ -443,53 +414,24 @@ def _last_json_object(text: str, key: str = "pairs") -> dict | None:
 
 
 def read_seat(name: str, seat_dir: pathlib.Path, stdout: str) -> dict:
-    """{answer, session, usage, error, read_nothing} from a seat's envelope."""
+    """{answer, session, usage, error, read_nothing} from a seat's `--output-format json` envelope."""
     res = {"answer": None, "session": None, "usage": None, "error": None, "read_nothing": None}
-    if name == "codex":
-        last = seat_dir / "last.json"
-        if last.exists():
-            txt = last.read_text(encoding="utf-8", errors="replace")
-            try:
-                res["answer"] = json.loads(txt)
-            except ValueError:
-                res["answer"] = _last_json_object(txt)
-        for line in stdout.splitlines():
-            try:
-                ev = json.loads(line)
-            except ValueError:
-                continue
-            if ev.get("type") == "turn.completed" and ev.get("usage"):
-                res["usage"] = ev["usage"]
-            if ev.get("type") in ("error", "turn.failed"):
-                res["error"] = json.dumps(ev)[:600]
-        if '"command_execution"' not in stdout:
-            res["read_nothing"] = "codex ran no command: no file was opened"
-        return res
     try:
         env = json.loads(stdout)
     except ValueError:
-        env = None
+        env = _last_json_object(stdout, key="type")
     if not isinstance(env, dict):
         res["error"] = "unreadable envelope"
         res["answer"] = _last_json_object(stdout)
         return res
-    if name == "grok":
-        res["session"] = env.get("sessionId")
-        res["usage"] = {"usage": env.get("usage"), "cost_usd": env.get("total_cost_usd"), "turns": env.get("num_turns")}
-        if (env.get("num_turns") or 0) <= 1:
-            res["read_nothing"] = f"grok answered in {env.get('num_turns')} turn(s): no file was opened"
-        res["answer"] = env.get("structuredOutput") if isinstance(env.get("structuredOutput"), dict) else _last_json_object(env.get("text") or "")
-        if env.get("stopReason") not in (None, "end_turn"):
-            res["error"] = f"stopReason {env.get('stopReason')}"
-    elif name == "agy":
-        res["session"] = env.get("conversation_id")
-        res["usage"] = {"usage": env.get("usage"), "turns": env.get("num_turns"), "seconds": env.get("duration_seconds")}
-        resp = env.get("structured_output") or env.get("response")
-        res["answer"] = resp if isinstance(resp, dict) else _last_json_object(resp or "")
-        if env.get("status") != "SUCCESS":
-            res["error"] = f"status {env.get('status')}: {str(env.get('error') or '')[:300]}"
-        if env.get("denied_actions"):
-            res["error"] = (res["error"] or "") + f" denied_actions {json.dumps(env['denied_actions'])[:300]}"
+    res["session"] = env.get("session_id")
+    res["usage"] = {"usage": env.get("usage"), "cost_usd": env.get("total_cost_usd"), "turns": env.get("num_turns")}
+    if (env.get("num_turns") or 0) <= 1:
+        res["read_nothing"] = f"claude answered in {env.get('num_turns')} turn(s): no file was opened"
+    so = env.get("structured_output")
+    res["answer"] = so if isinstance(so, dict) else _last_json_object(env.get("result") or "")
+    if env.get("is_error") or env.get("subtype") not in (None, "success"):
+        res["error"] = f"{env.get('subtype')}: {str(env.get('result') or '')[:300]}"
     return res
 
 
@@ -583,7 +525,7 @@ def check_anchor(files: Files, anchor: str, quote: str) -> tuple[str | None, str
     return None, None, f"{rel}:{n} does not contain the quoted text"
 
 
-# Statements about the ANSWER, not about scope. Measured round 3: codex's honest "hosting-platform
+# Statements about the ANSWER, not about scope. Measured round 3: a seat's honest "hosting-platform
 # enforcement was not verified" and "contain no placeholder anchors" tripped a looser pattern and
 # a good answer was refused whole.
 SELF_DISCLAIMER = re.compile(
@@ -640,11 +582,9 @@ def absence_contradicted(files: Files, ctx_files: list[str], terms: list[str]) -
     return f"{path}:{line} contains '{term}' ({len(hits)} hit(s) in the context's directories)"
 
 
-# Per-provider refusals, from measured withdrawal rates (5-hour continuous run, 2026-10-13: of
-# what landed, the reviewer withdrew agy's not-applicable 29%, deviation 19%; codex's 16% / 3%;
-# grok's 15% / 8%). agy's not-applicable also gamed the absence search with registry jargon. A
-# refused state becomes a decline - the pair stays unknown for a seat that judges it better.
-PROVIDER_POLICY = {"agy": {"not-applicable": "decline"}}
+# Per-provider refusals: a state a seat's measured withdrawal rate says not to accept from it. A
+# refused state becomes a decline - the pair stays unknown. No Claude seat is restricted today.
+PROVIDER_POLICY: dict[str, dict[str, str]] = {}
 
 
 def jargon_terms(d: dict, terms: list[str]) -> list[str]:
@@ -754,7 +694,7 @@ def validate(answer: dict | None, d: dict, files: Files, read_nothing: str | Non
                 decline("called conformant while a technique is a deviation")
                 continue
             # One anchor reused for several techniques is one piece of evidence: measured round 1,
-            # agy anchored five or six "not-applicable" techniques on `mod tests {` to reach the floor.
+            # a seat anchored five or six "not-applicable" techniques on `mod tests {` to reach the floor.
             if len(cited_anchors) < need:
                 decline(f"conformant below the evidence floor: {len(cited_anchors)} distinct anchors for {T} techniques, {need} needed")
                 continue
@@ -766,7 +706,7 @@ def validate(answer: dict | None, d: dict, files: Files, read_nothing: str | Non
             continue
         terms: list[str] = []
         if state == "not-applicable":
-            # Measured night 2026-10-12: a quarter of agy's not-applicable verdicts were withdrawn,
+            # Measured night 2026-10-12: a quarter of one seat's not-applicable verdicts were withdrawn,
             # most because the absence they claimed was one grep away (a `#[cfg(test)]` module, an
             # `e.mcp` read). The seat names its search; the driver re-runs it and any hit refuses.
             terms = [t.strip() for t in (raw.get("absence_terms") or []) if isinstance(t, str) and len(t.strip()) >= 3][:5]
@@ -789,7 +729,7 @@ def validate(answer: dict | None, d: dict, files: Files, read_nothing: str | Non
             pair["registryProposal"] = _norm(raw["registryProposal"])
         out["pairs"].append(pair)
     # A smear: one anchor, outside every context it is pinned on, carried by several pairs.
-    # Measured round 2: codex pinned `lefthook.yml:32` on four UI contexts with one sentence - true
+    # Measured round 2: a seat pinned `lefthook.yml:32` on four UI contexts with one sentence - true
     # of the repo, a verdict about none of them.
     by_anchor: dict[str, list[dict]] = {}
     for p in out["pairs"]:
@@ -856,56 +796,14 @@ def repo_untracked(root) -> set[str]:
     return {l[3:].strip().strip('"') for l in out.splitlines() if l.startswith("??")}
 
 
-def grok_session_dir(session: str, cwd) -> pathlib.Path:
-    from urllib.parse import quote
-    return HOME / ".grok" / "sessions" / quote(str(cwd), safe="") / session
-
-
 def clean_provider_sessions(seat: dict) -> list[str]:
-    """Delete what a provider wrote OUTSIDE the repo for this seat, by its own session id only."""
-    gone = []
-    sid = seat.get("session")
-    if not sid or not re.fullmatch(r"[0-9a-fA-F-]{16,64}", sid):
-        return gone
-    if seat["name"] == "grok":
-        cwd = (seat.get("dossier") or {}).get("repo_root") or L.PERSONAS_ROOT
-        cands = [grok_session_dir(sid, cwd)]
-        # grok also appends each prompt to ONE history file per cwd, shared with the operator's own
-        # sessions: drop only this seat's lines, matched by session id.
-        hist = grok_session_dir(sid, cwd).parent / "prompt_history.jsonl"
-        try:
-            lines = hist.read_text(encoding="utf-8").splitlines(keepends=True)
-            kept = [x for x in lines if f'"session_id":"{sid}"' not in x.replace(" ", "")]
-            if len(kept) != len(lines):
-                tmp = hist.with_name(hist.name + f".tmp-{os.getpid()}")
-                tmp.write_text("".join(kept), encoding="utf-8", newline="")
-                os.replace(tmp, hist)
-                gone.append(f"{hist} ({len(lines) - len(kept)} line(s))")
-        except OSError:
-            pass
-    elif seat["name"] == "agy":
-        base = HOME / ".gemini" / "antigravity-cli"
-        cands = [base / "annotations" / f"{sid}.pbtxt", base / "brain" / sid,
-                 base / "conversations" / f"{sid}.db", base / "presence" / f"{sid}.lock"]
-    else:
-        cands = []
-    for p in cands:
-        try:
-            if p.is_symlink():
-                continue  # never follow a link out of the provider's home
-            if p.is_dir():
-                shutil.rmtree(p)
-                gone.append(str(p))
-            elif p.exists():
-                p.unlink()
-                gone.append(str(p))
-        except OSError:
-            pass
-    return gone
+    """Delete what a provider wrote OUTSIDE the repo for this seat. Claude seats run with
+    `--no-session-persistence`, so there is nothing to delete."""
+    return []
 
 
 # Provider-made junk that may appear at the repo root; only these are ever auto-deleted.
-STRAY_OK = re.compile(r"^(\.grok|\.agents|\.gemini|\.codex|\.antigravity)(/|$)|^(tmp|temp)[^/]*\.(txt|json|md|py|js|mjs|sh)$", re.I)
+STRAY_OK = re.compile(r"^(tmp|temp)[^/]*\.(txt|json|md|py|js|mjs|sh)$", re.I)
 
 
 # --------------------------------------------------------------------------
@@ -1099,7 +997,7 @@ def run_round(a: argparse.Namespace) -> dict:
     skills = L.read_skills(registry)
     repos = consumer_repos(registry, [x.strip() for x in a.repos.split(",")] if getattr(a, "repos", None) else None)
     rdir.mkdir(parents=True, exist_ok=True)
-    agy_model = agy_flash_model() if "agy" in active else None
+    seat_model = getattr(a, "seat_model", None)
     schema_file = rdir / "schema.json"
     schema_file.write_text(json.dumps(SCHEMA), encoding="utf-8")
 
@@ -1122,7 +1020,7 @@ def run_round(a: argparse.Namespace) -> dict:
             if baseline and not baseline.get("nothing"):
                 print(json.dumps({**baseline, "event": "as_found_commit", "repo": d["repo"]}, default=str), flush=True)
                 baselines.append({"slug": d["repo"], **baseline})
-        seat = _launch(name, agy_model, claim, d, rdir / f"{name}-{i}", schema_file)
+        seat = _launch(name, seat_model, claim, d, rdir / f"{name}-{i}", schema_file)
         seats.append(seat)
         _journal(rdir, seats, before, a.keep_raw)
         print(json.dumps({"event": "seat", "round": n, "provider": name, "model": seat["model"], "repo": d["repo"],
@@ -1142,11 +1040,11 @@ def run_round(a: argparse.Namespace) -> dict:
     return summary
 
 
-def _launch(name: str, agy_model: str | None, claim: dict, d: dict, sdir: pathlib.Path,
+def _launch(name: str, seat_model: str | None, claim: dict, d: dict, sdir: pathlib.Path,
             schema_file: pathlib.Path) -> dict:
     """Start one provider seat on one dossier; the seat dict the settle path reads."""
     cfg = PROVIDERS[name]
-    model = (agy_model or "gemini-3.8-flash-high") if name == "agy" else cfg["model"]
+    model = seat_model or cfg["model"]
     sdir.mkdir(parents=True, exist_ok=True)
     pf = sdir / "prompt.md"
     prompt_text = brief(d, name)
@@ -1167,11 +1065,11 @@ def _launch(name: str, agy_model: str | None, claim: dict, d: dict, sdir: pathli
             pass
     return {"name": name, "model": model, "claim": claim, "dossier": d, "dir": sdir, "proc": proc,
             "prompt_sha": sha256_text(prompt_text), "pid": proc.pid, "create_time": L.proc_create_time(proc.pid),
-            "fo": fo, "fe": fe, "t0": time.time(), "session": sid if name == "grok" else None}
+            "fo": fo, "fe": fe, "t0": time.time(), "session": None}
 
 
 def spawn_unit(a, c, registry, skills, repos: list[dict], name: str, held: set[str], used: dict,
-               agy_model: str | None) -> dict | None:
+               seat_model: str | None) -> dict | None:
     """ONE seat as its own unit (`rounds/<n>/`, journaled, settled alone). None = nothing claimable.
 
     The continuous night is made of these: a unit ends when its seat does, so a fast provider
@@ -1195,7 +1093,7 @@ def spawn_unit(a, c, registry, skills, repos: list[dict], name: str, held: set[s
     baseline = commit_as_found(pathlib.Path(d["repo_root"]), n)
     if baseline and not baseline.get("nothing"):
         baselines.append({"slug": d["repo"], **baseline})
-    seat = _launch(name, agy_model, claim, d, rdir / f"{name}-0", schema_file)
+    seat = _launch(name, seat_model, claim, d, rdir / f"{name}-0", schema_file)
     _journal(rdir, [seat], before, False)
     seat["fo"].close(), seat["fe"].close()  # the child holds its own handles
     return {"n": n, "rdir": rdir, "seat": seat, "before": before, "baselines": baselines}
@@ -1302,7 +1200,7 @@ def settle_round(n: int, rdir: pathlib.Path, seats: list[dict], before: dict, ke
         tried_key = f"{d['repo']}:{claim['subject']}"
         if lost:
             # Nothing here is the seat's verdict - the driver died with it, or the provider was briefly
-            # unavailable (measured 2026-10-13: codex "Selected model is at capacity" after 86 s). Give
+            # unavailable (e.g. "Selected model is at capacity"). Give
             # the subject back so a later seat judges it; the flow backs this slot off for a while.
             why = f"provider unavailable: {transient}" if transient else "seat lost when the round's driver died"
             L.release(c, claim, f"curator-multi: {s['name']} {why}")
@@ -1807,7 +1705,7 @@ def _reviewed_phrase(review: dict, model: str) -> str:
 def run_flow(a, log, events: list, deadline, registry, repos: list[dict]) -> str:
     """Continuous seats: every provider slot takes its next subject the moment its seat settles.
 
-    Measured 2026-10-13: rounds waited for their slowest seat (grok ~12 min against agy's ~7),
+    Measured 2026-10-13: rounds waited for their slowest seat (~12 min against the fastest ~7),
     leaving 27% of seat time idle. Here each slot runs at its own provider's speed. A finished
     seat is settled on this thread (validate, merge, ledger) and its review + commit go to a
     worker, so a 10-minute review never holds a slot empty. One live unit per repo: a repo held
@@ -1828,7 +1726,7 @@ def run_flow(a, log, events: list, deadline, registry, repos: list[dict]) -> str
     started = empty_streak = 0
     stop = None
     last_hold = None
-    agy_model = agy_flash_model() if "agy" in names else None
+    seat_model = getattr(a, "seat_model", None)
     pool = ThreadPoolExecutor(max_workers=3)
 
     def post(summary: dict) -> tuple[dict, list]:
@@ -1933,7 +1831,7 @@ def run_flow(a, log, events: list, deadline, registry, repos: list[dict]) -> str
                         barren = {r for r, k in repo_dry.items() if k >= BARREN_UNITS}
                         used = {"repos": busy, "busy": busy | barren,
                                 "categories": {u["seat"]["dossier"]["category"] for u in running.values()}}
-                        u = spawn_unit(a, c, registry, skills, repos, slot.split("#")[0], held, used, agy_model)
+                        u = spawn_unit(a, c, registry, skills, repos, slot.split("#")[0], held, used, seat_model)
                     finally:
                         c.close()
                     if u is None:
@@ -2092,6 +1990,8 @@ def _detached(argv: list[str], log: pathlib.Path) -> int:
 
 def _common_args(a: argparse.Namespace) -> list[str]:
     out = ["--providers", a.providers, "--timeout-min", str(a.timeout_min), "--per-provider", str(a.per_provider)]
+    if getattr(a, "seat_model", None):
+        out += ["--seat-model", a.seat_model]
     if a.terminal_owns:
         out.append("--terminal-owns")
     if a.repos:
