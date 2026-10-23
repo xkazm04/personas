@@ -37268,6 +37268,52 @@
           "evidence": "src/features/notepad/plan/shipAthena.ts:91 Decomposition proposes goals directly onto an editable card without mapping unstated commitments across the four lenses or routing recurring conventions to instruction files."
         }
       ]
+    },
+    "b39776f5-3909-41e3-b69f-14c9a6c70bec/release-pipeline": {
+      "context": "home-learning",
+      "subject": "release-pipeline",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-23",
+      "evaluatedTs": "2026-10-23T21:20:38.836Z",
+      "techniques": [
+        {
+          "technique": "deprecation-by-version-arithmetic",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/i18n/useReleasesTranslation.ts:10 This compatibility wrapper serves internal components shipped together; the standard exempts internal symbols whose callers can migrate in the same repository."
+        },
+        {
+          "technique": "pipeline-staging",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/HomeReleases.tsx:39 This context consumes release records for presentation; it does not execute the version, build, or publish stages."
+        },
+        {
+          "technique": "release-level-by-reader-reach",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_releases/roadmapItems.ts:48 Unknown remote statuses reach an acting default instead of an inert or explicit unknown outcome; roadmapItems.test.ts:62–69 deliberately verifies this coercion."
+        },
+        {
+          "technique": "release-verification",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/roadmapItems.test.ts:93 The context tests an in-memory display transformation, not assembled release artifacts or a publish gate."
+        },
+        {
+          "technique": "updater-chain",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/useLiveRoadmap.ts:58 This refresh fetches roadmap content; it does not discover, verify, or apply application updates."
+        },
+        {
+          "technique": "version-single-truth",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_releases/BundledReleaseCard.tsx:22 The card displays the historical release record's version rather than maintaining a replica of the running artifact's version."
+        }
+      ],
+      "withdrawn": {
+        "worker": "c26f07cc-9369-4fb2-87e0-31dfa9daebf7",
+        "state": "deviation",
+        "at": "2026-10-23T21:20:58.296811+00:00",
+        "reason": "reviewer (sonnet): The code at roadmapItems.ts:43-49 does coerce unknown statuses to 'planned' and logs them, but that only picks a display label for the roadmap UI. It acts on nothing, and the verdict's own technique notes say this context never runs the version, build or publish stages, so the 'acting default' and '"
+      }
     }
   }
 }

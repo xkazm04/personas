@@ -1,0 +1,37 @@
+{
+  "schema": "conform-run/1",
+  "worker": "c26f07cc-9369-4fb2-87e0-31dfa9daebf7",
+  "subject": "release-pipeline",
+  "evaluatedAt": "2026-10-23T21:20:38.836963+00:00",
+  "provider": "codex",
+  "model": "gpt-6.1-sol",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "release-pipeline",
+      "context": "home-learning",
+      "reason": "withdrawn after review: reviewer (sonnet): The code at roadmapItems.ts:43-49 does coerce unknown statuses to 'planned' and logs them, but that only picks a display label for the roadmap UI. It acts on nothing, and the verdict's own technique notes say this context never runs the version, build or publish stages, so the 'acting default' and '"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-23T21:20:38.836963+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "release-pipeline"
+      ],
+      "techniques": [
+        "deprecation-by-version-arithmetic",
+        "pipeline-staging",
+        "release-level-by-reader-reach",
+        "release-verification",
+        "updater-chain",
+        "version-single-truth"
+      ],
+      "deviations": 1,
+      "context": "home-learning",
+      "via": "curator-multi:codex",
+      "model": "gpt-6.1-sol"
+    }
+  ]
+}
