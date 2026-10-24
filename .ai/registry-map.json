@@ -17927,7 +17927,11 @@
           "revision": 4,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/credentials/connectorLicensing.ts:180 Licensing tier is decided first by a hand-maintained side table that overrides the row's own metadata.pricing_tier; measured against scripts/connectors/builtin/*.json, 6 connectors disagree (asana enterprise vs row freemium, calendly paid vs row free, ramp personal vs row paid, granola, leonardo_ai, hubspot), so the taxonomy axis has two authorities and the side table silently wins.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:d78c2c6c19304554",
+          "evaluatedRevision": 4
         },
         {
           "subject": "translation-pipeline-topology",

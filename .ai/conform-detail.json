@@ -38360,6 +38360,22 @@
         "at": "2026-10-24T06:16:26.081073+00:00",
         "reason": "reviewer (sonnet): The anchor GitLabPipelineViewer.tsx:23 is only the component declaration and does not itself show that no artifact is acquired. My own grep of the gitlab directory for sidecar/download/install/binary/npx/exec found nothing, but the cited line is incidental."
       }
+    },
+    "e61f931c-25d7-4532-9ec7-ab6f3fc377e2/connector-catalog": {
+      "context": "lib-credentials",
+      "subject": "connector-catalog",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T21:09:02.932Z",
+      "worker": "83b7652d-c1d0-4c7e-a59c-eb2a429a903e",
+      "techniques": [
+        {
+          "technique": "catalog-as-data",
+          "verdict": "deviation",
+          "evidence": "src/lib/credentials/connectorLicensing.ts:180 Rows themselves are data (builtinConnectors.ts:32 globs every seed JSON, and connectorCategoryTags unions scalar+list as prescribed), and audiences use the documented row-first/fallback union bridge (though 0 of 135 seeds carry metadata.audiences yet). But licensing inverts the bridge (side table beats row, 6 measured disagreements), and CONNECTOR_ROLES (connectorRoles.ts:72) is a pure side table with no row read: 37 of its members (mailchimp, openai, shopify, zendesk, ...) name no shipped seed. The in-context seed test (builtinConnectors.test.ts:83) checks only key presence, never that roles fall in the closed set or that the probe references declared fields."
+        }
+      ]
     }
   }
 }

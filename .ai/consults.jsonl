@@ -2121,3 +2121,4 @@
 {"ts":"2026-10-24T06:15:58.322209+00:00","bundle":"software-engineering","subjects":["sidecar-provisioning"],"techniques":[],"deviations":0,"context":"plugins-gitlab","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-10-24T06:38:07.276636+00:00","bundle":"software-engineering","subjects":["codegen"],"techniques":[],"deviations":0,"context":"run-desk","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-10-24T06:38:07.276636+00:00","bundle":"software-engineering","subjects":["codegen"],"techniques":[],"deviations":0,"context":"templates-generated-gallery-cards","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-10-24T21:09:02.932555+00:00","bundle":"software-engineering","subjects":["connector-catalog"],"techniques":["catalog-as-data"],"deviations":1,"context":"lib-credentials","via":"curator-multi:claude","model":"claude-opus-5-5"}
