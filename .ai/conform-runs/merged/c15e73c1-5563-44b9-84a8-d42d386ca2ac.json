@@ -1,0 +1,117 @@
+{
+  "schema": "conform-run/1",
+  "worker": "c15e73c1-5563-44b9-84a8-d42d386ca2ac",
+  "subject": "concurrent-vcs",
+  "evaluatedAt": "2026-10-24T04:34:28.252303+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "triggers-studio",
+      "subject": "concurrent-vcs",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:2 Here 'commit' means saving a draft trigger link to the backend, not a VCS commit; searching all of src/features/triggers for worktree, git stash, GIT_INDEX_FILE, active-runs and git commit found 0 hits, so no shared-checkout VCS mechanics exist in this context.",
+      "techniques": [],
+      "absenceTerms": [
+        "worktree",
+        "git stash",
+        "GIT_INDEX_FILE",
+        "active-runs",
+        "git commit"
+      ]
+    },
+    {
+      "context": "overview-memories",
+      "subject": "concurrent-vcs",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/sub_memories/libs/memoryConflicts.ts:11 'Conflict' here means competing persona-memory claims, not merge conflicts; searching src/features/overview/sub_memories for worktree, git stash, GIT_INDEX_FILE, active-runs and git commit found 0 hits, so the subject's precondition (sessions sharing a checkout) does not reach this code.",
+      "techniques": [],
+      "absenceTerms": [
+        "worktree",
+        "git stash",
+        "GIT_INDEX_FILE",
+        "active-runs",
+        "git commit"
+      ]
+    },
+    {
+      "context": "lab-shared-primitives",
+      "subject": "concurrent-vcs",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_lab/shared/DiffViewer.tsx:3 The diff and version primitives compare stored persona prompt versions, not repository revisions; searching src/features/agents/sub_lab for worktree, git stash, GIT_INDEX_FILE, active-runs and git commit found 0 hits, so concurrent-VCS mechanics have no surface here.",
+      "techniques": [],
+      "absenceTerms": [
+        "worktree",
+        "git stash",
+        "GIT_INDEX_FILE",
+        "active-runs",
+        "git commit"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "concurrent-vcs",
+      "context": "fleet-session-grid",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "concurrent-vcs",
+      "context": "settings-network",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor ExposureManager.tsx:9 is only an import of SectionCard, so it does not show that the module runs no version-control operation. The claim rests on a keyword search, not on a line that shows the precondition is absent."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-24T04:34:28.252303+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "concurrent-vcs"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "settings-network",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T04:34:28.252303+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "concurrent-vcs"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "triggers-studio",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T04:34:28.252303+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "concurrent-vcs"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "overview-memories",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T04:34:28.252303+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "concurrent-vcs"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "lab-shared-primitives",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

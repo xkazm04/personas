@@ -38032,6 +38032,51 @@
       "evaluatedTs": "2026-10-24T04:22:06.568Z",
       "worker": "31f38b62-42f6-4d96-8e8f-97d2a0bb478f",
       "techniques": []
+    },
+    "7159d27d-86c2-43be-a83f-8b50c4c816be/concurrent-vcs": {
+      "context": "settings-network",
+      "subject": "concurrent-vcs",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T04:34:28.252Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "c15e73c1-5563-44b9-84a8-d42d386ca2ac",
+        "state": "not-applicable",
+        "at": "2026-10-24T04:34:47.019378+00:00",
+        "reason": "reviewer (sonnet): The anchor ExposureManager.tsx:9 is only an import of SectionCard, so it does not show that the module runs no version-control operation. The claim rests on a keyword search, not on a line that shows the precondition is absent."
+      }
+    },
+    "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc/concurrent-vcs": {
+      "context": "triggers-studio",
+      "subject": "concurrent-vcs",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T04:34:28.252Z",
+      "worker": "c15e73c1-5563-44b9-84a8-d42d386ca2ac",
+      "techniques": []
+    },
+    "e62d5595-2bbd-480a-a757-2d3a126545a0/concurrent-vcs": {
+      "context": "overview-memories",
+      "subject": "concurrent-vcs",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T04:34:28.252Z",
+      "worker": "c15e73c1-5563-44b9-84a8-d42d386ca2ac",
+      "techniques": []
+    },
+    "ba0d4722-bfde-40aa-8e1d-52591719f834/concurrent-vcs": {
+      "context": "lab-shared-primitives",
+      "subject": "concurrent-vcs",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T04:34:28.252Z",
+      "worker": "c15e73c1-5563-44b9-84a8-d42d386ca2ac",
+      "techniques": []
     }
   }
 }

@@ -17407,7 +17407,11 @@
           "revision": 9,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_lab/shared/DiffViewer.tsx:3 The diff and version primitives compare stored persona prompt versions, not repository revisions; searching src/features/agents/sub_lab for worktree, git stash, GIT_INDEX_FILE, active-runs and git commit found 0 hits, so concurrent-VCS mechanics have no surface here.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:de557423d4cf3016",
+          "evaluatedRevision": 9
         },
         {
           "subject": "fleet-orchestration",
@@ -23369,7 +23373,11 @@
           "revision": 9,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_memories/libs/memoryConflicts.ts:11 'Conflict' here means competing persona-memory claims, not merge conflicts; searching src/features/overview/sub_memories for worktree, git stash, GIT_INDEX_FILE, active-runs and git commit found 0 hits, so the subject's precondition (sessions sharing a checkout) does not reach this code.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:de557423d4cf3016",
+          "evaluatedRevision": 9
         },
         {
           "subject": "test-harness",
@@ -39532,7 +39540,11 @@
           "revision": 9,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:2 Here 'commit' means saving a draft trigger link to the backend, not a VCS commit; searching all of src/features/triggers for worktree, git stash, GIT_INDEX_FILE, active-runs and git commit found 0 hits, so no shared-checkout VCS mechanics exist in this context.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:de557423d4cf3016",
+          "evaluatedRevision": 9
         },
         {
           "subject": "convergence-loop-and-requeue",
