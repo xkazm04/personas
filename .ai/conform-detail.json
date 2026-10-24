@@ -38278,6 +38278,84 @@
         "at": "2026-10-24T05:57:04.108319+00:00",
         "reason": "reviewer (sonnet): The warning at AutomationTriggerStep.tsx:168-176 is real, and deploy.rs:289 also requires the 'workflow' scope. But I found no `automation_runner` or `create_repository_dispatch` anywhere in src or src-tauri, so I could not confirm the claim that unattended persona runs use this credential to dispat"
       }
+    },
+    "10c96ae7-a356-4555-996b-df92fc5dc8e7/sidecar-provisioning": {
+      "context": "plugins-dev-tools-skills",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T06:15:58.322Z",
+      "worker": "5d2a7160-281d-477d-b021-9df244e0aa7a",
+      "techniques": [
+        {
+          "technique": "source-pinning",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/StaticScanConfigModal.tsx:25 Default argv fetches and runs an npm package with no version or digest pinned. The `impeccable` default at :29 (`npx impeccable detect --json --no-advisory src`) has the same gap, and the comment at :26 presents 'npx on demand' as the whole setup."
+        }
+      ],
+      "registryProposal": "Source-pinning names libraries that provision themselves, but not a user-editable default command that fetches through a package runner (npx/uvx/pipx). That door is common in dev-tool hosts and could be named as its own case."
+    },
+    "456eb952-9b93-4de4-bad5-79e6f101aeb1/sidecar-provisioning": {
+      "context": "overview-components",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T06:15:58.322Z",
+      "worker": "5d2a7160-281d-477d-b021-9df244e0aa7a",
+      "techniques": [
+        {
+          "technique": "atomic-downloads",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/health/InstallButton.tsx:38 While downloading or installing, the only thing rendered is a progress strip plus the last output line. There is no cancel control, although the hook has one. The technique treats cancellation as a first-class exit."
+        },
+        {
+          "technique": "capability-detection",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/components/health/InstallButton.tsx:33 Any status other than ok gets the same 'Install' remedy. The backend tells broken apart from absent (health.rs: Warn 'detected in PATH, but version probe failed' vs Error 'Not found', both installable:true), but here both become one Install button, which tells a user who already has it installed to install it. In its favour: the verdict is re-run after an install completes (SystemHealthPanel.tsx:77 runSection('environment'))."
+        }
+      ]
+    },
+    "d9cffe6c-a868-4ed4-b5e8-6c8add36918a/sidecar-provisioning": {
+      "context": "plugins-dev-tools-lifecycle",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T06:15:58.322Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "5d2a7160-281d-477d-b021-9df244e0aa7a",
+        "state": "not-applicable",
+        "at": "2026-10-24T06:16:25.936191+00:00",
+        "reason": "reviewer (sonnet): The anchor LifecyclePage.tsx:30 is only the component declaration, so it does not show the absence. I also did not confirm that 'Install into repo' (installLifecycle) is only a dev-task dispatch, because the backend wasn't traced."
+      }
+    },
+    "b0cf3902-0739-40a8-8c76-ae594f41421b/sidecar-provisioning": {
+      "context": "plugins-dev-tools-context",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T06:15:58.322Z",
+      "worker": "5d2a7160-281d-477d-b021-9df244e0aa7a",
+      "techniques": []
+    },
+    "2b61b648-d166-4255-b7b7-5d32ffdd6751/sidecar-provisioning": {
+      "context": "plugins-gitlab",
+      "subject": "sidecar-provisioning",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T06:15:58.322Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "5d2a7160-281d-477d-b021-9df244e0aa7a",
+        "state": "not-applicable",
+        "at": "2026-10-24T06:16:26.081073+00:00",
+        "reason": "reviewer (sonnet): The anchor GitLabPipelineViewer.tsx:23 is only the component declaration and does not itself show that no artifact is acquired. My own grep of the gitlab directory for sidecar/download/install/binary/npx/exec found nothing, but the cited line is incidental."
+      }
     }
   }
 }

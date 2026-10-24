@@ -22189,8 +22189,12 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "deviation",
+          "priorNotApplicable": 5,
+          "evidence": "src/features/overview/components/health/SystemHealthPanel.tsx:58 The panel destructures only `install` from useAutoInstaller, which also exports `cancel` (useAutoInstaller.ts:176), so a running Node/Claude CLI download or install has no way to be cancelled from this surface.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         },
         {
           "subject": "data-viz",
@@ -26988,8 +26992,12 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "not-applicable",
+          "priorNotApplicable": 5,
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:1 The context projects runtime telemetry (LLM cost, Sentry errors) and scan state onto the context map. Searching sub_context for sidecar/sha256/onnx/gguf/model_path found nothing, so no external binary or model is provisioned here.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         },
         {
           "subject": "standards-layered-runtime",
@@ -27146,8 +27154,8 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "priorNotApplicable": 5,
+          "state": "unknown"
         },
         {
           "subject": "translation-quality-measurement",
@@ -27810,8 +27818,12 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "deviation",
+          "priorNotApplicable": 5,
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/StaticScanConfigModal.tsx:25 The shipped default static-scan command runs an unpinned `npx fallow`, so each run executes whatever npm currently resolves for that name: no catalog entry, no version pin, no content check before the bytes run.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:25f000a9ae879947",
+          "evaluatedRevision": 8
         },
         {
           "subject": "delivery-analytics",
@@ -28736,8 +28748,8 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "priorNotApplicable": 5,
+          "state": "unknown"
         },
         {
           "subject": "test-harness",
