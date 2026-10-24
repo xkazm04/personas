@@ -40130,12 +40130,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:229 shows this context authoring user-defined polling/schedule/webhook rules that execute a persona. That is rule-authority automation on the alerting side of the boundary the golden path draws, not machine-initiated contact with a human. The old anchor (TriggerStatusSummary.tsx:54-76) had drifted past the file's content.",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:5e13c88d70a4c50a",
-          "evaluatedRevision": 5,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/triggers/sub_triggers/UnattendedModeSection.tsx:8 Every trigger in this context is a user-authored rule (schedule, polling, webhook, file_watcher, clipboard, app_focus, composite) whose output is a persona run, not machine-initiated contact with a human, so the nudge-policy layer has nothing here to govern. A search of src/features/triggers/sub_triggers for nudge, proactive, quiet_hours, efficacy and attention found nothing. 'cooldown' hits only RateLimitControls.tsx:98, which is execution rate-limiting and belongs to scheduling. 'notify' hits only comments about the Rust file-watch crate.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:d8e246ede358e289",
+          "evaluatedRevision": 7,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",

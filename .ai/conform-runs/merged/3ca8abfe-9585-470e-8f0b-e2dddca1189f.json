@@ -1,0 +1,61 @@
+{
+ "schema": "conform-run/1",
+ "worker": "3ca8abfe-9585-470e-8f0b-e2dddca1189f",
+ "subject": "proactive-nudges",
+ "evaluatedAt": "2026-10-24T06:03:11.450097+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "triggers-triggers",
+   "subject": "proactive-nudges",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/triggers/sub_triggers/UnattendedModeSection.tsx:8 Every trigger in this context is a user-authored rule (schedule, polling, webhook, file_watcher, clipboard, app_focus, composite) whose output is a persona run, not machine-initiated contact with a human, so the nudge-policy layer has nothing here to govern. A search of src/features/triggers/sub_triggers for nudge, proactive, quiet_hours, efficacy and attention found nothing. 'cooldown' hits only RateLimitControls.tsx:98, which is execution rate-limiting and belongs to scheduling. 'notify' hits only comments about the Rust file-watch crate.",
+   "techniques": [
+    {
+     "technique": "quiet-windows",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/ActiveHoursSection.tsx:48 active_window limits the hours a trigger may fire a persona run (scheduling). It is not a quiet window on contact with a human."
+    },
+    {
+     "technique": "attention-budgets",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/RateLimitControls.tsx:98 This per-trigger rate limit and cooldown cap executions. It is not a daily budget on interrupting a human."
+    },
+    {
+     "technique": "trigger-evaluators",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_triggers/UnattendedModeSection.tsx:19 A trigger fires a run, held for approval or dry-run. No nudge evaluator produces a candidate notice for a person."
+    }
+   ],
+   "absenceTerms": [
+    "nudge",
+    "proactive",
+    "quiet_hours",
+    "efficacy",
+    "attention"
+   ],
+   "registryProposal": "Agent-automation trigger UIs can carry 'active hours' and 'cooldown' controls that look like quiet-windows and attention-budgets vocabulary but govern execution, not contact. The golden path's alerting boundary could also name this scheduling-of-agent-runs neighbour so seats do not have to re-derive that it is out of scope."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-24T06:03:11.450097+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "proactive-nudges"
+   ],
+   "techniques": [
+    "attention-budgets",
+    "quiet-windows",
+    "trigger-evaluators"
+   ],
+   "deviations": 0,
+   "context": "triggers-triggers",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

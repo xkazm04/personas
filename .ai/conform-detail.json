@@ -5712,18 +5712,34 @@
       "subject": "proactive-nudges",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-7",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T06:03:11.450Z",
+      "worker": "3ca8abfe-9585-470e-8f0b-e2dddca1189f",
       "techniques": [
         {
-          "technique": "trigger-evaluators",
+          "technique": "quiet-windows",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:229 configures a user-authored polling trigger whose output is a persona run. No agent judgment about the user's attention is evaluated here."
+          "evidence": "src/features/triggers/sub_triggers/ActiveHoursSection.tsx:48 active_window limits the hours a trigger may fire a persona run (scheduling). It is not a quiet window on contact with a human."
         },
         {
           "technique": "attention-budgets",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:229 authors an execution rule. The rate controls in this context bound persona runs, not contact with a human."
+          "evidence": "src/features/triggers/sub_triggers/RateLimitControls.tsx:98 This per-trigger rate limit and cooldown cap executions. It is not a daily budget on interrupting a human."
+        },
+        {
+          "technique": "trigger-evaluators",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/UnattendedModeSection.tsx:19 A trigger fires a run, held for approval or dry-run. No nudge evaluator produces a candidate notice for a person."
+        }
+      ],
+      "registryProposal": "Agent-automation trigger UIs can carry 'active hours' and 'cooldown' controls that look like quiet-windows and attention-budgets vocabulary but govern execution, not contact. The golden path's alerting boundary could also name this scheduling-of-agent-runs neighbour so seats do not have to re-derive that it is out of scope.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/TriggerAddForm.tsx:229 shows this context authoring user-defined polling/schedule/webhook rules that execute a persona. That is rule-authority automation on the alerting side of the boundary the golden path draws, not machine-initiated contact with a human. The old anchor (TriggerStatusSummary.tsx:54-76) had drifted past the file's content.",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by 3ca8abfe-9585-470e-8f0b-e2dddca1189f"
         }
       ]
     },
