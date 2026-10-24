@@ -1,0 +1,22 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5deadb19-c3e0-460b-a1fe-85f1920d6d99",
+ "subject": "codebase-scanning",
+ "evaluatedAt": "2026-10-24T06:25:59.394241+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "codebase-scanning",
+   "context": "overview-patterns",
+   "reason": "There is no code to judge. Every entry point in context-map.json (src/features/overview/sub_patterns/PracticeDetailModal.tsx, CreatePracticeModal.tsx, ExtractionMenu.tsx) is gone from the tree, and git ls-files finds none of them. Commit bec576bc8f (2026-09-14, 'refactor(knowledge): remove the Workspace Knowledge frontend surfaces') deleted PracticeDetailModal/Ledger, CreatePracticeModal, ExtractionMenu, harvestWave.ts, practiceHarvestPrompt.ts, useHarvestAutoIngest.ts and the related files. The context-map row has file_paths [] and the registry-map row has paths []. The context is stale: there is nothing to anchor a conformant, deviation or not-applicable verdict on. The match was also lexical ('practice', 'owns', 'presentation'). The one part that came close to the subject, the practice-harvest prompt (a model-assisted mining of repo conventions), was removed in that same commit."
+  },
+  {
+   "subject": "codebase-scanning",
+   "context": "plugins-artist-hooks",
+   "reason": "There is no code to judge. src/features/plugins/artist/ is gone. Commit 0697f13438 (2026-09-15, 'chore(plugins): remove the Artist and Research Lab plugins, client and server') deleted useArtistAssets.ts, useGallerySelection.ts, useBlenderMcp.ts, useLocalImage.ts and the other hooks. The context-map row has file_paths [] and the registry-map row has paths []. The match was lexical anyway: 'scan' here meant scanning an image-asset folder, not detecting defects in a codebase. With no files left, there is no line to anchor a not-applicable verdict on, so declining is more honest than marking it not-applicable."
+  }
+ ],
+ "consults": []
+}
