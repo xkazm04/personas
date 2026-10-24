@@ -23097,12 +23097,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:50 re-read: inbox of execution-run approvals keyed by execution_id, not memory beliefs or memory-governance proposals; precondition unmet",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:73 The inbox decides on persona execution reviews and Dev Tools backlog ideas, and nothing here captures, consolidates or recalls agent memory. A case-insensitive search of sub_manual-review and sub_analytics/components found 0 hits for memory, recall, episode and belief; the single 'consolidation' and 'provenance' hits are about merging data paths and labelling where a backlog finding came from, not memory.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
+          "revisionsBehind": 3
         },
         {
           "subject": "triage-queues",
@@ -31204,12 +31203,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/schedules/libs/calendarHelpers.ts:300 re-read: cron projection plus a 90s slot-to-run tolerance, an operator calendar with no agent store or distillation; match rode on past/month/week vocabulary",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:300 The code projects cron fire times and matches past slots to execution records within a 90s tolerance for an operator calendar, with no agent store, capture, distillation or recall. A case-insensitive search of src/features/schedules found 0 hits for memory, recall, episode, belief and distill.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
+          "revisionsBehind": 3
         },
         {
           "subject": "analytics-time-windows",
@@ -32235,12 +32233,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/shared/components/forms/SettingRow.tsx:34 re-read: presentational settings row; no agent captures, consolidates or recalls anything, precondition unmet",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/shared/components/forms/SettingRow.tsx:34 These are presentational form controls; even SettingRow, which Brain/Companion setup panels reuse, only renders a label and a toggle and never holds or recalls memory. A search of src/features/shared/components/forms found 0 hits for recall, episode, belief and distill; the 2 'memory' hits are the phrases 'muscle memory' and 'in-memory checks'.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
+          "evaluatedRevision": 51,
+          "revisionsBehind": 3
         },
         {
           "subject": "settings",

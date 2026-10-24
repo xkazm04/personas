@@ -15726,9 +15726,9 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T00:21:27.533Z",
+      "worker": "37ccc5a0-b8db-413c-8d04-902e24c0a06b",
       "techniques": [],
       "superseded": [
         {
@@ -15737,6 +15737,13 @@
           "evaluatedAt": "2026-10-10T11:14:00.000Z",
           "worker": "ae1def3a-8e43-4ee7-a7e9-a74fe0c5d27d",
           "reason": "replaced by 4f615649-b5a0-4caa-ac5a-dfb0d9c79a24"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:300 re-read: cron projection plus a 90s slot-to-run tolerance, an operator calendar with no agent store or distillation; match rode on past/month/week vocabulary",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by 37ccc5a0-b8db-413c-8d04-902e24c0a06b"
         }
       ]
     },
@@ -18353,9 +18360,9 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T00:21:27.533Z",
+      "worker": "37ccc5a0-b8db-413c-8d04-902e24c0a06b",
       "techniques": [],
       "superseded": [
         {
@@ -18364,6 +18371,13 @@
           "evaluatedAt": "2026-10-12T11:42:48.000Z",
           "worker": "07aaac1d-8803-42ca-9d5f-ce0b55598b01",
           "reason": "replaced by 4f615649-b5a0-4caa-ac5a-dfb0d9c79a24"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/forms/SettingRow.tsx:34 re-read: presentational settings row; no agent captures, consolidates or recalls anything, precondition unmet",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by 37ccc5a0-b8db-413c-8d04-902e24c0a06b"
         }
       ]
     },
@@ -19825,10 +19839,21 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
-      "techniques": [],
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T00:21:27.533Z",
+      "worker": "37ccc5a0-b8db-413c-8d04-902e24c0a06b",
+      "techniques": [
+        {
+          "technique": "memory-governance",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/components/backlog/AthenaVerdictCard.tsx:4 The pending approval holds Athena's accept/reject verdicts on backlog items. It is not a proposed belief or a rule written to her memory, so the write-lane tiering this technique governs is not in play."
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:48 Review rows are keyed to executions and carry no unconfirmed belief that recall could read."
+        }
+      ],
       "superseded": [
         {
           "state": "not-applicable",
@@ -19836,6 +19861,13 @@
           "evaluatedAt": "2026-10-12T17:24:13.297Z",
           "worker": "c510a03f-1707-4f7f-ba23-6336f8e5416c",
           "reason": "replaced by 4f615649-b5a0-4caa-ac5a-dfb0d9c79a24"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:50 re-read: inbox of execution-run approvals keyed by execution_id, not memory beliefs or memory-governance proposals; precondition unmet",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by 37ccc5a0-b8db-413c-8d04-902e24c0a06b"
         }
       ]
     },
