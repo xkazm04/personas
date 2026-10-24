@@ -35590,7 +35590,11 @@
           "revision": 2,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/l2/factoryL2Data.ts:1 This context is the data layer and tab UI for the Factory's per-project pages, which fetch dev-tools APIs. It hosts no language runtime, so debug globals, trace flags, probes, guest-settable limits and realm factories have nothing to apply to. A grep of src/features/teams/sub_factory/l2 for realm, bytecode, disassemble, interpreter, guest and createRealm found 0 files.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:d9a0bca3698f0a65",
+          "evaluatedRevision": 3
         },
         {
           "subject": "supply-chain",
@@ -35701,7 +35705,11 @@
           "revision": 2,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/improve/improvePlan.ts:2 This context is React/TypeScript business logic that ranks passport remediation items; it implements no language engine and has no guest program to introspect. A case-insensitive grep of its directory for realm, hidden class, bytecode, disassemble, createRealm, guest, interpreter, $262 and isSameShape found 0 files, so none of the subject's five techniques has a precondition to meet.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:d9a0bca3698f0a65",
+          "evaluatedRevision": 3
         },
         {
           "subject": "standards-layered-runtime",

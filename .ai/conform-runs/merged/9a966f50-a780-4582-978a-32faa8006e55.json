@@ -1,0 +1,67 @@
+{
+ "schema": "conform-run/1",
+ "worker": "9a966f50-a780-4582-978a-32faa8006e55",
+ "subject": "guest-language-introspection",
+ "evaluatedAt": "2026-10-24T21:21:40.207997+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "teams-factory-passport-improve",
+   "subject": "guest-language-introspection",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_factory/passport/improve/improvePlan.ts:2 This context is React/TypeScript business logic that ranks passport remediation items; it implements no language engine and has no guest program to introspect. A case-insensitive grep of its directory for realm, hidden class, bytecode, disassemble, createRealm, guest, interpreter, $262 and isSameShape found 0 files, so none of the subject's five techniques has a precondition to meet.",
+   "techniques": [],
+   "absenceTerms": [
+    "realm",
+    "bytecode",
+    "disassemble",
+    "interpreter",
+    "createRealm"
+   ]
+  },
+  {
+   "context": "teams-factory-l2",
+   "subject": "guest-language-introspection",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_factory/l2/factoryL2Data.ts:1 This context is the data layer and tab UI for the Factory's per-project pages, which fetch dev-tools APIs. It hosts no language runtime, so debug globals, trace flags, probes, guest-settable limits and realm factories have nothing to apply to. A grep of src/features/teams/sub_factory/l2 for realm, bytecode, disassemble, interpreter, guest and createRealm found 0 files.",
+   "techniques": [],
+   "absenceTerms": [
+    "realm",
+    "bytecode",
+    "disassemble",
+    "interpreter",
+    "createRealm"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-24T21:21:40.207997+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "guest-language-introspection"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "teams-factory-passport-improve",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T21:21:40.207997+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "guest-language-introspection"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "teams-factory-l2",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

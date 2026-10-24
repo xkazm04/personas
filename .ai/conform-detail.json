@@ -38376,6 +38376,26 @@
           "evidence": "src/lib/credentials/connectorLicensing.ts:180 Rows themselves are data (builtinConnectors.ts:32 globs every seed JSON, and connectorCategoryTags unions scalar+list as prescribed), and audiences use the documented row-first/fallback union bridge (though 0 of 135 seeds carry metadata.audiences yet). But licensing inverts the bridge (side table beats row, 6 measured disagreements), and CONNECTOR_ROLES (connectorRoles.ts:72) is a pure side table with no row read: 37 of its members (mailchimp, openai, shopify, zendesk, ...) name no shipped seed. The in-context seed test (builtinConnectors.test.ts:83) checks only key presence, never that roles fall in the closed set or that the probe references declared fields."
         }
       ]
+    },
+    "7e214a7d-44c6-4e6c-8b54-b30f4483ce12/guest-language-introspection": {
+      "context": "teams-factory-passport-improve",
+      "subject": "guest-language-introspection",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T21:21:40.207Z",
+      "worker": "9a966f50-a780-4582-978a-32faa8006e55",
+      "techniques": []
+    },
+    "d7b7eb04-730f-4450-9a68-affc95f93267/guest-language-introspection": {
+      "context": "teams-factory-l2",
+      "subject": "guest-language-introspection",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T21:21:40.207Z",
+      "worker": "9a966f50-a780-4582-978a-32faa8006e55",
+      "techniques": []
     }
   }
 }

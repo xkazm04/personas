@@ -2122,3 +2122,5 @@
 {"ts":"2026-10-24T06:38:07.276636+00:00","bundle":"software-engineering","subjects":["codegen"],"techniques":[],"deviations":0,"context":"run-desk","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-10-24T06:38:07.276636+00:00","bundle":"software-engineering","subjects":["codegen"],"techniques":[],"deviations":0,"context":"templates-generated-gallery-cards","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-10-24T21:09:02.932555+00:00","bundle":"software-engineering","subjects":["connector-catalog"],"techniques":["catalog-as-data"],"deviations":1,"context":"lib-credentials","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-10-24T21:21:40.207997+00:00","bundle":"software-engineering","subjects":["guest-language-introspection"],"techniques":[],"deviations":0,"context":"teams-factory-passport-improve","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-10-24T21:21:40.207997+00:00","bundle":"software-engineering","subjects":["guest-language-introspection"],"techniques":[],"deviations":0,"context":"teams-factory-l2","via":"curator-multi:claude","model":"claude-opus-5-5"}
