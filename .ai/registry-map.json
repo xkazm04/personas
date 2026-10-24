@@ -16073,12 +16073,11 @@
           "changedAt": "2026-10-21",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/hooks/realtime/emitDeploymentEvent.ts:2 Context searches found no talking-avatar terms, while the inspected hooks handle deployment, execution, relay and navigation state, so their event sharing does not trigger face-synchronization requirements.",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:f96c1d7ea0398677",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/hooks/realtime/createSingletonListener.ts:19 The context fans out generic Tauri events (persona, run, relay and deployment) to UI subscribers, and rg over src/hooks for avatar, viseme, lipsync, mouth and blink found nothing, so no face signal is mirrored across surfaces.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:72517c45ca8e4198",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 1
         },
         {
           "subject": "mcp-tools",
@@ -16544,12 +16543,11 @@
           "changedAt": "2026-10-21",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useProgressiveReveal.ts:9 Context searches found no talking-avatar terms, and the inspected modules implement list mounting, accessibility and DOM interactions, so speech-driven avatar requirements do not apply.",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:f96c1d7ea0398677",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:6 The context's motion code is only a reduced-motion preference gate for framer-motion UI transitions, and rg over src/hooks for avatar, viseme, lipsync, mouth and blink returned zero files, so nothing here animates a face to a voice.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:72517c45ca8e4198",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-runtime-assembly",
@@ -22572,12 +22570,11 @@
           "changedAt": "2026-10-21",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:10 Context searches found no talking-avatar terms, and these modules render static illustrations and entry-only execution motifs, so speech synchronization and avatar motion requirements do not apply.",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:f96c1d7ea0398677",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:10 The empty-state motifs only play an entry animation once on mount, and rg over the emptyStatePrototype directory for avatar, viseme, lipsync, mouth and blink found nothing, so there is no idle or speech-driven face.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:72517c45ca8e4198",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 1
         },
         {
           "subject": "quality-gates",
@@ -28229,8 +28226,12 @@
           "revision": 4,
           "changedAt": "2026-10-21",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:21 The Drive plugin wraps file-system IPC (list, move, search, OCR and signing), and rg over src/features/plugins/drive for avatar, viseme, lipsync, mouth and blink returned zero files, so no avatar exists here.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:72517c45ca8e4198",
+          "evaluatedRevision": 4
         },
         {
           "subject": "node-boot-and-declarative-bootstrap",
@@ -32871,12 +32872,11 @@
           "changedAt": "2026-10-21",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/glyph/GlyphCard.tsx:44 Context searches found no talking-avatar terms, and the sigils visualize capabilities through navigation, hover and selection, so their geometric shapes and transitions do not establish a speech-driven presence.",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:f96c1d7ea0398677",
-          "evaluatedRevision": 3,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/shared/glyph/types.ts:3 The glyph module draws capability sigils over an eight-dimension vocabulary, and rg over src/features/shared/glyph for avatar, viseme, lipsync, mouth and blink returned zero files, so no speaking presence exists to drive.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:72517c45ca8e4198",
+          "evaluatedRevision": 4,
+          "revisionsBehind": 1
         },
         {
           "subject": "mcp-tools",

@@ -34695,54 +34695,71 @@
       "subject": "talking-avatar",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T22:02:55.329Z",
-      "worker": "96e6a3c1-67fc-4ae3-ab3b-f515a2964683",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T03:26:13.899Z",
+      "worker": "2a5d497a-08b1-48d3-b34f-4fa32fd05bc5",
       "techniques": [
+        {
+          "technique": "procedural-presence-motion",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:6 Global UI motion preference, not idle or blink motion for an avatar."
+        },
         {
           "technique": "face-signal-across-surfaces",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useTrackedElementRect.ts:5 Tracks DOM coordinates; no companion face signal was found."
+          "evidence": "src/hooks/utility/interaction/useTrackedElementRect.ts:5 Tracks DOM coordinates; no companion face signal was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "motion-route-selection",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useMotion.ts:104 Selects UI motion preferences, without selecting an avatar animation route."
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:104 Selects UI motion preferences, without selecting an avatar animation route.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "neural-motion-retargeting",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useViewportClamp.ts:24 Computes popup geometry; no learned avatar motion source was found."
+          "evidence": "src/hooks/utility/interaction/useViewportClamp.ts:24 Computes popup geometry; no learned avatar motion source was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "paced-realtime-measurement",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useProgressiveReveal.ts:72 Schedules list reveal ticks; no avatar realtime claim or audio pacing exists here."
+          "evidence": "src/hooks/utility/interaction/useProgressiveReveal.ts:72 Schedules list reveal ticks; no avatar realtime claim or audio pacing exists here.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "per-sentence-face-sidecar",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:149 The asynchronous operation saves edits; no voice pipeline or face helper was found."
-        },
-        {
-          "technique": "procedural-presence-motion",
-          "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useMotion.ts:6 Generic reduced-motion support does not establish an animated companion presence."
+          "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:149 The asynchronous operation saves edits; no voice pipeline or face helper was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "rig-parameter-contract",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useVirtualList.ts:7 Configures list virtualization; no avatar motion producers or rig contract were found."
+          "evidence": "src/hooks/utility/interaction/useVirtualList.ts:7 Configures list virtualization; no avatar motion producers or rig contract were found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "single-image-layer-decomposition",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useViewportClamp.ts:7 Positions UI overlays; no portrait decomposition occurs."
+          "evidence": "src/hooks/utility/interaction/useViewportClamp.ts:7 Positions UI overlays; no portrait decomposition occurs.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "viseme-drive",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useCopyToClipboard.ts:13 Provides clipboard interaction; no synthesized-speech speaking element was found."
+          "evidence": "src/hooks/utility/interaction/useCopyToClipboard.ts:13 Provides clipboard interaction; no synthesized-speech speaking element was found.",
+          "carriedFrom": "2026-10-21"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useProgressiveReveal.ts:9 Context searches found no talking-avatar terms, and the inspected modules implement list mounting, accessibility and DOM interactions, so speech-driven avatar requirements do not apply.",
+          "evaluatedAt": "2026-10-21T22:02:55.329Z",
+          "worker": "96e6a3c1-67fc-4ae3-ab3b-f515a2964683",
+          "reason": "replaced by 2a5d497a-08b1-48d3-b34f-4fa32fd05bc5"
         }
       ]
     },
@@ -34751,54 +34768,71 @@
       "subject": "talking-avatar",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T22:02:55.329Z",
-      "worker": "96e6a3c1-67fc-4ae3-ab3b-f515a2964683",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T03:26:13.899Z",
+      "worker": "2a5d497a-08b1-48d3-b34f-4fa32fd05bc5",
       "techniques": [
         {
           "technique": "face-signal-across-surfaces",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/realtime/useEventBusListener.ts:14 Shares PersonaEvent subscriptions; no audio-clock-owned face signal was found."
+          "evidence": "src/hooks/realtime/createSingletonListener.ts:19 Shares event channels across components, but carries no face or voice-level signal."
         },
         {
           "technique": "motion-route-selection",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/theming/usePersonaVibe.ts:8 Derives a theme rather than choosing an avatar animation route."
+          "evidence": "src/hooks/theming/usePersonaVibe.ts:8 Derives a theme rather than choosing an avatar animation route.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "neural-motion-retargeting",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/useTerminalClassification.ts:19 Classifies terminal text; no audio-to-motion model or retargeting was found."
+          "evidence": "src/hooks/utility/useTerminalClassification.ts:19 Classifies terminal text; no audio-to-motion model or retargeting was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "paced-realtime-measurement",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/useTimeOfDay.ts:23 Updates a time-of-day classification; no avatar performance measurement exists here."
+          "evidence": "src/hooks/utility/useTimeOfDay.ts:23 Updates a time-of-day classification; no avatar performance measurement exists here.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "per-sentence-face-sidecar",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/realtime/useCloudWebhookRelay.ts:19 Observes webhook relay status; no per-sentence face helper was found."
+          "evidence": "src/hooks/realtime/useCloudWebhookRelay.ts:19 Observes webhook relay status; no per-sentence face helper was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "procedural-presence-motion",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/sidebar/useSidebarAgentActivity.ts:2 Feeds sidebar activity indicators; no avatar idle or speech motion was found."
+          "evidence": "src/hooks/sidebar/useSidebarAgentActivity.ts:2 Feeds sidebar activity indicators; no avatar idle or speech motion was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "rig-parameter-contract",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/realtime/useRunEventListener.ts:16 The payload describes evaluation results, without an avatar motion parameter seam."
+          "evidence": "src/hooks/realtime/useRunEventListener.ts:16 The payload describes evaluation results, without an avatar motion parameter seam.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "single-image-layer-decomposition",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/useElementVisible.ts:23 Tracks viewport visibility; no portrait splitting or layer preparation was found."
+          "evidence": "src/hooks/utility/useElementVisible.ts:23 Tracks viewport visibility; no portrait splitting or layer preparation was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "viseme-drive",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/tests/usePersonaTests.ts:10 Consumes test-run progress, without synthesized-speech mouth timing."
+          "evidence": "src/hooks/tests/usePersonaTests.ts:10 Consumes test-run progress, without synthesized-speech mouth timing.",
+          "carriedFrom": "2026-10-21"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/hooks/realtime/emitDeploymentEvent.ts:2 Context searches found no talking-avatar terms, while the inspected hooks handle deployment, execution, relay and navigation state, so their event sharing does not trigger face-synchronization requirements.",
+          "evaluatedAt": "2026-10-21T22:02:55.329Z",
+          "worker": "96e6a3c1-67fc-4ae3-ab3b-f515a2964683",
+          "reason": "replaced by 2a5d497a-08b1-48d3-b34f-4fa32fd05bc5"
         }
       ]
     },
@@ -34806,106 +34840,130 @@
       "context": "plugins-drive",
       "subject": "talking-avatar",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T22:02:55.329Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T03:26:13.899Z",
+      "worker": "2a5d497a-08b1-48d3-b34f-4fa32fd05bc5",
       "techniques": [
+        {
+          "technique": "viseme-drive",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:21 A file manager with no synthesized speech or speaking element."
+        },
         {
           "technique": "face-signal-across-surfaces",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/knowledge/useDriveKnowledge.ts:97 Shares knowledge-ingestion progress; no companion face signal was found."
+          "evidence": "src/features/plugins/drive/knowledge/useDriveKnowledge.ts:97 Shares knowledge-ingestion progress; no companion face signal was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "motion-route-selection",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/designTokens.ts:225 Selects file-type presentation presets, without choosing avatar animation routes."
+          "evidence": "src/features/plugins/drive/designTokens.ts:225 Selects file-type presentation presets, without choosing avatar animation routes.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "neural-motion-retargeting",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/ocr/useOcr.ts:13 The model integration serves document OCR; no learned facial motion was found."
+          "evidence": "src/features/plugins/drive/ocr/useOcr.ts:13 The model integration serves document OCR; no learned facial motion was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "paced-realtime-measurement",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:312 Tests file navigation; no realtime avatar route is evaluated."
+          "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:312 Tests file navigation; no realtime avatar route is evaluated.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "per-sentence-face-sidecar",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/signing/useSigning.ts:127 This sidecar is a document-signature JSON file, without a face-helper process."
+          "evidence": "src/features/plugins/drive/signing/useSigning.ts:127 This sidecar is a document-signature JSON file, without a face-helper process.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "procedural-presence-motion",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/hooks/useScrollShadows.ts:4 Drives scroll affordances; no animated character presence was found."
+          "evidence": "src/features/plugins/drive/hooks/useScrollShadows.ts:4 Drives scroll affordances; no animated character presence was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "rig-parameter-contract",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:56 Defines file-browser presentation modes, without avatar rig parameters."
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:56 Defines file-browser presentation modes, without avatar rig parameters.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "single-image-layer-decomposition",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/designTokens.ts:234 Maps image files to a visual preset; no portrait decomposition was found."
-        },
-        {
-          "technique": "viseme-drive",
-          "verdict": "not-applicable",
-          "evidence": "src/features/plugins/drive/designTokens.ts:235 Classifies audio files for display, without driving a speaking element."
+          "evidence": "src/features/plugins/drive/designTokens.ts:234 Maps image files to a visual preset; no portrait decomposition was found.",
+          "carriedFrom": "2026-10-21"
         }
-      ],
-      "withdrawn": {
-        "worker": "96e6a3c1-67fc-4ae3-ab3b-f515a2964683",
-        "state": "not-applicable",
-        "at": "2026-10-21T22:03:40.979047+00:00",
-        "reason": "reviewer (sonnet): The anchor DrivePage.tsx:4 is only `export { default } from \"./finder/FinderPage\"`, so it doesn't show the page composing browsing, OCR, knowledge ingestion and signing, as the evidence claims. It is an incidental anchor, even though a case-insensitive grep for avatar, speech, voice, tts, talking an"
-      }
+      ]
     },
     "f838d49f-2928-441e-ac8d-f6e6c412b262/talking-avatar": {
       "context": "shared-glyph",
       "subject": "talking-avatar",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T22:02:55.329Z",
-      "worker": "96e6a3c1-67fc-4ae3-ab3b-f515a2964683",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T03:26:13.899Z",
+      "worker": "2a5d497a-08b1-48d3-b34f-4fa32fd05bc5",
       "techniques": [
+        {
+          "technique": "motion-route-selection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/glyph/types.ts:3 Static capability sigils with no voice-synchronized motion."
+        },
         {
           "technique": "neural-motion-retargeting",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/glyph/ModelBadge.tsx:3 The model badge identifies a recommended language model; no motion model was found."
+          "evidence": "src/features/shared/glyph/ModelBadge.tsx:3 The model badge identifies a recommended language model; no motion model was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "paced-realtime-measurement",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/glyph/GlyphCard.tsx:95 Configures card entrance timing; no audio-paced avatar performance claim exists."
+          "evidence": "src/features/shared/glyph/GlyphCard.tsx:95 Configures card entrance timing; no audio-paced avatar performance claim exists.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "per-sentence-face-sidecar",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/glyph/ConnectorTotem.tsx:27 Resolves connector presentation metadata; no voice process or face sidecar was found."
+          "evidence": "src/features/shared/glyph/ConnectorTotem.tsx:27 Resolves connector presentation metadata; no voice process or face sidecar was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "procedural-presence-motion",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/glyph/SigilPetal.tsx:156 Responds to pointer interaction, without character idle, blink or gaze motion."
+          "evidence": "src/features/shared/glyph/SigilPetal.tsx:156 Responds to pointer interaction, without character idle, blink or gaze motion.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "rig-parameter-contract",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/glyph/types.ts:16 Presence means capability linkage; no avatar motion parameter contract was found."
+          "evidence": "src/features/shared/glyph/types.ts:16 Presence means capability linkage; no avatar motion parameter contract was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "single-image-layer-decomposition",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/glyph/dimPatterns.tsx:17 Constructs SVG texture geometry directly, without decomposing a portrait."
+          "evidence": "src/features/shared/glyph/dimPatterns.tsx:17 Constructs SVG texture geometry directly, without decomposing a portrait.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "viseme-drive",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/glyph/dimMeta.ts:15 Represents messaging as a capability icon; no speech-driven speaking element was found."
+          "evidence": "src/features/shared/glyph/dimMeta.ts:15 Represents messaging as a capability icon; no speech-driven speaking element was found.",
+          "carriedFrom": "2026-10-21"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/shared/glyph/GlyphCard.tsx:44 Context searches found no talking-avatar terms, and the sigils visualize capabilities through navigation, hover and selection, so their geometric shapes and transitions do not establish a speech-driven presence.",
+          "evaluatedAt": "2026-10-21T22:02:55.329Z",
+          "worker": "96e6a3c1-67fc-4ae3-ab3b-f515a2964683",
+          "reason": "replaced by 2a5d497a-08b1-48d3-b34f-4fa32fd05bc5"
         }
       ]
     },
@@ -34914,54 +34972,71 @@
       "subject": "talking-avatar",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T22:02:55.329Z",
-      "worker": "96e6a3c1-67fc-4ae3-ab3b-f515a2964683",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T03:26:13.899Z",
+      "worker": "2a5d497a-08b1-48d3-b34f-4fa32fd05bc5",
       "techniques": [
+        {
+          "technique": "procedural-presence-motion",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:10 Entry-only animation. No between-utterance presence."
+        },
         {
           "technique": "face-signal-across-surfaces",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/shared/emptyStatePrototype/IllustrationEmptyState.tsx:26 Selects a theme-specific static image; no companion face signal was found."
+          "evidence": "src/features/overview/shared/emptyStatePrototype/IllustrationEmptyState.tsx:26 Selects a theme-specific static image; no companion face signal was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "motion-route-selection",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:25 Selects an empty-state motif, without choosing a talking-avatar route."
+          "evidence": "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:25 Selects an empty-state motif, without choosing a talking-avatar route.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "neural-motion-retargeting",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/shared/emptyStatePrototype/illustrations/index.ts:37 Uses an imported illustration asset; no predicted motion or retargeting was found."
+          "evidence": "src/features/overview/shared/emptyStatePrototype/illustrations/index.ts:37 Uses an imported illustration asset; no predicted motion or retargeting was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "paced-realtime-measurement",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:34 Sets an entrance transition duration; no realtime avatar route is measured."
+          "evidence": "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:34 Sets an entrance transition duration; no realtime avatar route is measured.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "per-sentence-face-sidecar",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/index.ts:6 The motif registry maps to a local SVG component; no voice or face-helper process was found."
-        },
-        {
-          "technique": "procedural-presence-motion",
-          "verdict": "not-applicable",
-          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:7 Animates an execution diagram once, without depicting a living companion."
+          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/index.ts:6 The motif registry maps to a local SVG component; no voice or face-helper process was found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "rig-parameter-contract",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:22 Defines an empty-state motif vocabulary; no avatar motion producers or rig seam were found."
+          "evidence": "src/features/overview/shared/emptyStatePrototype/types.ts:22 Defines an empty-state motif vocabulary; no avatar motion producers or rig seam were found.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "single-image-layer-decomposition",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/shared/emptyStatePrototype/IllustrationEmptyState.tsx:50 Fades an illustration's edges, without splitting a portrait into movable parts."
+          "evidence": "src/features/overview/shared/emptyStatePrototype/IllustrationEmptyState.tsx:50 Fades an illustration's edges, without splitting a portrait into movable parts.",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "viseme-drive",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:31 Draws a predetermined execution waveform, without synthesized-speech timing."
+          "evidence": "src/features/overview/shared/emptyStatePrototype/motifs/ActivityMotif.tsx:31 Draws a predetermined execution waveform, without synthesized-speech timing.",
+          "carriedFrom": "2026-10-21"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:10 Context searches found no talking-avatar terms, and these modules render static illustrations and entry-only execution motifs, so speech synchronization and avatar motion requirements do not apply.",
+          "evaluatedAt": "2026-10-21T22:02:55.329Z",
+          "worker": "96e6a3c1-67fc-4ae3-ab3b-f515a2964683",
+          "reason": "replaced by 2a5d497a-08b1-48d3-b34f-4fa32fd05bc5"
         }
       ]
     },

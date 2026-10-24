@@ -1,0 +1,188 @@
+{
+ "schema": "conform-run/1",
+ "worker": "2a5d497a-08b1-48d3-b34f-4fa32fd05bc5",
+ "subject": "talking-avatar",
+ "evaluatedAt": "2026-10-24T03:26:13.899732+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "hooks-utility-interaction",
+   "subject": "talking-avatar",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/hooks/utility/interaction/useMotion.ts:6 The context's motion code is only a reduced-motion preference gate for framer-motion UI transitions, and rg over src/hooks for avatar, viseme, lipsync, mouth and blink returned zero files, so nothing here animates a face to a voice.",
+   "techniques": [
+    {
+     "technique": "procedural-presence-motion",
+     "verdict": "not-applicable",
+     "evidence": "src/hooks/utility/interaction/useMotion.ts:6 Global UI motion preference, not idle or blink motion for an avatar."
+    }
+   ],
+   "absenceTerms": [
+    "avatar",
+    "viseme",
+    "lipsync",
+    "mouth",
+    "blink"
+   ]
+  },
+  {
+   "context": "hooks-realtime",
+   "subject": "talking-avatar",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/hooks/realtime/createSingletonListener.ts:19 The context fans out generic Tauri events (persona, run, relay and deployment) to UI subscribers, and rg over src/hooks for avatar, viseme, lipsync, mouth and blink found nothing, so no face signal is mirrored across surfaces.",
+   "techniques": [
+    {
+     "technique": "face-signal-across-surfaces",
+     "verdict": "not-applicable",
+     "evidence": "src/hooks/realtime/createSingletonListener.ts:19 Shares event channels across components, but carries no face or voice-level signal."
+    }
+   ],
+   "absenceTerms": [
+    "avatar",
+    "viseme",
+    "lipsync",
+    "mouth",
+    "blink"
+   ]
+  },
+  {
+   "context": "shared-glyph",
+   "subject": "talking-avatar",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/glyph/types.ts:3 The glyph module draws capability sigils over an eight-dimension vocabulary, and rg over src/features/shared/glyph for avatar, viseme, lipsync, mouth and blink returned zero files, so no speaking presence exists to drive.",
+   "techniques": [
+    {
+     "technique": "motion-route-selection",
+     "verdict": "not-applicable",
+     "evidence": "src/features/shared/glyph/types.ts:3 Static capability sigils with no voice-synchronized motion."
+    }
+   ],
+   "absenceTerms": [
+    "avatar",
+    "viseme",
+    "lipsync",
+    "mouth",
+    "blink"
+   ]
+  },
+  {
+   "context": "overview-empty-states",
+   "subject": "talking-avatar",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:10 The empty-state motifs only play an entry animation once on mount, and rg over the emptyStatePrototype directory for avatar, viseme, lipsync, mouth and blink found nothing, so there is no idle or speech-driven face.",
+   "techniques": [
+    {
+     "technique": "procedural-presence-motion",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/shared/emptyStatePrototype/MotionEmptyState.tsx:10 Entry-only animation. No between-utterance presence."
+    }
+   ],
+   "absenceTerms": [
+    "avatar",
+    "viseme",
+    "lipsync",
+    "mouth",
+    "blink"
+   ]
+  },
+  {
+   "context": "plugins-drive",
+   "subject": "talking-avatar",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/drive/hooks/useDrive.ts:21 The Drive plugin wraps file-system IPC (list, move, search, OCR and signing), and rg over src/features/plugins/drive for avatar, viseme, lipsync, mouth and blink returned zero files, so no avatar exists here.",
+   "techniques": [
+    {
+     "technique": "viseme-drive",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/drive/hooks/useDrive.ts:21 A file manager with no synthesized speech or speaking element."
+    }
+   ],
+   "absenceTerms": [
+    "avatar",
+    "viseme",
+    "lipsync",
+    "mouth",
+    "blink"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-24T03:26:13.899732+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "talking-avatar"
+   ],
+   "techniques": [
+    "procedural-presence-motion"
+   ],
+   "deviations": 0,
+   "context": "hooks-utility-interaction",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T03:26:13.899732+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "talking-avatar"
+   ],
+   "techniques": [
+    "face-signal-across-surfaces"
+   ],
+   "deviations": 0,
+   "context": "hooks-realtime",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T03:26:13.899732+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "talking-avatar"
+   ],
+   "techniques": [
+    "motion-route-selection"
+   ],
+   "deviations": 0,
+   "context": "shared-glyph",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T03:26:13.899732+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "talking-avatar"
+   ],
+   "techniques": [
+    "procedural-presence-motion"
+   ],
+   "deviations": 0,
+   "context": "overview-empty-states",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T03:26:13.899732+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "talking-avatar"
+   ],
+   "techniques": [
+    "viseme-drive"
+   ],
+   "deviations": 0,
+   "context": "plugins-drive",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
