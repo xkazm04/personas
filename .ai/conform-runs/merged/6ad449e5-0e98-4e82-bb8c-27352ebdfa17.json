@@ -1,0 +1,155 @@
+{
+  "schema": "conform-run/1",
+  "worker": "6ad449e5-0e98-4e82-bb8c-27352ebdfa17",
+  "subject": "quality-gates",
+  "evaluatedAt": "2026-10-24T03:09:11.686948+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "triggers-triggers",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/triggers/sub_triggers/TriggerModeBadge.tsx:14 The only 'gate' in this context is the runtime destructive-action gate on trigger fires, a HITL product control. A recursive search of sub_triggers and its __tests__ for census, baseline, lefthook, process.exit, exitCode and max-warnings found 0 files, and there is no eslint-disable either, so no engineering check that refuses a change is built or waived here.",
+      "techniques": [],
+      "absenceTerms": [
+        "census",
+        "baseline",
+        "lefthook",
+        "process.exit",
+        "max-warnings"
+      ]
+    },
+    {
+      "context": "api-key-management",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:2 The 'gate' here is a runtime pairing-approval modal, not a check on the tree. Searching components/ and libs/ for census, baseline, lefthook, process.exit, exitCode and max-warnings found 0 files. The context only consumes the lint gate through one waiver and builds no gate machinery.",
+      "techniques": [
+        {
+          "technique": "waiver-names-its-finding",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:63 Consumer-side waiver of a rule set to 'warn' (eslint.config.js:70), not the design of a blocking gate's escape hatch. It names its rule but gives no reason, which is a suppression-hygiene concern (dead-code subject), not this technique's."
+        }
+      ],
+      "absenceTerms": [
+        "census",
+        "baseline",
+        "lefthook",
+        "process.exit",
+        "max-warnings"
+      ]
+    },
+    {
+      "context": "hooks-design",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/hooks/design/template/useGalleryQuery.ts:122 These are React hooks for design, credentials, OAuth and templates. The only contact with a quality gate is this reasoned lint waiver. A search of core/, credential/, oauth/ and template/ for census, baseline, lefthook, process.exit, exitCode and max-warnings found 0 files, so no check, rung, severity path or gate escape hatch is defined here.",
+      "techniques": [
+        {
+          "technique": "waiver-names-its-finding",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/design/template/useGalleryQuery.ts:122 Uses ESLint's waiver grammar (rule plus site plus reason) and does not design it. The waived rule is 'warn', so no blocking finding is downgraded."
+        }
+      ],
+      "absenceTerms": [
+        "census",
+        "baseline",
+        "lefthook",
+        "process.exit",
+        "max-warnings"
+      ]
+    },
+    {
+      "context": "vault-catalog-schemas",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/useAutoCredSession.ts:137 The only gate here is a runtime save gate bound to a credential healthcheck verdict, a product control and not a check refusing a change to the tree. A recursive search of schemas/, forms/, autoCred/helpers/ and vault/components for census, baseline, lefthook, process.exit, exitCode and max-warnings found 0 files.",
+      "techniques": [],
+      "absenceTerms": [
+        "census",
+        "baseline",
+        "lefthook",
+        "process.exit",
+        "max-warnings"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "quality-gates",
+      "context": "schedules-components",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor calendarHelpers.ts:5 is only a type-section comment and does not show that no gate exists. The one 'gate' hit it relies on (SchedulesOverlay.tsx:88) is in a file that isn't in the context file list, so the anchor is incidental to the absence claim."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-24T03:09:11.686948+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "triggers-triggers",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T03:09:11.686948+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "waiver-names-its-finding"
+      ],
+      "deviations": 0,
+      "context": "api-key-management",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T03:09:11.686948+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "waiver-names-its-finding"
+      ],
+      "deviations": 0,
+      "context": "hooks-design",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T03:09:11.686948+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "schedules-components",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T03:09:11.686948+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "vault-catalog-schemas",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

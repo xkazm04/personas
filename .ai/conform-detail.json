@@ -37824,6 +37824,73 @@
           "evidence": "src/features/teams/sub_mastermind/lib/FleetPreviewPanel.tsx:50 A hibernated session keeps its identity and pane but is not treated as a live process."
         }
       ]
+    },
+    "0dabb588-48ce-4c35-b425-c344fd723ce7/quality-gates": {
+      "context": "triggers-triggers",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T03:09:11.686Z",
+      "worker": "6ad449e5-0e98-4e82-bb8c-27352ebdfa17",
+      "techniques": []
+    },
+    "621caefc-8ae0-42e7-89b6-8e879ad62814/quality-gates": {
+      "context": "api-key-management",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T03:09:11.686Z",
+      "worker": "6ad449e5-0e98-4e82-bb8c-27352ebdfa17",
+      "techniques": [
+        {
+          "technique": "waiver-names-its-finding",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:63 Consumer-side waiver of a rule set to 'warn' (eslint.config.js:70), not the design of a blocking gate's escape hatch. It names its rule but gives no reason, which is a suppression-hygiene concern (dead-code subject), not this technique's."
+        }
+      ]
+    },
+    "c5228746-931d-4733-9cf7-84519a2c9605/quality-gates": {
+      "context": "hooks-design",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T03:09:11.686Z",
+      "worker": "6ad449e5-0e98-4e82-bb8c-27352ebdfa17",
+      "techniques": [
+        {
+          "technique": "waiver-names-its-finding",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/design/template/useGalleryQuery.ts:122 Uses ESLint's waiver grammar (rule plus site plus reason) and does not design it. The waived rule is 'warn', so no blocking finding is downgraded."
+        }
+      ]
+    },
+    "56a0fd55-279d-428b-b2f6-7c89154abd6f/quality-gates": {
+      "context": "schedules-components",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T03:09:11.686Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "6ad449e5-0e98-4e82-bb8c-27352ebdfa17",
+        "state": "not-applicable",
+        "at": "2026-10-24T03:09:32.010459+00:00",
+        "reason": "reviewer (sonnet): The anchor calendarHelpers.ts:5 is only a type-section comment and does not show that no gate exists. The one 'gate' hit it relies on (SchedulesOverlay.tsx:88) is in a file that isn't in the context file list, so the anchor is incidental to the absence claim."
+      }
+    },
+    "6229df3d-d54e-47bb-8091-abb479003c18/quality-gates": {
+      "context": "vault-catalog-schemas",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T03:09:11.686Z",
+      "worker": "6ad449e5-0e98-4e82-bb8c-27352ebdfa17",
+      "techniques": []
     }
   }
 }

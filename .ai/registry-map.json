@@ -4569,8 +4569,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:2 The 'gate' here is a runtime pairing-approval modal, not a check on the tree. Searching components/ and libs/ for census, baseline, lefthook, process.exit, exitCode and max-warnings found 0 files. The context only consumes the lint gate through one waiver and builds no gate machinery.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "terminal-multiplexing",
@@ -15665,8 +15669,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src/hooks/design/template/useGalleryQuery.ts:122 These are React hooks for design, credentials, OAuth and templates. The only contact with a quality gate is this reasoned lint waiver. A search of core/, credential/, oauth/ and template/ for census, baseline, lefthook, process.exit, exitCode and max-warnings found 0 files, so no check, rung, severity path or gate escape hatch is defined here.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "agent-memory",
@@ -31314,8 +31322,8 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "priorNotApplicable": 20,
+          "state": "unknown"
         },
         {
           "subject": "agent-instruction-files",
@@ -40022,8 +40030,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src/features/triggers/sub_triggers/TriggerModeBadge.tsx:14 The only 'gate' in this context is the runtime destructive-action gate on trigger fires, a HITL product control. A recursive search of sub_triggers and its __tests__ for census, baseline, lefthook, process.exit, exitCode and max-warnings found 0 files, and there is no eslint-disable either, so no engineering check that refuses a change is built or waived here.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "hitl-approval",
@@ -40736,8 +40748,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/helpers/useAutoCredSession.ts:137 The only gate here is a runtime save gate bound to a credential healthcheck verdict, a product control and not a check refusing a change to the tree. A recursive search of schemas/, forms/, autoCred/helpers/ and vault/components for census, baseline, lefthook, process.exit, exitCode and max-warnings found 0 files.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "credential-vault",
