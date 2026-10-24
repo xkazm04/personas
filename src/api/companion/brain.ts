@@ -103,6 +103,8 @@ export interface CycleStats {
   staged_consumed?: number;
   staged_malformed?: number;
   supersedes_applied?: number;
+  /** Procedural supersedes, counted apart from fact supersedes. */
+  rule_supersedes_applied?: number;
   supersedes_dropped?: number;
   tags_proposed?: number;
   prune_candidates?: number;
