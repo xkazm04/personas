@@ -32526,45 +32526,47 @@
       "subject": "scale-investment-timing",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-10-19",
-      "evaluatedTs": "2026-10-19T00:26:09.219Z",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T22:31:47.378Z",
       "techniques": [
         {
           "technique": "ceiling-as-deadline-not-trigger",
           "verdict": "not-applicable",
-          "evidence": "src/lib/execution/executionSink.ts:305 Crossing the byte budget activates output truncation, a runtime safeguard without an architecture replacement programme."
-        },
-        {
-          "technique": "execution-model-concurrency-threshold",
-          "verdict": "not-applicable",
-          "evidence": "src/lib/execution/pipeline.ts:744 Middleware callbacks run sequentially through the frontend boundary; this does not select a worker-pool or cooperative service execution model."
-        },
-        {
-          "technique": "migration-reason-audit",
-          "verdict": "not-applicable",
-          "evidence": "src/lib/execution/knowledgeMiddleware.ts:98 This registers a callback in the existing pipeline; no platform migration proposed on growth grounds was found."
+          "evidence": "src/lib/execution/executionSink.ts:22 This is an OOM guard on one execution's terminal buffer, and truncation is the designed, cheap remediation. It is not a point where an architecture runs out and needs a replacement programme with runway."
         },
         {
           "technique": "next-order-of-magnitude-only",
           "verdict": "not-applicable",
-          "evidence": "src/lib/execution/pipeline.ts:401 The surrounding implementation bounds retained timing entries to prevent accumulation from unfinished traces; it does not specify a projected workload increment."
+          "evidence": "src/lib/execution/systemTrace.ts:260 This is a cap on leaked trace sessions, with oldest-first eviction. It is a memory bound, not a decision to size for growth on a load axis."
         },
         {
-          "technique": "size-the-system-to-its-maintainers",
+          "technique": "execution-model-concurrency-threshold",
           "verdict": "not-applicable",
-          "evidence": "src/lib/execution/executionSink.ts:5 The stated design change concerns local state ownership; no growth-sizing or reduced-maintainer scenario appears in the reviewed context."
+          "evidence": "src/lib/execution/pipeline.ts:77 This file only describes the backend's tokio task model as a stage label. The execution-model choice is made in Rust, outside this context, and the TS code adopts no model of its own."
         },
         {
           "technique": "vertical-headroom-before-distribution",
           "verdict": "not-applicable",
-          "evidence": "src/lib/execution/middleware/timingMiddleware.ts:50 Timing persistence uses local browser storage; no proposal to distribute this workload for capacity was found."
+          "evidence": "src/lib/execution/pipeline.ts:401 State is per-process and session-scoped, and nothing here proposes distributing a workload across nodes."
+        },
+        {
+          "technique": "migration-reason-audit",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:98 This registers a callback in the existing pipeline; no platform migration proposed on growth grounds was found.",
+          "carriedFrom": "2026-10-19"
+        },
+        {
+          "technique": "size-the-system-to-its-maintainers",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/execution/executionSink.ts:5 The stated design change concerns local state ownership; no growth-sizing or reduced-maintainer scenario appears in the reviewed context.",
+          "carriedFrom": "2026-10-19"
         }
       ],
       "withdrawn": {
-        "worker": "1abfcf57-82a5-4c50-94f5-31dc6baec657",
+        "worker": "27f8a3e1-07f3-40d8-8d9b-b8f2c7bdefb3",
         "state": "not-applicable",
-        "at": "2026-10-19T00:26:28.342786+00:00",
-        "reason": "reviewer (sonnet): Both not-applicable verdicts rest on incidental anchors and on a keyword search that is the wrong test. The lines I opened match their quotes, but none of them shows that a scale-investment decision is absent: executionSink.ts:304 is a byte-budget truncation check, and cloud.ts:74 is a cloud-deploy "
+        "at": "2026-10-24T22:32:11.762772+00:00",
+        "reason": "reviewer (sonnet): The not-applicable anchor, middleware/index.ts:21, is an import line and does not show that no capacity or scale decision is present. The supporting techniques are generic memory caps (MAX_TOTAL_BYTES, MAX_ACTIVE_SESSIONS, _MAX_TRACKED_EXECUTIONS). The cited pipeline.ts:401 is an eviction cap, not '"
       }
     },
     "b26fe932-b123-4b9e-8d1c-bbbf4e508265/scale-investment-timing": {
@@ -32572,45 +32574,48 @@
       "subject": "scale-investment-timing",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-10-19",
-      "evaluatedTs": "2026-10-19T00:26:09.219Z",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T22:31:47.378Z",
       "techniques": [
         {
           "technique": "ceiling-as-deadline-not-trigger",
           "verdict": "not-applicable",
-          "evidence": "src/api/templates/templateAdopt.ts:69 The documented bound accommodates the backend CLI lease duration; it is an invocation timeout, not an architectural capacity deadline."
-        },
-        {
-          "technique": "execution-model-concurrency-threshold",
-          "verdict": "not-applicable",
-          "evidence": "src/api/platforms/platformDefinitions.ts:94 Awaiting IPC is boundary plumbing, which the technique explicitly excludes from execution-model investment."
-        },
-        {
-          "technique": "migration-reason-audit",
-          "verdict": "not-applicable",
-          "evidence": "src/api/system/qwen.ts:19 This configures an optional provider; the associated split-engine documentation describes capability expansion, without proposing a growth-driven platform replacement."
-        },
-        {
-          "technique": "next-order-of-magnitude-only",
-          "verdict": "not-applicable",
-          "evidence": "src/api/recipes/recipes.ts:26 This is a catalog pagination parameter, without a current-load measurement or future system-capacity target."
-        },
-        {
-          "technique": "size-the-system-to-its-maintainers",
-          "verdict": "not-applicable",
-          "evidence": "src/api/templates/teamPresets.ts:26 These teams are persona configuration objects; no operational maintainer count or staffing-driven sizing decision was found."
+          "evidence": "src/api/templates/templateAdopt.ts:60 The only 'ceiling' in this context is a client timeout set above the backend's lease ceiling. It is not a capacity ceiling for an architecture."
         },
         {
           "technique": "vertical-headroom-before-distribution",
           "verdict": "not-applicable",
-          "evidence": "src/api/system/gitlab.ts:54 The wrapper exposes an existing deployment operation without choosing additional machines over vertical capacity."
+          "evidence": "src/api/system/cloud.ts:30 The cloud wrapper only forwards connection credentials. Any decision to distribute execution to the cloud is made elsewhere."
+        },
+        {
+          "technique": "next-order-of-magnitude-only",
+          "verdict": "not-applicable",
+          "evidence": "src/api/system/systemMetrics.ts:11 This reads host CPU and memory for a gauge. Nothing here sizes anything against a growth axis."
+        },
+        {
+          "technique": "execution-model-concurrency-threshold",
+          "verdict": "not-applicable",
+          "evidence": "src/api/platforms/platformDefinitions.ts:94 Awaiting IPC is boundary plumbing, which the technique explicitly excludes from execution-model investment.",
+          "carriedFrom": "2026-10-19"
+        },
+        {
+          "technique": "migration-reason-audit",
+          "verdict": "not-applicable",
+          "evidence": "src/api/system/qwen.ts:19 This configures an optional provider; the associated split-engine documentation describes capability expansion, without proposing a growth-driven platform replacement.",
+          "carriedFrom": "2026-10-19"
+        },
+        {
+          "technique": "size-the-system-to-its-maintainers",
+          "verdict": "not-applicable",
+          "evidence": "src/api/templates/teamPresets.ts:26 These teams are persona configuration objects; no operational maintainer count or staffing-driven sizing decision was found.",
+          "carriedFrom": "2026-10-19"
         }
       ],
       "withdrawn": {
-        "worker": "1abfcf57-82a5-4c50-94f5-31dc6baec657",
+        "worker": "27f8a3e1-07f3-40d8-8d9b-b8f2c7bdefb3",
         "state": "not-applicable",
-        "at": "2026-10-19T00:26:28.342786+00:00",
-        "reason": "reviewer (sonnet): Both not-applicable verdicts rest on incidental anchors and on a keyword search that is the wrong test. The lines I opened match their quotes, but none of them shows that a scale-investment decision is absent: executionSink.ts:304 is a byte-budget truncation check, and cloud.ts:74 is a cloud-deploy "
+        "at": "2026-10-24T22:32:11.898282+00:00",
+        "reason": "reviewer (sonnet): The not-applicable anchor, tierUsage.ts:9, is just the import/export header of a thin invoke wrapper and does not show the precondition is absent. The context exposes tier/rate-bucket usage and cloud connection, which touch capacity and quota. The cited ceiling in templateAdopt.ts:60 is only a timeo"
       }
     },
     "dc7c4f48-e819-47d0-80be-6afb942d28fd/self-describing-model-packages": {

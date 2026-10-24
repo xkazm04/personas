@@ -1,0 +1,56 @@
+{
+  "schema": "conform-run/1",
+  "worker": "27f8a3e1-07f3-40d8-8d9b-b8f2c7bdefb3",
+  "subject": "scale-investment-timing",
+  "evaluatedAt": "2026-10-24T22:31:47.378367+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "scale-investment-timing",
+      "context": "lib-execution",
+      "reason": "withdrawn after review: reviewer (sonnet): The not-applicable anchor, middleware/index.ts:21, is an import line and does not show that no capacity or scale decision is present. The supporting techniques are generic memory caps (MAX_TOTAL_BYTES, MAX_ACTIVE_SESSIONS, _MAX_TRACKED_EXECUTIONS). The cited pipeline.ts:401 is an eviction cap, not '"
+    },
+    {
+      "subject": "scale-investment-timing",
+      "context": "api-system",
+      "reason": "withdrawn after review: reviewer (sonnet): The not-applicable anchor, tierUsage.ts:9, is just the import/export header of a thin invoke wrapper and does not show the precondition is absent. The context exposes tier/rate-bucket usage and cloud connection, which touch capacity and quota. The cited ceiling in templateAdopt.ts:60 is only a timeo"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-24T22:31:47.378367+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "scale-investment-timing"
+      ],
+      "techniques": [
+        "ceiling-as-deadline-not-trigger",
+        "execution-model-concurrency-threshold",
+        "next-order-of-magnitude-only",
+        "vertical-headroom-before-distribution"
+      ],
+      "deviations": 0,
+      "context": "lib-execution",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T22:31:47.378367+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "scale-investment-timing"
+      ],
+      "techniques": [
+        "ceiling-as-deadline-not-trigger",
+        "next-order-of-magnitude-only",
+        "vertical-headroom-before-distribution"
+      ],
+      "deviations": 0,
+      "context": "api-system",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}
