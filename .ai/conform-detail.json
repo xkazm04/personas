@@ -38396,6 +38396,42 @@
       "evaluatedTs": "2026-10-24T21:21:40.207Z",
       "worker": "9a966f50-a780-4582-978a-32faa8006e55",
       "techniques": []
+    },
+    "8650ca36-36fe-4862-98f5-745e866a2687/module-design": {
+      "context": "agents-design",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T21:39:50.978Z",
+      "worker": "7bf5c7fe-a437-4e39-89e6-2c5229eb7c40",
+      "techniques": [
+        {
+          "technique": "module-depth",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_design/DesignHub.tsx:33 Declared props that are never read are interface every caller must satisfy, and they hide nothing; the 'future panel should take it from here' reason is the individually defensible 'we will add it later' the technique warns about. ToolRunnerModal is kept unmounted for a future host on the same reasoning. By contrast useToolRunner is deep: getState/runTool hide dedupe, persona snapshotting and stale-result dropping."
+        },
+        {
+          "technique": "marked-unverifiable-region",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_design/libs/designStateHelpers.ts:17 A DB blob is asserted to AgentIR through a generic `JSON.parse as T` helper, and the next line calls .map on suggested_connectors. No comment names the invariant that makes this safe, so this unverifiable point is unmarked and has no stated reason. DesignHub.tsx:71 casts the i18n proxy to Record<string,string> without a stated reason either."
+        },
+        {
+          "technique": "seams-and-adapters",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:95 There is one door to the invoke_tool_direct IPC: a repo grep finds that only src/api/agents/tools.ts names the command and only this hook calls the wrapper, so swapping in a test double covers every path."
+        },
+        {
+          "technique": "io-free-core",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.test.ts:5 The hook's tests reach every decision (stale-persona drop, dedupe) with a single double, so the precondition (two or more doubles per decision, several runtimes) does not hold."
+        },
+        {
+          "technique": "locality-and-leverage",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_design/components/DesignSubtabPanels.tsx:57 One verification instance serves both the live panel and the recap, so the connector-health decision lives in one place and the two halves cannot disagree."
+        }
+      ]
     }
   }
 }

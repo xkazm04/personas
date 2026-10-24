@@ -3170,7 +3170,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_design/DesignHub.tsx:69 DesignHub requires callers to supply four props (draft, patch, modelDirty, onConnectorsMissingChange) and binds none of them, kept for 'a future panel'. That is interface with no implementation behind it, the shallow 'add it later' rent that module-depth names; separately, the saved design blob is asserted into AgentIR with no written invariant.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "wizard-flows",

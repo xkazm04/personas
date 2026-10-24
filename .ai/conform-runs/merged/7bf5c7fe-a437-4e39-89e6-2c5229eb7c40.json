@@ -1,0 +1,71 @@
+{
+ "schema": "conform-run/1",
+ "worker": "7bf5c7fe-a437-4e39-89e6-2c5229eb7c40",
+ "subject": "module-design",
+ "evaluatedAt": "2026-10-24T21:39:50.978091+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "agents-design",
+   "subject": "module-design",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_design/DesignHub.tsx:69 DesignHub requires callers to supply four props (draft, patch, modelDirty, onConnectorsMissingChange) and binds none of them, kept for 'a future panel'. That is interface with no implementation behind it, the shallow 'add it later' rent that module-depth names; separately, the saved design blob is asserted into AgentIR with no written invariant.",
+   "techniques": [
+    {
+     "technique": "module-depth",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_design/DesignHub.tsx:33 Declared props that are never read are interface every caller must satisfy, and they hide nothing; the 'future panel should take it from here' reason is the individually defensible 'we will add it later' the technique warns about. ToolRunnerModal is kept unmounted for a future host on the same reasoning. By contrast useToolRunner is deep: getState/runTool hide dedupe, persona snapshotting and stale-result dropping."
+    },
+    {
+     "technique": "marked-unverifiable-region",
+     "verdict": "deviation",
+     "evidence": "src/features/agents/sub_design/libs/designStateHelpers.ts:17 A DB blob is asserted to AgentIR through a generic `JSON.parse as T` helper, and the next line calls .map on suggested_connectors. No comment names the invariant that makes this safe, so this unverifiable point is unmarked and has no stated reason. DesignHub.tsx:71 casts the i18n proxy to Record<string,string> without a stated reason either."
+    },
+    {
+     "technique": "seams-and-adapters",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:95 There is one door to the invoke_tool_direct IPC: a repo grep finds that only src/api/agents/tools.ts names the command and only this hook calls the wrapper, so swapping in a test double covers every path."
+    },
+    {
+     "technique": "io-free-core",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.test.ts:5 The hook's tests reach every decision (stale-persona drop, dedupe) with a single double, so the precondition (two or more doubles per decision, several runtimes) does not hold."
+    },
+    {
+     "technique": "locality-and-leverage",
+     "verdict": "conformant",
+     "evidence": "src/features/agents/sub_design/components/DesignSubtabPanels.tsx:57 One verification instance serves both the live panel and the recap, so the connector-health decision lives in one place and the two halves cannot disagree."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "module-design",
+   "context": "recipes-playground",
+   "reason": "The context lists no files, and neither RecipePlaygroundModal nor useRecipeTestRunner exists in the tracked tree. Running git ls-files plus a repo grep turns up only a stale mention in a doc comment (src/features/shared/components/forms/FormFieldGroup.tsx:16) and entries in docs and registry metadata. There is no code to judge, and calling it not-applicable would wrongly claim the subject does not apply rather than that the module is gone."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-24T21:39:50.978091+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "module-design"
+   ],
+   "techniques": [
+    "io-free-core",
+    "locality-and-leverage",
+    "marked-unverifiable-region",
+    "module-depth",
+    "seams-and-adapters"
+   ],
+   "deviations": 1,
+   "context": "agents-design",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
