@@ -38432,6 +38432,27 @@
           "evidence": "src/features/agents/sub_design/components/DesignSubtabPanels.tsx:57 One verification instance serves both the live panel and the recap, so the connector-health decision lives in one place and the two halves cannot disagree."
         }
       ]
+    },
+    "03960450-6979-4412-9de3-35c897fe56d2/production-trace-scoring": {
+      "context": "agents-executions-components",
+      "subject": "production-trace-scoring",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T21:59:55.475Z",
+      "worker": "a0bdf36e-0438-41d0-b26f-66438cffb55c",
+      "techniques": [
+        {
+          "technique": "stable-hash-sampling",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/components/list/ExecutionValueBadges.tsx:19 The only verdict-like value shown is business_outcome, which src-tauri/engine/src/parser.rs parses from the agent's own output. No judge selection or sampling happens here."
+        },
+        {
+          "technique": "error-analysis-first-taxonomy",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/components/AnnotationEditor.tsx:33 Human free-form tags and notes on executions exist, but nothing here derives a judge rubric from them. This is human annotation, not scoring setup."
+        }
+      ]
     }
   }
 }

@@ -3675,7 +3675,11 @@
           "revision": 7,
           "changedAt": "2026-09-01",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_executions/components/list/ExecutionValueBadges.tsx:11 The list, comparison and rerun surfaces neither run nor display a model-judge verdict (the Director score display was removed on 2026-10-19 and the remaining badge shows the agent's self-reported business_outcome). A case-insensitive search of src/features/agents/sub_executions for judge, rescore, sample_rate, settle_window and unscored found no hits; director_score appears only in test fixtures under trace/ and replay/.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:65f1d14beed83924",
+          "evaluatedRevision": 7
         },
         {
           "subject": "mcp-tools",
