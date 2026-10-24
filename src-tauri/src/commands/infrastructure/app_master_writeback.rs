@@ -1547,7 +1547,7 @@ mod tests {
             "declined",
             "blocked",
             "already_delivered",
-            "\"pr_url\"",
+            "\"prUrl\"",
             "GET /dev-tools/goals/proj-42",
             "/goals/<goal_id>/amend",
             "/goals/<goal_id>/items/<item_id>",

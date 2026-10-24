@@ -804,13 +804,19 @@ mod tests {
     fn stale_and_never_ran_are_different_causes() {
         let pool = user_pool();
         let _home = seed_indexed_episodes(&pool, 3);
+        // `embedder_loaded = false` keeps the vector lane out of this test in
+        // BOTH builds. With `true` an `ml` build (the `desktop,ml` cell, which
+        // first compiled this module on 2026-10-24) evaluates the vector index
+        // of a pool that has never embedded anything, and its blocked stage
+        // ("vector_index_empty") outranks the consolidation cause this test is
+        // about. Without `ml` the lane is off either way, so nothing changes.
         assert_eq!(
-            cause_code(&run(&pool, true)),
+            cause_code(&run(&pool, false)),
             Some("consolidation_never_ran")
         );
 
         seed_completed_cycle(&pool, CONSOLIDATION_STALE_HOURS + 24);
-        assert_eq!(cause_code(&run(&pool, true)), Some("consolidation_stale"));
+        assert_eq!(cause_code(&run(&pool, false)), Some("consolidation_stale"));
     }
 
     /// An unparseable timestamp is reported as unknown, never as fresh.

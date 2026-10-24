@@ -121,6 +121,10 @@ expect(
   "package-qualified features are taken bare",
   featuresOnTestLine("'test', '--features', 'personas-core/desktop,personas-db/desktop'").join() === "desktop,desktop",
 );
+expect(
+  "the retry wrapper is a cargo test line",
+  featuresOnTestLine("run: bash scripts/ci/cargo-test-retry.sh --workspace --lib --features desktop,ml --no-fail-fast").join() === "desktop,ml",
+);
 expect("--all-features widens to everything", featuresOnTestLine("cargo test --all-features").join() === "*");
 expect("a non-test line contributes nothing", featuresOnTestLine("cargo check --features ml").length === 0);
 expect("a bare cargo test contributes nothing", featuresOnTestLine("cargo test --workspace").length === 0);

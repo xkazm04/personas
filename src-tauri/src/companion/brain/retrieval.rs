@@ -957,9 +957,12 @@ mod retirement_predicate_tests {
         {
             let conn = pool.get()?;
             for (id, imp) in [("live-fact", 2), ("retired-fact", 0)] {
+                // `file_path` and `content_hash` are NOT NULL: this module is
+                // gated on `ml`, no cell compiled it before 2026-10-24, and the
+                // INSERT below never named them.
                 conn.execute(
-                    "INSERT INTO companion_node (id, kind, importance) VALUES (?1, 'fact', ?2)",
-                    rusqlite::params![id, imp],
+                    "INSERT INTO companion_node (id, kind, file_path, content_hash, importance)                      VALUES (?1, 'fact', ?2, 'sha256:x', ?3)",
+                    rusqlite::params![id, format!("semantic/user/{id}.md"), imp],
                 )?;
             }
         }

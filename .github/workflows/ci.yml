@@ -1261,10 +1261,25 @@ jobs:
       # re-running the integration and doc tests `rust-tests` already runs.
       # Only the desktop-full leg tests; the other two legs are `cargo check`
       # shapes with no gated tests of their own.
+      #
+      # The contest plugin's instrument test (`commands::contest::node`) needs
+      # node and the registry checkout, exactly as in rust-tests: under `CI` it
+      # FAILS rather than skips when either is missing. The retry wrapper is the
+      # same one rust-tests uses (the P2P loopback test flakes in every lib run).
+      - uses: actions/setup-node@v4
+        if: matrix.label == 'desktop-full'
+        with:
+          node-version-file: .nvmrc
+      - name: Clone the knowledge registry (the contest instrument)
+        if: matrix.label == 'desktop-full'
+        shell: bash
+        run: git clone --depth 1 https://github.com/xkazm04/ai-registry.git ../ai-registry
       - name: cargo test --features desktop,ml (the ml-gated unit tests)
         if: matrix.label == 'desktop-full'
         shell: bash
-        run: cargo test --workspace --lib --manifest-path src-tauri/Cargo.toml --features desktop,ml --no-fail-fast
+        env:
+          AI_REGISTRY_DIR: ${{ github.workspace }}/../ai-registry
+        run: bash scripts/ci/cargo-test-retry.sh --workspace --lib --manifest-path src-tauri/Cargo.toml --features desktop,ml --no-fail-fast
 
   # ─── Job B3: the featureless shape ──────────────────────────────────
   # The root crate cannot build without `desktop` — capabilities/default.json
