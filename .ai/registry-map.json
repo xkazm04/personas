@@ -37701,7 +37701,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_explore/useExploreCatalog.ts:2 This context only browses and adopts first-party catalog data that ships bundled with the app, and preset adoption goes through IPC (adoptTeamPreset). A case-insensitive search of sub_explore and sub_presets for lockfile, unzip, pickle, license, allowlist, Cargo.toml and package-lock found 0 hits, so no dependency, archive, permission-manifest or untrusted-loader boundary crosses these files.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "structured-output",

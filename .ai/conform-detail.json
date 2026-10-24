@@ -38127,6 +38127,32 @@
       "evaluatedTs": "2026-10-24T04:52:08.175Z",
       "worker": "5f019704-a13b-4a40-8461-1a82f2532f8a",
       "techniques": []
+    },
+    "2a54cdc2-87af-4298-b490-9eb87f230df7/supply-chain": {
+      "context": "templates-draft-editor",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T05:06:26.329Z",
+      "worker": "ffbbf27a-e697-42a4-aca1-c31eee1f5f42",
+      "techniques": [
+        {
+          "technique": "reading-is-not-running",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_explore/useExploreCatalog.ts:11 Recipes come from a static JSON index generated at build time, imported as data. Nothing opens, evaluates or runs a foreign tree."
+        },
+        {
+          "technique": "unsafe-deserialization-off-by-default",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_presets/usePresetAdoption.ts:11 Adoption is a typed IPC call. No loader in these files rebuilds objects from a serialized graph."
+        },
+        {
+          "technique": "archive-extraction-safety",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_explore/useExploreCatalog.ts:2 Catalog is bundled JSON. Searching for unzip/archive extraction in the context dirs found no extraction site (the only 'archive' hit is a category name)."
+        }
+      ]
     }
   }
 }

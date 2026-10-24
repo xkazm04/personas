@@ -1,0 +1,75 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ffbbf27a-e697-42a4-aca1-c31eee1f5f42",
+ "subject": "supply-chain",
+ "evaluatedAt": "2026-10-24T05:06:26.329465+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "templates-draft-editor",
+   "subject": "supply-chain",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_explore/useExploreCatalog.ts:2 This context only browses and adopts first-party catalog data that ships bundled with the app, and preset adoption goes through IPC (adoptTeamPreset). A case-insensitive search of sub_explore and sub_presets for lockfile, unzip, pickle, license, allowlist, Cargo.toml and package-lock found 0 hits, so no dependency, archive, permission-manifest or untrusted-loader boundary crosses these files.",
+   "techniques": [
+    {
+     "technique": "reading-is-not-running",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_explore/useExploreCatalog.ts:11 Recipes come from a static JSON index generated at build time, imported as data. Nothing opens, evaluates or runs a foreign tree."
+    },
+    {
+     "technique": "unsafe-deserialization-off-by-default",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_presets/usePresetAdoption.ts:11 Adoption is a typed IPC call. No loader in these files rebuilds objects from a serialized graph."
+    },
+    {
+     "technique": "archive-extraction-safety",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_explore/useExploreCatalog.ts:2 Catalog is bundled JSON. Searching for unzip/archive extraction in the context dirs found no extraction site (the only 'archive' hit is a category name)."
+    }
+   ],
+   "absenceTerms": [
+    "lockfile",
+    "unzip",
+    "pickle",
+    "license"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "supply-chain",
+   "context": "teams-factory-l2",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "supply-chain",
+   "context": "plugins-artist-hooks",
+   "reason": "The context lists no files, and its declared entry points (src/features/plugins/artist/hooks/useArtistAssets.ts, useGallerySelection.ts, useBlenderMcp.ts) do not exist in the tree: git ls-files has no match and the directory is missing. There is no code to judge."
+  },
+  {
+   "subject": "supply-chain",
+   "context": "overview-patterns",
+   "reason": "The context lists no files, and its declared entry points (src/features/overview/sub_patterns/PracticeDetailModal.tsx, CreatePracticeModal.tsx, ExtractionMenu.tsx) do not exist in the tree: git ls-files has no match and the directory is missing. There is no code to judge."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-24T05:06:26.329465+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "supply-chain"
+   ],
+   "techniques": [
+    "archive-extraction-safety",
+    "reading-is-not-running",
+    "unsafe-deserialization-off-by-default"
+   ],
+   "deviations": 0,
+   "context": "templates-draft-editor",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
