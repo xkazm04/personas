@@ -30964,22 +30964,68 @@
       "context": "core",
       "subject": "guest-execution-bounding",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-17",
-      "evaluatedTs": "2026-10-17T01:19:12.712Z",
+      "state": "conformant",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T05:43:33.350Z",
+      "worker": "d2b591a2-05dc-435c-af9e-95084062badd",
       "techniques": [
         {
           "technique": "terminate-from-outside-when-you-cannot-count",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/cloud/runner.rs:222 Explicit cancellation calls cancel_execution at line 42, but the polling-limit branch only emits failure and returns without requesting remote termination."
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/cloud/runner.rs:240 When the poll limit gives up, it calls the orchestrator's own cancel door, so the remote work is stopped and not just abandoned. This answers 'what happens to the work when it fires?'"
+        },
+        {
+          "technique": "nested-liveness-ceilings",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/limits.rs:141 Ladder: STARTUP_SILENCE_SECS (180s) < stream deadline < ENGINE_MAX_EXECUTION_SECS. The inner rung is derived from the outer and a test enforces the order. Each rung's escape is written beside it (limits.rs:20-30, 57-64). Minor gap: the stream deadline and the engine ceiling both mint ErrorCategory::Timeout."
+        },
+        {
+          "technique": "grace-for-the-uninterruptible-host-call",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/limits.rs:31 The slack is a separately named quantity, not folded into the 20-min ceiling. It exists so the runner's timeout path can kill the process, keep the partial output and still mint the class (limits.rs:26-30)."
+        },
+        {
+          "technique": "uncatchable-limit-errors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/error_taxonomy.rs:132 There is no guest-side handler that could catch the breach. The host mints the class structurally ('The app's own timer fired; there is nothing to infer'), which is the typed-verdict analogue."
+        },
+        {
+          "technique": "one-terminator-many-armed-slots",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/run_budget.rs:3 Each unit of guest work is its own CLI process. Per the technique's own 'when not', the OS is the terminator and the process table is the set of slots."
+        },
+        {
+          "technique": "budget-tier-from-observed-output",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/limits.rs:37 The budget comes from an explicit per-persona configuration, so the work's kind is told up front rather than observed. That is the technique's own 'when not to use it' case."
+        },
+        {
+          "technique": "back-edge-iteration-counter",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/run_budget.rs:25 Core embeds no interpreter and has no compiler emitting loops. The guest is an opaque subprocess, and core states plainly that it cannot see inside a spawn while it runs."
+        },
+        {
+          "technique": "cost-budget-cooperative-yield",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/run_budget.rs:25 There is no dispatch loop to charge, and guest work does not share a single-threaded executor; it runs out of process."
+        },
+        {
+          "technique": "count-host-reentry-in-recursion-depth",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/run_budget.rs:25 Nothing in this process can be recursed into or re-entered by the guest."
+        },
+        {
+          "technique": "bounded-shadow-backtrace",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/run_budget.rs:25 There are no guest frames whose positions could be shadowed."
+        },
+        {
+          "technique": "instruction-budget-for-fuzzing",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/run_budget.rs:25 There is no interpreter fuzz target."
         }
       ],
-      "withdrawn": {
-        "worker": "23e18193-0c80-425c-a0a2-598980dc8964",
-        "state": "deviation",
-        "at": "2026-10-17T01:19:27.061082+00:00",
-        "reason": "reviewer (sonnet): The code claim is true (the polling-limit branch at src-tauri/src/cloud/runner.rs:222 returns without calling cancel_execution), but runner.rs is in the app crate's cloud module. It is not among the core context's files (src-tauri/core/src/*), and core is a lower crate that can't call it, so I could"
-      }
+      "registryProposal": "For a host whose guest is a per-unit subprocess (an LLM CLI), the subject's 'when not' clauses already route most techniques to not-applicable. A short note in the golden path saying 'subprocess-per-unit guests: only the external half applies' would make that verdict faster and more consistent."
     },
     "969f50a2-b70d-41e3-b573-284a75a67425/translation-pipeline-topology": {
       "context": "prompt-assembly-engine",
@@ -38179,6 +38225,21 @@
           "evidence": "src/lib/analytics/sink.ts:21 Events are in-memory transport payloads handed to Sentry. No fact table is designed here."
         }
       ]
+    },
+    "35c52f59-9612-47c4-8662-0ebb3c821771/guest-execution-bounding": {
+      "context": "notepad-core",
+      "subject": "guest-execution-bounding",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T05:43:33.350Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "d2b591a2-05dc-435c-af9e-95084062badd",
+        "state": "not-applicable",
+        "at": "2026-10-24T05:43:54.981032+00:00",
+        "reason": "reviewer (sonnet): The claim that the notepad's timers are \"debounce and retry only\" is contradicted by notepadAskState.ts:27,88, where ASK_CEILING_MS (120 s) is a ceiling timer that clears a pending Athena ask, so the notepad does bound a dispatched guest run. The anchor notepadActions.ts:1 only says notes leave thro"
+      }
     }
   }
 }

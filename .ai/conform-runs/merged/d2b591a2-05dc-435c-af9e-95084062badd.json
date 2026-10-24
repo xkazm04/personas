@@ -1,0 +1,125 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d2b591a2-05dc-435c-af9e-95084062badd",
+  "subject": "guest-execution-bounding",
+  "evaluatedAt": "2026-10-24T05:43:33.350308+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "core",
+      "subject": "guest-execution-bounding",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src-tauri/core/src/limits.rs:23 Core publishes the external, liveness-only half of the subject for a guest (the Claude CLI subprocess) whose loop the host cannot instrument: a 20-minute outer ceiling, a stream deadline derived to fire inside it with a named finalize margin, and a startup-silence rung, each documented with the escape it closes; the counter techniques do not apply because nothing in core owns a dispatch loop.",
+      "techniques": [
+        {
+          "technique": "terminate-from-outside-when-you-cannot-count",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/cloud/runner.rs:240 When the poll limit gives up, it calls the orchestrator's own cancel door, so the remote work is stopped and not just abandoned. This answers 'what happens to the work when it fires?'"
+        },
+        {
+          "technique": "nested-liveness-ceilings",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/limits.rs:141 Ladder: STARTUP_SILENCE_SECS (180s) < stream deadline < ENGINE_MAX_EXECUTION_SECS. The inner rung is derived from the outer and a test enforces the order. Each rung's escape is written beside it (limits.rs:20-30, 57-64). Minor gap: the stream deadline and the engine ceiling both mint ErrorCategory::Timeout."
+        },
+        {
+          "technique": "grace-for-the-uninterruptible-host-call",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/limits.rs:31 The slack is a separately named quantity, not folded into the 20-min ceiling. It exists so the runner's timeout path can kill the process, keep the partial output and still mint the class (limits.rs:26-30)."
+        },
+        {
+          "technique": "uncatchable-limit-errors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/error_taxonomy.rs:132 There is no guest-side handler that could catch the breach. The host mints the class structurally ('The app's own timer fired; there is nothing to infer'), which is the typed-verdict analogue."
+        },
+        {
+          "technique": "one-terminator-many-armed-slots",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/run_budget.rs:3 Each unit of guest work is its own CLI process. Per the technique's own 'when not', the OS is the terminator and the process table is the set of slots."
+        },
+        {
+          "technique": "budget-tier-from-observed-output",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/limits.rs:37 The budget comes from an explicit per-persona configuration, so the work's kind is told up front rather than observed. That is the technique's own 'when not to use it' case."
+        },
+        {
+          "technique": "back-edge-iteration-counter",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/run_budget.rs:25 Core embeds no interpreter and has no compiler emitting loops. The guest is an opaque subprocess, and core states plainly that it cannot see inside a spawn while it runs."
+        },
+        {
+          "technique": "cost-budget-cooperative-yield",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/run_budget.rs:25 There is no dispatch loop to charge, and guest work does not share a single-threaded executor; it runs out of process."
+        },
+        {
+          "technique": "count-host-reentry-in-recursion-depth",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/run_budget.rs:25 Nothing in this process can be recursed into or re-entered by the guest."
+        },
+        {
+          "technique": "bounded-shadow-backtrace",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/run_budget.rs:25 There are no guest frames whose positions could be shadowed."
+        },
+        {
+          "technique": "instruction-budget-for-fuzzing",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/core/src/run_budget.rs:25 There is no interpreter fuzz target."
+        }
+      ],
+      "registryProposal": "For a host whose guest is a per-unit subprocess (an LLM CLI), the subject's 'when not' clauses already route most techniques to not-applicable. A short note in the golden path saying 'subprocess-per-unit guests: only the external half applies' would make that verdict faster and more consistent."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "guest-execution-bounding",
+      "context": "commands-curator",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "guest-execution-bounding",
+      "context": "notepad-core",
+      "reason": "withdrawn after review: reviewer (sonnet): The claim that the notepad's timers are \"debounce and retry only\" is contradicted by notepadAskState.ts:27,88, where ASK_CEILING_MS (120 s) is a ceiling timer that clears a pending Athena ask, so the notepad does bound a dispatched guest run. The anchor notepadActions.ts:1 only says notes leave thro"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-24T05:43:33.350308+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "guest-execution-bounding"
+      ],
+      "techniques": [
+        "back-edge-iteration-counter",
+        "bounded-shadow-backtrace",
+        "budget-tier-from-observed-output",
+        "cost-budget-cooperative-yield",
+        "count-host-reentry-in-recursion-depth",
+        "grace-for-the-uninterruptible-host-call",
+        "instruction-budget-for-fuzzing",
+        "nested-liveness-ceilings",
+        "one-terminator-many-armed-slots",
+        "terminate-from-outside-when-you-cannot-count",
+        "uncatchable-limit-errors"
+      ],
+      "deviations": 0,
+      "context": "core",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T05:43:33.350308+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "guest-execution-bounding"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "notepad-core",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

@@ -9957,7 +9957,11 @@
           "revision": 3,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src-tauri/core/src/limits.rs:23 Core publishes the external, liveness-only half of the subject for a guest (the Claude CLI subprocess) whose loop the host cannot instrument: a 20-minute outer ceiling, a stream deadline derived to fire inside it with a named finalize margin, and a startup-silence rung, each documented with the escape it closes; the counter techniques do not apply because nothing in core owns a dispatch loop.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:a59e479b7cea486b",
+          "evaluatedRevision": 3
         },
         {
           "subject": "test-harness",
