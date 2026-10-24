@@ -38077,6 +38077,56 @@
       "evaluatedTs": "2026-10-24T04:34:28.252Z",
       "worker": "c15e73c1-5563-44b9-84a8-d42d386ca2ac",
       "techniques": []
+    },
+    "c5228746-931d-4733-9cf7-84519a2c9605/eval-harness": {
+      "context": "hooks-design",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T04:52:08.175Z",
+      "worker": "5f019704-a13b-4a40-8461-1a82f2532f8a",
+      "techniques": []
+    },
+    "3c107fe6-ec95-4f45-bf31-665e9ccfe223/eval-harness": {
+      "context": "plugins-drive",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T04:52:08.175Z",
+      "worker": "5f019704-a13b-4a40-8461-1a82f2532f8a",
+      "techniques": []
+    },
+    "56a0fd55-279d-428b-b2f6-7c89154abd6f/eval-harness": {
+      "context": "schedules-components",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T04:52:08.175Z",
+      "worker": "5f019704-a13b-4a40-8461-1a82f2532f8a",
+      "techniques": []
+    },
+    "89eddf81-0c57-441d-a07d-de36bf022cb5/eval-harness": {
+      "context": "display-data-formatters",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T04:52:08.175Z",
+      "worker": "5f019704-a13b-4a40-8461-1a82f2532f8a",
+      "techniques": []
+    },
+    "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f/eval-harness": {
+      "context": "home-cockpit-widgets",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T04:52:08.175Z",
+      "worker": "5f019704-a13b-4a40-8461-1a82f2532f8a",
+      "techniques": []
     }
   }
 }

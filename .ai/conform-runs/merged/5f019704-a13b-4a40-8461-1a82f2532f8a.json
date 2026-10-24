@@ -1,0 +1,143 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5f019704-a13b-4a40-8461-1a82f2532f8a",
+ "subject": "eval-harness",
+ "evaluatedAt": "2026-10-24T04:52:08.175930+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "hooks-design",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/hooks/design/core/useDesignAnalysis.ts:169 The hooks call the design model and send its streamed result to UI state, but nothing here runs that model against declared scenarios or scores what it returns. A recursive search of src/hooks/design found no judge, rubric, benchmark or pass-rate terms. The only 'eval' hits are predicate evaluation in negotiatorStepGraph.ts and the staleWhileRevalidate import, so the harness standard has nothing to govern in this context.",
+   "techniques": [],
+   "absenceTerms": [
+    "judge",
+    "rubric",
+    "benchmark",
+    "passRate"
+   ]
+  },
+  {
+   "context": "plugins-drive",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:189 The Drive suite is deterministic Vitest unit tests over a UI state hook, which belongs to the test-harness subject. It has no non-deterministic model candidate, so there is nothing for trials, judges or aggregation to apply to. A search of src/features/plugins/drive found no judge, rubric, benchmark or pass-rate terms. The 'scenario' hits are ScenarioEmptyState UI states and the one 'verdict' hit is signature verification.",
+   "techniques": [],
+   "absenceTerms": [
+    "judge",
+    "rubric",
+    "benchmark",
+    "passRate"
+   ]
+  },
+  {
+   "context": "schedules-components",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/schedules/libs/__tests__/matchPastSlotsToRuns.test.ts:32 The schedules context projects cron fires and matches past slots to executions inside a fixed tolerance window. Its tests check that matching with ordinary assertions, and no model output is scored anywhere. A search of src/features/schedules found no judge, rubric, benchmark, verdict or pass-rate terms; the one 'scenario' hit is the ScenarioEmptyState import.",
+   "techniques": [],
+   "absenceTerms": [
+    "judge",
+    "rubric",
+    "benchmark",
+    "passRate"
+   ]
+  },
+  {
+   "context": "display-data-formatters",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/components/display/Numeric.tsx:6 These are display components that only render time and number values, with no model and no scoring, so the eval-harness precondition does not hold. A search of the display, charts, modals and overlays folders found no eval, judge, rubric, benchmark or pass-rate terms; the 'scenario' hits are empty-state comments.",
+   "techniques": [],
+   "absenceTerms": [
+    "judge",
+    "rubric",
+    "benchmark",
+    "passRate"
+   ]
+  },
+  {
+   "context": "home-cockpit-widgets",
+   "subject": "eval-harness",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_cockpit/widgets/BrowserTestReportWidget.tsx:12 The nearest construct here, BrowserTestReportWidget, only renders the steps, defects and console errors that one browser-test turn reported (config.steps and config.defects). It does not run candidates, repeat trials, pin a judge or aggregate scores. The other 'verdict' hits are human approve/reject decisions in LinkedDecisionsWidget and DecisionDrawer. A search of the widgets folder found no judge, rubric, benchmark or pass-rate terms.",
+   "techniques": [],
+   "absenceTerms": [
+    "judge",
+    "rubric",
+    "benchmark",
+    "passRate"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-24T04:52:08.175930+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "hooks-design",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T04:52:08.175930+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "plugins-drive",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T04:52:08.175930+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "schedules-components",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T04:52:08.175930+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "display-data-formatters",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T04:52:08.175930+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "eval-harness"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "home-cockpit-widgets",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
