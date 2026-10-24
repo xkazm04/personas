@@ -1,0 +1,144 @@
+{
+ "schema": "conform-run/1",
+ "worker": "83c65d04-65d1-4712-a243-2866b80a6638",
+ "subject": "fleet-orchestration",
+ "evaluatedAt": "2026-10-24T02:54:03.710693+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "overview-manual-review",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:304 The review inbox is the operator's verification lane (with Athena also resolving approvals unattended); its stale-review sweep (startup + a button) flips every pending review older than 7 days to a terminal 'resolved' state via manual_reviews::gc_stale_pending, so owed verdicts leave the debt stock on a timer with no escalation to whoever staffs the seat - the 'self-close on a timer' the verifier-seat technique names as dishonest (honest terminal actions are escalate and hold), mitigated only by the distinct 'resolved' label and a sentinel note.",
+   "techniques": [
+    {
+     "technique": "verifier-seat-capacity",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:304 Owed pending verdicts are released to a terminal state by age (7-day default) instead of escalated and held; the header (line 341) shows the owed pending count but no oldest-owed age."
+    }
+   ]
+  },
+  {
+   "context": "output-stream-parser",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/parser.rs:488 The parser reads the CLI's terminal is_error field with unwrap_or(false), so a result line that carries no is_error is treated as a clean finish ('Completed', TerminalVerdict::Clean) - the projection layer fills in a status it never saw, even though the same file carefully separates a missing result line (MissingTerminalFact) from a negative one.",
+   "techniques": [
+    {
+     "technique": "absent-status-passthrough",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/parser.rs:488 A missing is_error on a result line becomes a success verdict instead of staying absent/unverified."
+    },
+    {
+     "technique": "completion-claim-verification",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/parser.rs:1064 No result line means MissingTerminalFact (Incomplete), never success from the exit code; a lost terminal marker is not treated as a clean finish."
+    },
+    {
+     "technique": "result-harvest",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/parser.rs:1034 A clean exit without the declared terminal result gets its own named outcome token rather than being folded into success or failure."
+    },
+    {
+     "technique": "worker-trajectory-anatomy",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/fix_loop.rs:171 The recovery budget is set up front (default 2, clamped 1-5) and paired with a failure-signature breaker (line 166) that stops repeated failures."
+    },
+    {
+     "technique": "brief-carries-the-session",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/fix_loop.rs:182 The fresh corrective run gets the original input restated instead of only the fix metadata; the doc records the earlier worse-informed retry."
+    },
+    {
+     "technique": "inherited-state-provenance",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/fix_loop.rs:98 The retry is told in its own prompt that a prior attempt exists and failed, and what it must do; the model-written evidence is marked as untrusted data. Moderate confidence: no directory or branch is inherited here."
+    }
+   ]
+  },
+  {
+   "context": "mastermind-popovers",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_mastermind/lib/FleetPreviewPanel.tsx:34 When the fleet store has no row for the previewed node (a demo node or a vanished session), the preview header shows the state 'exited', and line 22 picks the colour the same way. A display layer that saw no state substitutes a real lifecycle value, even though the body text below already tells demo apart from gone.",
+   "techniques": [
+    {
+     "technique": "absent-status-passthrough",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_mastermind/lib/FleetPreviewPanel.tsx:34 A missing session row is labelled with a real terminal state ('exited') instead of being shown as absent or unknown."
+    },
+    {
+     "technique": "hibernation-and-resume",
+     "verdict": "conformant",
+     "evidence": "src/features/teams/sub_mastermind/lib/FleetPreviewPanel.tsx:50 A hibernated session keeps its identity and pane but is not treated as a live process."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "fleet-orchestration",
+   "context": "observability-audit-models",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "overview-patterns",
+   "reason": "The context lists no files (empty paths in .ai/registry-map.json), so there is no code to judge."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-24T02:54:03.710693+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "verifier-seat-capacity"
+   ],
+   "deviations": 1,
+   "context": "overview-manual-review",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T02:54:03.710693+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "absent-status-passthrough",
+    "brief-carries-the-session",
+    "completion-claim-verification",
+    "inherited-state-provenance",
+    "result-harvest",
+    "worker-trajectory-anatomy"
+   ],
+   "deviations": 1,
+   "context": "output-stream-parser",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T02:54:03.710693+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [
+    "absent-status-passthrough",
+    "hibernation-and-resume"
+   ],
+   "deviations": 1,
+   "context": "mastermind-popovers",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

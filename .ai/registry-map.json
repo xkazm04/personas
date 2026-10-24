@@ -19219,7 +19219,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/FleetPreviewPanel.tsx:34 When the fleet store has no row for the previewed node (a demo node or a vanished session), the preview header shows the state 'exited', and line 22 picks the colour the same way. A display layer that saw no state substitutes a real lifecycle value, even though the body text below already tells demo apart from gone.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "mcp-tools",
@@ -21680,7 +21684,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/parser.rs:488 The parser reads the CLI's terminal is_error field with unwrap_or(false), so a result line that carries no is_error is treated as a clean finish ('Completed', TerminalVerdict::Clean) - the projection layer fills in a status it never saw, even though the same file carefully separates a missing result line (MissingTerminalFact) from a negative one.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "streaming-output",
@@ -23151,7 +23159,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:304 The review inbox is the operator's verification lane (with Athena also resolving approvals unattended); its stale-review sweep (startup + a button) flips every pending review older than 7 days to a terminal 'resolved' state via manual_reviews::gc_stale_pending, so owed verdicts leave the debt stock on a timer with no escalation to whoever staffs the seat - the 'self-close on a timer' the verifier-seat technique names as dishonest (honest terminal actions are escalate and hold), mitigated only by the distinct 'resolved' label and a sentinel note.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "eval-harness",

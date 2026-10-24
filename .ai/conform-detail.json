@@ -27091,33 +27091,60 @@
       "context": "output-stream-parser",
       "subject": "fleet-orchestration",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T23:21:32.061Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:54:03.710Z",
+      "worker": "83c65d04-65d1-4712-a243-2866b80a6638",
       "techniques": [
+        {
+          "technique": "absent-status-passthrough",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/parser.rs:488 A missing is_error on a result line becomes a success verdict instead of staying absent/unverified."
+        },
+        {
+          "technique": "completion-claim-verification",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/parser.rs:1064 No result line means MissingTerminalFact (Incomplete), never success from the exit code; a lost terminal marker is not treated as a clean finish."
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/parser.rs:1034 A clean exit without the declared terminal result gets its own named outcome token rather than being folded into success or failure."
+        },
+        {
+          "technique": "worker-trajectory-anatomy",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/fix_loop.rs:171 The recovery budget is set up front (default 2, clamped 1-5) and paired with a failure-signature breaker (line 166) that stops repeated failures."
+        },
+        {
+          "technique": "brief-carries-the-session",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/fix_loop.rs:182 The fresh corrective run gets the original input restated instead of only the fix metadata; the doc records the earlier worse-informed retry."
+        },
+        {
+          "technique": "inherited-state-provenance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/fix_loop.rs:98 The retry is told in its own prompt that a prior attempt exists and failed, and what it must do; the model-written evidence is marked as untrusted data. Moderate confidence: no directory or branch is inherited here."
+        },
         {
           "technique": "soft-budget-under-the-hard-cap",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/deliberation.rs:284 The cap fires as a forced successful resolution; the brief has no derived soft budget."
+          "evidence": "src-tauri/src/engine/deliberation.rs:284 The cap fires as a forced successful resolution; the brief has no derived soft budget.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "deliberation-as-an-elected-turn",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/deliberation.rs:6 The moderator runs every tick as machinery, not as an elected no-op before the action."
+          "evidence": "src-tauri/src/engine/deliberation.rs:6 The moderator runs every tick as machinery, not as an elected no-op before the action.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "heterogeneous-model-panels",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/deliberation.rs:498 This is one moderator routing a team conversation that already sees prior turns, not an independent cross-family panel."
+          "evidence": "src-tauri/src/engine/deliberation.rs:498 This is one moderator routing a team conversation that already sees prior turns, not an independent cross-family panel.",
+          "carriedFrom": "2026-10-15"
         }
-      ],
-      "registryProposal": "A cap that writes status Resolved and only names round_cap in a side reason still reads as success to any consumer that branches on status alone.",
-      "withdrawn": {
-        "worker": "53d5d40f-ed3f-47d8-b2b5-14386b9119f0",
-        "state": "deviation",
-        "at": "2026-10-15T23:22:15.240711+00:00",
-        "reason": "reviewer (sonnet): deliberation.rs is not among the context's files, which are the engine/src parser, protocol, chunker and similar. The engine/src files mention deliberation only in autonomy.rs and serving_overrides.rs. So the round_cap verdict is about a different context, and I did not confirm the 'moderator prompt"
-      }
+      ]
     },
     "ef73ca1c-fc54-4b9c-83ec-390c54929192/table": {
       "context": "overview-manual-review",
@@ -37760,6 +37787,43 @@
       "evaluatedTs": "2026-10-24T02:03:57.923Z",
       "worker": "767d5da2-b284-4b8e-924d-18def123034b",
       "techniques": []
+    },
+    "ef73ca1c-fc54-4b9c-83ec-390c54929192/fleet-orchestration": {
+      "context": "overview-manual-review",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:54:03.710Z",
+      "worker": "83c65d04-65d1-4712-a243-2866b80a6638",
+      "techniques": [
+        {
+          "technique": "verifier-seat-capacity",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/ManualReviewList.tsx:304 Owed pending verdicts are released to a terminal state by age (7-day default) instead of escalated and held; the header (line 341) shows the owed pending count but no oldest-owed age."
+        }
+      ]
+    },
+    "ca705961-f138-494a-b0fe-f882c674d25a/fleet-orchestration": {
+      "context": "mastermind-popovers",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:54:03.710Z",
+      "worker": "83c65d04-65d1-4712-a243-2866b80a6638",
+      "techniques": [
+        {
+          "technique": "absent-status-passthrough",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/FleetPreviewPanel.tsx:34 A missing session row is labelled with a real terminal state ('exited') instead of being shown as absent or unknown."
+        },
+        {
+          "technique": "hibernation-and-resume",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/FleetPreviewPanel.tsx:50 A hibernated session keeps its identity and pane but is not treated as a live process."
+        }
+      ]
     }
   }
 }
