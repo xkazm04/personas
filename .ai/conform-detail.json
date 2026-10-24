@@ -29672,17 +29672,17 @@
       "context": "plugins-fleet-tests",
       "subject": "agent-runtime-assembly",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T21:17:48.869Z",
-      "techniques": [],
-      "registryProposal": "The golden path already sends fleet orchestration and the replay viewer to other subjects, but the matcher still binds fleet UI tests, the React/Tauri event fan-out, and the execution trace inspector; naming those three surfaces where the subject stops would keep judgment on the hook chain.",
-      "withdrawn": {
-        "worker": "51ee89c9-8ba3-4163-89ae-3663574096e2",
-        "state": "not-applicable",
-        "at": "2026-10-16T21:18:10.386377+00:00",
-        "reason": "reviewer (sonnet): The anchor FleetSessionInsights.tsx is not one of this context's files, which are all __tests__ files, so the line does not show the precondition is absent for them; I also found that fleet has spawn and dispatch code (FleetSpawnTaskModal, quick-dispatch) that I did not trace."
-      }
+      "state": "deviation",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:03:57.923Z",
+      "worker": "767d5da2-b284-4b8e-924d-18def123034b",
+      "techniques": [
+        {
+          "technique": "activation-is-a-separate-mutation",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_settings/FleetSettingsPage.tsx:42 Install and uninstall failures are toasted loudly and checkHooks compares the declared events and port against what is actually registered. The check's own failure is silent, though: FleetHookBanner.tsx:38 renders 'Loading hook status…' for a null status, and FleetSettingsPage.test.tsx has no mockRejected case. Of the three required outcomes, 'could not tell' is missing."
+        }
+      ]
     },
     "03e7f46a-3f19-47b8-98a5-398efed815b4/agent-runtime-assembly": {
       "context": "hooks-realtime",
@@ -37618,6 +37618,36 @@
         }
       ],
       "registryProposal": "assert-the-schedule-not-the-stopwatch frames the load failure as a false RED. The absence-after-a-wait shape (sleep N, then assert a side effect did not happen) fails the other way, false GREEN under load, and is worth naming explicitly."
+    },
+    "621caefc-8ae0-42e7-89b6-8e879ad62814/agent-runtime-assembly": {
+      "context": "api-key-management",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:03:57.923Z",
+      "worker": "767d5da2-b284-4b8e-924d-18def123034b",
+      "techniques": []
+    },
+    "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc/agent-runtime-assembly": {
+      "context": "triggers-studio",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:03:57.923Z",
+      "worker": "767d5da2-b284-4b8e-924d-18def123034b",
+      "techniques": []
+    },
+    "ee9d4d9e-0414-4460-b159-5d9c7c4108a7/agent-runtime-assembly": {
+      "context": "vault-credentials-components-features",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:03:57.923Z",
+      "worker": "767d5da2-b284-4b8e-924d-18def123034b",
+      "techniques": []
     }
   }
 }
