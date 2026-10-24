@@ -1,0 +1,42 @@
+{
+  "schema": "conform-run/1",
+  "worker": "57ac5588-1e5b-40fc-991e-6142c99d9a83",
+  "subject": "machine-paced-delivery",
+  "evaluatedAt": "2026-10-24T05:53:44.794927+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "machine-paced-delivery",
+      "context": "api-agents",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "machine-paced-delivery",
+      "context": "persona-build-matrix",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "machine-paced-delivery",
+      "context": "agents-connectors",
+      "reason": "withdrawn after review: reviewer (sonnet): The warning at AutomationTriggerStep.tsx:168-176 is real, and deploy.rs:289 also requires the 'workflow' scope. But I found no `automation_runner` or `create_repository_dispatch` anywhere in src or src-tauri, so I could not confirm the claim that unattended persona runs use this credential to dispat"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-24T05:53:44.794927+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "machine-paced-delivery"
+      ],
+      "techniques": [
+        "scoped-delivery-access-for-agents"
+      ],
+      "deviations": 1,
+      "context": "agents-connectors",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

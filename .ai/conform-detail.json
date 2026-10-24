@@ -38240,6 +38240,28 @@
         "at": "2026-10-24T05:43:54.981032+00:00",
         "reason": "reviewer (sonnet): The claim that the notepad's timers are \"debounce and retry only\" is contradicted by notepadAskState.ts:27,88, where ASK_CEILING_MS (120 s) is a ceiling timer that clears a pending Athena ask, so the notepad does bound a dispatched guest run. The anchor notepadActions.ts:1 only says notes leave thro"
       }
+    },
+    "fbfcd99a-a333-42da-b85e-2ec1f560b4be/machine-paced-delivery": {
+      "context": "agents-connectors",
+      "subject": "machine-paced-delivery",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T05:53:44.794Z",
+      "techniques": [
+        {
+          "technique": "scoped-delivery-access-for-agents",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_connectors/components/automation/AutomationTriggerStep.tsx:176 The UI asks for the 'workflow' scope, which lets a token edit .github/workflows (change delivery config, rung 4). The persona only needs to start a repository_dispatch run (rung 2). There is no separate read grant and nothing makes the grant short-lived or narrow."
+        }
+      ],
+      "registryProposal": "The technique is written for agents reading or retrying CI. It should also cover an app that lets an agent trigger external pipelines through a user-supplied PAT, and name the 'ask for the broadest scope the setup needs' anti-pattern.",
+      "withdrawn": {
+        "worker": "57ac5588-1e5b-40fc-991e-6142c99d9a83",
+        "state": "deviation",
+        "at": "2026-10-24T05:57:04.108319+00:00",
+        "reason": "reviewer (sonnet): The warning at AutomationTriggerStep.tsx:168-176 is real, and deploy.rs:289 also requires the 'workflow' scope. But I found no `automation_runner` or `create_repository_dispatch` anywhere in src or src-tauri, so I could not confirm the claim that unattended persona runs use this credential to dispat"
+      }
     }
   }
 }
