@@ -32044,103 +32044,107 @@
       "context": "run-desk",
       "subject": "codegen",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-18",
-      "evaluatedTs": "2026-10-18T22:52:53.775Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T06:38:07.276Z",
+      "worker": "ad7db0ef-fa68-4173-9156-ebe902b48bef",
       "techniques": [
         {
           "technique": "commit-vs-derive-policy",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/TaskModal.tsx:60 Creates runtime task input; no generated-source artifact class requiring a commit policy was identified."
+          "evidence": "src/features/plugins/dev-tools/sub_runner/TaskModal.tsx:60 Creates runtime task input; no generated-source artifact class requiring a commit policy was identified.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "drift-gating",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:124 Refreshes runtime queue counts rather than comparing committed output with a source derivation."
+          "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:124 Refreshes runtime queue counts rather than comparing committed output with a source derivation.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "generated-file-hygiene",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/TaskOutputPanel.tsx:24 Combines streamed text for display; it does not emit generated source files."
+          "evidence": "src/features/plugins/dev-tools/sub_runner/TaskOutputPanel.tsx:24 Combines streamed text for display; it does not emit generated source files.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "generator-failure-isolation",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/AutoRunBanner.tsx:36 Observes an application task scheduler, not the repository's source-generation runner."
+          "evidence": "src/features/plugins/dev-tools/sub_runner/AutoRunBanner.tsx:36 Observes an application task scheduler, not the repository's source-generation runner.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "post-merge-regeneration",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/PrBridge.tsx:274 Builds a change-request description from runtime task data; no positional generated artifact was identified."
+          "evidence": "src/features/plugins/dev-tools/sub_runner/PrBridge.tsx:274 Builds a change-request description from runtime task data; no positional generated artifact was identified.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "task-registry-design",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskControls.tsx:106 Selects queued application tasks dynamically rather than defining a build-generator population."
+          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskControls.tsx:106 Selects queued application tasks dynamically rather than defining a build-generator population.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "trigger-wiring",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:88 Retries an application task; no development/build source-regeneration trigger belongs to this context."
+          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:88 Retries an application task; no development/build source-regeneration trigger belongs to this context.",
+          "carriedFrom": "2026-10-18"
         }
-      ],
-      "withdrawn": {
-        "worker": "6e951b5e-490e-4edf-972c-9f4a96139c31",
-        "state": "not-applicable",
-        "at": "2026-10-18T22:53:29.033499+00:00",
-        "reason": "reviewer (sonnet): Both contexts import generated bindings (`@/lib/bindings/DevTask`, `DevIdea`, `DevProject`, `AutoRunStatus`, `PersonaDesignReview`), which are generated-code artifacts. The cited anchors only show runtime fetching or caching, so they are incidental and don't show that no generated-artifact precondit"
-      }
+      ]
     },
     "9fca099d-94e4-4fd0-8460-3cf5d8c85acf/codegen": {
       "context": "templates-generated-gallery-cards",
       "subject": "codegen",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-18",
-      "evaluatedTs": "2026-10-18T22:52:53.775Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T06:38:07.276Z",
+      "worker": "ad7db0ef-fa68-4173-9156-ebe902b48bef",
       "techniques": [
         {
           "technique": "commit-vs-derive-policy",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCompare.ts:13 Comparison selections are runtime state, not committed generated artifacts."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCompare.ts:13 Comparison selections are runtime state, not committed generated artifacts.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "drift-gating",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts:39 Checks runtime template-payload integrity; this is not a source-generation freshness gate."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useTemplateCardData.ts:39 Checks runtime template-payload integrity; this is not a source-generation freshness gate.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "generated-file-hygiene",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:28 Stores parsed fields in a runtime WeakMap rather than writing a generated file."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/reviewParseCache.ts:28 Stores parsed fields in a runtime WeakMap rather than writing a generated file.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "generator-failure-isolation",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/useAdoptionCompletionNotifier.ts:63 Polls runtime persona adoption; no source-generator process is managed here."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useAdoptionCompletionNotifier.ts:63 Polls runtime persona adoption; no source-generator process is managed here.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "post-merge-regeneration",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/buildComparison.ts:49 Derives display columns in memory; no committed positional output requiring merge-time regeneration was identified."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/buildComparison.ts:49 Derives display columns in memory; no committed positional output requiring merge-time regeneration was identified.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "task-registry-design",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:61 Resolves application connector readiness rather than registering source-generation tasks."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:61 Resolves application connector readiness rather than registering source-generation tasks.",
+          "carriedFrom": "2026-10-18"
         },
         {
           "technique": "trigger-wiring",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:117 Rebuilds runtime template designs and refreshes the gallery, not repository-derived source."
+          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:117 Rebuilds runtime template designs and refreshes the gallery, not repository-derived source.",
+          "carriedFrom": "2026-10-18"
         }
-      ],
-      "withdrawn": {
-        "worker": "6e951b5e-490e-4edf-972c-9f4a96139c31",
-        "state": "not-applicable",
-        "at": "2026-10-18T22:53:29.033499+00:00",
-        "reason": "reviewer (sonnet): Both contexts import generated bindings (`@/lib/bindings/DevTask`, `DevIdea`, `DevProject`, `AutoRunStatus`, `PersonaDesignReview`), which are generated-code artifacts. The cited anchors only show runtime fetching or caching, so they are incidental and don't show that no generated-artifact precondit"
-      }
+      ]
     },
     "f197653d-267c-4a91-bffc-b3be17434877/declarative-object-graph-configs": {
       "context": "trigger-config",

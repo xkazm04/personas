@@ -31210,7 +31210,11 @@
           "revision": 6,
           "changedAt": "2026-09-21",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/RunDeskPage.tsx:26 The Run Desk only imports ts-rs types generated somewhere else (src/lib/bindings). It owns no generator, registry entry, generated output root or regeneration trigger: a search of sub_runner/ for codegen, run-codegen, @generated and 'do not edit' found nothing, so none of the pipeline techniques have anything to act on here.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:9a082bd05760516a",
+          "evaluatedRevision": 6
         },
         {
           "subject": "self-healing",
@@ -38150,7 +38154,11 @@
           "revision": 6,
           "changedAt": "2026-09-21",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:30 The gallery cards only import the generated PersonaDesignReview binding; they produce no generated artifact. A search of the gallery directory for codegen, run-codegen, @generated and 'do not edit' found nothing. The word 'generated' in these paths means LLM-generated templates, not derived source.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:9a082bd05760516a",
+          "evaluatedRevision": 6
         },
         {
           "subject": "test-harness",
