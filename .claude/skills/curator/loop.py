@@ -1079,6 +1079,13 @@ def reproject(repo: pathlib.Path) -> dict:
     return out
 
 
+def night_status() -> dict:
+    """The scheduled night's guard (`multi.night_guard`), so `status` says whether a loop is needed at all."""
+    sys.path.insert(0, str(pathlib.Path(__file__).parent))
+    import multi
+    return multi.night_guard()
+
+
 def app_running() -> bool | None:
     """Whether the Personas app is also driving. `None` when it cannot be told.
 
@@ -2568,6 +2575,7 @@ def main() -> int:
                    help="on the usage limit: stop after the running workers settle, or doze and probe")
     p.add_argument("--doze-min", type=int, default=LIMIT_DOZE_MIN, help="minutes between usage-limit probes")
     p.add_argument("--poll-sec", type=int, default=POOL_POLL_SEC)
+    p.add_argument("--beside-night", action="store_true", help="run even while the scheduled night is running")
     g = p.add_mutually_exclusive_group()
     g.add_argument("--dry", action="store_true", help="show what it would claim now, claim nothing")
     g.add_argument("--stop", action="store_true", help="ask a running pool to stop after its workers settle")
@@ -2595,6 +2603,7 @@ def main() -> int:
     p.add_argument("--why", help="withdraw/revalidate: the review's reason, recorded with the change")
     p.add_argument("--round", type=int, help="revalidate: the round whose kept raw answer is re-judged")
     p.add_argument("--provider", dest="provider", help="revalidate: the seat to re-judge")
+    p.add_argument("--beside-night", action="store_true", help="start/round: run even while the scheduled night is running")
     a = ap.parse_args()
 
     if a.cmd == "multi":
@@ -2619,6 +2628,9 @@ def main() -> int:
         if a.dry:
             print(json.dumps(pool_dry(a), indent=2, default=str))
             return 0
+        sys.path.insert(0, str(pathlib.Path(__file__).parent))
+        import multi
+        multi.refuse_beside_night(a)
         if a.lane and "refill" in a.lane and app_running():
             die("the app is running and the standing lane writes the registry's queue file it also writes; "
                 "drive --lane queue,plan, or switch her off in the app first")
@@ -2672,6 +2684,7 @@ def main() -> int:
             "projection_is_stale": (proj["behind"] or 0) > STALE_PROJECTION_BEHIND,
             "app_running": app_running(),
             "pool_running": pool_holder(POOL_DIR) is not None,
+            "night": night_status(),
             "brakes": brakes(c),
             "plan": plan_summary(c),
             "queue_file": {k: lane[k] for k in ("exists", "queued", "fingerprint")},

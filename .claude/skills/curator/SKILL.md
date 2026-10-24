@@ -1,6 +1,6 @@
 ---
 name: curator
-version: 1.3.0
+version: 1.4.0
 description: Drive Curator's work loop from a terminal instead of from the Personas app - read her real ladder out of the same SQLite database, claim the next piece of work, spawn a headless Claude worker at it in the knowledge registry, judge what came back, settle it honestly, and keep going until the subscription's usage limit or a brake stops her. The alternative driver for while the app is closed or its fleet is unavailable. Invoke with `/curator` (status) or `/curator loop`.
 ---
 
@@ -93,6 +93,18 @@ precisely so this driver and a running app cannot take the same item, and a hand
 4. **`corpus` and `corpus_is_stale`** - how far the checkout the plan was ranked from is
    from its own origin. See **The corpus brake** below. This is the first thing to read,
    because it decides whether any pass is worth paying for.
+5. **`night`** - the scheduled night (`\Personas\CuratorNight`, daily 23:00-07:00 with three
+   Claude seats on 2026-10-24) and whether it is live. **Read it before any `loop`, `pool`,
+   `--multi` round or `--multi night`.** Its `say` field is the sentence to give the operator:
+   - `running: true` - a night is judging every consumer repo right now. Tell the operator
+     another loop is not needed, give the pid, the start time and the window, and stop. Do not
+     start a pool or round beside it: both split the same backlog and the same usage limit for no
+     extra coverage. `run-pool`, `multi start` and `multi round` refuse on their own; pass
+     `--beside-night` only when the operator asks for both. `multi night` always refuses a second night.
+   - `in_window: true`, `running: false` - the window is open but the night ended early or never
+     started. Say so, read the night log it names, and ask before starting anything by hand.
+   - `scheduled: true` outside the window - a loop now is fine. Mention the next start, because a
+     loop still running at 23:00 runs beside the night.
 
 ## The ladder (the same four rungs the app's tick runs)
 
@@ -416,6 +428,11 @@ deletions, the commit verified to be OURS, the shared index resynced for these p
 skips a detached HEAD or a merge/rebase in progress, skips paths the repo ignores, and leaves the
 files uncommitted - reported - when a hook fails. A sibling's dirty file in that repo is never
 staged.
+
+**A session checks the night before starting one.** `multi.night_guard()` (shown as `night` in
+`loop.py status` and `multi status`) reads the live `night.lock` (pid AND creation time) and the
+task's Comment and state. While a night runs, `run-pool`, `multi start` and `multi round` refuse
+unless given `--beside-night`, and `multi night` refuses outright. See boot ritual step 5.
 
 **What stops a night**, each named in the report: `--until` (no round starts within 20 min of it),
 `--max-rounds`, `multi stop`, a brake (quiet hours, backpressure; `--terminal-owns` waives only

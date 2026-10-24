@@ -309,5 +309,44 @@ class Night(unittest.TestCase):
         self.assertEqual(M._deadline("23:30", datetime(2026, 10, 12, 23, 0)).day, 12)
 
 
+class NightGuard(unittest.TestCase):
+    TASK = {"Comment": "Curator night|23:00-07:00", "Scheduled Task State": "Enabled",
+            "Next Run Time": "10/24/2026 11:00:00 PM"}
+
+    def setUp(self):
+        import tempfile
+        self.tmp = pathlib.Path(tempfile.mkdtemp())
+        self._dir, M.MULTI_DIR = M.MULTI_DIR, self.tmp
+
+    def tearDown(self):
+        M.MULTI_DIR = self._dir
+
+    def test_the_window_wraps_midnight(self):
+        from datetime import datetime
+        self.assertTrue(M._in_window("23:00-07:00", datetime(2026, 10, 24, 2, 0)))
+        self.assertTrue(M._in_window("23:00-07:00", datetime(2026, 10, 24, 23, 30)))
+        self.assertFalse(M._in_window("23:00-07:00", datetime(2026, 10, 24, 7, 0)))
+        self.assertTrue(M._in_window("01:00-06:30", datetime(2026, 10, 24, 3, 0)))
+
+    def test_a_live_lock_says_no_loop_is_needed(self):
+        import json, os
+        (self.tmp / "night.lock").write_text(json.dumps(
+            {"pid": os.getpid(), "create_time": M.L.proc_create_time(os.getpid()), "at": "now"}), encoding="utf-8")
+        g = M.night_guard(self.TASK)
+        self.assertTrue(g["running"])
+        self.assertIn("no other loop is needed", g["say"])
+
+    def test_a_dead_lock_inside_the_window_is_named(self):
+        from datetime import datetime
+        g = M.night_guard(self.TASK, datetime(2026, 10, 24, 2, 0))
+        self.assertFalse(g["running"])
+        self.assertTrue(g["in_window"])
+
+    def test_a_disabled_task_is_not_a_schedule(self):
+        g = M.night_guard({**self.TASK, "Scheduled Task State": "Disabled"})
+        self.assertFalse(g["scheduled"])
+        self.assertFalse(g["in_window"])
+
+
 if __name__ == "__main__":
     unittest.main()

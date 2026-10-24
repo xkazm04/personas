@@ -2088,11 +2088,66 @@ def unschedule() -> dict:
 
 
 def scheduled() -> dict | None:
-    r = subprocess.run(["schtasks", "/Query", "/TN", TASK_NAME, "/FO", "LIST"], capture_output=True, text=True,
+    # /V carries the Comment (`Curator night|<at>-<until>`) and the enabled state; plain LIST does not.
+    r = subprocess.run(["schtasks", "/Query", "/TN", TASK_NAME, "/FO", "LIST", "/V"], capture_output=True, text=True,
                        encoding="utf-8", errors="replace")
     if r.returncode:
         return None
     return {k.strip(): v.strip() for k, v in (l.split(":", 1) for l in r.stdout.splitlines() if ":" in l)}
+
+
+def _in_window(window: str, at: datetime) -> bool:
+    start, end = (int(h) * 60 + int(m) for h, m in (x.split(":") for x in window.split("-")))
+    t = at.hour * 60 + at.minute
+    return start <= t < end if start <= end else (t >= start or t < end)
+
+
+def night_guard(task: dict | None = None, at: datetime | None = None) -> dict:
+    """Is the scheduled night already doing the work a session is about to start a loop for?
+
+    Read before any loop, pool or round. A night judges conform subjects in every consumer repo,
+    this one included, with three Claude seats; a second driver beside it splits the same backlog
+    and the same usage limit for no extra coverage. `running` is the live night.lock (pid AND
+    creation time); the schedule is TASK_NAME, its window read from the task's Comment.
+    """
+    at = at or datetime.now()
+    lock = L._read_json(MULTI_DIR / "night.lock", None)
+    running = bool(lock and L.proc_alive(lock.get("pid"), lock.get("create_time")))
+    task = scheduled() if task is None else task
+    window = None
+    if task and "|" in (task.get("Comment") or ""):
+        window = task["Comment"].split("|", 1)[1].strip() or None
+    enabled = bool(task) and (task.get("Scheduled Task State") or "").lower() == "enabled"
+    try:
+        in_window = bool(enabled and window and _in_window(window, at))
+    except ValueError:
+        in_window = False
+    out = {"running": running, "pid": lock.get("pid") if running else None, "since": lock.get("at") if running else None,
+           "scheduled": enabled, "window": window, "in_window": in_window,
+           "next_run": task.get("Next Run Time") if task else None,
+           "log": str(NIGHT_DIR / "night.out")}
+    if running:
+        out["say"] = (f"The scheduled night is running now (pid {out['pid']}, since {out['since']}, window {window}): "
+                      "it is already judging every consumer repo, so no other loop is needed. "
+                      "Watch it with `loop.py multi status`; `loop.py multi stop` ends it after its running round.")
+    elif in_window:
+        out["say"] = (f"Inside the night window ({window}) but no night is running: it ended early or never started. "
+                      f"Read {out['log']} before starting anything by hand.")
+    elif enabled:
+        out["say"] = (f"The night is scheduled ({window}, next start {out['next_run']}). A loop started now is "
+                      "fine; one still running at the next start would run beside it.")
+    else:
+        out["say"] = "No night is scheduled or running."
+    return out
+
+
+def refuse_beside_night(a: argparse.Namespace) -> None:
+    """Stop a pool or round from starting next to a live night, unless the operator asked for both."""
+    if getattr(a, "beside_night", False):
+        return
+    g = night_guard()
+    if g["running"]:
+        L.die(g["say"] + " Pass --beside-night to start it anyway.")
 
 
 def revalidate(n: int, provider: str, why: str) -> dict:
@@ -2206,17 +2261,20 @@ def status() -> dict:
     c.close()
     lock = L._read_json(MULTI_DIR / "night.lock", None)
     nights = sorted(NIGHT_DIR.glob("*.md")) if NIGHT_DIR.exists() else []
-    return {"ok": True, "state": load_state(),
+    task = scheduled()
+    return {"ok": True, "state": load_state(), "night": night_guard(task),
             "providers": {p: {"binary": bin_of(p), **PROVIDERS[p]} for p in PROVIDERS},
             "repos": [{"slug": r["slug"], "root": str(r["root"]), **backlog_size(r)} for r in consumer_repos(registry)],
             "night_running": bool(lock and L.proc_alive(lock.get("pid"), lock.get("create_time"))),
             "stop_requested": NIGHT_STOP.exists(), "last_report": str(nights[-1]) if nights else None,
-            "scheduled": scheduled(), "unfinished_round": unfinished_round()}
+            "scheduled": task, "unfinished_round": unfinished_round()}
 
 
 def main(a: argparse.Namespace) -> int:
     MULTI_DIR.mkdir(parents=True, exist_ok=True)
     cmd = a.multi_cmd
+    if cmd in ("round", "start"):
+        refuse_beside_night(a)
     if cmd == "round":
         out = run_round(a)
     elif cmd == "night":
