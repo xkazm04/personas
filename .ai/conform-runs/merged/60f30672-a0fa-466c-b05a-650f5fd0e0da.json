@@ -1,0 +1,33 @@
+{
+  "schema": "conform-run/1",
+  "worker": "60f30672-a0fa-466c-b05a-650f5fd0e0da",
+  "subject": "page-load-pipeline",
+  "evaluatedAt": "2026-10-24T22:16:01.945809+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "page-load-pipeline",
+      "context": "shared-components-layout",
+      "reason": "withdrawn after review: reviewer (sonnet): The code supports the claim: DeferUntilIdle.tsx:87 defaults `fallback = null`, and all 9 call sites I found pass no fallback. But DeferUntilIdle.tsx is not among this context's 12 listed files, and the 9 call sites are in other features (companions, overview, home). The verdict is therefore about th"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-24T22:16:01.945809+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "page-load-pipeline"
+      ],
+      "techniques": [
+        "layout-stability-by-reservation",
+        "script-cost-is-main-thread-time"
+      ],
+      "deviations": 1,
+      "context": "shared-components-layout",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

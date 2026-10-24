@@ -38453,6 +38453,33 @@
           "evidence": "src/features/agents/sub_executions/components/AnnotationEditor.tsx:33 Human free-form tags and notes on executions exist, but nothing here derives a judge rubric from them. This is human annotation, not scoring setup."
         }
       ]
+    },
+    "283b44f6-a4af-4a1f-8a0e-8b2dedb9adc0/page-load-pipeline": {
+      "context": "shared-components-layout",
+      "subject": "page-load-pipeline",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T22:16:01.945Z",
+      "techniques": [
+        {
+          "technique": "layout-stability-by-reservation",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/layout/DeferUntilIdle.tsx:87 Late content gets no reserved space by default, and no caller overrides that. The route header skeleton does reserve true geometry (ContentHeaderSkeleton.tsx:14). The body variant at RouteChunkSkeleton.tsx:47 is a fixed 5x56 silhouette not taken from the loaded content, and its own docstring forbids that."
+        },
+        {
+          "technique": "script-cost-is-main-thread-time",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/layout/DeferUntilIdle.tsx:128 Heavy or below-fold trees, and lazy() chunks via `suspend`, stay out of the first commit and mount when the main thread is idle, with a timeout cap. This fits the packaged-shell emphasis on main-thread cost."
+        }
+      ],
+      "registryProposal": "The layout-stability technique could name the deferred-mount primitive with a null default fallback (render nothing until idle) as its own failure mode. It is the idle-deferral version of 'lazily mounted section taller than its placeholder', and it is easy to miss because the primitive's own docs claim it causes no shift.",
+      "withdrawn": {
+        "worker": "60f30672-a0fa-466c-b05a-650f5fd0e0da",
+        "state": "deviation",
+        "at": "2026-10-24T22:16:38.174732+00:00",
+        "reason": "reviewer (sonnet): The code supports the claim: DeferUntilIdle.tsx:87 defaults `fallback = null`, and all 9 call sites I found pass no fallback. But DeferUntilIdle.tsx is not among this context's 12 listed files, and the 9 call sites are in other features (companions, overview, home). The verdict is therefore about th"
+      }
     }
   }
 }
