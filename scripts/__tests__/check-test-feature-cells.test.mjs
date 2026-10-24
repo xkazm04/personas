@@ -198,13 +198,21 @@ console.log("the gate, on this tree");
   const atBaseline = run([]);
   expect("green at the committed baseline", atBaseline.code === 0, atBaseline.out.trim());
 
-  // Trap 6: the scanner must not have read its own doc comment. If it had, the
-  // baseline would hold zero cells and the gap would read as closed.
+  // Trap 6: the scanner must not have read its own doc comment. This assertion
+  // used to be "the baseline records a real uncovered cell", which held only
+  // while the `ml` gap was open; closing the gap (a `cargo test --features
+  // desktop,ml` leg in ci.yml, 2026-10-24) emptied the baseline by design, so
+  // the check below asks the same question without needing a gap to exist:
+  // the cell that closed it is read from a REAL workflow line, not from this
+  // check's header (which quotes `--features ml` as its example and is
+  // skipped by name), and the baseline file is a well-formed empty list.
   const baseline = JSON.parse(readFileSync(join(REPO, "scripts", "test-feature-cells-baseline.json"), "utf8"));
+  expect("the baseline is a list of cells", Array.isArray(baseline.cells), JSON.stringify(baseline));
+  const closing = run(["--report"]);
   expect(
-    "the baseline records a real uncovered cell (the gate did not read its own header)",
-    (baseline.cells ?? []).some((c) => c.tests > 0),
-    JSON.stringify(baseline.cells),
+    "the ml cell is read from a workflow invocation, not from the header",
+    /ci\.yml\s+--features desktop,ml/.test(closing.out),
+    closing.out.trim().slice(0, 400),
   );
 
   // Trap 1, loud direction: the report lists the gating sites it found, so a
