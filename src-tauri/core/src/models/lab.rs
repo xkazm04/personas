@@ -71,7 +71,6 @@ impl LabRunStatus {
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct LabResultBase {
     pub scenario_name: String,
@@ -295,7 +294,6 @@ pub struct LabAbExperiment {
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct LabConsensusRun {
     pub id: String,
@@ -317,7 +315,6 @@ pub struct LabConsensusRun {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct LabConsensusResult {
     pub id: String,
@@ -639,7 +636,6 @@ pub struct LabToolCall {
 
 /// Full persona version snapshot (prompts + settings + tools reference).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PersonaVersion {
     pub id: String,

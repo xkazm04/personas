@@ -9,7 +9,6 @@ use ts_rs::TS;
 
 /// Result of analysing clipboard text for error patterns.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ErrorDetection {
     /// Category: "stack_trace", "error_message", "exception", "panic".

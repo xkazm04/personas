@@ -80,7 +80,6 @@ pub const MAX_LANE_ASSIGNMENTS: usize =
 
 /// One row's new queue-lane assignment. `lane: None` clears it.
 #[derive(Debug, Clone, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct LaneAssignment {
     pub session_id: String,

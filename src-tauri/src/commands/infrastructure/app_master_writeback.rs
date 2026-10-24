@@ -121,7 +121,7 @@ fn trimmed(v: Option<&String>) -> Option<&str> {
 // ============================================================================
 
 #[derive(Debug, Clone, Deserialize, TS)]
-#[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct IdeaOutcomeInput {
     /// `delivered` | `declined` | `blocked` | `already_delivered`.
     ///
@@ -137,12 +137,11 @@ pub struct IdeaOutcomeInput {
     pub branch: Option<String>,
     #[serde(default)]
     pub commit: Option<String>,
-    #[serde(default, alias = "prUrl")]
+    #[serde(default, alias = "pr_url")]
     pub pr_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct IdeaOutcomeResult {
     pub idea_id: String,
@@ -420,8 +419,9 @@ pub const ACTOR_APP_MASTER: &str = "AppMaster";
 // ============================================================================
 
 #[derive(Debug, Clone, Deserialize, TS)]
-#[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct FileIdeaInput {
+    #[serde(alias = "project_id")]
     pub project_id: String,
     pub title: String,
     pub description: Option<String>,
@@ -435,7 +435,7 @@ pub struct FileIdeaInput {
     pub impact: Option<i32>,
     #[serde(default)]
     pub risk: Option<i32>,
-    #[serde(default)]
+    #[serde(default, alias = "context_id")]
     pub context_id: Option<String>,
     /// The goal this item serves: a goal id, an id prefix of 8+ characters,
     /// or the goal's exact title. Resolved against the project; a reference
@@ -503,7 +503,6 @@ fn filing_key(input: &FileIdeaInput) -> Result<(&'static str, String), AppError>
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct FileIdeaResult {
     pub idea: DevIdea,
@@ -541,7 +540,6 @@ pub struct FileIdeaResult {
 /// backlog (the rules are not per-idea, so a pass answers every rated row
 /// still waiting, not only this one).
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct FiledIdeaTriage {
     /// Ideas the pass accepted.
@@ -908,27 +906,29 @@ fn short_id(id: &str) -> &str {
 
 #[derive(Debug, Clone, Deserialize, TS)]
 #[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateKpiInput {
+    #[serde(alias = "project_id")]
     pub project_id: String,
     pub name: String,
     #[serde(default)]
     pub description: Option<String>,
     #[serde(default)]
     pub category: Option<String>,
-    #[serde(default)]
+    #[serde(default, alias = "measure_kind")]
     pub measure_kind: Option<String>,
     /// JSON blob describing HOW the number is read. Defaults to `{}`.
-    #[serde(default)]
+    #[serde(default, alias = "measure_config")]
     pub measure_config: Option<String>,
     #[serde(default)]
     pub unit: Option<String>,
     #[serde(default)]
     pub direction: Option<String>,
-    #[serde(default)]
+    #[serde(default, alias = "baseline_value")]
     pub baseline_value: Option<f64>,
-    #[serde(default)]
+    #[serde(default, alias = "target_value")]
     pub target_value: Option<f64>,
-    #[serde(default)]
+    #[serde(default, alias = "target_date")]
     pub target_date: Option<String>,
     #[serde(default)]
     pub cadence: Option<String>,
@@ -938,9 +938,9 @@ pub struct CreateKpiInput {
     pub status: Option<String>,
     #[serde(default)]
     pub rationale: Option<String>,
-    #[serde(default)]
+    #[serde(default, alias = "context_group_id")]
     pub context_group_id: Option<String>,
-    #[serde(default)]
+    #[serde(default, alias = "context_id")]
     pub context_id: Option<String>,
 }
 
@@ -996,7 +996,7 @@ pub fn create_project_kpi(db: &DbPool, input: &CreateKpiInput) -> Result<DevKpi,
 // ============================================================================
 
 #[derive(Debug, Clone, Deserialize, TS)]
-#[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct MeasureKpiInput {
     pub value: f64,
     /// One of `evaluator | manual | scan | health_snapshot`. Defaults to `scan`
@@ -1062,7 +1062,6 @@ pub fn record_kpi_reading(
 /// One goal as a worker reads it: the row, its checklist, and the work that
 /// names it.
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectGoal {
     pub goal: DevGoal,
@@ -1108,7 +1107,6 @@ pub fn list_project_goals(db: &DbPool, project_id: &str) -> Result<Vec<ProjectGo
 // wire; the attribute keeps the bindings ratchet honest without changing the
 // filing protocol the worker writes.
 #[serde(rename_all = "camelCase")]
-#[ts(export)]
 pub struct NextCycleInput {
     /// The next cycle's objective in one line. REQUIRED, non-empty — an
     /// empty title is refused, so "no plan" is the absence of a filing.
@@ -1120,7 +1118,7 @@ pub struct NextCycleInput {
 }
 
 #[derive(Debug, Clone, Deserialize, TS)]
-#[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct AmendGoalInput {
     #[serde(default)]
     pub title: Option<String>,
@@ -1133,7 +1131,7 @@ pub struct AmendGoalInput {
     /// File the next autopilot cycle of the cycle goal this amends (WP3).
     /// Refused on a goal that is not a cycle (no `[cycle:…]` marker). A
     /// second filing while the successor is still open amends it.
-    #[serde(default)]
+    #[serde(default, alias = "next_cycle")]
     pub next_cycle: Option<NextCycleInput>,
 }
 
@@ -1213,13 +1211,12 @@ pub fn amend_project_goal(
 }
 
 #[derive(Debug, Clone, Deserialize, TS)]
-#[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct GoalItemInput {
     pub done: bool,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct GoalItemResult {
     pub item: DevGoalItem,
@@ -1265,7 +1262,7 @@ pub fn set_goal_item_done(
 }
 
 #[derive(Debug, Clone, Deserialize, TS)]
-#[ts(export)]
+#[serde(rename_all = "camelCase")]
 pub struct IdeaGoalInput {
     /// A goal id, an id prefix of 8+ characters, or the goal's exact title,
     /// resolved against the idea's project.
@@ -1274,7 +1271,6 @@ pub struct IdeaGoalInput {
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct IdeaGoalResult {
     pub idea: DevIdea,
@@ -1386,7 +1382,7 @@ pub fn write_back_brief(project_id: &str, idea_ids: &[String]) -> String {
              \"branch\":\"...\",\"commit\":\"...\"}}\n\
              - ...or {{\"outcome\":\"declined\",\"note\":\"why this should not be built\"}}\n\
              - ...or {{\"outcome\":\"blocked\",\"note\":\"what stopped you\"}}\n\
-             Add \"pr_url\":\"<url>\" to that call when you opened a pull request — \
+             Add \"prUrl\":\"<url>\" to that call when you opened a pull request — \
              it is how the next wake sees the PR at all.\n"
         ));
     } else if !idea_ids.is_empty() {
@@ -1411,7 +1407,7 @@ pub fn write_back_brief(project_id: &str, idea_ids: &[String]) -> String {
              \"branch\":\"...\",\"commit\":\"...\"} — or \
              {\"outcome\":\"declined\",\"note\":\"why this should not be built\"} — or \
              {\"outcome\":\"blocked\",\"note\":\"what stopped you\"}. \
-             Add \"pr_url\":\"<url>\" when you opened a pull request; it is how the \
+             Add \"prUrl\":\"<url>\" when you opened a pull request; it is how the \
              next wake sees the PR at all.\n\
              Do not report one verdict for the batch. An idea you finished and did \
              not report stays on the backlog for ever and will be dispatched again.\n",
@@ -1421,7 +1417,7 @@ pub fn write_back_brief(project_id: &str, idea_ids: &[String]) -> String {
     s.push_str(&format!(
         "Anything else you learned goes back as data, not as prose in your transcript:\n\
          - POST /dev-tools/ideas \
-         {{\"project_id\":\"{project_id}\",\"title\":\"...\",\"description\":\"...\",\"effort\":2,\"impact\":3,\"risk\":2,\"goal\":\"<goal id>\"}} \
+         {{\"projectId\":\"{project_id}\",\"title\":\"...\",\"description\":\"...\",\"effort\":2,\"impact\":3,\"risk\":2,\"goal\":\"<goal id>\"}} \
          — file a backlog item (deduped, paraphrases included; re-filing is safe; \
          \"force\":true files a different finding that reads alike); `goal` names the goal it serves\n\
          `effort`, `impact` and `risk` (each 1-5) are REQUIRED; a filing without them is refused. \
@@ -1431,11 +1427,11 @@ pub fn write_back_brief(project_id: &str, idea_ids: &[String]) -> String {
          Risk 1-2 is accepted by the project's triage rule without a human. \
          Re-filing an item you first filed unrated fills its score in.\n\
          - POST /dev-tools/kpis \
-         {{\"project_id\":\"{project_id}\",\"name\":\"...\",\
-         \"context_id\":\"<ctx>\",\"status\":\"active\",\
-         \"measure_kind\":\"codebase\",\"measure_config\":\"{{\\\"cmd\\\":\\\"...\\\"}}\",\
+         {{\"projectId\":\"{project_id}\",\"name\":\"...\",\
+         \"contextId\":\"<ctx>\",\"status\":\"active\",\
+         \"measureKind\":\"codebase\",\"measureConfig\":\"{{\\\"cmd\\\":\\\"...\\\"}}\",\
          \"unit\":\"...\",\"direction\":\"down\",\
-         \"baseline_value\":0,\"target_value\":0}} \
+         \"baselineValue\":0,\"targetValue\":0}} \
          — declare a meter; status active + context_id to count toward coverage\n\
          - GET /dev-tools/kpis/{project_id} \
          — read back what you filed (?status=active to see only active rows)\n\
@@ -1486,6 +1482,51 @@ mod tests {
         )
         .expect("idea");
         idea
+    }
+
+    // ── Wire casing: camelCase canonical, snake_case still accepted ───────
+    //
+    // Workers, the replay queue's persisted bodies and curl scripts written
+    // before the camelCase rename send snake_case keys; both spellings must
+    // reach the same field.
+
+    #[test]
+    fn write_back_bodies_accept_camel_case_and_the_legacy_snake_case() {
+        let camel: FileIdeaInput =
+            serde_json::from_str(r#"{"projectId":"p1","title":"t","contextId":"c1"}"#).unwrap();
+        let snake: FileIdeaInput =
+            serde_json::from_str(r#"{"project_id":"p1","title":"t","context_id":"c1"}"#).unwrap();
+        assert_eq!(camel.project_id, snake.project_id);
+        assert_eq!(camel.context_id.as_deref(), Some("c1"));
+        assert_eq!(snake.context_id.as_deref(), Some("c1"));
+
+        let kpi: CreateKpiInput = serde_json::from_str(
+            r#"{"projectId":"p","name":"n","measureKind":"codebase","baseline_value":1,"targetValue":2}"#,
+        )
+        .unwrap();
+        assert_eq!(kpi.measure_kind.as_deref(), Some("codebase"));
+        assert_eq!(kpi.baseline_value, Some(1.0));
+        assert_eq!(kpi.target_value, Some(2.0));
+
+        for wire in [
+            r#"{"outcome":"delivered","prUrl":"u"}"#,
+            r#"{"outcome":"delivered","pr_url":"u"}"#,
+        ] {
+            let o: IdeaOutcomeInput = serde_json::from_str(wire).unwrap();
+            assert_eq!(o.pr_url.as_deref(), Some("u"), "{wire}");
+        }
+
+        for wire in [
+            r#"{"nextCycle":{"title":"t"}}"#,
+            r#"{"next_cycle":{"title":"t"}}"#,
+        ] {
+            let a: AmendGoalInput = serde_json::from_str(wire).unwrap();
+            assert_eq!(
+                a.next_cycle.map(|n| n.title).as_deref(),
+                Some("t"),
+                "{wire}"
+            );
+        }
     }
 
     // ── The brief (pure) ──────────────────────────────────────────────────

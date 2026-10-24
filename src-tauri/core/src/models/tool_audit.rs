@@ -3,7 +3,6 @@ use ts_rs::TS;
 
 /// A single tool execution audit log entry.
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolExecutionAuditEntry {
     pub id: String,

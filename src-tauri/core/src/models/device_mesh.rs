@@ -180,7 +180,6 @@ pub struct MeshVerbReceipt {
 
 /// One CLI mailbox message.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CliMailPayload {
     /// The coordination topic, e.g. `onboard/t3`.

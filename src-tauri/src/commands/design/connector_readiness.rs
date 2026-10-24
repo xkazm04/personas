@@ -1136,7 +1136,6 @@ where
 /// One row of "what does this machine's provider-CLI situation look like?".
 /// Purely diagnostic: the readiness resolver reads the same cache directly.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CliProbeStatus {
     /// The connector name (`vercel`, `github`, …).

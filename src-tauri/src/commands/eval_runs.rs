@@ -49,7 +49,6 @@ use crate::error::AppError;
 
 /// Deterministic scoring dimensions (`scorecard.deterministic_dims`).
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DeterministicDims {
     #[serde(default, alias = "cascade_completion")]
@@ -67,7 +66,6 @@ pub struct DeterministicDims {
 
 /// One build/lint/test step result (`scorecard.code_track.{build,lint,test}`).
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CodeTrackStep {
     #[serde(default)]
@@ -79,7 +77,6 @@ pub struct CodeTrackStep {
 
 /// Code-track gate results — `null` for doc-track-only runs.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CodeTrack {
     #[serde(default)]
@@ -92,7 +89,6 @@ pub struct CodeTrack {
 
 /// `scorecard.delivered_increment` — what the team actually merged to master.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DeliveredIncrement {
     #[serde(default)]
@@ -105,7 +101,6 @@ pub struct DeliveredIncrement {
 
 /// One execution referenced by a self-veto.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SelfVetoExec {
     #[serde(default)]
@@ -117,7 +112,6 @@ pub struct SelfVetoExec {
 /// `scorecard.self_veto` — set when the team capped its own verdict (e.g. the
 /// release manager held on a red lint). `null` when no self-veto fired.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SelfVeto {
     /// The verdict the team voluntarily capped to.
@@ -129,7 +123,6 @@ pub struct SelfVeto {
 
 /// One row of `scorecard.grounding` — citation validity per produced doc.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct GroundingEntry {
     #[serde(default)]
@@ -272,7 +265,6 @@ pub struct Judge {
 /// One point on a team's score-over-time trajectory. Synthesized in Rust from
 /// the cheap per-run summaries (NOT read from any single file).
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct TrajectoryPoint {
     pub run_id: String,
@@ -285,7 +277,6 @@ pub struct TrajectoryPoint {
 
 /// Lightweight per-run row for the history list and cert grouping.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct EvalRunSummary {
     pub run_id: String,
@@ -313,7 +304,6 @@ pub struct EvalRunSummary {
 /// same-team summaries for `trajectory`); never `executions.json` /
 /// `events.json` / `repo.patch`. Ships `heartbeat_len`, not the array.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct EvalRunDetail {
     pub run_id: String,
@@ -356,7 +346,6 @@ pub struct EvalRunDetail {
 
 /// Certification status per team — the gate the dashboard headlines.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct TeamCertStatus {
     pub team_id: String,

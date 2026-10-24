@@ -12,4 +12,4 @@ export type UpsertBrowserSiteInput = { origin: string, label: string | null, ena
 /**
  * Who is adding it. Defaults to `operator` when absent.
  */
-created_by: string | null, };
+createdBy: string | null, };

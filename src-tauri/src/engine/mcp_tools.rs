@@ -445,7 +445,6 @@ pub struct McpToolResult {
 
 /// Result of an MCP server ping / connection test.
 #[derive(Debug, serde::Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PingResult {
     pub success: bool,

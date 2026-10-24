@@ -4,4 +4,4 @@
  * The refs `browser_login` fills. Rust fills them from the vault; the model
  * never sees a value (browser-credential-boundary).
  */
-export type BrowserLoginForm = { user_ref: string, pass_ref: string, submit_ref: string, };
+export type BrowserLoginForm = { userRef: string, passRef: string, submitRef: string, };

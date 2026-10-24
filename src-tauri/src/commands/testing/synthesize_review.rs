@@ -50,7 +50,6 @@ use ts_rs::TS;
 
 /// Result returned to the test bridge — identifiers it needs to poll.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SynthesizedManualReview {
     pub review_id: String,

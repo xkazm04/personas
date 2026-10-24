@@ -49,7 +49,7 @@ export default function SiteCredentialField({ site, value, onChange }: SiteCrede
     <FormField
       label={a.credential_label}
       hint={a.credential_hint}
-      helpText={site.scan_report?.login_form ? a.credential_form_found : a.credential_form_missing}
+      helpText={site.scanReport?.loginForm ? a.credential_form_found : a.credential_form_missing}
     >
       {(inputProps) => (
         <ThemedSelect

@@ -71,7 +71,6 @@ pub struct ChatMessage {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateChatMessageInput {
     pub persona_id: String,
@@ -111,7 +110,6 @@ pub struct ChatSessionContext {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct UpsertSessionContextInput {
     pub session_id: String,

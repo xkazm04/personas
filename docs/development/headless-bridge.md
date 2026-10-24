@@ -118,14 +118,14 @@ at a git commit — the idea it delivered stays `accepted` with no task, so the 
 handshake file and the header above.
 
 ```bash
-curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/ideas/<idea_id>/outcome" -d '{"outcome":"delivered","note":"what shipped","branch":"autopilot/x","commit":"abc1234","pr_url":"..."}'
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/ideas/<idea_id>/outcome" -d '{"outcome":"delivered","note":"what shipped","branch":"autopilot/x","commit":"abc1234","prUrl":"..."}'
 #   outcome: delivered | declined | blocked. Finds (or mints) the idea's dev_tasks row and closes it
 #   -> completed / cancelled / failed respectively; `declined` also rejects the idea through the one
 #   verdict door, with `note` as the reason. -> { ideaId, ideaStatus, task, taskCreated, taskStatus }
-curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/ideas"   -d '{"project_id":"<id>","title":"...","description":"...","reasoning":"...","category":"technical","effort":2,"impact":4,"risk":1}'
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/ideas"   -d '{"projectId":"<id>","title":"...","description":"...","reasoning":"...","category":"technical","effort":2,"impact":4,"risk":1}'
 #   -> { idea, created, dedupKey }. Deduped on a normalized title, so re-filing is safe and
 #   `created:false` hands back the row that already holds the key (in ANY status, rejected included).
-curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/kpis"   -d '{"project_id":"<id>","name":"Rust clippy findings","measure_kind":"codebase","unit":"findings","direction":"down","target_value":0}'
+curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/kpis"   -d '{"projectId":"<id>","name":"Rust clippy findings","measureKind":"codebase","unit":"findings","direction":"down","targetValue":0}'
 #   -> the DevKpi row. `status` defaults to `proposed` (pass `active` to claim it is readable now).
 curl -s -X POST -H "Content-Type: application/json" "${AUTH[@]}" "$B/kpis/<kpi_id>/measure"   -d '{"value":5,"evidence":"cargo clippy -> 5","source":"scan"}'
 #   -> the measurement row. `env` defaults to `production` and rolls current_value forward;

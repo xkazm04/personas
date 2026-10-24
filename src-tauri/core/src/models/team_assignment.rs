@@ -26,7 +26,6 @@ use ts_rs::TS;
 /// `awaiting_review` is a soft pause — the orchestrator stops the tick loop
 /// only for THIS assignment; other assignments on the same team continue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum TeamAssignmentStatus {
     Queued,
@@ -58,7 +57,6 @@ impl TeamAssignmentStatus {
 /// `failed`. `matching` is short-lived (the orchestrator resolves persona+UC
 /// then immediately transitions to `running` once execution is created).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum TeamAssignmentStepStatus {
     Pending,
@@ -95,7 +93,6 @@ impl TeamAssignmentStepStatus {
 /// match via existing fastembed) and `LlmEval` (Sonnet via the existing
 /// `ClaudeProvider` subscription path).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum TeamAssignmentMatchStrategy {
     Manual,
@@ -117,7 +114,6 @@ impl TeamAssignmentMatchStrategy {
 /// `source = Athena`, `companion_op_id` is set and the orchestrator forwards
 /// progress events to companion `OperativeMemory` (Phase C wiring).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum TeamAssignmentSource {
     TeamUi,
