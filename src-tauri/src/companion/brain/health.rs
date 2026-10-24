@@ -802,21 +802,25 @@ mod tests {
     /// discriminator is the counter rather than the English detail.
     #[test]
     fn stale_and_never_ran_are_different_causes() {
+        // The cause is read off the CONSOLIDATION stage itself, not off
+        // `first_blocking_cause`. That field is the first blocked stage in
+        // pipeline order, and under `ml` (the `desktop,ml` cell, which first
+        // compiled this module on 2026-10-24) the embedder / vector-index
+        // stages of a pool that has never embedded anything block ahead of it,
+        // so the report's headline was never about consolidation there. This
+        // test is about the consolidation stage's two codes, in every build.
+        fn consolidation_code(pool: &UserDbPool) -> String {
+            let report = run(pool, true);
+            let counters = gather_counters(pool).unwrap_or_default();
+            cause_for(stage_named(&report, "consolidation"), &counters).code
+        }
+
         let pool = user_pool();
         let _home = seed_indexed_episodes(&pool, 3);
-        // `embedder_loaded = false` keeps the vector lane out of this test in
-        // BOTH builds. With `true` an `ml` build (the `desktop,ml` cell, which
-        // first compiled this module on 2026-10-24) evaluates the vector index
-        // of a pool that has never embedded anything, and its blocked stage
-        // ("vector_index_empty") outranks the consolidation cause this test is
-        // about. Without `ml` the lane is off either way, so nothing changes.
-        assert_eq!(
-            cause_code(&run(&pool, false)),
-            Some("consolidation_never_ran")
-        );
+        assert_eq!(consolidation_code(&pool), "consolidation_never_ran");
 
         seed_completed_cycle(&pool, CONSOLIDATION_STALE_HOURS + 24);
-        assert_eq!(cause_code(&run(&pool, false)), Some("consolidation_stale"));
+        assert_eq!(consolidation_code(&pool), "consolidation_stale");
     }
 
     /// An unparseable timestamp is reported as unknown, never as fresh.

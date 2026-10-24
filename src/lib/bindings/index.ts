@@ -1201,7 +1201,6 @@ export type { TriageVerdictsIngestSummary } from "./TriageVerdictsIngestSummary"
 export type { TriggerCleanupResult } from "./TriggerCleanupResult";
 export type { TriggerFirePreview } from "./TriggerFirePreview";
 export type { TriggerKind } from "./TriggerKind";
-export type { TriggerStatus } from "./TriggerStatus";
 export type { TriggerValidationCheck } from "./TriggerValidationCheck";
 export type { TriggerValidationResult } from "./TriggerValidationResult";
 export type { TrustedPeer } from "./TrustedPeer";
