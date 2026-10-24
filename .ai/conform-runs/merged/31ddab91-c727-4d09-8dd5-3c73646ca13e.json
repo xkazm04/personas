@@ -1,0 +1,144 @@
+{
+  "schema": "conform-run/1",
+  "worker": "31ddab91-c727-4d09-8dd5-3c73646ca13e",
+  "subject": "voice-io",
+  "evaluatedAt": "2026-10-24T02:35:18.433183+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "test-runner-lab",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/engine/src/output_assertions.rs:3 The Lab scores execution output as text (assertions, keyword match, tool accuracy) and never captures or synthesizes speech. Searching the context's files and the directories src-tauri/engine/src and src-tauri/src/engine found no microphone, speechSynthesis, whisper, kokoro or getUserMedia. The only voice-like words are a persona 'voice' tone field, Claude session 'transcript_path' hooks, and a 'transcription' connector role mapped to deepgram in adoption_answers.rs, which binds a credential and moves no audio.",
+      "techniques": [],
+      "absenceTerms": [
+        "microphone",
+        "speechSynthesis",
+        "whisper",
+        "kokoro",
+        "getUserMedia"
+      ]
+    },
+    {
+      "context": "webhook-ingestion",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/engine/webhook.rs:89 This stack takes HTTP POST bodies and relayed trigger events into the event bus and has no audio path. Searching the context's files and both engine directories found no microphone, speechSynthesis, whisper, kokoro or getUserMedia. 'voice' appears only as the persona tone/style prompt block at template_v3.rs:844, and 'audio' only as a template filename in template_checksums.rs.",
+      "techniques": [],
+      "absenceTerms": [
+        "microphone",
+        "speechSynthesis",
+        "whisper",
+        "kokoro",
+        "getUserMedia"
+      ]
+    },
+    {
+      "context": "vault-catalog-autocred-ui",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/vault/sub_catalog/components/design/credentialDesignModalTypes.ts:9 The credential design and auto-cred wizard is a typed and clicked flow (these are its phases), with no listening or speaking. A search of src/features/vault/sub_catalog for microphone, speechSynthesis, whisper, kokoro, getUserMedia, speech, voice, audio, dictat and aloud returned nothing.",
+      "techniques": [],
+      "absenceTerms": [
+        "microphone",
+        "speechSynthesis",
+        "whisper",
+        "kokoro",
+        "getUserMedia"
+      ]
+    },
+    {
+      "context": "templates-generated-adoption-ucpicker",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:30 The use-case picker shows schedule and event triggers as visual cards. Searching src/features/templates/sub_generated for microphone, speechSynthesis, whisper, kokoro and getUserMedia found nothing. The only voice-like words are metaphors: a 'Speaker slit' in a glyph drawing, 'brand-voice' copy text, and a picker that 'speaks' a data shape.",
+      "techniques": [],
+      "absenceTerms": [
+        "microphone",
+        "speechSynthesis",
+        "whisper",
+        "kokoro",
+        "getUserMedia"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "voice-io",
+      "context": "companion-narration-ops",
+      "reason": "withdrawn after review: reviewer (sonnet): The context map lists only src/features/plugins/companion/* files for companion-narration-ops, and Composer.tsx and useSpeechInput live in src/features/companions/athena, so the verdict is about code outside the context; I also did not confirm that every engine error collapses into one message."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-24T02:35:18.433183+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "test-runner-lab",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T02:35:18.433183+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "webhook-ingestion",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T02:35:18.433183+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "vault-catalog-autocred-ui",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T02:35:18.433183+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "templates-generated-adoption-ucpicker",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T02:35:18.433183+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "voice-io"
+      ],
+      "techniques": [
+        "engine-abstraction",
+        "spoken-intent-parsing",
+        "stt-pipeline",
+        "voice-ux-integration"
+      ],
+      "deviations": 1,
+      "context": "companion-narration-ops",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

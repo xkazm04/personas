@@ -9167,15 +9167,11 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "not-applicable",
           "priorNotApplicable": 3,
-          "evidence": "src/features/companions/athena/NarrationThread.tsx:2 'narration' is the visible progress-beat timeline; re-checked against rev 20, none of the nine components reaches speech, tts, read-aloud or playback, so the tts-pipeline/voice-ux-integration preconditions do not hold",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
           "source": "retained",
-          "revisionsBehind": 3,
-          "stale": true
+          "state": "not-applicable",
+          "evidence": "src/features/companions/athena/NarrationThread.tsx:2 'narration' is the visible progress-beat timeline; re-checked against rev 20, none of the nine components reaches speech, tts, read-aloud or playback, so the tts-pipeline/voice-ux-integration preconditions do not hold",
+          "evaluatedAt": "2026-10-12"
         }
       ],
       "governance": "governed"
@@ -37797,12 +37793,11 @@
           "changedAt": "2026-10-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:30 The adoption picker shows calendar and event triggers for a template; a search of the adoption tree found no tts, microphone, whisper, dictation, or speechSynthesis.",
-          "evaluatedAt": "2026-10-17",
-          "evaluatedAgainst": "sha256-b2:fa03abeab38c89c7",
-          "evaluatedRevision": 21,
-          "revisionsBehind": 2,
-          "stale": true
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:30 The use-case picker shows schedule and event triggers as visual cards. Searching src/features/templates/sub_generated for microphone, speechSynthesis, whisper, kokoro and getUserMedia found nothing. The only voice-like words are metaphors: a 'Speaker slit' in a glyph drawing, 'brand-voice' copy text, and a picker that 'speaks' a data shape.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 2
         },
         {
           "subject": "generated-workflow-candidates",
@@ -38799,12 +38794,11 @@
           "changedAt": "2026-10-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/engine/src/eval.rs:70 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; test-runner-lab evaluates persona execution outputs solely via text assertions and tool accuracy strategies rather than processing audio or speech channels.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/engine/src/output_assertions.rs:3 The Lab scores execution output as text (assertions, keyword match, tool accuracy) and never captures or synthesizes speech. Searching the context's files and the directories src-tauri/engine/src and src-tauri/src/engine found no microphone, speechSynthesis, whisper, kokoro or getUserMedia. The only voice-like words are a persona 'voice' tone field, Claude session 'transcript_path' hooks, and a 'transcription' connector role mapped to deepgram in adoption_answers.rs, which binds a credential and moves no audio.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "fleet-orchestration",
@@ -40232,12 +40226,11 @@
           "changedAt": "2026-10-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/design/credentialDesignModalTypes.ts:9 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; vault-catalog-autocred-ui drives browser-based credential extraction and design dialogs without voice capture or speech synthesis.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/vault/sub_catalog/components/design/credentialDesignModalTypes.ts:9 The credential design and auto-cred wizard is a typed and clicked flow (these are its phases), with no listening or speaking. A search of src/features/vault/sub_catalog for microphone, speechSynthesis, whisper, kokoro, getUserMedia, speech, voice, audio, dictat and aloud returned nothing.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "markdown-vault",
@@ -42982,12 +42975,11 @@
           "changedAt": "2026-10-18",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src-tauri/engine/src/template_v3.rs:844 reads the persona voice block (style + output_format) as prompt text; the only audio hit is a template filename (src-tauri/engine/src/template_checksums.rs:16). No webhook/relay file carries an audio path. Re-checked against rev 20.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:fa1c8ca716f872dc",
-          "evaluatedRevision": 20,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src-tauri/src/engine/webhook.rs:89 This stack takes HTTP POST bodies and relayed trigger events into the event bus and has no audio path. Searching the context's files and both engine directories found no microphone, speechSynthesis, whisper, kokoro or getUserMedia. 'voice' appears only as the persona tone/style prompt block at template_v3.rs:844, and 'audio' only as a template filename in template_checksums.rs.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23,
+          "revisionsBehind": 3
         },
         {
           "subject": "test-harness",

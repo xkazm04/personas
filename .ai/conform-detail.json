@@ -639,9 +639,9 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "24d4e28a-165d-4531-9482-157bb32bc74c",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:35:18.433Z",
+      "worker": "31ddab91-c727-4d09-8dd5-3c73646ca13e",
       "techniques": [],
       "superseded": [
         {
@@ -650,6 +650,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by 24d4e28a-165d-4531-9482-157bb32bc74c"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/template_v3.rs:844 reads the persona voice block (style + output_format) as prompt text; the only audio hit is a template filename (src-tauri/engine/src/template_checksums.rs:16). No webhook/relay file carries an audio path. Re-checked against rev 20.",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "24d4e28a-165d-4531-9482-157bb32bc74c",
+          "reason": "replaced by 31ddab91-c727-4d09-8dd5-3c73646ca13e"
         }
       ]
     },
@@ -12133,10 +12140,30 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:41:29.000Z",
-      "worker": "20b83d7d-3128-42dd-a700-92e31c420fbd",
-      "techniques": [],
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:35:18.433Z",
+      "techniques": [
+        {
+          "technique": "stt-pipeline",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/Composer.tsx:346 Denied and no-device share one message, shown in a title tooltip only, and the composer has no level meter. The partial/final contract does hold: the interim text is a display tail only (:284), and only finalText reaches the draft."
+        },
+        {
+          "technique": "engine-abstraction",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/athena/Composer.tsx:77 The surface takes one engine-agnostic DictationState. The browser-vs-whisper choice lives behind useSpeechInput, so the composer code never branches on an engine name."
+        },
+        {
+          "technique": "voice-ux-integration",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/athena/Composer.tsx:324 The mic affordance appears only when an engine is supported (honest absence, not a dead button). Its toggle keeps start and stop in one unmoved control, with aria-pressed set."
+        },
+        {
+          "technique": "spoken-intent-parsing",
+          "verdict": "not-applicable",
+          "evidence": "src/features/companions/athena/Composer.tsx:193 The final transcript folds into an editable draft that the user sends. Nothing parses it into a command."
+        }
+      ],
       "superseded": [
         {
           "state": "not-applicable",
@@ -12144,8 +12171,21 @@
           "evaluatedAt": "2026-10-09T17:37:10.000Z",
           "worker": "10e1a64e-0d20-4ea4-9b09-302caf6b1cb1",
           "reason": "replaced by 20b83d7d-3128-42dd-a700-92e31c420fbd"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/companions/athena/NarrationThread.tsx:2 'narration' is the visible progress-beat timeline; re-checked against rev 20, none of the nine components reaches speech, tts, read-aloud or playback, so the tts-pipeline/voice-ux-integration preconditions do not hold",
+          "evaluatedAt": "2026-10-12T12:41:29.000Z",
+          "worker": "20b83d7d-3128-42dd-a700-92e31c420fbd",
+          "reason": "replaced by 31ddab91-c727-4d09-8dd5-3c73646ca13e"
         }
-      ]
+      ],
+      "withdrawn": {
+        "worker": "31ddab91-c727-4d09-8dd5-3c73646ca13e",
+        "state": "deviation",
+        "at": "2026-10-24T02:38:33.157440+00:00",
+        "reason": "reviewer (sonnet): The context map lists only src/features/plugins/companion/* files for companion-narration-ops, and Composer.tsx and useSpeechInput live in src/features/companions/athena, so the verdict is about code outside the context; I also did not confirm that every engine error collapses into one message."
+      }
     },
     "92f6c0fc-8d5c-43a7-bab8-1851973d5198/quality-regression-gating": {
       "context": "overview-leaderboard",
@@ -23866,24 +23906,36 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T12:00:13.603Z",
-      "worker": "0d1f8670-3002-4701-98d8-6af401cfaf33",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:35:18.433Z",
+      "worker": "31ddab91-c727-4d09-8dd5-3c73646ca13e",
       "techniques": [
         {
           "technique": "engine-abstraction",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/engine/src/eval.rs:47 Evaluation execution methods in the lab are restricted to LLM scoring and heuristic fallbacks over text output, with no speech recognition or synthesis engine adapters."
+          "evidence": "src-tauri/engine/src/eval.rs:47 Evaluation execution methods in the lab are restricted to LLM scoring and heuristic fallbacks over text output, with no speech recognition or synthesis engine adapters.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "stt-pipeline",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/engine/src/output_assertions.rs:85 The output assertion engine evaluates declarative text patterns against completed output strings without audio input capture, level metering, or transcription pipelines."
+          "evidence": "src-tauri/engine/src/output_assertions.rs:85 The output assertion engine evaluates declarative text patterns against completed output strings without audio input capture, level metering, or transcription pipelines.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "tts-pipeline",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/engine/src/capability_contract.rs:47 Declared capability requirements track credentials, connectors, personas, and automations, with no audio playback queue or speech synthesis requirements."
+          "evidence": "src-tauri/engine/src/capability_contract.rs:47 Declared capability requirements track credentials, connectors, personas, and automations, with no audio playback queue or speech synthesis requirements.",
+          "carriedFrom": "2026-10-13"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/eval.rs:70 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; test-runner-lab evaluates persona execution outputs solely via text assertions and tool accuracy strategies rather than processing audio or speech channels.",
+          "evaluatedAt": "2026-10-13T12:00:13.603Z",
+          "worker": "0d1f8670-3002-4701-98d8-6af401cfaf33",
+          "reason": "replaced by 31ddab91-c727-4d09-8dd5-3c73646ca13e"
         }
       ]
     },
@@ -23968,24 +24020,36 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-13",
-      "evaluatedTs": "2026-10-13T12:00:13.603Z",
-      "worker": "0d1f8670-3002-4701-98d8-6af401cfaf33",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:35:18.433Z",
+      "worker": "31ddab91-c727-4d09-8dd5-3c73646ca13e",
       "techniques": [
         {
           "technique": "stt-pipeline",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredConsent.tsx:18 Consent step gates automated browser harvesting of developer portal credentials, with no microphone device acquisition, level metering, or voice activity detection."
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredConsent.tsx:18 Consent step gates automated browser harvesting of developer portal credentials, with no microphone device acquisition, level metering, or voice activity detection.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "transcript-handoff-receipts",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:36 AutoCredPanel orchestrates Playwright-guided browser sessions to fill form credentials directly into vault storage, without system clipboard paste injection or transcript handoff receipts."
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/AutoCredPanel.tsx:36 AutoCredPanel orchestrates Playwright-guided browser sessions to fill form credentials directly into vault storage, without system clipboard paste injection or transcript handoff receipts.",
+          "carriedFrom": "2026-10-13"
         },
         {
           "technique": "voice-ux-integration",
           "verdict": "not-applicable",
-          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/SetupSteps.tsx:49 SetupHeader presents visual wizard status for browser-driven credential setup without speech overlay controls or narration arbiters."
+          "evidence": "src/features/vault/sub_catalog/components/autoCred/steps/SetupSteps.tsx:49 SetupHeader presents visual wizard status for browser-driven credential setup without speech overlay controls or narration arbiters.",
+          "carriedFrom": "2026-10-13"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/design/credentialDesignModalTypes.ts:9 Searched for microphone, speech-to-text, text-to-speech, and whisper with zero hits across context directories; vault-catalog-autocred-ui drives browser-based credential extraction and design dialogs without voice capture or speech synthesis.",
+          "evaluatedAt": "2026-10-13T12:00:13.603Z",
+          "worker": "0d1f8670-3002-4701-98d8-6af401cfaf33",
+          "reason": "replaced by 31ddab91-c727-4d09-8dd5-3c73646ca13e"
         }
       ]
     },
@@ -30497,19 +30561,30 @@
       "subject": "voice-io",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-17",
-      "evaluatedTs": "2026-10-17T00:02:26.925Z",
-      "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:35:18.433Z",
+      "worker": "31ddab91-c727-4d09-8dd5-3c73646ca13e",
       "techniques": [
         {
           "technique": "stt-pipeline",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:30 Trigger labels are schedule and event modes, not a listening pipeline."
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:30 Trigger labels are schedule and event modes, not a listening pipeline.",
+          "carriedFrom": "2026-10-17"
         },
         {
           "technique": "voice-setup-experience",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPicker.tsx:10 The wizard step renders template use cases. An empty template stays empty; there is no voice setup flow."
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPicker.tsx:10 The wizard step renders template use cases. An empty template stays empty; there is no voice setup flow.",
+          "carriedFrom": "2026-10-17"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:30 The adoption picker shows calendar and event triggers for a template; a search of the adoption tree found no tts, microphone, whisper, dictation, or speechSynthesis.",
+          "evaluatedAt": "2026-10-17T00:02:26.925Z",
+          "worker": "117a75ae-750a-41f4-804a-979a2101e5eb",
+          "reason": "replaced by 31ddab91-c727-4d09-8dd5-3c73646ca13e"
         }
       ]
     },
