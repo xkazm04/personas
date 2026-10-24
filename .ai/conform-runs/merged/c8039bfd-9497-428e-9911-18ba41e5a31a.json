@@ -1,0 +1,37 @@
+{
+ "schema": "conform-run/1",
+ "worker": "c8039bfd-9497-428e-9911-18ba41e5a31a",
+ "subject": "conversation-orchestration",
+ "evaluatedAt": "2026-10-24T04:03:27.733484+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "conversation-orchestration",
+   "context": "companion-ui-controls",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "conversation-orchestration",
+   "context": "companion-brain",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "conversation-orchestration",
+   "context": "commands-companion",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "conversation-orchestration",
+   "context": "onboarding-components",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "conversation-orchestration",
+   "context": "companion",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": []
+}
