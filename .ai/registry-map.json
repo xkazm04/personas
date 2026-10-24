@@ -7923,7 +7923,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/naming.rs:239 The one prompt this context assembles itself (the Haiku session-title fallback) cuts the task at 2,000 characters, possibly mid-sentence, and does not tell the model anything was dropped, so the model names a session from a partial task it takes to be the whole thing.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "mcp-tools",
@@ -21348,7 +21352,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/onboarding/components/useTourNarration.ts:22 The only model-adjacent path in the onboarding components is TTS narration of authored step text. A grep across src/features/onboarding for system_prompt, systemPrompt, max_tokens and buildPrompt found no hits, so no LLM prompt is assembled here.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "conversation-orchestration",

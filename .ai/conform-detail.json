@@ -37418,6 +37418,72 @@
         "at": "2026-10-23T21:36:10.120951+00:00",
         "reason": "reviewer (sonnet): The cited lines do persist each setItem call straight to the database, but the same context has a draft|scoped|cut milestone lifecycle (NotePlanPane.tsx:11) with an explicit commit step in ShipCertifyModal.tsx. The \"no sandbox phase before an explicit commit\" claim is therefore contradicted, and the"
       }
+    },
+    "2de6333f-8375-404b-8fdc-fe0fb15d4f95/prompt-assembly": {
+      "context": "commands-fleet",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T00:42:54.155Z",
+      "worker": "cd4f71ad-4273-4992-9208-8bd3635e626a",
+      "techniques": [
+        {
+          "technique": "context-budgeting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/naming.rs:239 The budget is counted in characters rather than tokens, the cut can fall mid-sentence, and the prompt carries no notice of what was removed. The technique asks for all three: a token count, a semantic boundary, and a notice."
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/fleet/naming.rs:238 The task text comes from the caller or dispatcher, so it is not authored by the system, but it is interpolated raw after a colon with no fence or delimiter and no trust class declared. Instructions inside the task read as instructions to the namer."
+        },
+        {
+          "technique": "task-envelope",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/naming.rs:236 The prompt opens with the done shape (a 3-5 word Title Case tab label) instead of a role claim. Its negations sit beside a positive instruction, and clean_name strips quotes and punctuation anyway."
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/naming.rs:235 This is a one-shot family with exactly one assembly site: no identity or policy layers, the task at the tail, and nothing appended after the format! returns. It is minimal, but there is no sprawl."
+        },
+        {
+          "technique": "continuation-prompts",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/pty.rs:37 This is the preserved-session regime: claude --resume keeps the conversation, so the wake sends a short delta prompt (orient in one line, then wait) rather than replaying the standing layers. It is sent only when resume_target finds a bound claude_session_id."
+        },
+        {
+          "technique": "context-ownership-regimes",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/fleet/registry.rs:2597 Claude Code holds the transcript (the agent-held regime). Fleet sends only new user turns as stream-json deltas and never edits or compacts the list itself. transcript_read.rs only reads counters."
+        }
+      ]
+    },
+    "7159d27d-86c2-43be-a83f-8b50c4c816be/prompt-assembly": {
+      "context": "settings-network",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T00:42:54.155Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "cd4f71ad-4273-4992-9208-8bd3635e626a",
+        "state": "not-applicable",
+        "at": "2026-10-24T00:43:11.904358+00:00",
+        "reason": "reviewer (sonnet): The not-applicable anchor, ExposureManager.tsx:9, is an import line that doesn't show that no prompt is assembled. My own search of sub_network for prompt, llm, claude, haiku, anthropic and completion also came back empty, but the verdict needs an anchor that shows the absence."
+      }
+    },
+    "aa2197a5-6b7c-46ff-a6cd-8172d2984f50/prompt-assembly": {
+      "context": "onboarding-components",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T00:42:54.155Z",
+      "worker": "cd4f71ad-4273-4992-9208-8bd3635e626a",
+      "techniques": []
     }
   }
 }
