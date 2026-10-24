@@ -6863,7 +6863,11 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/contest/driver.rs:864 Contest's only browser use is a deterministic Playwright screenshot script (node.rs:22, 'a headless browser over every variant, two viewports'). No agent issues browser commands, which is the standard's own 'single screenshot needs no daemon' exemption. A search of src-tauri/src/commands/contest/ found 0 hits for daemon, accessibility, selector, browser_act and cdp.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:a5e059a866a49108",
+          "evaluatedRevision": 5
         },
         {
           "subject": "mcp-tools",
@@ -34864,7 +34868,11 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/system/mcp_integration.rs:123 The health layer registers only the Personas stdio MCP server and probes CLI binaries with where/which and --version. It never launches or drives a browser. A search of system/ plus system_metrics.rs and system_ops.rs found 0 hits for browser, playwright, chromium, puppeteer, webdriver and cdp, and the wider infrastructure/ directory has 0 hits for chromium, puppeteer, webdriver, cdp and daemon.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:a5e059a866a49108",
+          "evaluatedRevision": 5
         },
         {
           "subject": "eval-harness",

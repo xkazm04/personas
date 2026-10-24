@@ -38012,6 +38012,26 @@
       "evaluatedTs": "2026-10-24T03:09:11.686Z",
       "worker": "6ad449e5-0e98-4e82-bb8c-27352ebdfa17",
       "techniques": []
+    },
+    "e4b48fb7-3763-4955-8ea9-01fd48aa0cf7/agent-browser-control": {
+      "context": "commands-contest",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T04:22:06.568Z",
+      "worker": "31f38b62-42f6-4d96-8e8f-97d2a0bb478f",
+      "techniques": []
+    },
+    "dd45411d-8955-4579-906e-5a3b00ba16da/agent-browser-control": {
+      "context": "system-health",
+      "subject": "agent-browser-control",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T04:22:06.568Z",
+      "worker": "31f38b62-42f6-4d96-8e8f-97d2a0bb478f",
+      "techniques": []
     }
   }
 }
