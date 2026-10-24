@@ -1,0 +1,106 @@
+{
+ "schema": "conform-run/1",
+ "worker": "66eca50e-eca6-481d-906c-ec405b757472",
+ "subject": "mcp-tools",
+ "evaluatedAt": "2026-10-24T01:05:17.808489+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "vault-catalog-schemas",
+   "subject": "mcp-tools",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:68 The MCP install form copies every env var value (the catalog's suggested_env carries ASANA_ACCESS_TOKEN, AZURE_DEVOPS_PAT, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN) into the connector DEFINITION metadata, which the repo itself describes as plaintext and returned on every definition fetch. So the server config the install flow writes becomes an unprotected credential store, which client-integration names as the failure.",
+   "techniques": [
+    {
+     "technique": "client-integration",
+     "verdict": "deviation",
+     "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:68 Capability tokens injected through the server's env are persisted into plaintext connector metadata (CredentialSchemaForm.tsx:144 metadata: JSON.stringify(metadata)) as well as the sealed credential. The UI masks the same values as passwords (ExtraFieldRenderers.tsx:133). The exact spawn command is at least shown untruncated and editable (McpPrefilledForm.tsx:17)."
+    }
+   ]
+  },
+  {
+   "context": "fleet-session-grid",
+   "subject": "mcp-tools",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:4 The grid controls terminal sessions through the app's own fleet IPC wrappers. A recursive search of src/features/plugins/fleet for mcp, jsonrpc, tools/list, McpTool and inputSchema found 0 files, so the context neither serves nor consumes a tool protocol.",
+   "techniques": [],
+   "absenceTerms": [
+    "mcp",
+    "jsonrpc",
+    "tools/list",
+    "McpTool",
+    "inputSchema"
+   ]
+  },
+  {
+   "context": "plugins-dev-tools-skills",
+   "subject": "mcp-tools",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_skills/skillsManagerData.ts:11 The Skills Manager lists and edits SKILL.md skill files through dev-tools IPC. A recursive search of src/features/plugins/dev-tools/sub_skills for mcp, jsonrpc, tools/list, McpTool and inputSchema found 0 files, so no tool-protocol server or client lives here.",
+   "techniques": [],
+   "absenceTerms": [
+    "mcp",
+    "jsonrpc",
+    "tools/list",
+    "McpTool",
+    "inputSchema"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "mcp-tools",
+   "context": "test-runner-lab",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "mcp-tools",
+   "context": "plugins-companion-decision",
+   "reason": "The context lists no files, and its context-map.json entry has file_paths: [] (only entry_points under src/features/plugins/companion/decision). There is no context-owned code to judge, and the entry points are a decision queue and orb UI, not a tool-protocol surface."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-24T01:05:17.808489+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "mcp-tools"
+   ],
+   "techniques": [
+    "client-integration"
+   ],
+   "deviations": 1,
+   "context": "vault-catalog-schemas",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T01:05:17.808489+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "mcp-tools"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "fleet-session-grid",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T01:05:17.808489+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "mcp-tools"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "plugins-dev-tools-skills",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

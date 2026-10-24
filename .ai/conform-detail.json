@@ -37484,6 +37484,42 @@
       "evaluatedTs": "2026-10-24T00:42:54.155Z",
       "worker": "cd4f71ad-4273-4992-9208-8bd3635e626a",
       "techniques": []
+    },
+    "6229df3d-d54e-47bb-8091-abb479003c18/mcp-tools": {
+      "context": "vault-catalog-schemas",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T01:05:17.808Z",
+      "worker": "66eca50e-eca6-481d-906c-ec405b757472",
+      "techniques": [
+        {
+          "technique": "client-integration",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:68 Capability tokens injected through the server's env are persisted into plaintext connector metadata (CredentialSchemaForm.tsx:144 metadata: JSON.stringify(metadata)) as well as the sealed credential. The UI masks the same values as passwords (ExtraFieldRenderers.tsx:133). The exact spawn command is at least shown untruncated and editable (McpPrefilledForm.tsx:17)."
+        }
+      ]
+    },
+    "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394/mcp-tools": {
+      "context": "fleet-session-grid",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T01:05:17.808Z",
+      "worker": "66eca50e-eca6-481d-906c-ec405b757472",
+      "techniques": []
+    },
+    "10c96ae7-a356-4555-996b-df92fc5dc8e7/mcp-tools": {
+      "context": "plugins-dev-tools-skills",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T01:05:17.808Z",
+      "worker": "66eca50e-eca6-481d-906c-ec405b757472",
+      "techniques": []
     }
   }
 }

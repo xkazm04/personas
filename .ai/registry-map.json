@@ -13690,7 +13690,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/fleet/FleetSessionCard.tsx:4 The grid controls terminal sessions through the app's own fleet IPC wrappers. A recursive search of src/features/plugins/fleet for mcp, jsonrpc, tools/list, McpTool and inputSchema found 0 files, so the context neither serves nor consumes a tool protocol.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "prompt-assembly",
@@ -27701,7 +27705,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/skillsManagerData.ts:11 The Skills Manager lists and edits SKILL.md skill files through dev-tools IPC. A recursive search of src/features/plugins/dev-tools/sub_skills for mcp, jsonrpc, tools/list, McpTool and inputSchema found 0 files, so no tool-protocol server or client lives here.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "prompt-assembly",
@@ -40654,7 +40662,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:68 The MCP install form copies every env var value (the catalog's suggested_env carries ASANA_ACCESS_TOKEN, AZURE_DEVOPS_PAT, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN) into the connector DEFINITION metadata, which the repo itself describes as plaintext and returned on every definition fetch. So the server config the install flow writes becomes an unprotected credential store, which client-integration names as the failure.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "markdown-vault",
