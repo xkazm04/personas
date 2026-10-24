@@ -37565,6 +37565,59 @@
         "at": "2026-10-24T01:25:27.625418+00:00",
         "reason": "reviewer (sonnet): The anchor is only the ManualReviewList function declaration with a comment about the approvals shell. It is incidental and does not show that no instruction file is authored or loaded. The claim rests on a keyword-absence search, and I could not confirm it from the cited line."
       }
+    },
+    "895b4bb2-16fd-4e8e-aae8-11315fe6436b/test-harness": {
+      "context": "api-agents",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T01:45:42.766Z",
+      "worker": "3eaa9f71-84d6-4c42-a0d5-4ada584cc511",
+      "techniques": [
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "deviation",
+          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:50 The ordering claim rests on a bare identifier needle ('POLL_DEADLINE'), which the technique names as a failure. The second needle, 'sleep(POLL_INTERVAL)', does carry an argument list. The sibling parity tests handle the other settings well: they strip comments from the haystack and require at least one match."
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "conformant",
+          "evidence": "src/api/agents/__tests__/automationRunTimeoutParity.test.ts:39 Each source-text extraction requires at least one match and agreement across all matches, so a matcher that finds nothing fails instead of passing."
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src/api/agents/__tests__/automationRunTimeoutParity.test.ts:91 Asserts the timeout argument actually passed across the IPC mock, not only the helper's computed budget, and does this for both producers (trigger and webhook test)."
+        }
+      ]
+    },
+    "59918f8a-62ca-4e52-9435-1e5bf9a18bbd/test-harness": {
+      "context": "webbuild",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T01:45:42.766Z",
+      "worker": "3eaa9f71-84d6-4c42-a0d5-4ada584cc511",
+      "techniques": [
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/bun.rs:181 A cutoff/absence claim decided by the test's own stopwatch, not by a record the fixture keeps of its own lifetime. Load can turn it falsely green."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/webbuild/versions.rs:129 The scratch git repo has a fixed name shared by every concurrent test process on the machine, such as sibling worktrees. Stale copies are removed at startup, but there is no reaper at exit. routes.rs:73, by contrast, makes its directory unique with the process id."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/webbuild/devserver.rs:713 Uses the production-schema test DB rather than hand-written CREATE TABLE fixtures, so tests cannot pass against yesterday's schema."
+        }
+      ],
+      "registryProposal": "assert-the-schedule-not-the-stopwatch frames the load failure as a false RED. The absence-after-a-wait shape (sleep N, then assert a side effect did not happen) fails the other way, false GREEN under load, and is worth naming explicitly."
     }
   }
 }

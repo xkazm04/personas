@@ -4183,7 +4183,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:50 The check that the deadline comes before the sleep relies on the first place the bare identifier POLL_DEADLINE appears in the Rust function, so a check moved after the sleep would stay green if any earlier non-comment use of the name (for example a `let` alias) were left above it.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "agent-memory",
@@ -42729,7 +42733,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/webbuild/bun.rs:181 The claim that the timeout kills grandchildren is checked by sleeping 6 s on the wall clock and then looking for a marker the fake grandchild writes about 3 s after it starts, so on a loaded runner a surviving grandchild can write late and the test passes with the defect present.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "prompt-assembly",

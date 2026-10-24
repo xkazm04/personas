@@ -1,0 +1,110 @@
+{
+ "schema": "conform-run/1",
+ "worker": "3eaa9f71-84d6-4c42-a0d5-4ada584cc511",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-10-24T01:45:42.766001+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "api-agents",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:50 The check that the deadline comes before the sleep relies on the first place the bare identifier POLL_DEADLINE appears in the Rust function, so a check moved after the sleep would stay green if any earlier non-comment use of the name (for example a `let` alias) were left above it.",
+   "techniques": [
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "deviation",
+     "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:50 The ordering claim rests on a bare identifier needle ('POLL_DEADLINE'), which the technique names as a failure. The second needle, 'sleep(POLL_INTERVAL)', does carry an argument list. The sibling parity tests handle the other settings well: they strip comments from the haystack and require at least one match."
+    },
+    {
+     "technique": "derived-selection-must-be-measured",
+     "verdict": "conformant",
+     "evidence": "src/api/agents/__tests__/automationRunTimeoutParity.test.ts:39 Each source-text extraction requires at least one match and agreement across all matches, so a matcher that finds nothing fails instead of passing."
+    },
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "conformant",
+     "evidence": "src/api/agents/__tests__/automationRunTimeoutParity.test.ts:91 Asserts the timeout argument actually passed across the IPC mock, not only the helper's computed budget, and does this for both producers (trigger and webhook test)."
+    }
+   ]
+  },
+  {
+   "context": "webbuild",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/webbuild/bun.rs:181 The claim that the timeout kills grandchildren is checked by sleeping 6 s on the wall clock and then looking for a marker the fake grandchild writes about 3 s after it starts, so on a loaded runner a surviving grandchild can write late and the test passes with the defect present.",
+   "techniques": [
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/webbuild/bun.rs:181 A cutoff/absence claim decided by the test's own stopwatch, not by a record the fixture keeps of its own lifetime. Load can turn it falsely green."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/webbuild/versions.rs:129 The scratch git repo has a fixed name shared by every concurrent test process on the machine, such as sibling worktrees. Stale copies are removed at startup, but there is no reaper at exit. routes.rs:73, by contrast, makes its directory unique with the process id."
+    },
+    {
+     "technique": "fixture-economics",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/webbuild/devserver.rs:713 Uses the production-schema test DB rather than hand-written CREATE TABLE fixtures, so tests cannot pass against yesterday's schema."
+    }
+   ],
+   "registryProposal": "assert-the-schedule-not-the-stopwatch frames the load failure as a false RED. The absence-after-a-wait shape (sleep N, then assert a side effect did not happen) fails the other way, false GREEN under load, and is worth naming explicitly."
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "shared-components-forms",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "team-memory",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "teams-goals",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-24T01:45:42.766001+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "derived-selection-must-be-measured",
+    "pin-the-call-not-the-name",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "api-agents",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T01:45:42.766001+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "fixture-economics",
+    "isolation-lanes"
+   ],
+   "deviations": 1,
+   "context": "webbuild",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
