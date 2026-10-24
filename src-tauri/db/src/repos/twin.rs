@@ -589,6 +589,23 @@ pub fn create_pending_memory_on(
     .map_err(AppError::Database)
 }
 
+/// Review a queued memory, and on APPROVAL consolidate it into the fact layer
+/// in the same transaction.
+///
+/// The approval IS the judgment pass. Flipping the status alone left the belief
+/// sitting in the review queue while `top_distilled_facts_for_recall` - the
+/// only lane twin generation actually reads - never saw it, so a human could
+/// approve a fact and the twin would still not know it. A rejected row stays as
+/// evidence and writes nothing: the review record outlives the verdict.
+///
+/// The write is one `Immediate` transaction because the status read decides the
+/// fact insert; a deferred transaction fails `SQLITE_BUSY_SNAPSHOT` in 0 ms
+/// under the concurrent review the queue invites.
+///
+/// A memory with no `source_communication_id` cannot become a fact: the
+/// distilled-fact provenance contract requires at least one source, and
+/// inventing one would store a hallucination-shaped row. Such a memory is still
+/// approved - it is simply approved evidence, not a consolidated belief.
 pub fn review_pending_memory(
     pool: &DbPool,
     id: &str,
@@ -597,8 +614,10 @@ pub fn review_pending_memory(
 ) -> Result<TwinPendingMemory, AppError> {
     let now = chrono::Utc::now().to_rfc3339();
     let status = if approved { "approved" } else { "rejected" };
-    let conn = pool.get()?;
-    let rows = conn.execute(
+    let mut conn = pool.get()?;
+    let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+
+    let rows = tx.execute(
         "UPDATE twin_pending_memories SET status = ?2, reviewer_notes = ?3, reviewed_at = ?4 WHERE id = ?1 AND status = 'pending'",
         params![id, status, reviewer_notes, now],
     )?;
@@ -607,12 +626,73 @@ pub fn review_pending_memory(
             "Pending memory {id} (already reviewed or not found)"
         )));
     }
-    conn.query_row(
-        &format!("SELECT {PENDING_MEMORY_COLUMNS} FROM twin_pending_memories WHERE id = ?1"),
-        params![id],
-        row_to_pending_memory,
-    )
-    .map_err(AppError::Database)
+
+    let reviewed: TwinPendingMemory = tx
+        .query_row(
+            &format!("SELECT {PENDING_MEMORY_COLUMNS} FROM twin_pending_memories WHERE id = ?1"),
+            params![id],
+            row_to_pending_memory,
+        )
+        .map_err(AppError::Database)?;
+
+    if approved {
+        consolidate_approved_memory_in(&tx, &reviewed, &now)?;
+    }
+
+    tx.commit()?;
+    Ok(reviewed)
+}
+
+/// Insert the distilled fact an approved pending memory becomes.
+///
+/// `contact_handle` is carried over from the source communication when there is
+/// one, so a fact about a person is recallable under that person rather than
+/// floating at twin scope.
+fn consolidate_approved_memory_in(
+    tx: &rusqlite::Transaction<'_>,
+    memory: &TwinPendingMemory,
+    now: &str,
+) -> Result<(), AppError> {
+    let Some(source_id) = memory.source_communication_id.as_deref() else {
+        tracing::debug!(
+            memory_id = %memory.id,
+            "twin: approved memory has no source communication; kept as evidence, not distilled"
+        );
+        return Ok(());
+    };
+    let content = memory.content.trim();
+    if content.is_empty() {
+        return Ok(());
+    }
+
+    let contact_handle: Option<String> = tx
+        .query_row(
+            "SELECT contact_handle FROM twin_communications WHERE id = ?1",
+            params![source_id],
+            |r| r.get::<_, Option<String>>("contact_handle"),
+        )
+        .unwrap_or(None);
+
+    let sources_json = serde_json::to_string(&[source_id])
+        .map_err(|e| AppError::Internal(format!("encode sources_json: {e}")))?;
+
+    tx.execute(
+        "INSERT INTO twin_distilled_facts \
+            (id, twin_id, contact_handle, content, importance, sources_json, created_at, last_seen_at) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+        params![
+            uuid::Uuid::new_v4().to_string(),
+            memory.twin_id,
+            contact_handle,
+            content,
+            // Same clamp `create_distilled_fact` applies: the fact layer's
+            // scale is 1-5 whatever the queue stored.
+            memory.importance.clamp(1, 5),
+            sources_json,
+            now,
+        ],
+    )?;
+    Ok(())
 }
 
 // ============================================================================
@@ -1851,6 +1931,147 @@ mod tests {
             conn.prepare(&sql)
                 .unwrap_or_else(|e| panic!("{table} projection does not match schema: {e}"));
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Approval consolidates into the fact layer (sweep #358)
+    // -----------------------------------------------------------------------
+
+    /// Queue one pending memory off a real communication, the way
+    /// `record_interaction` does, so the provenance the fact layer requires
+    /// actually exists.
+    fn queued_memory(pool: &DbPool, handle: Option<&str>) -> (String, TwinPendingMemory) {
+        let twin = create_profile(pool, "Consolidation Twin", None, None, None, None)
+            .expect("create twin profile");
+        let comm = record_interaction(
+            pool,
+            &twin.id,
+            "email",
+            // The table's CHECK is `direction IN ('in','out')`.
+            "in",
+            handle,
+            "They only ship on Thursdays.",
+            None,
+            None,
+            false,
+        )
+        .expect("record interaction");
+        // Queued explicitly rather than through `record_interaction`'s
+        // best-effort side effect: that call swallows its own error, which
+        // would make a fixture failure here look like a consolidation bug.
+        let pending = create_pending_memory(
+            pool,
+            &twin.id,
+            Some("email"),
+            "They only ship on Thursdays.",
+            Some("inbound with a contact"),
+            4,
+            Some(&comm.id),
+        )
+        .expect("queue pending memory");
+        assert_eq!(pending.status, "pending");
+        (twin.id, pending)
+    }
+
+    /// The approval IS the judgment pass. Before this it flipped a status and
+    /// stopped, so an approved belief sat in the review queue while
+    /// `top_distilled_facts_for_recall` - the lane twin generation reads -
+    /// never saw it.
+    #[test]
+    fn approving_a_memory_writes_the_distilled_fact() {
+        let pool = crate::init_test_db().expect("init test db");
+        let (twin_id, pending) = queued_memory(&pool, Some("ada@example.com"));
+
+        let reviewed =
+            review_pending_memory(&pool, &pending.id, true, Some("looks right")).expect("review");
+        assert_eq!(reviewed.status, "approved");
+
+        let facts = list_distilled_facts(&pool, &twin_id, None).expect("facts");
+        assert_eq!(facts.len(), 1, "approval must consolidate exactly one fact");
+        assert_eq!(facts[0].content, pending.content);
+        assert_eq!(
+            facts[0].contact_handle.as_deref(),
+            Some("ada@example.com"),
+            "the fact is filed under the contact the communication named"
+        );
+        assert!(
+            facts[0].sources_json.contains(
+                pending
+                    .source_communication_id
+                    .as_deref()
+                    .expect("source id")
+            ),
+            "provenance must survive the consolidation"
+        );
+    }
+
+    /// A rejected row stays as evidence and writes nothing: the review record
+    /// outlives the verdict, but a refused belief is not a belief.
+    #[test]
+    fn rejecting_a_memory_writes_no_fact() {
+        let pool = crate::init_test_db().expect("init test db");
+        let (twin_id, pending) = queued_memory(&pool, Some("ada@example.com"));
+
+        let reviewed =
+            review_pending_memory(&pool, &pending.id, false, Some("wrong")).expect("review");
+        assert_eq!(reviewed.status, "rejected");
+        assert!(reviewed.reviewer_notes.is_some(), "evidence is kept");
+        assert!(list_distilled_facts(&pool, &twin_id, None)
+            .expect("facts")
+            .is_empty());
+    }
+
+    /// The CAS on `status = 'pending'` is what makes the fact insert
+    /// idempotent: a second approval of the same id is NotFound, so a
+    /// double-clicked review cannot duplicate the belief.
+    #[test]
+    fn a_second_approval_is_refused_and_duplicates_nothing() {
+        let pool = crate::init_test_db().expect("init test db");
+        let (twin_id, pending) = queued_memory(&pool, None);
+
+        review_pending_memory(&pool, &pending.id, true, None).expect("first review");
+        let second = review_pending_memory(&pool, &pending.id, true, None);
+        assert!(
+            matches!(second, Err(AppError::NotFound(_))),
+            "already-reviewed must be NotFound, got {second:?}"
+        );
+        assert_eq!(
+            list_distilled_facts(&pool, &twin_id, None)
+                .expect("facts")
+                .len(),
+            1,
+            "the refused second approval must not add a fact"
+        );
+    }
+
+    /// The distilled-fact provenance contract requires at least one source.
+    /// A memory queued without one is still approved - it is approved
+    /// EVIDENCE - but inventing a source to make it a fact would store a
+    /// hallucination-shaped row.
+    #[test]
+    fn an_approval_with_no_source_stays_evidence() {
+        let pool = crate::init_test_db().expect("init test db");
+        let twin = create_profile(&pool, "Sourceless Twin", None, None, None, None)
+            .expect("create twin profile");
+        let pending = create_pending_memory(
+            &pool,
+            &twin.id,
+            None,
+            "Imported from a wiki audit, no single message behind it.",
+            Some("wiki audit"),
+            4,
+            None,
+        )
+        .expect("queue");
+
+        let reviewed = review_pending_memory(&pool, &pending.id, true, None).expect("review");
+        assert_eq!(reviewed.status, "approved");
+        assert!(
+            list_distilled_facts(&pool, &twin.id, None)
+                .expect("facts")
+                .is_empty(),
+            "no provenance, no fact"
+        );
     }
 
     #[test]

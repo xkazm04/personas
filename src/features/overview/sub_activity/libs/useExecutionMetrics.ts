@@ -127,7 +127,22 @@ export function useExecutionMetrics() {
 
   const comparedChartData = useMemo(() => {
     if (!compareEnabled || chartData.length === 0) return chartData;
-    return mergePreviousPeriod(chartData, effectiveDays, ['cost', 'completed', 'failed', 'successRate', 'p50', 'p95', 'p99']);
+    // `makeEmptyRow` keeps the axis on the calendar: a day with no runs still
+    // gets a tick, so a quiet stretch reads as quiet rather than as a shorter
+    // week. Only the count-shaped keys are zeroed — a day with no runs has no
+    // latency and no success rate, and writing 0 into those would draw a
+    // measurement nobody took.
+    return mergePreviousPeriod(
+      chartData,
+      effectiveDays,
+      ['cost', 'completed', 'failed', 'successRate', 'p50', 'p95', 'p99'],
+      {
+        makeEmptyRow: (isoDay) => ({
+          date: fmtDate(isoDay), rawDate: isoDay,
+          cost: 0, executions: 0, completed: 0, failed: 0,
+        }),
+      },
+    );
   }, [compareEnabled, chartData, effectiveDays]);
 
   const trends = useMemo(

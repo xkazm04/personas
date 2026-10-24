@@ -65,6 +65,48 @@ const SPIKE_WINDOW_DAYS: i64 = 7;
 /// incident detail modal.
 const MAX_AUTO_DIAGNOSES_PER_TICK: usize = 3;
 
+/// Publish the `alert_fired` persona event for a freshly persisted alert.
+///
+/// This is the ONLY thing that carries an alert off the desktop: the webhook
+/// notifier's tick reads `persona_events`, matches each one against the enabled
+/// notification subscriptions' patterns, and POSTs. Persisting a `FiredAlert`
+/// alone reaches nothing.
+///
+/// Shared with the client-evaluated path (`commands::communication::
+/// observability::alerts::create_fired_alert`) rather than copied into it: two
+/// loops fire alerts into the same table, and a payload that drifts between
+/// them would silently give subscribers two different event shapes for one
+/// concept. The severity travels IN the payload; the subscription's own
+/// `event_types` patterns decide who receives it.
+pub fn publish_alert_fired(
+    pool: &crate::db::DbPool,
+    alert: &FiredAlert,
+) -> Result<crate::db::models::PersonaEvent, crate::error::AppError> {
+    event_repo::publish(
+        pool,
+        CreatePersonaEventInput {
+            event_type: "alert_fired".into(),
+            source_type: "fired_alerts".into(),
+            source_id: Some(alert.id.clone()),
+            target_persona_id: alert.persona_id.clone(),
+            payload: Some(
+                serde_json::json!({
+                    "rule_id": alert.rule_id,
+                    "rule_name": alert.rule_name,
+                    "metric": alert.metric.to_string(),
+                    "severity": alert.severity.to_string(),
+                    "message": alert.message,
+                    "value": alert.value,
+                    "threshold": alert.threshold,
+                })
+                .to_string(),
+            ),
+            project_id: None,
+            use_case_id: None,
+        },
+    )
+}
+
 /// The minimal metrics snapshot a rule is evaluated against.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct MetricsSnapshot {
@@ -294,29 +336,7 @@ fn tick(app: &AppHandle, state: &Arc<AppState>) {
         // Publish to the persona event bus: the webhook notifier polls
         // persona_events, so this is what reaches Slack/Discord/... with the
         // UI closed. Best-effort.
-        match event_repo::publish(
-            pool,
-            CreatePersonaEventInput {
-                event_type: "alert_fired".into(),
-                source_type: "fired_alerts".into(),
-                source_id: Some(alert.id.clone()),
-                target_persona_id: alert.persona_id.clone(),
-                payload: Some(
-                    serde_json::json!({
-                        "rule_id": alert.rule_id,
-                        "rule_name": alert.rule_name,
-                        "metric": alert.metric.to_string(),
-                        "severity": alert.severity.to_string(),
-                        "message": alert.message,
-                        "value": alert.value,
-                        "threshold": alert.threshold,
-                    })
-                    .to_string(),
-                ),
-                project_id: None,
-                use_case_id: None,
-            },
-        ) {
+        match publish_alert_fired(pool, &alert) {
             Ok(event) => emit_event_bus(app, &event),
             Err(e) => {
                 tracing::warn!(alert_id = %alert.id, error = %e, "alert_evaluator: failed to publish alert_fired event");
@@ -450,6 +470,66 @@ mod tests {
         );
         assert_eq!(value, 0.0);
         assert!(!fired);
+    }
+
+    fn fired(id: &str, severity: AlertSeverity) -> FiredAlert {
+        FiredAlert {
+            id: id.into(),
+            rule_id: "r-1".into(),
+            rule_name: "Test rule".into(),
+            metric: AlertMetric::ErrorRate,
+            severity,
+            message: "Error rate is 25.0% (threshold: > 20%)".into(),
+            value: 25.0,
+            threshold: 20.0,
+            persona_id: None,
+            fired_at: "2026-07-30T00:00:00Z".into(),
+            dismissed: false,
+        }
+    }
+
+    /// The `alert_fired` persona event is the ONLY thing that carries an alert
+    /// off the desktop - the webhook notifier's tick reads `persona_events`.
+    /// One publish per fire, carrying the identity a subscriber needs to route
+    /// on (source id, severity, metric, threshold).
+    #[test]
+    fn publishing_a_fired_alert_lands_one_routable_event() {
+        let pool = crate::db::init_test_db().expect("test db");
+        let alert = fired("fa-1", AlertSeverity::Warning);
+
+        let event = publish_alert_fired(&pool, &alert).expect("publish");
+        assert_eq!(event.event_type, "alert_fired");
+        assert_eq!(event.source_type, "fired_alerts");
+        assert_eq!(event.source_id.as_deref(), Some("fa-1"));
+
+        let payload: serde_json::Value =
+            serde_json::from_str(&event.payload.expect("payload")).expect("json");
+        assert_eq!(payload["severity"], "warning");
+        assert_eq!(payload["metric"], "error_rate");
+        assert_eq!(payload["rule_id"], "r-1");
+        assert_eq!(payload["threshold"], 20.0);
+    }
+
+    /// Severity travels IN the payload rather than in the event type, so a
+    /// subscription's `event_types` pattern stays one string while a consumer
+    /// can still filter on how bad it is. Two fires at different severities
+    /// must therefore produce two events of the SAME type.
+    #[test]
+    fn severity_rides_in_the_payload_not_in_the_event_type() {
+        let pool = crate::db::init_test_db().expect("test db");
+        let warn = publish_alert_fired(&pool, &fired("fa-1", AlertSeverity::Warning))
+            .expect("publish warning");
+        let crit = publish_alert_fired(&pool, &fired("fa-2", AlertSeverity::Critical))
+            .expect("publish critical");
+
+        assert_eq!(warn.event_type, crit.event_type);
+        let of = |e: &crate::db::models::PersonaEvent| -> String {
+            let v: serde_json::Value =
+                serde_json::from_str(e.payload.as_deref().expect("payload")).expect("json");
+            v["severity"].as_str().expect("severity").to_string()
+        };
+        assert_eq!(of(&warn), "warning");
+        assert_eq!(of(&crit), "critical");
     }
 
     /// Message format matches the frontend's units-per-metric convention so
