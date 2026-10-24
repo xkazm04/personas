@@ -1,0 +1,143 @@
+{
+ "schema": "conform-run/1",
+ "worker": "bbde904b-1b09-4c84-8f06-f1e4643815de",
+ "subject": "generated-workflow-candidates",
+ "evaluatedAt": "2026-10-24T03:43:54.436658+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "template-gallery-search",
+   "subject": "generated-workflow-candidates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/useStructuredQuery.ts:3 The structured query only builds filter chips over template category, difficulty and setup metadata for a person browsing the gallery. A case-insensitive search of the context's directories and of src/features/templates plus src/api for hyperparam, ensembl, cross-valid and automl found nothing, so there is no dataset-measured generate-train-select arc for the subject to govern.",
+   "techniques": [],
+   "absenceTerms": [
+    "hyperparameter",
+    "ensemble",
+    "cross_validation",
+    "automl"
+   ]
+  },
+  {
+   "context": "template-generation",
+   "subject": "generated-workflow-candidates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:82 The runner feeds hand-written natural-language instructions (for example 'Gmail Smart Filter') to an LLM design pass, so its inputs are a person's intent and not dataset statistics, and nothing is trained or ranked by a declared score. A search of the context's directories for hyperparam, ensembl, cross-valid and automl returned zero hits, which places this on the templates-and-scaffolding side of the subject's boundary.",
+   "techniques": [],
+   "absenceTerms": [
+    "hyperparameter",
+    "ensemble",
+    "cross_validation",
+    "automl"
+   ]
+  },
+  {
+   "context": "api-system",
+   "subject": "generated-workflow-candidates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/api/design/design.ts:8 The design pipeline's IPC entry point takes a human instruction string and returns an LLM design result, and the rest of the context is thin invoke wrappers. A search of src/api for hyperparam, ensembl, cross-valid and automl found nothing, so there is no analyzer, statistics file, trained candidate or score-keyed selection here.",
+   "techniques": [],
+   "absenceTerms": [
+    "hyperparameter",
+    "ensemble",
+    "cross_validation",
+    "automl"
+   ]
+  },
+  {
+   "context": "templates-generated-gallery-cards",
+   "subject": "generated-workflow-candidates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/gallery/cards/buildComparison.ts:16 The only 'selection' in this context is a side-by-side comparison that a person reads to pick a catalogued template, which the golden path assigns to scaffolding ('when a human chooses among alternatives at the moment of use'). A search of src/features/templates for hyperparam, ensembl, cross-valid and automl found nothing.",
+   "techniques": [],
+   "absenceTerms": [
+    "hyperparameter",
+    "ensemble",
+    "cross_validation",
+    "automl"
+   ]
+  },
+  {
+   "context": "templates-generated-adoption-ucpicker",
+   "subject": "generated-workflow-candidates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:2 This is the interview-and-adopt step of the adoption wizard, where the adopter picks capabilities, triggers and destinations; the golden path names that as the scaffolding neighbour and not this subject. A search of src/features/templates for hyperparam, ensembl, cross-valid and automl found nothing. 'candidate' does appear in ChronologyAdoptionView.tsx, but only as a picker's list of choices, not a generated model candidate.",
+   "techniques": [],
+   "absenceTerms": [
+    "hyperparameter",
+    "ensemble",
+    "cross_validation",
+    "automl"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-24T03:43:54.436658+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "generated-workflow-candidates"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "template-gallery-search",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T03:43:54.436658+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "generated-workflow-candidates"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "template-generation",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T03:43:54.436658+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "generated-workflow-candidates"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "api-system",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T03:43:54.436658+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "generated-workflow-candidates"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "templates-generated-gallery-cards",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T03:43:54.436658+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "generated-workflow-candidates"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "templates-generated-adoption-ucpicker",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

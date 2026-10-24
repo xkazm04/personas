@@ -5174,12 +5174,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/api/system/system.ts:14 Grep across the context's 20 files for subject terms (candidate, hyperparameter, partition, two-tier, stage-level, score-keyed) returned zero matches; this module provides IPC client wrappers for desktop system metrics, settings, persona design analysis, and template adoption rather than managing machine learning candidate generation workflows.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:acd501ca62d5c9f0",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/api/design/design.ts:8 The design pipeline's IPC entry point takes a human instruction string and returns an LLM design result, and the rest of the context is thin invoke wrappers. A search of src/api for hyperparam, ensembl, cross-valid and automl found nothing, so there is no analyzer, statistics file, trained candidate or score-keyed selection here.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:a8a570eae3950671",
+          "evaluatedRevision": 2,
+          "revisionsBehind": 1
         },
         {
           "subject": "untrusted-extension-host",
@@ -37157,12 +37156,11 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/gallery/search/filters/searchConstants.ts:135 Grep across the context's files for subject terms (candidate, statistic, hyperparameter, partition, provenance) returned zero matches; this module implements user-facing gallery search and filter controls over template metadata (such as readiness and adoption count) rather than automated dataset-driven candidate generation.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:acd501ca62d5c9f0",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/templates/sub_generated/gallery/search/suggestions/useStructuredQuery.ts:3 The structured query only builds filter chips over template category, difficulty and setup metadata for a person browsing the gallery. A case-insensitive search of the context's directories and of src/features/templates plus src/api for hyperparam, ensembl, cross-valid and automl found nothing, so there is no dataset-measured generate-train-select arc for the subject to govern.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:a8a570eae3950671",
+          "evaluatedRevision": 2,
+          "revisionsBehind": 1
         },
         {
           "subject": "table",
@@ -37293,12 +37291,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:82 Grep across the context's files for subject terms (candidate, hyperparameter, partition, two-tier, stage-level, score-keyed) returned zero matches; this module implements an interactive runner modal for testing AI persona template creation against predefined natural-language prompts rather than automated dataset-measured workflow candidate generation.",
-          "evaluatedAt": "2026-10-13",
-          "evaluatedAgainst": "sha256-b2:acd501ca62d5c9f0",
-          "evaluatedRevision": 1,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:82 The runner feeds hand-written natural-language instructions (for example 'Gmail Smart Filter') to an LLM design pass, so its inputs are a person's intent and not dataset statistics, and nothing is trained or ranked by a declared score. A search of the context's directories for hyperparam, ensembl, cross-valid and automl returned zero hits, which places this on the templates-and-scaffolding side of the subject's boundary.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:a8a570eae3950671",
+          "evaluatedRevision": 2,
+          "revisionsBehind": 1
         },
         {
           "subject": "translation-pipeline-topology",
@@ -37833,8 +37830,12 @@
           "revision": 2,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "not-applicable",
+          "priorNotApplicable": 3,
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPickerTypes.ts:2 This is the interview-and-adopt step of the adoption wizard, where the adopter picks capabilities, triggers and destinations; the golden path names that as the scaffolding neighbour and not this subject. A search of src/features/templates for hyperparam, ensembl, cross-valid and automl found nothing. 'candidate' does appear in ChronologyAdoptionView.tsx, but only as a picker's list of choices, not a generated model candidate.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:a8a570eae3950671",
+          "evaluatedRevision": 2
         },
         {
           "subject": "agent-instruction-files",
@@ -37961,8 +37962,12 @@
           "revision": 2,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "not-applicable",
+          "priorNotApplicable": 3,
+          "evidence": "src/features/templates/sub_generated/gallery/cards/buildComparison.ts:16 The only 'selection' in this context is a side-by-side comparison that a person reads to pick a catalogued template, which the golden path assigns to scaffolding ('when a human chooses among alternatives at the moment of use'). A search of src/features/templates for hyperparam, ensembl, cross-valid and automl found nothing.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:a8a570eae3950671",
+          "evaluatedRevision": 2
         },
         {
           "subject": "agent-instruction-files",
