@@ -38153,6 +38153,32 @@
           "evidence": "src/features/templates/sub_explore/useExploreCatalog.ts:2 Catalog is bundled JSON. Searching for unzip/archive extraction in the context dirs found no extraction site (the only 'archive' hit is a category name)."
         }
       ]
+    },
+    "0a73aef0-7c50-4be1-b990-cbddad3671bd/analytics-store-design": {
+      "context": "lib-analytics",
+      "subject": "analytics-store-design",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T05:27:51.996Z",
+      "worker": "987c78a5-e53e-4c26-aac8-768fd2defa2e",
+      "techniques": [
+        {
+          "technique": "backend-parity-as-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/analytics/sink.ts:70 The sink interface is write-only (feature/interaction/session/conversion return void). No read methods means no query semantics for backends to keep in parity."
+        },
+        {
+          "technique": "capability-flags-and-refusal",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/analytics/sink.ts:107 The only capability-like flag is consent (noop vs live sink), not a query-serving capability. No query surface can be refused."
+        },
+        {
+          "technique": "flat-events-plus-json-linkage",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/analytics/sink.ts:21 Events are in-memory transport payloads handed to Sentry. No fact table is designed here."
+        }
+      ]
     }
   }
 }

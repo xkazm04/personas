@@ -17757,7 +17757,11 @@
           "revision": 6,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/lib/analytics/sink.ts:8 This context only emits navigation usage events to a fire-and-forget Sentry sink (a local SQLite sink is listed only as 'later' on the next line); it owns no events table, index, timestamp encoding or multi-backend query surface, and a search of src/lib/analytics/ for CREATE INDEX, toISOString, unsupported, partition and created_at found nothing.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:dd9e74116ab5601b",
+          "evaluatedRevision": 6
         },
         {
           "subject": "mcp-tools",
