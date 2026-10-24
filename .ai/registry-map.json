@@ -5535,12 +5535,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/settings/sub_appearance/components/AppearanceLanguageSettings.tsx:15 renders a language picker hint; selecting a language is not measuring translation quality",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3c01b1e10a982d9c",
-          "evaluatedRevision": 5,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceLanguageSettings.tsx:15 This context only lets a user pick a display locale and consumes translations through t(), measuring nothing about their quality. A search of src/features/settings for termbase, MQM, post-edit and 'quality estimat' found nothing.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:a50db88f6aef4acb",
+          "evaluatedRevision": 8,
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
@@ -12596,12 +12595,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:390 prompt asks for project directions and tensions; no translated store or engine is measured here",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3c01b1e10a982d9c",
-          "evaluatedRevision": 5,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:2 The consolidator's LLM writes a project pulse (narrative, directions, tensions) and no translated store is produced or measured. A search of src-tauri/src/engine and src-tauri/engine/src for termbase, MQM, post-edit and 'quality estimat' found nothing.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:a50db88f6aef4acb",
+          "evaluatedRevision": 8,
+          "revisionsBehind": 1
         },
         {
           "subject": "quality-gates",
@@ -16761,12 +16759,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "docs/i18n/glossary.md:1 declares a termbase but no script, hook or CI job checks the store against it (no 'termbase' reference in scripts/, lefthook.yml, package.json); the one-concept-one-rendering law is held only by translator discipline, so a drifted term ships silently",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3c01b1e10a982d9c",
-          "evaluatedRevision": 5,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "docs/i18n/glossary.md:1 The repo keeps a termbase (glossary.md plus a per-locale '## Termbase' in each style guide), but no script, hook or CI job checks the 13 machine-translated locale catalogs against it (no 'glossary'/'termbase' reference in scripts/, lefthook.yml, package.json or .github/workflows), so the strongest deterministic signal the subject names is missing, while skeleton parity is properly gated by check-untranslated --strict.",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:a50db88f6aef4acb",
+          "evaluatedRevision": 8,
+          "revisionsBehind": 1
         },
         {
           "subject": "error-handling",
@@ -23217,12 +23214,11 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:44 lists persona reviews and idea reviews; it is not a translation-review corpus",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:3c01b1e10a982d9c",
-          "evaluatedRevision": 5,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:44 The inbox pages persona manual reviews (flagged executions, approvals), not reviewer corrections of machine pretranslations. A search of src/features/overview for termbase, MQM, post-edit and 'quality estimat' found nothing, and its 'translat' hits are only the UI's own t() Translations type (reviewHelpers.ts:2).",
+          "evaluatedAt": "2026-10-24",
+          "evaluatedAgainst": "sha256-b2:a50db88f6aef4acb",
+          "evaluatedRevision": 8,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-instruction-files",

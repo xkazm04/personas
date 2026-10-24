@@ -1,0 +1,137 @@
+{
+ "schema": "conform-run/1",
+ "worker": "faa4f5a1-ada0-431e-b5ef-9970d672fd0b",
+ "subject": "translation-quality-measurement",
+ "evaluatedAt": "2026-10-24T02:19:18.382515+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "i18n",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "deviation",
+   "evidence": "docs/i18n/glossary.md:1 The repo keeps a termbase (glossary.md plus a per-locale '## Termbase' in each style guide), but no script, hook or CI job checks the 13 machine-translated locale catalogs against it (no 'glossary'/'termbase' reference in scripts/, lefthook.yml, package.json or .github/workflows), so the strongest deterministic signal the subject names is missing, while skeleton parity is properly gated by check-untranslated --strict.",
+   "techniques": [
+    {
+     "technique": "deterministic-checks-before-estimates",
+     "verdict": "deviation",
+     "evidence": "docs/i18n/glossary.md:1 Skeleton parity is realized well: scripts/i18n/lib/untranslated.mjs:112 brokenPlaceholderKeys compares brace spans in any script, one direction only, and fails pre-commit. But nothing checks termbase adherence or duplicate-source divergence (no rule found in scripts/i18n), so two of the four decidable classes are not run."
+    },
+    {
+     "technique": "per-pair-engine-selection",
+     "verdict": "deviation",
+     "evidence": "scripts/i18n/translate-extract.mjs:14 One engine is used for all 13 pairs (ar..zh), set by convention with 'medium quality is fine'. No per-pair measurement or recorded per-pair choice was found."
+    },
+    {
+     "technique": "context-sufficiency-signals",
+     "verdict": "conformant",
+     "evidence": "docs/i18n/source-defects.md:3 Source-ambiguity findings go to the source owner and are never worked around inside a locale. Each row names the missing input and the locales that reported it, so this is the cross-language-agreement form rather than two-model divergence."
+    }
+   ]
+  },
+  {
+   "context": "overview-manual-review",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:44 The inbox pages persona manual reviews (flagged executions, approvals), not reviewer corrections of machine pretranslations. A search of src/features/overview for termbase, MQM, post-edit and 'quality estimat' found nothing, and its 'translat' hits are only the UI's own t() Translations type (reviewHelpers.ts:2).",
+   "techniques": [],
+   "absenceTerms": [
+    "termbase",
+    "mqm",
+    "post-edit",
+    "quality estimat"
+   ]
+  },
+  {
+   "context": "engine-project-tracking",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:2 The consolidator's LLM writes a project pulse (narrative, directions, tensions) and no translated store is produced or measured. A search of src-tauri/src/engine and src-tauri/engine/src for termbase, MQM, post-edit and 'quality estimat' found nothing.",
+   "techniques": [],
+   "absenceTerms": [
+    "termbase",
+    "mqm",
+    "post-edit",
+    "quality estimat"
+   ]
+  },
+  {
+   "context": "appearance-settings",
+   "subject": "translation-quality-measurement",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/features/settings/sub_appearance/components/AppearanceLanguageSettings.tsx:15 This context only lets a user pick a display locale and consumes translations through t(), measuring nothing about their quality. A search of src/features/settings for termbase, MQM, post-edit and 'quality estimat' found nothing.",
+   "techniques": [],
+   "absenceTerms": [
+    "termbase",
+    "mqm",
+    "post-edit",
+    "quality estimat"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "translation-quality-measurement",
+   "context": "engine-build-session",
+   "reason": "evidence leans on build_session/mod.rs, which is not a tracked file"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-24T02:19:18.382515+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-quality-measurement"
+   ],
+   "techniques": [
+    "context-sufficiency-signals",
+    "deterministic-checks-before-estimates",
+    "per-pair-engine-selection"
+   ],
+   "deviations": 1,
+   "context": "i18n",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T02:19:18.382515+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-quality-measurement"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "overview-manual-review",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T02:19:18.382515+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-quality-measurement"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "engine-project-tracking",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-24T02:19:18.382515+00:00",
+   "bundle": "localization",
+   "subjects": [
+    "translation-quality-measurement"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "appearance-settings",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

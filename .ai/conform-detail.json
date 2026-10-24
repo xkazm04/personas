@@ -22098,36 +22098,50 @@
       "subject": "translation-quality-measurement",
       "bundle": "localization",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T08:30:00.000Z",
-      "worker": "b01227a1-a448-4749-b376-0cdb9c0a2d15",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:19:18.382Z",
+      "worker": "faa4f5a1-ada0-431e-b5ef-9970d672fd0b",
       "techniques": [
         {
           "technique": "deterministic-checks-before-estimates",
-          "verdict": "partial: placeholder parity, empty and verbatim-English are rule-checked, termbase adherence is not",
-          "evidence": "scripts/i18n/merge-chunks.mjs:91 placeholder-break check; docs/i18n/glossary.md:1 termbase with no enforcer"
+          "verdict": "deviation",
+          "evidence": "docs/i18n/glossary.md:1 Skeleton parity is realized well: scripts/i18n/lib/untranslated.mjs:112 brokenPlaceholderKeys compares brace spans in any script, one direction only, and fails pre-commit. But nothing checks termbase adherence or duplicate-source divergence (no rule found in scripts/i18n), so two of the four decidable classes are not run."
+        },
+        {
+          "technique": "per-pair-engine-selection",
+          "verdict": "deviation",
+          "evidence": "scripts/i18n/translate-extract.mjs:14 One engine is used for all 13 pairs (ar..zh), set by convention with 'medium quality is fine'. No per-pair measurement or recorded per-pair choice was found."
+        },
+        {
+          "technique": "context-sufficiency-signals",
+          "verdict": "conformant",
+          "evidence": "docs/i18n/source-defects.md:3 Source-ambiguity findings go to the source owner and are never worked around inside a locale. Each row names the missing input and the locales that reported it, so this is the cross-language-agreement form rather than two-model divergence."
         },
         {
           "technique": "language-scoped-check-exemptions",
           "verdict": "realized: exemptions are recorded per language and key",
-          "evidence": "scripts/i18n/lib/untranslated.mjs:120 loads <lang>:<key> and *:<key> allowlist entries"
-        },
-        {
-          "technique": "context-sufficiency-signals",
-          "verdict": "realized: source defects are reported rather than worked around",
-          "evidence": "docs/i18n/source-defects.md:3 records source-catalog defects capping every locale"
+          "evidence": "scripts/i18n/lib/untranslated.mjs:120 loads <lang>:<key> and *:<key> allowlist entries",
+          "carriedFrom": "2026-10-14"
         }
       ],
-      "registryProposal": "Not decisive: Personas translations are committed, agent-translated catalogs rather than a regenerated derived-and-served store, so the topology precondition is only partly met; the registry could say whether termbase adherence applies to committed machine-drafted catalogs. Index showed digest 3c01b1e10a982d9c rev 5 while the map carried 126898c163a402a3 rev 6."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "docs/i18n/glossary.md:1 declares a termbase but no script, hook or CI job checks the store against it (no 'termbase' reference in scripts/, lefthook.yml, package.json); the one-concept-one-rendering law is held only by translator discipline, so a drifted term ships silently",
+          "evaluatedAt": "2026-10-14T08:30:00.000Z",
+          "worker": "b01227a1-a448-4749-b376-0cdb9c0a2d15",
+          "reason": "replaced by faa4f5a1-ada0-431e-b5ef-9970d672fd0b"
+        }
+      ]
     },
     "ef73ca1c-fc54-4b9c-83ec-390c54929192/translation-quality-measurement": {
       "context": "overview-manual-review",
       "subject": "translation-quality-measurement",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T08:30:00.000Z",
-      "worker": "b01227a1-a448-4749-b376-0cdb9c0a2d15",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:19:18.382Z",
+      "worker": "faa4f5a1-ada0-431e-b5ef-9970d672fd0b",
       "techniques": [],
       "superseded": [
         {
@@ -22136,6 +22150,13 @@
           "evaluatedAt": "2026-10-13T02:51:06.630Z",
           "worker": "1da68e92-379f-45b9-aa00-c5e612b95ccd",
           "reason": "replaced by b01227a1-a448-4749-b376-0cdb9c0a2d15"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:44 lists persona reviews and idea reviews; it is not a translation-review corpus",
+          "evaluatedAt": "2026-10-14T08:30:00.000Z",
+          "worker": "b01227a1-a448-4749-b376-0cdb9c0a2d15",
+          "reason": "replaced by faa4f5a1-ada0-431e-b5ef-9970d672fd0b"
         }
       ]
     },
@@ -22144,9 +22165,9 @@
       "subject": "translation-quality-measurement",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T08:30:00.000Z",
-      "worker": "b01227a1-a448-4749-b376-0cdb9c0a2d15",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:19:18.382Z",
+      "worker": "faa4f5a1-ada0-431e-b5ef-9970d672fd0b",
       "techniques": [],
       "superseded": [
         {
@@ -22155,6 +22176,13 @@
           "evaluatedAt": "2026-10-13T02:51:06.630Z",
           "worker": "1da68e92-379f-45b9-aa00-c5e612b95ccd",
           "reason": "replaced by b01227a1-a448-4749-b376-0cdb9c0a2d15"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/project_tracking/consolidator.rs:390 prompt asks for project directions and tensions; no translated store or engine is measured here",
+          "evaluatedAt": "2026-10-14T08:30:00.000Z",
+          "worker": "b01227a1-a448-4749-b376-0cdb9c0a2d15",
+          "reason": "replaced by faa4f5a1-ada0-431e-b5ef-9970d672fd0b"
         }
       ]
     },
@@ -26130,10 +26158,19 @@
       "subject": "translation-quality-measurement",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T08:30:00.000Z",
-      "worker": "b01227a1-a448-4749-b376-0cdb9c0a2d15",
-      "techniques": []
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T02:19:18.382Z",
+      "worker": "faa4f5a1-ada0-431e-b5ef-9970d672fd0b",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_appearance/components/AppearanceLanguageSettings.tsx:15 renders a language picker hint; selecting a language is not measuring translation quality",
+          "evaluatedAt": "2026-10-14T08:30:00.000Z",
+          "worker": "b01227a1-a448-4749-b376-0cdb9c0a2d15",
+          "reason": "replaced by faa4f5a1-ada0-431e-b5ef-9970d672fd0b"
+        }
+      ]
     },
     "b39776f5-3909-41e3-b69f-14c9a6c70bec/agent-memory": {
       "context": "home-learning",
