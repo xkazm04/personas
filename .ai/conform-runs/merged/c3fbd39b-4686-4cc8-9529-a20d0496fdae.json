@@ -1,0 +1,74 @@
+{
+  "schema": "conform-run/1",
+  "worker": "c3fbd39b-4686-4cc8-9529-a20d0496fdae",
+  "subject": "agent-instruction-files",
+  "evaluatedAt": "2026-10-24T01:25:06.345757+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [],
+  "declined": [
+    {
+      "subject": "agent-instruction-files",
+      "context": "webhook-ingestion",
+      "reason": "evidence leans on commands/design/analysis.rs, which is not a tracked file"
+    },
+    {
+      "subject": "agent-instruction-files",
+      "context": "recipe-build-models",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-instruction-files",
+      "context": "teams-teamworkspace",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor is only the TeamStudioSplitVariant function signature, so it does not show the precondition is absent. The evidence says searches for 'instruction file' and 'agent instructions' had no hits. Yet teamStudio/TeamWorkspacePane.tsx, inside this context, authors and saves a team-level `shared_"
+    },
+    {
+      "subject": "agent-instruction-files",
+      "context": "templates-generated-gallery-cards",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor is only the GeneratedReviewsTab component declaration, so it does not itself show that no agent instruction file exists. The cards directory also renders `review.instruction` and a 'System Prompt Preview' (TemplateCardPreview.tsx:120), which touch agent-instruction content, so a bare abse"
+    },
+    {
+      "subject": "agent-instruction-files",
+      "context": "overview-manual-review",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor is only the ManualReviewList function declaration with a comment about the approvals shell. It is incidental and does not show that no instruction file is authored or loaded. The claim rests on a keyword-absence search, and I could not confirm it from the cited line."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-24T01:25:06.345757+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-instruction-files"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "teams-teamworkspace",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T01:25:06.345757+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-instruction-files"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "templates-generated-gallery-cards",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-10-24T01:25:06.345757+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-instruction-files"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "overview-manual-review",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

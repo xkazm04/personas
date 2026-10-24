@@ -37520,6 +37520,51 @@
       "evaluatedTs": "2026-10-24T01:05:17.808Z",
       "worker": "66eca50e-eca6-481d-906c-ec405b757472",
       "techniques": []
+    },
+    "a576c14f-1edd-4da4-8d11-527161a3b5b3/agent-instruction-files": {
+      "context": "teams-teamworkspace",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T01:25:06.345Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "c3fbd39b-4686-4cc8-9529-a20d0496fdae",
+        "state": "not-applicable",
+        "at": "2026-10-24T01:25:27.350714+00:00",
+        "reason": "reviewer (sonnet): The anchor is only the TeamStudioSplitVariant function signature, so it does not show the precondition is absent. The evidence says searches for 'instruction file' and 'agent instructions' had no hits. Yet teamStudio/TeamWorkspacePane.tsx, inside this context, authors and saves a team-level `shared_"
+      }
+    },
+    "9fca099d-94e4-4fd0-8460-3cf5d8c85acf/agent-instruction-files": {
+      "context": "templates-generated-gallery-cards",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T01:25:06.345Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "c3fbd39b-4686-4cc8-9529-a20d0496fdae",
+        "state": "not-applicable",
+        "at": "2026-10-24T01:25:27.486037+00:00",
+        "reason": "reviewer (sonnet): The anchor is only the GeneratedReviewsTab component declaration, so it does not itself show that no agent instruction file exists. The cards directory also renders `review.instruction` and a 'System Prompt Preview' (TemplateCardPreview.tsx:120), which touch agent-instruction content, so a bare abse"
+      }
+    },
+    "ef73ca1c-fc54-4b9c-83ec-390c54929192/agent-instruction-files": {
+      "context": "overview-manual-review",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-24",
+      "evaluatedTs": "2026-10-24T01:25:06.345Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "c3fbd39b-4686-4cc8-9529-a20d0496fdae",
+        "state": "not-applicable",
+        "at": "2026-10-24T01:25:27.625418+00:00",
+        "reason": "reviewer (sonnet): The anchor is only the ManualReviewList function declaration with a comment about the approvals shell. It is incidental and does not show that no instruction file is authored or loaded. The claim rests on a keyword-absence search, and I could not confirm it from the cited line."
+      }
     }
   }
 }
