@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The queue's honesty properties. Each `describe` below pins one defect that
  * shipped: a skip loop with no end, a progress readout that could exceed its

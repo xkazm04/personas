@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Operator-facing browser refusals. Rust puts the next step in `AppError.error`
  * (the hint). The registry has no rule for those hints, so an unclassified

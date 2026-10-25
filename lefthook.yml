@@ -62,32 +62,13 @@ pre-commit:
         - "scripts/census/__fixtures__/**/*.rs"
       run: rustfmt --edition 2021 --check {staged_files}
 
-    # Block commits that would ship a translation gap (English mixed into a
-    # non-English UI — which the user has ruled unacceptable). Scoped to locale
-    # edits so unrelated commits are unaffected; --strict fails on MISSING keys
-    # (not just the default extras), so adding en.json keys without translating
-    # every locale is blocked here rather than silently shipping English
-    # fallback. Fix via the pipeline: scripts/i18n/translate-extract.mjs →
-    # one Sonnet subagent per locale → scripts/i18n/translate-merge.mjs.
-    # See .claude/CLAUDE.md → "Translation completeness — no gaps".
-    - name: i18n-no-gaps
-      glob: "src/i18n/locales/*.json"
-      run: node scripts/i18n/check-coverage.mjs --strict
-
-    # Key parity (above) is only half the contract: it asserts a key EXISTS in
-    # every locale, never that its VALUE was translated. The runtime `t` Proxy
-    # deep-merges English under every locale, so an untranslated value renders
-    # as English with no warning. That blind spot hid ~57k raw-English strings
-    # (~24% of the app) behind a green "0 missing" report until 2026-07-12.
-    # This gate fails when a translatable, LIVE (source-referenced) value is
-    # still byte-identical to English. Dead keys and docs/i18n allowlist entries
-    # are excluded. Close a gap with the i18n-translate skill (`gaps all`).
-    - name: i18n-no-untranslated
-      glob: "src/i18n/locales/*.json"
-      run: node scripts/i18n/check-untranslated.mjs --strict
-
-    # Both gates above read a value and ask a question ABOUT it; neither asks
-    # whether the value itself survived the pipeline intact. On 2026-09-05, 176
+    # The translation gates that stood here (i18n-no-gaps: check-coverage
+    # --strict; i18n-no-untranslated: check-untranslated --strict) are off since
+    # 2026-10-25: the app ships English only (SHIPPED_UI_LOCALES in
+    # src/i18n/locales.manifest.ts) and new en.json keys are no longer translated.
+    # Reviving a locale means restoring both gates in the same change.
+    #
+    # Escape integrity still matters for the English catalog. On 2026-09-05, 176
     # values across 12 locales were found carrying runs of literal backslashes
     # where a character was meant ("Personas suchen" + 16 backslashes + "u2026"
     # instead of an ellipsis) - an escaping cascade from a tool that re-escaped
@@ -96,7 +77,7 @@ pre-commit:
     # made them differ from en.json. This gate holds the count at zero, and
     # self-tests its own matcher on five fixtures before trusting a green run.
     - name: i18n-escape-integrity
-      glob: "src/i18n/locales/*.json"
+      glob: "src/i18n/locales/en.json"
       run: node scripts/i18n/check-escapes.mjs
 
 pre-push:
@@ -137,8 +118,9 @@ pre-push:
     #
     # The job itself is `typecheck-and-census` above; this history stays because
     # the reason the census is on pre-push at all is recorded nowhere else.
-    - name: i18n-coverage
-      run: node scripts/i18n/check-coverage.mjs
+    #
+    # (The i18n-coverage job that followed - check-coverage.mjs, locale keyset
+    # parity - is off since 2026-10-25: English-only, see SHIPPED_UI_LOCALES.)
 
     # The Rust -> JS half of the test-automation bridge: every method name
     # test_automation.rs dispatches into window.__TEST__ must be installed by

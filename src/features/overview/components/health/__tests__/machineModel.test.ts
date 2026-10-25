@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The machine figure's arithmetic (kit batch home-3, builder FG). The claims under test are the
  * ones that make the drawing MEAN something: the deck's silhouette comes off the worst status, a

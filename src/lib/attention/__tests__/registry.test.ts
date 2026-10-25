@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The attention registry reads the Decision Center roster's counts.
  *

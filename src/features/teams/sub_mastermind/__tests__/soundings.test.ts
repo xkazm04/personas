@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Soundings — the pure core: the urgency formula the owner reviewed, the fixed
 // station order, the ranking, the reasons, and the chart geometry.
 import { describe, expect, it } from 'vitest';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The rules the bench and the gate rest on, one test each. Every one of
 // these is a rule the reference artifact states in prose and that three
 // separate surfaces have to agree about.

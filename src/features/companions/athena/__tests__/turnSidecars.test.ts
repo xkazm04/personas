@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { CompanionRecallPreview, CompanionTurnSidecar } from '@/api/companion';
 import type { StoredNarration } from '../narrationTimeline';

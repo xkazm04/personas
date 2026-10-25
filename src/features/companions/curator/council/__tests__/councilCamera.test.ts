@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The store's share of the queue and the open council, and of fixture
  * decisions.

@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The honesty rules, held to at the model boundary.
  *

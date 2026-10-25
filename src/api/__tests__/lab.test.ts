@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from "vitest";
 // eslint-disable-next-line no-restricted-imports
 import { invoke } from "@tauri-apps/api/core";

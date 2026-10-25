@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The gig persona policy approves kp hires on the operator's behalf inside its
  * bound. A budget field is the bound's ceiling, so what is pinned here is that

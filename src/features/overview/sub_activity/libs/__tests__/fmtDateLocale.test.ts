@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it } from 'vitest';
 import { fmtDate } from '../executionMetricsHelpers';
 import { useI18nStore } from '@/stores/i18nStore';

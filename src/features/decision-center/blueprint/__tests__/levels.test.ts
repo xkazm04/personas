@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Level scales (the r3 defect #1): L1 shows a wing AMONG ITS NEIGHBOURS at bp's scale (not one bay), L2 a room INSIDE
  * its wing, and each level is a step deeper than the one above, so the camera always knows which level it is at.

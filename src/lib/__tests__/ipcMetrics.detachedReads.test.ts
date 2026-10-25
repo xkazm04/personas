@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { recordIpcCall, getIpcRecords, getSlowestCalls, getGlobalSummary } from '@/lib/ipcMetrics';
 

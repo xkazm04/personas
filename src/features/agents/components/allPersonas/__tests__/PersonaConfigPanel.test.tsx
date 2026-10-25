@@ -63,22 +63,17 @@ describe('PersonaConfigPanel - load', () => {
     await waitFor(() => expect((screen.getByRole('button', { name: /refresh/i }) as HTMLButtonElement).disabled).toBe(false));
   });
 
-  it('names an untitled capability in the app language, not hardcoded English', async () => {
-    const { useI18nStore } = await import('@/stores/i18nStore');
+  // Until 2026-10-25 this asserted the German name ("Fähigkeit 1") to prove the
+  // label came from the catalog; the app ships English only now, so it pins
+  // that the catalog's English name renders for an untitled capability.
+  it('names an untitled capability from the catalog', async () => {
     const { preloadSectionsAsync } = await import('@/i18n/useTranslation');
-    const before = useI18nStore.getState().language;
-    await preloadSectionsAsync('de', ['agents', 'settings']);
-    useI18nStore.setState({ language: 'de' });
-    try {
-      const p = { ...persona('p-cap', 'Capable'), design_context: JSON.stringify({ useCases: [{ id: 'uc-a' }] }) } as Persona;
-      listPersonas.mockResolvedValue([p]);
-      render(<PersonaConfigPanel />);
-      const expand = await screen.findByRole('button', { expanded: false });
-      act(() => { expand.click(); });
-      expect(await screen.findByText('Fähigkeit 1')).toBeTruthy();
-      expect(screen.queryByText('Capability 1')).toBeNull();
-    } finally {
-      useI18nStore.setState({ language: before });
-    }
+    await preloadSectionsAsync('en', ['agents', 'settings']);
+    const p = { ...persona('p-cap', 'Capable'), design_context: JSON.stringify({ useCases: [{ id: 'uc-a' }] }) } as Persona;
+    listPersonas.mockResolvedValue([p]);
+    render(<PersonaConfigPanel />);
+    const expand = await screen.findByRole('button', { expanded: false });
+    act(() => { expand.click(); });
+    expect(await screen.findByText('Capability 1')).toBeTruthy();
   });
 });

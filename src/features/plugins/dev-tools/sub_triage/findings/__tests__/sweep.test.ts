@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The sweep judges a shipped finding against EVERY signal still over threshold,
  * not against the top-N slice it is allowed to raise.

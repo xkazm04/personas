@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { QueryToolbar } from "../QueryToolbar";
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
+
+// `vault`, `agents` and `overview` left the eager English core on 2026-10-25;
+// in the app the route preload lands them before this surface mounts.
+beforeAll(() => preloadSectionsAsync('en', ['vault', 'agents', 'overview']));
 
 vi.mock("../ConnectorCapabilityNote", () => ({
   ConnectorCapabilityNote: () => null,

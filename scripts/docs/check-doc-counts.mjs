@@ -81,9 +81,8 @@ export const FACTS = {
 /** Where each fact is quoted. `pattern` is global; group 1 is the number, group 2 an optional `+`. */
 export const CLAIMS = [
   { fact: 'connectors', file: 'README.md', pattern: /(\d[\d,]*)(\+?)\s+built-in connectors/g },
-  { fact: 'languages', file: 'README.md', pattern: /(\d[\d,]*)(\+?)\s+languages/g },
-  { fact: 'languages', file: 'CONTRIBUTING.md', pattern: /(\d[\d,]*)(\+?)\s+languages/g },
-  { fact: 'languages', file: '.claude/CLAUDE.md', pattern: /(\d[\d,]*)(\+?)\s+languages/g },
+  // No `languages` claims since 2026-10-25: the docs say "English only" (SHIPPED_UI_LOCALES),
+  // and the locale-file count the `languages` fact measures is no longer what ships.
   { fact: 'codegenTasks', file: '.claude/CLAUDE.md', pattern: /(\d[\d,]*)(\+?)\s+codegen tasks/g },
   { fact: 'vitestTests', file: '.claude/CLAUDE.md', pattern: /Vitest \((\d[\d,]*)(\+?)\s+tests\)/g },
 ];

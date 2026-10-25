@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * An import must hand the vault a field list, not a bare connector name.
  *

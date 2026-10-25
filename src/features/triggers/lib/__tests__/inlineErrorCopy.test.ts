@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * An IPC rejection is a serialized AppError OBJECT, never an Error, so the
  * `e instanceof Error ? e.message : String(e)` ladder rendered

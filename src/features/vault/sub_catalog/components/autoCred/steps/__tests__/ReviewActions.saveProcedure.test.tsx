@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReviewActionButtons } from '../ReviewActions';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
+
+// `vault`, `agents` and `overview` left the eager English core on 2026-10-25;
+// in the app the route preload lands them before this surface mounts.
+beforeAll(() => preloadSectionsAsync('en', ['vault', 'agents', 'overview']));
 
 /**
  * Saving the harvested click path was `import.meta.env.DEV` only, and a failed

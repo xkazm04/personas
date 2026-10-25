@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { buildCredentialGraph, analyzeBlastRadius, simulateRevocation, toAgentNodeId } from './credentialGraph';
 import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';

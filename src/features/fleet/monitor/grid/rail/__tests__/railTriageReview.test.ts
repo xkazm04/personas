@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { parseDecisions } from '@/features/overview/sub_manual-review/components/reviewFocusHelpers';
 import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';

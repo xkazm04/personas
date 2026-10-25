@@ -20,6 +20,9 @@ import { reactCompilerPlugin } from "./scripts/babel/react-compiler-vite-plugin.
 // become toolchain records for `npm run devlog` (docs/development/devlog.md).
 // Registered for `serve` only; prints nothing and changes no Vite output.
 import { devlogVitePlugin } from "./scripts/devlog/vite-plugin.mjs";
+// Build-only: writes the chunk graph (facade module, entry, static imports)
+// that scripts/check-bundle-budget.mjs keys and sums. Outside dist/.
+import { bundleGraphPlugin } from "./scripts/build/bundle-graph-vite-plugin.mjs";
 
 const host = process.env.TAURI_DEV_HOST;
 const isMobile = !!process.env.TAURI_ANDROID || !!process.env.TAURI_IOS;
@@ -43,6 +46,14 @@ const platform = process.env.TAURI_ANDROID
 export default defineConfig(async ({ command }) => ({
   // Use relative paths so assets resolve under tauri:// protocol in production
   base: "./",
+  // Every JSON import in src/ is a default import. With named exports on (Vite's
+  // default) each JSON module ALSO emits one binding per top-level key plus an
+  // `export{...}` list naming them all, and a lazily imported JSON chunk (the
+  // i18n sections, the connector seeds) keeps both copies because a dynamic
+  // import cannot be tree-shaken. Measured 2026-10-25: ~12% of every locale
+  // chunk. A named JSON import (`import { x } from "./a.json"`) no longer
+  // resolves with this off; import the default and read the key.
+  json: { namedExports: false },
   plugins: [
     // DevInspector source-location stamping. Self-gated (serve + env flag) and
     // enforce:'pre', so it runs before oxc lowers JSX and is a no-op otherwise.
@@ -63,6 +74,37 @@ export default defineConfig(async ({ command }) => ({
     // 2026-05-10 — if you bypass `npm run dev` / `npm run build` (e.g.,
     // by running `vite build` directly), regenerate codegen first via
     // `node scripts/run-codegen.mjs prebuild`.
+    // The connector seeds (`scripts/connectors/builtin/*.json`) are globbed
+    // eagerly into the startup `builtinConnectors` chunk, and each carries an
+    // `llm_usage_hint` the frontend never reads: it is prompt text the Rust
+    // runner takes from its own seed copy. ~32 KB of a ~248 KB chunk
+    // (2026-10-25). Dropped here, before the JSON plugin parses the file, so
+    // the backend's copy and the files on disk are untouched.
+    {
+      name: "strip-connector-llm-hints",
+      enforce: "pre" as const,
+      transform(code: string, id: string) {
+        if (!/[\\/]scripts[\\/]connectors[\\/]builtin[\\/][^\\/]+\.json$/.test(id)) return null;
+        const def = JSON.parse(code) as { metadata?: Record<string, unknown> | null };
+        if (!def.metadata || !("llm_usage_hint" in def.metadata)) return null;
+        delete def.metadata.llm_usage_hint;
+        return { code: JSON.stringify(def), map: null };
+      },
+    },
+    // rehype-highlight bundles lowlight's 37-grammar `common` set whatever
+    // `languages` it is given; this swaps that set for the app's own list
+    // (src/lib/markdown/lowlightCommon.ts). Only lowlight's own relative
+    // import is redirected, so no other package's `./lib/common.js` moves.
+    {
+      name: "lowlight-common-subset",
+      enforce: "pre" as const,
+      resolveId(source: string, importer: string | undefined) {
+        if (source !== "./lib/common.js" || !importer) return null;
+        if (!/[\\/]node_modules[\\/]lowlight[\\/]index\.js$/.test(importer)) return null;
+        return path.resolve(__dirname, "src/lib/markdown/lowlightCommon.ts");
+      },
+    },
+    bundleGraphPlugin({ root: __dirname }),
     react(),
     tailwindcss(),
     // Bundle analysis: run `ANALYZE=true npm run build` then open dist/bundle-report.html
@@ -155,6 +197,9 @@ export default defineConfig(async ({ command }) => ({
                 // dependency). Reusing an existing group name is what actually
                 // works; verify with a clean build before renaming this again.
                 "react-vendor": ["react", "react-dom", "zustand", "immer"],
+                // Kept grouped on purpose. Ungrouping was measured 2026-10-25:
+                // startup JS -72 KB, but startup chunks 171 -> 273 (icons split
+                // into tiny shared chunks), a hundred more module loads at boot.
                 "ui-vendor": ["lucide-react"],
                 "vendor-motion": ["framer-motion"],
                 "tauri-vendor": [

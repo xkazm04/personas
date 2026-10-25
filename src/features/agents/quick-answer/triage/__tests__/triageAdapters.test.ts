@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * What each adapter tells the reviewer, and what it refuses to invent.
  *

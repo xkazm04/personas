@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import en from '@/i18n/locales/en.json';
 import { ERROR_KEY_MAP } from '@/i18n/useTranslatedError';

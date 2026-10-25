@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * THE TS STATE MACHINE IS A MIRROR OF THE RUST ONE, SO IT IS READ AGAINST IT.
  *

@@ -1,3 +1,4 @@
+// @vitest-environment node
 // `obsidian_drive_push_sync` / `obsidian_drive_pull_sync` run inline and make
 // sequential Google calls per file (push_to_drive / pull_from_drive in
 // src-tauri/src/commands/obsidian_brain/drive.rs). Each call has its own

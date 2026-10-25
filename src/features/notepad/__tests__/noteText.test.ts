@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import { CARD_TEXT_LIMIT, canQuickWrite, resultSummary, titleFromText } from '../noteText';

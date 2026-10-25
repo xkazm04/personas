@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 import { settingEntry, entryScore, reachablePaletteSections, type PaletteItem } from './commandPaletteUtils';
 import { NAV_SECTIONS } from '@/lib/navigation/registry';

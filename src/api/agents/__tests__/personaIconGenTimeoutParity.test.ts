@@ -1,3 +1,4 @@
+// @vitest-environment node
 // `generate_persona_icon` runs a metered image job inline
 // (src-tauri/src/commands/core/persona_icon_gen.rs): one POST, a poll loop
 // bounded by POLL_DEADLINE (checked before each POLL_INTERVAL sleep, so one

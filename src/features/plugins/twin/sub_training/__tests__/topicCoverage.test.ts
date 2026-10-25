@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Coverage scored from the session, not from English.
  *

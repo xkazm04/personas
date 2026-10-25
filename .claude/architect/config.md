@@ -46,7 +46,7 @@ security (Security & Credentials) | plugins (Plugin Ecosystem) | platform (Platf
 ## Gates
 - baseline: `npx tsc --noEmit` | `npm run lint` (record the warning COUNT) | `cargo check` in
   `src-tauri/` | `npm run test -- --run`
-- step: the subset the step touched, plus `npm run check:i18n:strict` when locales/strings moved
+- step: the subset the step touched,
 - final: the full baseline set again, plus `npm run check` (ten gates in an `&&` chain incl.
   `census:check`) before the last commit
 - slow: `cargo clippy`, full `cargo test --lib --features desktop` - run in background, read the
@@ -57,10 +57,8 @@ security (Security & Credentials) | plugins (Plugin Ecosystem) | platform (Platf
 
 ## Repo law
 Authority: `.claude/CLAUDE.md` (parallel-safety primitives apply in full).
-- Every user-facing string: key into `src/i18n/locales/en.json` via `useTranslation()`, then
-  translated into **all 13 other locales in the same change** - `scripts/i18n/translate-extract.mjs`
-  -> fill `.i18n-work/missing-<code>.json` -> `translate-merge.mjs`. The `i18n-no-gaps` pre-commit
-  hook blocks gaps. No hardcoded English in JSX, placeholder, title or aria-label.
+- Every user-facing string: key into `src/i18n/locales/en.json` via `useTranslation()`.
+  Do NOT translate it: the app ships English only since 2026-10-25 (`.claude/rules/i18n.md`). No hardcoded English in JSX, placeholder, title or aria-label.
 - Status tokens via `tokenLabel()` from `src/i18n/tokenMaps.ts`; error messages via
   `resolveErrorTranslated()`.
 - Semantic design tokens only (`typo-*`, `rounded-*`, `shadow-elevation-*`) - see `.claude/Design.md`

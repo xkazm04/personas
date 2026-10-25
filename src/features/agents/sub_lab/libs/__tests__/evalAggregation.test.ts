@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import { buildEvalGridData } from '../evalAggregation';

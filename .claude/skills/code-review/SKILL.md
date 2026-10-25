@@ -116,7 +116,7 @@ Don't re-derive lint advice — determine **which CI/hook gates this diff will t
 | Diff contains… | Gate it trips | What to verify |
 |---|---|---|
 | Any `.ts`/`.tsx` | `npm run check` (tsc + ESLint incl. 18 custom rules) | New code introduces no TS errors (master is clean — errors are regressions) and no new custom-rule violations |
-| `src/i18n/locales/en.json` keys added/renamed | `npm run check:i18n:strict` + `i18n-no-gaps` pre-commit hook | All 13 other locales updated in the same change; renames leave no EXTRAS (extras always fail) |
+| `src/i18n/locales/en.json` keys added/renamed | none since 2026-10-25 (English only, `.claude/rules/i18n.md` banner) | Keys used through `t.section.key`; the other 13 locales are NOT updated, and their staleness is not a finding |
 | `error_registry` keys or `ERROR_KEY_MAP` edits | `npm run check:error-registry` | `<key>_message`/`<key>_suggestion` parity with `src/i18n/useTranslatedError.ts` |
 | Theme/token CSS changes | `npm run check:themes` | Both structural families still pass |
 | `src-tauri/tauri*.conf.json` | `npm run check:tauri-configs` | Config variants stay consistent |
@@ -159,7 +159,7 @@ Severity-ranked, most severe first. Every finding: `file:line`, axis tag, concre
 - [Security] `src-tauri/src/commands/foo.rs:42` — unwrap() on user-provided credentialId; panics when frontend sends null. Fix: `.ok_or(AppError::InvalidInput("credentialId".into()))?`
 
 ### Gate failures (will block CI/commit)
-- [Gate:i18n] `src/i18n/locales/en.json` — 3 new keys under `vault.*` untranslated in 13 locales; `i18n-no-gaps` pre-commit will block. Run the translate-extract/merge pipeline.
+- [Gate:i18n] `src/features/vault/VaultHeader.tsx` — 3 hardcoded English labels in JSX; move them to `en.json` under `vault.*` and read them through `t`.
 
 ### Warnings (should fix)
 - [Performance] `src-tauri/src/db/repos/core/bar.rs:15` — N+1: loop calls get_persona per group; batch with `WHERE id IN`

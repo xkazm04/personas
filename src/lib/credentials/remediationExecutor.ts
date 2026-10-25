@@ -14,7 +14,19 @@ import { rotateCredentialNow, listRotationPolicies, updateRotationPolicy } from 
 import { sendOsNotification } from '@/lib/utils/platform/osNotification';
 import { remediationBus, type RemediationEvent, type RemediationAction } from './remediationBus';
 import { extractMessage } from '@/lib/silentCatch';
-import { getActiveTranslations, interpolate as tx } from '@/i18n/useTranslation';
+import { getActiveTranslations, interpolate as tx, preloadSectionsAsync } from '@/i18n/useTranslation';
+import { useI18nStore } from '@/stores/i18nStore';
+
+/**
+ * The notification copy, after its section has landed. `vault` is lazy since
+ * 2026-10-25 (it left the eager English core), and remediation can fire before
+ * the idle background load has brought it in; an unloaded section resolves to
+ * blanks, which would send an OS notification with an empty title.
+ */
+async function remediationCopy() {
+  await preloadSectionsAsync(useI18nStore.getState().language, ['vault']);
+  return getActiveTranslations().vault.remediation_notify;
+}
 
 // The rotation IPC rejects with a serialized AppError OBJECT, never an Error:
 // `err instanceof Error` turned every refusal into the bare fallback, so the
@@ -33,10 +45,8 @@ async function executeAutoRotate(event: RemediationEvent): Promise<void> {
     const message = reasonOf(err, 'Rotation failed');
     remediationBus.updateOutcome(event.id, 'failed', message);
     // Rotation failure triggers a notification
-    void sendOsNotification(
-      getActiveTranslations().vault.remediation_notify.rotation_failed_title,
-      `${event.credentialName}: ${message}`,
-    );
+    const rn = await remediationCopy();
+    void sendOsNotification(rn.rotation_failed_title, `${event.credentialName}: ${message}`);
   }
 }
 
@@ -60,10 +70,8 @@ async function executeAutoDisable(event: RemediationEvent): Promise<void> {
       `Disabled ${enabledPolicies.length} rotation ${enabledPolicies.length === 1 ? 'policy' : 'policies'}`,
     );
 
-    void sendOsNotification(
-      getActiveTranslations().vault.remediation_notify.auto_disabled_title,
-      tx(getActiveTranslations().vault.remediation_notify.auto_disabled_body, { name: event.credentialName }),
-    );
+    const rn = await remediationCopy();
+    void sendOsNotification(rn.auto_disabled_title, tx(rn.auto_disabled_body, { name: event.credentialName }));
   } catch (err) {
     const message = reasonOf(err, 'Disable failed');
     remediationBus.updateOutcome(event.id, 'failed', message);
@@ -72,7 +80,7 @@ async function executeAutoDisable(event: RemediationEvent): Promise<void> {
 
 async function executeNotify(event: RemediationEvent): Promise<void> {
   const severity = event.action === 'notify_critical' ? 'Critical' : 'Warning';
-  const rn = getActiveTranslations().vault.remediation_notify;
+  const rn = await remediationCopy();
   const title = event.action === 'notify_drift'
     ? rn.drift_title
     : event.action === 'notify_critical' ? rn.critical_title : rn.warning_title;

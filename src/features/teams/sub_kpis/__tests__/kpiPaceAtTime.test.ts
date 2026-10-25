@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Pace is a function of time. A past reading must be judged against the
 // expected point on the baseline-to-target line AT ITS OWN TIME, not today's.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

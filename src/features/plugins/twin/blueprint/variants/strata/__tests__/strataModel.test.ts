@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The strata arithmetic: which plate an answer lands on, and the waffle cells
  * that keep a count honest (one cell per memory while they fit, an exact share

@@ -1,3 +1,4 @@
+// @vitest-environment node
 // `companion_probe_engines` runs every engine probe SEQUENTIALLY
 // (`probe_engines` in companion/session/launch.rs), each under its own
 // PROBE_TIMEOUT. When every probe hangs, the backend still answers with

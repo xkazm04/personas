@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { CuratorProcess } from '@/lib/bindings/CuratorProcess';
 import { rawSteps, runsOf, sessionById, stationKinds, waitBins } from './detail';

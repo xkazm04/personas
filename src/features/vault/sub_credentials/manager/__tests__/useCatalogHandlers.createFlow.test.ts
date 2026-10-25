@@ -30,6 +30,11 @@ vi.mock('@/lib/silentCatch', async (importOriginal) => ({
 
 import { useCatalogHandlers } from '../useCatalogHandlers';
 import type { ConnectorDefinition } from '@/lib/types/types';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
+
+// `vault`, `agents` and `overview` left the eager English core on 2026-10-25;
+// in the app the route preload lands them before this surface mounts.
+beforeAll(() => preloadSectionsAsync('en', ['vault', 'agents', 'overview']));
 
 const connector = { name: 'github', label: 'GitHub' } as ConnectorDefinition;
 

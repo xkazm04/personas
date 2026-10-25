@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The per-row alternative control only opens credential creation for the
  * alternative connector (ConnectorVerificationPanel.handleSwap); it never
