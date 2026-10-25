@@ -4,6 +4,9 @@ import { setLoadedEnglishSection } from "@/i18n/englishSections";
 import enAgents from "@/i18n/section-locales/en/agents.json";
 import enOverview from "@/i18n/section-locales/en/overview.json";
 import enVault from "@/i18n/section-locales/en/vault.json";
+import enOnboarding from "@/i18n/section-locales/en/onboarding.json";
+import enDecisionCenter from "@/i18n/section-locales/en/decisionCenter.json";
+import enDeliberation from "@/i18n/section-locales/en/deliberation.json";
 
 // `agents`, `overview` and `vault` left the eager English core on 2026-10-25
 // (305 KB off the startup path). In the app a route preloads them before its
@@ -16,6 +19,21 @@ import enVault from "@/i18n/section-locales/en/vault.json";
 setLoadedEnglishSection("agents", enAgents);
 setLoadedEnglishSection("overview", enOverview);
 setLoadedEnglishSection("vault", enVault);
+// `onboarding` left the eager core too (2026-10-25, later); same reasoning.
+setLoadedEnglishSection("onboarding", enOnboarding);
+// `decisionCenter` and `deliberation` moved to OVERLAY_SECTIONS (src/i18n/routeSections.ts) the
+// same day: the app fetches them when their overlay opens; a spec renders that overlay directly.
+setLoadedEnglishSection("decisionCenter", enDecisionCenter);
+setLoadedEnglishSection("deliberation", enDeliberation);
+
+// Startup chrome renders framer-motion's light `m.*` components, and App.tsx's <LazyMotion>
+// loads the animation features after first paint. A spec renders components without App, so
+// `m.*` there would have no features at all (no exit fades, no animation callbacks). Give
+// specs the full `motion` component under that name: what the app has once LazyMotion loads.
+vi.mock("framer-motion", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("framer-motion")>();
+  return { ...actual, m: actual.motion };
+});
 
 // Mock @tauri-apps/api/core -- all invoke() calls return undefined by default
 vi.mock("@tauri-apps/api/core", () => ({

@@ -1,6 +1,6 @@
 import { Children, useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence, useReducedMotion, type Variants } from 'framer-motion';
+import { m, AnimatePresence, useReducedMotion, type Variants } from 'framer-motion';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useModalStackPosition } from '@/lib/ui/ModalStackContext';
@@ -37,7 +37,7 @@ interface BaseModalProps {
   placement?: BaseModalPlacement;
   /** Opt out of per-child stagger wrapping. Required for modals using a
    *  flex-column header/body/footer layout where the body must fill remaining
-   *  space — the stagger wrapper is a block-level motion.div that breaks the
+   *  space — the stagger wrapper is a block-level m.div that breaks the
    *  flex chain, so the body's flex-1 + overflow-y-auto silently no-op. */
   staggerChildren?: boolean;
   children: React.ReactNode;
@@ -130,9 +130,9 @@ function staggeredChildren(children: ReactNode, childVariants: Variants): ReactN
   const arr = Children.toArray(children);
   if (arr.length <= 1) return children;
   return arr.map((child, i) => (
-    <motion.div key={i} variants={childVariants}>
+    <m.div key={i} variants={childVariants}>
       {child}
-    </motion.div>
+    </m.div>
   ));
 }
 
@@ -167,7 +167,7 @@ export function BaseModal({
   // one slide-in unit, and stagger-wrapping disrupts the flex column layout
   // (header / body / footer) that drawers typically use. Modals that use a
   // flex-column body with `flex-1 overflow-y-auto` must also opt out via
-  // `staggerChildren={false}` — the wrapper motion.div is `display: block`
+  // `staggerChildren={false}` — the wrapper m.div is `display: block`
   // and breaks the flex chain, leaving `flex-1` with no height to claim.
   const renderedChildren =
     isDrawer || !staggerChildren ? children : staggeredChildren(children, childVariants);
@@ -236,7 +236,7 @@ export function BaseModal({
     return (
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <m.div
             ref={modalRef}
             role="dialog"
             aria-labelledby={titleId}
@@ -247,7 +247,7 @@ export function BaseModal({
             exit="exit"
           >
             {renderedChildren}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     );
@@ -270,7 +270,7 @@ export function BaseModal({
     : `relative w-full ${IS_MOBILE ? 'max-w-full' : resolvedMaxWidth} `;
 
   const overlay = isOpen ? (
-    <motion.div
+    <m.div
       key="modal-overlay"
       initial="initial"
       animate="animate"
@@ -278,12 +278,12 @@ export function BaseModal({
       style={containerClassName ? undefined : { zIndex: overlayZIndex }}
       className={containerClassName ?? defaultContainerClass}
     >
-      <motion.div
+      <m.div
         variants={backdropVariants}
         onClick={onClose}
         className={backdropClass}
       />
-      <motion.div
+      <m.div
         ref={modalRef}
         role="dialog"
         aria-modal="true"
@@ -292,8 +292,8 @@ export function BaseModal({
         className={`${panelWidthPrefix}${panelClassName ?? defaultPanelClass}`}
       >
         {renderedChildren}
-      </motion.div>
-    </motion.div>
+      </m.div>
+    </m.div>
   ) : null;
 
   const animated = <AnimatePresence>{overlay}</AnimatePresence>;

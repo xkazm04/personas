@@ -1,7 +1,7 @@
 import { idlePrefetch } from "@/lib/idlePrefetch";
 import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from "@/stores/systemStore";
@@ -328,7 +328,7 @@ export default function PersonasPage() {
           <ErrorBoundary onGoHome={goHome} name="Cloud">
             <Suspense fallback={ROUTE_CHUNK_FALLBACK}>
               <AnimatePresence mode="wait" initial={false}>
-                <motion.div
+                <m.div
                   key={cloudTab}
                   initial={{ opacity: 0, x: shouldAnimate ? (cloudTab === 'gitlab' ? 14 : -14) : 0 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -343,7 +343,7 @@ export default function PersonasPage() {
                   ) : (
                     <CloudDeployPanel />
                   )}
-                </motion.div>
+                </m.div>
               </AnimatePresence>
             </Suspense>
           </ErrorBoundary>

@@ -16,7 +16,7 @@
 // is a beat, not a thing to acknowledge.
 
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
@@ -72,7 +72,7 @@ export function GoalBannerHost() {
     </span>
     <AnimatePresence>
       {current && (
-        <motion.div
+        <m.div
           key={current.id}
           aria-hidden
           className="pointer-events-none fixed inset-x-0 top-[20vh] z-[220] flex flex-col items-center justify-center"
@@ -92,7 +92,7 @@ export function GoalBannerHost() {
           />
           {/* Hairlines above and below, drawn outward from the centre. */}
           {[-58, 58].map((offset) => (
-            <motion.div
+            <m.div
               key={offset}
               aria-hidden
               className="absolute h-px w-[56vw]"
@@ -108,7 +108,7 @@ export function GoalBannerHost() {
           <div className="relative flex items-center justify-center">
             {/* Ghost bloom — the same line, swelling out and dissolving. */}
             {!reduced && (
-              <motion.span
+              <m.span
                 aria-hidden
                 className="absolute whitespace-nowrap uppercase"
                 style={{ fontFamily: SERIF, color: TITLE_COLOR, fontSize: 'clamp(2rem, 4.6vw, 4rem)', letterSpacing: '0.18em' }}
@@ -116,9 +116,9 @@ export function GoalBannerHost() {
                 animate={{ opacity: 0, scale: 1.22, transition: { duration: 1.8, ease: 'easeOut', delay: 0.25 } }}
               >
                 {title}
-              </motion.span>
+              </m.span>
             )}
-            <motion.span
+            <m.span
               className="relative whitespace-nowrap uppercase"
               style={{
                 fontFamily: SERIF,
@@ -131,20 +131,20 @@ export function GoalBannerHost() {
               animate={{ scale: reduced ? 1 : 1.05, transition: { duration: HOLD_MS / 1000 + 1.4, ease: 'linear' } }}
             >
               {title}
-            </motion.span>
+            </m.span>
           </div>
 
           {current.subtitle && (
-            <motion.span
+            <m.span
               className="relative mt-3 max-w-[60vw] truncate uppercase"
               style={{ fontFamily: SERIF, color: 'rgba(209, 250, 229, 0.72)', fontSize: '0.95rem', letterSpacing: '0.32em' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1, transition: { duration: 1, delay: reduced ? 0 : 0.6 } }}
             >
               {current.subtitle}
-            </motion.span>
+            </m.span>
           )}
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
     </>

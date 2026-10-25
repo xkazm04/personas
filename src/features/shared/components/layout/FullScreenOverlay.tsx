@@ -18,7 +18,7 @@
 // and a window-level `keydown` in the BUBBLE phase despite a comment claiming
 // capture.
 import { useRef, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { X } from 'lucide-react';
 
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
@@ -53,7 +53,7 @@ export function FullScreenOverlay({
   });
 
   return (
-    <motion.div
+    <m.div
       ref={shellRef}
       data-testid={testId}
       role="dialog"
@@ -81,6 +81,6 @@ export function FullScreenOverlay({
       <div ref={contentRef} className="flex-1 min-h-0 overflow-hidden">
         {children}
       </div>
-    </motion.div>
+    </m.div>
   );
 }

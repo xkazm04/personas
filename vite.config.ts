@@ -91,6 +91,24 @@ export default defineConfig(async ({ command }) => ({
         return { code: JSON.stringify(def), map: null };
       },
     },
+    // Every app import of `@sentry/react` resolves to the queueing facade
+    // (src/lib/telemetry/sentryFacade.tsx); only the facade's own dynamic
+    // import reaches the real SDK, after initSentry() in main.tsx's async
+    // phase. Keeps ~180 KB of SDK off the startup path. Build-only: Vitest does
+    // not load this config, so specs keep mocking the real package.
+    {
+      name: "sentry-deferred",
+      enforce: "pre" as const,
+      resolveId(source: string, importer: string | undefined) {
+        if (source !== "@sentry/react") return null;
+        const facade = path.resolve(__dirname, "src/lib/telemetry/sentryFacade.tsx");
+        const realSdk = path.resolve(__dirname, "src/lib/telemetry/sentrySdk.ts");
+        const from = importer ? path.resolve(importer.split("?")[0]) : "";
+        // The facade's type-only import never reaches here; sentrySdk.ts names
+        // the seven functions the facade needs, so the rest is tree-shaken.
+        return from === realSdk ? null : facade;
+      },
+    },
     // rehype-highlight bundles lowlight's 37-grammar `common` set whatever
     // `languages` it is given; this swaps that set for the app's own list
     // (src/lib/markdown/lowlightCommon.ts). Only lowlight's own relative
@@ -201,7 +219,10 @@ export default defineConfig(async ({ command }) => ({
                 // startup JS -72 KB, but startup chunks 171 -> 273 (icons split
                 // into tiny shared chunks), a hundred more module loads at boot.
                 "ui-vendor": ["lucide-react"],
-                "vendor-motion": ["framer-motion"],
+                // No "vendor-motion" group (removed 2026-10-25): startup chrome
+                // renders framer-motion's light `m.*` components under
+                // <LazyMotion>, and a group holding the whole package was
+                // imported by that chrome, pinning all of it to startup.
                 "tauri-vendor": [
                   "@tauri-apps/api/core",
                   "@tauri-apps/api/event",

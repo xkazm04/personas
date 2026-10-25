@@ -1,5 +1,9 @@
 import { Component, lazy, Profiler, Suspense, useCallback, useEffect, useRef, useState, type ProfilerOnRenderCallback, type ReactNode } from "react";
-import { AnimatePresence, motion, MotionConfig } from "framer-motion";
+import { AnimatePresence, LazyMotion, m, MotionConfig } from "framer-motion";
+
+// framer-motion's animation features load after first paint; the startup tree
+// renders `m.*` components (see src/lib/motion/motionFeatures.ts).
+const loadMotionFeatures = () => import("@/lib/motion/motionFeatures").then((mod) => mod.default);
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/chrome/UpdateBanner";
 import CliReadinessBanner from "@/features/shared/chrome/CliReadinessBanner";
@@ -384,6 +388,7 @@ export default function App() {
         <WorkspaceShortcuts />
         <KeyboardNavMode />
         <NavHistoryShortcuts />
+        <LazyMotion features={loadMotionFeatures}>
         <MotionConfig reducedMotion={isDocumentVisible ? "user" : "always"}>
           <AriaLiveProvider>
         <div
@@ -401,7 +406,7 @@ export default function App() {
           <UpdateBanner />
           <CliReadinessBanner />
           <AnimatePresence mode="wait" initial={false}>
-            <motion.div
+            <m.div
               key={language}
               inert={shellSuspended || undefined}
               className={`flex flex-1 overflow-hidden${shellSuspended ? ' shell-suspended' : ''}`}
@@ -411,7 +416,7 @@ export default function App() {
               transition={{ duration: shouldAnimate ? 0.18 : 0, ease: [0.22, 1, 0.36, 1] }}
             >
               <PersonasPage />
-            </motion.div>
+            </m.div>
           </AnimatePresence>
           {bgReady && (
             <>
@@ -496,6 +501,7 @@ export default function App() {
         </div>
           </AriaLiveProvider>
         </MotionConfig>
+        </LazyMotion>
         </ModalStackProvider>
       </AppKeyboardProvider>
     </VibeThemeProvider>

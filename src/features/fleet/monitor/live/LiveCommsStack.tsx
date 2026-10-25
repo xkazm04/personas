@@ -27,7 +27,8 @@
 // drag inside a drag region goes to the window frame).
 
 import { memo, useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+// The light component (LazyMotion in App.tsx); aliased because `m` is a local name here.
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { liveSourceFor } from './liveExternal';
 import { LIVE_LIFETIME_MS, authorAccent, type LiveVariantProps } from './liveModel';

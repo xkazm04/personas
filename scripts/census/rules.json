@@ -3630,6 +3630,10 @@
         {
           "path": "src/main.tsx",
           "reason": "owns the boot gate; it is one of only two call sites of isTelemetryEnabled in 4,829 files"
+        },
+        {
+          "path": "src/lib/telemetry/sentrySdk.ts",
+          "reason": "2026-10-25: the consent-aware facade's private slice of the SDK (named imports, so the rest is tree-shaken). Its only importer is src/lib/telemetry/sentryFacade.tsx, which calls it from init() after isTelemetryEnabled() and checks consent on every call; the build resolves every other @sentry/react import to that facade"
         }
       ],
       "baseline": {
