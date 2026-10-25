@@ -326,6 +326,26 @@ export function createWorktree(run, _brief = {}) {
  * Unlinks the node_modules junction FIRST and asserts the real node_modules survived, then
  * `git worktree remove --force`, then deletes the branch only when its tip is merged into base.
  */
+/**
+ * (root, dir) => boolean   // true when dir is gone afterwards
+ * `git worktree remove --force` deregisters a worktree but on Windows can leave its folder behind
+ * (a gate's real node_modules install), and a fixed-name base checkout then fails the next
+ * `worktree add` with "already exists" (CastleControl verify, 2026-10-25). Only a folder under
+ * WORKTREE_ROOT that git no longer lists is swept, with `rmdir /s /q`, which removes a junction
+ * as a link and never descends into its target.
+ */
+export function sweepLeftoverDir(root, dir) {
+  if (!fs.existsSync(dir)) return true;
+  if (!isUnder(dir, WORKTREE_ROOT)) return false;
+  const listed = gitTry(root, ['worktree', 'list', '--porcelain']);
+  if (listed.ok && listed.out.split(/\r?\n/).some((l) => l.startsWith('worktree ') && norm(l.slice(9)) === norm(dir))) return false;
+  try {
+    if (process.platform === 'win32') execFileSync('cmd', ['/d', '/c', 'rmdir', '/s', '/q', path.resolve(dir)], { stdio: 'ignore', windowsHide: true });
+    else fs.rmSync(dir, { recursive: true, force: true });
+  } catch { /* reported by the caller through the return value */ }
+  return !fs.existsSync(dir);
+}
+
 export function removeWorktree(run) {
   const { root, baseBranch } = repoOf(run);
   const out = { removed: false, branchDeleted: false, junction: false };
@@ -338,7 +358,7 @@ export function removeWorktree(run) {
       if (!r.ok) throw new Error(`git worktree remove ${worktree}: ${r.err}`);
     }
     gitTry(root, ['worktree', 'prune']);
-    out.removed = !fs.existsSync(worktree);
+    out.removed = sweepLeftoverDir(root, worktree);
   }
   const branch = run.branch;
   if (branch && gitTry(root, ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`]).ok
@@ -358,7 +378,7 @@ export function withBaseWorktree(run, fn) {
   const dir = path.join(WORKTREE_ROOT, run.slug, `base-${shortId(run.runId)}`);
   if (!isUnder(dir, WORKTREE_ROOT)) throw new Error(`base worktree ${dir} is not under ${WORKTREE_ROOT}`);
   fs.mkdirSync(path.dirname(dir), { recursive: true });
-  if (fs.existsSync(dir)) { unlinkNodeModules(root, dir); gitTry(root, ['worktree', 'remove', '--force', dir]); }
+  if (fs.existsSync(dir)) { unlinkNodeModules(root, dir); gitTry(root, ['worktree', 'remove', '--force', dir]); gitTry(root, ['worktree', 'prune']); sweepLeftoverDir(root, dir); }
   git(root, ['worktree', 'add', '--detach', dir, run.baseSha]);
   try {
     linkNodeModules(root, dir);
@@ -367,5 +387,6 @@ export function withBaseWorktree(run, fn) {
     unlinkNodeModules(root, dir);
     gitTry(root, ['worktree', 'remove', '--force', dir]);
     gitTry(root, ['worktree', 'prune']);
+    sweepLeftoverDir(root, dir);
   }
 }
