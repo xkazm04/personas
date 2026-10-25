@@ -623,3 +623,21 @@ test('cleanup', () => {
   }
   fs.rmSync(tmp, { recursive: true, force: true });
 });
+
+test('(xy) failureSignature reads TAP not ok, RED: lines and a checker path finding, and ignores build noise', async () => {
+  const G = await import('../lib/gate.mjs');
+  const sig = G.failureSignature([
+    '   Compiling tauri v2.12.4',
+    '    Finished `dev` profile [unoptimized + debuginfo] target(s) in 52.81s',
+    '[boundaries] walked 145 files',
+    'C:\\Users\\x\\.personas\\headless-masters\\worktrees\\castlecontrol\\e8f07a88\\packages\\ui\\kit\\entry.ts: unresolved relative import ../src/kit.js',
+    'not ok 3 - pairing survives a restart',
+    'RED: desk tsc 2 errors',
+    'ok 4 - fine',
+  ].join('\n'));
+  assert.deepEqual(sig, [
+    'RED: desk tsc 2 errors',
+    'not ok 3 - pairing survives a restart',
+    'packages/ui/kit/entry.ts: unresolved relative import ../src/kit.js',
+  ]);
+});

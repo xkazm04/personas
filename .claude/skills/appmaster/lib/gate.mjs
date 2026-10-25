@@ -176,7 +176,14 @@ export function failureSignature(text, cap = 300) {
     // (2026-10-07: personas-web's landing was held on census rises its branch did not add)
     const isRustTestFail = /^test \S+ \.\.\. FAILED$/.test(line);
     const isCensus = /^\[(?:drift|structural)\]\s/.test(line);
-    if (!isTestFail && !isTsError && !isNodeTestFile && !isNodeTestName && !isRustTestFail && !isCensus) continue;
+    // TAP `not ok`, firetv's `RED:` lines, and a repo checker's `<absolute path>: <finding>` line
+    // (2026-10-25: CastleControl's boundaries check printed `...\kit\entry.ts: unresolved relative
+    // import ../src/kit.js`, and the hold reason showed only the cargo build that ran after it)
+    const isTap = /^not ok\b/.test(line);
+    const isRed = /^RED:\s/.test(line);
+    const isPathFinding = /^(?:[A-Za-z]:)?[\\/][^\s:]+\.[A-Za-z]{1,5}(?::\d+(?::\d+)?)?:\s+\S/.test(line);
+    if (!isTestFail && !isTsError && !isNodeTestFile && !isNodeTestName && !isRustTestFail && !isCensus
+      && !isTap && !isRed && !isPathFinding) continue;
     const norm = line
       // the SAME test lives at a different absolute path in the branch worktree and in the base worktree
       .replace(/[A-Za-z]:[\\/][^\s]*?[\\/]worktrees[\\/][^\\/\s]+[\\/][^\\/\s]+[\\/]/g, '')
