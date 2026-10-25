@@ -261,7 +261,14 @@ export const ENV_STRIP = [
   'CLAUDECODE', 'CLAUDE_CODE_CHILD_SESSION', 'CLAUDE_CODE_SESSION_ID', 'CLAUDE_CODE_ENTRYPOINT',
   'CLAUDE_CODE_EXECPATH', 'CLAUDE_CODE_SSE_PORT', 'CLAUDE_EFFORT',
 ];
-export const ENV_SET = { CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1', CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS: '0' };
+/**
+ * pnpm 11 verifies deps before every `pnpm run`, and in a worktree whose node_modules is a junction to the
+ * main checkout's it decides an install is due and tries to purge the modules dir, which would follow the
+ * junction (2026-10-25: Overlord and CastleControl gates aborted with ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY;
+ * only the missing TTY stopped the purge). The env form reaches nested pnpm calls too; the CLI flag does not.
+ */
+export const PNPM_ENV = { pnpm_config_verify_deps_before_run: 'false' };
+export const ENV_SET = { CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1', CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS: '0', ...PNPM_ENV };
 /** Lower-cased substrings of a worker's output that mean the subscription (or a model) hit its limit. */
 export const LIMIT_SIGNATURES = [
   'usage limit', 'session limit', 'usage-credits', 'limit will reset', 'limit resets', 'hit your',

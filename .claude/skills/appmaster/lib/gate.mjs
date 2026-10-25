@@ -5,7 +5,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { ENV_STRIP, SELF_REPO, repoOf } from './contract.mjs';
+import { ENV_STRIP, PNPM_ENV, SELF_REPO, repoOf } from './contract.mjs';
 
 export const GATE_NAMES = ['typecheck', 'lint', 'test'];
 export const GATE_TIMEOUT_MS = 15 * 60 * 1000;
@@ -151,7 +151,7 @@ export function gateEnv(extra = {}) {
   const env = { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' };
   const strip = new Set([...ENV_STRIP, ...GATE_ENV_STRIP].map((k) => k.toUpperCase()));
   for (const k of Object.keys(env)) if (strip.has(k.toUpperCase())) delete env[k];
-  return { ...env, ...extra };
+  return { ...env, ...PNPM_ENV, ...extra };
 }
 
 /**
