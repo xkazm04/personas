@@ -160,15 +160,15 @@ test('codexArgs: the exact argv of fork, resume, exec and init; never the sandbo
   const roots_toml = 'sandbox_workspace_write.writable_roots=["C:\\\\state\\\\runs\\\\r1","C:\\\\repo\\\\.git"]';
   assert.deepEqual(X.codexArgs({ ...base, mode: 'fork', threadId: 'MAIN', writableRoots: roots }), [
     'exec', 'fork', 'MAIN', '--json', '-m', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="high"', '-c', 'approval_policy="never"',
-    '-c', 'sandbox_mode="workspace-write"', '-c', roots_toml, '-o', 'C:\\run\\last-message.txt', '-',
+    '-c', 'sandbox_mode="workspace-write"', '-c', 'sandbox_workspace_write.network_access=true', '-c', roots_toml, '-o', 'C:\\run\\last-message.txt', '-',
   ]);
   assert.deepEqual(X.codexArgs({ ...base, mode: 'resume', threadId: 'BUILD', writableRoots: roots }), [
     'exec', 'resume', 'BUILD', '--json', '-m', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="high"', '-c', 'approval_policy="never"',
-    '-c', 'sandbox_mode="workspace-write"', '-c', roots_toml, '-o', 'C:\\run\\last-message.txt', '-',
+    '-c', 'sandbox_mode="workspace-write"', '-c', 'sandbox_workspace_write.network_access=true', '-c', roots_toml, '-o', 'C:\\run\\last-message.txt', '-',
   ]);
   assert.deepEqual(X.codexArgs({ ...base, mode: 'exec', cwd: 'C:\\wt', writableRoots: roots }), [
     'exec', '--json', '-m', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="high"', '-c', 'approval_policy="never"',
-    '-s', 'workspace-write', '-C', 'C:\\wt', '--add-dir', roots[0], '--add-dir', roots[1], '-o', 'C:\\run\\last-message.txt', '-',
+    '-s', 'workspace-write', '-c', 'sandbox_workspace_write.network_access=true', '-C', 'C:\\wt', '--add-dir', roots[0], '--add-dir', roots[1], '-o', 'C:\\run\\last-message.txt', '-',
   ]);
   assert.deepEqual(X.codexArgs({ ...base, mode: 'init', cwd: 'C:\\proj' }), [
     'exec', '--json', '-m', 'gpt-6.1-sol', '-c', 'model_reasoning_effort="high"', '-c', 'approval_policy="never"',
@@ -252,7 +252,8 @@ test('codex dispatch: forks the main thread in the worktree, records engine/mode
   assert.equal(rec.argv[rec.argv.indexOf('-m') + 1], 'gpt-6.1-sol');
   assert.ok(rec.argv.includes('sandbox_mode="workspace-write"'));
   const roots = rec.argv.find((a) => a.startsWith('sandbox_workspace_write.writable_roots='));
-  assert.equal(roots, `sandbox_workspace_write.writable_roots=${X.tomlStrings([C.runDir('castle', out.runId)])}`, 'the run dir is the one extra writable root');
+  assert.equal(roots, `sandbox_workspace_write.writable_roots=${X.tomlStrings([C.runDir('castle', out.runId), ...X.toolchainCacheRoots()])}`, 'the run dir, then the package caches');
+  assert.ok(rec.argv.includes('sandbox_workspace_write.network_access=true'), 'a build thread may fetch dependencies');
   assert.match(rec.stdin, /Run no git command that writes[\s\S]*Do not commit\./, 'the codex addendum replaces the commit duty');
   assert.equal(fs.realpathSync(rec.cwd).toLowerCase(), fs.realpathSync(out.worktree).toLowerCase(), 'cwd = the worktree');
   assert.match(rec.stdin, /## Codex build thread/, 'the codex addendum rides on the builder prompt');

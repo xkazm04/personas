@@ -25,6 +25,7 @@
 
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import {
   SKILL_DIR, Refusal, codexPath, codexThreadsPath, headlessDir, runDir, readJson, writeJson, appendJsonl, readJsonl,
@@ -123,7 +124,9 @@ export function codexArgs({ mode, threadId, model, effort, cwd, writableRoots = 
   if (!model || !effort) throw new Error('codexArgs: model and effort are required');
   if (!lastMessage) throw new Error('codexArgs: lastMessage is required');
   const common = ['--json', '-m', model, '-c', `model_reasoning_effort="${effort}"`, '-c', 'approval_policy="never"'];
-  const sandboxC = ['-c', 'sandbox_mode="workspace-write"', ...(writableRoots.length ? ['-c', `sandbox_workspace_write.writable_roots=${tomlStrings(writableRoots)}`] : [])];
+  // network on: a build thread installs its dependencies (cargo, pnpm); CastleControl WP 0.6 blocked offline, 2026-10-25
+  const net = ['-c', 'sandbox_workspace_write.network_access=true'];
+  const sandboxC = ['-c', 'sandbox_mode="workspace-write"', ...net, ...(writableRoots.length ? ['-c', `sandbox_workspace_write.writable_roots=${tomlStrings(writableRoots)}`] : [])];
   const tail = ['-o', lastMessage, '-'];
   switch (mode) {
     case 'init':
@@ -135,7 +138,7 @@ export function codexArgs({ mode, threadId, model, effort, cwd, writableRoots = 
       return ['exec', mode, threadId, ...common, ...sandboxC, ...tail];
     case 'exec':
       if (!cwd) throw new Error('codexArgs exec: cwd (the worktree) is required');
-      return ['exec', ...common, '-s', 'workspace-write', '-C', cwd, ...writableRoots.flatMap((r) => ['--add-dir', r]), ...tail];
+      return ['exec', ...common, '-s', 'workspace-write', ...net, '-C', cwd, ...writableRoots.flatMap((r) => ['--add-dir', r]), ...tail];
     default:
       throw new Error(`codexArgs: unknown mode ${mode}`);
   }
@@ -231,8 +234,16 @@ export function lastMessageOf(run, clip = CODEX.lastMessageClip) {
 
 // ---------------------------------------------------------------- spawn
 
-/** The roots a build thread may write besides its cwd (the worktree): the run dir, for result.json. */
-export const writableRootsFor = (run) => [runDir(run.slug, run.runId)];
+/**
+ * The roots a build thread may write besides its cwd (the worktree): the run dir, for result.json, then
+ * the package caches that exist on this machine (cargo registry and git checkouts, the pnpm store, the npm
+ * cache), so a build can fetch its dependencies. Without them WP 0.6 could not resolve one crate (2026-10-25).
+ */
+export const toolchainCacheRoots = (home = os.homedir(), localAppData = process.env.LOCALAPPDATA) => [
+  path.join(home, '.cargo', 'registry'), path.join(home, '.cargo', 'git'),
+  ...(localAppData ? [path.join(localAppData, 'pnpm', 'store'), path.join(localAppData, 'npm-cache')] : []),
+].filter((d) => fs.existsSync(d));
+export const writableRootsFor = (run) => [runDir(run.slug, run.runId), ...toolchainCacheRoots()];
 
 const git = (cwd, args, opts = {}) => execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'], ...opts });
 
