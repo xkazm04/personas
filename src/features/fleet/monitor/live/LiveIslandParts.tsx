@@ -3,7 +3,8 @@
 // shared marks (ringed avatar, event chip, glyph + acknowledge cluster, the
 // draining lifeline). See LiveCommsStack.tsx for the metaphor.
 
-import { motion } from 'framer-motion';
+// The light component (LazyMotion in App.tsx); aliased because `m` is a local name here.
+import { m as motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';

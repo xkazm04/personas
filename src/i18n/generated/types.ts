@@ -2709,6 +2709,10 @@ export type Translations = {
     dark: string;
     light: string;
     footer_section_nav_aria: string;
+    footer_resume_setup: string;
+    footer_replay_setup: string;
+    footer_resume_tour: string;
+    tour_storage_unavailable_toast: string;
     paired_devices: string;
     palette_agent_enabled: string;
     palette_agent_disabled: string;
@@ -15402,8 +15406,6 @@ export type Translations = {
     skip_tooltip: string;
     opening_wizard: string;
     skip_button: string;
-    replay_setup: string;
-    resume_setup: string;
     adopt_button: string;
     continue_button: string;
     done_button: string;
@@ -15472,7 +15474,6 @@ export type Translations = {
     narration_replay: string;
     narration_mute: string;
     narration_unmute: string;
-    resume_tour: string;
     resume_continue_title: string;
     resume_continue_cta: string;
     back: string;
@@ -15509,7 +15510,6 @@ export type Translations = {
     tour_handoff_accept: string;
     tour_handoff_dismiss: string;
     start_tour: string;
-    tour_storage_unavailable_toast: string;
     connector_count_stat: string;
     connector_count_hint: string;
     categories_label: string;

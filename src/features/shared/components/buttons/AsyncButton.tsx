@@ -6,7 +6,7 @@ import {
   type MouseEvent,
   type ReactNode,
 } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import Button, { type ButtonProps } from './Button';
 
@@ -115,7 +115,7 @@ const AsyncButton = forwardRef<HTMLButtonElement, AsyncButtonProps>(function Asy
       {...rest}
     >
       <AnimatePresence mode="wait" initial={false}>
-        <motion.span
+        <m.span
           key={busy ? 'loading' : 'idle'}
           initial={{ opacity: 0, x: -6 }}
           animate={{ opacity: 1, x: 0 }}
@@ -124,7 +124,7 @@ const AsyncButton = forwardRef<HTMLButtonElement, AsyncButtonProps>(function Asy
           className="inline-flex items-center gap-1.5"
         >
           {busy ? loadingContent : restingContent}
-        </motion.span>
+        </m.span>
       </AnimatePresence>
     </Button>
   );

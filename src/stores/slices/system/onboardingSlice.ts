@@ -133,6 +133,16 @@ interface PersistedOnboarding {
   tourHandoffOffered: boolean;
 }
 
+/**
+ * True once the persisted state says the onboarding flow finished. main.tsx's
+ * pre-mount gate reads it: the `onboarding` copy left the eager English core
+ * on 2026-10-25, so a launch that can still open the overlay loads that
+ * section before first paint and a finished user's launch does not.
+ */
+export function isOnboardingCompletedPersisted(): boolean {
+  return loadPersistedOnboarding().completed;
+}
+
 function loadPersistedOnboarding(): PersistedOnboarding {
   const empty: PersistedOnboarding = { completed: false, dismissedAtStep: null, tourHandoffOffered: false };
   try {

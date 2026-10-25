@@ -1,6 +1,6 @@
 import { useCallback, useMemo, type CSSProperties } from 'react';
 import { CheckCircle2, AlertTriangle, ShieldAlert, X } from 'lucide-react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useToastStore, MAX_VISIBLE_TOASTS } from '@/stores/toastStore';
 import type { StandardToast, HealingToast } from '@/stores/toastStore';
 import { classifyErrorFull } from '@/lib/errors/errorPipeline';
@@ -294,7 +294,7 @@ export function ToastContainer() {
       <AnimatePresence initial={false}>
         {/* Overflow counter — sits below the stack via flex-col-reverse ordering */}
         {overflowCount > 0 && (
-          <motion.div
+          <m.div
             key="toast-overflow-chip"
             initial={initial}
             animate={animate}
@@ -303,11 +303,11 @@ export function ToastContainer() {
             className="pointer-events-auto self-end rounded-lg bg-secondary/80 backdrop-blur-sm border border-primary/10 px-2.5 py-1 typo-caption text-foreground"
           >
             {tx(t.common.toast_overflow, { count: overflowCount })}
-          </motion.div>
+          </m.div>
         )}
 
         {visible.map((toast) => (
-          <motion.div
+          <m.div
             key={toast.id}
             layout={!reduceMotion}
             initial={initial}
@@ -321,7 +321,7 @@ export function ToastContainer() {
             ) : (
               <StandardToastItem toast={toast} onDismiss={handleDismiss} />
             )}
-          </motion.div>
+          </m.div>
         ))}
       </AnimatePresence>
     </div>

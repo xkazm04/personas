@@ -9,6 +9,7 @@ export const sectionLoaders = import.meta.glob<{ default: unknown }>([
   "../section-locales/en/agents.json",
   "../section-locales/en/director.json",
   "../section-locales/en/vault.json",
+  "../section-locales/en/deliberation.json",
   "../section-locales/en/sharing.json",
   "../section-locales/en/overview.json",
   "../section-locales/en/matrix_v3.json",
@@ -16,6 +17,7 @@ export const sectionLoaders = import.meta.glob<{ default: unknown }>([
   "../section-locales/en/triggers.json",
   "../section-locales/en/settings.json",
   "../section-locales/en/design.json",
+  "../section-locales/en/onboarding.json",
   "../section-locales/en/system_health.json",
   "../section-locales/en/schedules.json",
   "../section-locales/en/recipes_catalog.json",
@@ -44,4 +46,5 @@ export const sectionLoaders = import.meta.glob<{ default: unknown }>([
   "../section-locales/en/studio.json",
   "../section-locales/en/browser.json",
   "../section-locales/en/companions.json",
+  "../section-locales/en/decisionCenter.json",
 ]);

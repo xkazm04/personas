@@ -101,10 +101,14 @@ function removeDir(dir) {
 // execution-ended message, ChartErrorBoundary and importHelpers on routes
 // whose sections are preloaded before mount); the one module-init read,
 // EventConfigSubPanels' ROTATION_EVENT_TEMPLATES, became a function of `t`.
-// `onboarding` stays: tourSlice can toast during boot.
+//
+// `onboarding` (68 KB) left too, later the same day: its only boot-time reads
+// were tourSlice's storage toast and two footer icons' labels, and those four
+// keys moved to the core `chrome` section. The onboarding overlay itself loads
+// the section before mount only while it can still appear (main.tsx).
 const EN_TS_SYNC_SECTIONS = [
   "alerts", "deployment", "eval_strategies", "execution",
-  "feedback_labels", "mastermind", "onboarding", "releases",
+  "feedback_labels", "mastermind", "releases",
   "ship",
 ];
 

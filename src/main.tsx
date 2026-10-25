@@ -19,6 +19,7 @@ import { installPreloadErrorRecovery } from "./lib/recovery/preloadErrorRecovery
 import { preloadSectionsAsync } from "./i18n/useTranslation";
 import { isLocaleCode, type LocaleCode } from "./i18n/locales.manifest";
 import { sectionsForRoute } from "./i18n/routeSections";
+import { isOnboardingCompletedPersisted } from "./stores/slices/system/onboardingSlice";
 import type { SidebarSection } from "./lib/types/types";
 import "./styles/globals.css";
 import { silentCatch } from '@/lib/silentCatch';
@@ -206,7 +207,10 @@ async function preloadPersistedLocaleBeforeMount(): Promise<void> {
   // other 13 locales — otherwise the very first paint of a non-base route
   // could race the English chunk for its own sections.
   const language = readPersistedLocale();
-  const sections = sectionsForRoute(readPersistedSidebarSection());
+  const route = sectionsForRoute(readPersistedSidebarSection());
+  // The onboarding overlay can open on this launch only until the flow is
+  // finished; its copy is not in the eager core, so it is awaited here then.
+  const sections = isOnboardingCompletedPersisted() ? route : [...route, "onboarding" as const];
   await Promise.race([
     preloadSectionsAsync(language, sections),
     new Promise<void>((resolve) => setTimeout(resolve, 1200)),

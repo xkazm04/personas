@@ -1,5 +1,5 @@
 import type { MouseEvent, ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Bell, CalendarClock, ClipboardCheck, Search } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
@@ -146,7 +146,7 @@ export default function TitleBarDock() {
         prefersReducedMotion ? (
           <span aria-hidden className={`pointer-events-none absolute inset-1 rounded-xl border border-primary/50 opacity-50`} />
         ) : (
-          <motion.span
+          <m.span
             aria-hidden
             className={`pointer-events-none absolute inset-1 rounded-xl border border-primary/50`}
             animate={{ opacity: [0.15, 0.6, 0.15] }}
