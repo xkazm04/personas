@@ -66,8 +66,8 @@ lines.push("");
 const toGo = current.startupKB - STARTUP_TARGET_KB;
 lines.push(
   toGo > 0
-    ? `Startup target ${STARTUP_TARGET_KB} KB: ${kb(toGo)} to go (tracked; the ratchet below is what fails a PR).`
-    : `Startup target ${STARTUP_TARGET_KB} KB: met, with ${kb(-toGo)} to spare.`,
+    ? `Startup ceiling ${STARTUP_TARGET_KB} KB: **over by ${kb(toGo)}** (this fails the gate).`
+    : `Startup ceiling ${STARTUP_TARGET_KB} KB: ${kb(-toGo)} under.`,
 );
 lines.push("");
 
