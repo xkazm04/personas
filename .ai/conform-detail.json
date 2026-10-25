@@ -38568,6 +38568,32 @@
           "evidence": "src-tauri/src/commands/fleet/transcript_read.rs:1051 The only content re-served is a tail-window recap, clipped to RECAP_TEXT_MAX and shown live, never stored or indexed. That is the 'scope and custody' case where declining to redact is right; it would need re-measuring if the window widened or the recap were persisted."
         }
       ]
+    },
+    "6da794b4-7a5f-4087-a4d4-fb8a416456e5/ci-execution-trust": {
+      "context": "commands-execution",
+      "subject": "ci-execution-trust",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-25",
+      "evaluatedTs": "2026-10-25T23:04:56.861Z",
+      "techniques": [
+        {
+          "technique": "control-plane-execution-boundary",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/eval_runs.rs:7 No orchestrator/runner split runs in these files. The eval harness that runs builds is host-side, and this module only reads its committed bundles."
+        },
+        {
+          "technique": "secret-materialization-discipline",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/execution/executions.rs:794 Nearest construct: secrets are masked when persona execution logs are read. That is log hygiene for agent runs, not a pipeline fetching a publishing credential, so the technique's precondition does not hold."
+        }
+      ],
+      "withdrawn": {
+        "worker": "931190ba-7f40-4643-834f-cffb9f4fa63c",
+        "state": "not-applicable",
+        "at": "2026-10-25T23:05:20.079321+00:00",
+        "reason": "reviewer (sonnet): The anchor (eval_runs.rs:7) is a doc comment saying one read-only module leaves git and npm to the host harness, which doesn't show that no CI or delivery construct exists across the other eleven context files. The second anchor (executions.rs:794) is log masking, and the four absence terms are narr"
+      }
     }
   }
 }
