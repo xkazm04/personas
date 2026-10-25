@@ -7985,7 +7985,11 @@
           "revision": 2,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/transcript_read.rs:114 The context reads Claude Code's ~/.claude/projects/*.jsonl live and in place: it folds new bytes into in-memory counters, evicts them after a 30-minute TTL and re-derives them from upstream, and it never copies, stores, indexes or cites transcript content. A search of the fleet directory found no transcript copy (fs::copy), no reading of the harness retention setting (cleanupPeriodDays), no content-digest or prefix machinery. Nothing in it outlives the harness's deletion clock, so the subject's precondition does not hold (\"a third party deletes the source and the archive must outrun it\").",
+          "evaluatedAt": "2026-10-25",
+          "evaluatedAgainst": "sha256-b2:aa419c7f13dda67a",
+          "evaluatedRevision": 3
         },
         {
           "subject": "agent-instruction-files",

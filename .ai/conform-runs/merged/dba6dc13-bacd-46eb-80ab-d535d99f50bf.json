@@ -1,0 +1,77 @@
+{
+ "schema": "conform-run/1",
+ "worker": "dba6dc13-bacd-46eb-80ab-d535d99f50bf",
+ "subject": "agent-session-archive",
+ "evaluatedAt": "2026-10-25T22:55:32.539848+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "commands-fleet",
+   "subject": "agent-session-archive",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/fleet/transcript_read.rs:114 The context reads Claude Code's ~/.claude/projects/*.jsonl live and in place: it folds new bytes into in-memory counters, evicts them after a 30-minute TTL and re-derives them from upstream, and it never copies, stores, indexes or cites transcript content. A search of the fleet directory found no transcript copy (fs::copy), no reading of the harness retention setting (cleanupPeriodDays), no content-digest or prefix machinery. Nothing in it outlives the harness's deletion clock, so the subject's precondition does not hold (\"a third party deletes the source and the archive must outrun it\").",
+   "techniques": [
+    {
+     "technique": "capture-before-parse",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/fleet/transcript_read.rs:114 No capture store exists. The rollup is a declared convenience view over upstream, which is the technique's own 'when not to use it' case."
+    },
+    {
+     "technique": "prefix-proof-retirement",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/fleet/transcript_read.rs:518 The only thing retired is an in-memory rollup that can be rebuilt from the upstream file. There are no captures whose bytes could be unique."
+    },
+    {
+     "technique": "ingest-disposition-accounting",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/fleet/transcript_read.rs:689 This is a live rollup, not an archive ingest. It still defers a half-written trailing record rather than parsing it, and it counts parse_errors. fleet_token_summary skips sessions with no transcript without saying so (line 958), which would be the disposition gap if it ever became an archive."
+    },
+    {
+     "technique": "root-relative-session-identity",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/fleet/transcript.rs:279 Identity is the native id from the filename stem, the key the technique names as failing. That is fine here because nothing is stored under it except a binding used for `claude --resume`. It would need the full key if an archive were built on it."
+    },
+    {
+     "technique": "declared-message-coordinates",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/fleet/transcript_read.rs:46 The summary returns only aggregate counts (tokens, tools, files touched, total_lines). No search hit or citation into a message is ever served."
+    },
+    {
+     "technique": "queryable-surface-redaction",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/fleet/transcript_read.rs:1051 The only content re-served is a tail-window recap, clipped to RECAP_TEXT_MAX and shown live, never stored or indexed. That is the 'scope and custody' case where declining to redact is right; it would need re-measuring if the window widened or the recap were persisted."
+    }
+   ],
+   "absenceTerms": [
+    "fs::copy",
+    "cleanupPeriodDays",
+    "content_digest",
+    "prefix_of"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-25T22:55:32.539848+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "agent-session-archive"
+   ],
+   "techniques": [
+    "capture-before-parse",
+    "declared-message-coordinates",
+    "ingest-disposition-accounting",
+    "prefix-proof-retirement",
+    "queryable-surface-redaction",
+    "root-relative-session-identity"
+   ],
+   "deviations": 0,
+   "context": "commands-fleet",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

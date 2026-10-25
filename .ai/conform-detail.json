@@ -38527,6 +38527,47 @@
         }
       ],
       "registryProposal": "The subject frames its input sources as hand-written or randomized test suites. It does not say whether an in-product eval runner's fixed case list (product-shipped 'test cases' fed to an LLM generator) falls under negative-space-generation. A sentence on in-product evaluation fixtures would settle that."
+    },
+    "2de6333f-8375-404b-8fdc-fe0fb15d4f95/agent-session-archive": {
+      "context": "commands-fleet",
+      "subject": "agent-session-archive",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-25",
+      "evaluatedTs": "2026-10-25T22:55:32.539Z",
+      "worker": "dba6dc13-bacd-46eb-80ab-d535d99f50bf",
+      "techniques": [
+        {
+          "technique": "capture-before-parse",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/transcript_read.rs:114 No capture store exists. The rollup is a declared convenience view over upstream, which is the technique's own 'when not to use it' case."
+        },
+        {
+          "technique": "prefix-proof-retirement",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/transcript_read.rs:518 The only thing retired is an in-memory rollup that can be rebuilt from the upstream file. There are no captures whose bytes could be unique."
+        },
+        {
+          "technique": "ingest-disposition-accounting",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/transcript_read.rs:689 This is a live rollup, not an archive ingest. It still defers a half-written trailing record rather than parsing it, and it counts parse_errors. fleet_token_summary skips sessions with no transcript without saying so (line 958), which would be the disposition gap if it ever became an archive."
+        },
+        {
+          "technique": "root-relative-session-identity",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/transcript.rs:279 Identity is the native id from the filename stem, the key the technique names as failing. That is fine here because nothing is stored under it except a binding used for `claude --resume`. It would need the full key if an archive were built on it."
+        },
+        {
+          "technique": "declared-message-coordinates",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/transcript_read.rs:46 The summary returns only aggregate counts (tokens, tools, files touched, total_lines). No search hit or citation into a message is ever served."
+        },
+        {
+          "technique": "queryable-surface-redaction",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/fleet/transcript_read.rs:1051 The only content re-served is a tail-window recap, clipped to RECAP_TEXT_MAX and shown live, never stored or indexed. That is the 'scope and custody' case where declining to redact is right; it would need re-measuring if the window widened or the recap were persisted."
+        }
+      ]
     }
   }
 }
