@@ -164,7 +164,6 @@ impl FromStr for PersonaTrustOrigin {
 ///                messages) is kept — archiving is NOT a delete. `enabled`
 ///                stays orthogonal (it is the runtime pause switch).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum PersonaLifecycle {
     Draft,

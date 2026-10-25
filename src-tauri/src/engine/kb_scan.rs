@@ -27,7 +27,6 @@ use ts_rs::TS;
 
 /// A knowledge base match result from an all-KB vector scan.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct KbMatch {
     /// Name of the knowledge base that contained the match.

@@ -33,9 +33,9 @@ export type SiteWrite =
 
 export function draftFromSite(site: BrowserSite): SiteEditDraft {
   const gated: Record<string, boolean> = {};
-  for (const tool of site.scan_report?.page_tools ?? []) gated[tool.name] = site.overrides[tool.name] === 'gated';
+  for (const tool of site.scanReport?.pageTools ?? []) gated[tool.name] = site.overrides[tool.name] === 'gated';
   for (const tool of Object.keys(site.overrides)) gated[tool] = site.overrides[tool] === 'gated';
-  return { label: site.label, budget: String(site.budget), credentialId: site.credential_id, gated };
+  return { label: site.label, budget: String(site.budget), credentialId: site.credentialId, gated };
 }
 
 /** A whole number, 0 or more, written as digits only. */
@@ -57,7 +57,7 @@ export function planSiteWrites(site: BrowserSite, draft: SiteEditDraft): SiteWri
   if (labelChanged || budgetChanged) {
     writes.push({ kind: 'upsert', label: labelChanged ? label : null, budget: budgetChanged ? budget : null });
   }
-  if (draft.credentialId !== site.credential_id) {
+  if (draft.credentialId !== site.credentialId) {
     writes.push({ kind: 'credential', credentialId: draft.credentialId });
   }
   for (const tool of Object.keys(draft.gated).sort()) {
@@ -73,7 +73,7 @@ export async function applySiteWrites(origin: string, writes: readonly SiteWrite
   let row: BrowserSite | null = null;
   for (const write of writes) {
     if (write.kind === 'upsert') {
-      row = await browserApi.upsertSite({ origin, label: write.label, enabled: null, budget: write.budget, created_by: null });
+      row = await browserApi.upsertSite({ origin, label: write.label, enabled: null, budget: write.budget, createdBy: null });
     } else if (write.kind === 'credential') {
       row = await browserApi.bindSiteCredential(origin, write.credentialId);
     } else {

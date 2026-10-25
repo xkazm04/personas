@@ -11,7 +11,6 @@ static TIMING_REPORT: OnceLock<StartupTimingReport> = OnceLock::new();
 
 /// A single phase measurement.
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct StartupPhase {
     /// Human-readable name (e.g. "database_init").
@@ -24,7 +23,6 @@ pub struct StartupPhase {
 
 /// Full startup timing report.
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct StartupTimingReport {
     /// Total wall-clock time from process start to setup() completion (ms).

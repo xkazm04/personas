@@ -103,7 +103,6 @@ impl CharterMirrorPayload {
 /// these parse; anything else is refused before it is persisted. Each one is
 /// applied at home through the door the home's own UI uses.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum CharterVerdict {
     Sign {

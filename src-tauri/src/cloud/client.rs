@@ -101,7 +101,6 @@ pub struct CloudStatusResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CloudSubmitResponse {
     pub execution_id: String,
@@ -109,7 +108,6 @@ pub struct CloudSubmitResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CloudExecutionPoll {
     pub execution_id: String,
@@ -177,7 +175,6 @@ pub struct CloudOAuthStatusResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CloudHealthResponse {
     pub status: String,
@@ -344,7 +341,6 @@ pub struct CloudTriggerFiring {
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SharedCatalogResponse {
     pub entries: Vec<SharedCatalogCloudEntry>,
@@ -352,7 +348,6 @@ pub struct SharedCatalogResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SharedCatalogCloudEntry {
     pub id: String,
@@ -372,7 +367,6 @@ pub struct SharedCatalogCloudEntry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SharedEventFiring {
     pub id: String,

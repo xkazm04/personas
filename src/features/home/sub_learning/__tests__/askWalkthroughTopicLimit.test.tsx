@@ -12,7 +12,9 @@ import { AskWalkthroughRow, COMPOSE_TOPIC_MAX } from '../AskWalkthroughRow';
 function backendTopicLimit(): number {
   const src = readFileSync(resolve(process.cwd(), 'src-tauri/src/commands/companion/tours.rs'), 'utf8')
     .replace(/\/\/.*$/gm, '');
-  const m = /topic\.len\(\)\s*>\s*(\d+)/.exec(src);
+  // The cap counts characters (`topic.chars().count() > TOPIC_MAX_CHARS`), so the
+  // number lives in the constant, not in the comparison.
+  const m = /const\s+TOPIC_MAX_CHARS\s*:\s*usize\s*=\s*(\d+)/.exec(src);
   if (!m) throw new Error('companion_compose_tour topic limit not found - update this test');
   return Number(m[1]);
 }

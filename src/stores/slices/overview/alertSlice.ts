@@ -81,6 +81,38 @@ interface MetricsSnapshot {
   avgCostUsd: number;
 }
 
+/**
+ * The two numbers a `cost_spike` rule compares: the most recent bucket, and the
+ * baseline it is a spike ABOVE.
+ *
+ * The baseline is the MEDIAN of the PRIOR buckets, and excludes today by
+ * construction. The old reading divided the last bucket by the mean of every
+ * bucket INCLUDING it, so on the one-day window the background evaluator
+ * fetched, the ratio was one sample over itself and collapsed to 1x: the metric
+ * operators configure to catch runaway spend was the one metric the always-on
+ * loop could not fire. A median rather than a mean so a single earlier spike
+ * does not raise the bar it is supposed to have cleared.
+ *
+ * `baseline: null` means there is no prior to compare against (a single bucket,
+ * or priors that cost nothing). That is not a ratio of 0 and not a ratio of 1 —
+ * it is no reading at all, and the caller must decline to evaluate the rule
+ * rather than claim it did not spike.
+ */
+export interface CostSpikeReading {
+  today: number;
+  baseline: number | null;
+}
+
+export function readCostSpike(points: ReadonlyArray<{ cost: number }>): CostSpikeReading {
+  const today = points.length > 0 ? points[points.length - 1]!.cost : 0;
+  if (points.length < 2) return { today, baseline: null };
+
+  const prior = points.slice(0, -1).map((p) => p.cost).sort((a, b) => a - b);
+  const mid = Math.floor(prior.length / 2);
+  const median = prior.length % 2 === 1 ? prior[mid]! : (prior[mid - 1]! + prior[mid]!) / 2;
+  return { today, baseline: median > 0 ? median : null };
+}
+
 function evaluateRule(rule: AlertRule, metrics: MetricsSnapshot): { triggered: boolean; value: number } {
   let value: number;
   switch (rule.metric) {
@@ -424,7 +456,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
         ? chartData.reduce((sum, p) => sum + p.cost, 0) / chartData.length
         : 0;
 
-      const todayCost = chartData.length > 0 ? chartData[chartData.length - 1]!.cost : 0;
+      const costSpike = readCostSpike(chartData);
 
       const snapshot: MetricsSnapshot = {
         totalExecutions: summary.totalExecutions,
@@ -458,10 +490,15 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
           delete cooldowns[rule.id];
         }
 
+        // A spike needs something to be a spike above. With no prior bucket
+        // there is no reading, and a rule that cannot be read must not be
+        // reported as "did not fire" — it was never evaluated.
+        if (rule.metric === 'cost_spike' && costSpike.baseline === null) continue;
+
         rulesEvaluated++;
 
         const evalSnapshot = rule.metric === 'cost_spike'
-          ? { ...snapshot, totalCostUsd: todayCost }
+          ? { ...snapshot, totalCostUsd: costSpike.today, avgCostUsd: costSpike.baseline! }
           : snapshot;
 
         const { triggered, value } = evaluateRule(rule, evalSnapshot);

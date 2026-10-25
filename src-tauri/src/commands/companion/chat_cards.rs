@@ -67,7 +67,6 @@ pub fn is_actionable_kind(kind: &str) -> bool {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CompanionChatCard {
     pub id: String,

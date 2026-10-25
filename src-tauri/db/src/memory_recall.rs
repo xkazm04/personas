@@ -115,7 +115,7 @@ pub fn task_context_from_input(input: Option<&serde_json::Value>) -> String {
 /// half-life with no access, a memory counts for half its importance.
 /// Categories that encode durable rules decay slowly; ephemeral context
 /// decays fast. Unknown categories get the `learned` default.
-fn category_half_life_days(category: &str) -> f64 {
+pub(crate) fn category_half_life_days(category: &str) -> f64 {
     match category {
         "constraint" => 365.0,
         "instruction" => 180.0,
@@ -130,7 +130,7 @@ fn category_half_life_days(category: &str) -> f64 {
 /// Parse an RFC3339 / `datetime('now')`-style timestamp, tolerating both
 /// forms present in the table (`create` writes RFC3339; SQLite defaults
 /// write `YYYY-MM-DD HH:MM:SS`).
-fn parse_ts(ts: &str) -> Option<DateTime<Utc>> {
+pub(crate) fn parse_ts(ts: &str) -> Option<DateTime<Utc>> {
     if let Ok(dt) = DateTime::parse_from_rfc3339(ts) {
         return Some(dt.with_timezone(&Utc));
     }

@@ -520,7 +520,6 @@ pub async fn get_persona_runs_hourly(
 /// Batched persona detail: persona + tools + triggers + subscriptions + automations
 /// in a single IPC round trip.
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PersonaDetail {
     #[serde(flatten)]

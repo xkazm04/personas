@@ -37,11 +37,39 @@ fn extract_expires_at(meta: &serde_json::Value) -> Option<chrono::DateTime<chron
         .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
 }
 
-/// Threshold: refresh tokens that expire within this many seconds.
-const REFRESH_THRESHOLD_SECS: i64 = 900; // 15 minutes
-
 /// Default token lifetime fallback when the provider omits `expires_in`.
 const DEFAULT_FALLBACK_LIFETIME_SECS: u64 = 3600;
+
+/// Floor on the computed refresh threshold. A provider that issues very short
+/// leases still gets a usable window rather than a threshold measured in
+/// seconds, which a five-minute tick could never hit.
+const MIN_REFRESH_THRESHOLD_SECS: i64 = 60;
+
+/// Ceiling on the computed refresh threshold. Without it a multi-week lease
+/// would sit permanently inside its own refresh window and be renewed on every
+/// tick, which is a refresh storm rather than a renewal policy.
+const MAX_REFRESH_THRESHOLD_SECS: i64 = 86_400; // 24 hours
+
+/// How much of a token's own lease must remain before it is refreshed.
+///
+/// Renew-at-two-thirds: the refresh fires once two thirds of the lease has
+/// elapsed, i.e. when one third of `predicted` is left, with the floor and
+/// ceiling above as the grace window. A flat threshold cannot serve both ends
+/// of the range this app sees - at a constant 900 s a 1-hour Google token sat
+/// idle for 45 minutes and was then raced against its own expiry, while a
+/// 24-hour token was left until its last 15 minutes.
+///
+/// `predicted` is the credential's own `oauth_predicted_lifetime_secs` (written
+/// back by [`refresh_single_credential_inner`] from the provider's `expires_in`);
+/// a credential that has never been refreshed has none yet and falls back to
+/// [`DEFAULT_FALLBACK_LIFETIME_SECS`], which reproduces roughly the old
+/// behaviour for the 1-hour case that dominates it.
+fn refresh_threshold_secs(predicted_lifetime_secs: Option<i64>) -> i64 {
+    let predicted = predicted_lifetime_secs
+        .filter(|v| *v > 0)
+        .unwrap_or(DEFAULT_FALLBACK_LIFETIME_SECS as i64);
+    (predicted / 3).clamp(MIN_REFRESH_THRESHOLD_SECS, MAX_REFRESH_THRESHOLD_SECS)
+}
 
 /// Maximum age of an expired token that is still eligible for refresh.
 /// Both startup sweep and periodic tick use this same threshold so that no
@@ -168,9 +196,12 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
             Some(expires_at) => {
                 oauth_eligible += 1;
                 let remaining = expires_at.signed_duration_since(now);
-                // Refresh if expiring soon, but not if expired beyond the
-                // staleness ceiling (those need re-auth, not a refresh).
-                remaining.num_seconds() <= REFRESH_THRESHOLD_SECS
+                // Refresh once two thirds of THIS token's own lease has
+                // elapsed, but not if expired beyond the staleness ceiling
+                // (those need re-auth, not a refresh).
+                let threshold =
+                    refresh_threshold_secs(parse_ledger(cred).oauth_predicted_lifetime_secs);
+                remaining.num_seconds() <= threshold
                     && remaining.num_seconds() >= -STALENESS_CEILING_SECS
             }
             None => {
@@ -451,7 +482,13 @@ async fn refresh_single_credential_inner(
             if let Some(ref meta) = fresh_meta {
                 if let Some(expires_at) = extract_expires_at(meta) {
                     let remaining = expires_at.signed_duration_since(chrono::Utc::now());
-                    if remaining.num_seconds() > REFRESH_THRESHOLD_SECS {
+                    // Same per-credential threshold the tick decided on, so the
+                    // "already refreshed" check cannot disagree with the reason
+                    // this refresh was queued.
+                    let threshold = refresh_threshold_secs(
+                        parse_ledger(fresh_cred).oauth_predicted_lifetime_secs,
+                    );
+                    if remaining.num_seconds() > threshold {
                         tracing::info!(
                             credential_id = %cred.id,
                             remaining_secs = remaining.num_seconds(),
@@ -1307,5 +1344,57 @@ mod identity_backfill_tests {
         // A different credential is unaffected.
         let other = format!("cred-{}", uuid::Uuid::new_v4());
         assert!(claim_identity_backfill(&other));
+    }
+}
+
+#[cfg(test)]
+mod refresh_threshold_tests {
+    use super::{
+        refresh_threshold_secs, MAX_REFRESH_THRESHOLD_SECS, MIN_REFRESH_THRESHOLD_SECS,
+        STALENESS_CEILING_SECS,
+    };
+
+    /// Google's 1-hour access token: renewed with 20 minutes left, not 15 - and
+    /// crucially the number is derived from the lease, not from a constant that
+    /// happens to suit this one provider.
+    #[test]
+    fn one_hour_token_refreshes_at_two_thirds() {
+        assert_eq!(refresh_threshold_secs(Some(3600)), 1200);
+    }
+
+    /// A 24-hour token used to be left until its last 15 minutes. It now has an
+    /// 8-hour window - i.e. it refreshes at the 16-hour mark.
+    #[test]
+    fn twenty_four_hour_token_refreshes_at_sixteen_hours() {
+        assert_eq!(refresh_threshold_secs(Some(86_400)), 28_800);
+    }
+
+    /// A credential that has never been refreshed carries no predicted
+    /// lifetime; the 1-hour fallback is the shape that dominates this app.
+    #[test]
+    fn missing_prediction_falls_back_to_one_hour() {
+        assert_eq!(refresh_threshold_secs(None), 1200);
+        // A zero or negative stored value is missing data, not a zero lease.
+        assert_eq!(refresh_threshold_secs(Some(0)), 1200);
+        assert_eq!(refresh_threshold_secs(Some(-5)), 1200);
+    }
+
+    /// Both ends are clamped: a 30-second lease still gets a reachable window,
+    /// and a 30-day lease does not sit permanently inside its own.
+    #[test]
+    fn the_window_is_clamped_at_both_ends() {
+        assert_eq!(refresh_threshold_secs(Some(30)), MIN_REFRESH_THRESHOLD_SECS);
+        assert_eq!(
+            refresh_threshold_secs(Some(30 * 86_400)),
+            MAX_REFRESH_THRESHOLD_SECS
+        );
+    }
+
+    /// The staleness ceiling is a separate, unchanged axis: a token expired
+    /// within 7 days is still refreshable, past that it needs re-auth. The
+    /// threshold must never grow into that range.
+    #[test]
+    fn the_threshold_never_reaches_the_staleness_ceiling() {
+        assert!(MAX_REFRESH_THRESHOLD_SECS < STALENESS_CEILING_SECS);
     }
 }

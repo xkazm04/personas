@@ -886,7 +886,7 @@ newest *open* cycle goal in that project (set `in-progress`) or creates
 `"<persona> · cycle 1"` from the charter's objective. The worker's brief ends
 with a cycle block telling it to file the **next** cycle through the goal
 write-back — `POST /dev-tools/goals/{goal_id}/amend` with
-`next_cycle: { title, description }` — which lands as an *open* child goal
+`nextCycle: { title, description }` — which lands as an *open* child goal
 (`parent_goal_id` = the running cycle, marker `n+1`). When the worker reaches
 `finished`, the harvest (off-thread, from the one state-transition door)
 closes the cycle `done` and, if a successor was filed, re-enqueues the persona

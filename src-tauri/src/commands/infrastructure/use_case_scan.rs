@@ -925,7 +925,6 @@ async fn run_use_case_scan(
 /// the caller then hand-authors the contract (census
 /// `untyped-command-payload`).
 #[derive(Debug, Clone, PartialEq, serde::Serialize, ts_rs::TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct UseCaseRelinkLaunch {
     /// The `dev_scans` row this relink reports through. Poll it with

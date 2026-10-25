@@ -26,7 +26,6 @@ use ts_rs::TS;
 /// (e.g. `ResultParsing` can yield a clarification question instead of a result).
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum CompilationStage {
     /// Build the LLM prompt from the pipeline's typed input.

@@ -1173,7 +1173,9 @@ jobs:
     # See the note on rust-fmt's condition.
     if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    # 100 for the desktop-full leg: it also compiles and runs the ml-gated unit
+    # tests (the test step below). The other two legs stay at 60.
+    timeout-minutes: ${{ matrix.label == 'desktop-full' && 100 || 60 }}
     strategy:
       fail-fast: false
       matrix:
@@ -1245,6 +1247,39 @@ jobs:
             libdbus-1-dev
       - name: cargo check --features ${{ matrix.features }}
         run: cargo check --workspace --manifest-path src-tauri/Cargo.toml --features ${{ matrix.features }}
+
+      # The feature axis' ONE test cell (scripts/check-test-feature-cells.mjs).
+      # `rust-tests` runs `--features desktop`, so every test behind
+      # `#[cfg(all(test, feature = "ml"))]` (27 across db, engine and the root
+      # crate: sqlite-vec KNN mechanics, the chunker, the twin KB grounding
+      # block, the retrieval retirement predicate) compiled in no cell and ran
+      # nowhere. `desktop,ml` is the superset of the two feature values that
+      # carry test code; it is the leg that already compiles ORT and fastembed
+      # for `cargo check`, so the dependency closure is warm here.
+      #
+      # `--lib` on purpose: all 27 are unit tests, and this keeps the leg from
+      # re-running the integration and doc tests `rust-tests` already runs.
+      # Only the desktop-full leg tests; the other two legs are `cargo check`
+      # shapes with no gated tests of their own.
+      #
+      # The contest plugin's instrument test (`commands::contest::node`) needs
+      # node and the registry checkout, exactly as in rust-tests: under `CI` it
+      # FAILS rather than skips when either is missing. The retry wrapper is the
+      # same one rust-tests uses (the P2P loopback test flakes in every lib run).
+      - uses: actions/setup-node@v4
+        if: matrix.label == 'desktop-full'
+        with:
+          node-version-file: .nvmrc
+      - name: Clone the knowledge registry (the contest instrument)
+        if: matrix.label == 'desktop-full'
+        shell: bash
+        run: git clone --depth 1 https://github.com/xkazm04/ai-registry.git ../ai-registry
+      - name: cargo test --features desktop,ml (the ml-gated unit tests)
+        if: matrix.label == 'desktop-full'
+        shell: bash
+        env:
+          AI_REGISTRY_DIR: ${{ github.workspace }}/../ai-registry
+        run: bash scripts/ci/cargo-test-retry.sh --workspace --lib --manifest-path src-tauri/Cargo.toml --features desktop,ml --no-fail-fast
 
   # ─── Job B3: the featureless shape ──────────────────────────────────
   # The root crate cannot build without `desktop` — capabilities/default.json

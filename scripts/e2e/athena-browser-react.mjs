@@ -251,7 +251,7 @@ async function ensureWhitelist() {
   const sites = await invoke('browser_sites_list');
   const row = (Array.isArray(sites) ? sites : []).find((s) => s.origin === FIXTURE_ORIGIN);
   if (!row) {
-    await invoke('browser_sites_upsert', { input: { origin: FIXTURE_ORIGIN, label: 'athena-browser-react fixture', enabled: true, created_by: 'operator' } });
+    await invoke('browser_sites_upsert', { input: { origin: FIXTURE_ORIGIN, label: 'athena-browser-react fixture', enabled: true, createdBy: 'operator' } });
     console.log(`whitelist: added ${FIXTURE_ORIGIN}`);
   } else if (!row.enabled) {
     await invoke('browser_sites_set_enabled', { origin: FIXTURE_ORIGIN, enabled: true });

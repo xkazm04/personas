@@ -37,7 +37,6 @@ const DEFAULT_SOURCE_LIMIT: i64 = 50;
 const MAX_PROMPT_BYTES: usize = 512 * 1024;
 
 #[derive(Debug, serde::Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct MemoryCompileResult {
     /// How many raw memories were fed into the compile pass.

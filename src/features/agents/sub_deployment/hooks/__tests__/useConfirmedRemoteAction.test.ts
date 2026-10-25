@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useConfirmedRemoteAction } from '../useConfirmedRemoteAction';
 
 const cfg = { title: 'Undeploy', details: [{ label: 'Name', value: 'Support bot' }] };
@@ -19,7 +19,9 @@ describe('useConfirmedRemoteAction', () => {
     act(() => { result.current.modal.config!.onConfirm(); });
     await expect(outcome!).resolves.toBe('done');
     expect(action).toHaveBeenCalledTimes(1);
-    expect(result.current.modal.open).toBe(false);
+    // The modal closes after the awaited action settles (b319f8fe5f), one
+    // microtask behind the caller's promise.
+    await waitFor(() => expect(result.current.modal.open).toBe(false));
   });
 
   it('resolves undefined on cancel without running the action', async () => {

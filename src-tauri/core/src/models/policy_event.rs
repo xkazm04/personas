@@ -18,7 +18,6 @@ use ts_rs::TS;
 
 /// A single policy-enforcement event captured during execution dispatch.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PolicyEvent {
     pub id: String,

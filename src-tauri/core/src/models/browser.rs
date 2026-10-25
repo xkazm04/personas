@@ -145,11 +145,12 @@ pub enum BrowserSideEffects {
 /// One tool the page declares (WebMCP native or polyfill).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub struct BrowserPageTool {
     pub name: String,
     pub description: String,
     pub reversible: bool,
+    #[serde(alias = "side_effects")]
     pub side_effects: BrowserSideEffects,
     /// The derived class. `Auto` iff `reversible && side_effects != external`
     /// (`browser_bridge::policy::derive_page_tool_class`), possibly tightened
@@ -171,7 +172,7 @@ pub enum BrowserScanFormKind {
 /// A form the scan found on the page.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub struct BrowserScanForm {
     pub name: String,
     pub fields: u32,
@@ -182,10 +183,13 @@ pub struct BrowserScanForm {
 /// never sees a value (browser-credential-boundary).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub struct BrowserLoginForm {
+    #[serde(alias = "user_ref")]
     pub user_ref: String,
+    #[serde(alias = "pass_ref")]
     pub pass_ref: String,
+    #[serde(alias = "submit_ref")]
     pub submit_ref: String,
 }
 
@@ -202,13 +206,16 @@ pub enum BrowserScanBlocker {
 /// The JSON stored in `browser_sites.scan_report`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS, Default)]
 #[ts(export)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub struct BrowserSiteScan {
     pub transport: BrowserScanTransport,
+    #[serde(alias = "page_tools")]
     pub page_tools: Vec<BrowserPageTool>,
+    #[serde(alias = "operable_count")]
     pub operable_count: u32,
     pub landmarks: Vec<String>,
     pub forms: Vec<BrowserScanForm>,
+    #[serde(alias = "login_form")]
     pub login_form: Option<BrowserLoginForm>,
     pub blockers: Vec<BrowserScanBlocker>,
     /// Controllability grade: 0 read-only, 1 generic hands, 2 the page's own
@@ -220,7 +227,7 @@ pub struct BrowserSiteScan {
 /// One row of `browser_sites` — the origin gate's unit of decision.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub struct BrowserSite {
     /// `scheme://host[:port]`, the ascii serialization of the URL's origin.
     pub origin: String,
@@ -232,9 +239,12 @@ pub struct BrowserSite {
     pub overrides: Json<BTreeMap<String, BrowserToolClass>>,
     /// Per-turn call budget for this origin.
     pub budget: i32,
+    #[serde(alias = "credential_id")]
     pub credential_id: Option<String>,
+    #[serde(alias = "scan_status")]
     pub scan_status: BrowserScanStatus,
     /// 0 | 1 | 2 — `None` until a scan answers.
+    #[serde(alias = "scan_tier")]
     pub scan_tier: Option<u8>,
     // `#[ts(as)]` is load-bearing. For `Option<Json<Struct>>` ts-rs 10.1 emits
     // the field type but NOT the import: `Option`'s dependency walk visits
@@ -246,6 +256,7 @@ pub struct BrowserSite {
     // `npm run test:rust -- export_bindings` does NOT re-export these models;
     // use `test:rust:crates` for anything under core/src/models.
     #[ts(as = "Option<BrowserSiteScan>")]
+    #[serde(alias = "scan_report")]
     pub scan_report: Option<Json<BrowserSiteScan>>,
     /// Epoch ms. i64 because SQLite INTEGER is 64-bit; epoch-ms stays far
     /// under 2^53, so the JS `number` pin is lossless.
@@ -253,13 +264,17 @@ pub struct BrowserSite {
     // type, so a bare `number` here would tell TypeScript a never-scanned
     // site has a timestamp.
     #[ts(type = "number | null")]
+    #[serde(alias = "scan_at")]
     pub scan_at: Option<i64>,
     #[ts(type = "number")]
+    #[serde(alias = "first_seen")]
     pub first_seen: i64,
     #[ts(type = "number")]
+    #[serde(alias = "last_seen")]
     pub last_seen: i64,
     /// `operator` | `athena` | `session:<id>` — the wire form of
     /// `browser_bridge::backend::Principal`.
+    #[serde(alias = "created_by")]
     pub created_by: String,
 }
 
@@ -549,13 +564,14 @@ fn split_host_port(rest: &str) -> Result<(&str, Option<&str>), String> {
 /// `credential_id`, which has its own command (`bind_credential`).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub struct UpsertBrowserSiteInput {
     pub origin: String,
     pub label: Option<String>,
     pub enabled: Option<bool>,
     pub budget: Option<i32>,
     /// Who is adding it. Defaults to `operator` when absent.
+    #[serde(alias = "created_by")]
     pub created_by: Option<String>,
 }
 
@@ -641,10 +657,29 @@ mod tests {
         };
         let json = serde_json::to_value(&scan).unwrap();
         assert_eq!(json["transport"], "webmcp-polyfill");
-        assert_eq!(json["page_tools"][0]["side_effects"], "internal");
-        assert_eq!(json["operable_count"], 4);
+        assert_eq!(json["pageTools"][0]["sideEffects"], "internal");
+        assert_eq!(json["operableCount"], 4);
         assert_eq!(json["blockers"][0], "login_wall");
-        assert_eq!(json["login_form"], serde_json::Value::Null);
+        assert_eq!(json["loginForm"], serde_json::Value::Null);
+    }
+
+    /// `browser_sites.scan_report` rows written before the camelCase rename
+    /// hold snake_case keys; they must keep reading, and re-serialize as
+    /// camelCase.
+    #[test]
+    fn a_legacy_snake_case_scan_report_still_reads() {
+        let legacy = r#"{"transport":"none","page_tools":[{"name":"t","description":"","reversible":true,"side_effects":"internal","class":"auto"}],"operable_count":7,"landmarks":[],"forms":[],"login_form":{"user_ref":"u","pass_ref":"p","submit_ref":"s"},"blockers":["login_wall"],"tier":1,"notes":""}"#;
+        let scan: BrowserSiteScan = serde_json::from_str(legacy).unwrap();
+        assert_eq!(scan.operable_count, 7);
+        assert_eq!(
+            scan.page_tools[0].side_effects,
+            BrowserSideEffects::Internal
+        );
+        assert_eq!(scan.login_form.as_ref().unwrap().submit_ref, "s");
+        let json = serde_json::to_value(&scan).unwrap();
+        assert_eq!(json["loginForm"]["userRef"], "u");
+        let again: BrowserSiteScan = serde_json::from_value(json).unwrap();
+        assert_eq!(again, scan);
     }
 
     // -----------------------------------------------------------------------

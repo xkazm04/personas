@@ -5,7 +5,6 @@ use ts_rs::TS;
 
 /// Network configuration.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct NetworkConfig {
     pub port: u16,
@@ -146,7 +145,6 @@ pub struct ConnectionHealth {
 
 /// Reason a peer connection was terminated.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum DisconnectReason {
     /// User or application explicitly disconnected.

@@ -22,7 +22,6 @@ pub type HealthcheckEntry = LedgerHealthEntry;
 
 /// Classify an HTTP status code extracted from a healthcheck/rotation message.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, TS)]
-#[ts(export)]
 pub enum ErrorClass {
     /// Transient: rate-limit (429), service unavailable (503), gateway timeout (504), or network timeout.
     Transient,

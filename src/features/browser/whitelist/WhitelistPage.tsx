@@ -73,7 +73,7 @@ export default function WhitelistPage() {
           label: value.label || null,
           enabled: null,
           budget: null,
-          created_by: null,
+          createdBy: null,
         });
         closeSiteModal();
         if (value.scanNow) void actions.onScan(row);

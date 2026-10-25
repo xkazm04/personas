@@ -332,7 +332,6 @@ pub fn parse_hypothesis(value: &serde_json::Value) -> Option<DirectorHypothesis>
 /// A single piece of coaching. Produced by an evaluator, routed into the
 /// Human Review layer.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DirectorVerdict {
     pub target_persona_id: String,

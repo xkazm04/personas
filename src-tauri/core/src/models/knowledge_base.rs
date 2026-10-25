@@ -66,7 +66,6 @@ pub struct KbDocument {
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct KbChunk {
     pub id: String,

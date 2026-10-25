@@ -5,7 +5,7 @@ import type { BrowserToolClass } from "./BrowserToolClass";
 /**
  * One tool the page declares (WebMCP native or polyfill).
  */
-export type BrowserPageTool = { name: string, description: string, reversible: boolean, side_effects: BrowserSideEffects, 
+export type BrowserPageTool = { name: string, description: string, reversible: boolean, sideEffects: BrowserSideEffects, 
 /**
  * The derived class. `Auto` iff `reversible && side_effects != external`
  * (`browser_bridge::policy::derive_page_tool_class`), possibly tightened

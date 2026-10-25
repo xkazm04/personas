@@ -80,7 +80,7 @@ export async function bindSiteCredential(
 // `src/lib/commandNames.overrides.ts` (`UnregisteredCommand`); the Director
 // removes those three lines once the generator reports them stale.
 
-/** Start a scan. Findings land on the row (`scan_status` / `scan_report` / `scan_tier`). */
+/** Start a scan. Findings land on the row (`scanStatus` / `scanReport` / `scanTier`). */
 export async function scanSite(origin: string): Promise<void> {
   return invoke<void>('browser_scan_site', { origin }, { timeoutMs: SCAN_TIMEOUT_MS });
 }

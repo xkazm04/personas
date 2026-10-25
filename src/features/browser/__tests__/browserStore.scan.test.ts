@@ -25,21 +25,21 @@ import { refreshSites, resetBrowserStore, SCAN_POLL_MS } from '../browserStore';
 const listSites = vi.mocked(browserApi.listSites);
 const listenScan = vi.mocked(browserApi.listenScan);
 
-function site(origin: string, scanStatus: BrowserSite['scan_status'] = 'none'): BrowserSite {
+function site(origin: string, scanStatus: BrowserSite['scanStatus'] = 'none'): BrowserSite {
   return {
     origin,
     label: origin,
     enabled: true,
     overrides: {},
     budget: 50,
-    credential_id: null,
-    scan_status: scanStatus,
-    scan_tier: null,
-    scan_report: null,
-    scan_at: null,
-    first_seen: 0,
-    last_seen: 0,
-    created_by: 'operator',
+    credentialId: null,
+    scanStatus: scanStatus,
+    scanTier: null,
+    scanReport: null,
+    scanAt: null,
+    firstSeen: 0,
+    lastSeen: 0,
+    createdBy: 'operator',
   } as BrowserSite;
 }
 

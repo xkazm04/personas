@@ -24,7 +24,6 @@ pub struct PersonaTestSuite {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct TestSuiteScenario {
     pub name: String,
@@ -37,7 +36,6 @@ pub struct TestSuiteScenario {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct TestSuiteMockTool {
     pub tool_name: String,

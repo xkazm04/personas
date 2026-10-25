@@ -2118,6 +2118,26 @@ pub fn ensure_memory_vec_table(vec_pool: &crate::UserDbPool) -> Result<(), AppEr
     if MEMORY_VEC_TABLE_READY.load(Ordering::Acquire) {
         return Ok(());
     }
+    create_memory_vec_tables(vec_pool)?;
+    if !MEMORY_VEC_TABLE_READY.swap(true, Ordering::AcqRel) {
+        tracing::info!(
+            dims = MEMORY_VEC_DIMS,
+            "persona_memory_embedding table ready"
+        );
+    }
+    Ok(())
+}
+
+/// The unlatched half of [`ensure_memory_vec_table`]: `CREATE ... IF NOT
+/// EXISTS` against `vec_pool`, every call. Split out so a test that builds its
+/// own throwaway user DB can provision it directly. Going through the
+/// process-wide latch instead made the `vec_tests` order-dependent: whichever
+/// test ran first latched `MEMORY_VEC_TABLE_READY`, and every later test (its
+/// own fresh pool, no table) failed with `no such table:
+/// persona_memory_embedding` -- found 2026-10-24, the first run of this module
+/// in any CI cell.
+#[cfg(feature = "ml")]
+fn create_memory_vec_tables(vec_pool: &crate::UserDbPool) -> Result<(), AppError> {
     let conn = vec_pool.conn("memories::ensure_memory_vec_table")?;
     // The vec0 table cannot carry an auxiliary model-stamp column without a
     // destructive recreate, so the stamp lives in a plain sidecar keyed 1:1 by
@@ -2135,12 +2155,6 @@ pub fn ensure_memory_vec_table(vec_pool: &crate::UserDbPool) -> Result<(), AppEr
              embedding_dims  INTEGER NOT NULL
          );"
     ))?;
-    if !MEMORY_VEC_TABLE_READY.swap(true, Ordering::AcqRel) {
-        tracing::info!(
-            dims = MEMORY_VEC_DIMS,
-            "persona_memory_embedding table ready"
-        );
-    }
     Ok(())
 }
 
@@ -3864,7 +3878,11 @@ mod vec_tests {
         let dir = std::env::temp_dir().join(format!("pm-vec-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let manager = r2d2_sqlite::SqliteConnectionManager::file(dir.join("vec-test.db"));
-        r2d2::Pool::builder().max_size(2).build(manager).unwrap()
+        let pool = r2d2::Pool::builder().max_size(2).build(manager).unwrap();
+        // Provision THIS pool's tables directly; `ensure_memory_vec_table` is
+        // latched per process and would skip every pool after the first.
+        create_memory_vec_tables(&pool).unwrap();
+        pool
     }
 
     fn unit_vec(axis: usize) -> Vec<f32> {
