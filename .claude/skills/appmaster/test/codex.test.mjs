@@ -253,7 +253,7 @@ test('codex dispatch: forks the main thread in the worktree, records engine/mode
   assert.ok(rec.argv.includes('sandbox_mode="workspace-write"'));
   const roots = rec.argv.find((a) => a.startsWith('sandbox_workspace_write.writable_roots='));
   assert.equal(roots, `sandbox_workspace_write.writable_roots=${X.tomlStrings([C.runDir('castle', out.runId)])}`, 'the run dir is the one extra writable root');
-  assert.match(rec.stdin, /Do not commit, and do not run `git add`/, 'the codex addendum replaces the commit duty');
+  assert.match(rec.stdin, /Run no git command that writes[\s\S]*Do not commit\./, 'the codex addendum replaces the commit duty');
   assert.equal(fs.realpathSync(rec.cwd).toLowerCase(), fs.realpathSync(out.worktree).toLowerCase(), 'cwd = the worktree');
   assert.match(rec.stdin, /## Codex build thread/, 'the codex addendum rides on the builder prompt');
   assert.ok(rec.stdin.includes(C.runDir('castle', out.runId)), 'it names the run dir for result.json');

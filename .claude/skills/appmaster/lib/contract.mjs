@@ -488,7 +488,8 @@ export class Refusal extends Error {
 }
 
 export function readJson(p, fallback = null) {
-  try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return fallback; }
+  // a BOM is stripped: PowerShell's `-Encoding utf8` (a Codex builder's usual writer) prepends one
+  try { return JSON.parse(fs.readFileSync(p, 'utf8').replace(/^\uFEFF/, '')); } catch { return fallback; }
 }
 /**
  * Windows refuses a rename onto a file another process holds open without delete sharing (an
@@ -517,6 +518,6 @@ export function appendJsonl(p, v) {
   fs.appendFileSync(p, JSON.stringify(v) + '\n');
 }
 export function readJsonl(p) {
-  let text; try { text = fs.readFileSync(p, 'utf8'); } catch { return []; }
+  let text; try { text = fs.readFileSync(p, 'utf8').replace(/^\uFEFF/, ''); } catch { return []; }
   return text.split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
 }
