@@ -468,40 +468,54 @@ async function codexSay(flags) {
   const live = recordCodexThread(run);
   if (!live.codexThreadId) throw new Refusal('no codex thread', { runId: run.runId, hint: 'the run never reported thread.started; nothing to resume' });
   if (!SAY_STATES.includes(live.state)) throw new Refusal('run not resumable', { runId: run.runId, state: live.state, hint: `say takes a ${SAY_STATES.join(', ')} run (a merged run's worktree is gone; a running one is still working)` });
-  if (!live.worktree || !fs.existsSync(live.worktree)) throw new Refusal('worktree gone', { runId: run.runId, worktree: live.worktree ?? null });
+  let live2 = live;
   const { readLimit } = await import('./limits.mjs');
   const limit = readLimit();
   if (limit && limitEngine(limit) === CODEX.kind) throw new Refusal('usage limit', { engine: CODEX.kind, resetsAt: limit.resetsAt ?? null, reason: limit.reason });
-  const mine = listRuns(live.slug, { states: ['running'] });
-  const cap = projectCap(loadBrief(live.slug));
+  const mine = listRuns(live2.slug, { states: ['running'] });
+  const cap = projectCap(loadBrief(live2.slug));
   if (mine.length >= cap) throw new Refusal('project cap', { cap, running: mine.map((r) => shortId(r.runId)) });
   const all = listSlugs().flatMap((s) => listRuns(s, { states: ['running'] }));
   if (all.length >= GLOBAL_CAP) throw new Refusal('global cap', { cap: GLOBAL_CAP });
   const others = listSlugs().flatMap((s) => listRuns(s, { states: ['running', 'exited', 'verifying'] }))
-    .filter((r) => r.runId !== live.runId && normRoot(repoOf(r).root || '') === normRoot(repoOf(live).root || ''));
+    .filter((r) => r.runId !== live2.runId && normRoot(repoOf(r).root || '') === normRoot(repoOf(live2).root || ''));
   const { overlappingPairs } = await import('./paths.mjs');
-  const clash = others.filter((r) => !isReviewRun(r) && overlappingPairs(live.paths, r.paths).length);
-  if (clash.length) throw new Refusal('paths overlap', { runId: live.runId, with: clash.map((r) => `${r.slug}:${shortId(r.runId)} (${r.state})`) });
+  const clash = others.filter((r) => !isReviewRun(r) && overlappingPairs(live2.paths, r.paths).length);
+  if (clash.length) throw new Refusal('paths overlap', { runId: live2.runId, with: clash.map((r) => `${r.slug}:${shortId(r.runId)} (${r.state})`) });
 
-  const dir = runDir(live.slug, live.runId);
+  // after every refusal, so a refused say never leaves a fresh worktree behind
+  if (!live.worktree || !fs.existsSync(live.worktree)) {
+    // a run that stopped to ask (blocked, no changes) settles failed and its empty worktree is removed;
+    // the thread still holds the question, so cut a fresh worktree from the base tip and resume there.
+    // A branch that survived means real work sits on it: never cut over it (2026-10-25, CastleControl WP 0.4).
+    const { createWorktree } = await import('./worktree.mjs');
+    const { gitTry } = await import('./worktree.mjs');
+    const { root } = repoOf(live);
+    if (live.branch && gitTry(root, ['rev-parse', '--verify', '--quiet', `refs/heads/${live.branch}`]).ok) {
+      throw new Refusal('worktree gone', { runId: run.runId, worktree: live.worktree ?? null, hint: `branch ${live.branch} still exists without its worktree; restore it by hand` });
+    }
+    const wt = createWorktree(live, loadBrief(live.slug) || {});
+    live2 = updateRun(live, { worktree: wt.worktree, branch: wt.branch, baseSha: wt.baseSha, nodeModules: wt.nodeModules, recutAt: nowIso() });
+  }
+  const dir = runDir(live2.slug, live2.runId);
   const rotated = rotateOutput(dir);
   const prompt = [
     'The App Master reviewed this build and sends it back. Address the following in the same worktree and on the',
-    'same branch, commit, then write result.json again exactly as before (the earlier one was moved aside).',
+    'same branch, leave the change uncommitted (no git writes), then write result.json again exactly as before (the earlier one was moved aside).',
     '',
     message.trim(),
   ].join('\n');
   fs.writeFileSync(path.join(dir, `say.${rotated.generation}.md`), prompt);
   const args = codexArgs({
-    mode: 'resume', threadId: live.codexThreadId, model: live.model, effort: live.effort || CODEX.effort,
-    writableRoots: writableRootsFor(live), lastMessage: path.join(dir, 'last-message.txt'),
+    mode: 'resume', threadId: live2.codexThreadId, model: live2.model, effort: live2.effort || CODEX.effort,
+    writableRoots: writableRootsFor(live2), lastMessage: path.join(dir, 'last-message.txt'),
   });
   const { workerEnv } = await import('./worker.mjs');
-  const { pid, threadId } = spawnCodex({ cwd: live.worktree, dir, args, prompt, env: workerEnv(live.slug, live) });
+  const { pid, threadId } = spawnCodex({ cwd: live2.worktree, dir, args, prompt, env: workerEnv(live2.slug, live2) });
   const startedAt = nowIso();
-  appendThread(live.slug, { runId: live.runId, threadId: threadId || live.codexThreadId, parent: live.codexParent ?? null, mode: 'resume', startedAt });
-  const bounces = [...(live.bounces ?? []), { at: startedAt, generation: rotated.generation, fromState: live.state, heldReason: live.heldReason ?? null, file: String(flags.file) }];
-  const next = updateRun(live, {
+  appendThread(live2.slug, { runId: live2.runId, threadId: threadId || live2.codexThreadId, parent: live2.codexParent ?? null, mode: 'resume', startedAt });
+  const bounces = [...(live2.bounces ?? []), { at: startedAt, generation: rotated.generation, fromState: live2.state, heldReason: live2.heldReason ?? null, file: String(flags.file) }];
+  const next = updateRun(live2, {
     state: 'running', pid, startedAt, endedAt: null, limitSeenAt: null, verdict: null, settledAt: null, heldReason: null, bounces,
   });
   const { awaitCommandFor } = await import('./worker.mjs');
