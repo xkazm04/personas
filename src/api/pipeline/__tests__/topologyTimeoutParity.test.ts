@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The LLM topology IPC must outlive the backend's own run budget.
 // `run_llm_topology_request` (commands/teams/teams.rs) runs a StructuredJson
 // Claude call under `with_escalation`, so a rejected first answer is retried

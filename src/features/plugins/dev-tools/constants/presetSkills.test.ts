@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { SCAN_AGENTS } from './scanAgents';
 import { SCAN_MATCH_RULES, matchAgentsToContext } from './presetSkills';

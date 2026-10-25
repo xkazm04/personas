@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The rule-generation IPC must outlive the backend's own budget.
 // `scraper_generate_rules` (commands/infrastructure/scraper.rs) first fetches
 // the page through the scraper's SSRF-safe client (engine/src/scraper.rs,

@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * A live cable tells the truth about whether it runs and when it last fired,
  * and its pause verb is a write that deletes nothing.

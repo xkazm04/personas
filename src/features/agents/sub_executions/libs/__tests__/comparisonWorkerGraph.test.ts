@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The comparison worker's bundle boundary, as a test.
  *

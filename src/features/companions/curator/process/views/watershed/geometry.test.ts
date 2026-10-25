@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { DevInstance } from '../../engine/devAdapter';
 import { devFailure } from '../../engine/devAdapter';

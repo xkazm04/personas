@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import { checkServerConfig, commandProblem, parsePort, SERVER_COMMAND_MAX } from '../serverConfig';

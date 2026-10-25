@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * TIER MATRIX — what each product tier actually shows, enumerated.
  *

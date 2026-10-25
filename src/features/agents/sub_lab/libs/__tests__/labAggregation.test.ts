@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';

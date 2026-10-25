@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The whisper model download and the three one-click sidecar installers run
 // their downloads INLINE and resolve only when the files are on disk. Each
 // download leg has its own reqwest `DOWNLOAD_TIMEOUT` (20 min), and the Kokoro /

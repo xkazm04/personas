@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { applyOrder, canDrag, dropIndex, dropPayload, meanWaitMs, nudgePayload, reEstimate, reorderPayload } from '../queueVerbs';
 

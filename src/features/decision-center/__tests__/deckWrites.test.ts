@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * deckWrites — the one mapping from a deck verdict to the real writes:
  * a chat reply goes through the channel's own door BEFORE the thread is marked

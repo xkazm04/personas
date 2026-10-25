@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import type { CellBuildStatus } from '@/lib/types/buildTypes';
 

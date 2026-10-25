@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The Breach card's head lines and mandate state (mandate-lanes WP5P):
  *  - `breachOutcomes` gives one line per numbered verdict the dock prints, in

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import type { CrossProjectProjectMetadata, RepoEvidence } from '@/api/devTools/devTools';
 import type { DevProject } from '@/lib/bindings/DevProject';

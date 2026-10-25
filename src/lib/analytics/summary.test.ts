@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { SECTIONS, TAB_DIMENSIONS } from './navCatalog';
 import { buildSessionSummary, sectionCountKey, tabCountKey } from './summary';

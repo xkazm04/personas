@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The `notification_prefs` blob had five preferences and no reader at the
  * doors where their events arrive: the healing toast hard-coded critical+high

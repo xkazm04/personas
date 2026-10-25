@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The list/event race. A `browser_webview_list` that was in flight when a
  * newer `browser-tabs` event (or a newer list) arrived must not paint over it.

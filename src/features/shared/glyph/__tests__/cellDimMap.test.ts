@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { CELL_KEY_TO_DIM, DIM_TO_CELL_KEY } from '../persona-sigil/cellDimMap';
 import { GLYPH_DIMENSIONS } from '../types';

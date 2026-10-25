@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import type { ActiveProcess } from '@/stores/slices/processActivitySlice';
 import { computeFleetPulse, layoutSlots, centerOutOrder } from './fleetStripModel';

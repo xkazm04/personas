@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Verdict routing. The property under test throughout: a decision either
  * DEFERS, or WRITES, or THROWS — it is never silently nothing.

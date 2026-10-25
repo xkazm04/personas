@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { buildSpine } from '../../engine/spine';
 import { devFailure, type DevInstance } from '../../engine/devAdapter';

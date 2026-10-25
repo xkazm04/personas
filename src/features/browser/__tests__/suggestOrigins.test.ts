@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The address bar's ranking, which is the whole of the suggestion feature that
  * can be wrong without anyone noticing: a popup that lists the right rows in

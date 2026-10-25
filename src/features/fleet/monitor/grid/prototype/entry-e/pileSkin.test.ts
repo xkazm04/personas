@@ -1,3 +1,4 @@
+// @vitest-environment node
 // pileSkin - the Activity board's lines speak the Board's four piles.
 //
 // A session is folded through the panel filter's own `sessionBucket`, so these

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { GlyphDimension, GlyphPresence } from '@/features/shared/glyph';

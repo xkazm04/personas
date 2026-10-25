@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The answer delta, both phases: what is known the moment an answer is given
  * (topic from the goal slot, kind, goal, channel), and what the reconcile pass

@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The System Check model (kit batch home-3). What is worth asserting here is the thing the owner
  * called out: status is drawn by MEANING, not by hue, and the six sections no longer carry a

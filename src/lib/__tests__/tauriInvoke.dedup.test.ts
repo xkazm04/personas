@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from "vitest";
 // Test-only: need the mocked raw `invoke` to assert round-trip counts;
 // production code must still go through invokeWithTimeout.

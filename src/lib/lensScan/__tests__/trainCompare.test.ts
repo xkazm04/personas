@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * PORTED from bp scripts/check-train-compare.ts @ 48171a1 (spark one-control, Stage 2, WP4b): the compare panel's
  * performance maths (the blueprint's port of bp src/lib/train/perf.ts) beside the verdict it sits next to

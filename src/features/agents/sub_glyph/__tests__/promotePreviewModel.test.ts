@@ -1,3 +1,4 @@
+// @vitest-environment node
 /** Promote preview view model: what the Glyph approval shows before the click.
  *
  *  Only a refusal disables Promote (promote would throw anyway); a slow or

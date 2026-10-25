@@ -1,3 +1,4 @@
+// @vitest-environment node
 // fleetGridModel — the pure half of the Activity board.
 //
 // The badge tests exist because the ORDER of `actionBadges` is not decoration:

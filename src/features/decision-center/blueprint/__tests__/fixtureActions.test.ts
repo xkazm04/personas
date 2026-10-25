@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The fixture source answers in the store's own shapes (WP4a): `decide` as DecideResult (decided[] and skipped[] with
  * the status a skipped row had), `triage` as TriageResult (with `note-required` and `in-release` reasons), `start` as

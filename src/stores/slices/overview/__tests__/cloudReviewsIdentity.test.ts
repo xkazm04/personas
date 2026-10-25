@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * WHAT A CLOUD POLL THAT FOUND NOTHING COSTS THE ACTIVITY BOARD.
  *

@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The `unpaced` verdict — the honesty rule that a KPI goal derivation cannot
 // even see must not be reported as "On track".
 //

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { lineEdgeClass } from './LineParts';

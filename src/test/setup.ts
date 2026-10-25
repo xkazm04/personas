@@ -16,26 +16,21 @@ vi.mock("@tauri-apps/api/event", () => ({
 // causes virtualized lists (e.g. TerminalBody) to render nothing in tests.
 // Pretend every element is 800x600 with full layout so the virtualizer reports
 // a non-empty viewport and renders all items present in its overscan window.
-Object.defineProperty(HTMLElement.prototype, "clientHeight", {
-  configurable: true,
-  get() { return 600; },
-});
-Object.defineProperty(HTMLElement.prototype, "clientWidth", {
-  configurable: true,
-  get() { return 800; },
-});
-Object.defineProperty(HTMLElement.prototype, "scrollHeight", {
-  configurable: true,
-  get() { return 600; },
-});
-Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
-  configurable: true,
-  get() { return 600; },
-});
-Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
-  configurable: true,
-  get() { return 800; },
-});
+//
+// Guarded: a pure-logic test opts out of jsdom with a first-line
+// `// @vitest-environment node` (jsdom setup was ~0.5 s per file, 2026-10-25),
+// and there is no HTMLElement to patch there.
+if (typeof HTMLElement !== "undefined") {
+  for (const [prop, value] of [
+    ["clientHeight", 600],
+    ["clientWidth", 800],
+    ["scrollHeight", 600],
+    ["offsetHeight", 600],
+    ["offsetWidth", 800],
+  ] as const) {
+    Object.defineProperty(HTMLElement.prototype, prop, { configurable: true, get: () => value });
+  }
+}
 
 if (!("ResizeObserver" in globalThis)) {
   class MockResizeObserver {

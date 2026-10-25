@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The pure diff core the comparison Web Worker runs.
  *

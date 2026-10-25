@@ -1,3 +1,4 @@
+// @vitest-environment node
 // An App Master's dispatched sessions land in its project's bay (polish P1, item 3).
 // The fixture is shaped like the live FireTV rows of 2026-10-16: the App Master
 // persona of project X, two CLI builders it dispatched through the fleet door,

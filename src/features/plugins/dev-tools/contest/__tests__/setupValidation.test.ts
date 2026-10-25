@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import { parseLocalDateTime, validateSetup, type SetupDraft } from '../model/setupValidation';

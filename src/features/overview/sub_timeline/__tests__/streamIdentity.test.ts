@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import { mergeTaggedRows, rowCallsign, rowToken } from '../libs/lensModel';

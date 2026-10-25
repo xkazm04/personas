@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The store's refresh semantics: coalesce onto the running fetch, but keep the
 // trailing edge, so a `contest-changed` that lands mid-fetch is never answered
 // with a read that began before it.

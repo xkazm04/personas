@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Fallback-chain test for resolveErrorTranslated — the translated front-end of
  * the error registry. Pins the four-link chain:

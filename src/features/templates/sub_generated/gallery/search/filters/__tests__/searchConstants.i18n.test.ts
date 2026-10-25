@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import en from '@/i18n/locales/en.json';
 import cs from '@/i18n/locales/cs.json';

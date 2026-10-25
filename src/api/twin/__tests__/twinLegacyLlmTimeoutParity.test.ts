@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The twin commands that run one `TwinCall::legacy` CLI call share
 // LEGACY_TIMEOUT (src-tauri/src/engine/twin_setup/llm.rs). compile_wiki,
 // audit_wiki and reflect persist their result, so a wrapper that gives up at

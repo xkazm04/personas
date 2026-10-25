@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Closing the OCR drawer mid-run cancels the backend call, which rejects with
 // AppError::Internal("OCR cancelled"). invokeWithTimeout hands that over as the
 // serialized AppError OBJECT, so the drawer's old `String(e)` check never saw

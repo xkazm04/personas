@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { resolveInPool, summarizeBulkOutcome, BULK_RESOLVE_CONCURRENCY } from '../bulkResolve';
 import { isDecisionConflict } from '@/lib/decisions/rowWrites';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The share prompt is a CONTRACT with whatever agent runs it, and the two
 // destinations have different contracts. These assertions exist because the
 // failure mode is silent: a prompt that forgets "do not push" still produces a

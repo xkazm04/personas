@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The books have to balance. A ledger that prints a total nobody can check is
 // a ledger nobody should believe.
 import { describe, expect, it } from 'vitest';

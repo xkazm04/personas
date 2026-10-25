@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import { announce, type AnnounceView, type AnnounceWords } from '../announce';

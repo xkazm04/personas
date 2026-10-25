@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The wizard's step-precondition errors reach `state.error` through sessionReducer and were
  * English in every locale. The catalog is mocked with each leaf replaced by its own key path,

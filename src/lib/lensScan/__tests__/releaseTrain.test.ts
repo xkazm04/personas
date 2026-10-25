@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * PORTED from bp scripts/check-release-train.ts @ 48171a1 (spark one-control, Stage 2, WP4b): the release train's pure
  * helpers (compare.ts, release.ts) on hand-built snapshots:

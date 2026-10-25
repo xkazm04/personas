@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Several power moves deep-link into a surface the sidebar hides — `dead-letter`
  * is devOnly, `executions` is minTier: TEAM, and two moves land in the

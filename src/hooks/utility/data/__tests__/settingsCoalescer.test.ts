@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from "vitest";
 // Test needs per-call argument inspection, which the tauriMock helpers do not
 // expose. Same escape hatch as `src/api/__tests__/settings.test.ts`.

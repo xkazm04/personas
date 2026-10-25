@@ -1,3 +1,4 @@
+// @vitest-environment node
 /** composeManifestSeed — codex state → MANIFEST SEED PROSE mapping contract.
  *
  *  What these tests pin, after the agent-manifest rebase turned

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 
 const persona = { id: 'persona-1', design_context: 'start' };

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { timeGroupKey, timeGroupLabels, buildGroupRows, type GroupSpec } from '../grouping';
 

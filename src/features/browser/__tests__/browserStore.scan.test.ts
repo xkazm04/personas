@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Scan freshness. `browser-scan` re-reads the site list immediately. The 15s
  * poll is only the backstop for an emit that never arrived.

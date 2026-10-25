@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // Test-only: the mocked raw `invoke` stands in for a slow backend.
 // eslint-disable-next-line no-restricted-imports

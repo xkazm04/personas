@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * `GateType` has always included `'test'` and `PERSONAS_GATES` never used it,
  * so `requiredFailures` could not count a red suite: an area with clean tsc and

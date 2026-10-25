@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { DispatchPreviewRow } from '@/lib/bindings/DispatchPreviewRow';
 import type { DispatchPreviewView } from '@/lib/bindings/DispatchPreviewView';

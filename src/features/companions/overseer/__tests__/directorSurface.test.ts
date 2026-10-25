@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * A failed portfolio read must be visually distinct from an empty scope.
  *

@@ -1,3 +1,4 @@
+// @vitest-environment node
 // `twin_draft_for_page` (src-tauri/src/commands/infrastructure/twin.rs) runs
 // one CLI call under `TwinCall::legacy`, whose hard deadline is LEGACY_TIMEOUT
 // (src-tauri/src/engine/twin_setup/llm.rs). A wrapper that gives up first puts

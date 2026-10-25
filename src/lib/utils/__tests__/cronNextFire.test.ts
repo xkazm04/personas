@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { nextFireAt, parseCron } from '../cronNextFire';
 import { CRON_PRESETS } from '../cronPresets';
