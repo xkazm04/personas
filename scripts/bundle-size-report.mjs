@@ -6,18 +6,18 @@
  * top 10 largest chunks with sizes (and deltas vs baseline if available),
  * plus total JS size and budget pass/fail status.
  *
- * Usage:  node scripts/bundle-size-report.mjs [--save-baseline]
+ * Usage:  node scripts/bundle-size-report.mjs
  *
- * Options:
- *   --save-baseline   Write current sizes to dist/bundle-sizes.json
- *
- * Baseline:  If scripts/bundle-baseline.json exists, the report shows
- *            size deltas compared to that baseline.
+ * Baseline:  If scripts/bundle-baseline.json exists, the report shows the
+ *            total's delta against it. Per-chunk deltas show only where this
+ *            report's file-name keys match the baseline's source-module keys
+ *            (schema 2, written by `check-bundle-budget.mjs --update`); the
+ *            gate itself is check-bundle-budget.mjs. `--save-baseline` is retired.
  *
  * Output:    Markdown report to stdout.
  */
 
-import { readdirSync, statSync, readFileSync, writeFileSync } from "fs";
+import { readdirSync, statSync, readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { MAX_CHUNK_KB, MAX_TOTAL_KB } from "./lib/bundle-budget.mjs";
@@ -92,29 +92,17 @@ try {
   // No baseline — deltas will be omitted
 }
 
-// ── Build chunk map for JSON output ──────────────────────────────────
-
-const chunkMap = {};
-for (const c of chunks) {
-  chunkMap[c.key] = Math.round(c.sizeKB * 10) / 10;
-}
 
 // ── Save baseline if requested ───────────────────────────────────────
 
 if (saveBaseline) {
-  const output = {
-    timestamp: new Date().toISOString(),
-    totalKB: Math.round(totalKB),
-    chunks: chunkMap,
-  };
-  // Write to the SAME file the delta comparison reads from. This previously
-  // wrote dist/bundle-sizes.json while deltas read scripts/bundle-baseline.json,
-  // so --save-baseline never actually refreshed the baseline. scripts/ always
-  // exists (no mkdir needed). Refreshing the baseline is now a deliberate
-  // `--save-baseline` + commit action, not a per-PR CI side effect.
-  writeFileSync(BASELINE_PATH, JSON.stringify(output, null, 2) + "\n");
-  // stderr so stdout stays clean for the markdown report
-  process.stderr.write(`Saved bundle baseline to ${BASELINE_PATH}\n`);
+  // Retired 2026-10-25: the baseline is schema 2 now (chunks keyed by source
+  // module, plus startupKB), which only check-bundle-budget.mjs computes. This
+  // writer produced the old name#N keys and would have silently replaced it.
+  process.stderr.write(
+    "--save-baseline is retired: run `node scripts/check-bundle-budget.mjs --update` (it writes the schema-2 baseline).\n",
+  );
+  process.exit(1);
 }
 
 // ── Generate markdown report ─────────────────────────────────────────

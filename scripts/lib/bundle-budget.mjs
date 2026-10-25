@@ -71,13 +71,62 @@ export function buildChunkMap(entries) {
 }
 
 /**
- * Ratchet comparison: `current` ({ totalKB, chunks: {key: sizeKB} }) against
+ * Key a chunk from the build's chunk graph (scripts/build/bundle-graph-vite-plugin.mjs).
+ *
+ * A chunk that is the facade of a module - an `import()` target, or the HTML
+ * entry - is keyed by that module's repo path (`src/features/teams/FactoryPage.tsx`,
+ * `src/i18n/section-locales/en/home.json`): stable across builds, unique, and
+ * the thing a reviewer can open. A shared chunk with no facade is keyed
+ * `shared:<name>`; name collisions among those fall back to `#2`, `#3` in size
+ * order, as every key did before 2026-10-25.
+ */
+export function chunkKeyFromGraph(chunk) {
+  return chunk.facade ?? `shared:${chunk.name}`;
+}
+
+/**
+ * `{ key -> sizeKB }` for the chunks in a bundle graph. `sizeKBOf(file)` returns
+ * a chunk file's size in KB (or null when the file is missing from dist/).
+ */
+export function buildGraphChunkMap(graph, sizeKBOf) {
+  const rows = graph.chunks.map((c) => ({ key: chunkKeyFromGraph(c), sizeKB: sizeKBOf(c.file) }));
+  rows.sort((a, b) => b.sizeKB - a.sizeKB);
+  const counts = {};
+  const map = {};
+  for (const r of rows) {
+    const n = (counts[r.key] = (counts[r.key] || 0) + 1);
+    map[n === 1 ? r.key : `${r.key}#${n}`] = Math.round(r.sizeKB * 10) / 10;
+  }
+  return map;
+}
+
+/**
+ * The files the app loads before first render: every entry chunk and the
+ * transitive closure of its STATIC imports. Lazy (`import()`) chunks are not
+ * startup, including the always-mounted lazy islands App.tsx fetches right
+ * after mount - those are their own chunks and keep their own ratchet.
+ */
+export function startupFiles(graph) {
+  const byFile = new Map(graph.chunks.map((c) => [c.file, c]));
+  const seen = new Set();
+  const stack = graph.chunks.filter((c) => c.isEntry).map((c) => c.file);
+  while (stack.length) {
+    const file = stack.pop();
+    if (seen.has(file)) continue;
+    seen.add(file);
+    for (const dep of byFile.get(file)?.imports ?? []) stack.push(dep);
+  }
+  return [...seen].sort();
+}
+
+/**
+ * Ratchet comparison: `current` ({ totalKB, startupKB?, chunks: {key: sizeKB} }) against
  * a recorded `baseline` of the same shape (or `null`/`undefined` if none
  * exists yet).
  *
  * Returns:
  *   violations   — anything present here means the gate should FAIL:
- *                    { kind: 'total', currentKB, baselineKB, diffKB, toleranceKB }
+ *                    { kind: 'total'|'startup', currentKB, baselineKB, diffKB, toleranceKB }
  *                    { kind: 'chunk', key, currentKB, baselineKB, diffKB, toleranceKB }
  *                    { kind: 'new-chunk', key, currentKB, maxChunkKB }
  *   staleNotices — a DROP beyond tolerance, or a chunk that vanished. Never
@@ -125,6 +174,19 @@ export function evaluateBudget(current, baseline, opts = {}) {
       diffKB: current.totalKB - maxTotalKB,
       toleranceKB: 0,
     });
+  }
+
+  // ── Startup (entry + static imports) ───────────────────────────────
+  // Ratcheted like the total, once both sides carry it (baselines written
+  // before 2026-10-25 do not).
+  if (typeof current.startupKB === "number" && typeof baseline?.startupKB === "number") {
+    const tol = tolerance(baseline.startupKB);
+    const diff = current.startupKB - baseline.startupKB;
+    if (diff > tol) {
+      violations.push({ kind: "startup", currentKB: current.startupKB, baselineKB: baseline.startupKB, diffKB: diff, toleranceKB: tol });
+    } else if (diff < -tol) {
+      staleNotices.push({ kind: "startup", currentKB: current.startupKB, baselineKB: baseline.startupKB, diffKB: diff });
+    }
   }
 
   // ── Per-chunk ──────────────────────────────────────────────────────

@@ -2,11 +2,15 @@
 /**
  * check-bundle-budget.mjs — Ratchet-enforce chunk sizes on the Vite build output.
  *
- * Reads all .js files in dist/assets/, normalizes each to a logical chunk
- * name (stripping the Vite content-hash), and compares the result against
- * the last honestly-measured build recorded in scripts/bundle-baseline.json.
- * Fails only when the total, or an individual chunk, GROWS beyond a small
- * tolerance (see scripts/lib/bundle-budget.mjs). A chunk that shrinks, or
+ * Reads all .js files in dist/assets/ and the chunk graph the build wrote
+ * (node_modules/.cache/personas/bundle-graph.json, see
+ * scripts/build/bundle-graph-vite-plugin.mjs). Each chunk is keyed by the
+ * source module it loads (a lazy route, a locale section, the HTML entry), or
+ * `shared:<name>` when it has none; "startup JS" is the entry plus its static
+ * imports. The result is compared against the last honestly-measured build
+ * recorded in scripts/bundle-baseline.json. Fails only when the total, the
+ * startup JS, or an individual chunk GROWS beyond a small tolerance (see
+ * scripts/lib/bundle-budget.mjs). A chunk that shrinks, or
  * disappears, never fails the gate — it prints a non-fatal "baseline stale"
  * notice instead, because a drop is either a real win (re-baseline it) or a
  * broken measurement, never a regression.
@@ -37,14 +41,18 @@ import {
   MAX_CHUNK_KB as DEFAULT_MAX_CHUNK_KB,
   MAX_TOTAL_KB as DEFAULT_MAX_TOTAL_KB,
   buildChunkMap,
+  buildGraphChunkMap,
   evaluateBudget,
+  startupFiles,
 } from "./lib/bundle-budget.mjs";
+import { BUNDLE_GRAPH_PATH } from "./build/bundle-graph-vite-plugin.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const DIST_DIR = join(ROOT, "dist");
 const ASSETS_DIR = join(DIST_DIR, "assets");
 const BASELINE_PATH = join(__dirname, "bundle-baseline.json");
+const GRAPH_PATH = join(ROOT, BUNDLE_GRAPH_PATH);
 
 const args = process.argv.slice(2);
 
@@ -109,13 +117,39 @@ function readCurrentBuild() {
     console.error("dist/assets/ holds no .js files — the build emitted nothing.");
     process.exit(1);
   }
-  const entries = files.map((f) => ({
-    file: f,
-    sizeKB: statSync(join(ASSETS_DIR, f)).size / 1024,
-  }));
-  const chunks = buildChunkMap(entries);
-  const totalKB = Object.values(chunks).reduce((sum, kb) => sum + kb, 0);
-  return { totalKB: Math.round(totalKB * 10) / 10, chunks, fileCount: entries.length };
+  const sizeKB = new Map(files.map((f) => [f, statSync(join(ASSETS_DIR, f)).size / 1024]));
+  const totalKB = [...sizeKB.values()].reduce((sum, kb) => sum + kb, 0);
+  const round = (kb) => Math.round(kb * 10) / 10;
+
+  // The chunk graph the build wrote (scripts/build/bundle-graph-vite-plugin.mjs)
+  // keys chunks by the source module they load and says what is startup. A JS
+  // file it does not list is a separate bundle (a Web Worker) and keeps the
+  // old file-name key. A file it lists that dist/ lacks means the graph is
+  // from another build: refuse, rather than measure two builds as one.
+  const graph = existsSync(GRAPH_PATH) ? JSON.parse(readFileSync(GRAPH_PATH, "utf-8")) : null;
+  if (!graph) {
+    console.error(`${relative(ROOT, GRAPH_PATH)} not found — run \`npm run build\` (the bundle-graph plugin writes it).`);
+    process.exit(1);
+  }
+  const missing = graph.chunks.filter((c) => !sizeKB.has(c.file));
+  if (missing.length > 0) {
+    console.error(
+      `bundle graph is stale: ${missing.length} chunk(s) it lists are not in dist/assets (e.g. ${missing[0].file}). ` +
+        "Rebuild with `npm run build` so the graph and dist/ come from the same build.",
+    );
+    process.exit(1);
+  }
+  const inGraph = new Set(graph.chunks.map((c) => c.file));
+  const chunks = {
+    ...buildGraphChunkMap(graph, (f) => sizeKB.get(f)),
+    ...Object.fromEntries(
+      Object.entries(buildChunkMap(files.filter((f) => !inGraph.has(f)).map((f) => ({ file: f, sizeKB: sizeKB.get(f) }))))
+        .map(([k, v]) => [`file:${k}`, v]),
+    ),
+  };
+  const startup = startupFiles(graph);
+  const startupKB = startup.reduce((sum, f) => sum + sizeKB.get(f), 0);
+  return { totalKB: round(totalKB), startupKB: round(startupKB), startupFiles: startup.length, chunks, fileCount: files.length };
 }
 
 function loadBaseline() {
@@ -128,8 +162,11 @@ function loadBaseline() {
 
 function writeBaseline(current) {
   const output = {
+    // schema 2 (2026-10-25): chunks keyed by source module (see chunkKeyFromGraph), plus startupKB.
+    schema: 2,
     timestamp: new Date().toISOString(),
     totalKB: Math.round(current.totalKB),
+    startupKB: Math.round(current.startupKB),
     chunks: current.chunks,
   };
   writeFileSync(BASELINE_PATH, JSON.stringify(output, null, 2) + "\n");
@@ -162,6 +199,7 @@ function printReport(current, baseline, result) {
   }
   console.log("─".repeat(70));
   console.log(`  Total JS: ${current.totalKB.toFixed(1)} KB across ${current.fileCount} chunks`);
+  console.log(`  Startup JS (entry + static imports): ${current.startupKB.toFixed(1)} KB across ${current.startupFiles} chunks`);
 
   if (result.violations.length > 0) {
     console.log(`\n  FAIL: ${result.violations.length} rise(s) beyond tolerance:`);
@@ -169,6 +207,8 @@ function printReport(current, baseline, result) {
       if (v.kind === "total") {
         const baselineStr = v.baselineKB === null ? `no baseline, cap ${MAX_TOTAL_KB} KB` : `baseline ${v.baselineKB} KB`;
         console.log(`    - total: ${v.currentKB.toFixed(1)} KB (${baselineStr}, +${v.diffKB.toFixed(1)} KB over)`);
+      } else if (v.kind === "startup") {
+        console.log(`    - startup: ${v.currentKB.toFixed(1)} KB (baseline ${v.baselineKB} KB, +${v.diffKB.toFixed(1)} KB, tolerance ${v.toleranceKB.toFixed(1)} KB)`);
       } else if (v.kind === "chunk") {
         console.log(
           `    - ${v.key}: ${v.currentKB.toFixed(1)} KB (baseline ${v.baselineKB} KB, +${v.diffKB.toFixed(1)} KB, tolerance ${v.toleranceKB.toFixed(1)} KB)`
@@ -186,8 +226,8 @@ function printReport(current, baseline, result) {
     for (const n of result.staleNotices) {
       if (n.kind === "removed-chunk") {
         console.log(`    - ${n.key}: gone from the build (was ${n.baselineKB} KB)`);
-      } else if (n.kind === "total") {
-        console.log(`    - total: ${n.currentKB.toFixed(1)} KB (baseline ${n.baselineKB} KB, ${n.diffKB.toFixed(1)} KB)`);
+      } else if (n.kind === "total" || n.kind === "startup") {
+        console.log(`    - ${n.kind}: ${n.currentKB.toFixed(1)} KB (baseline ${n.baselineKB} KB, ${n.diffKB.toFixed(1)} KB)`);
       } else {
         console.log(`    - ${n.key}: ${n.currentKB.toFixed(1)} KB (baseline ${n.baselineKB} KB, ${n.diffKB.toFixed(1)} KB)`);
       }
@@ -253,7 +293,35 @@ function runSelfTest() {
   const newChunkResult = evaluateBudget(withNewChunk, baseline, { maxChunkKB: 850 });
   const caughtNewOversizedChunk = newChunkResult.violations.some((v) => v.kind === "new-chunk" && v.key === "quux");
 
+  // Startup is ratcheted like the total: a +40 KB rise on a 300 KB startup fails.
+  const startupResult = evaluateBudget(
+    { totalKB: 1000, startupKB: 340, chunks: baseline.chunks },
+    { ...baseline, startupKB: 300 },
+  );
+  const caughtStartupRise = startupResult.violations.some((v) => v.kind === "startup");
+
+  // Graph keys: a facade chunk is keyed by its source module; two facade-less
+  // chunks sharing a name are told apart; startup follows static imports only.
+  const graph = {
+    chunks: [
+      { file: "index-a.js", name: "index", facade: "index.html", isEntry: true, imports: ["shared-b.js"] },
+      { file: "shared-b.js", name: "util", facade: null, isEntry: false, imports: [] },
+      { file: "shared-c.js", name: "util", facade: null, isEntry: false, imports: [] },
+      { file: "page-d.js", name: "index", facade: "src/pages/Page.tsx", isEntry: false, imports: ["shared-c.js"] },
+    ],
+  };
+  const sizes = { "index-a.js": 100, "shared-b.js": 50, "shared-c.js": 20, "page-d.js": 70 };
+  const graphMap = buildGraphChunkMap(graph, (f) => sizes[f]);
+  const keyedBySource = graphMap["src/pages/Page.tsx"] === 70 && graphMap["index.html"] === 100;
+  const sharedDisambiguated = graphMap["shared:util"] === 50 && graphMap["shared:util#2"] === 20;
+  const startup = startupFiles(graph);
+  const startupIsStaticClosure = startup.join(",") === "index-a.js,shared-b.js";
+
   const checks = [
+    ["rise beyond tolerance on startup JS is caught", caughtStartupRise],
+    ["a facade chunk is keyed by its source module", keyedBySource],
+    ["facade-less chunks with one name are disambiguated", sharedDisambiguated],
+    ["startup is the entry's static-import closure, not lazy chunks", startupIsStaticClosure],
     ["rise beyond tolerance on an existing chunk is caught", caughtChunkRise],
     ["rise beyond tolerance on the total is caught", caughtTotalRise],
     ["a small in-tolerance rise on a tiny chunk is NOT flagged", !falsePositiveOnBaz],
