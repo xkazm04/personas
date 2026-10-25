@@ -12,22 +12,36 @@
  * a resize rather than a snap between two layouts.
  */
 
+import { Suspense, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
+import { lazyRetry } from '@/lib/lazyRetry';
+import { idlePrefetch } from '@/lib/idlePrefetch';
+import { GhostRows } from '@/features/shared/components/kit';
 import { Collapse } from '@/features/shared/components/display/Collapse';
 import { useSystemStore } from '@/stores/systemStore';
 import { AthenaAvatar } from '../AthenaAvatar';
 import { DevOpLedger } from '../DevOpLedger';
 import { useAthenaStore } from '../athenaStore';
-import { AthenaChatBody } from './AthenaChatBody';
-import { AthenaChatHeader } from './AthenaChatHeader';
 import { PANEL_HEIGHT_PX, PANEL_MAX_HEIGHT } from './athenaChatGeometry';
 import { useAthenaChatEngine } from './athenaChatEngine';
 import { useChatMount } from './athenaChatMount';
 import { usePanelMotion } from './athenaChatMorph';
 import { useAthenaChatShellEffects } from './athenaChatShell';
 import { ChatVariantPanel, ChatVariantTabs, useChatVariantStore } from './next/ChatVariantTabs';
-import { ChatVariantHost } from './next/ChatVariantHost';
+
+// What the open window renders is lazy; what must run while it is closed (the
+// engine, the shell effects) stays here. This panel is always mounted, so
+// every byte statically imported below is paid at startup for a chat most
+// launches never open: until 2026-10-25 that was both variants, ~265 KB.
+// The chunks are warmed one idle slice after mount (below), so a real first
+// open finds them loaded; the ghosts cover only an open faster than that.
+const loadVariantHost = () => import('./next/ChatVariantHost');
+const loadHeader = () => import('./AthenaChatHeader');
+const loadBody = () => import('./AthenaChatBody');
+const ChatVariantHost = lazyRetry(() => loadVariantHost().then((m) => ({ default: m.ChatVariantHost })));
+const AthenaChatHeader = lazyRetry(() => loadHeader().then((m) => ({ default: m.AthenaChatHeader })));
+const AthenaChatBody = lazyRetry(() => loadBody().then((m) => ({ default: m.AthenaChatBody })));
 
 export default function AthenaChatPanel() {
   const { t } = useTranslation();
@@ -59,13 +73,16 @@ export default function AthenaChatPanel() {
   const mount = useChatMount(isOpen, motionProps.settleMs);
   // TODO(prototype, 2026-09-22): consolidate the Athena chat switcher.
   const variant = useChatVariantStore((s) => s.variant);
+  useEffect(() => idlePrefetch([loadVariantHost, loadHeader, loadBody]), []);
 
   return (
     <>
     {isOpen && <ChatVariantTabs lifted={fleetGridOpen} />}
     {isOpen && variant !== 'current' && (
       <ChatVariantPanel>
-        <ChatVariantHost variant={variant} engine={engine} lifted={fleetGridOpen} />
+        <Suspense fallback={null}>
+          <ChatVariantHost variant={variant} engine={engine} lifted={fleetGridOpen} />
+        </Suspense>
       </ChatVariantPanel>
     )}
     <AnimatePresence
@@ -108,19 +125,23 @@ export default function AthenaChatPanel() {
               className="absolute inset-0 -z-10 opacity-[0.05]"
             />
           )}
-          <AthenaChatHeader />
+          <Suspense fallback={<GhostRows count={1} size="s" />}>
+            <AthenaChatHeader />
+          </Suspense>
           {/* The dev row (the op ledger, which also carries the save-log key)
               animates open rather than blinking in, and `Collapse` unmounts on
               close so nothing keeps polling behind a shut row. */}
           <Collapse open={devModeAvailable && devMode} unmountWhenClosed className="shrink-0">
             <DevOpLedger />
           </Collapse>
-          <AthenaChatBody
-            compact={compact}
-            engine={engine}
-            ready={mount.ready}
-            chromeReady={mount.chromeReady}
-          />
+          <Suspense fallback={<GhostRows count={4} />}>
+            <AthenaChatBody
+              compact={compact}
+              engine={engine}
+              ready={mount.ready}
+              chromeReady={mount.chromeReady}
+            />
+          </Suspense>
         </motion.div>
       )}
     </AnimatePresence>
