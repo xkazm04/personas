@@ -22,6 +22,10 @@ import { overlappingPairs } from './paths.mjs';
 import { enqueue, loadQueue, markQueue, positionOf, queuedEntry, withQueueLock } from './queue.mjs';
 import { promote } from './promote.mjs';
 import { laneFor, runsHoldingRepos } from './repos.mjs';
+import {
+  CODEX, engineOf, limitEngine, loadMain, recordCodexThread, appendThread, spawnCodexWorker, renderCodexAddendum,
+  codexLimitSurface, detectCodexLimit, codexLimitSnippet, parseCodexStream,
+} from './codex.mjs';
 
 // ---------------------------------------------------------------- small helpers
 
@@ -124,6 +128,15 @@ export function finishedClean(streamText) {
 export function markLimitFromRun(run) {
   const { stream, stderr } = readRunOutput(run);
   if (finishedClean(stream)) return null;
+  if (run.engine === CODEX.kind) {
+    // a Codex limit binds the Codex plan, not the Claude subscription: the mark names its engine, and
+    // only a dispatch on that engine refuses on it. No reset time is invented when Codex gives none.
+    const surface = codexLimitSurface(stream, stderr);
+    if (!detectCodexLimit(surface)) return null;
+    const current = readLimit();
+    if (current && current.runId === run.runId) return current;
+    return setLimit(`codex worker ${shortId(run.runId)} (${run.slug}) hit a usage or rate limit: ${codexLimitSnippet(surface)}`, null, { runId: run.runId, source: 'worker', engine: CODEX.kind });
+  }
   const surface = limitSurface(stream, stderr);
   if (!detectLimit(surface)) return null;
   const current = readLimit();
@@ -267,6 +280,8 @@ export function spawnWorker(run, promptText) {
   if (!run.worktree || !fs.existsSync(run.worktree)) throw new Error(`run ${shortId(run.runId)} has no worktree to run in`);
   const dir = runDir(run.slug, run.runId);
   fs.mkdirSync(dir, { recursive: true });
+  // a codex-engine builder (lib/codex.mjs): the Codex CLI, forked from the project's main thread
+  if (run.engine === CODEX.kind) return spawnCodexWorker(run, promptText, workerEnv(run.slug, run));
   const sessionId = run.sessionId || mintId();
   const { bin } = resolveClaudeBin();
   const env = builderEnv(bin, run.slug, run);
@@ -366,8 +381,10 @@ function dispatchOrQueue(args) {
 export function dispatchCore({ flags = {} } = {}) {
   let run = requireRun(flags.run);
 
+  // a codex-engine project's builders run on Codex; its council reviews stay on Claude
+  const engine = isReviewRun(run) ? null : engineOf(loadBrief(run.slug));
   const limit = readLimit();
-  if (limit) throw new Refusal('usage limit', { resetsAt: limit.resetsAt ?? null, reason: limit.reason });
+  if (limit && limitEngine(limit) === (engine ? CODEX.kind : 'claude')) throw new Refusal('usage limit', { resetsAt: limit.resetsAt ?? null, reason: limit.reason, ...(limit.engine ? { engine: limit.engine } : {}) });
   if (run.state === 'running') return run;
   if (run.state !== 'planned') throw new Refusal('run not planned', { runId: run.runId, state: run.state });
   const mine = listRuns(run.slug, { states: ['running'] }).filter((r) => r.runId !== run.runId);
@@ -406,6 +423,11 @@ export function dispatchCore({ flags = {} } = {}) {
   const mem = memoryState({ runningBuilders: all.length });
   if (!mem.dispatchOk) throw new Refusal('memory', { freeGb: mem.freeGb, needGb: mem.dispatchNeedGb, hint: 'a dispatch needs FREE memory (more with builders already running); `status --text` names who is using it' });
 
+  const main = engine ? loadMain(run.slug) : null;
+  if (engine && !main?.mainThreadId) {
+    throw new Refusal('codex main thread missing', { runId: run.runId, slug: run.slug, hint: `start it once: appmaster.mjs codex init --project ${run.slug}` });
+  }
+
   const brief = loadBrief(run.slug) || {};
   const wt = createWorktree(run, brief);
   // the worktree is an effect: record it on the still-planned run before anything else can fail
@@ -418,11 +440,26 @@ export function dispatchCore({ flags = {} } = {}) {
     run = updateRun(run, { councilSeeded: seed.present, councilSeed: { copied: seed.copied, stateCopied: seed.stateCopied, expectedRound: seed.expectedRound } });
     prompt = renderReviewerPrompt(run, brief, seed);
   } else {
+    if (engine) {
+      run = updateRun(run, {
+        engine: CODEX.kind, model: engine.model, effort: engine.effort, codexParent: main.mainThreadId, codexMode: CODEX.mode,
+        ...(run.engine === CODEX.kind ? {} : { requestedModel: run.model }),
+      });
+    }
     prompt = renderBuilderPrompt(run, brief, resolveRunGates(run, brief));
+    if (engine) prompt += renderCodexAddendum(run);
   }
   fs.writeFileSync(runFile(run, 'brief.md'), prompt);
-  const { pid, sessionId } = spawnWorker(run, prompt);
-  return updateRun(run, { state: 'running', pid, sessionId, startedAt: nowIso() });
+  const spawned = spawnWorker(run, prompt);
+  const startedAt = nowIso();
+  run = updateRun(run, {
+    state: 'running', pid: spawned.pid, sessionId: spawned.sessionId, startedAt,
+    ...(engine ? { codexMode: spawned.codexMode, ...(spawned.codexThreadId ? { codexThreadId: spawned.codexThreadId } : {}) } : {}),
+  });
+  if (engine && spawned.codexThreadId) {
+    appendThread(run.slug, { runId: run.runId, threadId: spawned.codexThreadId, parent: run.codexParent ?? null, mode: spawned.codexMode, startedAt });
+  }
+  return run;
 }
 
 // ---------------------------------------------------------------- parse / watch
@@ -448,6 +485,9 @@ export function parseResult(streamText) {
       };
     }
   }
+  // a Codex stream has no `result` line: its outcome is the last turn.completed / turn.failed
+  const cx = parseCodexStream(streamText);
+  if (cx.ended) return { result: cx.lastMessage, isError: cx.ended === 'failed', costUsd: null, turns: cx.turnsCompleted, engine: CODEX.kind };
   return null;
 }
 
@@ -455,6 +495,7 @@ const minutesSince = (ms) => +((Date.now() - ms) / 60000).toFixed(1);
 
 /** One watch row for a run; moves running -> exited when its pid is gone. Never kills. */
 export function watchRun(run) {
+  run = recordCodexThread(run);   // a codex build's thread id, once stream.jsonl names it
   const alive = pidAlive(run.pid);
   let streamMtime = null;
   try { streamMtime = fs.statSync(runFile(run, 'stream.jsonl')).mtimeMs; } catch { /* no output yet */ }

@@ -17,6 +17,7 @@ import { briefCharters, resolveManaged, openDb, q, useCasesOf, councilRunsOf, ux
 import { brakes } from './brakes.mjs';
 import { queueTable } from './queue.mjs';
 import { repoKeys, resolveRepo, targetRootKey } from './repos.mjs';
+import { engineOf, limitEngine } from './codex.mjs';
 
 const STARTED_STATES = LIVE_RUN_STATES.filter((s) => s !== 'planned');
 const TOP_KEYS =['wakeId', 'dispatch', 'defer', 'asks', 'ideaVerdicts', 'say', 'note', 'nextWakeMinutes'];
@@ -421,11 +422,16 @@ export async function cmdDecide({ flags = {} } = {}) {
   // (1) identity before effect: one planned run per dispatch. A re-submission after a crash
   // finds the run this wake already minted for the charter instead of minting a second one.
   const warnings = [];
+  const engine = engineOf(brief);
   const runs = decision.dispatch.map((x, i) => {
     const found = prior.find((r) => r.charterSlug === x.charterSlug);
     if (found) return found;
-    const chosen = chooseBuilderModel(brief, x.charterSlug, x.model ?? null);
-    if (chosen.overridden) warnings.push(`dispatch[${i}].model ${x.model} ignored: the brief pins ${chosen.model} for ${x.charterSlug}`);
+    let chosen = chooseBuilderModel(brief, x.charterSlug, x.model ?? null);
+    // a codex-engine project's BUILDERS run on Codex whatever the master chose; its reviews stay on Claude
+    if (engine && !REVIEW_CHARTERS[x.charterSlug]) {
+      if (x.model) warnings.push(`dispatch[${i}].model ${x.model} ignored: this project's builders run on Codex (${engine.model}, effort ${engine.effort})`);
+      chosen = { model: engine.model, source: 'engine' };
+    } else if (chosen.overridden) warnings.push(`dispatch[${i}].model ${x.model} ignored: the brief pins ${chosen.model} for ${x.charterSlug}`);
     return newRun(project, {
       wakeId: wake.wakeId, charterSlug: x.charterSlug, reason: x.reason, brief: x.brief,
       ideaIds: x.ideaIds, model: chosen.model, modelSource: chosen.source, paths: Array.isArray(x.paths) ? x.paths : [],
@@ -458,7 +464,7 @@ export async function cmdDecide({ flags = {} } = {}) {
   const result = { wakeId: wake.wakeId, runIds: runs.map((r) => r.runId), outbox, asks: askIds, nextWakeAt };
   const b = brakes(slug);
   if (runs.length && b.memory.stop) warnings.push(`memory ${b.memory.freeGb} GB free (a dispatch needs ${b.memory.dispatchNeedGb}): dispatch will refuse until it recovers`);
-  if (runs.length && b.limit.limited) warnings.push(`usage limit marked${b.limit.resetsAt ? ` until ${b.limit.resetsAt}` : ''}: dispatch will refuse`);
+  if (runs.length && b.limit.limited && limitEngine(b.limit) === (engine ? 'codex' : 'claude')) warnings.push(`usage limit marked${b.limit.resetsAt ? ` until ${b.limit.resetsAt}` : ''}: dispatch will refuse`);
   saveWake(slug, { wakeId: wake.wakeId, status: 'decided', decision, runIds: result.runIds, nextWakeAt, note: decision.note, decidedAt, result });
   return warnings.length ? { ...result, warnings } : result;
 }

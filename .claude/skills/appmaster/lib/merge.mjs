@@ -11,8 +11,9 @@ import { findCouncilRunDir, readCouncilResult, copyCouncilRun, reportPayload, bo
 import { loadBrief, updateRun, raiseAsk, queueOutbox, openAsks, updateAsk } from './store.mjs';
 import { readLimit } from './limits.mjs';
 import { requireRun, pidAlive, runFile, markLimitFromRun, awaitHolder, finishedClean, readRunOutput } from './worker.mjs';
-import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree, linkNodeModules } from './worktree.mjs';
+import { git, gitTry, revParse, isAncestor, removeWorktree, withBaseWorktree, linkNodeModules, nodeModulesDirs } from './worktree.mjs';
 import { acquireGateSlot } from './memory.mjs';
+import { recordCodexThread, lastMessageOf, commitCodexWork } from './codex.mjs';
 import { resolveRunGates, runGates, gatesVerdict, splitBoundaries, boundaryHits, failuresAreInherited, testFilesIn, narrowCommand, GATE_TIMEOUT_MS, runTestFocus, focusedTestCommand } from './gate.mjs';
 
 const lines = (s) => String(s || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
@@ -81,7 +82,11 @@ export function closeHeldAsks(run, sha, notes = null) {
   return closed;
 }
 
+/** A codex run with no result.json: the reason carries what Codex said last (its -o last-message.txt). */
+const withCodexNote = (reason, verdict) => (verdict?.codexLastMessage ? `${reason} (no result.json; codex last message: ${verdict.codexLastMessage})` : reason);
+
 function hold(run, reason, verdict) {
+  reason = withCodexNote(reason, verdict);
   const id8 = shortId(run.runId);
   const target = repoOf(run);
   const where = target.key === SELF_REPO ? run.slug : `${run.slug} (its ${target.key} repo, ${target.root})`;
@@ -367,7 +372,7 @@ export function cmdSettle(args = {}) {
 }
 
 function settleCore({ flags = {} } = {}, slot) {
-  let run = requireRun(flags.run);
+  let run = recordCodexThread(requireRun(flags.run));
   // `--retry` may reopen a run released for a usage limit that its worker outlived (it finished clean)
   const outlivedLimit = run.state === 'released' && /^usage limit/.test(run.heldReason || '') && finishedClean(readRunOutput(run).stream);
   if (SETTLED_STATES.includes(run.state) && !(flags.retry && outlivedLimit)) return run;
@@ -396,6 +401,16 @@ function settleCore({ flags = {} } = {}, slot) {
   const branchRef = `refs/heads/${run.branch}`;
   const verdict = { commits: [], files: [], gates: {}, boundaryHits: [], dirtyOverlap: [] };
   verdict.claim = readJson(runFile(run, 'result.json'), null);
+  // a Codex run without result.json is settled exactly like a Claude one without it; its last message rides along
+  if (run.engine === 'codex' && !verdict.claim) { const m = lastMessageOf(run); if (m) verdict.codexLastMessage = m; }
+  // a Codex builder cannot commit (its sandbox keeps .git read-only): its claimed work is committed here, on its branch
+  if (run.engine === 'codex') {
+    let junctions = [];
+    try { junctions = nodeModulesDirs(root).map((rel) => path.join(rel, 'node_modules')); } catch { /* none */ }
+    const hc = commitCodexWork(run, verdict.claim, { junctions });
+    if (hc?.error) return hold(run, `committing the codex build's work failed: ${hc.error}`, verdict);
+    if (hc) verdict.harnessCommit = hc;
+  }
 
   if (!run.branch || !gitTry(root, ['rev-parse', '--verify', '--quiet', branchRef]).ok) return hold(run, `branch ${run.branch} does not exist`, verdict);
 
@@ -408,7 +423,7 @@ function settleCore({ flags = {} } = {}, slot) {
     const left = run.worktree && fs.existsSync(run.worktree) ? worktreeDirty(run.worktree) : [];
     let cleanup = null;
     if (!left.length) { try { cleanup = removeWorktree(run); } catch (e) { cleanup = { error: e.message }; } }
-    const reason = left.length ? `builder produced no commits (uncommitted changes left in the worktree: ${left.slice(0, 10).join(', ')})` : 'builder produced no commits';
+    const reason = withCodexNote(left.length ? `builder produced no commits (uncommitted changes left in the worktree: ${left.slice(0, 10).join(', ')})` : 'builder produced no commits', verdict);
     return updateRun(run, { state: 'failed', heldReason: reason, verdict, cleanup, settledAt: nowIso() });
   }
   verdict.files = lines(git(root, ['diff', '--name-only', '--no-renames', `${run.baseSha}..${branchRef}`]));

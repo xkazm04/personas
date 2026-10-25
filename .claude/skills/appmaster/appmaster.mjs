@@ -21,6 +21,8 @@
 //   onboard  --project p --brief <brief.json> [--force]
 //   heartbeat [--project p] [--state running|idle|ended]   (no --project: every managed project)
 //   standup  show | arm --file <plan.json> | end   (while armed, only the plan's projects are woken)
+//   codex    init --project p [--force] [--root dir] | show --project p | say --run <runId> --file <msg.md>
+//            (a brief with engine.kind "codex": the main Codex thread, its build threads, a follow-up turn)
 //
 // After decide, dispatch, watch, settle, await, release, promote and queue succeed (and after an await refusal: its
 // wait may have moved the run to exited), the CLI tells the app the project's
@@ -53,6 +55,7 @@ export const COMMANDS = {
   onboard:  ['./lib/onboard.mjs', 'cmdOnboard'],    // WP1
   heartbeat: ['./lib/heartbeat.mjs', 'cmdHeartbeat'], // the state door
   standup:  ['./lib/standup.mjs', 'cmdStandup'],    // the arm list of an /athena --standup plan
+  codex:    ['./lib/codex.mjs', 'cmdCodex'],        // the Codex engine: init | show | say
 };
 
 /** Subcommands whose success changes what the app should show for a project. */

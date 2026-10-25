@@ -12,7 +12,7 @@ export function readLimitMark(now = Date.now()) {
   const m = readJson(limitPath(), null);
   if (!m || !m.limitedAt) return { limited: false, reason: null, resetsAt: null };
   if (m.resetsAt && Date.parse(m.resetsAt) <= now) return { limited: false, reason: m.reason ?? null, resetsAt: m.resetsAt, expired: true };
-  return { limited: true, reason: m.reason ?? null, resetsAt: m.resetsAt ?? null, limitedAt: m.limitedAt };
+  return { limited: true, reason: m.reason ?? null, resetsAt: m.resetsAt ?? null, limitedAt: m.limitedAt, ...(m.engine ? { engine: m.engine } : {}) };
 }
 
 /** Builders in state `running`, in one project and across every managed project. */

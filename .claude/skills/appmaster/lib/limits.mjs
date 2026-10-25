@@ -79,7 +79,9 @@ export function cmdLimit({ _ = [], flags = {} } = {}) {
   if (sub === 'set') {
     if (!flags.reason || flags.reason === true) throw new Error('limit set needs --reason <text>');
     const resets = flags.resets && flags.resets !== true ? flags.resets : null;
-    return view(setLimit(flags.reason, resets, { source: 'operator' }));
+    // --engine codex marks the Codex plan (only codex-engine builders refuse on it); default: the Claude subscription
+    if (flags.engine != null && flags.engine !== 'codex' && flags.engine !== 'claude') throw new Error('--engine must be codex or claude');
+    return view(setLimit(flags.reason, resets, { source: 'operator', ...(flags.engine === 'codex' ? { engine: 'codex' } : {}) }));
   }
   if (sub === 'clear') return { limited: false, cleared: clearLimit() };
   throw new Error(`limit: unknown sub-command ${sub} (show|set|clear)`);

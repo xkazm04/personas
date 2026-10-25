@@ -9,6 +9,7 @@ import { isArmed, activeStandup } from './standup.mjs';
 import { brakes, isDue, lastDecided, parseTs } from './brakes.mjs';
 import { pressureReport } from './memory.mjs';
 import { queueTable } from './queue.mjs';
+import { engineOf, loadMain } from './codex.mjs';
 
 /** Minutes since runs/<id>/stream.jsonl last changed, or null when there is no stream yet. */
 export function streamAgeMin(slug, runId, nowMs = Date.now()) {
@@ -23,10 +24,14 @@ export function projectStatus(slug, nowMs = Date.now()) {
   const runs = listRuns(slug);
   const brief = loadBrief(slug) ?? {};
   const name = wakes.filter((w) => w.project?.name).at(-1)?.project.name ?? brief.project ?? slug;
+  const engine = engineOf(brief);
   return {
     slug, name, nextWakeAt: next, armed: isArmed(slug), due: isArmed(slug) && isDue(wakes, nowMs),
+    // a codex-engine project: its main thread (the hackathon's "session ID"), or null until `codex init`
+    ...(engine ? { codex: { ...engine, mainThreadId: loadMain(slug)?.mainThreadId ?? null } } : {}),
     running: runs.filter((r) => LIVE_RUN_STATES.includes(r.state)).map((r) => ({
       runId8: shortId(r.runId), charter: r.charterSlug, model: r.model, paths: r.paths ?? [], repo: r.repo ?? 'self', state: r.state, streamAgeMin: streamAgeMin(slug, r.runId, nowMs),
+      ...(r.engine ? { engine: r.engine, codexThreadId: r.codexThreadId ?? null } : {}),
     })),
     held: runs.filter((r) => r.state === 'held').map((r) => ({ runId8: shortId(r.runId), charter: r.charterSlug, branch: r.branch ?? null, heldReason: r.heldReason ?? null })),
     merged: runs.filter((r) => r.state === 'merged' && last && String(r.endedAt ?? r.createdAt) >= String(last.at))
@@ -63,8 +68,9 @@ export function renderDigest(status, nowMs = Date.now()) {
     const queued = p.queued ?? [];
     const reviewed = p.reviewed ?? [];
     const quiet = !p.running.length && !p.held.length && !p.merged.length && !reviewed.length && !queued.length && !p.asksOpen && !p.outboxDepth && !p.lastDispatch.length && !p.say;
-    if (quiet) { L.push(`${p.slug} - quiet, ${next}.`); continue; }
+    if (quiet) { L.push(`${p.slug} - quiet, ${next}.${p.codex ? ` Codex main thread ${p.codex.mainThreadId ?? 'not started'}.` : ''}`); continue; }
     L.push(`${p.slug} - ${p.lastDecisionAt ? `decided ${hhmm(p.lastDecisionAt, nowMs)}` : 'no decision yet'}${p.lastDispatch.length ? `, dispatched ${p.lastDispatch.join(', ')}` : ''}; ${next}.`);
+    if (p.codex) L.push(`  Codex builders (${p.codex.model}, effort ${p.codex.effort}); main thread ${p.codex.mainThreadId ?? 'not started: run `codex init`'}.`);
     for (const m of p.merged) L.push(`  Merged ${m.runId8} ${m.charter}${m.mergedSha ? ` at ${String(m.mergedSha).slice(0, 8)}` : ''}.`);
     for (const r of reviewed) L.push(`  Reviewed ${r.runId8} ${r.featureSlug}: ${r.mode} council ${r.outcome}${r.mode === 'full' && r.outcome === 'ready' ? ' (report + approval queued for the operator)' : ''}.`);
     // a planned run in the queue is a promise, not running: the queue block below shows it

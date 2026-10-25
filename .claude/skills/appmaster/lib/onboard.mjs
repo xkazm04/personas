@@ -6,12 +6,13 @@ import path from 'node:path';
 import { Refusal, SELF_REPO, briefPath, slugify } from './contract.mjs';
 import { saveBrief } from './store.mjs';
 import { resolveProject } from './dbread.mjs';
+import { validateEngine } from './codex.mjs';
 
 /** Keys /master's briefs carry (.claude/master/{ascent,kp}/brief.json) plus this skill's optional ones. */
 export const BRIEF_KEYS = [
   'project', 'product', 'stage', 'users', 'operatorRole', 'goals', 'charters', 'model', 'maxParallel', 'maxConcurrent',
   'boundaries', 'askFor', 'pacing', 'reportStyle', 'tone', 'digestCadence', 'digest', 'rung', 'extra', 'gates', 'models', 'headless',
-  'repos', 'baseBranch',
+  'repos', 'baseBranch', 'engine',
 ];
 const REPO_KEYS = ['key', 'root', 'baseBranch', 'lane', 'gates'];
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -68,6 +69,7 @@ export function validateBrief(brief) {
       });
     }
   }
+  errors.push(...validateEngine(brief.engine));   // absent = Claude builders; {kind:'codex', model?, effort?} = Codex builders
   for (const k of ['maxParallel', 'maxConcurrent']) if (brief[k] != null && !(Number.isInteger(brief[k]) && brief[k] >= 1)) errors.push(`${k} must be a positive integer`);
   return { ok: !errors.length, errors, warnings };
 }

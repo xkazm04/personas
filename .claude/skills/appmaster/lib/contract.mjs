@@ -31,6 +31,9 @@ export const slugOf = (name, root) => slugify(path.basename(String(root || '').r
 
 export const stateDir = (slug) => path.join(STATE_ROOT, slug);
 export const headlessDir = (slug) => path.join(stateDir(slug), 'headless');
+/** The project's main Codex thread (`codex init`) and the journal of every build thread (lib/codex.mjs). */
+export const codexPath = (slug) => path.join(headlessDir(slug), 'codex.json');
+export const codexThreadsPath = (slug) => path.join(headlessDir(slug), 'codex-threads.jsonl');
 export const briefPath = (slug) => path.join(stateDir(slug), 'brief.json');
 export const wakesPath = (slug) => path.join(headlessDir(slug), 'wakes.jsonl');
 export const asksPath = (slug) => path.join(headlessDir(slug), 'asks.jsonl');
@@ -123,8 +126,10 @@ export const PER_PROJECT_CAP = 2;
  * A brief may raise its own project's cap with `maxConcurrent` (operator 2026-10-20: firetv runs
  * alone before its deadline, "up to 4 subagents in parallel"), never above PROJECT_CAP_MAX. The
  * same number bounds the dispatches one decision may make; disjoint paths stay pairwise required.
+ * 5 since 2026-10-25 (operator: "up to 5 threads in parallel for the App Master" of CastleControl,
+ * whose builders run on Codex); GLOBAL_CAP and the memory brake are unchanged.
  */
-export const PROJECT_CAP_MAX = 4;
+export const PROJECT_CAP_MAX = 5;
 export const projectCap = (brief) => {
   const n = brief?.maxConcurrent;
   return Number.isInteger(n) && n >= 1 ? Math.min(n, PROJECT_CAP_MAX) : PER_PROJECT_CAP;
@@ -384,7 +389,7 @@ export const claudeBin = (opts) => resolveClaudeBin(opts).bin;
  * @property {string[]} ideaIds
  * @property {string} state            RUN_STATES
  * @property {string} model
- * @property {'brief'|'decision'|'contract'} [modelSource]   who chose the model (the brief, the master, the defaults)
+ * @property {'brief'|'decision'|'contract'|'engine'} [modelSource]   who chose the model (the brief, the master, the defaults, a codex engine)
  * @property {string[]} [paths]        what the builder declared it will touch; [] / absent = the whole repo
  * @property {string} [repo]           the target repo key (SELF_REPO or a brief.repos key); absent = self
  * @property {string} [repoRoot]       the target repo's checkout (worktree, gates, merge, dirty checks)
@@ -407,6 +412,9 @@ export const claudeBin = (opts) => resolveClaudeBin(opts).bin;
  * @property {string} [mergedSha]
  * @property {string} [nodeModules] @property {string} [limitSeenAt] @property {boolean} [killed] @property {Object} [cleanup]
  * @property {string} [askId] @property {string} [settledAt] @property {string} [verifyStartedAt]   written by WP2 (worker/merge)
+ * @property {'codex'} [engine]        set at dispatch for a builder of a brief with engine.kind 'codex'; absent = claude
+ * @property {string} [codexThreadId]  the build thread (thread.started); [codexParent] the main thread it forked from
+ * @property {'fork'|'exec'} [codexMode] @property {string} [effort] @property {string} [requestedModel] (the master's model, ignored)
  */
 
 /**
