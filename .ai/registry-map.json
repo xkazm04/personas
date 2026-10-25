@@ -23327,7 +23327,11 @@
           "revision": 15,
           "changedAt": "2026-09-17",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:7 This context is an inbox of human verdicts (pending/approved/rejected/resolved), which the golden path places under triage-queues, not admission-queue; searching sub_manual-review and sub_analytics for admission, semaphore, backpressure, maxConcurrent and loadShed found no gate that decides whether machine work runs now, waits or is refused.",
+          "evaluatedAt": "2026-10-25",
+          "evaluatedAgainst": "sha256-b2:56e509787bc708cd",
+          "evaluatedRevision": 15
         },
         {
           "subject": "delivery-analytics",

@@ -32940,23 +32940,43 @@
       "context": "overview-manual-review",
       "subject": "admission-queue",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-19",
-      "evaluatedTs": "2026-10-19T09:17:44.092Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-25",
+      "evaluatedTs": "2026-10-25T22:42:59.119Z",
+      "worker": "e6213b73-0df5-40f9-ad2e-1b210e31d1cd",
       "techniques": [
+        {
+          "technique": "queue-cardinality",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:7 The entries are human decisions, so no worker pool stands behind this queue."
+        },
+        {
+          "technique": "self-paced-intake",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:18 Reading is keyset pagination for display. No consumer steps per arrival."
+        },
+        {
+          "technique": "resource-denominated-bounds",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/libs/bulkResolve.ts:8 A fixed fan-out width over a batch that is already decided. It is not an admission bound on arrivals."
+        },
+        {
+          "technique": "admission-vocabulary",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/libs/bulkResolve.ts:13 This is a write-outcome vocabulary. It is not a set of gate verdicts like admitted, queued or refused."
+        },
+        {
+          "technique": "priority-and-fairness",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/components/backlog/useBacklogQueue.ts:27 The backlog is another human triage list. Its ordering belongs to triage-queues."
+        },
         {
           "technique": "depth-bounds-and-shed",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:67 The inspected ManualReview dispatch branch and repository create function insert pending reviews without a pending-depth check or saturation refusal; this violates the technique's explicit requirement to bound automatically produced output awaiting a human."
+          "evidence": "src-tauri/db/src/repos/communication/manual_reviews.rs:67 The inspected ManualReview dispatch branch and repository create function insert pending reviews without a pending-depth check or saturation refusal; this violates the technique's explicit requirement to bound automatically produced output awaiting a human.",
+          "carriedFrom": "2026-10-19"
         }
-      ],
-      "registryProposal": "Clarify that the golden path's exclusion of human triage queues still permits auditing their automated producers under depth-bounds-and-shed's downstream-backlog rule.",
-      "withdrawn": {
-        "worker": "46ec955f-5a3e-4931-a617-0b6a572a23aa",
-        "state": "deviation",
-        "at": "2026-10-19T09:18:18.075695+00:00",
-        "reason": "reviewer (sonnet): The backend claim holds: dispatch.rs:1120 calls review_repo::create, and manual_reviews.rs:52-86 inserts a 'pending' row with no depth check, even though IDEA_BACKLOG_CAP exists for dev_ideas. But both anchors are Rust producer code outside this context, which is only the React inbox UI under sub_ma"
-      }
+      ]
     },
     "b39776f5-3909-41e3-b69f-14c9a6c70bec/delivery-guarantees": {
       "context": "home-learning",
