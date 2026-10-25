@@ -38485,6 +38485,28 @@
         "at": "2026-10-24T22:16:38.174732+00:00",
         "reason": "reviewer (sonnet): The code supports the claim: DeferUntilIdle.tsx:87 defaults `fallback = null`, and all 9 call sites I found pass no fallback. But DeferUntilIdle.tsx is not among this context's 12 listed files, and the 9 call sites are in other features (companions, overview, home). The verdict is therefore about th"
       }
+    },
+    "8a57c65c-06fd-45c9-9d32-d50c89c4c705/test-input-generation": {
+      "context": "template-generation",
+      "subject": "test-input-generation",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-25",
+      "evaluatedTs": "2026-10-25T22:31:01.024Z",
+      "worker": "2fa78078-36d5-442c-bd9c-4bd5da49a3c3",
+      "techniques": [
+        {
+          "technique": "negative-space-generation",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:82 Positive space only: every predefined case is a valid, >50-char instruction naming real connectors and triggers. No case is ambiguous, malformed or names an unknown connector, and no test covers parseListMdFormat's skip/reject branches either (a git ls-files search of the *.test/*.spec files found no reference to it)."
+        },
+        {
+          "technique": "seed-is-not-a-reproduction",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:130 Inputs are a fixed literal list or user-supplied text. Nothing is randomized, so there is no seed to persist."
+        }
+      ],
+      "registryProposal": "The subject frames its input sources as hand-written or randomized test suites. It does not say whether an in-product eval runner's fixed case list (product-shipped 'test cases' fed to an LLM generator) falls under negative-space-generation. A sentence on in-product evaluation fixtures would settle that."
     }
   }
 }

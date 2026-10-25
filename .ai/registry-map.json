@@ -37460,7 +37460,11 @@
           "revision": 10,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:82 The design-review runner's built-in input supply is five hand-written, well-formed happy-path instructions, and the uploaded-markdown parser beside it (parseListMdFormat, line 29) has no test file anywhere in the repo, so no input the generator or parser should reject is ever constructed or exercised.",
+          "evaluatedAt": "2026-10-25",
+          "evaluatedAgainst": "sha256-b2:d5ab12a92aba67c4",
+          "evaluatedRevision": 10
         },
         {
           "subject": "pipeline-authoring",
