@@ -339,10 +339,15 @@ export function sweepLeftoverDir(root, dir) {
   if (!isUnder(dir, WORKTREE_ROOT)) return false;
   const listed = gitTry(root, ['worktree', 'list', '--porcelain']);
   if (listed.ok && listed.out.split(/\r?\n/).some((l) => l.startsWith('worktree ') && norm(l.slice(9)) === norm(dir))) return false;
-  try {
-    if (process.platform === 'win32') execFileSync('cmd', ['/d', '/c', 'rmdir', '/s', '/q', path.resolve(dir)], { stdio: 'ignore', windowsHide: true });
-    else fs.rmSync(dir, { recursive: true, force: true });
-  } catch { /* reported by the caller through the return value */ }
+  // the gate's processes may still hold files for a moment after they exit (2026-10-25: merged runs'
+  // folders survived the first pass and went the second), so a failed pass is retried a few times
+  for (let attempt = 0; attempt < 4 && fs.existsSync(dir); attempt += 1) {
+    if (attempt) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2000);
+    try {
+      if (process.platform === 'win32') execFileSync('cmd', ['/d', '/c', 'rmdir', '/s', '/q', path.resolve(dir)], { stdio: 'ignore', windowsHide: true });
+      else fs.rmSync(dir, { recursive: true, force: true });
+    } catch { /* retried, then reported by the caller through the return value */ }
+  }
   return !fs.existsSync(dir);
 }
 
