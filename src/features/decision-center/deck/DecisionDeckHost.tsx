@@ -9,6 +9,7 @@
  */
 import { Suspense } from 'react';
 import { lazyRetry } from '@/lib/lazyRetry';
+import { usePreloadedSections } from '@/i18n/useTranslation';
 import { useDecisionDeckStore } from './deckStore';
 import { LensSheetHost } from '../lens/LensSheetHost';
 
@@ -19,6 +20,8 @@ const LiveDeckModal = lazyRetry(() => import('./LiveDeck'));
 export default function DecisionDeckHost() {
   const request = useDecisionDeckStore((s) => s.request);
   const session = useDecisionDeckStore((s) => s.session);
+  // `decisionCenter` is an OVERLAY_SECTIONS entry: not loaded before first paint.
+  usePreloadedSections(['decisionCenter'], session !== 0);
   return (
     <>
       {/* Never opened: mount no deck, read nothing, fetch nothing. */}

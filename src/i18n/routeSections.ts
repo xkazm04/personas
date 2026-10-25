@@ -33,12 +33,7 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   'radio',
   // Persona Monitor is reachable from the always-mounted titlebar button.
   'monitor',
-  // `decisionCenter` — the product blueprint drawing set opens over the Decision Deck, which is a global
-  // OverlayIsland (so is the `monitor` section it reads): there is no route that does not reach it.
-  'decisionCenter',
-  // `deliberation` — the Monitor's Conversations view renders deliberation
-  // status captions from it (DeliberationRail), so it rides with `monitor`.
-  'deliberation',
+  // (`decisionCenter` and `deliberation` moved to OVERLAY_SECTIONS below on 2026-10-25.)
   // Rendered by App.tsx directly, before/above any route:
   //   consent          → FirstUseConsentModal (blocks first use, all routes)
   //   remote_approval  → RemoteApprovalPrompt (pairing prompt, all routes)
@@ -79,6 +74,22 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   // feature sections; until then it must load, because before 2026-08-09 it
   // loaded on no route at all and rendered English everywhere.
   'debt',
+];
+
+/**
+ * App-wide overlays a USER opens - never part of first paint. Unlike
+ * BASE_SECTIONS they are neither eager in the bundle nor awaited before mount
+ * (main.tsx); the idle background load in useTranslation.ts brings them in
+ * about a second after boot, and the overlay preloads its own section when it
+ * opens. Split out of BASE_SECTIONS 2026-10-25 (44 KB of startup JS):
+ *   decisionCenter — the Decision Deck and the lens / blueprint sheets
+ *   deliberation   — the Monitor's Conversations view (DeliberationRail)
+ * A section belongs here only if nothing always-mounted reads it at first
+ * paint (the titlebar reads `monitor`, so `monitor` stays in BASE_SECTIONS).
+ */
+export const OVERLAY_SECTIONS: readonly TranslationSection[] = [
+  'decisionCenter',
+  'deliberation',
 ];
 
 const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {

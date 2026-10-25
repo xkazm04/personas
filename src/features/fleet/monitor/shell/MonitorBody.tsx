@@ -4,7 +4,7 @@
 import { Suspense, type ComponentProps } from 'react';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { lazyRetry } from '@/lib/lazyRetry';
-import { useTranslation } from '@/i18n/useTranslation';
+import { usePreloadedSections, useTranslation } from '@/i18n/useTranslation';
 import type { MonitorView } from './monitorRouter';
 import { ActivityBody } from './ActivityBody';
 import { BodyFallback } from './fallbacks';
@@ -37,6 +37,10 @@ export function MonitorBody({ view, activity, hasChannels, bridges, channelPrese
   bridges: ComponentProps<typeof ConversationBriefing>['bridges'];
   channelPreset: ComponentProps<typeof ConversationBriefing>['preset'];
 }) {
+  // The Conversations view's DeliberationRail reads `deliberation`, an
+  // OVERLAY_SECTIONS entry (not loaded before first paint): ask for it as the
+  // Monitor opens.
+  usePreloadedSections(['deliberation']);
   return (
     <Suspense fallback={<BodyFallback />}>
       {view === 'activity' ? (

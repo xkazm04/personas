@@ -166,6 +166,22 @@ export function preloadSections(lang: Language, sections: readonly TranslationSe
   }
 }
 
+/**
+ * Preload sections for the active language while `enabled` - for an overlay
+ * that is mounted before it is opened (OVERLAY_SECTIONS in routeSections.ts):
+ * pass `enabled` as "is open", so opening it asks for its copy at once instead
+ * of waiting for the idle background load.
+ */
+export function usePreloadedSections(sections: readonly TranslationSection[], enabled = true): void {
+  const language = useI18nStore((s) => s.language);
+  const key = sections.join(',');
+  useEffect(() => {
+    if (enabled) preloadSections(language, sections);
+    // `key` stands for `sections`, so a new array literal per render is not a new request.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, language, key]);
+}
+
 export function preloadLanguage(
   lang: Language,
   sections: readonly TranslationSection[] = ['common'],

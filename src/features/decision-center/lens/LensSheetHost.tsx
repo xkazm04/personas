@@ -13,7 +13,7 @@
  * 2026-10-25, for a sheet most sessions never open.
  */
 import { Suspense } from 'react';
-import { useTranslation } from '@/i18n/useTranslation';
+import { usePreloadedSections, useTranslation } from '@/i18n/useTranslation';
 import { lazyRetry } from '@/lib/lazyRetry';
 
 import { kindLabel } from '../deck/deckMeta';
@@ -29,6 +29,8 @@ export function LensSheetHost() {
   const { t } = useTranslation();
   const request = useLensSheetStore((s) => s.request);
   const source = useLensScanProducts(false);
+  // `decisionCenter` is an OVERLAY_SECTIONS entry: not loaded before first paint.
+  usePreloadedSections(['decisionCenter'], request !== null);
   if (!request) return null;
   const product = source.products?.find((p) => p.projectId === request.projectId);
   const eyebrow = kindLabel(t.monitor, request.kind);

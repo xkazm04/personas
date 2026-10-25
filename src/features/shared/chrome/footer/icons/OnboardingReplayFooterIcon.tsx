@@ -40,7 +40,7 @@ export default function OnboardingReplayFooterIcon() {
 
   if (!show) return null;
 
-  const label = canResume ? t.onboarding.resume_setup : t.onboarding.replay_setup;
+  const label = canResume ? t.chrome.footer_resume_setup : t.chrome.footer_replay_setup;
   return (
     <button
       type="button"

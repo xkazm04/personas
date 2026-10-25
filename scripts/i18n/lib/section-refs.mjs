@@ -179,10 +179,17 @@ export function parseRouteSections(source) {
     routes[m[1]] = [...m[2].matchAll(/['"]([a-z_][a-zA-Z0-9_]*)['"]/g)].map((x) => x[1]);
   }
 
-  const covered = new Set(base);
+  // OVERLAY_SECTIONS (2026-10-25): app-wide overlays a user opens. Fetched by
+  // the idle background load and when the overlay opens, not before first
+  // paint - but fetched, so they count as covered.
+  const overlay = /\bconst\s+OVERLAY_SECTIONS\b/.test(source)
+    ? parseArrayLiteral(sliceAfterAssignment(source, 'OVERLAY_SECTIONS', '['), ']')
+    : [];
+
+  const covered = new Set([...base, ...overlay]);
   for (const list of Object.values(routes)) for (const s of list) covered.add(s);
 
-  return { base, routes, covered };
+  return { base, overlay, routes, covered };
 }
 
 /**
