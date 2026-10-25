@@ -429,7 +429,52 @@ when the operator has said to kill that run, and say so in the digest.
 
 `AM limit show` reads the global mark. `AM limit clear` after the operator confirms the
 subscription has reset. `AM limit set --reason "<text>" [--resets <iso>]` records a limit seen
-outside a builder (builders that hit one set it themselves).
+outside a builder (builders that hit one set it themselves). A mark carries the engine it binds:
+a Codex builder's limit marks `engine: "codex"` and stops only codex-engine dispatches; a mark
+without one is the Claude subscription's (`limit set --engine codex` for the Codex plan).
+
+## Codex engine (`engine.kind: "codex"`)
+
+A brief may carry `"engine": {"kind": "codex", "model": "gpt-6.1-sol", "effort": "high"}`
+(`model`/`effort` default to those; `onboard` validates it; absent = Claude builders, unchanged).
+The master stays Opus; every BUILDER of that project runs through the OpenAI Codex CLI, and a
+dispatch's `model` is ignored for builders (`decide` says so in `warnings`). Council reviews of
+the project stay on Claude. Code: `lib/codex.mjs`, prompt addendum `roles/builder-codex.md`.
+
+- `AM codex init --project p [--force] [--root dir]` starts the project's ONE main Codex thread,
+  read-only in the project root, from a primer (the brief's `product` and goals, `docs/plan/` if
+  present, how builds relate to it), and writes `headless/codex.json` =
+  `{mainThreadId, model, effort, createdAt, cwd}`. Refuses when it exists (`--force` keeps a `.bak`).
+  A codex project's dispatch refuses `codex main thread missing` until it exists.
+  **`mainThreadId` is the hackathon's "Codex session ID for the thread where the project was
+  built"**: every build thread descends from it. `status` shows it per project.
+- `AM codex show --project p` prints the main thread and every build thread
+  (`headless/codex-threads.jsonl`: `{runId, threadId, parent, mode, startedAt}`) with its run state.
+- `AM codex say --run <id> --file <msg.md>` bounces a held/exited/failed/released build: the
+  earlier output is rotated aside (`stream.1.jsonl`, `result.1.json`, ...), `codex exec resume
+  <threadId>` runs in the same worktree, the run goes back to `running` with a new pid. Start its
+  `awaitCommand` exactly as after a dispatch; settle judges it afresh.
+
+**Lineage: fork.** A build is `codex exec fork <mainThreadId> --json -m <model> -c
+model_reasoning_effort=... -c approval_policy="never" -c sandbox_mode="workspace-write" -c
+sandbox_workspace_write.writable_roots=[<runDir>] -o <runDir>/last-message.txt -` with the prompt
+on stdin (a file handle, not a pipe) and cwd = the worktree. Measured 2026-10-25 on Codex CLI
+0.160.0: the fork runs in the SPAWN cwd (not the main thread's), the `-c` sandbox is enforced (the
+worktree and the run dir writable, any other directory denied; %TEMP% is always writable), and
+`approval_policy="never"` never stalls. Never `--dangerously-bypass-approvals-and-sandbox`.
+
+**A Codex builder does not commit.** workspace-write keeps every `.git` path read-only even when
+listed as a writable root (a worktree commit failed `index.lock: Permission denied` with the git
+dir listed, and with `.git/{worktrees,objects,refs,logs}` listed). So the builder leaves its change
+uncommitted and writes `result.json` with a `commitMessage`; settle commits exactly the dirty
+paths (never a `node_modules` junction, hooks on) on the run's branch when the claim is `done` or
+`partial`, records `verdict.harnessCommit`, and the merge gate judges that commit like any other.
+No result.json (or `blocked`) is never committed: it settles as a Claude run without one, and the
+held/failed reason carries Codex's last message. A `turn.failed`/`error` naming a usage or rate
+limit (`429 Too Many Requests` included) releases the run on the limit path, with no invented reset.
+The bin is `APPMASTER_CODEX_BIN`, else on Windows the npm shim's node entry
+(`.../@openai/codex/bin/codex.js`, so await watches the real pid), else `codex`.
+`PROJECT_CAP_MAX` is 5 (operator 2026-10-25: up to 5 Codex threads in parallel for CastleControl).
 
 ## `end`
 

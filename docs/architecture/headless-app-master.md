@@ -450,6 +450,49 @@ the fullest budget level, kp 19446, ascent 16782, pof 12602 characters.
 Opus is `claude-opus-5-5` (one `claude -p --model claude-opus-5-5 "say ok"` answered on
 2026-10-07); the retired `claude-opus-5` is accepted as an alias and resolves to it.
 
+## The Codex engine (2026-10-25, spark spooky)
+
+Why: the operator's CastleControl entry to the TwitchCon x OpenAI Codex hackathon (deadline
+2026-11-02) must be built through OpenAI Codex, and the submission asks for "the Codex session ID
+for the thread where the project was built". So a project may keep its App Master on Claude
+(orchestrator and reviewer) and run every builder on the Codex CLI, under ONE durable main thread.
+
+- **The brief key.** `engine: {kind: "codex", model?, effort?}` (defaults `gpt-6.1-sol`, `high`),
+  validated by `onboard`. Absent, nothing changes: the claude argv is byte-for-byte today's (a
+  regression test pins it). A codex project's builders ignore a dispatch's `model` (a `decide`
+  warning says so; the run keeps it as `requestedModel`); its council reviews stay on Claude.
+- **The main thread** is `codex init`: a read-only `codex exec` in the project root from a primer
+  (product, goals, `docs/plan/`), its `thread_id` taken from the `thread.started` event and kept in
+  `headless/codex.json`. That id is the hackathon's session ID. Dispatch refuses
+  `codex main thread missing` without it.
+- **Build threads fork it.** `codex exec fork <main> --json` with the sandbox set through `-c`
+  (`sandbox_mode="workspace-write"`, `writable_roots=[runDir]`, `approval_policy="never"`), cwd =
+  the worktree, prompt on stdin as a file handle. Evidence, Codex CLI 0.160.0 on this machine: the
+  fork's `pwd` was the spawn cwd while the main thread lived in another directory; a listed root
+  was writable and an unlisted one denied (outside %TEMP%, which workspace-write always allows); no
+  approval prompt ever stalled a run. `run.json` records `engine`, `codexThreadId`, `codexParent`,
+  `codexMode`, `model`, `effort`; `headless/codex-threads.jsonl` journals `{runId, threadId,
+  parent, mode, startedAt}` for every fork and every `codex say` resume. `exec` (a fresh thread in
+  `-C <worktree>`, lineage only in the journal) is the coded fallback for a run with no parent.
+- **Settle commits for the builder.** Codex's workspace-write keeps every `.git` path read-only,
+  including the main repo's git dir a worktree commit writes (measured: `index.lock: Permission
+  denied` with the git dir, and then each of its `worktrees/objects/refs/logs`, listed as writable
+  roots). Making it writable would take `danger-full-access`, the bypass this engine refuses. So
+  the builder leaves its change uncommitted with a `commitMessage` in `result.json`; settle commits
+  exactly the dirty paths on the branch (no `node_modules` junction, hooks on, never
+  `--no-verify`) when the claim is `done` or `partial`, and from there the merge gate is the same
+  one every Claude run meets. A run with no result.json is never committed and settles exactly as a
+  Claude run without one, with Codex's `-o` last message in the held reason.
+- **Limits.** A `turn.failed`/`error` whose message names a usage or rate limit (a 429 included,
+  measured) releases the run through the existing limit path. The mark carries `engine: "codex"`
+  and binds only codex dispatches; the Claude subscription's marks bind only Claude ones. No reset
+  time is invented when Codex gives none.
+- **Bounce.** `codex say --run <id> --file <msg.md>` resumes the build's own thread
+  (`codex exec resume <threadId>`) in its worktree, output rotated aside, the run back to
+  `running` under the same pid / await / settle path.
+- **Caps.** `PROJECT_CAP_MAX` 4 -> 5 for CastleControl's five parallel threads; `GLOBAL_CAP` and
+  the memory brake are unchanged.
+
 ## Relationship to /master and the app
 
 `/master` is the chair for the in-app master and needs the app running for every write;
