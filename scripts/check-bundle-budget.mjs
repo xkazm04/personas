@@ -40,9 +40,9 @@ import { fileURLToPath } from "url";
 import {
   MAX_CHUNK_KB as DEFAULT_MAX_CHUNK_KB,
   MAX_TOTAL_KB as DEFAULT_MAX_TOTAL_KB,
-  buildChunkMap,
   buildGraphChunkMap,
   evaluateBudget,
+  readBuild,
   startupFiles,
 } from "./lib/bundle-budget.mjs";
 import { BUNDLE_GRAPH_PATH } from "./build/bundle-graph-vite-plugin.mjs";
@@ -103,53 +103,12 @@ function assertNothingLargeOutsideAssets(maxChunkKB) {
 }
 
 function readCurrentBuild() {
-  let files;
   try {
-    files = readdirSync(ASSETS_DIR).filter((f) => f.endsWith(".js"));
-  } catch {
-    console.error("dist/assets/ not found — run `npm run build` first.");
+    return readBuild({ assetsDir: ASSETS_DIR, graphPath: GRAPH_PATH, graphLabel: relative(ROOT, GRAPH_PATH) });
+  } catch (err) {
+    console.error(err.message);
     process.exit(1);
   }
-  // Fail-loud: "found no chunks" and "looked at nothing" must not both read as
-  // a pass. An empty assets dir would otherwise produce totalKB 0, which the
-  // ratchet happily reports as a (very large) DROP — a non-fatal notice.
-  if (files.length === 0) {
-    console.error("dist/assets/ holds no .js files — the build emitted nothing.");
-    process.exit(1);
-  }
-  const sizeKB = new Map(files.map((f) => [f, statSync(join(ASSETS_DIR, f)).size / 1024]));
-  const totalKB = [...sizeKB.values()].reduce((sum, kb) => sum + kb, 0);
-  const round = (kb) => Math.round(kb * 10) / 10;
-
-  // The chunk graph the build wrote (scripts/build/bundle-graph-vite-plugin.mjs)
-  // keys chunks by the source module they load and says what is startup. A JS
-  // file it does not list is a separate bundle (a Web Worker) and keeps the
-  // old file-name key. A file it lists that dist/ lacks means the graph is
-  // from another build: refuse, rather than measure two builds as one.
-  const graph = existsSync(GRAPH_PATH) ? JSON.parse(readFileSync(GRAPH_PATH, "utf-8")) : null;
-  if (!graph) {
-    console.error(`${relative(ROOT, GRAPH_PATH)} not found — run \`npm run build\` (the bundle-graph plugin writes it).`);
-    process.exit(1);
-  }
-  const missing = graph.chunks.filter((c) => !sizeKB.has(c.file));
-  if (missing.length > 0) {
-    console.error(
-      `bundle graph is stale: ${missing.length} chunk(s) it lists are not in dist/assets (e.g. ${missing[0].file}). ` +
-        "Rebuild with `npm run build` so the graph and dist/ come from the same build.",
-    );
-    process.exit(1);
-  }
-  const inGraph = new Set(graph.chunks.map((c) => c.file));
-  const chunks = {
-    ...buildGraphChunkMap(graph, (f) => sizeKB.get(f)),
-    ...Object.fromEntries(
-      Object.entries(buildChunkMap(files.filter((f) => !inGraph.has(f)).map((f) => ({ file: f, sizeKB: sizeKB.get(f) }))))
-        .map(([k, v]) => [`file:${k}`, v]),
-    ),
-  };
-  const startup = startupFiles(graph);
-  const startupKB = startup.reduce((sum, f) => sum + sizeKB.get(f), 0);
-  return { totalKB: round(totalKB), startupKB: round(startupKB), startupFiles: startup.length, chunks, fileCount: files.length };
 }
 
 function loadBaseline() {

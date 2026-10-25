@@ -26,8 +26,21 @@
 // they fail the gate only if they grow further, not because they exceed the
 // flat cap.
 
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+
+// The flat caps below are the NO-BASELINE fallback only (see the history
+// above); nothing reports them as the budget any more.
 export const MAX_CHUNK_KB = 850;
 export const MAX_TOTAL_KB = 5000;
+
+// Startup JS target (operator, 2026-10-25): what the app loads before first
+// paint - the entry and its static imports - is the figure a user waits for,
+// not the total of ~950 lazy chunks. 1,908 KB when this was set. TRACKED, not
+// gated: the startup ratchet in evaluateBudget() already stops any rise, and
+// the PR report shows the distance to this target until the baseline reaches
+// it; then it becomes the ceiling.
+export const STARTUP_TARGET_KB = 1500;
 
 // Ratchet tolerance: how much a chunk or the total may grow above its
 // recorded baseline before the gate fails. Whichever is larger of a
@@ -117,6 +130,56 @@ export function startupFiles(graph) {
     for (const dep of byFile.get(file)?.imports ?? []) stack.push(dep);
   }
   return [...seen].sort();
+}
+
+/**
+ * Measure a build the way the gate does: every .js in dist/assets, keyed
+ * through the chunk graph the build wrote (bundle-graph plugin), with startup
+ * JS summed from the entry's static closure. Shared by check-bundle-budget.mjs
+ * (the gate) and bundle-size-report.mjs (the PR comment) so the two can never
+ * report different numbers. Throws with a readable message on a missing
+ * build, a missing graph, or a graph from another build.
+ */
+export function readBuild({ assetsDir, graphPath, graphLabel = graphPath }) {
+  let files;
+  try {
+    files = readdirSync(assetsDir).filter((f) => f.endsWith(".js"));
+  } catch {
+    throw new Error("dist/assets/ not found — run `npm run build` first.");
+  }
+  // "Found no chunks" and "looked at nothing" must not both read as a pass.
+  if (files.length === 0) throw new Error("dist/assets/ holds no .js files — the build emitted nothing.");
+  const sizeKB = new Map(files.map((f) => [f, statSync(join(assetsDir, f)).size / 1024]));
+  const round = (kb) => Math.round(kb * 10) / 10;
+
+  // A JS file the graph does not list is a separate bundle (a Web Worker) and
+  // keeps a file-name key. A file it lists that dist/ lacks means the graph is
+  // from another build: refuse, rather than measure two builds as one.
+  if (!existsSync(graphPath)) throw new Error(`${graphLabel} not found — run \`npm run build\` (the bundle-graph plugin writes it).`);
+  const graph = JSON.parse(readFileSync(graphPath, "utf-8"));
+  const missing = graph.chunks.filter((c) => !sizeKB.has(c.file));
+  if (missing.length > 0) {
+    throw new Error(
+      `bundle graph is stale: ${missing.length} chunk(s) it lists are not in dist/assets (e.g. ${missing[0].file}). ` +
+        "Rebuild with `npm run build` so the graph and dist/ come from the same build.",
+    );
+  }
+  const inGraph = new Set(graph.chunks.map((c) => c.file));
+  const chunks = {
+    ...buildGraphChunkMap(graph, (f) => sizeKB.get(f)),
+    ...Object.fromEntries(
+      Object.entries(buildChunkMap(files.filter((f) => !inGraph.has(f)).map((f) => ({ file: f, sizeKB: sizeKB.get(f) }))))
+        .map(([k, v]) => [`file:${k}`, v]),
+    ),
+  };
+  const startup = startupFiles(graph);
+  return {
+    totalKB: round([...sizeKB.values()].reduce((sum, kb) => sum + kb, 0)),
+    startupKB: round(startup.reduce((sum, f) => sum + sizeKB.get(f), 0)),
+    startupFiles: startup.length,
+    chunks,
+    fileCount: files.length,
+  };
 }
 
 /**

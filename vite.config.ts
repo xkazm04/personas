@@ -197,6 +197,9 @@ export default defineConfig(async ({ command }) => ({
                 // dependency). Reusing an existing group name is what actually
                 // works; verify with a clean build before renaming this again.
                 "react-vendor": ["react", "react-dom", "zustand", "immer"],
+                // Kept grouped on purpose. Ungrouping was measured 2026-10-25:
+                // startup JS -72 KB, but startup chunks 171 -> 273 (icons split
+                // into tiny shared chunks), a hundred more module loads at boot.
                 "ui-vendor": ["lucide-react"],
                 "vendor-motion": ["framer-motion"],
                 "tauri-vendor": [
