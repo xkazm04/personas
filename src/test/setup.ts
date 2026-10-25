@@ -1,5 +1,21 @@
 import "@testing-library/jest-dom/vitest";
 import { vi } from "vitest";
+import { setLoadedEnglishSection } from "@/i18n/englishSections";
+import enAgents from "@/i18n/section-locales/en/agents.json";
+import enOverview from "@/i18n/section-locales/en/overview.json";
+import enVault from "@/i18n/section-locales/en/vault.json";
+
+// `agents`, `overview` and `vault` left the eager English core on 2026-10-25
+// (305 KB off the startup path). In the app a route preloads them before its
+// surface mounts and the idle background load lands the rest within a second;
+// a spec has neither, and one that rendered their copy synchronously passed or
+// failed on whether that idle load happened to win (CostBreakdownBar, CI run
+// 40191178765). Seeding them here gives every spec what it had before the
+// change. Seeded through englishSections, not useTranslation, which many specs
+// replace with vi.mock.
+setLoadedEnglishSection("agents", enAgents);
+setLoadedEnglishSection("overview", enOverview);
+setLoadedEnglishSection("vault", enVault);
 
 // Mock @tauri-apps/api/core -- all invoke() calls return undefined by default
 vi.mock("@tauri-apps/api/core", () => ({
