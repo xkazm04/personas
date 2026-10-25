@@ -410,7 +410,8 @@ export const claudeBin = (opts) => resolveClaudeBin(opts).bin;
  * @property {Object} [verdict]        what `settle` measured: commits, files, gates{}, boundaryHits[]
  * @property {string} [heldReason]
  * @property {string} [mergedSha]
- * @property {string} [nodeModules] @property {string} [limitSeenAt] @property {boolean} [killed] @property {Object} [cleanup]
+ * @property {string} [nodeModules]  'junction' | 'workspace' | 'none' (worktree.mjs linkNodeModules)
+ * @property {string} [limitSeenAt] @property {boolean} [killed] @property {Object} [cleanup]
  * @property {string} [askId] @property {string} [settledAt] @property {string} [verifyStartedAt]   written by WP2 (worker/merge)
  * @property {'codex'} [engine]        set at dispatch for a builder of a brief with engine.kind 'codex'; absent = claude
  * @property {string} [codexThreadId]  the build thread (thread.started); [codexParent] the main thread it forked from

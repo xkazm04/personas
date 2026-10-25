@@ -45,6 +45,9 @@ function isUnder(child, parent) {
 const lstatOrNull = (p) => { try { return fs.lstatSync(p); } catch { return null; } };
 
 // ---------------------------------------------------------------- node_modules junction
+// One whole-dir junction per package dir, unless that node_modules holds WORKSPACE links (npm/pnpm
+// workspaces link @scope/<pkg> to the checkout's own packages/<pkg>): then a real dir of per-entry
+// links whose workspace entries point back into the worktree (linkOne).
 
 /**
  * The package dirs whose node_modules a worktree needs, relative to the root: the root itself, and
@@ -74,34 +77,193 @@ export function nodeModulesDirs(root) {
   return rels;
 }
 
-/** Junction one <worktree>/<rel>/node_modules -> <root>/<rel>/node_modules and PROVE it is a link to the real dir. */
-function linkOne(root, worktree, rel) {
-  const source = path.join(root, rel, 'node_modules'), link = path.join(worktree, rel, 'node_modules');
-  if (!fs.existsSync(source) || !fs.existsSync(path.join(worktree, rel))) return false;
+/**
+ * The marker a per-entry node_modules layout carries (see linkOne). A real node_modules WITHOUT it
+ * is somebody's install and is never replaced; one WITH it is ours to refill and to take apart.
+ * It lists the top-level files copied in (lockfile caches such as .package-lock.json and
+ * .modules.yaml: a file cannot be junctioned, and a copy cannot write back into the checkout).
+ */
+export const LAYOUT_MARKER = '.appmaster-links.json';
+
+/** The real path of a link, or null when it dangles. */
+const realOrNull = (p) => { try { return fs.realpathSync.native ? fs.realpathSync.native(p) : fs.realpathSync(p); } catch { return null; } };
+
+/**
+ * Workspace links in one node_modules dir (2026-10-25: mage-arena's @mage/* resolved to the MAIN
+ * checkout's packages/core from a worktree, so a builder's new export failed TS2305, and a write
+ * through the link would land in the checkout). An entry is one when it is a link whose real path
+ * lies inside the root but under no node_modules (that excludes the pnpm store and every real
+ * install). Scoped entries (@scope/<pkg>) are read one level down.
+ * => Map(entry name, e.g. '@ws/core' with the platform separator -> path relative to the root)
+ */
+export function workspaceLinks(root, source) {
+  const rootReal = realOrNull(root);
+  const out = new Map();
+  if (!rootReal) return out;
+  const check = (name) => {
+    const st = lstatOrNull(path.join(source, name));
+    if (!st || !st.isSymbolicLink()) return;
+    const target = realOrNull(path.join(source, name));
+    if (!target) return;
+    const rel = path.relative(rootReal, target);
+    if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) return;
+    if (rel.split(/[\\/]+/).some((seg) => seg.toLowerCase() === 'node_modules')) return;
+    out.set(name, rel);
+  };
+  let names = [];
+  try { names = fs.readdirSync(source); } catch { return out; }
+  for (const name of names) {
+    const st = lstatOrNull(path.join(source, name));
+    if (name.startsWith('@') && st && st.isDirectory() && !st.isSymbolicLink()) {
+      let subs = [];
+      try { subs = fs.readdirSync(path.join(source, name)); } catch { /* unreadable scope: nothing to link */ }
+      for (const sub of subs) check(path.join(name, sub));
+    } else check(name);
+  }
+  return out;
+}
+
+/** Junction link -> target (an existing dir), replacing only a LINK that points elsewhere, and prove it. */
+function ensureJunction(link, target) {
   const st = lstatOrNull(link);
   if (st && !st.isSymbolicLink()) throw new Error(`${link} exists and is not a junction; refusing to replace it`);
-  if (!st) fs.symlinkSync(fs.realpathSync(source), link, 'junction');
+  if (st && realOrNull(link) && real(link) === real(target)) return;
+  if (st) unlinkJunction(link);
+  fs.symlinkSync(fs.realpathSync(target), link, 'junction');
+  const after = lstatOrNull(link);
+  if (!after || !after.isSymbolicLink() || real(link) !== real(target)) {
+    if (after && after.isSymbolicLink()) unlinkJunction(link);
+    throw new Error(`${link} is not a junction to ${target}`);
+  }
+}
+
+const readMarker = (dir) => {
+  try { return JSON.parse(fs.readFileSync(path.join(dir, LAYOUT_MARKER), 'utf8')); } catch { return null; }
+};
+
+/**
+ * Build <worktree>/<rel>/node_modules as a REAL dir of per-entry links: each ordinary entry is a
+ * junction to the root's, each workspace link points at the WORKTREE's own package (the same path
+ * relative to the root), so the worktree typechecks and builds against its own code and nothing
+ * can write through into the checkout. A workspace package the worktree does not have is left
+ * out rather than pointed at the checkout's copy: a missing module fails honestly.
+ */
+function linkLayout(worktree, source, link, wsLinks) {
+  if (!lstatOrNull(link)) fs.mkdirSync(link);
+  const files = new Set(readMarker(link)?.files || []);
+  // the marker goes in first, so a layout interrupted half-way is still recognised as ours
+  const writeMarker = () => fs.writeFileSync(path.join(link, LAYOUT_MARKER), JSON.stringify({ files: [...files].sort() }, null, 2) + '\n');
+  writeMarker();
+  const place = (name) => {
+    const src = path.join(source, name), dst = path.join(link, name);
+    if (wsLinks.has(name)) {
+      const target = path.join(worktree, wsLinks.get(name));
+      if (fs.existsSync(target)) ensureJunction(dst, target);
+      else { const st = lstatOrNull(dst); if (st && st.isSymbolicLink()) unlinkJunction(dst); }
+      return;
+    }
+    let st;
+    try { st = fs.statSync(src); } catch { return; }   // a dangling entry in the checkout: nothing to link
+    if (st.isDirectory()) ensureJunction(dst, src);
+    else if (st.isFile()) {
+      const have = lstatOrNull(dst);
+      if (have && (have.isSymbolicLink() || !files.has(name))) throw new Error(`${dst} exists and was not copied by appmaster; refusing to replace it`);
+      if (!have) { fs.copyFileSync(src, dst); files.add(name); writeMarker(); }
+    }
+  };
+  for (const name of fs.readdirSync(source)) {
+    if (name === LAYOUT_MARKER) continue;
+    const st = lstatOrNull(path.join(source, name));
+    const scoped = name.startsWith('@') && st && st.isDirectory() && !st.isSymbolicLink()
+      && [...wsLinks.keys()].some((k) => k.startsWith(name + path.sep));
+    if (scoped) {
+      const dir = path.join(link, name);
+      const have = lstatOrNull(dir);
+      if (have && have.isSymbolicLink()) unlinkJunction(dir);   // a scope junctioned whole on an earlier pass
+      if (!lstatOrNull(dir)) fs.mkdirSync(dir);
+      for (const sub of fs.readdirSync(path.join(source, name))) place(path.join(name, sub));
+    } else place(name);
+  }
+}
+
+/**
+ * Take a per-entry layout apart: links only (never followed), then the files the marker says were
+ * copied, then the marker, then each scope dir and the dir itself when empty (rmdir, never a
+ * recursive delete). Every link's target must still exist afterwards, or this throws before any
+ * git removal can run.
+ */
+function unlinkLayout(link) {
+  const files = new Set(readMarker(link)?.files || []);
+  const dropLink = (p) => {
+    const target = realOrNull(p);
+    unlinkJunction(p);
+    if (target && !fs.existsSync(target)) throw new Error(`${target} vanished while unlinking ${p}; stopping before any git removal`);
+  };
+  for (const name of fs.readdirSync(link)) {
+    const p = path.join(link, name);
+    const st = lstatOrNull(p);
+    if (!st) continue;
+    if (st.isSymbolicLink()) dropLink(p);
+    else if (st.isDirectory() && name.startsWith('@')) {
+      for (const sub of fs.readdirSync(p)) {
+        const sp = path.join(p, sub);
+        const sst = lstatOrNull(sp);
+        if (sst && sst.isSymbolicLink()) dropLink(sp);
+      }
+      try { fs.rmdirSync(p); } catch { /* something real was added inside: git removes it, no link remains */ }
+    } else if (st.isFile() && files.has(name)) fs.unlinkSync(p);
+  }
+  try { fs.unlinkSync(path.join(link, LAYOUT_MARKER)); } catch { /* already gone */ }
+  try { fs.rmdirSync(link); } catch { /* not empty: only real files a builder made are left, no link */ }
+  return true;
+}
+
+/**
+ * Link one <worktree>/<rel>/node_modules from <root>/<rel>/node_modules and PROVE it.
+ * No workspace links in it: one junction to the real dir, exactly as before -> 'junction'.
+ * Workspace links: a real dir of per-entry links (linkLayout) -> 'workspace'.
+ * A real node_modules that is neither a link nor our marked layout is refused.
+ */
+function linkOne(root, worktree, rel) {
+  const source = path.join(root, rel, 'node_modules'), link = path.join(worktree, rel, 'node_modules');
+  if (!fs.existsSync(source) || !fs.existsSync(path.join(worktree, rel))) return 'none';
+  const st = lstatOrNull(link);
+  const ours = !!st && !st.isSymbolicLink() && st.isDirectory() && !!readMarker(link);
+  if (st && !st.isSymbolicLink() && !ours) throw new Error(`${link} exists and is not a junction; refusing to replace it`);
+  const wsLinks = workspaceLinks(root, source);
+  if (wsLinks.size) {
+    if (st && st.isSymbolicLink()) unlinkJunction(link);   // a whole-dir junction from an earlier pass
+    linkLayout(worktree, source, link, wsLinks);
+    return 'workspace';
+  }
+  if (ours) unlinkLayout(link);   // the checkout no longer has workspace links: back to one junction
+  if (!lstatOrNull(link)) fs.symlinkSync(fs.realpathSync(source), link, 'junction');
   const after = lstatOrNull(link);
   if (!after || !after.isSymbolicLink() || real(link) !== real(source)) {
     if (after && after.isSymbolicLink()) unlinkJunction(link);
     throw new Error(`node_modules at ${link} is not a junction to ${source}`);
   }
-  return true;
+  return 'junction';
 }
 
-/** Junction every package's node_modules into the worktree (nodeModulesDirs); 'junction' when the root's was linked. */
+/**
+ * Link every package's node_modules into the worktree (nodeModulesDirs). Returns what the ROOT's
+ * got: 'junction' (one whole-dir junction), 'workspace' (a real dir of per-entry links whose
+ * workspace packages resolve inside the worktree), or 'none' (no root node_modules to link).
+ */
 export function linkNodeModules(root, worktree) {
-  let rootLinked = false;
+  let rootLinked = 'none';
   for (const rel of nodeModulesDirs(root)) {
     const linked = linkOne(root, worktree, rel);
     if (rel === '') rootLinked = linked;
   }
-  return rootLinked ? 'junction' : 'none';
+  return rootLinked;
 }
 
 /**
- * Unlink every node_modules junction in a worktree (the nested ones too), and assert each real
- * node_modules survived. Always before any `git worktree remove`: a forced remove must never meet a junction.
+ * Unlink every node_modules link in a worktree (the nested ones and the per-entry layouts too),
+ * and assert each real node_modules survived. Always before any `git worktree remove`: a forced
+ * remove must never meet a junction.
  */
 export function unlinkNodeModules(root, worktree) {
   let any = false;
@@ -111,6 +273,7 @@ export function unlinkNodeModules(root, worktree) {
     const hadSource = fs.existsSync(source);
     const st = lstatOrNull(link);
     if (st && st.isSymbolicLink()) any = unlinkJunction(link) || any;
+    else if (st && st.isDirectory() && readMarker(link)) any = unlinkLayout(link) || any;
     if (hadSource && !fs.existsSync(source)) throw new Error(`the real node_modules at ${source} vanished; stopping before any git removal`);
   }
   return any;
