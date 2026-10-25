@@ -1,5 +1,6 @@
 /**
- * Single source of truth for the set of locales the app ships.
+ * Single source of truth for the set of locales the app knows. Which of them
+ * it SHIPS is `SHIPPED_UI_LOCALES` below (English only since 2026-10-25).
  *
  * To ADD a language:
  *   1. Copy `src/i18n/locales/en.json` to `src/i18n/locales/<code>.json`.
@@ -49,6 +50,32 @@ export const LOCALES = [
 export type LocaleCode = (typeof LOCALES)[number]['code'];
 
 export const LOCALE_CODES = LOCALES.map((l) => l.code) as readonly LocaleCode[];
+
+/**
+ * The UI languages the app actually SHIPS — a subset of `LOCALES`.
+ *
+ * Operator decision 2026-10-25: the app is English-only until its core is
+ * done. The 13 other locale files stay in `src/i18n/locales/` and keep being
+ * split into `section-locales/`, but nothing outside this list is bundled,
+ * selectable, or checked by CI or hooks (`check:i18n`, the lefthook i18n
+ * gates and the translate pipeline are all off).
+ *
+ * To revive a language: add its code here and re-run
+ * `node scripts/run-codegen.mjs prebuild`. `scripts/i18n/split-locales.mjs`
+ * reads this array by regex and emits the lazy loaders for exactly these
+ * locales into `generated/sectionLoaders.ts`; the language pickers reappear
+ * once the list has more than one entry. Re-enable the coverage gates in
+ * `lefthook.yml` and `ci.yml` in the same change.
+ */
+export const SHIPPED_UI_LOCALES: readonly LocaleCode[] = ['en'];
+
+/** A persisted or requested language the build does not ship falls back to English. */
+export function toShippedUiLocale(code: string): LocaleCode {
+  return SHIPPED_UI_LOCALES.includes(code as LocaleCode) ? (code as LocaleCode) : 'en';
+}
+
+/** The language pickers (welcome, settings, onboarding) render only when there is a choice. */
+export const UI_LANGUAGE_PICKER_ENABLED = SHIPPED_UI_LOCALES.length > 1;
 
 export function getLocaleDescriptor(code: string): LocaleDescriptor | undefined {
   return LOCALES.find((l) => l.code === code);

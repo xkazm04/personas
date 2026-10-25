@@ -2,6 +2,11 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { QueryResultTable } from "../QueryResultTable";
 import type { QueryResult } from "@/api/vault/database/dbSchema";
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
+
+// `vault`, `agents` and `overview` left the eager English core on 2026-10-25;
+// in the app the route preload lands them before this surface mounts.
+beforeAll(() => preloadSectionsAsync('en', ['vault', 'agents', 'overview']));
 
 // Mock the virtualizer so rows render without real DOM dimensions
 vi.mock("@tanstack/react-virtual", () => ({

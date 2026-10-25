@@ -26,7 +26,6 @@ The commands the evidence pack runs over a span. Verbatim, in this order:
 - always: `npm run gate` (warm tsc + eslint on changed files + census, answered for this
   worktree as a delta against master; it falls back to the cold commands by itself and
   says so) and `npm run test -- --run`
-- when strings or locales are in the span: `npm run check:i18n:strict`
 - when Rust is in the span: `npm run test:rust -- <filter>`. **Never a bare `cargo test`**
   on this machine - the lib test binary dies at load without the post-link manifest patch -
   and never two cargo invocations at once.
@@ -80,8 +79,8 @@ authority and its parallel-safety primitives apply in full:
 - Reuse `src/features/shared/components` (`CATALOG.md`) before building UI; semantic tokens
   only. A spinner is never a surface loading state; a control the user pressed always gets
   a real one. Components under 200 LOC.
-- Every user-facing string goes through `t.section.key` and is translated into all 13 other
-  locales in the same change. No em dash in any app string - rewrite the sentence.
+- Every user-facing string goes through `t.section.key` (English only since 2026-10-25: no
+  translation). No em dash in any app string - rewrite the sentence.
 - IPC through `invokeWithTimeout`; errors through `toastCatch` / `silentCatch` and the error
   registry. Rust: reach for the existing primitive before writing a new one
   (`.claude/rules/rust-backend.md`).

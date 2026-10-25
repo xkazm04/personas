@@ -48,15 +48,11 @@ describe('alert option labels', () => {
     }
   });
 
-  it('change when the language changes', async () => {
+  // English only since 2026-10-25 (SHIPPED_UI_LOCALES): the Spanish half of
+  // this case went with the other locales. What it still pins is the shape -
+  // the labels resolve through `t` from keys, with exact values.
+  it('resolve through t to the English catalog', async () => {
     const english = await labelsFor('en');
-    const spanish = await labelsFor('es');
-
-    // Exact values, not "some of them differ" — a loose assertion would still
-    // pass if the resolution path regressed for most labels. Seven of the eight
-    // change; `severity_info` is legitimately "Info" in Spanish too, which the
-    // first run of this test surfaced and which is why it is spelled out rather
-    // than assumed.
     expect(english).toEqual([
       'Error Rate',
       'Success Rate',
@@ -66,16 +62,6 @@ describe('alert option labels', () => {
       'Info',
       'Warning',
       'Critical',
-    ]);
-    expect(spanish).toEqual([
-      'Tasa de Errores',
-      'Tasa de Éxito',
-      'Costo Total',
-      'Costo vs. Promedio',
-      'Ejecuciones',
-      'Info',
-      'Advertencia',
-      'Crítico',
     ]);
   });
 

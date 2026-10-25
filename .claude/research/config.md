@@ -71,15 +71,12 @@ attachment point in one sentence. For a finding spanning two areas, read both.
   `census:check` is the one most likely to fail a diff that compiles. See `.claude/CLAUDE.md` ->
   "PR self-review".
 - Rust changes -> `cargo check` in `src-tauri/` (needs `--features desktop`)
-- i18n changes -> `npm run check:i18n:strict` (the no-gap gate)
 - Lint baseline is ~10k warnings: gate on no NEW warnings in the files this diff touched.
 
 ## Repo law
 Authority: `.claude/CLAUDE.md`.
-- **i18n contract (14 locales).** Every user-facing string: key into `src/i18n/locales/en.json` via
-  `useTranslation()`, translated into all 13 other locales in the same change -
-  `scripts/i18n/translate-extract.mjs` -> fill `.i18n-work/missing-<code>.json` ->
-  `translate-merge.mjs`. The `i18n-no-gaps` pre-commit hook blocks gaps. No hardcoded English in
+- **i18n contract (English only since 2026-10-25).** Every user-facing string: key into
+  `src/i18n/locales/en.json` via `useTranslation()`. Do NOT translate it: the app ships English only since 2026-10-25 (`.claude/rules/i18n.md`). No hardcoded English in
   JSX, placeholder, title or aria-label. Backend status tokens via `tokenLabel()`
   (`src/i18n/tokenMaps.ts`); errors via `resolveErrorTranslated()` (`src/i18n/useTranslatedError.ts`).
   A string-adding finding costs 14 locales - put that in the effort note, not in the surprise.

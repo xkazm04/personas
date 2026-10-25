@@ -2,6 +2,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 import { AutomationCardActions } from '../AutomationCardActions';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
+
+// `vault`, `agents` and `overview` left the eager English core on 2026-10-25;
+// in the app the route preload lands them before this surface mounts.
+beforeAll(() => preloadSectionsAsync('en', ['vault', 'agents', 'overview']));
 
 const automation = { id: 'a1', name: 'Nightly sync', deploymentStatus: 'active' } as unknown as PersonaAutomation;
 

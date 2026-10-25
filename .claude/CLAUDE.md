@@ -17,7 +17,7 @@ npm run test:rust:crates # Rust unit tests for the extracted crates only
 npx vite build           # Vite ONLY — bypasses all 14 codegen tasks. Run
                          # `node scripts/run-codegen.mjs prebuild` first, or
                          # use `npm run build` (which does it for you).
-node scripts/i18n/check-coverage.mjs   # i18n coverage report (CI gate)
+node scripts/i18n/check-coverage.mjs   # i18n coverage report (not a gate: English-only since 2026-10-25)
 ```
 
 ### Build & packaging
@@ -84,7 +84,7 @@ hand only when your change is wide (a shared hook, a store, a migration), never 
   >
   > **Corrected 2026-08-20.** This line read "TypeScript + ESLint (incl. the 18 custom rules)" and named neither the eight project checks nor the census. There are **21** custom rules, not 18. An agent reading it would run `npm run check`, watch `census:check` fail on a rule it had never heard of, and have no doctrine for what to do next — which is the whole reason the section below now exists.
 - **Per item, before each atomic commit: `npm run verify:affected -- --files <your files>`** (`--dry` lists the plan; `--rust-tests` adds the app crate's tests). It wraps `npm run gate` and adds `vitest related` and scoped clippy. Without `--files` it takes every dirty file in the checkout, which on a shared checkout includes your siblings'. **`npm run gate`** alone answers tsc, eslint (changed files only) and the census from a warm local daemon (`scripts/gate/`, [`docs/architecture/warm-verification-service.md`](../docs/architecture/warm-verification-service.md)), for the checkout you run it in. In a worktree the verdict is a **delta against master** (`introduced` / `resolved`), so a sibling's red base does not make your diff red. When the daemon cannot answer it prints one line and runs the cold commands itself, with the same exit code. Measured 2026-09-07: a warm request for the main checkout 0.7 s; a repeated worktree request about 3 s; `census:check` alone fell from 43.7 s to 7.6 s on a warm cache after the engine started walking once. `npm run check` stays the pre-push lane (it also runs `check:tiers`, three Vite builds, which nothing can warm); `npm run check:fast` is `check` without `check:tiers` and with the three warm gates routed through the daemon.
-- `npm run check:i18n:strict` (no translation gaps — see `.claude/rules/i18n.md` § "Translation completeness") · `npm run check:error-registry` · `npm run check:themes` · `npm run check:tauri-configs`
+- `npm run check:error-registry` · `npm run check:themes` · `npm run check:tauri-configs`
 - Vitest: `verify:affected` runs the tests that import your files. The whole suite (`npm run test -- --run`, past 30 min on a CI runner) is the full lane's job.
 - If Rust changed: `verify:affected` runs clippy with `-D warnings` over the changed crates and their dependents, and the extracted crates' tests when only they changed. Add `--rust-tests` for the app crate's tests (`npm run test:rust`). If you added or changed a `#[ts(export)]` type: `cargo test --workspace --manifest-path src-tauri/Cargo.toml --features desktop export_bindings` (then commit `src/lib/bindings/`; without `--workspace --features desktop` **zero** bindings regenerate)
 - `node .ai/doctor.mjs` — `.ai` conformance (no hard FAILs)
@@ -166,7 +166,7 @@ src/
 │   ├── shared/       # Shared UI components, layout, feedback (122 files)
 │   └── ...           # triggers, recipes, schedules, deployment, etc.
 ├── hooks/            # Custom React hooks
-├── i18n/             # Internationalization system (14 languages)
+├── i18n/             # Internationalization system (ships English only; 13 more locales kept, unshipped)
 ├── lib/              # Business logic, types, utilities
 ├── stores/           # Zustand with slice pattern (src/stores/slices/)
 └── styles/           # Global CSS, typography, themes

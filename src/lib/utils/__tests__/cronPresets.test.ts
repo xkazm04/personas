@@ -18,7 +18,7 @@ afterEach(() => {
   useI18nStore.setState({ language: original });
 });
 
-async function labelsFor(language: 'en' | 'de') {
+async function labelsFor(language: 'en') {
   useI18nStore.setState({ language });
   await preloadSectionsAsync(language, ['schedules']);
   const t = getActiveTranslations();
@@ -38,18 +38,15 @@ describe('CRON_PRESETS', () => {
     expect(new Set(CRON_PRESETS.map((p) => p.cron)).size).toBe(CRON_PRESETS.length);
   });
 
-  it('resolves a label for every preset in every language it is asked for', async () => {
+  // English only since 2026-10-25: the German comparison that proved the
+  // labels resolve per language went with the other locales. Every preset
+  // must still resolve to a real English string through `t`.
+  it('resolves an English label for every preset', async () => {
     const english = await labelsFor('en');
-    const german = await labelsFor('de');
-
     expect(english[0]).toBe('Every minute');
-    expect(german[0]).toBe('Jede Minute');
-
-    // Every single one moves — a "some of them differ" assertion would still
-    // pass if resolution regressed for most of the list.
     for (const [i, label] of english.entries()) {
+      expect(typeof label, CRON_PRESETS[i]!.id).toBe('string');
       expect(label, CRON_PRESETS[i]!.id).not.toBe('');
-      expect(german[i], CRON_PRESETS[i]!.id).not.toBe(label);
     }
   });
 });

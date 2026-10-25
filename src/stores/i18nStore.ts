@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { LocaleCode } from '@/i18n/locales.manifest';
-import { getLocaleDescriptor } from '@/i18n/locales.manifest';
+import { getLocaleDescriptor, toShippedUiLocale } from '@/i18n/locales.manifest';
 import { silentCatch } from '@/lib/silentCatch';
 
 /**
@@ -102,7 +102,11 @@ export const useI18nStore = create<I18nState>()(
     (set) => ({
       language: 'en',
       fontReady: true,
-      setLanguage: (language) => {
+      setLanguage: (requested) => {
+        // A language the build does not ship has no section chunks behind it,
+        // so committing it would render English under a non-English `lang`
+        // (and `dir="rtl"` for Arabic). See SHIPPED_UI_LOCALES.
+        const language = toShippedUiLocale(requested);
         applyLangAttributes(language);
         set({ language });
         mirrorLanguageToBackend(language);
@@ -111,6 +115,12 @@ export const useI18nStore = create<I18nState>()(
     {
       name: 'personas-i18n-storage',
       partialize: (state) => ({ language: state.language }),
+      // A language persisted before the 2026-10-25 English-only decision (or
+      // by a build that shipped more locales) rehydrates as English.
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<Pick<I18nState, 'language'>>;
+        return { ...current, ...saved, language: toShippedUiLocale(saved.language ?? current.language) };
+      },
       onRehydrateStorage: () => (state) => {
         if (state) applyLangAttributes(state.language);
       },

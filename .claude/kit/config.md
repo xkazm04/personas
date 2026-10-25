@@ -22,7 +22,7 @@ starts in the batch track.
 - builder: `npm run gate -- --cold` (tsc + eslint on changed files + census as a delta; COLD only - the warm
   daemon has read green over real rises); `npx tsc --noEmit`; eslint on touched files (no NEW warnings);
   targeted vitest with counts (the whole suite cannot run here: a test kills its worker - shard with
-  `npx vitest run --reporter=dot --shard=i/4`); `npm run check:i18n:strict` when strings change.
+  `npx vitest run --reporter=dot --shard=i/4`).
 - Director at batch close: `npm run census:check` on a clean tree; ratchet drops only after tracing each to a
   removal in the batch diff (`npm run census -- --update` then commit it alone); never re-baseline a rise.
 - When a builder DELETES or MOVES a file: `node scripts/census/check-corpus-integrity.mjs` and `npm run check:evidence` (subject evidence lists and golden-path citations resolve paths; a deleted component broke both on 2026-09-25, the companions move did the same on 2026-09-22).
@@ -62,7 +62,7 @@ home, overview, agents, vault, settings, then plugins, companions, teams, trigge
 ## Rituals
 - Batch open/close: `node scripts/active-runs.mjs register|complete --slug kit-<batch> ...` (one bash call each).
 - Owner correction: `MSYS_NO_PATHCONV=1 node scripts/decision-ledger/capture-decision.mjs --correction "..." --was "..." --context "..."`.
-- Strings: `node scripts/i18n/translate-extract.mjs` -> fill per locale -> `node scripts/i18n/translate-merge.mjs`.
+- Strings: into `src/i18n/locales/en.json` only - English only since 2026-10-25, no translation.
 
 ## Taste
 - Keeps brand tint and glow (Gate 0 titles, Gate 1 primary-glow rail); calls their removal a degradation.

@@ -7,7 +7,7 @@ import { useVaultStore } from "@/stores/vaultStore";
 import type { CredentialTemplateEvent } from '@/lib/types/types';
 import {
   safeParseConfig,
-  ROTATION_EVENT_TEMPLATES,
+  rotationEventTemplates,
   getDefaultConfig,
 } from '@/features/vault/sub_credentials/components/features/EventConfigSubPanels';
 import { EventTemplateCard } from './EventTemplateCard';
@@ -32,7 +32,7 @@ export function CredentialEventConfig({ credentialId, events: eventsProp }: Cred
   const allTemplateIds = new Set(connectorEvents.map((e) => e.id));
   const eventTemplates = [
     ...connectorEvents,
-    ...ROTATION_EVENT_TEMPLATES.filter((rt) => !allTemplateIds.has(rt.id)),
+    ...rotationEventTemplates(t).filter((rt) => !allTemplateIds.has(rt.id)),
   ];
 
   // Filter events for this credential

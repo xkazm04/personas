@@ -27,7 +27,8 @@
  * corruption, and after parsing there is nothing to tell apart: a correct value
  * simply contains the character.
  *
- * Usage: node scripts/i18n/check-escapes.mjs [--self-test] [--json]
+ * Usage: node scripts/i18n/check-escapes.mjs [--self-test] [--json] [--all]
+ *   (en.json only unless --all; see the English-only note where files are listed)
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
@@ -96,7 +97,13 @@ if (args.includes('--self-test')) {
   process.exit(0);
 }
 
-const files = readdirSync(LOCALE_DIR).filter((f) => f.endsWith('.json')).sort();
+// English only by default: the app ships English alone since 2026-10-25
+// (SHIPPED_UI_LOCALES in src/i18n/locales.manifest.ts) and nothing checks the
+// other 13 catalogs any more. `--all` scans every locale, for reviving one.
+const files = readdirSync(LOCALE_DIR)
+  .filter((f) => f.endsWith('.json'))
+  .filter((f) => args.includes('--all') || f === 'en.json')
+  .sort();
 if (files.length === 0) {
   console.error(`i18n escape check: no locale files under ${LOCALE_DIR} — looked at nothing, which is not the same as finding nothing.`);
   process.exit(1);

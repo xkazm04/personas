@@ -45,7 +45,6 @@ builder: (before every commit, scoped to what the cycle touched)
   and never acceptable on the lines this cycle wrote.
 - `cargo check --manifest-path src-tauri/Cargo.toml` - when any `.rs` under
   `src-tauri/` changed.
-- `npm run check:i18n:strict` - when any key was added to `src/i18n/locales/en.json`.
 - `npm run test -- <path>` - only when the direction added or changed test files.
 
 integration: (before the exit summary)
@@ -97,7 +96,7 @@ the architecture and engine internals. The digest that binds a `/friend` cycle:
 | a `#[derive(TS)] #[ts(export)]` struct is added or changed | `cargo test --manifest-path src-tauri/Cargo.toml export_bindings` - commit the result in `src/lib/bindings/`, the single source of truth (the old `src-tauri/bindings/` dual tree is retired and gitignored) | review |
 | a new Tauri command is registered | `node scripts/generate-command-names.mjs` (any `npm run dev` / `npm run build` also triggers it) | build |
 | a new shared component with a `@catalog` tag | `npm run gen:catalog` | review |
-| English locale keys added | `node scripts/i18n/translate-extract.mjs` -> one Sonnet subagent per locale fills `.i18n-work/missing-<code>.json` (preserve `{placeholders}`, keep brand/technical terms) -> `node scripts/i18n/translate-merge.mjs`. For a <=5-key polish cycle, inline edits per locale file are fine. | `i18n-no-gaps` pre-commit hook |
+| English locale keys added | Nothing more: English only since 2026-10-25, the other locales are not translated (`.claude/rules/i18n.md`). | none |
 
 ## Docs
 

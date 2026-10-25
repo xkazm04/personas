@@ -17,7 +17,7 @@ This project adheres to the [Contributor Covenant](./CODE_OF_CONDUCT.md). By par
 - **Report a bug** — open an issue using the Bug Report template
 - **Propose a feature** — open an issue using the Feature Request template so we can align before you write code
 - **Improve documentation** — fixes to README, inline docs, or the `/docs` tree are always welcome
-- **Translate the UI** — see the [i18n section](#internationalization) below
+- **Translate the UI** — paused: the app ships English only for now, see the [i18n section](#internationalization) below
 - **Tackle a `good first issue`** — look for the label on the issues tab
 - **Write tests** — coverage gaps are tracked in issues labelled `area/tests`
 
@@ -148,7 +148,7 @@ Push your branch and open a PR against `master`. Fill out the PR template — it
 
 ## Internationalization
 
-This project ships with **14 languages**. Every user-facing string must go through the i18n system — the ESLint rule `custom/no-hardcoded-jsx-text` enforces this.
+The app ships in **English only** for now (since 2026-10-25). Translations for 13 more locales stay in `src/i18n/locales/` but are not bundled or checked. Every user-facing string still goes through the i18n system, so a language can come back as a translation job — the ESLint rule `custom/no-hardcoded-jsx-text` enforces this.
 
 ```typescript
 import { useTranslation } from '@/i18n/useTranslation';
@@ -161,11 +161,9 @@ When you add a new UI string:
 
 1. Add the key to **`src/i18n/locales/en.json`** in the appropriate top-level section. (`src/i18n/en.ts` is a back-compat shim, not the source — editing it does nothing.)
 2. Use `t.section.key` in your component.
-3. **Translate it into all 13 other locale files in the same commit.** English fallback is not an acceptable resting state: two `pre-commit` hooks in `lefthook.yml` block the commit otherwise — `i18n-no-gaps` (`scripts/i18n/check-coverage.mjs --strict`) fails on a key missing from any locale, and `i18n-no-untranslated` (`scripts/i18n/check-untranslated.mjs --strict`) fails on a live value still byte-identical to English.
-4. Don't hand-edit 13 files. Run `node scripts/i18n/translate-extract.mjs`, fill each `.i18n-work/missing-<code>.json`, then `node scripts/i18n/translate-merge.mjs`.
-5. Put translator context (what the string labels, space constraints) in the commit message — JSON carries no comments.
+3. Do not translate it into the other locale files; no hook or CI job checks them while the app is English-only.
 
-See the [i18n section in the README](./README.md#internationalization-i18n) for the full translator pipeline.
+See the [i18n section in the README](./README.md#internationalization-i18n) for how a language is brought back.
 
 ---
 

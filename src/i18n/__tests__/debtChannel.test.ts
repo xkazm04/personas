@@ -9,11 +9,12 @@
  * translated behind a green board) and no route declared the section (so the
  * chunk was never fetched). Both were fixed 2026-08-09.
  *
- * These tests pin the two runtime properties that fix depends on.
+ * These tests pin the runtime properties that fix depends on. (The case that
+ * proved a translated value resolved went with the other locales on
+ * 2026-10-25: the app ships English only.)
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { debtText } from '../DebtText';
-import { preloadSectionsAsync } from '../useTranslation';
 import { sectionsForRoute } from '../routeSections';
 import { useI18nStore } from '@/stores/i18nStore';
 import enCatalog from '../locales/en.json';
@@ -31,18 +32,6 @@ describe('debt channel', () => {
     // sidebar chrome, so there is no route it does not reach.
     expect(sectionsForRoute('studio')).toContain('debt');
     expect(sectionsForRoute('home')).toContain('debt');
-  });
-
-  it('resolves a translated value once the locale section is loaded', async () => {
-    useI18nStore.setState({ language: 'es' });
-    await preloadSectionsAsync('es', ['debt']);
-
-    const key = 'auto_active_project_687de263' as Parameters<typeof debtText>[0];
-    const value = debtText(key);
-    const english = (enCatalog.debt as Record<string, string>)[key];
-
-    expect(value).toBeTruthy();
-    expect(value).not.toBe(english);
   });
 
   it('falls back to real English prose, never to the raw key', () => {
