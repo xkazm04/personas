@@ -15,7 +15,8 @@
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { debtText } from '../DebtText';
-import { sectionsForRoute } from '../routeSections';
+import { FIRST_PAINT_PARTIAL_SECTIONS, sectionsForRoute } from '../routeSections';
+import { EN_PARTIAL_SECTION_STRINGS } from '../generated/enSectionStrings';
 import { useI18nStore } from '@/stores/i18nStore';
 import enCatalog from '../locales/en.json';
 
@@ -27,11 +28,19 @@ afterEach(() => {
 });
 
 describe('debt channel', () => {
-  it('is declared by BASE_SECTIONS so every route fetches it', () => {
+  it('is a partial-core section: first-paint keys eager, the rest loaded on every route right after', () => {
     // Its 113 call sites span eight feature areas plus the always-mounted
-    // sidebar chrome, so there is no route it does not reach.
-    expect(sectionsForRoute('studio')).toContain('debt');
-    expect(sectionsForRoute('home')).toContain('debt');
+    // sidebar chrome, so there is no route it does not reach. Until 2026-10-25
+    // that meant BASE_SECTIONS (all 539 keys eager and awaited before mount);
+    // now the sidebar's few keys ship eagerly and the idle background load
+    // brings the rest - so no route preload is needed, and none is declared.
+    expect(FIRST_PAINT_PARTIAL_SECTIONS).toContain('debt');
+    expect(sectionsForRoute('home')).not.toContain('debt');
+    const partial = JSON.parse(EN_PARTIAL_SECTION_STRINGS.debt!) as Record<string, string>;
+    expect(Object.keys(partial).length).toBeGreaterThan(0);
+    for (const [key, value] of Object.entries(partial)) {
+      expect(value).toBe((enCatalog.debt as Record<string, string>)[key]);
+    }
   });
 
   it('falls back to real English prose, never to the raw key', () => {

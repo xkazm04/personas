@@ -7,6 +7,8 @@ import {
   ALL_I18N_SECTIONS,
   getEnglishSection,
   getEnglishTranslations,
+  hasFullEnglishSection,
+  isPartialEnglishSection,
   isCoreSection,
   isTranslationSection,
   setLoadedEnglishSection,
@@ -88,7 +90,8 @@ function sectionLoadKey(lang: Language, section: TranslationSection): string {
  */
 function getCachedSection(lang: Language, section: TranslationSection): unknown | undefined {
   if (lang === 'en') {
-    return getEnglishSection(section);
+    // A partial core is not "loaded": `loadSection` must still fetch the full chunk.
+    return hasFullEnglishSection(section) ? getEnglishSection(section) : undefined;
   }
   return sectionCache.get(lang)?.[section];
 }
@@ -390,12 +393,32 @@ function shapeFor(section: TranslationSection): Record<string, unknown> {
   return SECTION_SHAPES[section] ?? EMPTY_SECTION_FALLBACK;
 }
 
+/**
+ * A partial core read over the section's shape, so a key outside the partial
+ * is `undefined` at any depth rather than a TypeError. Cached per section until
+ * the full chunk lands (`loadSection` clears `mergedSectionCache` then).
+ */
+function partialOverShape(section: TranslationSection, partial: unknown): unknown {
+  const cacheKey = `en-partial:${section}`;
+  let merged = mergedSectionCache.get(cacheKey);
+  if (merged === undefined) {
+    merged = deepMergeSection(shapeFor(section), partial);
+    mergedSectionCache.set(cacheKey, merged);
+  }
+  return merged;
+}
+
 function getResolvedSection(lang: Language, section: TranslationSection): unknown {
   const english = getEnglishSection(section);
   if (lang === 'en') {
     if (english === undefined) {
       degradedSections.add(section);
       return shapeFor(section);
+    }
+    if (isPartialEnglishSection(section)) {
+      // First paint's keys only: re-render this reader when the full section lands.
+      degradedSections.add(section);
+      return partialOverShape(section, english);
     }
     return english;
   }

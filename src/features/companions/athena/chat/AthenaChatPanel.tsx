@@ -14,7 +14,7 @@
 
 import { Suspense, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useTranslation } from '@/i18n/useTranslation';
+import { usePreloadedSections, useTranslation } from '@/i18n/useTranslation';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { idlePrefetch } from '@/lib/idlePrefetch';
 import { GhostRows } from '@/features/shared/components/kit';
@@ -69,6 +69,9 @@ export default function AthenaChatPanel() {
   // consuming it while the panel was closed).
   const engine = useAthenaChatEngine();
   const isOpen = state === 'open';
+  // `athena` is a partial core (FIRST_PAINT_PARTIAL_SECTIONS): the orb and
+  // footer keys ship eagerly, the open window's copy is the full section.
+  usePreloadedSections(['athena'], isOpen);
   const motionProps = usePanelMotion(compact);
   const mount = useChatMount(isOpen, motionProps.settleMs);
   // TODO(prototype, 2026-09-22): consolidate the Athena chat switcher.

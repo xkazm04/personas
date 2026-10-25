@@ -40,7 +40,9 @@ export function MonitorBody({ view, activity, hasChannels, bridges, channelPrese
   // The Conversations view's DeliberationRail reads `deliberation`, an
   // OVERLAY_SECTIONS entry (not loaded before first paint): ask for it as the
   // Monitor opens.
-  usePreloadedSections(['deliberation']);
+  // `monitor` itself is a partial core (FIRST_PAINT_PARTIAL_SECTIONS): the
+  // titlebar's keys ship eagerly, the Monitor's own copy is the full section.
+  usePreloadedSections(['deliberation', 'monitor']);
   return (
     <Suspense fallback={<BodyFallback />}>
       {view === 'activity' ? (

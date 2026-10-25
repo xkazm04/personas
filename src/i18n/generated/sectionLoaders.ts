@@ -3,6 +3,7 @@
 // English core sections are absent on purpose: they are eager in enSectionStrings.ts.
 
 export const sectionLoaders = import.meta.glob<{ default: unknown }>([
+  "../section-locales/en/monitor.json",
   "../section-locales/en/council.json",
   "../section-locales/en/features.json",
   "../section-locales/en/home.json",
@@ -28,6 +29,7 @@ export const sectionLoaders = import.meta.glob<{ default: unknown }>([
   "../section-locales/en/execution_status.json",
   "../section-locales/en/project_overview.json",
   "../section-locales/en/plugins.json",
+  "../section-locales/en/athena.json",
   "../section-locales/en/media_studio.json",
   "../section-locales/en/research_lab.json",
   "../section-locales/en/event_types.json",
@@ -38,12 +40,15 @@ export const sectionLoaders = import.meta.glob<{ default: unknown }>([
   "../section-locales/en/models.json",
   "../section-locales/en/gitlab.json",
   "../section-locales/en/pipeline.json",
+  "../section-locales/en/shared.json",
   "../section-locales/en/twin.json",
   "../section-locales/en/cockpit.json",
   "../section-locales/en/kpis.json",
   "../section-locales/en/planner.json",
   "../section-locales/en/auth.json",
+  "../section-locales/en/debt.json",
   "../section-locales/en/studio.json",
+  "../section-locales/en/notepad.json",
   "../section-locales/en/browser.json",
   "../section-locales/en/companions.json",
   "../section-locales/en/decisionCenter.json",

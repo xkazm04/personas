@@ -185,11 +185,16 @@ export function parseRouteSections(source) {
   const overlay = /\bconst\s+OVERLAY_SECTIONS\b/.test(source)
     ? parseArrayLiteral(sliceAfterAssignment(source, 'OVERLAY_SECTIONS', '['), ']')
     : [];
+  // FIRST_PAINT_PARTIAL_SECTIONS (2026-10-25): their first-paint keys ship
+  // eagerly, the full section loads right after first paint. Covered.
+  const partial = /\bconst\s+FIRST_PAINT_PARTIAL_SECTIONS\b/.test(source)
+    ? parseArrayLiteral(sliceAfterAssignment(source, 'FIRST_PAINT_PARTIAL_SECTIONS', '['), ']')
+    : [];
 
-  const covered = new Set([...base, ...overlay]);
+  const covered = new Set([...base, ...overlay, ...partial]);
   for (const list of Object.values(routes)) for (const s of list) covered.add(s);
 
-  return { base, overlay, routes, covered };
+  return { base, overlay, partial, routes, covered };
 }
 
 /**
