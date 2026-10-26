@@ -641,3 +641,19 @@ test('(xy) failureSignature reads TAP not ok, RED: lines and a checker path find
     'packages/ui/kit/entry.ts: unresolved relative import ../src/kit.js',
   ]);
 });
+
+test('(xz) unlinkAllLinks removes every link inside a worktree and never touches the link target', async () => {
+  const W = await import('../lib/worktree.mjs');
+  const fs = await import('node:fs'); const os = await import('node:os'); const path = await import('node:path');
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'am-links-'));
+  const target = path.join(base, 'main-store', 'typescript');
+  fs.mkdirSync(target, { recursive: true });
+  fs.writeFileSync(path.join(target, 'index.js'), 'keep');
+  const wt = path.join(base, 'wt');
+  fs.mkdirSync(path.join(wt, 'packages', 'renderer', 'node_modules'), { recursive: true });
+  fs.symlinkSync(target, path.join(wt, 'packages', 'renderer', 'node_modules', 'typescript'), 'junction');
+  assert.equal(W.unlinkAllLinks(wt), 1);
+  fs.rmSync(wt, { recursive: true, force: true });
+  assert.equal(fs.readFileSync(path.join(target, 'index.js'), 'utf8'), 'keep', 'the link target survives the delete');
+  fs.rmSync(base, { recursive: true, force: true });
+});

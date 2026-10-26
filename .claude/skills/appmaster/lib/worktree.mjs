@@ -279,6 +279,32 @@ export function unlinkNodeModules(root, worktree) {
   return any;
 }
 
+/**
+ * (dir) => number   // links removed
+ * Unlink EVERY symlink or junction under `dir`, wherever it points, without descending into one, so a
+ * later recursive delete of `dir` cannot follow a link into the main checkout. unlinkNodeModules only
+ * knows the junctions the harness made; a link made by anyone else inside a worktree (a builder, a gate,
+ * the Director) was followed by `git worktree remove --force` on 2026-10-26 and emptied packages in the
+ * main checkout's pnpm store. `.git` is skipped (a worktree's .git is a file, never a link to follow).
+ */
+export function unlinkAllLinks(dir) {
+  let n = 0;
+  const walk = (d) => {
+    let entries;
+    try { entries = fs.readdirSync(d, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (e.name === '.git') continue;
+      const p = path.join(d, e.name);
+      const st = lstatOrNull(p);
+      if (!st) continue;
+      if (st.isSymbolicLink()) { if (unlinkJunction(p)) n += 1; continue; }
+      if (st.isDirectory()) walk(p);
+    }
+  };
+  if (lstatOrNull(dir)?.isDirectory()) walk(dir);
+  return n;
+}
+
 /** Remove a junction itself, never what it points at. */
 export function unlinkJunction(link) {
   const st = lstatOrNull(link);
@@ -339,6 +365,7 @@ export function sweepLeftoverDir(root, dir) {
   if (!isUnder(dir, WORKTREE_ROOT)) return false;
   const listed = gitTry(root, ['worktree', 'list', '--porcelain']);
   if (listed.ok && listed.out.split(/\r?\n/).some((l) => l.startsWith('worktree ') && norm(l.slice(9)) === norm(dir))) return false;
+  unlinkAllLinks(dir);
   // the gate's processes may still hold files for a moment after they exit (2026-10-25: merged runs'
   // folders survived the first pass and went the second), so a failed pass is retried a few times
   for (let attempt = 0; attempt < 4 && fs.existsSync(dir); attempt += 1) {
@@ -358,6 +385,7 @@ export function removeWorktree(run) {
   if (worktree) {
     if (!isUnder(worktree, WORKTREE_ROOT)) throw new Error(`refusing to remove ${worktree}: not under ${WORKTREE_ROOT}`);
     out.junction = unlinkNodeModules(root, worktree);
+    out.links = unlinkAllLinks(worktree);
     if (fs.existsSync(worktree)) {
       const r = gitTry(root, ['worktree', 'remove', '--force', worktree]);
       if (!r.ok) throw new Error(`git worktree remove ${worktree}: ${r.err}`);
@@ -383,13 +411,14 @@ export function withBaseWorktree(run, fn) {
   const dir = path.join(WORKTREE_ROOT, run.slug, `base-${shortId(run.runId)}`);
   if (!isUnder(dir, WORKTREE_ROOT)) throw new Error(`base worktree ${dir} is not under ${WORKTREE_ROOT}`);
   fs.mkdirSync(path.dirname(dir), { recursive: true });
-  if (fs.existsSync(dir)) { unlinkNodeModules(root, dir); gitTry(root, ['worktree', 'remove', '--force', dir]); gitTry(root, ['worktree', 'prune']); sweepLeftoverDir(root, dir); }
+  if (fs.existsSync(dir)) { unlinkNodeModules(root, dir); unlinkAllLinks(dir); gitTry(root, ['worktree', 'remove', '--force', dir]); gitTry(root, ['worktree', 'prune']); sweepLeftoverDir(root, dir); }
   git(root, ['worktree', 'add', '--detach', dir, run.baseSha]);
   try {
     linkNodeModules(root, dir);
     return fn(dir);
   } finally {
     unlinkNodeModules(root, dir);
+    unlinkAllLinks(dir);
     gitTry(root, ['worktree', 'remove', '--force', dir]);
     gitTry(root, ['worktree', 'prune']);
     sweepLeftoverDir(root, dir);
