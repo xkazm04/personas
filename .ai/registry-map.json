@@ -13479,7 +13479,11 @@
           "revision": 4,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/mergedFeed.tsx:50 The cross-team union that feeds the live pop-ups is ranked by timestamp alone, with no identity tiebreak, and then cut at LIVE_FEED_WINDOW, so tied rows fall into input-iteration order and the window boundary keeps or drops them by accident. The sibling comparator in useConversation.ts:103 does carry the tiebreak, so the two rank sites in this context disagree.",
+          "evaluatedAt": "2026-10-26",
+          "evaluatedAgainst": "sha256-b2:fdaa24ca3f5177d9",
+          "evaluatedRevision": 4
         },
         {
           "subject": "voice-io",

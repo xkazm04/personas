@@ -35552,37 +35552,32 @@
       "context": "fleet-monitor-channels",
       "subject": "feed",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T01:54:16.820Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-26",
+      "evaluatedTs": "2026-10-26T22:26:52.125Z",
+      "worker": "a26610ea-051a-4056-bbcc-85c0c480b0b1",
       "techniques": [
+        {
+          "technique": "reverse-chronology-semantics",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/conversationModel.ts:81 The day bucket comes from slicing the stored timestamp string (UTC day), while dayLabel (line 90) computes Today/Yesterday from local midnight via setHours. The technique names this exact failure: boundary and label in different zones, and a calendar day derived by slicing a zone-suffixed string. Separately, the mergedFeed.tsx:50 comparator has no identity tiebreak."
+        },
         {
           "technique": "event-clustering",
           "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/__tests__/conversationModel.test.ts:88 The implemented and tested assignment grouping crosses unrelated intervening messages, contrary to the technique's consecutive-only clustering rule."
-        },
-        {
-          "technique": "live-prepend",
-          "verdict": "deviation",
-          "evidence": "src/features/overview/sub_timeline/components/LensStream.tsx:45 The current Timeline derives rendered rows directly from live data while scrolled, without holding prepends or compensating their height; its jump control also lacks a new-arrival count."
+          "evidence": "src/features/fleet/monitor/channels/conversationModel.ts:101 Clusters are view-only and keyed by the oldest member (line 133, `asg:${item.assignmentId}:${first.id}`), which conforms. But a cluster deliberately reaches across interleaved talk rows within a day, which breaks the technique's consecutive-only clause: earlier steps are pulled past a message to sit at the cluster's newest position."
         },
         {
           "technique": "read-position-and-unseen",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/pipeline/channelSlice.ts:149 The sidebar derives unread state from a persisted timestamp alone, so an unseen occurrence tied with the watermark timestamp is incorrectly excluded."
+          "evidence": "src/features/fleet/monitor/channels/ProjectRow.tsx:46 The NEW figure is counted over the loaded page (CHANNEL_PAGE=60 per page) and shown as exact. countUnread in channelSlice compares against a timestamp-only lastSeenAt anchor rather than a (timestamp, id) tuple, and a channel never read seeds at origin (fully unread). In-context, the conversation's 'N new' pill (VirtualConversation.tsx:151) is a maintained counter of row growth, so a step that extends an existing cluster is not counted."
         },
         {
-          "technique": "reverse-chronology-semantics",
-          "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/mergedFeed.tsx:50 The pop-up merge omits the identity tiebreaker despite merging multiple teams and cutting a bounded window."
+          "technique": "live-prepend",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/live/LiveChannelOverlay.tsx:73 The pop-up sink dedupes arrivals by occurrence id at the merge door and absorbs history present at mount silently. The conversation's entrance is keyed by row id (VirtualConversation.tsx:205), so a re-poll does not replay it. Scope: the conversation itself grows at the bottom (transcript geometry), so the top-growth scroll rules bind only the pop-up stack."
         }
-      ],
-      "withdrawn": {
-        "worker": "a378c301-cab4-4295-a112-b0577a246aed",
-        "state": "deviation",
-        "at": "2026-10-22T01:54:44.284681+00:00",
-        "reason": "reviewer (sonnet): The lines quoted say what the verdict claims (`mergedFeed.tsx:50` sorts by timestamp only, `countUnread` uses `<=` on the watermark), but the deviation is about code outside this context. `mergedFeed.tsx` is not among the listed context files and no listed file imports it; its header comment says it"
-      }
+      ]
     },
     "e61f931c-25d7-4532-9ec7-ab6f3fc377e2/issuance-policy-ladder": {
       "context": "lib-credentials",
