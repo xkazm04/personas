@@ -32305,40 +32305,40 @@
       "subject": "grounded-answer-scoring",
       "bundle": "llm-observability",
       "state": "unknown",
-      "evaluatedAt": "2026-10-18",
-      "evaluatedTs": "2026-10-18T23:43:47.049Z",
+      "evaluatedAt": "2026-10-26",
+      "evaluatedTs": "2026-10-26T22:33:06.827Z",
       "techniques": [
-        {
-          "technique": "bidirectional-claim-matching",
-          "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/sub_training/TrainingStudio.tsx:193 The studio persists approved interview examples; it does not compare a candidate answer with a written reference answer."
-        },
         {
           "technique": "decompose-then-verify",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:176 This generates answer prose for human review; the traced backend returns prose without an answer-support scoring operation."
+          "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:222 An LLM summary of the Q&A transcript is generated and recorded as a twin interaction. No support verdict of any kind is computed, so there is no grounding score to decompose. That is a product gap, not a misapplied technique."
+        },
+        {
+          "technique": "bidirectional-claim-matching",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:169 Answers are the user's own (or a draft the user edits). No written reference answer exists to match against."
         },
         {
           "technique": "per-source-attribution",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/infrastructure/twin.rs:1882 The connected batch backend records whether retrieved context was supplied, not correctness or retrieval-versus-reading fault attribution."
+          "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:176 The twin-simulated draft is grounded server-side, but nothing scores its correctness, so there is no regression to split into a retrieval fault or a reading fault."
         },
         {
           "technique": "question-blind-relevance",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/sub_training/topicCoverage.ts:126 Keyword matching counts topic coverage; it does not score an answer's relevance to its interview question."
+          "evidence": "src/features/plugins/twin/sub_training/useTrainingSession.ts:247 The only judgment on an answer is a word count that triggers a follow-up question. No relevance judge exists."
         },
         {
           "technique": "the-decomposer-is-inside-the-instrument",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/sub_training/TrainingStudio.tsx:313 Answer tiers derive from word counts, so no model decomposer controls a factuality-score denominator."
+          "evidence": "src/features/plugins/twin/sub_training/topicCoverage.ts:120 Coverage is a keyword or preset tally. Answers are never cut into claims, so there is no decomposer to calibrate."
         }
       ],
       "withdrawn": {
-        "worker": "8fa44819-fdc0-4f7e-a9a6-f35b1bbce6e9",
+        "worker": "a21c6cc1-ca22-4ed7-a850-00a08674a730",
         "state": "not-applicable",
-        "at": "2026-10-18T23:44:11.538131+00:00",
-        "reason": "reviewer (sonnet): The context's draft-answer path (useTrainingSession.ts:176 calling simulateAnswer, backed by twin.rs:1882 where a knowledge-base block is retrieved and `kb_grounded` is recorded) is retrieval-grounded answer generation, so grounded-answer scoring can apply, and the cited topicCoverage.ts:158 line on"
+        "at": "2026-10-26T22:33:30.554338+00:00",
+        "reason": "reviewer (sonnet): The code shows this context does generate LLM output from source material: `draftAnswer` calls `twinApi.simulateAnswer`, which is grounded in bio and facts (useTrainingSession.ts:165-176), and `summarizeSession` summarizes the transcript (:208-216). Both are saved unscored. The evidence itself calls"
       }
     },
     "876c0b4e-6472-4544-a21b-56e7529fb6b3/llm-extracted-entity-graph": {
