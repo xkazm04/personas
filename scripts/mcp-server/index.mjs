@@ -227,7 +227,7 @@ server.tool(
   "Trigger a persona execution with optional input data. Requires an enabled webhook trigger.",
   {
     persona: z.string().describe("Persona name or ID"),
-    input: z.record(z.unknown()).optional().describe("Input data object to pass to the persona"),
+    input: z.record(z.string(), z.unknown()).optional().describe("Input data object to pass to the persona"),
   },
   async ({ persona, input }) => {
     const row = findPersona(await getDb(), persona);
@@ -684,7 +684,7 @@ server.tool(
   "Execute a persona directly via the management API. Requires the Personas app to be running. More reliable than execute_persona (no webhook trigger needed).",
   {
     persona: z.string().describe("Persona name or ID"),
-    input: z.record(z.unknown()).optional().describe("Input data for the execution"),
+    input: z.record(z.string(), z.unknown()).optional().describe("Input data for the execution"),
   },
   async ({ persona, input }) => {
     const d = await getDb();
