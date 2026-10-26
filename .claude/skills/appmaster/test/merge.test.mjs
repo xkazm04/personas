@@ -486,6 +486,15 @@ test('(xviii) narrowCommand and testFilesIn', async () => {
   assert.deepEqual(G.testFilesIn(['FAIL src/__tests__/a.test.tsx > suite > case', 'x/y.test.ts', 'no file here']).sort(), ['src/__tests__/a.test.tsx', 'x/y.test.ts']);
 });
 
+test('(xz2) failureSignature reads failures behind a pnpm -r package prefix', async () => {
+  const G = await import('../lib/gate.mjs');
+  const sig = G.failureSignature([
+    'apps/console test: FAIL src/data/contractDoor.test.ts > door > parses a session event',
+    'apps/console test:  Tests  1 failed | 40 passed (41)',
+  ].join('\n'));
+  assert.deepEqual(sig, ['FAIL src/data/contractDoor.test.ts > door > parses a session event']);
+});
+
 test('(xx) failureSignature reads Rust libtest failures and census drift, so a base with the same lines makes them inherited', async () => {
   const G = await import('../lib/gate.mjs');
   const ESC = String.fromCharCode(27);

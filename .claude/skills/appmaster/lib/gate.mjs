@@ -165,7 +165,8 @@ export function failureSignature(text, cap = 300) {
   const ESC = String.fromCharCode(27);
   const ansi = new RegExp(ESC + '\\[[0-9;]*m', 'g');
   for (const raw of String(text || '').split(/\r?\n/)) {
-    const line = raw.replace(ansi, '').trim();
+    // `pnpm -r run` prefixes every child line with `<package dir> <script>: `
+    const line = raw.replace(ansi, '').trim().replace(/^\S+ [\w:-]+: /, '');
     const isTestFail = /^(?:FAIL|\u00d7|\u2717|\u2716|\u2718)\s+/.test(line);
     const isTsError = /error TS\d+/.test(line);
     // node:test summaries as kp's runner prints them: a bare test-file path, and `\u00b7 test name` under it
@@ -241,7 +242,10 @@ export function runShell(command, cwd, timeoutMs = GATE_TIMEOUT_MS, env = {}) {
   const timedOut = r.error?.code === 'ETIMEDOUT';
   const text = `${r.stdout || ''}${r.stderr ? `\n${r.stderr}` : ''}${r.error && !timedOut ? `\n${r.error.message}` : ''}${timedOut ? `\n[gate timed out after ${Math.round(timeoutMs / 60000)} min]` : ''}`;
   const ok = r.status === 0 && !timedOut;
-  return { ok, exit: r.status, tail: tail(text), ...(ok ? {} : { failures: failureSignature(text) }), ...(timedOut ? { timedOut: true } : {}) };
+  // stdout comes first in `text`, so a failure printed there (libtest, a `pnpm -r` child) can sit far
+  // above the tail; keep stdout's own tail too (2026-10-26: four overlord holds showed only cargo's
+  // stderr doc-test list and an empty signature, and every standalone rerun passed)
+  return { ok, exit: r.status, tail: tail(text), ...(ok ? {} : { failures: failureSignature(text), stdoutTail: tail(r.stdout) }), ...(timedOut ? { timedOut: true } : {}) };
 }
 
 /**
