@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Reads the Rust ticker's source with node:fs (the parity block below); tsc
 // skips __tests__/.
 import { readFileSync } from 'node:fs';

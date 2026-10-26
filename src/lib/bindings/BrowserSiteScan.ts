@@ -8,7 +8,7 @@ import type { BrowserScanTransport } from "./BrowserScanTransport";
 /**
  * The JSON stored in `browser_sites.scan_report`.
  */
-export type BrowserSiteScan = { transport: BrowserScanTransport, page_tools: Array<BrowserPageTool>, operable_count: number, landmarks: Array<string>, forms: Array<BrowserScanForm>, login_form: BrowserLoginForm | null, blockers: Array<BrowserScanBlocker>, 
+export type BrowserSiteScan = { transport: BrowserScanTransport, pageTools: Array<BrowserPageTool>, operableCount: number, landmarks: Array<string>, forms: Array<BrowserScanForm>, loginForm: BrowserLoginForm | null, blockers: Array<BrowserScanBlocker>, 
 /**
  * Controllability grade: 0 read-only, 1 generic hands, 2 the page's own
  * WebMCP tools.

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 
 // The name check itself is the backend's (webbuild_check_name, tested in Rust

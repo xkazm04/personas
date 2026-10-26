@@ -94,7 +94,6 @@ pub struct ApiKeyAuditEntry {
 /// consumer is the `external_api_keys` row that authenticated the call, so the
 /// blast-radius graph reflects live reality rather than declared bindings.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct BrokerConsumerEdge {
     pub id: String,

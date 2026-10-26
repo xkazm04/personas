@@ -15,7 +15,6 @@ use crate::models::serde_util::double_option;
 /// JSON (`scripts/connectors/builtin/*.json`). Field budget: aim for
 /// ~200-500 tokens per connector.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct LlmUsageHint {
     /// One-paragraph description of what this connector exposes at runtime.

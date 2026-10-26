@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The settings section writes an assertion's `config` as a JSON string the
 // engine deserializes on every run (src-tauri/engine/src/output_assertions.rs).
 // The create command stores the string unparsed, so a key the engine does not

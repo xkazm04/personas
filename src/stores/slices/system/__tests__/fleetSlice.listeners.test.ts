@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const { listen, typedListen } = vi.hoisted(() => ({ listen: vi.fn(), typedListen: vi.fn() }));

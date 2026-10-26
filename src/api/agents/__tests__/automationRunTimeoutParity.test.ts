@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The automation trigger IPC must outlive the backend's own run budget.
 // `trigger_automation` / `test_automation_webhook` await `invoke_automation`
 // (engine/src/automation_runner.rs) inline: up to `retry_count.clamp(1, 5)`

@@ -4,11 +4,17 @@
  * discarded, so a freshness-skipped no-op and a budget-spending coaching cycle
  * were indistinguishable.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { describeBatchOutcome, cappedSkippedNames } from '../batchOutcome';
 import { BatchOutcomeLine } from '../components/BatchOutcomeLine';
 import type { DirectorReport } from '@/api/director';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
+
+// BatchOutcomeLine reads `t.director`, a lazy section the companions route
+// preloads before mount. Rendered bare, it resolved to blanks and the line read
+// " · " - red on master's full lane before this was added (2026-10-25).
+beforeAll(() => preloadSectionsAsync('en', ['director']));
 
 const report = (over: Partial<DirectorReport> = {}): DirectorReport => ({
   evaluatedPersonas: 0,

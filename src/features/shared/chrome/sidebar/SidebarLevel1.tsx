@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { SIDEBAR_ICONS } from '@/features/shared/chrome/sidebar/SidebarIcons';
 import { BadgeSlot, isInteractiveSlot, type BadgeDefinition } from '@/features/shared/chrome/sidebar/BadgeSlot';
@@ -242,7 +242,7 @@ export default function SidebarLevel1({
               aria-current={isActive ? 'page' : undefined}
             >
               {isActive && !isDisabled && (
-                <motion.div
+                <m.div
                   layoutId="sidebarSectionIndicator"
                   className={`absolute inset-0 rounded-xl ${l1ActiveClass}`}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}

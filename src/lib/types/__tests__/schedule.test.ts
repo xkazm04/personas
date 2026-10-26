@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { toSchedule, frequencyToSchedule } from '../schedule';

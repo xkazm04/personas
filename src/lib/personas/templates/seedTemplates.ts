@@ -9,16 +9,16 @@ import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
 import type { LocaleCode } from '@/i18n/locales.manifest';
 import { useI18nStore } from '@/stores/i18nStore';
 import { batchImportDesignReviews, deleteStaleSeedTemplates } from '@/api/overview/reviews';
-import recipeIndex from '@/features/templates/sub_explore/recipeIndex.generated.json';
+// Generated beside recipeIndex.generated.json by scripts/templates/generate-recipe-index.mjs:
+// just id -> trigger kind, so the boot-time seeder does not pull the whole index.
+import recipeTriggers from './recipeTriggers.generated.json';
 import { computeContentHashSync, registerBuiltinContentHash } from '@/lib/templates/templateVerification';
 
 const SEED_RUN_ID = 'seed-category-v1';
 
 /** recipe id -> the trigger kind the recipe recommends (v3 `recommendedTrigger`). */
 const RECIPE_TRIGGER_KIND: ReadonlyMap<string, string> = new Map(
-  (recipeIndex as ReadonlyArray<{ id: string; recommendedTrigger: string | null }>).flatMap((r) =>
-    r.recommendedTrigger ? [[r.id, r.recommendedTrigger] as [string, string]] : [],
-  ),
+  Object.entries(recipeTriggers as Record<string, string>),
 );
 
 /**

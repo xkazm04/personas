@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useI18nStore } from '@/stores/i18nStore';
 import { preloadSectionsAsync } from '@/i18n/useTranslation';
-import ja from '@/i18n/locales/ja.json';
+import en from '@/i18n/locales/en.json';
 import { useUnsavedGuard } from '../useUnsavedGuard';
 
 // The guard offers Save / Discard / Stay when a dirty editor navigates away.
@@ -64,23 +64,21 @@ describe('useUnsavedGuard — a failed save is not a silent close', () => {
     expect(result.current.isOpen).toBe(true);
   });
 
-  // The reason used to be resolved through the English-only registry at catch
-  // time, so a Japanese user read an English sentence inside a Japanese dialog.
-  it('reports a known failure in the active language, not in English', async () => {
-    await preloadSectionsAsync('ja', ['error_registry']);
-    useI18nStore.setState({ language: 'ja' });
-    try {
-      const onSave = vi.fn().mockRejectedValue({ error: 'Request timed out after 30s', kind: 'timeout' });
-      const { result } = renderHook(() => useUnsavedGuard(true, { onSave, onDiscard: vi.fn() }));
-      await openGuard(result);
+  // A known failure is resolved through the error registry in the active
+  // language, never shown as the raw backend text. (Until 2026-10-25 this was
+  // asserted in Japanese; the app ships English only now.)
+  it('reports a known failure through the error registry, not as raw backend text', async () => {
+    await preloadSectionsAsync('en', ['error_registry']);
+    useI18nStore.setState({ language: 'en' });
+    const onSave = vi.fn().mockRejectedValue({ error: 'Request timed out after 30s', kind: 'timeout' });
+    const { result } = renderHook(() => useUnsavedGuard(true, { onSave, onDiscard: vi.fn() }));
+    await openGuard(result);
 
-      await act(async () => { await result.current.resolve('save'); });
+    await act(async () => { await result.current.resolve('save'); });
 
-      expect(result.current.saveError).toBe(ja.error_registry.timed_out_message);
-      expect(result.current.isOpen).toBe(true);
-    } finally {
-      useI18nStore.setState({ language: 'en' });
-    }
+    expect(result.current.saveError).toBe(en.error_registry.timed_out_message);
+    expect(result.current.saveError).not.toBe('Request timed out after 30s');
+    expect(result.current.isOpen).toBe(true);
   });
 
   it('Stay is still reachable after a failed save, and clears the error', async () => {

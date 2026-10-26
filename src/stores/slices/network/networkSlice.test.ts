@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // Mock the discovery API module so we can drive success/failure per call.

@@ -9,10 +9,11 @@
  * exists to prevent. So the expected value is computed from the Studio helper
  * itself rather than retyped here.
  */
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeAll, describe, it, expect, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 import { draftLinkToTriggerInput } from '@/features/triggers/sub_studio/libs/studioCommit';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
 
 const createTrigger = vi.fn();
 const addToast = vi.fn();
@@ -41,6 +42,11 @@ const ENTRY = {
   name: 'OpenAI API changes',
   category: 'ai',
 } as unknown as SharedEventCatalogEntry;
+
+// `triggers` is a lazily loaded English section; the modal's copy is empty until it lands.
+beforeAll(async () => {
+  await preloadSectionsAsync('en', ['triggers']);
+});
 
 afterEach(() => {
   cleanup();

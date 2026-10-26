@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import en from '@/i18n/locales/en.json';
 import { STYLE_PRESETS } from '../stylePresets';

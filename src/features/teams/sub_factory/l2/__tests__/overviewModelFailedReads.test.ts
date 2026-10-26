@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import type { DevContext } from '@/lib/bindings/DevContext';
 import type { FactoryL2Data } from '../factoryL2Data';

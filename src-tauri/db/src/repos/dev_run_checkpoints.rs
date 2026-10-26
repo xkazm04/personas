@@ -12,7 +12,6 @@ use personas_core::error::AppError;
 
 /// One recorded checkpoint of a dev-tools run.
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DevRunCheckpoint {
     pub id: String,

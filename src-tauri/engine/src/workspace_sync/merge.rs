@@ -68,7 +68,6 @@ impl<S: SyncSnapshot> WorkspaceEntity<S> {
 
 /// Which side won a last-writer-wins resolution.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub enum SyncWinner {
     Local,
@@ -81,7 +80,6 @@ pub enum SyncWinner {
 /// `persona_sync_state` to the agreed hash. Deletion direction falls out of the
 /// winning entity's [`WorkspaceEntity::is_tombstone`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase", tag = "outcome")]
 pub enum WorkspaceMergeOutcome {
     /// Both sides match the recorded base — nothing to do.

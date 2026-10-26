@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Both team-synthesis IPCs must outlive the backend's own run budget.
 // `run_crew_synthesis` (commands/design/team_synthesis.rs) runs a StructuredJson
 // Claude call under `with_escalation`, so a rejected first answer is retried

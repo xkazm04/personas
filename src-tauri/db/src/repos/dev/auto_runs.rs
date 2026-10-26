@@ -11,7 +11,6 @@ use rusqlite::{params, OptionalExtension, Row};
 /// rehydrate instead of silently forgetting an in-flight run.
 #[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
 #[serde(rename_all = "camelCase")]
-#[ts(export)]
 pub struct DevAutoRun {
     pub id: String,
     pub project_id: Option<String>,

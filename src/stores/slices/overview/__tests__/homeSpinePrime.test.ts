@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * What one Home prime costs. `fleetMetrics` lost its last reader when
  * FleetHealthStrip retired, yet every primeHomeSpine still fired

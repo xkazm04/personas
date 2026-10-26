@@ -383,7 +383,7 @@ count may not rise (`npm run census -- --rule <id> --verbose` lists the sites).
 | Raw `rounded-sm/md/lg/xl` | `rounded-interactive/input/card/modal/pill` | `custom/no-raw-radius-classes` |
 | Raw `shadow-sm/md/lg/xl/2xl` | `shadow-elevation-1..4` | `custom/no-raw-shadow-classes` |
 | Hand-rolled `role="dialog"` / `fixed inset-0` modal | `modals/BaseModal` / `feedback/ConfirmDialog` | `custom/enforce-base-modal` |
-| Hardcoded English strings in JSX / placeholder / title / aria-label | `t.section.key` via `useTranslation()` | `custom/no-hardcoded-jsx-text` + `check:i18n:strict` |
+| Hardcoded English strings in JSX / placeholder / title / aria-label | `t.section.key` via `useTranslation()` | `custom/no-hardcoded-jsx-text` |
 | Looping framer animation without a reduced-motion fallback | `useMotionVariants()` / `useMotion().shouldAnimate` | `custom/enforce-reduced-motion-fallback` |
 | Raw `.toFixed()` / `.toLocaleString()` for display | `display/Numeric` | `custom/prefer-numeric` |
 | `navigator.clipboard.writeText` | `buttons/CopyButton` / `useCopyToClipboard` | `custom/prefer-shared-clipboard` |

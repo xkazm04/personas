@@ -1,3 +1,4 @@
+// @vitest-environment node
 // GOLDEN EVAL — hostile connector output vs. the credential masker.
 //
 // The riskiest failure for an app that hands agents a credential vault is not a

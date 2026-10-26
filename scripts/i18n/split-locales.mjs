@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { firstPaintKeys } from "./lib/first-paint-keys.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "../..");
@@ -9,6 +10,7 @@ const sectionDir = path.join(root, "src/i18n/section-locales");
 const generatedDir = path.join(root, "src/i18n/generated");
 const enPath = path.join(localesDir, "en.json");
 const routeSectionsPath = path.join(root, "src/i18n/routeSections.ts");
+const manifestPath = path.join(root, "src/i18n/locales.manifest.ts");
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, "utf8"));
@@ -92,10 +94,23 @@ function removeDir(dir) {
  * proxy throws; see its `get` trap), not a silent wrong value, so a gap here
  * fails fast rather than shipping quietly.
  */
+//
+// 2026-10-25: `agents` (146 KB), `overview` (75 KB) and `vault` (84 KB) left
+// this list - together 305 KB of the eager `en` chunk on the startup path.
+// Their remaining `en.<section>` reads all run at call time, long after the
+// idle background load lands every English section (chatSlice's
+// execution-ended message, ChartErrorBoundary and importHelpers on routes
+// whose sections are preloaded before mount); the one module-init read,
+// EventConfigSubPanels' ROTATION_EVENT_TEMPLATES, became a function of `t`.
+//
+// `onboarding` (68 KB) left too, later the same day: its only boot-time reads
+// were tourSlice's storage toast and two footer icons' labels, and those four
+// keys moved to the core `chrome` section. The onboarding overlay itself loads
+// the section before mount only while it can still appear (main.tsx).
 const EN_TS_SYNC_SECTIONS = [
-  "agents", "alerts", "deployment", "eval_strategies", "execution",
-  "feedback_labels", "mastermind", "onboarding", "overview", "releases",
-  "ship", "vault",
+  "alerts", "deployment", "eval_strategies", "execution",
+  "feedback_labels", "mastermind", "releases",
+  "ship",
 ];
 
 /**
@@ -124,13 +139,57 @@ function readRouteBaseSections() {
   return names;
 }
 
+/**
+ * FIRST_PAINT_PARTIAL_SECTIONS in routeSections.ts (2026-10-25): sections the
+ * always-mounted chrome reads only a few keys of. Only those keys ship eagerly
+ * (EN_PARTIAL_SECTION_STRINGS below); the full section is a lazy chunk.
+ */
+function readPartialSections() {
+  const src = fs.readFileSync(routeSectionsPath, "utf8");
+  const match = /export const FIRST_PAINT_PARTIAL_SECTIONS: readonly TranslationSection\[\] = \[([\s\S]*?)\];/.exec(src);
+  if (!match) return [];
+  return [...match[1].matchAll(/'([a-zA-Z0-9_]+)'/g)].map((m) => m[1]);
+}
+
 function readCoreSections() {
   return [...new Set([...readRouteBaseSections(), ...EN_TS_SYNC_SECTIONS])];
+}
+
+/**
+ * The locales the app ships (`SHIPPED_UI_LOCALES` in locales.manifest.ts,
+ * English only since 2026-10-25). Every locale is still split below - the
+ * files stay in the repo and tests read them - but only these get a lazy
+ * loader in generated/sectionLoaders.ts, so only these reach the bundle and
+ * the Vitest import graph. Read by regex for the same reason as BASE_SECTIONS.
+ */
+function readShippedLocales() {
+  const src = fs.readFileSync(manifestPath, "utf8");
+  const match = /export const SHIPPED_UI_LOCALES: readonly LocaleCode\[\] = \[([^\]]*)\];/.exec(src);
+  if (!match) {
+    throw new Error(
+      `split-locales: could not find "export const SHIPPED_UI_LOCALES: readonly LocaleCode[] = [...]" in ${manifestPath}.`,
+    );
+  }
+  const codes = [...match[1].matchAll(/'([a-z]{2,3})'/g)].map((m) => m[1]);
+  if (!codes.includes("en")) {
+    throw new Error("split-locales: SHIPPED_UI_LOCALES must include 'en' - English is the fallback every read lands on.");
+  }
+  return codes;
 }
 
 const english = readJson(enPath);
 const sectionNames = Object.keys(english);
 const coreSections = readCoreSections();
+const partialSections = readPartialSections();
+for (const partial of partialSections) {
+  if (coreSections.includes(partial)) {
+    throw new Error(`split-locales: "${partial}" is both eager core and FIRST_PAINT_PARTIAL - remove it from BASE_SECTIONS / EN_TS_SYNC_SECTIONS.`);
+  }
+  if (!sectionNames.includes(partial)) {
+    throw new Error(`split-locales: FIRST_PAINT_PARTIAL_SECTIONS names "${partial}", not a section of en.json.`);
+  }
+}
+const { keys: partialKeys, closureSize } = firstPaintKeys(root, english, partialSections);
 for (const core of coreSections) {
   if (!sectionNames.includes(core)) {
     throw new Error(`split-locales: BASE_SECTIONS names "${core}" which is not a top-level section of en.json.`);
@@ -167,6 +226,12 @@ for (const file of localeFiles) {
 //    other section reaches the runtime exclusively through the async
 //    section-locales/en/<section>.json chunk written above.
 const allSectionsLiteral = JSON.stringify(sectionNames);
+const partialEntries = partialSections
+  .map((section) => {
+    const subset = Object.fromEntries(partialKeys[section].map((k) => [k, english[section][k]]));
+    return `  ${JSON.stringify(section)}: ${JSON.stringify(JSON.stringify(subset))},`;
+  })
+  .join("\n");
 const coreEntries = coreSections
   .map((section) => `  ${JSON.stringify(section)}: ${JSON.stringify(JSON.stringify(english[section] ?? {}))},`)
   .join("\n");
@@ -182,11 +247,49 @@ writeIfChanged(
     `// Every other section loads through section-locales/en/<section>.json — see\n` +
     `// src/i18n/englishSections.ts and src/i18n/useTranslation.ts.\n` +
     `export const EN_CORE_SECTION_STRINGS = {\n${coreEntries}\n} as const;\n\n` +
+    `// Partial core (FIRST_PAINT_PARTIAL_SECTIONS in routeSections.ts): only the keys the static\n` +
+    `// import closure of src/main.tsx can read before first paint\n` +
+    `// (scripts/i18n/lib/first-paint-keys.mjs). The full section is a lazy chunk that replaces it.\n` +
+    `export const EN_PARTIAL_SECTION_STRINGS: Partial<Record<string, string>> = {\n${partialEntries}\n};\n\n` +
     `export type I18nSectionKey = typeof EN_ALL_SECTIONS[number];\n` +
     `export type CoreI18nSectionKey = keyof typeof EN_CORE_SECTION_STRINGS;\n`,
 );
 
+// generated/sectionLoaders.ts: the lazy loaders, as an explicit list of files
+// rather than the old './section-locales/*/*.json' glob. Two things leave the
+// bundle this way:
+//  - every locale outside SHIPPED_UI_LOCALES (27.5 MB of 41.9 MB of JS on
+//    2026-10-25, and 952 of the files every Vitest `--changed` walk visited);
+//  - English's core sections, which are already eager in enSectionStrings.ts
+//    and so were never loaded through their chunk (`loadSection` returns on
+//    the cached value first) - about 0.7 MB of dead duplicates across locales.
+// Paths are relative to generated/, which is where import.meta.glob resolves them.
+const shippedLocales = readShippedLocales();
+const coreSet = new Set(coreSections);
+const loaderPaths = [];
+for (const lang of shippedLocales) {
+  if (!localeFiles.includes(`${lang}.json`)) {
+    throw new Error(`split-locales: SHIPPED_UI_LOCALES names "${lang}" but src/i18n/locales/${lang}.json does not exist.`);
+  }
+  for (const section of sectionNames) {
+    if (lang === "en" && coreSet.has(section)) continue;
+    loaderPaths.push(`../section-locales/${lang}/${section}.json`);
+  }
+}
+writeIfChanged(
+  path.join(generatedDir, "sectionLoaders.ts"),
+  `// AUTO-GENERATED by scripts/i18n/split-locales.mjs — DO NOT EDIT BY HAND.\n` +
+    `// Shipped UI locales: ${shippedLocales.join(", ")} (SHIPPED_UI_LOCALES in src/i18n/locales.manifest.ts).\n` +
+    `// English core sections are absent on purpose: they are eager in enSectionStrings.ts.\n\n` +
+    `export const sectionLoaders = import.meta.glob<{ default: unknown }>([\n` +
+    loaderPaths.map((p) => `  ${JSON.stringify(p)},\n`).join("") +
+    `]);\n`,
+);
+
 console.log(
   `Split ${localeFiles.length} locale(s) (English included) into ${sectionNames.length} section chunk(s); ` +
-    `${coreSections.length} section(s) kept eager as the English core.`,
+    `${coreSections.length} section(s) kept eager as the English core; ` +
+    `partial core ${partialSections.map((s) => `${s} ${partialKeys[s].length}/${Object.keys(english[s]).length}`).join(", ") || "none"} ` +
+    `(from a ${closureSize}-module startup closure); ` +
+    `${loaderPaths.length} lazy loader(s) for shipped locale(s) ${shippedLocales.join(", ")}.`,
 );

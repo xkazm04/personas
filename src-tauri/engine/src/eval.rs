@@ -42,7 +42,6 @@ pub struct EvalResult {
 /// Indicates which evaluation method produced the scores.
 /// Propagated to the frontend so users know when scores came from degraded evaluation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum EvalMethod {
     /// Full LLM-based evaluation with Claude scoring and rationale.

@@ -3,35 +3,13 @@
 # referenced by application code OR by other binding files.
 # Prevents dead bindings from accumulating as the Rust backend evolves
 # faster than the frontend consumes new types.
+#
+# Since 2026-10-25 the check itself is scripts/check-unused-bindings.mjs: the
+# same two questions (a whole-word reference anywhere in src/ outside a
+# `bindings` directory, or an import from another binding), answered in one
+# pass instead of one recursive grep per binding - 59 s on a CI runner became
+# about a second. This file stays at its path because docs and the census
+# cite it.
 
 set -euo pipefail
-
-BINDINGS_DIR="src/lib/bindings"
-UNUSED=()
-
-for f in "$BINDINGS_DIR"/*.ts; do
-  name=$(basename "$f" .ts)
-  [ "$name" = "index" ] && continue
-
-  # Check 1: referenced by app code outside bindings/
-  if grep -rw "$name" src/ --include='*.ts' --include='*.tsx' --exclude-dir=bindings -q 2>/dev/null; then
-    continue
-  fi
-
-  # Check 2: imported by another binding file (structural dependency)
-  if grep -l "from \"./$name\"" "$BINDINGS_DIR"/*.ts 2>/dev/null | grep -v "/${name}.ts$" | grep -v "/index.ts$" -q 2>/dev/null; then
-    continue
-  fi
-
-  UNUSED+=("$name")
-done
-
-if [ ${#UNUSED[@]} -gt 0 ]; then
-  echo "ERROR: ${#UNUSED[@]} unused binding(s) found in $BINDINGS_DIR:"
-  printf '  %s\n' "${UNUSED[@]}"
-  echo ""
-  echo "Remove unused .ts files and their index.ts exports, or start using them."
-  exit 1
-fi
-
-echo "OK: all bindings in $BINDINGS_DIR are referenced by application code or other bindings."
+exec node "$(dirname "$0")/check-unused-bindings.mjs" "$@"

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { answerNote, buildSeed, isStopOnly } from '../studioSeed';
 import { setupSteps } from '../guide/guideModel';

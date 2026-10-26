@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // dynamicTours pulls the tauri invoke wrapper for its IPC helpers; the

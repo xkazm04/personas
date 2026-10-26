@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { Copy, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from 'framer-motion';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { Tooltip } from '../display/Tooltip';
@@ -94,7 +94,7 @@ export function CopyButton({
       {/* Emerald flash background */}
       <AnimatePresence>
         {copied && (
-          <motion.span
+          <m.span
             className="absolute inset-0 rounded-[inherit] bg-emerald-500/15 pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -107,7 +107,7 @@ export function CopyButton({
       {/* Icon with morph animation */}
       <AnimatePresence mode="wait" initial={false}>
         {copied ? (
-          <motion.span
+          <m.span
             key="check"
             className={`${iconSize} shrink-0 relative`}
             initial={{ scale: 0.8 }}
@@ -116,9 +116,9 @@ export function CopyButton({
             transition={morphTransition}
           >
             {copiedIcon ?? <Check className={`${iconSize} text-emerald-400`} />}
-          </motion.span>
+          </m.span>
         ) : (
-          <motion.span
+          <m.span
             key="copy"
             className={`${iconSize} shrink-0 relative`}
             initial={{ scale: 0.8, opacity: 0 }}
@@ -127,7 +127,7 @@ export function CopyButton({
             transition={morphTransition}
           >
             {icon ?? <Copy className={iconSize} />}
-          </motion.span>
+          </m.span>
         )}
       </AnimatePresence>
 

@@ -203,7 +203,6 @@ pub struct SetupUpdatedEvent {
 /// How one step kind performs across ALL twins — the planner's prior for
 /// which kinds of question are worth asking.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SetupKindStat {
     /// Same vocabulary as [`SetupStep::kind`].

@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * actionRisk — the drift gate. sweep #262.
  *

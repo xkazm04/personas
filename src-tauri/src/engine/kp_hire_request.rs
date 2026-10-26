@@ -110,7 +110,6 @@ pub(crate) struct HireRequest {
 /// Keeping them apart is what lets `project_id` be optional here and required
 /// there: the door resolves it, the operation never guesses.
 #[derive(Debug, Clone, Default, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct HireRequestInput {
     /// The persona doing the asking.
@@ -133,7 +132,6 @@ pub struct HireRequestInput {
 /// Modelled on [`super::kp_reporter::RollupSummary`] — camelCase, and the
 /// things that did not happen are data rather than an absence.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct HireRequestOutcome {
     /// kp's intake row this need became.

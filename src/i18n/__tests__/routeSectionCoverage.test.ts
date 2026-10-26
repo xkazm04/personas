@@ -20,12 +20,11 @@
  * Running the analyzer here (rather than only from a script nobody remembers to
  * run) means `npm run test` closes the class.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { analyzeRouteSectionCoverage } from '../../../scripts/i18n/check-route-sections.mjs';
 import { sectionsForRoute } from '../routeSections';
-import { preloadSectionsAsync, getActiveTranslations } from '../useTranslation';
+import { getActiveTranslations } from '../useTranslation';
 import { useI18nStore } from '@/stores/i18nStore';
-import enCatalog from '../locales/en.json';
 
 describe('route-section coverage', () => {
   const result = analyzeRouteSectionCoverage();
@@ -57,26 +56,14 @@ describe('route-section coverage', () => {
   });
 });
 
-describe('twin renders in a non-English locale', () => {
+// The Spanish half of this block ("twin resolves Spanish once the plugins route
+// preloads it") went with the other locales on 2026-10-25 (English only). The
+// coverage gate above still matters: English's non-core sections are lazy too,
+// so an undeclared one is fetched only by the idle background load.
+describe('section fallback while a chunk is not loaded', () => {
   const original = useI18nStore.getState().language;
-  beforeEach(() => {
-    useI18nStore.setState({ language: 'es' });
-  });
   afterEach(() => {
     useI18nStore.setState({ language: original });
-  });
-
-  it('resolves Spanish once the plugins route preloads its sections', async () => {
-    // Exactly what the app does on the plugins route: preload the declared
-    // sections, then read through the bundle proxy.
-    await preloadSectionsAsync('es', sectionsForRoute('plugins'));
-
-    const t = getActiveTranslations();
-    const es = t.twin as unknown as Record<string, Record<string, string>>;
-    const en = enCatalog.twin as unknown as Record<string, Record<string, string>>;
-
-    expect(es.selector.createTwin).not.toBe(en.selector.createTwin);
-    expect(es.selector.createTwin).toBe('Crear gemelo nuevo');
   });
 
   it('still falls back to English for a section no route preloaded', () => {

@@ -23,7 +23,21 @@ import { silentCatch } from '@/lib/silentCatch';
  * silently stop notifications the moment the app leaves focus.
  */
 const ALERT_EVAL_INTERVAL_MS = 60_000;
-const ALERT_EVAL_WINDOW_DAYS = 1;
+/**
+ * Days of daily buckets this loop fetches per tick.
+ *
+ * **Sized by the baseline, not by the interval.** `cost_spike` compares the
+ * newest bucket against the MEDIAN OF THE PRIOR ones (`readCostSpike` in
+ * `alertSlice`), so a one-day window gave it a single sample and no prior at
+ * all — the ratio collapsed and the metric operators configure to catch runaway
+ * spend was the one metric this always-on loop could never fire. Eight days is
+ * today plus a week of priors: enough for a median that a single quiet or
+ * expensive day cannot swing, and still one bounded query per minute.
+ *
+ * Every other metric reads the window's summary and is indifferent to its
+ * length. If a future metric needs a longer baseline, raise this WITH it.
+ */
+const ALERT_EVAL_WINDOW_DAYS = 8;
 
 export function useGlobalAlertEvaluator(): void {
   useEffect(() => {

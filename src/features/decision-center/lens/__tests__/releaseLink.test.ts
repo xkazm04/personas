@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The Release card's composition (read only) and its one door out to bp
  * (spark one-control, WP3): the version bp's own rule suggests, the open

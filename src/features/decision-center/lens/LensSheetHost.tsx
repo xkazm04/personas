@@ -7,33 +7,50 @@
  *                     Evidence card at the first feature waiting for triage)
  *   release           the release's read-only composition, with its one
  *                     door out to bp
+ *
+ * Both sheets are lazy: this host is on the startup path, and the blueprint
+ * drawing engine alone was most of the always-loaded deck chunk until
+ * 2026-10-25, for a sheet most sessions never open.
  */
-import { useTranslation } from '@/i18n/useTranslation';
+import { Suspense } from 'react';
+import { usePreloadedSections, useTranslation } from '@/i18n/useTranslation';
+import { lazyRetry } from '@/lib/lazyRetry';
 
-import { LiveBlueprint } from '../blueprint/live/LiveBlueprint';
 import { kindLabel } from '../deck/deckMeta';
 import { useLensScanProducts } from '../roster/lensScanSource';
-import { ReleaseSheet } from './ReleaseSheet';
 import { closeLensSheet, useLensSheetStore } from './lensSheetStore';
+
+const LiveBlueprint = lazyRetry(() =>
+  import('../blueprint/live/LiveBlueprint').then((m) => ({ default: m.LiveBlueprint })),
+);
+const ReleaseSheet = lazyRetry(() => import('./ReleaseSheet').then((m) => ({ default: m.ReleaseSheet })));
 
 export function LensSheetHost() {
   const { t } = useTranslation();
   const request = useLensSheetStore((s) => s.request);
   const source = useLensScanProducts(false);
+  // `decisionCenter` is an OVERLAY_SECTIONS entry: not loaded before first paint.
+  usePreloadedSections(['decisionCenter'], request !== null);
   if (!request) return null;
   const product = source.products?.find((p) => p.projectId === request.projectId);
   const eyebrow = kindLabel(t.monitor, request.kind);
   if (request.kind === 'release') {
-    return product ? <ReleaseSheet product={product} eyebrow={eyebrow} onClose={closeLensSheet} /> : null;
+    return product ? (
+      <Suspense fallback={null}>
+        <ReleaseSheet product={product} eyebrow={eyebrow} onClose={closeLensSheet} />
+      </Suspense>
+    ) : null;
   }
   return (
-    <LiveBlueprint
-      key={request.projectId}
-      projectId={request.projectId}
-      name={product?.name ?? ''}
-      eyebrow={eyebrow}
-      focus={request.kind === 'evidence' ? 'evidence' : 'product'}
-      onClose={closeLensSheet}
-    />
+    <Suspense fallback={null}>
+      <LiveBlueprint
+        key={request.projectId}
+        projectId={request.projectId}
+        name={product?.name ?? ''}
+        eyebrow={eyebrow}
+        focus={request.kind === 'evidence' ? 'evidence' : 'product'}
+        onClose={closeLensSheet}
+      />
+    </Suspense>
   );
 }

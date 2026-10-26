@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -43,14 +44,14 @@ function site(origin: string, patch: Partial<BrowserSite> = {}): BrowserSite {
     enabled: false,
     overrides: {},
     budget: 50,
-    credential_id: null,
-    scan_status: 'none',
-    scan_tier: null,
-    scan_report: null,
-    scan_at: null,
-    first_seen: 0,
-    last_seen: 0,
-    created_by: 'operator',
+    credentialId: null,
+    scanStatus: 'none',
+    scanTier: null,
+    scanReport: null,
+    scanAt: null,
+    firstSeen: 0,
+    lastSeen: 0,
+    createdBy: 'operator',
     ...patch,
   } as BrowserSite;
 }
@@ -112,7 +113,7 @@ describe('adoptSite / dropSite', () => {
 describe('hasRunningScan', () => {
   it('is what turns the poll on and off', () => {
     expect(hasRunningScan([site('https://a.com')])).toBe(false);
-    expect(hasRunningScan([site('https://a.com', { scan_status: 'running' })])).toBe(true);
-    expect(hasRunningScan([site('https://a.com', { scan_status: 'proposed' })])).toBe(false);
+    expect(hasRunningScan([site('https://a.com', { scanStatus: 'running' })])).toBe(true);
+    expect(hasRunningScan([site('https://a.com', { scanStatus: 'proposed' })])).toBe(false);
   });
 });

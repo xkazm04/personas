@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * `launchPowerMove` used to call `markTried` on its FIRST line — before any
  * navigation and long before the spotlight resolved. The quest board's progress

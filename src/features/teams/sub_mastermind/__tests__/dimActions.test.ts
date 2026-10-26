@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { applicableDeployActions } from '@/features/teams/sub_factory/passport/improve/deployActions';

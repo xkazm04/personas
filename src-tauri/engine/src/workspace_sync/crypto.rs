@@ -53,7 +53,6 @@ impl SyncKey {
 /// An AES-256-GCM-sealed snapshot, base64-encoded for transport/storage. This is
 /// the shape the Stage 3b protocol message carries between devices.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SealedPayload {
     pub ciphertext_b64: String,

@@ -7,7 +7,6 @@ use crate::error::AppError;
 /// and a human-friendly message. Exported to the frontend via ts-rs so
 /// client-side validation can produce identical error shapes.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ValidationError {
     /// The field that failed validation (e.g. "name", "timeout_ms").
@@ -52,7 +51,6 @@ pub fn check(errors: Vec<ValidationError>) -> Result<(), AppError> {
 /// Describes a single validation rule in the catalog — exported so the
 /// frontend can build matching client-side checks.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ValidationRule {
     /// Domain this rule belongs to (e.g. "persona", "trigger", "memory").

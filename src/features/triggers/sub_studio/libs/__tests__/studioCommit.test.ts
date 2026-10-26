@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Pins the Chain Studio commit contract: which draft links are committable,
  * through which path (direct chain-trigger vs configure-&-commit modal), and

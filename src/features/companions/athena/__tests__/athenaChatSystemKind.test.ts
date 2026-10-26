@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { classifySystemNote } from '../chat/athenaChatSystemKind';
 import { systemMarkerOf } from '../systemMarkers';

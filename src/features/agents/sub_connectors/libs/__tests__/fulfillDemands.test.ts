@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * `useUnfulfilledCredentials` has always computed `reusableCount` and nothing
  * ever consumed it as an action, so a persona needing five connector types was

@@ -32,13 +32,8 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   'process_labels',
   'radio',
   // Persona Monitor is reachable from the always-mounted titlebar button.
-  'monitor',
-  // `decisionCenter` — the product blueprint drawing set opens over the Decision Deck, which is a global
-  // OverlayIsland (so is the `monitor` section it reads): there is no route that does not reach it.
-  'decisionCenter',
-  // `deliberation` — the Monitor's Conversations view renders deliberation
-  // status captions from it (DeliberationRail), so it rides with `monitor`.
-  'deliberation',
+  // (`monitor` -> FIRST_PAINT_PARTIAL_SECTIONS below, 2026-10-25; the reason above still holds for its first-paint keys.)
+  // (`decisionCenter` and `deliberation` moved to OVERLAY_SECTIONS below on 2026-10-25.)
   // Rendered by App.tsx directly, before/above any route:
   //   consent          → FirstUseConsentModal (blocks first use, all routes)
   //   remote_approval  → RemoteApprovalPrompt (pairing prompt, all routes)
@@ -48,11 +43,11 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   // every route, so it belongs in the core for the same reason `chrome` does.
   // It was absent, which is why its groups were the ones a cold start hit
   // first (see SECTION_SHAPES in useTranslation for the crash that exposed it).
-  'shared',
+  // (`shared` -> FIRST_PAINT_PARTIAL_SECTIONS below, 2026-10-25; the reason above still holds for its first-paint keys.)
   // `notepad` — the notepad overlay is an OverlayIsland at the App root and its
   // footer toggle is always mounted, so there is no route that does not reach
   // it. Same justification as consent/remote_approval above.
-  'notepad',
+  // (`notepad` -> FIRST_PAINT_PARTIAL_SECTIONS below, 2026-10-25; the reason above still holds for its first-paint keys.)
   // `athena` — her chat panel, orb, guide layer and decision bubble are
   // OverlayIslands at the App root (App.tsx), and her footer icon is in the
   // always-mounted footer, so there is no route that does not reach her.
@@ -67,7 +62,7 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   // out, these keys lived in `plugins`, which loads on the `teams` and
   // `plugins` routes only — so Athena's global overlays rendered English on
   // every other route in all 13 non-English locales.
-  'athena',
+  // (`athena` -> FIRST_PAINT_PARTIAL_SECTIONS below, 2026-10-25; the reason above still holds for its first-paint keys.)
   // `debt` is the auto-extracted hardcoded-string staging catalog read through
   // the debtText()/<DebtText/> channel (src/i18n/DebtText.tsx). 539 keys across
   // 113 files spanning agents, overview, plugins, templates, home, triggers,
@@ -78,7 +73,44 @@ const BASE_SECTIONS: readonly TranslationSection[] = [
   // right fix is to retire the section by folding its keys into the owning
   // feature sections; until then it must load, because before 2026-08-09 it
   // loaded on no route at all and rendered English everywhere.
+  // (`debt` -> FIRST_PAINT_PARTIAL_SECTIONS below, 2026-10-25; the reason above still holds for its first-paint keys.)
+];
+
+/**
+ * App-wide sections that first paint reads only a FEW keys of (2026-10-25).
+ * Each was in BASE_SECTIONS, so the whole section was eager in the bundle and
+ * awaited before mount, although the always-mounted chrome reads a fraction:
+ *   monitor 210/1,602 keys, athena 124/1,296, debt 7/539, shared 11/186,
+ *   notepad 22/226 - ~190 KB of startup JS for ~20 KB of first-paint copy.
+ * Now scripts/i18n/split-locales.mjs ships just those keys eagerly (the
+ * "partial core", computed from the static import closure of src/main.tsx,
+ * see scripts/i18n/lib/first-paint-keys.mjs), the full section is neither
+ * eager nor awaited before mount, and the idle background load brings it in
+ * about a second after boot; an overlay that needs it preloads it on open.
+ * The comments in BASE_SECTIONS above say why each section is app-wide.
+ */
+export const FIRST_PAINT_PARTIAL_SECTIONS: readonly TranslationSection[] = [
+  'monitor',
+  'athena',
   'debt',
+  'shared',
+  'notepad',
+];
+
+/**
+ * App-wide overlays a USER opens - never part of first paint. Unlike
+ * BASE_SECTIONS they are neither eager in the bundle nor awaited before mount
+ * (main.tsx); the idle background load in useTranslation.ts brings them in
+ * about a second after boot, and the overlay preloads its own section when it
+ * opens. Split out of BASE_SECTIONS 2026-10-25 (44 KB of startup JS):
+ *   decisionCenter — the Decision Deck and the lens / blueprint sheets
+ *   deliberation   — the Monitor's Conversations view (DeliberationRail)
+ * A section belongs here only if nothing always-mounted reads it at first
+ * paint (the titlebar reads `monitor`, so `monitor` stays in BASE_SECTIONS).
+ */
+export const OVERLAY_SECTIONS: readonly TranslationSection[] = [
+  'decisionCenter',
+  'deliberation',
 ];
 
 const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {

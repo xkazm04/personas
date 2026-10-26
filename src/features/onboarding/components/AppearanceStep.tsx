@@ -3,6 +3,7 @@ import { useThemeStore, THEMES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS,
 import { useI18nStore, type Language } from '@/stores/i18nStore';
 import { switchLanguage, useLanguagePrefetch, useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { UI_LANGUAGE_PICKER_ENABLED } from '@/i18n/locales.manifest';
 import {
   TextScalePicker,
   BrightnessPicker,
@@ -56,8 +57,8 @@ export function AppearanceStep() {
         </p>
       </div>
 
-      {/* Language */}
-      <div className="space-y-2">
+      {/* Language - only when more than one UI locale ships (SHIPPED_UI_LOCALES). */}
+      {UI_LANGUAGE_PICKER_ENABLED && <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Languages className="w-4 h-4 text-foreground" />
           <span className="typo-body text-foreground">{t.onboarding.language_label}</span>
@@ -89,7 +90,7 @@ export function AppearanceStep() {
             );
           })}
         </div>
-      </div>
+      </div>}
 
       {/* Text size */}
       <div className="space-y-2">

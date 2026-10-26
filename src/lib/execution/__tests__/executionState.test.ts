@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * THE STATE MACHINE IS LOAD-BEARING NOW, SO IT IS TESTED.
  *

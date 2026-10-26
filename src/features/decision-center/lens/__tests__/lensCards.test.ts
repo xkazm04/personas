@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The lens-scan cards (spark one-control, WP3): each kind appears and
  * disappears on its `LensScanProduct` threshold, one card per product per

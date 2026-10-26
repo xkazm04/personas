@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The Cadastre's geometry: every context lands on the map exactly once, a
 // district keeps every letter of its name when it wraps, and the survey line
 // starts at the deed's primary parcel.

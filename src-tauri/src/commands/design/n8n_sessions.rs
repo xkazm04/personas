@@ -66,7 +66,6 @@ fn validate_n8n_workflow_shape(value: &serde_json::Value) -> Result<(), AppError
 /// Single-struct parameter for the `update_n8n_session` command,
 /// replacing 11 individual arguments.
 #[derive(Debug, Clone, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateN8nSessionParams {
     pub id: String,

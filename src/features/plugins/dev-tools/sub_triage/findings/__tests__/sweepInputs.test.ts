@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { PlanItem } from '@/features/teams/sub_factory/passport/improve/improvePlan';

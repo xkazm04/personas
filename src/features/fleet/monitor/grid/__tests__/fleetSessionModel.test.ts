@@ -1,3 +1,4 @@
+// @vitest-environment node
 // fleetSessionModel — the session layer under the Activity board.
 //
 // The hue tables the node paints with (`SESSION_TINT`) are pinned to the

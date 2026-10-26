@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Unit tests for the Crew Foundry brief compiler — pure logic, no I/O.
 import { describe, expect, it } from 'vitest';
 

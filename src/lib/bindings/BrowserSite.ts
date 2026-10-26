@@ -23,18 +23,18 @@ overrides: { [key in string]?: BrowserToolClass },
 /**
  * Per-turn call budget for this origin.
  */
-budget: number, credential_id: string | null, scan_status: BrowserScanStatus, 
+budget: number, credentialId: string | null, scanStatus: BrowserScanStatus, 
 /**
  * 0 | 1 | 2 — `None` until a scan answers.
  */
-scan_tier: number | null, scan_report: BrowserSiteScan | null, 
+scanTier: number | null, scanReport: BrowserSiteScan | null, 
 /**
  * Epoch ms. i64 because SQLite INTEGER is 64-bit; epoch-ms stays far
  * under 2^53, so the JS `number` pin is lossless.
  */
-scan_at: number | null, first_seen: number, last_seen: number, 
+scanAt: number | null, firstSeen: number, lastSeen: number, 
 /**
  * `operator` | `athena` | `session:<id>` — the wire form of
  * `browser_bridge::backend::Principal`.
  */
-created_by: string, };
+createdBy: string, };

@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The one write door per decidable row type.
  *

@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The model over the Kettle fixture (WP4a): bp's loadStructure reads the map without a warning, the seven built-in
  * lenses and the custom one come out in the registry (Performance with its stopwatch, the custom lens with its own

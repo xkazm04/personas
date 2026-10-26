@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * What a caller of the healing slice can learn about a failure.
  *

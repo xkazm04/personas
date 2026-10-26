@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from "vitest";
 
 // Mock the active-translation accessor so we can flip the "active locale" at

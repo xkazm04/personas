@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The step-help IPC must outlive the backend's own run budget. The command
 // `get_negotiation_step_help` (commands/credentials/negotiator.rs) runs a
 // Claude prompt inline with a hard timeout; if the wrapper gives up first, the

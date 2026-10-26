@@ -45,8 +45,15 @@ for t in "${FAILED[@]}"; do
 done
 # Every test binary cargo started must have reported a result. A header with
 # no `test result:` after it is a binary that died mid-run.
-HEADERS=$(grep -cE '^ +(Running .+ \(.+\)|Doc-tests [A-Za-z0-9_-]+)$' "$LOG" || true)
-RESULTS=$(grep -cE '^test result: ' "$LOG" || true)
+# ci.yml runs with colour on, so cargo's `     Running` header arrives as
+# ESC[1m ESC[92m Running ESC[0m ... and an unanchored-at-start match counted ZERO
+# binaries on run 40082312846 (2026-10-24: "0 test binaries started but only 18
+# reported a result"), which refused the retry of the very flake this script
+# exists for. Strip SGR sequences before counting.
+ESC=$(printf '\033')
+PLAIN=$(sed "s/${ESC}\[[0-9;]*m//g" "$LOG")
+HEADERS=$(printf '%s\n' "$PLAIN" | grep -cE '^ +(Running .+ \(.+\)|Doc-tests [A-Za-z0-9_-]+)$' || true)
+RESULTS=$(printf '%s\n' "$PLAIN" | grep -cE '^test result: ' || true)
 [ "$HEADERS" -eq "$RESULTS" ] || refuse "$HEADERS test binaries started but only $RESULTS reported a result - one crashed, and a crash is never retried."
 
 echo "::group::retrying ${#FAILED[@]} failed test(s) once"

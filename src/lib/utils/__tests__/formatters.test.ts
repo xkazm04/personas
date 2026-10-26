@@ -232,12 +232,7 @@ describe('getStatusEntry', () => {
     expect(getStatusEntry('running').label).toBe('Running');
     expect(getStatusEntry('incomplete').label).toBe('Incomplete');
     expect(getStatusEntry('unknown').label).toBe('Unknown');
-
-    useI18nStore.setState({ language: 'de' });
-    await preloadSectionsAsync('de', ['status_tokens']);
-    expect(getStatusEntry('running').label).toBe('Läuft');
-    expect(getStatusEntry('incomplete').label).toBe('Unvollständig');
-    expect(getStatusEntry('unknown').label).toBe('Unbekannt');
+    // (The German half went with the other locales on 2026-10-25: English only.)
   });
 
   it('gives `error` its own failure badge instead of the gray Unknown one', () => {

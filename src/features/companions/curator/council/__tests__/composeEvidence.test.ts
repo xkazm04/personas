@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The evidence well is composed by the app, deterministically. These tests
 // pin that: every evidence kind maps to a widget, an unknown kind keeps its
 // fact instead of being dropped, and a member with nothing staged composes

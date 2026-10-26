@@ -6667,7 +6667,7 @@ async fn dispatch_into_worktree(
 pub(crate) const CYCLE_PLAN_BRIEF: &str = "\
 PERSONAS CYCLE — this run is cycle {cycle}; its goal id is {goal_id}.
 Before you stop, file the NEXT cycle (one call, same handshake and header as the write-back):
-- POST /dev-tools/goals/{goal_id}/amend {\"next_cycle\":{\"title\":\"<what cycle {next} should achieve>\",\"description\":\"<the plan: what, where, how you will know it worked>\"}}
+- POST /dev-tools/goals/{goal_id}/amend {\"nextCycle\":{\"title\":\"<what cycle {next} should achieve>\",\"description\":\"<the plan: what, where, how you will know it worked>\"}}
 The title is the next cycle's objective in one line; the description is the brief the next
 worker will start from — name files, findings and open questions you leave behind.
 File it EXACTLY once. A run that files no next cycle parks this persona: its cycle goal is
@@ -8469,7 +8469,7 @@ mod attention_tests {
         assert!(text.starts_with("do the charter\n\nGUARDRAILS\n\n"));
         assert!(text.contains("PERSONAS CYCLE — this run is cycle 3; its goal id is goal-abc."));
         assert!(text.contains("POST /dev-tools/goals/goal-abc/amend"));
-        assert!(text.contains("\"next_cycle\""));
+        assert!(text.contains("\"nextCycle\""));
         assert!(text.contains("cycle 4 should achieve"));
         assert!(
             !text.contains("{goal_id}") && !text.contains("{cycle}") && !text.contains("{next}")

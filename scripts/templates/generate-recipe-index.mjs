@@ -28,6 +28,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
 const SEEDS = path.join(ROOT, 'scripts', 'templates', '_recipe_seeds.json');
 const OUT = path.join(ROOT, 'src', 'features', 'templates', 'sub_explore', 'recipeIndex.generated.json');
+const TRIGGERS_OUT = path.join(ROOT, 'src', 'lib', 'personas', 'templates', 'recipeTriggers.generated.json');
 
 // The v3 domain family -> explore category map moved to `_domain-categories.mjs`
 // when `merge-into-bundle.mjs` became its second reader: the merge files a seed
@@ -77,16 +78,37 @@ function build() {
   return JSON.stringify(rows, null, 2) + '\n';
 }
 
+/**
+ * recipe id -> recommended trigger kind, for the boot-time template seeder
+ * (`src/lib/personas/templates/seedTemplates.ts`). It needs these two fields
+ * only, and importing the whole index put ~134 KB on the startup path
+ * (2026-10-25); the Explore screen still reads the full index, lazily.
+ */
+function buildTriggers(indexJson) {
+  const map = {};
+  for (const r of JSON.parse(indexJson)) if (r.recommendedTrigger) map[r.id] = r.recommendedTrigger;
+  return JSON.stringify(map, null, 2) + '\n';
+}
+
 const check = process.argv.includes('--check');
 const next = build();
+const outputs = [
+  [OUT, next],
+  [TRIGGERS_OUT, buildTriggers(next)],
+];
 if (check) {
-  const current = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8').replace(/\r\n/g, '\n') : '';
-  if (current !== next) {
-    console.error(`recipe index is stale: run \`node scripts/templates/generate-recipe-index.mjs\` (${OUT})`);
-    process.exit(1);
+  for (const [file, content] of outputs) {
+    const current = fs.existsSync(file) ? fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n') : '';
+    if (current !== content) {
+      console.error(`recipe index is stale: run \`node scripts/templates/generate-recipe-index.mjs\` (${file})`);
+      process.exit(1);
+    }
   }
   console.log(`recipe index is current (${JSON.parse(next).length} recipes)`);
 } else {
-  fs.writeFileSync(OUT, next, 'utf8');
-  console.log(`wrote ${path.relative(ROOT, OUT)} (${JSON.parse(next).length} recipes)`);
+  for (const [file, content] of outputs) {
+    fs.writeFileSync(file, content, 'utf8');
+    console.log(`wrote ${path.relative(ROOT, file)}`);
+  }
+  console.log(`${JSON.parse(next).length} recipes`);
 }

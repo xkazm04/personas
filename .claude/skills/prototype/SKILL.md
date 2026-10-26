@@ -190,7 +190,7 @@ Transition keywords that trigger this phase: "I think we have it", "this is the 
 2. **One atomic consolidation step:** remove the switcher, delete ALL loser variant files from disk, remove their imports and tab entries, and make the winner the sole render — in the same commit. Never leave a "winner as default tab, losers still selectable" intermediate state. **If the transition keyword was "production baseline" or equivalent, the cleanup scope extends to *legacy variants on the same surface* that the user never asked to prototype but is now willing to cut** — e.g. the old matrix/theme variant the prototype was competing against. Ask once if unsure; don't delete silently.
 3. **No switcher survives the session.** Leftover A/B switchers have historically lingered in this codebase for weeks (four were consolidated in a single ship-loop milestone). If the user defers the winner decision ("let me live with both for a few days"), that's allowed — but record a dated follow-up before ending the session: a `TODO(prototype, <YYYY-MM-DD>): consolidate <Component> switcher` comment at the switcher plus a line in the active-runs ledger entry (`handoff: switcher pending user decision`). A deferred decision with no dated trace is the failure mode.
 4. **LOC cap (standing user directive):** if the consolidated winner exceeds ~200 LOC, extract named sub-components in the same consolidation step — this is not "premature refactor", it's a standing user directive (never ship 200+ LOC components). Anything already hoisted during Phase 4 makes this cheap. Deeper restructuring (subfolder, barrel, hooks split) stays in Phase 6 on explicit request.
-5. **i18n extraction:** any user-facing string the winner introduced must go through `t.section.key` — add keys to `src/i18n/locales/en.json`, then run the translate pipeline (`node scripts/i18n/translate-extract.mjs` → per-locale subagents → `node scripts/i18n/translate-merge.mjs`). `npm run check:i18n:strict` must be clean; the pre-commit hook blocks gaps anyway.
+5. **i18n extraction:** any user-facing string the winner introduced must go through `t.section.key` — add keys to `src/i18n/locales/en.json`. Do not translate them: the app ships English only since 2026-10-25 (`.claude/rules/i18n.md`).
 6. Run typecheck to confirm no dangling references.
 
 Exit this phase with: one component, zero variant files, zero switcher, typecheck + i18n clean, user can reload and see the winner as the live render.
@@ -318,7 +318,7 @@ At the end of the workflow, confirm:
 - [ ] All non-winner variants deleted from disk, imports, and tab configs.
 - [ ] Winner uses semantic tokens only (no `text-white/*`, `bg-white/*`, raw palette classes) and shared catalog primitives.
 - [ ] Winner ≤ ~200 LOC per file, or sub-components extracted.
-- [ ] New user-facing strings extracted to i18n; `npm run check:i18n:strict` clean.
+- [ ] New user-facing strings extracted to `en.json` (no translation: English only).
 - [ ] Typecheck clean on touched files (pre-existing unrelated errors ignored).
 - [ ] Lint warnings explicitly audited — incremental-migration warnings (typography, spacing tokens, i18n) are acceptable; 0 errors required.
 - [ ] Consumer import paths still resolve (grep for old filename confirms zero references).

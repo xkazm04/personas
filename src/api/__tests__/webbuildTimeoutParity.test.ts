@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Studio's long webbuild calls each run under a backend budget, and a wrapper
 // that gives up first reports a failure while the backend finishes anyway:
 // a sketch that lands after the UI marked it failed is thrown away, and a

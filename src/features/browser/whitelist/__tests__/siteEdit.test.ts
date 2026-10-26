@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import type { BrowserSite } from '../../types';
@@ -10,19 +11,19 @@ function site(patch: Partial<BrowserSite> = {}): BrowserSite {
     enabled: true,
     overrides: {},
     budget: 50,
-    credential_id: null,
-    scan_status: 'confirmed',
-    scan_tier: 2,
-    scan_report: {
-      page_tools: [
-        { name: 'delete_item', description: '', reversible: false, side_effects: 'external', class: 'gated' },
-        { name: 'search', description: '', reversible: true, side_effects: 'none', class: 'auto' },
+    credentialId: null,
+    scanStatus: 'confirmed',
+    scanTier: 2,
+    scanReport: {
+      pageTools: [
+        { name: 'delete_item', description: '', reversible: false, sideEffects: 'external', class: 'gated' },
+        { name: 'search', description: '', reversible: true, sideEffects: 'none', class: 'auto' },
       ],
-    } as unknown as BrowserSite['scan_report'],
-    scan_at: null,
-    first_seen: 0,
-    last_seen: 0,
-    created_by: 'operator',
+    } as unknown as BrowserSite['scanReport'],
+    scanAt: null,
+    firstSeen: 0,
+    lastSeen: 0,
+    createdBy: 'operator',
     ...patch,
   };
 }
@@ -39,21 +40,21 @@ describe('draftFromSite', () => {
   });
 
   it('has no tools when the site was never scanned', () => {
-    expect(draftFromSite(site({ scan_report: null })).gated).toEqual({});
+    expect(draftFromSite(site({ scanReport: null })).gated).toEqual({});
   });
 
   // The ledger's WritesChip counts every stored override; a scan that is
-  // running (Rust nulls `scan_report` while it runs), failed, or no longer
+  // running (Rust nulls `scanReport` while it runs), failed, or no longer
   // lists the tool must not hide an override the operator can then never clear.
   it('lists a stored override even when the current scan does not report that tool', () => {
-    const unscanned = site({ scan_report: null, overrides: { submit_form: 'gated' } });
+    const unscanned = site({ scanReport: null, overrides: { submit_form: 'gated' } });
     expect(draftFromSite(unscanned).gated).toEqual({ submit_form: true });
     const dropped = site({ overrides: { old_tool: 'gated' } });
     expect(draftFromSite(dropped).gated).toEqual({ delete_item: false, search: false, old_tool: true });
   });
 
   it('can clear an override whose tool the scan no longer reports', () => {
-    const s = site({ scan_report: null, overrides: { submit_form: 'gated' } });
+    const s = site({ scanReport: null, overrides: { submit_form: 'gated' } });
     expect(planSiteWrites(s, { ...draftFromSite(s), gated: { submit_form: false } })).toEqual([
       { kind: 'override', tool: 'submit_form', gated: false },
     ]);
@@ -76,7 +77,7 @@ describe('parseBudget', () => {
 
 describe('planSiteWrites', () => {
   it('plans nothing for an untouched draft', () => {
-    const s = site({ overrides: { search: 'gated' }, credential_id: 'cred-1' });
+    const s = site({ overrides: { search: 'gated' }, credentialId: 'cred-1' });
     expect(planSiteWrites(s, draftFromSite(s))).toEqual([]);
   });
 
@@ -100,7 +101,7 @@ describe('planSiteWrites', () => {
     expect(planSiteWrites(s, { ...draftFromSite(s), credentialId: 'cred-9' })).toEqual([
       { kind: 'credential', credentialId: 'cred-9' },
     ]);
-    const bound = site({ credential_id: 'cred-9' });
+    const bound = site({ credentialId: 'cred-9' });
     expect(planSiteWrites(bound, { ...draftFromSite(bound), credentialId: null })).toEqual([
       { kind: 'credential', credentialId: null },
     ]);

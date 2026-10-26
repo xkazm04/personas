@@ -38,8 +38,12 @@ export const CODEGEN_IO = {
     outputs: ['src/i18n/generated/types.ts', 'src/i18n/generated/sectionShapes.ts'],
   },
   'i18n-split': {
-    inputs: [{ dir: 'src/i18n/locales', match: /\.json$/ }, 'src/i18n/routeSections.ts'],
-    outputs: [{ dir: 'src/i18n/section-locales', recursive: true }, 'src/i18n/generated/enSectionStrings.ts'],
+    inputs: [{ dir: 'src/i18n/locales', match: /\.json$/ }, 'src/i18n/routeSections.ts', 'src/i18n/locales.manifest.ts'],
+    outputs: [
+      { dir: 'src/i18n/section-locales', recursive: true },
+      'src/i18n/generated/enSectionStrings.ts',
+      'src/i18n/generated/sectionLoaders.ts',
+    ],
   },
 };
 

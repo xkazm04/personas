@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { shiftForChannel, targetsFor } from '../channelShift';
 import { isCoherent, violatesPairRules, extremeCount, MAX_EXTREMES } from '../styleDims';

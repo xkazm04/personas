@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 
 import { combineIslandState, computeAttention, monitoringSeverity, type MonitoringSummary } from '../lib/liveState';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 // buildQueueModel — the join of registry rows and the queue snapshot.
 //
 // The property under test is that a board never drops a row it can see and

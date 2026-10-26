@@ -400,9 +400,9 @@ The system map, with the runtime layers and which command module owns what, is [
 
 ## Internationalization (i18n)
 
-The app ships in **14 languages**: English (source of truth) plus Arabic, Bengali, Czech, German, Spanish, French, Hindi, Indonesian, Japanese, Korean, Russian, Vietnamese and Simplified Chinese.
+The app ships in **English only** (since 2026-10-25), while the core is still moving. Translations into Arabic, Bengali, Czech, German, Spanish, French, Hindi, Indonesian, Japanese, Korean, Russian, Vietnamese and Simplified Chinese stay in `src/i18n/locales/` but are not bundled, selectable or checked; they go stale as English grows. `SHIPPED_UI_LOCALES` in `src/i18n/locales.manifest.ts` is the switch that brings a language back.
 
-- `src/i18n/locales/en.json` is the only file you edit for new strings. Each section of every locale is lazy-loaded as its own chunk, and a missing key falls back to English at runtime.
+- `src/i18n/locales/en.json` is the only file you edit for new strings. Each lazily loaded section of a shipped locale is its own chunk, and a missing key falls back to English at runtime.
 - `src/i18n/section-locales/` and `src/i18n/generated/types.ts` are generated on `predev` / `prebuild`. Do not edit them by hand.
 - Strings are looked up through `useTranslation()`; the backend sends language-agnostic status tokens that the frontend maps in `src/i18n/tokenMaps.ts`.
 
@@ -420,15 +420,9 @@ function MyComponent() {
 }
 ```
 
-Hardcoded English in JSX is a bug (ESLint `custom/no-hardcoded-jsx-text`), and a key added to `en.json` must be translated into all 13 other locales in the same change.
+Hardcoded English in JSX is still a bug (ESLint `custom/no-hardcoded-jsx-text`): strings keep going through `en.json`, so reviving a language stays a translation job, not a rewrite. New keys are not translated into the other locales.
 
-```bash
-npm run check:i18n                       # CI gate: keysets match en.json, no stale keys
-npm run check:i18n:strict                # also fails on missing translations
-node scripts/i18n/check-coverage.mjs     # coverage report
-```
-
-The full pipeline and translation workflow is in [docs/i18n](./docs/i18n/contract.md) and `.claude/rules/i18n.md`.
+The parity and coverage scripts (`npm run check:i18n`, `check:i18n:strict`, `scripts/i18n/check-coverage.mjs`) still run by hand but are no longer CI or hook gates. The pipeline is described in [docs/i18n](./docs/i18n/contract.md) and `.claude/rules/i18n.md`.
 
 ---
 

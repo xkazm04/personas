@@ -21,11 +21,5 @@ describe('soundings dimension labels', () => {
     await preloadSectionsAsync('en', ['mastermind']);
     for (const key of DIM_ORDER) expect(labelOf(key)).toBe(DIM_REGISTRY[key].label);
   });
-
-  it('renders German names for the dimensions that have one', async () => {
-    useI18nStore.setState({ language: 'de' });
-    await preloadSectionsAsync('de', ['mastermind']);
-    const differing = DIM_ORDER.filter((k) => labelOf(k) !== DIM_REGISTRY[k].label);
-    expect(differing.length).toBeGreaterThanOrEqual(6);
-  });
+  // (A German case lived here until 2026-10-25; the app ships English only.)
 });

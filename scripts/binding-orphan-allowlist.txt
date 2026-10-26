@@ -31,7 +31,6 @@
 # One bare type name per line. `#` starts a comment.
 
 AuthDetection  # Rust type still exists (src-tauri/src/commands/credentials/auth_detect.rs) but no longer derives TS; 2 app ref(s), invoke<AuthDetection> for "detect_authenticated_services"
-BridgeActionResult  # Rust type still exists (src-tauri/engine/src/desktop_bridges.rs) but no longer derives TS; 0 app ref(s), not invoke-typed
 Continuation  # Rust type still exists (src-tauri/core/src/types.rs) but no longer derives TS; 7 app ref(s), not invoke-typed
 CredentialDesignHealthcheckResult  # no Rust type of this name; 2 app ref(s), invoke<CredentialDesignHealthcheckResult> for "test_credential_design_healthcheck"
 CredentialFieldMeta  # no Rust type of this name; 1 app ref(s), invoke<CredentialFieldMeta> for "list_credential_fields"
@@ -52,14 +51,11 @@ NegotiationStartResult  # no Rust type of this name; 1 app ref(s), invoke<Negoti
 ObservabilityMetrics  # no Rust type of this name; 2 app ref(s), not invoke-typed
 RotationHistoryEntry  # no Rust type of this name; 2 app ref(s), invoke<RotationHistoryEntry> for "get_rotation_history"
 RotationPolicy  # no Rust type of this name; 2 app ref(s), invoke<RotationPolicy> for "list_rotation_policies"
-RuntimeStatus  # Rust type still exists (src-tauri/engine/src/desktop_runtime.rs) but no longer derives TS; 0 app ref(s), not invoke-typed
 SchemaProposalSnapshot  # no Rust type of this name; 1 app ref(s), invoke<SchemaProposalSnapshot> for "get_schema_proposal_snapshot"
 SetupStartResult  # no Rust type of this name; 1 app ref(s), invoke<SetupStartResult> for "start_setup_install"
 StartOAuthParams  # no Rust type of this name; 2 app ref(s), not invoke-typed
 StartPhase  # no Rust type of this name; 0 app ref(s), not invoke-typed
 StepHelpResult  # no Rust type of this name; 1 app ref(s), invoke<StepHelpResult> for "get_negotiation_step_help"
-TemplateAdoptConfirmResult  # no Rust type of this name; 0 app ref(s), not invoke-typed
-TemplateAdoptStartResult  # no Rust type of this name; 0 app ref(s), not invoke-typed
 WorkflowJob  # Rust type still exists (src-tauri/src/commands/infrastructure/workflows.rs) but no longer derives TS; 1 app ref(s), not invoke-typed
 WorkflowsOverview  # Rust type still exists (src-tauri/src/commands/infrastructure/workflows.rs) but no longer derives TS; 1 app ref(s), invoke<WorkflowsOverview> for "get_workflows_overview"
 ZapierStep  # no Rust type of this name; 2 app ref(s), not invoke-typed

@@ -356,7 +356,6 @@ pub fn companion_get_adaptations(
 // ── Prompt-block size ledger ────────────────────────────────────────────
 
 #[derive(Debug, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AthenaPromptBlockStat {
     pub turn_id: String,
@@ -896,7 +895,6 @@ mod spend_rollup_tests {
 // before/after on the same numbers.
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct AthenaPromptChurnBlock {
     /// Block name as `companion::prompt::compose` labels it.

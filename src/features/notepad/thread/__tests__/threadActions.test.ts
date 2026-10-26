@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The thread verbs' ROUTING — which IPC each review kind reaches, in what
 // order, and what the rework loop writes into the next run's brief. The IPC is
 // mocked at the wrapper boundary; what is asserted is the sequence.

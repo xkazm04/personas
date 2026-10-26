@@ -63,7 +63,6 @@ pub struct ReplaySample {
 /// the existing `fitness_json` field, plus provenance and raw aggregates so the
 /// evidence is inspectable without re-deriving it.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct MeasuredFitness {
     /// Weighted overall fitness (0.0--1.0) — same scale/weights as the

@@ -33,8 +33,8 @@ export default function TourResumeFooterIcon() {
   if (!show) return null;
 
   // tx() interpolates {completed}/{total} — the label string carries the
-  // placeholders, so a plain `t.onboarding.resume_tour` would render them raw.
-  const label = tx(t.onboarding.resume_tour, { completed: done, total });
+  // placeholders, so a plain `t.chrome.footer_resume_tour` would render them raw.
+  const label = tx(t.chrome.footer_resume_tour, { completed: done, total });
   return (
     <button
       type="button"

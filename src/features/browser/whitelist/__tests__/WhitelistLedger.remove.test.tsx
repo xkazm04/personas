@@ -15,14 +15,14 @@ const SITE: BrowserSite = {
   enabled: true,
   overrides: {},
   budget: 50,
-  credential_id: null,
-  scan_status: 'confirmed',
-  scan_tier: 2,
-  scan_report: null,
-  scan_at: null,
-  first_seen: 0,
-  last_seen: 0,
-  created_by: 'operator',
+  credentialId: null,
+  scanStatus: 'confirmed',
+  scanTier: 2,
+  scanReport: null,
+  scanAt: null,
+  firstSeen: 0,
+  lastSeen: 0,
+  createdBy: 'operator',
 };
 
 function renderLedger(onRemove: (s: BrowserSite) => Promise<void>) {

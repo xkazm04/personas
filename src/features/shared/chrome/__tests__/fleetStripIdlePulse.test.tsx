@@ -5,7 +5,7 @@
  * only while something is running, and stops when the last run ends.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, act } from '@testing-library/react';
+import { render, act, waitFor } from '@testing-library/react';
 
 (globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
 
@@ -61,13 +61,17 @@ describe('FleetActivityStrip idle pulse', () => {
     expect(animateSpy).not.toHaveBeenCalled();
   });
 
-  it('starts the tween for a run and stops it when the run ends', () => {
+  // `animate` is fetched when a bar first lights (it is framer's animation
+  // engine, kept off the startup path since 2026-10-25), so the tween starts a
+  // tick after the run appears rather than in the same commit.
+  it('starts the tween for a run and stops it when the run ends', async () => {
     render(<FleetActivityStrip />);
     const run = (startedAt: number) => ({ status: 'running', costUsd: 0, startedAt });
     act(() => setProcesses({ a: run(1) }));
-    expect(animateSpy).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(animateSpy).toHaveBeenCalledTimes(1));
     // A second run joining does not restart the shared pulse.
     act(() => setProcesses({ a: run(1), b: run(2) }));
+    await new Promise((resolve) => setTimeout(resolve, 20));
     expect(animateSpy).toHaveBeenCalledTimes(1);
     act(() => setProcesses({ a: { status: 'queued', costUsd: 0, startedAt: 1 } }));
     expect(stopSpy).toHaveBeenCalledTimes(1);

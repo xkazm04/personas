@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Tests for the WebView2 compatibility layer:
  * - Runtime shim (public/webview2-compat.js)

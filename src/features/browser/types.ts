@@ -50,7 +50,7 @@ export type BrowserBackendKind = 'webview' | 'extension' | 'playwright';
 
 /**
  * Controllability grade the scan assigns: 0 read-only, 1 generic hands, 2 the
- * page's own WebMCP tools. The binding types `scan_tier` as `number | null`
+ * page's own WebMCP tools. The binding types `scanTier` as `number | null`
  * (ts-rs cannot narrow a `u8`); this is the vocabulary the UI renders.
  */
 export type BrowserControlTier = 0 | 1 | 2;

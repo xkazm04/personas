@@ -43,7 +43,6 @@ pub struct PersonaEpisode {
 
 /// Compact episode projection for prompt assembly and list surfaces.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct EpisodeExcerpt {
     pub id: String,

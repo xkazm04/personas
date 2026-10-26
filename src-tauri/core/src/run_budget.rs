@@ -90,7 +90,6 @@ pub fn enforce_enabled() -> bool {
 /// Serializable snapshot of a run's budget state. Embedded in run summaries
 /// (e.g. `EvolutionCycleSummary.budget`) and returned by `state()`.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct RunBudgetState {
     pub run_id: String,
@@ -112,7 +111,6 @@ pub struct RunBudgetState {
 /// dashboards. Superset of [`RunBudgetState`] with the captured enforce flag and
 /// row timestamps. Written at each consumer's finalize via `repos::run_budget`.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct RunBudgetRecord {
     pub run_id: String,

@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * A failed list is not a successful empty load. The first tab fetch that
  * rejects must raise tabsError and leave tabsLoading false without inventing

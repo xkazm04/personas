@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Dictation (whisper) and speech synthesis (Kokoro / Pocket) run a local
 // sidecar INLINE and resolve only when it exits. Each sidecar wait carries its
 // own hard cap in the Rust source (WHISPER_TIMEOUT, KOKORO_TIMEOUT,
