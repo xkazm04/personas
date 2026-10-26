@@ -29,7 +29,7 @@ function rustRiskLevels(): Record<string, string> {
   if (start < 0) throw new Error('DesktopCapability::risk_level not found; update this pin');
   const body = src.slice(start, src.indexOf('\n    }\n', start));
   const out: Record<string, string> = {};
-  for (const arm of body.matchAll(/((?:Self::\w+\s*\|?\s*)+)=>\s*"(\w+)"/g)) {
+  for (const arm of body.matchAll(/((?:Self::\w+(?:\s*\|)?\s*)+)=>\s*"(\w+)"/g)) {
     for (const v of arm[1]!.matchAll(/Self::(\w+)/g)) out[snake(v[1]!)] = arm[2]!;
   }
   return out;
