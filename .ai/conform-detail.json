@@ -33038,37 +33038,37 @@
       "context": "plugins-twin-training",
       "subject": "docs-content-model",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-20",
-      "evaluatedTs": "2026-10-20T21:28:42.952Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-26",
+      "evaluatedTs": "2026-10-26T22:12:30.196Z",
+      "worker": "7d9b746b-d842-4b95-8c6d-4e3d7ab8b6c6",
       "techniques": [
         {
           "technique": "catalog-referential-invariants",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/sub_training/topicPresets.ts:4 These records identify interview presets, rather than documentation pages with separately registered bodies."
+          "evidence": "src/features/plugins/twin/sub_training/topicPresets.ts:16 Training 'topics' are six i18n-keyed interview presets (labelKey/promptKey), not doc topic records with a body map, so there is no record-to-body bijection to assert."
         },
         {
           "technique": "derived-navigation-projection",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/sub_training/NextMovesPanel.tsx:18 Recommendations start training sessions; they do not project a documentation catalog into navigation."
+          "evidence": "src/features/plugins/twin/sub_training/topicCoverage.ts:5 The derived surface here is a memory-coverage score per interview preset, not navigation, a sitemap or prev/next over a docs catalog."
         },
         {
           "technique": "draft-visibility-gating",
-          "verdict": "deviation",
-          "evidence": "src/features/plugins/twin/sub_profiles/TwinHero.tsx:47 The standard explicitly requires checking inbound product links against catalog existence, category, and production visibility; searches found this literal link but no corresponding validation."
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/TrainingStudio.tsx:14 'Draft' here means an unsaved Q&A board cached locally, not an unpublished documentation topic that needs a visibility predicate."
         },
         {
           "technique": "per-topic-freshness-metadata",
           "verdict": "not-applicable",
-          "evidence": "src/features/plugins/twin/sub_training/useTrainingMomentum.ts:18 This timestamp measures interview activity, rather than review freshness of published documentation topics."
+          "evidence": "src/features/plugins/twin/sub_training/topicCoverage.ts:47 The tiers measure how many memories cover an interview area. They are not review dates or watched sources on a doc record."
+        },
+        {
+          "technique": "product-location-mapping",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/topicCoverage.ts:38 The topic keywords drive a fallback coverage scorer over persona-interview answers and point at no product location that documentation describes."
         }
-      ],
-      "withdrawn": {
-        "worker": "b9c4b6e1-34f3-4c40-bac8-b8d21e203ec7",
-        "state": "deviation",
-        "at": "2026-10-20T21:28:58.600194+00:00",
-        "reason": "reviewer (sonnet): TwinHero.tsx:47 does hold the literal external URL https://personas.dev/guide/twin, but the repo has no documentation catalog and no other reference to that /guide/ path, so I could not confirm that any catalog or published-docs set exists for the link to be checked against, or that docs changes cou"
-      }
+      ]
     },
     "959baa73-f18f-42c8-8569-466939b9050d/prompt-assembly": {
       "context": "notepad-plan",
