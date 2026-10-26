@@ -38594,6 +38594,21 @@
         "at": "2026-10-25T23:05:20.079321+00:00",
         "reason": "reviewer (sonnet): The anchor (eval_runs.rs:7) is a doc comment saying one read-only module leaves git and npm to the host harness, which doesn't show that no CI or delivery construct exists across the other eleven context files. The second anchor (executions.rs:794) is log masking, and the four absence terms are narr"
       }
+    },
+    "89eddf81-0c57-441d-a07d-de36bf022cb5/document-text-extraction": {
+      "context": "display-data-formatters",
+      "subject": "document-text-extraction",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-26",
+      "evaluatedTs": "2026-10-26T22:19:37.883Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "6fbdfa61-6245-4de3-87e1-fd5426c9d974",
+        "state": "not-applicable",
+        "at": "2026-10-26T22:19:56.821829+00:00",
+        "reason": "reviewer (sonnet): The anchor (Numeric.tsx:6) is only the doc-comment opening for the number primitive, so it doesn't show that document ingestion is absent; the claim rests on an absence search, and my grep of display/ for pdf, ocr, docx and similar terms found nothing."
+      }
     }
   }
 }
