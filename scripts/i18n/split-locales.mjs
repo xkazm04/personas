@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { firstPaintKeys } from "./lib/first-paint-keys.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "../..");
@@ -138,6 +139,18 @@ function readRouteBaseSections() {
   return names;
 }
 
+/**
+ * FIRST_PAINT_PARTIAL_SECTIONS in routeSections.ts (2026-10-25): sections the
+ * always-mounted chrome reads only a few keys of. Only those keys ship eagerly
+ * (EN_PARTIAL_SECTION_STRINGS below); the full section is a lazy chunk.
+ */
+function readPartialSections() {
+  const src = fs.readFileSync(routeSectionsPath, "utf8");
+  const match = /export const FIRST_PAINT_PARTIAL_SECTIONS: readonly TranslationSection\[\] = \[([\s\S]*?)\];/.exec(src);
+  if (!match) return [];
+  return [...match[1].matchAll(/'([a-zA-Z0-9_]+)'/g)].map((m) => m[1]);
+}
+
 function readCoreSections() {
   return [...new Set([...readRouteBaseSections(), ...EN_TS_SYNC_SECTIONS])];
 }
@@ -167,6 +180,16 @@ function readShippedLocales() {
 const english = readJson(enPath);
 const sectionNames = Object.keys(english);
 const coreSections = readCoreSections();
+const partialSections = readPartialSections();
+for (const partial of partialSections) {
+  if (coreSections.includes(partial)) {
+    throw new Error(`split-locales: "${partial}" is both eager core and FIRST_PAINT_PARTIAL - remove it from BASE_SECTIONS / EN_TS_SYNC_SECTIONS.`);
+  }
+  if (!sectionNames.includes(partial)) {
+    throw new Error(`split-locales: FIRST_PAINT_PARTIAL_SECTIONS names "${partial}", not a section of en.json.`);
+  }
+}
+const { keys: partialKeys, closureSize } = firstPaintKeys(root, english, partialSections);
 for (const core of coreSections) {
   if (!sectionNames.includes(core)) {
     throw new Error(`split-locales: BASE_SECTIONS names "${core}" which is not a top-level section of en.json.`);
@@ -203,6 +226,12 @@ for (const file of localeFiles) {
 //    other section reaches the runtime exclusively through the async
 //    section-locales/en/<section>.json chunk written above.
 const allSectionsLiteral = JSON.stringify(sectionNames);
+const partialEntries = partialSections
+  .map((section) => {
+    const subset = Object.fromEntries(partialKeys[section].map((k) => [k, english[section][k]]));
+    return `  ${JSON.stringify(section)}: ${JSON.stringify(JSON.stringify(subset))},`;
+  })
+  .join("\n");
 const coreEntries = coreSections
   .map((section) => `  ${JSON.stringify(section)}: ${JSON.stringify(JSON.stringify(english[section] ?? {}))},`)
   .join("\n");
@@ -218,6 +247,10 @@ writeIfChanged(
     `// Every other section loads through section-locales/en/<section>.json — see\n` +
     `// src/i18n/englishSections.ts and src/i18n/useTranslation.ts.\n` +
     `export const EN_CORE_SECTION_STRINGS = {\n${coreEntries}\n} as const;\n\n` +
+    `// Partial core (FIRST_PAINT_PARTIAL_SECTIONS in routeSections.ts): only the keys the static\n` +
+    `// import closure of src/main.tsx can read before first paint\n` +
+    `// (scripts/i18n/lib/first-paint-keys.mjs). The full section is a lazy chunk that replaces it.\n` +
+    `export const EN_PARTIAL_SECTION_STRINGS: Partial<Record<string, string>> = {\n${partialEntries}\n};\n\n` +
     `export type I18nSectionKey = typeof EN_ALL_SECTIONS[number];\n` +
     `export type CoreI18nSectionKey = keyof typeof EN_CORE_SECTION_STRINGS;\n`,
 );
@@ -256,5 +289,7 @@ writeIfChanged(
 console.log(
   `Split ${localeFiles.length} locale(s) (English included) into ${sectionNames.length} section chunk(s); ` +
     `${coreSections.length} section(s) kept eager as the English core; ` +
+    `partial core ${partialSections.map((s) => `${s} ${partialKeys[s].length}/${Object.keys(english[s]).length}`).join(", ") || "none"} ` +
+    `(from a ${closureSize}-module startup closure); ` +
     `${loaderPaths.length} lazy loader(s) for shipped locale(s) ${shippedLocales.join(", ")}.`,
 );

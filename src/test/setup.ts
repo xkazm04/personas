@@ -7,6 +7,11 @@ import enVault from "@/i18n/section-locales/en/vault.json";
 import enOnboarding from "@/i18n/section-locales/en/onboarding.json";
 import enDecisionCenter from "@/i18n/section-locales/en/decisionCenter.json";
 import enDeliberation from "@/i18n/section-locales/en/deliberation.json";
+import enMonitor from "@/i18n/section-locales/en/monitor.json";
+import enAthena from "@/i18n/section-locales/en/athena.json";
+import enDebt from "@/i18n/section-locales/en/debt.json";
+import enShared from "@/i18n/section-locales/en/shared.json";
+import enNotepad from "@/i18n/section-locales/en/notepad.json";
 
 // `agents`, `overview` and `vault` left the eager English core on 2026-10-25
 // (305 KB off the startup path). In the app a route preloads them before its
@@ -25,6 +30,13 @@ setLoadedEnglishSection("onboarding", enOnboarding);
 // same day: the app fetches them when their overlay opens; a spec renders that overlay directly.
 setLoadedEnglishSection("decisionCenter", enDecisionCenter);
 setLoadedEnglishSection("deliberation", enDeliberation);
+// The partial-core sections (FIRST_PAINT_PARTIAL_SECTIONS) were whole and eager before; a
+// spec gets the full section, as the app has it a second after boot.
+setLoadedEnglishSection("monitor", enMonitor);
+setLoadedEnglishSection("athena", enAthena);
+setLoadedEnglishSection("debt", enDebt);
+setLoadedEnglishSection("shared", enShared);
+setLoadedEnglishSection("notepad", enNotepad);
 
 // Startup chrome renders framer-motion's light `m.*` components, and App.tsx's <LazyMotion>
 // loads the animation features after first paint. A spec renders components without App, so

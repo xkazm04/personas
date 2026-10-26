@@ -34,12 +34,13 @@ import { join } from "node:path";
 export const MAX_CHUNK_KB = 850;
 export const MAX_TOTAL_KB = 5000;
 
-// Startup JS target (operator, 2026-10-25): what the app loads before first
-// paint - the entry and its static imports - is the figure a user waits for,
-// not the total of ~950 lazy chunks. 1,908 KB when this was set. TRACKED, not
-// gated: the startup ratchet in evaluateBudget() already stops any rise, and
-// the PR report shows the distance to this target until the baseline reaches
-// it; then it becomes the ceiling.
+// Startup JS ceiling (operator target, 2026-10-25): what the app loads before
+// first paint - the entry and its static imports - is the figure a user waits
+// for, not the total of ~950 lazy chunks. Set at 1,908 KB as a target, reached
+// the same day (1,459 KB), and from then a HARD ceiling: evaluateBudget()
+// fails any build over it, independent of the baseline, so a re-baseline
+// cannot carry startup past it. The startup ratchet below is tighter while
+// the baseline sits under it. Raising this number is a decision, not a fix.
 export const STARTUP_TARGET_KB = 1500;
 
 // Ratchet tolerance: how much a chunk or the total may grow above its
@@ -240,8 +241,18 @@ export function evaluateBudget(current, baseline, opts = {}) {
   }
 
   // ── Startup (entry + static imports) ───────────────────────────────
-  // Ratcheted like the total, once both sides carry it (baselines written
-  // before 2026-10-25 do not).
+  // A hard ceiling first (STARTUP_TARGET_KB), then ratcheted like the total
+  // once both sides carry it (baselines written before 2026-10-25 do not).
+  const startupCeilingKB = opts.startupCeilingKB ?? STARTUP_TARGET_KB;
+  if (typeof current.startupKB === "number" && current.startupKB > startupCeilingKB) {
+    violations.push({
+      kind: "startup-ceiling",
+      currentKB: current.startupKB,
+      baselineKB: startupCeilingKB,
+      diffKB: current.startupKB - startupCeilingKB,
+      toleranceKB: 0,
+    });
+  }
   if (typeof current.startupKB === "number" && typeof baseline?.startupKB === "number") {
     const tol = tolerance(baseline.startupKB);
     const diff = current.startupKB - baseline.startupKB;

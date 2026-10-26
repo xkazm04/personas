@@ -166,6 +166,8 @@ function printReport(current, baseline, result) {
       if (v.kind === "total") {
         const baselineStr = v.baselineKB === null ? `no baseline, cap ${MAX_TOTAL_KB} KB` : `baseline ${v.baselineKB} KB`;
         console.log(`    - total: ${v.currentKB.toFixed(1)} KB (${baselineStr}, +${v.diffKB.toFixed(1)} KB over)`);
+      } else if (v.kind === "startup-ceiling") {
+        console.log(`    - startup: ${v.currentKB.toFixed(1)} KB is over the ${v.baselineKB} KB ceiling (STARTUP_TARGET_KB) by ${v.diffKB.toFixed(1)} KB`);
       } else if (v.kind === "startup") {
         console.log(`    - startup: ${v.currentKB.toFixed(1)} KB (baseline ${v.baselineKB} KB, +${v.diffKB.toFixed(1)} KB, tolerance ${v.toleranceKB.toFixed(1)} KB)`);
       } else if (v.kind === "chunk") {
@@ -259,6 +261,19 @@ function runSelfTest() {
   );
   const caughtStartupRise = startupResult.violations.some((v) => v.kind === "startup");
 
+  // The ceiling holds even against a baseline above it (a re-baseline cannot carry startup past it).
+  const ceilingResult = evaluateBudget(
+    { totalKB: 1000, startupKB: 1600, chunks: baseline.chunks },
+    { ...baseline, startupKB: 1700 },
+    { startupCeilingKB: 1500 },
+  );
+  const caughtCeiling = ceilingResult.violations.some((v) => v.kind === "startup-ceiling");
+  const underCeilingQuiet = !evaluateBudget(
+    { totalKB: 1000, startupKB: 1400, chunks: baseline.chunks },
+    { ...baseline, startupKB: 1400 },
+    { startupCeilingKB: 1500 },
+  ).violations.some((v) => v.kind === "startup-ceiling");
+
   // Graph keys: a facade chunk is keyed by its source module; two facade-less
   // chunks sharing a name are told apart; startup follows static imports only.
   const graph = {
@@ -277,6 +292,8 @@ function runSelfTest() {
   const startupIsStaticClosure = startup.join(",") === "index-a.js,shared-b.js";
 
   const checks = [
+    ["startup over the ceiling fails even when the baseline is higher", caughtCeiling],
+    ["startup under the ceiling raises no ceiling violation", underCeilingQuiet],
     ["rise beyond tolerance on startup JS is caught", caughtStartupRise],
     ["a facade chunk is keyed by its source module", keyedBySource],
     ["facade-less chunks with one name are disambiguated", sharedDisambiguated],
