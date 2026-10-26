@@ -1,0 +1,17 @@
+{
+ "schema": "conform-run/1",
+ "worker": "12adfac2-98d7-44de-93cb-474179c9a64a",
+ "subject": "hitl-approval",
+ "evaluatedAt": "2026-10-26T22:38:05.724648+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [],
+ "declined": [
+  {
+   "subject": "hitl-approval",
+   "context": "fleet-triage-columns",
+   "reason": "There is no code left in this context to judge. Its context-map row has file_paths: [], and .ai/registry-map.json lists paths: []. Its two entry points, src/features/fleet/monitor/triage/MonitorProjectColumns.tsx and src/features/fleet/monitor/triage/triageModel.ts, no longer exist. The directory src/features/fleet/monitor/triage/ is absent, and `git ls-files` turns up no triageModel, MonitorProjectColumns or PersonaGlyph under src/features/fleet. Git history shows the deletion: commit f21ecd8b36 (2026-08-26) removed 72 lines from triageModel.ts, and commit b1d59f8aa8 (2026-08-26, 'header becomes the router') deleted MonitorProjectColumns.tsx (209 lines) and PersonaGlyph.tsx (45 lines). src/features/fleet/monitor/grid/fleetGridModel.ts:154-157 confirms it: the operation-badge logic was 'Moved here (2026-08-26) from the retired `triage/triageModel.ts`, whose only consumer \u2014 the Project-columns view \u2014 was deleted'. That code now belongs to the Activity grid context, not this one. Calling the pair not-applicable would be wrong, because the context did not avoid HITL concerns: it was a review and input-gate surface, and it was removed. Any anchor I gave would be borrowed from another context."
+  }
+ ],
+ "consults": []
+}
