@@ -486,6 +486,13 @@ test('(xviii) narrowCommand and testFilesIn', async () => {
   assert.deepEqual(G.testFilesIn(['FAIL src/__tests__/a.test.tsx > suite > case', 'x/y.test.ts', 'no file here']).sort(), ['src/__tests__/a.test.tsx', 'x/y.test.ts']);
 });
 
+test('(xz3) isCacheRace recognises a shared vitest cache unlink race, and nothing else', async () => {
+  const G = await import('../lib/gate.mjs');
+  assert.equal(G.isCacheRace("packages/contract test: [Error: EPERM: operation not permitted, unlink 'C:\\w\\node_modules\\.vitest-cache\\ce9a'] {"), true);
+  assert.equal(G.isCacheRace("Error: EPERM: operation not permitted, open 'C:\\w\\target\\debug\\app.exe'"), false);
+  assert.equal(G.isCacheRace('FAIL src/a.test.ts > b'), false);
+});
+
 test('(xz2) failureSignature reads failures behind a pnpm -r package prefix', async () => {
   const G = await import('../lib/gate.mjs');
   const sig = G.failureSignature([
