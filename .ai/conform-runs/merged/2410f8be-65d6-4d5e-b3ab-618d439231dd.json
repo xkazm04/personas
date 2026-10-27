@@ -1,0 +1,66 @@
+{
+ "schema": "conform-run/1",
+ "worker": "2410f8be-65d6-4d5e-b3ab-618d439231dd",
+ "subject": "multi-provider-event-normalization",
+ "evaluatedAt": "2026-10-27T22:19:57.197719+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "mastermind-scene-store",
+   "subject": "multi-provider-event-normalization",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_mastermind/lib/llmSpend.ts:6 This context gets LLM spend that has already been normalized: it imports fetchLlmPinpoints from the sub_llm_overview adapter context and only sums totalCostUsd per project (llmSpend.ts:25). It has no ingestion door, span mapper, provider matcher, usage extractor or event-id rule. A grep of src/features/teams/sub_mastermind for gen_ai, spanId, span_id, otlp, prompt_tokens and completion_tokens found nothing, so the subject's precondition (ingesting or mapping telemetry it did not emit) does not hold here.",
+   "techniques": [
+    {
+     "technique": "two-doors-one-pipeline",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_mastermind/lib/llmSpend.ts:24 It calls the adapter's single fetch function and adds no door or pipeline stage of its own."
+    },
+    {
+     "technique": "refuse-to-derive",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_mastermind/lib/llmSpend.ts:25 This is a downstream sum, not the normalization boundary the technique scopes itself to. The total cannot say how many rows were unpriced, because the adapter already turns null into 0 (llmTracingAdapters.ts:95 `cost_usd ?? 0`). That fault belongs to the adapter context."
+    },
+    {
+     "technique": "per-provider-usage-extractors",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_mastermind/lib/llmSpend.ts:19 Each provider's shape is handled by the adapter registry in another context. This file only filters on hasLiveAdapter."
+    },
+    {
+     "technique": "attribute-precedence-lists",
+     "verdict": "not-applicable",
+     "evidence": "src/features/teams/sub_mastermind/lib/llmSpend.ts:25 It reads one field that is already normalized and maps no span attributes."
+    }
+   ],
+   "absenceTerms": [
+    "gen_ai",
+    "spanId",
+    "span_id",
+    "otlp",
+    "prompt_tokens"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-27T22:19:57.197719+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "multi-provider-event-normalization"
+   ],
+   "techniques": [
+    "attribute-precedence-lists",
+    "per-provider-usage-extractors",
+    "refuse-to-derive",
+    "two-doors-one-pipeline"
+   ],
+   "deviations": 0,
+   "context": "mastermind-scene-store",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

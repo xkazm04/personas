@@ -19510,7 +19510,11 @@
           "revision": 7,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/llmSpend.ts:6 This context gets LLM spend that has already been normalized: it imports fetchLlmPinpoints from the sub_llm_overview adapter context and only sums totalCostUsd per project (llmSpend.ts:25). It has no ingestion door, span mapper, provider matcher, usage extractor or event-id rule. A grep of src/features/teams/sub_mastermind for gen_ai, spanId, span_id, otlp, prompt_tokens and completion_tokens found nothing, so the subject's precondition (ingesting or mapping telemetry it did not emit) does not hold here.",
+          "evaluatedAt": "2026-10-27",
+          "evaluatedAgainst": "sha256-b2:a0932e26160bfd85",
+          "evaluatedRevision": 7
         },
         {
           "subject": "operator-surfaces-for-llm-spend",
