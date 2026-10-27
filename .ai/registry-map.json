@@ -37536,7 +37536,11 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:18 The context is the React UI for a template-generation wizard and runner. The only numeric bound in it is a fixed form-validation minimum on input length, not a measurement compared against a recorded baseline. A case-insensitive search of src/features/templates/sub_generated/generation/ for baseline|ratchet|census|budget|threshold|regression|metric found no hits, so there is no metric gate here for any of the five techniques to apply to.",
+          "evaluatedAt": "2026-10-27",
+          "evaluatedAgainst": "sha256-b2:a673c17a2c4ddcea",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"

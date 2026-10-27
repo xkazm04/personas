@@ -36675,42 +36675,41 @@
       "context": "template-generation",
       "subject": "metric-gates",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T03:17:34.750Z",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-27",
+      "evaluatedTs": "2026-10-27T22:13:04.884Z",
+      "worker": "151fd228-e71a-4854-b9e1-c13e6f0a77cc",
       "techniques": [
+        {
+          "technique": "ratchet-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:18 A fixed validation constant, not a baseline that ratchets; the context has no recorded count to compare against."
+        },
         {
           "technique": "counted-set-snapshot",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/generation/runner/DesignReviewTerminal.tsx:124 This renders the current run's total; no count-based regression snapshot was found."
+          "evidence": "src/features/templates/sub_generated/generation/runner/DesignReviewTerminal.tsx:124 This renders the current run's total; no count-based regression snapshot was found.",
+          "carriedFrom": "2026-10-22"
         },
         {
           "technique": "deterministic-proxy-gate",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:173 Elapsed time feeds a progress estimate, without a blocking cost comparison requiring a deterministic replacement."
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:173 Elapsed time feeds a progress estimate, without a blocking cost comparison requiring a deterministic replacement.",
+          "carriedFrom": "2026-10-22"
         },
         {
           "technique": "operation-assertion-gates",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/generation/runner/DesignReviewRunner.tsx:138 Timing is displayed as ETA; searches found no context-specific performance gate or cost standard to translate into operation assertions."
+          "evidence": "src/features/templates/sub_generated/generation/runner/DesignReviewRunner.tsx:138 Timing is displayed as ETA; searches found no context-specific performance gate or cost standard to translate into operation assertions.",
+          "carriedFrom": "2026-10-22"
         },
         {
           "technique": "proxy-metric-counts-its-own-satisfiers",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:124 The count identifies inputs meeting explicit form requirements, without claiming coverage, parity, or implementation completeness."
-        },
-        {
-          "technique": "ratchet-design",
-          "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:146 This is an empty-input guard; no recorded baseline or directional metric comparison was found."
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:124 The count identifies inputs meeting explicit form requirements, without claiming coverage, parity, or implementation completeness.",
+          "carriedFrom": "2026-10-22"
         }
-      ],
-      "withdrawn": {
-        "worker": "c97d06ed-a495-41ca-ae47-905673764066",
-        "state": "not-applicable",
-        "at": "2026-10-22T03:18:49.414598+00:00",
-        "reason": "reviewer (sonnet): The anchor (DesignReviewRunner.tsx:174) is the start button's disabled condition, which does not show that a metric gate is absent. The absence search covered only the generation directory, but the repo has repo-wide metric gates in scripts/ (bundle-baseline.json, bundle budget, agents-sub-boundarie"
-      }
+      ]
     },
     "e0ea6f08-ebdf-4c9e-aab4-969eee32f573/multi-provider-event-normalization": {
       "context": "mastermind-scene-store",

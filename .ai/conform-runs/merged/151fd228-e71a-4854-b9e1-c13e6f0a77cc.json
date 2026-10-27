@@ -1,0 +1,48 @@
+{
+ "schema": "conform-run/1",
+ "worker": "151fd228-e71a-4854-b9e1-c13e6f0a77cc",
+ "subject": "metric-gates",
+ "evaluatedAt": "2026-10-27T22:13:04.884444+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "template-generation",
+   "subject": "metric-gates",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:18 The context is the React UI for a template-generation wizard and runner. The only numeric bound in it is a fixed form-validation minimum on input length, not a measurement compared against a recorded baseline. A case-insensitive search of src/features/templates/sub_generated/generation/ for baseline|ratchet|census|budget|threshold|regression|metric found no hits, so there is no metric gate here for any of the five techniques to apply to.",
+   "techniques": [
+    {
+     "technique": "ratchet-design",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:18 A fixed validation constant, not a baseline that ratchets; the context has no recorded count to compare against."
+    }
+   ],
+   "absenceTerms": [
+    "baseline",
+    "ratchet",
+    "census",
+    "threshold",
+    "metric"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-27T22:13:04.884444+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "metric-gates"
+   ],
+   "techniques": [
+    "ratchet-design"
+   ],
+   "deviations": 0,
+   "context": "template-generation",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
