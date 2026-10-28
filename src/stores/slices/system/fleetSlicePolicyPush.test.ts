@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The Fleet policy (auto-hibernate + state cutoffs) reaches the Rust ticker
  * once at boot and then only when the user changes it.

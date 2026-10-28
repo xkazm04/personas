@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * What changed between two reads (/perfect wave 2, direction 6): the pure diff, and the one-shot highlight schedule.
  */

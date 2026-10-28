@@ -1,55 +1,21 @@
-// A committed language switch used to paint English for one or more frames:
-// `setLanguage` flipped the store immediately and the section preload ran from
-// a post-render effect, so `getResolvedSection` returned the English chunk for
-// every section of the current route that had not landed yet. A mixed bundle
-// presented as ready is the failure mode the i18n rule calls worse than no
-// translation at all.
+// The UI ships English only since 2026-10-25 (SHIPPED_UI_LOCALES in
+// locales.manifest.ts). Until then this file proved that a switch to Japanese
+// had the route's sections resolvable in Japanese by the time it returned; that
+// behaviour is switched off with the other locales, and what is pinned now is
+// the contract that replaced it: no path - a switch, a direct setLanguage, a
+// language persisted by an older build - commits a language the build does not
+// ship, the pickers that offered one are gone, and the generated loaders bundle
+// English only. Reviving a locale means rewriting this file against it.
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 
-import { switchLanguage, getActiveTranslations } from '../useTranslation';
+import { switchLanguage } from '../useTranslation';
+import { sectionLoaders } from '../generated/sectionLoaders';
+import { EN_CORE_SECTION_STRINGS } from '../generated/enSectionStrings';
+import { SHIPPED_UI_LOCALES, UI_LANGUAGE_PICKER_ENABLED, toShippedUiLocale } from '../locales.manifest';
 import { useI18nStore } from '@/stores/i18nStore';
 import { useSystemStore } from '@/stores/systemStore';
-import ja from '../locales/ja.json';
-import en from '../locales/en.json';
 
-type Section = Record<string, Record<string, unknown>>;
-
-/** A leaf that exists in both bundles and differs between them. */
-function divergentLeaf(section: string): { path: string[]; ja: string } | null {
-  const jaSection = (ja as unknown as Record<string, Section>)[section];
-  const enSection = (en as unknown as Record<string, Section>)[section];
-  if (!jaSection || !enSection) return null;
-  for (const group of Object.keys(jaSection)) {
-    const jg = jaSection[group] as unknown;
-    const eg = enSection[group] as unknown;
-    if (typeof jg === 'string' && typeof eg === 'string' && jg !== eg) {
-      return { path: [group], ja: jg };
-    }
-    if (!jg || !eg || typeof jg !== 'object' || typeof eg !== 'object') continue;
-    const jgo = jg as Record<string, unknown>;
-    const ego = eg as Record<string, unknown>;
-    for (const key of Object.keys(jgo)) {
-      const jv = jgo[key];
-      const ev = ego[key];
-      if (typeof jv === 'string' && typeof ev === 'string' && jv !== ev) {
-        return { path: [group, key], ja: jv };
-      }
-    }
-  }
-  return null;
-}
-
-/** Walk a resolved section by the path `divergentLeaf` produced. */
-function readPath(root: unknown, path: string[]): unknown {
-  let cur: unknown = root;
-  for (const step of path) {
-    if (cur == null || typeof cur !== 'object') return undefined;
-    cur = (cur as Record<string, unknown>)[step];
-  }
-  return cur;
-}
-
-describe('switchLanguage', () => {
+describe('English-only UI', () => {
   beforeEach(() => {
     useI18nStore.setState({ language: 'en' });
     useSystemStore.setState({ sidebarSection: 'overview' });
@@ -59,31 +25,32 @@ describe('switchLanguage', () => {
     useI18nStore.setState({ language: 'en' });
   });
 
-  it('has the route section resolvable in the new locale by the time it returns', async () => {
-    const leaf = divergentLeaf('overview');
-    expect(leaf).not.toBeNull();
-
-    await switchLanguage('ja');
-
-    expect(useI18nStore.getState().language).toBe('ja');
-    const t = getActiveTranslations() as unknown as Record<string, unknown>;
-    expect(readPath(t.overview, leaf!.path)).toBe(leaf!.ja);
+  it('ships English and nothing else, so no picker is offered', () => {
+    expect(SHIPPED_UI_LOCALES).toEqual(['en']);
+    expect(UI_LANGUAGE_PICKER_ENABLED).toBe(false);
   });
 
-  it('does not depend on a hover prefetch having run first', async () => {
-    // Nothing touched `useLanguagePrefetch` in this test: a cold switch is the
-    // case the effect-based preload could never cover.
-    const leaf = divergentLeaf('common');
-    expect(leaf).not.toBeNull();
-
+  it('commits English when asked to switch to a locale the build does not ship', async () => {
     await switchLanguage('ja');
-
-    const t = getActiveTranslations() as unknown as Record<string, unknown>;
-    expect(readPath(t.common, leaf!.path)).toBe(leaf!.ja);
+    expect(useI18nStore.getState().language).toBe('en');
   });
 
-  // Latest pick wins. A cold locale's switch awaits real chunk imports; a
-  // switch started after it must not be overwritten when the cold one lands.
+  it('commits English when setLanguage is called with an unshipped locale', () => {
+    useI18nStore.getState().setLanguage('de');
+    expect(useI18nStore.getState().language).toBe('en');
+    expect(document.documentElement.getAttribute('lang')).toBe('en');
+    expect(document.documentElement.getAttribute('dir')).toBe('ltr');
+  });
+
+  it('rehydrates a language persisted by an older build as English', () => {
+    const merge = useI18nStore.persist.getOptions().merge!;
+    const merged = merge({ language: 'ar' }, useI18nStore.getState());
+    expect(merged.language).toBe('en');
+    expect(toShippedUiLocale('en')).toBe('en');
+  });
+
+  // Latest pick wins: a switch started after another must not be overwritten
+  // when the older one settles.
   it('does not let a slower, older switch overwrite a newer pick of English', async () => {
     const older = switchLanguage('cs');
     const newer = switchLanguage('en');
@@ -91,18 +58,19 @@ describe('switchLanguage', () => {
     expect(useI18nStore.getState().language).toBe('en');
   });
 
-  it('does not let a slower, older switch overwrite a newer warm pick', async () => {
-    await switchLanguage('ja'); // warm: ja's route sections are now cached
-    useI18nStore.setState({ language: 'en' });
-    const older = switchLanguage('ko');
-    const newer = switchLanguage('ja');
-    await Promise.all([older, newer]);
-    expect(useI18nStore.getState().language).toBe('ja');
+  it('is a no-op when the language is already active', async () => {
+    await switchLanguage('en');
+    expect(useI18nStore.getState().language).toBe('en');
   });
 
-  it('is a no-op when the language is already active', async () => {
-    useI18nStore.setState({ language: 'ja' });
-    await switchLanguage('ja');
-    expect(useI18nStore.getState().language).toBe('ja');
+  it('generates lazy loaders for English sections only, none for the eager core', () => {
+    const paths = Object.keys(sectionLoaders);
+    expect(paths.length).toBeGreaterThan(10);
+    for (const p of paths) expect(p).toMatch(/\/section-locales\/en\/[^/]+\.json$/);
+    const core = new Set(Object.keys(EN_CORE_SECTION_STRINGS));
+    for (const p of paths) {
+      const section = /\/([^/]+)\.json$/.exec(p)![1]!;
+      expect(core.has(section), section).toBe(false);
+    }
   });
 });

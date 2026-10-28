@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * AN UNPRICED RUN IS NOT A FREE RUN, AND IT IS NOT A COST OVERRUN EITHER.
  *

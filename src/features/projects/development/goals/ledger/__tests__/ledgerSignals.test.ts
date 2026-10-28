@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { GOAL_STATUSES } from '../../goalStatus';
 import { laneSignal, ledgerFillColor, ledgerFillPct, ledgerRail } from '../ledgerSignals';

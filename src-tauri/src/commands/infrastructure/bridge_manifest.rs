@@ -26,7 +26,6 @@ use crate::AppState;
 /// Wire shape for a manifest summary returned to the frontend. Drops the
 /// full action params map for compactness in list views.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct BridgeManifestSummary {
     pub id: String,

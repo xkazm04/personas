@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Both IPCs that decompose a team goal inline must outlive the backend's own
 // CLI budget, DECOMPOSE_TIMEOUT_SECS (commands/teams/assignments.rs):
 // `decompose_team_assignment_goal` directly, and `approve_deliberation_proposal`

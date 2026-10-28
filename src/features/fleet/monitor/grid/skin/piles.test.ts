@@ -1,3 +1,4 @@
+// @vitest-environment node
 // piles - the fleet's one state vocabulary.
 //
 // The pile is derived, never stored: these tests pin that it agrees with the

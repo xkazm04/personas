@@ -152,7 +152,10 @@ export function expand(names, table) {
  * to everything and is returned as `*`.
  */
 export function featuresOnTestLine(line) {
-  if (!/cargo\s+test|['"]test['"]/.test(line)) return [];
+  // `cargo-test-retry.sh` is `cargo test "$@"` plus one retry (ci.yml runs both
+  // rust-tests and the ml cell through it), so a line that invokes it enables
+  // exactly the features it passes.
+  if (!/cargo\s+test|cargo-test-retry|['"]test['"]/.test(line)) return [];
   if (/--all-features/.test(line)) return ["*"];
   const out = [];
   // `--features desktop`, `--features=desktop`, and the argv-array form
@@ -257,7 +260,7 @@ function collectEnabled(allFiles) {
     } catch {
       continue;
     }
-    if (!text.includes("cargo test") && !text.includes("'test'") && !text.includes('"test"')) continue;
+    if (!text.includes("cargo test") && !text.includes("cargo-test-retry") && !text.includes("'test'") && !text.includes('"test"')) continue;
     for (const line of text.split(/\r?\n/)) {
       const names = featuresOnTestLine(line);
       if (!names.length) continue;

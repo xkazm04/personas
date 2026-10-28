@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The Live Stream status filter and status cells speak the whole
  * persona_events vocabulary, read from the Rust enum that writes it.

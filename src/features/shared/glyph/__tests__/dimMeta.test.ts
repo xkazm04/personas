@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { GLYPH_DIMENSIONS } from '../types';
 import { DIM_META, PETAL_ANGLES } from '../dimMeta';

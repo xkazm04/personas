@@ -42,19 +42,14 @@ security (Security & Credentials) | plugins (Plugin Ecosystem) | platform (Platf
 - Frontend touched -> `npm run lint` (warnings at the ~10k baseline are OK; errors and NEW warnings
   in the files you touched are not)
 - Rust touched -> `cargo check` in `src-tauri/` (needs `--features desktop`)
-- Locales/strings touched -> `npm run check:i18n:strict`
 - Before a multi-item sweep's last commit -> `npm run check` (ten gates in an `&&` chain incl.
   `census:check`; the chain stops at the first failure, and `census:check` is the one most likely to
   fail a diff that compiles)
 
 ## Repo law
 Authority: `.claude/CLAUDE.md`.
-- Every user-facing string: key into `src/i18n/locales/en.json` via `useTranslation()`, then
-  translated into **all 13 other locales in the same commit** - `translate-extract.mjs` -> fill
-  `.i18n-work/missing-<code>.json` -> `translate-merge.mjs`. The `i18n-no-gaps` pre-commit hook
-  blocks gaps. No hardcoded English in JSX, placeholder, title or aria-label.
-  **14 locales makes a string-adding item NOT a paper cut** - for 1-3 keys use the pipeline; more
-  than that, defer the item.
+- Every user-facing string: key into `src/i18n/locales/en.json` via `useTranslation()`.
+  Do NOT translate it: the app ships English only since 2026-10-25 (`.claude/rules/i18n.md`). No hardcoded English in JSX, placeholder, title or aria-label.
 - Status tokens via `tokenLabel()` (`src/i18n/tokenMaps.ts`); errors via `resolveErrorTranslated()`.
 - Semantic design tokens (`.claude/Design.md` section 8) and shared components from
   `shared/components` CATALOG.md - no raw white/black/shadow utilities, no hand-rolled primitives.

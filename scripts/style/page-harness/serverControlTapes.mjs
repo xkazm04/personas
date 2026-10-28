@@ -57,14 +57,14 @@ export function serverControlTapes({ RECORDED_AT }) {
   }));
 
   const site = (origin, label, extra = {}) => ({
-    origin, label, enabled: true, overrides: {}, budget: 50, credential_id: null,
-    scan_status: 'none', scan_tier: null, scan_report: null, scan_at: null,
-    first_seen: ago(60 * 24 * 3), last_seen: ago(30), created_by: 'server-control', ...extra,
+    origin, label, enabled: true, overrides: {}, budget: 50, credentialId: null,
+    scanStatus: 'none', scanTier: null, scanReport: null, scanAt: null,
+    firstSeen: ago(60 * 24 * 3), lastSeen: ago(30), createdBy: 'server-control', ...extra,
   });
   const SITES = [
     ...[1420, 3000, 3001, 3002, 3003, 5173, 4173, 4200, 8000, 8080].map((port) => site(`http://localhost:${port}`, `localhost:${port}`)),
-    site('https://github.com', 'GitHub', { created_by: 'operator', scan_status: 'confirmed', scan_tier: 2, credential_id: 'cred-gh' }),
-    site('https://*.atlassian.net', 'Jira', { created_by: 'operator', scan_status: 'proposed', scan_tier: 1 }),
+    site('https://github.com', 'GitHub', { createdBy: 'operator', scanStatus: 'confirmed', scanTier: 2, credentialId: 'cred-gh' }),
+    site('https://*.atlassian.net', 'Jira', { createdBy: 'operator', scanStatus: 'proposed', scanTier: 1 }),
   ];
 
   function tape(module, note, servers) {

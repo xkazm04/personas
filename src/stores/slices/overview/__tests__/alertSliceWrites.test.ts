@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * A failed alert write names its cause and tells the caller it failed.
  *

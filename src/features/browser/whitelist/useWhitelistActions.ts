@@ -7,7 +7,7 @@
  * copy. The ledger never calls an API — it receives these.
  *
  * SCAN AND CONFIRM RE-READ REGARDLESS OF OUTCOME. The row, not the call's
- * return value, carries `scan_status` / `scan_report` / `scan_tier`, so a
+ * return value, carries `scanStatus` / `scanReport` / `scanTier`, so a
  * refusal is as informative as a success and both are followed by a read.
  */
 import { useCallback, useMemo } from 'react';

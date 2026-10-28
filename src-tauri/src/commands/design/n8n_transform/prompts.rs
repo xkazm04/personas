@@ -1,9 +1,8 @@
 use super::prompt_sanitizer::{
-    canary_instruction, sanitize_free_text, sanitize_json_payload, sanitize_workflow_name,
-    wrap_xml_boundary,
+    canary_instruction, sanitize_free_text, sanitize_json_payload, sanitize_json_payload_counted,
+    sanitize_workflow_name, wrap_xml_boundary,
 };
 use crate::engine::platform_rules;
-use crate::utils::text::truncate_on_char_boundary as truncate_utf8;
 
 /// Wraps a persona-generation prompt with section-delimited output instructions.
 pub fn wrap_prompt_with_sections(base_prompt: &str) -> String {
@@ -305,7 +304,7 @@ pub fn build_n8n_transform_prompt(
 ) -> String {
     // Sanitize all untrusted workflow data before embedding in prompts
     let workflow_name = sanitize_workflow_name(workflow_name);
-    let workflow_json = sanitize_json_payload(workflow_json);
+    let workflow_json = sanitize_json_payload_counted(workflow_json);
     let parser_result_json = sanitize_json_payload(parser_result_json);
 
     let platform = platform_rules::builtin_n8n();
@@ -420,8 +419,10 @@ pub fn build_n8n_unified_prompt(
     let connectors_section = format_connector_section(connectors_json);
     let credentials_section = format_credential_section(credentials_json);
 
-    let sanitized_workflow_json = sanitize_json_payload(workflow_json);
-    let workflow_preview = truncate_utf8(&sanitized_workflow_json, 5000);
+    // The session cap is 5 MB and the sanitizer cap is 50 KB; anything the
+    // sanitizer had to drop is named by a counted marker rather than silently
+    // cut, so the model never treats a partial export as the whole workflow.
+    let sanitized_workflow_json = sanitize_json_payload_counted(workflow_json);
 
     let credential_adaptation = build_credential_adaptation_rules();
     let protocol_docs = build_protocol_docs();
@@ -433,7 +434,7 @@ pub fn build_n8n_unified_prompt(
     // Wrap untrusted workflow data in XML boundary tags
     let wrapped_workflow_name = wrap_xml_boundary("workflow_name", &workflow_name);
     let wrapped_parser_result = wrap_xml_boundary("parser_result", &parser_result_json);
-    let wrapped_workflow_preview = wrap_xml_boundary("workflow_json_preview", workflow_preview);
+    let wrapped_workflow_preview = wrap_xml_boundary("workflow_json", &sanitized_workflow_json);
 
     format!(
         r#"You are a senior Personas architect. You will analyze a {platform_label} workflow and either ask
@@ -503,8 +504,84 @@ Workflow name:
 {wrapped_workflow_name}
 Parser result:
 {wrapped_parser_result}
-Original n8n JSON (first 5000 chars):
+Original n8n JSON:
 {wrapped_workflow_preview}
 "#
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Build an n8n-shaped export whose node ids are spread evenly through the
+    /// document, so a byte-offset cut is detectable by a missing id.
+    fn workflow_fixture(node_count: usize, filler_len: usize) -> String {
+        let nodes: Vec<String> = (0..node_count)
+            .map(|i| {
+                let filler = "x".repeat(filler_len);
+                format!(
+                    r#"{{"id":"node-{i:04}","name":"Step {i}","type":"n8n-nodes-base.httpRequest","parameters":{{"url":"https://example.com/{filler}"}}}}"#
+                )
+            })
+            .collect();
+        format!(r#"{{"name":"fixture","nodes":[{}]}}"#, nodes.join(","))
+    }
+
+    fn node_ids(count: usize) -> Vec<String> {
+        (0..count).map(|i| format!("node-{i:04}")).collect()
+    }
+
+    #[test]
+    fn unified_prompt_keeps_every_node_of_a_small_workflow() {
+        let wf = workflow_fixture(8, 40);
+        assert!(wf.len() < 5_000, "fixture must stay under the old cut");
+        let prompt = build_n8n_unified_prompt("Fixture", &wf, "{}", None, None);
+        for id in node_ids(8) {
+            assert!(prompt.contains(&id), "small workflow lost {id}");
+        }
+        assert!(!prompt.contains("[TRUNCATED"));
+    }
+
+    #[test]
+    fn unified_prompt_keeps_nodes_past_the_old_5kb_cut() {
+        let wf = workflow_fixture(120, 60);
+        assert!(
+            wf.len() > 20_000 && wf.len() < 50_000,
+            "fixture must land between the old cut and the sanitizer cap, was {}",
+            wf.len()
+        );
+        let prompt = build_n8n_unified_prompt("Fixture", &wf, "{}", None, None);
+        for id in node_ids(120) {
+            assert!(prompt.contains(&id), "mid-size workflow lost {id}");
+        }
+        assert!(!prompt.contains("[TRUNCATED"));
+    }
+
+    #[test]
+    fn unified_prompt_counts_what_the_sanitizer_cap_dropped() {
+        let wf = workflow_fixture(900, 200);
+        assert!(wf.len() > 150_000, "fixture must exceed the sanitizer cap");
+        let prompt = build_n8n_unified_prompt("Fixture", &wf, "{}", None, None);
+        assert!(prompt.contains("node-0000"), "early nodes must survive");
+        assert!(
+            prompt.contains("[TRUNCATED"),
+            "an over-cap workflow must name its cut"
+        );
+        assert!(
+            prompt.contains("Do not invent or guess them"),
+            "the marker must tell the model not to fill the gap"
+        );
+        assert!(
+            !prompt.contains("node-0899"),
+            "sanity: the last node genuinely does not fit"
+        );
+    }
+
+    #[test]
+    fn transform_prompt_also_counts_an_over_cap_workflow() {
+        let wf = workflow_fixture(900, 200);
+        let prompt = build_n8n_transform_prompt("Fixture", &wf, "{}", None, None, None, None, None);
+        assert!(prompt.contains("[TRUNCATED"));
+    }
 }

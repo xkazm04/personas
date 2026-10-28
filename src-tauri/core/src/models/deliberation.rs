@@ -156,7 +156,6 @@ pub struct PersonaCore {
 /// team-preset level (D5). Each member shares the `aim` but reaches it via its
 /// own `PersonaCore.north_star_commitment` (distinct routes).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct TeamNorthStar {
     /// e.g. "Become the #1 <category> product".
@@ -172,7 +171,6 @@ pub struct TeamNorthStar {
 /// and, once approved (decision 8 — always gated in v1), handed to the
 /// team-assignment engine as the goal (D4).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ProposalSpec {
     /// Short human title for the approval surface.

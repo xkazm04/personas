@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The studio tells the user to walk away during a background job. The board it
  * returns them to lived in `useState`, so flipping off Setup or closing the

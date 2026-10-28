@@ -1,3 +1,4 @@
+// @vitest-environment node
 // WP4 (spark athena-layered-voice) — vitest wrapper around the SAME 5
 // fixtures the bench harness's `node scripts/test/athena-model-bench.mjs
 // --self-test` runs, so the replyShape counters (sentence cap, bare-id

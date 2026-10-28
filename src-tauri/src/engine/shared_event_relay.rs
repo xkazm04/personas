@@ -41,7 +41,6 @@ impl SharedEventRelayState {
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SharedEventRelayStatus {
     pub connected: bool,

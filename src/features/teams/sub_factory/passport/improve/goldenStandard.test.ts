@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { scoreAgainstRubric, RUBRIC } from './goldenStandard';
 import type { AppPassport, Archetype, DocsLevel, MemoryLevel } from '../passportModel';

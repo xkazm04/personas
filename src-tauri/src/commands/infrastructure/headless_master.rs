@@ -65,7 +65,6 @@ pub const STATE_ENDED: &str = "ended";
 
 /// The request body of `POST /dev-tools/app-master/{project_id}/heartbeat`.
 #[derive(Debug, Clone, Deserialize, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct HeadlessHeartbeatInput {
     /// `running` (a builder is in flight), `idle` (between wakes) or `ended`

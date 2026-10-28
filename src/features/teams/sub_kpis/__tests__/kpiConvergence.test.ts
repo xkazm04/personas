@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
 import { computeConvergence, gapSpan, splitChannels } from '../kpiConvergence';

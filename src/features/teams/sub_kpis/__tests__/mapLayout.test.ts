@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The map's geometry. Area is a claim, so a wrong rectangle is a wrong claim.
 import { describe, expect, it } from 'vitest';
 

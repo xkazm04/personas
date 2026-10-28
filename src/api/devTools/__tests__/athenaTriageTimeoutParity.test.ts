@@ -1,3 +1,4 @@
+// @vitest-environment node
 // `dev_tools_athena_triage_batch` runs ONE headless Athena turn inline
 // (`cli_text_tracked_on` -> `cli_text_inner` in companion/athena_reaction.rs,
 // a hard stream cap plus a 5 s kill wait) and only then persists the verdicts

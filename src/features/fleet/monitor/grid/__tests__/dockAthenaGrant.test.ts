@@ -1,3 +1,4 @@
+// @vitest-environment node
 // dockAthenaGrant — the grant must land on what the dispatch became, and the
 // operator must hear about it when it does not.
 //

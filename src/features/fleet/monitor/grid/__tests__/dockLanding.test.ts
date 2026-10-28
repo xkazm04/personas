@@ -1,3 +1,4 @@
+// @vitest-environment node
 // dockLanding — what the Launch Rail is allowed to claim about the queue.
 //
 // The point of these assertions is not the arithmetic (it is three lines); it

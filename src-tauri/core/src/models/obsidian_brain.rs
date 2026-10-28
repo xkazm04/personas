@@ -130,7 +130,6 @@ impl Default for ObsidianVaultConfig {
 // ── Sync State ───────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SyncState {
     pub id: String,
@@ -250,7 +249,6 @@ pub struct VaultTreeNode {
 // trustworthy as it grows.
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct StaleNote {
     pub path: String,
@@ -259,7 +257,6 @@ pub struct StaleNote {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct BrokenWikilink {
     pub source_path: String,
@@ -268,14 +265,12 @@ pub struct BrokenWikilink {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct OrphanNote {
     pub path: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct VaultLintReport {
     pub vault_path: String,

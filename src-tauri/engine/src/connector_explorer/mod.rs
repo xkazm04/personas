@@ -25,7 +25,6 @@ const DEFAULT_USER_AGENT: &str =
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectorManifestDraft {
     /// Slugified hostname; useful as a starter `id` field for the
@@ -49,7 +48,6 @@ pub struct ConnectorManifestDraft {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS, PartialEq, Eq)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DiscoveredEndpoint {
     /// Path stem with parameter placeholders, e.g. `/posts/{id}`.

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -47,7 +48,10 @@ describe('quoted counts in the docs', () => {
   const editable = [...new Set(CLAIMS.map((c: { file: string }) => c.file))].filter((f) => !READ_ONLY.has(f));
 
   it('checks at least one editable file (a check over nothing is not a pass)', () => {
-    expect(editable).toEqual(expect.arrayContaining(['README.md', 'CONTRIBUTING.md']));
+    // CONTRIBUTING.md held only a "14 languages" claim, gone since the app went
+    // English-only (2026-10-25); README.md still quotes the connector count.
+    expect(editable).toEqual(expect.arrayContaining(['README.md']));
+    expect(editable.length).toBeGreaterThan(0);
   });
 
   it('every count quoted in an editable doc still matches the tree', () => {

@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Structural test: state-management slice discipline.
  *

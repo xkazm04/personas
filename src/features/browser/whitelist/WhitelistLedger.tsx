@@ -73,15 +73,15 @@ export default function WhitelistLedger({
       label: w.col_tier,
       width: '120px',
       sortable: true,
-      sortFn: (a, b) => (a.scan_tier ?? -1) - (b.scan_tier ?? -1),
-      render: (site) => <TierChip tier={site.scan_tier} />,
+      sortFn: (a, b) => (a.scanTier ?? -1) - (b.scanTier ?? -1),
+      render: (site) => <TierChip tier={site.scanTier} />,
     },
     {
       key: 'scan',
       label: w.col_scan,
       width: '130px',
       sortable: true,
-      render: (site) => <ScanChip status={site.scan_status} />,
+      render: (site) => <ScanChip status={site.scanStatus} />,
     },
     {
       key: 'writes',
@@ -121,12 +121,12 @@ export default function WhitelistLedger({
             variant="ghost"
             icon={<ScanSearch className="w-3.5 h-3.5" />}
             onClick={() => onScan(site)}
-            disabled={site.scan_status === 'running'}
+            disabled={site.scanStatus === 'running'}
             loadingText={w.scan_running}
           >
-            {site.scan_status === 'none' ? w.action_scan : w.action_rescan}
+            {site.scanStatus === 'none' ? w.action_scan : w.action_rescan}
           </AsyncButton>
-          {site.scan_status === 'proposed' && (
+          {site.scanStatus === 'proposed' && (
             <AsyncButton
               size="xs"
               variant="accent"

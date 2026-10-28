@@ -21,7 +21,6 @@ use ts_rs::TS;
 /// The set above is the credentials-stay-local boundary made structural: there is no
 /// runtime filter to forget — a secret field simply has no home on this struct.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PersonaWorkspaceSnapshot {
     pub id: String,
@@ -89,7 +88,6 @@ impl SyncSnapshot for PersonaWorkspaceSnapshot {
 /// Sync-safe projection of a `persona_memories` row. Excludes device-local runtime
 /// fields (`access_count`, `last_accessed_at`) — only authored content syncs.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct MemorySnapshot {
     pub id: String,
@@ -117,7 +115,6 @@ impl SyncSnapshot for MemorySnapshot {
 /// Sync-safe projection of a `persona_triggers` row. Excludes device-local runtime
 /// fields (`last_triggered_at`, `next_trigger_at`) — only the definition syncs.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct TriggerSnapshot {
     pub id: String,

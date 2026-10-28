@@ -7,8 +7,9 @@
  *
  * Run: `npm test -- src/test/e2e/cli-terminal-rendering.e2e.test.tsx`
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';
 import CliOutputPanel from '@/features/shared/components/terminal/CliOutputPanel';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
@@ -23,6 +24,11 @@ import {
   API_TEST_RUNNER_LINES,
   PROVIDER_FIXTURES,
 } from '../helpers/cliFixtures';
+
+// The strip's tooltips and labels come from lazily loaded English sections.
+beforeAll(async () => {
+  await preloadSectionsAsync('en', ['agents', 'execution', 'shared']);
+});
 
 // Mock clipboard API for copy tests
 beforeEach(() => {
@@ -95,7 +101,7 @@ describe('E2E: TerminalStrip -- rendering', () => {
         />,
       );
 
-      expect(screen.getByTitle('Expand log')).toBeInTheDocument();
+      expect(screen.getByLabelText('Expand')).toBeInTheDocument();
     });
 
     it('shows copy button when not running and has lines', () => {
@@ -109,7 +115,7 @@ describe('E2E: TerminalStrip -- rendering', () => {
         />,
       );
 
-      expect(screen.getByTitle('Copy log')).toBeInTheDocument();
+      expect(screen.getByLabelText('Copy log to clipboard')).toBeInTheDocument();
     });
 
     it('hides copy button while running', () => {
@@ -123,7 +129,7 @@ describe('E2E: TerminalStrip -- rendering', () => {
         />,
       );
 
-      expect(screen.queryByTitle('Copy log')).toBeNull();
+      expect(screen.queryByLabelText('Copy log to clipboard')).toBeNull();
     });
 
     it('shows dismiss button when not running and onClear provided', () => {
@@ -138,7 +144,7 @@ describe('E2E: TerminalStrip -- rendering', () => {
         />,
       );
 
-      expect(screen.getByTitle('Dismiss')).toBeInTheDocument();
+      expect(screen.getByLabelText('Dismiss')).toBeInTheDocument();
     });
 
     it('hides dismiss button while running', () => {
@@ -153,7 +159,7 @@ describe('E2E: TerminalStrip -- rendering', () => {
         />,
       );
 
-      expect(screen.queryByTitle('Dismiss')).toBeNull();
+      expect(screen.queryByLabelText('Dismiss')).toBeNull();
     });
 
     it('renders counters slot', () => {
@@ -203,7 +209,7 @@ describe('E2E: TerminalStrip -- rendering', () => {
         />,
       );
 
-      expect(screen.getByTitle('Collapse log')).toBeInTheDocument();
+      expect(screen.getByLabelText('Collapse')).toBeInTheDocument();
     });
 
     it('shows pulsing cursor when running and expanded', () => {
@@ -253,7 +259,7 @@ describe('E2E: TerminalStrip -- rendering', () => {
         />,
       );
 
-      fireEvent.click(screen.getByTitle('Expand log'));
+      fireEvent.click(screen.getByLabelText('Expand'));
       expect(onToggle).toHaveBeenCalledTimes(1);
     });
 
@@ -270,7 +276,7 @@ describe('E2E: TerminalStrip -- rendering', () => {
         />,
       );
 
-      fireEvent.click(screen.getByTitle('Dismiss'));
+      fireEvent.click(screen.getByLabelText('Dismiss'));
       expect(onClear).toHaveBeenCalledTimes(1);
     });
 
@@ -285,7 +291,7 @@ describe('E2E: TerminalStrip -- rendering', () => {
         />,
       );
 
-      fireEvent.click(screen.getByTitle('Copy log'));
+      fireEvent.click(screen.getByLabelText('Copy log to clipboard'));
       // eslint-disable-next-line custom/prefer-shared-clipboard -- asserting the clipboard spy was called, not performing a real copy
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith('Line 1\nLine 2');
     });

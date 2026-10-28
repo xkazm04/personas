@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import { overseerGoal, sendPreview } from '../../../journey/__tests__/overseerFixtures';

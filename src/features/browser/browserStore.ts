@@ -16,7 +16,7 @@
 //
 // THE SCAN LANE LISTENS, AND POLLS SLOWLY AS A BACKSTOP. `browser-scan` fires
 // when a row moves. A failed emit only logs, and the row stays authoritative,
-// so while ANY row reads `scan_status === 'running'` the store still re-reads
+// so while ANY row reads `scanStatus === 'running'` the store still re-reads
 // `browser_sites_list` — on a 15s tick, not the old 2.5s one. The subscription
 // is opened on the first refresh, not only after a running row is already
 // visible, or the transition that finishes the scan is the one we miss.
@@ -88,7 +88,7 @@ export function adoptSites(prev: BrowserSnapshot, sites: readonly BrowserSite[])
 
 /** True while any row has a scan in flight — what drives the poll. */
 export function hasRunningScan(sites: readonly BrowserSite[]): boolean {
-  return sites.some((site) => site.scan_status === 'running');
+  return sites.some((site) => site.scanStatus === 'running');
 }
 
 /** The active tab object, or null. */

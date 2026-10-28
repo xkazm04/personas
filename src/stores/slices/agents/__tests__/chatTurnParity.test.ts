@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import fixture from '../../../../../fixtures/chat-turn-input-v1.json';
 import feedbackFixture from '../../../../../fixtures/chat-turn-feedback-input-v1.json';

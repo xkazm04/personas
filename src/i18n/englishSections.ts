@@ -1,5 +1,10 @@
 import type { Translations } from './generated/types';
-import { EN_ALL_SECTIONS, EN_CORE_SECTION_STRINGS, type I18nSectionKey } from './generated/enSectionStrings';
+import {
+  EN_ALL_SECTIONS,
+  EN_CORE_SECTION_STRINGS,
+  EN_PARTIAL_SECTION_STRINGS,
+  type I18nSectionKey,
+} from './generated/enSectionStrings';
 
 export type TranslationSection = I18nSectionKey;
 
@@ -63,7 +68,35 @@ export function getEnglishSection(section: TranslationSection): unknown {
     }
     return coreCache.get(section);
   }
-  return loadedCache.get(section);
+  return loadedCache.get(section) ?? getPartialSection(section);
+}
+
+/**
+ * Partial core (FIRST_PAINT_PARTIAL_SECTIONS in routeSections.ts, 2026-10-25):
+ * for a section the always-mounted chrome reads only a few keys of, the build
+ * carries just those keys eagerly, and `getEnglishSection` serves them until
+ * the full section's chunk lands. A read of a key outside the partial returns
+ * undefined for that window - useTranslation.ts reads a partial over the
+ * section's shape (no throw at any depth) and re-renders when the full one
+ * arrives.
+ */
+function getPartialSection(section: TranslationSection): unknown {
+  const raw = EN_PARTIAL_SECTION_STRINGS[section];
+  if (raw === undefined) return undefined;
+  // The same parse memo as the core: both hold eager JSON strings, and a
+  // partial section is never a core one (split-locales.mjs refuses that).
+  if (!coreCache.has(section)) coreCache.set(section, JSON.parse(raw));
+  return coreCache.get(section);
+}
+
+/** The whole section is resident: core, or its chunk has landed. A partial is not. */
+export function hasFullEnglishSection(section: TranslationSection): boolean {
+  return CORE_SECTIONS.has(section) || loadedCache.has(section);
+}
+
+/** Only the partial core is resident for this section (its full chunk has not landed). */
+export function isPartialEnglishSection(section: TranslationSection): boolean {
+  return !hasFullEnglishSection(section) && EN_PARTIAL_SECTION_STRINGS[section] !== undefined;
 }
 
 /** Record a non-core English section once its chunk resolves. Called only by

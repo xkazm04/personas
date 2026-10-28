@@ -7,7 +7,7 @@
  *  - a write the roster rejects keeps the card in hand and toasts;
  *  - a council send-back will not go out under 12 characters of reason.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { AppKeyboardProvider } from '@/lib/keyboard/AppKeyboardProvider';
@@ -40,6 +40,14 @@ vi.mock('@/lib/silentCatch', async (importOriginal) => ({
 import DecisionDeckHost from '../deck/DecisionDeckHost';
 import { closeDecisionDeck, openDecisionDeck, useDecisionDeckStore } from '../deck/deckStore';
 import { queueOf } from '../deck/useDeck';
+
+// The deck sits behind a lazy boundary in the host (it is off the startup
+// path since 2026-10-25). Its first import under jsdom takes longer than a
+// `waitFor`'s default second, so warm it once - as a second open in the app
+// would find it - and every case below measures the deck, not module loading.
+beforeAll(async () => {
+  await import('../deck/LiveDeck');
+});
 
 const review = (id: string, over: Partial<DecisionItem> = {}) =>
   item({ id, kind: 'review', title: `Review ${id}`, verdictLabels: { accept: 'Approve', reject: 'Reject', skip: 'Later' }, ...over });

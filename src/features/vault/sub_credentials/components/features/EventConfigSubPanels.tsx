@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Clock, Timer, ShieldAlert, CalendarClock } from 'lucide-react';
 import type { CredentialTemplateEvent } from '@/lib/types/types';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
-import { useTranslation } from '@/i18n/useTranslation';
-import { en } from '@/i18n/en';
+import { useTranslation, type Translations } from '@/i18n/useTranslation';
 
 export function safeParseConfig(json: string | null | undefined): Record<string, unknown> {
   if (!json) return {};
@@ -15,12 +14,19 @@ export function safeParseConfig(json: string | null | undefined): Record<string,
   }
 }
 
-/** Universal rotation event templates available for all credential types */
-export const ROTATION_EVENT_TEMPLATES: CredentialTemplateEvent[] = [
-  { id: 'cron_schedule', name: en.vault.event_config.scheduled_rotation, description: en.vault.event_config.scheduled_rotation_desc },
-  { id: 'expiration_threshold', name: en.vault.event_config.expiration_threshold, description: en.vault.event_config.expiration_threshold_desc },
-  { id: 'healthcheck_failure', name: en.vault.event_config.healthcheck_failure, description: en.vault.event_config.healthcheck_failure_desc },
-];
+/**
+ * Universal rotation event templates available for all credential types.
+ * A function of `t`, not a module constant: built at import time from the `en`
+ * shim it pinned the 84 KB `vault` section into the eager English core.
+ */
+export function rotationEventTemplates(t: Translations): CredentialTemplateEvent[] {
+  const ec = t.vault.event_config;
+  return [
+    { id: 'cron_schedule', name: ec.scheduled_rotation, description: ec.scheduled_rotation_desc },
+    { id: 'expiration_threshold', name: ec.expiration_threshold, description: ec.expiration_threshold_desc },
+    { id: 'healthcheck_failure', name: ec.healthcheck_failure, description: ec.healthcheck_failure_desc },
+  ];
+}
 
 export const EVENT_ICONS: Record<string, typeof Clock> = {
   cron_schedule: CalendarClock,

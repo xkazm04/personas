@@ -148,6 +148,10 @@ jobs:
       frontend_base: ${{ steps.classify.outputs.frontend_base }}
       workflows: ${{ steps.classify.outputs.workflows }}
       docs_only: ${{ steps.classify.outputs.docs_only }}
+      # Which Vitest files to run: none | list | all (scripts/ci/affected-tests.mjs).
+      fe_tests: ${{ steps.classify.outputs.fe_tests }}
+      fe_test_files: ${{ steps.classify.outputs.fe_test_files }}
+      fe_tests_why: ${{ steps.classify.outputs.fe_tests_why }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -225,7 +229,7 @@ jobs:
           # the API as "<id> (<matrix values>)", which `judge` allows for.
           # KEEP IN STEP with ci-verdict's ON_RUST / ON_FRONTEND lists.
           RUST_JOBS="rust-fmt rust-tests rust-deny rust-features rust-no-features binding-drift"
-          FRONTEND_JOBS="frontend-checks"
+          FRONTEND_JOBS="frontend-checks frontend-build frontend-affected-tests"
           LOOKBACK=20
 
           # judge <file of "conclusion<TAB>job name"> <job ids…>
@@ -376,6 +380,30 @@ jobs:
             [ "$FRONTEND" = true ] && FE_CARRIED=""
           fi
 
+          # ── Frontend tests: the Vitest files this change can reach ──────
+          # none | list | all. `all` routes to the sharded frontend-tests;
+          # `list` is run by frontend-affected-tests as an explicit file list.
+          # Every doubt resolves to `all`, as everywhere in this job.
+          FE_TESTS=none; FE_TEST_FILES=""; FE_TESTS_WHY="frontend unchanged"
+          if [ "$FRONTEND" = true ]; then
+            if [ "$EVENT_NAME" != push ] && [ "$EVENT_NAME" != pull_request ]; then
+              FE_TESTS=all; FE_TESTS_WHY="event '$EVENT_NAME' runs the whole suite"
+            elif [ -z "$FE_BASE" ]; then
+              FE_TESTS=all; FE_TESTS_WHY="no frontend base to diff against (${WHY_FE:-unknown})"
+            else
+              SEL="$RUNNER_TEMP/fe-tests.out"
+              if GITHUB_OUTPUT="$SEL" node scripts/ci/affected-tests.mjs --changed-list "$FE_CHANGED" --github-output; then
+                FE_TESTS=$(sed -n 's/^fe_tests=//p' "$SEL")
+                FE_TEST_FILES=$(sed -n 's/^fe_test_files=//p' "$SEL")
+                FE_TESTS_WHY=$(sed -n 's/^fe_tests_why=//p' "$SEL")
+              fi
+              case "$FE_TESTS" in
+                none|list|all) ;;
+                *) FE_TESTS=all; FE_TEST_FILES=""; FE_TESTS_WHY="the selector failed or answered nothing" ;;
+              esac
+            fi
+          fi
+
           # ── Informational outputs (nothing is gated on these) ───────────
           WORKFLOWS=false; DOCS_ONLY=true
           if [ -z "$RUST_BASE" ] || [ -z "$FE_BASE" ]; then
@@ -400,6 +428,9 @@ jobs:
             echo "frontend_base=$FE_BASE"
             echo "workflows=$WORKFLOWS"
             echo "docs_only=$DOCS_ONLY"
+            echo "fe_tests=$FE_TESTS"
+            echo "fe_test_files=$FE_TEST_FILES"
+            echo "fe_tests_why=$FE_TESTS_WHY"
           } >> "$GITHUB_OUTPUT"
 
           {
@@ -417,6 +448,8 @@ jobs:
             else
               echo "| frontend | no | only inert files changed since \`$FE_BASE\`, where it concluded **$FE_CARRIED** — carried into ci-verdict |"
             fi
+            echo ""
+            echo "Vitest selection: **$FE_TESTS** - $FE_TESTS_WHY"
             echo ""
             echo "workflows=$WORKFLOWS docs_only=$DOCS_ONLY"
           } >> "$GITHUB_STEP_SUMMARY"
@@ -506,7 +539,12 @@ jobs:
 
           echo "All commit messages follow conventional commit format."
 
-  # ─── Job A: Frontend lint, typecheck, and tests ─────────────
+  # ─── Job A: Frontend lint, typecheck and the gate chain ─────────────
+  # 2026-10-25: this job used to run the gate chain, the canonical build, the
+  # bundle budget, the binding check AND the affected tests one after another
+  # (~7 minutes, two Vite builds and two codegen passes). The build + budget
+  # moved to `frontend-build` and the tests to `frontend-affected-tests`; the
+  # three run in parallel and each is its own verdict.
   frontend-checks:
     needs: changes
     # Skipped only when every changed file is on the inert list in `changes`
@@ -515,20 +553,18 @@ jobs:
     # skipped while `frontend` is 'true'.
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
-    # See the note on commit-lint's timeout-minutes. 40, not 30: the check
-    # step now runs all eighteen gates instead of stopping at the first red
-    # one (about 4 min measured locally 2026-10-15), and a fast-lane run with
-    # no class base falls back to the whole Vitest suite.
-    timeout-minutes: 40
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 30
     permissions:
       contents: read
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
-          # `vitest --changed <base>` diffs `<base>...HEAD`, which needs the
-          # merge base, so a shallow clone cannot answer it.
+          # Full history for the gates that read it, but treeless: commits and
+          # trees come down, file contents only for the checkout itself. A
+          # full clone took 74 s of this job on 2026-10-25.
           fetch-depth: 0
+          filter: blob:none
 
       - uses: actions/setup-node@v4
         with:
@@ -546,15 +582,11 @@ jobs:
         # red gates, four of them invisible behind the first. This runs the
         # same chain, parsed out of package.json, every gate to its verdict,
         # with a table in the step summary. It fails if any gate failed.
+        #
+        # The chain includes `check:tiers`, which does its own Vite build of
+        # the default tier to prove the tier gating; the canonical build the
+        # budget measures is `frontend-build`'s.
         run: node scripts/ci/run-check-chain.mjs check
-
-      - name: Check i18n locale keyset parity
-        if: always()
-        # CLAUDE.md long claimed this was a CI gate — it wasn't until
-        # build-tooling architect run 2026-05-01 wired it. Catches locale
-        # files that drift from en.json's keyset (missing or extra keys),
-        # which crashes the UI at runtime via the deep-merge fallback.
-        run: npm run check:i18n
 
       - name: Check ERROR_KEY_MAP ↔ en.json error_registry parity
         if: always()
@@ -593,61 +625,56 @@ jobs:
         # and feature names that don't match Cargo.toml [features].
         run: npm run check:tauri-configs
 
-      # REMOVED 2026-09-18: the step "Validate tier builds (starter / team)",
-      # which ran `npm run check:tiers starter team` here. ITS GATE NOW LIVES IN
-      # `npm run check` (the "Typecheck + lint" step above), whose && chain
-      # contains `check:tiers`. It had been there all along: this step's own
-      # comment argued that building the builder tier twice "would be
-      # redundant (~one extra full Vite build per CI run)" while the job was
-      # already building starter and team TWICE — once inside `npm run check`
-      # (all three tiers) and again here. Measured 2026-09-18: six Vite builds
-      # per run (3 in check, 2 here, 1 in Build below). Removing this step makes
-      # it four; the tier gate's own reduction to one build plus a Vitest
-      # tier-matrix test (scripts/check-tiers.mjs, same spark) makes it two.
-      # Count the chain before citing either number.
-      #
-      # What the removed step's comment recorded, and what is still true: tier
-      # variants flip frontend gating via VITE_APP_TIER — a RUNTIME check
-      # (isTierAvailable()/isTierVisible() against BUILD_MAX_TIER), not
-      # build-time tree-shaking; higher-tier code is not eliminated from these
-      # bundles. The tier gate exists so a broken tier-gated import cannot slip
-      # through. How it still fails: `check:tiers` exits non-zero inside
-      # `npm run check`, which fails that step and this job.
-      #
-      # THE dist/ ORDERING STILL MATTERS. check:tiers writes to dist/ as a side
-      # effect, so it must run BEFORE the canonical build below, which leaves
-      # dist/ as the default-tier (builder) bundle for the bundle-budget /
-      # baseline steps that read it. `npm run check` runs first, so it does.
+      - name: Check for unused bindings
+        if: always()
+        # One pass since 2026-10-25 (scripts/check-unused-bindings.mjs behind
+        # the .sh): 59 s of per-binding recursive greps became about a second.
+        run: bash scripts/check-unused-bindings.sh
+
+      # REMOVED 2026-09-18: the step "Validate tier builds (starter / team)".
+      # Its gate lives in `npm run check` (`check:tiers`, one Vite build plus a
+      # Vitest tier-matrix test). Tier variants flip frontend gating via
+      # VITE_APP_TIER — a RUNTIME check (isTierAvailable()/isTierVisible()
+      # against BUILD_MAX_TIER), not build-time tree-shaking; the tier gate
+      # exists so a broken tier-gated import cannot slip through.
+
+  # ─── Job A1: the canonical build and the bundle budget ─────────────────
+  # Split out of frontend-checks on 2026-10-25 so it runs beside the gate
+  # chain instead of after it. Still the only place CI runs the real `build`
+  # script - the `prebuild` codegen hook, sync-system-skills and the native
+  # typecheck - which is exactly what release.yml ships, and the build the
+  # budget's baseline was recorded from (the default tier; check:tiers' own
+  # build in frontend-checks is that gate's business, not this measurement's).
+  frontend-build:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build
-        if: always()
-        # KEPT, deliberately, even though `npm run check` has already produced a
-        # dist/. Reusing that dist/ was evaluated 2026-09-18 and declined:
-        #   - scripts/check-bundle-budget.mjs compares dist/assets against a
-        #     baseline recorded from the DEFAULT-tier build. Which tier
-        #     check:tiers leaves behind is an implementation detail of that
-        #     script, not a contract; a budget measured against the wrong
-        #     tier's bundle is a gate comparing the wrong thing, quietly.
-        #   - this is the only step in CI that runs the real `build` script:
-        #     the `prebuild` codegen hook, sync-system-skills and `tsc -b`
-        #     (check runs `tsc --noEmit`, a different invocation). release.yml
-        #     ships exactly this command.
-        #   - `npm run check` is an && chain, so a census failure stops it
-        #     before check:tiers and leaves NO dist/. Under `if: always()` this
-        #     step still answers "does it build" on that run.
         run: npm run build
 
       - name: Check bundle size budget
-        # Deliberately NOT `if: always()`, unlike its neighbors in this job.
-        # This step used to run under `if: always()` too, which meant a
-        # budget failure was easy to miss among the other steps' own
-        # failures — the ratchet in scripts/lib/bundle-budget.mjs went stale
-        # (57 phantom chunks, a baseline from 2026-03-14) without anyone
-        # noticing it had drifted this far. The gate compares the current
-        # build against scripts/bundle-baseline.json and fails on any rise
-        # beyond a small tolerance; run with `--update` locally (as a
-        # deliberate, reviewed re-baseline) if a real, intentional size
-        # change needs to move the baseline forward.
+        # Ratchets total JS, startup JS (the entry and its static imports) and
+        # every chunk keyed by the source module it loads, against
+        # scripts/bundle-baseline.json, from the chunk graph the build wrote
+        # (scripts/build/bundle-graph-vite-plugin.mjs). Fails on a rise beyond
+        # max(1%, 10 KB); run with `--update` locally - a deliberate, reviewed
+        # re-baseline - when a real, intentional size change has to move it.
         run: node scripts/check-bundle-budget.mjs
 
       - name: Comment bundle size on PR
@@ -658,40 +685,69 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: node scripts/bundle-comment.mjs
 
-      - name: Check for unused bindings
-        if: always()
-        run: bash scripts/check-unused-bindings.sh
-
-      # FAST LANE ONLY. The tests affected by what changed since the commit
-      # this class last reached a verdict on (the `changes` base, the same one
-      # that decided this job runs at all). Vitest follows the module graph
-      # from each changed file to the tests that import it, and runs the whole
-      # suite when a forceRerunTriggers file moved (package.json, the Vite and
-      # Vitest configs, src/test/** - see vitest.config.ts). With no base,
-      # every doubt resolves to "run everything", as in `changes`.
-      #
-      # The full suite (about 2,400 tests, past 30 minutes in one job) and the
-      # CLI e2e lane run in `frontend-tests`, in the full lane.
-      - name: Run frontend tests affected by this change
-        if: always() && needs.changes.outputs.lane == 'fast'
+  # ─── Job A2: the Vitest files this change can reach (FAST LANE) ────────
+  # `changes` picks them (scripts/ci/affected-tests.mjs: one reverse import
+  # graph, searched upward from the changed files) and this job runs the
+  # explicit list. It replaced `vitest run --changed <base>`, whose main
+  # process walked every spec's import graph at once and ran out of its 4 GB
+  # heap on every fast-lane push from 2026-10-05 to 2026-10-25, before a
+  # single test ran. When the selection is `all` (a lockfile, a config, the
+  # test setup, or a change that reaches hundreds of specs) the sharded
+  # `frontend-tests` runs instead, and this job only says so.
+  frontend-affected-tests:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    # See the note on commit-lint's timeout-minutes.
+    timeout-minutes: 30
+    steps:
+      - name: What the selection decided
         env:
-          BASE: ${{ needs.changes.outputs.frontend_base }}
+          MODE: ${{ needs.changes.outputs.fe_tests }}
+          WHY: ${{ needs.changes.outputs.fe_tests_why }}
         run: |
-          if [ -n "$BASE" ]; then
-            echo "Vitest: tests related to files changed since $BASE"
-            npx vitest run --changed "$BASE"
-          else
-            echo "::warning title=vitest::no class base for this run - running the whole suite."
-            npm run test -- --run
-          fi
+          echo "Vitest selection: ${MODE:-<empty>} - ${WHY:-no reason recorded}"
+          echo "### Vitest selection: **${MODE:-<empty>}** - ${WHY:-no reason recorded}" >> "$GITHUB_STEP_SUMMARY"
+          case "$MODE" in
+            list|none|all) ;;
+            *) echo "::error title=frontend-affected-tests::'changes' reported fe_tests='$MODE' - expected list, none or all."; exit 1 ;;
+          esac
 
-  # ─── Job A2: the whole Vitest suite, sharded (FULL LANE ONLY) ──────────
+      - uses: actions/checkout@v4
+        if: needs.changes.outputs.fe_tests == 'list'
+
+      - uses: actions/setup-node@v4
+        if: needs.changes.outputs.fe_tests == 'list'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        if: needs.changes.outputs.fe_tests == 'list'
+        run: npm ci
+
+      - name: Generate code the tests import
+        if: needs.changes.outputs.fe_tests == 'list'
+        run: node scripts/run-codegen.mjs prebuild
+
+      - name: Run the selected tests
+        if: needs.changes.outputs.fe_tests == 'list'
+        env:
+          FILES: ${{ needs.changes.outputs.fe_test_files }}
+        # An explicit file list: Vitest resolves nothing, walks nothing.
+        run: |
+          read -r -a files <<< "$FILES"
+          echo "Running ${#files[@]} test file(s)."
+          npx vitest run "${files[@]}"
+
+  # ─── Job A3: the whole Vitest suite, sharded ───────────────────────────
   # Split out of frontend-checks on 2026-10-15: in one job the suite ran past
   # that job's 30-minute cap and never reported. Four shards plus the CLI e2e
-  # lane run in parallel; each is its own verdict.
+  # lane run in parallel; each is its own verdict. Runs in the full lane, and
+  # in the fast lane when `changes` selected `all` (see frontend-affected-tests).
   frontend-tests:
     needs: changes
-    if: needs.changes.outputs.lane == 'full'
+    if: needs.changes.outputs.lane == 'full' || needs.changes.outputs.fe_tests == 'all'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -725,8 +781,7 @@ jobs:
         run: npm ci
 
       - name: Generate code the tests import
-        # frontend-checks' Build step runs this through `prebuild`; a shard has
-        # no build, so it runs the codegen itself.
+        # A shard has no build, so it runs the codegen itself.
         run: node scripts/run-codegen.mjs prebuild
 
       - name: ${{ matrix.label }}
@@ -1173,7 +1228,9 @@ jobs:
     # See the note on rust-fmt's condition.
     if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    # 100 for the desktop-full leg: it also compiles and runs the ml-gated unit
+    # tests (the test step below). The other two legs stay at 60.
+    timeout-minutes: ${{ matrix.label == 'desktop-full' && 100 || 60 }}
     strategy:
       fail-fast: false
       matrix:
@@ -1245,6 +1302,39 @@ jobs:
             libdbus-1-dev
       - name: cargo check --features ${{ matrix.features }}
         run: cargo check --workspace --manifest-path src-tauri/Cargo.toml --features ${{ matrix.features }}
+
+      # The feature axis' ONE test cell (scripts/check-test-feature-cells.mjs).
+      # `rust-tests` runs `--features desktop`, so every test behind
+      # `#[cfg(all(test, feature = "ml"))]` (27 across db, engine and the root
+      # crate: sqlite-vec KNN mechanics, the chunker, the twin KB grounding
+      # block, the retrieval retirement predicate) compiled in no cell and ran
+      # nowhere. `desktop,ml` is the superset of the two feature values that
+      # carry test code; it is the leg that already compiles ORT and fastembed
+      # for `cargo check`, so the dependency closure is warm here.
+      #
+      # `--lib` on purpose: all 27 are unit tests, and this keeps the leg from
+      # re-running the integration and doc tests `rust-tests` already runs.
+      # Only the desktop-full leg tests; the other two legs are `cargo check`
+      # shapes with no gated tests of their own.
+      #
+      # The contest plugin's instrument test (`commands::contest::node`) needs
+      # node and the registry checkout, exactly as in rust-tests: under `CI` it
+      # FAILS rather than skips when either is missing. The retry wrapper is the
+      # same one rust-tests uses (the P2P loopback test flakes in every lib run).
+      - uses: actions/setup-node@v4
+        if: matrix.label == 'desktop-full'
+        with:
+          node-version-file: .nvmrc
+      - name: Clone the knowledge registry (the contest instrument)
+        if: matrix.label == 'desktop-full'
+        shell: bash
+        run: git clone --depth 1 https://github.com/xkazm04/ai-registry.git ../ai-registry
+      - name: cargo test --features desktop,ml (the ml-gated unit tests)
+        if: matrix.label == 'desktop-full'
+        shell: bash
+        env:
+          AI_REGISTRY_DIR: ${{ github.workspace }}/../ai-registry
+        run: bash scripts/ci/cargo-test-retry.sh --workspace --lib --manifest-path src-tauri/Cargo.toml --features desktop,ml --no-fail-fast
 
   # ─── Job B3: the featureless shape ──────────────────────────────────
   # The root crate cannot build without `desktop` — capabilities/default.json
@@ -1480,6 +1570,8 @@ jobs:
       - changes
       - commit-lint
       - frontend-checks
+      - frontend-build
+      - frontend-affected-tests
       - frontend-tests
       - rust-fmt
       - rust-tests
@@ -1509,10 +1601,12 @@ jobs:
           ALWAYS="changes command-name-drift evidence-check"
           # Required in the fast lane (push, pull_request), skipped in the full.
           FAST_ONLY="commit-lint"
-          # Required in the full lane (schedule, dispatch), skipped in the fast.
+          # Required in the full lane (schedule, dispatch). In the fast lane it
+          # runs only when `changes` selected every test (fe_tests=all), so
+          # there it may be skipped - and may_skip still fails it on a red.
           FULL_ONLY="frontend-tests"
           ON_RUST="rust-fmt rust-tests rust-deny rust-features rust-no-features binding-drift"
-          ON_FRONTEND="frontend-checks"
+          ON_FRONTEND="frontend-checks frontend-build frontend-affected-tests"
 
           FAILED=0
           fail() { echo "::error title=ci-verdict::$1"; FAILED=1; }
@@ -1521,8 +1615,8 @@ jobs:
           # otherwise make every lookup below return "null" and be judged as
           # one more odd result rather than as this job being blind.
           COUNT=$(echo "$NEEDS" | jq 'length')
-          if [ "$COUNT" -lt 12 ]; then
-            fail "expected at least 12 needed jobs, saw $COUNT — the aggregator is not looking at the whole workflow."
+          if [ "$COUNT" -lt 14 ]; then
+            fail "expected at least 14 needed jobs, saw $COUNT — the aggregator is not looking at the whole workflow."
           fi
 
           result() { echo "$NEEDS" | jq -r --arg j "$1" '.[$j].result // "missing"'; }
@@ -1581,7 +1675,7 @@ jobs:
 
           echo "rust=$RUST frontend=$FRONTEND"
           carried "the Rust job group" "$RUST" "$RUST_CARRIED" "$RUST_BASE"
-          carried "frontend-checks" "$FRONTEND" "$FRONTEND_CARRIED" "$FRONTEND_BASE"
+          carried "the frontend job group" "$FRONTEND" "$FRONTEND_CARRIED" "$FRONTEND_BASE"
           for j in $ALWAYS; do must_run "$j"; done
           for j in $FAST_ONLY; do
             if [ "$LANE" = "fast" ]; then must_run "$j"; else may_skip "$j"; fi

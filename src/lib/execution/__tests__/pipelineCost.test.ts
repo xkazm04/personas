@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * THE LIVE TRACE PRICES THE RUN IT JUST WATCHED.
  *

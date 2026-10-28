@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The grid's "tiles never move" contract. Every session keeps a tile
  * (exited/hibernated render as in-place tombstones), order is locked to spawn

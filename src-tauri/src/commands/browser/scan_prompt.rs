@@ -72,15 +72,15 @@ Tier 2 requires page tools you actually saw listed. Do not grade up because a si
 
 Emit ONE line, exactly this shape, and nothing after it:
 
-{{"site_finding": {{"transport": "none", "page_tools": [], "operable_count": 0, "landmarks": [], "forms": [], "login_form": null, "blockers": [], "tier": 0, "notes": ""}}}}
+{{"site_finding": {{"transport": "none", "pageTools": [], "operableCount": 0, "landmarks": [], "forms": [], "loginForm": null, "blockers": [], "tier": 0, "notes": ""}}}}
 
 Field contracts:
 - `transport`: `"webmcp-native"` | `"webmcp-polyfill"` | `"none"`.
-- `page_tools`: `[{{"name": "", "description": "", "reversible": false, "side_effects": "none"|"internal"|"external", "class": "read"|"auto"|"gated"}}]`. Report `reversible` and `side_effects` as the page's OWN manifest declares them; do not infer them from the name. Set `class` to `"gated"` unless the manifest proves `reversible` and non-external.
-- `operable_count`: an integer.
+- `pageTools`: `[{{"name": "", "description": "", "reversible": false, "sideEffects": "none"|"internal"|"external", "class": "read"|"auto"|"gated"}}]`. Report `reversible` and `side_effects` as the page's OWN manifest declares them; do not infer them from the name. Set `class` to `"gated"` unless the manifest proves `reversible` and non-external.
+- `operableCount`: an integer.
 - `landmarks`: short strings, at most 12.
 - `forms`: `[{{"name": "", "fields": 0, "kind": "login"|"search"|"payment"|"other"}}]`.
-- `login_form`: `null`, or `{{"user_ref": "", "pass_ref": "", "submit_ref": ""}}` with the refs verbatim from a snapshot.
+- `loginForm`: `null`, or `{{"userRef": "", "passRef": "", "submitRef": ""}}` with the refs verbatim from a snapshot.
 - `blockers`: any of `"captcha"`, `"login_wall"`, `"csp_frozen_globals"`.
 - `tier`: 0, 1 or 2.
 - `notes`: one or two sentences for the operator — what you could not see, what you estimated, what you would want to re-check. Never a credential, never a personal detail you read on the page.

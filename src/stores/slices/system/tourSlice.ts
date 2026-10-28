@@ -1213,7 +1213,7 @@ function probeTourStorage(): boolean {
     try {
       useToastStore
         .getState()
-        .addToast(en.onboarding.tour_storage_unavailable_toast, "error", 8000);
+        .addToast(en.chrome.tour_storage_unavailable_toast, "error", 8000);
     } catch (err) { silentCatch("stores/slices/system/tourSlice:catch1")(err); }
   }
 
@@ -1286,7 +1286,7 @@ function persistState(state: Omit<PersistedTourState, 'version'>) {
       try {
         useToastStore
           .getState()
-          .addToast(en.onboarding.tour_storage_unavailable_toast, "error", 8000);
+          .addToast(en.chrome.tour_storage_unavailable_toast, "error", 8000);
       } catch (err) { silentCatch("stores/slices/system/tourSlice:catch2")(err); }
     }
   }

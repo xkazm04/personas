@@ -10,6 +10,7 @@ import type { NavStatChip } from './lib/useNavCardStatus';
 import ResumeSection from './ResumeSection';
 import SinceYouLeftBriefing from './SinceYouLeftBriefing';
 import { useTranslation } from '@/i18n/useTranslation';
+import { UI_LANGUAGE_PICKER_ENABLED } from '@/i18n/locales.manifest';
 
 const LanguageCards = lazyRetry(() => import('./LanguageSwitcher').then(m => ({ default: m.LanguageCardGrid })));
 
@@ -26,7 +27,8 @@ interface WelcomeLayoutProps {
 /**
  * The Welcome surface, composed from the kit: the hero greeting opens the page, then one calm
  * spine carries what happened since the last visit, the continue pointer, the first-run entry,
- * the modules and the language picker. A showcase surface: the default type tier, not compact.
+ * the modules and the language picker (only when more than one UI locale ships - see
+ * SHIPPED_UI_LOCALES). A showcase surface: the default type tier, not compact.
  */
 export default function WelcomeLayout({
   greeting,
@@ -65,13 +67,15 @@ export default function WelcomeLayout({
                     label={quickNavLabel}
                   />
                 </Section>
-                <Section title={wl.language}>
-                  <Suspense fallback={<GhostRows count={2} />}>
-                    <div className="k-in">
-                      <LanguageCards />
-                    </div>
-                  </Suspense>
-                </Section>
+                {UI_LANGUAGE_PICKER_ENABLED && (
+                  <Section title={wl.language}>
+                    <Suspense fallback={<GhostRows count={2} />}>
+                      <div className="k-in">
+                        <LanguageCards />
+                      </div>
+                    </Suspense>
+                  </Section>
+                )}
               </DeferUntilIdle>
             </Surface>
           </div>

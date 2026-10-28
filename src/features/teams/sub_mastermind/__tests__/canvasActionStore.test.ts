@@ -1,3 +1,4 @@
+// @vitest-environment node
 // canvasActionStore — the queue mechanics, refusal paths, and the pure band /
 // payload math the Soundings consumer builds on.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

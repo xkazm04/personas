@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from "vitest";
 import { buildVersionRows, type BuildRowsCtx } from "../versionMatrixRows";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";

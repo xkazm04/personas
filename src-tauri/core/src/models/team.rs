@@ -116,7 +116,6 @@ pub struct PersonaTeamConnection {
 ///
 /// All fields are optional — existing nodes with no config work unchanged.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeConfig {
     /// Override the persona's default model_profile for this pipeline step.

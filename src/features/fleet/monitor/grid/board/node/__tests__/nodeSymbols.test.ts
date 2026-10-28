@@ -1,3 +1,4 @@
+// @vitest-environment node
 // nodeSymbols — the map every board reads, and the node's one treatment.
 //
 // Two contracts. (1) WHICH symbols show, in WHICH order, is one pure function

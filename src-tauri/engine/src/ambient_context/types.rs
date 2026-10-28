@@ -9,7 +9,6 @@ use ts_rs::TS;
 /// signal is captured. Subscribers (e.g. the context rule engine) receive
 /// these in real time rather than polling.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ContextEvent {
     /// Signal source: "clipboard", "file_watcher", or "app_focus".
@@ -164,7 +163,6 @@ pub struct AmbientSignalEntry {
 /// The toggles render against the *_enabled fields; the *_signals_in_window
 /// counts populate the "What did Athena see?" view's source headers.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct SensorySourceState {
     /// Master kill switch (rarely toggled; defaults true).

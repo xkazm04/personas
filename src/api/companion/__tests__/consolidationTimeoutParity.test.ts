@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Athena's brain passes run one Claude call inline under an absolute backstop
 // (`call_claude_text(.., backstop)` in companion/brain/oneshot.rs). If the IPC
 // wrapper gives up first, the UI reports a failure while the backend goes on

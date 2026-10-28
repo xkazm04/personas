@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 
 // storeBus is consulted by setSidebarSection (selected-persona lookup) and

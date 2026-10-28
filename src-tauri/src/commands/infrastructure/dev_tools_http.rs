@@ -86,7 +86,7 @@
 //!                                             5 irreversible or external. Risk 1-2 is accepted by the project's
 //!                                             mechanical triage rule without a human. Re-filing an idea that was
 //!                                             filed unrated fills its scales in and answers `outcome: "rated"`.
-//!   POST /kpis                              → declare a KPI { project_id, name, measure_kind?, … }
+//!   POST /kpis                              → declare a KPI { projectId, name, measureKind?, … } (snake_case keys are still accepted)
 //!   POST /kpis/{kpi_id}/measure             → record a reading { value, source?, env?, evidence?, note? }
 //!   POST /ideas/{idea_id}/goal              → say which goal an idea's work served { goal } — binds an unbound
 //!                                             idea and attributes its tasks that serve no goal; never moves work

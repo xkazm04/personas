@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The stage vocabulary has ONE label table and ONE category rule.
  *

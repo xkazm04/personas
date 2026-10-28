@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Chart buckets are UTC days: a viewer west of UTC must still read the bucket's own date.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chartDayFormatter } from '../chartAnnotations';

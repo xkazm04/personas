@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * A REGISTRY WITH ONE SUBSCRIBER SLOT IS A REGISTRY THAT LOSES SUBSCRIBERS.
  *

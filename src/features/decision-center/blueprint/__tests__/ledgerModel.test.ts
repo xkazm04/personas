@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The ledger's pure derivations (bp useLedger, releaseState, pixels, ItemRow facts) over the Kettle fixture.
 import { describe, expect, it } from 'vitest';
 import { kettleData } from '../fixture/kettle';

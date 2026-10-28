@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The address bar's ranking, which is the whole of the suggestion feature that
  * can be wrong without anyone noticing: a popup that lists the right rows in
@@ -20,14 +21,14 @@ function site(origin: string, label = '', enabled = true): BrowserSite {
     enabled,
     overrides: {},
     budget: 50,
-    credential_id: null,
-    scan_status: 'none',
-    scan_tier: null,
-    scan_report: null,
-    scan_at: null,
-    first_seen: 0,
-    last_seen: 0,
-    created_by: 'operator',
+    credentialId: null,
+    scanStatus: 'none',
+    scanTier: null,
+    scanReport: null,
+    scanAt: null,
+    firstSeen: 0,
+    lastSeen: 0,
+    createdBy: 'operator',
   };
 }
 

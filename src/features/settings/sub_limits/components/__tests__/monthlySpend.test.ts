@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The month bucketing moved out of LimitsSettings so the tab and the
  * always-mounted spend watcher cannot disagree about "this month". This guard

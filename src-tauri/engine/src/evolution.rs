@@ -49,7 +49,6 @@ pub use personas_core::evolution_status::EvolutionCycleStatus;
 
 /// Summary of an evolution cycle result.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct EvolutionCycleSummary {
     pub cycle_id: String,

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 import { ApiError, classifyError, withRetry } from '../apiError';
 import type { TauriErrorKind } from '@/lib/types/tauriError';

@@ -2,6 +2,8 @@
 // Splits a double-period chart data array into current and previous halves,
 // then computes percentage change for key metrics.
 
+import { isIsoDay, latestDay, shiftDay } from './periodWindow';
+
 export interface TrendValue {
   /** Absolute percentage change (always >= 0) */
   pctChange: number;
@@ -38,8 +40,37 @@ export function splitComparisonPeriods<T>(
   rows: T[],
   currentPeriodDays: number,
   compareEnabled: boolean,
+  /**
+   * Reads a `YYYY-MM-DD` day key off a row. Supply it and the split is made on
+   * the CALENDAR; omit it and the split is ordinal.
+   *
+   * The ordinal split is only correct when every calendar day produced a row,
+   * and the daily rollup emits rows only for days with activity — so a window
+   * with three quiet days cut three days late and the "previous period" was
+   * really the current period's own earliest days. The accessor is optional
+   * because this helper is also used over plain `number[]` series
+   * (`computeSeriesTrendPct`), where there is no date to read.
+   */
+  isoDay?: (row: T) => unknown,
 ): { previous: T[]; current: T[] } | null {
   if (!compareEnabled || rows.length === 0) return null;
+
+  if (isoDay) {
+    const end = latestDay(rows.map(isoDay));
+    if (end !== null) {
+      const currentStart = shiftDay(end, -(currentPeriodDays - 1));
+      const previous: T[] = [];
+      const current: T[] = [];
+      for (const row of rows) {
+        const day = isoDay(row);
+        if (!isIsoDay(day)) continue;
+        (day >= currentStart ? current : previous).push(row);
+      }
+      if (previous.length === 0) return null;
+      return { previous, current };
+    }
+  }
+
   const splitIdx = Math.max(0, rows.length - currentPeriodDays);
   const previous = rows.slice(0, splitIdx);
   const current = rows.slice(splitIdx);
@@ -107,7 +138,9 @@ export function computePeriodTrends(
   effectiveDays: number,
   compareEnabled: boolean,
 ): MetricTrends | null {
-  const split = splitComparisonPeriods(chartData, effectiveDays, compareEnabled);
+  // Overview chart rows carry the unformatted day under `rawDate`, so the KPI
+  // deltas split on the same calendar the DayRangePicker shows.
+  const split = splitComparisonPeriods(chartData, effectiveDays, compareEnabled, (row) => row.rawDate);
   if (!split) return null;
   const { previous: prev, current: curr } = split;
 

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useToastStore } from '@/stores/toastStore';
 import { reportDispatchFailure } from '../lib/reportDispatchFailure';

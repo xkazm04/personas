@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Every key the Studio writes into a chain trigger's config, and every
  * condition type it writes, has a reader in the Rust engine. The config is

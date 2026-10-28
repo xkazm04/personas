@@ -27,12 +27,11 @@ cargo's target-dir lock serialises compiles for free - a lock wait is normal; en
 
 ## Gates
 - always: `npm run check`, `npm run test -- --run`
-- when locales/strings touched: `npm run check:i18n:strict`
 - when Rust touched: `cargo clippy`/`cargo check` + `cargo test --lib --features desktop`
 - slow: none
 - builder: `npm run gate` (warm tsc + eslint on your changed files + census, answered for YOUR
   worktree as a delta against master; falls back to the cold commands by itself and says so) | targeted vitest
-  | `npm run check:i18n:strict` if you touched strings/locales | `cargo test export_bindings` (+ commit
+  | `cargo test export_bindings` (+ commit
   `src/lib/bindings/`) if you touched Rust structs. Then drive the actual flow when a dev server is
   available; report what you COULD NOT verify honestly.
 - Gate calibration: gate on *no NEW warnings in files this diff touched* - full-crate clippy
@@ -62,9 +61,8 @@ Authority: `.claude/CLAUDE.md` (parallel-safety primitives apply in full).
 - Read `.claude/CLAUDE.md` § Styling before any UI; reuse `shared/components` (CATALOG.md) - never
   hand-roll spinners/modals/tooltips/buttons; semantic tokens only (`typo-*`, `rounded-*`,
   `shadow-elevation-*`).
-- Every user-facing string: add key to `src/i18n/locales/en.json` AND translate into all 13 other
-  locales yourself via `scripts/i18n/translate-extract.mjs` -> fill `.i18n-work/missing-<code>.json`
-  (medium quality fine) -> `translate-merge.mjs`. The pre-commit hook blocks gaps.
+- Every user-facing string: add key to `src/i18n/locales/en.json`. Do NOT translate it - the app
+  ships English only since 2026-10-25 (`.claude/rules/i18n.md`).
 - IPC via `invokeWithTimeout`; errors via `toastCatch`/`silentCatch` + error registry; components < 200
   LOC.
 - New Rust types with ts-rs: run `cargo test export_bindings` and commit `src/lib/bindings/` changes.

@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * THE GUIDANCE MUST NOT BREAK THE INPUT IT RIDES IN.
  *

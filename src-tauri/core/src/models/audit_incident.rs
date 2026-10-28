@@ -80,7 +80,6 @@ impl IncidentStatus {
 /// `normalize_severity()`. Storing the normalized value means the inbox can
 /// filter / sort by severity without per-source `CASE WHEN` ladders.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "lowercase")]
 pub enum IncidentSeverity {
     Low,

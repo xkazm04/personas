@@ -109,6 +109,8 @@ vi.mock('./grid/QuickDispatchDock', () => ({ default: () => null }));
 vi.mock('@/features/shared/chrome/FleetActivityStrip', () => ({ default: () => null }));
 
 vi.mock('@/i18n/useTranslation', () => ({
+  // MonitorBody asks for its overlay section on open (OVERLAY_SECTIONS, 2026-10-25).
+  usePreloadedSections: () => {},
   useTranslation: () => ({
     t: {
       monitor: {

@@ -15,7 +15,6 @@ use personas_macros::requires;
 
 /// Result of testing an endpoint in the playground.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaygroundTestResult {
     pub status_code: u16,

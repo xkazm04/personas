@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The inbox's incident status tables must match the Rust vocabulary. The
 // tokens are read from the Rust source at run time (as_str arms of
 // IncidentStatus, and the portfolio pending-count SQL that defines "still

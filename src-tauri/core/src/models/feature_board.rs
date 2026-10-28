@@ -438,7 +438,6 @@ pub struct FeatureScenario {
 
 /// What one council round found for one scenario.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CouncilScenarioResult {
     pub id: String,

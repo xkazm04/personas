@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import type { UndispatchedIdea } from '@/lib/bindings/UndispatchedIdea';
 import { ideaInScope, normalizeName, triageInScope, type RailProjectFilter } from '../railFilter';

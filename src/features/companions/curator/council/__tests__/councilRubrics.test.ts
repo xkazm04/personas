@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import type { CouncilVerdict } from '@/lib/bindings/CouncilVerdict';

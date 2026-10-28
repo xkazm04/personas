@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The list/event race. A `browser_webview_list` that was in flight when a
  * newer `browser-tabs` event (or a newer list) arrived must not paint over it.
@@ -54,14 +55,14 @@ function site(origin: string): BrowserSite {
     enabled: true,
     overrides: {},
     budget: 50,
-    credential_id: null,
-    scan_status: 'none',
-    scan_tier: null,
-    scan_report: null,
-    scan_at: null,
-    first_seen: 0,
-    last_seen: 0,
-    created_by: 'operator',
+    credentialId: null,
+    scanStatus: 'none',
+    scanTier: null,
+    scanReport: null,
+    scanAt: null,
+    firstSeen: 0,
+    lastSeen: 0,
+    createdBy: 'operator',
   } as BrowserSite;
 }
 

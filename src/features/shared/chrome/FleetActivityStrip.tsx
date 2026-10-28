@@ -17,7 +17,8 @@
 // its hover popover read as noise). Visuals unchanged.
 
 import { useEffect, useMemo, useState } from 'react';
-import { motion, useMotionValue, animate } from 'framer-motion';
+import { m, useMotionValue } from 'framer-motion';
+import { silentCatch } from '@/lib/silentCatch';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -126,12 +127,25 @@ export default function FleetActivityStrip() {
       pulseOpacity.set(1);
       return;
     }
-    const controls = animate(pulseOpacity, [0.45, 1, 0.45], {
-      duration: 3.2,
-      repeat: Infinity,
-      ease: 'easeInOut',
-    });
-    return () => controls.stop();
+    // `animate` is framer's whole animation engine, so it is fetched when a bar
+    // first lights rather than statically imported into always-mounted chrome
+    // (this strip is on the startup path; 2026-10-25).
+    let cancelled = false;
+    let controls: { stop: () => void } | null = null;
+    void import('framer-motion')
+      .then(({ animate }) => {
+        if (cancelled) return;
+        controls = animate(pulseOpacity, [0.45, 1, 0.45], {
+          duration: 3.2,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        });
+      })
+      .catch(silentCatch('FleetActivityStrip:pulse'));
+    return () => {
+      cancelled = true;
+      controls?.stop();
+    };
   }, [prefersReducedMotion, anyRunning, pulseOpacity]);
 
   // Self-heal stale `running` entries: an execution that completed via a path
@@ -191,7 +205,7 @@ export default function FleetActivityStrip() {
           // Queued/empty hold a static opacity (springing on kind change).
           if (kind === 'running' && !prefersReducedMotion) {
             return (
-              <motion.span
+              <m.span
                 key={i}
                 className="flex-1 h-full rounded-[1px]"
                 style={{ background, opacity: pulseOpacity }}
@@ -209,7 +223,7 @@ export default function FleetActivityStrip() {
             );
           }
           return (
-            <motion.span
+            <m.span
               key={i}
               className="flex-1 h-full rounded-[1px]"
               style={{ background }}

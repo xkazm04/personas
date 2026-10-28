@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, expectTypeOf } from 'vitest';
 import { mockedTauriInvoke, resetInvokeMocks, mockInvokeMap } from '@/test/tauriMock';
 import {

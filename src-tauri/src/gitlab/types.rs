@@ -158,7 +158,6 @@ pub struct GitLabVariable {
 
 /// Summary of a single credential that was provisioned as CI/CD variable(s).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialProvisionEntry {
     /// Env var name pushed to GitLab (value is never included)

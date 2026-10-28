@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { buildSyntheticTrace } from './SyntheticTrace';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';

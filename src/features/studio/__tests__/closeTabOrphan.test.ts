@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Closing a tab deletes the runtime unconditionally, so a `webbuild_dev_stop`

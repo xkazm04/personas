@@ -48,7 +48,6 @@ use personas_db::DbPool;
 /// The output of the workflow compilation pipeline — a team plus its full
 /// topology, ready for canvas rendering.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CompiledWorkflow {
     pub team: PersonaTeam,

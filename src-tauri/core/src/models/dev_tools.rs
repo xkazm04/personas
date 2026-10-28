@@ -705,7 +705,6 @@ pub struct GoalProgressSuggestion {
 /// goal-status buckets (see `normalize_goal_status`); `at_risk` = ongoing goals
 /// that are overdue or stalled. Computed in one pass over all goals — no N+1.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PortfolioProjectSummary {
     pub project_id: String,
@@ -726,7 +725,6 @@ pub struct PortfolioProjectSummary {
 
 /// The whole portfolio: per-project rollups + a grand total row.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PortfolioSummary {
     pub projects: Vec<PortfolioProjectSummary>,
@@ -998,7 +996,6 @@ pub struct DevContext {
 /// `personas_core::context_fingerprint` for what each counter does and does not
 /// mean (notably `set_state_after_await_count`, which is a coarse proxy).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DevContextFingerprint {
     pub project_id: String,
@@ -1253,7 +1250,6 @@ pub const FINDING_ORIGINS: [&str; 11] = [
 /// eight agent lenses (`architecture-analyst`, `security-auditor`, …) live
 /// there and are not sources in their own right.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum BacklogSource {
     // --- the eleven historical `FINDING_ORIGINS`, unchanged ---
@@ -1446,7 +1442,6 @@ pub fn normalize_scale(value: Option<i32>, from_max: i32) -> Option<i32> {
 /// this enum adds are the ones whose absence let 518 completed items sit in
 /// `Accepted` forever.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum IdeaStatus {
     /// Filed, no verdict passed.
@@ -1520,7 +1515,6 @@ impl IdeaStatus {
 /// refusal at the door is lost work. A `Draft` item is visible, countable and
 /// reviewable — it simply cannot become a task until something completes it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "snake_case")]
 pub enum IdeaCompleteness {
     Full,
@@ -1550,7 +1544,6 @@ impl IdeaCompleteness {
 /// exactly when their plans' file sets do not intersect, which is a property
 /// to be CHECKED rather than a grouping to be guessed.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct PlanStep {
     /// 1-based position. Steps are ordered and the order is the execution order.
@@ -1576,7 +1569,6 @@ pub struct PlanStep {
 /// and only ~8% of the largest producer's items contained so much as a
 /// numbered list.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct IdeaPlan {
     pub steps: Vec<PlanStep>,
@@ -1624,7 +1616,6 @@ impl IdeaPlan {
 /// the door writes SQL NULL. Never `0`, never `""` — the three scales run 1-5,
 /// so a `0` is a validation error and not a missing value.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct IdeaDraft {
     /// Nullable, because the column is: `dev_tools_create_idea` files an

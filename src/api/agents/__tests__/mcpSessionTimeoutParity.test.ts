@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The MCP stdio calls (`list_mcp_tools`, `execute_mcp_tool`,
 // `healthcheck_mcp_preview`) each run one session under the backend's
 // MCP_SESSION_TIMEOUT (src-tauri/src/engine/mcp_tools.rs) and answer a timeout

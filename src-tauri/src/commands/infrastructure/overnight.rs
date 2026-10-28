@@ -155,7 +155,6 @@ pub fn budget_verdict(
 /// One project-night of the Overnight Portfolio Engine, as stored in
 /// `autopilot_night_runs`. Also the morning-digest data shape.
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct NightRun {
     pub id: String,

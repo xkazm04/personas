@@ -31,6 +31,11 @@ vi.mock('@/api/vault/autoCredBrowser', () => ({
 
 import { TauriPlaywrightAdapter } from '../TauriPlaywrightAdapter';
 import type { AutoCredConnectorContext, BrowserLogEntry } from '../types';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
+
+// `vault`, `agents` and `overview` left the eager English core on 2026-10-25;
+// in the app the route preload lands them before this surface mounts.
+beforeAll(() => preloadSectionsAsync('en', ['vault', 'agents', 'overview']));
 
 const ctx = {
   connector: { name: 'acme', label: 'Acme', fields: [] },

@@ -526,7 +526,6 @@ pub struct CouncilIngestSummary {
 /// "nothing needed relinking" and "nothing could be relinked" are opposite
 /// answers and a bool spells them the same.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct UseCaseRelinkSummary {
     pub project_id: String,

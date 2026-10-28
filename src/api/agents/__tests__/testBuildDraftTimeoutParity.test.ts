@@ -1,3 +1,4 @@
+// @vitest-environment node
 // The build-test IPC must outlive the backend's own run budget.
 // `test_build_draft` (commands/design/build_sessions.rs) awaits
 // `run_tool_tests` inline, whose two model legs are capped at TEST_PLAN_TIMEOUT

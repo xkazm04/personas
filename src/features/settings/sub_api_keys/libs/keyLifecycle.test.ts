@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * keyLifecycle: which API keys can still authenticate, and which paired keys
  * are safe to retire.

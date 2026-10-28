@@ -1,3 +1,4 @@
+// @vitest-environment node
 /** The peek's key table. */
 import { describe, expect, it } from 'vitest';
 

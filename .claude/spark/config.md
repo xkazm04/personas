@@ -29,7 +29,6 @@ by the 1.1.0 generic rewrite.
 
 ## Gates
 - always: `npm run check`, `npm run test -- --run`
-- when locales/strings touched: `npm run check:i18n:strict`
 - when Rust touched: `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings` + `npm run test:rust`
 - when ts-rs types change: on Windows run BOTH `npm run test:rust -- export_bindings` (app_lib types) AND
   `npm run test:rust:crates -- export_bindings` (`core`/`db`/`engine` models: the first command regenerates NONE of
@@ -43,7 +42,7 @@ by the 1.1.0 generic rewrite.
   on 2026-09-20 a builder's warm gate read green over three real census rises in its own new files, the second sighting of a
   stale warm verdict; the Director also reviews on `--cold` only; on 2026-09-18
   thirteen census rises reached the merge gate because builders ran only the lines below) | `npx tsc --noEmit` | `npm run lint` (no NEW warnings in files you touched) | targeted vitest
-  | `npm run check:i18n:strict` if you touched strings/locales | `cargo test export_bindings` (+ commit
+  | `cargo test export_bindings` (+ commit
   `src/lib/bindings/`) if you touched Rust structs
 - Gate calibration: gate on *no NEW warnings in files this diff touched* - a full-crate clippy at
   `-D warnings` fails on pre-existing warnings here; compare against master for the same files.
@@ -85,14 +84,8 @@ MSYS_NO_PATHCONV=1 node scripts/decision-ledger/capture-decision.mjs --correctio
 The `MSYS_NO_PATHCONV=1` prefix is load-bearing on Windows. The ledger is personal data:
 gitignored, never committed, never quoted into committed files.
 
-**Phase 5 - close every i18n gap before the commit that introduces the keys** (the `i18n-no-gaps`
-pre-commit hook blocks a commit that stages `src/i18n/locales/*.json` with a gap):
-```bash
-node scripts/i18n/translate-extract.mjs
-# fan out: one Sonnet subagent per non-English locale fills .i18n-work/missing-<code>.json
-node scripts/i18n/translate-merge.mjs
-```
-Inline Director translation is fine to ~10 keys; beyond that batch locales across ~4 agents.
+**Phase 5 - i18n:** new keys go into `src/i18n/locales/en.json` only. No translation pass: the app
+ships English only since 2026-10-25 (`.claude/rules/i18n.md`).
 
 **Phase 6 - deregister with the outcome:**
 ```bash
@@ -105,8 +98,7 @@ Authority: `.claude/CLAUDE.md` (parallel-safety primitives apply in full).
   (`CATALOG.md`) - never hand-roll spinners/modals/tooltips/buttons; semantic tokens only
   (`typo-*`, `rounded-*`, `shadow-elevation-*`). Loading pattern v2 (`docs/design/overview-loading.md`):
   ghost-under-chrome for surfaces, a real spinner only on an action control.
-- Every user-facing string goes through `t.section.key` and is translated into all 13 other locales
-  in the same change (see the Phase-5 ritual).
+- Every user-facing string goes through `t.section.key` (English only, no translation; Phase 5).
 - IPC via `invokeWithTimeout`; errors via `toastCatch`/`silentCatch` + the error registry;
   components under 200 LOC.
 - Commit form: the repo mandates an **isolated-index** commit

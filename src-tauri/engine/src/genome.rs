@@ -575,7 +575,6 @@ pub fn compute_fitness(
 
 /// Result of a single breeding generation.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct BreedingOffspring {
     /// Unique ID for this offspring.

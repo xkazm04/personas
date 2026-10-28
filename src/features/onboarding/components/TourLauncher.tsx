@@ -73,7 +73,7 @@ export default function TourLauncher() {
       {hasProgress ? (
         <>
           <TourProgressArc completed={completedCount} total={totalSteps} />
-          {tx(t.onboarding.resume_tour, { completed: completedCount, total: totalSteps })}
+          {tx(t.chrome.footer_resume_tour, { completed: completedCount, total: totalSteps })}
         </>
       ) : (
         <>

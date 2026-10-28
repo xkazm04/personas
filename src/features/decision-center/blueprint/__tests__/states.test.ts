@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The state table and the keymap, as tables (WP4a):
  *  - every status of `wire.ts ProposalStatus` is in STATUS, and nothing else is;

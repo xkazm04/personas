@@ -101,7 +101,7 @@ export function WritesChip({ site }: { site: BrowserSite }) {
 
 export function CredentialChip({ site }: { site: BrowserSite }) {
   const { t } = useTranslation();
-  if (!site.credential_id) {
+  if (!site.credentialId) {
     return <span className="typo-caption text-foreground">{t.browser.whitelist.credential_none}</span>;
   }
   return (

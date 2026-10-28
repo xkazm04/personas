@@ -44,7 +44,6 @@ const MAX_FILE_BYTES: u64 = 2 * 1024 * 1024;
 const MISSING_MARKER: &str = "\u{0}missing";
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ContextFingerprintRefreshSummary {
     pub contexts_total: i32,

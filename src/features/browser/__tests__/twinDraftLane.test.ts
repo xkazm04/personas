@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * The Twin draft lane — the flow the Browser toolbar drives, proven without a
  * page: arm → pick → draft → fill → record → inserted, and the three ways it

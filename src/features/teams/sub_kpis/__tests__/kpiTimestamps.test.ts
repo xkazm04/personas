@@ -1,3 +1,4 @@
+// @vitest-environment node
 // KPI rows are written with SQLite `datetime('now')`: UTC, no zone marker.
 // Read as local time they land hours off for every viewer outside UTC.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

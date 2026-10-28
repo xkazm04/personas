@@ -28,8 +28,15 @@ const t = new Proxy({}, {
       ? new Proxy({}, { get: (_s, sub) => leaf(String(sub)) })
       : leaf(String(section)),
 });
+// `tx` must be ONE function, as the real hook's is (its return is memoized per
+// language). ActivityTab's loader is a useCallback over `t` and `tx`, and its
+// effect re-runs the load whenever the loader changes: a fresh `tx` per call
+// re-rendered, re-loaded and re-rendered without end - the file never
+// finished and hung the 4th CI shard until the 30-minute cancel (found
+// 2026-10-25).
+const tx = (s: unknown) => String(s);
 vi.mock('@/i18n/useTranslation', () => ({
-  useTranslation: () => ({ t, tx: (s: unknown) => String(s), language: 'en' }),
+  useTranslation: () => ({ t, tx, language: 'en' }),
   getActiveTranslations: () => t,
 }));
 
@@ -131,7 +138,10 @@ describe('persona Activity tab — the runs region', () => {
     expect(listManualReviewsPage).toHaveBeenCalled();
     expect(listReports).toHaveBeenCalled();
 
-    fireEvent.click(screen.getByText('All'));
+    // The tab label is `t.agents.activity_filters.all` (the proxy above renders
+    // keys); it read 'All' when the label was an English literal, and nothing
+    // noticed because this file never finished.
+    fireEvent.click(screen.getByText(/^activity_filters\.all/));
     // The aggregate timeline is allowed its own execution feed — it interleaves
     // five types and needs the full rows.
     await waitFor(() => expect(listExecutions).toHaveBeenCalled());

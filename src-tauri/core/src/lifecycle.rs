@@ -83,6 +83,9 @@ macro_rules! declare_lifecycle {
     ) => {
         $crate::declare_lifecycle! {
             @inner
+            [
+            #[ts(export)]
+            ]
             $(#[$meta])*
             pub enum $Name, entity = $entity {
                 $(
@@ -117,6 +120,9 @@ macro_rules! declare_lifecycle {
     ) => {
         $crate::declare_lifecycle! {
             @inner
+            [
+            #[ts(export)]
+            ]
             $(#[$meta])*
             pub enum $Name, entity = $entity {
                 $(
@@ -141,6 +147,7 @@ macro_rules! declare_lifecycle {
     // ── Internal arm: shared enum + impl generation ─────────────────────
     (
         @inner
+        [ $(#[$export:meta])* ]
         $(#[$meta:meta])*
         pub enum $Name:ident, entity = $entity:literal {
             $(
@@ -152,7 +159,7 @@ macro_rules! declare_lifecycle {
         $(#[$meta])*
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
         #[serde(rename_all = "lowercase")]
-        #[ts(export)]
+        $(#[$export])*
         pub enum $Name {
             $(
                 $(#[$var_meta])*
@@ -209,11 +216,55 @@ macro_rules! declare_lifecycle {
     };
 }
 
+/// [`declare_lifecycle!`] for an enum that has no TypeScript consumer: the same
+/// state machine, `FromStr` and `TS` derive, but no `#[ts(export)]`, so no
+/// `src/lib/bindings/<Name>.ts` is written for a type nothing imports
+/// (`scripts/check-unused-bindings.sh`). A separate macro rather than a flag on
+/// `declare_lifecycle!` because `scripts/lib/rustTsExports.mjs` resolves a
+/// macro-generated export by walking that macro's invocations, and a flag would
+/// still read every invocation as exporting. Without aliases only; add the arm
+/// the day an unexported enum needs them.
+#[macro_export]
+macro_rules! declare_lifecycle_unexported {
+    (
+        $(#[$meta:meta])*
+        pub enum $Name:ident, entity = $entity:literal {
+            $(
+                $(#[$var_meta:meta])*
+                $Variant:ident ( $str:literal ) => [ $( $Target:ident ),* $(,)? ]
+            ),+ $(,)?
+        }
+    ) => {
+        $crate::declare_lifecycle! {
+            @inner
+            []
+            $(#[$meta])*
+            pub enum $Name, entity = $entity {
+                $(
+                    $(#[$var_meta])*
+                    $Variant ( $str ) => [ $( $Target ),* ]
+                ),+
+            }
+        }
+
+        impl std::str::FromStr for $Name {
+            type Err = String;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                match s {
+                    $( $str => Ok($Name::$Variant), )+
+                    other => Err(format!("Unknown {} status: '{}'", $entity, other)),
+                }
+            }
+        }
+    };
+}
+
 // =============================================================================
 // TriggerStatus
 // =============================================================================
 
-declare_lifecycle! {
+declare_lifecycle_unexported! {
     /// Lifecycle states for a persona trigger.
     ///
     /// Valid transitions:

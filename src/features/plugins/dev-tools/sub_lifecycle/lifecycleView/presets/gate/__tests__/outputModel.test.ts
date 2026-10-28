@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import { ESLINT_ERROR, ESLINT_OUTPUT, flakyRuns, slowingRuns } from '../../../../journey/__tests__/gateFixtures';
