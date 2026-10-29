@@ -16895,7 +16895,11 @@
           "revision": 6,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/i18n/useTranslation.ts:506 The runtime's only count tool is plain `{var}` substitution: it never selects a plural form, nothing in src/ uses Intl.PluralRules, and call sites pick between two `_one`/`_other` keys, so Russian's one/few/many categories cannot render, and 122 `_other` strings in ru.json are frozen genitive plurals («{count} файлов») that come out wrong at 2-4, 22-24 and so on.",
+          "evaluatedAt": "2026-10-29",
+          "evaluatedAgainst": "sha256-b2:8b3a6423f877cfa0",
+          "evaluatedRevision": 7
         },
         {
           "subject": "prompt-assembly",

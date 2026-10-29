@@ -38696,6 +38696,43 @@
         }
       ],
       "registryProposal": "The subject has no rung for local-host capability probes (PATH/--version/keyring round-trip). A context like this one, which mixes local process probes with config-inferred rows about hosted providers, falls between remote-capability-probing, health-checks and optional-dependency-degradation. verdict-basis-tagging could state outright that a 'configuration present' basis is weaker than 'plan' and must never render as an available/Ok status."
+    },
+    "2e1e105a-866c-4039-9620-7ed5d0d30b17/russian": {
+      "context": "i18n",
+      "subject": "russian",
+      "bundle": "localization",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-29",
+      "evaluatedTs": "2026-10-29T22:30:57.437Z",
+      "worker": "3f23bd49-506a-49a7-b099-b88622111ea8",
+      "techniques": [
+        {
+          "technique": "plural-and-count-agreement",
+          "verdict": "deviation",
+          "evidence": "src/i18n/locales/ru.json:1194 Two-slot runtime with no few/many slots. About 128 `_other` strings correctly use the colon form («Агентов: {count}»), but 122 freeze the 5+ form, and a few use the «агент(ов)» hack (line 2417). This is the RU-FROZEN failure, and the runtime gap is a source-side defect that should be filed once."
+        },
+        {
+          "technique": "typography-and-spacing",
+          "verdict": "deviation",
+          "evidence": "src/i18n/locales/ru.json:348 Straight ASCII quotes around a search term instead of «». The catalog also has 24 spaced hyphens used as the copular dash (e.g. line 19572 «Политика выполнения - это») and 14 three-dot ellipses («Отправка...»). Guillemets (407) and … (841) dominate, but the sweep is incomplete."
+        },
+        {
+          "technique": "de-anglicization-constructions",
+          "verdict": "deviation",
+          "evidence": "src/i18n/locales/ru.json:378 The placeholder sits in an accusative object slot with no insulating head noun (also «Удалить {name}» at line 2306). Other strings do insulate correctly («Удалить метку «{name}»?» at line 14682), so the catalog is inconsistent."
+        },
+        {
+          "technique": "gender-and-aspect",
+          "verdict": "deviation",
+          "evidence": "src/i18n/locales/ru.json:8433 A masculine past-tense verb agrees with an arbitrary `{project}` name (RU-GENDER exposure; same at 8434 «{project} израсходовал»). Aspect itself looks right: «Удалить» on controls, «Загрузка…»/«Сохранение…» for progress."
+        },
+        {
+          "technique": "register-and-address",
+          "verdict": "conformant",
+          "evidence": "src/i18n/locales/ru.json:5319 Formal вы imperatives throughout (about 1,524 `-ите` hits) and zero mid-sentence politeness capitals (Вы/Ваш/Вам/Вас). The ты-forms found (e.g. line 16739 «Что ты умеешь?») are prompts the user sends to the AI companion, not product-to-user address."
+        }
+      ],
+      "registryProposal": "plural-and-count-agreement could cover the case of an unshipped but committed catalog: whether latent defects in a locale the build does not ship (behind a SHIPPED list) should count as deviations or be held until the locale is revived."
     }
   }
 }
