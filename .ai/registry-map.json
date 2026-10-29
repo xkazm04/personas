@@ -34883,7 +34883,11 @@
           "revision": 1,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/system/health.rs:582 The health report marks the hosted Ollama Cloud capability Ok ('free Ollama Cloud models available') when a settings key is merely non-empty, with no request sent and no basis recorded. It sits in the same rows as genuinely probed items (CLI --version, keyring round-trip, temp-table write), so an expired or rejected key reads exactly like proven availability.",
+          "evaluatedAt": "2026-10-29",
+          "evaluatedAgainst": "sha256-b2:9bb6b3bf0d353d66",
+          "evaluatedRevision": 3
         },
         {
           "subject": "mcp-tools",

@@ -38662,6 +38662,38 @@
         "at": "2026-10-28T22:05:33.532810+00:00",
         "reason": "reviewer (sonnet): The claim that nothing is pushed to an external channel is contradicted by this context's own code: `src/api/twin/placement.ts` and `SentReplies.tsx`/`useChannelActivity.ts` handle drafts the Twin toolbar types into web-page boxes, and also treat approved outbox replies as 'real channel sends'. The "
       }
+    },
+    "dd45411d-8955-4579-906e-5a3b00ba16da/remote-capability-probing": {
+      "context": "system-health",
+      "subject": "remote-capability-probing",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-29",
+      "evaluatedTs": "2026-10-29T22:20:30.006Z",
+      "worker": "d25e5a8d-ffe8-40f6-85de-c27f657c59eb",
+      "techniques": [
+        {
+          "technique": "verdict-basis-tagging",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/system/health.rs:584 A hosted-platform availability claim rests on configuration only. HealthCheckItem (health.rs:33-44) has only id/label/status/detail/installable/remediation and no basis field, so this inferred row can't be told apart from the endpoint- and process-probed rows beside it."
+        },
+        {
+          "technique": "advertised-support-is-not-evidence",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/system/binary_probe.rs:63 The context's only probes are local process spawns (where/which, --version). Its files have no remote read path that branches on a peer's advertised header (no reqwest or HTTP client)."
+        },
+        {
+          "technique": "the-probe-that-is-also-the-first-read",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/system/binary_probe.rs:73 Probes are local binary version checks, so no remote round trip is being saved. There is no fragment-vs-metadata choice to make here."
+        },
+        {
+          "technique": "single-blocker-short-circuit",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/system/health.rs:574 The remote-provider rows read local settings and send no requests, so there's no spending to stop behind a preflight blocker. The relevant gap is the missing basis, not request waste."
+        }
+      ],
+      "registryProposal": "The subject has no rung for local-host capability probes (PATH/--version/keyring round-trip). A context like this one, which mixes local process probes with config-inferred rows about hosted providers, falls between remote-capability-probing, health-checks and optional-dependency-degradation. verdict-basis-tagging could state outright that a 'configuration present' basis is weaker than 'plan' and must never render as an available/Ok status."
     }
   }
 }
