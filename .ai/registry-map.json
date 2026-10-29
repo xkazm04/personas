@@ -24729,7 +24729,11 @@
           "revision": 3,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/PassportActionsRow.tsx:153 The wall's 'Copy readiness report' action hands the user a markdown claim block (scores, '/100', 'meets the standard ✓') that the action catalog says is meant to be pasted into a README, but the block links to nothing that would go red when the claim stops holding, so the pasted claim freezes at the day it was copied.",
+          "evaluatedAt": "2026-10-29",
+          "evaluatedAgainst": "sha256-b2:6f6a6c4541bc949b",
+          "evaluatedRevision": 4
         },
         {
           "subject": "quality-gates",

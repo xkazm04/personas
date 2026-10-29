@@ -32504,22 +32504,24 @@
       "context": "passport-wall-ui",
       "subject": "repository-landing-document",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-19",
-      "evaluatedTs": "2026-10-19T00:19:19.258Z",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-29",
+      "evaluatedTs": "2026-10-29T22:25:38.982Z",
+      "worker": "953b9638-92dd-4780-bd4d-bcb3fbf0aa9f",
       "techniques": [
+        {
+          "technique": "evidence-linked-badges",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/passportExport.ts:30 The export (which its own header calls a 'report/badge' for the README, line 2) states a conformance verdict and statistics with only a date stamp (line 25) and no link to a check; header lines 3-5 admit the 'personas passport verify' CI check does not exist yet, which is 'badge before check'."
+        },
         {
           "technique": "landing-document-as-router",
           "verdict": "deviation",
-          "evidence": "src/features/teams/sub_factory/passport/improve/deployActions.ts:77 The authoring instruction mandates contributor-specific README content instead of routing it into the separately requested docs tree."
+          "evidence": "src/features/teams/sub_factory/passport/improve/deployActions.ts:77 The authoring instruction mandates contributor-specific README content instead of routing it into the separately requested docs tree.",
+          "carriedFrom": "2026-10-19"
         }
       ],
-      "withdrawn": {
-        "worker": "6765a31f-efad-4b0a-8664-7615a8fe7d84",
-        "state": "deviation",
-        "at": "2026-10-19T00:19:41.417853+00:00",
-        "reason": "reviewer (sonnet): The deviation rests on a population rule that I could not check against the standard, and the cited prompt asks for a README with purpose, architecture sketch, install/build/test/run commands and key directories, which is ordinary landing-document content. It also asks for a separate docs/ tree for "
-      }
+      "registryProposal": "The subject's techniques assume the landing document is hand-authored in the repo. They do not cover a tool that generates claim blocks for other repos' READMEs, like this readiness-passport export. evidence-linked-badges could say that a generated, pasteable claim snapshot needs a link back to its re-runnable source, or else an expiry the reader can see."
     },
     "1db5c86e-3237-4d2a-8e2f-1426d680757c/scale-investment-timing": {
       "context": "lib-execution",
