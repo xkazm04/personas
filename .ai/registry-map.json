@@ -15196,7 +15196,11 @@
           "revision": 11,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/home/sub_releases/HomeReleases.tsx:41 The in-app release notes (the shipped-release cards) come from a hand-kept releases.json whose active version is 0.0.2 while the app ships 1.1.0 and CHANGELOG.md's newest cut is 0.4.0. Users get a release description that is neither derived from commit history nor tied to the version they are running.",
+          "evaluatedAt": "2026-10-29",
+          "evaluatedAgainst": "sha256-b2:faf052699c35ced4",
+          "evaluatedRevision": 11
         },
         {
           "subject": "quality-gates",
