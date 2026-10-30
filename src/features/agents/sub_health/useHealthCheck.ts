@@ -223,20 +223,6 @@ export function coerceIssueText(raw: unknown): string | null {
 }
 
 /**
- * Options for {@link parseFeasibilityToHealthResult}.
- */
-export interface ParseFeasibilityOptions {
-  /**
-   * When `true` (default), run the keyword cascade in `generateHealthProposal`
-   * and attach `proposal` to each issue.
-   *
-   * No production caller passes `false`: the hook uses the default, and the
-   * digest slice no longer calls this parser at all.
-   */
-  withProposals?: boolean;
-}
-
-/**
  * Parse a backend `FeasibilityResult` into the canonical `DryRunResult` used
  * by the per-persona health hook. (The weekly digest slice used to share it;
  * it now builds its result from telemetry in `buildResultFromSignals`.)
@@ -247,16 +233,12 @@ export interface ParseFeasibilityOptions {
  *   matching after a re-check.
  * - On duplicate `(severity, description)` pairs the n-th occurrence gets a
  *   `_n` suffix so React keys stay unique without losing determinism.
- *
- * The `credentials` argument is only consulted when `withProposals` is on.
  */
 export function parseFeasibilityToHealthResult(
   raw: FeasibilityResult,
   persona: Persona,
   credentials: Array<{ id: string; service_type: string }>,
-  options: ParseFeasibilityOptions = {},
 ): DryRunResult {
-  const { withProposals = true } = options;
   // Shape-guard the IPC boundary: filter out non-string / null entries so a
   // backend change or transport glitch can't crash the health panel or
   // render "[object Object]".
@@ -278,7 +260,7 @@ export function parseFeasibilityToHealthResult(
       id: seen === 0 ? baseId : `${baseId}_${seen}`,
       severity,
       description: text,
-      proposal: withProposals ? generateHealthProposal(text, persona, credentials) : null,
+      proposal: generateHealthProposal(text, persona, credentials),
       resolved: false,
     });
   }

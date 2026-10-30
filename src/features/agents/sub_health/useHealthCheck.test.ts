@@ -183,16 +183,14 @@ describe('parseFeasibilityToHealthResult', () => {
     expect(issues[1]!.id).toBe(`${issues[0]!.id}_1`);
   });
 
-  it('skips proposal generation when withProposals is false', () => {
+  it('attaches an auto-fix proposal to an issue a rule matches', () => {
     const raw = {
       overall: 'partial',
       confirmed_capabilities: [],
       issues: ['Missing credential for slack'],
     };
-    const withOn = parseFeasibilityToHealthResult(raw, persona, [{ id: 'c1', service_type: 'slack' }]);
-    const withOff = parseFeasibilityToHealthResult(raw, persona, [{ id: 'c1', service_type: 'slack' }], { withProposals: false });
-    expect(withOn.issues[0]!.proposal).not.toBeNull();
-    expect(withOff.issues[0]!.proposal).toBeNull();
+    const result = parseFeasibilityToHealthResult(raw, persona, [{ id: 'c1', service_type: 'slack' }]);
+    expect(result.issues[0]!.proposal).not.toBeNull();
   });
 
   it('tolerates a non-array issues payload', () => {
