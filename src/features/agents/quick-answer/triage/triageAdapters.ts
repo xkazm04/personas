@@ -1226,6 +1226,25 @@ function kpiRange(current: number, target: number, unit: string | null): string 
 }
 
 /**
+ * How far from its baseline toward its target a KPI has moved, `0..100`, or
+ * null when there is no distance to measure (no baseline, or baseline ===
+ * target).
+ *
+ * The KPI board's law (`kpiProgressPct` in `teams/sub_kpis/kpiMath`), restated
+ * here over the enriched row's three numbers because adapters are store-free
+ * and that helper takes a whole `DevKpi`. It reads BOTH directions without an
+ * invert: for a lower-is-better KPI `target - baseline` is negative and so is
+ * the movement, so the ratio is still "share of the way covered". The gauge
+ * used to meter `current / target` from zero, inverted for `down`, which
+ * painted a met latency target red and a half-done growth target green.
+ */
+function goalProgressPct(current: number, target: number, baseline: number | null): number | null {
+  if (baseline == null || target === baseline) return null;
+  const share = (current - baseline) / (target - baseline);
+  return Math.round(Math.min(1, Math.max(0, share)) * 100);
+}
+
+/**
  * "The metric has not got there yet", read by the KPI's own direction.
  *
  * Deliberately the simple met/not-met test, not the pace model: the enriched row
@@ -1289,6 +1308,7 @@ export function goalToTriage(
   const facts: TriageFact[] = [];
   if (row.kpi_name) facts.push({ id: 'kpi', label: copy.goalKpi, value: row.kpi_name });
   if (row.kpi_current != null && row.kpi_target != null) {
+    const progress = goalProgressPct(row.kpi_current, row.kpi_target, row.kpi_baseline);
     facts.push({
       id: 'progress',
       label: copy.goalProgress,
@@ -1297,10 +1317,7 @@ export function goalToTriage(
       // The gate, stated once: no baseline, no meter. `bandTone` would happily
       // paint a bar from current/target alone, and it would read as measured
       // progress from a starting point nobody ever recorded.
-      score:
-        row.kpi_baseline == null
-          ? undefined
-          : { value: row.kpi_current, max: row.kpi_target, invert: row.kpi_direction === 'down' },
+      score: progress == null ? undefined : { value: progress, max: 100 },
     });
   }
   if (row.team_name) facts.push({ id: 'team', label: copy.goalTeam, value: row.team_name });
