@@ -1021,14 +1021,30 @@ export function useUnifiedTriage(
   /** Re-read only the goal ledger — what a goal verdict invalidates. */
   const refreshGoals = useCallback(() => setGoalGen((g) => g + 1), []);
 
+  /**
+   * Ideas whose Build now task has already LANDED from this deck.
+   *
+   * Build now writes the task first and the accept second (`triageDispatch`
+   * says why). When only the accept fails, the card is restored and the
+   * reviewer retries — and `dev_tools_create_task` does not dedupe on the
+   * source idea, so the retry used to queue a second task for the same work.
+   * Remembering the landed task makes the retry re-issue only the half that
+   * failed. A ref, not state: it gates a write, it never renders.
+   */
+  const taskedIdeasRef = useRef<Set<string>>(new Set());
+
   /** Every write a verdict can reach, in one injected bundle — see
    *  `triageDispatch`, which owns the routing itself. */
   const ports = useMemo<TriagePorts>(
     () => ({
       reviewAction: (id, status, notes) => interactions.handleReviewAction(id, status, notes),
       dispatchReviewAction: (id, action) => interactions.handleDispatchAction(id, action),
-      createTask: (title, projectId, body, ideaId) =>
-        devApi.createTask(title, projectId, body, ideaId),
+      createTask: async (title, projectId, body, ideaId) => {
+        if (taskedIdeasRef.current.has(ideaId)) return undefined;
+        const task = await devApi.createTask(title, projectId, body, ideaId);
+        taskedIdeasRef.current.add(ideaId);
+        return task;
+      },
       // Through the STORE, not `devApi` directly. The deck used to call the API
       // and bypass `devToolsTriageSlice` entirely, so accepting an idea here
       // never reached Approvals' Backlog tab: its rows and facet counts still

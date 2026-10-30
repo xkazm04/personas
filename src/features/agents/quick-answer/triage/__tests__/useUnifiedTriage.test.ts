@@ -371,6 +371,42 @@ describe('useUnifiedTriage — a REJECTED write restores the card', () => {
     expect(result.current.decidedCount).toBe(0);
     expect(mockAcceptIdea).toHaveBeenCalledTimes(2);
   });
+
+  it('retries a failed Build now WITHOUT creating a second task', async () => {
+    // Build now writes the task first, then the accept. When only the accept
+    // fails the card comes back, and the reviewer's natural retry used to run
+    // the whole branch again: `dev_tools_create_task` does not dedupe on the
+    // source idea, so one idea ended up with two tasks doing the same work.
+    mockCreateTask.mockResolvedValue({ id: 'task-1' });
+    mockAcceptIdea.mockRejectedValueOnce(new Error('disk I/O error'));
+    const { result } = await mount();
+
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept', branchId: 'build' });
+    });
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept', branchId: 'build' });
+    });
+
+    expect(mockCreateTask).toHaveBeenCalledTimes(1);
+    expect(mockAcceptIdea).toHaveBeenCalledTimes(2);
+    expect(result.current.decidedCount).toBe(1);
+  });
+
+  it('still creates the task again when the FIRST task write was the one that failed', async () => {
+    mockCreateTask.mockRejectedValueOnce(new Error('disk I/O error')).mockResolvedValue({ id: 'task-1' });
+    const { result } = await mount();
+
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept', branchId: 'build' });
+    });
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept', branchId: 'build' });
+    });
+
+    expect(mockCreateTask).toHaveBeenCalledTimes(2);
+    expect(mockAcceptIdea).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('useUnifiedTriage — a LOST compare-and-swap is not a failed write', () => {
