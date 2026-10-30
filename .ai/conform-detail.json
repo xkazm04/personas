@@ -24085,14 +24085,14 @@
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:39:42.000Z",
-      "worker": "39030afc-d468-4b92-8e28-a27e7f78deab",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T12:00:00.000Z",
+      "worker": "8ce121a3-f632-4b2c-9555-a701157bd425",
       "techniques": [
         {
           "technique": "native-side-owns-the-target-set",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/queue.rs:1101 the only bound on the executing command's working directory is non-emptiness; rule five's fallback (a project root the native side resolved from its own records) is not taken"
+          "evidence": "src-tauri/src/commands/fleet/queue.rs:1101 require_non_empty is the only cwd check; rule one (send an identity, not a target) and rule two (allow-list) both unmet"
         },
         {
           "technique": "non-stealing-overlay",
@@ -24139,6 +24139,13 @@
           "evaluatedAt": "2026-10-16T17:35:00.000Z",
           "worker": "56ce4ae4-545b-46a2-b62f-fdadbbf66288",
           "reason": "replaced by 39030afc-d468-4b92-8e28-a27e7f78deab"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:85 spawns a claude session with the renderer-supplied root_path as cwd; fleet_spawn_session (src-tauri/src/commands/fleet/commands.rs:33) takes any string with no require_auth and admission only checks non-empty (src-tauri/src/commands/fleet/queue.rs:1101), so the less trusted side chooses where an executing process runs - re-confirmed 2026-10-21, prior anchor :84 was one line high",
+          "evaluatedAt": "2026-10-21T12:39:42.000Z",
+          "worker": "39030afc-d468-4b92-8e28-a27e7f78deab",
+          "reason": "replaced by 8ce121a3-f632-4b2c-9555-a701157bd425"
         }
       ]
     },
@@ -24147,14 +24154,14 @@
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:39:42.000Z",
-      "worker": "39030afc-d468-4b92-8e28-a27e7f78deab",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T12:00:00.000Z",
+      "worker": "8ce121a3-f632-4b2c-9555-a701157bd425",
       "techniques": [
         {
           "technique": "native-side-owns-the-target-set",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/fleet/external.rs:93 the write root is a renderer string tested only for being a directory; resolve_inside bounds the relative path but not the root (rule one: send an identity, not a target)"
+          "evidence": "src-tauri/src/commands/fleet/external.rs:93 is_dir is the only gate on the renderer-chosen root; the id-based form exists beside it at src/features/notepad/notepadActions.ts:176"
         },
         {
           "technique": "non-stealing-overlay",
@@ -24207,6 +24214,13 @@
           "evaluatedAt": "2026-10-16T17:35:00.000Z",
           "worker": "56ce4ae4-545b-46a2-b62f-fdadbbf66288",
           "reason": "replaced by 39030afc-d468-4b92-8e28-a27e7f78deab"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/notepad/notepadActions.ts:162 sends project.root_path as the write root to fleet_write_dispatch_brief, whose native side only checks is_dir (src-tauri/src/commands/fleet/external.rs:93) before writing under it, so a corrupted renderer picks any directory on disk - while :176 of the same function already sends project.id and lets the native side resolve the root; re-confirmed 2026-10-21",
+          "evaluatedAt": "2026-10-21T12:39:42.000Z",
+          "worker": "39030afc-d468-4b92-8e28-a27e7f78deab",
+          "reason": "replaced by 8ce121a3-f632-4b2c-9555-a701157bd425"
         }
       ]
     },
@@ -30773,14 +30787,14 @@
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:39:42.000Z",
-      "worker": "39030afc-d468-4b92-8e28-a27e7f78deab",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T12:00:00.000Z",
+      "worker": "8ce121a3-f632-4b2c-9555-a701157bd425",
       "techniques": [
         {
           "technique": "native-side-owns-the-target-set",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:553 a deny-list is the gate rather than the backstop (rule two); and :612 kb_ingest_directory lets caller-supplied patterns replace the native extension allow-list, so the positive rule is the caller's"
+          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:261 deny-list is the gate, which rule two names as a backstop only; canonicalize-before-compare is met (:550)"
         },
         {
           "technique": "layout-resolved-input-synthesis",
@@ -30808,6 +30822,13 @@
           "evaluatedAt": "2026-10-16T23:08:35.179Z",
           "worker": "ef8dba44-069f-4690-932f-71299b6d5ea1",
           "reason": "replaced by 39030afc-d468-4b92-8e28-a27e7f78deab"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:553 kb_ingest_files gates renderer-supplied paths only with a deny-list of sensitive prefixes (validate_path_safety), so any unlisted location is ingested and made searchable; the extension allow-list is applied only later, after the read (src-tauri/engine/src/chunker.rs:339) - re-anchored from the chunker to the real gate",
+          "evaluatedAt": "2026-10-21T12:39:42.000Z",
+          "worker": "39030afc-d468-4b92-8e28-a27e7f78deab",
+          "reason": "replaced by 8ce121a3-f632-4b2c-9555-a701157bd425"
         }
       ]
     },
@@ -33889,22 +33910,31 @@
       "subject": "native-shell-integration",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:39:42.000Z",
-      "worker": "39030afc-d468-4b92-8e28-a27e7f78deab",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T12:00:00.000Z",
+      "worker": "8ce121a3-f632-4b2c-9555-a701157bd425",
       "techniques": [
         {
           "technique": "capability-presence-contract",
           "verdict": "deviation",
-          "evidence": "src/hooks/utility/data/useAutoUpdater.ts:207 the compile-out (src-tauri/Cargo.toml:268) is not mirrored by a declared presence class the hook reads; the build and the frontend disagree, which the technique names as the failure of compiling out without declaring the class"
+          "evidence": "src/hooks/utility/data/useAutoUpdater.ts:207 no presence class for the updater on the mobile host; class-4 capability is offered and its refusal is telemetry indistinguishable from a real defect"
         },
         {
           "technique": "native-owned-stream",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/data/useAutoUpdater.ts:208 the context owns a timed 6-hourly poll, not a long-lived stream; no subscriber here waits on frames"
+          "evidence": "src/hooks/utility/data/useAutoUpdater.ts:208 the context owns a timed 6-hourly poll, not a long-lived stream; no subscriber here waits on frames",
+          "carriedFrom": "2026-10-21"
         }
       ],
-      "registryProposal": "useEngineCapabilities.ts:68 leaves the installed-providers set empty when the local health check rejects (unknown read as absent). That is unknown-is-not-a-value, but the capability is an external executable, which the golden path routes to a different subject; the subject could name which subject owns 'installed-tool presence' so the next judge does not have to guess"
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/hooks/utility/data/useAutoUpdater.ts:207 the 6-hourly update poller is skipped only in DEV, not on a mobile build where the updater plugin is compiled out (src-tauri/Cargo.toml:268 ties it to the desktop feature), so the absent capability is called every 6h and filed as a failure via silentCatch at :123 - Sentry noise indistinguishable from a dead update endpoint",
+          "evaluatedAt": "2026-10-21T12:39:42.000Z",
+          "worker": "39030afc-d468-4b92-8e28-a27e7f78deab",
+          "reason": "replaced by 8ce121a3-f632-4b2c-9555-a701157bd425"
+        }
+      ]
     },
     "9b013060-5483-4162-9f8a-6b69109d623d/public-claim-provenance": {
       "context": "teams-kpis",

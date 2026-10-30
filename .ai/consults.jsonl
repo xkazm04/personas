@@ -2207,3 +2207,7 @@
 {"ts":"2026-10-30T21:01:55Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":["workspace-ancestry-isolation","sibling-floor-ownership"],"deviations":1}
 {"ts":"2026-10-30T21:01:55Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0}
 {"ts":"2026-10-30T21:01:55Z","bundle":"software-engineering","subjects":["agent-instruction-files"],"techniques":[],"deviations":0}
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set"],"deviations":1}
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set"],"deviations":1}
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["capability-presence-contract"],"deviations":1}
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set"],"deviations":1}
