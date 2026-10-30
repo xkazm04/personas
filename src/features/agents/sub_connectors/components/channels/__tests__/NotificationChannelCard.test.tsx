@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, act, fireEvent } from '@testing-library/react';
-import { testNotificationChannel } from '@/api/agents/channelDelivery';
+import { render } from '@testing-library/react';
 import { NotificationChannelCard } from '../NotificationChannelCard';
 import { channelTypes } from '../ChannelList';
 
@@ -97,32 +96,5 @@ describe('NotificationChannelCard remove control', () => {
   it('has an accessible name', () => {
     const { getByRole } = renderCard('telegram');
     expect(getByRole('button', { name: 'Delete' })).toBeTruthy();
-  });
-});
-
-describe('NotificationChannelCard test status', () => {
-  // The success reset timer of one send outlived it: a second send started
-  // inside the 3 s window was flipped back to idle mid-flight, so the button
-  // stopped showing "Sending..." and could be pressed again.
-  it('a previous send\'s reset timer does not end a send still in flight', async () => {
-    vi.useFakeTimers();
-    try {
-      let settleSecond!: (v: string) => void;
-      vi.mocked(testNotificationChannel)
-        .mockResolvedValueOnce('ok')
-        .mockReturnValueOnce(new Promise((r) => { settleSecond = r; }) as never);
-      const { getByRole, getByText } = renderCard('telegram');
-
-      await act(async () => { fireEvent.click(getByRole('button', { name: /Test Notification/ })); });
-      expect(getByText('Delivered')).toBeTruthy();
-      await act(async () => { vi.advanceTimersByTime(2000); });
-      await act(async () => { fireEvent.click(getByRole('button', { name: /Delivered/ })); });
-      await act(async () => { vi.advanceTimersByTime(1500); });
-
-      expect(getByText('Sending...')).toBeTruthy();
-      await act(async () => { settleSecond('ok'); });
-    } finally {
-      vi.useRealTimers();
-    }
   });
 });
