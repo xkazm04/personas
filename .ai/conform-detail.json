@@ -11098,10 +11098,21 @@
       "subject": "cost-metering",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:32:18.000Z",
-      "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
-      "techniques": [],
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T12:00:00.000Z",
+      "worker": "f914048b-6461-4385-b70e-c59fcfce86d8",
+      "techniques": [
+        {
+          "technique": "usage-ledgers",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/execution.rs:2418 cost_usd: Some(result.cost_usd) writes 0.0 for a run whose cost was never reported; failure is indistinguishable from free"
+        },
+        {
+          "technique": "budget-enforcement",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/run_budget.rs:188 record(run_id, cost_usd: f64) has no unknown-cost branch, so an unpriced spawn consumes no ceiling"
+        }
+      ],
       "superseded": [
         {
           "state": "deviation",
@@ -11109,6 +11120,13 @@
           "evaluatedAt": "2026-10-09T17:20:48.000Z",
           "worker": "e5f5e2b1-1518-44d4-b881-39195a416435",
           "reason": "replaced by d61cfc0d-c1fb-4ceb-b01d-0a7143b73719"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/types.rs:407 ExecutionResult.cost_usd (and ExecutionMetrics.cost_usd :526) is a non-optional f64 mid-pipeline, so a run killed before its result line persists as Some(0.0) (src-tauri/src/engine/execution.rs:2394) - unknown spelled as free, and the run-budget record API (src-tauri/core/src/run_budget.rs:188) likewise takes f64, so spawns of unknown cost can approach a ceiling but never cross it (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+          "evaluatedAt": "2026-10-14T09:32:18.000Z",
+          "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
+          "reason": "replaced by f914048b-6461-4385-b70e-c59fcfce86d8"
         }
       ]
     },
@@ -11154,10 +11172,21 @@
       "subject": "cost-metering",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:32:18.000Z",
-      "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
-      "techniques": [],
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T12:00:00.000Z",
+      "worker": "f914048b-6461-4385-b70e-c59fcfce86d8",
+      "techniques": [
+        {
+          "technique": "usage-ledgers",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/personaHealthSlice.ts:274 the returned window is discarded and the consumer re-derives its own"
+        },
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/personaHealthSlice.ts:436 rate computed over a different window (30 rolling days) than the level it is projected against (calendar month)"
+        }
+      ],
       "superseded": [
         {
           "state": "deviation",
@@ -11165,6 +11194,13 @@
           "evaluatedAt": "2026-10-09T17:20:48.000Z",
           "worker": "e5f5e2b1-1518-44d4-b881-39195a416435",
           "reason": "replaced by d61cfc0d-c1fb-4ceb-b01d-0a7143b73719"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/overview/personaHealthSlice.ts:273 keeps only MonthlySpendResult.items and discards its periodStartUtc, then :435 derives a burn rate over active days of a rolling 30-day chart and :440 projects exhaustion of the UTC-calendar-month ceiling with no reset - per-consumer period math whose projectedExhaustionDays drives a health charge (src/stores/slices/agents/healthCheckSlice.ts:111) (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+          "evaluatedAt": "2026-10-14T09:32:18.000Z",
+          "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
+          "reason": "replaced by f914048b-6461-4385-b70e-c59fcfce86d8"
         }
       ]
     },
@@ -11173,9 +11209,9 @@
       "subject": "cost-metering",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:32:18.000Z",
-      "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T12:00:00.000Z",
+      "worker": "f914048b-6461-4385-b70e-c59fcfce86d8",
       "techniques": [],
       "superseded": [
         {
@@ -11184,6 +11220,13 @@
           "evaluatedAt": "2026-10-09T17:20:48.000Z",
           "worker": "e5f5e2b1-1518-44d4-b881-39195a416435",
           "reason": "replaced by d61cfc0d-c1fb-4ceb-b01d-0a7143b73719"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:134 the context's only cost is a user-maintained flat monthly service list (no units, rates, ledger or metered call); its dispatches hand paid work to a Fleet session (src/features/teams/sub_factory/passport/actionConfirmCatalog.ts:94), whose context owns that spend (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+          "evaluatedAt": "2026-10-14T09:32:18.000Z",
+          "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
+          "reason": "replaced by f914048b-6461-4385-b70e-c59fcfce86d8"
         }
       ]
     },
@@ -16875,10 +16918,21 @@
       "subject": "cost-metering",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:32:18.000Z",
-      "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
-      "techniques": [],
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T12:00:00.000Z",
+      "worker": "f914048b-6461-4385-b70e-c59fcfce86d8",
+      "techniques": [
+        {
+          "technique": "usage-ledgers",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:225 a second period-boundary function beside the SQL predicate; result carries start (:39) but no end"
+        },
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:198 COALESCE(e.spend, 0.0) with no unpriced count, so an unpriced figure renders as $0, not a floor"
+        }
+      ],
       "superseded": [
         {
           "state": "deviation",
@@ -16886,6 +16940,13 @@
           "evaluatedAt": "2026-10-10T12:02:00.000Z",
           "worker": "b81eecf6-fe71-4ab0-8d82-4e8f96860ae2",
           "reason": "replaced by d61cfc0d-c1fb-4ceb-b01d-0a7143b73719"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:190 the periodStartUtc returned beside the totals is computed by a second boundary function (chrono, :219), not by the SQLite datetime('now','start of month') the rows were actually filtered with (src-tauri/db/src/repos/execution/executions.rs:2346), and no period end is returned; :27 spend is a bare f64 from SUM over a nullable cost_usd (src-tauri/db/src/migrations/schema.rs:123) COALESCEd to 0.0 (:192), so an unpriced month renders as $0 beside max_budget_usd with no unpriced count (re-checked 2026-10-14 against rev 15: anchors unchanged)",
+          "evaluatedAt": "2026-10-14T09:32:18.000Z",
+          "worker": "d61cfc0d-c1fb-4ceb-b01d-0a7143b73719",
+          "reason": "replaced by f914048b-6461-4385-b70e-c59fcfce86d8"
         }
       ]
     },
@@ -29133,17 +29194,26 @@
       "subject": "cost-metering",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:07:52.000Z",
-      "worker": "26a261d0-277d-43e2-8c68-5107a8d2f5f2",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T12:00:00.000Z",
+      "worker": "f914048b-6461-4385-b70e-c59fcfce86d8",
       "techniques": [
         {
           "technique": "spend-observability",
           "verdict": "not-applicable",
-          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 the only series logic is an ordinal period split, a metrics-rollups comparison concern, applied to whatever series a caller hands it"
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:30 the only series logic is an ordinal period split, a metrics-rollups comparison concern, applied to whatever series a caller hands it",
+          "carriedFrom": "2026-10-16"
         }
       ],
-      "registryProposal": "Technique-shaped resonance, not governance: the match rides on the token 'cost' in a chart-kit context; metrics-rollups (comparison honesty) is what governs periodComparison.ts."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/chartConstants.ts:49 a unit tag (cost -> usd) is the context's only money knowledge: a generic chart kit (tooltip, gradients, period merge) that prices, records, attributes and gates nothing; spend semantics live in its consumers, judged under overview-activity-metrics and overview-observability",
+          "evaluatedAt": "2026-10-16T18:07:52.000Z",
+          "worker": "26a261d0-277d-43e2-8c68-5107a8d2f5f2",
+          "reason": "replaced by f914048b-6461-4385-b70e-c59fcfce86d8"
+        }
+      ]
     },
     "2dcda6bf-9982-422b-b63f-1481c414cdab/cost-metering": {
       "context": "plugins-dev-tools-llm-overview",

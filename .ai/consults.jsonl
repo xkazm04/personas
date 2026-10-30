@@ -2164,3 +2164,8 @@
 {"ts":"2026-10-30T20:51:26.172Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["unreached-decisions-pin-nothing","negative-control-tests","isolation-lanes","assert-the-schedule-not-the-stopwatch"],"deviations":0}
 {"ts":"2026-10-30T20:51:26.172Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["configuration-axes-cross-the-ladder","unreached-decisions-pin-nothing","negative-control-tests","isolation-lanes","assert-the-schedule-not-the-stopwatch"],"deviations":0}
 {"ts":"2026-10-30T20:51:26.172Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["unreached-decisions-pin-nothing","isolation-lanes","assert-the-schedule-not-the-stopwatch","negative-control-tests"],"deviations":1}
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","spend-observability"],"deviations":1,"context":"commands-communication"}
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","budget-enforcement"],"deviations":1,"context":"core"}
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","spend-observability"],"deviations":1,"context":"stores-slices-overview"}
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":[],"deviations":0,"context":"passport-wall-model"}
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":[],"deviations":0,"context":"overview-usage-charts"}
