@@ -1,0 +1,7 @@
+{"schema": "conform-run/1", "worker": "74753747-d5cd-47ea-9127-99bb77a123a8", "subject": "multi-project",
+ "evaluatedAt": "2026-10-30T20:56:53Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "multi-project", "context": "19e4120b-6020-4103-8a3d-a9fd0e13640b", "reason": "weak context (governance: weak, empty paths sample, lexical-only match on 'project/projects'): a coverage question for the registry, not a pair to judge by default"}
+ ],
+ "consults": []}
