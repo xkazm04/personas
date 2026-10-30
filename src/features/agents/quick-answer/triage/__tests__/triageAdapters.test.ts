@@ -414,3 +414,24 @@ describe('reason prompts — who can record why', () => {
     expect(reasonPromptFor(item, 'reject')).toBeUndefined();
   });
 });
+
+describe('reviewToTriage — every severity a producer emits is ranked', () => {
+  // Producers write info|warning|error|critical (and `high`); the weight table
+  // used to know only critical/high/medium/low, so an `error` review fell to
+  // the neutral default and was dealt BELOW a routine `medium` one.
+  const weightOf = (severity: string) => reviewToTriage(review({ severity }), copy).weight;
+  const toneOf = (severity: string) => reviewToTriage(review({ severity }), copy).tags[0].tone;
+
+  it('ranks an error with critical, a warning with medium and info with low', () => {
+    expect(weightOf('error')).toBe(weightOf('critical'));
+    expect(toneOf('error')).toBe('danger');
+    expect(weightOf('warning')).toBe(weightOf('medium'));
+    expect(toneOf('warning')).toBe('warning');
+    expect(weightOf('info')).toBe(weightOf('low'));
+  });
+
+  it('never deals an error-severity review behind a medium one', () => {
+    expect(weightOf('error')).toBeGreaterThan(weightOf('medium'));
+    expect(weightOf('info')).toBeLessThan(weightOf('medium'));
+  });
+});

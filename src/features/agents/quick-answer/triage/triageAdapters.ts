@@ -349,19 +349,34 @@ function fill(template: string, values: Record<string, string | number>): string
 /* Weight — the one cross-domain scale                                        */
 /* -------------------------------------------------------------------------- */
 
-/** Severity → urgency. The only axis that outranks a blocked build. */
+/**
+ * Severity → urgency. The only axis that outranks a blocked build.
+ *
+ * Keyed by every token a producer actually writes, not just the four this deck
+ * started with: the producer prompt asks for `info|warning|error|critical` and a
+ * second writer emits `high`/`medium`/`low` (see `READABLE_SEVERITY` in
+ * `fleet/monitor/monitorModel`). `error` rides with `critical`, `warning` with
+ * `medium`, `info` with `low` — unlisted, an `error` review fell to the neutral
+ * default and was dealt behind a routine `medium` one.
+ */
 const SEVERITY_WEIGHT: Record<string, number> = {
   critical: 120,
+  error: 120,
   high: 95,
   medium: 60,
+  warning: 60,
   low: 35,
+  info: 35,
 };
 
 const SEVERITY_TONE: Record<string, TriageTone> = {
   critical: 'danger',
+  error: 'danger',
   high: 'danger',
   medium: 'warning',
+  warning: 'warning',
   low: 'neutral',
+  info: 'neutral',
 };
 
 /**
