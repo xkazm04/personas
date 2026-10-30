@@ -86,6 +86,7 @@ export function NotificationChannelCard({
         <button
           type="button"
           onClick={onRemove}
+          aria-label={t.common.delete}
           className="p-1 text-foreground hover:text-red-400 transition-colors"
         >
           <X className="w-3.5 h-3.5" />

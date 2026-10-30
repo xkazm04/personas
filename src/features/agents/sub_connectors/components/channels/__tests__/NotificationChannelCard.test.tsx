@@ -90,3 +90,11 @@ describe('NotificationChannelCard field labels', () => {
     expect(getByLabelText('Channel (optional)')).toBeTruthy();
   });
 });
+
+describe('NotificationChannelCard remove control', () => {
+  // An icon-only X with no accessible name: a screen reader announced "button".
+  it('has an accessible name', () => {
+    const { getByRole } = renderCard('telegram');
+    expect(getByRole('button', { name: 'Delete' })).toBeTruthy();
+  });
+});
