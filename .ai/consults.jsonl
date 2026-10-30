@@ -2177,3 +2177,6 @@
 {"ts":"2026-10-30T20:52:47Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":[],"deviations":0}
 {"ts":"2026-10-30T20:52:47Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":[],"deviations":0}
 {"ts":"2026-10-30T20:53:09Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["batching-and-n-plus-one"],"deviations":1}
+{"ts":"2026-10-30T20:55:25Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["unpriced-span-accounting"],"deviations":1}
+{"ts":"2026-10-30T20:55:25Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["derived-trace-rollup","single-shape-rule"],"deviations":1}
+{"ts":"2026-10-30T20:55:25Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["unpriced-span-accounting"],"deviations":1}

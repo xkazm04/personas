@@ -3516,10 +3516,10 @@
           "changedAt": "2026-09-18",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:115 skips null origCost into totalCostOriginal and BulkRunCohort (src/features/agents/sub_executions/libs/useBulkRerun.ts:61) carries no unmeasured-run count, so src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:90 prints a lower bound as the cohort total - re-verified 2026-10-16, files unchanged",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:441741a78f8712b4",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:116 skips null origCost into totalCostOriginal and BulkRunCohort (src/features/agents/sub_executions/libs/useBulkRerun.ts:61) carries no unmeasured-run count, so src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:90 prints a lower bound as the cohort total - re-judged against rev 8",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:3db1001b079944c5",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -12802,10 +12802,10 @@
           "changedAt": "2026-09-18",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:250 builds the waterfall via buildSpanTree (src/features/agents/sub_executions/libs/traceHelpers.ts:105), which drops parent-cycle spans and overwrites duplicate ids at :110, while src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:185 counts unifiedTrace.spans.length - the Spans tile and the rows beneath it range over different sets - re-verified 2026-10-16",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:441741a78f8712b4",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:187 counts unifiedTrace.spans.length while the waterfall comes from buildSpanTree (src/features/agents/sub_executions/detail/inspector/useTraceData.ts:255), which drops parent-cycle spans and overwrites duplicate span ids at src/features/agents/sub_executions/libs/traceHelpers.ts:110 - the Spans tile and the rows under it range over different collections (rev 8 pin-the-collection rule)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:3db1001b079944c5",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -16001,10 +16001,10 @@
           "changedAt": "2026-09-18",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/hooks/execution/useReasoningTrace.ts:100 coerces the optional ResultEvent.duration_ms (src/lib/types/terminalEvents.ts:56) to 0, and src/hooks/execution/useExecutionSummary.ts:82 hands it to src/features/agents/sub_executions/detail/views/ExecutionSummaryCard.tsx:124, whose != null guard cannot see the coercion, so an unmeasured run reads as 0 ms - re-verified 2026-10-16",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:441741a78f8712b4",
-          "evaluatedRevision": 7,
+          "evidence": "src/hooks/execution/useReasoningTrace.ts:100 coerces the optional ResultEvent.duration_ms (src/lib/types/terminalEvents.ts:56) to 0, which src/hooks/execution/useExecutionSummary.ts:82 passes to src/features/agents/sub_executions/detail/views/ExecutionSummaryCard.tsx:122, whose != null guard cannot see it, so an unmeasured run reads as 0 ms - re-judged against rev 8",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:3db1001b079944c5",
+          "evaluatedRevision": 8,
           "source": "retained",
           "revisionsBehind": 0
         }
