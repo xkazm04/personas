@@ -187,6 +187,18 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
   // re-running the same executions) would land in the new cohort's state.
   const latestWins = useRef(createLatestWins()).current;
 
+  /**
+   * A batch may keep working only while it is the latest one AND not
+   * cancelled. Checking `cancelledRef` alone was not enough: the next
+   * `start()` clears it, and the cancelled batch's workers then resumed
+   * draining their own queue under a stale token - dispatching, and billing,
+   * runs whose results `updateItem` silently discards.
+   */
+  const isLive = useCallback(
+    (token: number) => !cancelledRef.current && latestWins.isCurrent(token),
+    [latestWins],
+  );
+
   const updateItem = useCallback((token: number, originalId: string, patch: Partial<BulkRunItem>) => {
     if (!latestWins.isCurrent(token)) return; // a newer batch has since started
     setItems((prev) => {
@@ -232,7 +244,7 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
   );
 
   const runOne = useCallback(async (row: ExecutionListItem, personaId: string, token: number) => {
-    if (cancelledRef.current) return;
+    if (!isLive(token)) return;
     updateItem(token, row.id, { status: 'running' });
     try {
       let inputData: string | undefined;
@@ -242,6 +254,10 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
       } catch (err) {
         logger.warn('Failed to hydrate input_data; rerunning with empty input', { id: row.id, err });
       }
+      // The hydrate is an await: a cancel, or a newer cohort, can land during it.
+      // Dispatching after either bills a run nobody will see (updateItem drops a
+      // stale token's writes), so this is the last point to stop.
+      if (!isLive(token)) return;
       const idempotencyKey = `bulk-rerun-${row.id}-${Date.now()}`;
       const dispatched: PersonaExecution = await executePersona(
         personaId,
@@ -276,7 +292,7 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
       logger.warn('Bulk-rerun item failed', { id: row.id, error: msg });
       updateItem(token, row.id, { status: 'failed', error: msg });
     }
-  }, [updateItem, waitForLanding]);
+  }, [updateItem, waitForLanding, isLive]);
 
   const start = useCallback(async (rows: ExecutionListItem[], personaId: string) => {
     if (rows.length === 0) return;
@@ -307,7 +323,7 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
     for (let i = 0; i < Math.min(MAX_CONCURRENT, queue.length); i += 1) {
       workers.push((async function worker() {
         while (queue.length > 0) {
-          if (cancelledRef.current) return;
+          if (!isLive(token)) return;
           const next = queue.shift();
           if (!next) return;
           await runOne(next, personaId, token);
@@ -318,7 +334,7 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
     // A newer batch may have started while this one's workers were still
     // draining — don't stomp its 'running' phase back to 'completed'.
     if (latestWins.isCurrent(token)) setPhase('completed');
-  }, [runOne, latestWins]);
+  }, [runOne, latestWins, isLive]);
 
   const cancel = useCallback(() => {
     cancelledRef.current = true;

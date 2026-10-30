@@ -103,8 +103,11 @@ describe('useBulkRerun — stale-batch guard', () => {
     const batch2 = deferred<PersonaExecution>();
     // Batch 1 has a single row that re-uses id "shared-id" (same original id
     // batch 2 will also rerun) — the exact collision the bug corrupts.
-    executePersonaMock.mockReturnValueOnce(batch1.promise);
-    executePersonaMock.mockReturnValueOnce(batch2.promise);
+    // Routed by persona, not by call order: since batch 2 supersedes batch 1
+    // before batch 1's input hydrate settles, batch 1 now stops at its
+    // pre-dispatch check and never calls executePersona at all.
+    executePersonaMock.mockImplementation((personaId: string) =>
+      personaId === 'persona-1' ? batch1.promise : batch2.promise);
 
     let startPromise1!: Promise<void>;
     act(() => {
