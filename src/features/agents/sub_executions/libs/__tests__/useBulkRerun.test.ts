@@ -219,6 +219,7 @@ describe('useBulkRerun — reports what the re-runs actually cost', () => {
     expect(result.current.cohort.successCount).toBe(0);
     expect(result.current.cohort.finished).toBe(0);
     expect(result.current.cohort.totalCostNew).toBe(0);
-    expect(result.current.cohort.meanCostDelta).toBe(0);
+    // Nothing landed, so nothing was compared: no delta, never a measured 0.
+    expect(result.current.cohort.meanCostDelta).toBeNull();
   });
 });

@@ -66,8 +66,13 @@ export interface BulkRunCohort {
   failedCount: number;
   regressionCount: number;
   recoveredCount: number;
-  meanCostDelta: number;
-  meanDurationDeltaMs: number;
+  /**
+   * Mean over the landed runs that carry BOTH figures; `null` when none does.
+   * Never 0 for "nothing to compare": the row cells already refuse a delta
+   * without both costs, and a 0 here rendered as "$0.0000 - no change".
+   */
+  meanCostDelta: number | null;
+  meanDurationDeltaMs: number | null;
   totalCostOriginal: number;
   totalCostNew: number;
 }
@@ -89,8 +94,8 @@ function emptyCohort(): BulkRunCohort {
     failedCount: 0,
     regressionCount: 0,
     recoveredCount: 0,
-    meanCostDelta: 0,
-    meanDurationDeltaMs: 0,
+    meanCostDelta: null,
+    meanDurationDeltaMs: null,
     totalCostOriginal: 0,
     totalCostNew: 0,
   };
@@ -144,8 +149,8 @@ function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
     failedCount,
     regressionCount,
     recoveredCount,
-    meanCostDelta: costDeltaN > 0 ? costDeltaSum / costDeltaN : 0,
-    meanDurationDeltaMs: durDeltaN > 0 ? durDeltaSum / durDeltaN : 0,
+    meanCostDelta: costDeltaN > 0 ? costDeltaSum / costDeltaN : null,
+    meanDurationDeltaMs: durDeltaN > 0 ? durDeltaSum / durDeltaN : null,
     totalCostOriginal,
     totalCostNew,
   };

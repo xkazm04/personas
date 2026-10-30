@@ -93,4 +93,16 @@ describe('useBulkRerun dispatch discipline', () => {
     expect(result.current.items[0]!.newExecutionId).toBeNull();
     expect(result.current.items[0]!.error).toBeTruthy();
   });
+
+  it('reports no mean cost delta when no landed run carries both costs', async () => {
+    getExecutionMock.mockImplementation(async (id: string) =>
+      id.startsWith('new-exec') ? exec(id, 'completed', null) : exec(id, 'failed', 1));
+    executePersonaMock.mockResolvedValue(exec('new-exec-1', 'queued', 0));
+
+    const { result } = renderHook(() => useBulkRerun({ pollIntervalMs: 0, pollTimeoutMs: 1_000 }));
+    await act(async () => { await result.current.start([row('orig-1', null)], 'p1'); });
+
+    expect(result.current.items[0]!.status).toBe('success');
+    expect(result.current.cohort.meanCostDelta).toBeNull();
+  });
 });

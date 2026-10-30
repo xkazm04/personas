@@ -12,8 +12,11 @@ interface BulkRerunReportProps {
   onCompareItem: (originalId: string, newExecutionId: string) => void;
 }
 
-function deltaTone(delta: number, lowerIsBetter = true): string {
-  if (Math.abs(delta) < 1e-6) return 'text-foreground';
+/** An absence, not a measurement. */
+const EM_DASH = '—';
+
+function deltaTone(delta: number | null, lowerIsBetter = true): string {
+  if (delta === null || Math.abs(delta) < 1e-6) return 'text-foreground';
   const good = lowerIsBetter ? delta < 0 : delta > 0;
   return good ? 'text-emerald-400' : 'text-amber-400';
 }
@@ -27,6 +30,8 @@ export function BulkRerunReport({ cohort, items, onClose, onCompareItem }: BulkR
     : Math.round((cohort.successCount / cohort.total) * 100);
   const costDeltaTone = deltaTone(cohort.meanCostDelta, true);
   const durDeltaTone = deltaTone(cohort.meanDurationDeltaMs, true);
+  const meanCost = cohort.meanCostDelta;
+  const meanDur = cohort.meanDurationDeltaMs;
 
   const regressions = items.filter(
     (it) =>
@@ -79,10 +84,10 @@ export function BulkRerunReport({ cohort, items, onClose, onCompareItem }: BulkR
         />
         <SummaryCard
           label={e.bulk_rerun_mean_cost_delta}
-          value={fmtCost(Math.abs(cohort.meanCostDelta))}
-          sub={cohort.meanCostDelta < 0 ? e.bulk_rerun_cheaper : cohort.meanCostDelta > 0 ? e.bulk_rerun_pricier : e.bulk_rerun_no_change}
+          value={meanCost === null ? EM_DASH : fmtCost(Math.abs(meanCost))}
+          sub={meanCost === null ? EM_DASH : meanCost < 0 ? e.bulk_rerun_cheaper : meanCost > 0 ? e.bulk_rerun_pricier : e.bulk_rerun_no_change}
           tone={costDeltaTone}
-          icon={cohort.meanCostDelta < 0 ? <TrendingDown className="w-3 h-3" /> : cohort.meanCostDelta > 0 ? <TrendingUp className="w-3 h-3" /> : null}
+          icon={meanCost !== null && meanCost < 0 ? <TrendingDown className="w-3 h-3" /> : meanCost !== null && meanCost > 0 ? <TrendingUp className="w-3 h-3" /> : null}
         />
       </div>
 
@@ -91,7 +96,7 @@ export function BulkRerunReport({ cohort, items, onClose, onCompareItem }: BulkR
         <KvCell label={e.bulk_rerun_total_cost_new} value={fmtCost(cohort.totalCostNew)} />
         <KvCell
           label={e.bulk_rerun_mean_duration_delta}
-          value={formatDuration(Math.abs(cohort.meanDurationDeltaMs))}
+          value={meanDur === null ? EM_DASH : formatDuration(Math.abs(meanDur))}
           tone={durDeltaTone}
         />
         <KvCell
