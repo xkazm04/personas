@@ -2172,3 +2172,7 @@
 {"ts":"2026-10-30T20:51:25Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["comparison-modes","resolution-precondition","eval-economics"],"deviations":1}
 {"ts":"2026-10-30T20:51:25Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["resolution-precondition","metric-role-contract","outcome-conditioned-cost"],"deviations":1}
 {"ts":"2026-10-30T20:51:25Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["judge-stability","assertion-vs-judgment","eval-economics","reliability-aggregation"],"deviations":1}
+{"ts":"2026-10-30T20:52:47Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["session-registry","parallel-dispatch","durable-fleet-state"],"deviations":1}
+{"ts":"2026-10-30T20:52:47Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["absent-status-passthrough","session-registry","lifecycle-signals"],"deviations":2}
+{"ts":"2026-10-30T20:52:47Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":[],"deviations":0}
+{"ts":"2026-10-30T20:52:47Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":[],"deviations":0}

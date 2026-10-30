@@ -39664,6 +39664,80 @@
           "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
         }
       ]
+    },
+    "f71df7d8-fb1c-4151-bba3-00fe164a537b/fleet-orchestration": {
+      "context": "teams-collaboration-repo",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:52:47.000Z",
+      "worker": "26754f84-7f13-4e59-a249-28bddd1921e1",
+      "techniques": [
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/orchestration/team_assignments.rs:464 transition door checks vocabulary membership (CHECK) but not legal edges; illegal transitions from terminal states are accepted"
+        },
+        {
+          "technique": "parallel-dispatch",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/orchestration/team_assignments.rs:550 claim_step is a WHERE status='pending' CAS, tested to admit exactly one of two concurrent launchers (:942)"
+        },
+        {
+          "technique": "durable-fleet-state",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/orchestration/team_assignments.rs:470 every status change writes an audit event in the same transaction; src-tauri/src/engine/team_assignment_orchestrator.rs:477 reconciles running/queued assignments at startup"
+        }
+      ],
+      "registryProposal": "Most of this consolidated context (credentials, audit logs, OCR, obsidian) is not fleet state; only orchestration/team_assignments.rs and deliberation.rs carry the subject. The context mixes 30+ unrelated repos, so pairing it to the whole context is overbroad."
+    },
+    "fd961ee9-bf7c-4ec7-90c3-a728045d3d44/fleet-orchestration": {
+      "context": "teams-goals",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:52:47.000Z",
+      "worker": "26754f84-7f13-4e59-a249-28bddd1921e1",
+      "techniques": [
+        {
+          "technique": "absent-status-passthrough",
+          "verdict": "deviation",
+          "evidence": "src/features/projects/development/goals/goalStatus.ts:55 default branch substitutes 'open' for an absent or unknown status instead of passing absence through"
+        },
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_deliberations/useTeamDeliberations.ts:29 consumer re-declares ACTIVE_STATUSES by hand because src/lib/bindings/TeamDeliberation.ts:24 types status as a free string whose doc list already omits action_running"
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/deliberation.rs:994 the server tick reaps action_running deliberations, so the UI's mount-gated poll at src/features/teams/sub_deliberations/useTeamDeliberations.ts:221 is not the only harvester"
+        }
+      ]
+    },
+    "c413de7d-1182-4abc-8a08-9c8832254c62/fleet-orchestration": {
+      "context": "overview-director",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:52:47.000Z",
+      "worker": "26754f84-7f13-4e59-a249-28bddd1921e1",
+      "techniques": [],
+      "registryProposal": "Lexical false positive: 'fleet', 'sweep' and 'triage' match an observability dashboard over a persona roster. Route by the precondition (concurrent agent sessions with a lifecycle), not the word 'fleet'."
+    },
+    "2418ddaf-0e6e-446f-968f-28a4bf6e7120/fleet-orchestration": {
+      "context": "n8n-wizard-orchestration",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:52:47.000Z",
+      "worker": "26754f84-7f13-4e59-a249-28bddd1921e1",
+      "techniques": []
     }
   }
 }

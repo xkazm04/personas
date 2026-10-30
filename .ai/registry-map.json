@@ -20113,7 +20113,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizard.ts:34 the wizard drives one n8n import session through a local reducer; there are no concurrent agent sessions to register, dispatch or harvest",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "mcp-tools",
@@ -22392,7 +22396,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_missionControl/cards/FleetOptimizationCard.tsx:31 'fleet' here is the persona roster's cost/model advice and src/features/overview/sub_missionControl/sections/MissionStatusMonitor.tsx:48 reads per-persona health grades; no session registry, dispatch, liveness or harvest lives in this context",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "agent-instruction-files",
@@ -35451,7 +35459,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/orchestration/team_assignments.rs:464 update_assignment_status writes any status by id alone (WHERE id = ?3, no from-state guard), so done/failed/aborted can be overwritten back to running; the guarded CAS shape exists only for claim_step (:561)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         }
       ],
       "governance": "governed"
@@ -35998,7 +36010,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/projects/development/goals/goalStatus.ts:55 unknown/null/unrecognised (incl. failed) team statuses fall through to 'open', laundering an unobserved or failed state into a definite actionable one",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "hitl-approval",
