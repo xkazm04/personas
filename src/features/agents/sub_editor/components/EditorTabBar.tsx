@@ -98,7 +98,7 @@ function HealthBadge() {
 }
 
 export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: EditorTabBarProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const editorTab = useSystemStore((s) => s.editorTab);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   const tier = useTier();
@@ -136,7 +136,13 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
                 {failedTabs.includes(tab.id)
                   ? <TabBadge variant="error" srLabel={editorLabels.tab_save_failed_indicator} />
                   : tab.id === 'design' && connectorsMissing > 0
-                    ? <TabBadge variant="error" count={connectorsMissing} />
+                    ? (
+                      <TabBadge
+                        variant="error"
+                        count={connectorsMissing}
+                        srLabel={tx(editorLabels.missing_credentials, { credentials: String(connectorsMissing) })}
+                      />
+                    )
                     : tabDirty
                       ? <TabBadge variant="dirty" srLabel={editorLabels.unsaved_changes} />
                       : null}
