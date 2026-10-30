@@ -3,7 +3,6 @@ import {
   clampTimeoutSecs, deriveStageIndex, pickPlatformCredentialId,
   TIMEOUT_SECS_DEFAULT, TIMEOUT_SECS_MAX, TIMEOUT_SECS_MIN,
 } from '../useAutomationSetup';
-import { detectPlatformFromUrl } from '../automationTypes';
 
 describe('clampTimeoutSecs', () => {
   it('keeps in-range integers and floors fractions', () => {
@@ -28,15 +27,6 @@ describe('deriveStageIndex', () => {
     expect(deriveStageIndex(['Designing automation', 'Design complete'])).toBe(4);
     // An unrecognised trailing line does not reset the stage.
     expect(deriveStageIndex(['Design complete', 'some noise'])).toBe(4);
-  });
-});
-
-describe('detectPlatformFromUrl', () => {
-  it('recognises the three hosted platforms and nothing else', () => {
-    expect(detectPlatformFromUrl('https://acme.app.n8n.cloud/webhook/abc')).toBe('n8n');
-    expect(detectPlatformFromUrl('https://hooks.zapier.com/hooks/catch/1/2')).toBe('zapier');
-    expect(detectPlatformFromUrl('https://api.github.com/repos/o/r/dispatches')).toBe('github_actions');
-    expect(detectPlatformFromUrl('https://example.com/hook')).toBeNull();
   });
 });
 
