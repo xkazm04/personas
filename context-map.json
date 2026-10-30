@@ -23,7 +23,11 @@
         "src/features/agents/sub_health/types.ts",
         "src/features/agents/sub_health/useHealthCheck.ts",
         "src/features/agents/sub_health/useHealthDigestScheduler.ts",
-        "src/features/agents/sub_health/index.ts"
+        "src/features/agents/sub_health/index.ts",
+        "src/features/agents/sub_health/HealthDigestPanel.test.tsx",
+        "src/features/agents/sub_health/HealthDigestPanel.tsx",
+        "src/features/agents/sub_health/agentHealth.ts",
+        "src/features/agents/sub_health/healthDefinition.test.ts"
       ],
       "group": "Overview Observability",
       "group_id": "a62af61f-45e6-4096-855f-c90f0248c4c0",
@@ -90,7 +94,21 @@
         "src/features/agents/components/allPersonas/__tests__/PersonaGroupDropRail.test.tsx",
         "src/features/agents/components/allPersonas/__tests__/StatusBadge.test.tsx",
         "src/features/agents/components/allPersonas/__tests__/usePersonaActions.batchDelete.test.tsx",
-        "src/features/agents/components/create/__tests__/useTemplateIntentMatch.test.ts"
+        "src/features/agents/components/create/__tests__/useTemplateIntentMatch.test.ts",
+        "src/features/agents/components/allPersonas/PersonaBatchTeamMenu.tsx",
+        "src/features/agents/components/allPersonas/PersonaOverviewCompactControls.tsx",
+        "src/features/agents/components/allPersonas/PersonaSelectionScopeBanner.tsx",
+        "src/features/agents/components/allPersonas/__tests__/PersonaOverviewColumns.filters.test.tsx",
+        "src/features/agents/components/allPersonas/__tests__/PersonaOverviewColumns.renders.test.tsx",
+        "src/features/agents/components/allPersonas/__tests__/PersonaOverviewCompactControls.test.tsx",
+        "src/features/agents/components/allPersonas/__tests__/rosterCount.test.ts",
+        "src/features/agents/components/allPersonas/__tests__/rosterViewStore.test.ts",
+        "src/features/agents/components/allPersonas/__tests__/usePersonaShareActions.test.tsx",
+        "src/features/agents/components/allPersonas/__tests__/useRosterSelection.test.ts",
+        "src/features/agents/components/allPersonas/rosterCount.ts",
+        "src/features/agents/components/allPersonas/rosterViewStore.ts",
+        "src/features/agents/components/allPersonas/usePersonaFilterOptions.ts",
+        "src/features/agents/components/allPersonas/useRosterSelection.ts"
       ],
       "group": "Agent Platform",
       "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
@@ -168,7 +186,11 @@
         "src/features/agents/sub_connectors/components/connectors/__tests__/StatusResult.test.tsx",
         "src/features/agents/sub_connectors/libs/__tests__/swapControlLabel.test.ts",
         "src/features/agents/sub_connectors/libs/__tests__/useConnectorStatuses.hook.test.ts",
-        "src/features/agents/sub_connectors/libs/findEditAutomation.test.ts"
+        "src/features/agents/sub_connectors/libs/findEditAutomation.test.ts",
+        "src/features/agents/sub_connectors/components/automation/AutomationPlatformListings.tsx",
+        "src/features/agents/sub_connectors/components/automation/__tests__/AutomationSetupModal.test.tsx",
+        "src/features/agents/sub_connectors/components/connectors/__tests__/ConnectorStatusCard.test.tsx",
+        "src/features/agents/sub_connectors/libs/__tests__/useAutomationSetup.hook.test.ts"
       ],
       "group": "Automation & Pipelines",
       "group_id": "51f08310-27f9-4df5-831f-a7fd2034ae2d",
@@ -229,7 +251,6 @@
         "src/features/agents/sub_deployment/components/cloud/TriggerListItem.tsx",
         "src/features/agents/sub_deployment/components/cloud/cloudSchedulesHelpers.tsx",
         "src/features/agents/sub_deployment/components/cloud/CloudStatusPanel.tsx",
-        "src/features/agents/sub_deployment/components/ExecutionProgressBar.tsx",
         "src/features/agents/sub_deployment/components/UnifiedDeploymentDashboard.tsx",
         "src/features/agents/sub_deployment/components/DeploymentFilters.tsx",
         "src/features/agents/sub_deployment/components/DeploymentSubComponents.tsx",
@@ -256,7 +277,15 @@
         "src/features/agents/sub_deployment/components/cloud/DeploymentCard.test.tsx",
         "src/features/agents/sub_deployment/components/cloud/__tests__/CloudSchedulesPanel.partialFailure.test.tsx",
         "src/features/agents/sub_deployment/hooks/__tests__/awaitExecutionResult.test.ts",
-        "src/features/agents/sub_deployment/hooks/awaitExecutionResult.ts"
+        "src/features/agents/sub_deployment/hooks/awaitExecutionResult.ts",
+        "src/features/agents/executionPlayer/miniPlayerViewport.ts",
+        "src/features/agents/sub_deployment/components/DeploymentFilters.test.tsx",
+        "src/features/agents/sub_deployment/components/cloud/CloudTokenIndicator.tsx",
+        "src/features/agents/sub_deployment/components/cloud/__tests__/CloudConnectionForm.test.tsx",
+        "src/features/agents/sub_deployment/components/cloud/__tests__/CloudDeploymentsPanel.test.tsx",
+        "src/features/agents/sub_deployment/components/cloud/__tests__/CloudOAuthPanel.test.tsx",
+        "src/features/agents/sub_deployment/components/cloud/__tests__/CloudReconcileBanner.test.tsx",
+        "src/features/agents/sub_deployment/hooks/__tests__/useDeploymentTest.identity.test.ts"
       ],
       "group": "Agent Platform",
       "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
@@ -3436,7 +3465,8 @@
         "src/features/shared/components/display/emptyArt/motifs.ts",
         "src/features/shared/components/display/emptyArt/motifsData.tsx",
         "src/features/shared/components/display/emptyArt/motifsWork.tsx",
-        "src/features/shared/components/display/tableTokens.ts"
+        "src/features/shared/components/display/tableTokens.ts",
+        "src/features/shared/components/display/__tests__/DataGridPageRows.test.tsx"
       ],
       "group": "Shared UI Components",
       "group_id": "91345f65-76ad-43da-abe4-a90174415f33",
@@ -5080,7 +5110,8 @@
         "src/hooks/utility/interaction/useScrollShadow.ts",
         "src/hooks/utility/interaction/useScrollRestoration.ts",
         "src/hooks/utility/interaction/__tests__/useScrollRestoration.test.ts",
-        "src/hooks/utility/interaction/__tests__/useMobilePreview.test.ts"
+        "src/hooks/utility/interaction/__tests__/useMobilePreview.test.ts",
+        "src/hooks/utility/interaction/useMenuKeyboard.ts"
       ],
       "group": "Platform Infrastructure",
       "group_id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
@@ -14388,14 +14419,14 @@
     "root": "C:\\Users\\kazda\\kiro\\personas"
   },
   "provenance": {
-    "git_commit": "8c21e2e4c9df4a3c307b35edebd744911378a6b8",
+    "git_commit": "a7fd34fdb206c615f8483451c4edc5f6cc5e3729",
     "git_commit_count": 10635,
-    "refreshed_at": "2026-10-30T17:02:56.296Z",
+    "refreshed_at": "2026-10-30T23:30:19.201Z",
     "refresh_mode": "deterministic"
   },
   "stats": {
     "contexts": 219,
-    "files": 4823,
+    "files": 4854,
     "groups": 16,
     "use_cases": 12
   },

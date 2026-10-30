@@ -2,6 +2,11 @@
 
 ## Active
 
+### scan-sweep-c2-w1 — scan-sweep 4.10.0 cycle 2 wave 1: agents-design, agents-editor, agents-executions-components, agents-quick-answer (branch scan/c2)
+- **[2026-10-31 00:30]**
+- **Paths:** `src/features/agents/sub_design/**` · `src/features/agents/sub_tool_runner/**` · `src/features/agents/sub_editor/**` · `src/features/agents/sub_activity/**` · `src/features/agents/sub_executions/**` · `src/features/agents/quick-answer/**` · `src/features/agents/shared/quickConfig/**`
+- **Status:** started
+
 - **[2026-10-30 18:04]**
 - **Paths:** `src/features/agents/sub_health/**` · `src/features/agents/components/**` · `src/features/agents/sub_connectors/**` · `src/features/agents/sub_deployment/**` · `src/features/agents/executionPlayer/**`
 - **Status:** started
