@@ -3896,8 +3896,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:590 the deck still classifies a review with a missing severity as medium and an unrecognised token falls to weight 50 at :667, with no marker, while the manual-review list resolves the same row to Unclassified with defaulted=true (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:37); the deciding surface spells an unreadable payload as a readable medium",
-          "evaluatedAt": "2026-10-14",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:590 a review with no severity still classifies as medium and an unrecognised token falls to weight 50 at :667 with no marker, while the manual-review list resolves the same row to Unclassified with defaulted=true (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:32); the deciding deck spells an unreadable payload as a readable medium",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
           "evaluatedRevision": 22,
           "revisionsBehind": 0
@@ -23196,8 +23196,8 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114 getSevCfg still falls an unrecognized severity through to the Info config with no marker, and it drives the focus view where reviews are decided (src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx:360); the loud resolveReviewSeverity default (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:37) reached the list and detail but not the deciding surface, so one vocabulary has two disagreeing classifiers",
-          "evaluatedAt": "2026-10-14",
+          "evidence": "src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114 getSevCfg still falls an unrecognized severity through to the Info config with no marker and drives the focus view where reviews are decided (src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx:360); the loud resolveReviewSeverity default (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:32) reached the list and detail but not the deciding surface",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
           "evaluatedRevision": 22,
           "revisionsBehind": 0
@@ -26513,8 +26513,8 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:140 the message dismiss option swallows a failed companionDismissProactive with silentCatch and does not rethrow (same at :213 for the credential later option), so runDecisionOption (src/features/companions/athena/decision/resolveDecision.ts:46 keeps a decision pending only on a throw) clears the bubble as resolved while the row stays pending and resurfaces on the next pump with no error shown; a failed decision write is spelled as a decision",
-          "evaluatedAt": "2026-10-14",
+          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:130 the earlier dismiss/later swallow is fixed (both now rethrow, :146 and :220), but the mark_read option still swallows a failed markReportRead and then runs engage, so the orb consumes the nudge and runDecisionOption clears the decision as resolved while the message stays unread with no error shown; and a failed proactive list (:285) collapses to an empty source, so a pending credential re-auth decision silently drops out of the queue",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
           "evaluatedRevision": 22,
           "revisionsBehind": 0

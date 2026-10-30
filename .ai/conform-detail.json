@@ -428,14 +428,19 @@
       "subject": "hitl-approval",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:34:20.324Z",
-      "worker": "740edace-0bbb-4641-9802-4cd3c3f670f1",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:56:00.000Z",
+      "worker": "597ef65a-899e-4f3f-a35e-4194f05c0a4d",
       "techniques": [
         {
           "technique": "fail-loud-classification-default",
-          "verdict": "not realized on deciding surface",
-          "evidence": "src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114"
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114 unknown severity -> Info, quiet, on the deciding surface"
+        },
+        {
+          "technique": "cosmetic-vs-enforced-threshold-invariant",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/libs/reviewHelpers.ts:32 and src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114 are two classifiers of one severity vocabulary that disagree on an unknown token"
         }
       ],
       "superseded": [
@@ -452,6 +457,13 @@
           "evaluatedAt": "2026-10-09T17:52:30.000Z",
           "worker": "b370e53d-1508-460f-9849-d5e08b6a8f99",
           "reason": "replaced by 740edace-0bbb-4641-9802-4cd3c3f670f1"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114 getSevCfg still falls an unrecognized severity through to the Info config with no marker, and it drives the focus view where reviews are decided (src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx:360); the loud resolveReviewSeverity default (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:37) reached the list and detail but not the deciding surface, so one vocabulary has two disagreeing classifiers",
+          "evaluatedAt": "2026-10-14T09:34:20.324Z",
+          "worker": "740edace-0bbb-4641-9802-4cd3c3f670f1",
+          "reason": "replaced by 597ef65a-899e-4f3f-a35e-4194f05c0a4d"
         }
       ]
     },
@@ -6145,16 +6157,32 @@
       "subject": "hitl-approval",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:34:20.324Z",
-      "worker": "740edace-0bbb-4641-9802-4cd3c3f670f1",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:56:00.000Z",
+      "worker": "597ef65a-899e-4f3f-a35e-4194f05c0a4d",
       "techniques": [
         {
+          "technique": "review-queues",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:130 a failed mark-read write is swallowed and the decision still settles as resolved; :285 a failed source reads as empty"
+        },
+        {
+          "technique": "decision-records",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:130 the recorded outcome (nudge engaged, decision_resolved signal at src/features/companions/athena/decision/resolveDecision.ts:68) does not match the verdict that landed (message still unread)"
+        },
+        {
           "technique": "gate-state-machines",
-          "verdict": "not realized: failed write indistinguishable from verdict",
-          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:140"
+          "verdict": "conformant",
+          "evidence": "src/features/companions/athena/decision/resolveDecision.ts:61 a thrown option keeps the decision pending with an in-place error instead of clearing it"
+        },
+        {
+          "technique": "resume-after-decision",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/athena/decision/resolveDecision.ts:51 an in-flight guard allows one answer per decision across the five doors"
         }
       ],
+      "registryProposal": "review-queues 'the verdict write must land' could name the composite option: when one option performs two writes (here mark-read then engage), swallowing the first and committing the second is the same optimistic removal, and it survives a fix that only rethrows the last write",
       "superseded": [
         {
           "state": "deviation",
@@ -6169,6 +6197,13 @@
           "evaluatedAt": "2026-10-09T17:52:30.000Z",
           "worker": "b370e53d-1508-460f-9849-d5e08b6a8f99",
           "reason": "replaced by 740edace-0bbb-4641-9802-4cd3c3f670f1"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:140 the message dismiss option swallows a failed companionDismissProactive with silentCatch and does not rethrow (same at :213 for the credential later option), so runDecisionOption (src/features/companions/athena/decision/resolveDecision.ts:46 keeps a decision pending only on a throw) clears the bubble as resolved while the row stays pending and resurfaces on the next pump with no error shown; a failed decision write is spelled as a decision",
+          "evaluatedAt": "2026-10-14T09:34:20.324Z",
+          "worker": "740edace-0bbb-4641-9802-4cd3c3f670f1",
+          "reason": "replaced by 597ef65a-899e-4f3f-a35e-4194f05c0a4d"
         }
       ]
     },
@@ -18231,14 +18266,14 @@
       "subject": "hitl-approval",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:34:20.324Z",
-      "worker": "740edace-0bbb-4641-9802-4cd3c3f670f1",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:56:00.000Z",
+      "worker": "597ef65a-899e-4f3f-a35e-4194f05c0a4d",
       "techniques": [
         {
           "technique": "fail-loud-classification-default",
-          "verdict": "not realized: quiet mid-bucket default",
-          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:590 default medium"
+          "verdict": "deviation",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:590 missing severity defaults to medium with no defaulted marker"
         }
       ],
       "superseded": [
@@ -18248,6 +18283,13 @@
           "evaluatedAt": "2026-10-10T14:36:11.298Z",
           "worker": "d3d0a16e-bce3-48e0-9173-c712ef62c12e",
           "reason": "replaced by 740edace-0bbb-4641-9802-4cd3c3f670f1"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:590 the deck still classifies a review with a missing severity as medium and an unrecognised token falls to weight 50 at :667, with no marker, while the manual-review list resolves the same row to Unclassified with defaulted=true (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:37); the deciding surface spells an unreadable payload as a readable medium",
+          "evaluatedAt": "2026-10-14T09:34:20.324Z",
+          "worker": "740edace-0bbb-4641-9802-4cd3c3f670f1",
+          "reason": "replaced by 597ef65a-899e-4f3f-a35e-4194f05c0a4d"
         }
       ]
     },

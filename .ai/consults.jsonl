@@ -2180,3 +2180,6 @@
 {"ts":"2026-10-30T20:55:25Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["unpriced-span-accounting"],"deviations":1}
 {"ts":"2026-10-30T20:55:25Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["derived-trace-rollup","single-shape-rule"],"deviations":1}
 {"ts":"2026-10-30T20:55:25Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["unpriced-span-accounting"],"deviations":1}
+{"ts":"2026-10-30T20:56:00Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["review-queues","decision-records","gate-state-machines","resume-after-decision"],"deviations":1}
+{"ts":"2026-10-30T20:56:00Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["fail-loud-classification-default"],"deviations":1}
+{"ts":"2026-10-30T20:56:00Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["fail-loud-classification-default","cosmetic-vs-enforced-threshold-invariant"],"deviations":1}
