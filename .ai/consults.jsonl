@@ -2187,3 +2187,7 @@
 {"ts":"2026-10-30T20:55:46Z","bundle":"software-engineering","subjects":["settings"],"techniques":["key-registry","typed-accessors","setting-kinds","settings-audit-and-history","read-batching"],"deviations":2}
 {"ts":"2026-10-30T20:55:46Z","bundle":"software-engineering","subjects":["settings"],"techniques":["key-registry","typed-accessors","settings-audit-and-history","save-experience"],"deviations":0}
 {"ts":"2026-10-30T20:55:46Z","bundle":"software-engineering","subjects":["settings"],"techniques":["save-experience"],"deviations":0}
+{"ts":"2026-10-30T20:57:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["client-integration","server-composition"],"deviations":0,"context":"test-runner-lab"}
+{"ts":"2026-10-30T20:57:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["untrusted-result-handling","caller-differentiated-capability"],"deviations":0,"context":"agents-design"}
+{"ts":"2026-10-30T20:57:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["server-composition"],"deviations":0,"context":"stores-slices-system"}
+{"ts":"2026-10-30T20:57:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["client-integration"],"deviations":0,"context":"plugins-dev-tools-context"}

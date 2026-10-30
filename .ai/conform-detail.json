@@ -39896,6 +39896,84 @@
           "reason": "replaced by 4c4ac9b5-a4fd-48ba-b330-964250706f2f"
         }
       ]
+    },
+    "6a81750d-fdbf-4518-bae6-689303e1a884/mcp-tools": {
+      "context": "test-runner-lab",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:57:00.000Z",
+      "worker": "5acd0d2f-41d7-4125-ad7b-7d7ae010a0d6",
+      "techniques": [
+        {
+          "technique": "client-integration",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/skills_sidecar/mod.rs:6 writes per-connector SKILL.md files into exec_dir, not a spawn entry in an MCP client config"
+        },
+        {
+          "technique": "server-composition",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/skill_scratchpad.rs:28 the agent edits by shell append, with no MCP tool surface published from this context"
+        }
+      ],
+      "registryProposal": "Lexical match ('tool', 'sidecar', 'capability') on a grab-bag engine context; capability_contract.rs resolves design-time PersonaToolDefinition references, which the golden path excludes as model function-calling / design-time IR."
+    },
+    "8650ca36-36fe-4862-98f5-745e866a2687/mcp-tools": {
+      "context": "agents-design",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:57:00.000Z",
+      "worker": "5acd0d2f-41d7-4125-ad7b-7d7ae010a0d6",
+      "techniques": [
+        {
+          "technique": "untrusted-result-handling",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:95 the result goes to a human-facing card, not into a model's context"
+        },
+        {
+          "technique": "caller-differentiated-capability",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_tool_runner/components/ToolInvocationCard.tsx:38 the human surface declines builtin:// tools that only exist on the agent (personas-mcp) surface; the engine split itself lives outside this context"
+        }
+      ],
+      "registryProposal": "The golden path's 'What is not this subject' names generic RPC no model reads; a human-driven 'try this tool' runner over the same tool engine an agent uses is a common shape worth one sentence there, so the next judge does not have to argue it."
+    },
+    "c06088ef-d143-4aa4-b60a-9d6f7aff9aba/mcp-tools": {
+      "context": "stores-slices-system",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:57:00.000Z",
+      "worker": "5acd0d2f-41d7-4125-ad7b-7d7ae010a0d6",
+      "techniques": [
+        {
+          "technique": "server-composition",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/system/devToolsSlice.ts:5 re-exports project, context, scanner, triage and task UI slices, none a tool registry or dispatch door"
+        }
+      ],
+      "registryProposal": "Matcher false positive: the token 'tool' inside the product name 'devTools' earned a probable pairing; worth a stoplist entry for compound identifiers in the matcher."
+    },
+    "b0cf3902-0739-40a8-8c76-ae594f41421b/mcp-tools": {
+      "context": "plugins-dev-tools-context",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:57:00.000Z",
+      "worker": "5acd0d2f-41d7-4125-ad7b-7d7ae010a0d6",
+      "techniques": [
+        {
+          "technique": "client-integration",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:26 imports Sentry/LLM tracing adapters, not an MCP connection"
+        }
+      ],
+      "registryProposal": "Same 'devTools' lexical false positive as stores-slices-system."
     }
   }
 }

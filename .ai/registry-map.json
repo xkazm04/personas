@@ -3007,7 +3007,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:95 a PERSON invokes a tool definition over Tauri IPC (invokeToolDirect) and reads the result; no model reads it and no MCP wire is spoken, and builtin:// MCP-sidecar tools are explicitly refused here (src/features/agents/sub_tool_runner/components/ToolInvocationCard.tsx:38)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "prompt-assembly",
@@ -26940,7 +26944,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:22 the runtime joins LLM-cost and Sentry adapters onto the context map for display; it is React UI over IPC with no MCP host, client or tool surface",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "codebase-scanning",
@@ -34085,7 +34093,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/stores/slices/system/devToolsSlice.ts:1 is a zustand StateCreator for the Dev Tools plugin's UI state; 'tool' matched the product name 'devTools', and the slices hold client state with no MCP host, client, server or tool catalog",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "fleet-orchestration",
@@ -39058,7 +39070,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/skill_scratchpad.rs:28 states 'no MCP'; this context's sidecars write SKILL.md and Claude Code hooks (src-tauri/engine/src/skills_sidecar/mod.rs:6), not an MCP host, client config or tool server; the run MCP config lives in src-tauri/engine/src/cli_mcp_config.rs, which belongs to another context and is already judged there (webhook-ingestion)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "prompt-assembly",
