@@ -61,9 +61,10 @@ export function CloudConnectionForm({
           <Wifi className="w-5 h-5 text-emerald-400" />
           <div>
             <p className="typo-body text-emerald-400">{dt.connected}</p>
-            <p className="typo-body text-foreground mt-0.5">
-              {dt.orchestrator_prefix} {config?.url}
-            </p>
+            {/* The backend stores the validated URL WITH its scheme
+                (cloud_connect -> store_cloud_config(normalized)); a prefix
+                here doubled it and claimed https for an http orchestrator. */}
+            <p className="typo-body text-foreground mt-0.5">{config?.url}</p>
           </div>
         </div>
 
