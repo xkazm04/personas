@@ -1,0 +1,96 @@
+{
+  "schema": "conform-run/1",
+  "worker": "8e81cb95-20fe-49d6-b6d4-c38995f43b5e",
+  "subject": "background-jobs",
+  "evaluatedAt": "2026-10-30T21:06:12Z",
+  "pairs": [
+    {
+      "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+      "subject": "background-jobs",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:e3e7a428140a2fbb",
+      "evaluatedRevision": 6,
+      "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 the WorkflowJob projection still drops the cancel_outcome JobSnapshot carries (src-tauri/src/background_job.rs:1002), and src/api/pipeline/workflows.ts:16 cancel resolves void, so no client can show cancelling or tell cancelled from failed",
+      "techniques": [
+        {
+          "technique": "job-progress-and-cancellation",
+          "verdict": "deviation",
+          "evidence": "src/api/pipeline/workflows.ts:16 cancelWorkflowJob resolves void and src/lib/bindings/WorkflowJob.ts:3 has no cancel_outcome field, so the two-step cancelling/cancelled acknowledgement the snapshot keeps (src-tauri/src/background_job.rs:1002) never reaches the observer"
+        },
+        {
+          "technique": "job-progress-and-cancellation",
+          "verdict": "partial-realized",
+          "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 re-attach is realized: the overview snapshot carries job_id, status and a bounded 20-line output_tail"
+        }
+      ],
+      "registryProposal": "rev 6 added first-tick-gates-readiness, failed-start-kept-and-retried-at-cadence and problem-set-change-logging; none governs a TS IPC wrapper context, so this pair rests on job-progress-and-cancellation alone and the deviation carries forward unchanged"
+    },
+    {
+      "context": "33a96a83-6adc-42f7-b57c-839382bcef54",
+      "subject": "background-jobs",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:e3e7a428140a2fbb",
+      "evaluatedRevision": 6,
+      "evidence": "src-tauri/src/commands/curator/tick.rs:176 an unreadable registry root (and :199 unreadable brakes) logs and returns from a unit tick, and src-tauri/src/engine/subscription/runner.rs:219 records only latency, so a curator loop that fails every tick looks identical to a healthy idle one on the health surface",
+      "techniques": [
+        {
+          "technique": "loop-health-telemetry",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/subscription/runner.rs:219 the envelope records tick latency only; tick() returns unit (src-tauri/src/commands/curator/tick.rs:138) so failed / succeeded-empty / skipped are indistinguishable"
+        },
+        {
+          "technique": "problem-set-change-logging",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:1241 warn_occasionally is a time throttle on ONE static shared by every problem, so a standing problem re-logs each minute, one problem masks another, and a clear is never logged; :199 brakes-read failure warns every tick unthrottled"
+        },
+        {
+          "technique": "loop-supervision",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:138 the loop registers through the ReactiveSubscription door with interval, idle interval and wake signal"
+        },
+        {
+          "technique": "tick-isolation",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/subscription/runner.rs:153 each tick runs under AssertUnwindSafe(..).catch_unwind() with a consecutive-panic counter"
+        },
+        {
+          "technique": "adaptive-cadence",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:134 wake_signal plus idle_interval give the active/idle hybrid with wake-on-signal"
+        }
+      ],
+      "registryProposal": "upward lesson: tick.rs halt_transition announces the halt on its EDGE via pulse::emit, a correct problem-set-change realization for one problem, sitting beside a time-throttled logger for the rest - the technique could name the edge-vs-throttle split as a common half-adoption"
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-30T21:06:12Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "background-jobs"
+      ],
+      "techniques": [
+        "job-progress-and-cancellation"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-30T21:06:12Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "background-jobs"
+      ],
+      "techniques": [
+        "loop-health-telemetry",
+        "problem-set-change-logging",
+        "loop-supervision",
+        "tick-isolation",
+        "adaptive-cadence"
+      ],
+      "deviations": 2
+    }
+  ]
+}

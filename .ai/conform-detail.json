@@ -12474,14 +12474,19 @@
       "subject": "background-jobs",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:45:31.000Z",
-      "worker": "4b6bde5a-89ad-46bf-b2e3-ed4838ecc33c",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:06:12.000Z",
+      "worker": "8e81cb95-20fe-49d6-b6d4-c38995f43b5e",
       "techniques": [
         {
           "technique": "job-progress-and-cancellation",
           "verdict": "deviation",
-          "evidence": "src/lib/bindings/WorkflowJob.ts:3 has no cancel_outcome or cancelling state; the two-step cancel acknowledgement and the cancelled terminal state never reach the observer"
+          "evidence": "src/api/pipeline/workflows.ts:16 cancelWorkflowJob resolves void and src/lib/bindings/WorkflowJob.ts:3 has no cancel_outcome field, so the two-step cancelling/cancelled acknowledgement the snapshot keeps (src-tauri/src/background_job.rs:1002) never reaches the observer"
+        },
+        {
+          "technique": "job-progress-and-cancellation",
+          "verdict": "partial-realized",
+          "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 re-attach is realized: the overview snapshot carries job_id, status and a bounded 20-line output_tail"
         },
         {
           "technique": "job-progress-and-cancellation (re-attach snapshot)",
@@ -12514,7 +12519,7 @@
           "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "Re-judged at unchanged digest sha256-b2:22ed2a99172ae050 (revision 5, matches registry 145ab09c); the map row reports revisionsBehind 1 although evaluatedRevision equals revision, which looks like a builder arithmetic bug worth checking.",
+      "registryProposal": "rev 6 added first-tick-gates-readiness, failed-start-kept-and-retried-at-cadence and problem-set-change-logging; none governs a TS IPC wrapper context, so this pair rests on job-progress-and-cancellation alone and the deviation carries forward unchanged",
       "superseded": [
         {
           "state": "deviation",
@@ -12550,6 +12555,13 @@
           "evaluatedAt": "2026-10-16T17:44:08.000Z",
           "worker": "c20f1ff3-2b39-4b57-9b78-f3f3bd7407a3",
           "reason": "replaced by 4b6bde5a-89ad-46bf-b2e3-ed4838ecc33c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 the WorkflowJob projection still drops the cancel_outcome JobSnapshot carries (src-tauri/src/background_job.rs:1002) though :134 says the snapshot reports it, and src/api/pipeline/workflows.ts:16 cancel resolves void, so no client can show cancelling or tell cancelled from failed",
+          "evaluatedAt": "2026-10-21T12:45:31.000Z",
+          "worker": "4b6bde5a-89ad-46bf-b2e3-ed4838ecc33c",
+          "reason": "replaced by 8e81cb95-20fe-49d6-b6d4-c38995f43b5e"
         }
       ]
     },
@@ -34197,32 +34209,37 @@
       "subject": "background-jobs",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:45:31.000Z",
-      "worker": "4b6bde5a-89ad-46bf-b2e3-ed4838ecc33c",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:06:12.000Z",
+      "worker": "8e81cb95-20fe-49d6-b6d4-c38995f43b5e",
       "techniques": [
-        {
-          "technique": "loop-supervision",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/engine/background/lifecycle.rs:224 registers CuratorLoopSubscription with the shared runner (named, generation-stoppable) instead of a bare spawn+loop"
-        },
-        {
-          "technique": "tick-isolation",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/engine/subscription/runner.rs:153 wraps every tick in catch_unwind with crash event and backoff; no per-tick deadline beyond the overrun warning, not judged further"
-        },
-        {
-          "technique": "adaptive-cadence",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/curator/tick.rs:134 declares a wake signal beside the 60s/180s active/idle intervals, so operator requests skip the poll wait"
-        },
         {
           "technique": "loop-health-telemetry",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/subscription/traits.rs:37 tick returns (), so the envelope has no failed vs succeeded-empty vs skipped outcome; tick.rs:176/:199 failures are tracing-only"
+          "evidence": "src-tauri/src/engine/subscription/runner.rs:219 the envelope records tick latency only; tick() returns unit (src-tauri/src/commands/curator/tick.rs:138) so failed / succeeded-empty / skipped are indistinguishable"
+        },
+        {
+          "technique": "problem-set-change-logging",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:1241 warn_occasionally is a time throttle on ONE static shared by every problem, so a standing problem re-logs each minute, one problem masks another, and a clear is never logged; :199 brakes-read failure warns every tick unthrottled"
+        },
+        {
+          "technique": "loop-supervision",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:138 the loop registers through the ReactiveSubscription door with interval, idle interval and wake signal"
+        },
+        {
+          "technique": "tick-isolation",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/engine/subscription/runner.rs:153 each tick runs under AssertUnwindSafe(..).catch_unwind() with a consecutive-panic counter"
+        },
+        {
+          "technique": "adaptive-cadence",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:134 wake_signal plus idle_interval give the active/idle hybrid with wake-on-signal"
         }
       ],
-      "registryProposal": "Context is marked governance weak, but the subject genuinely governs it: tick.rs is a supervised loop. The loop-health-telemetry root cause sits in the shared ReactiveSubscription trait (src-tauri/engine/src/subscription/traits.rs:37, another context) and is likely the same deviation for all ~41 subscriptions; a pairing of background-jobs to the engine-subscription context is worth checking."
+      "registryProposal": "upward lesson: tick.rs halt_transition announces the halt on its EDGE via pulse::emit, a correct problem-set-change realization for one problem, sitting beside a time-throttled logger for the rest - the technique could name the edge-vs-throttle split as a common half-adoption"
     },
     "b6e66a59-78d3-465e-83b7-e77498b4c6ae/eval-harness": {
       "context": "stores-slices-agents",

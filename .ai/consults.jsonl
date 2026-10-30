@@ -2228,3 +2228,5 @@
 {"ts":"2026-10-30T21:05:53Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":["language-registry-single-source"],"deviations":1}
 {"ts":"2026-10-30T21:05:53Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":[],"deviations":0}
 {"ts":"2026-10-30T21:05:53Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":[],"deviations":0}
+{"ts":"2026-10-30T21:06:12Z","bundle":"software-engineering","subjects":["background-jobs"],"techniques":["job-progress-and-cancellation"],"deviations":1}
+{"ts":"2026-10-30T21:06:12Z","bundle":"software-engineering","subjects":["background-jobs"],"techniques":["loop-health-telemetry","problem-set-change-logging","loop-supervision","tick-isolation","adaptive-cadence"],"deviations":2}
