@@ -12,7 +12,7 @@ import type { PersonaEvent, PersonaReport } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { AttentionLedgerEntry } from '@/lib/bindings/AttentionLedgerEntry';
-import type { ActivityItem, ActivityType } from './activityTypes';
+import { FILTER_TABS, type ActivityItem, type ActivityType } from './activityTypes';
 import { ActiveChainsBadge } from '../sub_executions/components/ActiveChainsBadge';
 import { ActivityFilters } from './ActivityFilters';
 import { ActivityList } from './ActivityList';
@@ -49,10 +49,12 @@ export function ActivityTab() {
   const [useCaseFilter, setUseCaseFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
   const [starredOnly, setStarredOnly] = useState(false);
-  // Partial-failure honesty for the attention feed (golden path
-  // partial-failure-read-envelope): a failed ledger read is disclosed instead
-  // of rendering as "no attention passes".
-  const [attentionUnavailable, setAttentionUnavailable] = useState(false);
+  // Partial-failure honesty for every feed (golden path
+  // partial-failure-read-envelope): a failed read is disclosed instead of
+  // rendering as "no activity". Attention had this alone; the other five
+  // landed [] on failure and a dead feed read as a quiet agent.
+  const [failedFeeds, setFailedFeeds] = useState<FeedKey[]>([]);
+  const attentionUnavailable = failedFeeds.includes('attention');
   const loadGenRef = useRef(0);
 
   const personaId = selectedPersona?.id;
@@ -78,10 +80,14 @@ export function ActivityTab() {
     const markPending = (key: FeedKey) => {
       setPending((p) => (p[key] ? p : { ...p, [key]: true }));
     };
-    const land = (key: FeedKey, rows: ActivityItem[]) => {
+    const land = (key: FeedKey, rows: ActivityItem[], failed = false) => {
       if (!stillCurrent()) return;
       setFeeds((prev) => ({ ...prev, [key]: rows }));
       setPending((p) => ({ ...p, [key]: false }));
+      setFailedFeeds((prev) => {
+        if (prev.includes(key) === failed) return prev;
+        return failed ? [...prev, key] : prev.filter((k) => k !== key);
+      });
     };
 
     if (runsRegionOwnsExecutions) {
@@ -98,7 +104,7 @@ export function ActivityTab() {
           useCaseId: getUseCaseId(e),
           raw: e,
         }))))
-        .catch((err) => { silentCatch('ActivityTab:listExecutions')(err); land('execution', []); });
+        .catch((err) => { silentCatch('ActivityTab:listExecutions')(err); land('execution', [], true); });
     }
 
     markPending('event');
@@ -121,7 +127,7 @@ export function ActivityTab() {
         useCaseId: getUseCaseId(e),
         raw: e,
       }))))
-      .catch((err) => { silentCatch('ActivityTab:searchEvents')(err); land('event', []); });
+      .catch((err) => { silentCatch('ActivityTab:searchEvents')(err); land('event', [], true); });
 
     markPending('memory');
     listMemories(personaId, undefined, undefined, 50)
@@ -134,7 +140,7 @@ export function ActivityTab() {
         useCaseId: getUseCaseId(m),
         raw: m,
       }))))
-      .catch((err) => { silentCatch('ActivityTab:listMemories')(err); land('memory', []); });
+      .catch((err) => { silentCatch('ActivityTab:listMemories')(err); land('memory', [], true); });
 
     markPending('review');
     listManualReviewsPage({ personaId, limit: 50 })
@@ -147,7 +153,7 @@ export function ActivityTab() {
         useCaseId: getUseCaseId(r),
         raw: r,
       }))))
-      .catch((err) => { silentCatch('ActivityTab:listManualReviewsPage')(err); land('review', []); });
+      .catch((err) => { silentCatch('ActivityTab:listManualReviewsPage')(err); land('review', [], true); });
 
     markPending('message');
     listReports(50, undefined, personaId)
@@ -160,12 +166,11 @@ export function ActivityTab() {
         useCaseId: getUseCaseId(m),
         raw: m,
       }))))
-      .catch((err) => { silentCatch('ActivityTab:listReports')(err); land('message', []); });
+      .catch((err) => { silentCatch('ActivityTab:listReports')(err); land('message', [], true); });
 
     markPending('attention');
     listAttentionLedger(personaId, 50)
       .then((attention: AttentionLedgerEntry[]) => {
-        if (stillCurrent()) setAttentionUnavailable(false);
         land('attention', attention.map((a): ActivityItem => ({
           type: 'attention', id: a.id,
           title: t.agents.life.activity_attention_row,
@@ -178,8 +183,7 @@ export function ActivityTab() {
       })
       .catch((err) => {
         silentCatch('ActivityTab:listAttentionLedger')(err);
-        if (stillCurrent()) setAttentionUnavailable(true);
-        land('attention', []);
+        land('attention', [], true);
       });
   }, [personaId, t, tx, runsRegionOwnsExecutions]);
 
@@ -188,7 +192,7 @@ export function ActivityTab() {
     setPending({
       execution: true, event: true, memory: true, review: true, message: true, attention: true,
     });
-    setAttentionUnavailable(false);
+    setFailedFeeds([]);
   }, [personaId]);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -260,6 +264,15 @@ export function ActivityTab() {
     return c;
   }, [items, runsRegionOwnsExecutions, storeExecutions.length]);
 
+  // Failed feeds the current view would otherwise paint as empty. Attention
+  // keeps its own notice below; the runs tab is ExecutionList's region.
+  const visibleFailedFeedLabels = failedFeeds
+    .filter((k) => k !== 'attention' && (filter === 'all' || filter === k))
+    .map((k) => {
+      const key = FILTER_TABS.find((tab) => tab.id === k)?.labelKey;
+      return key ? t.agents.activity_filters[key] : k;
+    });
+
   const { handleRowClick, modals } = useActivityModals({
     personaName: selectedPersona?.name ?? '',
     personaColor: selectedPersona?.color || '#6366f1',
@@ -299,6 +312,11 @@ export function ActivityTab() {
       {attentionUnavailable && (filter === 'all' || filter === 'attention') && (
         <p className="typo-caption text-status-warning" data-testid="activity-attention-unavailable">
           {t.agents.life.activity_attention_unavailable}
+        </p>
+      )}
+      {!runsRegionOwnsExecutions && visibleFailedFeedLabels.length > 0 && (
+        <p className="typo-caption text-status-warning" data-testid="activity-feed-unavailable">
+          {visibleFailedFeedLabels.join(', ')}: {t.common.source_unreachable}
         </p>
       )}
       {runsRegionOwnsExecutions ? (
