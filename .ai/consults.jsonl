@@ -2197,3 +2197,6 @@
 {"ts":"2026-10-30T20:58:15Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["capability-gate-predicates"],"deviations":0}
 {"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running","archive-extraction-safety","dependency-policy-gates","permission-manifest-scoping"],"deviations":1}
 {"ts":"2026-10-30T20:59:37Z","bundle":"software-engineering","subjects":["guided-tours"],"techniques":["overlay-precedence","missing-anchor-degradation","anchor-contracts","spotlight-continuity","tour-lifecycle","action-driven-advancement"],"deviations":4}
+{"ts":"2026-10-30T21:00:33Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["storm-hygiene","refusal-contract"],"deviations":1}
+{"ts":"2026-10-30T21:00:33Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["limit-observability"],"deviations":1}
+{"ts":"2026-10-30T21:00:33Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["refusal-contract","storm-hygiene"],"deviations":1}
