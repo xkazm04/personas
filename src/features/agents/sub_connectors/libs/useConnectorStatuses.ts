@@ -7,10 +7,14 @@ import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import { useTranslation } from '@/i18n/useTranslation';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { ConnectorStatus, ConnectorReadiness, ConnectorTestResult } from './connectorTypes';
 import { deriveReadiness, restoreHealthcheck, isStaleResult, isUnreachable, summarizeTestAll } from './connectorTypes';
+
+/** Max healthchecks in flight at once for "Test all". */
+const TEST_ALL_CONCURRENCY = 4;
 
 export function useConnectorStatuses() {
   const { t, tx } = useTranslation();
@@ -251,12 +255,12 @@ export function useConnectorStatuses() {
     // only ever say "tested N connectors", which tells the user nothing.
     const baseline = new Map(testable.map((s) => [s.name, s.result]));
     try {
-      const outcomes = await Promise.all(
-        testable.map(async (status) => ({
-          name: status.name,
-          result: await testConnector(status.name, status.credentialId!),
-        })),
-      );
+      // Bounded fan-out: personas share credentials per provider, so probing every
+      // row at once can trip a provider rate limit that then reads as unreachable.
+      const outcomes = await mapWithConcurrency(testable, TEST_ALL_CONCURRENCY, async (status) => ({
+        name: status.name,
+        result: await testConnector(status.name, status.credentialId!),
+      }));
 
       // Verdicts only: an unreachable probe (success === false, but no verdict)
       // used to count as "newly failing" against a passing baseline. It is
