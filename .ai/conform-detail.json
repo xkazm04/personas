@@ -11788,20 +11788,19 @@
       "subject": "multi-provider-gateway-plane",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T03:06:41.000Z",
-      "worker": "a9df3930-b0a1-4575-966c-cef444703abf",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:01:31.000Z",
+      "worker": "a18d19a6-f5a8-4617-8501-447a553c8ffc",
       "techniques": [
-        {
-          "technique": "exclusive-authorship-of-a-measured-decision",
-          "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:2143 a second path decides the upstream after the BYOM policy has decided, and the compliance trail (provider_audit at src-tauri/src/engine/runner/mod.rs:3832) records nothing for it - the 'compliance trail reports no substitution' failure the technique names"
-        },
         {
           "technique": "strategy-tree-with-inherited-policy",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:2143 the HTTP upstream is a candidate outside the policy tree - the BYOM decision's blocked_providers is never applied to it, so the inherited policy does not reach every leaf",
-          "carriedFrom": "2026-10-21"
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2143 the HTTP leaf is reached outside build_failover_chain_with_policy, so the compliance/blocked-provider policy evaluated at src-tauri/src/engine/runner/mod.rs:2079 never reaches it"
+        },
+        {
+          "technique": "exclusive-authorship-of-a-measured-decision",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:3832 the provider_audit record (decided vs served, was_failover) is written only on the CLI path; remote-HTTP runs leave no compliance trail at all"
         },
         {
           "technique": "policy-verdict-in-the-status-space",
@@ -11851,6 +11850,13 @@
           "evaluatedAt": "2026-10-21T12:37:11.000Z",
           "worker": "1f21ca80-f3c6-413f-9abb-0c074b7c8582",
           "reason": "replaced by a9df3930-b0a1-4575-966c-cef444703abf"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2143 re-verified 2026-10-22, anchors unchanged: the remote-HTTP (Qwen/DashScope) branch returns run_http_execution without receiving policy_decision (computed at src-tauri/src/engine/runner/mod.rs:2079), so it skips the failover chain's blocked_providers filter (src-tauri/engine/src/failover.rs:770) and the provider_audit insert (src-tauri/src/engine/runner/mod.rs:3832), while src/features/settings/sub_byom/components/ByomProviderList.tsx:37 lists Qwen beside policy-governed providers - a compliance-tagged persona can run on a blocked, unaudited upstream",
+          "evaluatedAt": "2026-10-22T03:06:41.000Z",
+          "worker": "a9df3930-b0a1-4575-966c-cef444703abf",
+          "reason": "replaced by a18d19a6-f5a8-4617-8501-447a553c8ffc"
         }
       ]
     },
