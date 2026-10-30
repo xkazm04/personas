@@ -11209,10 +11209,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/test_runner/lab.rs:569 a budget-halted run (excluded from the completeness gate at :560) finalizes as LabRunStatus::Completed with no partial marker, and src-tauri/db/src/repos/lab/arena.rs:71 inserts runs with no dataset version or determinism stamp, so halted and unpinned runs store and compare as full ones (re-anchored: :551 had drifted to a comment)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:569 a budget-halted run (exempted from the completeness gate at :560) still finalizes as LabRunStatus::Completed with no partial marker in the summary (:519), and src-tauri/db/src/repos/lab/arena.rs:71 inserts runs with no dataset version or determinism stamp, so halted and unpinned runs store and compare as full ones",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         }
       ],
@@ -17245,10 +17245,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:214 The priced confirm dialog starts the match with models and an optional version and no spend ceiling, so consent is the only gate and a halted matrix cannot be marked partial from this call.",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:214 the priced preflight confirm starts the match with models, filter and version only and no spend ceiling, so consent is the only gate and a halted matrix cannot be marked partial from this call",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -17633,10 +17633,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:554 The version report states that ratings are directly comparable because they share one generated scenario set, but scenario reuse is only a 600-second process cache, so the artifact asserts a freeze the stored ratings do not have.",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:557 the version report asserts all versions share one generated scenario set so ratings are directly comparable, but scenario reuse is a 600 s process cache (src-tauri/engine/src/test_runner/scenarios.rs:16), so the artifact claims a freeze the stored ratings do not have (re-anchored: :554 drifted)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -33707,10 +33707,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/stores/slices/agents/labSlice.ts:206 cancelRun calls lc.markCancelled in finally even when the backend cancel threw (:197), so the client shows a stopped run with no cancelling or partial state while the worker can keep spending (re-anchored: :187 had drifted to fetchRuns)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/stores/slices/agents/labSlice.ts:206 cancelRun calls lc.markCancelled in finally even when the backend cancel threw (:197), so the client shows a stopped run with no cancelling or partial state while the worker can keep spending",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {

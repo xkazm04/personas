@@ -11550,14 +11550,14 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:44:32.000Z",
-      "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:04:30.000Z",
+      "worker": "40730fdf-6a69-492f-917c-dd572cd3de63",
       "techniques": [
         {
           "technique": "async-run-queue-with-cancel",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/agents/labSlice.ts:206 a failed cancel is still marked cancelled; the technique demands an honest unsupported/failed result, never a pretend-cancel"
+          "evidence": "src/stores/slices/agents/labSlice.ts:206 a failed cancel is rendered as a successful one - the pretend-cancel rule 5 names as the failure"
         },
         {
           "technique": "target-matrix-runs",
@@ -11586,6 +11586,13 @@
           "evaluatedAt": "2026-10-15T00:01:42.608Z",
           "worker": "c1329887-55a4-4a78-a37e-3fff5f311705",
           "reason": "replaced by dc9b3388-cbaf-46a0-8bba-f874a8455d2e"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/agents/labSlice.ts:206 cancelRun calls lc.markCancelled in finally even when the backend cancel threw (:197), so the client shows a stopped run with no cancelling or partial state while the worker can keep spending (re-anchored: :187 had drifted to fetchRuns)",
+          "evaluatedAt": "2026-10-21T12:44:32.000Z",
+          "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
+          "reason": "replaced by 40730fdf-6a69-492f-917c-dd572cd3de63"
         }
       ]
     },
@@ -17312,62 +17319,70 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T00:01:42.608Z",
-      "worker": "c1329887-55a4-4a78-a37e-3fff5f311705",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:04:30.000Z",
+      "worker": "40730fdf-6a69-492f-917c-dd572cd3de63",
       "techniques": [
+        {
+          "technique": "budget-preflight-and-ceiling",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:214 startArena carries no ceiling; estimate exists (estimateArenaSpend) but is compared to no default ceiling"
+        },
         {
           "technique": "target-matrix-runs",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:192 The card crowns bestModelId. That id is aggregates[0] after a composite sort, not a tested lead, and latency on the card is a mean."
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:192 The card crowns bestModelId. That id is aggregates[0] after a composite sort, not a tested lead, and latency on the card is a mean.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "sampling-knobs-are-axes-not-strings",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:210 The panel ignores selectedEfforts from usePanelRunState and sends model id, provider, model, and base_url only."
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:210 The panel ignores selectedEfforts from usePanelRunState and sends model id, provider, model, and base_url only.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "dataset-sampling-anonymize-freeze",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:170 Cases are persona charters and use cases, which this technique exempts as a curated offline harness."
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:170 Cases are persona charters and use cases, which this technique exempts as a curated offline harness.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "graded-case-difficulty",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:71 The headline is one blended composite across every scenario. No ordered difficulty grade is on the result or the summary."
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:71 The headline is one blended composite across every scenario. No ordered difficulty grade is on the result or the summary.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "determinism-stamping",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:202 The score renders alone. LabArenaResult has scores, tokens, cost, duration, and evalMethod, and no generation or judging determinism field."
-        },
-        {
-          "technique": "budget-preflight-and-ceiling",
-          "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:214 estimateArenaSpend names unpriced models and does not coerce them to zero, then ConfirmDialog starts the run with no ceiling argument."
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:202 The score renders alone. LabArenaResult has scores, tokens, cost, duration, and evalMethod, and no generation or judging determinism field.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "failure-clustering-recommendations",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:117 Suggestions are deduped and capped at 3 with no total or truncated count, and they are not grouped by failing dimension."
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:117 Suggestions are deduped and capped at 3 with no total or truncated count, and they are not grouped by failing dimension.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "axes-and-caveats-live-at-the-surface",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:159 The summary branch states the highest composite and a point gap with no sample-size, pinning, or partial qualifier on that sentence."
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaResultsView.tsx:159 The summary branch states the highest composite and a point gap with no sample-size, pinning, or partial qualifier on that sentence.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "cheapest-sufficient-configuration",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:95 The standing champion tallies best_quality_model wins. Cost is shown on the result card and is not the selection rule, and no paired test is run."
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:95 The standing champion tallies best_quality_model wins. Cost is shown on the result card and is not the selection rule, and no paired test is run.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "self-hosted-residency-is-part-of-the-target",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:79 Local models share the roster and are started as provider plus model plus base_url, with no context window or residency fraction on the result row."
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:79 Local models share the roster and are started as provider plus model plus base_url, with no context window or residency fraction on the result row.",
+          "carriedFrom": "2026-10-15"
         }
       ],
-      "registryProposal": "dataset-sampling-anonymize-freeze exempts a curated offline harness, while the golden path lists a synthetic dataset as a failure mode of this subject. An arena over authored use cases sits in that gap.",
       "superseded": [
         {
           "state": "deviation",
@@ -17382,6 +17397,13 @@
           "evaluatedAt": "2026-10-10T12:07:04.000Z",
           "worker": "f9423480-bb6c-424a-9616-ef7002896726",
           "reason": "replaced by c1329887-55a4-4a78-a37e-3fff5f311705"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:214 The priced confirm dialog starts the match with models and an optional version and no spend ceiling, so consent is the only gate and a halted matrix cannot be marked partial from this call.",
+          "evaluatedAt": "2026-10-15T00:01:42.608Z",
+          "worker": "c1329887-55a4-4a78-a37e-3fff5f311705",
+          "reason": "replaced by 40730fdf-6a69-492f-917c-dd572cd3de63"
         }
       ]
     },
@@ -17390,54 +17412,61 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T00:01:42.608Z",
-      "worker": "c1329887-55a4-4a78-a37e-3fff5f311705",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:04:30.000Z",
+      "worker": "40730fdf-6a69-492f-917c-dd572cd3de63",
       "techniques": [
-        {
-          "technique": "target-matrix-runs",
-          "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:203 Eval HTML prints Best from winnerId. Duration in that card is avgDuration, not a median and a tail."
-        },
-        {
-          "technique": "sampling-knobs-are-axes-not-strings",
-          "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx:223 The rating identity and the model column are modelId only. LabVersionRating has no effort field, so two efforts of one model collapse."
-        },
         {
           "technique": "dataset-sampling-anonymize-freeze",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:554 scenarios.rs keeps SCENARIO_CACHE_TTL_SECS at 600 and the key deliberately drops the prompt. There is no frozen dataset version on the report."
-        },
-        {
-          "technique": "graded-case-difficulty",
-          "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:193 Version aggregates are ordered only by blended composite. These libs have no difficulty grade or per-tier table."
-        },
-        {
-          "technique": "determinism-stamping",
-          "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:543 Confidence is n, partial coverage, and degraded count. No generation or judging determinism column exists."
-        },
-        {
-          "technique": "failure-clustering-recommendations",
-          "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/labFeedbackLoop.ts:98 modelRecommendation is that highest average. Weak cells are listed per metric, not clustered, and the recommendation is not cost-aware."
+          "evidence": "src-tauri/engine/src/test_runner/scenarios.rs:16 SCENARIO_CACHE_TTL_SECS = 600 is the only reuse; no frozen, versioned case set"
         },
         {
           "technique": "axes-and-caveats-live-at-the-surface",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:585 The markdown surface repeats the strongest comparability sentence with no cache-TTL or unfrozen-set caveat. partialCoverage here means renormalized sub-scores, not a halted run."
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:588 the markdown branch repeats the same unearned comparability claim"
+        },
+        {
+          "technique": "target-matrix-runs",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:203 Eval HTML prints Best from winnerId. Duration in that card is avgDuration, not a median and a tail.",
+          "carriedFrom": "2026-10-15"
+        },
+        {
+          "technique": "sampling-knobs-are-axes-not-strings",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx:223 The rating identity and the model column are modelId only. LabVersionRating has no effort field, so two efforts of one model collapse.",
+          "carriedFrom": "2026-10-15"
+        },
+        {
+          "technique": "graded-case-difficulty",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:193 Version aggregates are ordered only by blended composite. These libs have no difficulty grade or per-tier table.",
+          "carriedFrom": "2026-10-15"
+        },
+        {
+          "technique": "determinism-stamping",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:543 Confidence is n, partial coverage, and degraded count. No generation or judging determinism column exists.",
+          "carriedFrom": "2026-10-15"
+        },
+        {
+          "technique": "failure-clustering-recommendations",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/labFeedbackLoop.ts:98 modelRecommendation is that highest average. Weak cells are listed per metric, not clustered, and the recommendation is not cost-aware.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "cheapest-sufficient-configuration",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:229 The winner is the top composite after the sort. The economics panel orders costPerSuccess and sinks null cost, and it does not test sufficiency or replace this winner."
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:229 The winner is the top composite after the sort. The economics panel orders costPerSuccess and sinks null cost, and it does not test sufficiency or replace this winner.",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "self-hosted-residency-is-part-of-the-target",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx:234 A local model is a normal row. The local-specific handling is costUnknown shown as not tracked, with no context window or residency fraction."
+          "evidence": "src/features/agents/sub_lab/components/versions_table/LabVersionsTable.tsx:234 A local model is a normal row. The local-specific handling is costUnknown shown as not tracked, with no context window or residency fraction.",
+          "carriedFrom": "2026-10-15"
         }
       ],
       "superseded": [
@@ -17454,6 +17483,13 @@
           "evaluatedAt": "2026-10-10T12:07:04.000Z",
           "worker": "f9423480-bb6c-424a-9616-ef7002896726",
           "reason": "replaced by c1329887-55a4-4a78-a37e-3fff5f311705"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:554 The version report states that ratings are directly comparable because they share one generated scenario set, but scenario reuse is only a 600-second process cache, so the artifact asserts a freeze the stored ratings do not have.",
+          "evaluatedAt": "2026-10-15T00:01:42.608Z",
+          "worker": "c1329887-55a4-4a78-a37e-3fff5f311705",
+          "reason": "replaced by 40730fdf-6a69-492f-917c-dd572cd3de63"
         }
       ]
     },
@@ -17462,24 +17498,30 @@
       "subject": "cross-provider-benchmark-operations",
       "bundle": "llm-observability",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:44:32.000Z",
-      "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:04:30.000Z",
+      "worker": "40730fdf-6a69-492f-917c-dd572cd3de63",
       "techniques": [
         {
           "technique": "budget-preflight-and-ceiling",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/test_runner/lab.rs:569 halted_by_budget run is written Completed; a halted run must read partial, never passed"
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:569 halted_by_budget run is written Completed; the technique requires a halted run marked partial, never passed"
         },
         {
           "technique": "determinism-stamping",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 run row has no generation or judge pinning stamp"
+          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 run row has no determinism or dataset-version column"
+        },
+        {
+          "technique": "async-run-queue-with-cancel",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:504 a cancel landing during final collection finalizes Cancelled and skips the completeness gate"
         },
         {
           "technique": "dataset-sampling-anonymize-freeze",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 run row records no frozen dataset version, so two runs cannot be shown comparable"
+          "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 run row records no frozen dataset version, so two runs cannot be shown comparable",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "target-matrix-runs",
@@ -17515,6 +17557,13 @@
           "evaluatedAt": "2026-10-16T17:40:51.000Z",
           "worker": "7afe9251-781d-42b9-8c30-19c0da4120c9",
           "reason": "replaced by dc9b3388-cbaf-46a0-8bba-f874a8455d2e"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:569 a budget-halted run (excluded from the completeness gate at :560) finalizes as LabRunStatus::Completed with no partial marker, and src-tauri/db/src/repos/lab/arena.rs:71 inserts runs with no dataset version or determinism stamp, so halted and unpinned runs store and compare as full ones (re-anchored: :551 had drifted to a comment)",
+          "evaluatedAt": "2026-10-21T12:44:32.000Z",
+          "worker": "dc9b3388-cbaf-46a0-8bba-f874a8455d2e",
+          "reason": "replaced by 40730fdf-6a69-492f-917c-dd572cd3de63"
         }
       ]
     },

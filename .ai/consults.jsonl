@@ -2215,3 +2215,7 @@
 {"ts":"2026-10-30T21:03:11Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model"],"deviations":1}
 {"ts":"2026-10-30T21:03:11Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model","progress-communication"],"deviations":1}
 {"ts":"2026-10-30T21:03:11Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model","progress-communication"],"deviations":1}
+{"ts":"2026-10-30T21:04:30Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":["budget-preflight-and-ceiling","determinism-stamping","async-run-queue-with-cancel"],"deviations":1,"context":"db-repos-lab"}
+{"ts":"2026-10-30T21:04:30Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":["budget-preflight-and-ceiling"],"deviations":1,"context":"lab-arena"}
+{"ts":"2026-10-30T21:04:30Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":["dataset-sampling-anonymize-freeze","axes-and-caveats-live-at-the-surface"],"deviations":1,"context":"lab-versions-eval"}
+{"ts":"2026-10-30T21:04:30Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":["async-run-queue-with-cancel"],"deviations":1,"context":"stores-slices-agents"}
