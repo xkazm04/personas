@@ -1,0 +1,45 @@
+{"schema": "conform-run/1", "worker": "f99a210d-bf85-4308-b96c-37c7f34cecba", "subject": "status-vocabulary",
+ "evaluatedAt": "2026-10-30T21:08:17Z",
+ "pairs": [
+  {"context": "89eddf81-0c57-441d-a07d-de36bf022cb5", "subject": "status-vocabulary", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:6a9ab99285e2cac0", "evaluatedRevision": 6,
+   "evidence": "src/lib/utils/formatters.ts:676 re-judged at rev 6: formatValue 'ms'/'s' (:630) still route to formatDuration, which concatenates English unit glyphs (`${ms}ms`, `${s}s`, `${m}m`) with no locale in all 14 locales; formatters.ts:115 still clamps any future instant to 'now' with no tolerance or telemetry",
+   "techniques": [
+    {"technique": "number-formatting", "verdict": "deviation", "evidence": "src/lib/utils/formatters.ts:676 unit concatenated to a raw number inside the primitive, no language input exists on formatDuration (:657) - the 'missing argument' shape the technique names"},
+    {"technique": "timestamp-display", "verdict": "deviation", "evidence": "src/lib/utils/formatters.ts:115 Math.max(0, ...) clamps every future instant to 'now'; no tolerance past which absolute rendering + one breadcrumb takes over, so a wrong-instant bug renders as the calmest value"}
+   ]},
+  {"context": "3c749d5b-3169-4ea8-8faa-98558f9b5df5", "subject": "status-vocabulary", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:6a9ab99285e2cac0", "evaluatedRevision": 6,
+   "evidence": "src/features/shared/components/forms/FormField.tsx:328 re-judged at rev 6: AvailabilityStatus tone is still a nested ternary to raw text-emerald-400/text-amber-400 with icons in a parallel conditional chain below it, not one table keyed by the union; a new member silently gets neither colour nor icon",
+   "techniques": [
+    {"technique": "status-color-mapping", "verdict": "deviation", "evidence": "src/features/shared/components/forms/FormField.tsx:328 vocabulary -> raw palette literal at the call site (no semantic role), colour and icon split across two hand-wired chains, fallback undecided"}
+   ]},
+  {"context": "647d6a54-3813-4149-bbf7-2d96a57a77c7", "subject": "status-vocabulary", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:6a9ab99285e2cac0", "evaluatedRevision": 6,
+   "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:118 re-judged at rev 6: a saved query's last-run outcome is still a bare bg-emerald-400/bg-red-400 dot - raw palette, no semantic role, no shape, label or aria text, so colour alone carries the status",
+   "techniques": [
+    {"technique": "status-color-mapping", "verdict": "deviation", "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:118 'never colour alone' violated: ok and failed differ only by hue, raw literals instead of a role"}
+   ]},
+  {"context": "1d8a480b-eac4-4110-a60e-47a6ab281c97", "subject": "status-vocabulary", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:6a9ab99285e2cac0", "evaluatedRevision": 6,
+   "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:79 re-judged at rev 6: the prior DIM_LABEL finding is FIXED (566612c2ab, label now via useGlyphDimText), but an unmapped cellKey (typed `string`, src/lib/types/buildTypes.ts:290) still renders as its raw token with dashes swapped for spaces, in every locale",
+   "techniques": [
+    {"technique": "vocabulary-chain-integrity", "verdict": "deviation", "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:79 unknown member falls back to the machine token instead of a decided unknown label; the wire field is an open string so no compile error can fire"},
+    {"technique": "token-label-separation", "verdict": "deviation", "evidence": "src/lib/types/buildTypes.ts:290 cellKey: string - the token is not a closed type, so the unknown-token path is a raw render rather than part of the design"}
+   ],
+   "registryProposal": "Context is weak-governed (glyph-persona-card) and the pair was added by an earlier /conform; the residual finding is narrow - consider whether this pairing should stay once the raw-token fallback is fixed."},
+  {"context": "417112d1-004b-41d5-a656-57997a47d818", "subject": "status-vocabulary", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:6a9ab99285e2cac0", "evaluatedRevision": 6,
+   "evidence": "src/hooks/utility/timing/useElapsedTimer.ts:16 re-judged at rev 6, unchanged: a shared elapsed hook still spins its own setInterval per instance (4 consumers incl. TerminalHeader, ExecutionMiniPlayer), never slows with age, beside the existing self-scaling ticker at src/hooks/utility/timing/relativeTimeTicker.ts:221",
+   "techniques": [
+    {"technique": "timestamp-display", "verdict": "deviation", "evidence": "src/hooks/utility/timing/useElapsedTimer.ts:16 per-cell timer the 'one ticker, self-scaling, shared' rule retires; the shared ticker exists (relativeTimeTicker.ts:65 cadenceForAge) and is not used"}
+   ]}
+ ],
+ "declined": [],
+ "consults": [
+  {"ts": "2026-10-30T21:08:17Z", "bundle": "software-engineering", "subjects": ["status-vocabulary"], "techniques": ["number-formatting", "timestamp-display"], "deviations": 1},
+  {"ts": "2026-10-30T21:08:17Z", "bundle": "software-engineering", "subjects": ["status-vocabulary"], "techniques": ["status-color-mapping"], "deviations": 1},
+  {"ts": "2026-10-30T21:08:17Z", "bundle": "software-engineering", "subjects": ["status-vocabulary"], "techniques": ["status-color-mapping"], "deviations": 1},
+  {"ts": "2026-10-30T21:08:17Z", "bundle": "software-engineering", "subjects": ["status-vocabulary"], "techniques": ["vocabulary-chain-integrity", "token-label-separation"], "deviations": 1},
+  {"ts": "2026-10-30T21:08:17Z", "bundle": "software-engineering", "subjects": ["status-vocabulary"], "techniques": ["timestamp-display"], "deviations": 1}
+ ]}

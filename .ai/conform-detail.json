@@ -13073,19 +13073,19 @@
       "subject": "status-vocabulary",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:57:41.000Z",
-      "worker": "6ca5b133-89fe-4d31-8be1-7ba8e919d68c",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:08:17.000Z",
+      "worker": "f99a210d-bf85-4308-b96c-37c7f34cecba",
       "techniques": [
         {
           "technique": "number-formatting",
           "verdict": "deviation",
-          "evidence": "src/lib/utils/formatters.ts:704 duration renders concatenate a hardcoded unit glyph onto a number; formatDuration takes no locale, so the unit is not part of a locale-rendered value (locale IS bound inside the primitive for cost at formatters.ts:278)"
+          "evidence": "src/lib/utils/formatters.ts:676 unit concatenated to a raw number inside the primitive, no language input exists on formatDuration (:657) - the 'missing argument' shape the technique names"
         },
         {
           "technique": "timestamp-display",
           "verdict": "deviation",
-          "evidence": "src/lib/utils/formatters.ts:114 Math.max(0, ...) clamps every future instant to zero with no stated tolerance, no absolute fallback and no telemetry breadcrumb; the technique requires past-tolerance skew to abandon relative rendering and report"
+          "evidence": "src/lib/utils/formatters.ts:115 Math.max(0, ...) clamps every future instant to 'now'; no tolerance past which absolute rendering + one breadcrumb takes over, so a wrong-instant bug renders as the calmest value"
         },
         {
           "technique": "untrusted-label-rendering",
@@ -13119,6 +13119,13 @@
           "evaluatedAt": "2026-10-09T17:57:12.000Z",
           "worker": "9061f5f5-0062-4700-ad12-643df28f3dea",
           "reason": "replaced by 6ca5b133-89fe-4d31-8be1-7ba8e919d68c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/lib/utils/formatters.ts:635 re-verified: ms/s still route to formatDuration, which concatenates English unit glyphs (formatters.ts:704 `${ms}ms`) with no locale in all 14 locales; formatters.ts:114 still clamps any future instant to 'now' with no tolerance or telemetry",
+          "evaluatedAt": "2026-10-16T17:57:41.000Z",
+          "worker": "6ca5b133-89fe-4d31-8be1-7ba8e919d68c",
+          "reason": "replaced by f99a210d-bf85-4308-b96c-37c7f34cecba"
         }
       ]
     },
@@ -13127,14 +13134,14 @@
       "subject": "status-vocabulary",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:57:41.000Z",
-      "worker": "6ca5b133-89fe-4d31-8be1-7ba8e919d68c",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:08:17.000Z",
+      "worker": "f99a210d-bf85-4308-b96c-37c7f34cecba",
       "techniques": [
         {
           "technique": "status-color-mapping",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:118 violates 'never color alone' and vocabulary->role->themed value: ok/failed differ only by a hand-picked hue, with no accessible label"
+          "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:118 'never colour alone' violated: ok and failed differ only by hue, raw literals instead of a role"
         },
         {
           "technique": "untrusted-label-rendering",
@@ -13168,6 +13175,13 @@
           "evaluatedAt": "2026-10-09T17:57:12.000Z",
           "worker": "9061f5f5-0062-4700-ad12-643df28f3dea",
           "reason": "replaced by 6ca5b133-89fe-4d31-8be1-7ba8e919d68c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:118 re-verified (anchor moved from :117): a saved query's last-run outcome is still a bare bg-emerald-400/bg-red-400 dot, raw palette, no semantic role, no shape or label, so colour alone carries the status",
+          "evaluatedAt": "2026-10-16T17:57:41.000Z",
+          "worker": "6ca5b133-89fe-4d31-8be1-7ba8e919d68c",
+          "reason": "replaced by f99a210d-bf85-4308-b96c-37c7f34cecba"
         }
       ]
     },
@@ -13176,14 +13190,14 @@
       "subject": "status-vocabulary",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:57:41.000Z",
-      "worker": "6ca5b133-89fe-4d31-8be1-7ba8e919d68c",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:08:17.000Z",
+      "worker": "f99a210d-bf85-4308-b96c-37c7f34cecba",
       "techniques": [
         {
           "technique": "status-color-mapping",
           "verdict": "deviation",
-          "evidence": "src/features/shared/components/forms/FormField.tsx:323 raw palette literals per member instead of semantic roles, and colour and icon decided in two parallel chains rather than one entry per member of AvailabilityStatus (useAsyncFieldValidation.ts:11)"
+          "evidence": "src/features/shared/components/forms/FormField.tsx:328 vocabulary -> raw palette literal at the call site (no semantic role), colour and icon split across two hand-wired chains, fallback undecided"
         },
         {
           "technique": "number-formatting",
@@ -13217,6 +13231,13 @@
           "evaluatedAt": "2026-10-09T17:57:12.000Z",
           "worker": "9061f5f5-0062-4700-ad12-643df28f3dea",
           "reason": "replaced by 6ca5b133-89fe-4d31-8be1-7ba8e919d68c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/shared/components/forms/FormField.tsx:323 re-verified: AvailabilityStatus is still coloured by a nested ternary to raw text-emerald-400/text-amber-400 with icons in a parallel chain (:335-343), not one table keyed by the union; a new member silently gets neither colour nor icon",
+          "evaluatedAt": "2026-10-16T17:57:41.000Z",
+          "worker": "6ca5b133-89fe-4d31-8be1-7ba8e919d68c",
+          "reason": "replaced by f99a210d-bf85-4308-b96c-37c7f34cecba"
         }
       ]
     },
@@ -15796,44 +15817,65 @@
       "subject": "status-vocabulary",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:45:18.000Z",
-      "worker": "a3a2b496-dc39-40a7-b77c-e785c3aedcc3",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:08:17.000Z",
+      "worker": "f99a210d-bf85-4308-b96c-37c7f34cecba",
       "techniques": [
-        {
-          "technique": "token-label-separation@i18n",
-          "verdict": "deviation",
-          "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:77 DIM_LABEL[dim] is the English const and the else branch displays question.cellKey raw; the translated path exists at src/features/shared/glyph/persona-sigil/useGlyphDimText.ts:33 and is bypassed"
-        },
         {
           "technique": "vocabulary-chain-integrity",
           "verdict": "deviation",
-          "evidence": "src/lib/types/buildTypes.ts:75 ReviewPolicy.mode is never|on_low_confidence|always, yet src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:95 labels an auto_triage member the authority does not have, keyed by bare string so the type cannot see the drift"
+          "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:79 unknown member falls back to the machine token instead of a decided unknown label; the wire field is an open string so no compile error can fire"
+        },
+        {
+          "technique": "token-label-separation",
+          "verdict": "deviation",
+          "evidence": "src/lib/types/buildTypes.ts:290 cellKey: string - the token is not a closed type, so the unknown-token path is a raw render rather than part of the design"
+        },
+        {
+          "technique": "token-label-separation@i18n",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:77 DIM_LABEL[dim] is the English const and the else branch displays question.cellKey raw; the translated path exists at src/features/shared/glyph/persona-sigil/useGlyphDimText.ts:33 and is bypassed",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "status-color-mapping",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:53 reviewTone and :95 reviewLabel are two parallel string-keyed tables; unknown mode degrades to muted (:60) for an approval vocabulary, colour is raw text-amber-400/80 (:199) not a status role"
+          "evidence": "src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:53 reviewTone and :95 reviewLabel are two parallel string-keyed tables; unknown mode degrades to muted (:60) for an approval vocabulary, colour is raw text-amber-400/80 (:199) not a status role",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "vocabulary-evolution-checklist",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:102 an unrecognised review mode renders its raw token - the forgotten-layer failure the checklist exists to prevent"
+          "evidence": "src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:102 an unrecognised review mode renders its raw token - the forgotten-layer failure the checklist exists to prevent",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "untrusted-label-rendering",
           "verdict": "conformant",
-          "evidence": "src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:172 LLM-authored cap.title renders as a React text child, never markup"
+          "evidence": "src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:172 LLM-authored cap.title renders as a React text child, never markup",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "timestamp-display",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:19 the context state is cellStates/build phases; none of its nine files renders a moment"
+          "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:19 the context state is cellStates/build phases; none of its nine files renders a moment",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "number-formatting",
           "verdict": "not-applicable",
-          "evidence": "src/features/agents/sub_glyph/glyphLayoutHelpers.ts:21 the context derives petal states, not quantities; no numeric rendering in its files"
+          "evidence": "src/features/agents/sub_glyph/glyphLayoutHelpers.ts:21 the context derives petal states, not quantities; no numeric rendering in its files",
+          "carriedFrom": "2026-10-10"
+        }
+      ],
+      "registryProposal": "Context is weak-governed (glyph-persona-card) and the pair was added by an earlier /conform; the residual finding is narrow - consider whether this pairing should stay once the raw-token fallback is fixed.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:77 renders the dimension name from a local hardcoded-English DIM_LABEL copy (glyphLayoutHelpers.ts:10) instead of the translated useGlyphDimText, and falls back to the raw cellKey token - English or machine tokens in all 13 other locales",
+          "evaluatedAt": "2026-10-10T02:45:18.000Z",
+          "worker": "a3a2b496-dc39-40a7-b77c-e785c3aedcc3",
+          "reason": "replaced by f99a210d-bf85-4308-b96c-37c7f34cecba"
         }
       ]
     },
@@ -15842,37 +15884,49 @@
       "subject": "status-vocabulary",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:45:18.000Z",
-      "worker": "a3a2b496-dc39-40a7-b77c-e785c3aedcc3",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:08:17.000Z",
+      "worker": "f99a210d-bf85-4308-b96c-37c7f34cecba",
       "techniques": [
         {
           "technique": "timestamp-display",
           "verdict": "deviation",
-          "evidence": "src/hooks/utility/timing/useElapsedTimer.ts:16 per-instance interval bypasses the shared ticker; src/hooks/utility/timing/relativeTimeTicker.ts:250 useQuantizedNow already offers the shared pulse it should ride"
+          "evidence": "src/hooks/utility/timing/useElapsedTimer.ts:16 per-cell timer the 'one ticker, self-scaling, shared' rule retires; the shared ticker exists (relativeTimeTicker.ts:65 cadenceForAge) and is not used"
         },
         {
           "technique": "number-formatting",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/timing/useAnimatedNumber.ts:16 returns a raw interpolated number; formatting is the caller-side primitive, not this context"
+          "evidence": "src/hooks/utility/timing/useAnimatedNumber.ts:16 returns a raw interpolated number; formatting is the caller-side primitive, not this context",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "status-color-mapping",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/timing/usePolling.ts:1 the context holds timing primitives only; no status vocabulary is defined or rendered"
+          "evidence": "src/hooks/utility/timing/usePolling.ts:1 the context holds timing primitives only; no status vocabulary is defined or rendered",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "vocabulary-chain-integrity",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/timing/usePolling.ts:1 no closed display vocabulary in this context"
+          "evidence": "src/hooks/utility/timing/usePolling.ts:1 no closed display vocabulary in this context",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "untrusted-label-rendering",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/timing/useElapsedTimer.ts:8 hooks return numbers; nothing in the context renders text"
+          "evidence": "src/hooks/utility/timing/useElapsedTimer.ts:8 hooks return numbers; nothing in the context renders text",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "Upward lesson for timestamp-display: src/hooks/utility/timing/relativeTimeTicker.ts:106 gives each subscriber its own due time so the finest cadence is not contagious (one sub-minute label no longer re-renders 30s subscribers at 1 Hz), and :154 stops the ticker when the document is hidden with a catch-up fire on return. The technique names coalescing and age-scaling but neither of these; both were measured defects of a one-timer design. Coverage note: this context is weak overall (debounce/polling/RAF) and the subject governs only its ticker and elapsed-timer files."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/hooks/utility/timing/useElapsedTimer.ts:16 a shared elapsed-display hook spins its own setInterval per instance beside the shared ticker, never slows, and keeps ticking while the document is hidden - the per-cell timer the technique retires (4 consumers incl. TerminalHeader, ExecutionMiniPlayer)",
+          "evaluatedAt": "2026-10-10T02:45:18.000Z",
+          "worker": "a3a2b496-dc39-40a7-b77c-e785c3aedcc3",
+          "reason": "replaced by f99a210d-bf85-4308-b96c-37c7f34cecba"
+        }
+      ]
     },
     "a3cb83b5-7325-4d1c-b10d-b249ab1a186f/session-continuation": {
       "context": "run-desk",

@@ -2236,3 +2236,8 @@
 {"ts":"2026-10-30T21:08:12Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":[],"deviations":0}
 {"ts":"2026-10-30T21:08:12Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":[],"deviations":0}
 {"ts":"2026-10-30T21:08:12Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":[],"deviations":0}
+{"ts":"2026-10-30T21:08:17Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["number-formatting","timestamp-display"],"deviations":1}
+{"ts":"2026-10-30T21:08:17Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["status-color-mapping"],"deviations":1}
+{"ts":"2026-10-30T21:08:17Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["status-color-mapping"],"deviations":1}
+{"ts":"2026-10-30T21:08:17Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["vocabulary-chain-integrity","token-label-separation"],"deviations":1}
+{"ts":"2026-10-30T21:08:17Z","bundle":"software-engineering","subjects":["status-vocabulary"],"techniques":["timestamp-display"],"deviations":1}
