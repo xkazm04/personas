@@ -247,13 +247,12 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
     if (!isLive(token)) return;
     updateItem(token, row.id, { status: 'running' });
     try {
-      let inputData: string | undefined;
-      try {
-        const full = await getExecution(row.id, personaId);
-        inputData = full.input_data ?? undefined;
-      } catch (err) {
-        logger.warn('Failed to hydrate input_data; rerunning with empty input', { id: row.id, err });
-      }
+      // A failed read of the original's input fails THIS row (outer catch). It
+      // used to be logged and the persona re-run with no input at all: a
+      // different run, billed, then diffed against the original as its re-run.
+      // A run whose input really is empty still reads fine (null -> undefined).
+      const full = await getExecution(row.id, personaId);
+      const inputData = full.input_data ?? undefined;
       // The hydrate is an await: a cancel, or a newer cohort, can land during it.
       // Dispatching after either bills a run nobody will see (updateItem drops a
       // stale token's writes), so this is the last point to stop.

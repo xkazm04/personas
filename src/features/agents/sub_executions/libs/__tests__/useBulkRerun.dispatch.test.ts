@@ -80,4 +80,17 @@ describe('useBulkRerun dispatch discipline', () => {
     // 'd' and 'e' were cancelled. They must never be dispatched.
     expect(executePersonaMock).toHaveBeenCalledTimes(4);
   });
+
+  it('does not re-run with an empty input when the original input cannot be read', async () => {
+    getExecutionMock.mockRejectedValue(new Error('ipc down'));
+    executePersonaMock.mockResolvedValue(exec('new-exec-1', 'queued', 0));
+
+    const { result } = renderHook(() => useBulkRerun({ pollIntervalMs: 0, pollTimeoutMs: 0 }));
+    await act(async () => { await result.current.start([row('orig-1')], 'p1'); });
+
+    expect(executePersonaMock).not.toHaveBeenCalled();
+    expect(result.current.items[0]!.status).toBe('failed');
+    expect(result.current.items[0]!.newExecutionId).toBeNull();
+    expect(result.current.items[0]!.error).toBeTruthy();
+  });
 });
