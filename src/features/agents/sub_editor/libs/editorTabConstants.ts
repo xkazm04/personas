@@ -26,6 +26,11 @@ export const TAB_DIRTY_DEPENDENCIES: Partial<Record<EditorTab, string[]>> = {
  *  These include internal save-group names (e.g. 'model') that don't
  *  correspond to a visible tab but still appear in dirty/error lists. */
 export const TAB_LABELS: Record<string, string> = {
+  // `activity` and `design` are rendered tabs the breadcrumb reads from this
+  // table (useBreadcrumbTrail); without them it printed the raw id. Pinned
+  // against EditorTabBar's tabDefs by tabLabelsCoverRenderedTabs.test.ts.
+  activity: 'Activity',
+  design: 'Design',
   'use-cases': 'Use Cases',
   prompt: 'Prompt',
   lab: 'Lab',
