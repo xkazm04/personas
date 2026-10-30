@@ -2784,10 +2784,10 @@
           "changedAt": "2026-09-05",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:64 re-confirmed 2026-10-22 (no commit since 10-20): the deployment smoke test still calls local executePersona, not the endpoint the card advertises (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:45) though src/api/system/cloud.ts:50 cloudExecutePersona exists - a pass describes the local twin, never the deployed build",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
-          "evaluatedRevision": 4,
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:68 re-judged at rev 5: the per-deployment smoke test still runs local executePersona, not the endpoint the card advertises (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:45) though src/api/system/cloud.ts:50 cloudExecutePersona exists - a pass is a verdict about the local twin, never the deployed build",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -8304,10 +8304,10 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/platforms/deploy.rs:25 the only deploy here pushes a persona's design_result JSON to n8n/Zapier/GitHub via a thin wrapper (src-tauri/src/commands/tools/deploy_automation.rs:16): no host build, no environment ladder, no verification racing it, no served assets, so none of the subject's six techniques has its precondition met",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
-          "evaluatedRevision": 4,
+          "evidence": "src-tauri/src/engine/platforms/deploy.rs:108 re-judged at rev 5: the only deploy here pushes a persona design_result JSON to n8n/Zapier/GitHub via a thin wrapper (src-tauri/src/commands/tools/deploy_automation.rs:16) - no host build, upload filter, environment ladder, public demo build or renamed service, so none of the nine techniques has its precondition",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         }
       ],
@@ -12256,14 +12256,14 @@
           "grounding": "use_when",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/platforms/deploy.rs:22 the only deploy in this context ships a persona's design_result JSON plus a credential to n8n/Zapier/GitHub; the repository is not deployed through a host that builds its code, so the subject's precondition fails (the old model-tier finding is also fixed: fanout.rs:133 reads session_prompt::MODEL_TIER_RULE)",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
+          "evidence": "src-tauri/src/engine/platforms/deploy.rs:108 re-judged at rev 5: the only deploy reachable from this context ships a persona definition to n8n/Zapier/GitHub; the repository is not deployed through a host that builds its code, so the subject precondition (incl. the three rev-5 techniques) fails",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
           "digest": "sha256-b2:0aecb9f382210cdc",
           "source": "retained",
           "revision": 4,
           "changedAt": "2026-09-05",
-          "evaluatedRevision": 4,
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -26276,10 +26276,10 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 the Artist plugin and its hooks were removed on 2026-09-14; the context described a module-level data-URL cache over local files via Tauri IPC, not a cache lifetime on a served deploy, so the subject's precondition never held",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
-          "evaluatedRevision": 4
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 re-judged at rev 5: the Artist plugin and its hooks were removed 2026-09-14 (no src/features/plugins/artist file is tracked); it was a local data-URL cache over Tauri IPC, never a served deploy",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+          "evaluatedRevision": 5
         },
         {
           "subject": "codebase-scanning",
@@ -28897,10 +28897,10 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1277 re-confirmed 2026-10-22 (no commit since 10-20): rollback rebuilds the agent from the snapshot prompt plus CURRENT tools/model and with no snapshot falls back to current persona state (gitlab.rs:1288) - rollback ships a never-run artifact instead of re-pointing to the last known-good one",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
-          "evaluatedRevision": 4,
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1277 re-judged at rev 5: rollback-from-history rebuilds the agent from the snapshot prompt plus CURRENT tools (gitlab.rs:1272) and with no snapshot falls back to current persona state (gitlab.rs:1288) - rollback ships a never-run artifact instead of re-pointing to the last known-good one",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         }
       ],

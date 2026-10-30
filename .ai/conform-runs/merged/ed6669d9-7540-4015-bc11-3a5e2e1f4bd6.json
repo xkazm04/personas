@@ -1,0 +1,164 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ed6669d9-7540-4015-bc11-3a5e2e1f4bd6",
+  "subject": "deployment-contract",
+  "evaluatedAt": "2026-10-30T21:08:12Z",
+  "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+  "evaluatedRevision": 5,
+  "pairs": [
+    {
+      "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+      "subject": "deployment-contract",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+      "evaluatedRevision": 5,
+      "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:68 re-judged at rev 5: the per-deployment smoke test still runs local executePersona, not the endpoint the card advertises (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:45) though src/api/system/cloud.ts:50 cloudExecutePersona exists - a pass is a verdict about the local twin, never the deployed build",
+      "techniques": [
+        {
+          "technique": "environment-promotion",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:68 the proof obligation runs against a different system than the deployed one; per verdict-survives-boundary that verdict does not travel to the deployment"
+        },
+        {
+          "technique": "platform-build-parity",
+          "verdict": "not-applicable",
+          "evidence": "src/api/system/cloud.ts:50 the cloud orchestrator receives a persona by id over IPC and executes it; no hosted builder of this repo's code"
+        },
+        {
+          "technique": "build-context-filter-parity",
+          "verdict": "not-applicable",
+          "evidence": "src/api/system/cloud.ts:50 no remote build upload; personas are invoked by id, no source tree is uploaded"
+        },
+        {
+          "technique": "public-build-inert-by-mode",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:45 the endpoint is a per-persona execution route, not a public read-only demonstration build"
+        }
+      ]
+    },
+    {
+      "context": "2b61b648-d166-4255-b7b7-5d32ffdd6751",
+      "subject": "deployment-contract",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+      "evaluatedRevision": 5,
+      "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1277 re-judged at rev 5: rollback-from-history rebuilds the agent from the snapshot prompt plus CURRENT tools (gitlab.rs:1272) and with no snapshot falls back to current persona state (gitlab.rs:1288) - rollback ships a never-run artifact instead of re-pointing to the last known-good one",
+      "techniques": [
+        {
+          "technique": "environment-promotion",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1288 rollback-by-re-pointing is violated: the no-snapshot branch deploys current state under a rollback label"
+        },
+        {
+          "technique": "replace-before-retire",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1257 redeploys under the same project and agent name (the technique's own when-not-to-use case); no endpoint is renamed or moved"
+        },
+        {
+          "technique": "public-build-inert-by-mode",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1257 GitLab Duo agents are private project agents, no public demonstration build"
+        }
+      ],
+      "registryProposal": "plugins-gitlab deploys agent definitions to a third-party platform; deployment-contract governs it only through environment-promotion's rollback rule, whose subject precondition is a host that builds the repo. Rollback-to-known-good for pushed configuration artefacts may deserve a technique in cicd-monitoring or release-pipeline."
+    },
+    {
+      "context": "93359619-794a-4de7-a5bb-c7864e475fe7",
+      "subject": "deployment-contract",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/engine/platforms/deploy.rs:108 re-judged at rev 5: the only deploy here pushes a persona design_result JSON to n8n/Zapier/GitHub via a thin wrapper (src-tauri/src/commands/tools/deploy_automation.rs:16) - no host build, upload filter, environment ladder, public demo build or renamed service, so none of the nine techniques has its precondition",
+      "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+      "evaluatedRevision": 5,
+      "techniques": []
+    },
+    {
+      "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+      "subject": "deployment-contract",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/engine/platforms/deploy.rs:108 re-judged at rev 5: the only deploy reachable from this context ships a persona definition to n8n/Zapier/GitHub; the repository is not deployed through a host that builds its code, so the subject precondition (incl. the three rev-5 techniques) fails",
+      "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+      "evaluatedRevision": 5,
+      "techniques": []
+    },
+    {
+      "context": "cab45fee-e439-4bff-9924-217b1acc17f8",
+      "subject": "deployment-contract",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 re-judged at rev 5: the Artist plugin and its hooks were removed 2026-09-14 (no src/features/plugins/artist file is tracked); it was a local data-URL cache over Tauri IPC, never a served deploy",
+      "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+      "evaluatedRevision": 5,
+      "techniques": []
+    }
+  ],
+  "declined": [
+    {
+      "subject": "deployment-contract",
+      "context": "a35d1f4a-5de8-4be1-af8b-1a3784296400",
+      "reason": "governance weak (plugins-artist-gallery, empty paths, plugin removed 2026-09-14): a coverage question, not judged by default; its rev-4 not-applicable stays stale until the context is retired from the context map"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-30T21:08:12Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "deployment-contract"
+      ],
+      "techniques": [
+        "environment-promotion",
+        "replace-before-retire",
+        "public-build-inert-by-mode",
+        "platform-build-parity",
+        "build-context-filter-parity"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-30T21:08:12Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "deployment-contract"
+      ],
+      "techniques": [
+        "environment-promotion",
+        "replace-before-retire",
+        "public-build-inert-by-mode",
+        "platform-build-parity",
+        "build-context-filter-parity"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-30T21:08:12Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "deployment-contract"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-30T21:08:12Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "deployment-contract"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-30T21:08:12Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "deployment-contract"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

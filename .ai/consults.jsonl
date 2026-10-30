@@ -2231,3 +2231,8 @@
 {"ts":"2026-10-30T21:06:12Z","bundle":"software-engineering","subjects":["background-jobs"],"techniques":["job-progress-and-cancellation"],"deviations":1}
 {"ts":"2026-10-30T21:06:12Z","bundle":"software-engineering","subjects":["background-jobs"],"techniques":["loop-health-telemetry","problem-set-change-logging","loop-supervision","tick-isolation","adaptive-cadence"],"deviations":2}
 {"ts":"2026-10-30T21:07:07Z","bundle":"software-engineering","subjects":["realtime-events"],"techniques":["event-registry","subscription-lifecycle"],"deviations":1}
+{"ts":"2026-10-30T21:08:12Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":["environment-promotion","replace-before-retire","public-build-inert-by-mode","platform-build-parity","build-context-filter-parity"],"deviations":1}
+{"ts":"2026-10-30T21:08:12Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":["environment-promotion","replace-before-retire","public-build-inert-by-mode","platform-build-parity","build-context-filter-parity"],"deviations":1}
+{"ts":"2026-10-30T21:08:12Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":[],"deviations":0}
+{"ts":"2026-10-30T21:08:12Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":[],"deviations":0}
+{"ts":"2026-10-30T21:08:12Z","bundle":"software-engineering","subjects":["deployment-contract"],"techniques":[],"deviations":0}

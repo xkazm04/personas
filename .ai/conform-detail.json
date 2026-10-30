@@ -3119,20 +3119,35 @@
       "subject": "deployment-contract",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T03:11:06.000Z",
-      "worker": "aab86d14-aadc-457e-9c2a-4bb8f31c3d5f",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:08:12.000Z",
+      "worker": "ed6669d9-7540-4015-bc11-3a5e2e1f4bd6",
       "techniques": [
-        {
-          "technique": "deploy-gate-coupling",
-          "verdict": "deviation",
-          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:64 the verifying check targets local execution, against the rule 'point the verifying check at the address production serves'"
-        },
         {
           "technique": "environment-promotion",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:58 the proof obligation is discharged against the local runtime, not the named deployed environment",
-          "carriedFrom": "2026-10-16"
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:68 the proof obligation runs against a different system than the deployed one; per verdict-survives-boundary that verdict does not travel to the deployment"
+        },
+        {
+          "technique": "platform-build-parity",
+          "verdict": "not-applicable",
+          "evidence": "src/api/system/cloud.ts:50 the cloud orchestrator receives a persona by id over IPC and executes it; no hosted builder of this repo's code"
+        },
+        {
+          "technique": "build-context-filter-parity",
+          "verdict": "not-applicable",
+          "evidence": "src/api/system/cloud.ts:50 no remote build upload; personas are invoked by id, no source tree is uploaded"
+        },
+        {
+          "technique": "public-build-inert-by-mode",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:45 the endpoint is a per-persona execution route, not a public read-only demonstration build"
+        },
+        {
+          "technique": "deploy-gate-coupling",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:64 the verifying check targets local execution, against the rule 'point the verifying check at the address production serves'",
+          "carriedFrom": "2026-10-22"
         }
       ],
       "superseded": [
@@ -3170,6 +3185,13 @@
           "evaluatedAt": "2026-10-21T12:46:18.000Z",
           "worker": "7ab03a8f-c0ff-40ff-8c5d-4268ea469d61",
           "reason": "replaced by aab86d14-aadc-457e-9c2a-4bb8f31c3d5f"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:64 re-confirmed 2026-10-22 (no commit since 10-20): the deployment smoke test still calls local executePersona, not the endpoint the card advertises (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:45) though src/api/system/cloud.ts:50 cloudExecutePersona exists - a pass describes the local twin, never the deployed build",
+          "evaluatedAt": "2026-10-22T03:11:06.000Z",
+          "worker": "aab86d14-aadc-457e-9c2a-4bb8f31c3d5f",
+          "reason": "replaced by ed6669d9-7540-4015-bc11-3a5e2e1f4bd6"
         }
       ]
     },
@@ -3178,16 +3200,26 @@
       "subject": "deployment-contract",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-09-23",
-      "worker": "c0923-6",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:08:12.000Z",
+      "worker": "ed6669d9-7540-4015-bc11-3a5e2e1f4bd6",
       "techniques": [
         {
           "technique": "platform-build-parity",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/platforms/deploy.rs:25 the deploy input is a design_result Value, not a build of this repository, so no hosted builder exists to hold parity with"
+          "evidence": "src-tauri/src/engine/platforms/deploy.rs:25 the deploy input is a design_result Value, not a build of this repository, so no hosted builder exists to hold parity with",
+          "carriedFrom": "2026-09-23"
         }
       ],
-      "registryProposal": "deployment-contract's 'when not to use' should name persona-automation export and LLM build sessions, which the matcher pairs on deploy/build vocabulary but are not repository deploys."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/platforms/deploy.rs:22 the only deploy in this context ships a persona's design_result JSON plus a credential to n8n/Zapier/GitHub; the repository is not deployed through a host that builds its code, so the subject's precondition fails (the old model-tier finding is also fixed: fanout.rs:133 reads session_prompt::MODEL_TIER_RULE)",
+          "evaluatedAt": "2026-09-23",
+          "worker": null,
+          "reason": "replaced by ed6669d9-7540-4015-bc11-3a5e2e1f4bd6"
+        }
+      ]
     },
     "1d8a480b-eac4-4110-a60e-47a6ab281c97/operator-surfaces-for-llm-spend": {
       "context": "glyph-persona-card",
@@ -12575,14 +12607,24 @@
       "subject": "deployment-contract",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T03:11:06.000Z",
-      "worker": "aab86d14-aadc-457e-9c2a-4bb8f31c3d5f",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:08:12.000Z",
+      "worker": "ed6669d9-7540-4015-bc11-3a5e2e1f4bd6",
       "techniques": [
         {
           "technique": "environment-promotion",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1288 rollback re-derives a build from current state; 'Rollback is re-pointing' to the last known-good build is not realized"
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1288 rollback-by-re-pointing is violated: the no-snapshot branch deploys current state under a rollback label"
+        },
+        {
+          "technique": "replace-before-retire",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1257 redeploys under the same project and agent name (the technique's own when-not-to-use case); no endpoint is renamed or moved"
+        },
+        {
+          "technique": "public-build-inert-by-mode",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1257 GitLab Duo agents are private project agents, no public demonstration build"
         },
         {
           "technique": "deploy-gate-coupling",
@@ -12591,6 +12633,7 @@
           "carriedFrom": "2026-10-16"
         }
       ],
+      "registryProposal": "plugins-gitlab deploys agent definitions to a third-party platform; deployment-contract governs it only through environment-promotion's rollback rule, whose subject precondition is a host that builds the repo. Rollback-to-known-good for pushed configuration artefacts may deserve a technique in cicd-monitoring or release-pipeline.",
       "superseded": [
         {
           "state": "deviation",
@@ -12619,6 +12662,13 @@
           "evaluatedAt": "2026-10-21T12:46:18.000Z",
           "worker": "7ab03a8f-c0ff-40ff-8c5d-4268ea469d61",
           "reason": "replaced by aab86d14-aadc-457e-9c2a-4bb8f31c3d5f"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1277 re-confirmed 2026-10-22 (no commit since 10-20): rollback rebuilds the agent from the snapshot prompt plus CURRENT tools/model and with no snapshot falls back to current persona state (gitlab.rs:1288) - rollback ships a never-run artifact instead of re-pointing to the last known-good one",
+          "evaluatedAt": "2026-10-22T03:11:06.000Z",
+          "worker": "aab86d14-aadc-457e-9c2a-4bb8f31c3d5f",
+          "reason": "replaced by ed6669d9-7540-4015-bc11-3a5e2e1f4bd6"
         }
       ]
     },
@@ -12627,24 +12677,36 @@
       "subject": "deployment-contract",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:46:16.000Z",
-      "worker": "b12eff39-efd6-458f-bd03-c52ddd65b8b4",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:08:12.000Z",
+      "worker": "ed6669d9-7540-4015-bc11-3a5e2e1f4bd6",
       "techniques": [
         {
           "technique": "deploy-gate-coupling",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/tools/deploy_automation.rs:16 no verifying check exists to race or couple; deploy.rs activation_warning already refuses to claim an unconfirmed remote state"
+          "evidence": "src-tauri/src/commands/tools/deploy_automation.rs:16 no verifying check exists to race or couple; deploy.rs activation_warning already refuses to claim an unconfirmed remote state",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "environment-promotion",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/platforms/deploy.rs:25 a single workflow-definition push with no preview/production rungs or rollback"
+          "evidence": "src-tauri/src/engine/platforms/deploy.rs:25 a single workflow-definition push with no preview/production rungs or rollback",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "platform-build-parity",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/platforms/deploy.rs:25 the target receives JSON, it builds no repository code"
+          "evidence": "src-tauri/src/engine/platforms/deploy.rs:25 the target receives JSON, it builds no repository code",
+          "carriedFrom": "2026-10-09"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/platforms/deploy.rs:25 the only deploy here pushes a persona's design_result JSON to n8n/Zapier/GitHub via a thin wrapper (src-tauri/src/commands/tools/deploy_automation.rs:16): no host build, no environment ladder, no verification racing it, no served assets, so none of the subject's six techniques has its precondition met",
+          "evaluatedAt": "2026-10-09T17:46:16.000Z",
+          "worker": "b12eff39-efd6-458f-bd03-c52ddd65b8b4",
+          "reason": "replaced by ed6669d9-7540-4015-bc11-3a5e2e1f4bd6"
         }
       ]
     },
@@ -38061,17 +38123,26 @@
       "subject": "deployment-contract",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T12:00:00.000Z",
-      "worker": "8c84ee84-67af-4035-baa4-04ccef7e8938",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:08:12.000Z",
+      "worker": "ed6669d9-7540-4015-bc11-3a5e2e1f4bd6",
       "techniques": [
         {
           "technique": "cache-immutability-licensing",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 'cache invalidation' there was an in-process local-image cache, not HTTP cache headers on build output"
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 'cache invalidation' there was an in-process local-image cache, not HTTP cache headers on build output",
+          "carriedFrom": "2026-10-22"
         }
       ],
-      "registryProposal": "Lexical matches on 'asset'/'assets'/'cache' route creative-asset and in-process-cache contexts to deployment-contract; its golden path is about hosted-build delivery, so those terms in use_when/technique text attract false pairings."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 the Artist plugin and its hooks were removed on 2026-09-14; the context described a module-level data-URL cache over local files via Tauri IPC, not a cache lifetime on a served deploy, so the subject's precondition never held",
+          "evaluatedAt": "2026-10-22T12:00:00.000Z",
+          "worker": "8c84ee84-67af-4035-baa4-04ccef7e8938",
+          "reason": "replaced by ed6669d9-7540-4015-bc11-3a5e2e1f4bd6"
+        }
+      ]
     },
     "8a57c65c-06fd-45c9-9d32-d50c89c4c705/pipeline-authoring": {
       "context": "template-generation",
