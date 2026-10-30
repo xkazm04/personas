@@ -280,10 +280,16 @@ export function useConnectorStatuses() {
 
   const handleLinkCredential = useCallback(async (connectorName: string, credentialId: string, credentialName: string): Promise<boolean> => {
     lastAutoTestedCredentialRef.current.delete(connectorName);
+    // The row this optimistic link replaces. A write that never persists
+    // leaves the persisted link -- and what the runner injects -- unchanged,
+    // so the revert restores this row rather than painting it unlinked.
+    let replaced: ConnectorStatus | undefined;
     setStatuses((prev) =>
-      prev.map((s) =>
-        s.name === connectorName ? { ...s, credentialId, credentialName, result: null, linkError: null } : s,
-      ),
+      prev.map((s) => {
+        if (s.name !== connectorName) return s;
+        replaced = s;
+        return { ...s, credentialId, credentialName, result: null, linkError: null };
+      }),
     );
     if (selectedPersona) {
       // The design_context write queue reports failure through the RETURNED
@@ -298,10 +304,13 @@ export function useConnectorStatuses() {
         // lost write can be counted; the row's linkError reaches no telemetry.
         silentCatch('useConnectorStatuses:linkCredential')(new Error(outcome.reason));
         // Revert optimistic update -- the link was never persisted
+        const linkError = tx(t.agents.connectors.test_link_failed, { error: outcome.reason });
         setStatuses((prev) =>
           prev.map((s) =>
             s.name === connectorName
-              ? { ...s, credentialId: null, credentialName: null, result: null, linkError: tx(t.agents.connectors.test_link_failed, { error: outcome.reason }) }
+              ? (replaced
+                ? { ...replaced, testing: false, linkError }
+                : { ...s, credentialId: null, credentialName: null, result: null, linkError })
               : s,
           ),
         );

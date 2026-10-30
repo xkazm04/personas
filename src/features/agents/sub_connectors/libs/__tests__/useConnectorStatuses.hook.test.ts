@@ -169,6 +169,24 @@ describe('useConnectorStatuses link failure', () => {
     expect(result.current.statuses[0]?.linkError).toContain('persona gone');
     expect(reported).toHaveBeenCalledWith('useConnectorStatuses:linkCredential', expect.objectContaining({ message: 'persona gone' }));
   });
+
+  it('a link that never persisted restores the row it replaced, not an unlinked one', async () => {
+    // The persisted link is still cred-a and the runner still injects it, so
+    // the row must not claim "No credential" (and count toward the amber
+    // "execution blocked" banner) because a different link failed to save.
+    vi.mocked(mutateCredentialLink).mockResolvedValueOnce({ applied: false, reason: 'persona gone' });
+    const { result } = renderHook(() => useConnectorStatuses());
+    expect(result.current.statuses[0]?.credentialId).toBe('cred-a');
+
+    await act(async () => { await result.current.handleLinkCredential('github', 'cred-b', 'Personal GitHub'); });
+
+    const row = result.current.statuses[0];
+    expect(row?.credentialId).toBe('cred-a');
+    expect(row?.credentialName).toBe('Work GitHub');
+    expect(row?.result?.state).toBe('verified');
+    expect(row?.linkError).toContain('persona gone');
+    expect(result.current.readinessCounts.unlinked).toBe(0);
+  });
 });
 
 describe('useConnectorStatuses persona-scoped probes', () => {
