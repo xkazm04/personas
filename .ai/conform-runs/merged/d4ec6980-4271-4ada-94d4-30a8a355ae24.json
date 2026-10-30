@@ -1,0 +1,128 @@
+{
+ "schema": "conform-run/1",
+ "worker": "d4ec6980-4271-4ada-94d4-30a8a355ae24",
+ "subject": "voice-io",
+ "evaluatedAt": "2026-10-30T21:04:30Z",
+ "pairs": [
+  {
+   "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:13 the BYOM providers are LLM CLI engines (EngineKind, only claude_code) routed by compliance/routing rules; a speech/tts/stt/microphone/audio regex over all 18 context files is empty, so neither voice pipeline exists here",
+   "techniques": [
+    {
+     "technique": "engine-abstraction",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:13 the engine registry here is text-model providers, not transcription/synthesis engines"
+    }
+   ]
+  },
+  {
+   "context": "97025c06-0d64-4025-8a1f-98b90ba1c233",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:5 the two files are Ollama Cloud text-model presets and compare helpers; no capture, transcription, synthesis or playback",
+   "techniques": [
+    {
+     "technique": "engine-abstraction",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:5 model presets are LLM chat models, not voice engines"
+    }
+   ]
+  },
+  {
+   "context": "83a8a744-2036-4e3e-9654-6fcec82334ff",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/twin/useTwinReadiness.ts:17 the twin voice milestone was retired with the 2026-07-10 ElevenLabs descope; the remaining 30 files (twin dashboards, Obsidian vault sync/graph/browse) carry no audio surface per a speech/tts/stt/audio regex",
+   "techniques": [
+    {
+     "technique": "authored-voice-identity",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/twin/useTwinReadiness.ts:17 twin voice profiles were removed from readiness; no voice identity is stored or authored in this context"
+    }
+   ]
+  },
+  {
+   "context": "ebca0ef1-e509-4721-8472-1588ac2f93cc",
+   "subject": "voice-io",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/twin/__tests__/useTwinReadiness.test.ts:13 the voice milestone is retired; the 11 files are text reply channels (ContactThread, ReplyOutbox, SentReplies) with no capture or synthesis",
+   "techniques": [
+    {
+     "technique": "authored-voice-identity",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/twin/__tests__/useTwinReadiness.test.ts:13 readiness is five milestones with no voice profile"
+    }
+   ],
+   "registryProposal": "coverage: src/features/plugins/twin/setup/useSetupVoice.ts is a real two-direction voice surface (dictation in via useSpeechInput, guide question out via synthesize/play) that NO context in context-map.json lists, so voice-io never reaches it; a /project-populate rescan should assign twin/setup to a context, after which it pairs strongly with voice-io (it visibly realizes stt-pipeline final-only submission and hands-free-off-by-default at :14-20); second unmapped voice surface: src/features/studio/guide/ (useGuideReadAloud.ts) is in no context either, and the studio pair 7741725e was judged not-applicable from a 19-file list that excludes it. It speaks through voicePlayback.play (src/features/companions/athena/voicePlayback.ts:48 new Audio per call, no shared arbiter) and a stop() during synthesize (src/features/studio/guide/useGuideReadAloud.ts:35) does not cancel the pending .then, so a stopped read-aloud still plays - the same latest-wins and one-voice-audible defects already recorded on 5ed4c95e and aa2197a5, i.e. a third instance waiting for a context to carry it"
+  }
+ ],
+ "declined": [
+  {
+   "subject": "voice-io",
+   "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+   "reason": "a Playwright test context for the companion (32 specs); none exercise voice, but whether that is not-applicable or a test-coverage gap for a product that does speak and listen is a judgment the technique set does not settle, so left unknown rather than guessed"
+  },
+  {
+   "subject": "voice-io",
+   "context": "5ed4c95e-037f-459e-ba3e-aa1300fd7504",
+   "reason": "existing deviation judged 2026-10-21 at rev 23; no anchor file changed since (git log --since=2026-10-21 empty) and the subject is still rev 23, so a re-judge would only restate it"
+  },
+  {
+   "subject": "voice-io",
+   "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+   "reason": "existing deviation judged 2026-10-21 at rev 23; anchors unchanged since, re-judge would restate it"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-30T21:04:30Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [
+    "engine-abstraction"
+   ],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-30T21:04:30Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [
+    "engine-abstraction"
+   ],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-30T21:04:30Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [
+    "authored-voice-identity"
+   ],
+   "deviations": 0
+  },
+  {
+   "ts": "2026-10-30T21:04:30Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "voice-io"
+   ],
+   "techniques": [
+    "authored-voice-identity"
+   ],
+   "deviations": 0
+  }
+ ]
+}

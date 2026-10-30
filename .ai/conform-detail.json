@@ -40343,6 +40343,71 @@
       "evaluatedTs": "2026-10-30T21:01:55.000Z",
       "worker": "6c65c8a0-06fd-40c8-aa7d-4d0902350b49",
       "techniques": []
+    },
+    "94b0b4ea-9adb-44d7-8222-4e2345de455b/voice-io": {
+      "context": "byom-provider-settings",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:04:30.000Z",
+      "worker": "d4ec6980-4271-4ada-94d4-30a8a355ae24",
+      "techniques": [
+        {
+          "technique": "engine-abstraction",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:13 the engine registry here is text-model providers, not transcription/synthesis engines"
+        }
+      ]
+    },
+    "97025c06-0d64-4025-8a1f-98b90ba1c233/voice-io": {
+      "context": "model-config",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:04:30.000Z",
+      "worker": "d4ec6980-4271-4ada-94d4-30a8a355ae24",
+      "techniques": [
+        {
+          "technique": "engine-abstraction",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:5 model presets are LLM chat models, not voice engines"
+        }
+      ]
+    },
+    "83a8a744-2036-4e3e-9654-6fcec82334ff/voice-io": {
+      "context": "plugins-obsidian-brain",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:04:30.000Z",
+      "worker": "d4ec6980-4271-4ada-94d4-30a8a355ae24",
+      "techniques": [
+        {
+          "technique": "authored-voice-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/useTwinReadiness.ts:17 twin voice profiles were removed from readiness; no voice identity is stored or authored in this context"
+        }
+      ]
+    },
+    "ebca0ef1-e509-4721-8472-1588ac2f93cc/voice-io": {
+      "context": "plugins-twin-shared",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:04:30.000Z",
+      "worker": "d4ec6980-4271-4ada-94d4-30a8a355ae24",
+      "techniques": [
+        {
+          "technique": "authored-voice-identity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/twin/__tests__/useTwinReadiness.test.ts:13 readiness is five milestones with no voice profile"
+        }
+      ],
+      "registryProposal": "coverage: src/features/plugins/twin/setup/useSetupVoice.ts is a real two-direction voice surface (dictation in via useSpeechInput, guide question out via synthesize/play) that NO context in context-map.json lists, so voice-io never reaches it; a /project-populate rescan should assign twin/setup to a context, after which it pairs strongly with voice-io (it visibly realizes stt-pipeline final-only submission and hands-free-off-by-default at :14-20); second unmapped voice surface: src/features/studio/guide/ (useGuideReadAloud.ts) is in no context either, and the studio pair 7741725e was judged not-applicable from a 19-file list that excludes it. It speaks through voicePlayback.play (src/features/companions/athena/voicePlayback.ts:48 new Audio per call, no shared arbiter) and a stop() during synthesize (src/features/studio/guide/useGuideReadAloud.ts:35) does not cancel the pending .then, so a stopped read-aloud still plays - the same latest-wins and one-voice-audible defects already recorded on 5ed4c95e and aa2197a5, i.e. a third instance waiting for a context to carry it"
     }
   }
 }

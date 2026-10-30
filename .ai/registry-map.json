@@ -5965,8 +5965,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:13 the BYOM providers are LLM CLI engines (EngineKind, only claude_code) routed by compliance/routing rules; a speech/tts/stt/microphone/audio regex over all 18 context files is empty, so neither voice pipeline exists here",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "quality-gates",
@@ -19951,8 +19955,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:5 the two files are Ollama Cloud text-model presets and compare helpers; no capture, transcription, synthesis or playback",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "cross-provider-benchmark-operations",
@@ -29065,8 +29073,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/plugins/twin/useTwinReadiness.ts:17 the twin voice milestone was retired with the 2026-07-10 ElevenLabs descope; the remaining 30 files (twin dashboards, Obsidian vault sync/graph/browse) carry no audio surface per a speech/tts/stt/audio regex",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "quality-gates",
@@ -29772,8 +29784,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/plugins/twin/__tests__/useTwinReadiness.test.ts:13 the voice milestone is retired; the 11 files are text reply channels (ContactThread, ReplyOutbox, SentReplies) with no capture or synthesis",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "structured-output",

@@ -2219,3 +2219,7 @@
 {"ts":"2026-10-30T21:04:30Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":["budget-preflight-and-ceiling"],"deviations":1,"context":"lab-arena"}
 {"ts":"2026-10-30T21:04:30Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":["dataset-sampling-anonymize-freeze","axes-and-caveats-live-at-the-surface"],"deviations":1,"context":"lab-versions-eval"}
 {"ts":"2026-10-30T21:04:30Z","bundle":"llm-observability","subjects":["cross-provider-benchmark-operations"],"techniques":["async-run-queue-with-cancel"],"deviations":1,"context":"stores-slices-agents"}
+{"ts":"2026-10-30T21:04:30Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["engine-abstraction"],"deviations":0}
+{"ts":"2026-10-30T21:04:30Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["engine-abstraction"],"deviations":0}
+{"ts":"2026-10-30T21:04:30Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["authored-voice-identity"],"deviations":0}
+{"ts":"2026-10-30T21:04:30Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["authored-voice-identity"],"deviations":0}
