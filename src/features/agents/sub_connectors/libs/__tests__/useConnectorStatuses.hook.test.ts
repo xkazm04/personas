@@ -264,3 +264,42 @@ describe('useConnectorStatuses cold vault', () => {
     expect(result.current.readinessCounts.unlinked).toBe(1);
   });
 });
+
+describe('useConnectorStatuses Test all fan-out', () => {
+  // Personas share credentials per provider, so an unbounded batch of probes is
+  // how a provider rate limit gets read back as "unreachable". The instrument
+  // is the peak number of healthchecks in flight at once for a 12-connector run.
+  const CONNECTORS = 12;
+  const PROBE_CAP = 4;
+
+  it(`never has more than ${PROBE_CAP} healthchecks in flight across ${CONNECTORS} connectors`, async () => {
+    const types = Array.from({ length: CONNECTORS }, (_, i) => `svc${i}`);
+    const creds = types.map((type, i) => ({ ...cred(`c${i}`, `Cred ${i}`), service_type: type }) as CredentialMetadata);
+    let inFlight = 0;
+    let peak = 0;
+    healthcheckCredential.mockImplementation(async () => {
+      inFlight += 1;
+      peak = Math.max(peak, inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      inFlight -= 1;
+      return { success: true, message: 'ok', state: 'verified' };
+    });
+    act(() => {
+      useVaultStore.setState({ credentials: creds } as never);
+      useAgentStore.setState({
+        selectedPersona: {
+          id: 'persona-many', name: 'many', color: '#fff', design_context: JSON.stringify({ credentialLinks: {} }),
+          tools: types.map((type, i) => ({ id: `t${i}`, name: `tool${i}`, description: null, requires_credential_type: type })),
+        } as never,
+      } as never);
+    });
+    const { result } = renderHook(() => useConnectorStatuses());
+    expect(result.current.statuses).toHaveLength(CONNECTORS);
+
+    await act(async () => { await result.current.handleTestAll(); });
+
+    expect(healthcheckCredential).toHaveBeenCalledTimes(CONNECTORS);
+    expect(peak).toBeLessThanOrEqual(PROBE_CAP);
+    expect(peak).toBeGreaterThan(1);
+  });
+});

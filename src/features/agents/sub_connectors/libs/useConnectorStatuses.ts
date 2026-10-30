@@ -7,10 +7,14 @@ import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import { useTranslation } from '@/i18n/useTranslation';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { ConnectorStatus, ConnectorReadiness, ConnectorTestResult } from './connectorTypes';
 import { deriveReadiness, restoreHealthcheck, isStaleResult, isUnreachable, summarizeTestAll } from './connectorTypes';
+
+/** Max healthchecks in flight at once for "Test all". */
+const TEST_ALL_CONCURRENCY = 4;
 
 export function useConnectorStatuses() {
   const { t, tx } = useTranslation();
@@ -110,13 +114,14 @@ export function useConnectorStatuses() {
         const existing = prevByName.get(credType);
         const linkedCredId = credentialLinks[credType];
         const linkedCred = linkedCredId ? credentialsByIdMap.get(linkedCredId) ?? null : null;
-        // The EXPLICIT link wins over the auto-match. `matchedCred` is whichever
-        // credential of that service_type happened to be indexed first, so with
-        // two credentials for one connector the user's own choice -- persisted
-        // into design_context.credentialLinks by CredentialPicker -- was
-        // discarded on every fresh mount and the tab tested (and reported
-        // readiness for) an arbitrary sibling. `useUnfulfilledCredentials`
-        // already treats the link as authoritative; this now agrees with it.
+        // The EXPLICIT link wins over the auto-match. `matchedCred` is the NEWEST
+        // credential of that service_type (the one the runner injects), not the
+        // user's pick, so with two credentials for one connector the user's own
+        // choice -- persisted into design_context.credentialLinks by
+        // CredentialPicker -- was discarded on every fresh mount and the tab
+        // tested (and reported readiness for) the newest sibling instead.
+        // `useUnfulfilledCredentials` already treats the link as authoritative;
+        // this now agrees with it.
         // A link pointing at a deleted credential resolves to null and still
         // falls through to the auto-match.
         const credentialId = existing?.credentialId ?? linkedCred?.id ?? matchedCred?.id ?? null;
@@ -250,12 +255,12 @@ export function useConnectorStatuses() {
     // only ever say "tested N connectors", which tells the user nothing.
     const baseline = new Map(testable.map((s) => [s.name, s.result]));
     try {
-      const outcomes = await Promise.all(
-        testable.map(async (status) => ({
-          name: status.name,
-          result: await testConnector(status.name, status.credentialId!),
-        })),
-      );
+      // Bounded fan-out: personas share credentials per provider, so probing every
+      // row at once can trip a provider rate limit that then reads as unreachable.
+      const outcomes = await mapWithConcurrency(testable, TEST_ALL_CONCURRENCY, async (status) => ({
+        name: status.name,
+        result: await testConnector(status.name, status.credentialId!),
+      }));
 
       // Verdicts only: an unreachable probe (success === false, but no verdict)
       // used to count as "newly failing" against a passing baseline. It is
