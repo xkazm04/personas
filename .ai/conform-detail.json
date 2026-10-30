@@ -40611,6 +40611,16 @@
         }
       ],
       "registryProposal": "coverage: src/features/plugins/twin/setup/useSetupVoice.ts is a real two-direction voice surface (dictation in via useSpeechInput, guide question out via synthesize/play) that NO context in context-map.json lists, so voice-io never reaches it; a /project-populate rescan should assign twin/setup to a context, after which it pairs strongly with voice-io (it visibly realizes stt-pipeline final-only submission and hands-free-off-by-default at :14-20); second unmapped voice surface: src/features/studio/guide/ (useGuideReadAloud.ts) is in no context either, and the studio pair 7741725e was judged not-applicable from a 19-file list that excludes it. It speaks through voicePlayback.play (src/features/companions/athena/voicePlayback.ts:48 new Audio per call, no shared arbiter) and a stop() during synthesize (src/features/studio/guide/useGuideReadAloud.ts:35) does not cancel the pending .then, so a stopped read-aloud still plays - the same latest-wins and one-voice-audible defects already recorded on 5ed4c95e and aa2197a5, i.e. a third instance waiting for a context to carry it"
+    },
+    "621caefc-8ae0-42e7-89b6-8e879ad62814/seal-and-key-hierarchy": {
+      "context": "api-key-management",
+      "subject": "seal-and-key-hierarchy",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T22:14:48.283Z",
+      "worker": "99439a15-3f22-4bf0-821d-e1ace491732e",
+      "techniques": []
     }
   }
 }

@@ -4643,7 +4643,11 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/resources/external_api_keys.rs:3 The context issues bearer tokens and persists only their one-way SHA-256 digest, with no encrypted store, data key, keyring, root key or seal; a grep of src/features/settings/sub_api_keys/ for unseal/keyring/encrypt/cipher/rotate/root_key returned zero files, so the subject's precondition (a server encrypting its own store under a key hierarchy) does not hold here.",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:044e6e9d3f3395f0",
+          "evaluatedRevision": 3
         },
         {
           "subject": "llm-call-telemetry-model",
