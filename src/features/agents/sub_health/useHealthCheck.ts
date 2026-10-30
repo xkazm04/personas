@@ -62,21 +62,28 @@ function validateSeverity(value: string): DryRunIssue['severity'] {
 // -- Design context reconstruction ------------------------------------
 
 /**
- * Never null: a persona with no (or unparseable) design_context gets a minimal
- * context built from its own fields, so the feasibility check always has
- * something to run against. The hook used to guard a `null` here and surface
- * `error_no_design_context`, a branch this function could not reach.
+ * The payload for `test_design_feasibility`. The backend's `check_feasibility`
+ * reads AgentIR keys (`suggested_tools`, `suggested_connectors`,
+ * `suggested_triggers`, `structured_prompt`), which `design_context`
+ * (DesignContextData) never carries: sending it made every persona report
+ * "Missing structured_prompt section" and score a constant 75.
+ *
+ * Preference: the persona's `last_design_result` (the AgentIR) when it parses
+ * to an object; else a payload synthesised from the persona's own
+ * `structured_prompt`. A persona with neither honestly reports the missing prompt.
  */
-function personaToDesignContext(persona: Persona): DesignContextData {
-  if (persona.design_context) {
-    const ctx = parseJsonOrDefault<DesignContextData | null>(persona.design_context, null);
-    if (ctx) return ctx;
+function personaToFeasibilityPayload(persona: Persona): Record<string, unknown> {
+  if (persona.last_design_result) {
+    const ir = parseJsonOrDefault<Record<string, unknown> | null>(persona.last_design_result, null);
+    if (ir && typeof ir === 'object' && !Array.isArray(ir)) return ir;
   }
 
-  // Fallback: build a minimal context from persona fields
-  return {
-    summary: persona.description || persona.name,
-  };
+  const payload: Record<string, unknown> = {};
+  if (persona.structured_prompt) {
+    // Stored as JSON text; keep the raw string if it is not JSON (still "defined").
+    payload.structured_prompt = parseJsonOrDefault<unknown>(persona.structured_prompt, persona.structured_prompt);
+  }
+  return payload;
 }
 
 // -- Issue generation from feasibility --------------------------------
@@ -318,7 +325,7 @@ export function useHealthCheck(): UseHealthCheckReturn {
     setError(null);
 
     try {
-      const json = JSON.stringify(personaToDesignContext(persona));
+      const json = JSON.stringify(personaToFeasibilityPayload(persona));
 
       if (!latest.isCurrent(gen)) return null;
 

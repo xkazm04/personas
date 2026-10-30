@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { sendAppNotification } from "@/api/system/system";
 import { getAppSetting, setAppSetting } from '@/api/system/settings';
 import { silentCatch, silentCatchNull } from "@/lib/silentCatch";
@@ -7,6 +7,8 @@ import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
 
 const LAST_DIGEST_KEY = 'health_digest_last_run';
 const DIGEST_ENABLED_KEY = 'health_digest_enabled';
+/** How often an open app re-checks whether the weekly digest has become due. */
+const RECHECK_INTERVAL_MS = 60 * 60 * 1000;
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 /**
  * How far in the future a stored stamp may sit before it is treated as
@@ -44,6 +46,17 @@ export function useHealthDigestScheduler() {
   const ran = useRef(false);
   const running = useRef(false);
   const personasLoaded = useAgentStore((s) => s.personas.length > 0);
+  // Bumped hourly while a check is still pending, so an app left open past the
+  // due date re-evaluates instead of waiting for the next launch.
+  const [recheck, setRecheck] = useState(0);
+
+  useEffect(() => {
+    if (!personasLoaded) return;
+    const id = setInterval(() => {
+      if (!ran.current) setRecheck((n) => n + 1);
+    }, RECHECK_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [personasLoaded]);
 
   useEffect(() => {
     if (ran.current || running.current || !personasLoaded) return;
@@ -71,7 +84,8 @@ export function useHealthDigestScheduler() {
         const lastRunMs = parseLastRunMs(lastRunRaw, now);
 
         if (lastRunMs !== null && now - lastRunMs < ONE_WEEK_MS) {
-          ran.current = true; // Not yet due — no retry needed
+          // Not yet due: leave `ran` unlatched so the hourly recheck can find it
+          // due later in this session. The stamp guard still caps it at weekly.
           return;
         }
 
@@ -148,5 +162,5 @@ export function useHealthDigestScheduler() {
         running.current = false;
       }
     };
-  }, [personasLoaded]);
+  }, [personasLoaded, recheck]);
 }
