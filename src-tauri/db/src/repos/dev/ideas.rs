@@ -35,6 +35,31 @@ pub(crate) fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
         verify_evidence: row.get("verify_evidence").unwrap_or(None),
         plan: row.get("plan").unwrap_or(None),
         completeness: row.get("completeness").unwrap_or(None),
+        lens: row.get("lens").unwrap_or(None),
+        impact_why: row.get("impact_why").unwrap_or(None),
+        confidence: row.get("confidence").unwrap_or(None),
+        score: row.get("score").unwrap_or(None),
+        score_parts: row.get("score_parts").unwrap_or(None),
+        band: row
+            .get::<_, Option<String>>("band")
+            .unwrap_or(None)
+            .unwrap_or_else(|| "ranked".to_string()),
+        mvp: row
+            .get::<_, Option<i64>>("mvp")
+            .unwrap_or(None)
+            .unwrap_or(0)
+            != 0,
+        mvp_rule: row.get("mvp_rule").unwrap_or(None),
+        mvp_why: row.get("mvp_why").unwrap_or(None),
+        predicted_verdict: row.get("predicted_verdict").unwrap_or(None),
+        predicted_why: row.get("predicted_why").unwrap_or(None),
+        predicted_by: row.get("predicted_by").unwrap_or(None),
+        size: row.get("size").unwrap_or(None),
+        routing: row.get("routing").unwrap_or(None),
+        decided_by: row.get("decided_by").unwrap_or(None),
+        decided_at: row.get("decided_at").unwrap_or(None),
+        veto_until: row.get("veto_until").unwrap_or(None),
+        sweep_run_id: row.get("sweep_run_id").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -342,10 +367,13 @@ pub fn find_idea_by_id_or_prefix(pool: &DbPool, id_ref: &str) -> Result<Option<D
 /// `select-star-in-repo` count DOWN through its baseline, which the ratchet
 /// treats as a signal to investigate, not as a free win. New queries use it;
 /// converting the old ones is its own change.
-const IDEA_COLUMNS: &str = "id, project_id, context_id, scan_type, category, title, description, \
+pub(crate) const IDEA_COLUMNS: &str =
+    "id, project_id, context_id, scan_type, category, title, description, \
      reasoning, status, effort, impact, risk, priority, provider, model, rejection_reason, \
      origin, use_case_id, evidence, dedup_key, goal_id, verify_state, verify_checked_at, \
-     verify_evidence, plan, completeness, created_at, updated_at";
+     verify_evidence, plan, completeness, lens, impact_why, confidence, score, score_parts, \
+     band, mvp, mvp_rule, mvp_why, predicted_verdict, predicted_why, predicted_by, size, \
+     routing, decided_by, decided_at, veto_until, sweep_run_id, created_at, updated_at";
 
 /// Bind an idea to the goal it serves (G41). `None` clears the binding.
 /// Returns whether a row was touched; binding an idea that does not exist is

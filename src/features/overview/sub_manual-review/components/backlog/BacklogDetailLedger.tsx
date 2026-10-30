@@ -19,6 +19,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 
 import { prettyEvidence, triageValueScore, type BacklogIdea } from './backlogModel';
+import { ScanFindingChips } from './ScanFindingChips';
 
 /** Position within the review queue, plus the stepper. */
 export interface BacklogNav {
@@ -47,6 +48,7 @@ export function BacklogDetailLedger({
   onBuildNow,
   onClose,
   nav,
+  machineBanner,
 }: {
   idea: BacklogIdea;
   categoryLabel: (key: string) => string;
@@ -58,6 +60,8 @@ export function BacklogDetailLedger({
   onBuildNow: () => void;
   onClose: () => void;
   nav?: BacklogNav;
+  /** The veto strip for a machine-decided item (`MachineDecisionBanner`). */
+  machineBanner?: React.ReactNode;
 }) {
   const { t, tx } = useTranslation();
   const r = t.overview.review;
@@ -74,6 +78,7 @@ export function BacklogDetailLedger({
             </span>
             {idea.origin && <FindingBadge origin={idea.origin} evidence={idea.evidence} />}
             <VerdictChip verifyState={idea.verifyState} />
+            <ScanFindingChips idea={idea} />
           </div>
           <h2 id="backlog-detail" className="typo-title-lg max-w-[68ch]">
             {idea.title}
@@ -119,6 +124,7 @@ export function BacklogDetailLedger({
               scanners emit lists and backticks) at full body contrast, and
               evidence wraps in place instead of scrolling sideways. */}
           <div className="md:flex-1 min-w-0 px-6 py-5 flex flex-col gap-5">
+            {machineBanner}
             {/* MARKDOWN, not pre-wrapped text. The scanners that raise these
                 write the description in the same dialect as the reasoning
                 below it — lists, backticks, bold — and this was the one place
@@ -178,6 +184,7 @@ export function BacklogDetailLedger({
                   <LevelBadge label={r.backlog_risk} value={idea.risk} />
                 </span>
               </Row>
+              {idea.impactWhy && <Row label={r.backlog_impact_why}>{idea.impactWhy}</Row>}
               <Row label={r.backlog_col_value}>
                 <span className="tabular-nums">{triageValueScore(idea)}</span>
               </Row>

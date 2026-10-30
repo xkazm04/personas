@@ -227,6 +227,17 @@ const PENDING_ROWS = [
   ['i-14', 'Split the fleet grid into lanes by project', null, 'user', 8, 3, 7, 1300, null],
 ];
 
+// scan-finding/1 fields on a few rows (score + breakdown, lens, MVP, a reserve
+// row, a predicted verdict) so the Score sort, the Lens MVPs strip and the
+// reserve disclosure render; every other row stays unscored.
+const parts = (impact, cw, ed, rf) => JSON.stringify({ impact, confidence_w: cw, effort_div: ed, risk_factor: rf, formula: 'scan-score/1' });
+const SCAN_FIELDS = {
+  'i-11': { lens: 'error-handler', score: 40.5, score_parts: parts(8, 0.75, 1.333, 0.9), confidence: 'medium', mvp: true, mvp_rule: 'top-score', sweep_run_id: 'run-7', predicted_verdict: 'accept', predicted_why: 'precedent: accepted "swallowed error in vault sync"', impact_why: 'a failed write reads as success on the main path', size: 'S', band: 'ranked' },
+  'i-04': { lens: 'tech-debt-tracker', score: 28.5, score_parts: parts(3, 0.95, 1, 1), confidence: 'high', mvp: true, mvp_rule: 'top-score', sweep_run_id: 'run-7', predicted_verdict: 'defer', size: 'M', band: 'ranked' },
+  'i-07': { lens: 'documentation-auditor', score: 6.9, score_parts: parts(5, 0.5, 2, 0.55), confidence: 'low', sweep_run_id: 'run-7', predicted_verdict: 'reject', size: 'XS', band: 'reserve' },
+  'i-01': { lens: 'error-handler', score: 72.2, score_parts: parts(9, 0.95, 1.111, 0.95), confidence: 'high', sweep_run_id: 'run-6', predicted_verdict: 'accept', size: 'S', band: 'ranked' },
+};
+
 const PENDING_IDEAS = PENDING_ROWS.map(([id, title, origin, category, effort, impact, risk, m, evidence]) =>
   idea(id, title, {
     origin, category, effort, impact, risk,
@@ -234,6 +245,7 @@ const PENDING_IDEAS = PENDING_ROWS.map(([id, title, origin, category, effort, im
     evidence: evidence ? JSON.stringify(evidence) : null,
     description: `${title}. Synthetic fixture for the page harness.`,
     created_at: ago(m), updated_at: ago(m),
+    ...SCAN_FIELDS[id],
   }));
 
 // The decided history: enough heavy rejections, quick accepts and verdicts that
@@ -287,6 +299,18 @@ function subTriage() {
         },
       },
       { cmd: 'dev_tools_list_triage_rules', response: TRIAGE_RULES },
+      {
+        cmd: 'dev_tools_scan_trust',
+        response: {
+          slices: [
+            { slice: 'technical|error-handler|-|S', level: 2, ceiling: 3, start: 2, agreement: 0.85, n: 20 },
+            { slice: 'technical|security-auditor|-|S', level: 0, ceiling: 1, start: 1, n: 0, changedAt: ago(90), reason: 'human reversal of a machine decision (inside the veto window)' },
+          ],
+          events: [
+            { slice: 'technical|security-auditor|-|S', from: 1, to: 0, reason: 'human reversal of a machine decision (inside the veto window)', n: 0, at: ago(90) },
+          ],
+        },
+      },
       { cmd: 'dev_tools_run_triage_rules', response: { applied: 2, ideas_affected: 5 } },
       // usePassportForProject (SweepButton): no passport assessed yet.
       { cmd: 'dev_tools_get_cross_project_metadata', response: null },

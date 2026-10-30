@@ -18,6 +18,7 @@ import { EffortRiskFilter } from '@/features/plugins/dev-tools/sub_triage/Effort
 import { TriageRulesPanel } from '@/features/plugins/dev-tools/sub_triage/TriageRulesPanel';
 import { SensorScoreboard } from '@/features/plugins/dev-tools/sub_triage/findings/SensorScoreboard';
 import { SweepButton } from '@/features/plugins/dev-tools/sub_triage/findings/SweepButton';
+import Button from '@/features/shared/components/buttons/Button';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import * as devApi from '@/api/devTools/devTools';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
@@ -32,6 +33,8 @@ import { AthenaVerdictCard } from './AthenaVerdictCard';
 import { BacklogDetailModal } from './BacklogDetailModal';
 import { BacklogFocusDeck } from './BacklogFocusDeck';
 import { BacklogTable } from './BacklogTable';
+import { LensMvpStrip } from './LensMvpStrip';
+import { ScanTrustPopover } from './ScanTrustPopover';
 import { useCategoryLabel } from './backlogLabels';
 import {
   applyBacklogSort,
@@ -40,6 +43,7 @@ import {
   nextQueueIndex,
   selectionAfterSelectAll,
   SORT_MODE_COLUMN,
+  splitReserve,
   withinLevelRanges,
   type BacklogIdea,
   type BacklogSortMode,
@@ -53,7 +57,7 @@ const STATUSES: BacklogStatus[] = ['pending', 'accepted', 'rejected', 'archived'
 /** Mirrors `backlog_triage::MAX_BATCH_IDEAS` — the backend rejects more, so the
  *  panel truncates and says so rather than letting the call fail. */
 const ATHENA_BATCH_CAP = 30;
-const SORT_MODES: BacklogSortMode[] = ['default', 'value', 'quick'];
+const SORT_MODES: BacklogSortMode[] = ['default', 'value', 'quick', 'newest'];
 
 type BacklogView = 'table' | 'focus';
 
@@ -70,6 +74,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
   const [effortRange, setEffortRange] = useState<LevelRange>(FULL_LEVEL_RANGE);
   const [riskRange, setRiskRange] = useState<LevelRange>(FULL_LEVEL_RANGE);
   const [levelsOpen, setLevelsOpen] = useState(false);
+  const [showReserve, setShowReserve] = useState(false);
   const levelsRef = useRef<HTMLDivElement>(null);
   useClickOutside(levelsRef, levelsOpen, () => setLevelsOpen(false));
 
@@ -108,6 +113,15 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
       sortMode,
     ),
     [queue.rows, effortRange, riskRange, sortMode],
+  );
+
+  // scan-finding/1: `reserve` rows (found and scored, over the run's cap) sit
+  // collapsed under "N in reserve" and are not part of the ranked list until
+  // the reviewer opens them.
+  const { ranked, reserve } = useMemo(() => splitReserve(visibleRows), [visibleRows]);
+  const listRows = useMemo(
+    () => (showReserve ? [...ranked, ...reserve] : ranked),
+    [showReserve, ranked, reserve],
   );
 
   const byId = useMemo(
@@ -263,8 +277,8 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
       <div className="flex items-center gap-1">
         {SORT_MODES.map((mode) => {
           const active = sortMode === mode;
-          const label = { default: r.backlog_sort_default, value: r.backlog_sort_value, quick: r.backlog_sort_quick }[mode];
-          const tip = { default: undefined, value: r.backlog_sort_value_tip, quick: r.backlog_sort_quick_tip }[mode];
+          const label = { default: r.backlog_sort_default, value: r.backlog_sort_value, quick: r.backlog_sort_quick, newest: r.backlog_sort_newest }[mode];
+          const tip = { default: r.backlog_sort_default_tip, value: r.backlog_sort_value_tip, quick: r.backlog_sort_quick_tip, newest: undefined }[mode];
           return (
             <button
               key={mode}
@@ -361,6 +375,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
             {r.backlog_execute_accepted}
           </button>
           <SweepButton projectId={activeProjectId} onSwept={queue.reload} />
+          {activeProjectId && <ScanTrustPopover projectId={activeProjectId} />}
           <SegmentedTabs<BacklogView>
             tabs={[
               { id: 'table', label: r.backlog_view_table },
@@ -398,6 +413,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
       {/* Renders itself away until a sensor has raised something OR the last
           sweep skipped one - the project id is what lets it tell whose sweep. */}
       <SensorScoreboard projectId={activeProjectId} />
+      <LensMvpStrip rows={queue.rows} onOpen={(row) => openDetail(row, [row])} />
 
       <div
         className={view === 'table' ? 'flex-1' : 'flex-1 min-h-0'}
@@ -416,7 +432,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
             <div className="flex justify-end">{sortControls}</div>
             <div className="flex-1 min-h-0">
               <BacklogFocusDeck
-                rows={visibleRows}
+                rows={listRows}
                 counts={queue.counts}
                 categoryLabel={categoryLabel}
                 busy={queue.actingId !== null}
@@ -429,7 +445,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
           </div>
         ) : (
           <BacklogTable
-            rows={visibleRows}
+            rows={listRows}
             projectOptions={queue.projectOptions}
             selectedIds={selectedIds}
             onToggleSelect={toggleSelect}
@@ -442,6 +458,13 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
             toolbar={sortControls}
             sortHint={SORT_MODE_COLUMN[sortMode]}
           />
+        )}
+        {reserve.length > 0 && view === 'table' && (
+          <div className="flex justify-center pt-2">
+            <Button variant="ghost" size="sm" aria-expanded={showReserve} onClick={() => setShowReserve((v) => !v)}>
+              {tx(showReserve ? r.backlog_reserve_hide : r.backlog_reserve_show, { count: reserve.length })}
+            </Button>
+          </div>
         )}
       </div>
 

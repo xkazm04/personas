@@ -17,6 +17,7 @@ import { TruncateWithTooltip } from '@/features/shared/components/display/Trunca
 import type { Translations } from '@/i18n/en';
 
 import type { BacklogIdea } from './backlogModel';
+import { ScoreChip } from './ScanFindingChips';
 
 export function useBacklogColumns({
   r,
@@ -66,6 +67,16 @@ export function useBacklogColumns({
         ),
       },
     ];
+    // scan-finding/1: the producer's stored score; an unscored row says so.
+    cols.push({
+      key: 'score',
+      label: r.backlog_col_score,
+      width: '84px',
+      sortable: true,
+      align: 'right',
+      nowrap: true,
+      render: (row) => <ScoreChip idea={row} />,
+    });
     if (showProject) {
       cols.push({
         key: 'project',

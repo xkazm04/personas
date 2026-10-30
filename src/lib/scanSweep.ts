@@ -35,7 +35,21 @@ export function setAutoDeepScanEnabled(on: boolean): void {
 }
 
 /** The slash command a deep-scan escalation resolves to. The single-lens
- *  scan-* skills are retired — a focused deep pass is a one-lens sweep. */
-export function deepScanCommand(lens: string, context: string | null): string {
-  return context ? `/scan-sweep --lenses ${lens} ${context}` : `/scan-sweep --lenses ${lens}`;
+ *  scan-* skills are retired — a focused deep pass is a one-lens sweep.
+ *
+ *  scan-sweep takes a context only as `--one <context>`; a bare positional
+ *  context (what this emitted until 2026-10-30) is not an argument it accepts,
+ *  so the focused pass silently ran the default stabilize loop instead. */
+export function deepScanCommand(lens: string | readonly string[], context: string | null): string {
+  const lenses = (typeof lens === 'string' ? [lens] : [...lens])
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .join(',');
+  const one = context?.trim();
+  // Context names carry spaces ("Overview Observability"): quote them so the
+  // skill reads one argument, not the first word.
+  const arg = one && /\s/.test(one) ? `"${one}"` : one;
+  return arg
+    ? `/scan-sweep --one ${arg} --lenses ${lenses}`
+    : `/scan-sweep --lenses ${lenses}`;
 }

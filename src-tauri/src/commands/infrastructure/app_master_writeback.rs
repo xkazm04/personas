@@ -40,6 +40,7 @@ use ts_rs::TS;
 use crate::commands::infrastructure::dev_tools::{
     apply_idea_verdict_cas, create_task_core, run_triage_rules_core, IdeaVerdict,
 };
+use crate::commands::infrastructure::scan_contract;
 use crate::commands::infrastructure::task_executor::{
     record_task_outcome, write_back_to_source_idea,
 };
@@ -418,7 +419,7 @@ pub const ACTOR_APP_MASTER: &str = "AppMaster";
 // 2 · Filing a backlog item
 // ============================================================================
 
-#[derive(Debug, Clone, Deserialize, TS)]
+#[derive(Debug, Clone, Default, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct FileIdeaInput {
     #[serde(alias = "project_id")]
@@ -460,6 +461,60 @@ pub struct FileIdeaInput {
     /// filed is a dedup hit here. Read only with `origin: "scan_sweep"`.
     #[serde(default)]
     pub lens: Option<String>,
+    // --- scan-finding/1 (Seam A1). Every field optional; absent = SQL NULL.
+    //     Validated and written by `scan_contract::finding_fields`.
+    #[serde(default, alias = "impact_why")]
+    pub impact_why: Option<String>,
+    /// `low` | `medium` | `high`.
+    #[serde(default)]
+    pub confidence: Option<String>,
+    /// The producer's `scan-score/1`, stored as given.
+    #[serde(default)]
+    pub score: Option<f64>,
+    #[serde(default, alias = "score_parts")]
+    #[ts(type = "Record<string, unknown> | null")]
+    pub score_parts: Option<serde_json::Value>,
+    /// `ranked` | `reserve`.
+    #[serde(default)]
+    pub band: Option<String>,
+    #[serde(default)]
+    pub mvp: Option<bool>,
+    #[serde(default, alias = "mvp_rule")]
+    pub mvp_rule: Option<String>,
+    #[serde(default, alias = "mvp_why")]
+    pub mvp_why: Option<String>,
+    /// `accept` | `reject` | `defer`.
+    #[serde(default, alias = "predicted_verdict")]
+    pub predicted_verdict: Option<String>,
+    #[serde(default, alias = "predicted_why")]
+    pub predicted_why: Option<String>,
+    #[serde(default, alias = "predicted_by")]
+    pub predicted_by: Option<String>,
+    /// The contract's proof object; `verdict` lands on `verify_state`.
+    #[serde(default)]
+    #[ts(type = "Record<string, unknown> | null")]
+    pub proof: Option<serde_json::Value>,
+    /// `XS` | `S` | `M` | `L` | `XL`.
+    #[serde(default)]
+    pub size: Option<String>,
+    #[serde(default)]
+    pub lane: Option<String>,
+    #[serde(default)]
+    pub result: Option<String>,
+    #[serde(default)]
+    pub method: Option<String>,
+    #[serde(default)]
+    pub gate: Option<String>,
+    /// `backlog` | `carry`. A `carry` is owed to the sweep's next round and is
+    /// never filed for a decision: the door refuses it.
+    #[serde(default)]
+    pub disposition: Option<String>,
+    #[serde(default, alias = "sweep_run_id")]
+    pub sweep_run_id: Option<String>,
+    /// Ask the door to apply the L1 gate. Not stored. The door looks the
+    /// slice's level up itself; a filer's claim of a level is never read.
+    #[serde(default, alias = "auto_decide")]
+    pub auto_decide: Option<bool>,
 }
 
 /// Origins an HTTP filing may claim instead of `app-master`.
@@ -478,16 +533,7 @@ fn filing_key(input: &FileIdeaInput) -> Result<(&'static str, String), AppError>
             repo::scan_dedup_key(APP_MASTER_SCAN_TYPE, context, title),
         )),
         Some("scan_sweep") => {
-            let lens: String = input
-                .lens
-                .as_deref()
-                .unwrap_or("")
-                .trim()
-                .chars()
-                .filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
-                .map(|c| c.to_ascii_lowercase())
-                .take(60)
-                .collect();
+            let lens = scan_contract::sanitize_lens(input.lens.as_deref().unwrap_or(""));
             let key_type = if lens.is_empty() {
                 "scan_sweep"
             } else {
@@ -534,6 +580,15 @@ pub struct FileIdeaResult {
     /// this filing reads as a paraphrase of, and how to file anyway when it is
     /// a different finding.
     pub duplicate_note: Option<String>,
+    /// True when the filing asked for `autoDecide` and the slice's level
+    /// (looked up here, never taken from the filer) let the predicted verdict
+    /// stand as the decision, `decided_by: machine:scan-sweep`, with a 24 h
+    /// veto window.
+    pub auto_decided: bool,
+    /// The slice's level when `autoDecide` was asked; absent otherwise.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub level: Option<i32>,
 }
 
 /// The triage-rules pass a filing triggered, over the project's whole pending
@@ -576,6 +631,31 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
     let title = input.title.trim();
     let (scan_type, dedup_key) = filing_key(input)?;
 
+    // scan-finding/1: a `carry` is owed to the sweep's next round and is never
+    // presented for a decision; every other contract field is validated BEFORE
+    // anything is written, so a malformed filing files nothing.
+    if scan_contract::is_carry(input.disposition.as_deref()) {
+        return Err(AppError::Validation(
+            "disposition `carry` is owed to the sweep's next round and is not filed for a \
+             decision; file it when it is a backlog item"
+                .into(),
+        ));
+    }
+    let finding = scan_contract::finding_fields(&raw_finding(input))?;
+    let category = scan_contract::row_category(trimmed(input.category.as_ref()));
+
+    // The scales arrive on the filer's NATIVE curve: 1-5 for every filer but
+    // scan-sweep, which sends its 1-10 unhalved. The repo's one door normalises
+    // a `scan_sweep` row once (`normalize_scale(v, 10)`); the backfill path
+    // writes raw, so it gets the same exchange rate here, and nowhere twice.
+    let one_scale = |v: Option<i32>| match scan_type {
+        "scan_sweep" => crate::db::models::normalize_scale(
+            v,
+            crate::db::models::BacklogSource::ScanSweep.native_scale_max(),
+        ),
+        _ => v,
+    };
+
     // An honest paraphrase of an item already on the backlog keys differently
     // (the key is built from the title's words), so look for one before the
     // insert, unless the exact key already matches (that is the guard's hit)
@@ -592,9 +672,9 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
             let (idea, backfill) = repo::backfill_idea_scales(
                 db,
                 &near.idea.id,
-                input.effort,
-                input.impact,
-                input.risk,
+                one_scale(input.effort),
+                one_scale(input.impact),
+                one_scale(input.risk),
             )?;
             let duplicate_note = Some(format!(
                 "already on the backlog as [{}] \"{}\" ({}, similarity {:.2}), so nothing new \
@@ -612,6 +692,8 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
                 goal_note: None,
                 triage: None,
                 duplicate_note,
+                auto_decided: false,
+                level: None,
             };
             let filed = bind_filed_goal(db, &project.id, filed, trimmed(input.goal.as_ref()))?;
             return triage_filed_idea(
@@ -623,25 +705,21 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
         }
     }
 
-    // This door's scales are 1-5 for every filer, but the repo reads a
-    // `scan_sweep` row on that producer's native 1-10 curve. Doubling is the
-    // exact inverse of its exchange rate (ceil(2v / 2) = v).
-    let native = |v: Option<i32>| match scan_type {
-        "scan_sweep" => v.map(|v| v * 2),
-        _ => v,
-    };
+    // Raw: the repo's door applies the producer's exchange rate exactly once.
+    // (It used to receive scan-sweep's already-halved 1-5 doubled back to 1-10;
+    // scan-sweep now sends its native scale and the round trip is gone.)
     let created = repo::create_idea_deduped(
         db,
         &project.id,
         trimmed(input.context_id.as_ref()),
         scan_type,
-        trimmed(input.category.as_ref()),
+        category,
         title,
         trimmed(input.description.as_ref()),
         trimmed(input.reasoning.as_ref()),
-        native(input.effort),
-        native(input.impact),
-        native(input.risk),
+        input.effort,
+        input.impact,
+        input.risk,
         None,
         None,
         &dedup_key,
@@ -656,6 +734,8 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
             goal_note: None,
             triage: None,
             duplicate_note: None,
+            auto_decided: false,
+            level: None,
         },
         // The guard fired. Hand back what is already there — "already filed" and
         // "could not file" are different answers and the caller must be able to
@@ -675,9 +755,9 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
             let (idea, backfill) = repo::backfill_idea_scales(
                 db,
                 &existing.id,
-                input.effort,
-                input.impact,
-                input.risk,
+                one_scale(input.effort),
+                one_scale(input.impact),
+                one_scale(input.risk),
             )?;
             FileIdeaResult {
                 idea,
@@ -690,12 +770,57 @@ pub fn file_backlog_idea(db: &DbPool, input: &FileIdeaInput) -> Result<FileIdeaR
                 goal_note: None,
                 triage: None,
                 duplicate_note: None,
+                auto_decided: false,
+                level: None,
             }
         }
     };
     let judgeable = (filed.created && input.risk.is_some()) || filed.outcome == FILE_IDEA_RATED;
-    let filed = bind_filed_goal(db, &project.id, filed, trimmed(input.goal.as_ref()))?;
+    let mut filed = bind_filed_goal(db, &project.id, filed, trimmed(input.goal.as_ref()))?;
+
+    // scan-finding/1, in the order `scan_contract` documents: the fields, then
+    // the L1 gate, and only then the mechanical triage rules - which read
+    // `pending` rows only, so they cannot silently override a machine decision.
+    filed.idea = scan_contract::record_finding(db, &filed.idea.id, &finding)?;
+    if input.auto_decide == Some(true) {
+        let (auto_decided, level) = scan_contract::auto_decide(db, &filed.idea)?;
+        filed.auto_decided = auto_decided;
+        filed.level = Some(level);
+        if auto_decided {
+            filed.idea = repo::get_idea_by_id(db, &filed.idea.id)?;
+        }
+    } else if scan_type == "scan_sweep" {
+        // scan-sweep reads `level` top-level on every filing; report it even
+        // when no decision was asked for. Never inferred into a decision.
+        filed.level = Some(scan_contract::slice_level(db, &filed.idea)?);
+    }
     triage_filed_idea(db, &project.id, filed, judgeable)
+}
+
+/// Borrow the contract fields of a filing for validation.
+fn raw_finding(input: &FileIdeaInput) -> scan_contract::RawFinding<'_> {
+    scan_contract::RawFinding {
+        lens: input.lens.as_deref(),
+        impact_why: input.impact_why.as_deref(),
+        confidence: input.confidence.as_deref(),
+        score: input.score,
+        score_parts: input.score_parts.as_ref(),
+        band: input.band.as_deref(),
+        mvp: input.mvp,
+        mvp_rule: input.mvp_rule.as_deref(),
+        mvp_why: input.mvp_why.as_deref(),
+        predicted_verdict: input.predicted_verdict.as_deref(),
+        predicted_why: input.predicted_why.as_deref(),
+        predicted_by: input.predicted_by.as_deref(),
+        proof: input.proof.as_ref(),
+        size: input.size.as_deref(),
+        lane: input.lane.as_deref(),
+        result: input.result.as_deref(),
+        method: input.method.as_deref(),
+        gate: input.gate.as_deref(),
+        disposition: input.disposition.as_deref(),
+        sweep_run_id: input.sweep_run_id.as_deref(),
+    }
 }
 
 /// Run the project's triage rules when a filing handed them something new to
@@ -770,6 +895,12 @@ pub fn file_rated_backlog_idea(
 ) -> Result<FileIdeaResult, AppError> {
     personas_core::validation::require_non_empty("project_id", &input.project_id)?;
     personas_core::validation::require_non_empty("title", &input.title)?;
+    // Each filer on its native curve: scan-sweep grades 1-10 (scan-finding/1)
+    // and the repo converts it once; every other filer files 1-5.
+    let scale_max = match trimmed(input.origin.as_ref()) {
+        Some("scan_sweep") => crate::db::models::BacklogSource::ScanSweep.native_scale_max(),
+        _ => crate::db::models::IDEA_SCALE_MAX,
+    };
     let out_of_range: Vec<String> = [
         ("effort", input.effort),
         ("impact", input.impact),
@@ -777,13 +908,13 @@ pub fn file_rated_backlog_idea(
     ]
     .into_iter()
     .filter_map(|(k, v)| {
-        v.filter(|v| !(1..=5).contains(v))
+        v.filter(|v| !(1..=scale_max).contains(v))
             .map(|v| format!("{k} {v}"))
     })
     .collect();
     if !out_of_range.is_empty() {
         return Err(AppError::Validation(format!(
-            "scales are integers 1-5, got {}",
+            "scales are integers 1-{scale_max}, got {}",
             out_of_range.join(", ")
         )));
     }
@@ -801,7 +932,7 @@ pub fn file_rated_backlog_idea(
         if repo::find_idea_by_dedup_key(db, &project.id, &dedup_key)?.is_none() {
             return Err(AppError::Validation(format!(
                 "missing {}: the filer scores every item on effort, impact and risk, \
-                 each an integer 1-5; re-file with all three",
+                 each an integer 1-{scale_max}; re-file with all three",
                 missing.join(", ")
             )));
         }
@@ -1941,6 +2072,11 @@ mod tests {
         let mut input = rated_filing(&pid, "Measure caption lines with real advances", Some(4));
         input.origin = Some("scan_sweep".into());
         input.lens = Some("Parity-Auditor".into());
+        // scan-sweep files on its native 1-10 curve (scan-finding/1), unhalved;
+        // the repo's door converts it once: 4,6,8 -> 2,3,4.
+        input.effort = Some(4);
+        input.impact = Some(6);
+        input.risk = Some(8);
 
         let filed = file_rated_backlog_idea(&pool, &input)?;
         assert!(filed.created);
@@ -1983,6 +2119,7 @@ mod tests {
             force: None,
             origin: None,
             lens: None,
+            ..Default::default()
         };
 
         let first = file_backlog_idea(&pool, &input)?;
@@ -2035,6 +2172,7 @@ mod tests {
             force: None,
             origin: None,
             lens: None,
+            ..Default::default()
         };
 
         let first = file_backlog_idea(&pool, &unrated)?;
@@ -2096,6 +2234,7 @@ mod tests {
             force: None,
             origin: None,
             lens: None,
+            ..Default::default()
         };
         let first = file_backlog_idea(&pool, &filed)?;
         assert_eq!(first.idea.risk, Some(4));
@@ -2143,6 +2282,7 @@ mod tests {
             force: None,
             origin: None,
             lens: None,
+            ..Default::default()
         };
         let first = file_backlog_idea(&pool, &base)?;
         let other = file_backlog_idea(
@@ -2191,6 +2331,7 @@ mod tests {
             force: None,
             origin: None,
             lens: None,
+            ..Default::default()
         };
 
         // Filed with no goal while the project has one open: filed, and told.
@@ -2244,6 +2385,7 @@ mod tests {
             force: None,
             origin: None,
             lens: None,
+            ..Default::default()
         };
         let filed = file_backlog_idea(&pool, &base)?;
         assert!(filed.created, "a bad goal reference never loses the filing");
@@ -2286,6 +2428,7 @@ mod tests {
             force: None,
             origin: None,
             lens: None,
+            ..Default::default()
         };
         match file_rated_backlog_idea(&pool, &unrated) {
             Err(AppError::Validation(m)) => {
@@ -2342,6 +2485,7 @@ mod tests {
             force: None,
             origin: None,
             lens: None,
+            ..Default::default()
         };
         let seeded = file_backlog_idea(&pool, &unrated)?;
         assert!(seeded.created);
@@ -2384,6 +2528,7 @@ mod tests {
             force: None,
             origin: None,
             lens: None,
+            ..Default::default()
         }
     }
 
@@ -2735,6 +2880,7 @@ mod tests {
                 force: None,
                 origin: None,
                 lens: None,
+                ..Default::default()
             },
         )
         .expect_err("an unknown project cannot receive a backlog item");

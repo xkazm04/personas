@@ -38,9 +38,10 @@ const ACTIVE: Record<PresetTone, string> = {
   error: 'bg-status-error/20 text-status-error border-status-error/30',
 };
 const INACTIVE = 'bg-secondary/30 text-foreground border-border/20';
-// The "no filter" band. Wider than the scale on purpose: it must equal the
-// host's FULL_LEVEL_RANGE (backlogModel) or Clear would never hide.
-const ALL_RANGE: [number, number] = [1, 10];
+// The "no filter" band: the whole stored 1-5 scale. It must equal the host's
+// FULL_LEVEL_RANGE (backlogModel) or Clear would never hide; both were [1, 10]
+// after the scale moved to 1-5.
+const ALL_RANGE: [number, number] = [1, 5];
 
 function rangesEqual(a: [number, number], b: [number, number]) {
   return a[0] === b[0] && a[1] === b[1];

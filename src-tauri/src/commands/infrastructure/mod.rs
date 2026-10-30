@@ -66,6 +66,7 @@ pub mod registry_probe;
 pub mod registry_sync;
 pub mod registry_usage;
 pub mod run_checkpoints;
+pub mod scan_contract;
 pub mod scraper;
 pub mod settings;
 pub mod setup;

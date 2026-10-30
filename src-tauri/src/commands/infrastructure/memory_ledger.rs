@@ -85,6 +85,74 @@ struct OutboxLine {
     impact: Option<i64>,
     #[serde(default)]
     risk: Option<i64>,
+    // scan-finding/1 (Seam A2): the same fields the HTTP door takes, snake_case.
+    #[serde(default)]
+    category: Option<String>,
+    #[serde(default)]
+    impact_why: Option<String>,
+    #[serde(default)]
+    confidence: Option<String>,
+    #[serde(default)]
+    score: Option<f64>,
+    #[serde(default)]
+    score_parts: Option<serde_json::Value>,
+    #[serde(default)]
+    band: Option<String>,
+    #[serde(default)]
+    mvp: Option<bool>,
+    #[serde(default)]
+    mvp_rule: Option<String>,
+    #[serde(default)]
+    mvp_why: Option<String>,
+    #[serde(default)]
+    predicted_verdict: Option<String>,
+    #[serde(default)]
+    predicted_why: Option<String>,
+    #[serde(default)]
+    predicted_by: Option<String>,
+    #[serde(default)]
+    proof: Option<serde_json::Value>,
+    #[serde(default)]
+    size: Option<String>,
+    #[serde(default)]
+    lane: Option<String>,
+    #[serde(default)]
+    result: Option<String>,
+    #[serde(default)]
+    method: Option<String>,
+    #[serde(default)]
+    gate: Option<String>,
+    #[serde(default)]
+    disposition: Option<String>,
+    #[serde(default)]
+    sweep_run_id: Option<String>,
+}
+
+impl OutboxLine {
+    fn raw_finding(&self) -> super::scan_contract::RawFinding<'_> {
+        super::scan_contract::RawFinding {
+            lens: self.lens.as_deref(),
+            impact_why: self.impact_why.as_deref(),
+            confidence: self.confidence.as_deref(),
+            score: self.score,
+            score_parts: self.score_parts.as_ref(),
+            band: self.band.as_deref(),
+            mvp: self.mvp,
+            mvp_rule: self.mvp_rule.as_deref(),
+            mvp_why: self.mvp_why.as_deref(),
+            predicted_verdict: self.predicted_verdict.as_deref(),
+            predicted_why: self.predicted_why.as_deref(),
+            predicted_by: self.predicted_by.as_deref(),
+            proof: self.proof.as_ref(),
+            size: self.size.as_deref(),
+            lane: self.lane.as_deref(),
+            result: self.result.as_deref(),
+            method: self.method.as_deref(),
+            gate: self.gate.as_deref(),
+            disposition: self.disposition.as_deref(),
+            sweep_run_id: self.sweep_run_id.as_deref(),
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -104,8 +172,12 @@ pub struct MemoryIngestResult {
     pub findings_created: i32,
     /// Findings absorbed by the dedup guard (already known in any status).
     pub findings_deduped: i32,
-    /// Findings dropped by backpressure (pending backlog at cap) or line caps.
+    /// Findings dropped by backpressure (pending backlog at cap) or line caps,
+    /// or whose scan-finding/1 fields failed validation.
     pub findings_skipped: i32,
+    /// `disposition: carry` findings: owed to the sweep's next round, so
+    /// deliberately NOT filed as a pending decision.
+    pub findings_carried: i32,
     /// NEWLY created deep-scan escalations — the frontend auto-dispatches a
     /// focused `/scan-<lens> <context>` per entry (bounded). Duplicates are
     /// never re-listed: the escalation finding's dedup key acts as the
@@ -184,7 +256,16 @@ pub fn dev_tools_memory_ingest(
     project_id: String,
 ) -> Result<MemoryIngestResult, AppError> {
     require_auth_sync(&state)?;
-    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    ingest_outbox(&state.db, &project_id)
+}
+
+/// The ingest itself, reachable without a Tauri `State` so it can be tested.
+pub(crate) fn ingest_outbox(
+    db: &crate::db::DbPool,
+    project_id: &str,
+) -> Result<MemoryIngestResult, AppError> {
+    let project_id = project_id.to_string();
+    let project = repo::get_project_by_id(db, &project_id)?;
     let path = outbox_path(&project.root_path);
 
     let mut out = MemoryIngestResult {
@@ -197,6 +278,7 @@ pub fn dev_tools_memory_ingest(
         findings_created: 0,
         findings_deduped: 0,
         findings_skipped: 0,
+        findings_carried: 0,
         escalations: Vec::new(),
     };
     let Ok(meta) = std::fs::metadata(&path) else {
@@ -214,10 +296,7 @@ pub fn dev_tools_memory_ingest(
     let text = std::fs::read_to_string(&path)
         .map_err(|e| AppError::Internal(format!("read outbox failed: {e}")))?;
 
-    let conn = state
-        .db
-        .get()
-        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let conn = db.get().map_err(|e| AppError::Internal(e.to_string()))?;
 
     // Context NAME → id map (case-insensitive) for anchoring.
     let mut ctx_by_name = std::collections::HashMap::new();
@@ -408,6 +487,20 @@ pub fn dev_tools_memory_ingest(
                     out.skipped += 1;
                     continue;
                 };
+                // A `carry` is approved and owed to the sweep's next round on
+                // this context: the contract forbids presenting it for a
+                // decision, so it is counted and never filed `pending`.
+                if super::scan_contract::is_carry(parsed.disposition.as_deref()) {
+                    out.findings_carried += 1;
+                    continue;
+                }
+                // The outbox is lenient (bad lines are counted, not fatal): a
+                // finding whose contract fields fail validation is skipped.
+                let Ok(finding) = super::scan_contract::finding_fields(&parsed.raw_finding())
+                else {
+                    out.findings_skipped += 1;
+                    continue;
+                };
                 finding_lines += 1;
                 if finding_lines > MAX_FINDING_LINES
                     || pending_ideas >= crate::engine::dispatch::IDEA_BACKLOG_CAP
@@ -435,12 +528,12 @@ pub fn dev_tools_memory_ingest(
                 let score = |v: Option<i64>| v.map(|n| n.clamp(1, 10) as i32);
                 let dedup = repo::scan_dedup_key(&lens, context_id.as_deref(), &title);
                 match repo::create_finding(
-                    &state.db,
+                    db,
                     &project_id,
                     "scan_sweep",
                     &title,
                     body.as_deref(),
-                    None,
+                    super::scan_contract::row_category(parsed.category.as_deref()),
                     context_id.as_deref(),
                     None,
                     evidence.as_deref(),
@@ -449,11 +542,21 @@ pub fn dev_tools_memory_ingest(
                     score(parsed.impact),
                     score(parsed.risk),
                 )? {
-                    Some(_) => {
+                    Some(idea) => {
                         out.findings_created += 1;
                         pending_ideas += 1;
+                        super::scan_contract::record_finding(db, &idea.id, &finding)?;
                     }
-                    None => out.findings_deduped += 1,
+                    None => {
+                        out.findings_deduped += 1;
+                        // A re-sweep re-scores: the row the guard matched takes
+                        // this pass's contract fields (absent ones keep theirs).
+                        if let Some(existing) =
+                            repo::find_idea_by_dedup_key(db, &project_id, &dedup)?
+                        {
+                            super::scan_contract::record_finding(db, &existing.id, &finding)?;
+                        }
+                    }
                 }
             }
             // Deep-scan escalation: creates a visible backlog finding AND
@@ -499,7 +602,7 @@ pub fn dev_tools_memory_ingest(
                     .map(|r| r.chars().take(MAX_EVIDENCE_CHARS).collect());
                 let dedup = format!("scan:escalation:{lens}:{scope}");
                 if repo::create_finding(
-                    &state.db,
+                    db,
                     &project_id,
                     "scan_sweep",
                     &title,
