@@ -38733,6 +38733,59 @@
         }
       ],
       "registryProposal": "plural-and-count-agreement could cover the case of an unshipped but committed catalog: whether latent defects in a locale the build does not ship (behind a SHIPPED list) should count as deviations or be held until the locale is revived."
+    },
+    "2e1e105a-866c-4039-9620-7ed5d0d30b17/quality-gates": {
+      "context": "i18n",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:48:39.000Z",
+      "worker": "ff87575d-5735-413a-a39a-9bad443d3cb5",
+      "techniques": [
+        {
+          "technique": "prose-rule-drift",
+          "verdict": "deviation",
+          "evidence": "src/lib/lensScan/compare.ts:3 the re-sync rule exists only as a header comment (same at src/lib/lensScan/release.ts:3); no script, census rule or test compares the port to its upstream, so src/lib/lensScan/release.ts:37 still carries the cap bug bp fixed in aa3128a (2026-10-21)"
+        },
+        {
+          "technique": "refusal-names-a-reachable-remedy",
+          "verdict": "deviation",
+          "evidence": "src/lib/lensScan/release.ts:6 names scripts/check-release-train.ts as the Node check that runs this file; that script does not exist in this repo (it lives in bp), so the cited guard is unreachable from here"
+        }
+      ],
+      "registryProposal": "Coverage: the context map lumps src/lib/lensScan/* (a ported release-train model) into the i18n context, and quality-gates matched on registry/debt/legacy tokens, not on i18n. Lead: prose-rule-drift could name the cross-repo verbatim-port case (an upstream-pin comment with no drift check); a gate for it reads another repo, so under blocking-by-input-determinism it may only be advisory."
+    },
+    "9967adb9-e895-4dcd-b296-ab49a19ab122/quality-gates": {
+      "context": "project-overview",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:48:39.000Z",
+      "worker": "ff87575d-5735-413a-a39a-9bad443d3cb5",
+      "techniques": [],
+      "registryProposal": "Missing pairing: conformance-checking (engineering-assessment) governs the project-overview StandardsScanCard (per-rule present/partial/missing scoring) better than quality-gates."
+    },
+    "10c96ae7-a356-4555-996b-df92fc5dc8e7/quality-gates": {
+      "context": "plugins-dev-tools-skills",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:48:39.000Z",
+      "worker": "ff87575d-5735-413a-a39a-9bad443d3cb5",
+      "techniques": []
+    },
+    "a4174786-a5fb-4145-a1b3-f02826fac64a/quality-gates": {
+      "context": "passport-wall-ui",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:48:39.000Z",
+      "worker": "ff87575d-5735-413a-a39a-9bad443d3cb5",
+      "techniques": []
     }
   }
 }

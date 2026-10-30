@@ -16857,8 +16857,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "deviation",
+          "priorNotApplicable": 20,
+          "evidence": "src/lib/lensScan/compare.ts:3 states the verbatim-port invariant (re-sync by copying, never hand-drift it) with no check comparing the four PORTED VERBATIM files to bp; they already drifted: bp aa3128a fixed the 100-bump cap returning a taken version, still live at src/lib/lensScan/release.ts:37",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "docs-sync",
@@ -24753,8 +24757,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src/features/teams/sub_factory/passport/PopulateScopePicker.tsx:5 its freshness gates only pick which scan lanes run by default, and src/features/teams/sub_factory/passport/ActionConfirmModal.tsx:1 is a human consent gate (hitl-approval); nothing refuses a state against a quality standard",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "job-coordination",
@@ -27921,8 +27929,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/StaticScanCard.tsx:38 the static-scan lane (fallow/knip/jscpd) only creates backlog ideas from findings; no file in the context makes a tool result refuse a commit, merge or release",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "usage-analytics",
@@ -30126,8 +30138,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:78 the standards scan only computes a rendered compliance % and offers to queue a task per failing rule (:40); nothing in the context refuses a commit, merge or release - that is assessment, owned by conformance-checking",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "agent-memory",

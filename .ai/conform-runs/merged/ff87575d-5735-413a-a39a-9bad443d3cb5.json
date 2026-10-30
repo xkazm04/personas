@@ -1,0 +1,109 @@
+{
+  "schema": "conform-run/1",
+  "worker": "ff87575d-5735-413a-a39a-9bad443d3cb5",
+  "subject": "quality-gates",
+  "evaluatedAt": "2026-10-30T20:48:39Z",
+  "pairs": [
+    {
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+      "evaluatedRevision": 54,
+      "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+      "state": "deviation",
+      "evidence": "src/lib/lensScan/compare.ts:3 states the verbatim-port invariant (re-sync by copying, never hand-drift it) with no check comparing the four PORTED VERBATIM files to bp; they already drifted: bp aa3128a fixed the 100-bump cap returning a taken version, still live at src/lib/lensScan/release.ts:37",
+      "techniques": [
+        {
+          "technique": "prose-rule-drift",
+          "verdict": "deviation",
+          "evidence": "src/lib/lensScan/compare.ts:3 the re-sync rule exists only as a header comment (same at src/lib/lensScan/release.ts:3); no script, census rule or test compares the port to its upstream, so src/lib/lensScan/release.ts:37 still carries the cap bug bp fixed in aa3128a (2026-10-21)"
+        },
+        {
+          "technique": "refusal-names-a-reachable-remedy",
+          "verdict": "deviation",
+          "evidence": "src/lib/lensScan/release.ts:6 names scripts/check-release-train.ts as the Node check that runs this file; that script does not exist in this repo (it lives in bp), so the cited guard is unreachable from here"
+        }
+      ],
+      "registryProposal": "Coverage: the context map lumps src/lib/lensScan/* (a ported release-train model) into the i18n context, and quality-gates matched on registry/debt/legacy tokens, not on i18n. Lead: prose-rule-drift could name the cross-repo verbatim-port case (an upstream-pin comment with no drift check); a gate for it reads another repo, so under blocking-by-input-determinism it may only be advisory."
+    },
+    {
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+      "evaluatedRevision": 54,
+      "context": "9967adb9-e895-4dcd-b296-ab49a19ab122",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:78 the standards scan only computes a rendered compliance % and offers to queue a task per failing rule (:40); nothing in the context refuses a commit, merge or release - that is assessment, owned by conformance-checking",
+      "techniques": [],
+      "registryProposal": "Missing pairing: conformance-checking (engineering-assessment) governs the project-overview StandardsScanCard (per-rule present/partial/missing scoring) better than quality-gates."
+    },
+    {
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+      "evaluatedRevision": 54,
+      "context": "10c96ae7-a356-4555-996b-df92fc5dc8e7",
+      "state": "not-applicable",
+      "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/StaticScanCard.tsx:38 the static-scan lane (fallow/knip/jscpd) only creates backlog ideas from findings; no file in the context makes a tool result refuse a commit, merge or release",
+      "techniques": []
+    },
+    {
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+      "evaluatedRevision": 54,
+      "context": "a4174786-a5fb-4145-a1b3-f02826fac64a",
+      "state": "not-applicable",
+      "evidence": "src/features/teams/sub_factory/passport/PopulateScopePicker.tsx:5 its freshness gates only pick which scan lanes run by default, and src/features/teams/sub_factory/passport/ActionConfirmModal.tsx:1 is a human consent gate (hitl-approval); nothing refuses a state against a quality standard",
+      "techniques": []
+    }
+  ],
+  "declined": [
+    {
+      "subject": "quality-gates",
+      "context": "908be532-ef83-412b-8da3-caff9ff4d8ad",
+      "reason": "dead context: its only files (src/features/overview/sub_certification/*) were removed by 8a2ce465f6 (retire the Certification Command Center) and its map row has no paths; nothing to judge. Coverage question for the next context-map scan."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-30T20:48:39Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [
+        "prose-rule-drift",
+        "refusal-names-a-reachable-remedy"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-30T20:48:39Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-30T20:48:39Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-30T20:48:39Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "quality-gates"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

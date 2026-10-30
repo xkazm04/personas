@@ -2148,3 +2148,7 @@
 {"ts":"2026-10-30T18:56:54.897Z","bundle":"software-engineering","subjects":["table"],"techniques":["sorting","filtering","performance"],"deviations":1,"context":"agents-components-allpersonas","via":"scan-sweep@4.9.0"}
 {"ts":"2026-10-30T18:56:54.897Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["health-probing"],"deviations":1,"context":"agents-connectors","via":"scan-sweep@4.9.0"}
 {"ts":"2026-10-30T18:56:54.897Z","bundle":"software-engineering","subjects":["deployment-contract","cicd-monitoring","agent-cli-transport"],"techniques":["remote-action-consent","provider-capability-honesty"],"deviations":5,"context":"agents-deployment","via":"scan-sweep@4.9.0"}
+{"ts":"2026-10-30T20:48:39Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":["prose-rule-drift","refusal-names-a-reachable-remedy"],"deviations":1}
+{"ts":"2026-10-30T20:48:39Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0}
+{"ts":"2026-10-30T20:48:39Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0}
+{"ts":"2026-10-30T20:48:39Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0}
