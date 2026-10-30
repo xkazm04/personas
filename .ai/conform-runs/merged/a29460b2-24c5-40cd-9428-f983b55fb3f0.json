@@ -1,0 +1,13 @@
+{"schema":"conform-run/1","worker":"a29460b2-24c5-40cd-9428-f983b55fb3f0","subject":"data-access","evaluatedAt":"2026-10-30T20:53:09Z",
+"pairs":[{"context":"a8857307-216c-46e0-9571-e05e8cf06112","subject":"data-access","bundle":"software-engineering","state":"deviation",
+"evidence":"src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:176 batch archive still awaits the singular archivePersona IPC per selected id (restore likewise at :200); src/api/agents/personas.ts:83 offers no set-shaped archive/restore, though bulk delete now uses bulkDeletePersonas (:91)",
+"techniques":[{"technique":"batching-and-n-plus-one","verdict":"deviation","evidence":"src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:176 N sequential archive round trips for an N-row selection; the cure exists for delete (src/api/agents/personas.ts:91 bulk_delete_personas) but not for archive/restore"}]}],
+"declined":[
+{"subject":"data-access","context":"511ca12f-50df-4941-84e1-e2d74a3dff85","reason":"weak context: the match itself is doubtful; coverage question, not judged by default"},
+{"subject":"data-access","context":"0b0ee725-52a2-4656-9e13-07c5204de60e","reason":"verdict 2026-10-21 is at the current digest (rev 19) and no anchor file changed since; re-reading would reproduce it"},
+{"subject":"data-access","context":"320d2cea-9761-4233-97c1-ee2eaf4d6c17","reason":"current digest, anchor file unchanged since 2026-10-22 verdict"},
+{"subject":"data-access","context":"e0ea6f08-ebdf-4c9e-aab4-969eee32f573","reason":"current digest, anchor file unchanged since 2026-10-22 verdict"},
+{"subject":"data-access","context":"ae80cd74-5beb-4d76-ae0a-16a4b581a2df","reason":"current digest, anchor file unchanged since 2026-10-22 verdict"},
+{"subject":"data-access","context":"937c9d47-b0ca-4e3b-90e3-25baefe04474","reason":"current digest, anchor files unchanged since 2026-10-21 verdict"},
+{"subject":"data-access","context":"647d6a54-3813-4149-bbf7-2d96a57a77c7","reason":"current digest, anchor files unchanged since 2026-10-22 verdict"}],
+"consults":[{"ts":"2026-10-30T20:53:09Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["batching-and-n-plus-one"],"deviations":1}]}

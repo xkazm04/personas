@@ -13895,14 +13895,14 @@
       "subject": "data-access",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:49:06.000Z",
-      "worker": "bdacf617-e216-4c42-bc60-d916e4d13d0e",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:53:09.000Z",
+      "worker": "a29460b2-24c5-40cd-9428-f983b55fb3f0",
       "techniques": [
         {
           "technique": "batching-and-n-plus-one",
           "verdict": "deviation",
-          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:161 per-id archivePersona in a for-loop; no bulk archive/restore command exists"
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:176 N sequential archive round trips for an N-row selection; the cure exists for delete (src/api/agents/personas.ts:91 bulk_delete_personas) but not for archive/restore"
         },
         {
           "technique": "layering-rules",
@@ -13925,6 +13925,13 @@
           "evaluatedAt": "2026-10-16T18:10:56.000Z",
           "worker": "a2ed1275-cc0d-4308-8001-2b5b12bf55ee",
           "reason": "replaced by bdacf617-e216-4c42-bc60-d916e4d13d0e"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:161 batch archive still awaits the singular archivePersona IPC once per selected id in a loop (restore likewise at :185); src/api/agents/personas.ts:83 is the only archive door, so an N-row bulk action is N sequential round trips with no set-shaped operation",
+          "evaluatedAt": "2026-10-22T02:49:06.000Z",
+          "worker": "bdacf617-e216-4c42-bc60-d916e4d13d0e",
+          "reason": "replaced by a29460b2-24c5-40cd-9428-f983b55fb3f0"
         }
       ]
     },

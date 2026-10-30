@@ -2176,3 +2176,4 @@
 {"ts":"2026-10-30T20:52:47Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["absent-status-passthrough","session-registry","lifecycle-signals"],"deviations":2}
 {"ts":"2026-10-30T20:52:47Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":[],"deviations":0}
 {"ts":"2026-10-30T20:52:47Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":[],"deviations":0}
+{"ts":"2026-10-30T20:53:09Z","bundle":"software-engineering","subjects":["data-access"],"techniques":["batching-and-n-plus-one"],"deviations":1}
