@@ -61,15 +61,21 @@ export function EditorBody() {
   // never drift. Memoized inside the hook, so this doesn't churn the tab bar.
   const { missingConnectorCount } = usePersonaReadiness();
 
+  // Surface per-tab save failures so the user can see WHICH tab failed and
+  // retry without having to make a dummy edit to re-trigger autosave. Written
+  // by every explicit save path (Save & Switch, the leave guard, Retry); its
+  // only writer used to be the Retry button inside the banner it gates, so the
+  // banner and the tab's failed badge could never appear.
+  const [failedTabs, setFailedTabs] = useState<string[]>([]);
+  const selectedPersonaId = selectedPersona?.id;
+  useEffect(() => { setFailedTabs([]); }, [selectedPersonaId]);
+
   const { handleDiscardAndSwitch, handleSaveAndSwitch } = usePersonaSwitchGuard({
     cancelAllDebouncedSaves,
     saveAllTabs,
     clearAllDirty,
+    onSaveFailed: setFailedTabs,
   });
-
-  // Surface per-tab save failures so the user can see WHICH tab failed and
-  // retry without having to make a dummy edit to re-trigger autosave.
-  const [failedTabs, setFailedTabs] = useState<string[]>([]);
   const runSaveAll = useCallback(async () => {
     try {
       await saveAllTabs();
@@ -87,7 +93,12 @@ export function EditorBody() {
   const guard = useUnsavedGuard(isDirty, {
     onSave: async () => {
       cancelAllDebouncedSaves();
-      await saveAllTabs();
+      try {
+        await saveAllTabs();
+      } catch (err) {
+        if (err instanceof TabSaveError) setFailedTabs(err.failedTabs);
+        throw err;
+      }
     },
     onDiscard: () => {
       cancelAllDebouncedSaves();

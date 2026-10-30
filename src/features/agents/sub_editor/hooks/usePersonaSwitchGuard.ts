@@ -9,9 +9,13 @@ interface SwitchGuardDeps {
   cancelAllDebouncedSaves: () => void;
   saveAllTabs: () => Promise<void>;
   clearAllDirty: () => void;
+  /** Told which tabs failed when Save & Switch could not save them all, so the
+   *  editor can mark those tabs and offer Retry (a toast alone is gone in
+   *  seconds and leaves no way back to the failed save). */
+  onSaveFailed?: (failedTabs: string[]) => void;
 }
 
-export function usePersonaSwitchGuard({ cancelAllDebouncedSaves, saveAllTabs, clearAllDirty }: SwitchGuardDeps) {
+export function usePersonaSwitchGuard({ cancelAllDebouncedSaves, saveAllTabs, clearAllDirty, onSaveFailed }: SwitchGuardDeps) {
   const { t, tx } = useTranslation();
   const commitPendingSwitch = useAgentStore((s) => s.commitPendingSwitch);
   const isSwitchingRef = useRef(false);
@@ -36,6 +40,7 @@ export function usePersonaSwitchGuard({ cancelAllDebouncedSaves, saveAllTabs, cl
         const catalog = t.agents.editor.tabs;
         let label: string = t.agents.editor.save_failed_generic;
         if (err instanceof TabSaveError) {
+          onSaveFailed?.(err.failedTabs);
           label = tx(t.agents.editor.save_failed, { tabs: tabIdsToLabels(err.failedTabs, catalog) });
           if (err.savedTabs.length > 0) {
             label += ` (${tabIdsToLabels(err.savedTabs, catalog)}: ${t.agents.editor_ui.saved})`;
