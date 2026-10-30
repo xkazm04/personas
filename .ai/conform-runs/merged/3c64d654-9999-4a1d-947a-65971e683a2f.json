@@ -1,0 +1,5 @@
+{"schema": "conform-run/1", "worker": "3c64d654-9999-4a1d-947a-65971e683a2f", "subject": "chat-transcript",
+ "evaluatedAt": "2026-10-30T00:00:00Z",
+ "pairs": [],
+ "declined": [{"subject": "chat-transcript", "context": "1d8a480b-eac4-4110-a60e-47a6ab281c97", "reason": "context glyph-persona-card is governance:weak (layout/composer/card token match, priorNotApplicable 8); /conform never judges weak pairs by default - coverage question, not a verdict. All 13 other chat-transcript pairs are already judged at the current digest sha256-b2:5b4e7d399a4d924e (rev 5), none stale, and no deviation anchor file has a commit since the 2026-10-21 verdicts - no-op run"}],
+ "consults": []}
