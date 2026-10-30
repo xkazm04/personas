@@ -40145,6 +40145,75 @@
         }
       ],
       "registryProposal": "This is the fourth context in this repo (after plugins-dev-tools-context, plugins-dev-tools-projects and prompt-assembly-engine) where one root cause, a shared CLI-args builder with --dangerously-skip-permissions, produces the reading-is-not-running deviation once per UI surface that reaches it. The technique could add a decision rule: when the evaluating spawn is one shared builder, judge and fix it at the builder and record the per-surface hits as reach rather than as separate defects."
+    },
+    "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0/agent-runtime-assembly": {
+      "context": "commands-core",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:01:00.000Z",
+      "worker": "b2448cd1-41e5-4bae-9bec-8f8b90cb4ac6",
+      "techniques": [
+        {
+          "technique": "additive-input-at-the-call-boundary",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/chat_turn.rs:484 turn input built from the last COMPLETED turn's session id with no in-flight check; neither the earliest-safe-point injection nor the technique's own fallback (refuse mid-unit input and queue visibly at the surface) is realized, so concurrent turns silently fork the conversation"
+        },
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/core/chat_turn.rs:615 a run that is not completed (incl. restart-classified incomplete) writes no authoritative reply; the user row links its run, so the indeterminate status stays on the execution row rather than being re-encoded as a failure"
+        },
+        {
+          "technique": "nested-run-is-not-its-parent",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/core/chat_turn.rs:540 the turn starts a top-level persona run through execute_persona_inner; no run is launched from inside a run here"
+        }
+      ],
+      "registryProposal": "additive-input-at-the-call-boundary assumes one in-process loop; a CLI-per-turn runtime (each turn a fresh process resuming a stored session id) has no model-call boundary to inject at, so the only conformant shapes are the refuse/queue fallback or serialising turns per session. A sentence naming that topology (and that the stored resume pointer is the race) would let judges route it without inference."
+    },
+    "17f44718-7d6d-4579-91bf-86191e29595a/agent-runtime-assembly": {
+      "context": "commands-recipes",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:01:00.000Z",
+      "worker": "b2448cd1-41e5-4bae-9bec-8f8b90cb4ac6",
+      "techniques": [
+        {
+          "technique": "semantic-hook-placement",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/recipe_execution.rs:5 the context supplies only messages and an extractor to the shared AI-artifact flow; it composes no hook chain"
+        },
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/crud.rs:230 the live run is held only in the in-memory process_registry; there is no durable record for a restart to find and close"
+        }
+      ]
+    },
+    "2418ddaf-0e6e-446f-968f-28a4bf6e7120/agent-runtime-assembly": {
+      "context": "n8n-wizard-orchestration",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:01:00.000Z",
+      "worker": "b2448cd1-41e5-4bae-9bec-8f8b90cb4ac6",
+      "techniques": [
+        {
+          "technique": "bounded-projection-of-external-work",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nTransform.ts:307 the wizard polls a store snapshot as a UI surface; it is not an agent loop holding a remote handle"
+        },
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nTransform.ts:99 incomplete/unknown are displayed as stopped-while-running; the record closure is the backend's (commands-design pair)"
+        }
+      ]
     }
   }
 }

@@ -7092,7 +7092,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/core/chat_turn.rs:484 a follow-up sent while the session's previous run is still going is neither injected additively nor refused/queued: it starts a second run resuming the stored Claude session id, which finish() only advances at :665 when the first run completes, so the new turn forks from turn N-1 and never sees turn N; the last finisher's session id then wins the next --resume. The phone chat_send reaches this same door with no UI guard",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "import-normalization",
@@ -8132,7 +8136,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/crud.rs:238 recipe generate/derive/execute are one-shot CLI artifact calls handed to the shared spawn_ai_artifact_task (commands-credentials), with no hook chain, extension loading, resume or durable run record to recover; single-flight is guarded at :230",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "codebase-scanning",
@@ -20101,7 +20109,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nTransform.ts:307 these React hooks project a backend-owned transform snapshot and react to its terminal phases (:99); the run, its recovery and its closure are assembled in commands-design (judged there as a deviation), not here",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "fleet-orchestration",

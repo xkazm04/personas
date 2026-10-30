@@ -1,0 +1,124 @@
+{
+  "schema": "conform-run/1",
+  "worker": "b2448cd1-41e5-4bae-9bec-8f8b90cb4ac6",
+  "subject": "agent-runtime-assembly",
+  "evaluatedAt": "2026-10-30T21:01:00Z",
+  "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+  "evaluatedRevision": 28,
+  "pairs": [
+    {
+      "context": "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/commands/core/chat_turn.rs:484 a follow-up sent while the session's previous run is still going is neither injected additively nor refused/queued: it starts a second run resuming the stored Claude session id, which finish() only advances at :665 when the first run completes, so the new turn forks from turn N-1 and never sees turn N; the last finisher's session id then wins the next --resume. The phone chat_send reaches this same door with no UI guard",
+      "techniques": [
+        {
+          "technique": "additive-input-at-the-call-boundary",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/chat_turn.rs:484 turn input built from the last COMPLETED turn's session id with no in-flight check; neither the earliest-safe-point injection nor the technique's own fallback (refuse mid-unit input and queue visibly at the surface) is realized, so concurrent turns silently fork the conversation"
+        },
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/core/chat_turn.rs:615 a run that is not completed (incl. restart-classified incomplete) writes no authoritative reply; the user row links its run, so the indeterminate status stays on the execution row rather than being re-encoded as a failure"
+        },
+        {
+          "technique": "nested-run-is-not-its-parent",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/core/chat_turn.rs:540 the turn starts a top-level persona run through execute_persona_inner; no run is launched from inside a run here"
+        }
+      ],
+      "registryProposal": "additive-input-at-the-call-boundary assumes one in-process loop; a CLI-per-turn runtime (each turn a fresh process resuming a stored session id) has no model-call boundary to inject at, so the only conformant shapes are the refuse/queue fallback or serialising turns per session. A sentence naming that topology (and that the stored resume pointer is the race) would let judges route it without inference."
+    },
+    {
+      "context": "17f44718-7d6d-4579-91bf-86191e29595a",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src-tauri/src/commands/recipes/crud.rs:238 recipe generate/derive/execute are one-shot CLI artifact calls handed to the shared spawn_ai_artifact_task (commands-credentials), with no hook chain, extension loading, resume or durable run record to recover; single-flight is guarded at :230",
+      "techniques": [
+        {
+          "technique": "semantic-hook-placement",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/recipe_execution.rs:5 the context supplies only messages and an extractor to the shared AI-artifact flow; it composes no hook chain"
+        },
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/crud.rs:230 the live run is held only in the in-memory process_registry; there is no durable record for a restart to find and close"
+        }
+      ]
+    },
+    {
+      "context": "2418ddaf-0e6e-446f-968f-28a4bf6e7120",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evidence": "src/features/templates/sub_n8n/hooks/useN8nTransform.ts:307 these React hooks project a backend-owned transform snapshot and react to its terminal phases (:99); the run, its recovery and its closure are assembled in commands-design (judged there as a deviation), not here",
+      "techniques": [
+        {
+          "technique": "bounded-projection-of-external-work",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nTransform.ts:307 the wizard polls a store snapshot as a UI surface; it is not an agent loop holding a remote handle"
+        },
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nTransform.ts:99 incomplete/unknown are displayed as stopped-while-running; the record closure is the backend's (commands-design pair)"
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "d77a22ee-23cb-42f3-a910-590f8622977f",
+      "reason": "budget; companion-core-store has an empty file_paths list in context-map.json, so its real extent needs resolving before a judgment"
+    },
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "895b4bb2-16fd-4e8e-aae8-11315fe6436b",
+      "reason": "budget; api-agents is a 43-file IPC wrapper set, likely not-applicable but unread"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-30T21:01:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [
+        "additive-input-at-the-call-boundary",
+        "indeterminate-closure-on-interruption",
+        "nested-run-is-not-its-parent"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-30T21:01:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [
+        "semantic-hook-placement",
+        "indeterminate-closure-on-interruption"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-30T21:01:00Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [
+        "bounded-projection-of-external-work",
+        "indeterminate-closure-on-interruption"
+      ],
+      "deviations": 0
+    }
+  ]
+}

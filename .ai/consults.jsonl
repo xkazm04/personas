@@ -2200,3 +2200,6 @@
 {"ts":"2026-10-30T21:00:33Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["storm-hygiene","refusal-contract"],"deviations":1}
 {"ts":"2026-10-30T21:00:33Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["limit-observability"],"deviations":1}
 {"ts":"2026-10-30T21:00:33Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":["refusal-contract","storm-hygiene"],"deviations":1}
+{"ts":"2026-10-30T21:01:00Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["additive-input-at-the-call-boundary","indeterminate-closure-on-interruption","nested-run-is-not-its-parent"],"deviations":1}
+{"ts":"2026-10-30T21:01:00Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["semantic-hook-placement","indeterminate-closure-on-interruption"],"deviations":0}
+{"ts":"2026-10-30T21:01:00Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":["bounded-projection-of-external-work","indeterminate-closure-on-interruption"],"deviations":0}
