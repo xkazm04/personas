@@ -65,3 +65,18 @@ describe('AutomationsSection webhook tests', () => {
     expect((testButtons()[1] as HTMLButtonElement).disabled).toBe(false);
   });
 });
+
+describe('AutomationsSection failed webhook test', () => {
+  // The store resolves null when the call itself fails (reportError toasts and
+  // returns null). The card used to show nothing at all, so the row read as
+  // never tested once the toast was gone.
+  it('leaves a failure on the card when the test call itself fails', async () => {
+    useVaultStore.setState({ testAutomation: vi.fn().mockResolvedValue(null) } as never);
+    render(<AutomationsSection automations={[{
+      id: 'a1', name: 'Alpha', personaId: 'p1', platform: 'n8n', deploymentStatus: 'active',
+      fallbackMode: 'skip', lastTriggeredAt: null, platformUrl: null, useCaseId: null,
+    } as never]} onAdd={() => {}} onEdit={() => {}} />);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Test/ })); });
+    expect(screen.getByText('Webhook call failed')).toBeTruthy();
+  });
+});

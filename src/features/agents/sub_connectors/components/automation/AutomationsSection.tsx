@@ -48,6 +48,13 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
               : run.errorMessage ?? t.agents.connectors.auto_webhook_failed,
           },
         }));
+      } else {
+        // The store resolves null when the call itself failed (it toasts the
+        // cause). The card must not read as never tested once the toast is gone.
+        setTestResults((prev) => ({
+          ...prev,
+          [id]: { success: false, message: t.agents.connectors.auto_webhook_failed },
+        }));
       }
     } finally {
       setTestingIds((prev) => {
