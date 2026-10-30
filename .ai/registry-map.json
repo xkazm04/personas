@@ -6816,7 +6816,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/contest/draft.rs:126 cuts the owner's idea at MAX_IDEA_CHARS (4000) with no notice, and :101 then introduces it as \"The owner's idea, verbatim\", so an over-long idea is drafted from a silently partial text the prompt calls complete",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "test-harness",
@@ -7429,7 +7433,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:306 compose is the one assembler for the dispatch family (compose_method :438 a separate family), takes a typed Brief, omits absent fields, quotes the operator note as verbatim (:337), ends on a done/stop rule (:342), and tick.rs:727 hands its output to the send path unappended",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "mcp-tools",
@@ -37502,7 +37510,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:149 precondition unmet: the runner UI hands typed test cases (id, name, instruction, tools, trigger) to the backend via onStart; it renders no prompt text, and assembly happens server-side",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "test-input-generation",

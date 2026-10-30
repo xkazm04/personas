@@ -38868,6 +38868,154 @@
       "worker": "51a38791-4621-4c42-91a5-f1c34dc868b6",
       "techniques": [],
       "registryProposal": "Coverage: this context is governed by retrieval (and document-text-extraction for the Extract tab), not agent-memory; the match rode on knowledge-base/vector vocabulary"
+    },
+    "33a96a83-6adc-42f7-b57c-839382bcef54/prompt-assembly": {
+      "context": "commands-curator",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:48:47.597Z",
+      "worker": "63ab1926-c6ce-462c-8d9e-e2441340dc8a",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:306 one assembler per family with a pinned-shape test (:740); tick.rs:701 is the only caller and appends nothing. Note: the standing authorization (:340) trails the volatile context and operator note, because the first line is fixed to the skill invocation"
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:321 each Option field renders its line or nothing (no empty-string holes); :337 the operator note is marked as the operator verbatim text, so the worker can tell instruction from paraphrase"
+        },
+        {
+          "technique": "task-envelope",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:342 done/stop rule (run the named skill, report no-work honestly); :328 measurement is handed over to be recounted and refuted (check); :318/:321 HEAD and subject locate the work; no competence claim"
+        },
+        {
+          "technique": "fingerprinting-and-cache-keys",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless one-shot worker exits; no session is resumed, so no fingerprint gate has anything to compare"
+        },
+        {
+          "technique": "history-compaction",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "tiered-history-projection",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "context-ownership-regimes",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "endpoint-sealed-continuation-metadata",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "foreign-harness-history-folding",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "elision-to-a-refetch-pointer",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "fold-only-acknowledged-evidence",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "summary-evidence-gate",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "amortized-compaction-cadence",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "compaction-horizon-breakeven",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "speculative-compaction-splice",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "compaction-target-is-an-aim",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "compaction-is-a-fixed-point",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "live-attachment-delta-resharing",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        },
+        {
+          "technique": "cache-breakpoint-allocation",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/tick.rs:728 headless worker: the agent CLI owns and holds the transcript; the app writes one task message and never replays, compacts or resumes a history"
+        }
+      ]
+    },
+    "e4b48fb7-3763-4955-8ea9-01fd48aa0cf7/prompt-assembly": {
+      "context": "commands-contest",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:48:47.597Z",
+      "worker": "63ab1926-c6ce-462c-8d9e-e2441340dc8a",
+      "techniques": [
+        {
+          "technique": "context-budgeting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/contest/draft.rs:126 silent chars().take(4000); truncation must name what it dropped, and :101 asserts the opposite (verbatim)"
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/contest/draft.rs:76 one builder: standing format rules first, ledger patterns next, owner idea last; the patterns section is omitted when empty (tested :191)"
+        },
+        {
+          "technique": "task-envelope",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/contest/draft.rs:77 the done criterion is an artifact shape (exactly five named sections, nothing before or after), checked by clean_draft and the empty-draft error"
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/contest/draft.rs:131 the pattern list is capped (MAX_PATTERNS) and rendered per item (:96); the owner idea sits at a declared tail insertion point"
+        }
+      ],
+      "registryProposal": "context-budgeting could name the compound case: a silent cut at the call site paired with a template label that claims completeness (\"verbatim\") is worse than a plain silent cut, because the prompt asserts the falsehood instead of leaving it implicit"
+    },
+    "8a57c65c-06fd-45c9-9d32-d50c89c4c705/prompt-assembly": {
+      "context": "template-generation",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:48:47.597Z",
+      "worker": "63ab1926-c6ce-462c-8d9e-e2441340dc8a",
+      "techniques": []
     }
   }
 }
