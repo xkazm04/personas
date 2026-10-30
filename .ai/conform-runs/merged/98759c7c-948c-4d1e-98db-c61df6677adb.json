@@ -1,0 +1,12 @@
+{"schema": "conform-run/1", "worker": "98759c7c-948c-4d1e-98db-c61df6677adb", "subject": "module-design",
+ "evaluatedAt": "2026-10-30T20:53:34Z",
+ "pairs": [],
+ "declined": [
+  {"subject": "module-design", "context": "06ef5a64-1796-4637-a4d9-f860bbe67562", "reason": "recipes-playground is the only governed unjudged module-design pair, and there is nothing to judge: the map row and context-map.json both list no file_paths, all three entry points (src/features/recipes/sub_playground/...) were deleted in 450f1c9e5c (2026-09-25, 'delete the never-mounted recipe manager tree'), and git ls-files src/features/recipes returns nothing. This is a dead context, not a not-applicable verdict. Coverage question for the context map: retire or rescan this context."},
+  {"subject": "module-design", "context": "5ab49df3-3442-4ea6-a405-077dec64850d", "reason": "persona-core-codex is governance: weak; skill rule: weak pairs are not judged by default (coverage question)"},
+  {"subject": "module-design", "context": "11fe7642-7a1a-47c5-8910-499850aa04fe", "reason": "plugins-companion-inbox is governance: weak; not judged by default (coverage question)"},
+  {"subject": "module-design", "context": "9b6cc17c-3add-4152-a349-c189b15a109f", "reason": "template-design-preview is governance: weak; not judged by default (coverage question)"},
+  {"subject": "module-design", "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7", "reason": "triggers-test is governance: weak; not judged by default (coverage question)"}
+ ],
+ "consults": []
+}
