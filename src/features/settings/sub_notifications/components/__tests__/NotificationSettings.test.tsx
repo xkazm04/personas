@@ -15,6 +15,7 @@ vi.mock('@/i18n/useTranslation', () => ({
 }));
 vi.mock('../WebhookSubscriptionsPanel', () => ({ WebhookSubscriptionsPanel: () => null }));
 vi.mock('@/features/settings/shared/RecentChangeChip', () => ({ RecentChangeChip: () => null }));
+vi.mock('@/features/agents/sub_health/HealthDigestPanel', () => ({ HealthDigestPanel: () => null }));
 
 import NotificationSettings from '../NotificationSettings';
 

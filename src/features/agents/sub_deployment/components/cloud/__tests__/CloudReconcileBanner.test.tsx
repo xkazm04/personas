@@ -63,6 +63,20 @@ describe('CloudReconcileBanner', () => {
     expect(undeploy).not.toHaveBeenCalled();
   });
 
+  it('names an orphan from another machine by its deployment label', () => {
+    mount([orphan({ label: 'Billing Bot' })]);
+    const text = screen.getByTestId('cloud-reconcile-item-dep-1').textContent ?? '';
+    expect(text).toContain('Billing Bot');
+    expect(text).not.toContain('persona-');
+  });
+
+  it('says "Unknown persona" for an orphan with no label and no local record', () => {
+    mount([orphan()]);
+    const text = screen.getByTestId('cloud-reconcile-item-dep-1').textContent ?? '';
+    expect(text).toContain('Unknown persona');
+    expect(text).not.toContain('persona-');
+  });
+
   it('names a locally known persona by its name', () => {
     mount([orphan({ personaId: 'local-1' })]);
     expect(screen.getByTestId('cloud-reconcile-item-dep-1').textContent).toContain('Local Helper');

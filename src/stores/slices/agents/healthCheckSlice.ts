@@ -1,21 +1,9 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
-import { useOverviewStore } from "@/stores/overviewStore";
-import {
-  computeAggregateHealthScore,
-  makeIssueId,
-} from "@/features/agents/sub_health/healthScoring";
-import type {
-  PersonaHealthCheck,
-  AgentHealthDigest,
-  DryRunIssue,
-  DryRunResult,
-} from "@/features/agents/sub_health/types";
-import type { Persona } from "@/lib/bindings/Persona";
-import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
-import type { PersonaHealthSignal } from "@/stores/slices/overview/personaHealthSlice";
-import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
+import { computeAggregateHealthScore } from "@/features/agents/sub_health/healthScoring";
+import { assessAgentHealth } from "@/features/agents/sub_health/agentHealth";
+import type { PersonaHealthCheck, AgentHealthDigest } from "@/features/agents/sub_health/types";
 
 // -- Slice interface --------------------------------------------------
 
@@ -28,140 +16,6 @@ export interface HealthCheckSlice {
   // Actions
   runFullHealthDigest: () => Promise<AgentHealthDigest | null>;
   clearHealthDigest: () => void;
-}
-
-// -- Real-signal heuristics -------------------------------------------
-
-const HIGH_LATENCY_MS = 30_000;
-
-function pushIssue(
-  list: DryRunIssue[],
-  personaId: string,
-  severity: DryRunIssue['severity'],
-  description: string,
-): void {
-  list.push({
-    id: makeIssueId(personaId, severity, description),
-    severity,
-    description,
-    proposal: null,
-    resolved: false,
-  });
-}
-
-/**
- * Derive a DryRunResult from the real per-persona telemetry signals that
- * the overview health pipeline already computes (heartbeat composite,
- * burn rate, healing issues, failure trend). This replaces the static
- * design-feasibility check that produced low-signal items like "Missing
- * structured_prompt section" — the digest is now a live operational
- * health view backed by execution data.
- */
-export function buildResultFromSignals(
-  persona: Persona,
-  signal: PersonaHealthSignal | undefined,
-  healingIssues: PersonaHealingIssue[],
-): DryRunResult {
-  const t = getActiveTranslations().agents.health_digest;
-  const issues: DryRunIssue[] = [];
-
-  // Healing — itemise each open issue so the modal lists actionable detail.
-  const openHealing = healingIssues.filter((h) => h.status !== 'resolved');
-  for (const h of openHealing) {
-    const sev = h.severity.toLowerCase();
-    if (sev === 'error' || sev === 'critical' || h.is_circuit_breaker) {
-      pushIssue(issues, persona.id, 'error',
-        interpolate(t.signal_open_healing_error, { title: h.title }));
-    } else if (sev === 'warning' || sev === 'warn') {
-      pushIssue(issues, persona.id, 'warning',
-        interpolate(t.signal_open_healing_warning, { title: h.title }));
-    }
-  }
-
-  if (!signal) {
-    // No telemetry yet — flag once as info so the agent still appears.
-    if (openHealing.length === 0) {
-      pushIssue(issues, persona.id, 'info', t.signal_unknown);
-    }
-    return finalise(issues);
-  }
-
-  // Errors — high-confidence operational breakage.
-  if (signal.rollbackCount > 0) {
-    pushIssue(issues, persona.id, 'error',
-      interpolate(t.signal_circuit_breaker, { count: signal.rollbackCount }));
-  }
-  // One fact, one charge. `projectedExhaustionDays === 0` is defined as
-  // `max_budget - spend <= 0` (personaHealthSlice.ts:441-445) - the same
-  // condition as `budgetRatio >= 1`, not a second one. Emitting both cost an
-  // agent that had merely hit its cap two error penalties (50 of 100 points)
-  // for a single overrun. Prefer the more specific wording when it applies.
-  if (signal.projectedExhaustionDays === 0) {
-    pushIssue(issues, persona.id, 'error', t.signal_budget_exhausted);
-  } else if (signal.budgetRatio >= 1) {
-    pushIssue(issues, persona.id, 'error',
-      interpolate(t.signal_over_budget, { pct: Math.round(signal.budgetRatio * 100) }));
-  }
-
-  // Warnings — degrading state worth attention.
-  if (signal.budgetRatio > 0.8 && signal.budgetRatio < 1) {
-    pushIssue(issues, persona.id, 'warning',
-      interpolate(t.signal_budget_near_cap, { pct: Math.round(signal.budgetRatio * 100) }));
-  }
-  if (
-    signal.projectedExhaustionDays !== null &&
-    signal.projectedExhaustionDays > 0 &&
-    signal.projectedExhaustionDays <= 7
-  ) {
-    pushIssue(issues, persona.id, 'warning',
-      interpolate(t.signal_budget_exhausts_soon, { days: signal.projectedExhaustionDays }));
-  }
-  if (signal.healingFrequency > 0.5) {
-    const recent7 = Math.round(signal.healingFrequency * 7);
-    if (recent7 > 0) {
-      pushIssue(issues, persona.id, 'warning',
-        interpolate(t.signal_healing_frequency, { count: recent7 }));
-    }
-  }
-  if (signal.failureTrend === 'degrading') {
-    pushIssue(issues, persona.id, 'warning', t.signal_failure_trend_degrading);
-  }
-  if (signal.successRateSource !== 'unknown' && signal.successRate < 80) {
-    pushIssue(issues, persona.id, 'warning',
-      interpolate(t.signal_low_success_rate, { pct: Math.round(signal.successRate) }));
-  }
-
-  // Info — soft hints; not blocking but useful in the modal.
-  if (signal.totalExecutions > 0 && signal.recentExecutions === 0) {
-    pushIssue(issues, persona.id, 'info', t.signal_inactive);
-  }
-  if (
-    signal.predictedFailureInDays !== null &&
-    signal.predictedFailureInDays <= 30
-  ) {
-    pushIssue(issues, persona.id, 'info',
-      interpolate(t.signal_predicted_failure, { days: signal.predictedFailureInDays }));
-  }
-  if (signal.avgLatencyMs > HIGH_LATENCY_MS) {
-    pushIssue(issues, persona.id, 'info',
-      interpolate(t.signal_high_latency, { seconds: Math.round(signal.avgLatencyMs / 1000) }));
-  }
-
-  if (issues.length === 0 && signal.totalExecutions === 0) {
-    pushIssue(issues, persona.id, 'info', t.signal_unknown);
-  }
-
-  return finalise(issues);
-}
-
-function finalise(issues: DryRunIssue[]): DryRunResult {
-  const hasError = issues.some((i) => i.severity === 'error');
-  const hasNonInfo = issues.some((i) => i.severity !== 'info');
-  const status: DryRunResult['status'] =
-    hasError ? 'blocked' :
-    issues.length > 0 ? (hasNonInfo ? 'partial' : 'ready') :
-    'ready';
-  return { status, capabilities: [], issues };
 }
 
 function aggregateDigest(checks: PersonaHealthCheck[]): AgentHealthDigest {
@@ -191,7 +45,8 @@ function aggregateDigest(checks: PersonaHealthCheck[]): AgentHealthDigest {
     generatedAt: new Date().toISOString(),
     personas: checks,
     totalScore,
-    totalIssues: totalErrors + totalWarnings + totalInfos,
+    // Errors + warnings only: an info note is a note (see AgentHealthDigest).
+    totalIssues: totalErrors + totalWarnings,
     errorCount: totalErrors,
     warningCount: totalWarnings,
     infoCount: totalInfos,
@@ -213,39 +68,10 @@ export const createHealthCheckSlice: StateCreator<AgentStore, [], [], HealthChec
     set({ healthDigestRunning: true });
 
     try {
-      // Pull real telemetry: refresh the overview health pipeline (heartbeat,
-      // burn rate, failure trend per persona). The refresh fetches the healing
-      // bundle server-side and stashes the (bounded) healing issues on the
-      // overview store, so we reuse THOSE for the per-persona modal titles
-      // instead of issuing a third `list_healing_issues` IPC of our own.
-      const overview = useOverviewStore.getState();
-      await overview.refreshHealthDashboard();
-
-      const overviewState = useOverviewStore.getState();
-      const healingIssues: PersonaHealingIssue[] = overviewState.healthHealingIssues;
-
-      const signals = overviewState.healthSignals;
-      const signalById = new Map(signals.map((s) => [s.personaId, s] as const));
-      const healingByPersona = new Map<string, PersonaHealingIssue[]>();
-      for (const h of healingIssues) {
-        const list = healingByPersona.get(h.persona_id) ?? [];
-        list.push(h);
-        healingByPersona.set(h.persona_id, list);
-      }
-
-      const checks: PersonaHealthCheck[] = personas.map((persona) => ({
-        personaId: persona.id,
-        personaName: persona.name,
-        personaIcon: persona.icon,
-        personaColor: persona.color,
-        result: buildResultFromSignals(
-          persona,
-          signalById.get(persona.id),
-          healingByPersona.get(persona.id) ?? [],
-        ),
-        checkedAt: new Date().toISOString(),
-      }));
-
+      // THE health definition (sub_health/agentHealth.ts), shared with the
+      // editor badge: one refresh of the overview telemetry pipeline, the
+      // healing issues it stashed, and each persona's config warnings.
+      const checks = await assessAgentHealth(personas);
       const digest = aggregateDigest(checks);
       set({ healthDigest: digest, healthDigestRunning: false, lastDigestAt: digest.generatedAt });
       return digest;

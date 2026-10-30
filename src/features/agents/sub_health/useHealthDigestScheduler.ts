@@ -4,6 +4,7 @@ import { getAppSetting, setAppSetting } from '@/api/system/settings';
 import { silentCatch, silentCatchNull } from "@/lib/silentCatch";
 import { useAgentStore } from "@/stores/agentStore";
 import { getActiveTranslations, interpolate } from "@/i18n/useTranslation";
+import { attentionChecks } from './healthScoring';
 
 const LAST_DIGEST_KEY = 'health_digest_last_run';
 const DIGEST_ENABLED_KEY = 'health_digest_enabled';
@@ -34,6 +35,9 @@ export function parseLastRunMs(raw: string | null | undefined, now: number = Dat
   if (ms > now + FUTURE_TOLERANCE_MS) return null;
   return ms;
 }
+
+/** How many agent names a notification body carries before "+N more". */
+const NAMED_AGENTS_CAP = 3;
 
 /**
  * Scheduler hook that checks on mount whether a weekly health digest
@@ -97,9 +101,9 @@ export function useHealthDigestScheduler() {
           // ran.current and the finally below released running.current, so the
           // next flip of `personasLoaded` (or a strict-mode remount) re-fired
           // the effect and re-ran the whole digest. Treat one attempt per app
-          // session as the contract: if it failed, the user retries by
-          // restarting the app. (There is no "run digest now" control;
-          // NotificationSettings only exposes the enable/disable toggle.)
+          // session as the contract: if it failed, the user retries from the
+          // digest panel's "Run Health Digest" control (Settings >
+          // Notifications), or the next launch.
           ran.current = true;
           return;
         }
@@ -112,7 +116,11 @@ export function useHealthDigestScheduler() {
 
         // Send native notification (translated via getActiveTranslations
         // since this lives outside React's render cycle).
-        const { totalScore, totalIssues, errorCount, warningCount } = digest;
+        const { totalScore, errorCount, warningCount } = digest;
+        // The count carries its predicate: the breakdown names errors and
+        // warnings, so the issue count is exactly those. Info notes (every
+        // agent without telemetry carries one) are not issues.
+        const totalIssues = errorCount + warningCount;
         const personaCount = digest.personas.length;
         const gradeEmoji = totalScore.grade === 'healthy' ? '\u2705' : totalScore.grade === 'degraded' ? '\u26A0\uFE0F' : '\u274C';
         const notif = getActiveTranslations().agents.health_digest;
@@ -139,6 +147,17 @@ export function useHealthDigestScheduler() {
             agents: agentsText,
             breakdown,
           });
+          // The summary is a door, not a wall: name who needs attention. The
+          // full list (every agent, every issue) is the digest panel under
+          // Settings > Notifications > Weekly digest.
+          const attention = attentionChecks(digest.personas).map((c) => c.personaName);
+          if (attention.length > 0) {
+            const shown = attention.slice(0, NAMED_AGENTS_CAP).join(', ');
+            const names = attention.length > NAMED_AGENTS_CAP
+              ? interpolate(notif.notification_attention_more, { names: shown, count: attention.length - NAMED_AGENTS_CAP })
+              : shown;
+            body = interpolate(notif.notification_body_with_attention, { body, names });
+          }
         }
 
         await sendAppNotification(title, body).catch(silentCatch("useHealthDigestScheduler:sendAppNotification"));

@@ -17,7 +17,7 @@ Both pages are wired in `src/features/personas/PersonasPage.tsx`.
 
 | Surface | Behavior | Implementation |
 | --- | --- | --- |
-| Unified dashboard | Mixed Cloud + GitLab deployments with sort/filter/bulk actions | `UnifiedDeploymentDashboard.tsx`, `DeploymentTable.tsx`, `DeploymentFilters.tsx`, `BulkActionsToolbar.tsx`, `DeploymentSubComponents.tsx` (SummaryCard etc.), `DeploymentHealthSparkline.tsx`, `ExecutionProgressBar.tsx` |
+| Unified dashboard | Mixed Cloud + GitLab deployments with sort/filter/bulk actions | `UnifiedDeploymentDashboard.tsx`, `DeploymentTable.tsx`, `DeploymentFilters.tsx`, `BulkActionsToolbar.tsx`, `DeploymentSubComponents.tsx` (SummaryCard etc.), `DeploymentHealthSparkline.tsx` |
 | Tokens / typing | Per-target tokens (status, color, icon) and shared `DeploymentTypes` | `deploymentTokens.ts`, `deploymentTypes.ts` |
 | Hooks | Health rollup, manual test, cloud health monitor | `hooks/useDeploymentHealth.ts`, `hooks/useDeploymentTest.ts`, `hooks/useCloudHealthMonitor.ts` |
 
@@ -32,7 +32,7 @@ Both pages are wired in `src/features/personas/PersonasPage.tsx`.
 | `DeploymentCard.tsx` | Per-deployment card — status, endpoint URL (copy / open), budget gauge, invocation stats, smoke test result, API playground |
 | `CloudConnectionForm.tsx` | Connect to a cloud control-plane URL with API key, run diagnostics |
 | `CloudOAuthPanel.tsx` | OAuth-based connect / refresh / disconnect (alternative to API key) |
-| `CloudStatusPanel.tsx` | High-level cloud status — connected / not, worker counts, base URL |
+| `CloudStatusPanel.tsx` | High-level cloud status — connected / not, worker counts, base URL. The Claude token row (`CloudTokenIndicator.tsx`) reads the OAuth status as well as `hasClaudeToken`: green only for a verified unexpired token, a warning when expired, neutral "status unknown" when present but unverified |
 | `CloudHistoryPanel.tsx` | Cloud execution history across deployed personas, filterable by persona, status and 7/30/90-day window, with stats cards, daily chart, top-error drill-down and per-row output (`CloudExecutionRow.tsx`, `CloudHistoryHelpers.tsx`) |
 | `CloudSchedulesPanel.tsx` | Schedule list for cloud-deployed personas (`cloudSchedulesHelpers.tsx`, `CreateTriggerForm.tsx`, `TriggerListItem.tsx`) |
 | `ApiPlayground.tsx` | Inline request tester. Its Send runs the persona **locally** (`executePersona`, then waits for the run to land) and labels the result as a local run; only its curl / fetch snippets target the deployed endpoint |
@@ -91,4 +91,4 @@ Bindings (`src/lib/bindings/Cloud*`) keep the TS shapes in sync with the Rust ty
 
 ## Orphaned-deployment reconcile
 
-On (re)connect, the cloud panel diffs the orchestrator's list of your live deployments against what this install has recorded and surfaces any it doesn't recognize (another machine, a reinstall, or pruned history) in an advisory banner (`CloudReconcileBanner`) — read-only, with per-deployment **Adopt** (record it locally so it stops billing invisibly) or **Undeploy**. Nothing is auto-undeployed. Deploy-error strings now resolve at call time, so they follow a mid-session language switch.
+On (re)connect, the cloud panel diffs the orchestrator's list of your live deployments against what this install has recorded and surfaces any it doesn't recognize (another machine, a reinstall, or pruned history) in an advisory banner (`CloudReconcileBanner`) — read-only, with per-deployment **Adopt** (record it locally so it stops billing invisibly) or **Undeploy**. Each row is named by the deployment's label, then a locally known persona name, then "Unknown persona" - never an id fragment. Nothing is auto-undeployed. Deploy-error strings now resolve at call time, so they follow a mid-session language switch.

@@ -58,4 +58,32 @@ describe('useTemplateIntentMatch - latest keystroke wins', () => {
     expect(result.current.matches).toEqual([]);
     expect(result.current.loading).toBe(false);
   });
+
+  // Round 2 card 12: during the 300ms debounce the hook reported idle, so the
+  // roster's first-run field painted its no-match Create button, hid it when
+  // the request started, then painted matches - three states in ~0.5s.
+  it('reports pending from the keystroke, not from the debounced request', async () => {
+    const pending = deferred<{ id: string; name: string }[]>();
+    mockMatch.mockReturnValueOnce(pending.promise);
+
+    const { result, rerender } = renderHook(({ intent }) => useTemplateIntentMatch(intent), {
+      initialProps: { intent: '' },
+    });
+    expect(result.current.loading).toBe(false);
+
+    rerender({ intent: 'summarize my inbox' });
+    // Inside the debounce window: no request yet, but a match is coming.
+    expect(mockMatch).not.toHaveBeenCalled();
+    expect(result.current.loading).toBe(true);
+
+    await act(async () => { vi.advanceTimersByTime(300); });
+    expect(result.current.loading).toBe(true);
+    await act(async () => { pending.resolve([{ id: 'm', name: 'Match' }]); });
+    expect(result.current.loading).toBe(false);
+    expect(result.current.matches.map((m) => m.id)).toEqual(['m']);
+
+    // A short intent is never pending: there is nothing to wait for.
+    rerender({ intent: 'sum' });
+    expect(result.current.loading).toBe(false);
+  });
 });

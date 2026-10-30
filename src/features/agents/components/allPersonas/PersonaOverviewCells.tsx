@@ -119,6 +119,9 @@ export const NameCell = memo(function NameCell({ persona, onClick }: { persona: 
           value={persona.name}
           onCommit={(next) => updatePersona(persona.id, { name: next })}
           onTextClick={() => onClick(persona)}
+          // A system persona (the Director) is found by its name; the backend
+          // refuses the rename, so the roster does not offer it.
+          disabled={persona.trust_origin === 'system'}
           className="text-md text-foreground/90 max-w-full"
           parentGroup
         />

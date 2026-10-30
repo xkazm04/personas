@@ -9,6 +9,7 @@ import { DeploymentHealthSparkline } from './DeploymentHealthSparkline';
 import type { HealthDataPoint } from './DeploymentHealthSparkline';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { formatNumeric } from '@/lib/utils/formatters';
 import type { TestResult } from '../hooks/useDeploymentTest';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
@@ -67,6 +68,17 @@ interface DeploymentTableProps {
   onToggleSelectAll: () => void;
 }
 
+/**
+ * The test chip's hover summary. Duration and cost go through the same
+ * formatter `Numeric` uses on the card, so one TestResult reads one way.
+ */
+function testResultTitle(verdict: string, result: TestResult, language: string): string {
+  const parts = [verdict];
+  if (result.durationMs != null) parts.push(formatNumeric(result.durationMs, 'ms', { language }));
+  if (result.costUsd != null && result.costUsd > 0) parts.push(formatNumeric(result.costUsd, 'usd', { language }));
+  return parts.join(' - ');
+}
+
 export function DeploymentTable({
   displayRows,
   showGhost,
@@ -89,7 +101,7 @@ export function DeploymentTable({
   onToggleSelect,
   onToggleSelectAll,
 }: DeploymentTableProps) {
-  const { t, tx } = useTranslation();
+  const { t, tx, language } = useTranslation();
   const dt = t.deployment.dashboard;
   const allSelected = displayRows.length > 0 && displayRows.every((r) => selectedIds.has(r.id));
   const someSelected = displayRows.some((r) => selectedIds.has(r.id));
@@ -210,7 +222,10 @@ export function DeploymentTable({
                           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                           : 'bg-red-500/10 border-red-500/20 text-red-400'
                       }`}
-                      title={testResult.error ?? `${testResult.status === 'pass' ? t.deployment.deploy_card.test_title_pass : t.deployment.deploy_card.test_title_fail}${testResult.durationMs != null ? ` - ${testResult.durationMs}ms` : ''}${testResult.costUsd != null && testResult.costUsd > 0 ? ` - $${testResult.costUsd.toFixed(4)}` : ''}`}
+                      title={testResult.error ?? testResultTitle(
+                        testResult.status === 'pass' ? t.deployment.deploy_card.test_title_pass : t.deployment.deploy_card.test_title_fail,
+                        testResult, language,
+                      )}
                     >
                       {testResult.status === 'pass' ? t.deployment.deploy_card.test_pass : t.deployment.deploy_card.test_fail}
                       {testResult.durationMs != null && (

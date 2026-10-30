@@ -69,11 +69,15 @@ describe('usePersonaListFilters', () => {
     expect(run({ personas, view: { statusFilter: 'disabled' } }).data.map((p) => p.id)).toEqual(['off']);
   });
 
-  it('treats personas without a health entry as healthy for the health filter', () => {
-    const personas = [make('h'), make('f')];
-    const healthMap = { f: { status: 'failing' } };
+  // Round 2 card 13: a missing health entry (cold load, failed summaries) used
+  // to be coerced to healthy, so the Healthy filter matched every persona whose
+  // verdict had not arrived. Healthy now means a verdict was reached.
+  it('does not count personas without a health entry as healthy', () => {
+    const personas = [make('h'), make('f'), make('missing')];
+    const healthMap = { h: { status: 'healthy' }, f: { status: 'failing' } };
     expect(run({ personas, healthMap, view: { healthFilter: 'healthy' } }).data.map((p) => p.id)).toEqual(['h']);
     expect(run({ personas, healthMap, view: { healthFilter: 'failing' } }).data.map((p) => p.id)).toEqual(['f']);
+    expect(run({ personas, healthMap: {}, view: { healthFilter: 'healthy' } }).data).toEqual([]);
   });
 
   it('matches search against name and description, case-insensitively', () => {

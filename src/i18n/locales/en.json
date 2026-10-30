@@ -4369,6 +4369,12 @@
       "auto_loading_repos": "Loading repositories...",
       "auto_select_repo": "Select a repository...",
       "auto_no_repos": "No repositories found. Check your token permissions.",
+      "auto_repos_load_failed": "Couldn't load your repositories. The request failed, so this list may not be empty.",
+      "auto_zaps_load_failed": "Couldn't load your Zaps. The request failed, so this list may not be empty.",
+      "auto_repo_private": "{name} (private)",
+      "auto_scope_repo": "'repo'",
+      "auto_scope_workflow": "'workflow'",
+      "auto_scopes_repo_and_workflow": "'repo' and 'workflow'",
       "auto_your_zaps": "Your existing Zaps",
       "auto_loading_zaps": "Loading your Zaps...",
       "auto_no_zaps": "No existing Zaps found. A new Zap will be created during deployment.",
@@ -4427,6 +4433,7 @@
       "st_test": "Test",
       "st_test_all": "Test All",
       "st_link_existing": "Link Existing",
+      "st_change_credential": "Change",
       "st_add_new": "Add New",
       "st_credential": "Credential: {name}",
       "st_best_match": "Best match",
@@ -4966,7 +4973,8 @@
       "active_triggers": "{count} active trigger(s)",
       "quality": "Quality",
       "spend": "Spend",
-      "spend_hint": "Month-to-date spend, the same figure the run gate enforces."
+      "spend_hint": "Month-to-date spend, the same figure the run gate enforces.",
+      "health": "Health"
     },
     "health_indicator": {
       "last": "last {count}"
@@ -5152,26 +5160,12 @@
       "signal_inactive": "No executions in the last 7 days.",
       "signal_predicted_failure": "Trend predicts failure threshold within {days} day(s).",
       "signal_high_latency": "Average latency is {seconds}s — above the 30s target.",
-      "signal_unknown": "No telemetry yet — run this agent to populate health data."
-    },
-    "health_issue": {
-      "apply_fix": "Apply Fix: {label}",
-      "manual_action": "Manual action needed",
-      "fix_applied": "Applied fix: {label}",
-      "fix_failed": "Failed to apply fix: {error}",
-      "auto_match_blocked_one": "Auto-match blocked: credential service {services} has multiple credentials. Pick the right one manually before applying.",
-      "auto_match_blocked_other": "Auto-match blocked: credential services {services} have multiple credentials. Pick the right one manually before applying.",
-      "category_config": "Configuration",
-      "category_runtime": "Runtime",
-      "category_policy": "Policy"
-    },
-    "health_proposals": {
-      "link_credential": "Link {connector} credential",
-      "auto_match_credentials": "Auto-match all credentials",
-      "add_daily_schedule": "Add daily 9 AM schedule",
-      "switch_retry_3x": "Switch to retry-3x",
-      "add_default_use_case": "Add default use case",
-      "enable_first_run_review": "Enable first-run review"
+      "signal_unknown": "No telemetry yet — run this agent to populate health data.",
+      "notification_body_with_attention": "{body} · Needs attention: {names}",
+      "notification_attention_more": "{names} +{count} more",
+      "panel_never_run": "No digest has run this session. Run one to see which agents need attention.",
+      "panel_summary": "Score {score}/100 · {issues} · {agents}",
+      "panel_more_issues": "{first} (+{count} more)"
     },
     "health_score": {
       "healthy": "Healthy",
@@ -5248,7 +5242,14 @@
       "delete_cancel_failed_other": "{count} executions could not be cancelled.",
       "delete_drain_timeout": "Drain timeout was reached.",
       "execution_still_running": "Execution still running for the previous agent. Switch back to monitor it.",
-      "execution_still_queued": "Execution still queued for the previous agent. Switch back to monitor it."
+      "execution_still_queued": "Execution still queued for the previous agent. Switch back to monitor it.",
+      "select_page_all_selected": "All {count} personas on this page are selected.",
+      "select_all_matching": "Select all {count} matching",
+      "all_matching_selected": "All {count} matching personas are selected.",
+      "sort_label": "Sort",
+      "sort_option": "{column}, {direction}",
+      "sort_ascending": "ascending",
+      "sort_descending": "descending"
     },
     "life": {
       "sub_core": "Core",
@@ -5579,7 +5580,8 @@
       "degraded": "Degraded",
       "failing": "Failing",
       "dormant": "No runs yet",
-      "building": "Building"
+      "building": "Building",
+      "unknown": "Health unknown"
     },
     "editor_chrome": {
       "tab_activity": "Activity",
@@ -8767,7 +8769,6 @@
       "activity": "Activity",
       "queue_length": "Waiting in Line",
       "active_executions": "Currently Running",
-      "active_execution": "Currently Running",
       "claude_token": "Claude Token",
       "gauge_aria": "{label} gauge"
     },
@@ -8848,6 +8849,8 @@
       "filter_status": "Status",
       "filter_all": "All",
       "bulk_selected": "{count} selected",
+      "bulk_cloud_only_one": "Bulk actions apply to Cloud only: {count} GitLab deployment is not affected",
+      "bulk_cloud_only_other": "Bulk actions apply to Cloud only: {count} GitLab deployments are not affected",
       "bulk_pause": "Pause ({count})",
       "bulk_resume": "Resume ({count})",
       "bulk_delete_confirm": "Delete {count}?",
@@ -8863,14 +8866,6 @@
       "success_rate": "Success rate",
       "volume": "Volume",
       "errors": "Errors",
-      "stage_initializing": "Initializing",
-      "stage_thinking": "Thinking",
-      "stage_tool_calling": "Tool Call",
-      "stage_processing_result": "Processing Result",
-      "stage_generating": "Generating",
-      "stage_completed": "Completed",
-      "stage_failed": "Failed",
-      "tool_calls": "{count} tool calls",
       "history_title": "Deployment history",
       "history_empty": "No deployment history yet",
       "history_load_failed": "Could not load deployment history",
@@ -8889,6 +8884,7 @@
     "cloud_trigger_chain": "Chain",
     "cloud_trigger_manual": "Manual",
     "cloud_healthy": "Healthy",
+    "cloud_health_not_checked": "Not checked",
     "cron_every_5min": "Every 5 min",
     "cron_every_15min": "Every 15 min",
     "cron_every_hour": "Every hour",

@@ -29,6 +29,7 @@ import { useExecutionScope } from '@/hooks/execution/useExecutionScope';
 import { ExecutionSummaryCard } from '@/features/agents/sub_executions/detail/views/ExecutionSummaryCard';
 import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
 import { useRafCoalescedCallback } from '@/hooks/utility/timing/useRafCoalescedCallback';
+import { clampMiniPlayerPosition, useMiniPlayerViewportClamp } from './miniPlayerViewport';
 
 /** Raw tail used only by the expanded terminal view; empty when collapsed/Simple mode so we skip the slice entirely. */
 const EMPTY_LINES: string[] = [];
@@ -238,11 +239,9 @@ export default function ExecutionMiniPlayer() {
   const moveMiniPlayerFrame = useRafCoalescedCallback((clientX: number, clientY: number) => {
     const dx = clientX - dragStart.current.x;
     const dy = clientY - dragStart.current.y;
-    setMiniPlayerPosition({
-      x: Math.max(0, Math.min(window.innerWidth - 360, dragStart.current.posX + dx)),
-      y: Math.max(0, Math.min(window.innerHeight - 80, dragStart.current.posY + dy)),
-    });
+    setMiniPlayerPosition(clampMiniPlayerPosition(dragStart.current.posX + dx, dragStart.current.posY + dy));
   });
+  useMiniPlayerViewportClamp(miniPlayerPinned);
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDragging) return;

@@ -9,8 +9,13 @@ import Button from '@/features/shared/components/buttons/Button';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
-import { DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './viewConfig';
+import { DEFAULT_VIEW_CONFIG } from './viewConfig';
+import { useRosterViewStore } from './rosterViewStore';
 import { isPersonaBuilding } from './personaBuildStatus';
+import { rosterCount } from './rosterCount';
+import { useRosterSelection } from './useRosterSelection';
+import { PersonaSelectionScopeBanner } from './PersonaSelectionScopeBanner';
+import { PersonaOverviewCompactControls } from './PersonaOverviewCompactControls';
 import { rowAccentTone, type RowAccentTone } from './PersonaOverviewBadges';
 import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
@@ -42,6 +47,7 @@ const GRID_ACCENT_CLASS: Record<RowAccentTone, string> = {
   failing: 'border-l-red-400/60',
   degraded: 'border-l-amber-400/60',
   dormant: 'border-l-foreground/20',
+  unknown: 'border-l-foreground/20',
   healthy: 'border-l-emerald-400/40',
 };
 
@@ -64,9 +70,12 @@ export default function PersonaOverviewPage() {
   const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
   const { toggleFavorite, isFavorite } = useFavoriteAgents();
 
-  const [view, setView] = useState<AgentListViewConfig>(DEFAULT_VIEW_CONFIG);
+  // Sort + filters persist across visits (rosterViewStore); search does not.
+  const view = useRosterViewStore((s) => s.view);
+  const setView = useRosterViewStore((s) => s.setView);
   const [search, setSearch] = useState('');
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // The rows of the grid page on screen (DataGrid reports them); select-all is scoped to these.
+  const [pageRows, setPageRows] = useState<Persona[]>([]);
   const [pageTab, setPageTab] = useState<PageTab>('personas');
   // Home-team filter from PersonaGroupDropRail (cycle 19; repointed to home
   // teams in the Groups→Teams consolidation). null = unfiltered; a team id
@@ -126,6 +135,10 @@ export default function PersonaOverviewPage() {
     personas, view, search, triggerCounts, lastRunMap, spendMap, healthMap, isBuilding, isDraft, isArchived, isFavorite,
     groupFilter,
   });
+
+  // The compact card list is unpaginated, so there the visible rows are all of them.
+  const selection = useRosterSelection(filteredData, isMobile ? filteredData : pageRows);
+  const { selectedIds, setSelectedIds } = selection;
 
   const { modal, handleBatchDelete, handleDeleteDrafts, handleBatchArchive, handleBatchRestore, draftIds } =
     usePersonaActions({ personas, selectedIds, setSelectedIds, deletePersona, selectPersona, isDraft });
@@ -210,28 +223,7 @@ export default function PersonaOverviewPage() {
     [selectedIds, applyPersonaOp, addToast, t, tx, teamNameById],
   );
 
-  // Drop selections that no longer match the filtered data
-  useEffect(() => {
-    setSelectedIds((prev) => {
-      const valid = new Set(filteredData.map((p) => p.id));
-      const next = new Set([...prev].filter((id) => valid.has(id)));
-      return next.size === prev.size ? prev : next;
-    });
-  }, [filteredData]);
-
-  const handleToggleSelect = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const allSelected = filteredData.length > 0 && filteredData.every((p) => selectedIds.has(p.id));
-  const handleSelectAll = useCallback(() => {
-    setSelectedIds(allSelected ? new Set() : new Set(filteredData.map((p) => p.id)));
-  }, [allSelected, filteredData]);
+  const handleToggleSelect = selection.toggleOne;
 
   const handleRowClick = useCallback(
     (p: Persona) => {
@@ -249,30 +241,27 @@ export default function PersonaOverviewPage() {
     setView((prev) => prev.sortKey === key
       ? { ...prev, sortDirection: prev.sortDirection === 'asc' ? 'desc' : 'asc' }
       : { ...prev, sortKey: key, sortDirection: 'asc' });
-  }, []);
+  }, [setView]);
 
   const handleResetFilters = useCallback(() => {
     setView(DEFAULT_VIEW_CONFIG);
     setSearch('');
     setGroupFilter(null);
-  }, []);
+  }, [setView]);
 
   // The header count used to be a template literal with a hardcoded English
   // "of" and a hand-rolled `s` plural, so 13 of the 14 locales rendered
   // "3 of 12 personas" in English on the roster's own header.
+  // The total is the lifecycle population this view lists (rosterCount), not
+  // every persona: archived ones made an unfiltered roster read "10 of 12".
   const subtitle = useMemo(() => {
-    const plural = personas.length !== 1;
-    if (filteredData.length !== personas.length) {
-      return tx(
-        plural ? t.agents.persona_list.persona_count_filtered_other : t.agents.persona_list.persona_count_filtered_one,
-        { shown: filteredData.length, total: personas.length },
-      );
+    const c = rosterCount(personas, filteredData.length, archivedView);
+    const pl = t.agents.persona_list;
+    if (c.kind === 'filtered') {
+      return tx(c.total !== 1 ? pl.persona_count_filtered_other : pl.persona_count_filtered_one, { shown: c.shown, total: c.total });
     }
-    return tx(
-      plural ? t.agents.persona_list.persona_count_other : t.agents.persona_list.persona_count_one,
-      { count: personas.length },
-    );
-  }, [filteredData.length, personas.length, tx, t.agents.persona_list]);
+    return tx(c.count !== 1 ? pl.persona_count_other : pl.persona_count_one, { count: c.count });
+  }, [filteredData.length, personas, archivedView, tx, t.agents.persona_list]);
 
   const columns = usePersonaColumns({
     view, setView, selectedIds, onToggleSelect: handleToggleSelect, isFavorite, toggleFavorite,
@@ -347,6 +336,17 @@ export default function PersonaOverviewPage() {
 
         <DirectorPanel />
 
+        {isMobile && filteredData.length > 0 && (
+          <PersonaOverviewCompactControls view={view} onViewChange={setView} allConnectorNames={allConnectorNames} />
+        )}
+        <PersonaSelectionScopeBanner
+          scope={selection.scope}
+          pageCount={pageRows.length}
+          matchingCount={filteredData.length}
+          onSelectAllMatching={selection.selectAllMatching}
+          onClear={selection.clear}
+        />
+
         {filteredData.length === 0 ? (
           // Zero rows has two causes with two remedies: no personas at all
           // (create one) vs. personas that the filters exclude (reset). An
@@ -368,6 +368,8 @@ export default function PersonaOverviewPage() {
             onRowClick={handleRowClick}
             isDraft={isDraft}
             connectorNamesMap={connectorNamesMap}
+            onDuplicate={handleDuplicate}
+            onExport={handleExport}
           />
         ) : (
           <DataGrid
@@ -381,8 +383,9 @@ export default function PersonaOverviewPage() {
             sortDirection={view.sortDirection}
             onSort={handleSort}
             pageSize={25}
-            selectAll={allSelected}
-            onSelectAll={handleSelectAll}
+            selectAll={selection.pageAllSelected}
+            onSelectAll={selection.togglePage}
+            onPageRowsChange={setPageRows}
             density="compact"
             emptyArt="agents"
             emptyTitle={t.agents.sidebar.empty}

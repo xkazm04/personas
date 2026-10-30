@@ -41,3 +41,14 @@ describe('ApiPlayground result provenance', () => {
     expect(screen.queryByText('[object Object]')).toBeNull();
   });
 });
+
+describe('ApiPlayground disclosure and field names', () => {
+  it('exposes the disclosure state on both toggles and names the request body field', () => {
+    render(<ApiPlayground slug="demo" personaId="persona-1" endpointUrl="https://cloud.example/api/deployed/demo" />);
+    const collapsed = screen.getByRole('button', { name: 'API Playground' });
+    expect(collapsed.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(collapsed);
+    expect(screen.getByRole('button', { name: 'API Playground' }).getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByRole('textbox', { name: 'Request Body' })).toBeTruthy();
+  });
+});

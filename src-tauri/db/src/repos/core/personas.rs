@@ -1140,11 +1140,36 @@ pub fn create(pool: &DbPool, mut input: CreatePersonaInput) -> Result<Persona, A
     })
 }
 
+/// Reason a name change must be refused, or `None` when it is allowed.
+/// A system-origin persona (the Director) is found by its name: the boot
+/// seeder keys on `(name, trust_origin = 'system')` and the frontend's
+/// `useDirector` on the same pair, so a renamed Director is lost to both and
+/// the next boot seeds a second one. Re-saving the unchanged name is allowed
+/// (the editor sends the whole form).
+fn system_rename_forbidden_reason(existing: &Persona, new_name: Option<&str>) -> Option<String> {
+    match new_name {
+        Some(name)
+            if existing.trust_origin == PersonaTrustOrigin::System && name != existing.name =>
+        {
+            Some(format!(
+                "'{}' is a system persona and cannot be renamed.",
+                existing.name
+            ))
+        }
+        _ => None,
+    }
+}
+
 #[instrument(skip(pool, input))]
 pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Persona, AppError> {
     timed_query!("personas", "personas::update", {
         // Verify exists
         let existing = get_by_id(pool, id)?;
+        // Before any write (the auto-version below included): a system
+        // persona keeps its name, the same protection archive and delete give.
+        if let Some(reason) = system_rename_forbidden_reason(&existing, input.name.as_deref()) {
+            return Err(AppError::Validation(reason));
+        }
 
         // Auto-version if structured_prompt OR core_profile is changing
         // (living-agent: a Core edit is a prompt-shaping change and must land
@@ -3803,6 +3828,58 @@ mod tests {
             archive_persona(&pool, &p.id).is_err(),
             "system personas must not be archivable"
         );
+    }
+
+    /// Round 2 card 5: the Director is found by (name, system) at boot and in
+    /// the frontend, so renaming it re-seeds a second Director. A system
+    /// persona keeps its name; re-saving the same name and editing other
+    /// fields still work, and an ordinary persona renames freely.
+    #[test]
+    fn test_update_refuses_renaming_a_system_persona() -> Result<(), AppError> {
+        let pool = init_test_db().unwrap();
+        let p = create(&pool, lifecycle_input("Director", "Real.")).unwrap();
+        pool.get()?.execute(
+            "UPDATE personas SET trust_origin = 'system' WHERE id = ?1",
+            params![p.id],
+        )?;
+        let renamed = update(
+            &pool,
+            &p.id,
+            UpdatePersonaInput {
+                name: Some("Boss".into()),
+                ..Default::default()
+            },
+        );
+        assert!(
+            matches!(renamed, Err(AppError::Validation(ref m)) if m.contains("cannot be renamed")),
+            "renaming a system persona must be refused, got {renamed:?}"
+        );
+        assert_eq!(get_by_id(&pool, &p.id).unwrap().name, "Director");
+
+        let same_name = update(
+            &pool,
+            &p.id,
+            UpdatePersonaInput {
+                name: Some("Director".into()),
+                description: Some(Some("still me".into())),
+                ..Default::default()
+            },
+        )
+        .expect("re-saving the unchanged name is allowed");
+        assert_eq!(same_name.description.as_deref(), Some("still me"));
+
+        let ordinary = create(&pool, lifecycle_input("Ordinary", "Real.")).unwrap();
+        let ok = update(
+            &pool,
+            &ordinary.id,
+            UpdatePersonaInput {
+                name: Some("Renamed".into()),
+                ..Default::default()
+            },
+        )
+        .expect("an ordinary persona renames freely");
+        assert_eq!(ok.name, "Renamed");
+        Ok(())
     }
 
     #[test]

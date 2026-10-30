@@ -1,22 +1,18 @@
 /**
  * Behavioural tests for the `useHealthCheck` hook itself (the pure helpers are
- * covered in `useHealthCheck.test.ts`). Uses the REAL agent store so the
- * selected-persona subscription is exercised, and mocks only the IPC doors.
+ * covered in `useHealthCheck.test.ts`, the shared definition in
+ * `healthDefinition.test.ts`). Uses the REAL agent and overview stores so the
+ * selected-persona subscription is exercised, and stubs only the doors.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import type { Persona } from '@/lib/bindings/Persona';
+import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 import { useAgentStore } from '@/stores/agentStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 
-const mockFeasibility = vi.fn();
-vi.mock('@/api/design/design', () => ({
-  testDesignFeasibility: (...args: unknown[]) => mockFeasibility(...args),
-}));
 vi.mock('@/api/pipeline/triggers', () => ({
   getPersonaConfigWarnings: vi.fn().mockResolvedValue([]),
-}));
-vi.mock('@/stores/vaultStore', () => ({
-  useVaultStore: { getState: () => ({ credentials: [] }) },
 }));
 // Hoisted: the i18n module calls silentCatch while it is being imported, which
 // happens before a plain top-level const would be initialised.
@@ -28,8 +24,18 @@ vi.mock('@/lib/silentCatch', async (importOriginal) => ({
 
 import { useHealthCheck } from './useHealthCheck';
 
-const personaA = { id: 'persona-A', name: 'A', icon: null, color: null, design_context: null } as unknown as Persona;
-const personaB = { id: 'persona-B', name: 'B', icon: null, color: null, design_context: null } as unknown as Persona;
+const personaA = { id: 'persona-A', name: 'A', icon: null, color: null } as unknown as Persona;
+const personaB = { id: 'persona-B', name: 'B', icon: null, color: null } as unknown as Persona;
+
+function signal(personaId: string, over: Partial<PersonaHealthSignal> = {}): PersonaHealthSignal {
+  return {
+    personaId, rollbackCount: 0, budgetRatio: 0, projectedExhaustionDays: null, healingFrequency: 0,
+    failureTrend: 'stable', successRate: 100, successRateSource: 'executions', totalExecutions: 10,
+    recentExecutions: 5, predictedFailureInDays: null, avgLatencyMs: 100, ...over,
+  } as unknown as PersonaHealthSignal;
+}
+
+const mockRefresh = vi.fn();
 
 function select(persona: Persona | null) {
   // The slice's `selectedPersona` is a PersonaWithDetails; the hook only reads `.id`.
@@ -39,16 +45,21 @@ function select(persona: Persona | null) {
 }
 
 beforeEach(() => {
-  mockFeasibility.mockReset();
-  mockFeasibility.mockResolvedValue({ overall: 'partial', confirmed_capabilities: [], issues: ['Tool x is not installed'] });
+  mockRefresh.mockReset().mockResolvedValue(undefined);
+  useOverviewStore.setState({
+    refreshHealthDashboard: () => mockRefresh(),
+    healthSignals: [signal('persona-A'), signal('persona-B')],
+    healthHealingIssues: [],
+    healthError: null,
+  } as never);
   mockSilentCatch.mockClear();
   select(null);
 });
 
 describe('useHealthCheck — a failed check leaves a trace', () => {
-  it('routes a feasibility-door failure through silentCatch as well as into phase/error', async () => {
+  it('routes a telemetry-pipeline failure through silentCatch as well as into phase/error', async () => {
     select(personaA);
-    mockFeasibility.mockRejectedValueOnce(new Error('ipc down'));
+    mockRefresh.mockRejectedValueOnce(new Error('ipc down'));
     const { result } = renderHook(() => useHealthCheck());
 
     await act(async () => {
@@ -56,31 +67,29 @@ describe('useHealthCheck — a failed check leaves a trace', () => {
     });
     expect(result.current.phase).toBe('error');
     expect(result.current.error).toBe('ipc down');
-    // The badge renders `error` the same as `idle`, so the breadcrumb is the
-    // only durable evidence the door threw.
     expect(mockSilentCatch).toHaveBeenCalledWith('useHealthCheck:run');
   });
 
   it('reads the message out of a serialized AppError, the shape invokeWithTimeout really rejects with', async () => {
     select(personaA);
-    mockFeasibility.mockRejectedValueOnce({ error: 'feasibility door unreachable', kind: 'Internal' });
+    mockRefresh.mockRejectedValueOnce({ error: 'dashboard door unreachable', kind: 'Internal' });
     const { result } = renderHook(() => useHealthCheck());
 
     await act(async () => {
       await result.current.runHealthCheck(personaA);
     });
     expect(result.current.phase).toBe('error');
-    expect(result.current.error).toBe('feasibility door unreachable');
+    expect(result.current.error).toBe('dashboard door unreachable');
   });
 });
 
 describe('useHealthCheck — latest run wins', () => {
   it('drops a slower earlier run that resolves after a newer one', async () => {
     select(personaA);
-    let releaseFirst: (v: unknown) => void = () => {};
-    mockFeasibility
-      .mockImplementationOnce(() => new Promise((r) => { releaseFirst = r; }))
-      .mockResolvedValueOnce({ overall: 'ready', confirmed_capabilities: [], issues: [] });
+    let releaseFirst: () => void = () => {};
+    mockRefresh
+      .mockImplementationOnce(() => new Promise<void>((r) => { releaseFirst = r; }))
+      .mockResolvedValueOnce(undefined);
     const { result } = renderHook(() => useHealthCheck());
 
     let first: Promise<unknown> = Promise.resolve();
@@ -90,8 +99,10 @@ describe('useHealthCheck — latest run wins', () => {
     });
     expect(result.current.result?.result.status).toBe('ready');
 
+    // The slow run resolves against telemetry that now says the agent broke.
+    useOverviewStore.setState({ healthSignals: [signal('persona-A', { rollbackCount: 3 })] } as never);
     await act(async () => {
-      releaseFirst({ overall: 'blocked', confirmed_capabilities: [], issues: ['Tool x is not installed'] });
+      releaseFirst();
       await first;
     });
     expect(await first).toBeNull();
@@ -146,67 +157,5 @@ describe('useHealthCheck — verdict is scoped to the selected persona', () => {
     select(personaB);
     expect(result.current.phase).toBe('idle');
     expect(result.current.result).toBeNull();
-  });
-});
-
-/**
- * Faithful stand-in for the backend's `check_feasibility`
- * (src-tauri/engine/src/design.rs): it reads ONLY `suggested_tools`,
- * `suggested_connectors`, `suggested_triggers` and `structured_prompt` from the
- * payload actually sent, so a payload lacking them cannot be answered well.
- */
-function backendFeasibility(json: string, availableTools: string[] = []) {
-  const val = JSON.parse(json) as Record<string, unknown>;
-  const confirmed: string[] = [];
-  const issues: string[] = [];
-  for (const t of (Array.isArray(val.suggested_tools) ? val.suggested_tools : []) as string[]) {
-    if (availableTools.includes(t)) confirmed.push(`Tool '${t}' is available`);
-    else issues.push(`Tool '${t}' is not installed`);
-  }
-  if (val.structured_prompt !== undefined && val.structured_prompt !== null) confirmed.push('Structured prompt is defined');
-  else issues.push('Missing structured_prompt section');
-  const overall = issues.length === 0 ? 'ready' : issues.length <= 2 ? 'partial' : 'blocked';
-  return { overall, confirmed_capabilities: confirmed, issues };
-}
-
-describe('useHealthCheck - the payload sent to the feasibility door', () => {
-  const designed = {
-    id: 'persona-D', name: 'D', icon: null, color: null, description: 'd',
-    design_context: JSON.stringify({ useCases: [], credentialLinks: {}, summary: 's' }),
-    last_design_result: JSON.stringify({
-      structured_prompt: { identity: 'x' },
-      suggested_tools: ['web_search'],
-      suggested_connectors: [],
-      suggested_triggers: [],
-    }),
-    structured_prompt: JSON.stringify({ identity: 'x' }),
-  } as unknown as Persona;
-
-  it('sends the keys the backend reads, so a fully designed persona is not scored as missing its prompt', async () => {
-    select(designed);
-    mockFeasibility.mockImplementation(async (json: string) => backendFeasibility(json, ['web_search']));
-    const { result } = renderHook(() => useHealthCheck());
-    await act(async () => {
-      await result.current.runHealthCheck(designed);
-    });
-    const sent = JSON.parse(mockFeasibility.mock.calls[0]![0] as string) as Record<string, unknown>;
-    expect(sent).toHaveProperty('structured_prompt');
-    expect(sent).toHaveProperty('suggested_tools');
-    expect(result.current.result?.result.issues.map((i) => i.description)).not.toContain('Missing structured_prompt section');
-    expect(result.current.result?.result.status).toBe('ready');
-    expect(result.current.score?.grade).not.toBe('degraded');
-  });
-
-  it('falls back to the persona structured_prompt when there is no parseable last_design_result', async () => {
-    const p = { ...designed, last_design_result: 'not json' } as unknown as Persona;
-    select(p);
-    mockFeasibility.mockImplementation(async (json: string) => backendFeasibility(json));
-    const { result } = renderHook(() => useHealthCheck());
-    await act(async () => {
-      await result.current.runHealthCheck(p);
-    });
-    const sent = JSON.parse(mockFeasibility.mock.calls[0]![0] as string) as Record<string, unknown>;
-    expect(sent.structured_prompt).toEqual({ identity: 'x' });
-    expect(result.current.result?.result.status).toBe('ready');
   });
 });

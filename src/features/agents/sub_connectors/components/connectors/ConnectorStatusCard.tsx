@@ -48,8 +48,9 @@ export function ConnectorStatusCard({
   return (
     <SectionCard size="md">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-card bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
-          <Link className="w-3.5 h-3.5 text-emerald-400/60" />
+        {/* The tile follows the status (it was success-green for every state). */}
+        <div data-testid="connector-status-tile" className={`w-8 h-8 rounded-card border flex items-center justify-center flex-shrink-0 ${config.bg}`}>
+          <Link className={`w-3.5 h-3.5 ${config.color}`} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
@@ -72,6 +73,16 @@ export function ConnectorStatusCard({
             <button type="button" onClick={() => setSwapOpen((o) => !o)}
               className={`flex items-center gap-1 px-2 py-1.5 typo-body rounded-modal border transition-colors ${swapOpen ? 'border-sky-500/30 text-sky-300 bg-sky-500/15' : 'border-primary/20 text-foreground hover:bg-secondary/50 hover:text-foreground/80'}`}
               title={t.agents.connectors.ct_swap_alt_tooltip}><ArrowLeftRight className="w-3 h-3" /></button>
+          )}
+          {/* A linked (often auto-matched) slot can be re-pointed in place:
+              the picker already lists every row, only its trigger was gated on
+              an unlinked card. */}
+          {status.credentialId && credentials.some((c) => c.id !== status.credentialId) && (
+            <Button variant="secondary" size="sm" aria-expanded={isLinking}
+              icon={<ChevronDown className={`w-3 h-3 transition-transform ${isLinking ? 'rotate-180' : ''}`} />}
+              onClick={() => onToggleLinking(isLinking ? null : status.name)}>
+              {t.agents.connectors.st_change_credential}
+            </Button>
           )}
           {status.credentialId ? (
             <Tooltip content={status.testing ? t.agents.connectors.status_testing : ''} placement="top" delay={200}>

@@ -235,6 +235,7 @@ function DemandCard({
             <button
               type="button"
               onClick={onToggleLinking}
+              aria-expanded={isLinking}
               className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card border transition-colors cursor-pointer ${
                 isLinking
                   ? 'bg-blue-500/15 text-blue-400 border-blue-500/25'

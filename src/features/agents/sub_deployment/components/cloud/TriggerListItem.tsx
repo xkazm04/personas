@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import {
   ChevronDown,
   ChevronRight,
@@ -153,7 +154,7 @@ export function TriggerListItem({
                         orchestrator reports as `error` or `cancelled` was
                         painted here as still in flight. */}
                     {statusIcon(f.status)}
-                    <span className="text-foreground">{f.status}</span>
+                    <span className="text-foreground">{tokenLabel(t, 'execution', f.status)}</span>
                     <span className="text-foreground flex-1">{timeAgo(f.firedAt)}</span>
                     {f.durationMs != null && <Numeric value={Number(f.durationMs)} unit="ms" className="text-foreground" />}
                     <span className="text-foreground">{formatCost(f.costUsd)}</span>

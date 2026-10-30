@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { ChevronDown, ChevronRight, Terminal, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
@@ -60,7 +61,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-2">
           <div className="grid grid-cols-2 gap-2 typo-caption">
-            <div><span className="text-foreground">{dt.label_status}</span> <span className="text-foreground">{exec.status}</span></div>
+            <div><span className="text-foreground">{dt.label_status}</span> <span className="text-foreground">{tokenLabel(t, 'execution', exec.status)}</span></div>
             <div><span className="text-foreground">{dt.label_duration}</span> <span className="text-foreground">{formatDuration(durationMs)}</span></div>
             <div><span className="text-foreground">{dt.label_cost}</span> <span className="text-foreground">{formatCost(exec.costUsd)}</span></div>
             <div><span className="text-foreground">{dt.label_tokens}</span> <span className="text-foreground">{tokens ?? '—'}</span></div>

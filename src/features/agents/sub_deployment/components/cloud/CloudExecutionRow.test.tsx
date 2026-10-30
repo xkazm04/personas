@@ -57,3 +57,13 @@ describe('CloudExecutionRow: an unreported figure is not a zero', () => {
     expect(getByText('Tokens:').nextElementSibling?.textContent).toBe('150');
   });
 });
+
+describe('CloudExecutionRow: status reads the execution vocabulary', () => {
+  it('labels the expanded status through status_tokens, not the raw token', () => {
+    const { container } = render(
+      <CloudExecutionRow exec={exec('running')} personaName="p" isExpanded onToggle={() => {}} onFetchOutput={() => {}} />,
+    );
+    expect(container.textContent).toContain('Status: Running');
+    expect(container.textContent).not.toContain('Status: running');
+  });
+});

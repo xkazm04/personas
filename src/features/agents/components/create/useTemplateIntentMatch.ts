@@ -17,8 +17,9 @@ const DEBOUNCE_MS = 300;
  * The command already ranks + limits, so there's no client-side score
  * threshold here — we trust its ordering.
  *
- * `loading` is true only while a real request (intent ≥ MIN_CHARS) is in
- * flight, so the caller can keep the curated starters visible instead of
+ * `loading` is true from the keystroke that makes the intent long enough
+ * (intent ≥ MIN_CHARS) until its request settles - the 300ms debounce
+ * included - so the caller can keep the curated starters visible instead of
  * flashing an empty state between keystrokes.
  */
 export function useTemplateIntentMatch(intent: string, limit = 5): {
@@ -27,6 +28,11 @@ export function useTemplateIntentMatch(intent: string, limit = 5): {
 } {
   const [matches, setMatches] = useState<CompanionTemplateMatch[]>([]);
   const [loading, setLoading] = useState(false);
+  // The intent whose match has SETTLED (answered, failed or cleared as too
+  // short). A long-enough intent that differs from it is pending: the debounce
+  // has not fired yet, but a request is coming, so the caller must not paint
+  // its no-match state in the meantime.
+  const [settledIntent, setSettledIntent] = useState<string | null>(null);
   // One latest-wins slot per hook instance: a newer keystroke's request makes
   // every older one inert (the repo's shared guard, not a hand-rolled counter).
   const [latest] = useState(createLatestWins);
@@ -38,6 +44,7 @@ export function useTemplateIntentMatch(intent: string, limit = 5): {
       if (text.trim().length < MIN_CHARS) {
         setMatches([]);
         setLoading(false);
+        setSettledIntent(text);
         return;
       }
       setLoading(true);
@@ -52,7 +59,10 @@ export function useTemplateIntentMatch(intent: string, limit = 5): {
         if (!latest.isCurrent(requestId)) return;
         setMatches([]);
       } finally {
-        if (latest.isCurrent(requestId)) setLoading(false);
+        if (latest.isCurrent(requestId)) {
+          setLoading(false);
+          setSettledIntent(text);
+        }
       }
     },
     [limit, latest],
@@ -68,5 +78,6 @@ export function useTemplateIntentMatch(intent: string, limit = 5): {
     };
   }, [intent, run]);
 
-  return { matches, loading };
+  const pending = intent.trim().length >= MIN_CHARS && intent !== settledIntent;
+  return { matches, loading: loading || pending };
 }

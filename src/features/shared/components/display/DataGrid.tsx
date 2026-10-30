@@ -162,6 +162,12 @@ export interface DataGridProps<T> {
   bulkActions?: DataGridBulkAction[];
   /** Called when the user clears the selection (X button or Esc). */
   onClearSelection?: () => void;
+  /**
+   * Reports the rows of the page currently shown (all rows when unpaginated),
+   * so a caller can scope a header select-all to what the user can see.
+   * Pass a stable callback.
+   */
+  onPageRowsChange?: (rows: T[]) => void;
 }
 
 /** Bulk-action descriptor used by the floating toolbar that appears when rows are selected. */
@@ -214,6 +220,7 @@ export function DataGrid<T>({
   selectedCount = 0,
   bulkActions,
   onClearSelection,
+  onPageRowsChange,
 }: DataGridProps<T>) {
   const densityTokens = DENSITY_TOKENS[density];
   // Headers share the rows' horizontal padding so every column label sits on
@@ -271,6 +278,10 @@ export function DataGrid<T>({
     const start = (page - 1) * effectivePageSize;
     return data.slice(start, start + effectivePageSize);
   }, [data, page, effectivePageSize]);
+
+  useEffect(() => {
+    onPageRowsChange?.(pageData);
+  }, [pageData, onPageRowsChange]);
 
   // One-shot id-guarded row entrance (shared with UnifiedTable): a new page's
   // rows ripple on their FIRST appearance; returning to a page, polling, or a

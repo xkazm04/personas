@@ -11,6 +11,7 @@ import type { ConfigSource } from '@/lib/bindings/ConfigSource';
 import type { ConfigField } from '@/lib/bindings/ConfigField';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
@@ -358,11 +359,9 @@ export function PersonaConfigPanel() {
         // that was waiting on it, and leave the breadcrumb the list-read
         // catch below already leaves (the tooltip alone reaches no operator).
         silentCatch('PersonaConfigPanel:resolveBulk')(reason);
-        failure = reason instanceof Error
-          ? reason.message
-          : (typeof reason === 'object' && reason !== null && 'error' in reason)
-            ? String((reason as { error: string }).error)
-            : String(reason);
+        // The raw text is kept (the breadcrumb above carries the cause); the
+        // cell renders it through the friendly-error door, like the list read.
+        failure = extractMessage(reason);
       }
       const staleIds = new Set(stale.map((p) => p.id));
 
@@ -540,11 +539,15 @@ export function PersonaConfigPanel() {
                         // the row is real but its config couldn't be resolved.
                         if (f.key === FIELDS[0]!.key) {
                           return (
-                            <td key={f.key} className="px-3 py-2" title={row.error ?? s.config_could_not_be_resolved}>
-                              <span className="inline-flex items-center gap-1 text-amber-400 typo-caption">
-                                <AlertTriangle className="w-3 h-3" />
-                                {s.failed_to_resolve}
-                              </span>
+                            <td key={f.key} className="px-3 py-2">
+                              <Tooltip
+                                content={row.error ? resolveErrorTranslated(t, row.error).message : s.config_could_not_be_resolved}
+                              >
+                                <span className="inline-flex items-center gap-1 text-amber-400 typo-caption" data-testid={`config-resolve-failed-${row.persona.id}`}>
+                                  <AlertTriangle className="w-3 h-3" />
+                                  {s.failed_to_resolve}
+                                </span>
+                              </Tooltip>
                             </td>
                           );
                         }

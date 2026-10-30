@@ -13,6 +13,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import type { Persona } from '@/lib/bindings/Persona';
 import { BuildingBadge, StatusBadge, TrustScoreBar, rowAccentTone, type RowAccentTone } from './PersonaOverviewBadges';
 import { isPersonaBuilding } from './personaBuildStatus';
+import { PersonaRowMenu } from './PersonaRowMenu';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DENSITY_TOKENS, type DensityTokens } from '@/lib/density';
 
@@ -41,6 +42,10 @@ interface PersonaOverviewCardListProps {
   connectorNamesMap: Map<string, string[]>;
   /** Optional density tokens. Defaults to 'comfortable'. */
   densityTokens?: DensityTokens;
+  /** Row overflow: copy this agent (same handler as the grid's row menu). */
+  onDuplicate: (id: string) => Promise<void> | void;
+  /** Row overflow: write this agent's bundle to disk. */
+  onExport: (id: string) => Promise<void> | void;
 }
 
 interface PersonaOverviewCardItemProps {
@@ -53,6 +58,8 @@ interface PersonaOverviewCardItemProps {
   onRowClick: (p: Persona) => void;
   isDraft: (p: Persona) => boolean;
   densityTokens: DensityTokens;
+  onDuplicate: (id: string) => Promise<void> | void;
+  onExport: (id: string) => Promise<void> | void;
 }
 
 /**
@@ -66,7 +73,7 @@ interface PersonaOverviewCardItemProps {
 export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
   const {
     data, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
-    isDraft, connectorNamesMap, densityTokens = DENSITY_TOKENS.comfortable,
+    isDraft, connectorNamesMap, densityTokens = DENSITY_TOKENS.comfortable, onDuplicate, onExport,
   } = props;
 
   // Zero rows never reach this list: PersonaOverviewPage renders the shared
@@ -85,6 +92,8 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
           onRowClick={onRowClick}
           isDraft={isDraft}
           densityTokens={densityTokens}
+          onDuplicate={onDuplicate}
+          onExport={onExport}
         />
       ))}
     </div>
@@ -100,6 +109,7 @@ const CARD_ACCENT_CLASS: Record<RowAccentTone, string> = {
   failing: 'border-l-red-400',
   degraded: 'border-l-amber-400',
   dormant: 'border-l-foreground/30',
+  unknown: 'border-l-foreground/30',
   healthy: 'border-l-emerald-400/60',
 };
 
@@ -113,6 +123,8 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
   onRowClick,
   isDraft,
   densityTokens,
+  onDuplicate,
+  onExport,
 }: PersonaOverviewCardItemProps) {
   const { t } = useTranslation();
   const {
@@ -209,6 +221,10 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
         >
           <Star className={`w-3.5 h-3.5 ${favorite ? 'text-amber-400 fill-amber-400' : 'text-foreground'}`} />
         </button>
+        {/* The same Duplicate / Export overflow the grid row carries. */}
+        <div className="flex-shrink-0">
+          <PersonaRowMenu persona={p} onDuplicate={onDuplicate} onExport={onExport} />
+        </div>
       </div>
 
       {/* Meta row */}

@@ -3,6 +3,7 @@ import { extractConnectorNames } from '@/lib/personas/utils';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import type { AgentListViewConfig } from './viewConfig';
+import { healthKeyOf } from './PersonaOverviewBadges';
 
 const connectorNamesCache = new WeakMap<Persona, string[]>();
 
@@ -160,7 +161,8 @@ export function usePersonaListFilters({
 
     // Health
     if (healthFilter !== 'all') {
-      result = result.filter((p) => (healthMap[p.id]?.status ?? 'healthy') === healthFilter);
+      // No entry = `unknown`: Healthy matches only a real healthy verdict.
+      result = result.filter((p) => healthKeyOf(healthMap[p.id]) === healthFilter);
     }
 
     // Connector

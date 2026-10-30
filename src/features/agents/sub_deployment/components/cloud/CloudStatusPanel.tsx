@@ -4,7 +4,8 @@ import { LiveStatusDot } from '@/features/shared/components/display/LiveStatusDo
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { motion, useMotionValueEvent, useSpring, useTransform } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
-import { ExecutionProgressBar } from '../ExecutionProgressBar';
+import type { CloudOAuthStatusResponse } from '@/api/system/cloud';
+import { CloudTokenIndicator } from './CloudTokenIndicator';
 
 export interface CloudStatusPanelProps {
   status: {
@@ -15,15 +16,15 @@ export interface CloudStatusPanelProps {
   } | null;
   isLoading: boolean;
   onRefresh: () => void;
-  /** Currently active cloud execution ID (if any) for progress tracking. */
-  activeExecutionId?: string | null;
+  /** The orchestrator's OAuth status: whether the token `hasClaudeToken` reports still works. */
+  oauthStatus?: CloudOAuthStatusResponse | null;
   /** Timestamp from usePolling -- when non-null, auto-refresh is active. */
   lastPolled?: number | null;
   /** True after a failed poll: the numbers are the last good snapshot. */
   stale?: boolean;
 }
 
-export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecutionId, lastPolled, stale = false }: CloudStatusPanelProps) {
+export function CloudStatusPanel({ status, isLoading, onRefresh, oauthStatus, lastPolled, stale = false }: CloudStatusPanelProps) {
   const { t } = useTranslation();
   const dt = t.deployment;
   if (!status && isLoading) {
@@ -116,38 +117,10 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
         </div>
       </div>
 
-      {/* Active execution progress */}
-      {activeExecutionId && (
-        <div>
-          <SectionHeading className="mb-3">{dt.cloud_status.active_execution}</SectionHeading>
-          <ExecutionProgressBar executionId={activeExecutionId} />
-        </div>
-      )}
-
       {/* Claude token indicator */}
       <div>
         <SectionHeading className="mb-3">{dt.cloud_status.claude_token}</SectionHeading>
-        <div className="flex items-center gap-2 p-3 rounded-card bg-secondary/30 border border-primary/10">
-          {status.hasClaudeToken ? (
-            <>
-              <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <span className="typo-body text-foreground">{dt.status.token_available}</span>
-            </>
-          ) : (
-            <>
-              <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center">
-                <svg className="w-3 h-3 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <span className="typo-body text-foreground">{dt.status.no_token_configured}</span>
-            </>
-          )}
-        </div>
+        <CloudTokenIndicator hasClaudeToken={status.hasClaudeToken} oauthStatus={oauthStatus} />
       </div>
     </div>
   );

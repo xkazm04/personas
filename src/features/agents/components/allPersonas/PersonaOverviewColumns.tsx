@@ -9,7 +9,8 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import type { PersonaBudgetState } from '@/stores/slices/agents/budgetEnforcementSlice';
 import { BuildingBadge, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
-import { PersonaOverviewFilterHeader, type FilterOption } from './PersonaOverviewFilterHeader';
+import { PersonaOverviewFilterHeader } from './PersonaOverviewFilterHeader';
+import { usePersonaFilterOptions } from './usePersonaFilterOptions';
 import { ConnectorsCell, FavoriteCell, NameCell, SelectCell } from './PersonaOverviewCells';
 import { VerdictTrendCell } from './VerdictTrendCell';
 import { PersonaRowMenu } from './PersonaRowMenu';
@@ -58,28 +59,9 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
     connectorNamesMap, allConnectorNames, onDuplicate, onExport,
   } = args;
 
-  const STATUS_FILTER_OPTIONS = useMemo<FilterOption[]>(() => [
-    { value: 'all', label: t.agents.overview_columns.all_statuses },
-    { value: 'enabled', label: t.agents.overview_columns.active_only },
-    { value: 'disabled', label: t.agents.overview_columns.disabled_only },
-    { value: 'building', label: t.agents.overview_columns.building_drafts },
-  ], [t.agents.overview_columns.active_only, t.agents.overview_columns.all_statuses, t.agents.overview_columns.building_drafts, t.agents.overview_columns.disabled_only]);
-
-  const HEALTH_FILTER_OPTIONS = useMemo<FilterOption[]>(() => [
-    { value: 'all', label: t.agents.overview_columns.all_health },
-    { value: 'healthy', label: t.agents.status.healthy },
-    { value: 'degraded', label: t.agents.status.degraded },
-    { value: 'failing', label: t.agents.status.failing },
-    { value: 'dormant', label: t.agents.status.dormant },
-  ], [t.agents.overview_columns.all_health, t.agents.status.healthy, t.agents.status.degraded, t.agents.status.failing, t.agents.status.dormant]);
-
-  const connectorOptions = useMemo<FilterOption[]>(
-    () => [
-      { value: 'all', label: t.agents.overview_columns.all_connectors },
-      ...allConnectorNames.map((n) => ({ value: n, label: n })),
-    ],
-    [allConnectorNames, t.agents.overview_columns.all_connectors],
-  );
+  const {
+    status: STATUS_FILTER_OPTIONS, health: HEALTH_FILTER_OPTIONS, connector: connectorOptions,
+  } = usePersonaFilterOptions(allConnectorNames);
 
   return useMemo<DataGridColumn<Persona>[]>(
     () => [
@@ -112,14 +94,24 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         render: (p) => <ConnectorsCell persona={p} connectorNamesMap={connectorNamesMap} />,
       },
       {
-        key: 'status', label: t.agents.overview_columns.status, width: 'minmax(120px, 0.9fr)',
+        // Both filters live on the column that renders their value: the
+        // badge shows lifecycle AND health, so Health no longer sits on Trust.
+        key: 'status', label: t.agents.overview_columns.status, width: 'minmax(190px, 1fr)',
         filterComponent: (
-          <PersonaOverviewFilterHeader
-            label={t.agents.overview_columns.status}
-            value={view.statusFilter}
-            options={STATUS_FILTER_OPTIONS}
-            onChange={(v) => setView({ ...view, statusFilter: v })}
-          />
+          <span className="flex items-center gap-4">
+            <PersonaOverviewFilterHeader
+              label={t.agents.overview_columns.status}
+              value={view.statusFilter}
+              options={STATUS_FILTER_OPTIONS}
+              onChange={(v) => setView({ ...view, statusFilter: v })}
+            />
+            <PersonaOverviewFilterHeader
+              label={t.agents.overview_columns.health}
+              value={view.healthFilter}
+              options={HEALTH_FILTER_OPTIONS}
+              onChange={(v) => setView({ ...view, healthFilter: v })}
+            />
+          </span>
         ),
         // Lifecycle/health only. The setup-readiness warning that used to ride
         // alongside it (SetupStatusBadge) still lives on the persona editor
@@ -133,14 +125,6 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
       },
       {
         key: 'trust', label: t.agents.overview_columns.trust, width: '110px', sortable: true,
-        filterComponent: (
-          <PersonaOverviewFilterHeader
-            label={t.agents.overview_columns.trust}
-            value={view.healthFilter}
-            options={HEALTH_FILTER_OPTIONS}
-            onChange={(v) => setView({ ...view, healthFilter: v })}
-          />
-        ),
         render: (p) =>
           (!p.enabled || isDraft(p))
             ? <span className="text-md text-foreground">--</span>
@@ -219,6 +203,6 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         ),
       },
     ],
-    [onDuplicate, onExport, t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.agents.overview_columns.spend, t.agents.overview_columns.spend_hint, t.agents.overview_columns.quality, t.agents.overview_columns.active_triggers, t.common.connectors, t.common.triggers, tx, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap, spendMap, scoreTrendsMap],
+    [onDuplicate, onExport, t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.health, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.agents.overview_columns.spend, t.agents.overview_columns.spend_hint, t.agents.overview_columns.quality, t.agents.overview_columns.active_triggers, t.common.connectors, t.common.triggers, tx, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap, spendMap, scoreTrendsMap],
   );
 }
