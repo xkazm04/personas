@@ -94,6 +94,7 @@
     "filter_target": "Ziel",
     "gitlab": "GitLab",
     "history_empty": "Noch kein Bereitstellungsverlauf",
+    "history_load_failed": "Bereitstellungsverlauf konnte nicht geladen werden",
     "history_snapshot": "Prompt-Snapshot erfasst",
     "history_title": "Bereitstellungsverlauf",
     "no_data": "Keine Daten",

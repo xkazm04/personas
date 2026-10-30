@@ -4692,6 +4692,7 @@
       "filter_target": "Cíl",
       "gitlab": "GitLab",
       "history_empty": "Zatím žádná historie nasazení",
+      "history_load_failed": "Historii nasazení se nepodařilo načíst",
       "history_snapshot": "Snímek promptu uložen",
       "history_title": "Historie nasazení",
       "no_data": "Žádná data",

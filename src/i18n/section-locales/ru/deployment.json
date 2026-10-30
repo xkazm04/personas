@@ -94,6 +94,7 @@
     "filter_target": "Цель",
     "gitlab": "GitLab",
     "history_empty": "История развёртываний пока пуста",
+    "history_load_failed": "Не удалось загрузить историю развёртываний",
     "history_snapshot": "Снимок промпта сохранён",
     "history_title": "История развёртываний",
     "no_data": "Нет данных",

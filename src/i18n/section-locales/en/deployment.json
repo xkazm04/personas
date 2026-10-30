@@ -257,6 +257,7 @@
     "tool_calls": "{count} tool calls",
     "history_title": "Deployment history",
     "history_empty": "No deployment history yet",
+    "history_load_failed": "Could not load deployment history",
     "history_snapshot": "Prompt snapshot captured",
     "bulk_action_pause": "Bulk pause",
     "bulk_action_resume": "Bulk resume",

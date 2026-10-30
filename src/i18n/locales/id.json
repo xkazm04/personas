@@ -4692,6 +4692,7 @@
       "filter_target": "Target",
       "gitlab": "GitLab",
       "history_empty": "Belum ada riwayat penerapan",
+      "history_load_failed": "Riwayat deployment tidak dapat dimuat",
       "history_snapshot": "Snapshot prompt tersimpan",
       "history_title": "Riwayat penerapan",
       "no_data": "Tidak ada data",
