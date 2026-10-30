@@ -15298,10 +15298,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/home/sub_releases/i18n/useReleasesTranslation.ts:7 is a display-shape adapter over the main i18n loader; it owns no locale data, list, store or pipeline step, so the topology precondition is unmet",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/home/sub_releases/i18n/useReleasesTranslation.ts:7 is a display adapter that relies on the main loader for fallback; it owns no locale list, store or pipeline step",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -16781,10 +16781,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:13 still hand-lists 11 of the 14 locales in src/i18n/locales.manifest.ts (no bn/id/vi), so 3 shipped languages cannot be picked at onboarding, and the manifest says no other file lists locales",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:14 still hand-lists 11 of the 14 manifest locales (no bn/id/vi); now hidden behind UI_LANGUAGE_PICKER_ENABLED, but the manifest revive procedure (src/i18n/locales.manifest.ts:63) re-shows this picker without bn/id/vi, and src/features/home/sub_welcome/LanguageSwitcher.tsx:16 is a second shadow list",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -16992,10 +16992,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/i18n/generated/types.ts:2 This context contains generated TypeScript type definitions from en.json and UI unit tests rather than a machine translation pipeline, derived store, or locale registry.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/i18n/generated/types.ts:2 is generated types from en.json plus unit tests; no locale registry, translation store, request or serving decision lives here",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -18808,10 +18808,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/lib/personas/templates/templateOverlays.ts:276 overlay glob still lists 13 per-language literals; a test catches drift, but adding a manifest language still means editing this file, which fails the one-line-diff test",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:273 the overlay import.meta.glob still hand-lists 13 per-language patterns; the code set is derived (line 270) and a test asserts coverage, but adding a manifest language still requires editing this file, so the one-line-diff test fails (file unchanged since 2026-08-28)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         }
       ],

@@ -21510,39 +21510,41 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:44:16.000Z",
-      "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:05:53.000Z",
+      "worker": "66a74eca-413f-4e38-998a-bece6961d411",
       "techniques": [
         {
           "technique": "language-registry-single-source",
           "verdict": "deviation",
-          "evidence": "src/features/home/sub_welcome/LanguageSwitcher.tsx:16 is a second hand-made 14-entry list beside the manifest (src/i18n/locales.manifest.ts:13 says it is the only one); onboarding copy at AppearanceStep.tsx:13 has already drifted"
-        },
-        {
-          "technique": "source-identical-value-audit",
-          "verdict": "conformant",
-          "evidence": "scripts/i18n/check-untranslated.mjs:3 value-level gate with a committed allowlist, enforced --strict in pre-commit at lefthook.yml:87"
-        },
-        {
-          "technique": "pseudo-localization-readiness",
-          "verdict": "conformant",
-          "evidence": "src/i18n/pseudoLocale.ts:2 dev-only pseudo-locale built from en at runtime, with no catalog file and no effect on coverage"
+          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:14 shadow language list; src/i18n/locales.manifest.ts:14 claims no other file references a locale by code, which is false; reviving a language still means editing these lists plus the lefthook/ci gates the manifest names, so the one-line-diff test fails"
         },
         {
           "technique": "canonical-fallback-serving",
           "verdict": "conformant",
-          "evidence": "src/i18n/useTranslation.ts:327 deepMergeSection layers each locale over English per key, so a miss renders canonical text"
+          "evidence": "src/i18n/locales.manifest.ts:73 toShippedUiLocale sends any persisted or requested unshipped language to English, so no switcher offers a language the bundle cannot serve"
+        },
+        {
+          "technique": "pseudo-localization-readiness",
+          "verdict": "conformant",
+          "evidence": "src/i18n/pseudoLocale.ts:2 dev-only pseudo-locale is generated from the English bundle at runtime, with no engine, and stays out of the coverage gate"
+        },
+        {
+          "technique": "source-identical-value-audit",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/locales.manifest.ts:70 SHIPPED_UI_LOCALES is ['en'], so no shipped catalog makes a translatedness claim to audit"
         },
         {
           "technique": "canonical-and-derived-split",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/locales.manifest.ts:4 reviewed-and-committed product catalog; no derived MT store exists"
+          "evidence": "src/i18n/locales.manifest.ts:4 reviewed-and-committed product catalog; no derived MT store exists",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "sharded-translation-ci",
           "verdict": "not-applicable",
-          "evidence": "package.json:130 gaps are planned and merged by local scripts (i18n:plan-gaps / merge-chunks); no CI translation job"
+          "evidence": "package.json:130 gaps are planned and merged by local scripts (i18n:plan-gaps / merge-chunks); no CI translation job",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "prompt-context-contract",
@@ -21581,6 +21583,7 @@
           "carriedFrom": "2026-10-12"
         }
       ],
+      "registryProposal": "language-registry-single-source could name the shipped-subset case: a registry with a known set (LOCALES) and a shipped subset (SHIPPED_UI_LOCALES) where a dormant UI surface hides its shadow list until revival. That drift cannot be seen at runtime and only shows on the day a language is revived.",
       "superseded": [
         {
           "state": "deviation",
@@ -21595,6 +21598,13 @@
           "evaluatedAt": "2026-10-16T17:45:00.000Z",
           "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
           "reason": "replaced by a7c3c3b8-4960-489c-a199-8356b7325260"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:13 still hand-lists 11 of the 14 locales in src/i18n/locales.manifest.ts (no bn/id/vi), so 3 shipped languages cannot be picked at onboarding, and the manifest says no other file lists locales",
+          "evaluatedAt": "2026-10-21T12:44:16.000Z",
+          "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
+          "reason": "replaced by 66a74eca-413f-4e38-998a-bece6961d411"
         }
       ]
     },
@@ -21603,69 +21613,90 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:34:37.368Z",
-      "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:05:53.000Z",
+      "worker": "66a74eca-413f-4e38-998a-bece6961d411",
       "techniques": [
         {
           "technique": "canonical-and-derived-split",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/generated/types.ts:7 Defines compile-time TypeScript type definitions for the catalog without managing translation storage or machine-generated artifacts."
+          "evidence": "src/i18n/generated/types.ts:7 Defines compile-time TypeScript type definitions for the catalog without managing translation storage or machine-generated artifacts.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "canonical-fallback-serving",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:2 Tests frontend UI error resolution fallback rather than translation pipeline serving-time fallback."
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:2 Tests frontend UI error resolution fallback rather than translation pipeline serving-time fallback.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "source-identical-value-audit",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:33 Asserts parity between Rust enum constants and English catalog keys rather than auditing source-identical values across locales."
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:33 Asserts parity between Rust enum constants and English catalog keys rather than auditing source-identical values across locales.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "fuzzy-reuse-under-a-threshold",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:15 No translation memory or fuzzy matching reuse logic exists in this test suite."
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:15 No translation memory or fuzzy matching reuse logic exists in this test suite.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "language-registry-single-source",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/generated/types.ts:3 Type generator generates interface definitions for en.json, not the language registry."
+          "evidence": "src/i18n/generated/types.ts:3 Type generator generates interface definitions for en.json, not the language registry.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "non-translatable-value-classification",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:56 Tests validation error resolution in the UI, not catalog pre-prompt classification."
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:56 Tests validation error resolution in the UI, not catalog pre-prompt classification.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "prompt-context-contract",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:6 Tests Rust-TypeScript parity without constructing LLM translation prompts."
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:6 Tests Rust-TypeScript parity without constructing LLM translation prompts.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "pseudo-localization-readiness",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/generated/types.ts:9 Static type signatures do not generate or evaluate pseudo-localization transforms."
+          "evidence": "src/i18n/generated/types.ts:9 Static type signatures do not generate or evaluate pseudo-localization transforms.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "serialization-transport-safety",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 Parses Rust AST locally for test assertions; does not handle batch translation transport."
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 Parses Rust AST locally for test assertions; does not handle batch translation transport.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "sharded-translation-ci",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/generated/types.ts:4 Prebuild codegen runs locally in milliseconds; no sharded translation CI jobs exist."
+          "evidence": "src/i18n/generated/types.ts:4 Prebuild codegen runs locally in milliseconds; no sharded translation CI jobs exist.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "source-hash-translation-cache",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:42 Vitest assertion tests synchronous mock translation returns without caching."
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:42 Vitest assertion tests synchronous mock translation returns without caching.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "hand-authored-exception-contract",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:34 Tests English key completeness with no hand-authored language exceptions."
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:34 Tests English key completeness with no hand-authored language exceptions.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/i18n/generated/types.ts:2 This context contains generated TypeScript type definitions from en.json and UI unit tests rather than a machine translation pipeline, derived store, or locale registry.",
+          "evaluatedAt": "2026-10-12T18:34:37.368Z",
+          "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+          "reason": "replaced by 66a74eca-413f-4e38-998a-bece6961d411"
         }
       ]
     },
@@ -28708,10 +28739,19 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:45:00.000Z",
-      "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
-      "techniques": []
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:05:53.000Z",
+      "worker": "66a74eca-413f-4e38-998a-bece6961d411",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_releases/i18n/useReleasesTranslation.ts:7 is a display-shape adapter over the main i18n loader; it owns no locale data, list, store or pipeline step, so the topology precondition is unmet",
+          "evaluatedAt": "2026-10-16T17:45:00.000Z",
+          "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
+          "reason": "replaced by 66a74eca-413f-4e38-998a-bece6961d411"
+        }
+      ]
     },
     "d146b88b-6223-41c7-8330-8b9d7a1b3ee0/translation-pipeline-topology": {
       "context": "api-pipeline",
@@ -31457,22 +31497,23 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:44:16.000Z",
-      "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:05:53.000Z",
+      "worker": "66a74eca-413f-4e38-998a-bece6961d411",
       "techniques": [
         {
           "technique": "language-registry-single-source",
           "verdict": "deviation",
-          "evidence": "src/lib/personas/templates/templateOverlays.ts:276 hand-written per-locale glob; a single ../scripts/templates/**/*.*.json glob filtered by OVERLAY_SUFFIX_RE (derived from LOCALE_CODES at :270) would remove the shadow list"
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:273 static glob literal per language; a drift test (src/lib/personas/templates/__tests__/templateOverlays.test.ts:15) catches drift but does not remove the edit"
         },
         {
           "technique": "canonical-fallback-serving",
           "verdict": "unknown",
-          "evidence": "src/lib/personas/templates/useLocalizedTemplateCatalog.ts not read this run"
+          "evidence": "src/lib/personas/templates/useLocalizedTemplateCatalog.ts not read this run",
+          "carriedFrom": "2026-10-21"
         }
       ],
-      "registryProposal": "language-registry-single-source: when a bundler requires literal glob strings, a test that checks the copy against the registry stops drift but does not pass the one-line-diff test. The technique could name the conformant escape: one wildcard glob filtered at runtime by a pattern derived from the registry",
+      "registryProposal": "language-registry-single-source has no ruling for build-tool constraints that require static literals (Vite import.meta.glob). It should say whether a generated glob is required or whether a parity test that fails on drift is an acceptable second-best.",
       "superseded": [
         {
           "state": "deviation",
@@ -31480,6 +31521,13 @@
           "evaluatedAt": "2026-10-17T01:37:57.168Z",
           "worker": "7c949da1-f359-4ea0-8e42-d82371f6c899",
           "reason": "replaced by a7c3c3b8-4960-489c-a199-8356b7325260"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:276 overlay glob still lists 13 per-language literals; a test catches drift, but adding a manifest language still means editing this file, which fails the one-line-diff test",
+          "evaluatedAt": "2026-10-21T12:44:16.000Z",
+          "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
+          "reason": "replaced by 66a74eca-413f-4e38-998a-bece6961d411"
         }
       ]
     },

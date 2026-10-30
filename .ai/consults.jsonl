@@ -2224,3 +2224,7 @@
 {"ts":"2026-10-30T21:04:30Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["authored-voice-identity"],"deviations":0}
 {"ts":"2026-10-30T21:04:30Z","bundle":"software-engineering","subjects":["voice-io"],"techniques":["authored-voice-identity"],"deviations":0}
 {"ts":"2026-10-30T21:04:33Z","bundle":"software-engineering","subjects":["retry-backoff"],"techniques":["durable-retries","error-classification-for-retry","retry-observability"],"deviations":3}
+{"ts":"2026-10-30T21:05:53Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":["language-registry-single-source","canonical-fallback-serving","pseudo-localization-readiness","source-identical-value-audit"],"deviations":1}
+{"ts":"2026-10-30T21:05:53Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":["language-registry-single-source"],"deviations":1}
+{"ts":"2026-10-30T21:05:53Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":[],"deviations":0}
+{"ts":"2026-10-30T21:05:53Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":[],"deviations":0}
