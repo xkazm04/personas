@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { X, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
@@ -50,6 +50,7 @@ export function NotificationChannelCard({
   const { t, tx } = useTranslation();
   const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [testError, setTestError] = useState('');
+  const fieldIdPrefix = useId();
 
   const handleTestNotification = async () => {
     setTestStatus('sending');
@@ -94,10 +95,12 @@ export function NotificationChannelCard({
       {/* Config fields */}
       {configFields.map((field) => {
         const isEmpty = enabled && hasValidationErrors && !config[field.key]?.trim();
+        const fieldId = `${fieldIdPrefix}-${field.key}`;
         return (
           <div key={field.key}>
-            <label className="block typo-body text-foreground mb-1">{t.agents.connectors[field.labelKey]}</label>
+            <label htmlFor={fieldId} className="block typo-body text-foreground mb-1">{t.agents.connectors[field.labelKey]}</label>
             <input
+              id={fieldId}
               type={field.public ? 'text' : 'password'}
               autoComplete={field.public ? undefined : 'off'}
               value={config[field.key] || ''}

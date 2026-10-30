@@ -80,3 +80,13 @@ describe('NotificationChannelCard secret fields', () => {
     expect(inputFor(container, 'm').type).toBe('password');
   });
 });
+
+describe('NotificationChannelCard field labels', () => {
+  // The <label> sat beside its input with no htmlFor, so every config field -
+  // two of them masked secrets - reached a screen reader with no name.
+  it('names each config field by its visible label', () => {
+    const { getByLabelText } = renderCard('slack');
+    expect((getByLabelText('Notification delivery URL') as HTMLInputElement).type).toBe('password');
+    expect(getByLabelText('Channel (optional)')).toBeTruthy();
+  });
+});
