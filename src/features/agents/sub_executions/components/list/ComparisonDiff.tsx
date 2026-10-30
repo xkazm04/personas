@@ -34,6 +34,9 @@ export function OutputDiffSection({
   const [expanded, setExpanded] = useState(false);
   const [diff, setDiff] = useState<LineDiffEntry[]>([]);
   const [diffLoading, setDiffLoading] = useState(false);
+  // A diff job that failed is not a diff that found nothing: without this the
+  // body fell through to "No log data available" although both logs loaded.
+  const [diffFailed, setDiffFailed] = useState(false);
   // A failed load leaves both logs null and `loading` false, which is exactly
   // the condition the fetch effect waits for, so without this latch it re-fired
   // (and re-toasted) in a loop while the section stayed open. Only Retry clears it.
@@ -71,6 +74,7 @@ export function OutputDiffSection({
 
     setDiff([]);
     setDiffLoading(true);
+    setDiffFailed(false);
     const job = computeLineDiffOffThread(logLeft, logRight, (chunk) => {
       setDiff((prev) => [...prev, ...chunk]);
     });
@@ -82,6 +86,7 @@ export function OutputDiffSection({
       .catch((err) => {
         silentCatch('ComparisonDiff:computeLineDiffOffThread')(err);
         setDiffLoading(false);
+        setDiffFailed(true);
         logger.warn('Failed to compute comparison diff', { error: err });
       });
 
@@ -118,6 +123,8 @@ export function OutputDiffSection({
                   {t.common.retry}
                 </Button>
               </div>
+            ) : diffFailed ? (
+              <p className="typo-body text-status-error py-3">{e.diff_failed}</p>
             ) : diff.length === 0 ? (
               <p className="typo-body text-foreground py-3">{e.no_log_data}</p>
             ) : (
@@ -174,14 +181,24 @@ export function JsonDiffSection({
   const e = t.agents.executions;
   const [expanded, setExpanded] = useState(false);
   const [diffs, setDiffs] = useState<JsonDiffEntry[]>([]);
+  // `[]` alone cannot say why it is empty. The header used to read "identical"
+  // while the off-thread job was still running AND after it failed - a
+  // comparison that never ran reported as one that found nothing
+  // (diff-comparison / diff-honesty).
+  const [diffState, setDiffState] = useState<'pending' | 'done' | 'failed'>('pending');
 
   useEffect(() => {
+    setDiffState('pending');
     const job = computeJsonDiffOffThread(leftData, rightData);
     void job.promise
-      .then(setDiffs)
+      .then((result) => {
+        setDiffs(result);
+        setDiffState('done');
+      })
       .catch((err) => {
         silentCatch('ComparisonDiff:computeJsonDiffOffThread')(err);
         setDiffs([]);
+        setDiffState('failed');
         logger.warn('Failed to compute JSON comparison diff', { error: err });
       });
     return () => job.cancel();
@@ -199,7 +216,9 @@ export function JsonDiffSection({
       >
         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         {label}
-        {diffs.length > 0 ? (
+        {diffState === 'failed' ? (
+          <span className="typo-body text-status-error">{e.diff_failed}</span>
+        ) : diffState === 'pending' ? null : diffs.length > 0 ? (
           <span className="typo-body text-status-warning/70">
             {tx(diffs.length === 1 ? e.diff_count_one : e.diff_count_other, { count: diffs.length })}
           </span>
@@ -212,7 +231,11 @@ export function JsonDiffSection({
           <div
             className="animate-fade-slide-in mt-2 overflow-hidden"
           >
-            {diffs.length === 0 ? (
+            {diffState === 'pending' ? (
+              <ContentLoader variant="panel" hint="comparison" />
+            ) : diffState === 'failed' ? (
+              <p className="typo-body text-status-error py-2">{e.diff_failed}</p>
+            ) : diffs.length === 0 ? (
               <p className="typo-body text-foreground py-2">{e.no_differences}</p>
             ) : (
               <div className="space-y-1.5 max-h-48 overflow-y-auto">

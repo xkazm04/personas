@@ -3704,6 +3704,7 @@
       "failed_to_load_logs": "Failed to load execution logs for comparison",
       "failed_to_load_chain": "Failed to load retry chain for comparison",
       "failed_to_hydrate_comparison": "Couldn't load execution details for comparison",
+      "diff_failed": "Comparison failed",
       "bulk_rerun_enter": "Bulk re-run",
       "bulk_rerun_enter_tooltip": "Select multiple executions to re-run as a cohort and compare aggregate results",
       "bulk_rerun_col_header": "Sel",
