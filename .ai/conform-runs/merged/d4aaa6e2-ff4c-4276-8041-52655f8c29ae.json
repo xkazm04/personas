@@ -1,0 +1,614 @@
+{
+  "schema": "conform-run/1",
+  "worker": "d4aaa6e2-ff4c-4276-8041-52655f8c29ae",
+  "subject": "test-harness",
+  "evaluatedAt": "2026-10-30T20:51:26.172Z",
+  "pairs": [
+    {
+      "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/stores/__tests__/systemStore.rehydrate.test.ts:194 iterates the registry (ALL_SIDEBAR_SECTIONS, COMPANIONS_PAGES) instead of a copy after a per-test storage + dedup reset (:29); authStore.clearPendingOauth.test.ts:20 records its negative control and drives the timeout on fake timers (:52); lane-level techniques belong to vitest.config.ts",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src/stores/__tests__/systemStore.rehydrate.test.ts:194 membership is read from the navigation registry; src/hooks/__tests__/localizedNotificationCopy.test.ts:14 a marker catalog makes the answer name its producer (catalog vs literal)"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/stores/__tests__/authStore.clearPendingOauth.test.ts:20 states why a then-spy would pass on the unfixed code and spies on catch instead; remoteCommandStore.stale.test.ts:47 asserts the no-evidence arm beside the drop arm"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/stores/__tests__/systemStore.rehydrate.test.ts:29 every describe clears localStorage and the dedup cache before seeding"
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/stores/__tests__/authStore.clearPendingOauth.test.ts:52 the login-timeout path is advanced on fake timers, not slept"
+        },
+        {
+          "technique": "configuration-axes-cross-the-ladder",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/__tests__/remoteCommandStore.stale.test.ts:6 runs in one environment cell with the IPC door mocked; no feature-gated store path lives here"
+        },
+        {
+          "technique": "recorded-interaction-fixtures",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/__tests__/remoteCommandStore.stale.test.ts:6 the IPC door is mocked in-process; no remote service is recorded or replayed"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/__tests__/remoteCommandStore.stale.test.ts:6 the claims are UI/state effects inside the product, none on a system it does not own"
+        },
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/__tests__/remoteCommandStore.stale.test.ts:6 nothing here emits text a foreign interpreter reads"
+        },
+        {
+          "technique": "approval-snapshots-with-guarded-update",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/__tests__/remoteCommandStore.stale.test.ts:6 assertions are per-field; no snapshot files exist to re-baseline"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/__tests__/remoteCommandStore.stale.test.ts:6 every site is executed; no structural source-text pin is used"
+        },
+        {
+          "technique": "constraint-injection-for-unreachable-tiers",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/__tests__/remoteCommandStore.stale.test.ts:6 no capacity-tier degradation path lives in this context"
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "history-driven-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "platform-quirk-absorption",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "flake-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "long-lane-certification",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "out-of-graph-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "dynamic-verifier-classes",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "verification-inherits-driver-reach",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "mutation-lane-with-a-triaged-baseline",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "context-starved-executor",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+      "evaluatedRevision": 27
+    },
+    {
+      "context": "7159d27d-86c2-43be-a83f-8b50c4c816be",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/settings/sub_network/components/__tests__/BundleImportDialog.test.tsx:75 the supersession test reaches its decision (errMsg would render the raw error, src/stores/storeTypes.ts:75); refusal and success arms are paired (LimitsFailureSurfaces.test.tsx:54/:61), debounces run on fake timers (NotificationSettings.test.tsx:37), mocks reset per test",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/sub_network/components/__tests__/BundleImportDialog.test.tsx:75 the absent text is what the unfixed path renders; exposureInput.test.ts:6 pins a builder whose adoption is the real call site (src/features/settings/sub_network/components/ExposureManager.tsx:137)"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/sub_limits/components/__tests__/LimitsFailureSurfaces.test.tsx:61 the success arm proves the gauge push the refusal test (:54) asserts absent can happen; NetworkAccessScopeBadge.test.tsx:18 pairs unknown with known level"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/sub_notifications/components/__tests__/WebhookEventPicker.test.tsx:30 IPC mocks reset per test"
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/settings/sub_notifications/components/__tests__/NotificationSettings.test.tsx:37 debounce and unmount-flush are driven on fake timers"
+        },
+        {
+          "technique": "configuration-axes-cross-the-ladder",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/__tests__/BundleImportDialog.test.tsx:7 the store door is mocked; the p2p feature cell is not decided in this UI layer"
+        },
+        {
+          "technique": "recorded-interaction-fixtures",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/__tests__/BundleImportDialog.test.tsx:7 the IPC door is mocked in-process; no remote service is recorded or replayed"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/__tests__/BundleImportDialog.test.tsx:7 the claims are UI/state effects inside the product, none on a system it does not own"
+        },
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/__tests__/BundleImportDialog.test.tsx:7 nothing here emits text a foreign interpreter reads"
+        },
+        {
+          "technique": "approval-snapshots-with-guarded-update",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/__tests__/BundleImportDialog.test.tsx:7 assertions are per-field; no snapshot files exist to re-baseline"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/__tests__/BundleImportDialog.test.tsx:7 every site is executed; no structural source-text pin is used"
+        },
+        {
+          "technique": "constraint-injection-for-unreachable-tiers",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_network/components/__tests__/BundleImportDialog.test.tsx:7 no capacity-tier degradation path lives in this context"
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "history-driven-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "platform-quirk-absorption",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "flake-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "long-lane-certification",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "out-of-graph-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "dynamic-verifier-classes",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "verification-inherits-driver-reach",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "mutation-lane-with-a-triaged-baseline",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "context-starved-executor",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+      "evaluatedRevision": 27,
+      "registryProposal": "src/features/settings/sub_limits/components/__tests__/LimitsFailureSurfaces.test.tsx:57 asserts an ABSENCE after a fixed 20 ms wall sleep - on a loaded runner the buggy push can land after the window and the test stays green. No test-harness technique owns absence-after-sleep (assert-the-schedule-not-the-stopwatch covers overlap/cap/cutoff only); a rule \"assert an absence after the event that would have caused it settles, never after a duration\" would close it."
+    },
+    {
+      "context": "739b6d67-2c36-41ee-9794-a74bc0b25cfd",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/features/shared/components/display/__tests__/grouping.test.ts:107 pins a DST zone so the case is real on a UTC runner and restores it; header type is read from the shared token (DataGridHeader.test.tsx:30), timers are faked per test (Tooltip.test.tsx:5), storage cleared per test (ColumnResize.test.tsx:12)",
+      "techniques": [
+        {
+          "technique": "configuration-axes-cross-the-ladder",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/__tests__/grouping.test.ts:107 the time-zone axis is pinned inside the test instead of inherited from the runner cell"
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/__tests__/DataGridHeader.test.tsx:30 expected classes come from TABLE_HEAD_LABEL, not a copy; BusinessOutcomeBadge.test.tsx:9 marker catalog names the producer"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/__tests__/FacetedDecisionTable.test.tsx:77 select-all scope is asserted against the narrowed set, which differs from the full set the bug would hand over"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/__tests__/ColumnResize.test.tsx:12 persisted layout cleared per test"
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/display/__tests__/Tooltip.test.tsx:5 hover delay is proved on fake timers"
+        },
+        {
+          "technique": "recorded-interaction-fixtures",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/__tests__/BusinessOutcomeBadge.test.tsx:9 the IPC door is mocked in-process; no remote service is recorded or replayed"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/__tests__/BusinessOutcomeBadge.test.tsx:9 the claims are UI/state effects inside the product, none on a system it does not own"
+        },
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/__tests__/BusinessOutcomeBadge.test.tsx:9 nothing here emits text a foreign interpreter reads"
+        },
+        {
+          "technique": "approval-snapshots-with-guarded-update",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/__tests__/BusinessOutcomeBadge.test.tsx:9 assertions are per-field; no snapshot files exist to re-baseline"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/__tests__/BusinessOutcomeBadge.test.tsx:9 every site is executed; no structural source-text pin is used"
+        },
+        {
+          "technique": "constraint-injection-for-unreachable-tiers",
+          "verdict": "not-applicable",
+          "evidence": "src/features/shared/components/display/__tests__/BusinessOutcomeBadge.test.tsx:9 no capacity-tier degradation path lives in this context"
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "history-driven-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "platform-quirk-absorption",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "flake-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "long-lane-certification",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "out-of-graph-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "dynamic-verifier-classes",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "verification-inherits-driver-reach",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "mutation-lane-with-a-triaged-baseline",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "context-starved-executor",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+      "evaluatedRevision": 27
+    },
+    {
+      "context": "fd961ee9-bf7c-4ec7-90c3-a728045d3d44",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/projects/development/goals/__tests__/partitionGoalTasks.test.ts:36 claims exact matching \"like the backend\" but pins only the TS half; parity rests on two Rust writers both trimming (src-tauri/db/src/repos/orchestration/team_assignments.rs:222, src-tauri/db/src/repos/dev/goals.rs:412) and dropping either trim duplicates team steps as to-dos with this suite green",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/projects/development/goals/__tests__/partitionGoalTasks.test.ts:36 the name claims backend parity; the near-match case it pins cannot be produced (both writers trim) and the cross-language rule lives only in a comment (src/features/projects/development/goals/GoalTaskTable.tsx:43)"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/features/projects/development/goals/__tests__/goalsPortfolio.test.ts:26 IPC mock reset per test"
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_deliberations/__tests__/useTeamDeliberations.test.ts:44 stale-read ordering is forced with deferred promises, not timing"
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/features/projects/development/goals/ledger/__tests__/ledgerSignals.test.ts:8 iterates GOAL_STATUSES so a new status without a glyph fails"
+        },
+        {
+          "technique": "recorded-interaction-fixtures",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/__tests__/goalsPortfolio.test.ts:26 the IPC door is mocked in-process; no remote service is recorded or replayed"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/__tests__/goalsPortfolio.test.ts:26 the claims are UI/state effects inside the product, none on a system it does not own"
+        },
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/__tests__/goalsPortfolio.test.ts:26 nothing here emits text a foreign interpreter reads"
+        },
+        {
+          "technique": "approval-snapshots-with-guarded-update",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/__tests__/goalsPortfolio.test.ts:26 assertions are per-field; no snapshot files exist to re-baseline"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/__tests__/goalsPortfolio.test.ts:26 every site is executed; no structural source-text pin is used"
+        },
+        {
+          "technique": "constraint-injection-for-unreachable-tiers",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/__tests__/goalsPortfolio.test.ts:26 no capacity-tier degradation path lives in this context"
+        },
+        {
+          "technique": "suite-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "history-driven-partitioning",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "platform-quirk-absorption",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "flake-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "long-lane-certification",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "out-of-graph-artifacts",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "dynamic-verifier-classes",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "verification-inherits-driver-reach",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "mutation-lane-with-a-triaged-baseline",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "context-starved-executor",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "not-applicable",
+          "evidence": "vitest.config.ts:17 the unit lane is one runner config with location membership; this technique is a property of the lane, not of this context"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+      "evaluatedRevision": 27
+    }
+  ],
+  "declined": [
+    {
+      "subject": "test-harness",
+      "context": "*",
+      "reason": "113 other test-harness pairs left for later runs (budget 4). Map pairs carry digest sha256-b2:5521806124d93882 rev 26 while the registry index is sha256-b2:c96e1ee699a88119 rev 27: every prior verdict on this subject is one revision behind and not marked stale"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-30T20:51:26.172Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "unreached-decisions-pin-nothing",
+        "negative-control-tests",
+        "isolation-lanes",
+        "assert-the-schedule-not-the-stopwatch"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-30T20:51:26.172Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "unreached-decisions-pin-nothing",
+        "negative-control-tests",
+        "isolation-lanes",
+        "assert-the-schedule-not-the-stopwatch"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-30T20:51:26.172Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "configuration-axes-cross-the-ladder",
+        "unreached-decisions-pin-nothing",
+        "negative-control-tests",
+        "isolation-lanes",
+        "assert-the-schedule-not-the-stopwatch"
+      ],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-30T20:51:26.172Z",
+      "bundle": "software-engineering",
+      "subjects": [
+        "test-harness"
+      ],
+      "techniques": [
+        "unreached-decisions-pin-nothing",
+        "isolation-lanes",
+        "assert-the-schedule-not-the-stopwatch",
+        "negative-control-tests"
+      ],
+      "deviations": 1
+    }
+  ]
+}

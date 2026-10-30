@@ -11817,7 +11817,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/shared/components/display/__tests__/grouping.test.ts:107 pins a DST zone so the case is real on a UTC runner and restores it; header type is read from the shared token (DataGridHeader.test.tsx:30), timers are faked per test (Tooltip.test.tsx:5), storage cleared per test (ColumnResize.test.tsx:12)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "fleet-orchestration",
@@ -31798,7 +31802,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/settings/sub_network/components/__tests__/BundleImportDialog.test.tsx:75 the supersession test reaches its decision (errMsg would render the raw error, src/stores/storeTypes.ts:75); refusal and success arms are paired (LimitsFailureSurfaces.test.tsx:54/:61), debounces run on fake timers (NotificationSettings.test.tsx:37), mocks reset per test",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "concurrent-vcs",
@@ -33388,7 +33396,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/stores/__tests__/systemStore.rehydrate.test.ts:194 iterates the registry (ALL_SIDEBAR_SECTIONS, COMPANIONS_PAGES) instead of a copy after a per-test storage + dedup reset (:29); authStore.clearPendingOauth.test.ts:20 records its negative control and drives the timeout on fake timers (:52); lane-level techniques belong to vitest.config.ts",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "data-access",
@@ -35863,7 +35875,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/projects/development/goals/__tests__/partitionGoalTasks.test.ts:36 claims exact matching \"like the backend\" but pins only the TS half; parity rests on two Rust writers both trimming (src-tauri/db/src/repos/orchestration/team_assignments.rs:222, src-tauri/db/src/repos/dev/goals.rs:412) and dropping either trim duplicates team steps as to-dos with this suite green",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "agent-memory",
