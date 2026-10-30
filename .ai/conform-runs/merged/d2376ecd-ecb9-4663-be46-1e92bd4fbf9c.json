@@ -1,0 +1,14 @@
+{"schema": "conform-run/1", "worker": "d2376ecd-ecb9-4663-be46-1e92bd4fbf9c", "subject": "realtime-events",
+ "evaluatedAt": "2026-10-30T21:07:07Z",
+ "pairs": [{"context": "03e7f46a-3f19-47b8-98a5-398efed815b4", "subject": "realtime-events", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/hooks/lab/useLabEvents.ts:54 still subscribes to the literal \"lab-arena-status\" (and ab/matrix/eval), emitted as a bare literal at src-tauri/engine/src/test_runner/modes.rs:228 and absent from src/lib/eventRegistry.ts and src-tauri/core/src/events.rs; the gate regex at scripts/check-event-registry.mjs:268 sees only literal listen(x)/emit(x) calls, so a rename on either side silently stops Lab progress and completion (re-verified 2026-10-30, unchanged since 2026-10-22)",
+   "techniques": [
+     {"technique": "event-registry", "verdict": "deviation", "evidence": "src/hooks/lab/useLabEvents.ts:54 four lab-*-status names live outside both registries; scripts/check-event-registry.mjs:268 matches only listen('literal'), so names passed as data through useRunEventListener bindings never reach the gate"},
+     {"technique": "subscription-lifecycle", "verdict": "conformant", "evidence": "src/hooks/realtime/createSingletonListener.ts:121 one native listen per event name fanned out to subscribers, bounded early buffer (:33 MAX_BUFFER=50, :125) with drop counting, native unlisten when no subscriber remains (:156), cancelled flag on in-flight attach (:190)"}
+   ]}],
+ "declined": [
+   {"subject": "realtime-events", "context": "2fb16136-586e-478d-823f-38434d2d5b9a", "reason": "commands-communication is governance: weak with a probable lexical match (events/subscribe/generate); the skill does not judge weak rows by default - a coverage question, not a verdict"},
+   {"subject": "realtime-events", "context": "e0563a39-fb7e-485f-a698-f9c4dc1004a7", "reason": "triggers-test is governance: weak with a probable lexical match (subscribe/events/event); left unjudged as a coverage question per the weak-row rule"}
+ ],
+ "consults": [{"ts": "2026-10-30T21:07:07Z", "bundle": "software-engineering", "subjects": ["realtime-events"], "techniques": ["event-registry", "subscription-lifecycle"], "deviations": 1}]}

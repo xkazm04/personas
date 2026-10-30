@@ -5082,21 +5082,19 @@
       "subject": "realtime-events",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T20:02:59.169Z",
-      "worker": "f47d65f5-f507-4896-9f33-c0632acd03fb",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:07:07.000Z",
+      "worker": "d2376ecd-ecb9-4663-be46-1e92bd4fbf9c",
       "techniques": [
         {
           "technique": "event-registry",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/test_runner/modes.rs:228 lab-*-status names are literals on both sides of the IPC boundary with no registry entry; the gate cannot see binding-routed names (scripts/check-event-registry.mjs:268), so the vocabulary has an unenumerated, ungated family",
-          "carriedFrom": "2026-10-21"
+          "evidence": "src/hooks/lab/useLabEvents.ts:54 four lab-*-status names live outside both registries; scripts/check-event-registry.mjs:268 matches only listen('literal'), so names passed as data through useRunEventListener bindings never reach the gate"
         },
         {
           "technique": "subscription-lifecycle",
-          "verdict": "realized",
-          "evidence": "src/hooks/realtime/createSingletonListener.ts:190 per-attempt cancelled flag; :155 handshake completing with zero subscribers releases the native listener; :125 bounded early-arrival buffer with counted drops (recordEarlyDrop)",
-          "carriedFrom": "2026-10-21"
+          "verdict": "conformant",
+          "evidence": "src/hooks/realtime/createSingletonListener.ts:121 one native listen per event name fanned out to subscribers, bounded early buffer (:33 MAX_BUFFER=50, :125) with drop counting, native unlisten when no subscriber remains (:156), cancelled flag on in-flight attach (:190)"
         },
         {
           "technique": "coalescing-and-batching",
@@ -5126,6 +5124,13 @@
           "evaluatedAt": "2026-10-21T12:48:57.000Z",
           "worker": "fcfe75ad-4e00-455f-8640-0e65f0a6535d",
           "reason": "replaced by f47d65f5-f507-4896-9f33-c0632acd03fb"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/hooks/lab/useLabEvents.ts:54 subscribes to the literal \"lab-arena-status\" (also ab/matrix/eval), emitted as a bare literal at src-tauri/engine/src/test_runner/modes.rs:228 and absent from src/lib/eventRegistry.ts and src-tauri/core/src/events.rs; the gate (scripts/check-event-registry.mjs:268) sees only literal listen(x) and event_name::CONST, so a rename on either side silently stops Lab progress and completion",
+          "evaluatedAt": "2026-10-22T20:02:59.169Z",
+          "worker": "f47d65f5-f507-4896-9f33-c0632acd03fb",
+          "reason": "replaced by d2376ecd-ecb9-4663-be46-1e92bd4fbf9c"
         }
       ]
     },
