@@ -84,9 +84,10 @@ function personaToDesignContext(persona: Persona): DesignContextData {
 
 /**
  * Map the backend's free-form `overall` string to the discriminated
- * `DryRunResult['status']` union. Exported so the digest slice and any
- * future caller can share one mapping (drift between hook + slice was
- * the source of the W2.6 audit finding).
+ * `DryRunResult['status']` union. The hook is its only production caller:
+ * the weekly digest slice (`healthCheckSlice.ts`) stopped calling the
+ * feasibility door and derives its status from telemetry in `finalise`.
+ * Exported for unit tests.
  */
 export function mapOverallStatus(overall: string): DryRunResult['status'] {
   const o = overall.toLowerCase();
@@ -201,10 +202,8 @@ function generateHealthProposal(
  * extract a `description`/`message`/`text` field from object shapes, and
  * drop anything that can't be rendered without becoming "[object Object]".
  *
- * Exported so the digest slice (and any future caller) can share one
- * coercion routine — previously the slice did plain `.map(text => ...)`
- * which would render "[object Object]" if the backend ever returned a
- * richer shape.
+ * Exported for unit tests; `parseFeasibilityToHealthResult` is its only
+ * production caller.
  */
 export function coerceIssueText(raw: unknown): string | null {
   if (typeof raw === 'string') {
@@ -224,44 +223,22 @@ export function coerceIssueText(raw: unknown): string | null {
 }
 
 /**
- * Options for {@link parseFeasibilityToHealthResult}.
- */
-export interface ParseFeasibilityOptions {
-  /**
-   * When `true` (default), run the keyword cascade in `generateHealthProposal`
-   * and attach `proposal` to each issue.
-   *
-   * The aggregate digest slice passes `false` because the digest UI shows a
-   * summary only — fixes are applied from the per-persona panel that calls
-   * the hook with the default. Skipping proposal generation also avoids the
-   * cost of re-walking design context per issue when the digest fans out
-   * across many personas.
-   */
-  withProposals?: boolean;
-}
-
-/**
  * Parse a backend `FeasibilityResult` into the canonical `DryRunResult` used
- * by both the per-persona health hook and the aggregate digest slice. Single
- * source of truth — drift between two near-identical implementations was the
- * W2.6 audit finding (deterministic vs random IDs, plain map vs coercion).
+ * by the per-persona health hook. (The weekly digest slice used to share it;
+ * it now builds its result from telemetry in `buildResultFromSignals`.)
  *
  * Notes on identity:
  * - Issue IDs come from {@link makeIssueId} (FNV-64) so the same issue keeps
- *   the same ID across re-runs and across hook/slice paths. This is what
- *   makes `markIssueResolved` work between screens.
+ *   the same ID across re-runs. This is what keeps `markIssueResolved`
+ *   matching after a re-check.
  * - On duplicate `(severity, description)` pairs the n-th occurrence gets a
  *   `_n` suffix so React keys stay unique without losing determinism.
- *
- * The `credentials` argument is only consulted when `withProposals` is on.
  */
 export function parseFeasibilityToHealthResult(
   raw: FeasibilityResult,
   persona: Persona,
   credentials: Array<{ id: string; service_type: string }>,
-  options: ParseFeasibilityOptions = {},
 ): DryRunResult {
-  const { withProposals = true } = options;
   // Shape-guard the IPC boundary: filter out non-string / null entries so a
   // backend change or transport glitch can't crash the health panel or
   // render "[object Object]".
@@ -283,7 +260,7 @@ export function parseFeasibilityToHealthResult(
       id: seen === 0 ? baseId : `${baseId}_${seen}`,
       severity,
       description: text,
-      proposal: withProposals ? generateHealthProposal(text, persona, credentials) : null,
+      proposal: generateHealthProposal(text, persona, credentials),
       resolved: false,
     });
   }
