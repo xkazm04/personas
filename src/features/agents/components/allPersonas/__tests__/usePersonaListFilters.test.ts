@@ -200,3 +200,54 @@ describe('usePersonaListFilters: spend sort', () => {
     expect(data.map((p) => p.id)).toEqual(['a', 'b']);
   });
 });
+
+// --------------------------------------------------------------------------
+// scan-sweep sweep-20261030-w1 - the order is a contract (table/sorting):
+// absent values have ONE home (last, both directions) on every column the
+// spend column already honours, and equal keys fall back to the row identity
+// so the same data in a different storage order yields the same sequence.
+// --------------------------------------------------------------------------
+
+function sortBy(
+  personas: Persona[],
+  sortKey: string,
+  sortDirection: 'asc' | 'desc',
+  lastRunMap: Record<string, string | null> = {},
+) {
+  return renderHook(() =>
+    usePersonaListFilters({
+      personas,
+      view: { ...DEFAULT_VIEW_CONFIG, sortKey, sortDirection },
+      search: '',
+      triggerCounts: {},
+      lastRunMap,
+      healthMap: {} as never,
+      isBuilding: () => false,
+      isDraft: () => false,
+      isArchived: () => false,
+      isFavorite: () => false,
+      groupFilter: null,
+    }),
+  ).result.current.data.map((p) => p.id);
+}
+
+describe('usePersonaListFilters: absent sort values', () => {
+  it('puts never-run personas after every run, ascending as well as descending', () => {
+    const personas = [make('never'), make('old'), make('recent')];
+    const lastRun = { old: '2026-01-01T00:00:00Z', recent: '2026-10-01T00:00:00Z', never: null };
+    expect(sortBy(personas, 'lastRun', 'desc', lastRun)).toEqual(['recent', 'old', 'never']);
+    expect(sortBy(personas, 'lastRun', 'asc', lastRun)).toEqual(['old', 'recent', 'never']);
+  });
+});
+
+describe('usePersonaListFilters: total order', () => {
+  it('orders equal keys by identity, whatever order storage handed them over in', () => {
+    const a = make('a', { trust_score: 50 });
+    const b = make('b', { trust_score: 50 });
+    const c = make('c', { trust_score: 50 });
+    for (const dir of ['asc', 'desc'] as const) {
+      expect(sortBy([c, a, b], 'trust', dir)).toEqual(sortBy([b, c, a], 'trust', dir));
+      expect(sortBy([c, a, b], 'lastRun', dir)).toEqual(sortBy([a, b, c], 'lastRun', dir));
+    }
+  });
+});

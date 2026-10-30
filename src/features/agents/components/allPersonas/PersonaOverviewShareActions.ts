@@ -2,11 +2,18 @@ import { useCallback } from 'react';
 import { duplicatePersona, exportPersona } from '@/api/agents/personas';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('persona-overview-share');
+
+/** Re-read the roster after a duplicate landed. Best-effort: the duplicate's
+ *  own result decides the toast, so a failed refresh leaves a breadcrumb and
+ *  never reports a copy that exists as a failed duplicate. */
+function refreshRoster(context: string): Promise<void> {
+  return useAgentStore.getState().fetchPersonas().catch(silentCatch(context));
+}
 
 interface UsePersonaShareActionsArgs {
   selectedIds: Set<string>;
@@ -50,11 +57,12 @@ export function usePersonaShareActions({ selectedIds, setSelectedIds }: UsePerso
     async (id: string) => {
       try {
         await duplicateOne(id);
-        await useAgentStore.getState().fetchPersonas();
       } catch (err) {
         logger.error('Failed to duplicate persona', { id, error: err });
         toastCatch('PersonaOverviewShareActions:duplicate', t.agents.duplicate.failed)(err);
+        return;
       }
+      await refreshRoster('PersonaOverviewShareActions:duplicateRefresh');
     },
     [duplicateOne, t.agents.duplicate.failed],
   );
@@ -72,7 +80,7 @@ export function usePersonaShareActions({ selectedIds, setSelectedIds }: UsePerso
       }
     }
     setSelectedIds(new Set());
-    await useAgentStore.getState().fetchPersonas();
+    await refreshRoster('PersonaOverviewShareActions:batchDuplicateRefresh');
     if (firstErr !== null) toastCatch('PersonaOverviewShareActions:batchDuplicate', t.agents.duplicate.failed)(firstErr);
   }, [selectedIds, setSelectedIds, duplicateOne, t.agents.duplicate.failed]);
 
