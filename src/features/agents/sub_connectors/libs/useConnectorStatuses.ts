@@ -76,11 +76,19 @@ export function useConnectorStatuses() {
   // credential, name and result for every connector the two share.
   const builtForPersonaRef = useRef<string | null>(null);
   const personaId = selectedPersona?.id ?? null;
+  // The persisted links the current rows were built from. A carried row
+  // outranks the link only while the link is unchanged (an optimistic link in
+  // flight); a link that CHANGED was written by someone -- AgentCredentialDemands'
+  // reuse writes it through mutateCredentialLink, never through this hook -- and
+  // it outranks the carried row, which still names the auto-matched credential.
+  const builtFromLinksRef = useRef<Record<string, string>>({});
 
   // Build connector statuses
   useEffect(() => {
     const samePersona = builtForPersonaRef.current === personaId;
     builtForPersonaRef.current = personaId;
+    const previousLinks = builtFromLinksRef.current;
+    builtFromLinksRef.current = credentialLinks;
     if (requiredCredTypes.length === 0) { setStatuses([]); return; }
     setStatuses((prev) => {
       const prevByName = new Map<string, ConnectorStatus>();
@@ -89,6 +97,10 @@ export function useConnectorStatuses() {
           // A row whose credential left the vault is not carried either: it
           // kept naming (and testing) a credential that no longer exists.
           if (p.credentialId && !credentialsByIdMap.has(p.credentialId)) continue;
+          // Nor is a row whose persisted link changed under it to a
+          // credential other than the one it holds.
+          const link = credentialLinks[p.name];
+          if (link && link !== previousLinks[p.name] && link !== p.credentialId && credentialsByIdMap.has(link)) continue;
           prevByName.set(p.name, p);
         }
       }

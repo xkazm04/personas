@@ -110,6 +110,52 @@ describe('useConnectorStatuses unlinked auto-match', () => {
   });
 });
 
+describe('useConnectorStatuses explicit link written elsewhere', () => {
+  // AgentCredentialDemands' "reuse" writes design_context.credentialLinks
+  // through mutateCredentialLink, never through this hook. The row it lands on
+  // already holds the auto-matched (newest) credential, and a carried row's
+  // credential used to outrank the link, so the panel kept naming and testing
+  // a credential the persona was no longer bound to.
+  it('a link that changes under a carried auto-matched row wins, with that credential\'s own result', () => {
+    act(() => {
+      useVaultStore.setState({
+        credentials: [
+          cred('cred-old', 'Old GitHub', '2026-01-01T00:00:00Z'),
+          cred('cred-new', 'New GitHub', '2026-09-01T00:00:00Z'),
+        ],
+      } as never);
+      useAgentStore.setState({ selectedPersona: persona('persona-r', 'nothing-linked') } as never);
+    });
+    const { result } = renderHook(() => useConnectorStatuses());
+    expect(result.current.statuses[0]?.credentialId).toBe('cred-new');
+
+    act(() => { useAgentStore.setState({ selectedPersona: persona('persona-r', 'cred-old') } as never); });
+
+    expect(result.current.statuses[0]?.credentialId).toBe('cred-old');
+    expect(result.current.statuses[0]?.credentialName).toBe('Old GitHub');
+    expect(result.current.statuses[0]?.result?.cached).toBe(true);
+  });
+
+  it('an optimistic link in flight is not overridden while the persisted link is unchanged', async () => {
+    let resolveLink!: (v: { applied: boolean }) => void;
+    vi.mocked(mutateCredentialLink).mockReturnValueOnce(new Promise((r) => { resolveLink = r; }) as never);
+    healthcheckCredential.mockResolvedValue({ success: true, message: 'ok', state: 'verified' });
+    const { result } = renderHook(() => useConnectorStatuses());
+    expect(result.current.statuses[0]?.credentialId).toBe('cred-a');
+
+    let pending!: Promise<unknown>;
+    act(() => { pending = result.current.handleLinkCredential('github', 'cred-b', 'Personal GitHub'); });
+    // An unrelated vault refresh re-runs the row build while the write is in flight.
+    act(() => {
+      useVaultStore.setState({
+        credentials: [cred('cred-a', 'Work GitHub'), cred('cred-b', 'Personal GitHub'), cred('cred-c', 'Third')],
+      } as never);
+    });
+    expect(result.current.statuses[0]?.credentialId).toBe('cred-b');
+    await act(async () => { resolveLink({ applied: true }); await pending; });
+  });
+});
+
 describe('useConnectorStatuses link failure', () => {
   it('a link write the queue reports as not applied reaches telemetry, not only the row', async () => {
     reported.mockReset();
