@@ -3317,13 +3317,12 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "not-applicable",
-          "evidence": "src/features/agents/sub_editor/components/EditorTabContent.tsx:3 persona editor shell: tabbed form surface with draft/save lifecycle; no file in the context's sampled paths mentions memory, and the memory store/recall lives in other contexts (db-repos-core, overview-memories); match was lexical (agents/agent/draft)",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_activity/ActivityTab.tsx:137 a failed listMemories lands [] so the persona's memory feed renders as having no memories, while the same file discloses a failed attention read (:55); the read is also capped at 50 (:127) with no notice of what was not shown",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 3
         },
         {
           "subject": "agent-instruction-files",
@@ -7547,7 +7546,11 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/teams/team_memories.rs:126 evict_team_memories is an IPC door to a hard-DELETE ranked by importance/created_at (src-tauri/db/src/repos/resources/team_memories.rs:481) with no tombstone and no shared value model, and :68 lets any caller hand-poke the importance that eviction reads",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52
         },
         {
           "subject": "agent-runtime-assembly",
@@ -14918,7 +14921,11 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_cockpit/widgets/LinkedMemoriesWidget.tsx:65 the only memory touch is an operator display of rows by source_execution_id; no capture, consolidation, decay or recall into an agent lives here, and its failed read is already split from empty (:48-:72)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52
         },
         {
           "subject": "plan-entitlements",
@@ -33300,12 +33307,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/stores/systemStore.ts:2 re-read: system store for UI chrome, cloud, GitLab, onboarding, dev-tools; client state, not an agent memory pipeline",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/api/director.ts:145 runDirectorMemoryCleanup is a pass-through invoke and src/stores/overviewStore.ts:29 only composes the memory slice; the cleanup policy and the slice's merge live in overview-director and stores-slices-overview, judged there",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 3
         },
         {
           "subject": "voice-io",
@@ -42670,7 +42676,11 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx:20 an operator-curated document corpus (documents/search/extract/settings) whose only writers are operator commands (src-tauri/src/commands/credentials/vector_kb.rs:564); nothing the agent observed is carried forward, so the memory pipeline's precondition does not hold",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52
         },
         {
           "subject": "llm-extracted-entity-graph",

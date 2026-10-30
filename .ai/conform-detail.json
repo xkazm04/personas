@@ -19991,10 +19991,11 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:48:34.000Z",
+      "worker": "51a38791-4621-4c42-91a5-f1c34dc868b6",
       "techniques": [],
+      "registryProposal": "Re-judged a stale not-applicable (rev 48 -> 52): still holds, re-anchored on the two memory touches the context actually has instead of the store header",
       "superseded": [
         {
           "state": "not-applicable",
@@ -20002,6 +20003,13 @@
           "evaluatedAt": "2026-10-12T17:24:13.297Z",
           "worker": "c510a03f-1707-4f7f-ba23-6336f8e5416c",
           "reason": "replaced by 4f615649-b5a0-4caa-ac5a-dfb0d9c79a24"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/stores/systemStore.ts:2 re-read: system store for UI chrome, cloud, GitLab, onboarding, dev-tools; client state, not an agent memory pipeline",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by 51a38791-4621-4c42-91a5-f1c34dc868b6"
         }
       ]
     },
@@ -26340,11 +26348,37 @@
       "context": "agents-editor",
       "subject": "agent-memory",
       "bundle": "software-engineering",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
-      "techniques": []
+      "state": "deviation",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:48:34.000Z",
+      "worker": "51a38791-4621-4c42-91a5-f1c34dc868b6",
+      "techniques": [
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_activity/ActivityTab.tsx:137 failure becomes empty success on the operator's second door into the memory store, and :127 takes its own number (50) with no omission notice; the tell (:55 discloses the attention feed's failure) is the one the technique names"
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_activity/ActivityTab.tsx:127 the read feeds an operator activity list, not the agent's context"
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_activity/ActivityTab.tsx:127 the context only reads memories; the delete it opens is MemoryDetailModal from overview-memories, judged there"
+        }
+      ],
+      "registryProposal": "Re-judged a stale not-applicable: the prior anchor (EditorTabContent.tsx:3) now lands on a comment opener and the context's paths grew to include sub_activity, which reads the memory store; the carried verdict was the flattering one",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_editor/components/EditorTabContent.tsx:3 persona editor shell: tabbed form surface with draft/save lifecycle; no file in the context's sampled paths mentions memory, and the memory store/recall lives in other contexts (db-repos-core, overview-memories); match was lexical (agents/agent/draft)",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by 51a38791-4621-4c42-91a5-f1c34dc868b6"
+        }
+      ]
     },
     "b62fa237-32b4-41c3-bf56-3e498b643da9/agent-memory": {
       "context": "vault-credentials-components-forms",
@@ -38786,6 +38820,54 @@
       "evaluatedTs": "2026-10-30T20:48:39.000Z",
       "worker": "ff87575d-5735-413a-a39a-9bad443d3cb5",
       "techniques": []
+    },
+    "5d4b913e-4384-49d7-8854-5c7ddac7e19e/agent-memory": {
+      "context": "commands-design",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:48:34.000Z",
+      "worker": "51a38791-4621-4c42-91a5-f1c34dc868b6",
+      "techniques": [
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/teams/team_memories.rs:68 update_team_memory_importance hand-pokes the score eviction ranks by; :126 evicts via a private importance/created_at order (src-tauri/db/src/repos/resources/team_memories.rs:481) that ignores usage, and delete leaves no tombstone (src-tauri/db/src/repos/resources/team_memories.rs:289)"
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/teams/team_memories.rs:33 create_team_memory writes a durable team item from caller-supplied persona_id/run_id with no lane field; the lane (auto vs manual, i.e. evictable or not) is inferred from run_id nullness, so the writer list cannot name each path's lane"
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:481 the forgetting order is a private importance/created_at ranking, not the score recall reads"
+        }
+      ],
+      "registryProposal": "The context description is the n8n transform pipeline but the consolidation pulled team_memories commands in; the agent-memory obligations sit in the absorbed teams files, so the team-memory context and this one carry overlapping verdicts on the same repo functions"
+    },
+    "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f/agent-memory": {
+      "context": "home-cockpit-widgets",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:48:34.000Z",
+      "worker": "51a38791-4621-4c42-91a5-f1c34dc868b6",
+      "techniques": []
+    },
+    "876c0b4e-6472-4544-a21b-56e7529fb6b3/agent-memory": {
+      "context": "vault-shared-vector",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:48:34.000Z",
+      "worker": "51a38791-4621-4c42-91a5-f1c34dc868b6",
+      "techniques": [],
+      "registryProposal": "Coverage: this context is governed by retrieval (and document-text-extraction for the Extract tab), not agent-memory; the match rode on knowledge-base/vector vocabulary"
     }
   }
 }

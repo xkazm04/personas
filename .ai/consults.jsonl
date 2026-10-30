@@ -2152,3 +2152,8 @@
 {"ts":"2026-10-30T20:48:39Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0}
 {"ts":"2026-10-30T20:48:39Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0}
 {"ts":"2026-10-30T20:48:39Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0}
+{"ts":"2026-10-30T20:48:34Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["decay-and-forgetting","memory-governance","memory-value-model"],"deviations":1}
+{"ts":"2026-10-30T20:48:34Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["loss-site-inventory"],"deviations":1}
+{"ts":"2026-10-30T20:48:34Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":[],"deviations":0}
+{"ts":"2026-10-30T20:48:34Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":[],"deviations":0}
+{"ts":"2026-10-30T20:48:34Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":[],"deviations":0}
