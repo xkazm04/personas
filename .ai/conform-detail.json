@@ -40220,6 +40220,47 @@
           "evidence": "src/features/templates/sub_n8n/hooks/useN8nTransform.ts:99 incomplete/unknown are displayed as stopped-while-running; the record closure is the backend's (commands-design pair)"
         }
       ]
+    },
+    "767b2bb5-4662-4be1-ad24-c881ac334016/agent-instruction-files": {
+      "context": "webhook-ingestion",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:01:55.000Z",
+      "worker": "6c65c8a0-06fd-40c8-aa7d-4d0902350b49",
+      "techniques": [
+        {
+          "technique": "workspace-ancestry-isolation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/cli_process.rs:1044 spawn_cwd takes std::env::current_dir() as the agent workspace; spawn_temp (:1006) puts the rest under temp_dir, which on Windows sits under the user home, so neither path places the session outside an instruction-file span"
+        },
+        {
+          "technique": "sibling-floor-ownership",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/cli_mcp_config.rs:251 the sidecar install sweeps a stale config before writing and scrub_mcp_sidecar (:308) is called on every exit path, so the .claude/ file it creates names its reaper"
+        }
+      ]
+    },
+    "0ecc70bc-a005-4ff8-9a98-f362d2a75f53/agent-instruction-files": {
+      "context": "api-overview",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:01:55.000Z",
+      "worker": "6c65c8a0-06fd-40c8-aa7d-4d0902350b49",
+      "techniques": []
+    },
+    "0f1b56ac-cd96-4355-993e-dc445a20e63e/agent-instruction-files": {
+      "context": "fleet-monitor-channels",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:01:55.000Z",
+      "worker": "6c65c8a0-06fd-40c8-aa7d-4d0902350b49",
+      "techniques": []
     }
   }
 }

@@ -4821,7 +4821,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/devTools/devTools.ts:1604 the context is IPC pass-through (installSkill only forwards to skill_files_install); it neither authors nor delivers instruction content, and the install semantics are judged where they live (skill_files.rs under plugins-fleet-tests / resource-tracking)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "authorization",
@@ -13490,7 +13494,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/fleet/monitor/grid/sessionHome.ts:3 the monitor only reads a session's cwd and run label to place it in a bay; no file in the context writes, loads or re-delivers a repo-owned instruction file",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "feed",
@@ -43327,7 +43335,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/cli_process.rs:1044 spawn_cwd launches design-analysis (src-tauri/src/commands/design/analysis.rs:353) and review (reviews.rs:2858) agent sessions in the Personas process cwd with no ancestry bound, so they inherit whatever instruction files sit above it (in dev, this repo's operator CLAUDE.md) and the loaded set is never asserted",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "agent-memory",
