@@ -44,3 +44,25 @@ describe('ExecutionMiniPlayer terminal verdict', () => {
     expect(screen.getByText('Complete')).toBeInTheDocument();
   });
 });
+
+describe('ExecutionMiniPlayer Simple-mode progress', () => {
+  it('exposes the running stage as a progressbar with its value', () => {
+    useAgentStore.setState({
+      miniPlayerPinned: true,
+      miniPlayerPosition: { x: 0, y: 0 },
+      isExecuting: true,
+      activeExecutionId: 'run-1',
+      executionOutput: [],
+      executionMeaningfulTail: [],
+      pipelineTrace: null,
+      error: null,
+    });
+    render(<ExecutionMiniPlayer />);
+    const bar = screen.getByRole('progressbar');
+    expect(bar.getAttribute('aria-valuemin')).toBe('0');
+    expect(bar.getAttribute('aria-valuemax')).toBe('100');
+    expect(bar.getAttribute('aria-valuenow')).not.toBeNull();
+    expect(bar.getAttribute('aria-label')).toBeTruthy();
+    act(() => useAgentStore.setState({ isExecuting: false, activeExecutionId: null }));
+  });
+});

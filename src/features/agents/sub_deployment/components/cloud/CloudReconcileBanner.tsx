@@ -3,6 +3,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePersonaNameMap } from '@/hooks/usePersonaNameMap';
 import { Button, AsyncButton } from '@/features/shared/components/buttons';
+import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
+import { useConfirmedRemoteAction } from '../../hooks/useConfirmedRemoteAction';
 
 /**
  * Orphan-deployment reconcile surface.
@@ -28,6 +30,11 @@ export function CloudReconcileBanner() {
   const dismiss = useSystemStore((s) => s.cloudDismissReconcile);
   const dismissed = useSystemStore((s) => s.cloudReconcileDismissed);
   const show = useSystemStore((s) => s.cloudShowReconcile);
+  // Undeploy shuts down an endpoint other systems may still be calling, on a
+  // surface whose rows the user did not create here - so it names the
+  // deployment and waits for consent, like every other undeploy door in this
+  // context (registry: cicd-monitoring / remote-action-consent).
+  const { modal: confirmModal, confirmThen } = useConfirmedRemoteAction();
 
   if (orphans.length === 0) return null;
 
@@ -95,7 +102,16 @@ export function CloudReconcileBanner() {
               variant="danger"
               size="xs"
               title={r.undeploy_title}
-              onClick={() => undeploy(d.id)}
+              onClick={() => confirmThen(
+                {
+                  title: r.undeploy,
+                  details: [
+                    { label: t.common.name, value: personaName(d.personaId) || d.label || r.unknown_persona },
+                    { label: t.common.id, value: d.slug },
+                  ],
+                },
+                () => undeploy(d.id),
+              )}
               data-testid={`cloud-reconcile-undeploy-${d.id}`}
             >
               {r.undeploy}
@@ -103,6 +119,7 @@ export function CloudReconcileBanner() {
           </li>
         ))}
       </ul>
+      <ConfirmDestructiveModal {...confirmModal} />
     </div>
   );
 }
