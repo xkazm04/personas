@@ -31,3 +31,29 @@ describe('CloudExecutionRow: red opens to the failure', () => {
     expect(onFetchOutput).not.toHaveBeenCalled();
   });
 });
+
+describe('CloudExecutionRow: an unreported figure is not a zero', () => {
+  const running = (): CloudExecution => ({ ...exec('running'), durationMs: null, inputTokens: null, outputTokens: null });
+
+  it('shows a run with no recorded duration as unknown, never as "0ms"', () => {
+    const { container } = render(
+      <CloudExecutionRow exec={running()} personaName="p" isExpanded onToggle={() => {}} onFetchOutput={() => {}} />,
+    );
+    expect(container.textContent).not.toContain('0ms');
+  });
+
+  it('shows a run with no token counts as unknown, never as 0 tokens', () => {
+    const { getByText } = render(
+      <CloudExecutionRow exec={running()} personaName="p" isExpanded onToggle={() => {}} onFetchOutput={() => {}} />,
+    );
+    const tokens = getByText('Tokens:').nextElementSibling;
+    expect(tokens?.textContent).not.toBe('0');
+  });
+
+  it('still sums the token counts that were reported', () => {
+    const { getByText } = render(
+      <CloudExecutionRow exec={{ ...exec('completed'), inputTokens: 120n, outputTokens: 30n }} personaName="p" isExpanded onToggle={() => {}} onFetchOutput={() => {}} />,
+    );
+    expect(getByText('Tokens:').nextElementSibling?.textContent).toBe('150');
+  });
+});
