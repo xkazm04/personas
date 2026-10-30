@@ -35778,25 +35778,26 @@
       "subject": "trust-base",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T23:02:24.468Z",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T22:24:21.206Z",
       "techniques": [
-        {
-          "technique": "census-counts-unmarked-members",
-          "verdict": "deviation",
-          "evidence": "tests/playwright/template-marathon-fixtures.ts:218 An isolated type-aware lint confirmed an unsafe any assignment here; the searched repository tooling does not census this flow."
-        },
         {
           "technique": "soundness-argument-names-its-dependencies",
           "verdict": "deviation",
-          "evidence": "tests/playwright/discord-twin-1-setup.spec.ts:61 The assertion relies on endpoint responses matching caller-selected T, but names no producing declaration or corresponding dependency annotation; the fallback also asserts plain text as T."
+          "evidence": "tests/playwright/message-modal-features.spec.ts:61 This cast past a private member relies on companion-bridge.ts:135 and names neither that file nor that declaration. The same shape repeats at :225, :290 and :302, and none of those sites says why it is sound."
+        },
+        {
+          "technique": "census-counts-unmarked-members",
+          "verdict": "deviation",
+          "evidence": "tests/playwright/template-marathon-fixtures.ts:218 JSON.parse returns the unchecked `any` type, and assigning it to an annotated variable asserts a shape without using an assertion keyword. A census that counts `as unknown as` does not see this member. Similar sites: discord-twin-1-setup.spec.ts:95, where untyped `parsed.error` is read, and preset-team-adoption.spec.ts:168."
         }
       ],
+      "registryProposal": "The trust-base techniques are written for provers, `unsafe` code and marker implementations. In a TypeScript tree the closest equivalents are `as unknown as` and `any` returned from a decoder (JSON.parse). The census technique already covers the decoder case, but soundness-argument-names-its-dependencies could add an explicit TypeScript form: a cast that reaches past `private` depends on a declaration in another file.",
       "withdrawn": {
-        "worker": "5729c1e2-f371-4bed-a643-3b2bfbe049bd",
+        "worker": "6714b487-b71d-402c-98e0-31be4431fb1f",
         "state": "deviation",
-        "at": "2026-10-21T23:03:00.905118+00:00",
-        "reason": "reviewer (sonnet): The primary anchor tests/playwright/template-marathon-fixtures.ts:218 is not one of the context's files. Only template-marathon.spec.ts and a unit test import it, so the verdict is about a different context. The claimed type-aware lint result could not be confirmed, though line 218 does assign `JSON"
+        "at": "2026-10-30T22:25:35.405505+00:00",
+        "reason": "reviewer (sonnet): The cited sites are real (the casts at message-modal-features.spec.ts:61, :225, :290 and :302, the private bridgeExec at companion-bridge.ts:135, and the JSON.parse at template-marathon-fixtures.ts:218), but the registry-map lists none of message-modal-features.spec.ts, companion-bridge.ts, template"
       }
     },
     "1ffb5765-de47-4f01-87ec-06732a63522c/trust-base": {
