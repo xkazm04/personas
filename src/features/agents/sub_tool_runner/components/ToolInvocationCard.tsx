@@ -86,7 +86,22 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
           <TypeIcon className="w-2.5 h-2.5" />
           {toolType}
         </span>
-        {result && (
+        {/* The card starts collapsed and can be collapsed mid-run, so the header
+            has to tell idle, running and an IPC-level error apart too - not only
+            a settled result. */}
+        {isRunning && (
+          <span className="ml-auto inline-flex items-center gap-1 typo-body text-foreground">
+            <Clock className="w-3 h-3" />
+            {t.agents.tool_runner.running}
+          </span>
+        )}
+        {!isRunning && error && (
+          <span className="ml-auto inline-flex items-center gap-1 typo-body text-status-error">
+            <XCircle className="w-3 h-3" />
+            {t.agents.tool_runner.error}
+          </span>
+        )}
+        {!isRunning && !error && result && (
           <span className={`ml-auto inline-flex items-center gap-1 typo-body ${result.success ? 'text-emerald-400' : 'text-red-400'}`}>
             {result.success ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
             <Numeric value={Number(result.duration_ms)} unit="ms" />
