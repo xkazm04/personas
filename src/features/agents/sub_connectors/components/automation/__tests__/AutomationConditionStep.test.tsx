@@ -19,6 +19,30 @@ function renderStep() {
   );
 }
 
+describe('AutomationConditionStep credential line', () => {
+  // The same rule AutomationTriggerStep's banner pins: a selection that does
+  // not resolve renders an explicit absence, never the first credential, which
+  // the deploy (credentialId: platformCredentialId) would not use.
+  it('does not name the first offered credential when the selection does not resolve', () => {
+    const creds = [{ id: 'cred-first', name: 'Workspace A' }, { id: 'cred-second', name: 'Workspace B' }] as never;
+    render(
+      <AutomationConditionStep
+        designResult={{}}
+        name="x" setName={() => {}}
+        platform="n8n" githubRepo={null}
+        hasPlatformCredential platformCredentials={creds} platformCredentialId="cred-gone"
+        showAdvanced={false} setShowAdvanced={() => {}}
+        inputSchema="" setInputSchema={() => {}}
+        fallbackMode="connector" setFallbackMode={() => {}}
+        timeoutSecs={30} setTimeoutSecs={() => {}}
+        deployError={null}
+      />,
+    );
+    expect(screen.queryByText('Workspace A')).toBeNull();
+    expect(screen.getByText('None selected')).toBeTruthy();
+  });
+});
+
 describe('AutomationConditionStep timeout stepper', () => {
   it('advertises the same bounds the deploy path clamps to', () => {
     renderStep();

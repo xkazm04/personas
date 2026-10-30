@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import { useVaultStore } from '@/stores/vaultStore';
 import userEvent from '@testing-library/user-event';
 import { AutomationsSection } from '../AutomationsSection';
 
@@ -31,5 +32,51 @@ describe('AutomationsSection header', () => {
     fireEvent.click(add);
     expect(onAdd).toHaveBeenCalledTimes(1);
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  });
+});
+
+describe('AutomationsSection webhook tests', () => {
+  function auto(id: string, name: string) {
+    return {
+      id, name, personaId: 'p1', platform: 'n8n', deploymentStatus: 'active',
+      fallbackMode: 'skip', lastTriggeredAt: null, platformUrl: null, useCaseId: null,
+    } as never;
+  }
+  function testButtons() {
+    return screen.getAllByRole('button', { name: /^Test/ });
+  }
+
+  // Each card's Test owns its own in-flight state. One shared id let a second
+  // test re-enable the first card mid-flight, and the first test's settle
+  // cleared the second card's spinner while its webhook was still running.
+  it('a settling test does not clear another card that is still testing', async () => {
+    const resolvers: Record<string, (v: unknown) => void> = {};
+    useVaultStore.setState({
+      testAutomation: vi.fn((id: string) => new Promise((r) => { resolvers[id] = r; })),
+    } as never);
+    render(<AutomationsSection automations={[auto('a1', 'Alpha'), auto('a2', 'Beta')]} onAdd={() => {}} onEdit={() => {}} />);
+
+    fireEvent.click(testButtons()[0]!);
+    fireEvent.click(testButtons()[1]!);
+    await act(async () => { resolvers.a1!({ status: 'completed', durationMs: 5 }); });
+
+    expect((testButtons()[1] as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => { resolvers.a2!({ status: 'completed', durationMs: 5 }); });
+    expect((testButtons()[1] as HTMLButtonElement).disabled).toBe(false);
+  });
+});
+
+describe('AutomationsSection failed webhook test', () => {
+  // The store resolves null when the call itself fails (reportError toasts and
+  // returns null). The card used to show nothing at all, so the row read as
+  // never tested once the toast was gone.
+  it('leaves a failure on the card when the test call itself fails', async () => {
+    useVaultStore.setState({ testAutomation: vi.fn().mockResolvedValue(null) } as never);
+    render(<AutomationsSection automations={[{
+      id: 'a1', name: 'Alpha', personaId: 'p1', platform: 'n8n', deploymentStatus: 'active',
+      fallbackMode: 'skip', lastTriggeredAt: null, platformUrl: null, useCaseId: null,
+    } as never]} onAdd={() => {}} onEdit={() => {}} />);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Test/ })); });
+    expect(screen.getByText('Webhook call failed')).toBeTruthy();
   });
 });

@@ -110,6 +110,52 @@ describe('useConnectorStatuses unlinked auto-match', () => {
   });
 });
 
+describe('useConnectorStatuses explicit link written elsewhere', () => {
+  // AgentCredentialDemands' "reuse" writes design_context.credentialLinks
+  // through mutateCredentialLink, never through this hook. The row it lands on
+  // already holds the auto-matched (newest) credential, and a carried row's
+  // credential used to outrank the link, so the panel kept naming and testing
+  // a credential the persona was no longer bound to.
+  it('a link that changes under a carried auto-matched row wins, with that credential\'s own result', () => {
+    act(() => {
+      useVaultStore.setState({
+        credentials: [
+          cred('cred-old', 'Old GitHub', '2026-01-01T00:00:00Z'),
+          cred('cred-new', 'New GitHub', '2026-09-01T00:00:00Z'),
+        ],
+      } as never);
+      useAgentStore.setState({ selectedPersona: persona('persona-r', 'nothing-linked') } as never);
+    });
+    const { result } = renderHook(() => useConnectorStatuses());
+    expect(result.current.statuses[0]?.credentialId).toBe('cred-new');
+
+    act(() => { useAgentStore.setState({ selectedPersona: persona('persona-r', 'cred-old') } as never); });
+
+    expect(result.current.statuses[0]?.credentialId).toBe('cred-old');
+    expect(result.current.statuses[0]?.credentialName).toBe('Old GitHub');
+    expect(result.current.statuses[0]?.result?.cached).toBe(true);
+  });
+
+  it('an optimistic link in flight is not overridden while the persisted link is unchanged', async () => {
+    let resolveLink!: (v: { applied: boolean }) => void;
+    vi.mocked(mutateCredentialLink).mockReturnValueOnce(new Promise((r) => { resolveLink = r; }) as never);
+    healthcheckCredential.mockResolvedValue({ success: true, message: 'ok', state: 'verified' });
+    const { result } = renderHook(() => useConnectorStatuses());
+    expect(result.current.statuses[0]?.credentialId).toBe('cred-a');
+
+    let pending!: Promise<unknown>;
+    act(() => { pending = result.current.handleLinkCredential('github', 'cred-b', 'Personal GitHub'); });
+    // An unrelated vault refresh re-runs the row build while the write is in flight.
+    act(() => {
+      useVaultStore.setState({
+        credentials: [cred('cred-a', 'Work GitHub'), cred('cred-b', 'Personal GitHub'), cred('cred-c', 'Third')],
+      } as never);
+    });
+    expect(result.current.statuses[0]?.credentialId).toBe('cred-b');
+    await act(async () => { resolveLink({ applied: true }); await pending; });
+  });
+});
+
 describe('useConnectorStatuses link failure', () => {
   it('a link write the queue reports as not applied reaches telemetry, not only the row', async () => {
     reported.mockReset();
@@ -122,6 +168,24 @@ describe('useConnectorStatuses link failure', () => {
     expect(ok).toBe(false);
     expect(result.current.statuses[0]?.linkError).toContain('persona gone');
     expect(reported).toHaveBeenCalledWith('useConnectorStatuses:linkCredential', expect.objectContaining({ message: 'persona gone' }));
+  });
+
+  it('a link that never persisted restores the row it replaced, not an unlinked one', async () => {
+    // The persisted link is still cred-a and the runner still injects it, so
+    // the row must not claim "No credential" (and count toward the amber
+    // "execution blocked" banner) because a different link failed to save.
+    vi.mocked(mutateCredentialLink).mockResolvedValueOnce({ applied: false, reason: 'persona gone' });
+    const { result } = renderHook(() => useConnectorStatuses());
+    expect(result.current.statuses[0]?.credentialId).toBe('cred-a');
+
+    await act(async () => { await result.current.handleLinkCredential('github', 'cred-b', 'Personal GitHub'); });
+
+    const row = result.current.statuses[0];
+    expect(row?.credentialId).toBe('cred-a');
+    expect(row?.credentialName).toBe('Work GitHub');
+    expect(row?.result?.state).toBe('verified');
+    expect(row?.linkError).toContain('persona gone');
+    expect(result.current.readinessCounts.unlinked).toBe(0);
   });
 });
 
@@ -153,6 +217,18 @@ describe('useConnectorStatuses unreachable re-test', () => {
     // The attempt and the last real verdict are two facts: the row holds both.
     expect(row?.lastVerdict?.state).toBe('verified');
     expect(row?.lastVerdict?.testedAt).toBe('2026-10-18T00:00:00Z');
+  });
+
+  it('a probe that throws is no verdict either: unreachable, verdict kept', async () => {
+    // The store maps a transport failure to `unreachable`; the hook's own
+    // catch must agree rather than paint a red failure nothing judged.
+    healthcheckCredential.mockRejectedValueOnce(new Error('ipc timeout'));
+    const { result } = renderHook(() => useConnectorStatuses());
+    await act(async () => { await result.current.testConnector('github', 'cred-a'); });
+    const row = result.current.statuses[0];
+    expect(row?.result?.state).toBe('unreachable');
+    expect(result.current.readinessCounts.unhealthy).toBe(0);
+    expect(row?.lastVerdict?.state).toBe('verified');
   });
 
   it('a later real verdict replaces the kept one', async () => {

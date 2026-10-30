@@ -76,11 +76,19 @@ export function useConnectorStatuses() {
   // credential, name and result for every connector the two share.
   const builtForPersonaRef = useRef<string | null>(null);
   const personaId = selectedPersona?.id ?? null;
+  // The persisted links the current rows were built from. A carried row
+  // outranks the link only while the link is unchanged (an optimistic link in
+  // flight); a link that CHANGED was written by someone -- AgentCredentialDemands'
+  // reuse writes it through mutateCredentialLink, never through this hook -- and
+  // it outranks the carried row, which still names the auto-matched credential.
+  const builtFromLinksRef = useRef<Record<string, string>>({});
 
   // Build connector statuses
   useEffect(() => {
     const samePersona = builtForPersonaRef.current === personaId;
     builtForPersonaRef.current = personaId;
+    const previousLinks = builtFromLinksRef.current;
+    builtFromLinksRef.current = credentialLinks;
     if (requiredCredTypes.length === 0) { setStatuses([]); return; }
     setStatuses((prev) => {
       const prevByName = new Map<string, ConnectorStatus>();
@@ -89,6 +97,10 @@ export function useConnectorStatuses() {
           // A row whose credential left the vault is not carried either: it
           // kept naming (and testing) a credential that no longer exists.
           if (p.credentialId && !credentialsByIdMap.has(p.credentialId)) continue;
+          // Nor is a row whose persisted link changed under it to a
+          // credential other than the one it holds.
+          const link = credentialLinks[p.name];
+          if (link && link !== previousLinks[p.name] && link !== p.credentialId && credentialsByIdMap.has(link)) continue;
           prevByName.set(p.name, p);
         }
       }
@@ -176,9 +188,13 @@ export function useConnectorStatuses() {
       }
       return result;
     } catch (err) {
+      // A probe that threw never asked the service: the same `unreachable`
+      // token the store returns for a transport failure, never a red verdict.
+      // Without a state the row resolved to `failed` from `success: false`.
       const result: ConnectorTestResult = {
         success: false,
         message: err instanceof Error ? err.message : t.agents.connectors.test_healthcheck_failed_default,
+        state: 'unreachable',
       };
       if (epoch.isCurrent(token)) updateStatus(name, { testing: false, result });
       return result;
@@ -268,10 +284,16 @@ export function useConnectorStatuses() {
 
   const handleLinkCredential = useCallback(async (connectorName: string, credentialId: string, credentialName: string): Promise<boolean> => {
     lastAutoTestedCredentialRef.current.delete(connectorName);
+    // The row this optimistic link replaces. A write that never persists
+    // leaves the persisted link -- and what the runner injects -- unchanged,
+    // so the revert restores this row rather than painting it unlinked.
+    let replaced: ConnectorStatus | undefined;
     setStatuses((prev) =>
-      prev.map((s) =>
-        s.name === connectorName ? { ...s, credentialId, credentialName, result: null, linkError: null } : s,
-      ),
+      prev.map((s) => {
+        if (s.name !== connectorName) return s;
+        replaced = s;
+        return { ...s, credentialId, credentialName, result: null, linkError: null };
+      }),
     );
     if (selectedPersona) {
       // The design_context write queue reports failure through the RETURNED
@@ -286,10 +308,13 @@ export function useConnectorStatuses() {
         // lost write can be counted; the row's linkError reaches no telemetry.
         silentCatch('useConnectorStatuses:linkCredential')(new Error(outcome.reason));
         // Revert optimistic update -- the link was never persisted
+        const linkError = tx(t.agents.connectors.test_link_failed, { error: outcome.reason });
         setStatuses((prev) =>
           prev.map((s) =>
             s.name === connectorName
-              ? { ...s, credentialId: null, credentialName: null, result: null, linkError: tx(t.agents.connectors.test_link_failed, { error: outcome.reason }) }
+              ? (replaced
+                ? { ...replaced, testing: false, linkError }
+                : { ...s, credentialId: null, credentialName: null, result: null, linkError })
               : s,
           ),
         );

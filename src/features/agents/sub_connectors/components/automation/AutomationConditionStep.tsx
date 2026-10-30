@@ -98,7 +98,7 @@ export function AutomationConditionStep({
             {hasPlatformCredential ? (
               <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-modal bg-brand-emerald/5 border border-brand-emerald/15">
                 <CheckCircle2 className="w-3.5 h-3.5 text-brand-emerald/70 flex-shrink-0" />
-                <span className="typo-body text-foreground">{platformCredentials.find((c) => c.id === platformCredentialId)?.name ?? platformCredentials[0]?.name}</span>
+                <span className="typo-body text-foreground">{platformCredentials.find((c) => c.id === platformCredentialId)?.name ?? t.agents.connectors.auto_none_selected}</span>
               </div>
             ) : (
               <p className="mt-1.5 typo-body text-foreground">{t.agents.connectors.auto_none_selected}</p>
