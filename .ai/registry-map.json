@@ -5900,8 +5900,8 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "useByomSettings.ts routes through dedicated get_byom_policy/set_byom_policy/validate_byom_policy commands (src-tauri/src/commands/infrastructure/byom.rs:37-67) backed by src-tauri/db/src/byom.rs:244-305's ByomPolicy::load/save, which calls the generic settings::set - so key-registry, typed-accessors (validate_json_as::<ByomPolicy> at settings_keys.rs:1821) and settings-audit-and-history (audit_category 'byom' at settings_keys.rs:2143) all apply automatically; useByomSettings.ts:142-148 refuses to save over a corrupt load, protecting the stored policy (save-experience). read-batching, in-place-document-patch and cross-source-precedence-chain are not-applicable: this is one document behind one dedicated key, read and written whole (byom.rs:245,305), not a scattered-keys boot read or a multi-source config.",
-          "evaluatedAt": "2026-10-03",
+          "evidence": "src-tauri/db/src/byom.rs:305 the policy is written through the generic validated settings::set door, validated against the exact consumer type at src-tauri/db/src/settings_keys.rs:2085, audited as 'byom' (:2429), and src/features/settings/sub_byom/libs/useByomSettings.ts:152 refuses to save over a failed load - re-verified live 2026-10-30, anchors moved",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
           "evaluatedRevision": 13,
           "revisionsBehind": 0
@@ -10333,8 +10333,8 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/settings_keys.rs:636 MONTHLY_COST_CEILING_USD_DEFAULT is still 0.0 meaning 'no ceiling' (and CHAIN_MAX_COST_USD_DEFAULT :1307 copies the convention), with no declared setting kind, so the unconfigured install is the most permissive one on the spend keys - re-verified live 2026-10-22",
-          "evaluatedAt": "2026-10-22",
+          "evidence": "src-tauri/db/src/settings_keys.rs:636 MONTHLY_COST_CEILING_USD_DEFAULT is still 0.0 meaning 'no ceiling' (CHAIN_MAX_COST_USD_DEFAULT :1307 copies it) with no declared setting kind, so the unconfigured install is the most permissive one on the spend keys - re-verified live 2026-10-30",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
           "evaluatedRevision": 13,
           "revisionsBehind": 0
@@ -16287,8 +16287,8 @@
           "changedAt": "2026-09-05",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/hooks/utility/data/useAppSetting.ts:42 still takes a bare key: string and callers pass free literals ('cli_engine' src/features/settings/sub_engine/components/EngineCapabilityBadge.tsx:24), so a frontend key typo compiles clean and reads the default forever - re-verified live 2026-10-22",
-          "evaluatedAt": "2026-10-22",
+          "evidence": "src/hooks/utility/data/useAppSetting.ts:42 the door still takes a bare key: string and src/features/settings/sub_engine/components/EngineCapabilityBadge.tsx:24 passes the literal 'cli_engine', so a frontend key typo compiles clean and reads the caller default forever - re-verified live 2026-10-30",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
           "evaluatedRevision": 13,
           "revisionsBehind": 0
@@ -16560,8 +16560,8 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:146 keeps the guard open with the reason when Save fails, and useSettingsSaveToast.ts:18 confirms quietly; the realized techniques are save-experience and inherited-default-override, and the store-level techniques have no key in this hooks-only context.",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:156 a failed Save keeps the guard open with the raw failure instead of closing on a still-dirty editor; the prior anchor useSettingsSaveToast.ts was deleted (85b4abb535) so the verdict now rests on the guard alone - re-verified live 2026-10-30",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
           "evaluatedRevision": 13,
           "revisionsBehind": 0

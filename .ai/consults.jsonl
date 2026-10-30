@@ -2183,3 +2183,7 @@
 {"ts":"2026-10-30T20:56:00Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["review-queues","decision-records","gate-state-machines","resume-after-decision"],"deviations":1}
 {"ts":"2026-10-30T20:56:00Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["fail-loud-classification-default"],"deviations":1}
 {"ts":"2026-10-30T20:56:00Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["fail-loud-classification-default","cosmetic-vs-enforced-threshold-invariant"],"deviations":1}
+{"ts":"2026-10-30T20:55:46Z","bundle":"software-engineering","subjects":["settings"],"techniques":["read-batching","key-registry","typed-accessors","save-experience"],"deviations":2}
+{"ts":"2026-10-30T20:55:46Z","bundle":"software-engineering","subjects":["settings"],"techniques":["key-registry","typed-accessors","setting-kinds","settings-audit-and-history","read-batching"],"deviations":2}
+{"ts":"2026-10-30T20:55:46Z","bundle":"software-engineering","subjects":["settings"],"techniques":["key-registry","typed-accessors","settings-audit-and-history","save-experience"],"deviations":0}
+{"ts":"2026-10-30T20:55:46Z","bundle":"software-engineering","subjects":["settings"],"techniques":["save-experience"],"deviations":0}
