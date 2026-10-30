@@ -84,7 +84,14 @@ export function SimpleExecutionView({
             </span>
           )}
         </div>
-        <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
+        <div
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(stageProgress.fraction * 100)}
+          aria-label={error ? t.execution.something_went_wrong : stageProgress.label}
+          className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden"
+        >
           <div
             className={`h-full rounded-full transition-all duration-700 ease-out ${error ? 'bg-red-400' : 'bg-blue-400'}`}
             style={{ width: `${stageProgress.fraction * 100}%` }}
