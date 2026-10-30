@@ -94,6 +94,7 @@
     "filter_target": "Destino",
     "gitlab": "GitLab",
     "history_empty": "Aún no hay historial de despliegues",
+    "history_load_failed": "No se pudo cargar el historial de despliegues",
     "history_snapshot": "Instantánea del prompt guardada",
     "history_title": "Historial de despliegues",
     "no_data": "Sin datos",

@@ -8879,6 +8879,7 @@ export type Translations = {
       tool_calls: string;
       history_title: string;
       history_empty: string;
+      history_load_failed: string;
       history_snapshot: string;
       bulk_action_pause: string;
       bulk_action_resume: string;
