@@ -2,6 +2,11 @@
 
 ## Active
 
+### scan-sweep-w1-1030 — scan-sweep wave 1 (agent-health, agents-components-allpersonas, agents-connectors, agents-deployment) on scan/1030
+- **[2026-10-30 18:04]**
+- **Paths:** `src/features/agents/sub_health/**` · `src/features/agents/components/**` · `src/features/agents/sub_connectors/**` · `src/features/agents/sub_deployment/**` · `src/features/agents/executionPlayer/**`
+- **Status:** started
+
 - **[2026-10-11 18:57]**
 - **Paths:** `.claude/worktrees/bl-*`
 
