@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { invokeToolDirect, type ToolInvocationResult } from '@/api/agents/tools';
 import { extractMessage } from '@/lib/silentCatch';
+import { createKeyedLatestWins } from '@/stores/util/latestWins';
 
 interface ToolRunState {
   /** The persona whose tool run produced this entry. Results for any other
@@ -33,6 +34,13 @@ export function useToolRunner(personaId: string | undefined) {
   // De-dupe rapid double-clicks on the same toolId for the active persona.
   // Cleared on persona switch by the effect below.
   const runningRef = useRef<Set<string>>(new Set());
+
+  // The newest run of each tool (per-tool latest-wins token). The persona
+  // check alone cannot tell two runs apart after an A -> B -> A switch: the
+  // first run's persona id is current again, so it would overwrite the second,
+  // still in-flight run and free its de-dupe slot. Only the run whose token is
+  // still the latest for its tool may write state or release the slot.
+  const [latestRun] = useState(() => createKeyedLatestWins<string>());
 
   // Reset cached state when the persona changes. Without this, a tool run
   // started under persona A would land in the map keyed only by toolId and
@@ -79,6 +87,9 @@ export function useToolRunner(personaId: string | undefined) {
       // Snapshot the persona at call time. The in-flight request belongs to
       // THIS persona; any later persona switch will drop the result below.
       const runPersonaId = personaId;
+      const runToken = latestRun.next(toolId);
+      const isLatest = () =>
+        runPersonaId === personaIdRef.current && latestRun.isCurrent(toolId, runToken);
 
       runningRef.current.add(toolId);
       setStates((prev) => ({
@@ -94,9 +105,9 @@ export function useToolRunner(personaId: string | undefined) {
       try {
         const result = await invokeToolDirect(toolId, runPersonaId, inputJson);
         setStates((prev) => {
-          // Drop the result if the user has since switched personas — this
-          // entry no longer belongs to the visible tool runner panel.
-          if (runPersonaId !== personaIdRef.current) return prev;
+          // Drop the result if the user has since switched personas, or a newer
+          // run of this tool has started - this entry is no longer the one shown.
+          if (!isLatest()) return prev;
           return {
             ...prev,
             [toolId]: { personaId: runPersonaId, isRunning: false, result, error: null },
@@ -108,21 +119,21 @@ export function useToolRunner(personaId: string | undefined) {
         // blocker). extractMessage probes .message/.error/JSON before giving up.
         const msg = extractMessage(err) || 'Tool invocation failed';
         setStates((prev) => {
-          if (runPersonaId !== personaIdRef.current) return prev;
+          if (!isLatest()) return prev;
           return {
             ...prev,
             [toolId]: { personaId: runPersonaId, isRunning: false, result: null, error: msg },
           };
         });
       } finally {
-        // Only release the dedupe slot if we're still on the same persona
-        // (otherwise the persona-switch effect already cleared the set).
-        if (runPersonaId === personaIdRef.current) {
+        // Only the latest run releases the dedupe slot (a persona switch already
+        // cleared the set; a newer run of the same tool owns the slot now).
+        if (isLatest()) {
           runningRef.current.delete(toolId);
         }
       }
     },
-    [personaId],
+    [personaId, latestRun],
   );
 
   return { getState, runTool };

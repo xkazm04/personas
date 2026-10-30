@@ -45,6 +45,28 @@ describe('useToolRunner', () => {
     await act(async () => { resolve(ok); await first; });
   });
 
+  it('lets only the latest run of a tool write its state after an A-B-A persona switch', async () => {
+    const resolvers: Array<(v: unknown) => void> = [];
+    invokeMock.mockImplementation(() => new Promise((r) => { resolvers.push(r); }));
+    const { result, rerender } = renderHook(({ pid }) => useToolRunner(pid), { initialProps: { pid: 'p1' } });
+    let first!: Promise<void>;
+    act(() => { first = result.current.runTool('t1', '{}'); });
+    // A -> B -> A: the switch clears the map and the de-dupe set, so the same
+    // tool can be started again under the same persona id.
+    rerender({ pid: 'p2' });
+    rerender({ pid: 'p1' });
+    let second!: Promise<void>;
+    act(() => { second = result.current.runTool('t1', '{}'); });
+    // The FIRST call settles while the second is still in flight.
+    await act(async () => { resolvers[0]!({ ...ok, output: 'first' }); await first; });
+    expect(result.current.getState('t1')).toMatchObject({ isRunning: true, result: null });
+    // Its settle must not free the slot the second run holds.
+    await act(async () => { await result.current.runTool('t1', '{}'); });
+    expect(invokeMock).toHaveBeenCalledTimes(2);
+    await act(async () => { resolvers[1]!({ ...ok, output: 'second' }); await second; });
+    expect(result.current.getState('t1')).toMatchObject({ isRunning: false, result: { output: 'second' } });
+  });
+
   it('leaves no timer behind once the run settles', async () => {
     vi.useFakeTimers();
     invokeMock.mockResolvedValue(ok);
