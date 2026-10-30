@@ -4555,6 +4555,10 @@
         {
           "path": "src/hooks/navigation/useBreadcrumbTrail.ts",
           "reason": "same shape over the nav sub-tab constants — the collection is a literal in the code, so its members cannot be deleted out from under the id"
+        },
+        {
+          "path": "src/features/decision-center/blueprint/model/brief.ts",
+          "reason": "a verbatim port of bp's decision brief, held byte for byte by bp's golden: a lens id the map does not name is printed as the id by bp's own documented rule ('Lens names fall back to the id'), not a chooser hiding a deleted entity; editing the line would break the golden"
         }
       ],
       "baseline": {
