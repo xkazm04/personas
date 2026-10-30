@@ -2211,3 +2211,7 @@
 {"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set"],"deviations":1}
 {"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["capability-presence-contract"],"deviations":1}
 {"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["native-shell-integration"],"techniques":["native-side-owns-the-target-set"],"deviations":1}
+{"ts":"2026-10-30T21:03:11Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["progress-communication","step-state-model"],"deviations":1}
+{"ts":"2026-10-30T21:03:11Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model"],"deviations":1}
+{"ts":"2026-10-30T21:03:11Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model","progress-communication"],"deviations":1}
+{"ts":"2026-10-30T21:03:11Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model","progress-communication"],"deviations":1}

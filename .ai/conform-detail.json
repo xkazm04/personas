@@ -22922,24 +22922,26 @@
       "subject": "wizard-flows",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:42:00.000Z",
-      "worker": "b973da67-ff76-4e8f-a74f-08dd0284a8bb",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:03:11.000Z",
+      "worker": "c0fef9f4-4b87-44cb-a518-513e5b750441",
       "techniques": [
         {
           "technique": "step-state-model",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:106 activeIdx index over orderedQuestions, reset to 0 on questions.length change at :113 - identity must be a name, not an index"
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:106 useState(0) activeIdx indexes orderedQuestions, which re-sorts at :101-103 - identity is an index, not a name"
         },
         {
           "technique": "progress-communication",
           "verdict": "conformant",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:294 answered/total derived from the filtered relevant set, not counted by hand"
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:294 answered/total derived from the filtered relevant set, not counted by hand",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "branching-and-skipping",
           "verdict": "unknown",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:224 disabled dims drop questions from the relevant set; whether their retained answers are excluded at commit is decided in ChronologyAdoptionView (another context), unread"
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:224 disabled dims drop questions from the relevant set; whether their retained answers are excluded at commit is decided in ChronologyAdoptionView (another context), unread",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "snapshot-and-resume",
@@ -22966,7 +22968,6 @@
           "carriedFrom": "2026-10-13"
         }
       ],
-      "registryProposal": "The 2026-10-13 verdict also cited silent restore of session dim state; that hydration (useAdoptionDimensionModel.tsx:113) reads the system-of-record build session the user explicitly reopened, which snapshot-and-resume does not call an ambush - dropped from the evidence",
       "superseded": [
         {
           "state": "deviation",
@@ -22982,19 +22983,19 @@
       "subject": "wizard-flows",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:42:00.000Z",
-      "worker": "b973da67-ff76-4e8f-a74f-08dd0284a8bb",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:03:11.000Z",
+      "worker": "c0fef9f4-4b87-44cb-a518-513e5b750441",
       "techniques": [
+        {
+          "technique": "step-state-model",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:904 merged = { ...defaults, ...autoAnswers, ... } seeds answers with no visited set beside them"
+        },
         {
           "technique": "progress-communication",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStoryThread.tsx:143 pending covers both visited-and-skipped and never-reached; needs-attention exists only for vault blocking (:140). Realized parts: blocker named at QuestionnaireBlockedCredentialCta.tsx:27, stable category rail with per-stage counts at QuestionnaireCategoryRail.tsx:102"
-        },
-        {
-          "technique": "step-state-model",
-          "verdict": "conformant",
-          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/useQuestionnaireKeyboardNav.ts:88 Enter advances only when the current question is answered; rail indices are render-time and resolved to a question id by the consumer (persona-layout/useAdoptionDimensionModel.tsx:283)"
+          "evidence": "src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStoryThread.tsx:135 answered = !!userAnswers[q.id] - marker conflates valid with visited"
         },
         {
           "technique": "frontier-batched-elicitation",
@@ -23027,7 +23028,6 @@
           "carriedFrom": "2026-10-13"
         }
       ],
-      "registryProposal": "The 2026-10-13 deviation (index navigation, no downstream invalidation) does not hold here: navigation resolves to ids, and option narrowing comes from the vault, not from earlier answers. Re-anchored to the visited/valid collapse. The snapshot hook questionnaire/useAdoptionAnswerSnapshot.ts sits in this folder but in no context-map path list (added 2026-09-17), so its silent restore at ChronologyAdoptionView.tsx:618-625 is governed by no pair",
       "superseded": [
         {
           "state": "deviation",
@@ -23043,24 +23043,25 @@
       "subject": "wizard-flows",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:42:00.000Z",
-      "worker": "b973da67-ff76-4e8f-a74f-08dd0284a8bb",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:03:11.000Z",
+      "worker": "c0fef9f4-4b87-44cb-a518-513e5b750441",
       "techniques": [
-        {
-          "technique": "progress-communication",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:58 completion derived from position, not from the step precondition predicate"
-        },
         {
           "technique": "step-state-model",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:7 a second step list beside SURFACED_STEPS (src/features/templates/sub_n8n/reducers/navigationReducer.ts:63), against one-authority-per-vocabulary; the transition guard itself is realized at navigationReducer.ts:92"
+          "evidence": "src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:7 VISIBLE_STEPS duplicates src/features/templates/sub_n8n/reducers/navigationReducer.ts:63 SURFACED_STEPS"
+        },
+        {
+          "technique": "progress-communication",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:58 isCompleted = i < activeIndex - completion by position, not a derivation from the model"
         },
         {
           "technique": "snapshot-and-resume",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/resources/n8n_sessions.rs:226 the only reaper is an explicit per-id delete; no age-based expiry for persisted transform sessions, though restore does clamp to a surfaced step (navigationReducer.ts:66)"
+          "evidence": "src-tauri/db/src/repos/resources/n8n_sessions.rs:226 the only reaper is an explicit per-id delete; no age-based expiry for persisted transform sessions, though restore does clamp to a surfaced step (navigationReducer.ts:66)",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "commit-boundary",
@@ -23087,7 +23088,6 @@
           "carriedFrom": "2026-10-13"
         }
       ],
-      "registryProposal": "The 2026-10-13 evidence said the indicator drifts from a five-step model; today both lists read [upload, analyze], so the defect is the duplicated authority, not a present mismatch",
       "superseded": [
         {
           "state": "deviation",
@@ -23103,34 +23103,37 @@
       "subject": "wizard-flows",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:42:00.000Z",
-      "worker": "b973da67-ff76-4e8f-a74f-08dd0284a8bb",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T21:03:11.000Z",
+      "worker": "c0fef9f4-4b87-44cb-a518-513e5b750441",
       "techniques": [
         {
           "technique": "progress-communication",
           "verdict": "deviation",
-          "evidence": "src/features/scraper/ScrapeEditorWizard.tsx:56 done-or-number only; no needs-attention state although stepComplete (src/features/scraper/EditorSteps.tsx:49) can turn false after a revisit"
+          "evidence": "src/features/scraper/ScrapeEditorWizard.tsx:56 done ? Check : i + 1 - two states, no needs-attention marker"
         },
         {
           "technique": "step-state-model",
           "verdict": "deviation",
-          "evidence": "src/features/scraper/ScrapeEditorWizard.tsx:103 Next advances with no canAdvance guard and the rail at :46 jumps with no canJumpTo; position is screen-local useState at :28 with no visited set (the commit itself is guarded, see commit-boundary)"
+          "evidence": "src/features/scraper/ScrapeEditorWizard.tsx:46 onClick={() => setStep(i)} sets an index position with no canJumpTo guard and no visited set"
         },
         {
           "technique": "commit-boundary",
           "verdict": "conformant",
-          "evidence": "src/features/scraper/ScrapeEditorModal.tsx:28 the save re-checks canSave inside the transition (courtesy copy: disabled button at ScrapeEditorWizard.tsx:99), and the blocker is named at ScrapeEditorWizard.tsx:85"
+          "evidence": "src/features/scraper/ScrapeEditorModal.tsx:28 the save re-checks canSave inside the transition (courtesy copy: disabled button at ScrapeEditorWizard.tsx:99), and the blocker is named at ScrapeEditorWizard.tsx:85",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "branching-and-skipping",
           "verdict": "conformant",
-          "evidence": "src/features/scraper/useScrapeForm.ts:216 the preview is proven against a url+rules signature, so an earlier edit invalidates exactly its dependent step and nothing else"
+          "evidence": "src/features/scraper/useScrapeForm.ts:216 the preview is proven against a url+rules signature, so an earlier edit invalidates exactly its dependent step and nothing else",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "snapshot-and-resume",
           "verdict": "not-applicable",
-          "evidence": "src/features/scraper/ScrapeEditorModal.tsx:33 the only durable write is the final save; the preview dry-run creates nothing, so the zero tier is honest"
+          "evidence": "src/features/scraper/ScrapeEditorModal.tsx:33 the only durable write is the final save; the preview dry-run creates nothing, so the zero tier is honest",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "ai-driven-elicitation",

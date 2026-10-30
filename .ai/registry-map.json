@@ -31654,7 +31654,7 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src/features/scraper/ScrapeEditorWizard.tsx:56 the rail has two marker states (check or step number) and no visited set, so a Preview step that an extract edit invalidated looks the same as a step never reached",
-          "evaluatedAt": "2026-10-21",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:e0fac678b7164451",
           "evaluatedRevision": 4,
           "source": "retained",
@@ -36760,7 +36760,7 @@
           "digest": "sha256-b2:e0fac678b7164451",
           "revision": 4,
           "changedAt": "2026-08-22",
-          "evaluatedAt": "2026-10-21",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:e0fac678b7164451",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
@@ -36860,7 +36860,7 @@
           "digest": "sha256-b2:e0fac678b7164451",
           "revision": 4,
           "changedAt": "2026-08-22",
-          "evaluatedAt": "2026-10-21",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:e0fac678b7164451",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
@@ -38479,7 +38479,7 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:7 the indicator keeps a private VISIBLE_STEPS copy of navigationReducer.ts:63 SURFACED_STEPS and marks completion by position (:58 i < activeIndex), not validity - two authorities over one step vocabulary",
-          "evaluatedAt": "2026-10-21",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:e0fac678b7164451",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
