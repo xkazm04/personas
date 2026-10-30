@@ -12,10 +12,12 @@ interface DeploymentHealthMap {
  * then maps the daily_breakdown back to each deployment row by its ID.
  *
  * Deployments with the same persona share the same stats.
- * GitLab deployments (no personaId) are skipped.
+ * GitLab rows are skipped even when they carry a personaId (the probed-status
+ * path sets one): these are CLOUD execution stats, and painting them onto a
+ * GitLab row would show another target's health as its own.
  */
 export function useDeploymentHealth(
-  rows: Array<{ id: string; personaId: string | null }>,
+  rows: Array<{ id: string; personaId: string | null; target?: 'cloud' | 'gitlab' }>,
 ): { healthMap: DeploymentHealthMap; isLoading: boolean } {
   const [healthMap, setHealthMap] = useState<DeploymentHealthMap>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +25,7 @@ export function useDeploymentHealth(
 
   // Build a stable key from sorted unique persona IDs to avoid re-fetching
   const personaEntries = rows
-    .filter((r) => r.personaId)
+    .filter((r) => r.personaId && r.target !== 'gitlab')
     .map((r) => ({ id: r.id, personaId: r.personaId! }));
 
   const uniquePersonaIds = [...new Set(personaEntries.map((e) => e.personaId))].sort();

@@ -28,6 +28,20 @@ describe('useDeploymentHealth', () => {
     expect(result.current.healthMap['cloud-1']![0]!.count).toBe(3);
   });
 
+  it('never paints cloud execution stats onto a GitLab row that shares the persona', async () => {
+    statsMock.mockResolvedValue({ dailyBreakdown: daily });
+    const rows = [
+      { id: 'cloud-1', personaId: 'p1', target: 'cloud' as const },
+      { id: 'gitlab-a1', personaId: 'p1', target: 'gitlab' as const },
+      { id: 'gitlab-a2', personaId: 'p2', target: 'gitlab' as const },
+    ];
+    const { result } = renderHook(() => useDeploymentHealth(rows));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(Object.keys(result.current.healthMap)).toEqual(['cloud-1']);
+    expect(statsMock).toHaveBeenCalledTimes(1);
+    expect(statsMock).toHaveBeenCalledWith('p1', 7);
+  });
+
   it('keeps the fulfilled personas and reports a rejected one instead of dropping it silently', async () => {
     statsMock.mockImplementation((pid: string) =>
       pid === 'bad' ? Promise.reject(new Error('boom')) : Promise.resolve({ dailyBreakdown: daily }),
