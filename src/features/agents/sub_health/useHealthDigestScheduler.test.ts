@@ -4,7 +4,7 @@
  * branch was documented in the hook and pinned by nothing until this file.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import en from '@/i18n/locales/en.json';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -147,5 +147,24 @@ describe('useHealthDigestScheduler', () => {
     await flush();
     expect(mockSetSetting).not.toHaveBeenCalled();
     expect(mockSendNotification).not.toHaveBeenCalled();
+  });
+});
+
+describe('useHealthDigestScheduler - app left open across the due date', () => {
+  it('re-evaluates due-ness on an interval and fires once the stamp turns a week old', async () => {
+    vi.useFakeTimers();
+    try {
+      settings({ health_digest_last_run: new Date(Date.now() - 6 * DAY).toISOString() });
+      renderHook(() => useHealthDigestScheduler());
+      await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+      expect(mockRunDigest).not.toHaveBeenCalled(); // 6 days old: not due yet
+      await act(async () => { await vi.advanceTimersByTimeAsync(2 * DAY); });
+      expect(mockRunDigest).toHaveBeenCalledTimes(1);
+      // The mocked stamp stays 6 days old, so only the latch keeps it from firing again.
+      await act(async () => { await vi.advanceTimersByTimeAsync(2 * DAY); });
+      expect(mockRunDigest).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
