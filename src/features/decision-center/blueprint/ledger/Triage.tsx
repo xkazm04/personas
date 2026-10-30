@@ -14,7 +14,7 @@ interface RowProps { f: Finding; on: boolean; focus: boolean; move: string; acts
 const Row = memo(function Row({ f, on, focus, move, acts }: RowProps) {
   const { B, tx } = useSheet().text;
   const p = f.p, band = riskBand(p.risk);
-  const kind = p.kind === 'fix' ? null : p.kind === 'baseline-upgrade' ? B.lg_kind_upgrade : p.parent_id ? tx(B.lg_kind_propagation_of, { id: p.parent_id }) : B.lg_kind_propagation;
+  const kind = p.kind === 'fix' || p.kind === 'work-item' ? null : p.kind === 'baseline-upgrade' ? B.lg_kind_upgrade : p.parent_id ? tx(B.lg_kind_propagation_of, { id: p.parent_id }) : B.lg_kind_propagation;
   return (
     <div role="row" className={'lg-tr' + (on ? ' on' : '') + ' s-' + f.status} data-fid={p.id} data-testid="blueprint-ledger-finding" tabIndex={focus ? 0 : -1}
       onFocus={(e) => { if (e.target === e.currentTarget) acts.focus(p.id); }}
