@@ -104,4 +104,12 @@ describe('PersonaConfigPanel - a failed bulk resolve', () => {
     await screen.findByText('Retry me');
     await waitFor(() => expect(resolveEffectiveConfigBulk).toHaveBeenCalledTimes(2));
   });
+
+  it('leaves a telemetry breadcrumb', async () => {
+    listPersonas.mockResolvedValue([persona('p-trace', 'Trace me')]);
+    resolveEffectiveConfigBulk.mockRejectedValue({ error: 'database is locked', kind: 'database' });
+    render(<PersonaConfigPanel />);
+    await waitFor(() => expect(resolveEffectiveConfigBulk).toHaveBeenCalled());
+    await waitFor(() => expect(silentCatchScopes).toContain('PersonaConfigPanel:resolveBulk'));
+  });
 });

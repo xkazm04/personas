@@ -355,7 +355,9 @@ export function PersonaConfigPanel() {
         });
       } catch (reason) {
         // The whole bulk call failed — surface the message on every row
-        // that was waiting on it.
+        // that was waiting on it, and leave the breadcrumb the list-read
+        // catch below already leaves (the tooltip alone reaches no operator).
+        silentCatch('PersonaConfigPanel:resolveBulk')(reason);
         failure = reason instanceof Error
           ? reason.message
           : (typeof reason === 'object' && reason !== null && 'error' in reason)
