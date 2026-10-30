@@ -148,3 +148,65 @@ describe('useHealthCheck — verdict is scoped to the selected persona', () => {
     expect(result.current.result).toBeNull();
   });
 });
+
+/**
+ * Faithful stand-in for the backend's `check_feasibility`
+ * (src-tauri/engine/src/design.rs): it reads ONLY `suggested_tools`,
+ * `suggested_connectors`, `suggested_triggers` and `structured_prompt` from the
+ * payload actually sent, so a payload lacking them cannot be answered well.
+ */
+function backendFeasibility(json: string, availableTools: string[] = []) {
+  const val = JSON.parse(json) as Record<string, unknown>;
+  const confirmed: string[] = [];
+  const issues: string[] = [];
+  for (const t of (Array.isArray(val.suggested_tools) ? val.suggested_tools : []) as string[]) {
+    if (availableTools.includes(t)) confirmed.push(`Tool '${t}' is available`);
+    else issues.push(`Tool '${t}' is not installed`);
+  }
+  if (val.structured_prompt !== undefined && val.structured_prompt !== null) confirmed.push('Structured prompt is defined');
+  else issues.push('Missing structured_prompt section');
+  const overall = issues.length === 0 ? 'ready' : issues.length <= 2 ? 'partial' : 'blocked';
+  return { overall, confirmed_capabilities: confirmed, issues };
+}
+
+describe('useHealthCheck - the payload sent to the feasibility door', () => {
+  const designed = {
+    id: 'persona-D', name: 'D', icon: null, color: null, description: 'd',
+    design_context: JSON.stringify({ useCases: [], credentialLinks: {}, summary: 's' }),
+    last_design_result: JSON.stringify({
+      structured_prompt: { identity: 'x' },
+      suggested_tools: ['web_search'],
+      suggested_connectors: [],
+      suggested_triggers: [],
+    }),
+    structured_prompt: JSON.stringify({ identity: 'x' }),
+  } as unknown as Persona;
+
+  it('sends the keys the backend reads, so a fully designed persona is not scored as missing its prompt', async () => {
+    select(designed);
+    mockFeasibility.mockImplementation(async (json: string) => backendFeasibility(json, ['web_search']));
+    const { result } = renderHook(() => useHealthCheck());
+    await act(async () => {
+      await result.current.runHealthCheck(designed);
+    });
+    const sent = JSON.parse(mockFeasibility.mock.calls[0]![0] as string) as Record<string, unknown>;
+    expect(sent).toHaveProperty('structured_prompt');
+    expect(sent).toHaveProperty('suggested_tools');
+    expect(result.current.result?.result.issues.map((i) => i.description)).not.toContain('Missing structured_prompt section');
+    expect(result.current.result?.result.status).toBe('ready');
+    expect(result.current.score?.grade).not.toBe('degraded');
+  });
+
+  it('falls back to the persona structured_prompt when there is no parseable last_design_result', async () => {
+    const p = { ...designed, last_design_result: 'not json' } as unknown as Persona;
+    select(p);
+    mockFeasibility.mockImplementation(async (json: string) => backendFeasibility(json));
+    const { result } = renderHook(() => useHealthCheck());
+    await act(async () => {
+      await result.current.runHealthCheck(p);
+    });
+    const sent = JSON.parse(mockFeasibility.mock.calls[0]![0] as string) as Record<string, unknown>;
+    expect(sent.structured_prompt).toEqual({ identity: 'x' });
+    expect(result.current.result?.result.status).toBe('ready');
+  });
+});
