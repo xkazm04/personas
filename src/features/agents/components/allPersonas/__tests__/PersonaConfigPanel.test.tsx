@@ -10,6 +10,12 @@ vi.mock('@/api/agents/personas', () => ({
   resolveEffectiveConfigBulk: (...a: unknown[]) => resolveEffectiveConfigBulk(...a),
 }));
 
+const silentCatchScopes: string[] = [];
+vi.mock('@/lib/silentCatch', async (orig) => ({
+  ...(await orig<typeof import('@/lib/silentCatch')>()),
+  silentCatch: (scope: string) => () => { silentCatchScopes.push(scope); },
+}));
+
 import { PersonaConfigPanel } from '../PersonaConfigPanel';
 
 const persona = (id: string, name: string) =>
@@ -75,5 +81,27 @@ describe('PersonaConfigPanel - load', () => {
     const expand = await screen.findByRole('button', { expanded: false });
     act(() => { expand.click(); });
     expect(await screen.findByText('Capability 1')).toBeTruthy();
+  });
+});
+
+describe('PersonaConfigPanel - a failed bulk resolve', () => {
+  beforeEach(() => {
+    listPersonas.mockReset();
+    resolveEffectiveConfigBulk.mockReset();
+    silentCatchScopes.length = 0;
+  });
+
+  it('is retried on the next visit instead of being served from the cache', async () => {
+    listPersonas.mockResolvedValue([persona('p-retry', 'Retry me')]);
+    resolveEffectiveConfigBulk.mockRejectedValueOnce({ error: 'database is locked', kind: 'database' });
+    const first = render(<PersonaConfigPanel />);
+    await waitFor(() => expect(resolveEffectiveConfigBulk).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(first.container.querySelector('[title]')).not.toBeNull());
+    first.unmount();
+
+    resolveEffectiveConfigBulk.mockResolvedValue([]);
+    render(<PersonaConfigPanel />);
+    await screen.findByText('Retry me');
+    await waitFor(() => expect(resolveEffectiveConfigBulk).toHaveBeenCalledTimes(2));
   });
 });

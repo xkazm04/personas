@@ -339,6 +339,10 @@ export function PersonaConfigPanel() {
       // groups and global settings once and resolves in memory — replacing
       // the per-persona fan-out that cost ~10s with ~142 personas.
       const now = Date.now();
+      // A failure is shown on this load's rows but never cached: a cached
+      // failure would be served as a fresh result for CACHE_TTL_MS, turning a
+      // transient error (a locked database) into one that outlives a remount.
+      let failure: string | null = null;
       try {
         const configs = await resolveEffectiveConfigBulk(stale.map((p) => p.id));
         const byId = new Map(configs.map((c) => [c.personaId, c]));
@@ -352,18 +356,19 @@ export function PersonaConfigPanel() {
       } catch (reason) {
         // The whole bulk call failed — surface the message on every row
         // that was waiting on it.
-        const message = reason instanceof Error
+        failure = reason instanceof Error
           ? reason.message
           : (typeof reason === 'object' && reason !== null && 'error' in reason)
             ? String((reason as { error: string }).error)
             : String(reason);
-        stale.forEach((p) => {
-          configCache.set(p.id, { config: null, error: message, ts: now });
-        });
       }
+      const staleIds = new Set(stale.map((p) => p.id));
 
       if (!loadLatest.isCurrent(requestId)) return;
       setRows(personas.map((p) => {
+        if (failure !== null && staleIds.has(p.id)) {
+          return { persona: p, config: null, loading: false, error: failure };
+        }
         const cached = configCache.get(p.id);
         return {
           persona: p,
