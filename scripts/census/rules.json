@@ -2875,6 +2875,10 @@
       },
       "exclude": [
         {
+          "path": "src-tauri/src/commands/infrastructure/bp_link/tests.rs",
+          "reason": "test-only: an in-test stand-in for bp's /api/session/focus on an ephemeral 127.0.0.1 port, aborted when the test ends; nothing ships"
+        },
+        {
           "path": "src-tauri/src/engine/management_api.rs",
           "reason": "the only router-level auth layer in 963 Rust files: middleware::from_fn_with_state(require_api_key) + per-route scope check"
         },
@@ -3796,6 +3800,10 @@
       },
       "exclude": [
         {
+          "path": "src/features/decision-center/blueprint/model/focus.ts",
+          "reason": "a verbatim port of bp's session/focus.ts: followingWords' age ladder ('just now', 's', 'min', 'h') is bp's wire text for a follow chip, not a UI verdict band; the port is not edited here"
+        },
+        {
           "path": "src/features/overview/components/shared/KpiTile.tsx",
           "reason": "the file's only match is a display truncation, not a verdict: absPct >= 1000 renders the string '999+%' and absPct < 0.1 renders '<0.1%'. Both arms are number-formatting for one delta, owned by number-and-cost-formatting.md, and neither arm picks a tone, grade or status word"
         }
@@ -4548,6 +4556,10 @@
         "description": "An entity is looked up by id inside a collection and its identity field is read through `?.` and coalesced with `??` in the SAME expression. There is no binding, so there is nowhere an absence arm could live: a value whose row is gone renders byte-identically to `nothing is selected`. PROXY FOR the stack-free condition: a chooser is showing what is currently chosen, and it cannot tell `this entity no longer exists` from `you have not chosen`. WHY THIS IS NOT HYPOTHETICAL, MEASURED BY REPLAYING THE OPERATOR'S LIVE DATABASE: 211 distinct persona ids are recorded somewhere in it whose persona row no longer exists, against 78 that do -- 2.7 dead references per live entity -- and 332 rows in LIVE CONFIGURATION tables (not audit logs) hold an id whose row is gone. The leading `(?<![A-Z0-9_])` excludes SCREAMING_SNAKE receivers, whose members are literals in the code and therefore cannot be deleted. Consequences at three of the sites: CanvasShell.tsx:878 dispatches a fleet job with an empty group label; SlackBridgePickers.tsx:101 writes a dangling channel id with a null name into saved config; PersonaSelector.tsx:86-91 (NOT matched -- it uses the named form, see the recall note in the golden path) renders a deleted persona as `All personas`. The compliant idiom -- `.some(x => x.id === value)`, i.e. asking WHETHER the value is still in the set -- exists at 50 sites in 38 files, and only 2 files do both."
       },
       "exclude": [
+        {
+          "path": "src/features/decision-center/blueprint/model/focus.ts",
+          "reason": "a verbatim port of bp's session/focus.ts (followingWords: an unknown reader id is shown as the id, by bp's own rule); held to bp by its pinned header and bp's drift report, so it is not edited here"
+        },
         {
           "path": "src/features/shared/chrome/sidebar/Sidebar.tsx",
           "reason": "resolves a ROUTE id against the code-determined nav registry (SIDEBAR_SECTIONS), not a fetched entity; an unknown route falling back to the Overview label is the deliberate default, not a dangling row"

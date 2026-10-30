@@ -104,6 +104,21 @@ export interface StartResult {
   pid: number;
 }
 
+/**
+ * bp's shared focus, read through Personas' Rust (spark roadmap S6): the sheet FOLLOWS the place bp's owner is looking
+ * at, and never publishes one. Every call answers bp's own JSON; `view` is bp's `SharedView`, validated by the sheet.
+ */
+export interface FollowSource {
+  /** This window's bp reader id, `personas:<window>`. */
+  reader: string;
+  /** One read; `online: false` while bp is down (Rust holds that answer for 5 s instead of knocking every second). */
+  read(): Promise<{ online: boolean; view?: unknown; error?: string }>;
+  /** A presence move: hello (every 15 s while the sheet is open), follow `*`, unfollow, forget (on close). */
+  move(op: 'hello' | 'follow' | 'unfollow' | 'forget'): Promise<unknown>;
+  /** bp's products, each with the Personas project at the same root: the slug a place names, looked up, never guessed. */
+  products(): Promise<{ slug: string; name: string; projectId?: string }[]>;
+}
+
 /** Every write and every side read the drawing may make. */
 export interface BlueprintActions {
   decide(ids: string[], decision: DecideDecision, note?: string): Promise<DecideResult>;
@@ -120,4 +135,6 @@ export interface BlueprintActions {
    * product; the drawing does nothing else. Absent = no switching (the fixture, a test).
    */
   openProduct?(projectId: string): void;
+  /** Follow bp's shared focus. Absent = no Follow chip (the fixture, a test). */
+  follow?: FollowSource;
 }

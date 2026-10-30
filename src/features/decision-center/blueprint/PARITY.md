@@ -133,6 +133,17 @@ Reference shots: bp itself on :3010 (Kettle sample and live products), compared 
 | Blast radius (B) | present (2026-10-30) | the decision brief's blast line: the feature, its room, the features that depend on it (it opens their list) |
 | The decision brief on a waiting card (bp 51e193e, "one morning, with memory") | present | `model/brief.ts` is bp's `brief.ts`, held byte for byte by bp's golden (`standard/decision-brief.golden.json`, `__tests__/brief.golden.test.ts`); the card shows the advice chip and at most five fact lines, the declined line in amber, each fact opening its evidence. On a repeat (`withdraw`) Decline is the first answer, "You declined this before", Approve stays as "Approve anyway", and X opens the reason pre-filled with the note naming the decision it repeats (`repeatNote`), sent through `lens_scan_decide`. A like idea declined elsewhere (`ask`) keeps Approve first. bp's Enter-takes-the-recommended-option is not ported: Enter on an open feature says the enter hint, as before. No key is bound (Y stays triage accept) |
 
+## Follow bp's shared focus (spark roadmap S6, first half, 2026-10-30)
+
+| Element in bp | Verdict | Here |
+|---|---|---|
+| The follow chip ("Following Web, 2 s ago") | present | `ui/header/FollowChip.tsx`, a live product only: Follow bp / Following <who moved> / bp offline |
+| Reader presence (hello every 15 s, forget on close) | present | as `personas:main`; bp's own chip lists Personas while the sheet is open |
+| Following whoever moves, applying a new place (`toApply`) | present | `model/focus.ts` is bp's `session/focus.ts` @ 51e193e; `model/focusPlace.ts` maps a place: site -> level 0, wing `0:<domain>` -> the wing, room (a capability since bp 57ee810) -> the bay, `<cap>.<kind>` -> its bay, feature -> its L4 sheet with `lens=` from the hash; an id the plan does not draw holds still and says so |
+| The transport | improved | Rust reads bp over loopback (`bp_link`: the webview cannot reach bp); the sheet asks once a second and Rust holds an offline answer for 5 s |
+| A place on another product | dropped for now | the status line names it; opening that product's sheet at the place (`place?` on `LensSheetRequest`) is the next step |
+| Publishing the shared focus | dropped | G7, the owner's decision: Personas follows, never publishes |
+
 ## Dropped for the whole sheet
 
 | Element | Reason |

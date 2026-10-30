@@ -28,10 +28,11 @@ import {
   type LensScanProduct,
 } from '@/api/lensScan';
 
+import { listBpProducts, moveBpFocus, readBpFocus } from '@/api/bpLink';
 import { openLensSheet } from '../../lens/lensSheetStore';
 import { readinessLevel } from '../../lens/readiness';
 import { getLensScanState, refreshLensScanProducts } from '../../roster/lensScanSource';
-import type { BlueprintActions, BlueprintData, BlueprintProduct, BlueprintProductEntry } from '../source';
+import type { BlueprintActions, BlueprintData, BlueprintProduct, BlueprintProductEntry, FollowSource } from '../source';
 
 /** The MIME of a `shots` file, from its extension (the door serves exactly these). */
 const SHOT_MIME: Record<string, string> = {
@@ -91,6 +92,22 @@ export function openProduct(projectId: string): void {
   openLensSheet({ kind: 'build', projectId });
 }
 
+/**
+ * bp's shared focus for this window, through the bp_link doors. One reader per window: the sheet is the window's only
+ * Blueprint surface that follows (bp docs/concepts/one-morning/personas-adoption.md section 2.2).
+ */
+export function liveFollow(window = 'main'): FollowSource {
+  return {
+    reader: `personas:${window}`,
+    read: async () => {
+      const r = await readBpFocus();
+      return { online: r.online, ...(r.view !== undefined ? { view: r.view } : {}), ...(r.error ? { error: r.error } : {}) };
+    },
+    move: (op) => moveBpFocus(window, op),
+    products: async () => (await listBpProducts()).map((p) => ({ slug: p.slug, name: p.name, ...(p.projectId ? { projectId: p.projectId } : {}) })),
+  };
+}
+
 export function createLiveActions(product: BlueprintProduct, onChanged: () => void): BlueprintActions {
   const id = product.projectId;
   const written = <T>(p: Promise<T>): Promise<T> => p.finally(onChanged);
@@ -105,5 +122,6 @@ export function createLiveActions(product: BlueprintProduct, onChanged: () => vo
     },
     refresh: () => readBlueprint(product),
     openProduct,
+    follow: liveFollow(),
   };
 }

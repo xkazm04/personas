@@ -28261,6 +28261,13 @@ export type Translations = {
       brief_match_same_standard: string;
       brief_match_similar_words: string;
       brief_match_same_lens: string;
+      follow_bp: string;
+      follow_on: string;
+      follow_waiting: string;
+      follow_offline: string;
+      follow_label: string;
+      follow_missing: string;
+      follow_elsewhere: string;
       opt_arm: string;
       opt_approved_here: string;
       opt_arm_sub: string;
