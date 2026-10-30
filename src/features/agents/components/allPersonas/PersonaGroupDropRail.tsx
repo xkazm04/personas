@@ -5,6 +5,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
+import { inLifecyclePopulation } from './rosterCount';
 
 /** Sentinel filter id for "personas with no home team". */
 const NO_TEAM = '__ungrouped__';
@@ -44,7 +45,7 @@ export function PersonaGroupDropRail({
   const rail = t.agents.persona_groups_rail;
   const allPersonas = useAgentStore((s) => s.personas);
   const personas = useMemo(
-    () => allPersonas.filter((p) => (p.lifecycle === 'archived') === archivedView),
+    () => allPersonas.filter((p) => inLifecyclePopulation(p, archivedView)),
     [allPersonas, archivedView],
   );
   const { teams, fetchTeams } = usePipelineStore(

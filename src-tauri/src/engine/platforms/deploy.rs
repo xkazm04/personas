@@ -21,7 +21,10 @@ use super::zapier;
 #[serde(rename_all = "camelCase")]
 pub struct DeployAutomationInput {
     pub persona_id: String,
-    pub credential_id: String,
+    // Optional because the custom platform has no credential type: it is saved
+    // as a draft without one. n8n / GitHub Actions / Zapier refuse a missing one
+    // in `required_credential`.
+    pub credential_id: Option<String>,
     pub design_result: Value,
     pub github_repo: Option<String>,
     pub use_case_id: Option<String>,
@@ -89,6 +92,17 @@ fn timeout_secs_to_ms(secs: i64) -> i64 {
     secs.clamp(1, 3600) * 1000
 }
 
+/// The platform credential a remote deploy needs. Only `custom` may go without.
+fn required_credential<'a>(
+    input: &'a DeployAutomationInput,
+    platform: &str,
+) -> Result<&'a str, AppError> {
+    // The repo's one emptiness check (command-input-validation golden path), not an open-coded refusal.
+    let id = input.credential_id.as_deref().unwrap_or_default();
+    personas_core::validation::require_non_empty(&format!("{platform} credential"), id)?;
+    Ok(id)
+}
+
 // -- Main dispatcher --------------------------------------------
 
 pub async fn deploy_automation(
@@ -113,7 +127,8 @@ async fn deploy_n8n(
     input: &DeployAutomationInput,
     design: &DesignResult,
 ) -> Result<DeployAutomationResult, AppError> {
-    let client = n8n::build_client_from_credential(pool, &input.credential_id)?;
+    let credential_id = required_credential(input, "n8n")?;
+    let client = n8n::build_client_from_credential(pool, credential_id)?;
 
     // Get the workflow definition from the design, or build a minimal webhook workflow
     let wf_def = design.workflow_definition.clone().unwrap_or_else(|| {
@@ -149,7 +164,7 @@ async fn deploy_n8n(
     };
 
     // Resolve the base URL from credential to build platform URL
-    let cred = crate::db::repos::resources::credentials::get_by_id(pool, &input.credential_id)?;
+    let cred = crate::db::repos::resources::credentials::get_by_id(pool, credential_id)?;
     let fields = crate::db::repos::resources::credentials::get_decrypted_fields(pool, &cred)?;
     if let Err(e) = crate::db::repos::resources::audit_log::log_decrypt(
         pool,
@@ -187,7 +202,7 @@ async fn deploy_n8n(
             Some(&workflow_id),
             platform_url.as_deref(),
             webhook_url.as_deref(),
-            Some(&input.credential_id),
+            Some(credential_id),
             None,
             design.input_schema.as_deref(),
             design.output_schema.as_deref(),
@@ -206,7 +221,7 @@ async fn deploy_n8n(
             Some(&workflow_id),
             platform_url.as_deref(),
             webhook_url.as_deref(),
-            Some(&input.credential_id),
+            Some(credential_id),
             None,
             design.input_schema.as_deref(),
             design.output_schema.as_deref(),
@@ -277,7 +292,8 @@ async fn deploy_github(
 
     let (_owner, _repo) = parse_owner_repo(repo_full)?;
 
-    let client = github::build_client_from_credential(pool, &input.credential_id)?;
+    let credential_id = required_credential(input, "GitHub")?;
+    let client = github::build_client_from_credential(pool, credential_id)?;
 
     // Verify permissions
     let perms = client.check_permissions().await?;
@@ -362,7 +378,7 @@ async fn deploy_github(
         // `credential_mapping`, so storing the unreachable localhost URL here
         // only ever misled a reader.
         None,
-        Some(&input.credential_id),
+        Some(credential_id),
         Some(&credential_mapping.to_string()),
         design.input_schema.as_deref(),
         design.output_schema.as_deref(),
@@ -455,6 +471,7 @@ async fn deploy_zapier(
     input: &DeployAutomationInput,
     design: &DesignResult,
 ) -> Result<DeployAutomationResult, AppError> {
+    let credential_id = required_credential(input, "Zapier")?;
     let hook_url = design
         .workflow_definition
         .as_ref()
@@ -487,7 +504,7 @@ async fn deploy_zapier(
         None,
         None,
         Some(&hook_url),
-        Some(&input.credential_id),
+        Some(credential_id),
         None,
         design.input_schema.as_deref(),
         design.output_schema.as_deref(),
@@ -526,7 +543,10 @@ async fn deploy_custom(
         platform_url: None,
         webhook_url: design.webhook_url.clone(),
         webhook_method: None,
-        platform_credential_id: Some(input.credential_id.clone()),
+        platform_credential_id: input
+            .credential_id
+            .clone()
+            .filter(|id| !id.trim().is_empty()),
         credential_mapping: None,
         input_schema: design.input_schema.clone(),
         output_schema: design.output_schema.clone(),
@@ -775,7 +795,7 @@ mod tests {
         let pool = init_test_db().unwrap();
         let input = DeployAutomationInput {
             persona_id: "p-1".into(),
-            credential_id: "c-1".into(),
+            credential_id: Some("c-1".into()),
             design_result: serde_json::json!({
                 "name": "Daily Digest",
                 "platform": "github_actions",
@@ -799,7 +819,7 @@ mod tests {
         let pool = init_test_db().unwrap();
         let input = DeployAutomationInput {
             persona_id: "p-1".into(),
-            credential_id: "does-not-exist".into(),
+            credential_id: Some("does-not-exist".into()),
             design_result: serde_json::json!({
                 "name": "Nightly Sync",
                 "platform": "n8n",
@@ -811,6 +831,72 @@ mod tests {
             deploy_automation(&pool, input).await.is_err(),
             "a missing n8n credential must surface as an error, not a success"
         );
+    }
+
+    fn seed_persona(pool: &DbPool) -> String {
+        crate::db::repos::core::personas::create(
+            pool,
+            crate::db::models::CreatePersonaInput {
+                name: "Automation owner".to_string(),
+                system_prompt: "You are a deploy test persona.".to_string(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .expect("seed persona")
+        .id
+    }
+
+    #[tokio::test]
+    async fn a_custom_automation_deploys_as_a_draft_without_a_credential() {
+        // The custom platform has no credential type, so the UI can never hold
+        // one; requiring it made every designed custom automation undeployable.
+        let pool = init_test_db().unwrap();
+        let persona_id = seed_persona(&pool);
+        let input = DeployAutomationInput {
+            persona_id,
+            credential_id: None,
+            design_result: serde_json::json!({
+                "name": "Hand-wired hook",
+                "platform": "custom",
+            }),
+            github_repo: None,
+            use_case_id: None,
+        };
+        let result = deploy_automation(&pool, input).await.unwrap();
+        assert_eq!(result.automation.platform, AutomationPlatform::Custom);
+        assert_eq!(result.automation.platform_credential_id, None);
+    }
+
+    #[tokio::test]
+    async fn a_remote_platform_without_a_credential_is_a_validation_error() {
+        let pool = init_test_db().unwrap();
+        for platform in ["n8n", "zapier"] {
+            let input = DeployAutomationInput {
+                persona_id: "p-1".into(),
+                credential_id: None,
+                design_result: serde_json::json!({ "name": "Nightly", "platform": platform }),
+                github_repo: None,
+                use_case_id: None,
+            };
+            let err = deploy_automation(&pool, input).await.unwrap_err();
+            assert!(
+                matches!(err, AppError::Validation(ref m) if m.contains("credential cannot be empty")),
+                "{platform}: expected a Validation error naming the credential, got: {err:?}"
+            );
+        }
     }
 
     #[test]

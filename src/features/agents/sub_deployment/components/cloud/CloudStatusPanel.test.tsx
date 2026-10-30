@@ -26,6 +26,35 @@ describe('CloudStatusPanel activity gauges', () => {
   });
 });
 
+describe('CloudStatusPanel Claude token: presence is not authorization', () => {
+  const oauth = (isExpired: boolean | null) => ({ connected: true, scopes: null, expiresAt: null, isExpired });
+  const token = () => screen.getByTestId('cloud-status-token');
+
+  it('shows a present but expired token as expired, not available', () => {
+    render(<CloudStatusPanel status={status(0, 0)} isLoading={false} onRefresh={() => {}} oauthStatus={oauth(true)} />);
+    expect(token().textContent).toContain('Token expired');
+    expect(token().getAttribute('data-token-state')).toBe('expired');
+  });
+
+  it('shows a present token whose validity was not verified as unknown', () => {
+    render(<CloudStatusPanel status={status(0, 0)} isLoading={false} onRefresh={() => {}} oauthStatus={null} />);
+    expect(token().textContent).toContain('Token status unknown');
+    expect(token().getAttribute('data-token-state')).toBe('unknown');
+  });
+
+  it('keeps a verified token green and a missing token red', () => {
+    const { rerender } = render(
+      <CloudStatusPanel status={status(0, 0)} isLoading={false} onRefresh={() => {}} oauthStatus={oauth(false)} />,
+    );
+    expect(token().getAttribute('data-token-state')).toBe('valid');
+    expect(token().textContent).toContain('Token available');
+    rerender(
+      <CloudStatusPanel status={{ ...status(0, 0), hasClaudeToken: false }} isLoading={false} onRefresh={() => {}} oauthStatus={oauth(false)} />,
+    );
+    expect(token().getAttribute('data-token-state')).toBe('missing');
+  });
+});
+
 describe('CloudStatusPanel liveness after a failed poll', () => {
   it('shows Live while polls succeed and a stale marker (no ping) after a failed poll', () => {
     const { rerender } = render(

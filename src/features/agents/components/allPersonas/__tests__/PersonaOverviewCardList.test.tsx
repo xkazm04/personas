@@ -34,10 +34,27 @@ function renderList(selected: boolean, onToggleSelect = vi.fn()) {
       onRowClick={() => {}}
       isDraft={() => false}
       connectorNamesMap={new Map()}
+      onDuplicate={onDuplicate}
+      onExport={() => {}}
     />,
   );
   return onToggleSelect;
 }
+
+const onDuplicate = vi.fn();
+
+// Round 2 card 8: the card list's doc promised a row action menu and the card
+// rendered none, so the compact roster could not duplicate or export.
+describe('PersonaOverviewCardList row menu', () => {
+  it('offers the same Duplicate / Export overflow as the grid row', async () => {
+    onDuplicate.mockClear();
+    renderList(false);
+    fireEvent.click(screen.getByTestId('persona-row-menu-p1'));
+    await act(async () => { fireEvent.click(screen.getByTestId('persona-row-duplicate-p1')); });
+    expect(onDuplicate).toHaveBeenCalledWith('p1');
+    expect(screen.queryByTestId('persona-row-export-p1')).toBeNull();
+  });
+});
 
 describe('PersonaOverviewCardList selection control', () => {
   it('is a checkbox named after the persona, with its checked state announced', () => {

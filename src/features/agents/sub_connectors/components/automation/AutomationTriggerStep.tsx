@@ -1,7 +1,4 @@
-import {
-  Sparkles, CheckCircle2, AlertCircle,
-  KeyRound, ExternalLink, Zap,
-} from 'lucide-react';
+import { Sparkles, CheckCircle2, KeyRound, ExternalLink } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -10,6 +7,7 @@ import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
 import type { PersonaCapability } from '@/lib/personas/capabilities';
 import { DebtText } from '@/i18n/DebtText';
+import { GithubRepoPicker, ZapierZapList } from './AutomationPlatformListings';
 
 
 interface AutomationTriggerStepProps {
@@ -31,6 +29,9 @@ interface AutomationTriggerStepProps {
   loadingRepos: boolean;
   zapierZaps: ZapierZap[];
   loadingZaps: boolean;
+  reposFailed: boolean;
+  zapsFailed: boolean;
+  onRetryListings: () => void;
   availableUseCases: PersonaCapability[];
   useCaseId: string | null;
   setUseCaseId: (v: string | null) => void;
@@ -43,7 +44,7 @@ export function AutomationTriggerStep({
   needsCredential, hasPlatformCredential, platformCredentials,
   platformCredentialId, setPlatformCredentialId, platformConnector,
   githubRepos, githubPerms, githubRepo, setGithubRepo, loadingRepos,
-  zapierZaps, loadingZaps,
+  zapierZaps, loadingZaps, reposFailed, zapsFailed, onRetryListings,
   availableUseCases, useCaseId, setUseCaseId,
   canDesign, onDesign,
 }: AutomationTriggerStepProps) {
@@ -164,75 +165,15 @@ export function AutomationTriggerStep({
 
       {/* GitHub: Repo picker */}
       {platform === 'github_actions' && hasPlatformCredential && (
-        <div className="space-y-2">
-          {githubPerms && (!githubPerms.hasRepo || !githubPerms.hasWorkflow) && (
-            <div className="flex items-start gap-2.5 p-3 rounded-modal bg-brand-rose/5 border border-brand-rose/15">
-              <AlertCircle className="w-4 h-4 text-brand-rose/70 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="typo-body text-brand-rose/80">{t.agents.connectors.auto_missing_perms}</p>
-                <p className="typo-body text-foreground mt-0.5">
-                  {tx(t.agents.connectors.auto_github_token_needs, { scopes: [
-                    !githubPerms.hasRepo ? "'repo'" : '',
-                    !githubPerms.hasWorkflow ? "'workflow'" : '',
-                  ].filter(Boolean).join(' and ') })}
-                </p>
-              </div>
-            </div>
-          )}
-          <div>
-            <label className="typo-body text-foreground">{t.agents.connectors.auto_repo_required}</label>
-            <div className="mt-1.5">
-              {loadingRepos ? (
-                // Ghost in the select's geometry, delayed so a fast fetch never paints it.
-                <div className="h-9 rounded-modal border border-border/60 bg-secondary/30 animate-fade-in" style={{ animationDelay: '120ms' }}>
-                  <span className="sr-only">{t.agents.connectors.auto_loading_repos}</span>
-                </div>
-              ) : (
-                <ThemedSelect
-                  filterable
-                  options={githubRepos.map((r) => ({ value: r.fullName, label: `${r.fullName}${r.private ? ' (private)' : ''}` }))}
-                  value={githubRepo ?? ''}
-                  onValueChange={(v) => setGithubRepo(v || null)}
-                  placeholder={t.agents.connectors.auto_select_repo}
-                />
-              )}
-            </div>
-            {githubRepos.length === 0 && !loadingRepos && (
-              <p className="mt-1 typo-body text-foreground">{t.agents.connectors.auto_no_repos}</p>
-            )}
-          </div>
-        </div>
+        <GithubRepoPicker
+          githubRepos={githubRepos} githubPerms={githubPerms} githubRepo={githubRepo} setGithubRepo={setGithubRepo}
+          loadingRepos={loadingRepos} reposFailed={reposFailed} onRetry={onRetryListings}
+        />
       )}
 
       {/* Zapier: Existing zaps listing */}
       {platform === 'zapier' && hasPlatformCredential && (
-        <div className="space-y-2">
-          <label className="typo-body text-foreground">{t.agents.connectors.auto_your_zaps}</label>
-          {loadingZaps ? (
-            <div className="h-[4.5rem] rounded-modal border border-border/60 bg-secondary/30 animate-fade-in" style={{ animationDelay: '120ms' }}>
-              <span className="sr-only">{t.agents.connectors.auto_loading_zaps}</span>
-            </div>
-          ) : zapierZaps.length > 0 ? (
-            <div className="max-h-36 overflow-y-auto rounded-modal border border-border/60 divide-y divide-border/40">
-              {zapierZaps.map((zap) => (
-                <div key={zap.id} className="flex items-center gap-2.5 px-3 py-2">
-                  <Zap className={`w-3.5 h-3.5 flex-shrink-0 ${zap.status === 'on' ? 'text-brand-amber' : 'text-foreground'}`} />
-                  <span className="typo-body text-foreground truncate flex-1">{zap.title}</span>
-                  <span className={`typo-caption px-1.5 py-0.5 rounded-card ${
-                    zap.status === 'on' ? 'bg-brand-emerald/10 text-brand-emerald border border-brand-emerald/20' :
-                    zap.status === 'off' ? 'bg-secondary/60 text-foreground border border-border/40' :
-                    'bg-brand-amber/10 text-brand-amber border border-brand-amber/20'
-                  }`}>{zap.status}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="typo-body text-foreground px-1">{t.agents.connectors.auto_no_zaps}</p>
-          )}
-          <p className="typo-caption text-foreground px-1">
-            {t.agents.connectors.auto_zaps_ref}
-          </p>
-        </div>
+        <ZapierZapList zapierZaps={zapierZaps} loadingZaps={loadingZaps} zapsFailed={zapsFailed} onRetry={onRetryListings} />
       )}
 
       <div className="flex items-center justify-between">

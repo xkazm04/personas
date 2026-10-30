@@ -3,6 +3,7 @@ import { Copy, Download, MoreHorizontal } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
+import { useMenuKeyboard } from '@/hooks/utility/interaction/useMenuKeyboard';
 import type { Persona } from '@/lib/bindings/Persona';
 
 interface PersonaRowMenuProps {
@@ -28,10 +29,15 @@ export function PersonaRowMenu({ persona, onDuplicate, onExport }: PersonaRowMen
   // per-site pair of document listeners.
   const close = useCallback(() => setOpen(false), []);
   useClickOutside(ref, open, close);
+  // The menu keyboard model its role="menu" announces: focus in, arrows, back.
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const { onKeyDown } = useMenuKeyboard({ menuRef, triggerRef, open, onClose: close });
 
   return (
     <div ref={ref} className="relative flex items-center justify-center w-full h-full">
       <button
+        ref={triggerRef}
         type="button"
         data-testid={`persona-row-menu-${persona.id}`}
         aria-label={t.agents.persona_list.more_actions}
@@ -47,9 +53,12 @@ export function PersonaRowMenu({ persona, onDuplicate, onExport }: PersonaRowMen
       </button>
       {open && (
         <div
+          ref={menuRef}
           role="menu"
+          aria-label={t.agents.persona_list.more_actions}
           className="absolute right-0 top-full mt-1 z-50 w-44 rounded-card border border-primary/15 bg-background shadow-elevation-3 p-1"
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={onKeyDown}
         >
           <AsyncButton
             variant="ghost"

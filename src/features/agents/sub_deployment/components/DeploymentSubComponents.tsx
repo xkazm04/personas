@@ -6,6 +6,7 @@ import type { DeployStatus, SortKey, SortDir } from './deploymentTypes';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import { SortableHeader } from '@/features/shared/components/display/SortableHeader';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
 // Status icon
@@ -38,6 +39,7 @@ export function SummaryCard({
   color?: string;
   connected?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="px-3 py-2.5 rounded-modal bg-secondary/30 border border-primary/10 flex items-center gap-2.5">
       <div className="w-8 h-8 rounded-card bg-secondary/50 border border-primary/15 flex items-center justify-center flex-shrink-0">
@@ -52,7 +54,11 @@ export function SummaryCard({
         <div className="typo-caption text-foreground flex items-center gap-1">
           {label}
           {connected !== undefined && (
-            <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} />
+            <>
+              <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} />
+              {/* The dot is colour alone (WCAG 1.4.1); the state is also text. */}
+              <span className="sr-only">{connected ? t.common.connected : t.common.disconnected}</span>
+            </>
           )}
         </div>
       </div>

@@ -3,6 +3,8 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Filter } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { useMenuKeyboard } from '@/hooks/utility/interaction/useMenuKeyboard';
 
 export interface FilterOption {
   value: string;
@@ -55,6 +57,9 @@ export function PersonaOverviewFilterHeader({
   // portalled away from its trigger, so both refs count as inside.
   const close = useCallback(() => setOpen(false), []);
   useClickOutside([popRef, btnRef], open, close);
+  // Focus enters the menu on open (the checked option), arrows move it, and
+  // it returns to the trigger on close - the menu model role="menu" announces.
+  const { onKeyDown: onMenuKeyDown } = useMenuKeyboard({ menuRef: popRef, triggerRef: btnRef, open, onClose: close });
 
   useEffect(() => {
     if (!open) return;
@@ -86,8 +91,11 @@ export function PersonaOverviewFilterHeader({
     });
   }, [open, alignRight]);
 
+  const hint = isFiltered && activeLabel ? `${label}: ${activeLabel}` : tx(t.agents.filters.filter_by, { label: label.toLowerCase() });
+
   return (
     <>
+      <Tooltip content={hint}>
       <button
         ref={btnRef}
         type="button"
@@ -98,7 +106,6 @@ export function PersonaOverviewFilterHeader({
         // button whose activation changes nothing it can perceive.
         aria-haspopup="menu"
         aria-expanded={open}
-        title={isFiltered && activeLabel ? `${label}: ${activeLabel}` : tx(t.agents.filters.filter_by, { label: label.toLowerCase() })}
         // `typo-label` (not a bespoke text-md/font-semibold/tracking-wider mix)
         // so a filterable column header is typographically identical to the
         // plain and sortable headers it sits beside. `-mx-1.5` cancels the
@@ -114,6 +121,7 @@ export function PersonaOverviewFilterHeader({
         {isFiltered && <span className="w-1 h-1 rounded-full bg-primary" aria-hidden />}
         <ChevronDown className={`w-2.5 h-2.5 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
+      </Tooltip>
       {open &&
         createPortal(
           <div
@@ -121,6 +129,7 @@ export function PersonaOverviewFilterHeader({
             style={style}
             role="menu"
             aria-label={label}
+            onKeyDown={onMenuKeyDown}
             className="min-w-[180px] rounded-card border border-primary/15 bg-background shadow-elevation-3 shadow-black/20 py-1 max-h-64 overflow-y-auto animate-fade-slide-in"
           >
             {options.map((opt) => {

@@ -94,6 +94,7 @@
     "filter_target": "ターゲット",
     "gitlab": "GitLab",
     "history_empty": "デプロイ履歴はまだありません",
+    "history_load_failed": "デプロイ履歴を読み込めませんでした",
     "history_snapshot": "プロンプトのスナップショットを保存済み",
     "history_title": "デプロイ履歴",
     "no_data": "データなし",

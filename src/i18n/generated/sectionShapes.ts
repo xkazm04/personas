@@ -93,8 +93,6 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     "tool_runner": {},
     "health_check": {},
     "health_digest": {},
-    "health_issue": {},
-    "health_proposals": {},
     "health_score": {},
     "overview_actions": {},
     "duplicate": {},

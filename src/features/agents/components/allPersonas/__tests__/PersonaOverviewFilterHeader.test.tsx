@@ -47,6 +47,24 @@ describe('PersonaOverviewFilterHeader', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
+  // Round 2 card 9: role="menu" announced a menu that kept focus on the
+  // trigger and ignored the arrow keys.
+  it('focuses the checked option on open, moves with arrows, and returns focus on close', () => {
+    render(<PersonaOverviewFilterHeader label="Status" value="enabled" options={options} onChange={() => {}} />);
+    const trigger = screen.getByRole('button', { name: /status/i });
+    fireEvent.click(trigger);
+    const items = screen.getAllByRole('menuitemradio');
+    expect(document.activeElement).toBe(items[1]);
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(items[2]);
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(items[0]);
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'End' });
+    expect(document.activeElement).toBe(items[2]);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(document.activeElement).toBe(trigger);
+  });
+
   it('closes on Escape', () => {
     render(<PersonaOverviewFilterHeader label="Status" value="all" options={options} onChange={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: /status/i }));

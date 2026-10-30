@@ -661,6 +661,12 @@ pub fn apply_idea_verdict_cas(
     // side-effect fan-out below must never pass through twice.
     let idea = repo::decide_idea_cas(db, id, &existing.status, status, reason)?;
 
+    // Who decided and when, the veto window a machine decision opens, and the
+    // autonomy ladder's reading of the verdict (a human reversing a machine
+    // decision demotes its slice). Best effort: the verdict above stands.
+    crate::commands::infrastructure::scan_contract::on_verdict(db, &existing, actor);
+    let idea = repo::get_idea_by_id(db, id).unwrap_or(idea);
+
     record_idea_decision_by(db, &idea, status, actor);
     Ok(idea)
 }

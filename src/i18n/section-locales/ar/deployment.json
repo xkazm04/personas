@@ -94,6 +94,7 @@
     "filter_target": "الهدف",
     "gitlab": "GitLab",
     "history_empty": "لا يوجد سجل نشر بعد",
+    "history_load_failed": "تعذر تحميل سجل النشر",
     "history_snapshot": "تم التقاط لقطة المطالبة",
     "history_title": "سجل النشر",
     "no_data": "لا توجد بيانات",

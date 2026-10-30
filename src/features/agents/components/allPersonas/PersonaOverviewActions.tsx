@@ -4,13 +4,23 @@ import { BlastRadiusPanelLazy } from '@/features/overview/components/BlastRadius
 import { getPersonaBlastRadius, bulkDeletePersonas, archivePersona, restorePersona } from '@/api/agents/personas';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
-import { toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { mapWithConcurrency } from '@/lib/concurrency';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import type { Persona } from '@/lib/bindings/Persona';
 
 const logger = createLogger('persona-overview');
+
+/**
+ * Re-read the roster after a mutation has already landed. Best-effort: the
+ * mutation's own result decides what the user is told, so a refresh that fails
+ * leaves a breadcrumb and never turns a delete/archive/restore that succeeded
+ * into a reported failure (or a skipped success toast).
+ */
+function refreshRoster(context: string): Promise<void> {
+  return useAgentStore.getState().fetchPersonas().catch(silentCatch(context));
+}
 
 interface UsePersonaActionsArgs {
   personas: Persona[];
@@ -82,7 +92,7 @@ export function usePersonaActions({
         const deleted = outcomes.filter((o) => o.status === 'deleted').length;
         const protectedCount = outcomes.filter((o) => o.status === 'protected').length;
         const failed = outcomes.filter((o) => o.status === 'failed').length;
-        await useAgentStore.getState().fetchPersonas();
+        await refreshRoster('PersonaOverviewActions:bulkDeleteRefresh');
         if (failed > 0 || protectedCount > 0) {
           useToastStore.getState().addToast(
             tx(t.agents.overview_actions.bulk_delete_partial, { deleted, skipped: protectedCount + failed }),
@@ -109,7 +119,12 @@ export function usePersonaActions({
       (id) => personas.find((p) => p.id === id)?.trust_origin !== 'system',
     );
     const count = ids.length;
-    if (count === 0) return;
+    if (count === 0) {
+      // Only system personas were selected. Say why nothing happens, the way
+      // the single-row delete does, instead of ignoring the click.
+      useToastStore.getState().addToast(t.agents.overview_actions.system_persona_undeletable, 'warning');
+      return;
+    }
     // Same guard the single delete carries: what depends on these agents, and a
     // typed confirmation (the name for one, the count for several).
     // A large selection would fire one IPC per agent at once; four at a time.
@@ -127,7 +142,7 @@ export function usePersonaActions({
         await runBulkDelete(ids);
       },
     });
-  }, [personas, selectedIds, confirm, tx, t.agents.overview_actions.delete_agents, t.agents.overview_actions.delete_agents_message, setSelectedIds, runBulkDelete]);
+  }, [personas, selectedIds, confirm, tx, t.agents.overview_actions.delete_agents, t.agents.overview_actions.delete_agents_message, t.agents.overview_actions.system_persona_undeletable, setSelectedIds, runBulkDelete]);
 
   const draftIds = useMemo(
     () => personas.filter((p) => isDraft(p)).map((p) => p.id),
@@ -166,7 +181,7 @@ export function usePersonaActions({
       }
     }
     setSelectedIds(new Set());
-    await useAgentStore.getState().fetchPersonas();
+    await refreshRoster('PersonaOverviewActions:batchArchiveRefresh');
     if (ok > 0) {
       useToastStore.getState().addToast(tx(t.agents.overview_actions.archived_done, { count: ok }), 'success');
     }
@@ -190,7 +205,7 @@ export function usePersonaActions({
       }
     }
     setSelectedIds(new Set());
-    await useAgentStore.getState().fetchPersonas();
+    await refreshRoster('PersonaOverviewActions:batchRestoreRefresh');
     if (ok > 0) {
       useToastStore.getState().addToast(tx(t.agents.overview_actions.restored_done, { count: ok }), 'success');
     }

@@ -20,7 +20,9 @@ interface AutomationsSectionProps {
 export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSectionProps) {
   const { t, tx } = useTranslation();
   const [expanded, setExpanded] = useState(automations.length > 0);
-  const [testingId, setTestingId] = useState<string | null>(null);
+  // One in-flight entry per automation: a single shared id let a second Test
+  // take over the first card's spinner, and the first settle cleared both.
+  const [testingIds, setTestingIds] = useState<Set<string>>(new Set());
   const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string }>>({});
 
   const testAutomation = useVaultStore((s) => s.testAutomation);
@@ -28,7 +30,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
   const deleteAutomation = useVaultStore((s) => s.deleteAutomation);
 
   const handleTest = async (id: string) => {
-    setTestingId(id);
+    setTestingIds((prev) => new Set(prev).add(id));
     setTestResults((prev) => {
       const next = { ...prev };
       delete next[id];
@@ -46,9 +48,20 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
               : run.errorMessage ?? t.agents.connectors.auto_webhook_failed,
           },
         }));
+      } else {
+        // The store resolves null when the call itself failed (it toasts the
+        // cause). The card must not read as never tested once the toast is gone.
+        setTestResults((prev) => ({
+          ...prev,
+          [id]: { success: false, message: t.agents.connectors.auto_webhook_failed },
+        }));
       }
     } finally {
-      setTestingId(null);
+      setTestingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
@@ -170,7 +183,7 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
                       onEdit={onEdit}
                       onToggleStatus={handleToggleStatus}
                       onDelete={handleDelete}
-                      isTesting={testingId === auto.id}
+                      isTesting={testingIds.has(auto.id)}
                       isTransitioning={transitioningIds.has(auto.id)}
                       testResult={testResults[auto.id] ?? null}
                     />

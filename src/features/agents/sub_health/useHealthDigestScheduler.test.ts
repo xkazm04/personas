@@ -4,7 +4,7 @@
  * branch was documented in the hook and pinned by nothing until this file.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import en from '@/i18n/locales/en.json';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -147,5 +147,81 @@ describe('useHealthDigestScheduler', () => {
     await flush();
     expect(mockSetSetting).not.toHaveBeenCalled();
     expect(mockSendNotification).not.toHaveBeenCalled();
+  });
+});
+
+describe('useHealthDigestScheduler - app left open across the due date', () => {
+  it('re-evaluates due-ness on an interval and fires once the stamp turns a week old', async () => {
+    vi.useFakeTimers();
+    try {
+      settings({ health_digest_last_run: new Date(Date.now() - 6 * DAY).toISOString() });
+      renderHook(() => useHealthDigestScheduler());
+      await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+      expect(mockRunDigest).not.toHaveBeenCalled(); // 6 days old: not due yet
+      await act(async () => { await vi.advanceTimersByTimeAsync(2 * DAY); });
+      expect(mockRunDigest).toHaveBeenCalledTimes(1);
+      // The mocked stamp stays 6 days old, so only the latch keeps it from firing again.
+      await act(async () => { await vi.advanceTimersByTimeAsync(2 * DAY); });
+      expect(mockRunDigest).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+function check(name: string, severities: Array<'error' | 'warning' | 'info'>) {
+  return {
+    personaId: name.toLowerCase(), personaName: name, personaIcon: null, personaColor: null,
+    checkedAt: new Date().toISOString(),
+    result: { status: 'partial', issues: severities.map((severity, i) => ({ id: `${name}-${i}`, severity, description: `${name} ${severity}` })) },
+  };
+}
+
+describe('useHealthDigestScheduler - the notification body', () => {
+  it('counts only errors and warnings as issues, so an info-only fleet reads healthy', async () => {
+    // A fresh install: every agent carries the `signal_unknown` info note.
+    // The issue count used to include infos while the breakdown named only
+    // errors and warnings: "3 issues across 3 agents (0 errors, 0 warnings)".
+    mockRunDigest.mockResolvedValue({
+      ...healthyDigest,
+      personas: [check('A', ['info']), check('B', ['info']), check('C', ['info'])],
+      totalScore: { value: 98, grade: 'healthy' as const },
+      totalIssues: 3, infoCount: 3,
+    });
+    settings({});
+    renderHook(() => useHealthDigestScheduler());
+    await waitFor(() => expect(mockSendNotification).toHaveBeenCalledTimes(1));
+    const [, body] = mockSendNotification.mock.calls[0]!;
+    expect(body).toBe('All 3 agents are healthy! Score: 98/100');
+  });
+
+  it('names the agents that need attention, worst first, and leaves info-only agents out', async () => {
+    mockRunDigest.mockResolvedValue({
+      ...healthyDigest,
+      personas: [check('Gamma', ['info']), check('Beta', ['warning']), check('Alpha', ['error', 'warning'])],
+      totalScore: { value: 78, grade: 'degraded' as const },
+      totalIssues: 3, errorCount: 1, warningCount: 2, infoCount: 1,
+    });
+    settings({});
+    renderHook(() => useHealthDigestScheduler());
+    await waitFor(() => expect(mockSendNotification).toHaveBeenCalledTimes(1));
+    const [, body] = mockSendNotification.mock.calls[0]!;
+    expect(body).toContain('3 issues across 3 agents (1 errors, 2 warnings)');
+    expect(body).toContain('Needs attention: Alpha, Beta');
+    expect(body).not.toContain('Gamma');
+  });
+
+  it('caps the named agents and says how many more there are', async () => {
+    mockRunDigest.mockResolvedValue({
+      ...healthyDigest,
+      personas: ['A', 'B', 'C', 'D', 'E'].map((n) => check(n, ['warning'])),
+      totalScore: { value: 90, grade: 'healthy' as const },
+      totalIssues: 5, warningCount: 5,
+    });
+    settings({});
+    renderHook(() => useHealthDigestScheduler());
+    await waitFor(() => expect(mockSendNotification).toHaveBeenCalledTimes(1));
+    const [, body] = mockSendNotification.mock.calls[0]!;
+    expect(body).toContain('Needs attention: A, B, C +2 more');
   });
 });

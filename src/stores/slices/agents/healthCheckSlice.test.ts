@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildResultFromSignals } from './healthCheckSlice';
+import { buildResultFromSignals } from '@/features/agents/sub_health/agentHealth';
 import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 import type { Persona } from '@/lib/bindings/Persona';
 

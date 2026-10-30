@@ -34,6 +34,23 @@ export interface BacklogIdea {
   evidence: string | null;
   verifyState: string | null;
   createdAt: string;
+  // --- scan-finding/1. Absent stays null: unscored is never 0. ---
+  /** The producer's stored `scan-score/1`; null = unscored (ranks after every scored row). */
+  score: number | null;
+  /** The breakdown that ships with the score, parsed; null when absent or malformed. */
+  scoreParts: Record<string, number | string> | null;
+  confidence: string | null;
+  impactWhy: string | null;
+  /** The model's shadow verdict: accept | reject | defer. */
+  predictedVerdict: string | null;
+  predictedWhy: string | null;
+  lens: string | null;
+  /** `reserve` rows are found and scored but over the run's cap. */
+  band: 'ranked' | 'reserve';
+  mvp: boolean;
+  sweepRunId: string | null;
+  decidedBy: string | null;
+  vetoUntil: string | null;
 }
 
 /** Effort/impact/risk default to the MIDPOINT of the 1-5 scale
@@ -68,7 +85,91 @@ export function toBacklogIdea(
     evidence: idea.evidence,
     verifyState: idea.verify_state,
     createdAt: idea.created_at,
+    score: idea.score ?? null,
+    scoreParts: parseScoreParts(idea.score_parts ?? null),
+    confidence: idea.confidence ?? null,
+    impactWhy: idea.impact_why ?? null,
+    predictedVerdict: idea.predicted_verdict ?? null,
+    predictedWhy: idea.predicted_why ?? null,
+    lens: idea.lens ?? null,
+    band: idea.band === 'reserve' ? 'reserve' : 'ranked',
+    mvp: idea.mvp === true,
+    sweepRunId: idea.sweep_run_id ?? null,
+    decidedBy: idea.decided_by ?? null,
+    vetoUntil: idea.veto_until ?? null,
   };
+}
+
+/**
+ * Parse the stored `score_parts` JSON into a flat record of its scalar
+ * members. Anything that is not an object of numbers/strings is dropped:
+ * a breakdown that will not parse shows no breakdown, never a wrong one.
+ */
+export function parseScoreParts(json: string | null): Record<string, number | string> | null {
+  if (!json || !json.trim()) return null;
+  try {
+    const parsed: unknown = JSON.parse(json);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+    const out: Record<string, number | string> = {};
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof v === 'number' || typeof v === 'string') out[k] = v;
+    }
+    return Object.keys(out).length > 0 ? out : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A machine (`machine:<skill>`) passed this row's current verdict. */
+export function isMachineDecided(i: Pick<BacklogIdea, 'decidedBy'>): boolean {
+  return i.decidedBy?.startsWith('machine:') === true;
+}
+
+/** True while a machine decision's veto window is still open at `now`. */
+export function vetoOpen(i: Pick<BacklogIdea, 'decidedBy' | 'vetoUntil'>, now: number): boolean {
+  if (!isMachineDecided(i) || !i.vetoUntil) return false;
+  const until = Date.parse(i.vetoUntil);
+  return Number.isFinite(until) && until > now;
+}
+
+/** Split a row set into the ranked list and its reserve, order preserved. */
+export function splitReserve(rows: readonly BacklogIdea[]): { ranked: BacklogIdea[]; reserve: BacklogIdea[] } {
+  const ranked: BacklogIdea[] = [];
+  const reserve: BacklogIdea[] = [];
+  for (const r of rows) (r.band === 'reserve' ? reserve : ranked).push(r);
+  return { ranked, reserve };
+}
+
+/** Open = still owed a verdict or work: the two statuses an MVP can hold. */
+const OPEN_STATUSES = new Set(['pending', 'accepted']);
+
+/**
+ * One MVP per lens: the open row flagged `mvp` from the lens's LATEST sweep run
+ * (the run of its most recently created row), else the lens's open row with the
+ * top score. A lens with no scored open row and no flagged one has no MVP.
+ * Sorted by score, highest first.
+ */
+export function lensMvps(rows: readonly BacklogIdea[]): BacklogIdea[] {
+  const byLens = new Map<string, BacklogIdea[]>();
+  for (const r of rows) {
+    if (!r.lens || !OPEN_STATUSES.has(r.status)) continue;
+    const list = byLens.get(r.lens) ?? [];
+    list.push(r);
+    byLens.set(r.lens, list);
+  }
+  const out: BacklogIdea[] = [];
+  for (const list of byLens.values()) {
+    const newest = list.reduce((a, b) => (b.createdAt > a.createdAt ? b : a));
+    const flagged = newest.sweepRunId
+      ? list.find((r) => r.mvp && r.sweepRunId === newest.sweepRunId)
+      : undefined;
+    const top = list
+      .filter((r) => r.score !== null)
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
+    const pick = flagged ?? top;
+    if (pick) out.push(pick);
+  }
+  return out.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
 }
 
 /**
@@ -99,7 +200,7 @@ export function backlogHaystack(i: BacklogIdea): string[] {
   return [i.title, i.description, i.reasoning];
 }
 
-export type BacklogSortKey = 'category' | 'title' | 'project' | 'value' | 'quick' | 'created';
+export type BacklogSortKey = 'category' | 'title' | 'project' | 'value' | 'quick' | 'created' | 'score';
 export type SortDir = 'asc' | 'desc';
 
 /**
@@ -126,6 +227,13 @@ export function compareBacklog(
       return (triageValueScore(a) - triageValueScore(b)) * s;
     case 'quick':
       return (a.effort - b.effort || b.impact - a.impact) * s;
+    case 'score':
+      // Unscored rows rank after every scored one in BOTH directions: an
+      // unmeasured item is not a low score, it is not a score at all.
+      if (a.score === null || b.score === null) {
+        return a.score === b.score ? b.createdAt.localeCompare(a.createdAt) : a.score === null ? 1 : -1;
+      }
+      return (a.score - b.score) * s || b.createdAt.localeCompare(a.createdAt);
     case 'created':
     default:
       return a.createdAt.localeCompare(b.createdAt) * s;
@@ -138,13 +246,15 @@ export function compareBacklog(
  * order and the table's initial sort in the same breath, so Table ⇄ Focus never
  * reshuffles the queue under the user.
  */
-export type BacklogSortMode = 'default' | 'value' | 'quick';
+export type BacklogSortMode = 'default' | 'value' | 'quick' | 'newest';
 
 /** Each pill's equivalent table sort. `quick` has no column (see compareBacklog). */
 export const SORT_MODE_COLUMN: Record<BacklogSortMode, { key: BacklogSortKey; dir: SortDir }> = {
-  default: { key: 'created', dir: 'desc' },
+  // The producer's stored score leads (scan-finding/1); unscored rows follow.
+  default: { key: 'score', dir: 'desc' },
   value: { key: 'value', dir: 'desc' },
   quick: { key: 'quick', dir: 'asc' },
+  newest: { key: 'created', dir: 'desc' },
 };
 
 /** Order a row set by a sort mode. Returns a copy; never mutates the input. */
@@ -155,7 +265,10 @@ export function applyBacklogSort(rows: BacklogIdea[], mode: BacklogSortMode): Ba
 
 /** Inclusive effort/risk band, as the EffortRiskFilter presets express it. */
 export type LevelRange = [number, number];
-export const FULL_LEVEL_RANGE: LevelRange = [1, 10];
+/** The whole stored 1-5 scale (`IDEA_SCALE_MAX`). It was still [1, 10] after
+ *  the scale moved to 1-5, so the "no filter" band was wider than the data. */
+export const LEVEL_SCALE_MAX = 5;
+export const FULL_LEVEL_RANGE: LevelRange = [1, LEVEL_SCALE_MAX];
 
 /** True when a row falls inside both bands. */
 export function withinLevelRanges(i: BacklogIdea, effort: LevelRange, risk: LevelRange): boolean {
@@ -163,9 +276,10 @@ export function withinLevelRanges(i: BacklogIdea, effort: LevelRange, risk: Leve
     && i.risk >= risk[0] && i.risk <= risk[1];
 }
 
-/** True when either band is narrower than the full 1-10 range (drives the badge). */
+/** True when either band is narrower than the full 1-5 range (drives the badge). */
 export function hasLevelFilter(effort: LevelRange, risk: LevelRange): boolean {
-  return effort[0] !== 1 || effort[1] !== 10 || risk[0] !== 1 || risk[1] !== 10;
+  return effort[0] !== 1 || effort[1] !== LEVEL_SCALE_MAX
+    || risk[0] !== 1 || risk[1] !== LEVEL_SCALE_MAX;
 }
 
 /**

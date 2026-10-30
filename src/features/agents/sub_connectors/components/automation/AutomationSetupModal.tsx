@@ -45,7 +45,7 @@ export function AutomationSetupModal({
             {s.phase === 'error' && t.agents.connectors.auto_modal_failed}
           </h2>
         </div>
-        <button type="button" onClick={handleClose} className="text-foreground hover:text-foreground transition-colors">
+        <button type="button" onClick={handleClose} aria-label={t.common.close} className="text-foreground hover:text-foreground transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -64,6 +64,7 @@ export function AutomationSetupModal({
               githubRepo={s.githubRepo} setGithubRepo={s.setGithubRepo}
               loadingRepos={s.loadingRepos}
               zapierZaps={s.zapierZaps} loadingZaps={s.loadingZaps}
+              reposFailed={s.reposFailed} zapsFailed={s.zapsFailed} onRetryListings={s.retryListings}
               availableUseCases={s.availableUseCases}
               useCaseId={s.useCaseId} setUseCaseId={s.setUseCaseId}
               canDesign={s.canDesign} onDesign={s.handleDesign}

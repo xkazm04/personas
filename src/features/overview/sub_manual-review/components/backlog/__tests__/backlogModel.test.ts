@@ -13,6 +13,13 @@ import {
   triageValueScore,
   type BacklogIdea,
   selectionAfterSelectAll,
+  applyBacklogSort,
+  FULL_LEVEL_RANGE,
+  hasLevelFilter,
+  lensMvps,
+  parseScoreParts,
+  splitReserve,
+  vetoOpen,
 } from '../backlogModel';
 
 function devIdea(over: Partial<DevIdea> = {}): DevIdea {
@@ -180,5 +187,78 @@ describe('selectionAfterSelectAll', () => {
   });
   it('is a no-op on an empty narrowed set', () => {
     expect(selectionAfterSelectAll(new Set(['x']), []).size).toBe(1);
+  });
+});
+
+
+describe('scan-finding/1 view fields', () => {
+  it('maps absent contract fields to null, never 0', () => {
+    const v = toBacklogIdea(devIdea(), names);
+    expect(v.score).toBeNull();
+    expect(v.band).toBe('ranked');
+    expect(v.mvp).toBe(false);
+  });
+
+  it('parses the score breakdown and drops a malformed one', () => {
+    expect(parseScoreParts('{"impact":8,"formula":"scan-score/1","nested":{}}')).toEqual({
+      impact: 8,
+      formula: 'scan-score/1',
+    });
+    expect(parseScoreParts('not json')).toBeNull();
+    expect(parseScoreParts('[1,2]')).toBeNull();
+    expect(parseScoreParts(null)).toBeNull();
+  });
+
+  it('default sort is the stored score, highest first, unscored after every scored row', () => {
+    const rows = [
+      view({ id: 'u', score: null }),
+      view({ id: 'lo', score: 6.9 }),
+      view({ id: 'hi', score: 95 }),
+      view({ id: 'mid', score: 40.5 }),
+    ];
+    expect(applyBacklogSort(rows, 'default').map((r) => r.id)).toEqual(['hi', 'mid', 'lo', 'u']);
+    // Ascending still keeps the unscored row last: unmeasured is not a low score.
+    expect([...rows].sort((a, b) => compareBacklog(a, b, 'score', 'asc')).map((r) => r.id))
+      .toEqual(['lo', 'mid', 'hi', 'u']);
+  });
+
+  it('keeps the old value sort selectable', () => {
+    const rows = [view({ id: 'a', impact: 1, effort: 5, risk: 5 }), view({ id: 'b', impact: 5, effort: 1, risk: 1 })];
+    expect(applyBacklogSort(rows, 'value').map((r) => r.id)).toEqual(['b', 'a']);
+  });
+
+  it('splits reserve rows out of the ranked list, order preserved', () => {
+    const { ranked, reserve } = splitReserve([
+      view({ id: 'a' }),
+      view({ id: 'r1', band: 'reserve' }),
+      view({ id: 'b' }),
+    ]);
+    expect(ranked.map((r) => r.id)).toEqual(['a', 'b']);
+    expect(reserve.map((r) => r.id)).toEqual(['r1']);
+  });
+
+  it('picks one MVP per lens: the flagged row of the latest run, else the top score', () => {
+    const rows = [
+      view({ id: 'old-mvp', lens: 'perf', mvp: true, sweepRunId: 'run1', score: 90, createdAt: '2026-10-01' }),
+      view({ id: 'new-mvp', lens: 'perf', mvp: true, sweepRunId: 'run2', score: 30, createdAt: '2026-10-02' }),
+      view({ id: 'ux-top', lens: 'ux', score: 50, createdAt: '2026-10-01' }),
+      view({ id: 'ux-low', lens: 'ux', score: 10, createdAt: '2026-10-03' }),
+      view({ id: 'done', lens: 'docs', status: 'rejected', score: 99 }),
+      view({ id: 'no-lens', score: 99 }),
+    ];
+    expect(lensMvps(rows).map((r) => r.id)).toEqual(['ux-top', 'new-mvp']);
+  });
+
+  it('the level filter spans the stored 1-5 scale', () => {
+    expect(FULL_LEVEL_RANGE).toEqual([1, 5]);
+    expect(hasLevelFilter(FULL_LEVEL_RANGE, FULL_LEVEL_RANGE)).toBe(false);
+    expect(hasLevelFilter([1, 2], FULL_LEVEL_RANGE)).toBe(true);
+  });
+
+  it('a veto window is open only for a machine decision before its deadline', () => {
+    const now = Date.parse('2026-10-30T12:00:00Z');
+    expect(vetoOpen({ decidedBy: 'machine:scan-sweep', vetoUntil: '2026-10-31T12:00:00Z' }, now)).toBe(true);
+    expect(vetoOpen({ decidedBy: 'machine:scan-sweep', vetoUntil: '2026-10-29T12:00:00Z' }, now)).toBe(false);
+    expect(vetoOpen({ decidedBy: 'Human', vetoUntil: '2026-10-31T12:00:00Z' }, now)).toBe(false);
   });
 });

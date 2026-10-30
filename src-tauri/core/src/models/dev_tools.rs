@@ -1182,6 +1182,37 @@ pub struct DevIdea {
     /// `full` or `draft` — whether the item carries everything a dispatch
     /// needs. A `draft` is stored and visible; it simply cannot become a task.
     pub completeness: Option<String>,
+    // --- scan-finding/1 (e72). Absent is NULL / None, never 0 or "". -------
+    /// The scan dimension that found the item. Never collapsed into `scan_type`.
+    pub lens: Option<String>,
+    pub impact_why: Option<String>,
+    /// `low` | `medium` | `high`.
+    pub confidence: Option<String>,
+    /// The producer's `scan-score/1`. Stored as given; never recomputed here.
+    pub score: Option<f64>,
+    /// JSON breakdown `{impact, confidence_w, effort_div, risk_factor, formula}`.
+    pub score_parts: Option<String>,
+    /// `ranked` | `reserve` (verified and scored, but over the run's cap).
+    pub band: String,
+    /// The lens's top finding of its run.
+    pub mvp: bool,
+    pub mvp_rule: Option<String>,
+    pub mvp_why: Option<String>,
+    /// The model's shadow verdict: `accept` | `reject` | `defer`.
+    pub predicted_verdict: Option<String>,
+    pub predicted_why: Option<String>,
+    pub predicted_by: Option<String>,
+    /// `XS` | `S` | `M` | `L` | `XL`.
+    pub size: Option<String>,
+    /// JSON `{lane, result, method, gate, disposition}` - the producer's routing words.
+    pub routing: Option<String>,
+    /// Who passed the current verdict (`Human`, `TriageRule`, `machine:scan-sweep`, ...).
+    pub decided_by: Option<String>,
+    pub decided_at: Option<String>,
+    /// End of the veto window a machine decision is shown with.
+    pub veto_until: Option<String>,
+    /// The sweep run that last filed or re-scored this item (e44 column).
+    pub sweep_run_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

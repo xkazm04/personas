@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { X, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
@@ -50,19 +50,29 @@ export function NotificationChannelCard({
   const { t, tx } = useTranslation();
   const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [testError, setTestError] = useState('');
+  const fieldIdPrefix = useId();
+  // The pending return-to-idle of the LAST send. A new send cancels it: a
+  // reset left over from the previous send used to flip a send still in
+  // flight back to idle, re-enabling the button mid-request.
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (resetTimerRef.current) clearTimeout(resetTimerRef.current); }, []);
+  const scheduleReset = (ms: number) => {
+    resetTimerRef.current = setTimeout(() => setTestStatus('idle'), ms);
+  };
 
   const handleTestNotification = async () => {
+    if (resetTimerRef.current) { clearTimeout(resetTimerRef.current); resetTimerRef.current = null; }
     setTestStatus('sending');
     setTestError('');
     try {
       await testNotificationChannel({ type, enabled: true, config, credential_id: credentialId });
       setTestStatus('success');
-      setTimeout(() => setTestStatus('idle'), 3000);
+      scheduleReset(3000);
     } catch (err) {
       setTestStatus('error');
       // Structured AppError envelope (`{ error, kind, … }`) — not an Error instance.
       setTestError(errMsg(err, String(err)));
-      setTimeout(() => setTestStatus('idle'), 5000);
+      scheduleReset(5000);
     }
   };
 
@@ -85,6 +95,7 @@ export function NotificationChannelCard({
         <button
           type="button"
           onClick={onRemove}
+          aria-label={t.common.delete}
           className="p-1 text-foreground hover:text-red-400 transition-colors"
         >
           <X className="w-3.5 h-3.5" />
@@ -94,10 +105,12 @@ export function NotificationChannelCard({
       {/* Config fields */}
       {configFields.map((field) => {
         const isEmpty = enabled && hasValidationErrors && !config[field.key]?.trim();
+        const fieldId = `${fieldIdPrefix}-${field.key}`;
         return (
           <div key={field.key}>
-            <label className="block typo-body text-foreground mb-1">{t.agents.connectors[field.labelKey]}</label>
+            <label htmlFor={fieldId} className="block typo-body text-foreground mb-1">{t.agents.connectors[field.labelKey]}</label>
             <input
+              id={fieldId}
               type={field.public ? 'text' : 'password'}
               autoComplete={field.public ? undefined : 'off'}
               value={config[field.key] || ''}

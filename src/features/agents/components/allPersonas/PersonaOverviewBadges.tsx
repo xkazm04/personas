@@ -8,7 +8,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 /* -- Health style map (also exported so filter dropdowns can stay in sync) --
    Labels resolve through i18n via `labelKey` into `t.agents.status`. */
 
-export type HealthLabelKey = 'healthy' | 'degraded' | 'failing' | 'dormant';
+export type HealthLabelKey = 'healthy' | 'degraded' | 'failing' | 'dormant' | 'unknown';
 
 export const HEALTH_STYLES: Record<string, { bg: string; text: string; labelKey: HealthLabelKey }> = {
   healthy: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', labelKey: 'healthy' },
@@ -16,15 +16,26 @@ export const HEALTH_STYLES: Record<string, { bg: string; text: string; labelKey:
   failing: { bg: 'bg-red-500/10', text: 'text-red-400', labelKey: 'failing' },
   // Never ran: no verdict either way, so it must not read as a verified Healthy.
   dormant: { bg: 'bg-foreground/10', text: 'text-foreground', labelKey: 'dormant' },
+  // No health entry at all (summaries not loaded yet, or the read failed): no
+  // verdict was reached, so it is neutral like dormant - never a green Healthy.
+  unknown: { bg: 'bg-foreground/10', text: 'text-foreground', labelKey: 'unknown' },
 };
+
+/** The health key a persona is shown and filtered under: a missing entry, or a
+ *  status this map does not know, is `unknown` - never a coerced `healthy`. */
+export function healthKeyOf(health: PersonaHealth | undefined): string {
+  const status = health?.status;
+  return status && status in HEALTH_STYLES ? status : 'unknown';
+}
 
 /* -- Row accent ------------------------------------------------------- */
 
-export type RowAccentTone = 'building' | 'draft' | 'failing' | 'degraded' | 'dormant' | 'healthy';
+export type RowAccentTone = 'building' | 'draft' | 'failing' | 'degraded' | 'dormant' | 'unknown' | 'healthy';
 
 /**
  * ONE priority rule for the left-edge accent a persona row or card carries:
- * building beats draft beats failing beats degraded, else healthy. The grid
+ * building beats draft beats failing beats degraded; healthy only for a real
+ * healthy verdict, and a missing one is unknown. The grid
  * (PersonaOverviewPage) and the mobile card (PersonaOverviewCardList) each
  * map the tone to their own classes; the order and the health mapping live
  * here so the two surfaces cannot drift apart again.
@@ -39,7 +50,8 @@ export function rowAccentTone(
   if (health?.status === 'failing') return 'failing';
   if (health?.status === 'degraded') return 'degraded';
   if (health?.status === 'dormant') return 'dormant';
-  return 'healthy';
+  if (health?.status === 'healthy') return 'healthy';
+  return 'unknown';
 }
 
 /* -- Trust score bar -------------------------------------------------- */
@@ -91,8 +103,8 @@ export function StatusBadge({
       </span>
     );
   }
-  const healthStatus = health?.status ?? 'healthy';
-  const style = (HEALTH_STYLES[healthStatus] ?? HEALTH_STYLES.healthy)!;
+  const healthStatus = healthKeyOf(health);
+  const style = HEALTH_STYLES[healthStatus]!;
   return (
     <span
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-md font-medium ${style.bg} ${style.text} border border-current/15`}

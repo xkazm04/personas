@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Plug, Star } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
@@ -11,7 +12,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 /* -- Select checkbox cell -------------------------------------------- */
 
-export function SelectCell({
+export const SelectCell = memo(function SelectCell({
   persona,
   selected,
   onToggle,
@@ -59,11 +60,11 @@ export function SelectCell({
       </div>
     </button>
   );
-}
+});
 
 /* -- Favorite star cell ---------------------------------------------- */
 
-export function FavoriteCell({
+export const FavoriteCell = memo(function FavoriteCell({
   persona,
   isFavorite,
   onToggle,
@@ -99,11 +100,11 @@ export function FavoriteCell({
       </button>
     </Tooltip>
   );
-}
+});
 
 /* -- Persona identity cell (icon + name) ---------------------------- */
 
-export function NameCell({ persona, onClick }: { persona: Persona; onClick: (p: Persona) => void }) {
+export const NameCell = memo(function NameCell({ persona, onClick }: { persona: Persona; onClick: (p: Persona) => void }) {
   const updatePersona = useAgentStore((s) => s.updatePersona);
   return (
     <div className="flex items-center gap-3 min-w-0 w-full group">
@@ -118,19 +119,22 @@ export function NameCell({ persona, onClick }: { persona: Persona; onClick: (p: 
           value={persona.name}
           onCommit={(next) => updatePersona(persona.id, { name: next })}
           onTextClick={() => onClick(persona)}
+          // A system persona (the Director) is found by its name; the backend
+          // refuses the rename, so the roster does not offer it.
+          disabled={persona.trust_origin === 'system'}
           className="text-md text-foreground/90 max-w-full"
           parentGroup
         />
       </div>
     </div>
   );
-}
+});
 
 /* -- Connector chips cell -------------------------------------------- */
 
 const MAX_VISIBLE_CONNECTORS = 4;
 
-export function ConnectorsCell({
+export const ConnectorsCell = memo(function ConnectorsCell({
   persona,
   connectorNamesMap,
 }: {
@@ -173,4 +177,4 @@ export function ConnectorsCell({
       )}
     </div>
   );
-}
+});

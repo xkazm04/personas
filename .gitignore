@@ -94,6 +94,7 @@ recordings/
 !.claude/mvp/
 !.claude/spark/
 !.claude/lens-scan/
+!.claude/scan-sweep/
 !.claude/kit/
 !.claude/devlog/
 !.claude/agents/

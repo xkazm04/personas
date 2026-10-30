@@ -28,6 +28,12 @@ describe('StatusBadge health', () => {
     expect(screen.getByText('status.healthy')).toBeTruthy();
   });
 
+  it('does not badge a persona with no health entry as healthy (card 13)', () => {
+    render(<StatusBadge enabled isDraft={false} health={undefined} />);
+    expect(screen.queryByText('status.healthy')).toBeNull();
+    expect(screen.getByText('status.unknown')).toBeTruthy();
+  });
+
   it('knows every status the backend emits', () => {
     for (const s of ['healthy', 'degraded', 'failing', 'dormant']) expect(HEALTH_STYLES[s]).toBeTruthy();
   });

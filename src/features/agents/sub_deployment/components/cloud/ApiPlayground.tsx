@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useId } from 'react';
 import { Send, Copy, Check, ChevronDown, ChevronRight, Terminal, Code2, Loader2 } from 'lucide-react';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { executePersona } from '@/api/agents/executions';
@@ -60,6 +60,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
   const { t } = useTranslation();
   const dt = t.deployment.api_playground;
   const [expanded, setExpanded] = useState(false);
+  const bodyFieldId = useId();
   const [body, setBody] = useState(DEFAULT_BODY);
   const [sending, setSending] = useState(false);
   const [response, setResponse] = useState<PlaygroundResponse | null>(null);
@@ -142,6 +143,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
       <button
         type="button"
         onClick={() => setExpanded(true)}
+        aria-expanded={false}
         className="flex items-center gap-1.5 typo-caption text-foreground hover:text-indigo-400 transition-colors cursor-pointer py-0.5"
       >
         <Terminal className="w-3 h-3" />
@@ -157,6 +159,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
       <button
         type="button"
         onClick={() => setExpanded(false)}
+        aria-expanded
         className="flex items-center gap-1.5 typo-caption text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
       >
         <Terminal className="w-3 h-3" />
@@ -166,10 +169,11 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
 
       {/* Request body editor */}
       <div className="space-y-1">
-        <label className="text-[11px] font-medium text-foreground uppercase tracking-wider">
+        <label htmlFor={bodyFieldId} className="text-[11px] font-medium text-foreground uppercase tracking-wider">
           {dt.request_body}
         </label>
         <textarea
+          id={bodyFieldId}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={4}

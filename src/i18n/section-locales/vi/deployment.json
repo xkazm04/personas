@@ -94,6 +94,7 @@
     "filter_target": "Mục tiêu",
     "gitlab": "GitLab",
     "history_empty": "Chưa có lịch sử triển khai",
+    "history_load_failed": "Không thể tải lịch sử triển khai",
     "history_snapshot": "Đã lưu ảnh chụp prompt",
     "history_title": "Lịch sử triển khai",
     "no_data": "Không có dữ liệu",

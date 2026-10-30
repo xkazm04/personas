@@ -12,10 +12,12 @@ interface DeploymentHealthMap {
  * then maps the daily_breakdown back to each deployment row by its ID.
  *
  * Deployments with the same persona share the same stats.
- * GitLab deployments (no personaId) are skipped.
+ * GitLab rows are skipped even when they carry a personaId (the probed-status
+ * path sets one): these are CLOUD execution stats, and painting them onto a
+ * GitLab row would show another target's health as its own.
  */
 export function useDeploymentHealth(
-  rows: Array<{ id: string; personaId: string | null }>,
+  rows: Array<{ id: string; personaId: string | null; target?: 'cloud' | 'gitlab' }>,
 ): { healthMap: DeploymentHealthMap; isLoading: boolean } {
   const [healthMap, setHealthMap] = useState<DeploymentHealthMap>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +25,7 @@ export function useDeploymentHealth(
 
   // Build a stable key from sorted unique persona IDs to avoid re-fetching
   const personaEntries = rows
-    .filter((r) => r.personaId)
+    .filter((r) => r.personaId && r.target !== 'gitlab')
     .map((r) => ({ id: r.id, personaId: r.personaId! }));
 
   const uniquePersonaIds = [...new Set(personaEntries.map((e) => e.personaId))].sort();
@@ -60,6 +62,7 @@ export function useDeploymentHealth(
 
     prevKeyRef.current = stableKey;
     let cancelled = false;
+    let landed = false;
     setIsLoading(true);
 
     (async () => {
@@ -104,12 +107,20 @@ export function useDeploymentHealth(
         }
 
         setHealthMap(mapped);
+        landed = true;
       } finally {
         if (!cancelled) setIsLoading(false);
       }
     })();
 
-    return () => { cancelled = true; };
+    // A teardown before the stats land (StrictMode's mount replay, or a row
+    // joining mid-fetch, which changes deploymentIdsKey) discards this fetch.
+    // Forget the key too, or the re-run takes the re-map branch over an empty
+    // cache and settles every cloud row at "No data" for good.
+    return () => {
+      cancelled = true;
+      if (!landed) prevKeyRef.current = '';
+    };
   }, [stableKey, deploymentIdsKey]);
 
   return { healthMap, isLoading };

@@ -63,10 +63,11 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
 
       {/* Trigger type */}
       <div className="space-y-1">
-        <label className="typo-caption text-foreground">{dt.trigger_type}</label>
-        <div className="flex gap-2">
+        <span id="cloud-trigger-type-label" className="typo-caption text-foreground">{dt.trigger_type}</span>
+        <div role="group" aria-labelledby="cloud-trigger-type-label" className="flex gap-2">
           <button
             type="button"
+            aria-pressed={createType === 'schedule'}
             onClick={() => setCreateType('schedule')}
             className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border transition-colors ${
               createType === 'schedule'
@@ -79,6 +80,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
           </button>
           <button
             type="button"
+            aria-pressed={createType === 'webhook'}
             onClick={() => setCreateType('webhook')}
             className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border transition-colors ${
               createType === 'webhook'
@@ -113,6 +115,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
               <button
                 key={preset.id}
                 type="button"
+                aria-pressed={createCron === preset.cron}
                 onClick={() => setCreateCron(preset.cron)}
                 className={`px-2 py-1 typo-caption rounded-card border transition-colors ${
                   createCron === preset.cron

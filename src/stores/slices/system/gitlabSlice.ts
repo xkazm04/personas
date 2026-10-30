@@ -130,6 +130,8 @@ export interface GitLabSlice {
   // Unified (GitLab + cloud) deployment audit trail
   unifiedDeploymentHistory: GitLabDeploymentRecord[];
   unifiedDeploymentHistoryLoading: boolean;
+  /** True when the last unified-history fetch failed (distinct from an empty trail). */
+  unifiedDeploymentHistoryError: boolean;
 
   // Deployment history actions
   gitlabFetchDeploymentHistory: (projectId: number, personaId?: string) => Promise<void>;
@@ -618,15 +620,16 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
   gitlabRollingBackFromHistory: false,
   unifiedDeploymentHistory: [],
   unifiedDeploymentHistoryLoading: false,
+  unifiedDeploymentHistoryError: false,
 
   fetchUnifiedDeploymentHistory: async (limit?: number) => {
-    set({ unifiedDeploymentHistoryLoading: true });
+    set({ unifiedDeploymentHistoryLoading: true, unifiedDeploymentHistoryError: false });
     try {
       const history = await listDeploymentHistoryAll(limit);
-      set({ unifiedDeploymentHistory: history, unifiedDeploymentHistoryLoading: false, gitlabError: null });
+      set({ unifiedDeploymentHistory: history, unifiedDeploymentHistoryLoading: false, unifiedDeploymentHistoryError: false, gitlabError: null });
     } catch (err) {
       // Best-effort surface — never blank the dashboard on a history error.
-      set({ unifiedDeploymentHistoryLoading: false });
+      set({ unifiedDeploymentHistoryLoading: false, unifiedDeploymentHistoryError: true });
       silentCatch("stores/slices/system/gitlabSlice:fetchUnifiedDeploymentHistory")(err);
     }
   },

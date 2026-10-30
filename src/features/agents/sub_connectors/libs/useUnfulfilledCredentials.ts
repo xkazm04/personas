@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
-import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import { parseDesignContext } from '@/features/agents/shared/designContext';
+import { credentialMatchesConnector } from './connectorTypes';
 import type { CredentialMetadata, ConnectorDefinition, PersonaWithDetails } from '@/lib/types/types';
 
 // Hex fallbacks for unknown / placeholder entries. Consumed by callers
@@ -73,10 +73,7 @@ function computeUnfulfilled(
       //     authored at the category level (the common case for V3) need this
       //     second path; without it every category-shaped requirement renders
       //     as missing-credential even when a perfect candidate exists.
-      const matching = credentials.filter((c) =>
-        c.service_type === credType ||
-        connectorCategoryTags(c.service_type).includes(credType),
-      );
+      const matching = credentials.filter((c) => credentialMatchesConnector(c, credType));
 
       const connector = connectorByName.get(credType);
 

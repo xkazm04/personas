@@ -25,7 +25,8 @@ import { GRADE_THRESHOLDS } from '@/features/overview/sub_health/libs/compositeH
  * - `degradedCutoff` 80 / `unhealthyCutoff` 50 align with the three grade
  *   bands the editor HealthBadge (EditorTabBar) and the Arena herald paint
  *   (healthy / degraded / unhealthy). HealthScoreDisplay was deleted in
- *   fbf3e6a6a.
+ *   fbf3e6a6a. Since 2026-10-30 the badge and the weekly digest also grade
+ *   the SAME issues (`agentHealth.ts`), not just by the same cutoffs.
  */
 export const HEALTH_SCORING = {
   errorPenalty: 25,
@@ -53,10 +54,9 @@ function gradeForScore(value: number): HealthGrade {
 }
 
 export function computeHealthScore(issues: DryRunIssue[]): HealthScore {
-  const unresolved = issues.filter((i) => !i.resolved);
-  const errors = unresolved.filter((i) => i.severity === 'error').length;
-  const warnings = unresolved.filter((i) => i.severity === 'warning').length;
-  const infos = unresolved.filter((i) => i.severity === 'info').length;
+  const errors = issues.filter((i) => i.severity === 'error').length;
+  const warnings = issues.filter((i) => i.severity === 'warning').length;
+  const infos = issues.filter((i) => i.severity === 'info').length;
 
   const penalty =
     errors * HEALTH_SCORING.errorPenalty +
@@ -90,16 +90,32 @@ export function computeAggregateHealthScore(
   return { value, grade: gradeForScore(value) };
 }
 
+/** An issue that needs attention: an error or a warning. Info notes are notes. */
+export function needsAttention(issue: DryRunIssue): boolean {
+  return issue.severity === 'error' || issue.severity === 'warning';
+}
+
+/**
+ * The digest's failing members: checks with at least one error or warning,
+ * worst score first (stable for ties). Info-only agents are healthy and are
+ * left out. Read by the digest notification (names) and the digest panel (rows).
+ */
+export function attentionChecks<T extends { result: { issues: DryRunIssue[] } }>(checks: readonly T[]): T[] {
+  return checks
+    .filter((c) => c.result.issues.some(needsAttention))
+    .map((c) => ({ c, score: computeHealthScore(c.result.issues).value }))
+    .sort((a, b) => a.score - b.score)
+    .map(({ c }) => c);
+}
+
 /**
  * Generate a deterministic issue ID from `(personaId, severity, description)`.
  *
  * Why deterministic: re-running a health check used to mint fresh random IDs,
- * so any client holding a prior `issueId` (a debounced `markIssueResolved`,
- * an in-flight fix proposal) silently no-op'd against the new result set.
- * Hashing the issue's content keeps identity stable across runs — unchanged
- * issues keep the same ID, and `markIssueResolved` continues to match after
- * a re-check. Determinism also enables future diffing of issue sets across
- * runs.
+ * so any client holding a prior `issueId` silently no-op'd against the new
+ * result set. Hashing the issue's content keeps identity stable across runs —
+ * unchanged issues keep the same ID (the digest drill-down keys its rows by
+ * it). Determinism also enables future diffing of issue sets across runs.
  *
  * Implementation: 64-bit FNV-1a, hex-encoded. Non-cryptographic, but the
  * collision space is wide enough for the per-persona issue counts we ever

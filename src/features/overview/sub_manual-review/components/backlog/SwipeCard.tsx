@@ -21,6 +21,7 @@ import { LevelBadge, ValueBadge } from '@/features/plugins/dev-tools/constants/i
 import { useTranslation } from '@/i18n/useTranslation';
 
 import type { BacklogIdea } from './backlogModel';
+import { ScanFindingChips } from './ScanFindingChips';
 
 /** Horizontal travel (px) at which a drag commits to a verdict. */
 export const SWIPE_THRESHOLD = 150;
@@ -122,11 +123,17 @@ export function SwipeCard({
           <span className={`rounded-full px-2.5 py-0.5 typo-caption ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
             {categoryLabel(idea.category)}
           </span>
+          <ScanFindingChips idea={idea} />
           <ValueBadge idea={idea} />
           {levels.map(([label, value]) => (
             <LevelBadge key={label} label={label} value={value} />
           ))}
         </div>
+        {idea.impactWhy && (
+          <p className="typo-caption mb-2">
+            {r.backlog_impact_why}: {idea.impactWhy}
+          </p>
+        )}
 
         <h3 className="typo-heading-lg text-primary mb-2">{idea.title}</h3>
         {idea.projectName && (

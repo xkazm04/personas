@@ -94,6 +94,7 @@
     "filter_target": "目标",
     "gitlab": "GitLab",
     "history_empty": "暂无部署历史",
+    "history_load_failed": "无法加载部署历史",
     "history_snapshot": "已捕获提示词快照",
     "history_title": "部署历史",
     "no_data": "无数据",

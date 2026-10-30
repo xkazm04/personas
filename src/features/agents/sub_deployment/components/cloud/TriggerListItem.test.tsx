@@ -43,3 +43,39 @@ describe('TriggerListItem firings load failure', () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('TriggerListItem firing status and health copy', () => {
+  it('labels a firing status through status_tokens, not the raw token', () => {
+    render(
+      <TriggerListItem
+        trigger={trigger} isExpanded isLoadingFirings={false} personaName="p"
+        firings={[{ id: 'f-1', triggerId: 'tr-1', personaId: 'p1', executionId: null, status: 'error',
+          costUsd: null, durationMs: null, firedAt: null, resolvedAt: null }]}
+        onToggleExpand={() => {}} onToggleEnabled={() => {}} onDelete={() => {}}
+      />,
+    );
+    expect(screen.getByText('Error')).toBeTruthy();
+    expect(screen.queryByText('error')).toBeNull();
+  });
+
+  it('shows a never-probed trigger as not checked, never as Healthy', () => {
+    render(
+      <TriggerListItem
+        trigger={trigger} isExpanded={false} firings={[]} isLoadingFirings={false} personaName="p"
+        onToggleExpand={() => {}} onToggleEnabled={() => {}} onDelete={() => {}}
+      />,
+    );
+    expect(screen.getByText('Not checked')).toBeTruthy();
+    expect(screen.queryByText('Healthy')).toBeNull();
+  });
+
+  it('keeps a reported healthy trigger green', () => {
+    render(
+      <TriggerListItem
+        trigger={{ ...trigger, healthStatus: 'healthy' }} isExpanded={false} firings={[]} isLoadingFirings={false}
+        personaName="p" onToggleExpand={() => {}} onToggleEnabled={() => {}} onDelete={() => {}}
+      />,
+    );
+    expect(screen.getByText('Healthy')).toBeTruthy();
+  });
+});

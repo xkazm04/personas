@@ -3,6 +3,7 @@ import { extractConnectorNames } from '@/lib/personas/utils';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import type { AgentListViewConfig } from './viewConfig';
+import { healthKeyOf } from './PersonaOverviewBadges';
 
 const connectorNamesCache = new WeakMap<Persona, string[]>();
 
@@ -92,52 +93,41 @@ export function usePersonaListFilters({
 
     if (!sortKey) return result;
 
-    result.sort((a, b) => {
-      let cmp = 0;
+    // The order is a contract (registry: software-engineering/table, sorting):
+    // the same data and sort state yield the same sequence. An ABSENT value
+    // has one home - after every present one, in BOTH directions (the spend
+    // column's "unknown is not free" rule, applied to every column) - and
+    // equal keys fall back to the row id, so storage order never leaks in.
+    const keyOf = (p: Persona): string | number | undefined => {
       switch (sortKey) {
-        case 'name':
-          cmp = a.name.localeCompare(b.name);
-          break;
-        case 'status':
-          cmp = (a.enabled ? 1 : 0) - (b.enabled ? 1 : 0);
-          break;
-        case 'trust':
-          cmp = (a.trust_score ?? 0) - (b.trust_score ?? 0);
-          break;
-        case 'triggers':
-          cmp = (triggerCounts[a.id] ?? 0) - (triggerCounts[b.id] ?? 0);
-          break;
-        case 'lastRun': {
-          const ta = lastRunMap[a.id] ?? '';
-          const tb = lastRunMap[b.id] ?? '';
-          cmp = ta.localeCompare(tb);
-          break;
-        }
-        case 'spend': {
-          const sa = spendMap?.get(a.id)?.spend;
-          const sb = spendMap?.get(b.id)?.spend;
-          // UNKNOWN IS NOT FREE (golden path: llm-spend-accounting). Defaulting
-          // a missing figure to 0 would rank an agent whose spend nobody could
-          // report alongside one that genuinely cost nothing, and the cheapest
-          // row on the screen would be the one with no data. Unknown sorts
-          // after every known figure instead, in BOTH directions - pre-negated
-          // here because the caller flips `cmp` for a descending sort.
-          if (sa === undefined || sb === undefined) {
-            if (sa === undefined && sb === undefined) cmp = 0;
-            else {
-              const dir = sortDirection === 'desc' ? -1 : 1;
-              cmp = (sa === undefined ? 1 : -1) * dir;
-            }
-            break;
-          }
-          cmp = sa - sb;
-          break;
-        }
-        case 'created':
-          cmp = (a.created_at ?? '').localeCompare(b.created_at ?? '');
-          break;
+        case 'name': return p.name;
+        case 'status': return p.enabled ? 1 : 0;
+        case 'trust': return p.trust_score ?? undefined;
+        case 'triggers': return triggerCounts[p.id] ?? 0;
+        case 'lastRun': return lastRunMap[p.id] || undefined;
+        // UNKNOWN IS NOT FREE (golden path: llm-spend-accounting): a missing
+        // spend figure is not $0 and must never rank as the cheapest row.
+        case 'spend': return spendMap?.get(p.id)?.spend;
+        case 'created': return p.created_at || undefined;
+        default: return undefined;
       }
-      return sortDirection === 'desc' ? -cmp : cmp;
+    };
+    const dir = sortDirection === 'desc' ? -1 : 1;
+
+    result.sort((a, b) => {
+      const ka = keyOf(a);
+      const kb = keyOf(b);
+      let cmp = 0;
+      if (ka === undefined || kb === undefined) {
+        // Not multiplied by `dir`: absent stays last whichever way you sort.
+        if (ka !== kb) return ka === undefined ? 1 : -1;
+      } else if (typeof ka === 'string' && typeof kb === 'string') {
+        cmp = ka.localeCompare(kb) * dir;
+      } else {
+        cmp = ((ka as number) - (kb as number)) * dir;
+      }
+      if (cmp !== 0) return cmp;
+      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
     });
 
     return result;
@@ -171,7 +161,8 @@ export function usePersonaListFilters({
 
     // Health
     if (healthFilter !== 'all') {
-      result = result.filter((p) => (healthMap[p.id]?.status ?? 'healthy') === healthFilter);
+      // No entry = `unknown`: Healthy matches only a real healthy verdict.
+      result = result.filter((p) => healthKeyOf(healthMap[p.id]) === healthFilter);
     }
 
     // Connector

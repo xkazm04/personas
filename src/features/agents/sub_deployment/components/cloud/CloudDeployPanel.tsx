@@ -116,7 +116,9 @@ export default function CloudDeployPanel() {
   // Auto-refresh when Status, OAuth, Deployments, or Schedules tabs become active
   useEffect(() => {
     if (!isConnected) return;
-    if (activeTab === 'oauth') {
+    // Status reads the OAuth status too: its token row must not call a token
+    // "available" on presence alone (one read per tab visit, not per poll).
+    if (activeTab === 'oauth' || activeTab === 'status') {
       fetchOAuthStatus();
     } else if (activeTab === 'deployments' || activeTab === 'schedules') {
       let active = true;
@@ -124,7 +126,7 @@ export default function CloudDeployPanel() {
       fetchDeployments().finally(() => { if (active) setIsFetchingDeployments(false); });
       return () => { active = false; };
     }
-    // Status tab is now handled by usePolling below
+    // The Status tab's counts are polled by usePolling below
   }, [activeTab, isConnected, fetchOAuthStatus, fetchDeployments]);
 
   // Auto-poll cloud status while the Status tab is active and connected
@@ -250,6 +252,7 @@ export default function CloudDeployPanel() {
             onRefresh={refreshStatus}
             stale={statusPollErrors > 0}
             lastPolled={statusLastRefreshed}
+            oauthStatus={oauthStatus}
           />}
           {activeTab === 'oauth' && isConnected && <CloudOAuthPanel
             oauthStatus={oauthStatus}

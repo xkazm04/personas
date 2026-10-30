@@ -68,6 +68,9 @@ pub mod pipelines;
 pub mod portfolio;
 /// `dev_projects` — the project row itself and its per-project config columns.
 pub mod projects;
+/// `scan-finding/1` on `dev_ideas`: the contract fields, the decision memory a
+/// scanner reads (A3) and the autonomy ladder over `scan_trust_events` (A4).
+pub mod scan_trust;
 /// `dev_scans`.
 pub mod scans;
 /// `dev_use_case_scenarios` and `dev_council_scenario_results` - a feature

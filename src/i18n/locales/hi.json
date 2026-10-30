@@ -4692,6 +4692,7 @@
       "filter_target": "लक्ष्य",
       "gitlab": "GitLab",
       "history_empty": "अभी तक कोई तैनाती इतिहास नहीं",
+      "history_load_failed": "डिप्लॉयमेंट इतिहास लोड नहीं हो सका",
       "history_snapshot": "प्रॉम्प्ट स्नैपशॉट कैप्चर किया गया",
       "history_title": "तैनाती इतिहास",
       "no_data": "कोई डेटा नहीं",

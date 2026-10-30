@@ -29,6 +29,9 @@ export function useDeploymentTest() {
   const [tests, setTests] = useState<Record<string, TestState>>({});
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const unmountedRef = useRef(false);
+  // In-flight ids live in a ref (not read from `tests`) so runTest keeps one
+  // identity and the double-fire guard holds even before a re-render lands.
+  const runningRef = useRef<Set<string>>(new Set());
 
   // Walk all pending dismiss timers and clear them on unmount so stale
   // setTests calls don't fire on an unmounted hook (memory retention of
@@ -48,7 +51,8 @@ export function useDeploymentTest() {
 
   const runTest = useCallback(async (deploymentId: string, personaId: string, prompt?: string) => {
     // Prevent double-fire
-    if (tests[deploymentId]?.running) return;
+    if (runningRef.current.has(deploymentId)) return;
+    runningRef.current.add(deploymentId);
 
     // Clear any previous dismiss timer
     if (timers.current[deploymentId]) {
@@ -122,8 +126,10 @@ export function useDeploymentTest() {
           return next;
         });
       }, RESULT_DISPLAY_MS);
+    } finally {
+      runningRef.current.delete(deploymentId);
     }
-  }, [tests]);
+  }, []);
 
   const dismissResult = useCallback((deploymentId: string) => {
     if (timers.current[deploymentId]) {

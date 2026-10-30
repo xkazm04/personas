@@ -80,7 +80,7 @@ export function DeploymentFilters({
             <div>
               <label className="typo-label text-foreground">{dt.filter_status}</label>
               <div className="flex flex-wrap gap-1 mt-1.5">
-                {(['all', 'active', 'paused', 'failed', 'file-based'] as const).map((v) => (
+                {(['all', 'active', 'paused', 'failed', 'file-based', 'unknown'] as const).map((v) => (
                   <button
                     type="button"
                     key={v}

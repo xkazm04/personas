@@ -20,6 +20,7 @@ import type { DevContext } from "@/lib/bindings/DevContext";
 import type { DevContextGroupRelationship } from "@/lib/bindings/DevContextGroupRelationship";
 import type { DevProjectEnvConnector } from "@/lib/bindings/DevProjectEnvConnector";
 import type { DevIdea } from "@/lib/bindings/DevIdea";
+import type { ScanTrustReport } from "@/lib/bindings/ScanTrustReport";
 import type { DevScan } from "@/lib/bindings/DevScan";
 import type { DevTask } from "@/lib/bindings/DevTask";
 import type { StaticScanConfig } from "@/lib/bindings/StaticScanConfig";
@@ -1149,6 +1150,8 @@ export interface MemoryIngestResult {
   findingsDeduped: number;
   /** Dropped by backpressure (backlog at cap) or per-ingest line caps. */
   findingsSkipped: number;
+  /** `disposition: carry` findings - owed to the sweep's next round, never filed for a decision. */
+  findingsCarried: number;
   /** NEW deep-scan escalations — auto-dispatch `/scan-<lens> <context>` per entry (bounded). */
   escalations: { lens: string; context: string | null }[];
 }
@@ -1187,6 +1190,10 @@ export interface MemoryCoverage {
  *  Missing outbox = zero-work success (`outboxFound: false`). */
 export const ingestMemoryOutbox = (projectId: string) =>
   invoke<MemoryIngestResult>("dev_tools_memory_ingest", { projectId });
+
+/** The scan autonomy ladder per slice (scan-finding/1): level, agreement, last event. */
+export const getScanTrust = (projectId: string) =>
+  invoke<ScanTrustReport>("dev_tools_scan_trust", { projectId });
 
 /** Refresh `<root>/.personas/backlog-digest.json` (known idea titles per
  *  status) so a scan skill dispatched next reads the CURRENT backlog. Returns

@@ -29,6 +29,7 @@ import { useExecutionScope } from '@/hooks/execution/useExecutionScope';
 import { ExecutionSummaryCard } from '@/features/agents/sub_executions/detail/views/ExecutionSummaryCard';
 import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
 import { useRafCoalescedCallback } from '@/hooks/utility/timing/useRafCoalescedCallback';
+import { clampMiniPlayerPosition, useMiniPlayerViewportClamp } from './miniPlayerViewport';
 
 /** Raw tail used only by the expanded terminal view; empty when collapsed/Simple mode so we skip the slice entirely. */
 const EMPTY_LINES: string[] = [];
@@ -84,7 +85,14 @@ export function SimpleExecutionView({
             </span>
           )}
         </div>
-        <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
+        <div
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(stageProgress.fraction * 100)}
+          aria-label={error ? t.execution.something_went_wrong : stageProgress.label}
+          className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden"
+        >
           <div
             className={`h-full rounded-full transition-all duration-700 ease-out ${error ? 'bg-red-400' : 'bg-blue-400'}`}
             style={{ width: `${stageProgress.fraction * 100}%` }}
@@ -231,11 +239,9 @@ export default function ExecutionMiniPlayer() {
   const moveMiniPlayerFrame = useRafCoalescedCallback((clientX: number, clientY: number) => {
     const dx = clientX - dragStart.current.x;
     const dy = clientY - dragStart.current.y;
-    setMiniPlayerPosition({
-      x: Math.max(0, Math.min(window.innerWidth - 360, dragStart.current.posX + dx)),
-      y: Math.max(0, Math.min(window.innerHeight - 80, dragStart.current.posY + dy)),
-    });
+    setMiniPlayerPosition(clampMiniPlayerPosition(dragStart.current.posX + dx, dragStart.current.posY + dy));
   });
+  useMiniPlayerViewportClamp(miniPlayerPinned);
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDragging) return;
