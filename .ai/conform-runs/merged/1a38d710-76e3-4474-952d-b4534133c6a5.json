@@ -1,0 +1,65 @@
+{
+ "schema": "conform-run/1",
+ "worker": "1a38d710-76e3-4474-952d-b4534133c6a5",
+ "subject": "subscription-billing-periods",
+ "evaluatedAt": "2026-10-30T22:16:42.669627+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "overview-usage-charts",
+   "subject": "subscription-billing-periods",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:2 Here a 'period' is an analytics display window (24h/7d/30d/90d, compared with the previous window as ghost lines). There are no recurring subscriptions, anchors, renewals or invoices to bound. A grep over src/features/overview/sub_usage/ for subscription, billing, invoice and renewal found nothing, so no technique's precondition holds.",
+   "techniques": [
+    {
+     "technique": "anchor-re-derived-not-chained",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:75 The window is derived from an end day and a day count for one chart render. No subscription anchor or recurrence exists to chain."
+    },
+    {
+     "technique": "timezone-anchored-period-dates",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/components/DayRangePicker.tsx:10 These are user-picked lookback ranges, not per-subscriber billing boundaries."
+    },
+    {
+     "technique": "boundary-stitch-on-timezone-change",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:79 The previous window is only a comparison lookup. No period record is persisted, so nothing needs to tile or stitch."
+    },
+    {
+     "technique": "hourly-pass-with-derived-idempotency",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:50 This is a pure render-time transform. No recurring pass advances periods or issues invoices."
+    }
+   ],
+   "absenceTerms": [
+    "subscription",
+    "billing",
+    "invoice",
+    "renewal"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-30T22:16:42.669627+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "subscription-billing-periods"
+   ],
+   "techniques": [
+    "anchor-re-derived-not-chained",
+    "boundary-stitch-on-timezone-change",
+    "hourly-pass-with-derived-idempotency",
+    "timezone-anchored-period-dates"
+   ],
+   "deviations": 0,
+   "context": "overview-usage-charts",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

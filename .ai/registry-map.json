@@ -24297,7 +24297,11 @@
           "revision": 1,
           "changedAt": "2026-09-07",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:2 Here a 'period' is an analytics display window (24h/7d/30d/90d, compared with the previous window as ghost lines). There are no recurring subscriptions, anchors, renewals or invoices to bound. A grep over src/features/overview/sub_usage/ for subscription, billing, invoice and renewal found nothing, so no technique's precondition holds.",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:3a0a03da985229a4",
+          "evaluatedRevision": 2
         },
         {
           "subject": "usage-event-ingestion",
