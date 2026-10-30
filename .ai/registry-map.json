@@ -35720,7 +35720,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/l2/useFactoryScans.ts:82 the Factory L2 'Scan for KPIs' and (:105) context re-scan buttons spawn a headless claude with cwd = the attached project root (src-tauri/src/commands/infrastructure/kpi_scan.rs:807, src-tauri/src/commands/infrastructure/context_generation.rs:1629) through build_cli_args, which emits --dangerously-skip-permissions with no --setting-sources restriction (src-tauri/engine/src/prompt/cli_args.rs:107), so the scanned repo's CLAUDE.md and .claude/settings.json hooks run under a read verb with no digest approval",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         }
       ],
       "governance": "governed"

@@ -40059,6 +40059,38 @@
           "reason": "replaced by 5ca57a8d-5b66-4fce-85a0-880da6052585"
         }
       ]
+    },
+    "d7b7eb04-730f-4450-9a68-affc95f93267/supply-chain": {
+      "context": "teams-factory-l2",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T12:00:00.000Z",
+      "worker": "5f2d7b7c-16a2-4a21-b098-878affa8adaf",
+      "techniques": [
+        {
+          "technique": "reading-is-not-running",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/cli_process.rs:467 every headless one-shot (KPI scan, context scan) takes build_cli_args' --dangerously-skip-permissions and reads the target tree's own settings/hooks; no approved-digest gate, no loud refusal on change, not default-off"
+        },
+        {
+          "technique": "archive-extraction-safety",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/l2/factoryL2Data.ts:1 the context is a per-project data layer and scan launcher; it downloads and unpacks no archive"
+        },
+        {
+          "technique": "dependency-policy-gates",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/l2/factoryL2Data.ts:1 no lockfile, manifest or resolved dependency graph crosses this context; the repo-level gates are judged elsewhere"
+        },
+        {
+          "technique": "permission-manifest-scoping",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/l2/factoryL2Data.ts:1 the context declares no capability, CSP or permission manifest"
+        }
+      ],
+      "registryProposal": "This is the fourth context in this repo (after plugins-dev-tools-context, plugins-dev-tools-projects and prompt-assembly-engine) where one root cause, a shared CLI-args builder with --dangerously-skip-permissions, produces the reading-is-not-running deviation once per UI surface that reaches it. The technique could add a decision rule: when the evaluating spawn is one shared builder, judge and fix it at the builder and record the per-surface hits as reach rather than as separate defects."
     }
   }
 }

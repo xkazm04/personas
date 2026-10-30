@@ -2195,3 +2195,4 @@
 {"ts":"2026-10-30T20:58:15Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["capability-gate-predicates","subtractive-entitlement"],"deviations":0}
 {"ts":"2026-10-30T20:58:15Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["tier-model-single-source"],"deviations":0}
 {"ts":"2026-10-30T20:58:15Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["capability-gate-predicates"],"deviations":0}
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running","archive-extraction-safety","dependency-policy-gates","permission-manifest-scoping"],"deviations":1}
