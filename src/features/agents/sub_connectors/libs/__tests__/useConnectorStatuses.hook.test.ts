@@ -219,6 +219,18 @@ describe('useConnectorStatuses unreachable re-test', () => {
     expect(row?.lastVerdict?.testedAt).toBe('2026-10-18T00:00:00Z');
   });
 
+  it('a probe that throws is no verdict either: unreachable, verdict kept', async () => {
+    // The store maps a transport failure to `unreachable`; the hook's own
+    // catch must agree rather than paint a red failure nothing judged.
+    healthcheckCredential.mockRejectedValueOnce(new Error('ipc timeout'));
+    const { result } = renderHook(() => useConnectorStatuses());
+    await act(async () => { await result.current.testConnector('github', 'cred-a'); });
+    const row = result.current.statuses[0];
+    expect(row?.result?.state).toBe('unreachable');
+    expect(result.current.readinessCounts.unhealthy).toBe(0);
+    expect(row?.lastVerdict?.state).toBe('verified');
+  });
+
   it('a later real verdict replaces the kept one', async () => {
     healthcheckCredential.mockResolvedValueOnce({ success: false, message: 'dns failure', state: 'unreachable' });
     healthcheckCredential.mockResolvedValueOnce({ success: false, message: 'bad token', state: 'failed' });

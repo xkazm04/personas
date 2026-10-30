@@ -188,9 +188,13 @@ export function useConnectorStatuses() {
       }
       return result;
     } catch (err) {
+      // A probe that threw never asked the service: the same `unreachable`
+      // token the store returns for a transport failure, never a red verdict.
+      // Without a state the row resolved to `failed` from `success: false`.
       const result: ConnectorTestResult = {
         success: false,
         message: err instanceof Error ? err.message : t.agents.connectors.test_healthcheck_failed_default,
+        state: 'unreachable',
       };
       if (epoch.isCurrent(token)) updateStatus(name, { testing: false, result });
       return result;
