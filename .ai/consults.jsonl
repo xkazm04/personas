@@ -2169,3 +2169,6 @@
 {"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","spend-observability"],"deviations":1,"context":"stores-slices-overview"}
 {"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":[],"deviations":0,"context":"passport-wall-model"}
 {"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":[],"deviations":0,"context":"overview-usage-charts"}
+{"ts":"2026-10-30T20:51:25Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["comparison-modes","resolution-precondition","eval-economics"],"deviations":1}
+{"ts":"2026-10-30T20:51:25Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["resolution-precondition","metric-role-contract","outcome-conditioned-cost"],"deviations":1}
+{"ts":"2026-10-30T20:51:25Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["judge-stability","assertion-vs-judgment","eval-economics","reliability-aggregation"],"deviations":1}

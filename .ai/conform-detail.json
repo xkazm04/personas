@@ -374,31 +374,38 @@
       "subject": "eval-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T17:10:33.987Z",
-      "worker": "332d5829-60c2-4fbe-9865-a6f46bbb5d40",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:51:25.000Z",
+      "worker": "2092b7c7-f055-474c-a81b-6b908f48aced",
       "techniques": [
         {
           "technique": "judge-stability",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/eval.rs:609 The LLM judge routes through CallClass::Verdict pointing to SONNET_CURRENT, an alias that silently shifts under roster bumps, without recording judge identity or packet version onto the result row."
+          "evidence": "src-tauri/engine/src/eval.rs:615 route.model is used for the call and the spend ledger but never written onto the eval result; the rubric is inline in build_llm_eval_prompt with no packet version"
+        },
+        {
+          "technique": "assertion-vs-judgment",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/eval.rs:476 deterministic scorers (keyword, tool accuracy, protocol, confusion) sit beside the judge and back it as a fallback"
+        },
+        {
+          "technique": "eval-economics",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:355 a semaphore caps concurrent CLI cells across a lab run"
+        },
+        {
+          "technique": "reliability-aggregation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:385 one spawn per model x variant pair per scenario, no repeat count; no declared N or aggregation rule travels with the composite"
         },
         {
           "technique": "scenario-design",
           "verdict": "conformant",
-          "evidence": "src-tauri/engine/src/test_runner/scenarios.rs:36 Scenario cache key scopes persona ID and tools while deliberately excluding candidate prompt, ensuring version comparisons evaluate against identical questions."
-        },
-        {
-          "technique": "eval-economics",
-          "verdict": "conformant",
-          "evidence": "src-tauri/engine/src/test_runner/lab.rs:30 Bounds concurrent CLI cell execution via bounded concurrency primitive to avoid rate limit stampedes."
-        },
-        {
-          "technique": "assertion-vs-judgment",
-          "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/eval.rs:503 Inverts the standard layering by invoking the LLM judge first and only executing deterministic heuristics as a fallback upon LLM failure."
+          "evidence": "src-tauri/engine/src/test_runner/scenarios.rs:36 Scenario cache key scopes persona ID and tools while deliberately excluding candidate prompt, ensuring version comparisons evaluate against identical questions.",
+          "carriedFrom": "2026-10-12"
         }
       ],
+      "registryProposal": "judge-stability names the first-party tier constant as an alias; here the spend ledger already records the resolved model per judge call, a cheap join that the technique could name as the minimum stamp when the result schema cannot change yet",
       "superseded": [
         {
           "state": "deviation",
@@ -406,6 +413,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 332d5829-60c2-4fbe-9865-a6f46bbb5d40"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/eval.rs:616 Routes LLM evaluation through CallClass::Verdict resolving to SONNET_CURRENT without recording the concrete model identifier or judge packet version onto the result record, allowing model roster updates to silently drift the measurement baseline.",
+          "evaluatedAt": "2026-10-12T17:10:33.987Z",
+          "worker": "332d5829-60c2-4fbe-9865-a6f46bbb5d40",
+          "reason": "replaced by 2092b7c7-f055-474c-a81b-6b908f48aced"
         }
       ]
     },
@@ -6841,29 +6855,30 @@
       "subject": "eval-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T17:10:33.987Z",
-      "worker": "332d5829-60c2-4fbe-9865-a6f46bbb5d40",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:51:25.000Z",
+      "worker": "2092b7c7-f055-474c-a81b-6b908f48aced",
       "techniques": [
-        {
-          "technique": "metric-role-contract",
-          "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:180 Blends tool accuracy, output quality, and protocol compliance into an unconstrained weighted composite score rather than optimizing one metric against constraints."
-        },
         {
           "technique": "resolution-precondition",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:193 Ranks versions by composite score and assigns winner without checking whether between-condition spread exceeds within-condition noise."
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:250 winner taken from aggs[0] after sort at :214, no between-vs-within comparison"
+        },
+        {
+          "technique": "metric-role-contract",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:201 the ranking metric is a composite of three sub-scores; no optimized metric and no declared thresholds"
         },
         {
           "technique": "outcome-conditioned-cost",
-          "verdict": "conformant",
-          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:110 Separates incomplete trials from scored runs, tracking scoredCost and scoredTokens alongside total unconditioned figures."
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:207 incompleteCount and scored-only cost/duration are kept apart from the all-runs totals"
         },
         {
           "technique": "comparison-modes",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:229 Crowns the top matrix version as winner without reporting per-cell win/loss margins."
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:229 Crowns the top matrix version as winner without reporting per-cell win/loss margins.",
+          "carriedFrom": "2026-10-12"
         }
       ],
       "superseded": [
@@ -6873,6 +6888,13 @@
           "evaluatedAt": "2026-09-23",
           "worker": null,
           "reason": "replaced by 332d5829-60c2-4fbe-9865-a6f46bbb5d40"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:193 Evaluates persona versions by sorting on an unconstrained weighted composite score and designating the top entry as winner without pre-declared thresholds or resolution verification against within-condition variance.",
+          "evaluatedAt": "2026-10-12T17:10:33.987Z",
+          "worker": "332d5829-60c2-4fbe-9865-a6f46bbb5d40",
+          "reason": "replaced by 2092b7c7-f055-474c-a81b-6b908f48aced"
         }
       ]
     },
@@ -19714,29 +19736,45 @@
       "subject": "eval-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T17:10:33.987Z",
-      "worker": "332d5829-60c2-4fbe-9865-a6f46bbb5d40",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:51:25.000Z",
+      "worker": "2092b7c7-f055-474c-a81b-6b908f48aced",
       "techniques": [
         {
           "technique": "comparison-modes",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:131 Forces a winner on tied win totals using alphabetical model name comparison rather than preserving ties or executing mirrored position controls."
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:131 forced winner on equal win counts; no win/loss/tie reported"
+        },
+        {
+          "technique": "resolution-precondition",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/test_runner/summaries.rs:88 best_quality_model is the top of a sort on rounded composite with no within-condition spread check before the per-run winner is published"
+        },
+        {
+          "technique": "eval-economics",
+          "verdict": "realized",
+          "evidence": "src/features/agents/sub_lab/use-cases/MockModePanel.tsx:11 a mock execution mode exists beside the live arena"
         },
         {
           "technique": "uncontrolled-games-beside-the-win-rate",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:117 Counts single-direction match winner outcomes without position swap controls or accounting for excluded/uncontrolled games."
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:117 Counts single-direction match winner outcomes without position swap controls or accounting for excluded/uncontrolled games.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "pairing-schedule",
           "verdict": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:119 Maintains cumulative win tallies without checking comparison graph connectivity or rater exposure balance."
-        },
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:119 Maintains cumulative win tallies without checking comparison graph connectivity or rater exposure balance.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
         {
-          "technique": "eval-economics",
-          "verdict": "conformant",
-          "evidence": "src/features/agents/sub_lab/use-cases/MockModePanel.tsx:35 Provides mock execution mode for use cases allowing UI inspection without spending model calls."
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:131 In head-to-head persona arena matches, ties in win count are artificially broken by alphabetical model name comparison rather than preserving ties or completing position-mirrored controls.",
+          "evaluatedAt": "2026-10-12T17:10:33.987Z",
+          "worker": "332d5829-60c2-4fbe-9865-a6f46bbb5d40",
+          "reason": "replaced by 2092b7c7-f055-474c-a81b-6b908f48aced"
         }
       ]
     },
