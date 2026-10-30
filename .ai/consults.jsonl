@@ -2191,3 +2191,7 @@
 {"ts":"2026-10-30T20:57:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["untrusted-result-handling","caller-differentiated-capability"],"deviations":0,"context":"agents-design"}
 {"ts":"2026-10-30T20:57:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["server-composition"],"deviations":0,"context":"stores-slices-system"}
 {"ts":"2026-10-30T20:57:00Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["client-integration"],"deviations":0,"context":"plugins-dev-tools-context"}
+{"ts":"2026-10-30T20:58:15Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["tier-model-single-source","deployment-mode-short-circuit","live-catalog-edit-is-a-lifecycle-event"],"deviations":0}
+{"ts":"2026-10-30T20:58:15Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["capability-gate-predicates","subtractive-entitlement"],"deviations":0}
+{"ts":"2026-10-30T20:58:15Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["tier-model-single-source"],"deviations":0}
+{"ts":"2026-10-30T20:58:15Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["capability-gate-predicates"],"deviations":0}

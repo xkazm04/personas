@@ -10337,49 +10337,84 @@
       "subject": "plan-entitlements",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:08:40.000Z",
-      "worker": "01de9f50-abf3-4a5a-8033-65d5426aab64",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:58:15.000Z",
+      "worker": "5ca57a8d-5b66-4fce-85a0-880da6052585",
       "techniques": [
         {
-          "technique": "capability-gate-predicates",
+          "technique": "tier-model-single-source",
           "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useTier.ts:47 isVisible compares TIER_RANK against BUILD_MAX_TIER, a feature-visibility gate with no tenant, usage or balance input, because nothing is sold"
-        },
-        {
-          "technique": "id-vs-label-split",
-          "verdict": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useTier.ts:42 current = BUILD_MAX_TIER, and no tenant row persists a plan id, so there is no stored id for a label to drift from"
+          "evidence": "src/lib/constants/uiModes.ts:47 single tier constant exists, but it models a build edition, not a paid plan"
         },
         {
           "technique": "deployment-mode-short-circuit",
           "verdict": "not-applicable",
-          "evidence": ".ai/manifest.yaml:104 does_not lists hosted multi-tenant service and billing; with one self-run deployment that sells nothing, there is no operation-vs-capability mode to declare"
+          "evidence": "src/hooks/utility/interaction/useTier.ts:4 runtime mode toggle retired; there is no metered mode to short-circuit"
+        },
+        {
+          "technique": "live-catalog-edit-is-a-lifecycle-event",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/constants/uiModes.ts:47 tier model lives in code, there is no editable catalog and no subscribers"
+        },
+        {
+          "technique": "capability-gate-predicates",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useTier.ts:47 isVisible compares TIER_RANK against BUILD_MAX_TIER, a feature-visibility gate with no tenant, usage or balance input, because nothing is sold",
+          "carriedFrom": "2026-10-09"
+        },
+        {
+          "technique": "id-vs-label-split",
+          "verdict": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useTier.ts:42 current = BUILD_MAX_TIER, and no tenant row persists a plan id, so there is no stored id for a label to drift from",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "Technique-shaped resonance, not a hole: both pairs were added by an earlier /conform on the word \"tier\". plan-entitlements opens on what money buys, and this repo declares no billing (.ai/manifest.yaml:104). A build-edition/audience gate (VITE_APP_TIER) shares the structural vocabulary of tier-model-single-source and capability-gate-predicates but fails the subject precondition. Proposal: the golden path names \"edition/audience tiers with no payment\" in its does-not-own seams, so the matcher and judges route such surfaces away. Also: score-0 pairs added by /conform should be checked against the subject precondition before they are added."
+      "registryProposal": "Personas' build-edition tiers (starter/team/builder via VITE_APP_TIER) resonate with tier-model-single-source and deployment-mode-short-circuit without the subject's paid-plan precondition; a 'when NOT to use' line naming audience/edition tiers that no payment confers would stop the matcher re-proposing this pairing",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useTier.ts:4 the runtime mode toggle was retired and the tier is the build constant VITE_APP_TIER, a UI-audience edition that no payment confers; the repo declares no billing (.ai/manifest.yaml:104), so the subject precondition (a plan that money buys) does not hold",
+          "evaluatedAt": "2026-10-09T17:08:40.000Z",
+          "worker": "01de9f50-abf3-4a5a-8033-65d5426aab64",
+          "reason": "replaced by 5ca57a8d-5b66-4fce-85a0-880da6052585"
+        }
+      ]
     },
     "dc471d31-ae30-4ac9-b015-d51969df458d/plan-entitlements": {
       "context": "shared-chrome",
       "subject": "plan-entitlements",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:08:40.000Z",
-      "worker": "01de9f50-abf3-4a5a-8033-65d5426aab64",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:58:15.000Z",
+      "worker": "5ca57a8d-5b66-4fce-85a0-880da6052585",
       "techniques": [
         {
           "technique": "capability-gate-predicates",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:49 isTierVisible(minTier, activeTier) is a read-side visibility filter for the UI audience. There is no write gate and no refusal for it to share, because no capability is paid for"
+          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:43 a visibility filter over the edition; no plan, allowance or balance to decide on"
+        },
+        {
+          "technique": "subtractive-entitlement",
+          "verdict": "not-applicable",
+          "evidence": "src/lib/constants/uiModes.ts:47 no per-tenant overrides exist; one operator per install"
         },
         {
           "technique": "tier-model-single-source",
           "verdict": "not-applicable",
-          "evidence": "src/lib/constants/uiModes.ts:30 TIERS has no limits, prices or capabilities a subscription buys; it is an audience ladder, and .ai/manifest.yaml:104 declares no billing"
+          "evidence": "src/lib/constants/uiModes.ts:30 TIERS has no limits, prices or capabilities a subscription buys; it is an audience ladder, and .ai/manifest.yaml:104 declares no billing",
+          "carriedFrom": "2026-10-09"
         }
       ],
-      "registryProposal": "Technique-shaped resonance, not a hole: both pairs were added by an earlier /conform on the word \"tier\". plan-entitlements opens on what money buys, and this repo declares no billing (.ai/manifest.yaml:104). A build-edition/audience gate (VITE_APP_TIER) shares the structural vocabulary of tier-model-single-source and capability-gate-predicates but fails the subject precondition. Proposal: the golden path names \"edition/audience tiers with no payment\" in its does-not-own seams, so the matcher and judges route such surfaces away. Also: score-0 pairs added by /conform should be checked against the subject precondition before they are added."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:43 filterByTier hides nav items by minTier against the build edition, not against a paid plan; the repo declares no billing (.ai/manifest.yaml:104), so the subject precondition does not hold",
+          "evaluatedAt": "2026-10-09T17:08:40.000Z",
+          "worker": "01de9f50-abf3-4a5a-8033-65d5426aab64",
+          "reason": "replaced by 5ca57a8d-5b66-4fce-85a0-880da6052585"
+        }
+      ]
     },
     "bb9239ca-2b5b-4d51-b6ec-c32921a2fe20/motion": {
       "context": "plugins-radio",
@@ -39974,6 +40009,56 @@
         }
       ],
       "registryProposal": "Same 'devTools' lexical false positive as stores-slices-system."
+    },
+    "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f/plan-entitlements": {
+      "context": "home-cockpit-widgets",
+      "subject": "plan-entitlements",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:58:15.000Z",
+      "worker": "5ca57a8d-5b66-4fce-85a0-880da6052585",
+      "techniques": [
+        {
+          "technique": "tier-model-single-source",
+          "verdict": "not-applicable",
+          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:6 model-routing tier, not a product tier"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:6-9 'tier' is an LLM-model capability tier (haiku|sonnet|opus), and ObservabilityPlanWidget.tsx's 'plan' is an operational runbook Athena proposes -- neither reads or writes src/lib/constants/uiModes.ts's TIERS (the actual product tier model). Precondition (this widget set implements plan/tier gating) does not hold; it is a vocabulary collision, not a deviation.",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 5ca57a8d-5b66-4fce-85a0-880da6052585"
+        }
+      ]
+    },
+    "e0a448bc-24d4-4663-ba31-27d4ce378a14/plan-entitlements": {
+      "context": "agents-deployment",
+      "subject": "plan-entitlements",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-30",
+      "evaluatedTs": "2026-10-30T20:58:15.000Z",
+      "worker": "5ca57a8d-5b66-4fce-85a0-880da6052585",
+      "techniques": [
+        {
+          "technique": "capability-gate-predicates",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/cloud.rs:120 capability gate on connection presence, not entitlement"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudHistoryHelpers.tsx:12 'provider-capability-honesty' is the only tier/capability-adjacent hit in this component tree; grep for tier|entitle|capability|plan across the whole cloud/ directory finds nothing else. Cloud-deploy reachability is gated solely by Google OAuth (#[requires(cloud)]), a different axis from the product tier model in src/lib/constants/uiModes.ts:30 (TIERS) -- precondition (this context implements or reads a plan/tier gate) does not hold.",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by 5ca57a8d-5b66-4fce-85a0-880da6052585"
+        }
+      ]
     }
   }
 }

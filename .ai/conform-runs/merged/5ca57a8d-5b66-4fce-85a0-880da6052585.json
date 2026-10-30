@@ -1,0 +1,46 @@
+{"schema": "conform-run/1", "worker": "5ca57a8d-5b66-4fce-85a0-880da6052585", "subject": "plan-entitlements",
+ "evaluatedAt": "2026-10-30T20:58:15Z",
+ "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba", "evaluatedRevision": 8,
+ "pairs": [
+  {"context": "cc76d419-f457-4fe4-833c-6869efbc9287", "subject": "plan-entitlements", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/constants/uiModes.ts:47 the tier is the build constant VITE_APP_TIER (defaults to builder), an edition no payment confers; .ai/manifest.yaml:116 declares billing out of scope and no payment code exists, so the subject precondition (what money buys) does not hold under rev 8 either",
+   "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba", "evaluatedRevision": 8,
+   "techniques": [
+    {"technique": "tier-model-single-source", "verdict": "not-applicable", "evidence": "src/lib/constants/uiModes.ts:47 single tier constant exists, but it models a build edition, not a paid plan"},
+    {"technique": "deployment-mode-short-circuit", "verdict": "not-applicable", "evidence": "src/hooks/utility/interaction/useTier.ts:4 runtime mode toggle retired; there is no metered mode to short-circuit"},
+    {"technique": "live-catalog-edit-is-a-lifecycle-event", "verdict": "not-applicable", "evidence": "src/lib/constants/uiModes.ts:47 tier model lives in code, there is no editable catalog and no subscribers"}],
+   "registryProposal": "Personas' build-edition tiers (starter/team/builder via VITE_APP_TIER) resonate with tier-model-single-source and deployment-mode-short-circuit without the subject's paid-plan precondition; a 'when NOT to use' line naming audience/edition tiers that no payment confers would stop the matcher re-proposing this pairing"},
+  {"context": "dc471d31-ae30-4ac9-b015-d51969df458d", "subject": "plan-entitlements", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:43 filterByTier hides nav by minTier against the build edition, not a paid plan; .ai/manifest.yaml:116 puts billing out of scope, so the precondition fails and rev 8's new techniques (catalog edit, inherited/subtractive tiers) have nothing to bind to",
+   "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba", "evaluatedRevision": 8,
+   "techniques": [
+    {"technique": "capability-gate-predicates", "verdict": "not-applicable", "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:43 a visibility filter over the edition; no plan, allowance or balance to decide on"},
+    {"technique": "subtractive-entitlement", "verdict": "not-applicable", "evidence": "src/lib/constants/uiModes.ts:47 no per-tenant overrides exist; one operator per install"}]},
+  {"context": "a76a8bc2-39eb-4cf1-92e6-93fba40ce96f", "subject": "plan-entitlements", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:6 'tier' is an LLM model slug (haiku|sonnet|opus), a vocabulary collision; .ai/manifest.yaml:116 declares billing out of scope, so no plan entitlement exists for these widgets to read",
+   "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba", "evaluatedRevision": 8,
+   "techniques": [
+    {"technique": "tier-model-single-source", "verdict": "not-applicable", "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:6 model-routing tier, not a product tier"}]},
+  {"context": "e0a448bc-24d4-4663-ba31-27d4ce378a14", "subject": "plan-entitlements", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/infrastructure/cloud.rs:120 cloud deploy is gated by #[requires(cloud)] (a configured connection), not a plan; sub_deployment has zero tier/entitle/quota hits and .ai/manifest.yaml:116 excludes billing, so the precondition fails",
+   "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba", "evaluatedRevision": 8,
+   "techniques": [
+    {"technique": "capability-gate-predicates", "verdict": "not-applicable", "evidence": "src-tauri/src/commands/infrastructure/cloud.rs:120 capability gate on connection presence, not entitlement"}]}
+ ],
+ "declined": [
+  {"subject": "plan-entitlements", "context": "12d5948a-76a4-4db1-ac6a-ac554eb12020", "reason": "budget: stale against rev 8 (carries rev 7 not-applicable); tests of the cockpit widgets re-judged above, so likely the same verdict, but left for the next run"},
+  {"subject": "plan-entitlements", "context": "959baa73-f18f-42c8-8569-466939b9050d", "reason": "budget: stale against rev 8; lexical-only pairing ('plan' = Ship milestone plan), lowest value to re-read"},
+  {"subject": "plan-entitlements", "context": "90f639de-ffc7-4225-b67f-1566e5d66b8b", "reason": "budget: stale against rev 8; probable-confidence health/event context"},
+  {"subject": "plan-entitlements", "context": "37cd64d2-bd42-47b9-8c17-7ea1b466135c", "reason": "weak context: not judged by default; coverage question, not a verdict"},
+  {"subject": "plan-entitlements", "context": "a576c14f-1edd-4da4-8d11-527161a3b5b3", "reason": "budget: stale against rev 8; probable-confidence team workspace"}
+ ],
+ "consults": [
+  {"ts":"2026-10-30T20:58:15Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["tier-model-single-source","deployment-mode-short-circuit","live-catalog-edit-is-a-lifecycle-event"],"deviations":0},
+  {"ts":"2026-10-30T20:58:15Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["capability-gate-predicates","subtractive-entitlement"],"deviations":0},
+  {"ts":"2026-10-30T20:58:15Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["tier-model-single-source"],"deviations":0},
+  {"ts":"2026-10-30T20:58:15Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["capability-gate-predicates"],"deviations":0}
+ ]}
