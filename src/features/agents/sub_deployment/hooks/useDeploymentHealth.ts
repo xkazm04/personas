@@ -62,6 +62,7 @@ export function useDeploymentHealth(
 
     prevKeyRef.current = stableKey;
     let cancelled = false;
+    let landed = false;
     setIsLoading(true);
 
     (async () => {
@@ -106,12 +107,20 @@ export function useDeploymentHealth(
         }
 
         setHealthMap(mapped);
+        landed = true;
       } finally {
         if (!cancelled) setIsLoading(false);
       }
     })();
 
-    return () => { cancelled = true; };
+    // A teardown before the stats land (StrictMode's mount replay, or a row
+    // joining mid-fetch, which changes deploymentIdsKey) discards this fetch.
+    // Forget the key too, or the re-run takes the re-map branch over an empty
+    // cache and settles every cloud row at "No data" for good.
+    return () => {
+      cancelled = true;
+      if (!landed) prevKeyRef.current = '';
+    };
   }, [stableKey, deploymentIdsKey]);
 
   return { healthMap, isLoading };

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 
 const statsMock = vi.fn();
 const silentCatchSpy = vi.fn();
@@ -26,6 +27,24 @@ describe('useDeploymentHealth', () => {
     expect(statsMock).toHaveBeenCalledWith('p1', 7);
     expect(Object.keys(result.current.healthMap).sort()).toEqual(['cloud-1', 'cloud-2']);
     expect(result.current.healthMap['cloud-1']![0]!.count).toBe(3);
+  });
+
+  it('still loads when the effect is torn down mid-fetch (StrictMode mount replay)', async () => {
+    statsMock.mockResolvedValue({ dailyBreakdown: daily });
+    const rows = [{ id: 'cloud-1', personaId: 'p1' }];
+    const { result } = renderHook(() => useDeploymentHealth(rows), { wrapper: StrictMode });
+    await waitFor(() => expect(Object.keys(result.current.healthMap)).toEqual(['cloud-1']));
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it('still loads when a row joins for a persona whose stats are already in flight', async () => {
+    let resolve!: (v: unknown) => void;
+    statsMock.mockImplementation(() => new Promise((r) => { resolve = r; }));
+    const first = [{ id: 'cloud-1', personaId: 'p1' }];
+    const { result, rerender } = renderHook(({ rows }) => useDeploymentHealth(rows), { initialProps: { rows: first } });
+    rerender({ rows: [...first, { id: 'cloud-2', personaId: 'p1' }] });
+    await act(async () => { resolve({ dailyBreakdown: daily }); });
+    await waitFor(() => expect(Object.keys(result.current.healthMap).sort()).toEqual(['cloud-1', 'cloud-2']));
   });
 
   it('never paints cloud execution stats onto a GitLab row that shares the persona', async () => {
