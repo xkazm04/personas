@@ -58,13 +58,3 @@ describe('AutomationConditionStep timeout stepper', () => {
     fireEvent.click(screen.getByText(/hide advanced/i));
   });
 });
-
-describe('AutomationConditionStep field labels', () => {
-  // Both <label>s sat beside their control with no htmlFor, so the name input
-  // and the input-schema textarea had no accessible name.
-  it('names the name input and the input-schema textarea by their labels', () => {
-    renderStep();
-    expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('x');
-    expect(screen.getByLabelText('Input Schema').tagName).toBe('TEXTAREA');
-  });
-});

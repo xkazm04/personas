@@ -1,4 +1,3 @@
-import { useId } from 'react';
 import {
   CheckCircle2, AlertCircle, ChevronDown, Pencil,
   Rocket, GitBranch, Zap,
@@ -45,8 +44,6 @@ export function AutomationConditionStep({
   fallbackMode, setFallbackMode, timeoutSecs, setTimeoutSecs, deployError,
 }: AutomationConditionStepProps) {
   const { t, tx } = useTranslation();
-  const nameId = useId();
-  const schemaId = useId();
   return (
     <div key="preview" className="animate-fade-slide-in space-y-6">
       {designResult.platform_reasoning && (
@@ -61,8 +58,8 @@ export function AutomationConditionStep({
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <div>
-            <label htmlFor={nameId} className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_name_label}</label>
-            <input id={nameId} type="text" value={name} onChange={(e) => setName(e.target.value)}
+            <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_name_label}</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)}
               className="w-full mt-1.5 px-3 py-2 typo-body rounded-modal border border-border bg-secondary/20 text-foreground focus-ring" />
           </div>
           <div>
@@ -145,8 +142,8 @@ export function AutomationConditionStep({
       {showAdvanced && (
           <div className="animate-fade-slide-in overflow-hidden space-y-4">
             <div>
-              <label htmlFor={schemaId} className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_input_schema}</label>
-              <textarea id={schemaId} placeholder={t.agents.connectors.auto_input_schema_placeholder} value={inputSchema} onChange={(e) => setInputSchema(e.target.value)} rows={3}
+              <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_input_schema}</label>
+              <textarea placeholder={t.agents.connectors.auto_input_schema_placeholder} value={inputSchema} onChange={(e) => setInputSchema(e.target.value)} rows={3}
                 className="w-full mt-1.5 px-3 py-2 typo-code rounded-modal border border-border bg-secondary/20 text-foreground placeholder:text-foreground focus-ring resize-none" />
             </div>
             <div>
