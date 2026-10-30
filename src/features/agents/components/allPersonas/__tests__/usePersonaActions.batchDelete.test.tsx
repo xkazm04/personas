@@ -92,3 +92,14 @@ describe('a refresh that fails after the mutation landed', () => {
     await waitFor(() => expect(toastMessages()).toContain('Archived 2 persona(s)'));
   });
 });
+
+describe('a selection that holds only the system persona', () => {
+  beforeEach(() => { useToastStore.setState({ toasts: [] }); });
+
+  it('says why delete did nothing instead of doing nothing silently', async () => {
+    render(<Harness ids={['dir']} />);
+    fireEvent.click(screen.getByText('go'));
+    expect(bulkDeletePersonas).not.toHaveBeenCalled();
+    expect(toastMessages()).toContain("The Director is a system persona and can't be deleted.");
+  });
+});

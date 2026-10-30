@@ -119,7 +119,12 @@ export function usePersonaActions({
       (id) => personas.find((p) => p.id === id)?.trust_origin !== 'system',
     );
     const count = ids.length;
-    if (count === 0) return;
+    if (count === 0) {
+      // Only system personas were selected. Say why nothing happens, the way
+      // the single-row delete does, instead of ignoring the click.
+      useToastStore.getState().addToast(t.agents.overview_actions.system_persona_undeletable, 'warning');
+      return;
+    }
     // Same guard the single delete carries: what depends on these agents, and a
     // typed confirmation (the name for one, the count for several).
     // A large selection would fire one IPC per agent at once; four at a time.
@@ -137,7 +142,7 @@ export function usePersonaActions({
         await runBulkDelete(ids);
       },
     });
-  }, [personas, selectedIds, confirm, tx, t.agents.overview_actions.delete_agents, t.agents.overview_actions.delete_agents_message, setSelectedIds, runBulkDelete]);
+  }, [personas, selectedIds, confirm, tx, t.agents.overview_actions.delete_agents, t.agents.overview_actions.delete_agents_message, t.agents.overview_actions.system_persona_undeletable, setSelectedIds, runBulkDelete]);
 
   const draftIds = useMemo(
     () => personas.filter((p) => isDraft(p)).map((p) => p.id),
