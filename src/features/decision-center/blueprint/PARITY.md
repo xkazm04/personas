@@ -130,7 +130,8 @@ Reference shots: bp itself on :3010 (Kettle sample and live products), compared 
 | Lives in (surfaces, contexts) | present | |
 | Revisions table | present | from the events log |
 | Illustration of the feature | dropped | the live stores carry no art; a key plan stands in |
-| Blast radius (B) | dropped | outside the brief; the map's dependency edges are loaded and can feed it later |
+| Blast radius (B) | present (2026-10-30) | the decision brief's blast line: the feature, its room, the features that depend on it (it opens their list) |
+| The decision brief on a waiting card (bp 51e193e, "one morning, with memory") | present | `model/brief.ts` is bp's `brief.ts`, held byte for byte by bp's golden (`standard/decision-brief.golden.json`, `__tests__/brief.golden.test.ts`); the card shows the advice chip and at most five fact lines, the declined line in amber, each fact opening its evidence. On a repeat (`withdraw`) Decline is the first answer, "You declined this before", Approve stays as "Approve anyway", and X opens the reason pre-filled with the note naming the decision it repeats (`repeatNote`), sent through `lens_scan_decide`. A like idea declined elsewhere (`ask`) keeps Approve first. bp's Enter-takes-the-recommended-option is not ported: Enter on an open feature says the enter hint, as before. No key is bound (Y stays triage accept) |
 
 ## Dropped for the whole sheet
 
