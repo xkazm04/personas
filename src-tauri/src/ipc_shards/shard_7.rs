@@ -380,5 +380,9 @@ pub(super) fn shard(
         commands::infrastructure::lens_scan::lens_scan_identity,
         commands::infrastructure::lens_scan::lens_scan_commit_diff,
         commands::infrastructure::lens_scan::lens_scan_shot,
+        // bp link (spark roadmap S6): the shared focus and bp's product table, read from Rust
+        commands::infrastructure::bp_link::bp_focus_read,
+        commands::infrastructure::bp_link::bp_focus_move,
+        commands::infrastructure::bp_link::bp_products,
     ])
 }
