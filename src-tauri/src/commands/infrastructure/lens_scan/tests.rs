@@ -46,7 +46,7 @@ async fn store_with_proposals(n: usize) -> (Scratch, PathBuf, Vec<String>) {
     let guard = Scratch(tmp.clone());
     let s = scripts();
     let init: Value = run_store(&s, &tmp, "init", &[]).await.unwrap();
-    assert_eq!(init["user_version"], 3, "store.mjs creates a v3 file");
+    assert_eq!(init["user_version"], 4, "store.mjs creates a v4 file");
     let run: Value = run_store(
         &s,
         &tmp,
@@ -149,7 +149,99 @@ async fn decide_goes_through_store_mjs_and_is_compare_and_set() {
     assert_eq!(row["status"], "approved");
     assert_eq!(row["decided_by"], "user:tester");
     assert_eq!(row["decision_note"], "looks right");
-    assert_eq!(snap.store_version, 3);
+    assert_eq!(snap.store_version, 4);
+}
+
+/// The decision brief's two runtime facts, end to end through the real
+/// `store.mjs`: an item filed with a v4 tier and risk class reads back typed
+/// (the brief's `subjectOf` takes them from these rows), and a Decline taken on
+/// a repeat carries `repeatNote`'s words into `decision_note` through the same
+/// argv `lens_scan_decide` builds.
+#[tokio::test]
+#[ignore = "needs the ai-registry checkout and node"]
+async fn v4_severity_reads_back_and_a_repeat_decline_keeps_its_note() {
+    let (_g, root, ids) = store_with_proposals(1).await;
+    let s = scripts();
+    let run: Value = run_store(
+        &s,
+        &root,
+        "run-start",
+        &[
+            "--phase".into(),
+            "propose".into(),
+            "--lenses".into(),
+            "dev".into(),
+        ],
+    )
+    .await
+    .unwrap();
+    let run = run["id"].as_str().unwrap().to_string();
+    let p: Value = run_store(
+        &s,
+        &root,
+        "propose",
+        &[
+            "--run",
+            &run,
+            "--feature",
+            "card-payments",
+            "--lens",
+            "dev",
+            "--title",
+            "Add retry to checkout payment calls",
+            "--kind",
+            "fix",
+            "--metric",
+            "m",
+            "--expected-delta",
+            "1",
+            "--tier",
+            "2",
+            "--risk-class",
+            "money",
+        ]
+        .map(String::from),
+    )
+    .await
+    .unwrap();
+    let id = p["id"].as_str().unwrap().to_string();
+    let snap = read_snapshot(&root).unwrap();
+    assert_eq!(snap.store_version, 4);
+    let row = snap
+        .scan
+        .proposals
+        .iter()
+        .find(|r| r["id"] == id.as_str())
+        .unwrap();
+    assert_eq!(row["tier"], serde_json::json!(2));
+    assert_eq!(row["risk_class"], "money");
+    let plain = snap
+        .scan
+        .proposals
+        .iter()
+        .find(|r| r["id"] == ids[0].as_str())
+        .unwrap();
+    assert!(!plain.contains_key("tier"), "an untriaged item omits tier");
+
+    let note = r#"Repeats h4, declined 2026-10-10: "No retries until idempotency keys land.""#;
+    let note = super::tooling::clean_note(Some(note)).unwrap();
+    let args =
+        super::tooling::store_args(&[id.clone()], "decline", "user:personas", note.as_deref());
+    let r: LensScanDecideResult = run_store(&s, &root, "decide", &args).await.unwrap();
+    assert_eq!(
+        (r.decision.as_str(), r.decided.as_slice()),
+        ("declined", [id.clone()].as_slice())
+    );
+    let snap = read_snapshot(&root).unwrap();
+    let row = snap
+        .scan
+        .proposals
+        .iter()
+        .find(|r| r["id"] == id.as_str())
+        .unwrap();
+    assert_eq!(row["status"], "declined");
+    assert_eq!(row["decided_by"], "user:personas");
+    assert_eq!(row["decision_note"], note.unwrap().as_str());
 }
 
 #[tokio::test]
