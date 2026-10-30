@@ -1,7 +1,9 @@
 /**
- * The filter/sort state of the All-Personas roster. Held in component state
- * for the life of the page (it is NOT persisted — the `view_config` JSON
- * column belongs to the Events page's saved views, not to this list).
+ * The filter/sort state of the All-Personas roster. Persisted per device by
+ * `rosterViewStore` (localStorage key `persona-roster-view`, sanitised against
+ * today's vocabularies on load) so a repeat visit keeps the view it was left
+ * in. Unrelated to the `view_config` JSON column, which belongs to the Events
+ * page's saved views.
  */
 export interface AgentListViewConfig {
   statusFilter: string;

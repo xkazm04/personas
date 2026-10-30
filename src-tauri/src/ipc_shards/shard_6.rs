@@ -67,6 +67,7 @@ pub(super) fn shard(
         commands::infrastructure::kpi_sim::dev_tools_kpi_sim_ingest,
         commands::infrastructure::feed_impact::dev_tools_feed_impact_ingest,
         commands::infrastructure::memory_ledger::dev_tools_memory_ingest,
+        commands::infrastructure::scan_contract::dev_tools_scan_trust,
         commands::infrastructure::context_map_export::dev_tools_export_backlog_digest,
         commands::infrastructure::memory_ledger::dev_tools_memory_list,
         commands::infrastructure::memory_ledger::dev_tools_memory_coverage,

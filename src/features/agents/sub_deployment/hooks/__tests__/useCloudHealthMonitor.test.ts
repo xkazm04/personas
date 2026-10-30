@@ -105,6 +105,18 @@ describe('useCloudHealthMonitor late tick after host sleep', () => {
     expect(useSystemStore.getState().cloudReconnectState.isReconnecting).toBe(true);
     unmount();
   });
+
+  it('leaves a breadcrumb naming the cause of the failed probe that starts the reconnect loop', async () => {
+    const cause = new Error('orchestrator down');
+    cloudGetConfig.mockRejectedValue(cause);
+    const { unmount } = mountConnected();
+
+    await fireTickAfterSleep(0);
+
+    expect(silentCatch).toHaveBeenCalledWith('useCloudHealthMonitor:health');
+    expect(silentCatchHandler).toHaveBeenCalledWith(cause);
+    unmount();
+  });
 });
 
 describe('useCloudHealthMonitor reconnect loop', () => {
@@ -135,7 +147,9 @@ describe('useCloudHealthMonitor reconnect loop', () => {
     }
 
     expect(cloudReconnectFromKeyring.mock.calls.length).toBeGreaterThan(1);
-    expect(silentCatchHandler).toHaveBeenCalledTimes(21);
+    // One breadcrumb per failed attempt (the probe that started the loop
+    // leaves its own, under the :health context).
+    expect(silentCatch.mock.calls.filter(([ctx]) => ctx === 'useCloudHealthMonitor:reconnect')).toHaveLength(21);
     expect(cloudReconnectFromKeyring).toHaveBeenCalledTimes(21);
     const state = useSystemStore.getState();
     expect(state.cloudReconnectState.isReconnecting).toBe(false);

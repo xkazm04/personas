@@ -268,15 +268,15 @@ export function UnifiedDeploymentDashboard() {
             <h1 className="typo-section-title">{dt.title}</h1>
             <p className="typo-body text-foreground mt-0.5">{dt.subtitle}</p>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground hover:text-foreground/95 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
+            loading={isRefreshing}
+            icon={<RefreshCw className="w-3.5 h-3.5" />}
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             {dt.refresh}
-          </button>
+          </Button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 3xl:grid-cols-10 gap-3">
           <SummaryCard icon={Activity} label={dt.total} value={unified.length} />

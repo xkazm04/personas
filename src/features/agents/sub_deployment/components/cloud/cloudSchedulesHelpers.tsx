@@ -5,6 +5,7 @@ import {
   Zap,
   CheckCircle2,
   AlertTriangle,
+  HelpCircle,
 } from 'lucide-react';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import type { Translations } from '@/i18n/en';
@@ -77,7 +78,12 @@ export function triggerTypeIcon(type: string) {
 }
 
 export function healthBadge(t: Translations, status: string | null) {
-  if (!status || status === 'healthy') {
+  // Unreported is unknown, not healthy: a trigger the orchestrator has never
+  // probed (healthStatus null) gets a neutral badge; green means it checked.
+  if (!status) {
+    return <StatusBadge variant="neutral" size="sm" className="typo-caption" icon={<HelpCircle className="w-2.5 h-2.5" />}>{t.deployment.cloud_health_not_checked}</StatusBadge>;
+  }
+  if (status === 'healthy') {
     return <StatusBadge variant="success" size="sm" className="typo-caption" icon={<CheckCircle2 className="w-2.5 h-2.5" />}>{t.deployment.cloud_healthy}</StatusBadge>;
   }
   return <StatusBadge variant="warning" size="sm" className="typo-caption" icon={<AlertTriangle className="w-2.5 h-2.5" />}>{status}</StatusBadge>;

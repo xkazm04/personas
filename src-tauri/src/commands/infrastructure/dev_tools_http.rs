@@ -78,7 +78,14 @@
 //!                                             `already_delivered` closes an item the default branch already
 //!                                             satisfies (commit REQUIRED) — a delivery, not a refusal, so it
 //!                                             writes no rejection constraint.
-//!   POST /ideas                             → file a deduped backlog item { project_id, title, description?, effort, impact, risk (each REQUIRED, 1-5), goal?, … }
+//!   GET  /scan/decisions?projectId=&contextId=&lens=&limit=
+//!                                           → { decisions: [{ ideaId, title, lens?, contextId?, verdict, reason?,
+//!                                             decidedBy?, decidedAt? }] } newest first (limit 20, max 100) - the
+//!                                             decision memory a scanner reads before it predicts (scan-finding/1)
+//!   GET  /scan/trust?projectId=&slice=      → { slices: [...], events: [...] } - the autonomy ladder per slice,
+//!                                             computed here from this store's own decision history
+//!   POST /ideas                             → file a deduped backlog item { project_id, title, description?, effort, impact, risk (each REQUIRED, 1-5;
+//!                                             origin scan_sweep: 1-10 native), goal?, scan-finding/1 fields, autoDecide?, … }
 //!                                             A first filing short of a scale is a 400 naming what is missing:
 //!                                             an unrated idea is never accepted automatically. 1 documentation or a reversible local change ·
 //!                                             2 code behind a test · 3 touches a route, a contract or a schema ·
@@ -165,6 +172,7 @@ use crate::commands::infrastructure::use_case_scan::{
     launch_use_case_scan, use_case_scan_status_json,
 };
 use crate::db::models::{DevContextGroup, DevKpi, DevProject, DevUseCase};
+use crate::db::repos::dev::scan_trust;
 use crate::db::repos::dev_tools as repo;
 use crate::db::repos::dev_workspaces as ws_repo;
 use crate::db::DbPool;
@@ -222,6 +230,8 @@ pub fn router(app: AppHandle) -> Router {
         .route("/hire", post(hire_route))
         // Worker write-back (see the module header).
         .route("/ideas", post(file_idea_route))
+        .route("/scan/decisions", get(scan_decisions_route))
+        .route("/scan/trust", get(scan_trust_route))
         .route("/ideas/{idea_id}/outcome", post(idea_outcome_route))
         .route("/kpis", post(create_kpi_route))
         .route("/kpis/{kpi_id}/measure", post(measure_kpi_route))
@@ -1777,6 +1787,61 @@ async fn file_idea_route(
     let pool = db(&s)?;
     writeback("file idea", move || {
         app_master_writeback::file_rated_backlog_idea(&pool, &b)
+    })
+    .await
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ScanDecisionsQuery {
+    #[serde(alias = "project_id")]
+    project_id: String,
+    #[serde(default, alias = "context_id")]
+    context_id: Option<String>,
+    #[serde(default)]
+    lens: Option<String>,
+    #[serde(default)]
+    limit: Option<i64>,
+}
+
+/// Seam A3: the project's recorded decisions, newest first.
+async fn scan_decisions_route(
+    State(s): State<DevToolsHttp>,
+    Query(q): Query<ScanDecisionsQuery>,
+) -> Result<Json<scan_trust::ScanDecisionList>, (StatusCode, String)> {
+    require_project(&s, &q.project_id)?;
+    let pool = db(&s)?;
+    writeback("scan decisions", move || {
+        scan_trust::list_scan_decisions(
+            &pool,
+            &q.project_id,
+            q.context_id.as_deref(),
+            q.lens.as_deref(),
+            q.limit,
+        )
+    })
+    .await
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ScanTrustQuery {
+    #[serde(alias = "project_id")]
+    project_id: String,
+    /// A slice to report even when it has no history yet (its start level).
+    #[serde(default)]
+    slice: Option<String>,
+}
+
+/// Seam A4: the autonomy ladder, computed from this store's own history.
+async fn scan_trust_route(
+    State(s): State<DevToolsHttp>,
+    Query(q): Query<ScanTrustQuery>,
+) -> Result<Json<scan_trust::ScanTrustReport>, (StatusCode, String)> {
+    require_project(&s, &q.project_id)?;
+    let pool = db(&s)?;
+    writeback("scan trust", move || {
+        scan_trust::trust_report(&pool, &q.project_id, q.slice.as_deref())
     })
     .await
 }

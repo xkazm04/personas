@@ -70,7 +70,8 @@ describe('PersonaOverviewBatchBar', () => {
     expect(onArchive).toHaveBeenCalledTimes(1);
     expect(btn.getAttribute('aria-busy')).toBe('true');
     await act(async () => { gate.resolve(); await gate.promise; });
-    expect(btn.getAttribute('aria-busy')).toBe('false');
+    // The shared Button drops aria-busy when idle (absent = not busy).
+    expect(btn.getAttribute('aria-busy')).not.toBe('true');
   });
 
   it('fires archive once for three clicks dispatched without a render between them', async () => {
@@ -88,6 +89,38 @@ describe('PersonaOverviewBatchBar', () => {
     btn.dispatchEvent(ev());
     expect(onArchive).toHaveBeenCalledTimes(1);
     d.resolve();
+  });
+
+  // Round 2 card 9: the team menu declared role="menu" but never moved focus
+  // into itself and answered no arrow key.
+  it('moves focus into the team menu, answers arrows, and returns focus on Escape', () => {
+    store.teams = [{ id: 't1', name: 'Alpha', color: null }, { id: 't2', name: 'Beta', color: null }];
+    render(<PersonaOverviewBatchBar count={2} onDelete={() => {}} onClear={() => {}} onMoveToGroup={async () => {}} />);
+    const trigger = screen.getByRole('button', { name: /set home team/i });
+    fireEvent.click(trigger);
+    const items = screen.getAllByRole('menuitem');
+    expect(items).toHaveLength(3);
+    expect(document.activeElement).toBe(items[0]);
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(items[1]);
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowUp' });
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowUp' });
+    expect(document.activeElement).toBe(items[2]);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  // Round 2 card 11: five of the bar's six controls were hand-rolled buttons
+  // painted with raw palette classes beside the shared Button family.
+  it('paints every bar control through the shared Button family, Delete as danger', () => {
+    render(
+      <PersonaOverviewBatchBar count={2} onDelete={() => {}} onClear={() => {}} onMoveToGroup={async () => {}}
+        onArchive={async () => {}} onDuplicate={async () => {}} />,
+    );
+    const raw = /text-(indigo|amber|emerald)-300|text-red-400/;
+    for (const btn of screen.getAllByRole('button')) expect(btn.className).not.toMatch(raw);
+    expect(screen.getByRole('button', { name: /^delete$/i }).className).toMatch(/bg-red-600/);
   });
 
   it('fires restore once for two clicks while the first is in flight', async () => {

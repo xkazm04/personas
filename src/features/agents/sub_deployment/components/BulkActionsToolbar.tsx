@@ -34,6 +34,9 @@ export function BulkActionsToolbar({
   const pausableIds = cloudRows.filter((r) => r.status === 'active').map((r) => r._cloud!.id);
   const resumableIds = cloudRows.filter((r) => r.status === 'paused').map((r) => r._cloud!.id);
   const removableIds = cloudRows.map((r) => r._cloud!.id);
+  // Every action below acts on cloud rows only; the count says "N selected"
+  // for all of them, so the rows no action can touch are named, not silent.
+  const skippedCount = selectedRows.length - cloudRows.length;
 
   const reportResults = (action: string, results: BulkActionResult[]) => {
     const succeeded = results.filter((r) => r.status === 'fulfilled').length;
@@ -80,6 +83,12 @@ export function BulkActionsToolbar({
       <span className="typo-data text-foreground/90">
         {tx(dt.bulk_selected, { count: selectedRows.length })}
       </span>
+
+      {skippedCount > 0 && (
+        <span data-testid="bulk-cloud-only-note" className="typo-caption text-foreground">
+          {tx(skippedCount === 1 ? dt.bulk_cloud_only_one : dt.bulk_cloud_only_other, { count: skippedCount })}
+        </span>
+      )}
 
       <div className="w-px h-5 bg-primary/15" />
 

@@ -786,6 +786,26 @@ than newly-authored team memory. See `MEMORY CONTRACT (5)` in
    the mobile card, not in the roster row). **Quality** — renamed from
    _Verdict_ — is the Director's 0–5 score trend
    (`VerdictTrendCell`, fed by `listDirectorScoreTrends`).
+   Roster behaviour (round 2, 2026-10-30):
+   - The **Status** header carries both filters it renders: lifecycle and
+     **Health** (the health filter used to sit on the Trust header). A persona
+     with no health entry yet reads **Health unknown** (neutral), never Healthy,
+     and the Healthy filter matches only a real healthy verdict.
+   - Sort, filters and the favourites toggle are **remembered** across visits
+     and restarts (`rosterViewStore`, localStorage `persona-roster-view`,
+     sanitised on load). Search text and the team filter are not kept.
+   - The header checkbox selects the **visible page only**; a line above the
+     grid then offers "Select all N matching", and says so once taken.
+   - The compact card list has a sort + Status/Health/Connector filter row and
+     the same Duplicate/Export row menu as the grid.
+   - The header count totals the lifecycle population the view lists, so
+     archived personas no longer turn an unfiltered roster into "10 of 12".
+   - A system persona (the Director) cannot be renamed: `update_persona`
+     refuses a name change and the roster shows the name read-only. The
+     Director is found by its name at boot, so a rename used to re-seed a
+     second Director.
+   - The menus (column filters, team menu, row menu) take focus on open and
+     answer ArrowUp/Down, Home/End, Tab and Escape (`useMenuKeyboard`).
 9. **The All-Personas page has a top-level view switcher: _Personas_ vs _Configuration_.**
    _Personas_ is the roster table above.
    _Configuration_ (`allPersonas/PersonaConfigPanel.tsx`, migrated out of the old

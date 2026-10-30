@@ -6,7 +6,8 @@ const health = (status: string) => ({ status } as unknown as PersonaHealth);
 
 describe('rowAccentTone', () => {
   it('maps health when the persona is neither building nor a draft', () => {
-    expect(rowAccentTone(false, false, undefined)).toBe('healthy');
+    // No entry is no verdict (card 13): neutral, never the healthy green.
+    expect(rowAccentTone(false, false, undefined)).toBe('unknown');
     expect(rowAccentTone(false, false, health('healthy'))).toBe('healthy');
     expect(rowAccentTone(false, false, health('degraded'))).toBe('degraded');
     expect(rowAccentTone(false, false, health('failing'))).toBe('failing');

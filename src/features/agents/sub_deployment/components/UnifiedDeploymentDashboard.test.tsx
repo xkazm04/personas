@@ -35,6 +35,22 @@ beforeEach(() => {
   };
 });
 
+describe('UnifiedDeploymentDashboard: header refresh is the Button primitive', () => {
+  it('marks the Refresh control busy while the reload runs, like the retry control', async () => {
+    fetchCloud.mockResolvedValue(true);
+    await act(async () => { render(<UnifiedDeploymentDashboard />); });
+    let settle!: (v: boolean) => void;
+    fetchCloud.mockImplementation(() => new Promise<boolean>((resolve) => { settle = resolve; }));
+    const refresh = screen.getByRole('button', { name: /Refresh/ });
+    expect(refresh.getAttribute('aria-busy')).not.toBe('true');
+    await act(async () => { fireEvent.click(refresh); });
+    expect(screen.getByRole('button', { name: /Refresh/ }).getAttribute('aria-busy')).toBe('true');
+    await act(async () => { settle(true); });
+    expect(screen.getByRole('button', { name: /Refresh/ }).getAttribute('aria-busy')).not.toBe('true');
+    expect(screen.getByRole('button', { name: /Refresh/ }).querySelector('.animate-spin')).toBeNull();
+  });
+});
+
 describe('UnifiedDeploymentDashboard: a failed fetch is not an empty fleet', () => {
   it('shows the failure with a retry instead of "No deployments yet"', async () => {
     fetchCloud.mockResolvedValue(false);

@@ -593,8 +593,8 @@
         }
       ],
       "baseline": {
-        "files": 241,
-        "matches": 529
+        "files": 239,
+        "matches": 525
       },
       "floor": 4000
     },
@@ -634,8 +634,8 @@
         }
       ],
       "baseline": {
-        "files": 50,
-        "matches": 74
+        "files": 49,
+        "matches": 73
       },
       "floor": 4000
     },
@@ -685,8 +685,8 @@
         }
       ],
       "baseline": {
-        "files": 13,
-        "matches": 15
+        "files": 12,
+        "matches": 14
       },
       "floor": 4000
     },
@@ -727,8 +727,8 @@
         }
       ],
       "baseline": {
-        "files": 40,
-        "matches": 591
+        "files": 39,
+        "matches": 590
       },
       "floor": 1500
     },
@@ -749,8 +749,8 @@
         "description": "a connection-pool checkout (`state.db.get()`, `state.user_db.get()`, `user_db.get()`) inside src-tauri/src/commands/**. PROXY FOR the stack-free condition \"the transport/adapter layer acquires a persistence handle directly instead of delegating to the layer that owns data access\". The compliant shape is one line -- `repo::get_all_lean(&state.db)` (commands/core/personas.rs:44) -- which passes the POOL to the repository and never checks a connection out; the violating shape is `let conn = state.user_db.get()?;` followed by inline SQL (commands/companion/observability.rs:84-88). Measured in this repo: 134 checkouts across 46 of 299 command files; 88.1% are followed by a SQL literal or a rusqlite call within 900 chars; only 13.4% sit inside a #[cfg(test)] module; and 1,096 compliant repo:: delegations exist across 86 files, so the correct alternative is present and dominant. Convergence: all four repos in this fleet independently built this boundary and all four leak it (personas-web 6/11 routes, brainiac 20/42 SQL files outside its store crate, personas-cloud 1/8 routers) -- the condition is physics, not local taste. PRECONDITION: this proxy works because Personas' persistence handle is an r2d2 pool whose checkout is spelled `.get()` on a field ending in `db`. A repo using sqlx (`&pool` passed everywhere), an ORM session, or a DI-injected repository interface has the same condition wearing different markup and must re-derive its own proxy -- key on whatever the layer-crossing token is there, not on `.get()`. Legal destination: a function in src-tauri/db/ (the personas-db crate, 117 of 143 files already carry the SQL) called with `&state.db`."
       },
       "baseline": {
-        "files": 53,
-        "matches": 135
+        "files": 54,
+        "matches": 136
       },
       "floor": 200
     },
@@ -1180,8 +1180,8 @@
         "description": "a literal `$` glyph immediately followed by an interpolation (`` `$${x.toFixed(2)}` ``) or by the shared <Numeric> primitive (`$<Numeric value={x} precision={4}/>`). PROXY FOR the stack-free condition: a monetary amount is composed at the call site out of a hard-coded currency glyph plus a number that was rounded by whoever wrote that line, so (a) the rounding contract is re-decided per call site, (b) the glyph cannot move to the position the locale requires, and (c) no currency other than USD can ever be represented. Precision measured 50/50 on a full read of every match: every one is a real money render, zero test-fixture or non-money hits. Two of the 50 are non-UI destinations (analyticsMiddleware.ts:33 writes a Sentry breadcrumb; knowledgeMiddleware.ts:33 builds an LLM prompt) and are left in deliberately — the rounding argument applies to them too and excluding two lines would cost more than it buys. Measured consequences in this repo: of the 40 `$${…}` sites, 22 round a sub-cent amount to a displayed `$0.00` (or `$0` at toFixed(0)) — FactoryOverviewTab.tsx:284 renders per-project spend at toFixed(0), so $0.49 of real spend reads as `$0`; and the 5 distinct precisions in flight (0,1,2,3,4 decimals) mean the same cost_usd field renders differently on two screens. The 10 `$<Numeric …>` sites are the sharper shape: the primitive IS imported, and the caller still hand-rolls the currency semantics around it (LlmTrackingCell.tsx:72 re-derives formatCost's 'auto' precision inline as `precision={spend >= 1 ? 2 : 4}`). PRECONDITION (measured, must be re-derived per repo): this repo denominates all money in USD, stores it as a float, and spells a currency render as a template literal starting with `$`. A repo that formats through Intl currency style, or uses a non-`$` symbol, or stores integer cents, scores zero while the condition is present — and the sibling personas-web, which has the identical idiom 11 times, ALSO has 0 `Intl.NumberFormat`, so the condition is convergent while this exact proxy is not portable to a repo that had adopted Intl. LEGAL FIX: `formatCost(usd, { language })` from @/lib/utils/formatters, or `<Numeric value={usd} unit=\"usd\" language={language} />` — both emit the currency glyph through Intl, so it lands where the locale puts it (`$1,234.50` en / `1.234,50 $` de / `US$1.234,50` id), and both carry the `<$0.01` sub-cent guard the hand-rolled sites lack."
       },
       "baseline": {
-        "files": 31,
-        "matches": 40
+        "files": 30,
+        "matches": 39
       },
       "floor": 4000
     },
@@ -1313,8 +1313,8 @@
         }
       ],
       "baseline": {
-        "files": 8,
-        "matches": 8
+        "files": 7,
+        "matches": 7
       },
       "floor": 4000
     },
@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 362,
-        "matches": 664
+        "files": 361,
+        "matches": 662
       },
       "floor": 2000
     },
@@ -3026,8 +3026,8 @@
         }
       ],
       "baseline": {
-        "files": 28,
-        "matches": 32
+        "files": 27,
+        "matches": 31
       },
       "floor": 3000
     },
@@ -3661,8 +3661,8 @@
       },
       "exclude": [],
       "baseline": {
-        "files": 24,
-        "matches": 32
+        "files": 23,
+        "matches": 31
       },
       "floor": 3000
     },
@@ -5301,8 +5301,8 @@
         }
       ],
       "baseline": {
-        "files": 23,
-        "matches": 37
+        "files": 22,
+        "matches": 36
       },
       "floor": 4000
     },
@@ -5413,8 +5413,8 @@
         "description": "A catch handler whose only state write is an empty array, and which sets no error/failure identity anywhere in the handler. The rejection becomes indistinguishable from an empty result."
       },
       "baseline": {
-        "files": 26,
-        "matches": 29
+        "files": 25,
+        "matches": 28
       },
       "floor": 4000
     },
@@ -5739,8 +5739,8 @@
         }
       ],
       "baseline": {
-        "files": 802,
-        "matches": 3735
+        "files": 800,
+        "matches": 3721
       },
       "floor": 5000
     },
@@ -5856,7 +5856,7 @@
       ],
       "baseline": {
         "files": 924,
-        "matches": 2051
+        "matches": 2046
       },
       "floor": 2200
     },
@@ -5929,8 +5929,8 @@
         }
       ],
       "baseline": {
-        "files": 669,
-        "matches": 1629
+        "files": 668,
+        "matches": 1628
       },
       "floor": 5000
     },

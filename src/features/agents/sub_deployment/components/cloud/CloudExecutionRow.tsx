@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { ChevronDown, ChevronRight, Terminal, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
@@ -22,6 +23,13 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
   const { t } = useTranslation();
   const dt = t.deployment.exec_detail;
   const statusClass = classifyExecutionStatus(exec.status);
+  // An unreported figure is unknown, not zero: Number(null) is 0, which
+  // painted a running or unmetered run as "0ms" and 0 tokens. formatDuration
+  // already renders null as an em dash (as CloudHistoryPanel's stat does).
+  const durationMs = exec.durationMs == null ? null : Number(exec.durationMs);
+  const tokens = exec.inputTokens == null && exec.outputTokens == null
+    ? null
+    : Number(exec.inputTokens ?? 0) + Number(exec.outputTokens ?? 0);
 
   // Red opens to the failure: expanding a failed run loads its output at once
   // instead of parking a "View Output" button behind one more click. The
@@ -44,7 +52,7 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
         {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
         {statusIcon(exec.status)}
         <span className="typo-body text-foreground truncate flex-1">{personaName}</span>
-        <span className="typo-caption text-foreground">{formatDuration(Number(exec.durationMs))}</span>
+        <span className="typo-caption text-foreground">{formatDuration(durationMs)}</span>
         <span className="typo-caption text-foreground">{formatCost(exec.costUsd)}</span>
         <span className="typo-caption text-foreground">{timeAgo(exec.createdAt)}</span>
       </button>
@@ -53,10 +61,10 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
       {isExpanded && (
         <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-2">
           <div className="grid grid-cols-2 gap-2 typo-caption">
-            <div><span className="text-foreground">{dt.label_status}</span> <span className="text-foreground">{exec.status}</span></div>
-            <div><span className="text-foreground">{dt.label_duration}</span> <span className="text-foreground">{formatDuration(Number(exec.durationMs))}</span></div>
+            <div><span className="text-foreground">{dt.label_status}</span> <span className="text-foreground">{tokenLabel(t, 'execution', exec.status)}</span></div>
+            <div><span className="text-foreground">{dt.label_duration}</span> <span className="text-foreground">{formatDuration(durationMs)}</span></div>
             <div><span className="text-foreground">{dt.label_cost}</span> <span className="text-foreground">{formatCost(exec.costUsd)}</span></div>
-            <div><span className="text-foreground">{dt.label_tokens}</span> <span className="text-foreground">{Number(exec.inputTokens ?? 0) + Number(exec.outputTokens ?? 0)}</span></div>
+            <div><span className="text-foreground">{dt.label_tokens}</span> <span className="text-foreground">{tokens ?? '—'}</span></div>
             <div><span className="text-foreground">{dt.label_started}</span> <span className="text-foreground"><AbsoluteTime timestamp={exec.startedAt} /></span></div>
             <div><span className="text-foreground">{dt.label_completed}</span> <span className="text-foreground"><AbsoluteTime timestamp={exec.completedAt} /></span></div>
           </div>

@@ -10,6 +10,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { WebhookSubscriptionsPanel } from './WebhookSubscriptionsPanel';
 import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
+import { HealthDigestPanel } from '@/features/agents/sub_health/HealthDigestPanel';
 import {
   DEFAULT_NOTIFICATION_PREFS,
   NOTIFICATION_PREFS_KEY,
@@ -73,6 +74,8 @@ function WeeklyDigestToggle() {
       {digestSetting.error && (
         <p role="alert" className="typo-caption text-status-error mt-2">{digestSetting.error}</p>
       )}
+      {/* The digest's drill-down: which agents need attention, and why. */}
+      <HealthDigestPanel />
     </SectionCard>
   );
 }

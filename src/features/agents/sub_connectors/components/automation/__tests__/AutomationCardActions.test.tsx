@@ -45,6 +45,16 @@ describe('AutomationCardActions menu', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
+  // The section's BaseModal (name + blast radius) is the confirmation; an
+  // inline second "Confirm" click in the menu made delete three steps.
+  it('hands Delete to the section dialog on the first click and closes', () => {
+    const { onDelete } = renderActions();
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /delete/i }));
+    expect(onDelete).toHaveBeenCalledWith('a1');
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
   it('routes pause through onToggleStatus and closes', () => {
     const { onToggleStatus } = renderActions();
     fireEvent.click(screen.getByRole('button', { name: 'Actions' }));

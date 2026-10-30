@@ -22,6 +22,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { BacklogDetailLedger, type BacklogNav } from './BacklogDetailLedger';
+import { MachineDecisionBanner } from './MachineDecisionBanner';
 import type { BacklogIdea } from './backlogModel';
 
 export type { BacklogNav } from './BacklogDetailLedger';
@@ -40,7 +41,7 @@ export function BacklogDetailModal({
   /** True while the queue's own verdict call is in flight. */
   busy: boolean;
   onAccept: (id: string) => Promise<void>;
-  onReject: (id: string) => Promise<void>;
+  onReject: (id: string, reason?: string) => Promise<void>;
   onClose: () => void;
   /** Absent when the idea was opened outside a list (no queue to walk). */
   nav?: BacklogNav;
@@ -143,6 +144,7 @@ export function BacklogDetailModal({
         onBuildNow={() => void buildNow()}
         onClose={onClose}
         nav={nav}
+        machineBanner={<MachineDecisionBanner idea={idea} onAccept={onAccept} onReject={onReject} />}
       />
     </BaseModal>
   );

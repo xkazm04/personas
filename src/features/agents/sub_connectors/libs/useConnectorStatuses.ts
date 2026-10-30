@@ -7,10 +7,14 @@ import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutator';
 import { useTranslation } from '@/i18n/useTranslation';
+import { mapWithConcurrency } from '@/lib/concurrency';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { ConnectorStatus, ConnectorReadiness, ConnectorTestResult } from './connectorTypes';
 import { deriveReadiness, restoreHealthcheck, isStaleResult, isUnreachable, summarizeTestAll } from './connectorTypes';
+
+/** Max healthchecks in flight at once for "Test all". */
+const TEST_ALL_CONCURRENCY = 4;
 
 export function useConnectorStatuses() {
   const { t, tx } = useTranslation();
@@ -76,11 +80,19 @@ export function useConnectorStatuses() {
   // credential, name and result for every connector the two share.
   const builtForPersonaRef = useRef<string | null>(null);
   const personaId = selectedPersona?.id ?? null;
+  // The persisted links the current rows were built from. A carried row
+  // outranks the link only while the link is unchanged (an optimistic link in
+  // flight); a link that CHANGED was written by someone -- AgentCredentialDemands'
+  // reuse writes it through mutateCredentialLink, never through this hook -- and
+  // it outranks the carried row, which still names the auto-matched credential.
+  const builtFromLinksRef = useRef<Record<string, string>>({});
 
   // Build connector statuses
   useEffect(() => {
     const samePersona = builtForPersonaRef.current === personaId;
     builtForPersonaRef.current = personaId;
+    const previousLinks = builtFromLinksRef.current;
+    builtFromLinksRef.current = credentialLinks;
     if (requiredCredTypes.length === 0) { setStatuses([]); return; }
     setStatuses((prev) => {
       const prevByName = new Map<string, ConnectorStatus>();
@@ -89,6 +101,10 @@ export function useConnectorStatuses() {
           // A row whose credential left the vault is not carried either: it
           // kept naming (and testing) a credential that no longer exists.
           if (p.credentialId && !credentialsByIdMap.has(p.credentialId)) continue;
+          // Nor is a row whose persisted link changed under it to a
+          // credential other than the one it holds.
+          const link = credentialLinks[p.name];
+          if (link && link !== previousLinks[p.name] && link !== p.credentialId && credentialsByIdMap.has(link)) continue;
           prevByName.set(p.name, p);
         }
       }
@@ -98,13 +114,14 @@ export function useConnectorStatuses() {
         const existing = prevByName.get(credType);
         const linkedCredId = credentialLinks[credType];
         const linkedCred = linkedCredId ? credentialsByIdMap.get(linkedCredId) ?? null : null;
-        // The EXPLICIT link wins over the auto-match. `matchedCred` is whichever
-        // credential of that service_type happened to be indexed first, so with
-        // two credentials for one connector the user's own choice -- persisted
-        // into design_context.credentialLinks by CredentialPicker -- was
-        // discarded on every fresh mount and the tab tested (and reported
-        // readiness for) an arbitrary sibling. `useUnfulfilledCredentials`
-        // already treats the link as authoritative; this now agrees with it.
+        // The EXPLICIT link wins over the auto-match. `matchedCred` is the NEWEST
+        // credential of that service_type (the one the runner injects), not the
+        // user's pick, so with two credentials for one connector the user's own
+        // choice -- persisted into design_context.credentialLinks by
+        // CredentialPicker -- was discarded on every fresh mount and the tab
+        // tested (and reported readiness for) the newest sibling instead.
+        // `useUnfulfilledCredentials` already treats the link as authoritative;
+        // this now agrees with it.
         // A link pointing at a deleted credential resolves to null and still
         // falls through to the auto-match.
         const credentialId = existing?.credentialId ?? linkedCred?.id ?? matchedCred?.id ?? null;
@@ -176,9 +193,13 @@ export function useConnectorStatuses() {
       }
       return result;
     } catch (err) {
+      // A probe that threw never asked the service: the same `unreachable`
+      // token the store returns for a transport failure, never a red verdict.
+      // Without a state the row resolved to `failed` from `success: false`.
       const result: ConnectorTestResult = {
         success: false,
         message: err instanceof Error ? err.message : t.agents.connectors.test_healthcheck_failed_default,
+        state: 'unreachable',
       };
       if (epoch.isCurrent(token)) updateStatus(name, { testing: false, result });
       return result;
@@ -234,12 +255,12 @@ export function useConnectorStatuses() {
     // only ever say "tested N connectors", which tells the user nothing.
     const baseline = new Map(testable.map((s) => [s.name, s.result]));
     try {
-      const outcomes = await Promise.all(
-        testable.map(async (status) => ({
-          name: status.name,
-          result: await testConnector(status.name, status.credentialId!),
-        })),
-      );
+      // Bounded fan-out: personas share credentials per provider, so probing every
+      // row at once can trip a provider rate limit that then reads as unreachable.
+      const outcomes = await mapWithConcurrency(testable, TEST_ALL_CONCURRENCY, async (status) => ({
+        name: status.name,
+        result: await testConnector(status.name, status.credentialId!),
+      }));
 
       // Verdicts only: an unreachable probe (success === false, but no verdict)
       // used to count as "newly failing" against a passing baseline. It is
@@ -268,10 +289,16 @@ export function useConnectorStatuses() {
 
   const handleLinkCredential = useCallback(async (connectorName: string, credentialId: string, credentialName: string): Promise<boolean> => {
     lastAutoTestedCredentialRef.current.delete(connectorName);
+    // The row this optimistic link replaces. A write that never persists
+    // leaves the persisted link -- and what the runner injects -- unchanged,
+    // so the revert restores this row rather than painting it unlinked.
+    let replaced: ConnectorStatus | undefined;
     setStatuses((prev) =>
-      prev.map((s) =>
-        s.name === connectorName ? { ...s, credentialId, credentialName, result: null, linkError: null } : s,
-      ),
+      prev.map((s) => {
+        if (s.name !== connectorName) return s;
+        replaced = s;
+        return { ...s, credentialId, credentialName, result: null, linkError: null };
+      }),
     );
     if (selectedPersona) {
       // The design_context write queue reports failure through the RETURNED
@@ -286,10 +313,13 @@ export function useConnectorStatuses() {
         // lost write can be counted; the row's linkError reaches no telemetry.
         silentCatch('useConnectorStatuses:linkCredential')(new Error(outcome.reason));
         // Revert optimistic update -- the link was never persisted
+        const linkError = tx(t.agents.connectors.test_link_failed, { error: outcome.reason });
         setStatuses((prev) =>
           prev.map((s) =>
             s.name === connectorName
-              ? { ...s, credentialId: null, credentialName: null, result: null, linkError: tx(t.agents.connectors.test_link_failed, { error: outcome.reason }) }
+              ? (replaced
+                ? { ...replaced, testing: false, linkError }
+                : { ...s, credentialId: null, credentialName: null, result: null, linkError })
               : s,
           ),
         );

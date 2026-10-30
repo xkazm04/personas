@@ -1,8 +1,10 @@
 import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
-import { usePersonaNameMap } from '@/hooks/usePersonaNameMap';
+import { useAgentStore } from '@/stores/agentStore';
 import { Button, AsyncButton } from '@/features/shared/components/buttons';
+import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
+import { useConfirmedRemoteAction } from '../../hooks/useConfirmedRemoteAction';
 
 /**
  * Orphan-deployment reconcile surface.
@@ -21,13 +23,24 @@ import { Button, AsyncButton } from '@/features/shared/components/buttons';
 export function CloudReconcileBanner() {
   const { t, tx } = useTranslation();
   const r = t.deployment.reconcile;
-  const personaName = usePersonaNameMap();
+  // A real local name or nothing: usePersonaNameMap falls back to the id's
+  // first 8 chars, which is always truthy, so an orphan (no local record by
+  // definition) used to print "persona-" and never reached its label or the
+  // unknown copy. Order matches the dashboard: label, local name, unknown.
+  const personas = useAgentStore((s) => s.personas);
+  const orphanName = (d: { label: string | null; personaId: string }) =>
+    d.label || personas.find((p) => p.id === d.personaId)?.name || r.unknown_persona;
   const orphans = useSystemStore((s) => s.cloudOrphanDeployments);
   const adopt = useSystemStore((s) => s.cloudAdoptOrphan);
   const undeploy = useSystemStore((s) => s.cloudUndeployOrphan);
   const dismiss = useSystemStore((s) => s.cloudDismissReconcile);
   const dismissed = useSystemStore((s) => s.cloudReconcileDismissed);
   const show = useSystemStore((s) => s.cloudShowReconcile);
+  // Undeploy shuts down an endpoint other systems may still be calling, on a
+  // surface whose rows the user did not create here - so it names the
+  // deployment and waits for consent, like every other undeploy door in this
+  // context (registry: cicd-monitoring / remote-action-consent).
+  const { modal: confirmModal, confirmThen } = useConfirmedRemoteAction();
 
   if (orphans.length === 0) return null;
 
@@ -78,7 +91,7 @@ export function CloudReconcileBanner() {
           >
             <div className="flex-1 min-w-0">
               <p className="typo-body text-foreground truncate">
-                {personaName(d.personaId) || d.label || r.unknown_persona}
+                {orphanName(d)}
               </p>
               <p className="typo-caption text-foreground truncate">{d.slug}</p>
             </div>
@@ -95,7 +108,16 @@ export function CloudReconcileBanner() {
               variant="danger"
               size="xs"
               title={r.undeploy_title}
-              onClick={() => undeploy(d.id)}
+              onClick={() => confirmThen(
+                {
+                  title: r.undeploy,
+                  details: [
+                    { label: t.common.name, value: orphanName(d) },
+                    { label: t.common.id, value: d.slug },
+                  ],
+                },
+                () => undeploy(d.id),
+              )}
               data-testid={`cloud-reconcile-undeploy-${d.id}`}
             >
               {r.undeploy}
@@ -103,6 +125,7 @@ export function CloudReconcileBanner() {
           </li>
         ))}
       </ul>
+      <ConfirmDestructiveModal {...confirmModal} />
     </div>
   );
 }

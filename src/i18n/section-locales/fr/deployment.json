@@ -94,6 +94,7 @@
     "filter_target": "Cible",
     "gitlab": "GitLab",
     "history_empty": "Aucun historique de déploiement",
+    "history_load_failed": "Impossible de charger l'historique des déploiements",
     "history_snapshot": "Instantané du prompt capturé",
     "history_title": "Historique des déploiements",
     "no_data": "Aucune donnée",

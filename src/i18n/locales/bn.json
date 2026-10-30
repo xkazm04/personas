@@ -4692,6 +4692,7 @@
       "filter_target": "টার্গেট",
       "gitlab": "GitLab",
       "history_empty": "এখনও কোনও ডিপ্লয়মেন্ট ইতিহাস নেই",
+      "history_load_failed": "ডিপ্লয়মেন্ট ইতিহাস লোড করা যায়নি",
       "history_snapshot": "প্রম্পট স্ন্যাপশট সংরক্ষিত",
       "history_title": "ডিপ্লয়মেন্ট ইতিহাস",
       "no_data": "কোনো ডেটা নেই",

@@ -15,7 +15,6 @@ export function AutomationCardActions({
 }: AutomationCardActionsProps) {
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   // Same disclosure contract as every other menu on the agent surfaces: a
@@ -37,15 +36,12 @@ export function AutomationCardActions({
     };
   }, [menuOpen]);
 
+  // One click hands off to the section's confirm dialog (it names the
+  // automation and shows the blast radius). An inline "Confirm" second click
+  // used to sit in front of it, making delete a three-step act.
   const handleDelete = () => {
-    if (confirmDelete) {
-      onDelete(automation.id);
-      setConfirmDelete(false);
-      setMenuOpen(false);
-    } else {
-      setConfirmDelete(true);
-      setTimeout(() => setConfirmDelete(false), 3000);
-    }
+    onDelete(automation.id);
+    setMenuOpen(false);
   };
 
   return (
@@ -106,7 +102,7 @@ export function AutomationCardActions({
               className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-brand-rose hover:bg-brand-rose/10"
             >
               <Trash2 className="w-3 h-3" />
-              {confirmDelete ? t.agents.connectors.auto_confirm : t.common.delete}
+              {t.common.delete}
             </button>
           </div>
         )}

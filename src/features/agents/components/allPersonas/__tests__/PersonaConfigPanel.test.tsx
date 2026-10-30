@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Persona } from '@/lib/bindings/Persona';
 
 const listPersonas = vi.fn();
@@ -8,6 +8,12 @@ const resolveEffectiveConfigBulk = vi.fn();
 vi.mock('@/api/agents/personas', () => ({
   listPersonas: (...a: unknown[]) => listPersonas(...a),
   resolveEffectiveConfigBulk: (...a: unknown[]) => resolveEffectiveConfigBulk(...a),
+}));
+
+const silentCatchScopes: string[] = [];
+vi.mock('@/lib/silentCatch', async (orig) => ({
+  ...(await orig<typeof import('@/lib/silentCatch')>()),
+  silentCatch: (scope: string) => () => { silentCatchScopes.push(scope); },
 }));
 
 import { PersonaConfigPanel } from '../PersonaConfigPanel';
@@ -75,5 +81,50 @@ describe('PersonaConfigPanel - load', () => {
     const expand = await screen.findByRole('button', { expanded: false });
     act(() => { expand.click(); });
     expect(await screen.findByText('Capability 1')).toBeTruthy();
+  });
+});
+
+describe('PersonaConfigPanel - a failed bulk resolve', () => {
+  beforeEach(() => {
+    listPersonas.mockReset();
+    resolveEffectiveConfigBulk.mockReset();
+    silentCatchScopes.length = 0;
+  });
+
+  it('is retried on the next visit instead of being served from the cache', async () => {
+    listPersonas.mockResolvedValue([persona('p-retry', 'Retry me')]);
+    resolveEffectiveConfigBulk.mockRejectedValueOnce({ error: 'database is locked', kind: 'database' });
+    const first = render(<PersonaConfigPanel />);
+    await waitFor(() => expect(resolveEffectiveConfigBulk).toHaveBeenCalledTimes(1));
+    await screen.findByTestId('config-resolve-failed-p-retry');
+    first.unmount();
+
+    resolveEffectiveConfigBulk.mockResolvedValue([]);
+    render(<PersonaConfigPanel />);
+    await screen.findByText('Retry me');
+    await waitFor(() => expect(resolveEffectiveConfigBulk).toHaveBeenCalledTimes(2));
+  });
+
+  // Round 2 card 15: the per-row failure tooltip painted the raw backend
+  // string ("database is locked") while the list-read failure in the same
+  // panel goes through resolveErrorTranslated.
+  it('explains the failure through the friendly-error door, not the raw string', async () => {
+    listPersonas.mockResolvedValue([persona('p-raw', 'Raw me')]);
+    resolveEffectiveConfigBulk.mockRejectedValue({ error: 'database is locked', kind: 'database' });
+    const { container } = render(<PersonaConfigPanel />);
+    const cell = await screen.findByTestId('config-resolve-failed-p-raw');
+    expect(container.querySelector('[title="database is locked"]')).toBeNull();
+    fireEvent.mouseEnter(cell.parentElement!);
+    const tip = await screen.findByRole('tooltip', {}, { timeout: 3000 });
+    expect(tip.textContent).not.toContain('database is locked');
+    expect(tip.textContent?.trim().length).toBeGreaterThan(0);
+  });
+
+  it('leaves a telemetry breadcrumb', async () => {
+    listPersonas.mockResolvedValue([persona('p-trace', 'Trace me')]);
+    resolveEffectiveConfigBulk.mockRejectedValue({ error: 'database is locked', kind: 'database' });
+    render(<PersonaConfigPanel />);
+    await waitFor(() => expect(resolveEffectiveConfigBulk).toHaveBeenCalled());
+    await waitFor(() => expect(silentCatchScopes).toContain('PersonaConfigPanel:resolveBulk'));
   });
 });

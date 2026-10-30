@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import {
   CheckCircle2, AlertCircle, ChevronDown, Pencil,
   Rocket, GitBranch, Zap,
@@ -44,6 +45,8 @@ export function AutomationConditionStep({
   fallbackMode, setFallbackMode, timeoutSecs, setTimeoutSecs, deployError,
 }: AutomationConditionStepProps) {
   const { t, tx } = useTranslation();
+  const nameId = useId();
+  const schemaId = useId();
   return (
     <div key="preview" className="animate-fade-slide-in space-y-6">
       {designResult.platform_reasoning && (
@@ -58,8 +61,8 @@ export function AutomationConditionStep({
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <div>
-            <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_name_label}</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+            <label htmlFor={nameId} className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_name_label}</label>
+            <input id={nameId} type="text" value={name} onChange={(e) => setName(e.target.value)}
               className="w-full mt-1.5 px-3 py-2 typo-body rounded-modal border border-border bg-secondary/20 text-foreground focus-ring" />
           </div>
           <div>
@@ -98,7 +101,7 @@ export function AutomationConditionStep({
             {hasPlatformCredential ? (
               <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-modal bg-brand-emerald/5 border border-brand-emerald/15">
                 <CheckCircle2 className="w-3.5 h-3.5 text-brand-emerald/70 flex-shrink-0" />
-                <span className="typo-body text-foreground">{platformCredentials.find((c) => c.id === platformCredentialId)?.name ?? platformCredentials[0]?.name}</span>
+                <span className="typo-body text-foreground">{platformCredentials.find((c) => c.id === platformCredentialId)?.name ?? t.agents.connectors.auto_none_selected}</span>
               </div>
             ) : (
               <p className="mt-1.5 typo-body text-foreground">{t.agents.connectors.auto_none_selected}</p>
@@ -142,8 +145,8 @@ export function AutomationConditionStep({
       {showAdvanced && (
           <div className="animate-fade-slide-in overflow-hidden space-y-4">
             <div>
-              <label className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_input_schema}</label>
-              <textarea placeholder={t.agents.connectors.auto_input_schema_placeholder} value={inputSchema} onChange={(e) => setInputSchema(e.target.value)} rows={3}
+              <label htmlFor={schemaId} className="typo-body text-foreground uppercase tracking-wider">{t.agents.connectors.auto_input_schema}</label>
+              <textarea id={schemaId} placeholder={t.agents.connectors.auto_input_schema_placeholder} value={inputSchema} onChange={(e) => setInputSchema(e.target.value)} rows={3}
                 className="w-full mt-1.5 px-3 py-2 typo-code rounded-modal border border-border bg-secondary/20 text-foreground placeholder:text-foreground focus-ring resize-none" />
             </div>
             <div>

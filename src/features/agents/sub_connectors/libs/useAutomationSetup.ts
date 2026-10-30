@@ -154,17 +154,22 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     return connectorDefinitions.find((c) => c.name === platformServiceType) ?? null;
   }, [connectorDefinitions, platformServiceType]);
 
+  // Prefill ONCE per edited automation. `editAutomation` is a fresh object
+  // after any persona refresh (the row comes from `selectedPersona.automations`),
+  // and keying the prefill on its identity reset the user's in-progress edits.
+  const prefilledIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (editAutomation) {
-      setPlatform(editAutomation.platform);
-      setName(editAutomation.name);
-      setDescription(editAutomation.description);
-      setFallbackMode(editAutomation.fallbackMode);
-      setTimeoutSecs(Math.round(Number(editAutomation.timeoutMs) / 1000));
-      if (editAutomation.inputSchema) setInputSchema(editAutomation.inputSchema);
-      if (editAutomation.platformCredentialId) setPlatformCredentialId(editAutomation.platformCredentialId);
-      setUseCaseId(editAutomation.useCaseId ?? null);
-    }
+    if (!editAutomation) { prefilledIdRef.current = null; return; }
+    if (prefilledIdRef.current === editAutomation.id) return;
+    prefilledIdRef.current = editAutomation.id;
+    setPlatform(editAutomation.platform);
+    setName(editAutomation.name);
+    setDescription(editAutomation.description);
+    setFallbackMode(editAutomation.fallbackMode);
+    setTimeoutSecs(Math.round(Number(editAutomation.timeoutMs) / 1000));
+    if (editAutomation.inputSchema) setInputSchema(editAutomation.inputSchema);
+    if (editAutomation.platformCredentialId) setPlatformCredentialId(editAutomation.platformCredentialId);
+    setUseCaseId(editAutomation.useCaseId ?? null);
   }, [editAutomation]);
 
   useEffect(() => {
@@ -172,7 +177,16 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     if (next !== platformCredentialId) setPlatformCredentialId(next);
   }, [platformCredentials, platformCredentialId]);
 
+  // A listing that FAILED is not an empty account: the flags let the trigger
+  // step say so (with a retry) instead of "No repositories found. Check your
+  // token permissions." for an outage. `listingAttempt` re-runs both fetches.
+  const [reposFailed, setReposFailed] = useState(false);
+  const [zapsFailed, setZapsFailed] = useState(false);
+  const [listingAttempt, setListingAttempt] = useState(0);
+  const retryListings = useCallback(() => setListingAttempt((n) => n + 1), []);
+
   useEffect(() => {
+    setReposFailed(false);
     if (platform !== 'github_actions' || !platformCredentialId) {
       setGithubRepos([]); setGithubPerms(null); setGithubRepo(null); return;
     }
@@ -185,12 +199,13 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
       githubCheckPermissions(platformCredentialId).catch(silentCatchNull("useAutomationSetup:githubCheckPermissions")),
     ]).then(([repos, perms]) => {
       if (cancelled) return;
-      setGithubRepos(repos ?? []); setGithubPerms(perms); setLoadingRepos(false);
+      setGithubRepos(repos ?? []); setReposFailed(repos === null); setGithubPerms(perms); setLoadingRepos(false);
     });
     return () => { cancelled = true; };
-  }, [platform, platformCredentialId]);
+  }, [platform, platformCredentialId, listingAttempt]);
 
   useEffect(() => {
+    setZapsFailed(false);
     if (platform !== 'zapier' || !platformCredentialId) { setZapierZaps([]); return; }
     let cancelled = false;
     setLoadingZaps(true);
@@ -199,10 +214,10 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
       .catch((err) => {
         silentCatch("useAutomationSetup:zapierListZaps")(err);
         if (cancelled) return;
-        setZapierZaps([]); setLoadingZaps(false);
+        setZapierZaps([]); setZapsFailed(true); setLoadingZaps(false);
       });
     return () => { cancelled = true; };
-  }, [platform, platformCredentialId]);
+  }, [platform, platformCredentialId, listingAttempt]);
 
   useEffect(() => {
     if (design.phase !== 'analyzing') { setElapsed(0); return; }
@@ -231,7 +246,9 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
   const deployInFlightRef = useRef(false);
 
   const handleDeploy = async () => {
-    if (!name.trim() || !platformCredentialId) return;
+    // The custom platform has no credential type (`PLATFORM_TO_SERVICE_TYPE.custom`
+    // is null) and is saved as a draft without one; every other platform needs it.
+    if (!name.trim() || (needsCredential && !platformCredentialId)) return;
     if (deployInFlightRef.current) return; // guard against double-submit
     deployInFlightRef.current = true;
     // Clamp user-editable timeout at the trust boundary — the raw input can be
@@ -247,14 +264,15 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     setLocalPhase('deploying'); setDeployError(null);
     try {
       const result = await deployAutomation({
-        personaId, credentialId: platformCredentialId,
+        personaId, credentialId: needsCredential ? platformCredentialId : null,
         designResult: mergedDesign as Parameters<typeof deployAutomation>[0]['designResult'],
         githubRepo: platform === 'github_actions' ? githubRepo : null,
         useCaseId,
       });
-      if (result) { setDeployResult(result); setLocalPhase('success'); void fetchAutomations(personaId); }
-      else { setLocalPhase(null); setDeployError(t.agents.connectors.auto_error_deploy_check_credentials); }
-    } catch (err) { setLocalPhase(null); setDeployError(errMsg(err, t.agents.connectors.auto_error_deploy_generic)); }
+      setDeployResult(result); setLocalPhase('success'); void fetchAutomations(personaId);
+    } catch (err) {
+      // The store rethrows the backend error, so the banner names the cause.
+      setLocalPhase(null); setDeployError(errMsg(err, t.agents.connectors.auto_error_deploy_generic)); }
     finally { deployInFlightRef.current = false; }
   };
 
@@ -269,6 +287,8 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     setPlatformCredentialId(null); setGithubRepo(null); setGithubRepos([]);
     setGithubPerms(null); setZapierZaps([]); setLocalPhase(null);
     setDeployResult(null); setDeployError(null); setUseCaseId(null);
+    setReposFailed(false); setZapsFailed(false);
+    prefilledIdRef.current = null;
   }, [design]);
 
   const stageIndex = useMemo(() => deriveStageIndex(design.outputLines), [design.outputLines]);
@@ -290,13 +310,13 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     platformCredentialId, setPlatformCredentialId,
     useCaseId, setUseCaseId, availableUseCases,
     githubRepos, githubPerms, githubRepo, setGithubRepo, loadingRepos,
-    zapierZaps, loadingZaps,
+    zapierZaps, loadingZaps, reposFailed, zapsFailed, retryListings,
     localPhase, setLocalPhase, deployResult, deployError, setDeployError,
     elapsed, platformCredentials, hasPlatformCredential, needsCredential,
     platformConnector, handleDesign, handleDeploy, handleClose,
     stageIndex, tailLines, tailRef, phase, canDesign,
     timeoutSecsInvalid,
     /** Disable the Deploy button while a deploy is in flight or inputs are invalid. */
-    canDeploy: !!name.trim() && !!platformCredentialId && !timeoutSecsInvalid && localPhase !== 'deploying',
+    canDeploy: !!name.trim() && (!needsCredential || !!platformCredentialId) && !timeoutSecsInvalid && localPhase !== 'deploying',
   };
 }

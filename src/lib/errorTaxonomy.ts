@@ -302,28 +302,6 @@ export function defaultSeverity(category: ErrorCategory): ErrorSeverity {
 }
 
 // ---------------------------------------------------------------------------
-// Issue severity inference (shared by health check, dry run, and digest)
-// ---------------------------------------------------------------------------
-
-/**
- * Infer issue severity from health-check / feasibility issue text.
- *
- * Previously duplicated in healthCheckSlice.ts, useDryRun.ts, and
- * useHealthCheck.ts. Centralized here so all subsystems produce consistent
- * severity classifications.
- */
-export function inferIssueSeverity(issueText: string, overall: string): 'error' | 'warning' | 'info' {
-  const lower = issueText.toLowerCase();
-  if (overall === 'blocked' || lower.includes('missing') || lower.includes('required') || lower.includes('must')) {
-    return 'error';
-  }
-  if (lower.includes('recommend') || lower.includes('consider') || lower.includes('optional') || lower.includes('suggest')) {
-    return 'info';
-  }
-  return 'warning';
-}
-
-// ---------------------------------------------------------------------------
 // Display helpers
 // ---------------------------------------------------------------------------
 

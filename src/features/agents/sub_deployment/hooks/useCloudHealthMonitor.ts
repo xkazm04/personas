@@ -82,8 +82,12 @@ export function useCloudHealthMonitor() {
         // Connection dropped — start reconnect loop
         startReconnectLoopRef.current(gen);
       }
-    } catch {
+    } catch (err) {
       if (isStale(gen)) return;
+      // The probe failure is what flips the app into reconnecting; leave the
+      // same breadcrumb the reconnect attempts below leave, or the cause of a
+      // reconnect storm is unrecorded.
+      silentCatch('useCloudHealthMonitor:health')(err);
       if (lateTick) {
         // The host slept through this tick; the network may not be back yet.
         // One re-probe after a short grace — only its failure is a verdict.

@@ -54,4 +54,22 @@ describe('roster row duplicate / export', () => {
     await waitFor(() => expect(exportPersona).toHaveBeenCalledWith('p-1'));
     expect(duplicatePersona).not.toHaveBeenCalled();
   });
+
+  // Round 2 card 9: the row menu announced role="menu" but left focus on the
+  // trigger and answered no arrow key.
+  it('moves focus into the menu, answers arrows, and Tab closes back to the trigger', () => {
+    renderRow();
+    const trigger = screen.getByTestId('persona-row-menu-p-1');
+    fireEvent.click(trigger);
+    const dup = screen.getByTestId('persona-row-duplicate-p-1');
+    const exp = screen.getByTestId('persona-row-export-p-1');
+    expect(document.activeElement).toBe(dup);
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(exp);
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Home' });
+    expect(document.activeElement).toBe(dup);
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Tab' });
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
 });

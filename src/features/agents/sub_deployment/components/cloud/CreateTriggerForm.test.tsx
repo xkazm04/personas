@@ -48,3 +48,26 @@ describe('CreateTriggerForm', () => {
     expect(onCreated).not.toHaveBeenCalled();
   });
 });
+
+describe('CreateTriggerForm selection is exposed, not colour-only', () => {
+  it('names the trigger-type group and marks the chosen type and preset pressed', () => {
+    render(<CreateTriggerForm deployedPersonas={personas} onCreated={() => {}} onCancel={() => {}} />);
+    const group = screen.getByRole('group', { name: 'Trigger Type' });
+    const schedule = group.querySelector('button[aria-pressed="true"]');
+    expect(schedule?.textContent).toContain('Schedule (cron)');
+    const pressed = (name: string) => screen.getByRole('button', { name }).getAttribute('aria-pressed');
+    expect(pressed('Webhook')).toBe('false');
+
+    // 2 type toggles + 8 cron presets, every one with a pressed state.
+    const toggles = Array.from(document.querySelectorAll('button[aria-pressed]'));
+    expect(toggles).toHaveLength(10);
+    // The default cron '0 * * * *' is the "Every hour" preset.
+    expect(pressed('Every hour')).toBe('true');
+    fireEvent.click(screen.getByRole('button', { name: 'Every 5 min' }));
+    expect(pressed('Every 5 min')).toBe('true');
+    expect(pressed('Every hour')).toBe('false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Webhook' }));
+    expect(pressed('Webhook')).toBe('true');
+  });
+});

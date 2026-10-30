@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { History, ChevronDown, ChevronRight, Cloud, GitBranch, FileText, RotateCcw } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
+import { Button } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -28,14 +28,13 @@ export function UnifiedDeploymentHistory() {
 
   const history = useSystemStore((s) => s.unifiedDeploymentHistory);
   const loading = useSystemStore((s) => s.unifiedDeploymentHistoryLoading);
+  const failed = useSystemStore((s) => s.unifiedDeploymentHistoryError);
   const fetchHistory = useSystemStore((s) => s.fetchUnifiedDeploymentHistory);
 
+  // The action never rejects (it records `unifiedDeploymentHistoryError`), so
+  // a failed load is rendered below instead of reading as "no history".
   useEffect(() => {
-    if (open) {
-      fetchHistory(100).catch(
-        toastCatch('UnifiedDeploymentHistory:fetch', 'Failed to load deployment history'),
-      );
-    }
+    if (open) void fetchHistory(100);
   }, [open, fetchHistory]);
 
   // Ghost rows only into cold emptiness while the (re)fetch is running;
@@ -66,6 +65,13 @@ export function UnifiedDeploymentHistory() {
         <div className="max-h-64 overflow-auto px-6 pb-3">
           {showGhost ? (
             <HistoryGhostRows />
+          ) : history.length === 0 && failed ? (
+            <div className="py-4 flex items-center gap-3 typo-caption text-status-error" role="alert" data-testid="unified-deploy-history-error">
+              <span>{dt.history_load_failed}</span>
+              <Button variant="secondary" size="xs" onClick={() => void fetchHistory(100)}>
+                {t.common.retry}
+              </Button>
+            </div>
           ) : history.length === 0 ? (
             <p className="py-4 typo-caption text-foreground">{dt.history_empty}</p>
           ) : (

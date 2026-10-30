@@ -64,4 +64,52 @@ plan: string | null,
  * `full` or `draft` — whether the item carries everything a dispatch
  * needs. A `draft` is stored and visible; it simply cannot become a task.
  */
-completeness: string | null, created_at: string, updated_at: string, };
+completeness: string | null, 
+/**
+ * The scan dimension that found the item. Never collapsed into `scan_type`.
+ */
+lens: string | null, impact_why: string | null, 
+/**
+ * `low` | `medium` | `high`.
+ */
+confidence: string | null, 
+/**
+ * The producer's `scan-score/1`. Stored as given; never recomputed here.
+ */
+score: number | null, 
+/**
+ * JSON breakdown `{impact, confidence_w, effort_div, risk_factor, formula}`.
+ */
+score_parts: string | null, 
+/**
+ * `ranked` | `reserve` (verified and scored, but over the run's cap).
+ */
+band: string, 
+/**
+ * The lens's top finding of its run.
+ */
+mvp: boolean, mvp_rule: string | null, mvp_why: string | null, 
+/**
+ * The model's shadow verdict: `accept` | `reject` | `defer`.
+ */
+predicted_verdict: string | null, predicted_why: string | null, predicted_by: string | null, 
+/**
+ * `XS` | `S` | `M` | `L` | `XL`.
+ */
+size: string | null, 
+/**
+ * JSON `{lane, result, method, gate, disposition}` - the producer's routing words.
+ */
+routing: string | null, 
+/**
+ * Who passed the current verdict (`Human`, `TriageRule`, `machine:scan-sweep`, ...).
+ */
+decided_by: string | null, decided_at: string | null, 
+/**
+ * End of the veto window a machine decision is shown with.
+ */
+veto_until: string | null, 
+/**
+ * The sweep run that last filed or re-scored this item (e44 column).
+ */
+sweep_run_id: string | null, created_at: string, updated_at: string, };

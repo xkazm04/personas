@@ -44,3 +44,54 @@ describe('ExecutionMiniPlayer terminal verdict', () => {
     expect(screen.getByText('Complete')).toBeInTheDocument();
   });
 });
+
+describe('ExecutionMiniPlayer Simple-mode progress', () => {
+  it('exposes the running stage as a progressbar with its value', () => {
+    useAgentStore.setState({
+      miniPlayerPinned: true,
+      miniPlayerPosition: { x: 0, y: 0 },
+      isExecuting: true,
+      activeExecutionId: 'run-1',
+      executionOutput: [],
+      executionMeaningfulTail: [],
+      pipelineTrace: null,
+      error: null,
+    });
+    render(<ExecutionMiniPlayer />);
+    const bar = screen.getByRole('progressbar');
+    expect(bar.getAttribute('aria-valuemin')).toBe('0');
+    expect(bar.getAttribute('aria-valuemax')).toBe('100');
+    expect(bar.getAttribute('aria-valuenow')).not.toBeNull();
+    expect(bar.getAttribute('aria-label')).toBeTruthy();
+    act(() => useAgentStore.setState({ isExecuting: false, activeExecutionId: null }));
+  });
+});
+
+describe('ExecutionMiniPlayer stays on screen when the window shrinks', () => {
+  const setViewport = (w: number, h: number) => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: w });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: h });
+  };
+  const original = { w: window.innerWidth, h: window.innerHeight };
+  afterEach(() => setViewport(original.w, original.h));
+
+  it('re-clamps a player pinned near the right edge after the window is restored smaller', () => {
+    setViewport(1920, 1080);
+    renderFinished('completed', null, null);
+    act(() => useAgentStore.setState({ miniPlayerPosition: { x: 1540, y: 880 } }));
+
+    setViewport(1000, 700);
+    act(() => { window.dispatchEvent(new Event('resize')); });
+    // Same bounds the drag handler enforces: x <= innerWidth - 360, y <= innerHeight - 80.
+    expect(useAgentStore.getState().miniPlayerPosition).toEqual({ x: 640, y: 620 });
+  });
+
+  it('leaves a position that still fits untouched', () => {
+    setViewport(1920, 1080);
+    renderFinished('completed', null, null);
+    act(() => useAgentStore.setState({ miniPlayerPosition: { x: 100, y: 100 } }));
+    setViewport(1000, 700);
+    act(() => { window.dispatchEvent(new Event('resize')); });
+    expect(useAgentStore.getState().miniPlayerPosition).toEqual({ x: 100, y: 100 });
+  });
+});

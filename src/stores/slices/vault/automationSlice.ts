@@ -40,7 +40,8 @@ export interface AutomationSlice {
   updateAutomation: (id: string, input: Partial<UpdateAutomationInput>) => Promise<void>;
   deleteAutomation: (id: string) => Promise<void>;
   testAutomation: (id: string) => Promise<AutomationRun | null>;
-  deployAutomation: (input: DeployAutomationInput) => Promise<DeployAutomationResult | null>;
+  /** Rejects with the backend error on failure (after reporting it). */
+  deployAutomation: (input: DeployAutomationInput) => Promise<DeployAutomationResult>;
 }
 
 export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationSlice> = (set, get) => ({
@@ -117,7 +118,10 @@ export const createAutomationSlice: StateCreator<VaultStore, [], [], AutomationS
       return result;
     } catch (err) {
       reportError(err, "Failed to deploy automation", set);
-      return null;
+      // Rethrown, not collapsed to null: the setup modal's persistent banner
+      // names the cause from this error. A null used to read as "check your
+      // platform credentials" for every failure (500, network, bad design).
+      throw err;
     }
   },
 });

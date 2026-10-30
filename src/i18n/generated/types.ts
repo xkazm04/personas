@@ -4375,6 +4375,12 @@ export type Translations = {
       auto_loading_repos: string;
       auto_select_repo: string;
       auto_no_repos: string;
+      auto_repos_load_failed: string;
+      auto_zaps_load_failed: string;
+      auto_repo_private: string;
+      auto_scope_repo: string;
+      auto_scope_workflow: string;
+      auto_scopes_repo_and_workflow: string;
       auto_your_zaps: string;
       auto_loading_zaps: string;
       auto_no_zaps: string;
@@ -4433,6 +4439,7 @@ export type Translations = {
       st_test: string;
       st_test_all: string;
       st_link_existing: string;
+      st_change_credential: string;
       st_add_new: string;
       st_credential: string;
       st_best_match: string;
@@ -4973,6 +4980,7 @@ export type Translations = {
       quality: string;
       spend: string;
       spend_hint: string;
+      health: string;
     };
     health_indicator: {
       last: string;
@@ -5159,25 +5167,11 @@ export type Translations = {
       signal_predicted_failure: string;
       signal_high_latency: string;
       signal_unknown: string;
-    };
-    health_issue: {
-      apply_fix: string;
-      manual_action: string;
-      fix_applied: string;
-      fix_failed: string;
-      auto_match_blocked_one: string;
-      auto_match_blocked_other: string;
-      category_config: string;
-      category_runtime: string;
-      category_policy: string;
-    };
-    health_proposals: {
-      link_credential: string;
-      auto_match_credentials: string;
-      add_daily_schedule: string;
-      switch_retry_3x: string;
-      add_default_use_case: string;
-      enable_first_run_review: string;
+      notification_body_with_attention: string;
+      notification_attention_more: string;
+      panel_never_run: string;
+      panel_summary: string;
+      panel_more_issues: string;
     };
     health_score: {
       healthy: string;
@@ -5255,6 +5249,13 @@ export type Translations = {
       delete_drain_timeout: string;
       execution_still_running: string;
       execution_still_queued: string;
+      select_page_all_selected: string;
+      select_all_matching: string;
+      all_matching_selected: string;
+      sort_label: string;
+      sort_option: string;
+      sort_ascending: string;
+      sort_descending: string;
     };
     life: {
       sub_core: string;
@@ -5586,6 +5587,7 @@ export type Translations = {
       failing: string;
       dormant: string;
       building: string;
+      unknown: string;
     };
     editor_chrome: {
       tab_activity: string;
@@ -8773,7 +8775,6 @@ export type Translations = {
       activity: string;
       queue_length: string;
       active_executions: string;
-      active_execution: string;
       claude_token: string;
       gauge_aria: string;
     };
@@ -8854,6 +8855,8 @@ export type Translations = {
       filter_status: string;
       filter_all: string;
       bulk_selected: string;
+      bulk_cloud_only_one: string;
+      bulk_cloud_only_other: string;
       bulk_pause: string;
       bulk_resume: string;
       bulk_delete_confirm: string;
@@ -8869,16 +8872,9 @@ export type Translations = {
       success_rate: string;
       volume: string;
       errors: string;
-      stage_initializing: string;
-      stage_thinking: string;
-      stage_tool_calling: string;
-      stage_processing_result: string;
-      stage_generating: string;
-      stage_completed: string;
-      stage_failed: string;
-      tool_calls: string;
       history_title: string;
       history_empty: string;
+      history_load_failed: string;
       history_snapshot: string;
       bulk_action_pause: string;
       bulk_action_resume: string;
@@ -8894,6 +8890,7 @@ export type Translations = {
     cloud_trigger_chain: string;
     cloud_trigger_manual: string;
     cloud_healthy: string;
+    cloud_health_not_checked: string;
     cron_every_5min: string;
     cron_every_15min: string;
     cron_every_hour: string;
@@ -9712,6 +9709,39 @@ export type Translations = {
       backlog_sort_quick: string;
       backlog_sort_value_tip: string;
       backlog_sort_quick_tip: string;
+      backlog_sort_default_tip: string;
+      backlog_sort_newest: string;
+      backlog_col_score: string;
+      backlog_unscored: string;
+      backlog_unscored_tip: string;
+      backlog_score_breakdown: string;
+      backlog_score_part_impact: string;
+      backlog_score_part_confidence_w: string;
+      backlog_score_part_effort_div: string;
+      backlog_score_part_risk_factor: string;
+      backlog_score_part_formula: string;
+      backlog_confidence_low: string;
+      backlog_confidence_medium: string;
+      backlog_confidence_high: string;
+      backlog_predicted_accept: string;
+      backlog_predicted_reject: string;
+      backlog_predicted_defer: string;
+      backlog_impact_why: string;
+      backlog_auto_accepted: string;
+      backlog_auto_rejected: string;
+      backlog_veto: string;
+      backlog_veto_reason: string;
+      backlog_reserve_show: string;
+      backlog_reserve_hide: string;
+      backlog_mvps_title: string;
+      backlog_trust_button: string;
+      backlog_trust_title: string;
+      backlog_trust_empty: string;
+      backlog_trust_level: string;
+      backlog_trust_agreement: string;
+      backlog_trust_no_window: string;
+      backlog_trust_ceiling: string;
+      backlog_trust_last: string;
       backlog_levels_filter: string;
       backlog_swipe_reject: string;
       backlog_swipe_accept: string;

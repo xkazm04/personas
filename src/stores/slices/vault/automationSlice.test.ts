@@ -84,4 +84,14 @@ describe("automationSlice writes reach the section that renders them", () => {
     await h.get().deployAutomation({} as Parameters<typeof api.deployAutomation>[0]);
     expect(changed).toEqual(["persona-1"]);
   });
+
+  // The setup modal's banner names the cause from this rejection; a null used
+  // to read as "check your platform credentials" for every failure.
+  it("a failed deploy rejects with the backend error instead of resolving null", async () => {
+    vi.mocked(api.deployAutomation).mockRejectedValue({ error: "n8n answered 500", kind: "Internal" });
+    const h = makeHarness();
+    await expect(h.get().deployAutomation({} as Parameters<typeof api.deployAutomation>[0]))
+      .rejects.toEqual({ error: "n8n answered 500", kind: "Internal" });
+    expect(changed).toEqual([]);
+  });
 });

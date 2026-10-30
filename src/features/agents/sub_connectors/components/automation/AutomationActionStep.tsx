@@ -28,7 +28,15 @@ export function AutomationActionStep({
         <span className="typo-body text-foreground">{t.agents.connectors.auto_typically}</span>
       </div>
 
-      <div className="h-2 rounded-full bg-primary/10 overflow-hidden">
+      <div
+        className="h-2 rounded-full bg-primary/10 overflow-hidden"
+        role="progressbar"
+        aria-label={t.agents.connectors.auto_modal_designing}
+        aria-valuemin={0}
+        aria-valuemax={STAGE_DEFS.length}
+        aria-valuenow={Math.min(stageIndex, STAGE_DEFS.length)}
+        aria-valuetext={STAGE_DEFS[stageIndex] ? t.agents.connectors[STAGE_DEFS[stageIndex].labelKey] : undefined}
+      >
         <div
           className="animate-fade-in h-full rounded-full bg-primary" style={{ width: `${Math.min((stageIndex / STAGE_DEFS.length) * 100, 100)}%` }}
         />
