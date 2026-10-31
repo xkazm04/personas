@@ -48,7 +48,7 @@ export function EditorBody() {
 
   const {
     draft, baseline, patch, setBaseline,
-    isSaving, modelDirty, saveError,
+    isSaving, saveError,
     isDirty, allDirtyTabs,
     saveAllTabs, cancelAllDebouncedSaves, clearAllDirty,
     undo, redo,
@@ -205,11 +205,7 @@ export function EditorBody() {
             {editorTab === 'activity' && <ActivityTab />}
             {editorTab === 'lab' && <LabTab />}
             {editorTab === 'design' && (
-              <DesignTab
-                draft={draft}
-                patch={patch}
-                modelDirty={modelDirty}
-              />
+              <DesignTab />
             )}
             {editorTab === 'settings' && (
               <EditorTabContent>

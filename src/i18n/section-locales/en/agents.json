@@ -10,17 +10,11 @@
   },
   "design_subtabs": {
     "manifest": "Manifest",
-    "use_cases": "Use Cases",
-    "prompt": "Properties",
-    "parameters": "Parameters",
     "connectors": "Connectors",
-    "triggers": "Events & Triggers",
-    "messaging": "Notifications",
-    "core": "Core",
+    "connectors_empty_description": "This agent reaches no tools yet. Add a responsibility that needs one.",
+    "connectors_empty_action": "Open Responsibilities",
     "responsibilities": "Responsibilities",
-    "brain": "Brain",
-    "triggers_desc": "Per-persona event subscriptions and trigger configuration will land in this tab.",
-    "messaging_desc": "Notification channels and inbox routing for this agent will live here."
+    "brain": "Brain"
   },
   "manifest": {
     "title": "Manifest",
@@ -2019,7 +2013,6 @@
     "error": "Error",
     "invalid_json": "Invalid JSON — fix before running.",
     "input_json_placeholder": "{ \"key\": \"value\" }",
-    "run_tool": "Run tool",
     "panel_title": "Run a tool",
     "panel_subtitle": "Invoke a tool directly against this persona's credentials.",
     "output_truncated": "Output truncated — the tool returned more than the display limit.",

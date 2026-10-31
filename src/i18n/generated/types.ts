@@ -3091,17 +3091,11 @@ export type Translations = {
     };
     design_subtabs: {
       manifest: string;
-      use_cases: string;
-      prompt: string;
-      parameters: string;
       connectors: string;
-      triggers: string;
-      messaging: string;
-      core: string;
+      connectors_empty_description: string;
+      connectors_empty_action: string;
       responsibilities: string;
       brain: string;
-      triggers_desc: string;
-      messaging_desc: string;
     };
     manifest: {
       title: string;
@@ -5100,7 +5094,6 @@ export type Translations = {
       error: string;
       invalid_json: string;
       input_json_placeholder: string;
-      run_tool: string;
       panel_title: string;
       panel_subtitle: string;
       output_truncated: string;
