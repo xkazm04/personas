@@ -26,13 +26,15 @@ export const createCredential = (input: CreateCredentialInput) =>
 // `Partial<>` since 2026-08-15. `UpdateCredentialInput` makes every field
 // required, so a caller who only wants to rename had to name `metadata` too —
 // and the honest-looking value to pass is `null`. `metadata` is
-// `Option<Option<String>>` with `double_option` (core/src/models/credential.rs:95),
-// so an explicit null is not "leave alone", it is CLEAR, and the repo binds SQL
-// NULL for it (repos/vault/credentials.rs:381).
+// `Option<Option<String>>` with `double_option`
+// (src-tauri/core/src/models/credential.rs:95), so an explicit null is not
+// "leave alone", it is CLEAR, and the repo binds SQL NULL for it
+// (src-tauri/db/src/repos/resources/credentials.rs:381).
 //
 // Replaying the three live rename payloads against the real credential rows lost
 // 18 of 18 metadata keys — including `oauth_token_expires_at`, whose absence is
-// the documented cause of the daily-401 re-auth loop (crud.rs:124-127), plus
+// the documented cause of the daily-401 re-auth loop
+// (src-tauri/src/commands/credentials/crud.rs:131-134), plus
 // `oauth_refresh_backoff_until`, `needs_reauth` and all healthcheck state. The
 // `refuse_corrupt_metadata` guard never fired because a blind overwrite performs
 // no read that could fail.
