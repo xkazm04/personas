@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
+import { preloadSectionsAsync } from '@/i18n/useTranslation';
 import { THEMES } from '@/stores/themeStore';
 import { getContrastRatio } from '@/lib/theme/contrastRatio';
 import { AppearanceThemeSwatch } from '../AppearanceThemeSwatch';
@@ -16,6 +17,10 @@ function exposedContrastText(container: HTMLElement): string {
     .join(' ');
   return `${btn.getAttribute('aria-label') ?? ''} ${described}`;
 }
+
+beforeAll(async () => {
+  await preloadSectionsAsync('en', ['settings']);
+});
 
 describe('theme swatch contrast level reaches assistive tech', () => {
   it('every swatch exposes its contrast level through aria-describedby', () => {
