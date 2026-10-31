@@ -49,4 +49,23 @@ describe('custom theme editor lifecycle', () => {
     expect(screen.queryAllByRole('button', { name: a.applied })).toHaveLength(0);
     expect(screen.queryAllByRole('button', { name: a.save_apply })).toHaveLength(1);
   });
+  it('Save persists the draft name and a remount shows it with the button reading Applied', () => {
+    const { unmount } = render(<CustomThemeCreator />);
+    fireEvent.change(screen.getByLabelText(a.theme_name), { target: { value: 'Dusk' } });
+    fireEvent.click(screen.getByRole('button', { name: a.save_apply }));
+    expect(useThemeStore.getState().customTheme?.label).toBe('Dusk');
+    unmount();
+    render(<CustomThemeCreator />);
+    expect((screen.getByLabelText(a.theme_name) as HTMLInputElement).value).toBe('Dusk');
+    expect(screen.queryAllByRole('button', { name: a.applied })).toHaveLength(1);
+  });
+
+  it('Reset returns the editor to its defaults and hides the Reset button', () => {
+    act(() => { useThemeStore.getState().setCustomTheme(SAVED); });
+    render(<CustomThemeCreator />);
+    expect((screen.getByLabelText(a.theme_name) as HTMLInputElement).value).toBe('Mine');
+    fireEvent.click(screen.getByRole('button', { name: a.reset }));
+    expect((screen.getByLabelText(a.theme_name) as HTMLInputElement).value).toBe('Custom');
+    expect(screen.queryAllByRole('button', { name: a.reset })).toHaveLength(0);
+  });
 });
