@@ -886,6 +886,8 @@ export function useUnifiedTriage(
    * would re-create `decide` on every poll, so the successor is read through a
    * ref at call time instead — which is also when it is actually true.
    */
+  const allRef = useRef(all);
+  allRef.current = all;
   const projectionRef = useRef(projection);
   projectionRef.current = projection;
 
@@ -1112,12 +1114,12 @@ export function useUnifiedTriage(
       // in the queue and the next verdict on one of them writes into a goal that
       // is already signed off. A rejected write throws before it gets here,
       // which is what leaves the restore path free to put the card back.
-      acceptGoal: async (id) => {
-        await acceptGoalViaStore(id);
+      acceptGoal: async (id, seenStatus) => {
+        await acceptGoalViaStore(id, seenStatus);
         refreshGoals();
       },
-      rejectGoal: async (id, comment) => {
-        await rejectGoalViaStore(id, comment);
+      rejectGoal: async (id, comment, seenStatus) => {
+        await rejectGoalViaStore(id, comment, seenStatus);
         refreshGoals();
       },
       reopenIdea: (id, seenStatus) => reopenIdeaRow(id, { seenStatus }),
@@ -1185,6 +1187,26 @@ export function useUnifiedTriage(
       try {
         await routeDecision(decision, ports);
         journal(decision);
+        // "Accept all N from this KPI" signed off N goals, so the session owes N
+        // decisions: resolve and journal each sibling the router accepted, or the
+        // readout counts one and the siblings silently leave the denominator.
+        if (item.kind === 'goal' && decision.branchId === 'accept-kpi-batch') {
+          const siblingIds = new Set(
+            (item.payload?.batchGoalIds ?? '').split(',').filter(Boolean).map((g) => `goal:${g}`),
+          );
+          siblingIds.delete(item.id);
+          const siblings = allRef.current.filter((i) => siblingIds.has(i.id));
+          if (siblings.length > 0) {
+            setResolved((prev) => {
+              const next = new Set(prev);
+              for (const sib of siblings) next.add(sib.id);
+              return next;
+            });
+            for (const sib of siblings) {
+              journal({ item: sib, verdict: 'accept', branchId: 'accept-kpi-batch' });
+            }
+          }
+        }
         // The row is gone from a queue the title-bar badge counts, so the badge
         // owes an update NOW rather than on its next 30s tick — a reviewer who
         // clears the deck and watches the number sit there reads it as broken.

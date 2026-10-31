@@ -330,8 +330,14 @@ export const undispatchedIdeas = (projectId?: string, limit?: number) =>
   invoke<UndispatchedIdea[]>("dev_tools_undispatched_ideas", { projectId, limit });
 
 /** Accept (→ done, off-board) or reject (→ in-progress, with a comment) a goal. */
-export const resolveGoalAcceptance = (goalId: string, decision: "accept" | "reject", comment?: string) =>
-  invoke<DevGoal>("dev_tools_resolve_goal_acceptance", { goalId, decision, comment });
+export const resolveGoalAcceptance = (
+  goalId: string,
+  decision: "accept" | "reject",
+  comment?: string,
+  /** Compare-and-swap: lose with the shared conflict error unless the goal still holds this status. Omit for unconditional. */
+  expectedStatus?: string,
+) =>
+  invoke<DevGoal>("dev_tools_resolve_goal_acceptance", { goalId, decision, comment, expectedStatus });
 
 /** All checklist items for one project's goals in a single query (Board card todos). */
 export const listGoalItemsForProject = (projectId: string) =>

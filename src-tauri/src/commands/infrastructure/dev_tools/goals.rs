@@ -446,12 +446,18 @@ pub fn dev_tools_pending_counts(
 
 /// Accept (→ `done`, off-board) or reject (→ `in-progress`, with a comment) a
 /// pending-acceptance goal. `decision` is `accept` | `reject`.
+///
+/// `expected_status` is optional: when given, the verdict is a compare-and-swap
+/// that loses (with the shared "already decided … by a concurrent action"
+/// conflict error) if the goal is no longer in that status. Omitted = the
+/// previous behaviour.
 #[tauri::command]
 pub fn dev_tools_resolve_goal_acceptance(
     state: State<'_, Arc<AppState>>,
     goal_id: String,
     decision: String,
     comment: Option<String>,
+    expected_status: Option<String>,
 ) -> Result<DevGoal, AppError> {
     require_auth_sync(&state)?;
     let accept = match decision.as_str() {
@@ -463,7 +469,13 @@ pub fn dev_tools_resolve_goal_acceptance(
             )))
         }
     };
-    repo::resolve_goal_acceptance(&state.db, &goal_id, accept, comment.as_deref())
+    repo::resolve_goal_acceptance(
+        &state.db,
+        &goal_id,
+        accept,
+        comment.as_deref(),
+        expected_status.as_deref(),
+    )
 }
 
 /// All dependency edges for one project's goals (single query; Map edges).

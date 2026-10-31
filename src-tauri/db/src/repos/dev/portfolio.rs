@@ -347,18 +347,61 @@ fn sql_pending_counts(pool: &DbPool) -> Result<PendingCounts, AppError> {
     })
 }
 
+/// Flip a goal's status only while it still holds `from` (raw stored value).
+/// Returns the rows changed: 0 means a concurrent verdict got there first.
+fn claim_goal_status(
+    pool: &DbPool,
+    goal_id: &str,
+    from: &str,
+    to: &str,
+) -> Result<usize, AppError> {
+    timed_query!("dev_goals", "dev_goals::claim_goal_status", {
+        let conn = pool.get()?;
+        Ok(conn.execute(
+            "UPDATE dev_goals SET status = ?1, updated_at = ?2 WHERE id = ?3 AND status = ?4",
+            params![to, chrono::Utc::now().to_rfc3339(), goal_id, from],
+        )?)
+    })
+}
+
 /// Resolve a pending-acceptance goal. `accept` → `done` (off-board, completion
 /// stamp kept) + a `goal_accepted` signal. Reject → `in-progress` (back to the
 /// team's lane) with the completion stamp cleared + a `goal_rejected` signal
 /// carrying the user's comment (the feedback the team reworks against).
+///
+/// `expected_status` makes the verdict a compare-and-swap: when `Some`, the goal
+/// must still be in that status (compared canonically, so aliases fold) AND the
+/// status flip is a single conditional UPDATE, so of two concurrent verdicts
+/// exactly one wins. The loser gets a Validation error worded to match
+/// `src/lib/decisions/rowWrites.ts` (`isDecisionConflict`), the same contract as
+/// `decide_idea_cas`. `None` keeps the previous unconditional behaviour.
 pub fn resolve_goal_acceptance(
     pool: &DbPool,
     goal_id: &str,
     accept: bool,
     comment: Option<&str>,
+    expected_status: Option<&str>,
 ) -> Result<DevGoal, AppError> {
     let goal = get_goal_by_id(pool, goal_id)?;
-    if normalize_goal_status(&goal.status) != "awaiting_acceptance" {
+    if let Some(expected) = expected_status {
+        let lost = |actual: &str| {
+            AppError::Validation(format!(
+                "Goal {goal_id} was already decided as '{}' by a concurrent action",
+                normalize_goal_status(actual)
+            ))
+        };
+        if normalize_goal_status(&goal.status) != normalize_goal_status(expected) {
+            return Err(lost(&goal.status));
+        }
+        // The claim: flip the status only while the row still holds the value
+        // just read. A concurrent verdict between the read and here makes this
+        // match zero rows, which is the lost swap.
+        let target = if accept { "done" } else { "in-progress" };
+        if claim_goal_status(pool, goal_id, &goal.status, target)? == 0 {
+            let actual = get_goal_by_id(pool, goal_id)?;
+            return Err(lost(&actual.status));
+        }
+    } else if normalize_goal_status(&goal.status) != "awaiting_acceptance" {
         return Err(AppError::Validation(format!(
             "goal {goal_id} is not awaiting acceptance (status: {})",
             goal.status
@@ -845,5 +888,77 @@ mod pending_counts_tests {
         let with = counts.with_companion_approvals(4);
         assert_eq!(with.companion_approvals, 4);
         assert_eq!(with.decision_total, with.total + 4);
+    }
+}
+
+#[cfg(test)]
+mod resolve_goal_acceptance_cas_tests {
+    use super::*;
+    use crate::init_test_db;
+    use crate::repos::dev::goals::create_goal;
+    use crate::repos::dev::projects::create_project;
+
+    fn awaiting_goal(pool: &DbPool) -> DevGoal {
+        let project = create_project(pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
+        let goal = create_goal(pool, &project.id, "G", None, None, None, None, None).unwrap();
+        update_goal(
+            pool,
+            &goal.id,
+            None,
+            None,
+            Some("awaiting_acceptance"),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn matching_expected_status_wins() {
+        let pool = init_test_db().unwrap();
+        let goal = awaiting_goal(&pool);
+        let done =
+            resolve_goal_acceptance(&pool, &goal.id, true, None, Some("awaiting_acceptance"))
+                .unwrap();
+        assert_eq!(normalize_goal_status(&done.status), "done");
+    }
+
+    #[test]
+    fn stale_expected_status_loses_with_the_conflict_wording() {
+        let pool = init_test_db().unwrap();
+        let goal = awaiting_goal(&pool);
+        // First reviewer sends it back; the second still holds the old card.
+        resolve_goal_acceptance(
+            &pool,
+            &goal.id,
+            false,
+            Some("rework"),
+            Some("awaiting_acceptance"),
+        )
+        .unwrap();
+        let err = resolve_goal_acceptance(&pool, &goal.id, true, None, Some("awaiting_acceptance"))
+            .unwrap_err();
+        let msg = err.to_string();
+        assert!(
+            msg.contains("already decided") && msg.contains("by a concurrent action"),
+            "not the shared conflict wording: {msg}"
+        );
+        // The loser must not have written anything.
+        let after = get_goal_by_id(&pool, &goal.id).unwrap();
+        assert_eq!(normalize_goal_status(&after.status), "in-progress");
+    }
+
+    #[test]
+    fn omitted_expected_status_keeps_the_old_behaviour() {
+        let pool = init_test_db().unwrap();
+        let goal = awaiting_goal(&pool);
+        resolve_goal_acceptance(&pool, &goal.id, true, None, None).unwrap();
+        // Second unconditional resolve: the old validation error, not a conflict.
+        let err = resolve_goal_acceptance(&pool, &goal.id, true, None, None).unwrap_err();
+        assert!(err.to_string().contains("not awaiting acceptance"));
     }
 }

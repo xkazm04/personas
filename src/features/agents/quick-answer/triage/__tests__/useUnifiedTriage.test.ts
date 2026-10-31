@@ -134,7 +134,7 @@ vi.mock('@/i18n/useTranslation', () => ({
   }),
 }));
 
-import { clearJournal, resetJournalCache } from '../triageJournal';
+import { clearJournal, readJournal, resetJournalCache } from '../triageJournal';
 import { clearTriageSession, resetTriageSessionCache } from '../triageSession';
 import { TRIAGE_KINDS } from '../triageTypes';
 import { resetTriageWarmCache, useUnifiedTriage } from '../useUnifiedTriage';
@@ -863,7 +863,7 @@ describe('useUnifiedTriage — goals reach the same spine', () => {
 
     // Through the SLICE, not `devApi` — it owns the row write and the pending
     // count, and no seen-status because goals have no compare-and-swap.
-    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1');
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1', 'awaiting_acceptance');
     expect(result.current.items).toHaveLength(0);
     expect(result.current.decidedCount).toBe(1);
     // A goal verdict invalidates the goal ledger, so it is re-read the way a
@@ -886,7 +886,7 @@ describe('useUnifiedTriage — goals reach the same spine', () => {
 
     // The comment is the only account the team gets of why finished work came
     // back, so a dropped reason is a silent regression.
-    expect(mockRejectGoal).toHaveBeenCalledWith('goal-1', 'The KPI never moved');
+    expect(mockRejectGoal).toHaveBeenCalledWith('goal-1', 'The KPI never moved', 'awaiting_acceptance');
     expect(result.current.items).toHaveLength(0);
   });
 
@@ -933,11 +933,32 @@ describe('useUnifiedTriage — goals reach the same spine', () => {
     });
 
     expect(mockAcceptGoal).toHaveBeenCalledTimes(2);
-    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1');
-    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-2');
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1', 'awaiting_acceptance');
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-2', 'awaiting_acceptance');
     // The siblings were signed off but their cards are still in the deck, so
     // the re-read is what stops the next verdict writing into a decided goal.
     await waitFor(() => expect(mockPendingAcceptance).toHaveBeenCalledTimes(2));
+  });
+
+  it('records an accept-all-from-KPI batch as one decision per goal', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([
+      pendingGoal(),
+      pendingGoal({ goal_id: 'goal-2', title: 'Ship the second half' }),
+      pendingGoal({ goal_id: 'goal-5', title: 'Ship the third part' }),
+    ]);
+
+    const { result } = await mount();
+    const first = result.current.items.find((i) => i.id === 'goal:goal-1')!;
+    await act(async () => {
+      await result.current.decide({ item: first, verdict: 'accept', branchId: 'accept-kpi-batch' });
+    });
+
+    expect(mockAcceptGoal).toHaveBeenCalledTimes(3);
+    // Three goals were signed off, so the session counts three decisions.
+    expect(result.current.decidedCount).toBe(3);
+    const goalRows = readJournal().filter((e) => e.kind === 'goal' && e.verdict === 'accept');
+    expect(goalRows.map((e) => e.sourceId).sort()).toEqual(['goal-1', 'goal-2', 'goal-5']);
   });
 
   it('offers no batch branch to the only goal on its KPI', async () => {
