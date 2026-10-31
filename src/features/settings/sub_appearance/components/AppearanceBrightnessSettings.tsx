@@ -31,7 +31,7 @@ export default function AppearanceBrightnessSettings() {
 
   return (
     <div className="space-y-4">
-      <p className="typo-caption">{s.brightness_hint}</p>
+      <p className="typo-caption">{isDark ? s.brightness_hint : s.brightness_hint_light}</p>
       <div className="grid grid-cols-3 gap-3">
         {brightnessLevels.map((level, i) => {
           const isActive = brightness === level.id;
