@@ -30891,7 +30891,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "docs/features/recipes/README.md:242 There is no code left in this context to judge for boundary placement. Its three entry points (RecipePlaygroundModal.tsx, useRecipeTestRunner.ts, RecipeVersionsTab.tsx) and all of src/features/recipes/sub_playground were deleted in 450f1c9e5c (2026-09-25, 'delete the never-mounted recipe manager tree'), src/features/recipes no longer exists, and searching src/ for RecipePlaygroundModal, useRecipeTestRunner and recipes/sub_playground found zero files.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "quality-gates",

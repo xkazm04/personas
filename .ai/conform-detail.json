@@ -40908,6 +40908,16 @@
       "evaluatedTs": "2026-10-31T22:27:58.716Z",
       "worker": "e6d93c46-39df-46bd-9764-2b406ae4e523",
       "techniques": []
+    },
+    "06ef5a64-1796-4637-a4d9-f860bbe67562/module-design": {
+      "context": "recipes-playground",
+      "subject": "module-design",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T22:31:23.619Z",
+      "worker": "f2e084b1-2044-4bd1-a282-ba91d5690557",
+      "techniques": []
     }
   }
 }
