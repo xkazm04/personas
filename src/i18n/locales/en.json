@@ -3081,7 +3081,12 @@
       "failed": "Couldn't publish this agent to the gallery",
       "imported": "Agent imported from a share link",
       "import_failed": "Couldn't import that shared agent",
-      "invite_hint": "Invite a friend to Personas — you're credited when they join"
+      "invite_hint": "Invite a friend to Personas — you're credited when they join",
+      "confirm_title": "Publish this agent publicly?",
+      "confirm_body": "This uploads the full agent - its prompt, design context and tools - to the public gallery. Anyone with the link can read and import it, and it cannot be unpublished from here.",
+      "confirm_action": "Publish publicly",
+      "sensitive_title": "Sensitive agent - not shared",
+      "sensitive_body": "This agent is marked sensitive, so it cannot be published to the public gallery. Clear the sensitive flag first if you really intend to share it."
     },
     "design_subtabs": {
       "manifest": "Manifest",

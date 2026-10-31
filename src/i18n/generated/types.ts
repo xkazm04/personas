@@ -3088,6 +3088,11 @@ export type Translations = {
       imported: string;
       import_failed: string;
       invite_hint: string;
+      confirm_title: string;
+      confirm_body: string;
+      confirm_action: string;
+      sensitive_title: string;
+      sensitive_body: string;
     };
     design_subtabs: {
       manifest: string;

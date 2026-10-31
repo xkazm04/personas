@@ -162,7 +162,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
           />
         </div>
       </HeldTooltip>
-      {selectedPersona?.id && <ShareAgentButton personaId={selectedPersona.id} />}
+      {selectedPersona?.id && <ShareAgentButton personaId={selectedPersona.id} sensitive={baseline.sensitive} />}
       <AnimatePresence>
         {showReadinessPopover && readiness.blockers.length > 0 && (
           <motion.div
