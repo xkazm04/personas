@@ -7,7 +7,6 @@ import type { UpdateAutomationInput } from "@/lib/bindings/UpdateAutomationInput
 import type { N8nWorkflow } from "@/lib/bindings/N8nWorkflow";
 import type { N8nActivateResult } from "@/lib/bindings/N8nActivateResult";
 import type { ZapierZap } from "@/lib/bindings/ZapierZap";
-import type { ZapierWebhookResult } from "@/lib/bindings/ZapierWebhookResult";
 import type { GitHubRepo } from "@/lib/bindings/GitHubRepo";
 import type { GitHubPermissions } from "@/lib/bindings/GitHubPermissions";
 import type { DeployAutomationInput } from "@/lib/bindings/DeployAutomationInput";
@@ -141,12 +140,6 @@ export const n8nTriggerWebhook = (credentialId: string, webhookUrl: string, body
 
 export const zapierListZaps = (credentialId: string) =>
   invoke<ZapierZap[]>("zapier_list_zaps", { credentialId });
-
-export const zapierCreateZap = (credentialId: string, definition: Record<string, unknown>) =>
-  invoke<{ zapId: string; webhookUrl: string | null }>("zapier_create_zap", { credentialId, definition });
-
-export const zapierTriggerWebhook = (credentialId: string, webhookUrl: string, body?: Record<string, unknown>) =>
-  invoke<ZapierWebhookResult>("zapier_trigger_webhook", { credentialId, webhookUrl, body: body });
 
 // GitHub Platform API
 
