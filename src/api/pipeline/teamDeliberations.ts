@@ -7,6 +7,13 @@ import type { DeliberationAgendaItem } from '@/lib/bindings/DeliberationAgendaIt
 import type { TeamChannelMessage } from '@/lib/bindings/TeamChannelMessage';
 import type { CompanionAssignTeamResult } from '@/lib/bindings/CompanionAssignTeamResult';
 
+/** Split, merge and escalation-resolve each await ONE headless Claude CLI leg
+ *  inline (cli_text_inner, bounded at 180 s in companion/athena_reaction.rs).
+ *  The IPC must outlive that leg, or the panel reports a failure for tracks or
+ *  a proposal the backend goes on to write. Pinned by
+ *  __tests__/deliberationTimeoutParity.test.ts. */
+const SINGLE_CLI_LEG_TIMEOUT_MS = 210_000;
+
 /** Open a deliberation on a team (the DB enforces one active per team).
  *  `costBudgetUsd` is the hard cost floor + the "Run to budget" stop (null ⇒
  *  unbounded — the run loop then ends on convergence / round cap instead). */
@@ -43,9 +50,9 @@ export const listDeliberationTurns = (deliberationId: string, limit?: number) =>
 
 /** Split a deliberation into parallel tracks (sub-sessions): a Haiku planner
  *  partitions the open agenda into 2-4 child deliberations. Returns the parent
- *  (now 'tracking'). Runs the planner, so a wide timeout. */
+ *  (now 'tracking'). Runs the planner inline, so it outlives one CLI leg. */
 export const splitTeamDeliberation = (deliberationId: string) =>
-  invoke<TeamDeliberation>('split_team_deliberation', { deliberationId }, { timeoutMs: 120_000 });
+  invoke<TeamDeliberation>('split_team_deliberation', { deliberationId }, { timeoutMs: SINGLE_CLI_LEG_TIMEOUT_MS });
 
 /** The child tracks of a parent deliberation (oldest-first). */
 export const listDeliberationTracks = (deliberationId: string) =>
@@ -54,7 +61,7 @@ export const listDeliberationTracks = (deliberationId: string) =>
 /** Merge a parent's resolved tracks into one combined proposal (Sonnet). All
  *  tracks must be terminal. Returns the parent (now 'resolved', pending). */
 export const mergeDeliberationTracks = (deliberationId: string) =>
-  invoke<TeamDeliberation>('merge_deliberation_tracks', { deliberationId }, { timeoutMs: 180_000 });
+  invoke<TeamDeliberation>('merge_deliberation_tracks', { deliberationId }, { timeoutMs: SINGLE_CLI_LEG_TIMEOUT_MS });
 
 /** Advance a deliberation by one moderated round on demand (user-initiated;
  *  not gated by the autonomous flag). Returns the updated deliberation. */
@@ -97,7 +104,7 @@ export const resolveDeliberationEscalation = (
   invoke<TeamDeliberation>(
     'resolve_deliberation_escalation',
     { deliberationId, decision, comment: comment ?? null },
-    { timeoutMs: 120_000 },
+    { timeoutMs: SINGLE_CLI_LEG_TIMEOUT_MS },
   );
 
 /** Decision gate (always gated): approve a resolved proposal → spawns a real
