@@ -28297,7 +28297,7 @@ export type Translations = {
       follow_offline: string;
       follow_label: string;
       follow_missing: string;
-      follow_elsewhere: string;
+      follow_not_here: string;
       opt_arm: string;
       opt_approved_here: string;
       opt_arm_sub: string;

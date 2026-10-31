@@ -1,11 +1,16 @@
 /**
- * Following bp's shared focus in the sheet (spark roadmap S6), over a fake FollowSource (no IPC, no bp):
- *  - the sheet says hello when it opens and forgets when it closes; Follow sends `follow` (whoever moves), never a
- *    publish;
- *  - a place on this product's plan is applied (a feature opens its L4 sheet); an id the plan does not draw holds still
- *    and the status line says so; a place on another product says so;
- *  - bp down reads "bp offline" on the chip.
- * The fixture source itself has no follow: its sheet shows no chip.
+ * Following bp's shared focus in the sheet (spark roadmap S6, G5), over the window's follower (lens/bpFollower.ts) on a
+ * fake FollowSource (no IPC, no bp):
+ *  - the open sheet is a visible Blueprint surface: hello when it opens, forget when it closes; Follow sends `follow`
+ *    (whoever moves), never a publish;
+ *  - each row of the place table (bp docs/concepts/one-morning-brief/personas.md section 3.2) lands on the right node of
+ *    the Kettle plan: the site at level 0, a wing at level 1, a room (a capability) at its bay, a bp bay `<cap>.<kind>` at
+ *    its capability's bay, a feature on its L4 sheet;
+ *  - an id the plan does not draw holds still and says so; a product Personas has not got says "Not in Personas: <slug>";
+ *    a place on another Personas product opens the sheet there (the follower's `open`), and a sheet opened at a place
+ *    (`place` on LensSheetRequest) lands on it;
+ *  - bp down reads "bp offline" on the chip; bp coming back hears follow again.
+ * The fixture source itself has no follower: its sheet shows no chip.
  */
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -14,6 +19,9 @@ import { BlueprintSheet } from '../BlueprintSheet';
 import { createFixtureActions } from '../fixture/actions';
 import { kettleData } from '../fixture/kettle';
 import type { FollowSource } from '../source';
+import type { FocusPlace } from '../model/focus';
+import { buildPlan } from '../model/plan';
+import { BpFollower } from '../../lens/bpFollower';
 
 vi.mock('@/hooks/utility/interaction/useMotion', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/utility/interaction/useMotion')>()),
@@ -47,13 +55,25 @@ function fakeSource(read: FollowSource['read']): FollowSource & { moves: string[
     moves,
     read,
     move: async (op) => { moves.push(op); return {}; },
-    products: async () => [{ slug: 'kettle', name: 'Kettle', projectId: data.product.projectId }, { slug: 'pof', name: 'PoF' }],
+    products: async () => [{ slug: 'kettle', name: 'Kettle', projectId: data.product.projectId }, { slug: 'pof', name: 'PoF', projectId: 'p-pof' }, { slug: 'atlas', name: 'Atlas' }],
   };
 }
 
-function mount(source?: FollowSource) {
-  const actions = { ...createFixtureActions(kettleData()), ...(source ? { follow: source } : {}) };
-  return render(<AppKeyboardProvider><BlueprintSheet data={kettleData()} actions={actions} onClose={() => {}} /></AppKeyboardProvider>);
+const open = vi.fn();
+function mount(source?: FollowSource, initialPlace?: FocusPlace) {
+  const follower = source ? new BpFollower(source, { open }) : undefined;
+  const actions = { ...createFixtureActions(kettleData()), ...(follower ? { follow: follower } : {}) };
+  return render(<AppKeyboardProvider><BlueprintSheet data={kettleData()} actions={actions} onClose={() => {}} {...(initialPlace ? { initialPlace } : {})} /></AppKeyboardProvider>);
+}
+const level = () => document.querySelector('nav.bp-lv [aria-current="true"]')?.getAttribute('data-level');
+const plan = buildPlan(data.structure, data.events);
+/** Follow on, one place shared by bp's web. */
+async function follow(place: Record<string, unknown>, rev = 9) {
+  const src = fakeSource(async () => ({ online: true, view: view(rev, place) }));
+  mount(src);
+  await waitFor(() => expect(screen.getByTestId('blueprint-sheet')).toBeTruthy());
+  act(() => { fireEvent.click(chip()); });
+  return src;
 }
 const chip = () => screen.getByTestId('blueprint-follow-chip');
 const say = () => document.querySelector('.bp-say')?.textContent ?? '';
@@ -74,7 +94,7 @@ describe('Follow bp in the sheet', () => {
     act(() => { fireEvent.click(chip()); });
     await waitFor(() => expect(src.moves).toContain('unfollow'));
     r.unmount();
-    expect(src.moves).toContain('forget');
+    await waitFor(() => expect(src.moves).toContain('forget'), { timeout: 3000 });
     expect(src.moves).not.toContain('publish');
   });
 
@@ -97,12 +117,43 @@ describe('Follow bp in the sheet', () => {
     expect(screen.queryByTestId('blueprint-feature-sheet')).toBeNull();
   });
 
-  it('a place on another product says so and stays', async () => {
-    const src = fakeSource(async () => ({ online: true, view: view(6, { product: 'pof' }) }));
+  it('a place on another Personas product opens the sheet there, at the place', async () => {
+    await follow({ product: 'pof', target: { kind: 'room', id: 'combat' } }, 6);
+    await waitFor(() => expect(open).toHaveBeenCalledWith('p-pof', { product: 'pof', target: { kind: 'room', id: 'combat' } }));
+  });
+
+  it('a product Personas has not got holds still and says Not in Personas', async () => {
+    await follow({ product: 'atlas', target: { kind: 'room', id: 'maps' } }, 7);
+    await waitFor(() => expect(say()).toContain('Not in Personas: atlas'));
+    expect(open).not.toHaveBeenCalled();
+  });
+
+  it('the place table: site at level 0, wing at 1, room and a bp bay at their capability bay (3)', async () => {
+    const wing = plan.L.wings[1] ?? plan.L.wings[0]!, bay = plan.L.bays[2] ?? plan.L.bays[0]!;
+    const rows: [Record<string, unknown>, string][] = [
+      [{ product: 'kettle', target: { kind: 'wing', id: wing.id } }, '1'],
+      [{ product: 'kettle' }, '0'],
+      [{ product: 'kettle', target: { kind: 'room', id: bay.id } }, '3'],
+      [{ product: 'kettle', target: { kind: 'site', id: 'kettle' } }, '0'],
+      [{ product: 'kettle', target: { kind: 'room', id: `${bay.id}.screens` } }, '3'],
+    ];
+    let i = 0;
+    const src = fakeSource(async () => ({ online: true, view: view(20 + i, rows[i]![0]) }));
     mount(src);
     await waitFor(() => expect(screen.getByTestId('blueprint-sheet')).toBeTruthy());
     act(() => { fireEvent.click(chip()); });
-    await waitFor(() => expect(say()).toContain('pof'));
+    for (; i < rows.length; i++) {
+      const want = rows[i]![1];
+      await waitFor(() => expect(level()).toBe(want), { timeout: 3000 });
+    }
+  });
+
+  it('a sheet opened at a place (place on LensSheetRequest) lands on it', async () => {
+    const fid = data.scan.proposals.find((p) => p.status === 'proposed')!.feature;
+    const src = fakeSource(async () => ({ online: true, view: { rev: 0, shared: null, readers: [] } }));
+    mount(src, { product: 'kettle', target: { kind: 'feature', id: fid }, say: 'Opened where bp is' });
+    await waitFor(() => expect(screen.getByTestId('blueprint-feature-sheet')).toBeTruthy());
+    expect(say()).toContain('Opened where bp is');
   });
 
   it('bp coming back hears follow again', async () => {

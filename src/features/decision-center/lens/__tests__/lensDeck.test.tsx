@@ -23,7 +23,10 @@ const api = vi.hoisted(() => ({
   getLensScanSnapshot: vi.fn(),
   getAppSetting: vi.fn(),
   openExternalUrl: vi.fn(),
+  listBpProducts: vi.fn(),
 }));
+// bp's product table (Rust `bp_products`): rejects unless a case says otherwise, as when bp is not running
+vi.mock('@/api/bpLink', () => ({ listBpProducts: api.listBpProducts }));
 vi.mock('@/api/lensScan', () => ({ listLensScanProducts: api.listLensScanProducts, getLensScanSnapshot: api.getLensScanSnapshot }));
 vi.mock('@/api/system/settings', () => ({ getAppSetting: api.getAppSetting }));
 vi.mock('@/api/system/system', async (orig) => ({ ...(await orig<typeof import('@/api/system/system')>()), openExternalUrl: api.openExternalUrl }));
@@ -140,8 +143,9 @@ describe('the release composition', () => {
     releases: [{ id: 'rel-0.4.0', version: '0.4.0', branch: 'release/0.4.0', status: 'tagged', created_at: T, updated_at: T }],
   };
 
-  it('opens bp at the product Release tab from the setting, read only', async () => {
+  it("opens bp at the product Release tab from the setting, read only, under bp's own slug for the root", async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(null)));
+    api.listBpProducts.mockResolvedValue([{ slug: 'teapot', name: 'Teapot', root: 'C:\\sample\\Teapot-Works' }]);
     api.getAppSetting.mockResolvedValue('http://bp.test:4000');
     api.getLensScanSnapshot.mockResolvedValue({ structure: {}, events: '', scan: relScan, storeVersion: 3 });
     api.openExternalUrl.mockResolvedValue(undefined);
@@ -153,11 +157,12 @@ describe('the release composition', () => {
     const open = screen.getByTestId('lens-release-open-bp');
     await waitFor(() => expect((open as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(open);
-    await waitFor(() => expect(api.openExternalUrl).toHaveBeenCalledWith('http://bp.test:4000/?product=teapot-works&page=ledger&tab=release'));
+    await waitFor(() => expect(api.openExternalUrl).toHaveBeenCalledWith('http://bp.test:4000/?product=teapot&page=ledger&tab=release'));
   });
 
-  it('falls back to the default URL when the setting is unset, and Enter opens it', async () => {
+  it('falls back to the default URL when the setting is unset, and to the folder name when bp does not answer; Enter opens it', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(null)));
+    api.listBpProducts.mockRejectedValue(new Error('bp offline'));
     api.getAppSetting.mockResolvedValue(null);
     api.getLensScanSnapshot.mockResolvedValue({ structure: {}, events: '', scan: relScan, storeVersion: 3 });
     api.openExternalUrl.mockResolvedValue(undefined);
@@ -171,6 +176,7 @@ describe('the release composition', () => {
 
   it('when bp does not answer, says it is not running, shows the command, and offers no open', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch'); }));
+    api.listBpProducts.mockRejectedValue(new Error('bp offline'));
     api.getAppSetting.mockResolvedValue(null);
     api.getLensScanSnapshot.mockResolvedValue({ structure: {}, events: '', scan: relScan, storeVersion: 3 });
     host();

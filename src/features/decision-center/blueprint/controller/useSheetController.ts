@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { Engine } from '../engine/Engine';
 import { scopeOf, queueIn, type Level } from '../model/scope';
+import type { FocusPlace } from '../model/focus';
 import type { BlueprintActions, BlueprintData } from '../source';
 import { TipStore } from '../state/tipStore';
 import { initialUi, uiReducer } from '../state/uiState';
@@ -25,9 +26,11 @@ interface Props {
   actions: BlueprintActions;
   onClose: () => void;
   initialFeature?: string;
+  /** A place bp's shared focus moved to on this product (the follower opened the sheet at it). */
+  initialPlace?: FocusPlace;
 }
 
-export function useSheetController({ data: initial, actions, onClose, initialFeature }: Props) {
+export function useSheetController({ data: initial, actions, onClose, initialFeature, initialPlace }: Props) {
   const text = useBlueprintText();
   const words = useEngineWords(text);
   const { data, plan, work, reload, readAt } = useSheetData(initial, actions);
@@ -67,7 +70,7 @@ export function useSheetController({ data: initial, actions, onClose, initialFea
   const changes = useChanges(data.scan, engine);
   const writes = useWrites({ actions, work, ui, dispatch, reload, say, sent: changes.sent });
   const hooks = useEngineHooks({ engine, plan, work, lens: ui.lens, nav, dispatch, tip });
-  const follow = useFocusFollow({ source: actions.follow, projectId: data.product.projectId, plan, nav, dispatch, text });
+  const follow = useFocusFollow({ follower: actions.follow, projectId: data.product.projectId, plan, nav, dispatch, text, ready: engine !== null, initialPlace });
 
   useSheetKeys({ plan, ui, dispatch, levelNow: () => (engine ? engine.cam.level().n : 0), nav, writes, current, onClose, sayEnterHint: () => dispatch({ type: 'say', text: B.say_enter_hint }) });
 
