@@ -53,6 +53,7 @@ export function ActivityFilters({
               type="button"
               key={tab.id}
               onClick={() => { onFilterChange(tab.id); onStatusFilterChange('all'); }}
+              aria-pressed={isActive}
               className={`relative px-3 py-1.5 typo-body rounded-t-card transition-colors duration-150 ease-out ${
                 isActive
                   ? 'bg-primary/10 text-primary'
@@ -121,6 +122,7 @@ export function ActivityFilters({
           <select
             value={statusFilter}
             onChange={(e) => onStatusFilterChange(e.target.value)}
+            aria-label={t.agents.activity.col_status}
             className="px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none"
           >
             <option value="all">{t.agents.activity.all_statuses}</option>
