@@ -5152,8 +5152,8 @@
         "description": "Object equality decided by JSON.stringify on both sides, in the inline form or the paired-const form. Key order is insertion order in JS and survives a JSON.parse round trip, so a value read from the database and an object literal of the same shape compare unequal. Replayed: two semantically identical payloads whose nested keys were serialized in a different order report as changed. Compare key-by-key, or serialize both sides through one canonicalizing stringifier. The paired-const alternative is load-bearing: it is the only one that sees comparisonHelpers.ts:85, the diff kernel behind execution comparison."
       },
       "baseline": {
-        "files": 4,
-        "matches": 4
+        "files": 3,
+        "matches": 3
       },
       "floor": 4000
     },
@@ -5930,7 +5930,7 @@
       ],
       "baseline": {
         "files": 661,
-        "matches": 1617
+        "matches": 1616
       },
       "floor": 5000
     },
