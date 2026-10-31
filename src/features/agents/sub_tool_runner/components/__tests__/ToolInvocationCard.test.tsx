@@ -3,8 +3,8 @@
  * contract fields (error_kind, http_status, output_truncated, retryable).
  * useTranslation is real; no IPC is involved (the card is presentational).
  */
-import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import type { ToolInvocationResult } from '@/api/agents/tools';
@@ -163,5 +163,27 @@ describe('ToolInvocationCard kind chip', () => {
       expect(toggle.textContent).not.toMatch(/\b(api|script|automation|builtin)\b/);
       unmount();
     }
+  });
+});
+
+describe('ToolInvocationCard result copy', () => {
+  it('copies the pretty-printed output in one click', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    render(
+      <ToolInvocationCard tool={tool()} isRunning={false} result={result({ success: true, error: null, output: '{"a":1}' })} error={null} onRun={() => {}} />,
+    );
+    fireEvent.click(screen.getByTestId('tool-card-toggle-gmail_reader'));
+    fireEvent.click(within(screen.getByTestId('tool-result-gmail_reader')).getByRole('button'));
+    expect(writeText).toHaveBeenCalledWith('{\n  "a": 1\n}');
+  });
+
+  it('copies the error text of an IPC failure', () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    render(<ToolInvocationCard tool={tool()} isRunning={false} result={null} error="IPC timeout" onRun={() => {}} />);
+    fireEvent.click(screen.getByTestId('tool-card-toggle-gmail_reader'));
+    fireEvent.click(within(screen.getByTestId('tool-result-gmail_reader')).getByRole('button'));
+    expect(writeText).toHaveBeenCalledWith('IPC timeout');
   });
 });

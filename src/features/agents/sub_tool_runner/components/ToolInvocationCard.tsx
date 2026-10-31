@@ -17,6 +17,7 @@ import type { ToolInvocationResult } from '@/api/agents/tools';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tToken } from '@/i18n/tokenMaps';
 import { silentCatch } from '@/lib/silentCatch';
+import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 
 interface ToolInvocationCardProps {
@@ -201,6 +202,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
         <div role="alert" className="flex items-center gap-1.5 mb-1">
           <XCircle className="w-3 h-3 flex-shrink-0" />
           <span className="font-medium">{t.agents.tool_runner.error}</span>
+          <CopyButton text={error} className="ml-auto" />
         </div>
         <pre className="typo-code whitespace-pre-wrap break-all opacity-80">{error}</pre>
       </div>
@@ -208,6 +210,10 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
   }
 
   if (!result) return null;
+
+  // One click moves the whole payload (pretty-printed output, then any error
+  // text) out of the 64-line scroll box.
+  const copyText = [formattedOutput, result.error].filter(Boolean).join('\n\n');
 
   return (
     <div
@@ -230,6 +236,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
           <Clock className="w-2.5 h-2.5" />
           <Numeric value={Number(result.duration_ms)} unit="ms" />
         </span>
+        <CopyButton text={copyText} />
       </div>
 
       {/* Typed failure metadata: the shared tool-outcome contract carries a
