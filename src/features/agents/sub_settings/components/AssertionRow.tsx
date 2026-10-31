@@ -6,7 +6,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { useTranslation } from '@/i18n/useTranslation';
 
 /** One saved quality gate in the settings list. */
-export function AssertionRow({ row, onDelete }: { row: OutputAssertion; onDelete: (id: string) => void }) {
+export function AssertionRow({ row, onDelete }: { row: OutputAssertion; onDelete: (row: OutputAssertion) => void }) {
   const { t } = useTranslation();
   const a = t.agents.assertions;
   // Exhaustive over AssertionType: gates are also created outside this form
@@ -29,6 +29,11 @@ export function AssertionRow({ row, onDelete }: { row: OutputAssertion; onDelete
     >
       <div className="flex items-center gap-2">
         <span className="typo-body text-foreground truncate flex-1">{row.name}</span>
+        {row.severity === 'critical' && (
+          <span className="typo-caption rounded-input border border-status-error/30 bg-status-error/10 px-1.5 text-status-error">
+            {a.severity_critical}
+          </span>
+        )}
         {!row.enabled && (
           <span className="typo-caption rounded-input border border-status-warning/30 bg-status-warning/10 px-1.5 text-status-warning">
             {a.paused}
@@ -38,7 +43,7 @@ export function AssertionRow({ row, onDelete }: { row: OutputAssertion; onDelete
         <span className="typo-caption text-primary">{actionLabel(row.onFailure)}</span>
         <button
           type="button"
-          onClick={() => onDelete(row.id)}
+          onClick={() => onDelete(row)}
           aria-label={a.delete}
           className="p-1 rounded-input text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
         >

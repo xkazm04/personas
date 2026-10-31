@@ -6221,6 +6221,10 @@ export type Translations = {
       stat_pass: string;
       stat_fail: string;
       never_evaluated: string;
+      severity_critical: string;
+      delete_confirm_title: string;
+      delete_confirm_body: string;
+      delete_confirm_critical: string;
     };
     brain: {
       tiers_title: string;

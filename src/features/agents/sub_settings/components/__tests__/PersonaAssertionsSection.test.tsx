@@ -65,6 +65,7 @@ describe('PersonaAssertionsSection happy path', () => {
     expect(screen.queryByPlaceholderText('assertions.name_placeholder')).toBeNull();
 
     fireEvent.click(screen.getByLabelText('assertions.delete'));
+    fireEvent.click(screen.getByText('assertions.delete')); // confirm the dialog
     await waitFor(() => expect(screen.queryByText('Cites total')).toBeNull());
     expect(h.deleteOutputAssertion).toHaveBeenCalledWith('a1');
     await waitFor(() => expect(screen.getByText('assertions.empty')).toBeInTheDocument());

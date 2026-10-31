@@ -4,7 +4,7 @@
  * comma-only field leaves Create disabled.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
 const h = vi.hoisted(() => ({
   listOutputAssertions: vi.fn(),
@@ -25,7 +25,7 @@ const t = new Proxy({}, {
     : leaf(String(section)),
 });
 vi.mock('@/i18n/useTranslation', () => ({
-  useTranslation: () => ({ t, tx: (s: unknown) => String(s), language: 'en' }),
+  useTranslation: () => ({ t, tx: (s: unknown, v?: unknown) => (v ? `${String(s)}|${JSON.stringify(v)}` : String(s)), language: 'en' }),
   getActiveTranslations: () => t,
 }));
 
@@ -89,5 +89,34 @@ describe('gate row evaluation meta', () => {
   it('says a gate was never evaluated when it has no timestamp', async () => {
     await renderWith([row()]);
     expect(screen.getByTestId('assertion-stats')).toHaveTextContent('assertions.never_evaluated');
+  });
+});
+
+describe('gate delete consent', () => {
+  it('asks before deleting, names the gate, and deletes only on confirm', async () => {
+    h.deleteOutputAssertion.mockResolvedValue(true);
+    await renderWith([row({ name: 'Cites total' })]);
+    fireEvent.click(screen.getByLabelText('assertions.delete'));
+    expect(h.deleteOutputAssertion).not.toHaveBeenCalled();
+    expect(screen.getByText(/assertions\.delete_confirm_title\|.*Cites total/)).toBeInTheDocument();
+    expect(screen.getByText('assertions.delete_confirm_body')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('assertions.delete'));
+    await waitFor(() => expect(h.deleteOutputAssertion).toHaveBeenCalledWith('a1'));
+  });
+
+  it('cancel keeps the gate', async () => {
+    await renderWith([row()]);
+    fireEvent.click(screen.getByLabelText('assertions.delete'));
+    fireEvent.click(screen.getByText('common.cancel'));
+    expect(h.deleteOutputAssertion).not.toHaveBeenCalled();
+    expect(screen.queryByText('assertions.delete_confirm_body')).toBeNull();
+  });
+
+  it('shows severity on a critical gate and uses the critical warning', async () => {
+    await renderWith([row({ severity: 'critical', name: 'Baseline blocker detection' })]);
+    expect(screen.getByText('assertions.severity_critical')).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('assertions.delete'));
+    expect(screen.getByText('assertions.delete_confirm_critical')).toBeInTheDocument();
   });
 });

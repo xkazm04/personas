@@ -7,6 +7,7 @@ import {
 import type { OutputAssertion } from '@/lib/bindings/OutputAssertion';
 import { Button } from '@/features/shared/components/buttons';
 import { toastCatch } from '@/lib/silentCatch';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AssertionAddForm } from './AssertionAddForm';
@@ -23,7 +24,7 @@ import { AssertionRow } from './AssertionRow';
  * and the typeLabel map later.
  */
 export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const a = t.agents.assertions;
   const [assertions, setAssertions] = useState<OutputAssertion[]>([]);
   // Loading, failed and truly empty must not render alike: the empty line is
@@ -60,6 +61,9 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
     return () => { latestWins.next(); };
   }, [refresh, latestWins]);
 
+  // Deleting is irreversible (a critical gate such as the baseline blocker
+  // detector is not re-created), so the row asks first and names the gate.
+  const [pendingDelete, setPendingDelete] = useState<OutputAssertion | null>(null);
   const handleDelete = async (id: string) => {
     try {
       await deleteOutputAssertion(id);
@@ -92,7 +96,7 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
         )}
 
         {assertions.map((row) => (
-          <AssertionRow key={row.id} row={row} onDelete={handleDelete} />
+          <AssertionRow key={row.id} row={row} onDelete={setPendingDelete} />
         ))}
 
         {adding ? (
@@ -103,6 +107,19 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
           </Button>
         )}
       </div>
+      {pendingDelete && (
+        <ConfirmDialog
+          title={tx(a.delete_confirm_title, { name: pendingDelete.name })}
+          body={pendingDelete.severity === 'critical' ? a.delete_confirm_critical : a.delete_confirm_body}
+          danger
+          confirmLabel={a.delete}
+          onConfirm={async () => {
+            await handleDelete(pendingDelete.id);
+            setPendingDelete(null);
+          }}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
     </div>
   );
 }
