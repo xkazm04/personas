@@ -3813,6 +3813,7 @@ export type Translations = {
       chain_total_cost: string;
       chain_cost_partial: string;
       chain_ended_because: string;
+      chain_stop_reasons_unavailable: string;
       span_orphaned: string;
       lines_counter: string;
       timeline_scrubber_label: string;
