@@ -1,0 +1,115 @@
+{
+ "schema": "conform-run/1",
+ "worker": "4fb744ff-9741-4093-9b36-9c68c3ebe714",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-10-31T22:05:15.559796+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "shared-components-forms",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/shared/components/forms/__tests__/NumberStepper.test.tsx:123 The test is named after the hold-to-repeat acceleration loop (window.setTimeout tick at NumberStepper.tsx:124-157), but it calls pointerDown/pointerUp back to back and never advances a timer, and the file has no fake timers; no tick ever fires, so it passes on the immediate step alone and pins neither the per-tick behaviour nor the mid-hold boundary stop (endStep) its name claims.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/shared/components/forms/__tests__/NumberStepper.test.tsx:123 The name claims the accelerating-tick decision, but no timer advances, so the repeat loop is never reached; the technique says to rename such a test or make the tick reachable (fake timers)."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/features/shared/components/forms/__tests__/NumberStepper.test.tsx:147 Pairs the keyboard-click regression fix (comment at :133-135 names the defect: a pointer-only handler) with a control showing the fix does not over-fire."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/features/shared/components/forms/__tests__/DirectoryPickerInput.test.tsx:32 beforeEach resets the persisted recents store, so tests share no state."
+    }
+   ]
+  },
+  {
+   "context": "supabase-sync-pipeline",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/cloud/sync/mod.rs:1111 The test claims to catch a table added to collect_pass without a SYNC_TABLES entry, but it only asserts SYNC_TABLES.len() == 17, which such an addition (e.g. a separate sync_x fn like sync_notes) never changes; the claimed decision is unreached, and collect_pass itself is never executed in tests.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/cloud/sync/mod.rs:1111 The comment's claim overstates what the assertion pins; the length is a constant of the list itself, not of the dispatch."
+    },
+    {
+     "technique": "recorded-interaction-fixtures",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/cloud/sync/client.rs:55 The PostgREST transport is hard-wired, with no seam, and client.rs has no tests. No wiremock/httpmock/mockito appears in any src-tauri Cargo.toml, so the upsert/patch/delete wire contract (Prefer headers, chunking, non-2xx handling) is skipped entirely, the option the technique names as leaving the boundary uncovered."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/cloud/sync/redact.rs:522 False-positive controls (also :500) prove the redactor does not mask everything that looks secret-ish."
+    },
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/cloud/sync/mod.rs:1255 The needle is a SQL token prose cannot spell, and the haystack is the SQL const itself, not a source file with comments."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "team-memory",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "hooks-design",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "agents-quick-answer",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-31T22:05:15.559796+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "isolation-lanes",
+    "negative-control-tests",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "shared-components-forms",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-10-31T22:05:15.559796+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "negative-control-tests",
+    "pin-the-call-not-the-name",
+    "recorded-interaction-fixtures",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "supabase-sync-pipeline",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

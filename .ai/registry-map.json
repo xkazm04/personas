@@ -32555,7 +32555,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/forms/__tests__/NumberStepper.test.tsx:123 The test is named after the hold-to-repeat acceleration loop (window.setTimeout tick at NumberStepper.tsx:124-157), but it calls pointerDown/pointerUp back to back and never advances a timer, and the file has no fake timers; no tick ever fires, so it passes on the immediate step alone and pins neither the per-tick behaviour nor the mid-hold boundary stop (endStep) its name claims.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "keyed-sample-transforms",
@@ -34784,7 +34788,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:1111 The test claims to catch a table added to collect_pass without a SYNC_TABLES entry, but it only asserts SYNC_TABLES.len() == 17, which such an addition (e.g. a separate sync_x fn like sync_notes) never changes; the claimed decision is unreached, and collect_pass itself is never executed in tests.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "supply-chain",
