@@ -16,6 +16,13 @@ export default function AppearanceThemingSection() {
   const labels = t.settings.appearance;
 
   const [themeTab, setThemeTab] = useState<'default' | 'custom'>('default');
+  // The editor mounts on first visit and then stays mounted (hidden), so its draft survives tab
+  // switches without a never-opened editor re-rendering on every theme change.
+  const [customVisited, setCustomVisited] = useState(false);
+  const handleTabChange = (tab: 'default' | 'custom') => {
+    setThemeTab(tab);
+    if (tab === 'custom') setCustomVisited(true);
+  };
 
   const customDef = useMemo(() => (customTheme ? customThemeDef(customTheme) : null), [customTheme]);
   const { darkThemes, lightThemes } = useMemo(() => {
@@ -37,7 +44,7 @@ export default function AppearanceThemingSection() {
           variant="segment"
           ariaLabel={labels.theming}
           activeTab={themeTab}
-          onTabChange={setThemeTab}
+          onTabChange={handleTabChange}
           tabs={[
             { id: 'default', label: labels.default_tab },
             { id: 'custom', label: labels.custom_tab },
@@ -45,7 +52,9 @@ export default function AppearanceThemingSection() {
         />
       }
     >
-      {themeTab === 'default' ? (
+      {/* The editor's draft lives in its local state, so unmounting it on a tab switch discarded
+          unsaved colour picks: the panel is hidden, not removed, once visited. */}
+      <div hidden={themeTab !== 'default'}>
         <div className="space-y-4">
           <div className="space-y-2">
             <span className="typo-body text-foreground">{labels.dark}</span>
@@ -64,9 +73,10 @@ export default function AppearanceThemingSection() {
             </div>
           </div>
         </div>
-      ) : (
-        <CustomThemeCreator />
-      )}
+      </div>
+      <div hidden={themeTab !== 'custom'}>
+        {customVisited && <CustomThemeCreator />}
+      </div>
     </SectionCard>
   );
 }
