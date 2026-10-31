@@ -1,7 +1,7 @@
-import { Check } from 'lucide-react';
 import { useThemeStore } from '@/stores/themeStore';
 import type { TimezoneMode } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { AppearanceOptionTile } from './AppearanceOptionTile';
 
 // IANA timezone values are technical identifiers (passed verbatim to date
 // formatters); only the display label and description translate. Keys live
@@ -35,32 +35,18 @@ export default function AppearanceTimezoneSettings() {
 
   return (
     <div className="space-y-4">
-      <p className="typo-caption text-foreground">{s.timezone_hint}</p>
+      <p className="typo-caption">{s.timezone_hint}</p>
       <div className="grid grid-cols-2 2xl:grid-cols-3 gap-3">
         {TIMEZONE_OPTIONS.map((tz) => {
           const isActive = timezone === tz.value;
           return (
-            <button
-              type="button"
+            <AppearanceOptionTile
               key={tz.value}
-              onClick={() => setTimezone(tz.value as TimezoneMode)}
-              aria-pressed={isActive}
-              className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors text-center ${
-                isActive
-                  ? 'border-primary/30 bg-primary/5'
-                  : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-              }`}
-            >
-              <span className={`typo-heading ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
-                {s[tz.labelKey]}
-              </span>
-              <span className="typo-caption text-foreground">{s[tz.descriptionKey]}</span>
-              {isActive && (
-                <div className="absolute top-2 right-2">
-                  <Check className="w-3.5 h-3.5 text-primary" />
-                </div>
-              )}
-            </button>
+              active={isActive}
+              onSelect={() => setTimezone(tz.value as TimezoneMode)}
+              label={s[tz.labelKey]}
+              description={s[tz.descriptionKey]}
+            />
           );
         })}
       </div>

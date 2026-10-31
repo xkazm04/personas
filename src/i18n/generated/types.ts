@@ -14075,8 +14075,10 @@ export type Translations = {
       contrast_pair_accent_text: string;
       timezone: string;
       timezone_hint: string;
+      text_size_hint: string;
       brightness: string;
       brightness_hint: string;
+      brightness_hint_light: string;
       dim_mode_label: string;
       dim_mode_hint: string;
       cvd_safe_label: string;
