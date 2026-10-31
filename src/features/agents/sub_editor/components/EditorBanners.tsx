@@ -65,10 +65,13 @@ interface UnsavedBannerProps {
   onSaveAndSwitch: () => void;
   onDiscardAndSwitch: () => void;
   onDismiss: () => void;
+  /** True while Save & Switch is writing every dirty tab: the save button
+   *  shows its busy state and Discard is held so the two cannot race. */
+  saving?: boolean;
 }
 
 export function UnsavedChangesBanner({
-  visible, changedSections, onSaveAndSwitch, onDiscardAndSwitch, onDismiss,
+  visible, changedSections, onSaveAndSwitch, onDiscardAndSwitch, onDismiss, saving = false,
 }: UnsavedBannerProps) {
   const { t, tx } = useTranslation();
   return (
@@ -80,10 +83,10 @@ export function UnsavedChangesBanner({
         ? tx(t.agents.editor.unsaved_changes, { sections: changedSections.join(', ') })
         : t.agents.editor.unsaved_changes_generic}
       actions={[
-        <Button key="save" variant="accent" tone="warning" size="sm" onClick={onSaveAndSwitch}>
+        <Button key="save" variant="accent" tone="warning" size="sm" onClick={onSaveAndSwitch} loading={saving}>
           {t.agents.editor.save_and_switch}
         </Button>,
-        <Button key="discard" variant="secondary" size="sm" onClick={onDiscardAndSwitch}>
+        <Button key="discard" variant="secondary" size="sm" onClick={onDiscardAndSwitch} disabled={saving}>
           {t.agents.editor.discard}
         </Button>,
       ]}

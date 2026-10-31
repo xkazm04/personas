@@ -70,7 +70,7 @@ export function EditorBody() {
   const selectedPersonaId = selectedPersona?.id;
   useEffect(() => { setFailedTabs([]); }, [selectedPersonaId]);
 
-  const { handleDiscardAndSwitch, handleSaveAndSwitch } = usePersonaSwitchGuard({
+  const { handleDiscardAndSwitch, handleSaveAndSwitch, isSwitching } = usePersonaSwitchGuard({
     cancelAllDebouncedSaves,
     saveAllTabs,
     clearAllDirty,
@@ -166,6 +166,7 @@ export function EditorBody() {
         onSaveAndSwitch={handleSaveAndSwitch}
         onDiscardAndSwitch={handleDiscardAndSwitch}
         onDismiss={cancelPendingSwitch}
+        saving={isSwitching}
       />
 
       <EditorTabBar dirtyTabs={allDirtyTabs} connectorsMissing={missingConnectorCount} failedTabs={failedTabs} />

@@ -32,3 +32,28 @@ describe('editor banners', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('Save & Switch busy state', () => {
+  const renderBanner = (saving: boolean) => render(
+    <UnsavedChangesBanner
+      visible
+      changedSections={['Settings']}
+      onSaveAndSwitch={() => {}}
+      onDiscardAndSwitch={() => {}}
+      onDismiss={() => {}}
+      saving={saving}
+    />,
+  );
+
+  it('disables both actions while the save runs, so it never looks idle', () => {
+    renderBanner(true);
+    expect(screen.getByRole('button', { name: /save_and_switch/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /discard/ })).toBeDisabled();
+  });
+
+  it('leaves both actions enabled when no save is running', () => {
+    renderBanner(false);
+    expect(screen.getByRole('button', { name: /save_and_switch/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /discard/ })).toBeEnabled();
+  });
+});
