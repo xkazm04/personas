@@ -5046,6 +5046,10 @@ export type Translations = {
       annotation_tags_label: string;
       annotation_note_label: string;
       annotation_empty: string;
+      review_status_pending: string;
+      review_status_approved: string;
+      review_status_rejected: string;
+      review_status_resolved: string;
       report_title: string;
     };
     settings_status: {

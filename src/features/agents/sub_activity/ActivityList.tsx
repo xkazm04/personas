@@ -3,6 +3,7 @@ import { Star } from 'lucide-react';
 import { formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { TYPE_ICONS, renderImportanceStars, renderScoreStars, type ActivityItem } from './activityTypes';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
+import { StatusBadge, type StatusVariant } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ExecutionAnnotation } from '@/lib/bindings/ExecutionAnnotation';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
@@ -14,6 +15,14 @@ interface ActivityListProps {
   annotationsByExecution: Map<string, ExecutionAnnotation>;
   onRowClick: (item: ActivityItem) => void;
 }
+
+/** Review verdicts share the run pills' chrome (StatusBadge) with translated labels. */
+const REVIEW_STATUS_PILLS: Record<string, { variant: StatusVariant; labelKey: 'review_status_pending' | 'review_status_approved' | 'review_status_rejected' | 'review_status_resolved' }> = {
+  pending: { variant: 'warning', labelKey: 'review_status_pending' },
+  approved: { variant: 'success', labelKey: 'review_status_approved' },
+  rejected: { variant: 'error', labelKey: 'review_status_rejected' },
+  resolved: { variant: 'neutral', labelKey: 'review_status_resolved' },
+};
 
 function useColumns(
   useCaseOptions: { id: string; title: string }[],
@@ -140,12 +149,11 @@ function useColumns(
           return <span className="typo-body text-amber-400/70" title={`Importance: ${item.status.replace(/^importance:\s*/i, '')}`}>{renderImportanceStars(item.status)}</span>;
         }
         if (item.type === 'review') {
+          const reviewStatus = REVIEW_STATUS_PILLS[item.status];
           return (
-            <span className={`typo-body px-1.5 py-0.5 rounded ${
-              item.status === 'approved' ? 'bg-emerald-500/15 text-emerald-400' :
-              item.status === 'rejected' ? 'bg-red-500/15 text-red-400' :
-              'bg-amber-500/15 text-amber-400'
-            }`}>{item.status}</span>
+            <StatusBadge variant={reviewStatus?.variant ?? 'neutral'}>
+              {reviewStatus ? t.agents.activity[reviewStatus.labelKey] : item.status}
+            </StatusBadge>
           );
         }
         return <span className="typo-body text-foreground">{item.status}</span>;

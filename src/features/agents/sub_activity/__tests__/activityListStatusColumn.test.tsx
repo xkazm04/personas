@@ -46,4 +46,13 @@ describe('ActivityList status column', () => {
     expect(titles).toContain('Importance: 7');
     expect(titles.some((x) => /importance:.*importance:/i.test(x ?? ''))).toBe(false);
   });
+
+  it('renders review statuses as translated StatusBadge pills, not ad-hoc colours', () => {
+    const { container } = renderItems([row('review', 'approved'), row('review', 'rejected'), row('review', 'pending')]);
+    const html = container.innerHTML;
+    expect(html).toContain('activity.review_status_approved');
+    expect(html).toContain('activity.review_status_rejected');
+    expect(html).toContain('activity.review_status_pending');
+    expect(html).not.toMatch(/bg-(emerald|red|amber)-500\/15/);
+  });
 });
