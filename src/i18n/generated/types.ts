@@ -6222,6 +6222,7 @@ export type Translations = {
       stat_fail: string;
       never_evaluated: string;
       severity_critical: string;
+      enabled_label: string;
       delete_confirm_title: string;
       delete_confirm_body: string;
       delete_confirm_critical: string;

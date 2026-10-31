@@ -10,11 +10,13 @@ const h = vi.hoisted(() => ({
   listOutputAssertions: vi.fn(),
   createOutputAssertion: vi.fn(),
   deleteOutputAssertion: vi.fn(),
+  updateOutputAssertion: vi.fn(),
 }));
 vi.mock('@/api/agents/outputAssertions', () => ({
   listOutputAssertions: (...a: unknown[]) => h.listOutputAssertions(...a),
   createOutputAssertion: (...a: unknown[]) => h.createOutputAssertion(...a),
   deleteOutputAssertion: (...a: unknown[]) => h.deleteOutputAssertion(...a),
+  updateOutputAssertion: (...a: unknown[]) => h.updateOutputAssertion(...a),
 }));
 vi.mock('@/lib/silentCatch', () => ({ toastCatch: () => () => undefined, silentCatch: () => () => undefined }));
 
@@ -42,6 +44,7 @@ beforeEach(() => {
   h.listOutputAssertions.mockReset();
   h.createOutputAssertion.mockReset();
   h.deleteOutputAssertion.mockReset();
+  h.updateOutputAssertion.mockReset();
 });
 
 const renderWith = async (rows: ReturnType<typeof row>[]) => {
@@ -118,5 +121,33 @@ describe('gate delete consent', () => {
     expect(screen.getByText('assertions.severity_critical')).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('assertions.delete'));
     expect(screen.getByText('assertions.delete_confirm_critical')).toBeInTheDocument();
+  });
+});
+
+describe('gate row pause and edit', () => {
+  it('toggling the switch pauses the gate through updateOutputAssertion exactly once, then refreshes', async () => {
+    h.updateOutputAssertion.mockResolvedValue(row({ enabled: false }));
+    await renderWith([row()]);
+    const calls = h.listOutputAssertions.mock.calls.length;
+    const toggle = screen.getByRole('switch', { name: 'assertions.enabled_label' });
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(toggle);
+    await waitFor(() => expect(h.updateOutputAssertion).toHaveBeenCalledTimes(1));
+    expect(h.updateOutputAssertion).toHaveBeenCalledWith({ id: 'a1', enabled: false });
+    await waitFor(() => expect(h.listOutputAssertions.mock.calls.length).toBeGreaterThan(calls));
+  });
+
+  it('resuming a paused gate sends enabled:true', async () => {
+    h.updateOutputAssertion.mockResolvedValue(row());
+    await renderWith([row({ enabled: false })]);
+    fireEvent.click(screen.getByRole('switch', { name: 'assertions.enabled_label' }));
+    await waitFor(() => expect(h.updateOutputAssertion).toHaveBeenCalledWith({ id: 'a1', enabled: true }));
+  });
+
+  it('changing the on-failure action updates only that field', async () => {
+    h.updateOutputAssertion.mockResolvedValue(row({ onFailure: 'heal' }));
+    await renderWith([row()]);
+    fireEvent.change(screen.getByLabelText('assertions.on_failure_label'), { target: { value: 'heal' } });
+    await waitFor(() => expect(h.updateOutputAssertion).toHaveBeenCalledWith({ id: 'a1', onFailure: 'heal' }));
   });
 });

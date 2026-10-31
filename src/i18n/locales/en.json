@@ -6216,6 +6216,7 @@
       "stat_fail": "fail",
       "never_evaluated": "not evaluated yet",
       "severity_critical": "Critical",
+      "enabled_label": "Gate enabled",
       "delete_confirm_title": "Delete gate \"{name}\"?",
       "delete_confirm_body": "Runs will no longer be checked against this gate. It cannot be restored; you would have to create it again.",
       "delete_confirm_critical": "This is a critical gate. Without it, runs that fail this check are no longer flagged. It cannot be restored; you would have to create it again."

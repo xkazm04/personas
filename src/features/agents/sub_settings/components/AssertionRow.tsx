@@ -3,10 +3,24 @@ import type { OutputAssertion } from '@/lib/bindings/OutputAssertion';
 import type { AssertionType } from '@/lib/bindings/AssertionType';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import type { AssertionFailureAction } from '@/lib/bindings/AssertionFailureAction';
 import { useTranslation } from '@/i18n/useTranslation';
 
 /** One saved quality gate in the settings list. */
-export function AssertionRow({ row, onDelete }: { row: OutputAssertion; onDelete: (row: OutputAssertion) => void }) {
+export type AssertionPatch = { enabled?: boolean; onFailure?: AssertionFailureAction };
+
+export function AssertionRow({
+  row,
+  onDelete,
+  onUpdate,
+}: {
+  row: OutputAssertion;
+  onDelete: (row: OutputAssertion) => void;
+  /** Pause/resume or change the on-failure action without delete + re-create. */
+  onUpdate: (id: string, patch: AssertionPatch) => void;
+}) {
   const { t } = useTranslation();
   const a = t.agents.assertions;
   // Exhaustive over AssertionType: gates are also created outside this form
@@ -20,8 +34,6 @@ export function AssertionRow({ row, onDelete }: { row: OutputAssertion; onDelete
     json_schema: a.type_json_schema,
     length: a.type_length,
   };
-  const actionLabel = (ac: string) =>
-    ac === 'heal' ? a.action_heal : ac === 'log' ? a.action_log : a.action_review;
 
   return (
     <div
@@ -40,7 +52,22 @@ export function AssertionRow({ row, onDelete }: { row: OutputAssertion; onDelete
           </span>
         )}
         <span className="typo-caption text-foreground">{typeLabels[row.assertionType] ?? row.assertionType}</span>
-        <span className="typo-caption text-primary">{actionLabel(row.onFailure)}</span>
+        <ThemedSelect
+          value={row.onFailure}
+          onChange={(e) => onUpdate(row.id, { onFailure: e.target.value as AssertionFailureAction })}
+          wrapperClassName="min-w-[9rem]"
+          aria-label={a.on_failure_label}
+        >
+          <option value="review">{a.action_review}</option>
+          <option value="log">{a.action_log}</option>
+          <option value="heal">{a.action_heal}</option>
+        </ThemedSelect>
+        <AccessibleToggle
+          size="sm"
+          checked={row.enabled}
+          onChange={() => onUpdate(row.id, { enabled: !row.enabled })}
+          label={a.enabled_label}
+        />
         <button
           type="button"
           onClick={() => onDelete(row)}

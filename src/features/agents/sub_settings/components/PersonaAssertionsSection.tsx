@@ -3,6 +3,7 @@ import { ShieldCheck, Plus } from 'lucide-react';
 import {
   listOutputAssertions,
   deleteOutputAssertion,
+  updateOutputAssertion,
 } from '@/api/agents/outputAssertions';
 import type { OutputAssertion } from '@/lib/bindings/OutputAssertion';
 import { Button } from '@/features/shared/components/buttons';
@@ -11,7 +12,7 @@ import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDial
 import { createLatestWins } from '@/stores/util/latestWins';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AssertionAddForm } from './AssertionAddForm';
-import { AssertionRow } from './AssertionRow';
+import { AssertionRow, type AssertionPatch } from './AssertionRow';
 
 /**
  * Quality gates — declarative output assertions attached to a persona and
@@ -63,6 +64,14 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
 
   // Deleting is irreversible (a critical gate such as the baseline blocker
   // detector is not re-created), so the row asks first and names the gate.
+  const handleUpdate = async (id: string, patch: AssertionPatch) => {
+    try {
+      await updateOutputAssertion({ id, ...patch });
+      await refresh();
+    } catch (err) {
+      toastCatch('assertions:update')(err);
+    }
+  };
   const [pendingDelete, setPendingDelete] = useState<OutputAssertion | null>(null);
   const handleDelete = async (id: string) => {
     try {
@@ -96,7 +105,7 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
         )}
 
         {assertions.map((row) => (
-          <AssertionRow key={row.id} row={row} onDelete={setPendingDelete} />
+          <AssertionRow key={row.id} row={row} onDelete={setPendingDelete} onUpdate={handleUpdate} />
         ))}
 
         {adding ? (
