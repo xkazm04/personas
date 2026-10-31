@@ -32964,8 +32964,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "deviation",
+          "priorNotApplicable": 20,
+          "evidence": "src/features/shared/glyph/CapabilitySigil.tsx:59 The context writes down the rule 'connected wrappers read, the primitive renders' and admits that no boundary gate reaches shared/glyph/. In the same directory, InteractiveSigil.tsx:9 still imports useThemeStore, and GlyphCard/GlyphQuestionPanel import other features. The forbidden action succeeds silently, which is prose-rule drift.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "agent-memory",
@@ -42632,8 +42636,8 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "priorNotApplicable": 20,
+          "state": "unknown"
         },
         {
           "subject": "multi-provider-gateway-plane",

@@ -38744,14 +38744,14 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T03:09:11.686Z",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T22:15:17.201Z",
       "techniques": [],
       "withdrawn": {
-        "worker": "6ad449e5-0e98-4e82-bb8c-27352ebdfa17",
+        "worker": "26234dd8-51c6-412d-9171-722a8e604b97",
         "state": "not-applicable",
-        "at": "2026-10-24T03:09:32.010459+00:00",
-        "reason": "reviewer (sonnet): The anchor calendarHelpers.ts:5 is only a type-section comment and does not show that no gate exists. The one 'gate' hit it relies on (SchedulesOverlay.tsx:88) is in a file that isn't in the context file list, so the anchor is incidental to the absence claim."
+        "at": "2026-10-31T22:15:44.086775+00:00",
+        "reason": "reviewer (sonnet): The anchor src/features/schedules/index.ts:1 is only a barrel re-export and does not show that no gate exists; the context's scheduleCalendarCopy.test.tsx is itself a regression guard against untranslated literals, which the not-applicable claim glosses over."
       }
     },
     "6229df3d-d54e-47bb-8091-abb479003c18/quality-gates": {
@@ -40738,6 +40738,52 @@
           "technique": "pin-the-call-not-the-name",
           "verdict": "conformant",
           "evidence": "src-tauri/src/cloud/sync/mod.rs:1255 The needle is a SQL token prose cannot spell, and the haystack is the SQL const itself, not a source file with comments."
+        }
+      ]
+    },
+    "0a6ae5fd-fb42-446c-9602-0d2abdd220d5/quality-gates": {
+      "context": "vault-shared-playground",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T22:15:17.201Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "26234dd8-51c6-412d-9171-722a8e604b97",
+        "state": "not-applicable",
+        "at": "2026-10-31T22:15:44.186701+00:00",
+        "reason": "reviewer (sonnet): The anchor PlaygroundTabContent.tsx:13 is a PlaygroundTab type alias that does not show the absence of any gate; the claim rests only on a keyword grep, so the anchor is incidental."
+      }
+    },
+    "f838d49f-2928-441e-ac8d-f6e6c412b262/quality-gates": {
+      "context": "shared-glyph",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T22:15:17.201Z",
+      "worker": "26234dd8-51c6-412d-9171-722a8e604b97",
+      "techniques": [
+        {
+          "technique": "prose-rule-drift",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/glyph/InteractiveSigil.tsx:9 The store read that CapabilitySigil removed is still present in its sibling, and the comment above it cites CapabilitySigil as precedent. No census rule or ESLint rule covers glyph/, so nothing distinguishes this from compliance."
+        },
+        {
+          "technique": "chokepoint-tag-registry",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/glyph/triggers.ts:48 The per-kind icon table is checked against the generated TriggerKind identifier set at compile time, so a kind added in Rust cannot ship without a row and a stray key is an excess-property error."
+        },
+        {
+          "technique": "vacuous-by-evaluation",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/glyph/__tests__/glyphPrimitives.test.ts:159 The totality test reads its population from the independent TRIGGER_KINDS authority rather than from the map under test, so it can actually fail."
+        },
+        {
+          "technique": "instrument-answers-only-its-own-question",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/glyph/cron.ts:9 The code names the lint rule's scope (JSX text only) instead of treating lint green as proof the strings were translated. The fix (taking t) does not rely on that gate."
         }
       ]
     }
