@@ -71,6 +71,14 @@ const DRAFT_DEFAULTS = {
   backgroundAngle: 135,
 };
 
+/** Field-wise equality: null/undefined are the same "unset", and the angle only counts with an end colour. */
+function sameCustomTheme(a: CustomThemeConfig, b: CustomThemeConfig): boolean {
+  const keys = ['baseMode', 'primaryColor', 'accentColor', 'label', 'backgroundColor', 'backgroundEndColor',
+    'foregroundColor', 'secondaryColor', 'borderColor', 'cardBgColor', 'mutedFgColor'] as const;
+  if (keys.some((k) => (a[k] ?? null) !== (b[k] ?? null))) return false;
+  return !a.backgroundEndColor || (a.backgroundAngle ?? 135) === (b.backgroundAngle ?? 135);
+}
+
 export default function CustomThemeCreator() {
   const existingConfig = useThemeStore((s) => s.customTheme);
   const setCustomTheme = useThemeStore((s) => s.setCustomTheme);
@@ -122,7 +130,7 @@ export default function CustomThemeCreator() {
   }), [baseMode, primaryColor, accentColor, label]);
 
   const isDirty = !existingConfig
-    || JSON.stringify(existingConfig) !== JSON.stringify(draftConfig);
+    || !sameCustomTheme(existingConfig, draftConfig);
 
   const handleSave = () => {
     setCustomTheme(draftConfig);

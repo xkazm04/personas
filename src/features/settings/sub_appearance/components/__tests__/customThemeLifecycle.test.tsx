@@ -68,4 +68,14 @@ describe('custom theme editor lifecycle', () => {
     expect((screen.getByLabelText(a.theme_name) as HTMLInputElement).value).toBe('Custom');
     expect(screen.queryAllByRole('button', { name: a.reset })).toHaveLength(0);
   });
+  it('a theme saved with the gradient section open but no end colour reopens as saved', () => {
+    const { unmount } = render(<CustomThemeCreator />);
+    fireEvent.click(screen.getByRole('button', { name: a.background_gradient }));
+    fireEvent.click(screen.getByRole('button', { name: a.save_apply }));
+    expect(useThemeStore.getState().customTheme).not.toBeNull();
+    unmount();
+    render(<CustomThemeCreator />);
+    expect(screen.queryAllByRole('button', { name: a.applied })).toHaveLength(1);
+    expect(screen.queryAllByRole('button', { name: a.save_apply })).toHaveLength(0);
+  });
 });
