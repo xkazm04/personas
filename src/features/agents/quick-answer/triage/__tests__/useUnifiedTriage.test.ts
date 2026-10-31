@@ -54,8 +54,13 @@ const interactions = {
   handleDispatchAction: vi.fn(),
 };
 
+// What the hook returns THIS render. A test that replaces it simulates a poll
+// (or a write's isProcessing flip) producing a fresh `usePendingInteractions`
+// object, which is exactly what the real hook does every 15-30 s.
+const mockInteractionsNow = { current: interactions };
+
 vi.mock('../../usePendingInteractions', () => ({
-  usePendingInteractions: () => interactions,
+  usePendingInteractions: () => mockInteractionsNow.current,
 }));
 
 vi.mock('@/api/devTools/devTools', () => ({
@@ -242,6 +247,7 @@ beforeEach(() => {
   // pre-seeded with whatever queue the PREVIOUS test's fetches left behind.
   resetTriageWarmCache();
   interactions.reviewsError = null;
+  mockInteractionsNow.current = interactions;
   mockTriageIdeas.mockResolvedValue(page([idea()]));
   mockAcceptIdea.mockResolvedValue(undefined);
   mockRejectIdea.mockResolvedValue(undefined);
@@ -1073,5 +1079,24 @@ describe('useUnifiedTriage — opening the deck does not write the session back'
 
     const second = await mount();
     expect(second.result.current.summary.decided).toBe(1);
+  });
+});
+
+describe('useUnifiedTriage — decide keeps its identity across a review poll', () => {
+  it('does not re-create the ports or decide when the borrowed source re-reads', async () => {
+    // `decide` roots the deck's memo chain (TriageCard's doc counts the cost of
+    // one unstable callback). The ports used to depend on the WHOLE
+    // `usePendingInteractions` object, which is new on every poll and on every
+    // isProcessing flip, while reading only three identity-stable callbacks.
+    const hook = await mount();
+    const { decide, ports } = hook.result.current;
+
+    mockInteractionsNow.current = { ...interactions, reviews: [] };
+    hook.rerender();
+    mockInteractionsNow.current = { ...interactions, reviews: [], isProcessing: true };
+    hook.rerender();
+
+    expect(hook.result.current.ports).toBe(ports);
+    expect(hook.result.current.decide).toBe(decide);
   });
 });

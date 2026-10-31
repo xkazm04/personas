@@ -1033,12 +1033,18 @@ export function useUnifiedTriage(
    */
   const taskedIdeasRef = useRef<Set<string>>(new Set());
 
+  // The three writers the ports borrow, by name. Depending on the whole
+  // `interactions` object re-created the ports — and `decide` with them — on
+  // every review poll and every isProcessing flip, though these three are
+  // identity-stable (the Monitor's handlers read the live row through a ref).
+  const { handleReviewAction, handleDispatchAction, submitQuestionAnswers } = interactions;
+
   /** Every write a verdict can reach, in one injected bundle — see
    *  `triageDispatch`, which owns the routing itself. */
   const ports = useMemo<TriagePorts>(
     () => ({
-      reviewAction: (id, status, notes) => interactions.handleReviewAction(id, status, notes),
-      dispatchReviewAction: (id, action) => interactions.handleDispatchAction(id, action),
+      reviewAction: (id, status, notes) => handleReviewAction(id, status, notes),
+      dispatchReviewAction: (id, action) => handleDispatchAction(id, action),
       createTask: async (title, projectId, body, ideaId) => {
         if (taskedIdeasRef.current.has(ideaId)) return undefined;
         const task = await devApi.createTask(title, projectId, body, ideaId);
@@ -1053,7 +1059,7 @@ export function useUnifiedTriage(
       // rejects on failure so the restore below can fire.
       acceptIdea: (id, seenStatus) => acceptIdeaViaStore(id, seenStatus),
       rejectIdea: (id, reason, seenStatus) => rejectIdeaViaStore(id, reason, seenStatus),
-      submitAnswers: (sessionId, answers) => interactions.submitQuestionAnswers(sessionId, answers),
+      submitAnswers: (sessionId, answers) => submitQuestionAnswers(sessionId, answers),
       // Both proposal ledgers go through `rowWrites` for the same reason the
       // other three do: it is the module that owns the expectation contract and
       // the conflict wording, and a queue that wrote proposals directly through
@@ -1087,7 +1093,9 @@ export function useUnifiedTriage(
       openGoalBoard: onOpenGoalBoard,
     }),
     [
-      interactions,
+      handleReviewAction,
+      handleDispatchAction,
+      submitQuestionAnswers,
       onOpenBuilder,
       onOpenGoalBoard,
       acceptIdeaViaStore,
