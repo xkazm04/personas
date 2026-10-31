@@ -62,6 +62,15 @@ function ContrastReadout({ vars, labels }: {
   );
 }
 
+/** The fresh-editor values: the initial draft when nothing is saved, and what Reset returns to.
+ *  ("Custom" is the stored default theme NAME, user data rather than UI copy.) */
+const DRAFT_DEFAULTS = {
+  baseMode: 'dark' as const,
+  primaryColor: '#8b5cf6',
+  label: 'Custom',
+  backgroundAngle: 135,
+};
+
 export default function CustomThemeCreator() {
   const existingConfig = useThemeStore((s) => s.customTheme);
   const setCustomTheme = useThemeStore((s) => s.setCustomTheme);
@@ -73,15 +82,15 @@ export default function CustomThemeCreator() {
   const nameInputId = useId();
 
   // Local draft state — initialized from store or defaults
-  const [baseMode, setBaseMode] = useState<'dark' | 'light'>(existingConfig?.baseMode ?? 'dark');
-  const [primaryColor, setPrimaryColor] = useState(existingConfig?.primaryColor ?? '#8b5cf6');
+  const [baseMode, setBaseMode] = useState<'dark' | 'light'>(existingConfig?.baseMode ?? DRAFT_DEFAULTS.baseMode);
+  const [primaryColor, setPrimaryColor] = useState(existingConfig?.primaryColor ?? DRAFT_DEFAULTS.primaryColor);
   const [accentColor, setAccentColor] = useState<string | null>(existingConfig?.accentColor ?? null);
-  const [label, setLabel] = useState(existingConfig?.label ?? 'Custom');
+  const [label, setLabel] = useState(existingConfig?.label ?? DRAFT_DEFAULTS.label);
 
   // Extended color overrides
   const [backgroundColor, setBackgroundColor] = useState<string | null>(existingConfig?.backgroundColor ?? null);
   const [backgroundEndColor, setBackgroundEndColor] = useState<string | null>(existingConfig?.backgroundEndColor ?? null);
-  const [backgroundAngle, setBackgroundAngle] = useState(existingConfig?.backgroundAngle ?? 135);
+  const [backgroundAngle, setBackgroundAngle] = useState(existingConfig?.backgroundAngle ?? DRAFT_DEFAULTS.backgroundAngle);
   const [foregroundColor, setForegroundColor] = useState<string | null>(existingConfig?.foregroundColor ?? null);
   const [secondaryColor, setSecondaryColor] = useState<string | null>(existingConfig?.secondaryColor ?? null);
   const [borderColor, setBorderColor] = useState<string | null>(existingConfig?.borderColor ?? null);
@@ -125,13 +134,13 @@ export default function CustomThemeCreator() {
     const activeThemeId = currentThemeId;
     clearCustomTheme();
     if (activeThemeId !== 'custom') setTheme(activeThemeId);
-    setBaseMode('dark');
-    setPrimaryColor('#8b5cf6');
+    setBaseMode(DRAFT_DEFAULTS.baseMode);
+    setPrimaryColor(DRAFT_DEFAULTS.primaryColor);
     setAccentColor(null);
-    setLabel('Custom');
+    setLabel(DRAFT_DEFAULTS.label);
     setBackgroundColor(null);
     setBackgroundEndColor(null);
-    setBackgroundAngle(135);
+    setBackgroundAngle(DRAFT_DEFAULTS.backgroundAngle);
     setForegroundColor(null);
     setSecondaryColor(null);
     setBorderColor(null);
@@ -143,7 +152,7 @@ export default function CustomThemeCreator() {
   const isActiveCustom = currentThemeId === 'custom';
 
   const colorRows: { id: string; label: string; value: string | null; derivedValue: string | undefined; onChange: (c: string | null) => void }[] = useMemo(() => [
-    { id: 'primary', label: s.color_primary, value: primaryColor, derivedValue: '#8b5cf6', onChange: (c: string | null) => setPrimaryColor(c ?? '#8b5cf6') },
+    { id: 'primary', label: s.color_primary, value: primaryColor, derivedValue: DRAFT_DEFAULTS.primaryColor, onChange: (c: string | null) => setPrimaryColor(c ?? DRAFT_DEFAULTS.primaryColor) },
     { id: 'accent', label: s.color_accent, value: accentColor, derivedValue: baseVars['--accent'], onChange: (c: string | null) => setAccentColor(c) },
     { id: 'background', label: s.color_background, value: backgroundColor, derivedValue: baseVars['--background'], onChange: (c: string | null) => setBackgroundColor(c) },
     { id: 'foreground', label: s.color_foreground, value: foregroundColor, derivedValue: baseVars['--foreground'], onChange: (c: string | null) => setForegroundColor(c) },
