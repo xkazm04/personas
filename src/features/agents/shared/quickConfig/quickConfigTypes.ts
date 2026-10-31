@@ -7,22 +7,10 @@ import type { ChannelSpecV2 } from '@/lib/bindings/ChannelSpecV2';
 
 export type Frequency = 'daily' | 'weekly' | 'monthly';
 
-export const DAYS = [
-  { key: 'mon', label: 'M' },
-  { key: 'tue', label: 'T' },
-  { key: 'wed', label: 'W' },
-  { key: 'thu', label: 'T' },
-  { key: 'fri', label: 'F' },
-  { key: 'sat', label: 'S' },
-  { key: 'sun', label: 'S' },
-] as const;
-
-export const DAY_LABELS: Record<string, string> = {
+const DAY_LABELS: Record<string, string> = {
   mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
   fri: 'Friday', sat: 'Saturday', sun: 'Sunday',
 };
-
-export const MONTH_DAYS = Array.from({ length: 28 }, (_, i) => i + 1);
 
 export const INPUT_CLS = 'h-9 px-3 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none focus-visible:border-primary/30 transition-colors';
 
