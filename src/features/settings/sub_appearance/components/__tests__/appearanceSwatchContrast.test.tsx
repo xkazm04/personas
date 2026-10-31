@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { THEMES } from '@/stores/themeStore';
+import { getContrastRatio } from '@/lib/theme/contrastRatio';
 import { AppearanceThemeSwatch } from '../AppearanceThemeSwatch';
 
 /** The contrast badge text a swatch exposes to assistive tech: its aria-label plus whatever its
@@ -35,5 +36,26 @@ describe('theme swatch contrast level reaches assistive tech', () => {
       <AppearanceThemeSwatch theme={THEMES[0]} active={false} onSelect={() => {}} />,
     );
     expect(container.querySelector('button [title]')).toBeNull();
+  });
+});
+
+describe('theme swatch contrast badge is legible on its own tile', () => {
+  it('paints the chip from the theme samples, not the app status tokens', () => {
+    let legible = 0;
+    for (const theme of THEMES) {
+      const { container, unmount } = render(
+        <AppearanceThemeSwatch theme={theme} active={false} onSelect={() => {}} />,
+      );
+      const badge = container.querySelector<HTMLElement>('button span[id]')!;
+      expect(badge.className).not.toMatch(/status-/);
+      // jsdom normalises inline colours to rgb(); compare through a probe element.
+      const probe = document.createElement('span');
+      probe.style.color = theme.foregroundSample;
+      probe.style.backgroundColor = theme.backgroundSample;
+      if (badge.style.color === probe.style.color && badge.style.backgroundColor === probe.style.backgroundColor
+        && getContrastRatio(theme.foregroundSample, theme.backgroundSample) >= 4.5) legible++;
+      unmount();
+    }
+    expect(legible).toBe(THEMES.length);
   });
 });

@@ -49,11 +49,6 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
     : contrastLevel === 'AA' ? a.contrast_badge_aa
     : a.contrast_badge_low;
   const badgeAriaLabel = tx(a.contrast_badge_aria, { level: badgeLabel, ratio: contrastRatio.toFixed(1) });
-  const badgeClass =
-    contrastLevel === 'AAA' ? 'bg-status-success/20 text-status-success'
-    : contrastLevel === 'AA' ? 'bg-status-info/20 text-status-info'
-    : 'bg-status-warning/25 text-status-warning';
-
   return (
     <div className="relative" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
       {showHover && !active && <AppearanceThemeHoverPreview theme={theme} />}
@@ -75,11 +70,16 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
           className="relative w-full flex flex-col gap-2.5 px-3 py-3 pointer-events-none"
           style={{ minHeight: '110px', backgroundColor: theme.backgroundSample, color: theme.foregroundSample }}
         >
-          {/* Contrast badge — tinted with the APP theme's status tokens, not the previewed theme's */}
+          {/* Contrast badge — the previewed theme's own fg-on-bg pair (the ratio it reports), so it is legible on every tile whatever the app theme */}
           <span
             id={badgeId}
             aria-label={badgeAriaLabel}
-            className={`absolute top-2 right-2 px-1.5 py-0.5 rounded-pill text-[9px] font-semibold tracking-wide ${badgeClass}`}
+            className="absolute top-2 right-2 px-1.5 py-0.5 rounded-pill border text-[9px] font-semibold tracking-wide"
+            style={{
+              backgroundColor: theme.backgroundSample,
+              color: theme.foregroundSample,
+              borderColor: `color-mix(in srgb, ${theme.foregroundSample} 35%, transparent)`,
+            }}
           >
             {badgeLabel}
           </span>
