@@ -46,8 +46,8 @@ describe('ActivityFilters accessibility', () => {
     renderFilters();
     const tabs = screen.getAllByRole('button', { pressed: true }).concat(screen.getAllByRole('button', { pressed: false }));
     const typeButtons = tabs.filter((b) => FILTER_TABS.length > 0 && b.getAttribute('aria-pressed') !== null);
-    // 7 type buttons + the starred toggle
-    expect(typeButtons.length).toBe(FILTER_TABS.length + 1);
+    // 7 type buttons (the starred toggle is offered on All only)
+    expect(typeButtons.length).toBe(FILTER_TABS.length);
     expect(screen.getByRole('button', { pressed: true }).textContent).toContain('activity_filters.events');
   });
 });

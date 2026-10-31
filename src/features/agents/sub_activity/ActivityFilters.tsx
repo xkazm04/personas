@@ -40,6 +40,9 @@ export function ActivityFilters({
   onTagFilterChange, onStarredOnlyChange,
 }: ActivityFiltersProps) {
   const { t } = useTranslation();
+  // Starred / tag narrow to execution rows, which only the All tab lists beside
+  // other types; offering them on Events/Memories/... could only empty the feed.
+  const runOnlyFilters = filter === 'all';
   return (
     <div className="flex items-center gap-3 border-b border-primary/10 pb-0">
       <div className="flex gap-1">
@@ -77,6 +80,7 @@ export function ActivityFilters({
       </div>
       {!hideSecondaryFilters && (
       <div className="ml-auto flex items-center gap-2">
+        {runOnlyFilters && (
         <button
           type="button"
           onClick={() => onStarredOnlyChange(!starredOnly)}
@@ -91,7 +95,8 @@ export function ActivityFilters({
           <Star className="w-3 h-3" fill={starredOnly ? 'currentColor' : 'none'} />
           {t.agents.activity.filter_starred_only}
         </button>
-        {availableTags.length > 0 && (
+        )}
+        {runOnlyFilters && availableTags.length > 0 && (
           <select
             value={tagFilter}
             onChange={(e) => onTagFilterChange(e.target.value)}

@@ -236,12 +236,14 @@ export function ActivityTab() {
         ? result.filter((i) => !i.useCaseId)
         : result.filter((i) => i.useCaseId === useCaseFilter);
     }
-    if (starredOnly) {
+    // Run-only filters apply where the controls are offered (the All tab); a
+    // stale toggle must not empty the other tabs.
+    if (filter === 'all' && starredOnly) {
       result = result.filter(
         (i) => i.type === 'execution' && (annotationsByExecution.get(i.id)?.starred ?? false),
       );
     }
-    if (tagFilter !== 'all') {
+    if (filter === 'all' && tagFilter !== 'all') {
       result = result.filter(
         (i) => i.type === 'execution' && annotationsByExecution.get(i.id)?.tags.includes(tagFilter),
       );
