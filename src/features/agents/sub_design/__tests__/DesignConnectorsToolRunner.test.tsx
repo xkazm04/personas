@@ -22,8 +22,13 @@ import { useVaultStore } from '@/stores/vaultStore';
 vi.mock('@/features/agents/sub_connectors/components/connectors/ConnectorVerificationPanel', () => ({
   ConnectorVerificationPanel: () => <div data-testid="stub-verification" />,
 }));
+const verificationState = { credentialsLoaded: true };
 vi.mock('@/features/agents/sub_connectors/libs/useConnectorStatuses', () => ({
-  useConnectorStatuses: () => ({ requiredCredTypes: [], testConnector: vi.fn() }),
+  useConnectorStatuses: () => ({
+    requiredCredTypes: [],
+    testConnector: vi.fn(),
+    credentialsLoaded: verificationState.credentialsLoaded,
+  }),
 }));
 vi.mock('@/features/templates/sub_generated/design-preview/ConnectorsSection', () => ({
   ConnectorsSection: () => <div data-testid="stub-recap" />,
@@ -51,6 +56,32 @@ function persona(tools: PersonaToolDefinition[]): Persona {
 function setPersona(tools: PersonaToolDefinition[]): void {
   useAgentStore.setState({ selectedPersona: persona(tools), toolDefinitions: [] });
 }
+
+describe('DesignConnectorsPanel design recap waits for the vault', () => {
+  const design = JSON.stringify({ suggested_connectors: [{ name: 'gmail' }], suggested_tools: [] });
+
+  beforeEach(() => {
+    useVaultStore.setState({ credentials: [], connectorDefinitions: [] });
+    useAgentStore.setState({
+      selectedPersona: { id: 'p-1', name: 'Mail Bot', tools: [], last_design_result: design } as unknown as Persona,
+      toolDefinitions: [],
+    });
+  });
+
+  it('withholds the recap until the first credential fetch settles', () => {
+    // An empty vault before the fetch lands is "not yet", not "none": the recap
+    // would paint every proposed connector "Configure credential".
+    verificationState.credentialsLoaded = false;
+    render(<DesignConnectorsPanel />);
+    expect(screen.queryByTestId('stub-recap')).not.toBeInTheDocument();
+  });
+
+  it('shows the recap once credentials are loaded', () => {
+    verificationState.credentialsLoaded = true;
+    render(<DesignConnectorsPanel />);
+    expect(screen.getByTestId('stub-recap')).toBeInTheDocument();
+  });
+});
 
 describe('DesignConnectorsPanel mounts the tool runner', () => {
   beforeEach(() => {

@@ -1,4 +1,4 @@
-import { Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ScrollText, ClipboardList, Brain, Plug } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -81,11 +81,37 @@ export function DesignHub(_props: DesignHubProps) {
     [designSubTab],
   );
 
+  // WAI-ARIA tabs: the strip is a tablist, only the selected tab is a Tab stop
+  // (roving tabindex), and Arrow/Home/End move the selection - the same
+  // contract layout/PanelTabBar implements. Before this the four sub-tabs were
+  // plain buttons: no selected state for assistive tech, four Tab stops, and
+  // arrow keys did nothing.
+  const tablistRef = useRef<HTMLDivElement>(null);
+  const handleTabKeyDown = (e: React.KeyboardEvent, index: number) => {
+    let next: number;
+    switch (e.key) {
+      case 'ArrowRight': next = (index + 1) % SUB_TABS.length; break;
+      case 'ArrowLeft': next = (index - 1 + SUB_TABS.length) % SUB_TABS.length; break;
+      case 'Home': next = 0; break;
+      case 'End': next = SUB_TABS.length - 1; break;
+      default: return;
+    }
+    e.preventDefault();
+    const target = SUB_TABS[next];
+    if (!target) return;
+    setDesignSubTab(target.id);
+    tablistRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+  };
+
   return (
     <div className="flex flex-col min-h-full">
       <div className="flex items-center border-b border-primary/10 px-1">
-        <div className="flex items-center flex-1 min-w-0 overflow-x-auto scrollbar-none">
-          {SUB_TABS.map((tab) => {
+        <div
+          ref={tablistRef}
+          role="tablist"
+          className="flex items-center flex-1 min-w-0 overflow-x-auto scrollbar-none"
+        >
+          {SUB_TABS.map((tab, index) => {
             const Icon = tab.icon;
             const isActive = activeSubTab === tab.id;
             const label = subtabLabels[tab.labelKey] ?? tab.labelKey;
@@ -93,8 +119,16 @@ export function DesignHub(_props: DesignHubProps) {
               <button
                 type="button"
                 key={tab.id}
+                role="tab"
+                id={`design-subtab-tab-${tab.id}`}
+                aria-selected={isActive}
+                // Only the selected tab names the panel: the others' panels are
+                // not mounted, and a reference to an absent id dangles.
+                aria-controls={isActive ? `design-subtab-panel-${tab.id}` : undefined}
+                tabIndex={isActive ? 0 : -1}
                 data-testid={`design-subtab-${tab.id}`}
                 onClick={() => setDesignSubTab(tab.id)}
+                onKeyDown={(e) => handleTabKeyDown(e, index)}
                 className={`relative flex items-center gap-1.5 px-3 py-2 typo-body transition-colors whitespace-nowrap ${
                   isActive ? 'text-primary' : 'text-foreground hover:text-foreground/95'
                 }`}
@@ -114,7 +148,12 @@ export function DesignHub(_props: DesignHubProps) {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 pt-4">
+      <div
+        role="tabpanel"
+        id={`design-subtab-panel-${activeSubTab}`}
+        aria-labelledby={`design-subtab-tab-${activeSubTab}`}
+        className="flex-1 min-h-0 pt-4"
+      >
         <Suspense fallback={<RouteChunkSkeleton />}>
           {activeSubTab === 'manifest' && <DesignManifestPanel />}
           {activeSubTab === 'responsibilities' && <DesignResponsibilitiesPanel />}

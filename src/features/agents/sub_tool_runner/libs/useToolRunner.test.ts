@@ -4,12 +4,19 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 const invokeMock = vi.fn();
 vi.mock('@/api/agents/tools', () => ({ invokeToolDirect: (...a: unknown[]) => invokeMock(...a) }));
 
+const reported = vi.fn();
+const silentCatchMock = vi.fn((_context: string) => reported);
+vi.mock('@/lib/silentCatch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/silentCatch')>()),
+  silentCatch: (context: string) => silentCatchMock(context),
+}));
+
 import { useToolRunner } from './useToolRunner';
 
 const ok = { success: true, output: 'hi', duration_ms: 5 };
 
 describe('useToolRunner', () => {
-  beforeEach(() => { invokeMock.mockReset(); });
+  beforeEach(() => { invokeMock.mockReset(); reported.mockReset(); silentCatchMock.mockClear(); });
   afterEach(() => { vi.useRealTimers(); });
 
   it('lands a result under the persona that started the run', async () => {
@@ -45,6 +52,28 @@ describe('useToolRunner', () => {
     await act(async () => { resolve(ok); await first; });
   });
 
+  it('lets only the latest run of a tool write its state after an A-B-A persona switch', async () => {
+    const resolvers: Array<(v: unknown) => void> = [];
+    invokeMock.mockImplementation(() => new Promise((r) => { resolvers.push(r); }));
+    const { result, rerender } = renderHook(({ pid }) => useToolRunner(pid), { initialProps: { pid: 'p1' } });
+    let first!: Promise<void>;
+    act(() => { first = result.current.runTool('t1', '{}'); });
+    // A -> B -> A: the switch clears the map and the de-dupe set, so the same
+    // tool can be started again under the same persona id.
+    rerender({ pid: 'p2' });
+    rerender({ pid: 'p1' });
+    let second!: Promise<void>;
+    act(() => { second = result.current.runTool('t1', '{}'); });
+    // The FIRST call settles while the second is still in flight.
+    await act(async () => { resolvers[0]!({ ...ok, output: 'first' }); await first; });
+    expect(result.current.getState('t1')).toMatchObject({ isRunning: true, result: null });
+    // Its settle must not free the slot the second run holds.
+    await act(async () => { await result.current.runTool('t1', '{}'); });
+    expect(invokeMock).toHaveBeenCalledTimes(2);
+    await act(async () => { resolvers[1]!({ ...ok, output: 'second' }); await second; });
+    expect(result.current.getState('t1')).toMatchObject({ isRunning: false, result: { output: 'second' } });
+  });
+
   it('leaves no timer behind once the run settles', async () => {
     vi.useFakeTimers();
     invokeMock.mockResolvedValue(ok);
@@ -58,5 +87,23 @@ describe('useToolRunner', () => {
     const { result } = renderHook(() => useToolRunner('p1'));
     await act(async () => { await result.current.runTool('t1', '{}'); });
     await waitFor(() => expect(result.current.getState('t1').error).toBe('credential missing'));
+  });
+
+  it('reports a rejected direct run to the error door, not only to the card', async () => {
+    // A tool FAILURE resolves as success:false; a rejection is infrastructure
+    // (IPC timeout, AppError) and must leave a trace after the card clears.
+    const err = { message: 'Tauri invoke "invoke_tool_direct" timed out' };
+    invokeMock.mockRejectedValue(err);
+    const { result } = renderHook(() => useToolRunner('p1'));
+    await act(async () => { await result.current.runTool('t1', '{}'); });
+    expect(silentCatchMock).toHaveBeenCalledWith('useToolRunner:invokeToolDirect');
+    expect(reported).toHaveBeenCalledWith(err);
+  });
+
+  it('does not report a resolved tool failure as an error', async () => {
+    invokeMock.mockResolvedValue({ ...ok, success: false, error: 'HTTP 503' });
+    const { result } = renderHook(() => useToolRunner('p1'));
+    await act(async () => { await result.current.runTool('t1', '{}'); });
+    expect(reported).not.toHaveBeenCalled();
   });
 });

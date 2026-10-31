@@ -79,6 +79,22 @@ describe('ToolInvocationCard result contract fields', () => {
     expect(screen.getByText(/Output truncated/i)).toBeInTheDocument();
   });
 
+  it('says in the collapsed header that a run is in flight or failed at the IPC layer', () => {
+    const { rerender } = render(
+      <ToolInvocationCard tool={tool()} isRunning={false} result={null} error={null} onRun={() => {}} />,
+    );
+    const toggle = screen.getByTestId('tool-card-toggle-gmail_reader');
+    const idle = toggle.textContent;
+    rerender(<ToolInvocationCard tool={tool()} isRunning result={null} error={null} onRun={() => {}} />);
+    expect(toggle.textContent).not.toBe(idle);
+    expect(toggle).toHaveTextContent('Running...');
+    rerender(<ToolInvocationCard tool={tool()} isRunning={false} result={null} error="IPC timeout" onRun={() => {}} />);
+    expect(toggle.textContent).not.toBe(idle);
+    expect(toggle).toHaveTextContent('Error');
+    // Still collapsed: the body (and its error block) is not rendered.
+    expect(screen.queryByTestId('tool-result-gmail_reader')).toBeNull();
+  });
+
   it('renders the auth failure kind label', () => {
     render(
       <ToolInvocationCard
