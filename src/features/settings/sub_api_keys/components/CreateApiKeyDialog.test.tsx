@@ -35,4 +35,11 @@ describe('CreateApiKeyDialog', () => {
     render(<CreateApiKeyDialog onSubmit={vi.fn()} onClose={vi.fn()} />);
     expect(screen.queryByRole('button', { name: 'Close' })).not.toBeNull();
   });
+
+  it('binds its labels to their controls', () => {
+    render(<CreateApiKeyDialog onSubmit={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.queryByLabelText('Name')).not.toBeNull();
+    expect(screen.queryByRole('group', { name: 'Scopes' })).not.toBeNull();
+    expect(screen.queryByRole('group', { name: 'Expires' })).not.toBeNull();
+  });
 });

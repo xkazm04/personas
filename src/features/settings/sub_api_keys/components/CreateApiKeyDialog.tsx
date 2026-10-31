@@ -9,7 +9,7 @@
  * `personas:execute:persona:<id>` scope per pick (no blanket execute). Keys are
  * time-boxed by default.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { extractMessage } from '@/lib/silentCatch';
@@ -42,6 +42,9 @@ interface CreateApiKeyDialogProps {
 export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProps) {
   const { t } = useTranslation();
   const s = t.settings.api_keys;
+  const nameId = useId();
+  const scopesLabelId = useId();
+  const expiryLabelId = useId();
 
   const [name, setName] = useState('');
   const [selectedScopes, setSelectedScopes] = useState<Set<string>>(() => new Set(['personas:build']));
@@ -128,8 +131,9 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
 
         <div className="p-4 space-y-4 overflow-y-auto">
           <div>
-            <label className="block typo-caption text-foreground mb-1.5">{s.field_name_label}</label>
+            <label htmlFor={nameId} className="block typo-caption text-foreground mb-1.5">{s.field_name_label}</label>
             <input
+              id={nameId}
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -143,8 +147,8 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
           </div>
 
           <div>
-            <label className="block typo-caption text-foreground mb-1.5">{s.field_scopes_label}</label>
-            <div className="space-y-1.5">
+            <span id={scopesLabelId} className="block typo-caption text-foreground mb-1.5">{s.field_scopes_label}</span>
+            <div role="group" aria-labelledby={scopesLabelId} className="space-y-1.5">
               {AVAILABLE_SCOPES.map((scope) => {
                 const isSelected = selectedScopes.has(scope.id);
                 return (
@@ -193,8 +197,8 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
           </div>
 
           <div>
-            <label className="block typo-caption text-foreground mb-1.5">{s.field_expiry_label}</label>
-            <div className="flex gap-1.5">
+            <span id={expiryLabelId} className="block typo-caption text-foreground mb-1.5">{s.field_expiry_label}</span>
+            <div role="group" aria-labelledby={expiryLabelId} className="flex gap-1.5">
               {EXPIRY_OPTIONS.map((opt) => {
                 const active = expiresInDays === opt.days;
                 return (
