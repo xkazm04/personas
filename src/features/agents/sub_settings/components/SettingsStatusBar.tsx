@@ -1,6 +1,6 @@
 import { Trash2, AlertTriangle, Check } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
+import { AsyncButton } from '@/features/shared/components/buttons';
 
 interface SettingsStatusBarProps {
   isSaving: boolean;
@@ -22,10 +22,10 @@ export function SettingsStatusBar({
   const { t, tx } = useTranslation();
   return (
     <div className="flex items-center justify-between pt-2 border-t border-primary/10">
-      <div className="flex items-center gap-2 typo-body text-foreground">
+      {/* Autosave is the only save path here, so this line is the only confirmation. */}
+      <div role="status" aria-live="polite" className="flex items-center gap-2 typo-body text-foreground">
         {isSaving ? (
           <>
-            <LoadingSpinner size="sm" className="text-primary/70" />
             <span>{tx(t.agents.settings_status.saving, { sections: changedSections.join(' + ').toLowerCase() })}</span>
           </>
         ) : isDirty ? (
@@ -57,14 +57,17 @@ export function SettingsStatusBar({
             <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
             {t.agents.settings_status.irreversible}
           </span>
-          <button
-            type="button"
+          {/* AsyncButton arms its in-flight guard synchronously, so a double press
+              sends one delete_persona, not two racing ones. */}
+          <AsyncButton
+            variant="accent"
+            tone="error"
+            size="sm"
             onClick={onDelete}
             data-testid="agent-delete-confirm"
-            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-modal typo-body transition-colors"
           >
             {t.common.confirm}
-          </button>
+          </AsyncButton>
           <button
             type="button"
             onClick={() => setShowDeleteConfirm(false)}

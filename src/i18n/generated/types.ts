@@ -6199,6 +6199,7 @@ export type Translations = {
       title: string;
       subtitle: string;
       empty: string;
+      load_failed: string;
       add: string;
       name_placeholder: string;
       type_label: string;

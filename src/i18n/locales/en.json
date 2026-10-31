@@ -6193,6 +6193,7 @@
       "title": "Quality gates",
       "subtitle": "Check every run's output and route failures to review or healing.",
       "empty": "No quality gates yet.",
+      "load_failed": "Couldn't load quality gates.",
       "add": "Add gate",
       "name_placeholder": "Gate name (e.g. Must cite a total)",
       "type_label": "Check",
