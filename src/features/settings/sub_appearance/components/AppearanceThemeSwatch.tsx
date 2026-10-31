@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, memo, useMemo } from 'react';
+import { useState, useRef, useCallback, memo, useMemo, useId } from 'react';
 import { Check } from 'lucide-react';
 import type { ThemeDefinition, ThemeId } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -20,6 +20,7 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
   onSelect: (id: ThemeId) => void;
 }) {
   const { tx, t } = useTranslation();
+  const badgeId = useId();
   const previewAriaLabel = tx(t.settings.appearance.theme_preview_aria, { name: theme.label });
 
   const [showHover, setShowHover] = useState(false);
@@ -62,6 +63,7 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
         onFocus={handleEnter}
         onBlur={handleLeave}
         aria-label={previewAriaLabel}
+        aria-describedby={badgeId}
         aria-pressed={active}
         className={`group relative flex flex-col w-full p-0 overflow-hidden rounded-modal border transition-all ${
           active
@@ -75,8 +77,8 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
         >
           {/* Contrast badge — tinted with the APP theme's status tokens, not the previewed theme's */}
           <span
+            id={badgeId}
             aria-label={badgeAriaLabel}
-            title={badgeAriaLabel}
             className={`absolute top-2 right-2 px-1.5 py-0.5 rounded-pill text-[9px] font-semibold tracking-wide ${badgeClass}`}
           >
             {badgeLabel}
