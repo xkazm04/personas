@@ -10,17 +10,9 @@
   },
   "design_subtabs": {
     "manifest": "Manifest",
-    "use_cases": "Use Cases",
-    "prompt": "Properties",
-    "parameters": "Parameters",
     "connectors": "Connectors",
-    "triggers": "Events & Triggers",
-    "messaging": "Notifications",
-    "core": "Core",
     "responsibilities": "Responsibilities",
-    "brain": "Brain",
-    "triggers_desc": "Per-persona event subscriptions and trigger configuration will land in this tab.",
-    "messaging_desc": "Notification channels and inbox routing for this agent will live here."
+    "brain": "Brain"
   },
   "manifest": {
     "title": "Manifest",
@@ -2012,13 +2004,11 @@
     "error": "Error",
     "invalid_json": "Invalid JSON — fix before running.",
     "input_json_placeholder": "{ \"key\": \"value\" }",
-    "run_tool": "Run tool",
     "panel_title": "Run a tool",
     "panel_subtitle": "Invoke a tool directly against this persona's credentials.",
     "output_truncated": "Output truncated — the tool returned more than the display limit.",
     "http_status_label": "HTTP {status}",
     "retryable_hint": "This may succeed on retry.",
-    "failure_kind_label": "Failure",
     "builtin_note": "Built-in tool — it runs inside persona executions (not manually from here). Trigger one of the persona's capabilities to exercise it."
   },
   "health_check": {
