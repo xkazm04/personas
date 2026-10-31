@@ -103,7 +103,7 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
 
           {rows === null && !error ? (
             <>
-              <span className="sr-only" role="status">{s.audit_title}</span>
+              <span className="sr-only" role="status">{s.loading}</span>
               <AuditGhostRows />
             </>
           ) : rows !== null && rows.length === 0 ? (
