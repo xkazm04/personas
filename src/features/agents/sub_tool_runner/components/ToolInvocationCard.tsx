@@ -38,10 +38,22 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
   // offering Run here produced a false "misconfigured" failure that read as
   // "my persona is broken" (2026-07-16 UAT). Show an honest note instead.
   const isBuiltin = tool.script_path?.startsWith('builtin://') ?? false;
-  const toolType = isBuiltin
+  // The backend runs a tool only when it has exactly one strategy: automation
+  // by category, else one of script_path / implementation_guide. Zero or two
+  // can only fail, so those shapes get a note instead of Run.
+  const hasScript = !!tool.script_path;
+  const hasGuide = !!tool.implementation_guide;
+  const strategyProblem: 'none' | 'conflict' | null =
+    isBuiltin || tool.category === 'automation' || hasScript !== hasGuide
+      ? null
+      : hasScript ? 'conflict' : 'none';
+  const toolType: 'builtin' | 'automation' | 'script' | 'api' | 'unconfigured' = isBuiltin
     ? 'builtin'
-    : tool.category === 'automation' ? 'automation' : tool.script_path ? 'script' : 'api';
-  const TypeIcon = toolType === 'automation' ? Zap : toolType === 'script' || toolType === 'builtin' ? Terminal : Globe;
+    : tool.category === 'automation' ? 'automation'
+    : strategyProblem ? 'unconfigured'
+    : hasScript ? 'script' : 'api';
+  const canOfferRun = !isBuiltin && !strategyProblem;
+  const TypeIcon = toolType === 'automation' ? Zap : toolType === 'script' || toolType === 'builtin' || toolType === 'unconfigured' ? Terminal : Globe;
 
   // Pre-flight JSON validation. Previously, malformed JSON (trailing comma,
   // unquoted key, smart quotes from paste) was forwarded to the Rust tool
@@ -135,8 +147,17 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
                 </p>
               )}
 
+              {strategyProblem && (
+                <p
+                  data-testid={`tool-strategy-note-${tool.name}`}
+                  className="typo-body text-foreground rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2"
+                >
+                  {strategyProblem === 'conflict' ? t.agents.tool_runner.conflict_note : t.agents.tool_runner.no_strategy_note}
+                </p>
+              )}
+
               {/* Input */}
-              {!isBuiltin && (
+              {canOfferRun && (
               <div>
                 <label htmlFor={`tool-input-${tool.id}`} className="typo-heading text-foreground uppercase mb-1 block">
                   {t.agents.tool_runner.input_json}
@@ -164,7 +185,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
               )}
 
               {/* Run button */}
-              {!isBuiltin && (
+              {canOfferRun && (
               <Button
                 variant="accent"
                 tone="agent"

@@ -207,3 +207,22 @@ describe('ToolInvocationCard default input', () => {
     expect(JSON.parse(value)).toEqual({ q: '', limit: 10, dry: false, tags: [] });
   });
 });
+
+describe('ToolInvocationCard execution-strategy rule (mirrors backend tool_kind)', () => {
+  const shapes: Array<[string, Partial<PersonaToolDefinition>, boolean]> = [
+    ['script only', { script_path: 'tools/x.ts', implementation_guide: null }, true],
+    ['guide only', { script_path: '', implementation_guide: 'curl x' }, true],
+    ['automation', { category: 'automation', script_path: '', implementation_guide: null }, true],
+    ['no strategy', { script_path: '', implementation_guide: null }, false],
+    ['empty guide', { script_path: '', implementation_guide: '' }, false],
+    ['both strategies', { script_path: 'tools/x.ts', implementation_guide: 'curl x' }, false],
+  ];
+  for (const [name, over, runnable] of shapes) {
+    it(`${runnable ? 'offers' : 'withholds'} Run for ${name}`, () => {
+      render(<ToolInvocationCard tool={{ ...tool(), ...over }} isRunning={false} result={null} error={null} onRun={() => {}} />);
+      fireEvent.click(screen.getByTestId('tool-card-toggle-gmail_reader'));
+      expect(screen.queryByTestId('tool-run-gmail_reader') !== null).toBe(runnable);
+      expect(screen.queryByTestId('tool-strategy-note-gmail_reader') !== null).toBe(!runnable);
+    });
+  }
+});

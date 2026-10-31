@@ -48,6 +48,7 @@ function tool(over: Partial<PersonaToolDefinition> = {}): PersonaToolDefinition 
     name: 'fetch_weather',
     description: null,
     script_path: null,
+    implementation_guide: 'Curl: curl https://example.com',
     category: 'api',
     input_schema: null,
     requires_credential_type: 'openweather',

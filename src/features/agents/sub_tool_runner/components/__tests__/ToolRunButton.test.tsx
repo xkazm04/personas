@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import { ToolInvocationCard } from '../ToolInvocationCard';
 
-const tool = { id: 't1', name: 'ping', description: null, script_path: null, category: 'api', input_schema: null } as unknown as PersonaToolDefinition;
+const tool = { id: 't1', name: 'ping', description: null, script_path: null, implementation_guide: 'Curl: x', category: 'api', input_schema: null } as unknown as PersonaToolDefinition;
 
 describe('ToolInvocationCard Run button while running', () => {
   it('keeps a visible glyph inside the disabled button', () => {

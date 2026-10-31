@@ -2023,6 +2023,9 @@
     "kind_script": "Script",
     "kind_automation": "Automation",
     "kind_builtin": "Built-in",
+    "kind_unconfigured": "Not runnable",
+    "no_strategy_note": "This tool has no execution strategy (no script and no implementation guide), so it cannot be run. Edit the tool to give it exactly one.",
+    "conflict_note": "This tool sets both a script and an implementation guide, so it cannot be run. Remove one of them.",
     "no_persona": "No active persona. Open a persona before running tools.",
     "invocation_failed": "Tool invocation failed",
     "builtin_note": "Built-in tool — it runs inside persona executions (not manually from here). Trigger one of the persona's capabilities to exercise it."
