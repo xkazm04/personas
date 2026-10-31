@@ -6205,6 +6205,10 @@ export type Translations = {
       type_label: string;
       type_contains: string;
       type_not_contains: string;
+      type_regex: string;
+      type_json_path: string;
+      type_json_schema: string;
+      type_length: string;
       phrase_placeholder: string;
       on_failure_label: string;
       action_log: string;

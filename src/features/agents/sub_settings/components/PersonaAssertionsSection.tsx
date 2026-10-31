@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ShieldCheck, Plus, Trash2 } from 'lucide-react';
+import { ShieldCheck, Plus } from 'lucide-react';
 import {
   listOutputAssertions,
   deleteOutputAssertion,
@@ -10,6 +10,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AssertionAddForm } from './AssertionAddForm';
+import { AssertionRow } from './AssertionRow';
 
 /**
  * Quality gates — declarative output assertions attached to a persona and
@@ -68,10 +69,6 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
     }
   };
 
-  const typeLabel = (ty: string) => (ty === 'not_contains' ? a.type_not_contains : a.type_contains);
-  const actionLabel = (ac: string) =>
-    ac === 'heal' ? a.action_heal : ac === 'log' ? a.action_log : a.action_review;
-
   return (
     <div className="space-y-3 relative z-10">
       <h4 className="flex items-center gap-2.5 typo-submodule-header">
@@ -95,19 +92,7 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
         )}
 
         {assertions.map((row) => (
-          <div key={row.id} className="flex items-center gap-2 rounded-card border border-primary/10 bg-background/30 px-2.5 py-1.5">
-            <span className="typo-body text-foreground truncate flex-1">{row.name}</span>
-            <span className="typo-caption text-foreground">{typeLabel(row.assertionType)}</span>
-            <span className="typo-caption text-primary">{actionLabel(row.onFailure)}</span>
-            <button
-              type="button"
-              onClick={() => handleDelete(row.id)}
-              aria-label={a.delete}
-              className="p-1 rounded-input text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <AssertionRow key={row.id} row={row} onDelete={handleDelete} />
         ))}
 
         {adding ? (
