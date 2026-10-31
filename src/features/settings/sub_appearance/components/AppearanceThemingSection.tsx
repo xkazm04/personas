@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Palette } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { SegmentedTabs, segmentedTabPanelProps } from '@/features/shared/components/layout/SegmentedTabs';
 import { useThemeStore, THEMES, customThemeDef } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AppearanceThemeSwatch } from './AppearanceThemeSwatch';
 import CustomThemeCreator from './CustomThemeCreator';
+
+const TABS_PREFIX = 'appearance-theming';
 
 /** Theme picker — default dark/light grids + the custom-theme creator tab. */
 export default function AppearanceThemingSection() {
@@ -43,6 +45,7 @@ export default function AppearanceThemingSection() {
         <SegmentedTabs<'default' | 'custom'>
           variant="segment"
           ariaLabel={labels.theming}
+          idPrefix={TABS_PREFIX}
           activeTab={themeTab}
           onTabChange={handleTabChange}
           tabs={[
@@ -54,7 +57,7 @@ export default function AppearanceThemingSection() {
     >
       {/* The editor's draft lives in its local state, so unmounting it on a tab switch discarded
           unsaved colour picks: the panel is hidden, not removed, once visited. */}
-      <div hidden={themeTab !== 'default'}>
+      <div {...segmentedTabPanelProps(TABS_PREFIX, 'default')} hidden={themeTab !== 'default'}>
         <div className="space-y-4">
           <div className="space-y-2">
             <span className="typo-body text-foreground">{labels.dark}</span>
@@ -74,7 +77,7 @@ export default function AppearanceThemingSection() {
           </div>
         </div>
       </div>
-      <div hidden={themeTab !== 'custom'}>
+      <div {...segmentedTabPanelProps(TABS_PREFIX, 'custom')} hidden={themeTab !== 'custom'}>
         {customVisited && <CustomThemeCreator />}
       </div>
     </SectionCard>
