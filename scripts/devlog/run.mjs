@@ -63,6 +63,7 @@ import { makeRecord } from "./lib/envelope.mjs";
 import { REPO_ROOT, resolveLogsDir } from "./lib/paths.mjs";
 import { createLineSplitter, createToolchainParser } from "./lib/toolchain-parser.mjs";
 import { JsonlWriter, pruneDaily } from "./lib/writer.mjs";
+import { clangPathEnv } from "../build/clang-path.mjs";
 
 const GRACE_MS = 3000;
 const FORCE_MS = 8000;
@@ -245,6 +246,11 @@ export async function runWrapped(opts = {}) {
   // run quietly drop its own priority).
   if (!env.DEVLOG_CHILD) {
     Object.assign(childEnv, cargoThrottleEnv(env, (m) => errOut.write(m + "\n")));
+    // tauri dev spawns cargo itself, so cargo-run.mjs never sees it: add LLVM to PATH here too
+    // when clang is installed but not listed (ring's build script needs it on ARM64 Windows).
+    const clang = clangPathEnv(childEnv);
+    Object.assign(childEnv, clang.add);
+    if (clang.note) errOut.write(`[devlog] ${clang.note}\n`);
   }
   if (out.isTTY && env.DEVLOG_COLOR !== "0") {
     const forced = [];

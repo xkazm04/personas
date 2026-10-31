@@ -139,6 +139,7 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
               error={chain.error}
               partial={chain.partial}
               stopReasons={chain.stopReasons}
+              stopReasonsError={chain.stopReasonsError}
               chainCostUsd={chain.chainCostUsd}
               chainPricedTraces={chain.chainPricedTraces}
               currentExecutionId={execution.id}

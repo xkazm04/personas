@@ -26,8 +26,8 @@ describe('jsonDiff', () => {
     const out = jsonDiff('{"a":1,"b":"x"}', '{"a":2,"c":true}');
     expect(out).toEqual([
       { path: 'a', left: '1', right: '2' },
-      { path: 'b', left: '"x"', right: 'null' },
-      { path: 'c', left: 'null', right: 'true' },
+      { path: 'b', left: '"x"', right: '(absent)' },
+      { path: 'c', left: '(absent)', right: 'true' },
     ]);
   });
 
@@ -60,6 +60,24 @@ describe('jsonDiff', () => {
       { path: 'cost', left: '1234.5678', right: '1234.5679' },
       { path: 'started', left: '"2026-09-20T10:30:00Z"', right: '"2026-09-21T10:30:00Z"' },
     ]);
+  });
+});
+
+describe('jsonDiff depth and absence', () => {
+  it('names the changed leaf, not the top-level key', () => {
+    const out = jsonDiff(
+      '{"config":{"retries":1,"model":"m"},"tags":["a","b"]}',
+      '{"config":{"retries":3,"model":"m"},"tags":["a","c"]}',
+    );
+    expect(out).toEqual([
+      { path: 'config.retries', left: '1', right: '3' },
+      { path: 'tags[1]', left: '"b"', right: '"c"' },
+    ]);
+  });
+
+  it('keeps an absent key distinct from an explicit null', () => {
+    expect(jsonDiff('{"a":null}', '{}')).toEqual([{ path: 'a', left: 'null', right: '(absent)' }]);
+    expect(jsonDiff('{"a":null}', '{"a":null}')).toEqual([]);
   });
 });
 

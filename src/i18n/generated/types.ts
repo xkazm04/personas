@@ -323,6 +323,7 @@ export type Translations = {
     triage_policy_basis_lab: string;
     triage_policy_basis_success: string;
     triage_policy_budget_body: string;
+    triage_policy_budget_body_no_ceiling: string;
     triage_policy_budget_introduce: string;
     triage_policy_budget_lower: string;
     triage_policy_budget_raise: string;
@@ -720,10 +721,12 @@ export type Translations = {
     triage_reason_title: string;
     triage_reason_wrong_approach: string;
     triage_reject: string;
+    triage_severity_unclassified: string;
     triage_skip: string;
     triage_source_cloud: string;
     triage_source_local: string;
     triage_submit: string;
+    triage_untitled_agent: string;
     triage_view_run: string;
     triage_view_run_hint: string;
     quick_loading: string;
@@ -3085,20 +3088,19 @@ export type Translations = {
       imported: string;
       import_failed: string;
       invite_hint: string;
+      confirm_title: string;
+      confirm_body: string;
+      confirm_action: string;
+      sensitive_title: string;
+      sensitive_body: string;
     };
     design_subtabs: {
       manifest: string;
-      use_cases: string;
-      prompt: string;
-      parameters: string;
       connectors: string;
-      triggers: string;
-      messaging: string;
-      core: string;
+      connectors_empty_description: string;
+      connectors_empty_action: string;
       responsibilities: string;
       brain: string;
-      triggers_desc: string;
-      messaging_desc: string;
     };
     manifest: {
       title: string;
@@ -3627,6 +3629,7 @@ export type Translations = {
       active_chains_agents_one: string;
       active_chains_agents_other: string;
       active_chains_depth: string;
+      active_chains_stale: string;
       cb_all_paused: string;
       cb_providers_unavailable_one: string;
       cb_providers_unavailable_other: string;
@@ -3653,6 +3656,7 @@ export type Translations = {
       terminal_output_diff: string;
       differences_count: string;
       no_log_data: string;
+      diff_clipped: string;
       identical: string;
       diff_count_one: string;
       diff_count_other: string;
@@ -3710,6 +3714,7 @@ export type Translations = {
       failed_to_load_logs: string;
       failed_to_load_chain: string;
       failed_to_hydrate_comparison: string;
+      diff_failed: string;
       bulk_rerun_enter: string;
       bulk_rerun_enter_tooltip: string;
       bulk_rerun_col_header: string;
@@ -3730,6 +3735,9 @@ export type Translations = {
       bulk_rerun_preflight_confirm: string;
       bulk_rerun_strip_in_flight: string;
       bulk_rerun_strip_done: string;
+      bulk_rerun_strip_done_partial: string;
+      bulk_rerun_timed_out_state: string;
+      bulk_rerun_cancelled_state: string;
       bulk_rerun_open_report: string;
       bulk_rerun_cancel: string;
       bulk_rerun_close: string;
@@ -3745,6 +3753,7 @@ export type Translations = {
       bulk_rerun_mean_duration_delta: string;
       bulk_rerun_total_cost_original: string;
       bulk_rerun_total_cost_new: string;
+      bulk_rerun_unpriced_note: string;
       bulk_rerun_failed_count: string;
       bulk_rerun_cheaper: string;
       bulk_rerun_pricier: string;
@@ -3786,6 +3795,7 @@ export type Translations = {
       deep_fanout: string;
       deep_fanout_hint: string;
       deep_fanout_unavailable: string;
+      deep_fanout_probe_failed: string;
       tab_chain: string;
       verdict_field: string;
       retry_of_field: string;
@@ -3810,6 +3820,7 @@ export type Translations = {
       chain_total_cost: string;
       chain_cost_partial: string;
       chain_ended_because: string;
+      chain_stop_reasons_unavailable: string;
       span_orphaned: string;
       lines_counter: string;
       timeline_scrubber_label: string;
@@ -5042,6 +5053,13 @@ export type Translations = {
       annotation_tags_label: string;
       annotation_note_label: string;
       annotation_empty: string;
+      review_status_pending: string;
+      review_status_approved: string;
+      review_status_rejected: string;
+      review_status_resolved: string;
+      attention_detail_reason: string;
+      attention_detail_started: string;
+      attention_detail_completed: string;
       report_title: string;
     };
     settings_status: {
@@ -5087,13 +5105,26 @@ export type Translations = {
       error: string;
       invalid_json: string;
       input_json_placeholder: string;
-      run_tool: string;
       panel_title: string;
       panel_subtitle: string;
       output_truncated: string;
       http_status_label: string;
       retryable_hint: string;
       failure_kind_label: string;
+      kind_api: string;
+      kind_script: string;
+      kind_automation: string;
+      kind_builtin: string;
+      confirm_title: string;
+      confirm_body: string;
+      schema_title: string;
+      schema_required: string;
+      schema_enum: string;
+      kind_unconfigured: string;
+      no_strategy_note: string;
+      conflict_note: string;
+      no_persona: string;
+      invocation_failed: string;
       builtin_note: string;
     };
     health_check: {
@@ -6138,6 +6169,7 @@ export type Translations = {
         editor: string;
         header: string;
         fanout: string;
+        gallery: string;
         other: string;
       };
       fields: {
@@ -6160,6 +6192,7 @@ export type Translations = {
         cli_awareness_enabled: string;
         model_profile: string;
         notification_channels: string;
+        published_to_gallery: string;
       };
     };
     assertions: {

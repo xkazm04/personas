@@ -30,8 +30,25 @@ export interface QuickStats {
 const REFRESH_DEBOUNCE_MS = 400;
 
 export function useQuickStats(personaId: string | undefined) {
-  const [executions, setExecutions] = useState<PersonaExecution[]>([]);
+  // Rows are tagged with the persona they were fetched for, so a persona
+  // change hides the previous agent's numbers on the very next render instead
+  // of after the new fetch lands.
+  const [fetched, setFetched] = useState<{ personaId: string | undefined; rows: PersonaExecution[] }>({
+    personaId: undefined,
+    rows: [],
+  });
+  const executions = useMemo(
+    () => (fetched.personaId === personaId ? fetched.rows : []),
+    [fetched, personaId],
+  );
+  const setExecutions = useCallback(
+    (rows: PersonaExecution[]) => setFetched({ personaId, rows }),
+    [personaId],
+  );
   const [loading, setLoading] = useState(false);
+  // The persona the last started fetch was for: a live refresh of the SAME
+  // persona updates in place, a different one is a first load.
+  const loadedForRef = useRef<string | undefined>(undefined);
   const healthSignals = useOverviewStore((s) => s.healthSignals);
 
   // Bump to force a re-fetch without changing personaId. Driven by the
@@ -68,9 +85,13 @@ export function useQuickStats(personaId: string | undefined) {
   useEffect(() => {
     if (!personaId) return;
     let cancelled = false;
-    // Only show the skeleton on the first load; live refreshes update in place
-    // so the row doesn't flash a spinner every time a run completes.
-    if (reloadTick === 0) setLoading(true);
+    // Show the skeleton on the first load of a persona; live refreshes of the
+    // same persona update in place so the row doesn't flash a spinner every
+    // time a run completes.
+    if (loadedForRef.current !== personaId) {
+      loadedForRef.current = personaId;
+      setLoading(true);
+    }
     // Fetch 50 to match ActivityTab's request shape — identical args let
     // tauriInvoke's 250ms read-only auto-dedup catch concurrent mounts in
     // the persona editor. Slice locally so quick-stats math still runs over
@@ -83,7 +104,7 @@ export function useQuickStats(personaId: string | undefined) {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [personaId, reloadTick]);
+  }, [personaId, reloadTick, setExecutions]);
 
   const healthSignal = useMemo(
     () => healthSignals.find((s) => s.personaId === personaId) ?? null,

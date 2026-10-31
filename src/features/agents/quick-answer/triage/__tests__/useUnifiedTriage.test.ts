@@ -54,8 +54,13 @@ const interactions = {
   handleDispatchAction: vi.fn(),
 };
 
+// What the hook returns THIS render. A test that replaces it simulates a poll
+// (or a write's isProcessing flip) producing a fresh `usePendingInteractions`
+// object, which is exactly what the real hook does every 15-30 s.
+const mockInteractionsNow = { current: interactions };
+
 vi.mock('../../usePendingInteractions', () => ({
-  usePendingInteractions: () => interactions,
+  usePendingInteractions: () => mockInteractionsNow.current,
 }));
 
 vi.mock('@/api/devTools/devTools', () => ({
@@ -129,7 +134,7 @@ vi.mock('@/i18n/useTranslation', () => ({
   }),
 }));
 
-import { clearJournal, resetJournalCache } from '../triageJournal';
+import { clearJournal, readJournal, resetJournalCache } from '../triageJournal';
 import { clearTriageSession, resetTriageSessionCache } from '../triageSession';
 import { TRIAGE_KINDS } from '../triageTypes';
 import { resetTriageWarmCache, useUnifiedTriage } from '../useUnifiedTriage';
@@ -242,6 +247,7 @@ beforeEach(() => {
   // pre-seeded with whatever queue the PREVIOUS test's fetches left behind.
   resetTriageWarmCache();
   interactions.reviewsError = null;
+  mockInteractionsNow.current = interactions;
   mockTriageIdeas.mockResolvedValue(page([idea()]));
   mockAcceptIdea.mockResolvedValue(undefined);
   mockRejectIdea.mockResolvedValue(undefined);
@@ -371,6 +377,42 @@ describe('useUnifiedTriage — a REJECTED write restores the card', () => {
     expect(result.current.decidedCount).toBe(0);
     expect(mockAcceptIdea).toHaveBeenCalledTimes(2);
   });
+
+  it('retries a failed Build now WITHOUT creating a second task', async () => {
+    // Build now writes the task first, then the accept. When only the accept
+    // fails the card comes back, and the reviewer's natural retry used to run
+    // the whole branch again: `dev_tools_create_task` does not dedupe on the
+    // source idea, so one idea ended up with two tasks doing the same work.
+    mockCreateTask.mockResolvedValue({ id: 'task-1' });
+    mockAcceptIdea.mockRejectedValueOnce(new Error('disk I/O error'));
+    const { result } = await mount();
+
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept', branchId: 'build' });
+    });
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept', branchId: 'build' });
+    });
+
+    expect(mockCreateTask).toHaveBeenCalledTimes(1);
+    expect(mockAcceptIdea).toHaveBeenCalledTimes(2);
+    expect(result.current.decidedCount).toBe(1);
+  });
+
+  it('still creates the task again when the FIRST task write was the one that failed', async () => {
+    mockCreateTask.mockRejectedValueOnce(new Error('disk I/O error')).mockResolvedValue({ id: 'task-1' });
+    const { result } = await mount();
+
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept', branchId: 'build' });
+    });
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept', branchId: 'build' });
+    });
+
+    expect(mockCreateTask).toHaveBeenCalledTimes(2);
+    expect(mockAcceptIdea).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('useUnifiedTriage — a LOST compare-and-swap is not a failed write', () => {
@@ -420,6 +462,50 @@ describe('useUnifiedTriage — a LOST compare-and-swap is not a failed write', (
     });
 
     expect(result.current.decidedCount).toBe(2);
+  });
+});
+
+/** A keyset backend over `total` pending ideas that clamps `limit` to 200 like `triage_ideas`. */
+function pagedBackend(total: number) {
+  const all = Array.from({ length: total }, (_, i) => idea({ id: `idea-${i}` }));
+  return (_p: unknown, limit: number, cursor?: string | null) => {
+    const start = cursor ? Number(cursor) : 0;
+    const end = Math.min(start + Math.min(limit, 200), total);
+    return Promise.resolve({
+      ideas: all.slice(start, end),
+      cursor: end < total ? String(end) : null,
+      hasMore: end < total,
+      counts: { pending: total, accepted: 0, rejected: 0, archived: 0, total },
+    });
+  };
+}
+
+describe('useUnifiedTriage — a revalidation keeps the Load more working set', () => {
+  it('re-reads every page the session pulled in, not just the first', async () => {
+    mockTriageIdeas.mockImplementation(pagedBackend(150));
+    const { result } = await mount();
+    expect(result.current.backlog.loaded).toBe(60);
+    await act(async () => result.current.loadMore());
+    await waitFor(() => expect(result.current.backlog.loaded).toBe(120));
+
+    await act(async () => result.current.revalidate());
+    await waitFor(() => expect(mockTriageIdeas.mock.calls.length).toBeGreaterThanOrEqual(3));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.backlog.loaded).toBe(120);
+  });
+
+  it('re-walks pages when the loaded size exceeds the backend limit cap', async () => {
+    mockTriageIdeas.mockImplementation(pagedBackend(500));
+    const { result } = await mount();
+    for (let loaded = 120; loaded <= 240; loaded += 60) {
+      await act(async () => result.current.loadMore());
+      await waitFor(() => expect(result.current.backlog.loaded).toBe(loaded));
+    }
+    const callsBefore = mockTriageIdeas.mock.calls.length;
+    await act(async () => result.current.revalidate());
+    await waitFor(() => expect(mockTriageIdeas.mock.calls.length).toBeGreaterThan(callsBefore));
+    await waitFor(() => expect(result.current.backlog.loaded).toBe(240));
+    expect(result.current.backlog.hasMore).toBe(true);
   });
 });
 
@@ -777,7 +863,7 @@ describe('useUnifiedTriage — goals reach the same spine', () => {
 
     // Through the SLICE, not `devApi` — it owns the row write and the pending
     // count, and no seen-status because goals have no compare-and-swap.
-    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1');
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1', 'awaiting_acceptance');
     expect(result.current.items).toHaveLength(0);
     expect(result.current.decidedCount).toBe(1);
     // A goal verdict invalidates the goal ledger, so it is re-read the way a
@@ -800,7 +886,7 @@ describe('useUnifiedTriage — goals reach the same spine', () => {
 
     // The comment is the only account the team gets of why finished work came
     // back, so a dropped reason is a silent regression.
-    expect(mockRejectGoal).toHaveBeenCalledWith('goal-1', 'The KPI never moved');
+    expect(mockRejectGoal).toHaveBeenCalledWith('goal-1', 'The KPI never moved', 'awaiting_acceptance');
     expect(result.current.items).toHaveLength(0);
   });
 
@@ -847,11 +933,32 @@ describe('useUnifiedTriage — goals reach the same spine', () => {
     });
 
     expect(mockAcceptGoal).toHaveBeenCalledTimes(2);
-    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1');
-    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-2');
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1', 'awaiting_acceptance');
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-2', 'awaiting_acceptance');
     // The siblings were signed off but their cards are still in the deck, so
     // the re-read is what stops the next verdict writing into a decided goal.
     await waitFor(() => expect(mockPendingAcceptance).toHaveBeenCalledTimes(2));
+  });
+
+  it('records an accept-all-from-KPI batch as one decision per goal', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([
+      pendingGoal(),
+      pendingGoal({ goal_id: 'goal-2', title: 'Ship the second half' }),
+      pendingGoal({ goal_id: 'goal-5', title: 'Ship the third part' }),
+    ]);
+
+    const { result } = await mount();
+    const first = result.current.items.find((i) => i.id === 'goal:goal-1')!;
+    await act(async () => {
+      await result.current.decide({ item: first, verdict: 'accept', branchId: 'accept-kpi-batch' });
+    });
+
+    expect(mockAcceptGoal).toHaveBeenCalledTimes(3);
+    // Three goals were signed off, so the session counts three decisions.
+    expect(result.current.decidedCount).toBe(3);
+    const goalRows = readJournal().filter((e) => e.kind === 'goal' && e.verdict === 'accept');
+    expect(goalRows.map((e) => e.sourceId).sort()).toEqual(['goal-1', 'goal-2', 'goal-5']);
   });
 
   it('offers no batch branch to the only goal on its KPI', async () => {
@@ -1037,5 +1144,24 @@ describe('useUnifiedTriage — opening the deck does not write the session back'
 
     const second = await mount();
     expect(second.result.current.summary.decided).toBe(1);
+  });
+});
+
+describe('useUnifiedTriage — decide keeps its identity across a review poll', () => {
+  it('does not re-create the ports or decide when the borrowed source re-reads', async () => {
+    // `decide` roots the deck's memo chain (TriageCard's doc counts the cost of
+    // one unstable callback). The ports used to depend on the WHOLE
+    // `usePendingInteractions` object, which is new on every poll and on every
+    // isProcessing flip, while reading only three identity-stable callbacks.
+    const hook = await mount();
+    const { decide, ports } = hook.result.current;
+
+    mockInteractionsNow.current = { ...interactions, reviews: [] };
+    hook.rerender();
+    mockInteractionsNow.current = { ...interactions, reviews: [], isProcessing: true };
+    hook.rerender();
+
+    expect(hook.result.current.ports).toBe(ports);
+    expect(hook.result.current.decide).toBe(decide);
   });
 });

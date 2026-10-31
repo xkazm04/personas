@@ -8,7 +8,7 @@ import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
 import {
   ExecutionCostCell, ExecutionDurationCell, ExecutionStartedCell, ExecutionStatusPill, ExecutionTokensCell, byStartTime,
 } from '../table/ExecutionCells';
-import { formatTokens } from '../../libs/useExecutionList';
+import { fmtTokens } from '../../libs/comparisonHelpers';
 import { deriveExecutionOrigin, type ExecutionOrigin } from '../../libs/executionOrigin';
 import { OriginBadge, originLabel } from './OriginBadge';
 import { OriginFilterDropdown } from './OriginFilterDropdown';
@@ -18,6 +18,9 @@ import { ExecutionValueBadges } from './ExecutionValueBadges';
 // zombie sweep writes for an abandoned run - the class most worth re-running.
 export const STATUS_FILTERS = ['all', 'running', 'completed', 'failed', 'incomplete', 'cancelled'] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
+
+// A run that failed before any model call has 0 tokens: the ledger shows that as absent.
+const formatLedgerTokens = (n: number) => fmtTokens(n, { zeroAs: '-' });
 
 const CHIP = 'inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card border';
 
@@ -124,7 +127,7 @@ export function useExecutionColumns(a: ExecutionColumnsArgs): TableColumn<Execut
         align: 'right',
         sortable: true,
         sortFn: (x, y) => (x.input_tokens + x.output_tokens) - (y.input_tokens + y.output_tokens),
-        render: (row) => <ExecutionTokensCell input={row.input_tokens} output={row.output_tokens} format={formatTokens} />,
+        render: (row) => <ExecutionTokensCell input={row.input_tokens} output={row.output_tokens} format={formatLedgerTokens} />,
       },
       {
         key: 'cost',

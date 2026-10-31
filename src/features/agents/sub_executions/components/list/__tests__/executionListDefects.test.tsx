@@ -61,7 +61,7 @@ const bulkRerun = {
   cohort: {
     total: 0, finished: 0, successCount: 0, failedCount: 0, regressionCount: 0,
     recoveredCount: 0, meanCostDelta: 0, meanDurationDeltaMs: 0,
-    totalCostOriginal: 0, totalCostNew: 0,
+    landedCount: 0, totalCostOriginal: 0, totalCostNew: 0, unpricedOriginalCount: 0, unpricedNewCount: 0,
   },
   start: bulkStart,
   cancel: vi.fn(),
@@ -231,5 +231,15 @@ describe('(e) the bulk-rerun spend preflight', () => {
       expect(screen.queryByText(startsWith('executions.bulk_rerun_preflight_title'))).toBeNull(),
     );
     expect(bulkStart).not.toHaveBeenCalled();
+  });
+});
+
+describe('(f) the first-run sample input', () => {
+  it('does not load the template catalog to build a sample input', async () => {
+    const { getTemplateCatalog } = await import('@/lib/personas/templates/templateCatalog');
+    agentState.executions = [];
+    render(<ExecutionList />);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(getTemplateCatalog).not.toHaveBeenCalled();
   });
 });

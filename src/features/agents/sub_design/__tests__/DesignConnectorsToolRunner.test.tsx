@@ -12,21 +12,32 @@
  * their own tests.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import { useAgentStore } from '@/stores/agentStore';
 import { useVaultStore } from '@/stores/vaultStore';
+import { useToastStore } from '@/stores/toastStore';
 
 vi.mock('@/features/agents/sub_connectors/components/connectors/ConnectorVerificationPanel', () => ({
   ConnectorVerificationPanel: () => <div data-testid="stub-verification" />,
 }));
+const verificationState = { credentialsLoaded: true };
+const testConnectorMock = vi.hoisted(() => vi.fn());
 vi.mock('@/features/agents/sub_connectors/libs/useConnectorStatuses', () => ({
-  useConnectorStatuses: () => ({ requiredCredTypes: [], testConnector: vi.fn() }),
+  useConnectorStatuses: () => ({
+    requiredCredTypes: [],
+    testConnector: testConnectorMock,
+    credentialsLoaded: verificationState.credentialsLoaded,
+  }),
 }));
 vi.mock('@/features/templates/sub_generated/design-preview/ConnectorsSection', () => ({
-  ConnectorsSection: () => <div data-testid="stub-recap" />,
+  ConnectorsSection: (props: { onTestConnector?: (name: string, credId: string) => void }) => (
+    <div data-testid="stub-recap">
+      <button data-testid="stub-recap-test" onClick={() => props.onTestConnector?.('gmail', 'cred-1')} />
+    </div>
+  ),
 }));
 
 import { DesignConnectorsPanel } from '../components/DesignSubtabPanels';
@@ -37,6 +48,7 @@ function tool(over: Partial<PersonaToolDefinition> = {}): PersonaToolDefinition 
     name: 'fetch_weather',
     description: null,
     script_path: null,
+    implementation_guide: 'Curl: curl https://example.com',
     category: 'api',
     input_schema: null,
     requires_credential_type: 'openweather',
@@ -51,6 +63,32 @@ function persona(tools: PersonaToolDefinition[]): Persona {
 function setPersona(tools: PersonaToolDefinition[]): void {
   useAgentStore.setState({ selectedPersona: persona(tools), toolDefinitions: [] });
 }
+
+describe('DesignConnectorsPanel design recap waits for the vault', () => {
+  const design = JSON.stringify({ suggested_connectors: [{ name: 'gmail' }], suggested_tools: [] });
+
+  beforeEach(() => {
+    useVaultStore.setState({ credentials: [], connectorDefinitions: [] });
+    useAgentStore.setState({
+      selectedPersona: { id: 'p-1', name: 'Mail Bot', tools: [], last_design_result: design } as unknown as Persona,
+      toolDefinitions: [],
+    });
+  });
+
+  it('withholds the recap until the first credential fetch settles', () => {
+    // An empty vault before the fetch lands is "not yet", not "none": the recap
+    // would paint every proposed connector "Configure credential".
+    verificationState.credentialsLoaded = false;
+    render(<DesignConnectorsPanel />);
+    expect(screen.queryByTestId('stub-recap')).not.toBeInTheDocument();
+  });
+
+  it('shows the recap once credentials are loaded', () => {
+    verificationState.credentialsLoaded = true;
+    render(<DesignConnectorsPanel />);
+    expect(screen.getByTestId('stub-recap')).toBeInTheDocument();
+  });
+});
 
 describe('DesignConnectorsPanel mounts the tool runner', () => {
   beforeEach(() => {
@@ -86,5 +124,37 @@ describe('DesignConnectorsPanel mounts the tool runner', () => {
     setPersona([]);
     render(<DesignConnectorsPanel />);
     expect(screen.queryByTestId('design-connectors-tool-runner')).not.toBeInTheDocument();
+  });
+});
+
+describe('DesignConnectorsPanel recap Test outcome', () => {
+  const design = JSON.stringify({ suggested_connectors: [{ name: 'gmail' }], suggested_tools: [] });
+
+  beforeEach(() => {
+    verificationState.credentialsLoaded = true;
+    testConnectorMock.mockReset();
+    useToastStore.setState({ toasts: [] });
+    useVaultStore.setState({ credentials: [], connectorDefinitions: [] });
+    useAgentStore.setState({
+      selectedPersona: { id: 'p-1', name: 'Mail Bot', tools: [], last_design_result: design } as unknown as Persona,
+      toolDefinitions: [],
+    });
+  });
+
+  it('tells the user when the probe was unreachable', async () => {
+    testConnectorMock.mockResolvedValue({ success: false, message: 'offline', state: 'unreachable' });
+    render(<DesignConnectorsPanel />);
+    fireEvent.click(screen.getByTestId('stub-recap-test'));
+    await waitFor(() => expect(testConnectorMock).toHaveBeenCalled());
+    await waitFor(() => expect(useToastStore.getState().toasts.some((x) => x.message === 'offline')).toBe(true));
+  });
+
+  it('stays quiet for a real verdict (the store repaints the row)', async () => {
+    testConnectorMock.mockResolvedValue({ success: false, message: 'bad key', state: 'failed' });
+    render(<DesignConnectorsPanel />);
+    fireEvent.click(screen.getByTestId('stub-recap-test'));
+    await waitFor(() => expect(testConnectorMock).toHaveBeenCalled());
+    await Promise.resolve();
+    expect(useToastStore.getState().toasts).toHaveLength(0);
   });
 });

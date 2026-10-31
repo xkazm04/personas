@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Star, Trash2, Plus, X } from 'lucide-react';
 import type { ExecutionAnnotation } from '@/lib/bindings/ExecutionAnnotation';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -36,11 +36,35 @@ export function AnnotationEditor({
   const [draftTag, setDraftTag] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Last values taken from the annotation prop (or the empty defaults), and the
+  // execution they belong to. A prop change resets the form only when the user
+  // has not edited since that snapshot - otherwise a load that lands after the
+  // user started typing would wipe the draft. Switching execution always resets.
+  const syncedRef = useRef({ executionId, tags, note, starred });
+  const localRef = useRef({ tags, note, starred });
+  localRef.current = { tags, note, starred };
+
   useEffect(() => {
-    setTags(annotation?.tags ?? []);
-    setNote(annotation?.note ?? '');
-    setStarred(annotation?.starred ?? false);
-  }, [annotation?.id, annotation?.execution_id, annotation?.tags, annotation?.note, annotation?.starred]);
+    const synced = syncedRef.current;
+    const local = localRef.current;
+    const untouched =
+      local.note === synced.note &&
+      local.starred === synced.starred &&
+      local.tags.length === synced.tags.length &&
+      local.tags.every((tag, i) => tag === synced.tags[i]);
+    const next = {
+      executionId,
+      tags: annotation?.tags ?? [],
+      note: annotation?.note ?? '',
+      starred: annotation?.starred ?? false,
+    };
+    syncedRef.current = next;
+    if (untouched || synced.executionId !== executionId) {
+      setTags(next.tags);
+      setNote(next.note);
+      setStarred(next.starred);
+    }
+  }, [executionId, annotation?.id, annotation?.execution_id, annotation?.tags, annotation?.note, annotation?.starred]);
 
   const tagSuggestions = useMemo(
     () =>
@@ -142,12 +166,14 @@ export function AnnotationEditor({
               }
             }}
             placeholder={a.annotation_tag_placeholder}
+            aria-label={a.annotation_tags_label}
             className="flex-1 min-w-[100px] px-2 py-0.5 typo-body bg-secondary/30 border border-primary/15 rounded-card text-foreground outline-none focus:border-primary/30"
           />
           <button
             type="button"
             onClick={() => commitTag(draftTag)}
             disabled={!draftTag.trim()}
+            aria-label={t.common.add}
             className="p-1 rounded-interactive text-foreground hover:text-foreground disabled:opacity-30"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -177,6 +203,7 @@ export function AnnotationEditor({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder={a.annotation_note_placeholder}
+          aria-label={a.annotation_note_label}
           rows={3}
           className="w-full px-2 py-1.5 typo-body bg-secondary/30 border border-primary/15 rounded-card text-foreground outline-none focus:border-primary/30 resize-y"
         />

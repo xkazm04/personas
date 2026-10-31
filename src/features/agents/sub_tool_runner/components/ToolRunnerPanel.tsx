@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Wrench } from 'lucide-react';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
 import { ToolInvocationCard } from './ToolInvocationCard';
@@ -12,6 +13,14 @@ interface ToolRunnerPanelProps {
 export function ToolRunnerPanel({ tools, personaId }: ToolRunnerPanelProps) {
   const { t } = useTranslation();
   const { getState, runTool } = useToolRunner(personaId);
+
+  // One stable onRun per tool: the cards are memoised, so a fresh arrow per
+  // render would repaint every card each time any one tool starts or settles.
+  // runTool changes only with the persona, which also resets the card states.
+  const runHandlers = useMemo(
+    () => new Map(tools.map((tool) => [tool.id, (inputJson: string) => { void runTool(tool.id, inputJson); }])),
+    [tools, runTool],
+  );
 
   if (tools.length === 0) {
     return (
@@ -33,7 +42,7 @@ export function ToolRunnerPanel({ tools, personaId }: ToolRunnerPanelProps) {
             isRunning={state.isRunning}
             result={state.result}
             error={state.error}
-            onRun={(inputJson) => runTool(tool.id, inputJson)}
+            onRun={runHandlers.get(tool.id)!}
           />
         );
       })}

@@ -79,6 +79,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { cpus, getPriority, setPriority } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { clangPathEnv } from "./clang-path.mjs";
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -376,6 +377,10 @@ export function runCargo({ args = [], cwd = ROOT, env = {}, label = "cargo" } = 
   // carry `RUSTC_WRAPPER: undefined` must not be able to unset sccache behind its back.
   const childEnv = { ...process.env, ...env };
   if (envFlag("RUSTC_WRAPPER") && !childEnv.RUSTC_WRAPPER) childEnv.RUSTC_WRAPPER = process.env.RUSTC_WRAPPER;
+  // ring's build script needs clang on ARM64 Windows; an installed-but-unlisted LLVM is added here.
+  const clang = clangPathEnv(childEnv);
+  Object.assign(childEnv, clang.add);
+  if (clang.note) warnOnce("clang-path", `[cargo-run:${label}] ${clang.note}`);
 
   try {
     const r = spawnSync("cargo", capped.args, {

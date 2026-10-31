@@ -61,9 +61,9 @@ export interface DevToolsProjectSlice {
   pendingAcceptanceCount: number;
   refreshPendingAcceptance: () => Promise<void>;
   /** Accept a pending goal → `done` (off-board). Updates the goals array + count. */
-  acceptGoal: (id: string) => Promise<void>;
+  acceptGoal: (id: string, seenStatus?: string) => Promise<void>;
   /** Reject a pending goal with a comment → `in-progress` (Agent's turn). */
-  rejectGoal: (id: string, comment: string) => Promise<void>;
+  rejectGoal: (id: string, comment: string, seenStatus?: string) => Promise<void>;
 
   // -- Goal Dependencies -------------------------------------------------
   goalDependencies: DevGoalDependency[];
@@ -329,9 +329,9 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
     }
   },
 
-  acceptGoal: async (id) => {
+  acceptGoal: async (id, seenStatus) => {
     try {
-      const updated = await devApi.resolveGoalAcceptance(id, "accept");
+      const updated = await devApi.resolveGoalAcceptance(id, "accept", undefined, seenStatus);
       set((state) => ({ goals: state.goals.map((g) => (g.id === id ? updated : g)), error: null }));
       await get().refreshPendingAcceptance();
     } catch (err) {
@@ -344,9 +344,9 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
     }
   },
 
-  rejectGoal: async (id, comment) => {
+  rejectGoal: async (id, comment, seenStatus) => {
     try {
-      const updated = await devApi.resolveGoalAcceptance(id, "reject", comment);
+      const updated = await devApi.resolveGoalAcceptance(id, "reject", comment, seenStatus);
       set((state) => ({ goals: state.goals.map((g) => (g.id === id ? updated : g)), error: null }));
       await get().refreshPendingAcceptance();
     } catch (err) {

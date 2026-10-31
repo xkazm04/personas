@@ -22,6 +22,7 @@ import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal
 
 import { DEFAULT_TRIAGE_COPY, goalToTriage } from '../triageAdapters';
 import { reasonPromptFor, type TriageFact } from '../triageTypes';
+import { bandTone } from '@/features/decision-center/deck/tones';
 
 const copy = DEFAULT_TRIAGE_COPY;
 
@@ -119,21 +120,50 @@ describe('goalToTriage — a completed goal as a card', () => {
 });
 
 describe('goalToTriage — the KPI gauge', () => {
-  it('meters current against target when the KPI has a baseline', () => {
-    // A fact carrying `score` leaves the ledger and is drawn as a meter by
-    // `MetricBadgeRow` — that IS the gauge.
+  it('meters progress from the baseline toward the target when the KPI has one', () => {
+    // A fact carrying `score` is drawn as a meter — that IS the gauge. It reads
+    // the KPI board's own law (`kpiProgressPct`): (current - baseline) /
+    // (target - baseline), so 34 on a 20 -> 50 KPI is 47% of the way, not 68%.
     const progress = factById(goalToTriage(pendingGoal(), ['goal-1'], copy).facts, 'progress');
     expect(progress.value).toBe('34 → 50 %');
-    expect(progress.score).toEqual({ value: 34, max: 50, invert: false });
+    expect(progress.score).toEqual({ value: 47, max: 100 });
   });
 
-  it('inverts the meter for a KPI where LOWER is better', () => {
+  it('reads a KPI where LOWER is better by the same law, without inverting', () => {
+    // 200 -> 80, now 120: two thirds of the way down.
     const item = goalToTriage(
       pendingGoal({ kpi_direction: 'down', kpi_current: 120, kpi_target: 80, kpi_baseline: 200 }),
       ['goal-1'],
       copy,
     );
-    expect(factById(item.facts, 'progress').score?.invert).toBe(true);
+    expect(factById(item.facts, 'progress').score).toEqual({ value: 67, max: 100 });
+  });
+
+  it('paints a MET target as success and a half-way one as unfinished, in both directions', () => {
+    // The defect: a latency KPI 500 -> 200 sitting at 150 (met) was metered
+    // 150/200 inverted and painted danger beside a success-toned value, while
+    // an up KPI 40 -> 50 at 45 (half way) read 90% and painted success.
+    const meterTone = (overrides: Partial<PendingAcceptanceGoal>) => {
+      const fact = factById(goalToTriage(pendingGoal(overrides), ['goal-1'], copy).facts, 'progress');
+      if (!fact.score) throw new Error('no meter');
+      return { meter: bandTone(fact.score.value, fact.score.max, fact.score.invert), fact: fact.tone };
+    };
+    expect(meterTone({ kpi_direction: 'down', kpi_current: 150, kpi_target: 200, kpi_baseline: 500 }))
+      .toEqual({ meter: 'success', fact: 'success' });
+    expect(meterTone({ kpi_direction: 'up', kpi_current: 55, kpi_target: 50, kpi_baseline: 40 }))
+      .toEqual({ meter: 'success', fact: 'success' });
+    expect(meterTone({ kpi_direction: 'up', kpi_current: 45, kpi_target: 50, kpi_baseline: 40 }))
+      .toEqual({ meter: 'warning', fact: 'warning' });
+    expect(meterTone({ kpi_direction: 'down', kpi_current: 400, kpi_target: 200, kpi_baseline: 500 }))
+      .toEqual({ meter: 'warning', fact: 'warning' });
+  });
+
+  it('draws no meter when baseline and target coincide — there is no distance to cover', () => {
+    const progress = factById(
+      goalToTriage(pendingGoal({ kpi_baseline: 50 }), ['goal-1'], copy).facts,
+      'progress',
+    );
+    expect(progress.score).toBeUndefined();
   });
 
   it('shows the raw range and NO score when the KPI was never baselined', () => {

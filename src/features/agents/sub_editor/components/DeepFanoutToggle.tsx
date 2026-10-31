@@ -3,7 +3,7 @@ import { Network } from 'lucide-react';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useTranslation } from '@/i18n/useTranslation';
 import { probeCliCapabilities } from '@/api/agents/evolution';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useAgentStore } from '@/stores/agentStore';
 
 type Param = { key?: string; value?: unknown; type?: string };
@@ -19,13 +19,19 @@ function readDeepFanout(parametersJson: string | null | undefined): boolean {
   }
 }
 
-function writeDeepFanout(parametersJson: string | null | undefined, on: boolean): string {
-  let arr: Param[];
+/** Returns the new parameters JSON, or null when the stored blob is not a
+ *  parseable array. Falling back to [] here persisted a one-entry array over
+ *  whatever the blob held, erasing every other persona parameter. */
+function writeDeepFanout(parametersJson: string | null | undefined, on: boolean): string | null {
+  let parsed: unknown;
   try {
-    arr = parametersJson ? (JSON.parse(parametersJson) as Param[]) : [];
+    parsed = parametersJson ? JSON.parse(parametersJson) : [];
   } catch {
-    arr = [];
+    return null;
   }
+  if (!Array.isArray(parsed)) return null;
+  // A JSON array of parameter entries; each entry is read defensively below.
+  let arr = parsed as Param[];
   arr = arr.filter((x) => x?.key !== 'deep_fanout');
   if (on) arr.push({ key: 'deep_fanout', type: 'boolean', value: true });
   return JSON.stringify(arr);
@@ -48,6 +54,9 @@ export function DeepFanoutToggle({
   const e = t.agents.executions;
   const [on, setOn] = useState(() => readDeepFanout(parameters));
   const [available, setAvailable] = useState<boolean | null>(null);
+  // A failed probe is its own state, not a "no" answer: it must not tell a Max
+  // user their plan lacks the capability.
+  const [probeFailed, setProbeFailed] = useState(false);
 
   useEffect(() => {
     setOn(readDeepFanout(parameters));
@@ -61,7 +70,7 @@ export function DeepFanoutToggle({
       })
       .catch((err) => {
         silentCatch('DeepFanoutToggle:probeCliCapabilities')(err);
-        if (!cancelled) setAvailable(false);
+        if (!cancelled) setProbeFailed(true);
       });
     return () => {
       cancelled = true;
@@ -72,6 +81,14 @@ export function DeepFanoutToggle({
 
   const toggle = async () => {
     const next = !on;
+    const written = writeDeepFanout(parameters, next);
+    if (written === null) {
+      // Leave the unreadable blob as it is - it may still be recoverable.
+      toastCatch('DeepFanoutToggle:corruptParameters', t.agents.life.save_failed)(
+        new Error('persona parameters are not a JSON array'),
+      );
+      return;
+    }
     setOn(next);
     // Through the store, not the raw IPC wrapper: the raw write left the
     // store's persona row (the `parameters` prop this reads) on the old value,
@@ -81,7 +98,7 @@ export function DeepFanoutToggle({
     // (Sentry + toast), so this catch rolls the optimistic switch back and
     // leaves only a breadcrumb.
     try {
-      await updatePersona(personaId, { parameters: writeDeepFanout(parameters, next) });
+      await updatePersona(personaId, { parameters: written });
     } catch (err) {
       setOn(!next);
       silentCatch('DeepFanoutToggle:updatePersona')(err);
@@ -96,14 +113,19 @@ export function DeepFanoutToggle({
           {e.deep_fanout}
         </div>
         <div className="typo-caption text-foreground/90">
-          {available === false ? e.deep_fanout_unavailable : e.deep_fanout_hint}
+          {probeFailed
+            ? e.deep_fanout_probe_failed
+            : available === false ? e.deep_fanout_unavailable : e.deep_fanout_hint}
         </div>
       </div>
       <AccessibleToggle
         checked={on}
         onChange={toggle}
         label={e.deep_fanout}
-        disabled={available === false}
+        // Held only when it would turn the flag ON: switching a capability OFF
+        // never needs the capability, so a persona already fanning out can
+        // always be switched back (probe failure or a plan downgrade).
+        disabled={(available === false || probeFailed) && !on}
       />
     </div>
   );

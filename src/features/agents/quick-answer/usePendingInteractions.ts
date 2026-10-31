@@ -22,6 +22,7 @@
 
 import { useMemo, useCallback } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useSharedMonitorData } from '@/features/fleet/monitor/monitorDataContext';
 import {
   MONITOR_REVIEW_LIMIT,
@@ -30,6 +31,7 @@ import {
 } from '@/features/fleet/monitor/useMonitorData';
 import { answerBuildQuestion } from '@/api/agents/buildSession';
 import { buildBatchedAnswerPayload } from '@/lib/build/answerPayload';
+import { isDeferredQuestion } from './triage/triageAdapters';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 
@@ -66,11 +68,13 @@ export interface QuickAnswerData {
 }
 
 /** A question that needs the full builder UI (file/URL attach or connector
- *  picker) rather than a plain inline answer. The Quick Answer popover defers
- *  these to "Open in builder" — the C-ready deep-link seam. */
-export function isComplexQuestion(q: BuildQuestion): boolean {
-  return !!(q.connectorCategory || q.acceptsReference || q.acceptsWebhookSource);
-}
+ *  picker) rather than a plain inline answer — deferred to "Open in builder".
+ *
+ *  The SAME function as the deck's `isDeferredQuestion`, not a copy of its
+ *  body: the Needs-you rail reads this name and the triage adapter reads that
+ *  one, and two bodies of one rule drift the first time a deferral reason is
+ *  added to only one of them. */
+export const isComplexQuestion: (q: BuildQuestion) => boolean = isDeferredQuestion;
 
 /**
  * What this surface can actually render.
@@ -117,6 +121,7 @@ export function usePendingInteractions(): QuickAnswerData {
   const buildSessions = useAgentStore((s) => s.buildSessions);
   const personas = useAgentStore((s) => s.personas);
   const applyPendingAnswers = useAgentStore((s) => s.applyPendingAnswers);
+  const untitledAgent = useTranslation().t.monitor.triage_untitled_agent;
 
   // The overlay's engine when this hook runs inside the Monitor, `null` when it
   // runs in the Quick Answer popover. `own` is the popover's instance — always
@@ -143,14 +148,14 @@ export function usePendingInteractions(): QuickAnswerData {
       groups.push({
         sessionId: sess.sessionId,
         personaId: sess.personaId,
-        personaName: p?.name ?? 'Untitled agent',
+        personaName: p?.name ?? untitledAgent,
         personaIcon: p?.icon ?? null,
         personaColor: p?.color ?? null,
         questions: sess.pendingQuestions,
       });
     }
     return groups;
-  }, [buildSessions, personas]);
+  }, [buildSessions, personas, untitledAgent]);
 
   const submitQuestionAnswers = useCallback(
     async (sessionId: string, answers: Record<string, string>) => {

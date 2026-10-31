@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { executePersona, getExecution } from '@/api/agents/executions';
 import { createLogger } from '@/lib/log';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
@@ -13,7 +13,7 @@ const MAX_CONCURRENT = 3;
 
 /** How often a dispatched re-run is re-read while waiting for it to land. */
 const DEFAULT_POLL_INTERVAL_MS = 2_000;
-/** How long a single re-run is waited on before its row is left pending. */
+/** How long a single re-run is waited on before its row is left 'running' (unsettled). */
 const DEFAULT_POLL_TIMEOUT_MS = 15 * 60_000;
 
 /**
@@ -37,7 +37,13 @@ export interface UseBulkRerunOptions {
   pollTimeoutMs?: number;
 }
 
-export type BulkRunStatus = 'pending' | 'running' | 'success' | 'failed';
+/**
+ * `timed_out` (the wait budget ran out while the re-run was still going) and
+ * `cancelled` (the operator stopped the cohort, or it was never dispatched) are
+ * terminal for THIS view: we stopped watching. Without them such rows stayed
+ * 'running'/'pending' under a "Cohort complete" strip.
+ */
+export type BulkRunStatus = 'pending' | 'running' | 'success' | 'failed' | 'timed_out' | 'cancelled';
 
 export interface BulkRunItem {
   originalId: string;
@@ -64,12 +70,29 @@ export interface BulkRunCohort {
   finished: number;
   successCount: number;
   failedCount: number;
+  /** Rows whose wait budget ran out while the re-run was still going. */
+  timedOutCount: number;
+  /** Rows stopped by a cancel (in flight or never dispatched). */
+  cancelledCount: number;
   regressionCount: number;
   recoveredCount: number;
-  meanCostDelta: number;
-  meanDurationDeltaMs: number;
+  /**
+   * Mean over the landed runs that carry BOTH figures; `null` when none does.
+   * Never 0 for "nothing to compare": the row cells already refuse a delta
+   * without both costs, and a 0 here rendered as "$0.0000 - no change".
+   */
+  meanCostDelta: number | null;
+  meanDurationDeltaMs: number | null;
+  /** Re-runs that reached a terminal status; both cost totals cover exactly these. */
+  landedCount: number;
+  /** Original cost summed over the LANDED runs that have one. */
   totalCostOriginal: number;
+  /** Re-run cost summed over the same landed runs that have one. */
   totalCostNew: number;
+  /** Landed runs whose original cost was never recorded (left out of totalCostOriginal). */
+  unpricedOriginalCount: number;
+  /** Landed runs whose re-run cost is missing (left out of totalCostNew). */
+  unpricedNewCount: number;
 }
 
 export interface UseBulkRerun {
@@ -87,36 +110,54 @@ function emptyCohort(): BulkRunCohort {
     finished: 0,
     successCount: 0,
     failedCount: 0,
+    timedOutCount: 0,
+    cancelledCount: 0,
     regressionCount: 0,
     recoveredCount: 0,
-    meanCostDelta: 0,
-    meanDurationDeltaMs: 0,
+    meanCostDelta: null,
+    meanDurationDeltaMs: null,
+    landedCount: 0,
     totalCostOriginal: 0,
     totalCostNew: 0,
+    unpricedOriginalCount: 0,
+    unpricedNewCount: 0,
   };
 }
 
-function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
+export function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
   const total = items.length;
   let finished = 0;
   let successCount = 0;
   let failedCount = 0;
+  let timedOutCount = 0;
+  let cancelledCount = 0;
   let regressionCount = 0;
   let recoveredCount = 0;
   let totalCostOriginal = 0;
   let totalCostNew = 0;
+  let landedCount = 0;
+  let unpricedOriginalCount = 0;
+  let unpricedNewCount = 0;
   let costDeltaSum = 0;
   let costDeltaN = 0;
   let durDeltaSum = 0;
   let durDeltaN = 0;
 
   for (const it of items) {
-    // An unrecorded original cost contributes nothing to the total and no
-    // delta — it is not a $0 run.
-    if (it.origCost !== null) totalCostOriginal += it.origCost;
+    // Both cost totals cover the same population: re-runs that landed. An
+    // unrecorded cost contributes nothing to its total and no delta — it is not
+    // a $0 run — and is counted so the report can say how many were skipped.
+    if (it.newStatus !== null) {
+      landedCount += 1;
+      if (it.origCost !== null) totalCostOriginal += it.origCost;
+      else unpricedOriginalCount += 1;
+      if (it.newCost === null) unpricedNewCount += 1;
+    }
     if (it.status === 'success' || it.status === 'failed') finished += 1;
     if (it.status === 'success') successCount += 1;
     if (it.status === 'failed') failedCount += 1;
+    if (it.status === 'timed_out') timedOutCount += 1;
+    if (it.status === 'cancelled') cancelledCount += 1;
 
     if (it.newCost !== null) {
       totalCostNew += it.newCost;
@@ -142,12 +183,17 @@ function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
     finished,
     successCount,
     failedCount,
+    timedOutCount,
+    cancelledCount,
     regressionCount,
     recoveredCount,
-    meanCostDelta: costDeltaN > 0 ? costDeltaSum / costDeltaN : 0,
-    meanDurationDeltaMs: durDeltaN > 0 ? durDeltaSum / durDeltaN : 0,
+    meanCostDelta: costDeltaN > 0 ? costDeltaSum / costDeltaN : null,
+    meanDurationDeltaMs: durDeltaN > 0 ? durDeltaSum / durDeltaN : null,
+    landedCount,
     totalCostOriginal,
     totalCostNew,
+    unpricedOriginalCount,
+    unpricedNewCount,
   };
 }
 
@@ -187,6 +233,24 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
   // re-running the same executions) would land in the new cohort's state.
   const latestWins = useRef(createLatestWins()).current;
 
+  /**
+   * A batch may keep working only while it is the latest one AND not
+   * cancelled. Checking `cancelledRef` alone was not enough: the next
+   * `start()` clears it, and the cancelled batch's workers then resumed
+   * draining their own queue under a stale token - dispatching, and billing,
+   * runs whose results `updateItem` silently discards.
+   */
+  const isLive = useCallback(
+    (token: number) => !cancelledRef.current && latestWins.isCurrent(token),
+    [latestWins],
+  );
+
+  // The cohort state lives in this hook, so once its owner unmounts nothing can
+  // show, cancel or report it. Stop dispatching NEW re-runs (runs already
+  // dispatched keep running on the backend). `start()` clears the flag again,
+  // so a StrictMode mount/unmount/mount probe before any start is harmless.
+  useEffect(() => () => { cancelledRef.current = true; }, []);
+
   const updateItem = useCallback((token: number, originalId: string, patch: Partial<BulkRunItem>) => {
     if (!latestWins.isCurrent(token)) return; // a newer batch has since started
     setItems((prev) => {
@@ -199,7 +263,7 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
   /**
    * Re-read a dispatched re-run until it lands. Returns the landed execution,
    * or null when the batch was cancelled/superseded or the run was still going
-   * when the wait budget ran out — in which case the row stays pending and is
+   * when the wait budget ran out — in which case the row stays 'running' and is
    * never reported as a zero-cost success.
    */
   const waitForLanding = useCallback(
@@ -220,7 +284,7 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
           logger.warn('Failed to read re-run status; retrying', { id: executionId, err });
         }
         if (Date.now() >= deadline) {
-          logger.warn('Re-run did not land within the wait budget; left pending', {
+          logger.warn('Re-run did not land within the wait budget; left running', {
             id: executionId,
           });
           return null;
@@ -231,18 +295,23 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
     [latestWins, pollIntervalMs, pollTimeoutMs],
   );
 
-  const runOne = useCallback(async (row: ExecutionListItem, personaId: string, token: number) => {
-    if (cancelledRef.current) return;
+  const runOne = useCallback(async (row: ExecutionListItem, personaId: string, token: number, cohortId: string) => {
+    if (!isLive(token)) return;
     updateItem(token, row.id, { status: 'running' });
     try {
-      let inputData: string | undefined;
-      try {
-        const full = await getExecution(row.id, personaId);
-        inputData = full.input_data ?? undefined;
-      } catch (err) {
-        logger.warn('Failed to hydrate input_data; rerunning with empty input', { id: row.id, err });
-      }
-      const idempotencyKey = `bulk-rerun-${row.id}-${Date.now()}`;
+      // A failed read of the original's input fails THIS row (outer catch). It
+      // used to be logged and the persona re-run with no input at all: a
+      // different run, billed, then diffed against the original as its re-run.
+      // A run whose input really is empty still reads fine (null -> undefined).
+      const full = await getExecution(row.id, personaId);
+      const inputData = full.input_data ?? undefined;
+      // The hydrate is an await: a cancel, or a newer cohort, can land during it.
+      // Dispatching after either bills a run nobody will see (updateItem drops a
+      // stale token's writes), so this is the last point to stop.
+      if (!isLive(token)) return;
+      // Derived from (cohort, original), never from the clock: a retried dispatch
+      // of this row in this cohort must carry the SAME key to be deduplicated.
+      const idempotencyKey = `bulk-rerun-${cohortId}-${row.id}`;
       const dispatched: PersonaExecution = await executePersona(
         personaId,
         undefined,
@@ -258,7 +327,12 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
       updateItem(token, row.id, { newExecutionId: dispatched.id });
 
       const landed = await waitForLanding(dispatched.id, personaId, token);
-      if (!landed) return; // cancelled, superseded, or still running — stays pending
+      if (!landed) {
+        // Cancelled/superseded vs. wait budget spent: either way no outcome is
+        // claimed, but the row ends in a terminal, labelled state.
+        updateItem(token, row.id, { status: isLive(token) ? 'timed_out' : 'cancelled' });
+        return;
+      }
 
       const successful = !isFailedExecutionStatus(landed.status);
       updateItem(token, row.id, {
@@ -276,12 +350,13 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
       logger.warn('Bulk-rerun item failed', { id: row.id, error: msg });
       updateItem(token, row.id, { status: 'failed', error: msg });
     }
-  }, [updateItem, waitForLanding]);
+  }, [updateItem, waitForLanding, isLive]);
 
   const start = useCallback(async (rows: ExecutionListItem[], personaId: string) => {
     if (rows.length === 0) return;
     cancelledRef.current = false;
     const token = latestWins.next();
+    const cohortId = crypto.randomUUID();
     const initial: BulkRunItem[] = rows.map((r) => ({
       originalId: r.id,
       origStatus: r.status,
@@ -307,10 +382,10 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
     for (let i = 0; i < Math.min(MAX_CONCURRENT, queue.length); i += 1) {
       workers.push((async function worker() {
         while (queue.length > 0) {
-          if (cancelledRef.current) return;
+          if (!isLive(token)) return;
           const next = queue.shift();
           if (!next) return;
-          await runOne(next, personaId, token);
+          await runOne(next, personaId, token, cohortId);
         }
       })());
     }
@@ -318,10 +393,20 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
     // A newer batch may have started while this one's workers were still
     // draining — don't stomp its 'running' phase back to 'completed'.
     if (latestWins.isCurrent(token)) setPhase('completed');
-  }, [runOne, latestWins]);
+  }, [runOne, latestWins, isLive]);
 
   const cancel = useCallback(() => {
     cancelledRef.current = true;
+    // Rows still queued or in flight will never be reported on: close them out.
+    setItems((prev) => {
+      const next = prev.map((it) =>
+        it.status === 'pending' || it.status === 'running'
+          ? { ...it, status: 'cancelled' as const }
+          : it,
+      );
+      setCohort(deriveCohort(next));
+      return next;
+    });
     setPhase('completed');
   }, []);
 

@@ -6,7 +6,6 @@
     "sub_brain -> sub_life": 2,
     "sub_design -> sub_brain": 1,
     "sub_design -> sub_connectors": 2,
-    "sub_design -> sub_editor": 1,
     "sub_design -> sub_life": 1,
     "sub_design -> sub_manifest": 1,
     "sub_design -> sub_responsibilities": 1,

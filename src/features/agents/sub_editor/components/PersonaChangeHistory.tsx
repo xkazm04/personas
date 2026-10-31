@@ -19,6 +19,7 @@ const SOURCE_TONE: Record<string, string> = {
   editor: 'bg-primary/10 text-primary border-primary/20',
   header: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
   fanout: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+  gallery: 'bg-status-warning/10 text-status-warning border-status-warning/20',
   other: 'bg-secondary/40 text-foreground border-primary/10',
 };
 
@@ -32,6 +33,10 @@ export function PersonaChangeHistory({ personaId, revision }: PersonaChangeHisto
   const labels = t.agents.change_history;
   const [entries, setEntries] = useState<PersonaChangeEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  // A failed read is its own state. Leaving the rows as they were painted the
+  // PREVIOUS agent's history under a newly selected one (or "no changes yet"
+  // on a first load) - an audit trail that attributed changes to the wrong agent.
+  const [failed, setFailed] = useState(false);
 
   // Latest-wins: only the newest request may write. Without it a slow
   // response for persona A landed after the user had switched to B and
@@ -43,8 +48,17 @@ export function PersonaChangeHistory({ personaId, revision }: PersonaChangeHisto
   const load = useCallback(() => {
     const token = latestWins.next();
     listPersonaChangeLog(personaId, 50)
-      .then((rows) => { if (latestWins.isCurrent(token)) setEntries(rows); })
-      .catch((err) => { silentCatch('PersonaChangeHistory:list')(err); })
+      .then((rows) => {
+        if (!latestWins.isCurrent(token)) return;
+        setEntries(rows);
+        setFailed(false);
+      })
+      .catch((err) => {
+        silentCatch('PersonaChangeHistory:list')(err);
+        if (!latestWins.isCurrent(token)) return;
+        setEntries([]);
+        setFailed(true);
+      })
       .finally(() => { if (latestWins.isCurrent(token)) setLoading(false); });
   }, [personaId, latestWins]);
 
@@ -99,6 +113,11 @@ export function PersonaChangeHistory({ personaId, revision }: PersonaChangeHisto
               <div key={i} className="h-5 rounded-card bg-primary/5" />
             ))}
           </div>
+        ) : failed ? (
+          <p className="flex items-center justify-center gap-2 py-4 typo-body text-status-warning" data-testid="change-history-unavailable">
+            <History className="w-3.5 h-3.5" />
+            {t.common.source_unreachable}
+          </p>
         ) : entries.length === 0 ? (
           <p className="flex items-center justify-center gap-2 py-4 typo-body text-foreground">
             <History className="w-3.5 h-3.5" />

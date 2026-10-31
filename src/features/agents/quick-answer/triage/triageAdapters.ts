@@ -81,6 +81,8 @@ export interface TriageCopy {
   openBuilderHint: string;
   carryOutHint: string;
   severity: string;
+  /** Severity label for a review whose token no producer vocabulary knows. */
+  severityUnclassified: string;
   reviewType: string;
   persona: string;
   raised: string;
@@ -145,6 +147,8 @@ export interface TriageCopy {
   policyBudgetLowerTitle: string;
   /** `{observed}` `{rows}` `{current}`. */
   policyBudgetBody: string;
+  /** `{observed}` `{rows}`: the body when no ceiling exists yet. */
+  policyBudgetBodyNoCeiling: string;
   fromModel: string;
   toModel: string;
   saving: string;
@@ -216,7 +220,7 @@ export interface TriageCopy {
   reasonNeedsRework: string;
 }
 
-/** Provisional English. Replaced wholesale by translated copy at consolidation. */
+/** The English fallback. Pinned word-for-word to `en.json` by `triageCopyParity.test.ts`. */
 export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   accept: 'Accept',
   reject: 'Reject',
@@ -227,9 +231,10 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   buildNow: 'Build now',
   buildNowHint: 'Accept and queue a task for it',
   openBuilder: 'Open in builder',
-  openBuilderHint: 'Needs the full picker — answer it in the persona builder',
+  openBuilderHint: 'Needs the full picker: answer it in the persona builder',
   carryOutHint: 'Resolve the review and carry this out',
   severity: 'Severity',
+  severityUnclassified: 'Unclassified',
   reviewType: 'Type',
   persona: 'Persona',
   raised: 'Raised',
@@ -246,7 +251,7 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   cloud: 'Cloud',
   local: 'Local',
   blocking: 'Blocking a team step',
-  blockingDetail: 'A held step is waiting on this — approving it resumes the work.',
+  blockingDetail: 'A held step is waiting on this: approving it resumes the work.',
   viewRun: 'See the run',
   viewRunHint: 'Open the execution that raised this review',
   priority: 'Priority',
@@ -271,12 +276,14 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   policyKindBudget: 'Budget',
   policyRoutingTitle: 'Route {category} work to {to}',
   policyRoutingBody:
-    'Sending {category} runs to {to} instead of {from} projects a saving of {saving} a month — {pct} of what that work costs today.',
+    'Sending {category} runs to {to} instead of {from} projects a saving of {saving} a month: {pct} of what that work costs today.',
   policyBudgetIntroduceTitle: 'Introduce a monthly ceiling of {proposed}',
   policyBudgetRaiseTitle: 'Raise the monthly ceiling to {proposed}',
   policyBudgetLowerTitle: 'Lower the monthly ceiling to {proposed}',
   policyBudgetBody:
     'Spend is running at {observed} a month across {rows} charged runs, against a ceiling of {current}.',
+  policyBudgetBodyNoCeiling:
+    'Spend is running at {observed} a month across {rows} charged runs, with no monthly ceiling set.',
   fromModel: 'Now',
   toModel: 'Proposed',
   saving: 'Saving',
@@ -322,7 +329,7 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   goalBatch: 'Accept all {count} from this KPI',
   goalBatchHint: 'Signs off every completed goal on this KPI at once',
   goalOpenBoard: 'Open the goals board',
-  goalOpenBoardHint: 'See this goal in its project — decides nothing',
+  goalOpenBoardHint: 'See this goal in its project: decides nothing',
   reasonNotFinished: 'Not finished yet',
   reasonNoEvidence: 'No evidence it landed',
   reasonMissedTarget: 'Missed the KPI target',
@@ -349,19 +356,37 @@ function fill(template: string, values: Record<string, string | number>): string
 /* Weight — the one cross-domain scale                                        */
 /* -------------------------------------------------------------------------- */
 
-/** Severity → urgency. The only axis that outranks a blocked build. */
+/**
+ * Severity → urgency. The only axis that outranks a blocked build.
+ *
+ * Keyed by every token a producer actually writes, not just the four this deck
+ * started with: the producer prompt asks for `info|warning|error|critical` and a
+ * second writer emits `high`/`medium`/`low` (see `READABLE_SEVERITY` in
+ * `fleet/monitor/monitorModel`). `error` rides with `critical`, `warning` with
+ * `medium`, `info` with `low` — unlisted, an `error` review fell to the neutral
+ * default and was dealt behind a routine `medium` one.
+ */
 const SEVERITY_WEIGHT: Record<string, number> = {
   critical: 120,
+  error: 120,
   high: 95,
   medium: 60,
+  warning: 60,
   low: 35,
+  info: 35,
 };
+
+/** An unreadable severity takes the top band — the same as `critical`. */
+const UNCLASSIFIED_SEVERITY_WEIGHT = 120;
 
 const SEVERITY_TONE: Record<string, TriageTone> = {
   critical: 'danger',
+  error: 'danger',
   high: 'danger',
   medium: 'warning',
+  warning: 'warning',
   low: 'neutral',
+  info: 'neutral',
 };
 
 /**
@@ -587,7 +612,17 @@ export function bodyWithoutTitle(
 }
 
 export function reviewToTriage(review: TriageReviewRow, copy: TriageCopy): TriageItem {
-  const severity = (review.severity || 'medium').toLowerCase();
+  const severity = (review.severity ?? '').trim().toLowerCase();
+  // A token no producer vocabulary knows (or none at all) is NOT a quiet
+  // `medium`. Every sibling reader of this column takes the loud reading —
+  // `resolveReviewSeverity` labels it Unclassified, `severityBucket` files it
+  // in the loudest bucket — so an item nobody could classify is read first
+  // rather than filed mid-queue under a severity it never claimed.
+  const knownWeight = Object.hasOwn(SEVERITY_WEIGHT, severity) ? SEVERITY_WEIGHT[severity] : undefined;
+  const readable = knownWeight !== undefined;
+  const severityLabel = readable ? severity : copy.severityUnclassified;
+  const severityTone: TriageTone = readable ? SEVERITY_TONE[severity] ?? 'neutral' : 'danger';
+  const severityWeight = knownWeight ?? UNCLASSIFIED_SEVERITY_WEIGHT;
   // `context_data` is not one thing. When a persona raises N choices it holds
   // an array of DECISIONS plus the prose that framed them; otherwise it is an
   // opaque payload. Until now this adapter threw the whole blob into
@@ -606,16 +641,14 @@ export function reviewToTriage(review: TriageReviewRow, copy: TriageCopy): Triag
   const typeLabel =
     reviewType && reviewType.toLowerCase() !== severity ? reviewType.replace(/_/g, ' ') : '';
 
-  const tags: TriageTag[] = [
-    { id: 'severity', label: severity, tone: SEVERITY_TONE[severity] ?? 'neutral' },
-  ];
+  const tags: TriageTag[] = [{ id: 'severity', label: severityLabel, tone: severityTone }];
   if (typeLabel) tags.push({ id: 'type', label: typeLabel, tone: 'neutral' });
   if (review.source === 'cloud') {
     tags.push({ id: 'source', label: copy.cloud, tone: 'accent' });
   }
 
   const facts: TriageFact[] = [
-    { id: 'severity', label: copy.severity, value: severity, tone: SEVERITY_TONE[severity] ?? 'neutral' },
+    { id: 'severity', label: copy.severity, value: severityLabel, tone: severityTone },
   ];
   if (typeLabel) facts.push({ id: 'type', label: copy.reviewType, value: typeLabel });
   facts.push(
@@ -664,7 +697,7 @@ export function reviewToTriage(review: TriageReviewRow, copy: TriageCopy): Triag
       color: review.persona_color ?? null,
     },
     createdAt: review.created_at,
-    weight: (SEVERITY_WEIGHT[severity] ?? 50) + (blocking ? BLOCKING_WEIGHT_BOOST : 0),
+    weight: severityWeight + (blocking ? BLOCKING_WEIGHT_BOOST : 0),
     // Suggested actions are the review's real branches: choosing one resolves
     // the review AND dispatches a follow-up run, which is a materially
     // different act from a bare approval.
@@ -1019,7 +1052,9 @@ export function policyProposalToTriage(proposal: PolicyProposal, copy: TriageCop
           : copy.policyBudgetLowerTitle,
       { proposed: usd(budget.proposedCeilingUsd) },
     );
-    body = fill(copy.policyBudgetBody, {
+    // `ceiling` is a ledger value ("None"), not a noun phrase: with no ceiling the
+    // sentence gets its own wording instead of "against a ceiling of None".
+    body = fill(budget.currentCeilingUsd > 0 ? copy.policyBudgetBody : copy.policyBudgetBodyNoCeiling, {
       observed: usd(budget.observedMonthlySpendUsd),
       rows: budget.spendRows,
       current: ceiling,
@@ -1211,6 +1246,25 @@ function kpiRange(current: number, target: number, unit: string | null): string 
 }
 
 /**
+ * How far from its baseline toward its target a KPI has moved, `0..100`, or
+ * null when there is no distance to measure (no baseline, or baseline ===
+ * target).
+ *
+ * The KPI board's law (`kpiProgressPct` in `teams/sub_kpis/kpiMath`), restated
+ * here over the enriched row's three numbers because adapters are store-free
+ * and that helper takes a whole `DevKpi`. It reads BOTH directions without an
+ * invert: for a lower-is-better KPI `target - baseline` is negative and so is
+ * the movement, so the ratio is still "share of the way covered". The gauge
+ * used to meter `current / target` from zero, inverted for `down`, which
+ * painted a met latency target red and a half-done growth target green.
+ */
+function goalProgressPct(current: number, target: number, baseline: number | null): number | null {
+  if (baseline == null || target === baseline) return null;
+  const share = (current - baseline) / (target - baseline);
+  return Math.round(Math.min(1, Math.max(0, share)) * 100);
+}
+
+/**
  * "The metric has not got there yet", read by the KPI's own direction.
  *
  * Deliberately the simple met/not-met test, not the pace model: the enriched row
@@ -1240,13 +1294,10 @@ function goalOffTrack(row: PendingAcceptanceGoal): boolean {
  *    raw `current → target` in the ledger and no gauge at all. This is the exact
  *    bug the retired `goalAcceptanceModel` documented having already fixed once,
  *    where a defaulted baseline rendered a precise, fabricated 0%.
- *  • **No `seenStatus`.** Every other decidable row in the app carries the status
- *    the card rendered so the write can be a single-winner compare-and-swap.
- *    `resolveGoalAcceptance(goalId, decision, comment)` takes no such token, so
- *    goals are last-writer-wins and two reviewers can silently overwrite each
- *    other. Closing that is a backend change; carrying a token nothing reads
- *    would advertise a protection that does not exist, so this adapter omits it
- *    rather than implying it.
+ *  • **No `seenStatus` in the payload.** A goal card is only ever dealt while
+ *    `awaiting_acceptance`, so the router sends that constant
+ *    (`GOAL_SEEN_STATUS`) as the compare-and-swap expectation instead of
+ *    reading a per-card token.
  *  • **The bulk affordance is a branch.** `GoalsTriage` was built around
  *    "accept everything on this KPI", and branches are the deck's existing
  *    digit-hotkeyed escape hatch for anything beyond the spine — so the
@@ -1274,6 +1325,7 @@ export function goalToTriage(
   const facts: TriageFact[] = [];
   if (row.kpi_name) facts.push({ id: 'kpi', label: copy.goalKpi, value: row.kpi_name });
   if (row.kpi_current != null && row.kpi_target != null) {
+    const progress = goalProgressPct(row.kpi_current, row.kpi_target, row.kpi_baseline);
     facts.push({
       id: 'progress',
       label: copy.goalProgress,
@@ -1282,10 +1334,7 @@ export function goalToTriage(
       // The gate, stated once: no baseline, no meter. `bandTone` would happily
       // paint a bar from current/target alone, and it would read as measured
       // progress from a starting point nobody ever recorded.
-      score:
-        row.kpi_baseline == null
-          ? undefined
-          : { value: row.kpi_current, max: row.kpi_target, invert: row.kpi_direction === 'down' },
+      score: progress == null ? undefined : { value: progress, max: 100 },
     });
   }
   if (row.team_name) facts.push({ id: 'team', label: copy.goalTeam, value: row.team_name });

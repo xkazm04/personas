@@ -12,7 +12,7 @@ import { TIERS } from '@/lib/constants/uiModes';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useHealthCheck } from '@/features/agents/sub_health';
 
-type TabDefBase = { id: EditorTab; labelKey: string; icon: typeof FileText; devOnly?: boolean; minTier?: Tier };
+type TabDefBase = { id: EditorTab; labelKey: string; icon: typeof FileText; minTier?: Tier };
 const tabDefs: TabDefBase[] = [
   { id: 'activity', labelKey: 'tab_activity', icon: Activity, minTier: TIERS.TEAM },
   { id: 'design', labelKey: 'tab_design', icon: Wand2 },
@@ -28,7 +28,7 @@ interface EditorTabBarProps {
   failedTabs?: string[];
 }
 
-type TabBadgeVariant = 'dirty' | 'attention' | 'error';
+type TabBadgeVariant = 'dirty' | 'error';
 
 /** `srLabel` is the badge's meaning for assistive tech: the dot and the `!`
  *  are colour and shape only, so without it a screen reader heard nothing
@@ -39,14 +39,6 @@ function TabBadge({ variant, count, srLabel }: { variant: TabBadgeVariant; count
     return (
       <span className="ml-auto min-w-4 h-4 px-1 rounded-full bg-red-500/15 border border-red-500/25 text-red-400 typo-caption text-center">
         {count ?? '!'}{sr}
-      </span>
-    );
-  }
-  if (variant === 'attention') {
-    return (
-      <span className="ml-auto relative flex h-1.5 w-1.5">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
-        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500" />
       </span>
     );
   }
@@ -98,7 +90,7 @@ function HealthBadge() {
 }
 
 export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: EditorTabBarProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const editorTab = useSystemStore((s) => s.editorTab);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   const tier = useTier();
@@ -112,7 +104,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
     <div className="border-b border-primary/10 bg-primary/5">
       <div className={`flex items-center ${IS_MOBILE ? 'px-1' : 'px-6'}`}>
         <div className={`flex overflow-x-auto flex-1 min-w-0 ${IS_MOBILE ? 'gap-0' : 'gap-1'} scrollbar-none`}>
-          {tabDefs.filter((td) => (!td.devOnly || import.meta.env.DEV) && (!td.minTier || tier.isVisible(td.minTier))).map((tab) => {
+          {tabDefs.filter((td) => !td.minTier || tier.isVisible(td.minTier)).map((tab) => {
             const Icon = tab.icon;
             const isActive = editorTab === tab.id;
             const tabDirty = isTabDirty(tab.id, dirtyTabs);
@@ -136,7 +128,13 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
                 {failedTabs.includes(tab.id)
                   ? <TabBadge variant="error" srLabel={editorLabels.tab_save_failed_indicator} />
                   : tab.id === 'design' && connectorsMissing > 0
-                    ? <TabBadge variant="error" count={connectorsMissing} />
+                    ? (
+                      <TabBadge
+                        variant="error"
+                        count={connectorsMissing}
+                        srLabel={tx(editorLabels.missing_credentials, { credentials: String(connectorsMissing) })}
+                      />
+                    )
                     : tabDirty
                       ? <TabBadge variant="dirty" srLabel={editorLabels.unsaved_changes} />
                       : null}
