@@ -20,7 +20,8 @@ import { assertionConfigJson, parsePhrases } from './assertionConfig';
  * `outputAssertions.ts` (UAT 2026-07-20, FA-RRE-03: the only configurable
  * quality gate was unreachable). This surfaces the two highest-value types
  * ("must contain" / "must not contain") with an on-failure action; richer types
- * (regex / jsonpath / length) can extend the type Listbox later.
+ * (regex / json_path / json_schema / length) can extend the type ThemedSelect
+ * and the typeLabel map later.
  */
 export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
   const { t } = useTranslation();
