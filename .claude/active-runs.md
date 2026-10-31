@@ -2,7 +2,6 @@
 
 ## Active
 
-### scan-sweep-c2-w1 — scan-sweep 4.10.0 cycle 2 wave 1: agents-design, agents-editor, agents-executions-components, agents-quick-answer (branch scan/c2)
 - **[2026-10-31 00:30]**
 - **Paths:** `src/features/agents/sub_design/**` · `src/features/agents/sub_tool_runner/**` · `src/features/agents/sub_editor/**` · `src/features/agents/sub_activity/**` · `src/features/agents/sub_executions/**` · `src/features/agents/quick-answer/**` · `src/features/agents/shared/quickConfig/**`
 - **Status:** started
@@ -1469,6 +1468,8 @@
 - SCOPE CHANGED (2026-07-26 ~23:30): operator halted feature work after a cargo build hit 8 GB RAM twice. Now a BUILD-MEMORY investigation + the app_lib crate split. Paths: src-tauri/Cargo.toml, src-tauri/core/** (new personas-core crate), src-tauri/src/{lib.rs,mcp_bin.rs,engine/mod.rs}, src-tauri/src/commands/fleet/**. NOTE: touches src-tauri/ workspace root — any other session running a cargo build will see a rebuild. No overlap with the two live sessions (both frontend-only in sub_workspaces / sub_manual-review).
 
 ## Recently completed
+
+### scan-sweep-c2-w1 — scan-sweep 4.10.0 cycle 2 wave 1: agents-design, agents-editor, agents-executions-components, agents-quick-answer (branch scan/c2)
 
 ### scan-sweep-w1-1030 — scan-sweep wave 1 (agent-health, agents-components-allpersonas, agents-connectors, agents-deployment) on scan/1030
 
