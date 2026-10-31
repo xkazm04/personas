@@ -465,6 +465,50 @@ describe('useUnifiedTriage — a LOST compare-and-swap is not a failed write', (
   });
 });
 
+/** A keyset backend over `total` pending ideas that clamps `limit` to 200 like `triage_ideas`. */
+function pagedBackend(total: number) {
+  const all = Array.from({ length: total }, (_, i) => idea({ id: `idea-${i}` }));
+  return (_p: unknown, limit: number, cursor?: string | null) => {
+    const start = cursor ? Number(cursor) : 0;
+    const end = Math.min(start + Math.min(limit, 200), total);
+    return Promise.resolve({
+      ideas: all.slice(start, end),
+      cursor: end < total ? String(end) : null,
+      hasMore: end < total,
+      counts: { pending: total, accepted: 0, rejected: 0, archived: 0, total },
+    });
+  };
+}
+
+describe('useUnifiedTriage — a revalidation keeps the Load more working set', () => {
+  it('re-reads every page the session pulled in, not just the first', async () => {
+    mockTriageIdeas.mockImplementation(pagedBackend(150));
+    const { result } = await mount();
+    expect(result.current.backlog.loaded).toBe(60);
+    await act(async () => result.current.loadMore());
+    await waitFor(() => expect(result.current.backlog.loaded).toBe(120));
+
+    await act(async () => result.current.revalidate());
+    await waitFor(() => expect(mockTriageIdeas.mock.calls.length).toBeGreaterThanOrEqual(3));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.backlog.loaded).toBe(120);
+  });
+
+  it('re-walks pages when the loaded size exceeds the backend limit cap', async () => {
+    mockTriageIdeas.mockImplementation(pagedBackend(500));
+    const { result } = await mount();
+    for (let loaded = 120; loaded <= 240; loaded += 60) {
+      await act(async () => result.current.loadMore());
+      await waitFor(() => expect(result.current.backlog.loaded).toBe(loaded));
+    }
+    const callsBefore = mockTriageIdeas.mock.calls.length;
+    await act(async () => result.current.revalidate());
+    await waitFor(() => expect(mockTriageIdeas.mock.calls.length).toBeGreaterThan(callsBefore));
+    await waitFor(() => expect(result.current.backlog.loaded).toBe(240));
+    expect(result.current.backlog.hasMore).toBe(true);
+  });
+});
+
 describe('useUnifiedTriage — the two proposal queues reach the same spine', () => {
   it('deals a promotion card, names its persona, and writes through the one door', async () => {
     mockTriageIdeas.mockResolvedValue(page([]));
