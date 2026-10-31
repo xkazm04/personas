@@ -6205,6 +6205,10 @@ export type Translations = {
       type_label: string;
       type_contains: string;
       type_not_contains: string;
+      type_regex: string;
+      type_json_path: string;
+      type_json_schema: string;
+      type_length: string;
       phrase_placeholder: string;
       on_failure_label: string;
       action_log: string;
@@ -6213,6 +6217,15 @@ export type Translations = {
       create: string;
       cancel: string;
       delete: string;
+      paused: string;
+      stat_pass: string;
+      stat_fail: string;
+      never_evaluated: string;
+      severity_critical: string;
+      enabled_label: string;
+      delete_confirm_title: string;
+      delete_confirm_body: string;
+      delete_confirm_critical: string;
     };
     brain: {
       tiers_title: string;

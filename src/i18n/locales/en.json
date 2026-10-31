@@ -6199,6 +6199,10 @@
       "type_label": "Check",
       "type_contains": "Must contain",
       "type_not_contains": "Must not contain",
+      "type_regex": "Must match pattern",
+      "type_json_path": "JSON path check",
+      "type_json_schema": "Must match JSON schema",
+      "type_length": "Length limit",
       "phrase_placeholder": "Phrase(s), comma-separated",
       "on_failure_label": "On failure",
       "action_log": "Log only",
@@ -6206,7 +6210,16 @@
       "action_heal": "Attempt healing",
       "create": "Create",
       "cancel": "Cancel",
-      "delete": "Delete gate"
+      "delete": "Delete gate",
+      "paused": "Paused",
+      "stat_pass": "pass",
+      "stat_fail": "fail",
+      "never_evaluated": "not evaluated yet",
+      "severity_critical": "Critical",
+      "enabled_label": "Gate enabled",
+      "delete_confirm_title": "Delete gate \"{name}\"?",
+      "delete_confirm_body": "Runs will no longer be checked against this gate. It cannot be restored; you would have to create it again.",
+      "delete_confirm_critical": "This is a critical gate. Without it, runs that fail this check are no longer flagged. It cannot be restored; you would have to create it again."
     },
     "brain": {
       "tiers_title": "Memory",

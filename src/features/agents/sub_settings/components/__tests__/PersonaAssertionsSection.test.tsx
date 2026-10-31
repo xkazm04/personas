@@ -9,11 +9,13 @@ const h = vi.hoisted(() => ({
   listOutputAssertions: vi.fn(),
   createOutputAssertion: vi.fn(),
   deleteOutputAssertion: vi.fn(),
+  updateOutputAssertion: vi.fn(),
 }));
 vi.mock('@/api/agents/outputAssertions', () => ({
   listOutputAssertions: (...a: unknown[]) => h.listOutputAssertions(...a),
   createOutputAssertion: (...a: unknown[]) => h.createOutputAssertion(...a),
   deleteOutputAssertion: (...a: unknown[]) => h.deleteOutputAssertion(...a),
+  updateOutputAssertion: (...a: unknown[]) => h.updateOutputAssertion(...a),
 }));
 vi.mock('@/lib/silentCatch', () => ({ toastCatch: () => () => undefined, silentCatch: () => () => undefined }));
 
@@ -65,6 +67,7 @@ describe('PersonaAssertionsSection happy path', () => {
     expect(screen.queryByPlaceholderText('assertions.name_placeholder')).toBeNull();
 
     fireEvent.click(screen.getByLabelText('assertions.delete'));
+    fireEvent.click(screen.getByText('assertions.delete')); // confirm the dialog
     await waitFor(() => expect(screen.queryByText('Cites total')).toBeNull());
     expect(h.deleteOutputAssertion).toHaveBeenCalledWith('a1');
     await waitFor(() => expect(screen.getByText('assertions.empty')).toBeInTheDocument());
