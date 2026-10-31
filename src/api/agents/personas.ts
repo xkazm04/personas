@@ -57,7 +57,7 @@ export const createPersona = (input: CreatePersonaInput) =>
 
 /**
  * Partial update. Build the payload with {@link buildUpdateInput} rather than
- * assembling it by hand — for the 13 `Option<Option<T>>` columns an explicit
+ * assembling it by hand — for the 14 `Option<Option<T>>` columns an explicit
  * `null` means "clear this column", so a hand-written payload that nulls the
  * fields it does not care about will erase them. See
  * {@link PERSONA_NULLABLE_FIELDS}.
