@@ -16,6 +16,10 @@ const SAVED = { baseMode: 'dark' as const, primaryColor: '#8b5cf6', accentColor:
 
 describe('custom theme editor lifecycle', () => {
   const a = en.settings.appearance;
+  const clickResetAndConfirm = () => {
+    fireEvent.click(screen.getByRole('button', { name: a.reset }));
+    fireEvent.click(screen.getByRole('button', { name: a.reset_confirm_action }));
+  };
   beforeAll(async () => {
     await preloadSectionsAsync('en', ['settings']);
   });
@@ -27,7 +31,7 @@ describe('custom theme editor lifecycle', () => {
     act(() => { useThemeStore.getState().setCustomTheme(SAVED); });
     act(() => { useThemeStore.getState().setTheme('light-ice'); });
     render(<CustomThemeCreator />);
-    fireEvent.click(screen.getByRole('button', { name: a.reset }));
+    clickResetAndConfirm();
     expect(useThemeStore.getState().customTheme).toBeNull();
     expect(useThemeStore.getState().themeId).toBe('light-ice');
   });
@@ -35,7 +39,7 @@ describe('custom theme editor lifecycle', () => {
   it('Reset of the ACTIVE custom theme falls back to a built-in theme', () => {
     act(() => { useThemeStore.getState().setCustomTheme(SAVED); });
     render(<CustomThemeCreator />);
-    fireEvent.click(screen.getByRole('button', { name: a.reset }));
+    clickResetAndConfirm();
     expect(useThemeStore.getState().customTheme).toBeNull();
     expect(useThemeStore.getState().themeId).not.toBe('custom');
   });
@@ -64,7 +68,7 @@ describe('custom theme editor lifecycle', () => {
     act(() => { useThemeStore.getState().setCustomTheme(SAVED); });
     render(<CustomThemeCreator />);
     expect((screen.getByLabelText(a.theme_name) as HTMLInputElement).value).toBe('Mine');
-    fireEvent.click(screen.getByRole('button', { name: a.reset }));
+    clickResetAndConfirm();
     expect((screen.getByLabelText(a.theme_name) as HTMLInputElement).value).toBe('Custom');
     expect(screen.queryAllByRole('button', { name: a.reset })).toHaveLength(0);
   });
@@ -77,5 +81,17 @@ describe('custom theme editor lifecycle', () => {
     render(<CustomThemeCreator />);
     expect(screen.queryAllByRole('button', { name: a.applied })).toHaveLength(1);
     expect(screen.queryAllByRole('button', { name: a.save_apply })).toHaveLength(0);
+  });
+  it('Reset asks first: the saved theme survives until confirmed, and Cancel keeps it', () => {
+    act(() => { useThemeStore.getState().setCustomTheme(SAVED); });
+    render(<CustomThemeCreator />);
+    fireEvent.click(screen.getByRole('button', { name: a.reset }));
+    expect(screen.getByText(a.reset_confirm_title)).toBeTruthy();
+    expect(useThemeStore.getState().customTheme).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: en.common.cancel }));
+    expect(screen.queryByText(a.reset_confirm_title)).toBeNull();
+    expect(useThemeStore.getState().customTheme).not.toBeNull();
+    clickResetAndConfirm();
+    expect(useThemeStore.getState().customTheme).toBeNull();
   });
 });

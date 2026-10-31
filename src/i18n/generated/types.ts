@@ -14105,6 +14105,9 @@ export type Translations = {
       save_apply: string;
       applied: string;
       reset: string;
+      reset_confirm_title: string;
+      reset_confirm_body: string;
+      reset_confirm_action: string;
       enter_theme_name: string;
       reset_to_auto: string;
       preview_dashboard: string;

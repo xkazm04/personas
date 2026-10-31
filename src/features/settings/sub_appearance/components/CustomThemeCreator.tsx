@@ -6,6 +6,7 @@ import type { CustomThemeConfig } from '@/stores/themeStore';
 import { deriveCustomThemeVars } from '@/lib/theme/deriveCustomTheme';
 import { getContrastRatio, getContrastLevel, type ContrastLevel } from '@/lib/theme/contrastRatio';
 import { Button } from '@/features/shared/components/buttons';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { Slider } from '@/features/shared/components/forms/Slider';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { ColorRow } from './ColorRow';
@@ -88,6 +89,7 @@ export default function CustomThemeCreator() {
   const { t } = useTranslation();
   const s = t.settings.appearance;
   const nameInputId = useId();
+  const [confirmReset, setConfirmReset] = useState(false);
 
   // Local draft state — initialized from store or defaults
   const [baseMode, setBaseMode] = useState<'dark' | 'light'>(existingConfig?.baseMode ?? DRAFT_DEFAULTS.baseMode);
@@ -292,9 +294,19 @@ export default function CustomThemeCreator() {
           {isDirty || !isActiveCustom ? s.save_apply : s.applied}
         </Button>
         {existingConfig && (
-          <Button variant="ghost" size="sm" icon={<RotateCcw className="w-3.5 h-3.5" />} onClick={handleReset}>{s.reset}</Button>
+          <Button variant="ghost" size="sm" icon={<RotateCcw className="w-3.5 h-3.5" />} onClick={() => setConfirmReset(true)}>{s.reset}</Button>
         )}
       </div>
+      {confirmReset && (
+        <ConfirmDialog
+          danger
+          title={s.reset_confirm_title}
+          body={s.reset_confirm_body}
+          confirmLabel={s.reset_confirm_action}
+          onConfirm={() => { handleReset(); setConfirmReset(false); }}
+          onCancel={() => setConfirmReset(false)}
+        />
+      )}
     </div>
   );
 }
