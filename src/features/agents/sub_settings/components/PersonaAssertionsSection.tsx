@@ -6,12 +6,13 @@ import {
   deleteOutputAssertion,
 } from '@/api/agents/outputAssertions';
 import type { OutputAssertion } from '@/lib/bindings/OutputAssertion';
+import type { AssertionFailureAction } from '@/lib/bindings/AssertionFailureAction';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { toastCatch } from '@/lib/silentCatch';
 import { createLatestWins } from '@/stores/util/latestWins';
 import { useTranslation } from '@/i18n/useTranslation';
-import { assertionConfigJson, parsePhrases } from './assertionConfig';
+import { assertionConfigJson, parsePhrases, type SettingsAssertionType } from './assertionConfig';
 
 /**
  * Quality gates — declarative output assertions attached to a persona and
@@ -32,9 +33,9 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
   const [loadState, setLoadState] = useState<'loading' | 'failed' | 'loaded'>('loading');
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
-  const [assertionType, setAssertionType] = useState<'contains' | 'not_contains'>('contains');
+  const [assertionType, setAssertionType] = useState<SettingsAssertionType>('contains');
   const [phrase, setPhrase] = useState('');
-  const [onFailure, setOnFailure] = useState<'log' | 'review' | 'heal'>('review');
+  const [onFailure, setOnFailure] = useState<AssertionFailureAction>('review');
   const [saving, setSaving] = useState(false);
 
   // The section stays mounted across a persona switch, so a slower response for
@@ -155,7 +156,7 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
             <div className="flex flex-wrap items-center gap-2">
               <ThemedSelect
                 value={assertionType}
-                onChange={(e) => setAssertionType(e.target.value as 'contains' | 'not_contains')}
+                onChange={(e) => setAssertionType(e.target.value as SettingsAssertionType)}
                 wrapperClassName="min-w-[9rem]"
                 aria-label={a.type_label}
               >
@@ -164,7 +165,7 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
               </ThemedSelect>
               <ThemedSelect
                 value={onFailure}
-                onChange={(e) => setOnFailure(e.target.value as 'log' | 'review' | 'heal')}
+                onChange={(e) => setOnFailure(e.target.value as AssertionFailureAction)}
                 wrapperClassName="min-w-[9rem]"
                 aria-label={a.on_failure_label}
               >
