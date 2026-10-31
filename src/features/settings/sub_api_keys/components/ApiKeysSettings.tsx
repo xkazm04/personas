@@ -36,7 +36,7 @@ import {
 import { revokePairing } from '@/api/auth/pairing';
 import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
-import { extractMessage } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
 import { useConfirmClick } from '@/features/settings/shared/useConfirmClick';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -125,6 +125,7 @@ export default function ApiKeysSettings() {
         await revokeExternalApiKey(id);
         await load();
       } catch (e) {
+        silentCatch('ApiKeysSettings:revoke')(e);
         setError(extractMessage(e));
       } finally {
         setActioning(null);
@@ -140,6 +141,7 @@ export default function ApiKeysSettings() {
         await deleteExternalApiKey(id);
         await load();
       } catch (e) {
+        silentCatch('ApiKeysSettings:delete')(e);
         setError(extractMessage(e));
       } finally {
         setActioning(null);
@@ -166,11 +168,13 @@ export default function ApiKeysSettings() {
       setActioning(group.current?.id ?? null);
       try {
         const out = await runRetire(disconnectIds(group), revokePairing);
+        for (const f of out.failed) silentCatch('ApiKeysSettings:disconnect')(new Error(f.message));
         // Reload first: load() clears the error banner, which would erase a
         // failed-revoke message set before it.
         await load();
         if (out.failed.length > 0) setError(out.failed.map((f) => f.message).join('; '));
       } catch (e) {
+        silentCatch('ApiKeysSettings:disconnect')(e);
         setError(extractMessage(e));
       } finally {
         setActioning(null);

@@ -55,6 +55,7 @@ function confirmIn(row: HTMLElement, label: string) {
   fireEvent.click(within(row).getByText(label).closest('button')!);
   fireEvent.click(within(row).getByText('Confirm').closest('button')!);
 }
+const rowOf = (name: string) => screen.getByText(name).closest('div.rounded-card') as HTMLElement;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -75,5 +76,30 @@ describe('ApiKeysSettings revocation', () => {
     await waitFor(() => expect(revokePairingMock).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(list).toHaveBeenCalledTimes(2));
     expect(screen.queryByText('revoke blocked')).not.toBeNull();
+  });
+
+  it('traces failed revoke, delete and disconnect to telemetry', async () => {
+    list.mockResolvedValue([
+      mk('a'),
+      mk('b'),
+      mk('p1', { bound_origin: 'https://app.example', name: 'Pair one' }),
+    ]);
+    revokeKey.mockRejectedValue(new Error('rv fail'));
+    deleteKey.mockRejectedValue(new Error('del fail'));
+    revokePairingMock.mockRejectedValue(new Error('dc fail'));
+    render(<ApiKeysSettings />);
+    await screen.findByText('Key a');
+    confirmIn(rowOf('Key a'), 'Revoke');
+    await waitFor(() => expect(traced).toHaveBeenCalledTimes(1));
+    confirmIn(rowOf('Key b'), 'Delete');
+    await waitFor(() => expect(traced).toHaveBeenCalledTimes(2));
+    confirmIn(screen.getByTestId('connected-app-row'), 'Disconnect');
+    await waitFor(() => expect(traced).toHaveBeenCalledTimes(3));
+    const contexts = traced.mock.calls.map((c) => c[0]);
+    expect(contexts).toEqual([
+      'ApiKeysSettings:revoke',
+      'ApiKeysSettings:delete',
+      'ApiKeysSettings:disconnect',
+    ]);
   });
 });
