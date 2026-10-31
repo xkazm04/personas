@@ -71,5 +71,7 @@ export const getOAuthStatus = (sessionId: string) =>
 // command were retired — the command was the only OAuth IPC surface that
 // accepted a raw refresh_token (and returned raw tokens), and it had no caller.
 // OAuth token refresh happens entirely server-side in the runtime credential
-// path (engine/runner). If a UI-driven refresh is ever needed, add a
-// credential-id-based command that loads the token backend-side.
+// path (engine/runner). The UI-driven refresh is the credential-id-based
+// `refreshCredentialOAuthNow` in ./rotation.ts (`refresh_credential_oauth_now`,
+// src-tauri/src/commands/credentials/rotation.rs), which loads the token
+// backend-side and audits the outcome; use it rather than adding another door.
