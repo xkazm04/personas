@@ -21,8 +21,6 @@ import { toastCatch } from '@/lib/silentCatch';
  * the four-tab hub keeps only surfaces the agent itself owns.
  */
 
-const NOOP = () => {};
-
 /**
  * Connectors & Tools. Live connector verification (test / link / swap) via
  * `ConnectorVerificationPanel`, a direct tool invoke (`ToolRunnerPanel`), plus
@@ -49,7 +47,6 @@ export function DesignConnectorsPanel() {
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   const saved = useSavedDesignResult(selectedPersona);
-  const selectedTools = useMemo(() => new Set(saved?.suggested_tools ?? []), [saved]);
   // Connector name whose credential is being provisioned from the recap.
   const [provisioning, setProvisioning] = useState<string | null>(null);
   // ONE verification instance, shared by the live panel and the recap below, so
@@ -122,11 +119,8 @@ export function DesignConnectorsPanel() {
           <ConnectorsSection
             result={saved}
             allToolDefs={toolDefinitions}
-            currentToolNames={[]}
             credentials={credentials}
             connectorDefinitions={connectorDefinitions}
-            selectedTools={selectedTools}
-            onToolToggle={NOOP}
             onConnectorClick={(connector) => setProvisioning(connector.name)}
             hiddenConnectors={liveConnectors}
             onTestConnector={(name, credId) => void testFromRecap(name, credId)}

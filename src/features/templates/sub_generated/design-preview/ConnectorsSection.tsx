@@ -14,14 +14,18 @@ import { DebtText } from '@/i18n/DebtText';
 
 
 import { isCredentialVerified } from '@/lib/credentials/healthState';
+const NO_TOOL_NAMES: string[] = [];
+const NO_SELECTION: ReadonlySet<string> = new Set();
+
 interface ConnectorsSectionProps {
   result: AgentIR;
   allToolDefs: PersonaToolDefinition[];
-  currentToolNames: string[];
+  /** Editing contract only; omit when `readOnly`. */
+  currentToolNames?: string[];
   credentials: CredentialMetadata[];
   connectorDefinitions: ConnectorDefinition[];
-  selectedTools: Set<string>;
-  onToolToggle: (toolName: string) => void;
+  selectedTools?: ReadonlySet<string>;
+  onToolToggle?: (toolName: string) => void;
   onConnectorClick?: (connector: SuggestedConnector) => void;
   /**
    * Connector names to omit — used when a host renders a live verification
@@ -40,10 +44,10 @@ interface ConnectorsSectionProps {
 export function ConnectorsSection({
   result,
   allToolDefs,
-  currentToolNames,
+  currentToolNames = NO_TOOL_NAMES,
   credentials,
   connectorDefinitions,
-  selectedTools,
+  selectedTools = NO_SELECTION,
   onToolToggle,
   onConnectorClick,
   hiddenConnectors,
@@ -237,7 +241,7 @@ export function ConnectorsSection({
                           <DesignCheckbox
                             checked={isSelected || isAlreadyAssigned}
                             disabled={isAlreadyAssigned}
-                            onChange={() => onToolToggle(toolName)}
+                            onChange={() => onToolToggle?.(toolName)}
                           />
                         )}
                         <Wrench className="w-3 h-3 text-primary/40 flex-shrink-0" />
