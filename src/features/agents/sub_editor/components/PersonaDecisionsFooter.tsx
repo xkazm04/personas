@@ -19,7 +19,8 @@ import { navigateToCompanions } from '@/features/companions/navigation';
  * for the currently-open persona. Collapsed by default to avoid
  * crowding the editor; click to expand the recent decisions inline.
  * "Open full audit" link routes the user to the Companion plugin's
- * Decisions sub-tab pre-filtered to this persona.
+ * Decisions sub-tab. It is NOT filtered to this persona: navigateToCompanions
+ * takes a page id only, so the audit opens on every persona's decisions.
  *
  * Renders nothing when there are no decisions logged for this persona.
  * That's the common case for personas built before the design-decision
