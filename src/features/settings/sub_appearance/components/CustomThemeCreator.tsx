@@ -272,7 +272,7 @@ export default function CustomThemeCreator() {
       {/* Actions */}
       <div className="flex items-center gap-2 pt-1">
         <Button variant="accent" tone="agent" size="sm" icon={<Paintbrush className="w-3.5 h-3.5" />} onClick={handleSave} disabled={!label.trim()} disabledReason={s.enter_theme_name}>
-          {isDirty ? s.save_apply : s.applied}
+          {isDirty || !isActiveCustom ? s.save_apply : s.applied}
         </Button>
         {existingConfig && (
           <Button variant="ghost" size="sm" icon={<RotateCcw className="w-3.5 h-3.5" />} onClick={handleReset}>{s.reset}</Button>

@@ -10,6 +10,7 @@ import CustomThemeCreator from '../CustomThemeCreator';
  * defect at HEAD before its fix (scan-sweep 2026-10-31):
  * - Reset cleared the custom theme AND switched an active non-custom theme to Midnight, because
  *   clearCustomTheme always applies the dark-midnight fallback.
+ * - The action button read "Applied" for a saved theme that was not the active theme.
  */
 const SAVED = { baseMode: 'dark' as const, primaryColor: '#8b5cf6', accentColor: null, label: 'Mine' };
 
@@ -37,5 +38,15 @@ describe('custom theme editor lifecycle', () => {
     fireEvent.click(screen.getByRole('button', { name: a.reset }));
     expect(useThemeStore.getState().customTheme).toBeNull();
     expect(useThemeStore.getState().themeId).not.toBe('custom');
+  });
+  it('a saved custom theme that is not active offers Save & Apply, not Applied', () => {
+    const { unmount } = render(<CustomThemeCreator />);
+    fireEvent.click(screen.getByRole('button', { name: a.save_apply }));
+    expect(screen.queryAllByRole('button', { name: a.applied })).toHaveLength(1);
+    unmount();
+    act(() => { useThemeStore.getState().setTheme('dark-cyan'); });
+    render(<CustomThemeCreator />);
+    expect(screen.queryAllByRole('button', { name: a.applied })).toHaveLength(0);
+    expect(screen.queryAllByRole('button', { name: a.save_apply })).toHaveLength(1);
   });
 });
