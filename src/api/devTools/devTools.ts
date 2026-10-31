@@ -1127,22 +1127,6 @@ export const batchCreateTasks = async (
   return created;
 };
 
-export const startTask = (id: string) =>
-  safeInvoke<DevTask>({} as DevTask, "dev_tools_start_task", { id });
-
-export const cancelTask = (id: string) =>
-  safeInvoke<DevTask>({} as DevTask, "dev_tools_cancel_task", { id });
-
-export const startBatch = (taskIds: string[]) =>
-  safeInvoke<{ batch_id: string; started: number }>({ batch_id: "", started: 0 }, "dev_tools_start_batch", { taskIds });
-
-export const getBatchStatus = (batchId: string) =>
-  safeInvoke<{ batch_id: string; total: number; completed: number; failed: number; running: number; pending: number; tasks: DevTask[] }>(
-    { batch_id: "", total: 0, completed: 0, failed: 0, running: 0, pending: 0, tasks: [] },
-    "dev_tools_get_batch_status",
-    { batchId },
-  );
-
 // -- Task Execution (CLI-powered) -------------------------------------------
 
 // ── Project Memory Ledger (docs/plans/skill-memory-unification.md) ─────────
