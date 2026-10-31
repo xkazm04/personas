@@ -29056,6 +29056,8 @@ export type Translations = {
       close: string;
       tab_blueprint: string;
       tab_blueprint_hint: string;
+      tab_morning: string;
+      tab_morning_hint: string;
       picker_title: string;
       picker_empty: string;
       picker_empty_hint: string;
@@ -29088,6 +29090,24 @@ export type Translations = {
       check_not_read: string;
       map_hint: string;
       release_line: string;
+      morning_title: string;
+      morning_hint: string;
+      morning_window: string;
+      morning_offline: string;
+      morning_not_here: string;
+      morning_decline_repeat_only: string;
+      morning_approved: string;
+      morning_declined: string;
+      morning_skipped: string;
+      morning_failed: string;
+      morning_skipped_products: string;
+      morning_portfolio: string;
+      morning_news: string;
+      morning_repeat: string;
+      morning_steered: string;
+      morning_decline_repeat: string;
+      morning_approve_anyway: string;
+      morning_defer_in_bp: string;
     };
     build: {
       title: string;

@@ -26,6 +26,7 @@ const ConversationBriefing = lazyRetry(() =>
 );
 const ChannelMap = lazyRetry(() => import('../channels/map/ChannelMap'));
 const BlueprintPicker = lazyRetry(() => import('@/features/decision-center/lens/BlueprintPicker'));
+const MorningDeck = lazyRetry(() => import('@/features/decision-center/lens/morning/MorningDeck'));
 
 type ActivityProps = ComponentProps<typeof ActivityBody>;
 
@@ -47,6 +48,14 @@ export function MonitorBody({ view, activity, hasChannels, bridges, channelPrese
     <Suspense fallback={<BodyFallback />}>
       {view === 'activity' ? (
         <ActivityBody {...activity} />
+      ) : view === 'morning' ? (
+        /* bp's Morning deck, read-only (spark roadmap S6): Approve, and
+           Decline on a repeat, go through Personas' own lens_scan_decide. */
+        <div className="relative z-10 flex-1 min-h-0 overflow-y-auto">
+          <div className="h-full">
+            <MorningDeck />
+          </div>
+        </div>
       ) : view === 'blueprint' ? (
         /* The lens-scan products; a tile opens its blueprint over the app
            (LensSheetHost). Escape at the drawing's site closes only the
