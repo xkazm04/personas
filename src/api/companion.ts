@@ -118,10 +118,15 @@ export interface SendTurnResult {
  * background tasks (codebase scans, idea generation, multi-step
  * reasoning); the default 90s invoke timeout is too short and surfaces
  * as a confusing "Tauri invoke timed out" error even though the
- * backend is still working. 25 minutes matches the backend's own
- * `TURN_TIMEOUT` so the frontend never gives up before the CLI does.
+ * backend is still working. The backend's own `TURN_TIMEOUT` (25 min,
+ * `companion/session/events.rs`) starts only after the turn lock and the
+ * prompt assembly, and the reply is persisted after it, so a wrapper that
+ * waits exactly 25 minutes always lost that tie. 27 minutes matches
+ * `REMOTE_TURN_TIMEOUT` (`companion/remote_jobs.rs`), which waits past the
+ * turn ceiling for the same reason: a turn that hits its OWN timeout reports
+ * that as the reason. Pinned by `__tests__/companionTurnTimeoutParity.test.ts`.
  */
-const COMPANION_TURN_TIMEOUT_MS = 25 * 60 * 1000;
+const COMPANION_TURN_TIMEOUT_MS = 27 * 60 * 1000;
 
 export async function companionSendMessage(
   message: string,
