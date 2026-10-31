@@ -167,10 +167,14 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
 
   const performSettingsSave = useCallback(async (d: PersonaDraft) => {
     if (!selectedPersonaId) return;
-    // Name is the one required field — never autosave an empty name (it would
-    // persist a nameless persona that renders blank in the sidebar/header/resume
-    // row). Skip the save; the tab stays dirty so the user fixes it first.
-    if (d.name.trim() === '') return;
+    // Name is the one required field - never persist an empty name (it would
+    // leave a nameless persona that renders blank in the sidebar/header/resume
+    // row). REJECT rather than return: a resolved save is read by saveAll as
+    // "persisted", which marked the tab clean and let Save & Switch discard
+    // every other Settings edit. The debounced path never gets here with a
+    // blank name (see the `enabled` gate below), so only an explicit save
+    // reports this failure.
+    if (d.name.trim() === '') throw new Error('Settings not saved: the agent name is required');
     const savePersonaId = selectedPersonaId;
     const prevBaseline = { ...baselineRef.current };
     const op = buildSettingsOp(d);
@@ -216,7 +220,9 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     mode: 'debounced',
     delay: 800,
     deps: SETTINGS_KEYS.map((k) => draft[k]),
-    enabled: !!selectedPersonaId && !pendingPersonaId,
+    // A blank name is skipped silently on the autosave path; the tab stays
+    // dirty until the user fixes it, and an explicit save reports it as failed.
+    enabled: !!selectedPersonaId && !pendingPersonaId && draft.name.trim() !== '',
   });
 
   const { isSaving: isSavingModel, lastError: modelError } = useTabSection({
