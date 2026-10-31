@@ -16,8 +16,12 @@ import {
   getOverviewBundle,
 } from '@/api/overview/observability';
 
-/** Every overview command that buckets by the user's local day, and the
- *  argument it carries the offset in. */
+/** Every overview command whose wrapper sends the user's UTC offset, and the
+ *  argument it carries it in. This pins the WIRE, not bucketing: four bucket
+ *  by local day, but get_all_monthly_spend deliberately ignores the offset and
+ *  uses a UTC month so the budget UI matches the server's budget gate
+ *  (src-tauri/src/commands/communication/observability/metrics.rs,
+ *  get_all_monthly_spend_with_conn). */
 const CASES: Array<[string, () => Promise<unknown>, string]> = [
   ['get_health_bundle', () => getHealthBundle(), 'utcOffsetMinutes'],
   ['get_sla_dashboard', () => getSlaDashboard(30), 'utcOffsetMinutes'],
