@@ -50,6 +50,7 @@ describe("api/agents/executions", () => {
   it("cancelExecution calls cancel_execution", async () => {
     mockInvoke("cancel_execution", undefined);
     await expect(cancelExecution("e-1", "p-1")).resolves.toBeUndefined();
+    expect(mockedInvoke.mock.calls.at(-1)?.[0]).toBe("cancel_execution");
   });
 
   it("executePersona calls execute_persona", async () => {

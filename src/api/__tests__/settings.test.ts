@@ -31,6 +31,7 @@ describe("api/system/settings", () => {
   it("setAppSetting resolves", async () => {
     mockInvoke("set_app_setting", undefined);
     await expect(setAppSetting("theme", "dark")).resolves.toBeUndefined();
+    expect(mockedInvoke.mock.calls.at(-1)?.[0]).toBe("set_app_setting");
   });
 
   it("deleteAppSetting returns boolean", async () => {
