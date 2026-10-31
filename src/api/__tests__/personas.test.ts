@@ -1,5 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 // eslint-disable-next-line no-restricted-imports
 import { invoke } from "@tauri-apps/api/core";
 import { vi } from "vitest";
@@ -226,6 +228,32 @@ describe("api/agents/personas", () => {
       // Omission is the only way to leave it alone; `null` would clear it.
       expect(buildUpdateInput({})).not.toHaveProperty('last_test_report');
       expect(buildUpdateInput({ description: 'x' })).not.toHaveProperty('last_test_report');
+    });
+
+    it("PERSONA_NULLABLE_FIELDS is exactly the Rust struct's double_option set", () => {
+      // The loops above iterate PERSONA_NULLABLE_FIELDS, the builder's own list,
+      // so they cannot see a field Rust moves to `double_option` while the
+      // builder keeps writing `field: null` for it (= "clear the column"). ts-rs
+      // flattens `Option<Option<T>>` to the same TS type, so tsc cannot either.
+      // The ground truth is the Rust struct, read here with comments stripped.
+      const src = readFileSync(resolve(__dirname, "../../..", "src-tauri/core/src/models/persona.rs"), "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/\/\/.*$/gm, "");
+      const start = src.indexOf("pub struct UpdatePersonaInput {");
+      expect(start, "UpdatePersonaInput not found; update this pin").toBeGreaterThanOrEqual(0);
+      const end = src.indexOf("\n}\n", start);
+      expect(end, "end of UpdatePersonaInput not found; update this pin").toBeGreaterThan(start);
+      const body = src.slice(start, end);
+      const doubleOption = [
+        ...body.matchAll(/deserialize_with\s*=\s*"double_option"\s*\)\]\s*pub\s+(\w+)\s*:/g),
+      ].map((m) => m[1]!);
+      const allFields = [...body.matchAll(/pub\s+(\w+)\s*:/g)].map((m) => m[1]!);
+      expect(allFields.length, "parsed no fields (vacuous pin)").toBeGreaterThan(20);
+
+      expect([...doubleOption].sort()).toEqual([...PERSONA_NULLABLE_FIELDS].sort());
+      // And the builder never emits a double_option key the caller did not name.
+      const emitted = Object.keys(buildUpdateInput({}));
+      expect(emitted.filter((k) => doubleOption.includes(k))).toEqual([]);
     });
 
     it("explicit null and an omitted key are OPPOSITES for Option<Option<T>>", () => {
