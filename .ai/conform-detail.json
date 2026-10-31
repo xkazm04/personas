@@ -7456,26 +7456,24 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:05:34.000Z",
-      "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
       "techniques": [
+        {
+          "technique": "policy-projection",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:72 a hand-written TS readiness predicate instead of a projection of the backend resolver. The header popover and the Design badge share it, but the policy that actually refuses (src-tauri/src/commands/design/connector_readiness.rs:767) is a different one, so the surface understates what blocks."
+        },
         {
           "technique": "gate-laddering",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/core/personas.rs:142 the binding rung (the command) carries no copy of the check the UI rung enforces"
+          "evidence": "src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95 is the only place readiness refuses an enable. src-tauri/src/commands/core/personas.rs:142 set_persona_enabled re-checks nothing, and src/features/fleet/monitor/grid/orchestration/OrchestrationLedger.tsx:147 enables through it with no readiness check. The only binding rung, the run gate, checks a different predicate."
         },
         {
           "technique": "refusal-names-a-reachable-remedy",
           "verdict": "realized",
-          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:19 every blocker carries the editor tab (and sub-tab) that fixes it, so the refusal routes to its remedy",
-          "carriedFrom": "2026-10-09"
-        },
-        {
-          "technique": "policy-projection",
-          "verdict": "realized",
-          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:45 one resolver feeds both the header popover and the Design-tab badge, so the reason list and the badge count cannot drift",
-          "carriedFrom": "2026-10-09"
+          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:81 every blocker carries the editor tab (and sub-tab) that fixes it, so the refusal routes to its remedy."
         }
       ],
       "superseded": [
@@ -7485,6 +7483,13 @@
           "evaluatedAt": "2026-10-09T15:40:00.000Z",
           "worker": "910f5999-b183-4f5d-a67e-e49e43242f9b",
           "reason": "replaced by 74b319ac-90c8-4ce1-9f66-08bdc2eb8324"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95 is the only place readiness refuses an enable; src-tauri/src/commands/core/personas.rs:142 set_persona_enabled and :217 update_persona re-check nothing, so any other caller enables a persona with no trigger or missing credentials - a UI-only courtesy, not a gate",
+          "evaluatedAt": "2026-10-16T18:05:34.000Z",
+          "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
+          "reason": "replaced by cloud-20261031-personas-7"
         }
       ]
     },
@@ -13569,38 +13574,34 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:05:34.000Z",
-      "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
       "techniques": [
         {
           "technique": "refusal-names-a-reachable-remedy",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:104 the remedy, applied as worded, cannot clear the ambiguity refusal at :961"
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:104 the remedy, applied as worded, cannot clear the ambiguity refusal from :961; it makes it worse."
         },
         {
           "technique": "false-positive-economics",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:767 persona_live_blockers resolves readiness by connector name from vault-global state (persona_declared_connectors :695 reads names only), so a persona whose credentialLinks binds one of two same-service credentials is refused at every run",
-          "carriedFrom": "2026-10-10"
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:767 persona_live_blockers resolves readiness from connector names against vault-global state, so a persona whose credentialLinks binds one of two same-service credentials is refused at every run."
         },
         {
           "technique": "unmeasurable-criteria",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:548 a blank connector declaration and :619 an unwired probe arm both fail closed as Misconfigured instead of reading as ready",
-          "carriedFrom": "2026-10-10"
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:546 a blank connector declaration, and :615 a global-probe connector with no probe arm, both fail closed as Misconfigured instead of reading as ready."
         },
         {
           "technique": "policy-projection",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:3 one resolver serves adopt, promote and run gate; :1230 the gallery's readiness is derived from it instead of a parallel TS computation",
-          "carriedFrom": "2026-10-10"
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:1230 the gallery's readiness is derived from the one resolver adopt, promote and the run gate share, replacing the TS computation that disagreed by construction."
         },
         {
           "technique": "severity-by-construction",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/design/template_adopt.rs:40 the inert adoption integrity gate was removed rather than left as decoration, and :52 labels the surviving verifier a detector, not a gate",
-          "carriedFrom": "2026-10-10"
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/design/template_adopt.rs:52 the surviving integrity verifier is labelled a detector, not a gate, after the inert gate was removed rather than left as decoration."
         }
       ],
       "superseded": [
@@ -13610,6 +13611,13 @@
           "evaluatedAt": "2026-10-10T01:09:48.799Z",
           "worker": "3ebd8e48-554f-40a8-bc1e-31658ecf232f",
           "reason": "replaced by 74b319ac-90c8-4ce1-9f66-08bdc2eb8324"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:961 an exact service_type match with 2+ vault credentials resolves to None and :584 refuses as VaultCredential, whose remedy :104 'add the credential in Settings -> Vault' adds a candidate and cannot clear it; persona_live_blockers :763 never reads design_context.credentialLinks, so a correctly bound persona is refused with a remedy that makes it worse",
+          "evaluatedAt": "2026-10-16T18:05:34.000Z",
+          "worker": "74b319ac-90c8-4ce1-9f66-08bdc2eb8324",
+          "reason": "replaced by cloud-20261031-personas-7"
         }
       ]
     },
@@ -13618,9 +13626,9 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T17:21:17.000Z",
-      "worker": "fda63bd4-4977-495f-b591-d1f3811baf5b",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
       "techniques": [],
       "superseded": [
         {
@@ -13629,6 +13637,13 @@
           "evaluatedAt": "2026-10-10T01:09:48.799Z",
           "worker": "3ebd8e48-554f-40a8-bc1e-31658ecf232f",
           "reason": "replaced by fda63bd4-4977-495f-b591-d1f3811baf5b"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 the deck turns one human reviewer verdict into one backend write; no mechanism here computes a verdict over a tree, change or release, so the quality-gates precondition does not hold (hitl-approval territory)",
+          "evaluatedAt": "2026-10-21T17:21:17.000Z",
+          "worker": "fda63bd4-4977-495f-b591-d1f3811baf5b",
+          "reason": "replaced by cloud-20261031-personas-7"
         }
       ]
     },
@@ -18980,32 +18995,29 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T16:09:25.243Z",
-      "worker": "15fb2a27-f979-4772-98da-54430e6be7a7",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
       "techniques": [
         {
           "technique": "enforcement-binding",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 the real door bypasses the gate"
-        },
-        {
-          "technique": "unmeasurable-criteria",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:105 requirements the gate could not verify fail closed with a named reason instead of scoring Eligible",
-          "carriedFrom": "2026-10-12"
-        },
-        {
-          "technique": "gate-liveness",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:370 seeded known-bad input (corrupt tool requirements) asserted to refuse; siblings at :291, :319, :419 prove the other refusal branches red",
-          "carriedFrom": "2026-10-12"
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 the real door writes the use case through mutateUseCases and bypasses adopt_recipe_for_persona."
         },
         {
           "technique": "chokepoint-tag-registry",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 the underlying capability (appending a recipe use case to design_context) is not confined to the gated wrapper; nothing proves adoption routes through recipe_adoption.rs",
-          "carriedFrom": "2026-10-12"
+          "evidence": "src/features/templates/sub_recipes/libs/useAdoption.ts:62 appending a recipe use case to design_context is not confined to the gated wrapper, and nothing proves adoption routes through recipe_adoption.rs."
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:105 requirements the gate could not verify refuse with a named reason instead of scoring Eligible."
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:370 a seeded known-bad input (corrupt tool requirements) is asserted to refuse, proving the refusal branch red."
         }
       ],
       "superseded": [
@@ -19015,6 +19027,13 @@
           "evaluatedAt": "2026-10-12T11:42:13.122Z",
           "worker": "4a2b286f-12e8-42a5-b463-b7ae3887c447",
           "reason": "replaced by 15fb2a27-f979-4772-98da-54430e6be7a7"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:87 refuses on Incompatible, but the command (registered src-tauri/src/ipc_shards/shard_2.rs:206) has no frontend caller (only src/lib/commandNames.generated.ts:25) while UI adoption writes via src/features/templates/sub_recipes/libs/useAdoption.ts:62 - the gate refuses nothing a user does",
+          "evaluatedAt": "2026-10-15T16:09:25.243Z",
+          "worker": "15fb2a27-f979-4772-98da-54430e6be7a7",
+          "reason": "replaced by cloud-20261031-personas-7"
         }
       ]
     },
@@ -27050,10 +27069,16 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:29:49.324Z",
-      "worker": "19727a7e-86fc-4ad1-81af-40929dcb7669",
-      "techniques": [],
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
+      "techniques": [
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_health/agentHealth.ts:152 the grade gates nothing. Its absence handling (an 'undetermined' issue that never moves the status, and a throw when the telemetry pipeline errored) matches the technique's shape, but no refusal reads the grade."
+        }
+      ],
       "superseded": [
         {
           "state": "not-applicable",
@@ -27061,6 +27086,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by 19727a7e-86fc-4ad1-81af-40929dcb7669"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_health/healthScoring.ts:55 computeHealthScore returns a grade painted by the editor badge and Arena herald (src/features/agents/sub_health/healthScoring.ts:26); the only \"blocked\" status (src/features/agents/sub_health/types.ts:67) is mapped from text (useHealthCheck.ts:93) and no path refuses a run, save or deploy on it, so no refusal precondition holds - diagnostic, not a gate. Re-checked at revision 54.",
+          "evaluatedAt": "2026-10-14T09:29:49.324Z",
+          "worker": "19727a7e-86fc-4ad1-81af-40929dcb7669",
+          "reason": "replaced by cloud-20261031-personas-7"
         }
       ]
     },
@@ -37934,22 +37966,48 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T12:00:00.000Z",
-      "worker": "d780b612-16c4-4f59-ad85-801cb8438f0e",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
       "techniques": [
+        {
+          "technique": "policy-projection",
+          "verdict": "deviation",
+          "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:92 'Mirrors ByomPolicy::validate()' is a second hand-walked enumeration rather than a map over the backend's (src/api/system/byom.ts:32 is unused). The two codes currently agree, but no test pins them together."
+        },
+        {
+          "technique": "gate-laddering",
+          "verdict": "realized",
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:156 the UI refusal is a courtesy rung. The binding refusal sits at the action, src-tauri/db/src/byom.rs:293, where ByomPolicy::save refuses any Error-severity warning whoever calls it."
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "realized",
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:152 a policy that failed to load or is corrupt refuses the save instead of overwriting the stored policy with defaults."
+        },
         {
           "technique": "self-reported-gate-inputs",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/byom.rs:378 the gate's tag input is an optional persona field; absent means no rule applies instead of refusal"
+          "evidence": "src-tauri/db/src/byom.rs:378 the gate's tag input is an optional persona field; absent means no rule applies instead of refusal",
+          "carriedFrom": "2026-10-22"
         },
         {
           "technique": "enforcement-binding",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:2017 the policy is bound at the run door and a corrupt policy aborts the execution"
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2017 the policy is bound at the run door and a corrupt policy aborts the execution",
+          "carriedFrom": "2026-10-22"
         }
       ],
-      "registryProposal": "quality-gates is repo/pipeline-shaped; 60+ of its 90 map pairs are UI contexts matched on vocabulary (gate, verdict, pipeline). Consider a precondition note so display surfaces route to not-applicable."
+      "registryProposal": "The prior verdict's self-reported-gate-inputs finding (the compliance tag is the optional persona template_category, so absence passes) lives in src-tauri/db/src/byom.rs, outside this UI context's file list. This context surfaces it honestly (byomHelpers.ts:122). Judge it under whichever context owns db/src/byom.rs.",
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/byom.rs:378 compliance rules match persona template_category (src-tauri/src/engine/runner/mod.rs:2054) so personas without a category pass an empty tag set and the restriction fails OPEN, reported only as a Warning; the corrupt-policy path at runner/mod.rs:2017 does fail closed",
+          "evaluatedAt": "2026-10-22T12:00:00.000Z",
+          "worker": "d780b612-16c4-4f59-ad85-801cb8438f0e",
+          "reason": "replaced by cloud-20261031-personas-7"
+        }
+      ]
     },
     "e62cdb2d-a626-4a0b-afdf-ac3d7aada9f0/agent-memory": {
       "context": "commands-core",
@@ -38302,12 +38360,36 @@
       "context": "commands-curator",
       "subject": "quality-gates",
       "bundle": "software-engineering",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T19:48:37.037Z",
-      "worker": "5a807c85-8405-49e3-92d4-9d9359ab6729",
-      "techniques": [],
-      "registryProposal": "dispatch.rs:291 states the hook-bypass prohibition (--no-verify, LEFTHOOK=0) only as prompt prose to dispatched workers, so prose-rule-drift would apply to whichever layer holds the mechanical deny in target repos; the context itself has no such layer to judge."
+      "state": "deviation",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
+      "techniques": [
+        {
+          "technique": "prose-rule-drift",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:290 an action-shaped prohibition (force-push, gate bypass, discarding work) written into the brief and enforced nowhere at the action. The dispatcher controls the spawn argv (src-tauri/src/commands/curator/tick.rs:727) but passes no disallowed-tools set."
+        },
+        {
+          "technique": "refusal-names-a-reachable-remedy",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:140 vet_autonomous refuses a skill with no documented invocation and names the reachable exit (only an explicit operator request may name it). The next arm quotes the file's own argument hint."
+        },
+        {
+          "technique": "gate-liveness",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:574 the test drives undocumented skills through vet_autonomous and asserts the refusal, proving the gate red."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:115 vet_autonomous refuses an invocation the app would invent, which is dispatch validation not a quality gate; line 291 only instructs workers not to bypass repo hooks and builds none",
+          "evaluatedAt": "2026-10-22T19:48:37.037Z",
+          "worker": "5a807c85-8405-49e3-92d4-9d9359ab6729",
+          "reason": "replaced by cloud-20261031-personas-7"
+        }
+      ]
     },
     "d5c5e7fe-6353-41eb-800b-dc11adee0775/prompt-assembly": {
       "context": "engine-project-tracking",
@@ -39267,14 +39349,29 @@
       "subject": "quality-gates",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T03:09:11.686Z",
-      "worker": "6ad449e5-0e98-4e82-bb8c-27352ebdfa17",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-7",
       "techniques": [
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/libs/gigPolicyDraft.ts:42 budgetUnreadable refuses to save a budget the field cannot read rather than let it read as 'no cap'. That is the honest-absence rule applied to the gate's configuration. The gate that reads the cap lives outside this context."
+        },
         {
           "technique": "waiver-names-its-finding",
           "verdict": "not-applicable",
-          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:63 Consumer-side waiver of a rule set to 'warn' (eslint.config.js:70), not the design of a blocking gate's escape hatch. It names its rule but gives no reason, which is a suppression-hygiene concern (dead-code subject), not this technique's."
+          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:63 Consumer-side waiver of a rule set to 'warn' (eslint.config.js:70), not the design of a blocking gate's escape hatch. It names its rule but gives no reason, which is a suppression-hygiene concern (dead-code subject), not this technique's.",
+          "carriedFrom": "2026-10-24"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:2 The 'gate' here is a runtime pairing-approval modal, not a check on the tree. Searching components/ and libs/ for census, baseline, lefthook, process.exit, exitCode and max-warnings found 0 files. The context only consumes the lint gate through one waiver and builds no gate machinery.",
+          "evaluatedAt": "2026-10-24T03:09:11.686Z",
+          "worker": "6ad449e5-0e98-4e82-bb8c-27352ebdfa17",
+          "reason": "replaced by cloud-20261031-personas-7"
         }
       ]
     },

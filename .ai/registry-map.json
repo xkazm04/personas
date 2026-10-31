@@ -2338,10 +2338,10 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_health/healthScoring.ts:55 computeHealthScore returns a grade painted by the editor badge and Arena herald (src/features/agents/sub_health/healthScoring.ts:26); the only \"blocked\" status (src/features/agents/sub_health/types.ts:67) is mapped from text (useHealthCheck.ts:93) and no path refuses a run, save or deploy on it, so no refusal precondition holds - diagnostic, not a gate. Re-checked at revision 54.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54,
+          "evidence": "src/features/agents/sub_health/HealthDigestPanel.tsx:68 the 'blocked' grade (computed at src/features/agents/sub_health/agentHealth.ts:152) only picks a row's paint tone; grepping the context and its consumers (useHealthCheck, assessAgentHealth, healthCheckSlice) for blocked/refuse/disable/enabled finds no execution, save or enable that is refused on the grade, so it is a diagnostic, not a gate.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55,
           "revisionsBehind": 0
         },
         {
@@ -3368,10 +3368,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95 is the only place readiness refuses an enable; src-tauri/src/commands/core/personas.rs:142 set_persona_enabled and :217 update_persona re-check nothing, so any other caller enables a persona with no trigger or missing credentials - a UI-only courtesy, not a gate",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54,
+          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:72 the enable gate counts a credential as present when any vault row of that service_type exists, the predicate src-tauri/src/commands/design/connector_readiness.rs:1230 records as disagreeing BY CONSTRUCTION with the run gate (persona_live_blockers, :767, which needs one unique, usable bind over the design-context connectors). So the header can say 'can enable' for a persona that is then refused at every run.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55,
           "revisionsBehind": 0
         },
         {
@@ -3798,10 +3798,10 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 the deck turns one human reviewer verdict into one backend write; no mechanism here computes a verdict over a tree, change or release, so the quality-gates precondition does not hold (hitl-approval territory)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54,
+          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 the deck turns one human reviewer verdict into one backend write. Grepping the context for refuse/gate/blocking/threshold finds only display: the 'blocking' badge weight in triageAdapters.ts, and a challenger's improvement shown against a threshold the backend applied. No mechanism here computes a verdict that refuses anything.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55,
           "revisionsBehind": 0
         },
         {
@@ -4586,10 +4586,10 @@
           "confidence": "probable",
           "state": "not-applicable",
           "priorNotApplicable": 20,
-          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:2 The 'gate' here is a runtime pairing-approval modal, not a check on the tree. Searching components/ and libs/ for census, baseline, lefthook, process.exit, exitCode and max-warnings found 0 files. The context only consumes the lint gate through one waiver and builds no gate machinery.",
-          "evaluatedAt": "2026-10-24",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54
+          "evidence": "src/features/settings/sub_api_keys/libs/gigPolicyDraft.ts:3 the only gate-shaped thing in the context is the authoring form for the gig auto-approval policy. The evaluator that refuses or approves a hire is personas_db::kp_gig_policy::evaluate_request (src-tauri/db), outside this context. The 'gate' at src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:2 is a runtime pairing-approval modal. Grep terms: refuse/gate/block/verdict/policy/threshold.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55
         },
         {
           "subject": "terminal-multiplexing",
@@ -5996,10 +5996,10 @@
           "confidence": "probable",
           "state": "deviation",
           "priorNotApplicable": 20,
-          "evidence": "src-tauri/db/src/byom.rs:378 compliance rules match persona template_category (src-tauri/src/engine/runner/mod.rs:2054) so personas without a category pass an empty tag set and the restriction fails OPEN, reported only as a Warning; the corrupt-policy path at runner/mod.rs:2017 does fail closed",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54
+          "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:79 the save pre-check runs on a hand-written TS copy of ByomPolicy::validate, although the backend's own enumeration is exposed as a command (src/api/system/byom.ts:32) that nothing calls. Nothing holds the two in parity, and the copy's pointer to its source (:92, src-tauri/src/engine/byom.rs) already names a file that does not exist.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55
         },
         {
           "subject": "credential-vault",
@@ -7403,12 +7403,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "not-applicable",
+          "state": "deviation",
           "priorNotApplicable": 20,
-          "evidence": "src-tauri/src/commands/curator/dispatch.rs:115 vet_autonomous refuses an invocation the app would invent, which is dispatch validation not a quality gate; line 291 only instructs workers not to bypass repo hooks and builds none",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:290 the prohibitions on dispatched workers exist only as prompt prose: `--no-verify`, `LEFTHOOK=0`, any `*_SKIP_GATE`, force-pushing a default branch, discarding uncommitted changes. The workers are spawned with no extra args (src-tauri/src/commands/curator/tick.rs:727) on a base argv carrying --dangerously-skip-permissions (src-tauri/src/commands/fleet/headless.rs:106), into the registry root, which in this checkout tracks no .claude/settings.json deny and no hooks. Nothing at the action refuses these steps.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55
         },
         {
           "subject": "guest-execution-bounding",
@@ -7641,10 +7641,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:961 an exact service_type match with 2+ vault credentials resolves to None and :584 refuses as VaultCredential, whose remedy :104 'add the credential in Settings -> Vault' adds a candidate and cannot clear it; persona_live_blockers :763 never reads design_context.credentialLinks, so a correctly bound persona is refused with a remedy that makes it worse",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54,
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:961 an exact service_type match with 2+ vault credentials resolves to None. :584 then refuses it as VaultCredential, whose remedy at :104 ('add the credential in Settings → Vault') cannot clear the refusal: adding another credential keeps the match ambiguous. The run gate (:767) reads connector names only and never the persona's credentialLinks binding.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55,
           "revisionsBehind": 0
         },
         {
@@ -8132,10 +8132,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:87 refuses on Incompatible, but the command (registered src-tauri/src/ipc_shards/shard_2.rs:206) has no frontend caller (only src/lib/commandNames.generated.ts:25) while UI adoption writes via src/features/templates/sub_recipes/libs/useAdoption.ts:62 - the gate refuses nothing a user does",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54,
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:87 the adoption gate refuses on Incompatible. Its command is registered (src-tauri/src/ipc_shards/shard_2.rs:206), but no frontend code invokes it: UI adoption appends the use case directly via src/features/templates/sub_recipes/libs/useAdoption.ts:62, behind a separate TS eligibility (RecipeAdoptionModal.tsx:45). So the gate refuses nothing a user does.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55,
           "revisionsBehind": 0
         },
         {
