@@ -55,6 +55,31 @@ caller (the test harness), so they are not orphans — but they are also not
 reachable from the product UI, which is worth knowing before anyone "cleans up"
 a test.
 
+## Caveat: "referenced" means a string literal exists, not that anything calls it
+
+Method step 2 counts a command as reached when its name appears anywhere in
+`src/**`, and for almost every command the only literal is the one inside its own
+typed wrapper in `src/api/**`. A wrapper that nothing imports therefore makes its
+command look live. The 1,410 "referenced" figure above is a **ceiling** on reach,
+and the 109 "unreferenced" figure a **floor** on dead surface.
+
+Export-level probe (measured 2026-10-31, 1,749 names in
+`commandNames.generated.ts`; non-test `src/**` plus `scripts/`): 1,632 have a
+literal outside tests; for each, the enclosing exported wrapper was looked up and
+searched by word for an importer elsewhere in the tree. **160 commands are
+reached only through a wrapper that has no importer** ("wrapper-only"), a class
+the census above folds into "referenced". Largest sources:
+`devTools/devTools.ts` 11, `recipes/recipes.ts` 11, `agents/tools.ts` 9,
+`agents/automations.ts` 8, `companion.ts` 8, `overview/observability.ts` 8,
+`agents/evolution.ts` 7, `agents/genome.ts` 7.
+
+The probe is a lower bound: it matches identifiers by name, so a store method or
+local variable that shares a wrapper's name (`createPersona`) counts as an importer.
+Read the 160 as "at least", and treat wrapper-only as its own class (d) alongside
+(a)-(c) before any backend removal pass: nothing in the UI reaches them, but unlike
+class (a) they do have a wrapper and a Rust handler, so they are not "dead" by the
+grep this document used.
+
 ## The headline finding: class (b) is empty
 
 **No orphan command is kept alive by the HTTP / MCP / A2A surfaces.** This was
