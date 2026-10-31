@@ -8098,19 +8098,19 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T13:00:00.000Z",
-      "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-1",
       "techniques": [
         {
           "technique": "host-routed-approval-round-trip",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/session/launch.rs:280 pre-set full-access stance in an attended session"
+          "evidence": "src-tauri/src/companion/session/launch.rs:280 a pre-set full-bypass stance in an attended chat where a human is reachable; grep for permission-prompt-tool across src-tauri found no routing of the child's mid-turn requests"
         },
         {
           "technique": "permission-stance-enforcement",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/session/launch.rs:280 no read-only layering for the chat turn"
+          "evidence": "src-tauri/src/companion/session/launch.rs:280 full bypass with no layered grants, while the Grok arm of the same launcher passes --tools \"\" (:398) - the two engines disagree on stance"
         }
       ],
       "superseded": [
@@ -8120,6 +8120,13 @@
           "evaluatedAt": "2026-10-09T16:16:30.000Z",
           "worker": "fa11a4fa-09d8-4f88-99c8-80905ddd1894",
           "reason": "replaced by e6722372-20b3-4f23-a4d7-abf234ee66f2"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/session/launch.rs:280 Athena's attended Claude chat turn runs with --dangerously-skip-permissions and full native tools while the host has an approval queue (src/features/companions/athena/ApprovalCard.tsx:10) that never receives the child's own tool requests; host-routed-approval-round-trip is unrealized though a person is within reach of the turn",
+          "evaluatedAt": "2026-10-14T13:00:00.000Z",
+          "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
+          "reason": "replaced by cloud-20261031-personas-1"
         }
       ]
     },
@@ -13787,42 +13794,50 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T01:21:20.000Z",
-      "worker": "f962e23a-8b51-4235-8a81-c59b5f5c31a9",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-1",
       "techniques": [
         {
           "technique": "output-normalization",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/twin.rs:2049 returns raw stdout when no result/assistant text parses, and :2034 takes a result event without checking is_error; src-tauri/src/engine/twin_setup/llm.rs:208 drops the envelope subtype and keeps no raw prefix, so the caller cannot branch on the tool's classification"
+          "evidence": "src-tauri/src/commands/infrastructure/twin.rs:2034 result events are read without is_error/subtype; src-tauri/src/engine/twin_setup/llm.rs:207 a non-zero exit becomes a generic 'non-zero exit code' error with neither the envelope subtype nor a raw prefix"
         },
         {
           "technique": "permission-stance-enforcement",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/twin_setup/llm.rs:60 LEAN_ARGS pass --tools \"\" + --strict-mcp-config for every twin call and :158 neutral_cwd gives the generate seam an empty working directory - a genuine generate posture for a page-content prompt"
+          "evidence": "src-tauri/src/engine/twin_setup/llm.rs:60 LEAN_ARGS (--tools \"\", --strict-mcp-config, --disable-slash-commands) on every twin call and :158 neutral_cwd give the page draft a genuine generate posture"
         },
         {
           "technique": "subscription-auth-selection",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/cli_process.rs:516 strips metering keys last (billing correct), but :487 builds the child from the inherited host env with only a denylist while the prompt carries scraped page text (src-tauri/src/commands/infrastructure/twin.rs:1176 draft_for_page) - the technique treats a full-env spread into a child over untrusted content as a finding whatever the child is; --tools \"\" mitigates but is not the built-env allowlist"
+          "evidence": "src-tauri/engine/src/cli_process.rs:487 spawn_headless_claude_tier builds the child from the full inherited host env with only a denylist (billing strip is correct at :516) while the prompt carries scraped page text - the technique's 'child over untrusted content gets a built allowlist env' clause is unmet"
         },
         {
           "technique": "fallback-ladder",
-          "verdict": "partial",
-          "evidence": "src-tauri/engine/src/cli_process.rs:520 a missing binary returns an honest install message, but as AppError::Internal (untyped), so src/features/browser/twinDraftLane.ts:277 can only render text - absence is not a designed toolbar state"
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/cli_process.rs:521 a missing binary is an honest message but an untyped AppError::Internal, so src/features/browser/twinDraftLane.ts:277 can only render the failure text; absence is not a designed toolbar state"
         },
         {
           "technique": "host-routed-approval-round-trip",
           "verdict": "not-applicable",
-          "evidence": "src/features/browser/webview/PendingApprovalBar.tsx:22 the browser approvals are host-gated companion ops (src-tauri/src/companion/dispatcher/catalog.rs:756 browser_act as an Approval op), not the child CLI's native mid-turn permission requests the technique routes"
+          "evidence": "src-tauri/src/engine/twin_setup/llm.rs:61 the draft child has no tools at all, so there are no mid-turn permission requests to route"
         },
         {
           "technique": "thread-custody-across-resume",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/infrastructure/twin.rs:1176 page drafting is a one-shot generate call; no thread id is stored or resumed"
+          "evidence": "src-tauri/src/commands/infrastructure/twin.rs:1177 page drafting is a one-shot call; no thread id is stored or resumed"
         }
       ],
-      "registryProposal": "Coverage: src-tauri/src/engine/twin_setup/llm.rs (the one door every twin LLM call goes through, a realized generate seam) sits in no context of context-map.json, so its transport verdict is reachable only through caller contexts like this one; the twin backend (twin.rs, owned by workspace-governance) is not separately paired with agent-cli-transport."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/twin.rs:2049 the page-draft call behind the Twin toolbar (src/features/browser/twinDraftLane.ts:245) reads the CLI stream without ever consulting the result envelope is_error/subtype (:2034) and falls back to returning raw stdout as the answer, which the lane types straight into the third-party page box (twinDraftLane.ts:252); a non-zero exit is flattened to one opaque Internal string with stderr discarded (src-tauri/src/engine/twin_setup/llm.rs:187, :208), so usage-limit, logged-out and crash all render as the same failure (twinDraftLane.ts:277)",
+          "evaluatedAt": "2026-10-10T01:21:20.000Z",
+          "worker": "f962e23a-8b51-4235-8a81-c59b5f5c31a9",
+          "reason": "replaced by cloud-20261031-personas-1"
+        }
+      ]
     },
     "11fe7642-7a1a-47c5-8910-499850aa04fe/agent-cli-transport": {
       "context": "plugins-companion-inbox",
@@ -16559,19 +16574,28 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T00:00:00.000Z",
-      "worker": "5a33eebf-17c9-4e12-92df-8167b502fde0",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-1",
       "techniques": [
         {
           "technique": "availability-probe",
           "verdict": "deviation",
-          "evidence": "src/api/agents/evolution.ts:104 installed and authorized collapse into one rejection; src/hooks/utility/data/useCliReadiness.ts:62 must then guess from the message (already a recorded deviation on hooks-utility-data) - this door is its root. The probe itself does go through the spawn door at ~$0 (src-tauri/engine/src/cli_capabilities.rs:108 build_cli_args mirrors production), and the wrapper doc at src/api/agents/evolution.ts:100 wrongly calls it 'not free'"
+          "evidence": "src/api/agents/evolution.ts:104 installed and authorized collapse into one rejection; and src-tauri/engine/src/cli_capabilities.rs:92 serves the cached success unless force, with no invalidation on a CLI version change or a real-run auth failure (evolution.ts:108 never passes force). The probe does go through the production spawn args (cli_capabilities.rs:108), and src/api/companion.ts:43 probes engines through the same spawn door, but that one checks --version only"
         },
         {
           "technique": "dated-capability-matrix",
-          "verdict": "partial",
-          "evidence": "src-tauri/engine/src/cli_capabilities.rs:63 CliCapabilities carries cliVersion, probedAt and servedFromCache (dated and witnessed), but the cache at :92 never invalidates on a version change or a real-run auth failure, and src/api/agents/evolution.ts:108 passes no force to ask for one"
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/cli_capabilities.rs:80 probed_at is stamped when the child actually reported its surface and :85 served_from_cache marks a replay, so a capability value carries its witness and date rather than being a baked constant"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/api/agents/evolution.ts:104 the probe door every readiness gate consumes documents that a rejection means 'binary missing OR no working subscription session' without distinguishing them (backend maps both to AppError::Internal, src-tauri/src/commands/execution/evolution.rs:167), and the wrapper at :107 passes no force, so installed vs authorized collapse into one rejection and a cached probe that a real run has falsified cannot be re-probed from the client",
+          "evaluatedAt": "2026-10-10T00:00:00.000Z",
+          "worker": "5a33eebf-17c9-4e12-92df-8167b502fde0",
+          "reason": "replaced by cloud-20261031-personas-1"
         }
       ]
     },
@@ -19002,22 +19026,30 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:52:43.000Z",
-      "worker": "9d8ed911-0769-45d8-96be-0e10bb822093",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-1",
       "techniques": [
         {
           "technique": "host-routed-approval-round-trip",
           "verdict": "not-applicable",
-          "evidence": "src/features/companions/athena/TurnSummaryChip.tsx:37 only scrolls to the ApprovalCard list; the approval surface and its deviation live in companion-chat-bubbles"
+          "evidence": "src/features/companions/athena/TurnSummaryChip.tsx:37 only scrolls to the ApprovalCard list; the approval surface belongs to companion-chat-bubbles"
         },
         {
           "technique": "thread-custody-across-resume",
           "verdict": "not-applicable",
-          "evidence": "src/features/companions/athena/NarrationThread.tsx:12 the trail is session-scoped display state, not a stored child thread id"
+          "evidence": "src/features/companions/athena/NarrationThread.tsx:7 the trail is session-scoped display state, not a stored child thread id"
         }
       ],
-      "registryProposal": "Lexical match on thread/turn/chat; narration 'thread' is a display trail, not a CLI thread - a technique-shaped resonance, not governance."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/companions/athena/NarrationThread.tsx:7 renders already-parsed beats and tool calls of Athena's turn and DevOpLedger.tsx:46 reads a persisted dev-op ledger; nothing here spawns, probes, resumes or approves for a CLI child - Athena's spawn stance and approval routing are judged on companion-chat-bubbles",
+          "evaluatedAt": "2026-10-12T11:52:43.000Z",
+          "worker": "9d8ed911-0769-45d8-96be-0e10bb822093",
+          "reason": "replaced by cloud-20261031-personas-1"
+        }
+      ]
     },
     "0f1b56ac-cd96-4355-993e-dc445a20e63e/structured-output": {
       "context": "fleet-monitor-channels",
@@ -25583,24 +25615,29 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T13:00:00.000Z",
-      "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-1",
       "techniques": [
         {
           "technique": "permission-stance-enforcement",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:202 skip-permissions with home cwd (:210) for a no-workspace call"
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:202 full bypass for a no-workspace call that needs no tools, and :210 home cwd instead of a neutral one"
         },
         {
           "technique": "subscription-auth-selection",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:211 session-nesting markers not removed; only force_subscription_auth (:218) applied"
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:211 hand-rolled Command::new beside the door: only force_subscription_auth is applied, so the CLAUDECODE/CLAUDE_CODE session-marker strip the door carries (src-tauri/engine/src/prompt/cli_args.rs:206) is missed and the child can start as a nested session"
+        },
+        {
+          "technique": "output-normalization",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:365 an error-subtype result envelope collapses to empty text and its classification never reaches the caller (the main build stream does it right: src-tauri/engine/src/build_session/parser.rs:112 names the subtype)"
         },
         {
           "technique": "availability-probe",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:196 resolves via base_cli_invocation -> claude_cli_invocation (cli.rs:767)"
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:196 the binary is resolved through base_cli_invocation, the same resolution as every other spawn"
         }
       ],
       "superseded": [
@@ -25610,6 +25647,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by e6722372-20b3-4f23-a4d7-abf234ee66f2"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:202 the agent_ir fix pass is a generate-shaped one-shot (JSON in/out) yet spawns with --dangerously-skip-permissions and cwd=home (:210) through a hand-rolled Command::new (:211) beside the shared headless door, so a 'generate' call holds write access over the operator's home dir and it never strips CLAUDECODE/CLAUDE_CODE (no occurrence in the file) so it can start as a nested session; auth strip (:218) and shim-immune resolver (:196) are now correctly reused",
+          "evaluatedAt": "2026-10-14T13:00:00.000Z",
+          "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
+          "reason": "replaced by cloud-20261031-personas-1"
         }
       ]
     },
@@ -40651,6 +40695,82 @@
           "technique": "hourly-pass-with-derived-idempotency",
           "verdict": "not-applicable",
           "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:50 This is a pure render-time transform. No recurring pass advances periods or issues invoices."
+        }
+      ]
+    },
+    "1092db16-982f-4d99-b71b-14e6cf704a4f/agent-cli-transport": {
+      "context": "commands-credentials",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-1",
+      "techniques": [
+        {
+          "technique": "permission-stance-enforcement",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:804 the comment 'Restrict to only Playwright tools' is backed only by an allow-list under the full-bypass flag (cli_args.rs:107), with no --tools restriction and no deny layer; guided mode at :818 passes an empty --allowedTools value for 'disallow all tools', which neither restricts under bypass nor survives a cmd re-parse"
+        },
+        {
+          "technique": "subscription-auth-selection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/ai_artifact_flow.rs:455 hand-rolled spawn inherits the whole host env (billing strip :482 and session-marker strip :471 are present) while the child browses untrusted sites - no built allowlist environment"
+        },
+        {
+          "technique": "output-normalization",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/ai_artifact_flow.rs:547 every unparsed (Unknown) stdout line is appended to the answer text, so hook/notice noise enters the extraction, and the result event's is_error/subtype is never surfaced to the caller"
+        },
+        {
+          "technique": "host-routed-approval-round-trip",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:777 a batch credential-capture run with no human reachable inside the child's turn; stance must be fixed beforehand"
+        }
+      ],
+      "registryProposal": "permission-stance-enforcement should name a near miss it currently implies but does not state: in the Claude Code family an allow-list flag (--allowedTools) pre-approves tools and does NOT narrow the roster, and under the full-bypass flag it is a no-op - restriction needs the roster flag (--tools) or a deny list. Measured here: a call site commented 'Restrict to only Playwright tools' that restricts nothing.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/credentials/cli_capture.rs:1-14 shells out to gcloud/gh/vercel/netlify/heroku to extract already-issued OAuth tokens as app credentials; none is a coding-agent CLI run as an LLM transport (oauth.rs and cli_capture.rs carry zero claude/codex/gemini references) — the subject's precondition (spawning a headless coding-agent CLI as prompt-in/answer-out) does not hold in this context.",
+          "evaluatedAt": "2026-10-03",
+          "worker": null,
+          "reason": "replaced by cloud-20261031-personas-1"
+        }
+      ]
+    },
+    "d5c5e7fe-6353-41eb-800b-dc11adee0775/agent-cli-transport": {
+      "context": "engine-project-tracking",
+      "subject": "agent-cli-transport",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-1",
+      "techniques": [
+        {
+          "technique": "subscription-auth-selection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/cli_process.rs:1092 build_and_spawn_with(scrub=false) is the persona path; the untrusted-content allowlist clause is unmet. The billing half is realized: mandatory strip at the door, pinned by a test that reads a real child's env (src-tauri/engine/src/cli_process.rs:1456) and vault injection refused under reserved names (src-tauri/src/engine/runner/credentials.rs:932)"
+        },
+        {
+          "technique": "permission-stance-enforcement",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:107 every unattended persona execution carries the full-bypass flag; the technique's edit stance is auto-accept, never bypass"
+        },
+        {
+          "technique": "child-observed-posture",
+          "verdict": "realized",
+          "evidence": "src-tauri/engine/src/cli_process.rs:72 on Windows the real claude.exe is resolved and spawned directly, removing the cmd re-parse seam that deletes empty argv values"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2350 persona executions (children that read connector/web content) spawn via CliProcessDriver, whose build_and_spawn_core (src-tauri/engine/src/cli_process.rs:928) inherits the FULL host env (incl. PERSONAS_API_KEY set at boot/finalize.rs:52, already delivered to the sidecar by name at cli_mcp_config.rs:154) while the probe at cli_process.rs:774 env_clears to an allowlist; untrusted-content children must get a built env, not a denylist. Billing strip itself is right: last-applied at cli_process.rs:960, vault refuses reserved names at runner/credentials.rs:932",
+          "evaluatedAt": "2026-10-06",
+          "worker": null,
+          "reason": "replaced by cloud-20261031-personas-1"
         }
       ]
     }
