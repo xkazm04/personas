@@ -435,3 +435,24 @@ describe('reviewToTriage — every severity a producer emits is ranked', () => {
     expect(weightOf('info')).toBeLessThan(weightOf('medium'));
   });
 });
+
+describe('reviewToTriage — an unreadable severity is loud, never a quiet medium', () => {
+  // The hitl-approval rule every sibling surface follows: the manual-review list
+  // resolves a missing or unknown token to `Unclassified` (defaulted) and the
+  // Monitor to its LOUDEST bucket. The deck used to spell a missing severity as
+  // a readable `medium`, filing an item nobody could classify mid-queue.
+  for (const severity of ['', null, 'bogus']) {
+    it(`labels ${JSON.stringify(severity)} Unclassified and deals it in the top band`, () => {
+      const item = reviewToTriage(review({ severity: severity as string }), copy);
+      expect(item.tags[0]).toMatchObject({ id: 'severity', label: copy.severityUnclassified, tone: 'danger' });
+      expect(factValue(item, 'severity')).toBe(copy.severityUnclassified);
+      expect(item.weight).toBe(reviewToTriage(review({ severity: 'critical' }), copy).weight);
+    });
+  }
+
+  it('leaves a readable severity exactly as it was', () => {
+    const item = reviewToTriage(review({ severity: 'Medium' }), copy);
+    expect(item.tags[0]).toMatchObject({ label: 'medium', tone: 'warning' });
+    expect(item.weight).toBe(60);
+  });
+});

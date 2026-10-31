@@ -31,6 +31,7 @@ export function useTriageCopy(): TriageCopy {
       openBuilderHint: m.triage_open_builder_hint,
       carryOutHint: m.triage_carry_out_hint,
       severity: m.triage_fact_severity,
+      severityUnclassified: m.triage_severity_unclassified,
       reviewType: m.triage_fact_type,
       persona: m.triage_fact_persona,
       raised: m.triage_fact_raised,

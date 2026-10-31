@@ -81,6 +81,8 @@ export interface TriageCopy {
   openBuilderHint: string;
   carryOutHint: string;
   severity: string;
+  /** Severity label for a review whose token no producer vocabulary knows. */
+  severityUnclassified: string;
   reviewType: string;
   persona: string;
   raised: string;
@@ -230,6 +232,7 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   openBuilderHint: 'Needs the full picker — answer it in the persona builder',
   carryOutHint: 'Resolve the review and carry this out',
   severity: 'Severity',
+  severityUnclassified: 'Unclassified',
   reviewType: 'Type',
   persona: 'Persona',
   raised: 'Raised',
@@ -368,6 +371,9 @@ const SEVERITY_WEIGHT: Record<string, number> = {
   low: 35,
   info: 35,
 };
+
+/** An unreadable severity takes the top band — the same as `critical`. */
+const UNCLASSIFIED_SEVERITY_WEIGHT = 120;
 
 const SEVERITY_TONE: Record<string, TriageTone> = {
   critical: 'danger',
@@ -602,7 +608,17 @@ export function bodyWithoutTitle(
 }
 
 export function reviewToTriage(review: TriageReviewRow, copy: TriageCopy): TriageItem {
-  const severity = (review.severity || 'medium').toLowerCase();
+  const severity = (review.severity ?? '').trim().toLowerCase();
+  // A token no producer vocabulary knows (or none at all) is NOT a quiet
+  // `medium`. Every sibling reader of this column takes the loud reading —
+  // `resolveReviewSeverity` labels it Unclassified, `severityBucket` files it
+  // in the loudest bucket — so an item nobody could classify is read first
+  // rather than filed mid-queue under a severity it never claimed.
+  const knownWeight = Object.hasOwn(SEVERITY_WEIGHT, severity) ? SEVERITY_WEIGHT[severity] : undefined;
+  const readable = knownWeight !== undefined;
+  const severityLabel = readable ? severity : copy.severityUnclassified;
+  const severityTone: TriageTone = readable ? SEVERITY_TONE[severity] ?? 'neutral' : 'danger';
+  const severityWeight = knownWeight ?? UNCLASSIFIED_SEVERITY_WEIGHT;
   // `context_data` is not one thing. When a persona raises N choices it holds
   // an array of DECISIONS plus the prose that framed them; otherwise it is an
   // opaque payload. Until now this adapter threw the whole blob into
@@ -621,16 +637,14 @@ export function reviewToTriage(review: TriageReviewRow, copy: TriageCopy): Triag
   const typeLabel =
     reviewType && reviewType.toLowerCase() !== severity ? reviewType.replace(/_/g, ' ') : '';
 
-  const tags: TriageTag[] = [
-    { id: 'severity', label: severity, tone: SEVERITY_TONE[severity] ?? 'neutral' },
-  ];
+  const tags: TriageTag[] = [{ id: 'severity', label: severityLabel, tone: severityTone }];
   if (typeLabel) tags.push({ id: 'type', label: typeLabel, tone: 'neutral' });
   if (review.source === 'cloud') {
     tags.push({ id: 'source', label: copy.cloud, tone: 'accent' });
   }
 
   const facts: TriageFact[] = [
-    { id: 'severity', label: copy.severity, value: severity, tone: SEVERITY_TONE[severity] ?? 'neutral' },
+    { id: 'severity', label: copy.severity, value: severityLabel, tone: severityTone },
   ];
   if (typeLabel) facts.push({ id: 'type', label: copy.reviewType, value: typeLabel });
   facts.push(
@@ -679,7 +693,7 @@ export function reviewToTriage(review: TriageReviewRow, copy: TriageCopy): Triag
       color: review.persona_color ?? null,
     },
     createdAt: review.created_at,
-    weight: (SEVERITY_WEIGHT[severity] ?? 50) + (blocking ? BLOCKING_WEIGHT_BOOST : 0),
+    weight: severityWeight + (blocking ? BLOCKING_WEIGHT_BOOST : 0),
     // Suggested actions are the review's real branches: choosing one resolves
     // the review AND dispatches a follow-up run, which is a materially
     // different act from a bare approval.
