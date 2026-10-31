@@ -40786,6 +40786,32 @@
           "evidence": "src/features/shared/glyph/cron.ts:9 The code names the lint rule's scope (JSX text only) instead of treating lint green as proof the strings were translated. The fix (taking t) does not rely on that gate."
         }
       ]
+    },
+    "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394/prompt-assembly": {
+      "context": "fleet-session-grid",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T22:18:38.021Z",
+      "worker": "bc89e330-6d70-4f02-a441-e0a14cb5802d",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:133 The call site gives the companion finished text, not data. The standard says callers hand the assembler typed inputs and never finished prompt text. Keeping the wording in one function is a single source of truth for the words, not one assembler with owned sections."
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/fleetAttention.ts:191 The session name (FleetSession.name is string|null, falling back to projectLabel) is pasted between bare quotes. It has no declared type or trust class and no fencing, so a name containing quotes or instructions reads as part of the task."
+        },
+        {
+          "technique": "task-envelope",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/fleetAttention.ts:193 No role-priming opener. Locate (session and project) and Done (propose one action or say it needs a human) are present, but there is no explicit Check step before reporting. The technique names Check as one of its three required parts."
+        }
+      ]
     }
   }
 }

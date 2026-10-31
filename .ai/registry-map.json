@@ -13785,7 +13785,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/fleetAttention.ts:177 The Fleet grid writes the prompt for the 'ask Athena about a stale session' request with string templates and sends the finished text into Athena's conversation as a System turn, so no assembler ever sees typed inputs, trust classes or a budget for this prompt.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "agent-memory",

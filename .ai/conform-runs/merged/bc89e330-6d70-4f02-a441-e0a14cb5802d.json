@@ -1,0 +1,74 @@
+{
+ "schema": "conform-run/1",
+ "worker": "bc89e330-6d70-4f02-a441-e0a14cb5802d",
+ "subject": "prompt-assembly",
+ "evaluatedAt": "2026-10-31T22:18:38.021247+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "fleet-session-grid",
+   "subject": "prompt-assembly",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/fleet/fleetAttention.ts:177 The Fleet grid writes the prompt for the 'ask Athena about a stale session' request with string templates and sends the finished text into Athena's conversation as a System turn, so no assembler ever sees typed inputs, trust classes or a budget for this prompt.",
+   "techniques": [
+    {
+     "technique": "layered-composition",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:133 The call site gives the companion finished text, not data. The standard says callers hand the assembler typed inputs and never finished prompt text. Keeping the wording in one function is a single source of truth for the words, not one assembler with owned sections."
+    },
+    {
+     "technique": "variable-interpolation",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/fleet/fleetAttention.ts:191 The session name (FleetSession.name is string|null, falling back to projectLabel) is pasted between bare quotes. It has no declared type or trust class and no fencing, so a name containing quotes or instructions reads as part of the task."
+    },
+    {
+     "technique": "task-envelope",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/fleet/fleetAttention.ts:193 No role-priming opener. Locate (session and project) and Done (propose one action or say it needs a human) are present, but there is no explicit Check step before reporting. The technique names Check as one of its three required parts."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "prompt-assembly",
+   "context": "plugins-fleet-tests",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "prompt-assembly",
+   "context": "vault-shared-playground",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "prompt-assembly",
+   "context": "settings-network",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "prompt-assembly",
+   "context": "vault-catalog-autocred-ui",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-10-31T22:18:38.021247+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "prompt-assembly"
+   ],
+   "techniques": [
+    "layered-composition",
+    "task-envelope",
+    "variable-interpolation"
+   ],
+   "deviations": 1,
+   "context": "fleet-session-grid",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
