@@ -31,7 +31,10 @@ export function MetricDeltaCard({
   // painted as "+100%" beside an amber TrendingUp: an invented regression,
   // indistinguishable from a real one.
   const measured = leftVal !== null && rightVal !== null;
-  const pct = measured ? pctChange(leftVal, rightVal) : null;
+  // Growth from a zero base has no percentage (generateWhatChanged refuses it
+  // the same way); 0 -> 0 is a real 0%.
+  const zeroBaseGrowth = measured && leftVal === 0 && rightVal !== 0;
+  const pct = measured && !zeroBaseGrowth ? pctChange(leftVal, rightVal) : null;
   return (
     <div className="bg-secondary/30 border border-primary/10 rounded-modal px-3 py-2.5 space-y-1">
       <div className="typo-code uppercase tracking-wider text-foreground">{label}</div>
