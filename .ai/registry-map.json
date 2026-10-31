@@ -11547,12 +11547,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/shared/components/display/RelativeTime.tsx:2 re-read: presentational formatters over caller-passed timestamps; no agent store, capture or recall, precondition unmet; match rode on shared/item/counter",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/shared/components/display/RelativeTime.tsx:2 These are presentational formatters over timestamps and numbers the caller passes in. A search of the display, charts, modals and overlays directories found no hits for episod, recall, evict or decay. The 'memories' hits there are display-only: CategoryChip colour maps for memory categories and an execution-detail modal listing an execution's memories. They render data owned elsewhere and hold no store, capture, consolidation or recall logic.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 3
         },
         {
           "subject": "status-vocabulary",
@@ -15144,12 +15143,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/home/sub_learning/powerMoves/powerMovesStore.ts:9 re-read: tried/done flags of operator onboarding progress in a UI store; no agent carries state here, match lexical",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/home/sub_learning/powerMoves/powerMovesStore.ts:9 The only persisted state in this context is a zustand store of operator onboarding flags (tried/done power moves). A case-insensitive search of sub_releases and sub_learning found no hits for episod, recall, evict, decay or memories. The only 'memory' hit is an illustration prompt string, and 'superseded' appears only in a spotlight-polling generation token, so no agent store, capture or recall exists here.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 3
         },
         {
           "subject": "prompt-assembly",
@@ -18664,12 +18662,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/lib/personas/parsers/workflowDetector.ts:2 re-read: workflow-import format detection; holds no agent-written store, match rode on the token consolidation",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/lib/personas/parsers/workflowDetector.ts:2 This context parses and imports external workflows and seeds templates; it holds no agent-written store. A search of src/lib/personas found no hits for episod, recall, evict or decay. The 'consolidation' hit is platformDefinitions' credentialConsolidation rule. The 'memory' hits are capabilities.ts reading a charter's memory-lane on/off flag to build dimension labels: a capability flag, not a memory pipeline.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 3
         },
         {
           "subject": "prompt-assembly",
@@ -41440,12 +41437,11 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/vault/sub_credentials/components/forms/FieldCaptureRow.tsx:1 credential form field capture (operator input rows), not episodic capture by an agent; no file in the forms directory mentions memory; match lexical (import/capture/scope)",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/features/vault/sub_credentials/components/forms/FieldCaptureRow.tsx:40 'Capture' here means rows where the operator types credential fields, not an agent capturing episodes. A search of src/features/vault/sub_credentials/components found zero files mentioning memory, episod, recall, evict or decay, so the subject's precondition (an agent carrying state forward) does not hold.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 3
         },
         {
           "subject": "connector-catalog",

@@ -16190,9 +16190,9 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T22:10:54.502Z",
+      "worker": "715a9c93-62cc-484c-b566-224460ac6f2e",
       "techniques": [],
       "superseded": [
         {
@@ -16201,6 +16201,13 @@
           "evaluatedAt": "2026-10-10T11:14:00.000Z",
           "worker": "ae1def3a-8e43-4ee7-a7e9-a74fe0c5d27d",
           "reason": "replaced by 4f615649-b5a0-4caa-ac5a-dfb0d9c79a24"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/display/RelativeTime.tsx:2 re-read: presentational formatters over caller-passed timestamps; no agent store, capture or recall, precondition unmet; match rode on shared/item/counter",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by 715a9c93-62cc-484c-b566-224460ac6f2e"
         }
       ]
     },
@@ -26824,9 +26831,9 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T22:10:54.502Z",
+      "worker": "715a9c93-62cc-484c-b566-224460ac6f2e",
       "techniques": [],
       "superseded": [
         {
@@ -26835,6 +26842,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by 4f615649-b5a0-4caa-ac5a-dfb0d9c79a24"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_learning/powerMoves/powerMovesStore.ts:9 re-read: tried/done flags of operator onboarding progress in a UI store; no agent carries state here, match lexical",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by 715a9c93-62cc-484c-b566-224460ac6f2e"
         }
       ]
     },
@@ -26843,9 +26857,9 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T22:10:54.502Z",
+      "worker": "715a9c93-62cc-484c-b566-224460ac6f2e",
       "techniques": [],
       "superseded": [
         {
@@ -26854,6 +26868,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by 4f615649-b5a0-4caa-ac5a-dfb0d9c79a24"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/lib/personas/parsers/workflowDetector.ts:2 re-read: workflow-import format detection; holds no agent-written store, match rode on the token consolidation",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by 715a9c93-62cc-484c-b566-224460ac6f2e"
         }
       ]
     },
@@ -26898,10 +26919,19 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T12:00:00.000Z",
-      "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
-      "techniques": []
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T22:10:54.502Z",
+      "worker": "715a9c93-62cc-484c-b566-224460ac6f2e",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_credentials/components/forms/FieldCaptureRow.tsx:1 credential form field capture (operator input rows), not episodic capture by an agent; no file in the forms directory mentions memory; match lexical (import/capture/scope)",
+          "evaluatedAt": "2026-10-14T12:00:00.000Z",
+          "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
+          "reason": "replaced by 715a9c93-62cc-484c-b566-224460ac6f2e"
+        }
+      ]
     },
     "a7ece012-8300-4780-b286-b9cea81801fc/cost-metering": {
       "context": "observability-audit-models",
