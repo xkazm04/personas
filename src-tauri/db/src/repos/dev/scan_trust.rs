@@ -662,7 +662,6 @@ pub fn trust_report(
 
 /// One recorded decision, as a scanner reads it before predicting.
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanDecision {
     pub idea_id: String,
@@ -687,7 +686,6 @@ pub struct ScanDecision {
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanDecisionList {
     pub decisions: Vec<ScanDecision>,

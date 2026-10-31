@@ -1054,8 +1054,6 @@ export type { SampleOutput } from "./SampleOutput";
 export type { SampleOutputFormat } from "./SampleOutputFormat";
 export type { SavedView } from "./SavedView";
 export type { ScanAgentMeta } from "./ScanAgentMeta";
-export type { ScanDecision } from "./ScanDecision";
-export type { ScanDecisionList } from "./ScanDecisionList";
 export type { ScanDelta } from "./ScanDelta";
 export type { ScanTrustEvent } from "./ScanTrustEvent";
 export type { ScanTrustReport } from "./ScanTrustReport";
