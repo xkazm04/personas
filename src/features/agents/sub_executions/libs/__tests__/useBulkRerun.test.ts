@@ -212,11 +212,12 @@ describe('useBulkRerun — reports what the re-runs actually cost', () => {
     // The new execution IS known — the user can still drill into it.
     expect(item.newExecutionId).toBe('new-exec-1');
     // ...but nothing about its outcome is claimed.
-    expect(item.status).toBe('running');
+    expect(item.status).toBe('timed_out');
     expect(item.newStatus).toBeNull();
     expect(item.newCost).toBeNull();
     expect(item.newDurationMs).toBeNull();
     expect(result.current.cohort.successCount).toBe(0);
+    expect(result.current.cohort.timedOutCount).toBe(1);
     expect(result.current.cohort.finished).toBe(0);
     expect(result.current.cohort.totalCostNew).toBe(0);
     // Nothing landed, so nothing was compared: no delta, never a measured 0.

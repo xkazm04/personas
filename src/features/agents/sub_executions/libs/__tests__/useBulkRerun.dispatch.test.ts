@@ -106,3 +106,81 @@ describe('useBulkRerun dispatch discipline', () => {
     expect(result.current.cohort.meanCostDelta).toBeNull();
   });
 });
+
+describe('useBulkRerun idempotency key', () => {
+  it('derives the key from (cohort, original) and never from the clock', async () => {
+    const nowSpy = vi.spyOn(Date, 'now');
+    nowSpy.mockReturnValue(1_700_000_000_111);
+    executePersonaMock.mockResolvedValue(exec('new-1', 'queued', 0));
+    getExecutionMock.mockImplementation(async (id: string) =>
+      id === 'new-1' || id === 'new-2' ? exec(id, 'completed', 2) : exec(id, 'failed', 1));
+
+    const { result } = renderHook(() => useBulkRerun({ pollIntervalMs: 0, pollTimeoutMs: 1_000 }));
+    await act(async () => { await result.current.start([row('o1'), row('o2')], 'p1'); });
+    nowSpy.mockRestore();
+
+    const keys = executePersonaMock.mock.calls.map((c) => String(c[5]));
+    expect(keys).toHaveLength(2);
+    // The clock reading must not be part of the key.
+    for (const k of keys) expect(k).not.toContain('1700000000111');
+    // Both rows of one cohort share one cohort segment; the original id closes the key.
+    const m1 = /^bulk-rerun-(.+)-o1$/.exec(keys[0]);
+    const m2 = /^bulk-rerun-(.+)-o2$/.exec(keys[1]);
+    expect(m1).not.toBeNull();
+    expect(m2).not.toBeNull();
+    expect(m1![1]).toBe(m2![1]);
+  });
+});
+
+describe('useBulkRerun terminal accounting', () => {
+  it('ends a cancelled cohort with no pending/running rows', async () => {
+    const held: Array<(v: PersonaExecution) => void> = [];
+    executePersonaMock.mockImplementation(
+      () => new Promise<PersonaExecution>((r) => { held.push(r); }),
+    );
+    getExecutionMock.mockImplementation(async (id: string) => exec(id, 'failed', 1));
+
+    const { result } = renderHook(() => useBulkRerun({ pollIntervalMs: 0, pollTimeoutMs: 1_000 }));
+    let started!: Promise<void>;
+    await act(async () => {
+      started = result.current.start(['a', 'b', 'c', 'd', 'e'].map((id) => row(id)), 'p1');
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    act(() => { result.current.cancel(); });
+    await act(async () => {
+      held.forEach((resolve, i) => resolve(exec(`n${i}`, 'queued', 0)));
+      await started;
+    });
+
+    const open = result.current.items.filter((i) => i.status === 'pending' || i.status === 'running');
+    expect(open).toHaveLength(0);
+    expect(result.current.cohort.cancelledCount).toBe(5);
+    expect(result.current.phase).toBe('completed');
+  });
+});
+
+describe('useBulkRerun unmount', () => {
+  it('dispatches nothing further once the owning view unmounts mid-cohort', async () => {
+    const held: Array<(v: PersonaExecution) => void> = [];
+    executePersonaMock.mockImplementation(
+      () => new Promise<PersonaExecution>((r) => { held.push(r); }),
+    );
+    getExecutionMock.mockImplementation(async (id: string) => exec(id, 'completed', 1));
+
+    const { result, unmount } = renderHook(() => useBulkRerun({ pollIntervalMs: 0, pollTimeoutMs: 1_000 }));
+    let started!: Promise<void>;
+    await act(async () => {
+      started = result.current.start(['a', 'b', 'c', 'd', 'e'].map((id) => row(id)), 'p1');
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(executePersonaMock).toHaveBeenCalledTimes(3);
+
+    unmount();
+    await act(async () => {
+      held.forEach((resolve, i) => resolve(exec(`n${i}`, 'queued', 0)));
+      await started;
+    });
+    // 'd' and 'e' were still queued when the view went away: never dispatched.
+    expect(executePersonaMock).toHaveBeenCalledTimes(3);
+  });
+});

@@ -19,6 +19,7 @@ export function BulkRerunStrip({ phase, items, cohort, onCancel, onOpenReport }:
   const total = items.length;
   const pct = total === 0 ? 0 : Math.round((finished / total) * 100);
   const isDone = phase === 'completed';
+  const stopped = cohort.timedOutCount + cohort.cancelledCount;
 
   return (
     <div
@@ -30,7 +31,9 @@ export function BulkRerunStrip({ phase, items, cohort, onCancel, onOpenReport }:
       <div className="flex items-center gap-3">
         <span className="typo-heading text-foreground">
           {isDone
-            ? tx(e.bulk_rerun_strip_done, { success: cohort.successCount, total })
+            ? stopped > 0
+              ? tx(e.bulk_rerun_strip_done_partial, { success: cohort.successCount, total, stopped })
+              : tx(e.bulk_rerun_strip_done, { success: cohort.successCount, total })
             : tx(e.bulk_rerun_strip_in_flight, { finished, total })}
         </span>
         <div className="flex-1 h-1.5 rounded-full bg-primary/10 overflow-hidden">
@@ -69,7 +72,9 @@ export function BulkRerunStrip({ phase, items, cohort, onCancel, onOpenReport }:
                 ? 'bg-emerald-400/70'
                 : it.status === 'failed'
                   ? 'bg-red-400/70'
-                  : it.status === 'running'
+                  : it.status === 'timed_out' || it.status === 'cancelled'
+                    ? 'bg-amber-400/70'
+                    : it.status === 'running'
                     ? 'bg-primary/60 animate-pulse'
                     : 'bg-primary/15'
             }`}
