@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Share2, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
@@ -8,6 +8,7 @@ import type { GalleryPublishResult } from '@/lib/bindings/GalleryPublishResult';
 import { getInstallId, markActivation } from '@/lib/analytics';
 import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 
 /**
  * @catalog Share an agent to the public gallery and surface its share link.
@@ -17,7 +18,7 @@ import { useTranslation } from '@/i18n/useTranslation';
  * half of the viral loop, surfaced where agents are edited (not buried in
  * Settings). Records the `shared` activation milestone on first publish.
  */
-export function ShareAgentButton({ personaId }: { personaId: string }) {
+export function ShareAgentButton({ personaId, sensitive = false }: { personaId: string; sensitive?: boolean }) {
   const { t } = useTranslation();
   const s = t.agents.share;
   const [publishing, setPublishing] = useState(false);
@@ -27,12 +28,20 @@ export function ShareAgentButton({ personaId }: { personaId: string }) {
   const [published, setPublished] = useState<{ personaId: string; result: GalleryPublishResult } | null>(null);
   const result = published?.personaId === personaId ? published.result : null;
   const [open, setOpen] = useState(false);
+  // Publishing is public and irreversible: Share first asks, naming what leaves the machine.
+  const [confirming, setConfirming] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const headingId = useId();
+  const confirmId = useId();
+  // Same dismissal as the readiness popover beside it: Escape and outside click.
+  useClickOutside(rootRef, open || confirming, () => { setOpen(false); setConfirming(false); });
   // The referral code is this install's pseudonymous id; whoever installs from
   // this link gets the referrer credited on their first activation.
   const inviteUrl = `https://personas.ai/?ref=${getInstallId()}`;
 
   const handleShare = async () => {
-    if (publishing) return;
+    if (publishing || sensitive) return;
+    setConfirming(false);
     setPublishing(true);
     try {
       const r = await publishPersonaToGallery(personaId, null, getInstallId());
@@ -47,23 +56,57 @@ export function ShareAgentButton({ personaId }: { personaId: string }) {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={rootRef}>
       <Button
         variant="ghost"
         size="sm"
         loading={publishing}
         icon={<Share2 className="w-3.5 h-3.5" />}
-        onClick={result ? () => setOpen((o) => !o) : handleShare}
+        onClick={result ? () => setOpen((o) => !o) : () => setConfirming((c) => !c)}
         data-testid="agent-share-btn"
       >
         {s.button}
       </Button>
 
       <AnimatePresence>
+        {confirming && !result && (
+          <motion.div
+            // eslint-disable-next-line custom/enforce-base-modal -- anchored share popover, not a centered modal
+            role="dialog"
+            aria-labelledby={confirmId}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full right-0 mt-2 w-80 bg-background border border-primary/15 rounded-card shadow-elevation-3 p-3 z-50"
+            data-testid="agent-share-confirm"
+          >
+            <p id={confirmId} className="typo-heading text-foreground">
+              {sensitive ? s.sensitive_title : s.confirm_title}
+            </p>
+            <p className="mt-2 typo-caption text-foreground">
+              {sensitive ? s.sensitive_body : s.confirm_body}
+            </p>
+            <div className="mt-3 flex justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setConfirming(false)} data-testid="agent-share-cancel">
+                {t.common.cancel}
+              </Button>
+              {!sensitive && (
+                <Button variant="primary" size="sm" onClick={handleShare} data-testid="agent-share-confirm-btn">
+                  {s.confirm_action}
+                </Button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {open && result && (
           <motion.div
             // eslint-disable-next-line custom/enforce-base-modal -- anchored share popover, not a centered modal
             role="dialog"
+            aria-labelledby={headingId}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
@@ -71,7 +114,7 @@ export function ShareAgentButton({ personaId }: { personaId: string }) {
             className="absolute top-full right-0 mt-2 w-80 bg-background border border-primary/15 rounded-card shadow-elevation-3 p-3 z-50"
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="typo-heading text-foreground">{s.published}</p>
+              <p id={headingId} className="typo-heading text-foreground">{s.published}</p>
               <Button
                 variant="ghost"
                 size="icon-sm"

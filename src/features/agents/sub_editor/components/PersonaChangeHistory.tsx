@@ -19,6 +19,7 @@ const SOURCE_TONE: Record<string, string> = {
   editor: 'bg-primary/10 text-primary border-primary/20',
   header: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
   fanout: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+  gallery: 'bg-status-warning/10 text-status-warning border-status-warning/20',
   other: 'bg-secondary/40 text-foreground border-primary/10',
 };
 

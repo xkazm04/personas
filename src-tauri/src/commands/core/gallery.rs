@@ -65,6 +65,26 @@ pub struct GalleryPublishResult {
     pub url: String,
 }
 
+/// Record an outward publish in the persona's append-only change log so
+/// "is this agent public, since when, under which link" has a local answer.
+/// `field = "published_to_gallery"`, `after_value` = the share URL, `source` =
+/// `"gallery"`. One row per publish (never coalesced - each is its own act).
+fn record_publish(pool: &crate::db::DbPool, persona_id: &str, url: &str) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "INSERT INTO persona_change_log
+            (id, persona_id, field, before_value, after_value, source, created_at)
+         VALUES (?1, ?2, 'published_to_gallery', NULL, ?3, 'gallery', ?4)",
+        rusqlite::params![
+            uuid::Uuid::new_v4().to_string(),
+            persona_id,
+            url,
+            chrono::Utc::now().to_rfc3339()
+        ],
+    )?;
+    Ok(())
+}
+
 /// Publish a persona to the public gallery; returns the share slug + URL.
 ///
 /// `publisher` is an optional pseudonymous display name shown on the share page;
@@ -119,9 +139,17 @@ pub async fn gallery_publish_persona(
         )));
     }
 
-    resp.json::<GalleryPublishResult>()
+    let published = resp
+        .json::<GalleryPublishResult>()
         .await
-        .map_err(|e| AppError::Cloud(format!("invalid publish response: {e}")))
+        .map_err(|e| AppError::Cloud(format!("invalid publish response: {e}")))?;
+
+    // The bundle is already public: a failed audit write must not hide the link
+    // from the user, so log and carry on.
+    if let Err(e) = record_publish(&state.db, &persona_id, &published.url) {
+        tracing::warn!(persona_id = %persona_id, error = %e, "gallery publish record failed");
+    }
+    Ok(published)
 }
 
 /// Import a persona from the gallery by share slug (the receiving end of the
@@ -377,4 +405,50 @@ pub async fn get_referral_count(
     resp.json::<ReferralStats>()
         .await
         .map_err(|e| AppError::Cloud(format!("invalid referral response: {e}")))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_publish_leaves_a_local_change_log_row() {
+        let pool = crate::db::init_test_db().expect("db");
+        let id = persona_repo::create(
+            &pool,
+            crate::db::models::CreatePersonaInput {
+                name: "Shared".to_string(),
+                system_prompt: "p".to_string(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+                lifecycle: None,
+            },
+        )
+        .expect("persona")
+        .id;
+
+        record_publish(&pool, &id, "https://personas.ai/p/shared-1").expect("record");
+
+        let rows =
+            crate::db::repos::resources::persona_change_log::list_for_persona(&pool, &id, 10)
+                .expect("list");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].field, "published_to_gallery");
+        assert_eq!(
+            rows[0].after_value.as_deref(),
+            Some("https://personas.ai/p/shared-1")
+        );
+        assert_eq!(rows[0].source.as_deref(), Some("gallery"));
+    }
 }

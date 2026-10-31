@@ -3088,6 +3088,11 @@ export type Translations = {
       imported: string;
       import_failed: string;
       invite_hint: string;
+      confirm_title: string;
+      confirm_body: string;
+      confirm_action: string;
+      sensitive_title: string;
+      sensitive_body: string;
     };
     design_subtabs: {
       manifest: string;
@@ -6163,6 +6168,7 @@ export type Translations = {
         editor: string;
         header: string;
         fanout: string;
+        gallery: string;
         other: string;
       };
       fields: {
@@ -6185,6 +6191,7 @@ export type Translations = {
         cli_awareness_enabled: string;
         model_profile: string;
         notification_channels: string;
+        published_to_gallery: string;
       };
     };
     assertions: {
