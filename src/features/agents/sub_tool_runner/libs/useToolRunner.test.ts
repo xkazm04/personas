@@ -11,6 +11,12 @@ vi.mock('@/lib/silentCatch', async (importOriginal) => ({
   silentCatch: (context: string) => silentCatchMock(context),
 }));
 
+// Sentinel catalog: proves the hook reads user-facing copy from `t`, not literals.
+const sentinelT = {
+  agents: { tool_runner: { no_persona: 'KEY:no_persona', invocation_failed: 'KEY:invocation_failed' } },
+};
+vi.mock('@/i18n/useTranslation', () => ({ useTranslation: () => ({ t: sentinelT }) }));
+
 import { useToolRunner } from './useToolRunner';
 
 const ok = { success: true, output: 'hi', duration_ms: 5 };
@@ -105,5 +111,19 @@ describe('useToolRunner', () => {
     const { result } = renderHook(() => useToolRunner('p1'));
     await act(async () => { await result.current.runTool('t1', '{}'); });
     expect(reported).not.toHaveBeenCalled();
+  });
+
+  it('uses the catalog fallback when a rejection carries no readable message', async () => {
+    invokeMock.mockRejectedValue('');
+    const { result } = renderHook(() => useToolRunner('p1'));
+    await act(async () => { await result.current.runTool('t2', '{}'); });
+    expect(result.current.getState('t2').error).toBe('KEY:invocation_failed');
+  });
+
+  it('puts the catalog no-persona message in the card error slot', async () => {
+    const { result } = renderHook(() => useToolRunner(undefined));
+    await act(async () => { await result.current.runTool('t1', '{}'); });
+    // The entry carries personaId '' so getState(…) matches an undefined persona.
+    expect(result.current.getState('t1').error).toBe('KEY:no_persona');
   });
 });

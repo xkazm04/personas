@@ -2023,6 +2023,8 @@
     "kind_script": "Script",
     "kind_automation": "Automation",
     "kind_builtin": "Built-in",
+    "no_persona": "No active persona. Open a persona before running tools.",
+    "invocation_failed": "Tool invocation failed",
     "builtin_note": "Built-in tool — it runs inside persona executions (not manually from here). Trigger one of the persona's capabilities to exercise it."
   },
   "health_check": {

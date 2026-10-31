@@ -5102,6 +5102,8 @@ export type Translations = {
       kind_script: string;
       kind_automation: string;
       kind_builtin: string;
+      no_persona: string;
+      invocation_failed: string;
       builtin_note: string;
     };
     health_check: {
