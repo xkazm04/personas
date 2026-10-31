@@ -114,7 +114,7 @@ function PairingGroupRow({ group, actioning, onDisconnect, onAudit }: PairingGro
       <Globe className="w-4 h-4 text-sky-400 shrink-0" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="typo-heading text-foreground truncate">{shown.name}</span>
+          <span className="typo-body text-foreground truncate">{shown.name}</span>
           {current && expiry ? (
             <Tooltip content={formatTimestamp(current.expires_at)}>
               <span className="typo-caption px-1.5 py-0.5 rounded inline-flex items-center gap-1 text-foreground bg-secondary/40">
