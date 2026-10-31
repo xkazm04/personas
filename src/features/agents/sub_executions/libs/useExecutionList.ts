@@ -1,6 +1,28 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
+import type { DesignUseCase } from '@/lib/types/frontendTypes';
+
+/**
+ * The first-run "Try it" seed: the persona's own declared input, as the JSON
+ * text the runner expects. Takes the first runnable use case (enabled, not
+ * documentation-only) that declares a `sample_input`, else one built from its
+ * `input_schema` defaults; `'{}'` when nothing declares an input.
+ */
+export function deriveSampleInput(useCases: readonly DesignUseCase[]): string {
+  for (const uc of useCases) {
+    if (uc.enabled === false || uc.execution_mode === 'non_executable') continue;
+    if (uc.sample_input && Object.keys(uc.sample_input).length > 0) {
+      return JSON.stringify(uc.sample_input, null, 2);
+    }
+    const fromSchema: Record<string, unknown> = {};
+    for (const field of uc.input_schema ?? []) {
+      if (field.default !== undefined) fromSchema[field.key] = field.default;
+    }
+    if (Object.keys(fromSchema).length > 0) return JSON.stringify(fromSchema, null, 2);
+  }
+  return '{}';
+}
 
 /**
  * Single source of truth for the persona execution list.

@@ -10,7 +10,7 @@ import { UnifiedTable } from '@/features/shared/components/display/UnifiedTable'
 import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
 import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
-import { useExecutionList } from '../../libs/useExecutionList';
+import { useExecutionList, deriveSampleInput } from '../../libs/useExecutionList';
 import { deriveExecutionOrigin, type ExecutionOrigin } from '../../libs/executionOrigin';
 import { matchesStatusFilter } from '../../libs/executionStatus';
 import { ActiveChainsBadge } from '../ActiveChainsBadge';
@@ -76,7 +76,6 @@ function LiveSelectCell({ row, live }: { row: ExecutionListItem; live: LiveSelec
 }
 
 const ROW_HEIGHT = 48;
-const EMPTY_SAMPLE_INPUT = '{}';
 
 export interface ExecutionListProps {
   /**
@@ -232,12 +231,9 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
       {error && paging.rows.length === 0 ? (
         <ExecutionListError onRetry={() => { void refresh(); }} />
       ) : neverRan ? (
-        // The first-run sample used to come from a template-id -> input map
-        // whose eight ids matched no template after the 2026 template
-        // retirement, so it was always '{}' - after loading the whole template
-        // catalog to find that out. A real sample belongs to the template's
-        // declared inputs, not to a hand list here.
-        <ExecutionListFirstRun onTryIt={() => setRerunInputData(EMPTY_SAMPLE_INPUT)} />
+        // Seeded from the persona's own declared use-case input (sample_input,
+        // else input_schema defaults); '{}' only when none declares one.
+        <ExecutionListFirstRun onTryIt={() => setRerunInputData(deriveSampleInput(useCases))} />
       ) : (
         <div className="animate-fade-slide-in">
           <UnifiedTable<ExecutionListItem>

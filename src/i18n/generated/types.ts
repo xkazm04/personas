@@ -3624,6 +3624,7 @@ export type Translations = {
       active_chains_agents_one: string;
       active_chains_agents_other: string;
       active_chains_depth: string;
+      active_chains_stale: string;
       cb_all_paused: string;
       cb_providers_unavailable_one: string;
       cb_providers_unavailable_other: string;
