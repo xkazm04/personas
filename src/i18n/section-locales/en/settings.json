@@ -144,6 +144,7 @@
     "contrast_badge_aaa": "AAA",
     "contrast_badge_aa": "AA",
     "contrast_badge_low": "Low",
+    "contrast_low_warning": "Body text is below AA contrast (4.5:1) and may be hard to read. You can still save this theme.",
     "contrast_badge_aria": "{level} contrast ({ratio}:1)",
     "contrast_readout_title": "Contrast",
     "contrast_pair_body": "Body text",

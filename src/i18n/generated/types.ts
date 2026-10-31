@@ -14068,6 +14068,7 @@ export type Translations = {
       contrast_badge_aaa: string;
       contrast_badge_aa: string;
       contrast_badge_low: string;
+      contrast_low_warning: string;
       contrast_badge_aria: string;
       contrast_readout_title: string;
       contrast_pair_body: string;

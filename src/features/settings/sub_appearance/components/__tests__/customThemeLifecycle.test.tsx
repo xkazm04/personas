@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import { preloadSectionsAsync } from '@/i18n/useTranslation';
 import { useThemeStore } from '@/stores/themeStore';
 import { en } from '@/i18n/en';
@@ -93,5 +93,18 @@ describe('custom theme editor lifecycle', () => {
     expect(useThemeStore.getState().customTheme).not.toBeNull();
     clickResetAndConfirm();
     expect(useThemeStore.getState().customTheme).toBeNull();
+  });
+  it('warns, without blocking Save, when body text falls below AA contrast', () => {
+    render(<CustomThemeCreator />);
+    expect(screen.queryByText(a.contrast_low_warning)).toBeNull();
+    // Foreground set to (almost) the dark default background: unreadable body text.
+    fireEvent.click(screen.getByTitle(`Pick ${a.color_foreground}`));
+    const region = screen.getByRole('region', { name: `${a.color_foreground} color picker` });
+    fireEvent.change(within(region).getByRole('textbox'), { target: { value: '#0a0e14' } });
+    expect(screen.queryByText(a.contrast_low_warning)).not.toBeNull();
+    const save = screen.getByRole('button', { name: a.save_apply }) as HTMLButtonElement;
+    expect(save.disabled).toBe(false);
+    fireEvent.click(save);
+    expect(useThemeStore.getState().customTheme?.foregroundColor).toBe('#0a0e14');
   });
 });

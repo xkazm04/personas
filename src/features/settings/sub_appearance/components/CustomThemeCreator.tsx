@@ -19,7 +19,7 @@ import { useTranslation } from '@/i18n/useTranslation';
    so a "Low" badge appears the moment a pick falls below AA. */
 function ContrastReadout({ vars, labels }: {
   vars: Record<string, string>;
-  labels: { title: string; body: string; primaryBtn: string; accentText: string; aaa: string; aa: string; low: string };
+  labels: { title: string; body: string; primaryBtn: string; accentText: string; aaa: string; aa: string; low: string; lowWarning: string };
 }) {
   const fg = vars['--foreground'] ?? '#e2e8f0';
   const bg = vars['--background'] ?? '#0a0e14';
@@ -59,6 +59,7 @@ function ContrastReadout({ vars, labels }: {
           </div>
         ))}
       </div>
+      {getContrastLevel(fg, bg) === 'low' && <p role="status" className="typo-caption text-status-warning">{labels.lowWarning}</p>}
     </div>
   );
 }
@@ -279,6 +280,7 @@ export default function CustomThemeCreator() {
           aaa: s.contrast_badge_aaa,
           aa: s.contrast_badge_aa,
           low: s.contrast_badge_low,
+          lowWarning: s.contrast_low_warning,
         }}
       />
 
