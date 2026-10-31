@@ -134,7 +134,7 @@ vi.mock('@/i18n/useTranslation', () => ({
   }),
 }));
 
-import { clearJournal, resetJournalCache } from '../triageJournal';
+import { clearJournal, readJournal, resetJournalCache } from '../triageJournal';
 import { clearTriageSession, resetTriageSessionCache } from '../triageSession';
 import { TRIAGE_KINDS } from '../triageTypes';
 import { resetTriageWarmCache, useUnifiedTriage } from '../useUnifiedTriage';
@@ -938,6 +938,27 @@ describe('useUnifiedTriage — goals reach the same spine', () => {
     // The siblings were signed off but their cards are still in the deck, so
     // the re-read is what stops the next verdict writing into a decided goal.
     await waitFor(() => expect(mockPendingAcceptance).toHaveBeenCalledTimes(2));
+  });
+
+  it('records an accept-all-from-KPI batch as one decision per goal', async () => {
+    mockTriageIdeas.mockResolvedValue(page([]));
+    mockPendingAcceptance.mockResolvedValue([
+      pendingGoal(),
+      pendingGoal({ goal_id: 'goal-2', title: 'Ship the second half' }),
+      pendingGoal({ goal_id: 'goal-5', title: 'Ship the third part' }),
+    ]);
+
+    const { result } = await mount();
+    const first = result.current.items.find((i) => i.id === 'goal:goal-1')!;
+    await act(async () => {
+      await result.current.decide({ item: first, verdict: 'accept', branchId: 'accept-kpi-batch' });
+    });
+
+    expect(mockAcceptGoal).toHaveBeenCalledTimes(3);
+    // Three goals were signed off, so the session counts three decisions.
+    expect(result.current.decidedCount).toBe(3);
+    const goalRows = readJournal().filter((e) => e.kind === 'goal' && e.verdict === 'accept');
+    expect(goalRows.map((e) => e.sourceId).sort()).toEqual(['goal-1', 'goal-2', 'goal-5']);
   });
 
   it('offers no batch branch to the only goal on its KPI', async () => {
