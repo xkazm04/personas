@@ -31,6 +31,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
   const { t } = useTranslation();
   const [inputJson, setInputJson] = useState(() => buildDefaultInput(tool));
   const [expanded, setExpanded] = useState(false);
+  const bodyId = `tool-card-body-${tool.id}`;
 
   // builtin:// tools execute only inside persona runs (personas-mcp sidecar);
   // offering Run here produced a false "misconfigured" failure that read as
@@ -73,6 +74,8 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
         type="button"
         data-testid={`tool-card-toggle-${tool.name}`}
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-controls={bodyId}
         className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors"
       >
         {expanded ? (
@@ -112,6 +115,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
       {/* Expanded body */}
       {expanded && (
           <div
+            id={bodyId}
             className="animate-fade-slide-in overflow-hidden"
           >
             <div className="border-t border-primary/10 px-3.5 py-3 space-y-3">

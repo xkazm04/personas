@@ -110,3 +110,16 @@ describe('ToolInvocationCard result contract fields', () => {
     expect(screen.getByText('HTTP 401')).toBeInTheDocument();
   });
 });
+
+describe('ToolInvocationCard disclosure semantics', () => {
+  it('exposes expanded state and the controlled body id on the header button', () => {
+    render(<ToolInvocationCard tool={tool()} isRunning={false} result={null} error={null} onRun={() => {}} />);
+    const toggle = screen.getByTestId('tool-card-toggle-gmail_reader');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    const controls = toggle.getAttribute('aria-controls');
+    expect(controls).toBeTruthy();
+    expect(document.getElementById(controls as string)).not.toBeNull();
+  });
+});
