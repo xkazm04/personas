@@ -725,6 +725,7 @@ export type Translations = {
     triage_source_cloud: string;
     triage_source_local: string;
     triage_submit: string;
+    triage_untitled_agent: string;
     triage_view_run: string;
     triage_view_run_hint: string;
     quick_loading: string;

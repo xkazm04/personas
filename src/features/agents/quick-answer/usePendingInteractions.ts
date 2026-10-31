@@ -22,6 +22,7 @@
 
 import { useMemo, useCallback } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useSharedMonitorData } from '@/features/fleet/monitor/monitorDataContext';
 import {
   MONITOR_REVIEW_LIMIT,
@@ -120,6 +121,7 @@ export function usePendingInteractions(): QuickAnswerData {
   const buildSessions = useAgentStore((s) => s.buildSessions);
   const personas = useAgentStore((s) => s.personas);
   const applyPendingAnswers = useAgentStore((s) => s.applyPendingAnswers);
+  const untitledAgent = useTranslation().t.monitor.triage_untitled_agent;
 
   // The overlay's engine when this hook runs inside the Monitor, `null` when it
   // runs in the Quick Answer popover. `own` is the popover's instance — always
@@ -146,14 +148,14 @@ export function usePendingInteractions(): QuickAnswerData {
       groups.push({
         sessionId: sess.sessionId,
         personaId: sess.personaId,
-        personaName: p?.name ?? 'Untitled agent',
+        personaName: p?.name ?? untitledAgent,
         personaIcon: p?.icon ?? null,
         personaColor: p?.color ?? null,
         questions: sess.pendingQuestions,
       });
     }
     return groups;
-  }, [buildSessions, personas]);
+  }, [buildSessions, personas, untitledAgent]);
 
   const submitQuestionAnswers = useCallback(
     async (sessionId: string, answers: Record<string, string>) => {

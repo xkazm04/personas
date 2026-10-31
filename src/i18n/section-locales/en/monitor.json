@@ -718,6 +718,7 @@
   "triage_source_cloud": "Cloud",
   "triage_source_local": "Local",
   "triage_submit": "Submit",
+  "triage_untitled_agent": "Untitled agent",
   "triage_view_run": "See the run",
   "triage_view_run_hint": "Open the execution that raised this review",
   "quick_loading": "Reading what is waiting on you…",
