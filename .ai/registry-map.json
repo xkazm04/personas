@@ -4199,10 +4199,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:50 The check that the deadline comes before the sleep relies on the first place the bare identifier POLL_DEADLINE appears in the Rust function, so a check moved after the sleep would stay green if any earlier non-comment use of the name (for example a `let` alias) were left above it.",
-          "evaluatedAt": "2026-10-24",
-          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
-          "evaluatedRevision": 27
+          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:51 the deadline-before-sleep ordering claim still compares indexOf('POLL_DEADLINE'), a bare identifier, so a later `let deadline = started + POLL_DEADLINE` above a check moved after the sleep keeps the test green while the budget it computes is wrong.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:2287af36a9532062",
+          "evaluatedRevision": 28
         },
         {
           "subject": "agent-memory",
@@ -4400,10 +4400,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/api/__tests__/enums.test.ts:15 claims 'a change on EITHER side fails this test' while the Rust sets are literal copies (:30) and the file reads no Rust source, so a change to VALID_CHANNELS in src-tauri/src/commands/infrastructure/twin.rs leaves it green: the named decision is unreached and the claim overstates the guard.",
+          "evidence": "src/api/__tests__/enums.test.ts:15 claims 'a change on EITHER side fails this test' while the Rust side is a hand-copied literal list (:30) and the file never reads twin.rs, so a Rust-only change to VALID_CHANNELS stays green - the claim the file makes is the one it does not pin.",
           "evaluatedAt": "2026-10-31",
-          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
-          "evaluatedRevision": 27,
+          "evaluatedAgainst": "sha256-b2:2287af36a9532062",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -7620,10 +7620,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 flips the seeded persona_executions row to 'completed' with a raw UPDATE after creating it through the repo door (:99), bypassing the executions status transitions and asserting no invariant afterwards, so the fixture can hold states the product's write path never produces.",
+          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 the test-bridge seeder still flips the persona_executions row to 'completed' with a raw UPDATE after creating it through the repo, so the seeded run skips the product's status-transition door and can hold a state the product could never write.",
           "evaluatedAt": "2026-10-31",
-          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
-          "evaluatedRevision": 27,
+          "evaluatedAgainst": "sha256-b2:2287af36a9532062",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -7786,10 +7786,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/eval_runs.rs:828 says the canonical archive holds no judged runs, so judge_panel_present_when_a_run_is_judged loops and passes without asserting anything. detail_loads_and_resolves_verdict likewise returns green at :814 when no scorecard run exists. The judge contract is unreached and the failure looks the same as a pass.",
+          "evidence": "src-tauri/src/commands/eval_runs.rs:828 says the canonical archive holds no judged runs, so judge_panel_present_when_a_run_is_judged (:827) loops, finds none and passes without asserting anything - a green result over a population the decision never fired on, published as a pass.",
           "evaluatedAt": "2026-10-31",
-          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
-          "evaluatedRevision": 27,
+          "evaluatedAgainst": "sha256-b2:2287af36a9532062",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -9494,10 +9494,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "tests/playwright/athena-conversation.spec.ts:110 handles a tab-memory testid missing past the polling deadline by adding a warn annotation and returning green (the same at :257). The technique says a deadline expiring with nothing found must be reported as a failure, but here it is reported as a pass.",
+          "evidence": "tests/playwright/athena-conversation.spec.ts:110 a missing tab-memory testid past the polling deadline still adds a warn annotation and returns, so the live-app spec reports green over an assertion it never reached.",
           "evaluatedAt": "2026-10-31",
-          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
-          "evaluatedRevision": 27,
+          "evaluatedAgainst": "sha256-b2:2287af36a9532062",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {

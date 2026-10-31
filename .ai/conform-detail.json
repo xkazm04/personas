@@ -12345,12 +12345,17 @@
       "state": "deviation",
       "evaluatedAt": "2026-10-31",
       "evaluatedTs": "2026-10-31T00:00:00.000Z",
-      "worker": "cloud-20261031-personas-2",
+      "worker": "cloud-20261031-personas-9",
       "techniques": [
         {
           "technique": "live-app-harness",
           "verdict": "deviation",
-          "evidence": "tests/playwright/athena-conversation.spec.ts:110 an absent element after the deadline becomes an annotation plus return, so the live lane reports success for a check it never ran. The test-identifier contract half is realized: tests/playwright/__tests__/selector-contract.test.ts:7 requires every spec testid to be emitted by src/, with a two-sided KNOWN list (:23)."
+          "evidence": "tests/playwright/athena-conversation.spec.ts:110 a broken test-identifier contract is converted into a passing test with an annotation instead of a failure (failure must be spelled differently from empty success)."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "realized",
+          "evidence": "tests/playwright/__tests__/selector-contract.test.ts:7 a static, two-sided contract requires every literal testid the specs query to be emitted by src/, which is the interim pin for specs no CI lane runs."
         },
         {
           "technique": "isolation-lanes",
@@ -12359,6 +12364,7 @@
           "carriedFrom": "2026-10-09"
         }
       ],
+      "registryProposal": "",
       "superseded": [
         {
           "state": "deviation",
@@ -12373,6 +12379,13 @@
           "evaluatedAt": "2026-10-09T17:37:37.000Z",
           "worker": "d3586c5a-c4f5-48dc-ba6f-f81f31a9b347",
           "reason": "replaced by cloud-20261031-personas-2"
+        },
+        {
+          "state": "deviation",
+          "evidence": "tests/playwright/athena-conversation.spec.ts:110 handles a tab-memory testid missing past the polling deadline by adding a warn annotation and returning green (the same at :257). The technique says a deadline expiring with nothing found must be reported as a failure, but here it is reported as a pass.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-2",
+          "reason": "replaced by cloud-20261031-personas-9"
         }
       ]
     },
@@ -15730,17 +15743,17 @@
       "state": "deviation",
       "evaluatedAt": "2026-10-31",
       "evaluatedTs": "2026-10-31T00:00:00.000Z",
-      "worker": "cloud-20261031-personas-2",
+      "worker": "cloud-20261031-personas-9",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src/api/__tests__/enums.test.ts:15 the file's claim about what it pins (both sides) is never settled; mutating the Rust side, the decision it names, cannot turn it red because :30 hardcodes the Rust set."
+          "evidence": "src/api/__tests__/enums.test.ts:30 `RUST_VALID_CHANNELS` is a literal copy, so mutating the Rust decision the header (:15) names cannot reach the assertion; the decision rule says a file's claim is settled by mutating the decision it names."
         },
         {
           "technique": "pin-the-call-not-the-name",
-          "verdict": "realized",
-          "evidence": "src/api/__tests__/scraperTimeoutParity.test.ts:28 strips block and line comments from the Rust source before matching, so prose cannot satisfy the pin, and :37 uses a needle carrying the argument list of spawn_claude_and_collect."
+          "verdict": "deviation",
+          "evidence": "src/api/__tests__/enums.test.ts:30 no structural pin over src-tauri/src/commands/infrastructure/twin.rs exists at all; sibling parity tests in this repo (src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:46) show the read-the-source shape is available."
         },
         {
           "technique": "negative-control-tests",
@@ -15755,6 +15768,7 @@
           "carriedFrom": "2026-10-10"
         }
       ],
+      "registryProposal": "",
       "superseded": [
         {
           "state": "deviation",
@@ -15762,6 +15776,13 @@
           "evaluatedAt": "2026-10-10T02:23:06.000Z",
           "worker": "b2435f14-a79c-4550-8ac6-81f0387e4917",
           "reason": "replaced by cloud-20261031-personas-2"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/api/__tests__/enums.test.ts:15 claims 'a change on EITHER side fails this test' while the Rust sets are literal copies (:30) and the file reads no Rust source, so a change to VALID_CHANNELS in src-tauri/src/commands/infrastructure/twin.rs leaves it green: the named decision is unreached and the claim overstates the guard.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-2",
+          "reason": "replaced by cloud-20261031-personas-9"
         }
       ]
     },
@@ -20125,12 +20146,12 @@
       "state": "deviation",
       "evaluatedAt": "2026-10-31",
       "evaluatedTs": "2026-10-31T00:00:00.000Z",
-      "worker": "cloud-20261031-personas-2",
+      "worker": "cloud-20261031-personas-9",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/eval_runs.rs:828 the test's own comment says the decision it names (a judged run's panel) is never present, so the assertion never runs and no engagement is reported."
+          "evidence": "src-tauri/src/commands/eval_runs.rs:827 the test reports ok with zero engagement; the decision rule requires engagement published beside the verdict (no-difference over an unengaged population is blindness) and a test name that does not overstate."
         },
         {
           "technique": "negative-control-tests",
@@ -20199,6 +20220,7 @@
           "carriedFrom": "2026-10-12"
         }
       ],
+      "registryProposal": "",
       "superseded": [
         {
           "state": "deviation",
@@ -20206,6 +20228,13 @@
           "evaluatedAt": "2026-10-12T16:43:32.807Z",
           "worker": "b9065c40-0f9e-46fc-a8a2-b36a03aad8fa",
           "reason": "replaced by cloud-20261031-personas-2"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/eval_runs.rs:828 says the canonical archive holds no judged runs, so judge_panel_present_when_a_run_is_judged loops and passes without asserting anything. detail_loads_and_resolves_verdict likewise returns green at :814 when no scorecard run exists. The judge contract is unreached and the failure looks the same as a pass.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-2",
+          "reason": "replaced by cloud-20261031-personas-9"
         }
       ]
     },
@@ -26877,12 +26906,12 @@
       "state": "deviation",
       "evaluatedAt": "2026-10-31",
       "evaluatedTs": "2026-10-31T00:00:00.000Z",
-      "worker": "cloud-20261031-personas-2",
+      "worker": "cloud-20261031-personas-9",
       "techniques": [
         {
           "technique": "fixture-economics",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 is a raw status write in a test fixture with no follow-up invariant assertion, which is the seeded-data honesty failure the technique names."
+          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 raw `UPDATE persona_executions SET status = 'completed'` bypasses the write path with no assertion afterwards that the seeded row satisfies the door's invariants (seeded-data honesty)."
         },
         {
           "technique": "live-app-harness",
@@ -26891,6 +26920,7 @@
           "carriedFrom": "2026-10-14"
         }
       ],
+      "registryProposal": "",
       "superseded": [
         {
           "state": "deviation",
@@ -26898,6 +26928,13 @@
           "evaluatedAt": "2026-10-14T09:14:39.000Z",
           "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
           "reason": "replaced by cloud-20261031-personas-2"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 flips the seeded persona_executions row to 'completed' with a raw UPDATE after creating it through the repo door (:99), bypassing the executions status transitions and asserting no invariant afterwards, so the fixture can hold states the product's write path never produces.",
+          "evaluatedAt": "2026-10-31T00:00:00.000Z",
+          "worker": "cloud-20261031-personas-2",
+          "reason": "replaced by cloud-20261031-personas-9"
         }
       ]
     },
@@ -39089,24 +39126,35 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T01:45:42.766Z",
-      "worker": "3eaa9f71-84d6-4c42-a0d5-4ada584cc511",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-9",
       "techniques": [
         {
           "technique": "pin-the-call-not-the-name",
           "verdict": "deviation",
-          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:50 The ordering claim rests on a bare identifier needle ('POLL_DEADLINE'), which the technique names as a failure. The second needle, 'sleep(POLL_INTERVAL)', does carry an argument list. The sibling parity tests handle the other settings well: they strip comments from the haystack and require at least one match."
+          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:51 ordering rests on the bare identifier `POLL_DEADLINE`, not a needle prose cannot spell such as `elapsed() >= POLL_DEADLINE` (the decision rule: an ordering claim never rests on a bare identifier)."
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "realized",
+          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:46 the backend budget is read from the real Rust source (`HTTP_TIMEOUT` in http_clients.rs) at run time rather than a copied constant, so the parity claim reaches the decision it names."
         },
         {
           "technique": "derived-selection-must-be-measured",
           "verdict": "conformant",
-          "evidence": "src/api/agents/__tests__/automationRunTimeoutParity.test.ts:39 Each source-text extraction requires at least one match and agreement across all matches, so a matcher that finds nothing fails instead of passing."
-        },
+          "evidence": "src/api/agents/__tests__/automationRunTimeoutParity.test.ts:39 Each source-text extraction requires at least one match and agreement across all matches, so a matcher that finds nothing fails instead of passing.",
+          "carriedFrom": "2026-10-24"
+        }
+      ],
+      "registryProposal": "",
+      "superseded": [
         {
-          "technique": "unreached-decisions-pin-nothing",
-          "verdict": "conformant",
-          "evidence": "src/api/agents/__tests__/automationRunTimeoutParity.test.ts:91 Asserts the timeout argument actually passed across the IPC mock, not only the helper's computed budget, and does this for both producers (trigger and webhook test)."
+          "state": "deviation",
+          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:50 The check that the deadline comes before the sleep relies on the first place the bare identifier POLL_DEADLINE appears in the Rust function, so a check moved after the sleep would stay green if any earlier non-comment use of the name (for example a `let` alias) were left above it.",
+          "evaluatedAt": "2026-10-24T01:45:42.766Z",
+          "worker": "3eaa9f71-84d6-4c42-a0d5-4ada584cc511",
+          "reason": "replaced by cloud-20261031-personas-9"
         }
       ]
     },
