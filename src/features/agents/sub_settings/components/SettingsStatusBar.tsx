@@ -1,6 +1,7 @@
 import { Trash2, AlertTriangle, Check } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
+import { AsyncButton } from '@/features/shared/components/buttons';
 
 interface SettingsStatusBarProps {
   isSaving: boolean;
@@ -57,14 +58,17 @@ export function SettingsStatusBar({
             <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
             {t.agents.settings_status.irreversible}
           </span>
-          <button
-            type="button"
+          {/* AsyncButton arms its in-flight guard synchronously, so a double press
+              sends one delete_persona, not two racing ones. */}
+          <AsyncButton
+            variant="accent"
+            tone="error"
+            size="sm"
             onClick={onDelete}
             data-testid="agent-delete-confirm"
-            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-modal typo-body transition-colors"
           >
             {t.common.confirm}
-          </button>
+          </AsyncButton>
           <button
             type="button"
             onClick={() => setShowDeleteConfirm(false)}
