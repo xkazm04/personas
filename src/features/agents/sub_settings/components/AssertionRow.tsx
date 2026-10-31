@@ -22,8 +22,15 @@ export function AssertionRow({ row, onDelete }: { row: OutputAssertion; onDelete
     ac === 'heal' ? a.action_heal : ac === 'log' ? a.action_log : a.action_review;
 
   return (
-    <div className="flex items-center gap-2 rounded-card border border-primary/10 bg-background/30 px-2.5 py-1.5">
+    <div
+      className={`flex items-center gap-2 rounded-card border border-primary/10 bg-background/30 px-2.5 py-1.5 ${row.enabled ? '' : 'opacity-60'}`}
+    >
       <span className="typo-body text-foreground truncate flex-1">{row.name}</span>
+      {!row.enabled && (
+        <span className="typo-caption rounded-input border border-status-warning/30 bg-status-warning/10 px-1.5 text-status-warning">
+          {a.paused}
+        </span>
+      )}
       <span className="typo-caption text-foreground">{typeLabels[row.assertionType] ?? row.assertionType}</span>
       <span className="typo-caption text-primary">{actionLabel(row.onFailure)}</span>
       <button

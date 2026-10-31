@@ -6217,6 +6217,7 @@ export type Translations = {
       create: string;
       cancel: string;
       delete: string;
+      paused: string;
     };
     brain: {
       tiers_title: string;

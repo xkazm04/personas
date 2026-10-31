@@ -3135,7 +3135,8 @@
     "action_heal": "Attempt healing",
     "create": "Create",
     "cancel": "Cancel",
-    "delete": "Delete gate"
+    "delete": "Delete gate",
+    "paused": "Paused"
   },
   "brain": {
     "tiers_title": "Memory",

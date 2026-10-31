@@ -64,3 +64,12 @@ describe('gate row type label', () => {
     if (type !== 'contains') expect(screen.queryByText('assertions.type_contains')).toBeNull();
   });
 });
+
+describe('gate row enabled state', () => {
+  it('marks a disabled gate as paused and leaves an active one unmarked', async () => {
+    await renderWith([row({ id: 'a1', name: 'Off gate', enabled: false }), row({ id: 'a2', name: 'On gate' })]);
+    expect(screen.getAllByText('assertions.paused')).toHaveLength(1);
+    expect(screen.getByText('Off gate').parentElement).toContainElement(screen.getByText('assertions.paused'));
+    expect(screen.getByText('On gate').parentElement).not.toContainElement(screen.queryByText('assertions.paused'));
+  });
+});
