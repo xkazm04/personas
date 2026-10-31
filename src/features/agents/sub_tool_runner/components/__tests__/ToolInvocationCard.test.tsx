@@ -123,3 +123,25 @@ describe('ToolInvocationCard disclosure semantics', () => {
     expect(document.getElementById(controls as string)).not.toBeNull();
   });
 });
+
+describe('ToolInvocationCard result announcements', () => {
+  it('announces a settled run through a status region', () => {
+    render(
+      <ToolInvocationCard tool={tool()} isRunning={false} result={result({ success: true, error: null, output: '{}' })} error={null} onRun={() => {}} />,
+    );
+    fireEvent.click(screen.getByTestId('tool-card-toggle-gmail_reader'));
+    expect(screen.getByRole('status')).toHaveTextContent('Success');
+  });
+
+  it('announces a failed run through a status region', () => {
+    render(<ToolInvocationCard tool={tool()} isRunning={false} result={result({})} error={null} onRun={() => {}} />);
+    fireEvent.click(screen.getByTestId('tool-card-toggle-gmail_reader'));
+    expect(screen.getByRole('status')).toHaveTextContent('Failed');
+  });
+
+  it('announces an IPC error through an alert', () => {
+    render(<ToolInvocationCard tool={tool()} isRunning={false} result={null} error="IPC timeout" onRun={() => {}} />);
+    fireEvent.click(screen.getByTestId('tool-card-toggle-gmail_reader'));
+    expect(screen.getByRole('alert')).toHaveTextContent('Error');
+  });
+});

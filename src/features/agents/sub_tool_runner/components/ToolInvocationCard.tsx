@@ -198,7 +198,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
         data-testid={`tool-result-${toolName}`}
         className="rounded-modal border border-red-500/15 bg-red-500/5 px-3 py-2 typo-body text-red-400"
       >
-        <div className="flex items-center gap-1.5 mb-1">
+        <div role="alert" className="flex items-center gap-1.5 mb-1">
           <XCircle className="w-3 h-3 flex-shrink-0" />
           <span className="font-medium">{t.agents.tool_runner.error}</span>
         </div>
@@ -217,7 +217,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
         ? 'border-emerald-500/15 bg-emerald-500/5'
         : 'border-red-500/15 bg-red-500/5'
     }`}>
-      <div className="flex items-center gap-2 mb-1.5">
+      <div role="status" className="flex items-center gap-2 mb-1.5">
         {result.success ? (
           <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
         ) : (
