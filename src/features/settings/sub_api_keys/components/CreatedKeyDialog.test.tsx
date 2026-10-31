@@ -30,43 +30,43 @@ beforeEach(() => {
   Object.defineProperty(navigator, 'clipboard', { value: { writeText, readText }, configurable: true });
 });
 
-function ackAndDone() {
+async function ackAndDone() {
   fireEvent.click(screen.getByRole('checkbox'));
-  fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Done' }));
 }
 
 describe('CreatedKeyDialog clipboard hygiene', () => {
   it('clears the clipboard on close when it still holds the copied key', async () => {
     const onClose = vi.fn();
     render(<CreatedKeyDialog response={response} onClose={onClose} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Copy' }));
     await waitFor(() => expect(clipboard).toBe('pk_secret_123'));
-    ackAndDone();
+    await ackAndDone();
     await waitFor(() => expect(clipboard).toBe(''));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('clears a copied MCP config (which embeds the token) on close', async () => {
     render(<CreatedKeyDialog response={response} onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /Copy MCP config/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Copy MCP config/i }));
     await waitFor(() => expect(clipboard).toContain('pk_secret_123'));
-    ackAndDone();
+    await ackAndDone();
     await waitFor(() => expect(clipboard).toBe(''));
   });
 
   it('leaves the clipboard alone when the user copied something else since', async () => {
     render(<CreatedKeyDialog response={response} onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Copy' }));
     await waitFor(() => expect(clipboard).toBe('pk_secret_123'));
     clipboard = 'something else';
-    ackAndDone();
+    await ackAndDone();
     await waitFor(() => expect(readText).toHaveBeenCalled());
     expect(clipboard).toBe('something else');
   });
 
-  it('never touches the clipboard when nothing was copied', () => {
+  it('never touches the clipboard when nothing was copied', async () => {
     render(<CreatedKeyDialog response={response} onClose={vi.fn()} />);
-    ackAndDone();
+    await ackAndDone();
     expect(readText).not.toHaveBeenCalled();
     expect(writeText).not.toHaveBeenCalled();
   });
