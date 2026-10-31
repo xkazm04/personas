@@ -82,6 +82,7 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
                 key={p.id}
                 type="button"
                 onClick={() => onToggle(p.id)}
+                aria-pressed={isSelected}
                 disabled={disabled}
                 className={`w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-input border transition-colors disabled:opacity-50 ${
                   isSelected
@@ -89,7 +90,7 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
                     : 'border-border/30 bg-secondary/20 hover:bg-secondary/40'
                 }`}
               >
-                <input type="checkbox" checked={isSelected} readOnly tabIndex={-1} />
+                <input type="checkbox" checked={isSelected} readOnly tabIndex={-1} aria-hidden="true" />
                 <span className="typo-caption text-foreground truncate">{p.name}</span>
               </button>
             );
