@@ -8,6 +8,7 @@
  */
 import { Folder, History, PiggyBank, Repeat, Target, Trophy, Users, Wallet, Zap, type LucideIcon } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { TONE_TEXT } from './tones';
 import type { TriageFact } from '@/features/agents/quick-answer/triage/triageTypes';
 
@@ -23,6 +24,9 @@ const FACT_ICON: Record<string, LucideIcon> = {
   action: Zap,
 };
 
+/** Facts whose value is a raw ISO timestamp, drawn as a time instead of a string. */
+const TIME_FACTS = new Set(['lockedAt']);
+
 export function FactLine({ fact }: { fact: TriageFact }) {
   const Icon = FACT_ICON[fact.id];
   const ink = fact.tone ? TONE_TEXT[fact.tone] : 'text-foreground';
@@ -30,7 +34,9 @@ export function FactLine({ fact }: { fact: TriageFact }) {
     return (
       <div className="flex items-baseline justify-between gap-3">
         <span className="typo-eyebrow text-foreground">{fact.label}</span>
-        <span className={`min-w-0 text-right typo-data [overflow-wrap:anywhere] ${ink}`}>{fact.value}</span>
+        <span className={`min-w-0 text-right typo-data [overflow-wrap:anywhere] ${ink}`}>
+          {TIME_FACTS.has(fact.id) ? <RelativeTime timestamp={fact.value} fallback={fact.value} /> : fact.value}
+        </span>
       </div>
     );
   }
