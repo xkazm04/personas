@@ -142,12 +142,14 @@ export function AnnotationEditor({
               }
             }}
             placeholder={a.annotation_tag_placeholder}
+            aria-label={a.annotation_tags_label}
             className="flex-1 min-w-[100px] px-2 py-0.5 typo-body bg-secondary/30 border border-primary/15 rounded-card text-foreground outline-none focus:border-primary/30"
           />
           <button
             type="button"
             onClick={() => commitTag(draftTag)}
             disabled={!draftTag.trim()}
+            aria-label={t.common.add}
             className="p-1 rounded-interactive text-foreground hover:text-foreground disabled:opacity-30"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -177,6 +179,7 @@ export function AnnotationEditor({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder={a.annotation_note_placeholder}
+          aria-label={a.annotation_note_label}
           rows={3}
           className="w-full px-2 py-1.5 typo-body bg-secondary/30 border border-primary/15 rounded-card text-foreground outline-none focus:border-primary/30 resize-y"
         />
