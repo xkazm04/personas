@@ -12247,19 +12247,20 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:37:37.000Z",
-      "worker": "d3586c5a-c4f5-48dc-ba6f-f81f31a9b347",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-2",
       "techniques": [
         {
           "technique": "live-app-harness",
           "verdict": "deviation",
-          "evidence": "tests/playwright/athena-conversation.spec.ts:107 absent identifier is reported as a warn annotation and the test returns green; src/features/companions/athena/BrainViewer.tsx:252 the memory tab carries no testId"
+          "evidence": "tests/playwright/athena-conversation.spec.ts:110 an absent element after the deadline becomes an annotation plus return, so the live lane reports success for a check it never ran. The test-identifier contract half is realized: tests/playwright/__tests__/selector-contract.test.ts:7 requires every spec testid to be emitted by src/, with a two-sided KNOWN list (:23)."
         },
         {
           "technique": "isolation-lanes",
           "verdict": "conformant",
-          "evidence": "playwright.config.ts:56 workers: 1 with the singleton companion session stated as the reason"
+          "evidence": "playwright.config.ts:56 workers: 1 with the singleton companion session stated as the reason",
+          "carriedFrom": "2026-10-09"
         }
       ],
       "superseded": [
@@ -12269,6 +12270,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by d3586c5a-c4f5-48dc-ba6f-f81f31a9b347"
+        },
+        {
+          "state": "deviation",
+          "evidence": "tests/playwright/athena-conversation.spec.ts:107 when data-testid=\"tab-memory\" is absent the test pushes a warn annotation and returns green (same at :254), and nothing in src produces that id (src/features/companions/athena/BrainViewer.tsx:250 SegmentedTabs declares no testId though src/features/shared/components/layout/SegmentedTabs.tsx:131 would emit one), so both Phase D tests pass while asserting nothing - live-app-harness makes a missing identifier a breaking change and a missing element a harness failure, never a pass. [re-judged at rev 26: code unchanged since the rev-25 verdict]",
+          "evaluatedAt": "2026-10-09T17:37:37.000Z",
+          "worker": "d3586c5a-c4f5-48dc-ba6f-f81f31a9b347",
+          "reason": "replaced by cloud-20261031-personas-2"
         }
       ]
     },
@@ -15552,24 +15560,40 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:23:06.000Z",
-      "worker": "b2435f14-a79c-4550-8ac6-81f0387e4917",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-2",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src/api/__tests__/enums.test.ts:14 the file's stated claim (either-side change fails) is false under the mutation it names; the decision on the Rust side is never read"
+          "evidence": "src/api/__tests__/enums.test.ts:15 the file's claim about what it pins (both sides) is never settled; mutating the Rust side, the decision it names, cannot turn it red because :30 hardcodes the Rust set."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "realized",
+          "evidence": "src/api/__tests__/scraperTimeoutParity.test.ts:28 strips block and line comments from the Rust source before matching, so prose cannot satisfy the pin, and :37 uses a needle carrying the argument list of spawn_claude_and_collect."
         },
         {
           "technique": "negative-control-tests",
           "verdict": "deviation",
-          "evidence": "src/api/__tests__/enums.test.ts:29 correspondence probe against a hand-held copy of the far side, no recorded control; a Rust-side mutation is invisible to it"
+          "evidence": "src/api/__tests__/enums.test.ts:29 correspondence probe against a hand-held copy of the far side, no recorded control; a Rust-side mutation is invisible to it",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "isolation-lanes",
           "verdict": "realized",
-          "evidence": "src/test/tauriMock.ts:79 resetInvokeMocks (called per test, src/api/__tests__/personas.test.ts:50) also clears the auto-dedup response cache that would otherwise carry one test's result into the next"
+          "evidence": "src/test/tauriMock.ts:79 resetInvokeMocks (called per test, src/api/__tests__/personas.test.ts:50) also clears the auto-dedup response cache that would otherwise carry one test's result into the next",
+          "carriedFrom": "2026-10-10"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/api/__tests__/enums.test.ts:14 claims 'a change on EITHER side fails this test' but the Rust sets are literal copies (:29) and nothing reads src-tauri/src/commands/infrastructure/twin.rs:524, whose own comment (twin.rs:512) names this file as its sync guard - narrowing VALID_CHANNELS (the historical defect the header records) stays green while TS-valid channels are rejected at runtime; each side believes the other pins it.",
+          "evaluatedAt": "2026-10-10T02:23:06.000Z",
+          "worker": "b2435f14-a79c-4550-8ac6-81f0387e4917",
+          "reason": "replaced by cloud-20261031-personas-2"
         }
       ]
     },
@@ -19899,72 +19923,91 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T16:43:32.807Z",
-      "worker": "b9065c40-0f9e-46fc-a8a2-b36a03aad8fa",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-2",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/eval_runs.rs:839 The test iterates list_summaries over an archive with 0 judged runs and exits green without ever entering the assertion block."
+          "evidence": "src-tauri/src/commands/eval_runs.rs:828 the test's own comment says the decision it names (a judged run's panel) is never present, so the assertion never runs and no engagement is reported."
         },
         {
           "technique": "negative-control-tests",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/eval_runs.rs:843 Because detail.judge is never Some in the archive, the test cannot fail when the judge panel contract breaks."
+          "evidence": "src-tauri/src/commands/eval_runs.rs:843 Because detail.judge is never Some in the archive, the test cannot fail when the judge panel contract breaks.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "fixture-economics",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:117 Cheap in-memory JSON string payloads test array parsing and validation logic efficiently."
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:117 Cheap in-memory JSON string payloads test array parsing and validation logic efficiently.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "isolation-lanes",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/execution/assertions.rs:188 Pure parsing and validation functions execute without shared state or live database handles."
+          "evidence": "src-tauri/src/commands/execution/assertions.rs:188 Pure parsing and validation functions execute without shared state or live database handles.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "suite-partitioning",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Rust unit tests run within the cargo test framework; lane boundaries are declared in CI matrix configs."
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Rust unit tests run within the cargo test framework; lane boundaries are declared in CI matrix configs.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "approval-snapshots-with-guarded-update",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:118 Assertions check specific integers and validation errors rather than recording approval snapshots."
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:118 Assertions check specific integers and validation errors rather than recording approval snapshots.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "assert-through-the-reader",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/assertions.rs:189 Tokens are internal IPC strings parsed directly rather than scripts emitted for foreign interpreters."
+          "evidence": "src-tauri/src/commands/execution/assertions.rs:189 Tokens are internal IPC strings parsed directly rather than scripts emitted for foreign interpreters.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "pin-the-call-not-the-name",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/assertions.rs:204 Tests invoke command parsers directly rather than scanning source files."
+          "evidence": "src-tauri/src/commands/execution/assertions.rs:204 Tests invoke command parsers directly rather than scanning source files.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "live-app-harness",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Runs in-process unit tests without launching the desktop Tauri application shell."
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Runs in-process unit tests without launching the desktop Tauri application shell.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "dynamic-verifier-classes",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 No sanitizers or verifier instrumentation are configured in this command unit suite."
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 No sanitizers or verifier instrumentation are configured in this command unit suite.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "flake-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Synchronous unit tests with no retry or quarantine policy."
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Synchronous unit tests with no retry or quarantine policy.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "far-side-oracle",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Does not assert side effects on external unowned remote services."
+          "evidence": "src-tauri/src/commands/execution/test_suites.rs:112 Does not assert side effects on external unowned remote services.",
+          "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "unreached-decisions-pin-nothing: add a rule and linter for test assertions enclosed in conditional blocks or loops over static fixtures that execute zero iterations, passing vacuously when expected data variants are absent."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/eval_runs.rs:839 The test loops over summaries with an archive containing zero judged runs and passes vacuously without asserting any judge panel contract.",
+          "evaluatedAt": "2026-10-12T16:43:32.807Z",
+          "worker": "b9065c40-0f9e-46fc-a8a2-b36a03aad8fa",
+          "reason": "replaced by cloud-20261031-personas-2"
+        }
+      ]
     },
     "c5f662f2-458b-4b5d-b03b-e4acf8f54049/test-harness": {
       "context": "plugins-dev-tools-projects",
@@ -26531,19 +26574,29 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:14:39.000Z",
-      "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-2",
       "techniques": [
+        {
+          "technique": "fixture-economics",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 is a raw status write in a test fixture with no follow-up invariant assertion, which is the seeded-data honesty failure the technique names."
+        },
         {
           "technique": "live-app-harness",
           "verdict": "realized in part: test-only command compiled behind the test-automation feature, rows marked is_simulation",
-          "evidence": "src-tauri/src/commands/mod.rs:25"
-        },
+          "evidence": "src-tauri/src/commands/mod.rs:25",
+          "carriedFrom": "2026-10-14"
+        }
+      ],
+      "superseded": [
         {
-          "technique": "fixture-economics",
-          "verdict": "not realized: seeded status written around the product write path (one-validation-door)",
-          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:119"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:119 flips the seeded persona_executions row to 'completed' with a raw UPDATE, bypassing executions::update_status (src-tauri/db/src/repos/execution/executions.rs:1264) which redacts fields and owns the transition, so the fixture can hold a state the product door would shape differently",
+          "evaluatedAt": "2026-10-14T09:14:39.000Z",
+          "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+          "reason": "replaced by cloud-20261031-personas-2"
         }
       ]
     },
@@ -36449,29 +36502,40 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:44:00.000Z",
-      "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-2",
       "techniques": [
         {
-          "technique": "unreached-decisions-pin-nothing",
+          "technique": "negative-control-tests",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/failover.rs:202 with_persistence restore decisions (TTL filter, is_open -> Instant reconstruction) reached by no test; failover tests only drive the in-memory breaker"
-        },
-        {
-          "technique": "gate-scope-is-not-report-scope",
-          "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:16 a repo file with no test importer does not appear in any test verdict at all"
+          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:38 the circuit-state recovery path is a restore path the suite never executes, so no test exists that could be shown to fail."
         },
         {
           "technique": "fixture-economics",
           "verdict": "realized",
-          "evidence": "src-tauri/db/src/repos/execution/executions.rs:3800 make_persona seeds through personas::create on the init_test_db template copy"
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:2785 the execution repo tests take the shared copied template via init_test_db() instead of migrating per test."
         },
         {
-          "technique": "negative-control-tests",
-          "verdict": "realized",
-          "evidence": "src-tauri/db/src/repos/execution/executions.rs:2900 the promotion CAS test pins the pre-CAS resurrection bug (doc :2897) by driving the reaped row it used to overwrite"
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/failover.rs:202 with_persistence restore decisions (TTL filter, is_open -> Instant reconstruction) reached by no test; failover tests only drive the in-memory breaker",
+          "carriedFrom": "2026-10-22"
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:16 a repo file with no test importer does not appear in any test verdict at all",
+          "carriedFrom": "2026-10-22"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:38 load_active (and upsert/purge_expired) is imported by no test, and its only caller, the restart-restore path src-tauri/engine/src/failover.rs:202 with_persistence, is constructed by no test - positional row.get mapping, the '-N minutes' TTL predicate and open-state reconstruction can break across a restart with every suite green",
+          "evaluatedAt": "2026-10-22T02:44:00.000Z",
+          "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+          "reason": "replaced by cloud-20261031-personas-2"
         }
       ]
     },

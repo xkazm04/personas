@@ -4396,10 +4396,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/api/__tests__/enums.test.ts:14 claims 'a change on EITHER side fails this test' but the Rust sets are literal copies (:29) and nothing reads src-tauri/src/commands/infrastructure/twin.rs:524, whose own comment (twin.rs:512) names this file as its sync guard - narrowing VALID_CHANNELS (the historical defect the header records) stays green while TS-valid channels are rejected at runtime; each side believes the other pins it.",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
+          "evidence": "src/api/__tests__/enums.test.ts:15 claims 'a change on EITHER side fails this test' while the Rust sets are literal copies (:30) and the file reads no Rust source, so a change to VALID_CHANNELS in src-tauri/src/commands/infrastructure/twin.rs leaves it green: the named decision is unreached and the claim overstates the guard.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
           "revisionsBehind": 0
         },
         {
@@ -7616,10 +7616,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:119 flips the seeded persona_executions row to 'completed' with a raw UPDATE, bypassing executions::update_status (src-tauri/db/src/repos/execution/executions.rs:1264) which redacts fields and owns the transition, so the fixture can hold a state the product door would shape differently",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
+          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 flips the seeded persona_executions row to 'completed' with a raw UPDATE after creating it through the repo door (:99), bypassing the executions status transitions and asserting no invariant afterwards, so the fixture can hold states the product's write path never produces.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
           "revisionsBehind": 0
         },
         {
@@ -7782,10 +7782,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/eval_runs.rs:839 The test loops over summaries with an archive containing zero judged runs and passes vacuously without asserting any judge panel contract.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
+          "evidence": "src-tauri/src/commands/eval_runs.rs:828 says the canonical archive holds no judged runs, so judge_panel_present_when_a_run_is_judged loops and passes without asserting anything. detail_loads_and_resolves_verdict likewise returns green at :814 when no scorecard run exists. The judge contract is unreached and the failure looks the same as a pass.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
           "revisionsBehind": 0
         },
         {
@@ -9490,10 +9490,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "tests/playwright/athena-conversation.spec.ts:107 when data-testid=\"tab-memory\" is absent the test pushes a warn annotation and returns green (same at :254), and nothing in src produces that id (src/features/companions/athena/BrainViewer.tsx:250 SegmentedTabs declares no testId though src/features/shared/components/layout/SegmentedTabs.tsx:131 would emit one), so both Phase D tests pass while asserting nothing - live-app-harness makes a missing identifier a breaking change and a missing element a harness failure, never a pass. [re-judged at rev 26: code unchanged since the rev-25 verdict]",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
+          "evidence": "tests/playwright/athena-conversation.spec.ts:110 handles a tab-memory testid missing past the polling deadline by adding a warn annotation and returning green (the same at :257). The technique says a deadline expiring with nothing found must be reported as a failure, but here it is reported as a pass.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
           "revisionsBehind": 0
         },
         {
@@ -10985,10 +10985,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:38 load_active (and upsert/purge_expired) is imported by no test, and its only caller, the restart-restore path src-tauri/engine/src/failover.rs:202 with_persistence, is constructed by no test - positional row.get mapping, the '-N minutes' TTL predicate and open-state reconstruction can break across a restart with every suite green",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26
+          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:38 load_active, like upsert and purge_expired, has no test (0 #[test] in the file). Its only caller, the restart-restore path at src-tauri/engine/src/failover.rs:206, is never built with a pool by any failover test, so a broken TTL filter or is_open decode would ship green.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "cost-metering",
