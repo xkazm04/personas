@@ -6,12 +6,11 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { useDensity } from '@/hooks/utility/data/useDensity';
 import { useExecutionAnnotations } from '@/hooks/agents/useExecutionAnnotations';
-import { silentCatch } from '@/lib/silentCatch';
 import { UnifiedTable } from '@/features/shared/components/display/UnifiedTable';
 import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
 import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
-import { useExecutionList, getSampleInput } from '../../libs/useExecutionList';
+import { useExecutionList } from '../../libs/useExecutionList';
 import { deriveExecutionOrigin, type ExecutionOrigin } from '../../libs/executionOrigin';
 import { matchesStatusFilter } from '../../libs/executionStatus';
 import { ActiveChainsBadge } from '../ActiveChainsBadge';
@@ -31,6 +30,7 @@ import { useExecutionColumns, type StatusFilter } from './useExecutionColumns';
 import { useExecutionDetail } from './useExecutionDetail';
 
 const ROW_HEIGHT = 48;
+const EMPTY_SAMPLE_INPUT = '{}';
 
 export interface ExecutionListProps {
   /**
@@ -78,12 +78,6 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
   const compare = useExecutionCompare(personaId, paging.rows, annotationsByExecution, e);
   const bulk = useExecutionBulk(personaId, rows, e.bulk_rerun_failed_toast);
   const detail = useExecutionDetail(compare.hydrate, selectedPersona?.name);
-
-  const [sampleInput, setSampleInput] = useState('{}');
-  useEffect(() => {
-    // Keep the '{}' default — sample input is hint-only, not load-bearing.
-    getSampleInput(selectedPersona?.name).then(setSampleInput, silentCatch('execution-list:getSampleInput'));
-  }, [selectedPersona?.name]);
 
   const titleById = useMemo(() => new Map(useCases.map((uc) => [uc.id, uc.title])), [useCases]);
   const capabilityTitle = useCallback((id: string | null) => (id ? titleById.get(id) ?? null : null), [titleById]);
@@ -184,7 +178,12 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
       {error && paging.rows.length === 0 ? (
         <ExecutionListError onRetry={() => { void refresh(); }} />
       ) : neverRan ? (
-        <ExecutionListFirstRun onTryIt={() => setRerunInputData(sampleInput)} />
+        // The first-run sample used to come from a template-id -> input map
+        // whose eight ids matched no template after the 2026 template
+        // retirement, so it was always '{}' - after loading the whole template
+        // catalog to find that out. A real sample belongs to the template's
+        // declared inputs, not to a hand list here.
+        <ExecutionListFirstRun onTryIt={() => setRerunInputData(EMPTY_SAMPLE_INPUT)} />
       ) : (
         <div className="animate-fade-slide-in">
           <UnifiedTable<ExecutionListItem>

@@ -233,3 +233,13 @@ describe('(e) the bulk-rerun spend preflight', () => {
     expect(bulkStart).not.toHaveBeenCalled();
   });
 });
+
+describe('(f) the first-run sample input', () => {
+  it('does not load the template catalog to build a sample input', async () => {
+    const { getTemplateCatalog } = await import('@/lib/personas/templates/templateCatalog');
+    agentState.executions = [];
+    render(<ExecutionList />);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(getTemplateCatalog).not.toHaveBeenCalled();
+  });
+});

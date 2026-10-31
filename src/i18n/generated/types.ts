@@ -3710,6 +3710,7 @@ export type Translations = {
       failed_to_load_logs: string;
       failed_to_load_chain: string;
       failed_to_hydrate_comparison: string;
+      diff_failed: string;
       bulk_rerun_enter: string;
       bulk_rerun_enter_tooltip: string;
       bulk_rerun_col_header: string;
