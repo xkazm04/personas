@@ -55,6 +55,21 @@ export const listTrustedPeers = () =>
 export const importTrustedPeer = (identityCard: string, notes?: string) =>
   invoke<TrustedPeer>("import_trusted_peer", { identityCard, notes });
 
+/**
+ * Update a trusted peer's display name, trust level, or notes.
+ *
+ * The most consequential field is `trust_level`. The `Manual → Verified`
+ * transition is the contract that distinguishes "I imported a card"
+ * from "I confirmed this peer holds the matching private key" — see
+ * the state machine in `src-tauri/core/src/models/identity.rs::TrustLevel`.
+ * Until an automatic signed-challenge flow ships, this is the only path
+ * for a user to mark a peer as `Verified`.
+ *
+ * Pass an empty `input` to no-op (returns the current row).
+ */
+export const updateTrustedPeer = (peerId: string, input: UpdateTrustedPeerInput) =>
+  invoke<TrustedPeer>("update_trusted_peer", { peerId, input });
+
 export const revokePeerTrust = (peerId: string) =>
   invoke<boolean>("revoke_peer_trust", { peerId });
 
