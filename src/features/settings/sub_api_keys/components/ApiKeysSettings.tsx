@@ -85,7 +85,18 @@ export default function ApiKeysSettings() {
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(null);
-  const [actioning, setActioning] = useState<string | null>(null);
+  // Every row action in flight, by key id: a single slot let a second revoke
+  // re-enable the first row mid-call and let whichever finished first clear both.
+  const [actioning, setActioning] = useState<ReadonlySet<string>>(() => new Set());
+  const markActioning = useCallback((id: string | null, on: boolean) => {
+    if (id === null) return;
+    setActioning((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
   const [auditTarget, setAuditTarget] = useState<ExternalApiKey | null>(null);
   const enter = useRevealTracker('api-keys');
 
@@ -120,7 +131,7 @@ export default function ApiKeysSettings() {
 
   const handleRevoke = useCallback(
     async (id: string) => {
-      setActioning(id);
+      markActioning(id, true);
       try {
         await revokeExternalApiKey(id);
         await load();
@@ -128,15 +139,15 @@ export default function ApiKeysSettings() {
         silentCatch('ApiKeysSettings:revoke')(e);
         setError(extractMessage(e));
       } finally {
-        setActioning(null);
+        markActioning(id, false);
       }
     },
-    [load],
+    [load, markActioning],
   );
 
   const handleDelete = useCallback(
     async (id: string) => {
-      setActioning(id);
+      markActioning(id, true);
       try {
         await deleteExternalApiKey(id);
         await load();
@@ -144,10 +155,10 @@ export default function ApiKeysSettings() {
         silentCatch('ApiKeysSettings:delete')(e);
         setError(extractMessage(e));
       } finally {
-        setActioning(null);
+        markActioning(id, false);
       }
     },
-    [load],
+    [load, markActioning],
   );
 
   const visibleKeys = keys ?? [];
@@ -165,7 +176,8 @@ export default function ApiKeysSettings() {
   // re-derives that allowlist.
   const handleDisconnect = useCallback(
     async (group: PairingGroup) => {
-      setActioning(group.current?.id ?? null);
+      const actingId = group.current?.id ?? null;
+      markActioning(actingId, true);
       try {
         const out = await runRetire(disconnectIds(group), revokePairing);
         for (const f of out.failed) silentCatch('ApiKeysSettings:disconnect')(new Error(f.message));
@@ -177,10 +189,10 @@ export default function ApiKeysSettings() {
         silentCatch('ApiKeysSettings:disconnect')(e);
         setError(extractMessage(e));
       } finally {
-        setActioning(null);
+        markActioning(actingId, false);
       }
     },
-    [load],
+    [load, markActioning],
   );
 
   return (
@@ -249,7 +261,7 @@ export default function ApiKeysSettings() {
                   >
                     <ApiKeyRow
                       apiKey={key}
-                      actioning={actioning === key.id}
+                      actioning={actioning.has(key.id)}
                       onRevoke={() => handleRevoke(key.id)}
                       onDelete={() => handleDelete(key.id)}
                       onAudit={() => setAuditTarget(key)}
@@ -263,7 +275,7 @@ export default function ApiKeysSettings() {
 
         <ConnectedAppsSection
           keys={visibleKeys}
-          actioningId={actioning}
+          actioningIds={actioning}
           onDisconnect={(id) => void handleDisconnect(id)}
           onAudit={setAuditTarget}
           onRetired={() => void load()}

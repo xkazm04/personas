@@ -102,4 +102,19 @@ describe('ApiKeysSettings revocation', () => {
       'ApiKeysSettings:disconnect',
     ]);
   });
+
+  it('keeps both rows disabled while two revokes are in flight', async () => {
+    list.mockResolvedValue([mk('a'), mk('b')]);
+    revokeKey.mockImplementation(() => new Promise(() => {}));
+    render(<ApiKeysSettings />);
+    await screen.findByText('Key a');
+    confirmIn(rowOf('Key a'), 'Revoke');
+    confirmIn(rowOf('Key b'), 'Revoke');
+    await waitFor(() => expect(revokeKey).toHaveBeenCalledTimes(2));
+    for (const name of ['Key a', 'Key b']) {
+      const buttons = within(rowOf(name)).getAllByRole('button');
+      const disabled = buttons.filter((b) => (b as HTMLButtonElement).disabled);
+      expect(disabled.length, name).toBe(2);
+    }
+  });
 });

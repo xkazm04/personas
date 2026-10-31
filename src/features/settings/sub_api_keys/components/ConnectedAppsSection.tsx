@@ -22,7 +22,7 @@ import { RetireKeysDialog } from './RetireKeysDialog';
 
 interface ConnectedAppsSectionProps {
   keys: readonly ExternalApiKey[];
-  actioningId: string | null;
+  actioningIds: ReadonlySet<string>;
   /** Revoke every pairing of the group's origin (see `disconnectIds`). */
   onDisconnect: (group: PairingGroup) => void;
   onAudit: (key: ExternalApiKey) => void;
@@ -30,7 +30,7 @@ interface ConnectedAppsSectionProps {
   onRetired: () => void;
 }
 
-export function ConnectedAppsSection({ keys, actioningId, onDisconnect, onAudit, onRetired }: ConnectedAppsSectionProps) {
+export function ConnectedAppsSection({ keys, actioningIds, onDisconnect, onAudit, onRetired }: ConnectedAppsSectionProps) {
   const { t, tx } = useTranslation();
   const s = t.settings.api_keys;
   const groups = useMemo(() => groupPairings(keys), [keys]);
@@ -65,7 +65,7 @@ export function ConnectedAppsSection({ keys, actioningId, onDisconnect, onAudit,
             <PairingGroupRow
               key={g.origin}
               group={g}
-              actioning={g.current !== null && actioningId === g.current.id}
+              actioning={g.current !== null && actioningIds.has(g.current.id)}
               onDisconnect={onDisconnect}
               onAudit={onAudit}
             />
