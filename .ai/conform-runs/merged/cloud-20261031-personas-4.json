@@ -1,0 +1,100 @@
+{
+  "worker": "cloud-20261031-personas-4",
+  "evaluatedAt": "2026-10-31",
+  "pairs": [
+    {
+      "context": "5d538a29-a2bb-4d61-8ec2-c51bcde105fe",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:16 declares per-run output assertions (quality gates) on ONE persona's production runs, not a matrix of provider x model targets over a shared frozen case set; a grep of all 6 context files for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|leaderboard|compare-model returned zero hits, so the subject's precondition (a cross-target benchmark run) is absent.",
+      "techniques": [
+        {"technique": "target-matrix-runs", "verdict": "not-applicable", "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:16 assertions attach to a single persona and evaluate every run; no target declaration exists in this context."}
+      ]
+    },
+    {
+      "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:219 a new BYOM routing rule maps task_complexity to a provider/model, which is runtime dispatch policy (the builder-side model-routing subject the golden path explicitly excludes), not production of benchmark evidence; a grep of all 18 context files for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|leaderboard|compare-model returned zero hits.",
+      "techniques": [
+        {"technique": "target-matrix-runs", "verdict": "not-applicable", "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:219 the rule is a routing policy entry, not a benchmark target; no cases or runs live here."}
+      ]
+    },
+    {
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "tests/playwright/companion-stop-button.spec.ts:51 forces the companion streaming flag to test a UI control; the context is 32 Playwright/UI test files, and a grep for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|leaderboard|compare-model found only a prose 'judge copy quality' comment in tours-explore.spec.ts, so no benchmark operation exists here.",
+      "techniques": [
+        {"technique": "target-matrix-runs", "verdict": "not-applicable", "evidence": "tests/playwright/companion-stop-button.spec.ts:51 the specs drive UI state, not a provider x model matrix."}
+      ]
+    },
+    {
+      "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src-tauri/db/src/macros.rs:392 the lab_crud! macro here is mode-agnostic CRUD (get/status/progress/delete) and states that the mode-specific run/result creation stays hand-written in each lab module outside this context, so the benchmark discipline (stamping, partial state, preflight) has no home in the db substrate; grep for benchmark|arena|judge|lab_eval|compare-model hit only that macro doc, a settings key and a connector description.",
+      "techniques": [
+        {"technique": "async-run-queue-with-cancel", "verdict": "not-applicable", "evidence": "src-tauri/db/src/macros.rs:392 run/result semantics are delegated to per-mode lab modules not in this context."},
+        {"technique": "target-matrix-runs", "verdict": "not-applicable", "evidence": "src-tauri/db/src/model_routing.rs:7 the model-selection code in this context resolves a runtime (model, effort) cascade, which is routing territory, not a benchmark target declaration."}
+      ]
+    },
+    {
+      "context": "97025c06-0d64-4025-8a1f-98b90ba1c233",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "unknown",
+      "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:14 the context is now only the price book (ANTHROPIC_TIERS) that the arena's preflight spend estimate reads, and it declares that an absent entry is UNPRICED rather than free; that realizes this context's link of budget-preflight-and-ceiling, but two files cannot carry anchors for half of the 13 techniques, so the evidence floor makes the pair unknown rather than conformant (the prior not-applicable no longer holds: the file has a live benchmark caller in arenaSpendEstimate.ts).",
+      "techniques": [
+        {"technique": "budget-preflight-and-ceiling", "verdict": "realized", "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:14 the price book states a missing model is UNPRICED, not free, which is the 'unpriced models are named, never zero' rule at the book's own declaration."},
+        {"technique": "target-matrix-runs", "verdict": "not-applicable", "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:6 the A/B compare panel and its matrix helpers were deleted; no target declaration remains in this context."}
+      ],
+      "registryProposal": "The evidence floor (half the techniques) cannot be met by a context that is one link of the chain (a shared price book feeding another context's preflight). The subject could name 'the price book' as a unit with its own contract (absent = unpriced, keyed on the same identifier the matrix uses), so a context holding only that link can be judged conformant on it rather than unknown."
+    },
+    {
+      "context": "456eb952-9b93-4de4-bad5-79e6f101aeb1",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:25 the Overview shell records that the former Leaderboard/Health tabs were consolidated into Mission Control; the context is dashboard shell plus install/config health popups, and a grep of all 21 files for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|compare-model hit only that comment, so no benchmark run or scorecard lives here.",
+      "techniques": [
+        {"technique": "axes-and-caveats-live-at-the-surface", "verdict": "not-applicable", "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:25 the shell renders no benchmark scorecard surface."}
+      ]
+    },
+    {
+      "context": "92f6c0fc-8d5c-43a7-bab8-1851973d5198",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 the leaderboard computes a composite score per persona from production health signals (input at :20 is PersonaHealthSignal[]), ranking personas doing different jobs on live traffic; there is no shared case set and no provider x model target matrix, so the subject's precondition does not hold.",
+      "techniques": [
+        {"technique": "target-matrix-runs", "verdict": "not-applicable", "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:20 input is production health signals per persona, not per-target results over common cases."},
+        {"technique": "cheapest-sufficient-configuration", "verdict": "not-applicable", "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 the ranked units are personas, not alternative configurations of one workload, so no routing recommendation is being derived."}
+      ]
+    },
+    {
+      "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+      "subject": "cross-provider-benchmark-operations",
+      "bundle": "llm-observability",
+      "state": "not-applicable",
+      "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:151 the build wizard's simulation runs one draft persona on one chosen capability (a dry-run preview, per :4), not the same cases across provider x model targets; a grep of all 6 context files for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|leaderboard|compare-model returned zero hits.",
+      "techniques": [
+        {"technique": "target-matrix-runs", "verdict": "not-applicable", "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:4 the user picks one capability to preview, a single-target dry run."}
+      ]
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-31T00:00:00Z",
+      "bundle": "llm-observability",
+      "subjects": ["cross-provider-benchmark-operations"],
+      "techniques": ["target-matrix-runs", "budget-preflight-and-ceiling", "async-run-queue-with-cancel", "axes-and-caveats-live-at-the-surface", "cheapest-sufficient-configuration"],
+      "deviations": 0
+    }
+  ]
+}
