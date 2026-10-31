@@ -3463,13 +3463,13 @@
           "state": "not-applicable",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:100-124 is a page-owned tab strip (reads/writes useSystemStore().editorTab locally; its ids are not in the navigation registry's section vocabulary) -- nav-hierarchy.md 'Level three does not live in the shell ... the page owns the depth (tabs, trees, master-detail)' names exactly this precondition: PersonaEditor's tab bar is the page's own structure, not shell navigation.",
+          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:116 the editor's tabs are a page-owned strip writing page state (setEditorTab), the depth app-shell hands to the page beyond its two levels; a grep of the context's 36 files for setSidebarSection, NAV_SECTIONS, navigation/registry, passesGates, sidebarData and lazyRetry finds none, so no shell nav, slot or section loading lives here",
           "digest": "sha256-b2:62a9a7fc993ea8b5",
           "revision": 6,
           "changedAt": "2026-09-23",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -11720,13 +11720,13 @@
           "state": "not-applicable",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "src/features/shared/components/display/RelativeTime.tsx:1-5 and Tooltip.tsx:1-10 are generic read-only display/overlay primitives reused across every feature, with no section vocabulary, nav badge, or shell-residency concept -- app-shell's techniques govern the persistent nav frame and its hosted services, which this context has none of.",
+          "evidence": "src/features/shared/components/display/RelativeTime.tsx:28 the context is generic display/formatting primitives (relative time, portal tooltip at src/features/shared/components/display/Tooltip.tsx:2, filter pills) reused by every feature; a grep of its 33 files for setSidebarSection, NAV_SECTIONS, navigation/registry, passesGates, sidebarData and minTier finds none (the one lazy() is the charting library in src/features/shared/charts/RechartsWrapper.tsx:14, not a section)",
           "digest": "sha256-b2:62a9a7fc993ea8b5",
           "revision": 6,
           "changedAt": "2026-09-23",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         }
       ],
@@ -14262,10 +14262,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 the pickers are in-document modals; no file in the context imports @/api or @tauri-apps (only stores and the read-only useTableIntrospection hook at composer/ConnectorTableScopeRow.tsx:18), so no native capability, destructive command, overlay or stream crosses here",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4
+          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 the pickers are in-document modals; a grep of the context's 19 files for @tauri-apps, @/api/, invoke, alwaysOnTop, globalShortcut, getCurrentWindow and setFocus finds no host import (the only keydown listener is window-scoped at :65), so no native capability, foreign surface or input synthesis exists here",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5
         },
         {
           "subject": "mcp-tools",
@@ -15467,10 +15467,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:67-68 filters Welcome cards by hand-copied SIMPLE_SECTIONS/DEV_MODE_SECTIONS (src/lib/utils/platform/platform.ts:102-103) instead of passesGates (src/lib/navigation/registry.ts:160), so on the default TEAM tier (src/lib/constants/uiModes.ts:65) the rail offers Plugins (registry.ts:84 minTier TEAM) while Welcome hides it - re-verified 2026-10-12, unfixed",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:68 filters Welcome cards with the hand-copied DEV_MODE_SECTIONS set (src/lib/utils/platform/platform.ts:103 'plugins') instead of the registry's passesGates (src/lib/navigation/registry.ts:160), so on the default TEAM tier the rail offers Plugins (registry.ts:85 minTier TEAM) while Welcome hides it - two authorities disagree on one entrance",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -15969,10 +15969,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src/hooks/execution/usePersonaExecution.ts:389 execution output/status are produced by the native runner (src-tauri/src/engine/runner/mod.rs:737) and the hooks only subscribe on the local bus and render - no connection, reconnect or backoff state lives in the throttleable view",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:389 the view only subscribes to EXECUTION_STATUS, which the native runner emits (src-tauri/src/engine/runner/mod.rs:745), so execution status keeps arriving whether or not the view is shown; every other technique's precondition is absent (only the event bus is imported from the host)",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -19393,10 +19393,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:716 vault projection/import take only a project id (src/features/teams/sub_mastermind/lib/MemorySection.tsx:36); the native side resolves the write root from stored config and deletes only notes it stamped with personas_id (:850), so the renderer cannot pick a directory or a deletion set",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4
+          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:819 the vault write target is derived natively from the vault setting plus the project's own name, and the renderer (src/features/teams/sub_mastermind/lib/MemorySection.tsx:9) sends only a project id; the projection's deletions are limited to native-stamped notes no longer active (:954)",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5
         },
         {
           "subject": "multi-project",
@@ -22347,10 +22347,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:73 renders IncidentsInbox with no tier check and src/stores/slices/overview/overviewSlice.ts:279 setOverviewTab writes unchecked, so src/features/companions/athena/ProactiveCard.tsx:53 (and decision/useDecisionQueue.ts:153) route to a tab the sidebar hides below TEAM (src/features/shared/chrome/sidebar/sidebarData.ts:81) - re-verified 2026-10-12, unfixed",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:76 renders the TEAM-gated Approvals tab (src/features/shared/chrome/sidebar/sidebarData.ts:87) with no tier check and src/stores/slices/overview/overviewSlice.ts:288 setOverviewTab writes any id, so src/features/overview/sub_reports/components/ReportDetailModal.tsx:239 (reached from the ungated Messages tab) opens a destination the sidebar hides below TEAM",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "source": "retained",
           "revisionsBehind": 0
         }
@@ -24024,10 +24024,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:14 the context's surface (Practice Detail modal, sub_patterns) was removed (git 6ea91dd77b, bec576bc8f) and its workspace_knowledge table retired; no tracked file remains under src/features/overview/sub_patterns, so no native capability, command target, overlay or stream exists to judge",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4
+          "evidence": "src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:1 the Workspace Knowledge practice library this context described was retired; context-map.json lists 0 filePaths for it and git ls-files finds no src/features/overview/sub_patterns file, so there is no code for the subject's precondition to hold in",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5
         },
         {
           "subject": "structured-output",
@@ -25273,10 +25273,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_glyph/personaCore/PersonaCoreEntry.tsx:35 mounts a dimension badge plus its configurator modal inside a host page; the context has no primary nav, section vocabulary, entitlement gate or lazy section, so app-shell (the persistent frame around pages) has no precondition here",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evidence": "src/features/agents/sub_glyph/personaCore/PersonaCoreEntry.tsx:20 the context is a badge whose configurator opens in the host page's own surface; a grep of its 13 files for setSidebarSection, NAV_SECTIONS, navigation/registry, sidebarData and lazyRetry finds none - 'badge' here is a form chip, not nav attention",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -25365,10 +25365,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 the editor is an absolute layer over the in-page sigil; none of the context's 10 files imports @/api or @tauri-apps, so it reaches no native capability and no native command - revision 4's command-target technique has nothing to bound here either",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
+          "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 the editor is an absolute overlay over the in-page sigil stage; a grep of the context's 7 files for @tauri-apps, @/api/, invoke, alwaysOnTop, globalShortcut, getCurrentWindow, setFocus and keydown returns nothing, so no native surface or capability is involved",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -27095,10 +27095,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src-tauri/src/commands/infrastructure/context_generation.rs:797 the renderer-sent scan root (src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:410) is canonicalized and confined component-wise to the project's registered root before it becomes the cwd of a permission-disabled agent; scan output is native-owned and rendered from events",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
+          "evidence": "src-tauri/src/commands/infrastructure/context_generation.rs:797 the renderer-sent scan root (src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:410) is confined natively to the project's registered root by canonicalize plus component-wise starts_with (:735) and refused otherwise; the scan itself runs natively and the page only renders its events",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -29145,10 +29145,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10-15 splits six sub-panels with plain React lazy(), skipping the chunk-retry wrapper src/lib/lazyRetry.ts that sibling src/features/plugins/twin/TwinPage.tsx:19-24 uses; a transient chunk blip goes straight to the reload prompt - re-verified 2026-10-12, unfixed",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10 splits its six sub-panels with plain React lazy(), skipping the repo's retry wrapper src/lib/lazyRetry.ts that sibling src/features/plugins/twin/TwinPage.tsx:19 uses, so a transient chunk-fetch blip goes straight to the error boundary instead of retrying first",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "source": "retained",
           "revisionsBehind": 0
         },
@@ -32202,10 +32202,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120-122 casts untyped sub-nav ids (id as DevToolsTab/ObsidianBrainTab/TwinTab); only top-level sections derive from the registry (src/features/shared/chrome/sidebar/sidebarData.ts:34) while the sub-nav arrays stay hand-kept - sidebarData.ts:161-164 records this cast shipping a blank page; re-verified 2026-10-12, unfixed",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120 casts untyped sub-nav ids (id as DevToolsTab / ObsidianBrainTab / TwinTab at :120-122) from hand-kept arrays, while only top-level sections derive from the registry; src/features/shared/chrome/sidebar/sidebarData.ts:163 records this exact cast having shipped a blank page",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -32845,10 +32845,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 the fullest surface is a document overlay below the title bar; none of the context's 33 files imports @/api or @tauri-apps, so no host capability, foreign window, synthesized input or native command crosses here",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
+          "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 the fullest surface is a document overlay below the title bar; a grep of the context's 38 files for @tauri-apps, @/api/, invoke, alwaysOnTop, globalShortcut, getCurrentWindow and setFocus hits only comments, so no native capability, foreign window or synthesized input exists here",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -34282,13 +34282,13 @@
           "source": "conform",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/stores/slices/system/uiSlice.ts:570 setSettingsTab writes any id unchecked and src/stores/systemStore.ts:95 persists settingsTab with no restore validation (only sidebarSection is checked, systemStore.ts:234), so a retired id makes src/features/settings/components/SettingsPage.tsx:72 tabComponents[tab] undefined and Settings crashes to its boundary - same for cloudTab/homeTab (systemStore.ts:82,88); re-verified 2026-10-12, unfixed (anchor moved from uiSlice.ts:571; 0afa77a0a1 added inert/aria-hidden only)",
+          "evidence": "src/stores/slices/system/uiSlice.ts:542 setSettingsTab writes any id unchecked and src/stores/systemStore.ts:115 persists settingsTab with no restore validation (only sidebarSection is checked, :262), so a retired id makes src/features/settings/components/SettingsPage.tsx:73 tabComponents[tab] undefined and Settings crashes to its boundary",
           "digest": "sha256-b2:62a9a7fc993ea8b5",
           "revision": 6,
           "changedAt": "2026-09-23",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         }
       ],
@@ -36518,10 +36518,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src-tauri/src/commands/core/gallery.rs:260 the outward publish and the rollback delete (src/features/teams/sub_teamWorkspace/useAutoTeam.ts:157) send only a team id; the native side re-derives the payload and refuses a delete while a pipeline runs (src-tauri/src/commands/teams/teams.rs:71); no other native-only capability is reached",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4
+          "evidence": "src-tauri/src/commands/core/gallery.rs:290 the outward publish builds its blueprint natively from the team id the renderer sends (src/features/teams/sub_teamWorkspace/teamStudio/TeamPublishButton.tsx:6), and the rollback delete (src/features/teams/sub_teamWorkspace/useAutoTeam.ts:157) sends only an id that src-tauri/src/commands/teams/teams.rs:71 can refuse",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5
         },
         {
           "subject": "sidecar-provisioning",
