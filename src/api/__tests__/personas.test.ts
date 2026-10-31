@@ -2,10 +2,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-// eslint-disable-next-line no-restricted-imports
-import { invoke } from "@tauri-apps/api/core";
-import { vi } from "vitest";
-import { mockInvoke, mockInvokeError, resetInvokeMocks } from "@/test/tauriMock";
+import { mockInvoke, mockInvokeError, mockedTauriInvoke, resetInvokeMocks } from "@/test/tauriMock";
 import {
   listPersonas,
   getPersona,
@@ -22,7 +19,7 @@ import {
   PERSONA_NULLABLE_FIELDS,
 } from "@/api/agents/personas";
 
-const mockedInvoke = vi.mocked(invoke);
+const mockedInvoke = mockedTauriInvoke;
 
 const stubPersona = {
   id: "p-1",

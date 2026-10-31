@@ -1,9 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from "vitest";
-// eslint-disable-next-line no-restricted-imports
-import { invoke } from "@tauri-apps/api/core";
-import { vi } from "vitest";
-import { mockInvoke, mockInvokeError, resetInvokeMocks } from "@/test/tauriMock";
+import { mockInvoke, mockInvokeError, mockedTauriInvoke, resetInvokeMocks } from "@/test/tauriMock";
 import {
   listExecutions,
   listAllExecutions,
@@ -16,7 +13,7 @@ import {
   getCircuitBreakerStatus,
 } from "@/api/agents/executions";
 
-const mockedInvoke = vi.mocked(invoke);
+const mockedInvoke = mockedTauriInvoke;
 
 describe("api/agents/executions", () => {
   beforeEach(() => {
