@@ -1,8 +1,9 @@
 // The sheet's controller: composes the read side (data, plan, work), the reducer, the engine's view, navigation,
 // the writes and the keyboard into the one `Sheet` value every panel reads. Panels never reach past it.
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { Engine } from '../engine/Engine';
 import { scopeOf, queueIn, type Level } from '../model/scope';
+import { cardBrief, declinePrefill, isRepeat } from '../model/cardBrief';
 import type { FocusPlace } from '../model/focus';
 import type { BlueprintActions, BlueprintData } from '../source';
 import { TipStore } from '../state/tipStore';
@@ -72,7 +73,17 @@ export function useSheetController({ data: initial, actions, onClose, initialFea
   const hooks = useEngineHooks({ engine, plan, work, lens: ui.lens, nav, dispatch, tip });
   const follow = useFocusFollow({ follower: actions.follow, projectId: data.product.projectId, plan, nav, dispatch, text, ready: engine !== null, initialPlace });
 
-  useSheetKeys({ plan, ui, dispatch, levelNow: () => (engine ? engine.cam.level().n : 0), nav, writes, current, onClose, sayEnterHint: () => dispatch({ type: 'say', text: B.say_enter_hint }) });
+  // Enter takes the recommended answer (owner decision D14): Decline with the repeat's note when the brief found a repeat
+  // of a declined idea, else Approve (the card's first answer either way). Only a waiting item has one.
+  const takeRecommended = useCallback((): boolean => {
+    if (!current || current.status !== 'proposed') return false;
+    const brief = cardBrief(data, plan, current);
+    if (isRepeat(brief)) void writes.decline(current, declinePrefill(brief));
+    else void writes.approve(current);
+    return true;
+  }, [current, data, plan, writes]);
+
+  useSheetKeys({ plan, ui, dispatch, levelNow: () => (engine ? engine.cam.level().n : 0), nav, writes, current, onClose, takeRecommended, sayEnterHint: () => dispatch({ type: 'say', text: B.say_enter_hint }) });
 
   // open at the item the caller named, once the camera exists
   const opened = useRef(false);

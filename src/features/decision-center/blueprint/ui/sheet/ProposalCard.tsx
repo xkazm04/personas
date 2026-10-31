@@ -18,6 +18,7 @@ import { PackEvidence } from './PackEvidence';
  * A waiting item reads its brief: on a repeat of a declined idea (identity, never likeness) Decline is the first answer,
  * tagged, and Approve stays as "approve anyway"; the decline prompt then opens with the note naming the decision it
  * repeats (ReasonDialog). A like idea declined elsewhere only shows the decline in amber: Approve stays first.
+ * Enter takes the first answer (owner decision D14): Decline with the repeat's note on a repeat, else Approve.
  */
 function Tail({ p, brief }: { p: WorkItem; brief: Brief | null }) {
   const s = useSheet();
@@ -25,8 +26,8 @@ function Tail({ p, brief }: { p: WorkItem; brief: Brief | null }) {
   const pick = () => s.nav.select(p);
   if (p.status === 'proposed') {
     const repeat = isRepeat(brief);
-    const approve = <OptionRow k="a" primary={!repeat} label={repeat ? B.opt_approve_anyway : B.opt_approve} tag={repeat ? undefined : B.opt_suggest} sub={deltaText(s.plan, p, language)} onPress={() => { pick(); void s.writes.approve(p); }} testId="blueprint-approve" busy={s.ui.busy} />;
-    const decline = <OptionRow k="x" primary={repeat} repeat={repeat} label={B.opt_decline} tag={repeat ? B.opt_declined_before : undefined} sub={repeat ? B.opt_decline_repeat_sub : B.opt_decline_sub} onPress={() => { pick(); s.writes.askDecline(p); }} testId="blueprint-decline" />;
+    const approve = <OptionRow k="a" primary={!repeat} enter={!repeat} label={repeat ? B.opt_approve_anyway : B.opt_approve} tag={repeat ? undefined : B.opt_suggest} sub={deltaText(s.plan, p, language)} onPress={() => { pick(); void s.writes.approve(p); }} testId="blueprint-approve" busy={s.ui.busy} />;
+    const decline = <OptionRow k="x" primary={repeat} repeat={repeat} enter={repeat} label={B.opt_decline} tag={repeat ? B.opt_declined_before : undefined} sub={repeat ? B.opt_decline_repeat_sub : B.opt_decline_sub} onPress={() => { pick(); s.writes.askDecline(p); }} testId="blueprint-decline" />;
     return repeat ? <>{decline}{approve}</> : <>{approve}{decline}</>;
   }
   if (p.status === 'approved') return <OptionRow k="b" primary label={B.opt_arm} tag={B.opt_approved_here} sub={B.opt_arm_sub} onPress={() => { pick(); s.writes.arm(); }} testId="blueprint-arm" />;

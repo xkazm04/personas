@@ -28237,7 +28237,7 @@
       "key_approve": "Approve the current item. Never builds",
       "key_decline": "Decline, with a reason",
       "key_build": "Build the approved: arms first, B or Enter starts",
-      "key_enter": "Down one level; at the bay opens the feature",
+      "key_enter": "Down one level; at the bay opens the feature; on a waiting item, takes the recommended answer",
       "key_back": "Up one level; at the site, closes the drawing set",
       "key_wing_next": "Next wing on the plan",
       "key_wing_prev": "Previous wing",
