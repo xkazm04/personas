@@ -36,7 +36,7 @@ interface DesignHubProps {
 
 interface SubTabDef {
   id: DesignSubTab;
-  /** Key into `t.agents.design_subtabs` — resolved at render so all 14 locales apply. */
+  /** Key into `t.agents.design_subtabs` — resolved through the catalog at render. */
   labelKey: string;
   icon: typeof ScrollText;
 }
