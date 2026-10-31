@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -38,12 +38,21 @@ export function ThemePreview({ vars }: { vars: Record<string, string> }) {
   const btnPrimary = vars['--btn-primary'];
   const gradient = vars['--background-gradient'];
 
-  // Hash drives an AnimatePresence crossfade when any visible color changes.
+  // Hash of every visible colour; its settled value drives the AnimatePresence crossfade.
   const hash = useMemo(
     () => PREVIEW_KEYS.map((k) => vars[k] ?? '').join('|'),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [...PREVIEW_KEYS.map((k) => vars[k])],
   );
+
+  // The crossfade is keyed by a SETTLED hash: while a colour is being dragged the hash changes on
+  // every tick, and keying by it mounted a new preview tree per tick (each kept alive for its exit).
+  // The layer keeps painting the live colours; it only crossfades once the colours stop changing.
+  const [fadeKey, setFadeKey] = useState(hash);
+  useEffect(() => {
+    const id = setTimeout(() => setFadeKey(hash), 160);
+    return () => clearTimeout(id);
+  }, [hash]);
 
   return (
     <div
@@ -52,7 +61,7 @@ export function ThemePreview({ vars }: { vars: Record<string, string> }) {
     >
       <AnimatePresence initial={false}>
         <motion.div
-          key={hash}
+          key={fadeKey}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

@@ -14,7 +14,7 @@
  *                    the dock's order); the first is lit, the rest quiet.
  */
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { TONE_TEXT } from '@/features/agents/quick-answer/triage/deck/DeckChips';
+import { TONE_TEXT } from './tones';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { chipOf, type DecisionItem } from '../model/decisionModel';

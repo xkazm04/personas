@@ -1,0 +1,14 @@
+{"schema": "conform-run/1", "worker": "f2548395-7bc6-4e7a-8a6f-a2b1c6d2168d", "subject": "retry-backoff",
+ "evaluatedAt": "2026-10-30T21:04:33Z",
+ "pairs": [{"context": "a3cb83b5-7325-4d1c-b10d-b249ab1a186f", "subject": "retry-backoff", "bundle": "software-engineering",
+   "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:0ff53fb3a87ad13c", "evaluatedRevision": 14,
+   "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:100 auto-heal cap is looked up by row id in session useState while each retry mints a new row whose persisted attempt (src-tauri/db/src/repos/dev/tasks.rs:963) is never read, so every child failure is healed afresh and the lineage is unbounded - re-confirmed at registry 5058b962c (rev 14)",
+   "techniques": [
+     {"technique": "durable-retries", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:100 rung read from an in-memory HealingAttempt keyed by row id (created at SelfHealingPanel.tsx:46 useState), never from dev_tasks.attempt persisted at src-tauri/db/src/repos/dev/tasks.rs:963 - attempt count does not live in the row, the budget resets on remount and on every new child id, and no exhaustion terminal state exists"},
+     {"technique": "error-classification-for-retry", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:45 retry class is decided by regexes over the joined error/description/title strings, re-parsing message text downstream of the boundary - a task whose title mentions 'type error' is classed build_error and auto-retried regardless of its real failure"},
+     {"technique": "retry-observability", "verdict": "deviation", "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:56 the only stop vocabulary is pending/healing/healed/failed in session memory - exhausted vs reclassified vs denied are not spelled, and the cap-hit toast (SelfHealingPanel.tsx:62) is not recorded anywhere"}
+   ],
+   "registryProposal": "durable-retries step 3 is written for a single row that is rescheduled; a lineage that mints a child row per attempt (parent_task_id + attempt) satisfies 'attempt lives in the row' only if the budget check reads the newest child's attempt - worth one sentence naming the per-attempt-row shape and that the cap keys on lineage root, not on the row id"}],
+ "declined": [],
+ "consults": [{"ts": "2026-10-30T21:04:33Z", "bundle": "software-engineering", "subjects": ["retry-backoff"], "techniques": ["durable-retries", "error-classification-for-retry", "retry-observability"], "deviations": 3}]}

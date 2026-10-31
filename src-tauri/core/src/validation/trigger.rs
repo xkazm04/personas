@@ -377,6 +377,45 @@ pub fn validate_polling_url(trigger_type: &str, config: Option<&str>) -> Vec<Val
     vec![]
 }
 
+// -- Rule catalog -------------------------------------------------------------
+
+pub fn rules() -> Vec<ValidationRule> {
+    vec![
+        ValidationRule::new(
+            "trigger",
+            "trigger_type",
+            "allowed_values",
+            "Must be a valid trigger type",
+        )
+        .with_allowed(VALID_TRIGGER_TYPES.iter().map(|s| s.to_string()).collect()),
+        ValidationRule::new(
+            "trigger",
+            "config",
+            "json",
+            "Config must be valid JSON when provided",
+        ),
+        ValidationRule::new(
+            "trigger",
+            "config.interval_seconds",
+            "range",
+            format!("Must be at least {MIN_INTERVAL_SECONDS}"),
+        )
+        .with_min(MIN_INTERVAL_SECONDS as f64),
+        ValidationRule::new(
+            "trigger",
+            "config.webhook_secret",
+            "required",
+            "Required for webhook triggers",
+        ),
+        ValidationRule::new(
+            "trigger",
+            "config.url",
+            "url_safety",
+            "Polling URLs must not target private/internal addresses",
+        ),
+    ]
+}
+
 // -- Tests --------------------------------------------------------------------
 
 #[cfg(test)]
@@ -625,43 +664,4 @@ mod tests {
         )
         .is_empty());
     }
-}
-
-// -- Rule catalog -------------------------------------------------------------
-
-pub fn rules() -> Vec<ValidationRule> {
-    vec![
-        ValidationRule::new(
-            "trigger",
-            "trigger_type",
-            "allowed_values",
-            "Must be a valid trigger type",
-        )
-        .with_allowed(VALID_TRIGGER_TYPES.iter().map(|s| s.to_string()).collect()),
-        ValidationRule::new(
-            "trigger",
-            "config",
-            "json",
-            "Config must be valid JSON when provided",
-        ),
-        ValidationRule::new(
-            "trigger",
-            "config.interval_seconds",
-            "range",
-            format!("Must be at least {MIN_INTERVAL_SECONDS}"),
-        )
-        .with_min(MIN_INTERVAL_SECONDS as f64),
-        ValidationRule::new(
-            "trigger",
-            "config.webhook_secret",
-            "required",
-            "Required for webhook triggers",
-        ),
-        ValidationRule::new(
-            "trigger",
-            "config.url",
-            "url_safety",
-            "Polling URLs must not target private/internal addresses",
-        ),
-    ]
 }

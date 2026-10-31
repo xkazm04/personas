@@ -463,7 +463,10 @@ fn twin_setup_write_answer_becomes_a_sample_offer() -> Result<(), AppError> {
         ("sample", "tone", Some("examples"), Some("slack"))
     );
     assert_eq!(offer.value, "yep, on it");
-    assert_eq!(out.snapshot.last_answer_offer_ids, [offer.id.clone()]);
+    assert_eq!(
+        out.snapshot.last_answer_offer_ids,
+        std::slice::from_ref(&offer.id)
+    );
 
     // The verdict flips once; a second verdict and an unknown one change nothing.
     let id = offer.id.clone();

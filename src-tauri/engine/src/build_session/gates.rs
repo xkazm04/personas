@@ -1622,7 +1622,7 @@ mod tests {
     fn assert_question_envelope(events: &[BuildEvent], expected_field: &str) {
         // Both v3 + legacy mirror should be emitted by build_clarifying_question_events.
         assert!(
-            events.len() >= 1,
+            !events.is_empty(),
             "expected at least one event, got {}",
             events.len()
         );

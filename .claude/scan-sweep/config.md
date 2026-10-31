@@ -4,6 +4,12 @@ autonomy:
     technical: 2
     product: 0
   frozen: []
+ratchets:
+  - npm run census:check
+  - node scripts/check-agents-sub-boundaries.mjs
+structuralTests: src/__tests__/structural
+regen:
+  - node scripts/i18n/split-locales.mjs
 ---
 
 # scan-sweep overlay - Personas

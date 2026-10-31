@@ -3469,7 +3469,7 @@ mod tests {
         reg.insert(worker("w", FleetSessionState::Idle));
         let reason = unmarked_finish_reason("Done. Delivery branch is clean");
 
-        assert_eq!(reg.finish_unmarked("w", &reason).as_deref(), Some("idle"));
+        assert_eq!(reg.finish_unmarked("w", &reason), Some("idle"));
         {
             let map = reg.sessions.lock().unwrap();
             let s = map.get("w").unwrap();

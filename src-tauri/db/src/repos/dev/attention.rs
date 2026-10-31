@@ -1266,7 +1266,7 @@ mod attention_queue_tests {
         )
         .unwrap();
         let quiet = create_goal(&pool, &p.id, "quiet", None, None, None, None, None).unwrap();
-        let fresh = create_goal(&pool, &p.id, "fresh", None, None, None, None, None).unwrap();
+        let _fresh = create_goal(&pool, &p.id, "fresh", None, None, None, None, None).unwrap();
         let finished = create_goal(
             &pool,
             &p.id,

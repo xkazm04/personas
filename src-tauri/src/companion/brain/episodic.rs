@@ -1171,8 +1171,8 @@ mod tests {
 
     // ── machine correlator records vs conversation ──────────────────────
 
-    /// The markers are interpolated into a SQL `LIKE` pattern, so they must
-    /// carry no quote or wildcard. Guards `machine_marker_exclusion_sql`.
+    // The markers are interpolated into a SQL `LIKE` pattern, so they must
+    // carry no quote or wildcard. Guards `machine_marker_exclusion_sql`.
     // -- reconciling orphaned episode files (X2) --------------------------
 
     /// Write an episode file to disk with NO index row -- exactly what
@@ -1492,11 +1492,11 @@ mod tests {
     /// the design intent is that correlator rows still compete on relevance.
     #[test]
     fn the_machine_tier_stays_retrievable() {
-        assert!(
+        const _: () = assert!(
             MACHINE_EPISODE_IMPORTANCE > 0,
             "importance 0 would delete correlator rows from the keyword lane"
         );
-        assert!(MACHINE_EPISODE_IMPORTANCE < HUMAN_EPISODE_IMPORTANCE);
+        const _: () = assert!(MACHINE_EPISODE_IMPORTANCE < HUMAN_EPISODE_IMPORTANCE);
     }
 
     /// The positive predicate and the exclusion must be exact complements over

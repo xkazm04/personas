@@ -1,0 +1,35 @@
+{"schema": "conform-run/1", "worker": "8ce121a3-f632-4b2c-9555-a701157bd425", "subject": "native-shell-integration",
+ "evaluatedAt": "2026-10-30T12:00:00Z",
+ "evaluatedAgainst": "sha256-b2:9034ad02704d9c88", "evaluatedRevision": 5,
+ "pairs": [
+  {"context": "67c91bb4-f3ee-4aa0-91ca-e7097ac6b394", "subject": "native-shell-integration", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:9034ad02704d9c88", "evaluatedRevision": 5,
+   "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:85 spawns a claude session with renderer-supplied root_path as cwd; fleet_spawn_session takes any string (src-tauri/src/commands/fleet/commands.rs:33) and admission only checks non-empty (src-tauri/src/commands/fleet/queue.rs:1101), so the less trusted side picks where an executing process runs - re-confirmed against rev 5",
+   "techniques": [{"technique": "native-side-owns-the-target-set", "verdict": "deviation", "evidence": "src-tauri/src/commands/fleet/queue.rs:1101 require_non_empty is the only cwd check; rule one (send an identity, not a target) and rule two (allow-list) both unmet"}]},
+  {"context": "35c52f59-9612-47c4-8662-0ebb3c821771", "subject": "native-shell-integration", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:9034ad02704d9c88", "evaluatedRevision": 5,
+   "evidence": "src/features/notepad/notepadActions.ts:162 sends project.root_path as the write root to fleet_write_dispatch_brief, whose native side checks only is_dir (src-tauri/src/commands/fleet/external.rs:93) before writing under it, while :176 of the same function already sends project.id - re-confirmed against rev 5",
+   "techniques": [{"technique": "native-side-owns-the-target-set", "verdict": "deviation", "evidence": "src-tauri/src/commands/fleet/external.rs:93 is_dir is the only gate on the renderer-chosen root; the id-based form exists beside it at src/features/notepad/notepadActions.ts:176"}]},
+  {"context": "107445f8-c266-4671-8160-f854bd79319e", "subject": "native-shell-integration", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:9034ad02704d9c88", "evaluatedRevision": 5,
+   "evidence": "src/hooks/utility/data/useAutoUpdater.ts:207 the 6-hourly update poller is skipped only in DEV, not on a mobile build where the updater plugin is compiled out (src-tauri/Cargo.toml:268 ties it to desktop), so the absent capability is called every 6h and filed as a failure via silentCatch at :123 - re-confirmed against rev 5; UpdateBanner is mounted unconditionally (src/App.tsx:406)",
+   "techniques": [{"technique": "capability-presence-contract", "verdict": "deviation", "evidence": "src/hooks/utility/data/useAutoUpdater.ts:207 no presence class for the updater on the mobile host; class-4 capability is offered and its refusal is telemetry indistinguishable from a real defect"}]},
+  {"context": "876c0b4e-6472-4544-a21b-56e7529fb6b3", "subject": "native-shell-integration", "bundle": "software-engineering", "state": "deviation",
+   "evaluatedAgainst": "sha256-b2:9034ad02704d9c88", "evaluatedRevision": 5,
+   "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:553 kb_ingest_files gates renderer-supplied paths only with a deny-list (validate_path_safety, :261), so any unlisted location is read and made searchable; the extension allow-list applies only after the read (src-tauri/engine/src/chunker.rs:339) - re-confirmed against rev 5",
+   "techniques": [{"technique": "native-side-owns-the-target-set", "verdict": "deviation", "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:261 deny-list is the gate, which rule two names as a backstop only; canonicalize-before-compare is met (:550)"}]}
+ ],
+ "declined": [
+  {"subject": "native-shell-integration", "context": "511ca12f-50df-4941-84e1-e2d74a3dff85", "reason": "weak context with no paths; a coverage question, not judged by default"},
+  {"subject": "native-shell-integration", "context": "a6843b83-43a1-4eab-ae40-26f23b949a0d", "reason": "rev-4 conformant verdict; rev 5 only added host-forwarded-key-contract (TV remote keys into an embedded page), which has no precondition here - left for a later --stale pass within budget"},
+  {"subject": "native-shell-integration", "context": "ca705961-f138-494a-b0fe-f882c674d25a", "reason": "rev-4 conformant verdict, outside this run's budget; rev-5 delta does not touch it"},
+  {"subject": "native-shell-integration", "context": "b0cf3902-0739-40a8-8c76-ae594f41421b", "reason": "rev-4 conformant verdict, outside this run's budget; rev-5 delta does not touch it"},
+  {"subject": "native-shell-integration", "context": "a576c14f-1edd-4da4-8d11-527161a3b5b3", "reason": "rev-4 conformant verdict, outside this run's budget; rev-5 delta does not touch it"},
+  {"subject": "native-shell-integration", "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc", "reason": "rev-4 conformant verdict, outside this run's budget; rev-5 delta does not touch it"}
+ ],
+ "consults": [
+  {"ts": "2026-10-30T12:00:00Z", "bundle": "software-engineering", "subjects": ["native-shell-integration"], "techniques": ["native-side-owns-the-target-set"], "deviations": 1},
+  {"ts": "2026-10-30T12:00:00Z", "bundle": "software-engineering", "subjects": ["native-shell-integration"], "techniques": ["native-side-owns-the-target-set"], "deviations": 1},
+  {"ts": "2026-10-30T12:00:00Z", "bundle": "software-engineering", "subjects": ["native-shell-integration"], "techniques": ["capability-presence-contract"], "deviations": 1},
+  {"ts": "2026-10-30T12:00:00Z", "bundle": "software-engineering", "subjects": ["native-shell-integration"], "techniques": ["native-side-owns-the-target-set"], "deviations": 1}
+ ]}

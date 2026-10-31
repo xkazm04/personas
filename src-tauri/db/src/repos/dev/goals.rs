@@ -1208,7 +1208,7 @@ mod apply_progress_tests {
         assert!(g2.completed_at.is_some());
 
         // Explicit acceptance is what actually completes the goal.
-        let accepted = resolve_goal_acceptance(&pool, &goal.id, true, None).unwrap();
+        let accepted = resolve_goal_acceptance(&pool, &goal.id, true, None, None).unwrap();
         assert_eq!(normalize_goal_status(&accepted.status), "done");
     }
 
@@ -2180,7 +2180,7 @@ mod uat_gate_tests {
         let g2 = get_goal_by_id(&pool, &goal.id).unwrap();
         assert_eq!(normalize_goal_status(&g2.status), "awaiting_acceptance");
 
-        let accepted = resolve_goal_acceptance(&pool, &goal.id, true, None).unwrap();
+        let accepted = resolve_goal_acceptance(&pool, &goal.id, true, None, None).unwrap();
         assert_eq!(normalize_goal_status(&accepted.status), "done");
     }
 

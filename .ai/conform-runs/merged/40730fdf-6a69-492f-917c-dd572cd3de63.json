@@ -1,0 +1,39 @@
+{"schema": "conform-run/1", "worker": "40730fdf-6a69-492f-917c-dd572cd3de63", "subject": "cross-provider-benchmark-operations",
+ "evaluatedAt": "2026-10-30T21:04:30Z",
+ "pairs": [
+  {"context": "9b0ee86c-2613-49a5-9fda-fcc4d432fb72", "subject": "cross-provider-benchmark-operations", "bundle": "llm-observability", "state": "deviation",
+   "evidence": "src-tauri/engine/src/test_runner/lab.rs:569 a budget-halted run (exempted from the completeness gate at :560) still finalizes as LabRunStatus::Completed with no partial marker in the summary (:519), and src-tauri/db/src/repos/lab/arena.rs:71 inserts runs with no dataset version or determinism stamp, so halted and unpinned runs store and compare as full ones",
+   "techniques": [
+    {"technique": "budget-preflight-and-ceiling", "verdict": "deviation", "evidence": "src-tauri/engine/src/test_runner/lab.rs:569 halted_by_budget run is written Completed; the technique requires a halted run marked partial, never passed"},
+    {"technique": "determinism-stamping", "verdict": "deviation", "evidence": "src-tauri/db/src/repos/lab/arena.rs:71 run row has no determinism or dataset-version column"},
+    {"technique": "async-run-queue-with-cancel", "verdict": "conformant", "evidence": "src-tauri/engine/src/test_runner/lab.rs:504 a cancel landing during final collection finalizes Cancelled and skips the completeness gate"}
+   ]},
+  {"context": "a1223fbb-1e53-471b-9829-075cce8014f8", "subject": "cross-provider-benchmark-operations", "bundle": "llm-observability", "state": "deviation",
+   "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:214 the priced preflight confirm starts the match with models, filter and version only and no spend ceiling, so consent is the only gate and a halted matrix cannot be marked partial from this call",
+   "techniques": [
+    {"technique": "budget-preflight-and-ceiling", "verdict": "deviation", "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:214 startArena carries no ceiling; estimate exists (estimateArenaSpend) but is compared to no default ceiling"}
+   ]},
+  {"context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b", "subject": "cross-provider-benchmark-operations", "bundle": "llm-observability", "state": "deviation",
+   "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:557 the version report asserts all versions share one generated scenario set so ratings are directly comparable, but scenario reuse is a 600 s process cache (src-tauri/engine/src/test_runner/scenarios.rs:16), so the artifact claims a freeze the stored ratings do not have (re-anchored: :554 drifted)",
+   "techniques": [
+    {"technique": "dataset-sampling-anonymize-freeze", "verdict": "deviation", "evidence": "src-tauri/engine/src/test_runner/scenarios.rs:16 SCENARIO_CACHE_TTL_SECS = 600 is the only reuse; no frozen, versioned case set"},
+    {"technique": "axes-and-caveats-live-at-the-surface", "verdict": "deviation", "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:588 the markdown branch repeats the same unearned comparability claim"}
+   ]},
+  {"context": "b6e66a59-78d3-465e-83b7-e77498b4c6ae", "subject": "cross-provider-benchmark-operations", "bundle": "llm-observability", "state": "deviation",
+   "evidence": "src/stores/slices/agents/labSlice.ts:206 cancelRun calls lc.markCancelled in finally even when the backend cancel threw (:197), so the client shows a stopped run with no cancelling or partial state while the worker can keep spending",
+   "techniques": [
+    {"technique": "async-run-queue-with-cancel", "verdict": "deviation", "evidence": "src/stores/slices/agents/labSlice.ts:206 a failed cancel is rendered as a successful one - the pretend-cancel rule 5 names as the failure"}
+   ]}
+ ],
+ "declined": [
+  {"subject": "cross-provider-benchmark-operations", "context": "*13 not-applicable pairs*", "reason": "judged at revision 12 (2026-10-15..21); the only change to revision 13 (8e7b93947) is frontmatter on an external application (python--target-matrix-runs: verified_against -> counterpart: external), so no doctrine moved under those verdicts; outside budget, left as carried"}
+ ],
+ "consults": [
+  {"ts": "2026-10-30T21:04:30Z", "bundle": "llm-observability", "subjects": ["cross-provider-benchmark-operations"], "techniques": ["budget-preflight-and-ceiling", "determinism-stamping", "async-run-queue-with-cancel"], "deviations": 1, "context": "db-repos-lab"},
+  {"ts": "2026-10-30T21:04:30Z", "bundle": "llm-observability", "subjects": ["cross-provider-benchmark-operations"], "techniques": ["budget-preflight-and-ceiling"], "deviations": 1, "context": "lab-arena"},
+  {"ts": "2026-10-30T21:04:30Z", "bundle": "llm-observability", "subjects": ["cross-provider-benchmark-operations"], "techniques": ["dataset-sampling-anonymize-freeze", "axes-and-caveats-live-at-the-surface"], "deviations": 1, "context": "lab-versions-eval"},
+  {"ts": "2026-10-30T21:04:30Z", "bundle": "llm-observability", "subjects": ["cross-provider-benchmark-operations"], "techniques": ["async-run-queue-with-cancel"], "deviations": 1, "context": "stores-slices-agents"}
+ ],
+ "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+ "evaluatedRevision": 13
+}

@@ -1,6 +1,6 @@
 # Quick Answer — the unified triage deck
 
-> **Retired as a surface 2026-10-06 (decision-center spark).** The title-bar deck UI is gone; its model (`triage/triageTypes.ts`, adapters, `triageDispatch`, `triageQueue`, `useUnifiedTriage`) now feeds the Decision Center roster (`src/features/decision-center/`), and decisions are made in the Decision Deck. `QuickAnswerBody` survives as the Conversations "Quick" tab. The text below describes the retired deck and is kept as history.
+> **Retired as a surface 2026-10-06 (decision-center spark).** The title-bar deck UI is gone; its model (`triage/triageTypes.ts`, adapters, `triageDispatch`, `triageQueue`, `useUnifiedTriage`) now feeds the Decision Center roster (`src/features/decision-center/`), and decisions are made in the Decision Deck. `QuickAnswerBody` survived as the Conversations "Quick" tab until that tab was folded into the Needs-you rail (8af4ec6b4d); with no host left, it and its three child components were deleted (scan-sweep, 2026-10-31). The text below describes the retired deck and is kept as history.
 
 > Co-located design doc. **Rewritten 2026-07-31** (`/perfect` round 2): the
 > previous revision described a 576px anchored popover over two queues, a
@@ -230,8 +230,9 @@ splitting them turned an untestable hook into unit-testable units.
   the running pulse opens the full Monitor. What "attention" counts has since been
   corrected to all seven queues (it was questions + reviews, which is why the
   badge could read `0` over a full deck), but the split itself is unchanged.
-- **The legacy popover components are deliberately retained.** `QuickAnswerBody`,
-  `QuickAnswerQuestionGroup` and `QuickAnswerReviewCard` still render inside the
-  channel-timeline rail and the reviews rail. `QuickAnswerReviewStepper` is the
-  exception: nothing renders it, and the nine `quick-answer-*` tour anchors that
-  target it can never anchor.
+- **The legacy popover components are gone (2026-10-31).** `QuickAnswerBody`,
+  `QuickAnswerQuestionGroup`, `QuickAnswerReviewStepper` and `QuickAnswerReviewCard`
+  outlived their hosts - the channel-timeline and reviews rails became the
+  Needs-you rail in 8af4ec6b4d - and were deleted with their two tests. The
+  `quick-answer-*` entries in the generated tour-anchor manifest are stale until
+  `scripts/docs/gen-tour-anchors.mjs` next runs.

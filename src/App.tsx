@@ -4,6 +4,8 @@ import { AnimatePresence, LazyMotion, m, MotionConfig } from "framer-motion";
 // framer-motion's animation features load after first paint; the startup tree
 // renders `m.*` components (see src/lib/motion/motionFeatures.ts).
 const loadMotionFeatures = () => import("@/lib/motion/motionFeatures").then((mod) => mod.default);
+import { framerReducedMotion } from "@/lib/motion/framerReducedMotion";
+import { useThemeStore } from "@/stores/themeStore";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/chrome/UpdateBanner";
 import CliReadinessBanner from "@/features/shared/chrome/CliReadinessBanner";
@@ -305,6 +307,7 @@ export default function App() {
   const fontReady = useI18nStore((s) => s.fontReady);
   const { shouldAnimate } = useMotion();
   const isDocumentVisible = useDocumentVisibility();
+  const reduceMotionSetting = useThemeStore((s) => s.reduceMotion);
 
   useEffect(() => {
     document.documentElement.dataset.documentVisible = String(isDocumentVisible);
@@ -389,7 +392,7 @@ export default function App() {
         <KeyboardNavMode />
         <NavHistoryShortcuts />
         <LazyMotion features={loadMotionFeatures}>
-        <MotionConfig reducedMotion={isDocumentVisible ? "user" : "always"}>
+        <MotionConfig reducedMotion={framerReducedMotion(isDocumentVisible, reduceMotionSetting)}>
           <AriaLiveProvider>
         <div
           className={`app-safe-area flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground transition-opacity duration-150 ease-out ${fontReady ? 'opacity-100' : 'opacity-60'}`}

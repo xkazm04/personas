@@ -150,8 +150,6 @@ pub fn dev_tools_write_registry_usage(
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     use super::*;
 
     #[test]

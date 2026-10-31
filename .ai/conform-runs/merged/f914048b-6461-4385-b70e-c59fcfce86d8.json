@@ -1,0 +1,36 @@
+{"schema":"conform-run/1","worker":"f914048b-6461-4385-b70e-c59fcfce86d8","subject":"cost-metering",
+"evaluatedAt":"2026-10-30T12:00:00Z",
+"pairs":[
+{"context":"2fb16136-586e-478d-823f-38434d2d5b9a","subject":"cost-metering","bundle":"software-engineering","state":"deviation",
+"evidence":"src-tauri/src/commands/communication/observability/metrics.rs:196 periodStartUtc still comes from a second chrono boundary fn (:225), not the SQLite datetime('now','start of month') the rows are filtered by (src-tauri/db/src/repos/execution/executions.rs:2369), and no period end is returned; spend is a bare f64 (:27) from SUM over nullable cost_usd COALESCEd to 0.0 (:198), so an unpriced month reads $0 beside max_budget_usd (re-checked 2026-10-30 after b2c51639f4, which windowed the dashboard/overview bundle only; anchors shifted)",
+"techniques":[
+{"technique":"usage-ledgers","verdict":"deviation","evidence":"src-tauri/src/commands/communication/observability/metrics.rs:225 a second period-boundary function beside the SQL predicate; result carries start (:39) but no end"},
+{"technique":"spend-observability","verdict":"deviation","evidence":"src-tauri/src/commands/communication/observability/metrics.rs:198 COALESCE(e.spend, 0.0) with no unpriced count, so an unpriced figure renders as $0, not a floor"}]},
+{"context":"468953eb-0204-4013-b366-9357b2161138","subject":"cost-metering","bundle":"software-engineering","state":"deviation",
+"evidence":"src-tauri/core/src/types.rs:407 ExecutionResult.cost_usd (and ExecutionMetrics.cost_usd :526) is a non-optional f64, so a run killed before its result line persists as Some(0.0) (src-tauri/src/engine/execution.rs:2418): unknown spelled as free; the run-budget record API (src-tauri/core/src/run_budget.rs:188) also takes f64, so spawns of unknown cost never cross a ceiling (re-checked 2026-10-30 after b57e139c5e/31140b2b96, binding and doc changes only; execution.rs anchor :2394 -> :2418)",
+"techniques":[
+{"technique":"usage-ledgers","verdict":"deviation","evidence":"src-tauri/src/engine/execution.rs:2418 cost_usd: Some(result.cost_usd) writes 0.0 for a run whose cost was never reported; failure is indistinguishable from free"},
+{"technique":"budget-enforcement","verdict":"deviation","evidence":"src-tauri/core/src/run_budget.rs:188 record(run_id, cost_usd: f64) has no unknown-cost branch, so an unpriced spawn consumes no ceiling"}]},
+{"context":"532bbf10-3fd3-4b57-a8ea-95a957645697","subject":"cost-metering","bundle":"software-engineering","state":"deviation",
+"evidence":"src/stores/slices/overview/personaHealthSlice.ts:274 keeps only MonthlySpendResult.items and drops periodStartUtc, then :436 derives a burn rate over active days of a rolling 30-day chart and :440 projects exhaustion of the UTC-calendar-month ceiling with no reset: per-consumer period math whose projectedExhaustionDays drives a health charge (src/features/agents/sub_health/agentHealth.ts:93) (re-checked 2026-10-30 after 578ec66e90, an error-printing fix; anchors shifted, charge moved out of healthCheckSlice)",
+"techniques":[
+{"technique":"usage-ledgers","verdict":"deviation","evidence":"src/stores/slices/overview/personaHealthSlice.ts:274 the returned window is discarded and the consumer re-derives its own"},
+{"technique":"spend-observability","verdict":"deviation","evidence":"src/stores/slices/overview/personaHealthSlice.ts:436 rate computed over a different window (30 rolling days) than the level it is projected against (calendar month)"}]},
+{"context":"66bc7a14-bf15-41d7-8d9a-900aa670f47e","subject":"cost-metering","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/features/teams/sub_factory/passport/passportModel.ts:134 the context's only cost is a user-maintained flat monthly service list (no units, rates, ledger or metered call); its dispatches hand paid work to a Fleet session (src/features/teams/sub_factory/passport/actionConfirmCatalog.ts:94 'LLM tokens'), whose context owns that spend (re-checked 2026-10-30 after 4aff4d381a, dead-export deletion only)",
+"techniques":[]},
+{"context":"7901fd6c-0346-430b-aefe-fc4cd623b167","subject":"cost-metering","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/features/overview/sub_usage/libs/chartConstants.ts:37 a unit tag (cost -> usd), formatted at src/features/overview/sub_usage/components/ChartTooltip.tsx:17, is the context's only money knowledge: a generic chart kit that prices, records, attributes and gates nothing; spend semantics live in its consumers, judged under overview-activity-metrics and overview-observability (re-checked 2026-10-30 after 2e3bc9d70a deleted four chart modules; anchor :49 -> :37)",
+"techniques":[]}
+],
+"declined":[
+{"subject":"cost-metering","context":"5ab49df3-3442-4ea6-a405-077dec64850d","reason":"persona-core-codex is a weak-governance row (probable, score 286.6); /conform does not judge weak pairs by default, so it is left unknown as a coverage question"},
+{"subject":"cost-metering","context":"(14 other pairs)","reason":"already judged against the current digest sha256-b2:7247db31eb8f3dce rev 15 on 2026-10-14/16/21 and their anchor files have no commits since the verdict; re-reading them would repeat work at budget 5"}
+],
+"consults":[
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","spend-observability"],"deviations":1,"context":"commands-communication"},
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","budget-enforcement"],"deviations":1,"context":"core"},
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":["usage-ledgers","spend-observability"],"deviations":1,"context":"stores-slices-overview"},
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":[],"deviations":0,"context":"passport-wall-model"},
+{"ts":"2026-10-30T12:00:00Z","bundle":"software-engineering","subjects":["cost-metering"],"techniques":[],"deviations":0,"context":"overview-usage-charts"}
+]}

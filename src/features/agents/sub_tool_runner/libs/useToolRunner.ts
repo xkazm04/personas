@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { invokeToolDirect, type ToolInvocationResult } from '@/api/agents/tools';
-import { extractMessage } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
+import { createKeyedLatestWins } from '@/stores/util/latestWins';
 
 interface ToolRunState {
   /** The persona whose tool run produced this entry. Results for any other
@@ -19,6 +21,7 @@ const EMPTY_STATE: ToolRunState = {
 };
 
 export function useToolRunner(personaId: string | undefined) {
+  const { t } = useTranslation();
   const [states, setStates] = useState<Record<string, ToolRunState>>({});
 
   // Track the latest personaId in a ref so the runTool result-write code can
@@ -33,6 +36,13 @@ export function useToolRunner(personaId: string | undefined) {
   // De-dupe rapid double-clicks on the same toolId for the active persona.
   // Cleared on persona switch by the effect below.
   const runningRef = useRef<Set<string>>(new Set());
+
+  // The newest run of each tool (per-tool latest-wins token). The persona
+  // check alone cannot tell two runs apart after an A -> B -> A switch: the
+  // first run's persona id is current again, so it would overwrite the second,
+  // still in-flight run and free its de-dupe slot. Only the run whose token is
+  // still the latest for its tool may write state or release the slot.
+  const [latestRun] = useState(() => createKeyedLatestWins<string>());
 
   // Reset cached state when the persona changes. Without this, a tool run
   // started under persona A would land in the map keyed only by toolId and
@@ -66,7 +76,7 @@ export function useToolRunner(personaId: string | undefined) {
             personaId: '',
             isRunning: false,
             result: null,
-            error: 'No active persona. Open a persona before running tools.',
+            error: t.agents.tool_runner.no_persona,
           },
         }));
         return;
@@ -79,6 +89,9 @@ export function useToolRunner(personaId: string | undefined) {
       // Snapshot the persona at call time. The in-flight request belongs to
       // THIS persona; any later persona switch will drop the result below.
       const runPersonaId = personaId;
+      const runToken = latestRun.next(toolId);
+      const isLatest = () =>
+        runPersonaId === personaIdRef.current && latestRun.isCurrent(toolId, runToken);
 
       runningRef.current.add(toolId);
       setStates((prev) => ({
@@ -94,9 +107,9 @@ export function useToolRunner(personaId: string | undefined) {
       try {
         const result = await invokeToolDirect(toolId, runPersonaId, inputJson);
         setStates((prev) => {
-          // Drop the result if the user has since switched personas — this
-          // entry no longer belongs to the visible tool runner panel.
-          if (runPersonaId !== personaIdRef.current) return prev;
+          // Drop the result if the user has since switched personas, or a newer
+          // run of this tool has started - this entry is no longer the one shown.
+          if (!isLatest()) return prev;
           return {
             ...prev,
             [toolId]: { personaId: runPersonaId, isRunning: false, result, error: null },
@@ -106,23 +119,27 @@ export function useToolRunner(personaId: string | undefined) {
         // Tauri rejects with structured AppError objects, not Error instances —
         // `String(err)` on those renders "[object Object]" (2026-07-16 UAT
         // blocker). extractMessage probes .message/.error/JSON before giving up.
-        const msg = extractMessage(err) || 'Tool invocation failed';
+        const msg = extractMessage(err) || t.agents.tool_runner.invocation_failed;
+        // A tool FAILURE resolves (success:false); a rejection is the IPC path
+        // itself failing (wrapper timeout, AppError). The card state is cleared
+        // on the next persona switch, so leave a trace that outlives it.
+        silentCatch('useToolRunner:invokeToolDirect')(err);
         setStates((prev) => {
-          if (runPersonaId !== personaIdRef.current) return prev;
+          if (!isLatest()) return prev;
           return {
             ...prev,
             [toolId]: { personaId: runPersonaId, isRunning: false, result: null, error: msg },
           };
         });
       } finally {
-        // Only release the dedupe slot if we're still on the same persona
-        // (otherwise the persona-switch effect already cleared the set).
-        if (runPersonaId === personaIdRef.current) {
+        // Only the latest run releases the dedupe slot (a persona switch already
+        // cleared the set; a newer run of the same tool owns the slot now).
+        if (isLatest()) {
           runningRef.current.delete(toolId);
         }
       }
     },
-    [personaId],
+    [personaId, latestRun, t],
   );
 
   return { getState, runTool };

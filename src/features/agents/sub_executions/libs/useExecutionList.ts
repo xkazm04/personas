@@ -1,31 +1,27 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
-import { getTemplateCatalog } from '@/lib/personas/templates/templateCatalog';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
+import type { DesignUseCase } from '@/lib/types/frontendTypes';
 
-export const TEMPLATE_SAMPLE_INPUT: Record<string, object> = {
-  'gmail-maestro': { mode: 'process_inbox', max_emails: 5, labels: ['inbox', 'unread'] },
-  'slack-standup': { channel: '#team-standup', lookback_hours: 24 },
-  'security-auditor': { target_path: './src', scan_type: 'full' },
-  'doc-writer': { source_path: './src', output_format: 'markdown' },
-  'test-generator': { module_path: './src/utils/helpers.ts', framework: 'vitest' },
-  'dep-updater': { manifest: 'package.json', check_security: true },
-  'bug-triager': { issue_id: 'BUG-1234', source: 'github' },
-  'data-monitor': { pipeline: 'etl-daily', check_interval_min: 5 },
-};
-
-export async function getSampleInput(personaName: string | undefined): Promise<string> {
-  if (!personaName) return '{}';
-  const catalog = await getTemplateCatalog();
-  const match = catalog.find((t) => t.name === personaName);
-  const data = match ? TEMPLATE_SAMPLE_INPUT[match.id] ?? {} : {};
-  return JSON.stringify(data, null, 2);
-}
-
-export function formatTokens(tokens: number): string {
-  if (tokens === 0) return '-';
-  if (tokens >= 1000) return `${(tokens / 1000).toFixed(1)}k`;
-  return String(tokens);
+/**
+ * The first-run "Try it" seed: the persona's own declared input, as the JSON
+ * text the runner expects. Takes the first runnable use case (enabled, not
+ * documentation-only) that declares a `sample_input`, else one built from its
+ * `input_schema` defaults; `'{}'` when nothing declares an input.
+ */
+export function deriveSampleInput(useCases: readonly DesignUseCase[]): string {
+  for (const uc of useCases) {
+    if (uc.enabled === false || uc.execution_mode === 'non_executable') continue;
+    if (uc.sample_input && Object.keys(uc.sample_input).length > 0) {
+      return JSON.stringify(uc.sample_input, null, 2);
+    }
+    const fromSchema: Record<string, unknown> = {};
+    for (const field of uc.input_schema ?? []) {
+      if (field.default !== undefined) fromSchema[field.key] = field.default;
+    }
+    if (Object.keys(fromSchema).length > 0) return JSON.stringify(fromSchema, null, 2);
+  }
+  return '{}';
 }
 
 /**

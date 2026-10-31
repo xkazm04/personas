@@ -352,13 +352,14 @@ mod tests {
     }
 
     fn base_persona() -> Persona {
-        let mut p = Persona::default();
-        p.id = "p1".to_string();
-        p.name = "Original".to_string();
-        p.system_prompt = "old prompt".to_string();
-        p.max_budget_usd = Some(1.0);
-        p.model_profile = Some(r#"{"model":"claude-x","auth_token":"secret-abc"}"#.to_string());
-        p
+        Persona {
+            id: "p1".to_string(),
+            name: "Original".to_string(),
+            system_prompt: "old prompt".to_string(),
+            max_budget_usd: Some(1.0),
+            model_profile: Some(r#"{"model":"claude-x","auth_token":"secret-abc"}"#.to_string()),
+            ..Default::default()
+        }
     }
 
     #[test]

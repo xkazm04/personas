@@ -2,12 +2,12 @@ import { Sparkles, CheckCircle2, KeyRound, ExternalLink } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
 import type { CredentialMetadata } from '@/lib/types/types';
-import type { GitHubRepo, GitHubPermissions, ZapierZap } from '@/api/agents/automations';
+import type { GitHubRepo, GitHubPermissions } from '@/api/agents/automations';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
 import type { PersonaCapability } from '@/lib/personas/capabilities';
 import { DebtText } from '@/i18n/DebtText';
-import { GithubRepoPicker, ZapierZapList } from './AutomationPlatformListings';
+import { GithubRepoPicker } from './AutomationPlatformListings';
 
 
 interface AutomationTriggerStepProps {
@@ -27,10 +27,7 @@ interface AutomationTriggerStepProps {
   githubRepo: string | null;
   setGithubRepo: (v: string | null) => void;
   loadingRepos: boolean;
-  zapierZaps: ZapierZap[];
-  loadingZaps: boolean;
   reposFailed: boolean;
-  zapsFailed: boolean;
   onRetryListings: () => void;
   availableUseCases: PersonaCapability[];
   useCaseId: string | null;
@@ -44,7 +41,7 @@ export function AutomationTriggerStep({
   needsCredential, hasPlatformCredential, platformCredentials,
   platformCredentialId, setPlatformCredentialId, platformConnector,
   githubRepos, githubPerms, githubRepo, setGithubRepo, loadingRepos,
-  zapierZaps, loadingZaps, reposFailed, zapsFailed, onRetryListings,
+  reposFailed, onRetryListings,
   availableUseCases, useCaseId, setUseCaseId,
   canDesign, onDesign,
 }: AutomationTriggerStepProps) {
@@ -169,11 +166,6 @@ export function AutomationTriggerStep({
           githubRepos={githubRepos} githubPerms={githubPerms} githubRepo={githubRepo} setGithubRepo={setGithubRepo}
           loadingRepos={loadingRepos} reposFailed={reposFailed} onRetry={onRetryListings}
         />
-      )}
-
-      {/* Zapier: Existing zaps listing */}
-      {platform === 'zapier' && hasPlatformCredential && (
-        <ZapierZapList zapierZaps={zapierZaps} loadingZaps={loadingZaps} zapsFailed={zapsFailed} onRetry={onRetryListings} />
       )}
 
       <div className="flex items-center justify-between">

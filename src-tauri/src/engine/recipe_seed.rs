@@ -581,6 +581,7 @@ mod tests {
     ///   5. every adoption question's use-case binding hits an embedded id
     ///   6. ref ids follow `derive_recipe_id` (or are on the frozen
     ///      hand-minted allowlist)
+    ///
     /// Dev-checkout test: walks `scripts/templates/` relative to the
     /// manifest dir (same pattern as `companion::dev_mode` context tests).
     #[test]

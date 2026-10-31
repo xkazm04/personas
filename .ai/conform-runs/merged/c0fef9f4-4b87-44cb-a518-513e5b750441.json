@@ -1,0 +1,34 @@
+{"schema":"conform-run/1","worker":"c0fef9f4-4b87-44cb-a518-513e5b750441","subject":"wizard-flows","evaluatedAt":"2026-10-30T21:03:11Z",
+"pairs":[
+{"context":"68e3a26f-d83a-447b-a2d0-ad875004506f","subject":"wizard-flows","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/scraper/ScrapeEditorWizard.tsx:56 the rail has two marker states (check or step number) and no visited set, so a Preview step that an extract edit invalidated looks the same as a step never reached",
+ "techniques":[
+  {"technique":"progress-communication","verdict":"deviation","evidence":"src/features/scraper/ScrapeEditorWizard.tsx:56 done ? Check : i + 1 - two states, no needs-attention marker"},
+  {"technique":"step-state-model","verdict":"deviation","evidence":"src/features/scraper/ScrapeEditorWizard.tsx:46 onClick={() => setStep(i)} sets an index position with no canJumpTo guard and no visited set"}]},
+{"context":"b88ef121-d028-4999-bf34-6e44aed99959","subject":"wizard-flows","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:106 position is an index into a list that re-sorts answered questions to the end on every answer (:101-103), so answering the current question silently swaps the card to another unless an explicit navigation had pinned an id",
+ "techniques":[
+  {"technique":"step-state-model","verdict":"deviation","evidence":"src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:106 useState(0) activeIdx indexes orderedQuestions, which re-sorts at :101-103 - identity is an index, not a name"}]},
+{"context":"e76afaf6-ba3b-4341-b1ad-f444f08da8b8","subject":"wizard-flows","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStoryThread.tsx:135 answered means only that an answer is present, with no visited set, so template defaults seeded into the answers (ChronologyAdoptionView.tsx:904) show a green check on questions the user never saw",
+ "techniques":[
+  {"technique":"step-state-model","verdict":"deviation","evidence":"src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:904 merged = { ...defaults, ...autoAnswers, ... } seeds answers with no visited set beside them"},
+  {"technique":"progress-communication","verdict":"deviation","evidence":"src/features/templates/sub_generated/adoption/questionnaire/QuestionnaireStoryThread.tsx:135 answered = !!userAnswers[q.id] - marker conflates valid with visited"}]},
+{"context":"5dc3cb6a-6612-4909-995d-86e92394ec94","subject":"wizard-flows","bundle":"software-engineering","state":"deviation",
+ "evidence":"src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:7 the indicator keeps a private VISIBLE_STEPS copy of navigationReducer.ts:63 SURFACED_STEPS and marks completion by position (:58 i < activeIndex), not validity - two authorities over one step vocabulary",
+ "techniques":[
+  {"technique":"step-state-model","verdict":"deviation","evidence":"src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:7 VISIBLE_STEPS duplicates src/features/templates/sub_n8n/reducers/navigationReducer.ts:63 SURFACED_STEPS"},
+  {"technique":"progress-communication","verdict":"deviation","evidence":"src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:58 isCompleted = i < activeIndex - completion by position, not a derivation from the model"}]}
+],
+"declined":[
+ {"subject":"wizard-flows","context":"89d44c76-ec4c-4388-843e-503cf6ca2507","reason":"weak context (progress-transform, lexical-only match on 'progress'): a loader/progress-bar primitive is not a staged commitment; coverage question, not judged by default"},
+ {"subject":"wizard-flows","context":"8650ca36-36fe-4862-98f5-745e866a2687","reason":"not-applicable verdict of 2026-10-13 is current against digest e0fac678 rev 4; not re-read this run"},
+ {"subject":"wizard-flows","context":"3a377c10-3b0f-4674-87f9-aae9cb267c99","reason":"not-applicable verdict of 2026-10-16 is current against digest e0fac678 rev 4; not re-read this run"},
+ {"subject":"wizard-flows","context":"2a54cdc2-87af-4298-b490-9eb87f230df7","reason":"not-applicable verdict of 2026-10-16 is current against digest e0fac678 rev 4; not re-read this run"}
+],
+"consults":[
+ {"ts":"2026-10-30T21:03:11Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["progress-communication","step-state-model"],"deviations":1},
+ {"ts":"2026-10-30T21:03:11Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model"],"deviations":1},
+ {"ts":"2026-10-30T21:03:11Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model","progress-communication"],"deviations":1},
+ {"ts":"2026-10-30T21:03:11Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model","progress-communication"],"deviations":1}
+]}

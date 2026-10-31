@@ -206,7 +206,7 @@ mod tests {
     #[test]
     fn numbers_print_as_ecmascript_doubles() {
         assert_eq!(
-            canonical_json(&json!(333_333_333.333_333_29_f64)),
+            canonical_json(&json!(333_333_333.333_333_3_f64)),
             "333333333.3333333"
         );
         let cases: [(&str, &str); 13] = [

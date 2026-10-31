@@ -77,6 +77,50 @@ export function splitLogLines(text: string | null): string[] {
   return (text ?? '').split('\n').filter((line) => line.trim());
 }
 
+/** Printed for a path present on one side only; an explicit `null` prints as `null`. */
+const ABSENT = '(absent)';
+
+const isContainer = (v: unknown): v is Record<string, unknown> | unknown[] =>
+  typeof v === 'object' && v !== null;
+
+const hasChildren = (v: unknown): boolean =>
+  isContainer(v) && (Array.isArray(v) ? v.length > 0 : Object.keys(v).length > 0);
+
+/**
+ * Recurse to leaf paths (`config.retries`, `tags[1]`). A path missing on one
+ * side is `ABSENT`, never folded into `null`. Containers of different kinds,
+ * and empty containers, compare as leaves.
+ */
+function walkJsonDiff(a: unknown, b: unknown, path: string, out: JsonDiffEntry[]): void {
+  const bothArrays = Array.isArray(a) && Array.isArray(b);
+  const bothObjects = isContainer(a) && isContainer(b) && !Array.isArray(a) && !Array.isArray(b);
+  if ((bothArrays || bothObjects) && (hasChildren(a) || hasChildren(b))) {
+    const keys = bothArrays
+      ? Array.from({ length: Math.max(a.length, (b as unknown[]).length) }, (_, i) => String(i))
+      : [...new Set([...Object.keys(a as object), ...Object.keys(b as object)])];
+    for (const key of keys) {
+      const child = bothArrays ? `${path}[${key}]` : path ? `${path}.${key}` : key;
+      const ra = a as Record<string, unknown>;
+      const rb = b as Record<string, unknown>;
+      const hasA = Object.prototype.hasOwnProperty.call(ra, key);
+      const hasB = Object.prototype.hasOwnProperty.call(rb, key);
+      if (hasA && hasB) {
+        walkJsonDiff(ra[key], rb[key], child, out);
+      } else {
+        out.push({
+          path: child,
+          left: hasA ? JSON.stringify(ra[key]) : ABSENT,
+          right: hasB ? JSON.stringify(rb[key]) : ABSENT,
+        });
+      }
+    }
+    return;
+  }
+  const left = JSON.stringify(a);
+  const right = JSON.stringify(b);
+  if (left !== right) out.push({ path: path || '(root)', left, right });
+}
+
 /** Structural diff of two JSON strings. */
 export function jsonDiff(a: string | null, b: string | null): JsonDiffEntry[] {
   const diffs: JsonDiffEntry[] = [];
@@ -87,14 +131,7 @@ export function jsonDiff(a: string | null, b: string | null): JsonDiffEntry[] {
   if (keysA.length === 0 && keysB.length === 0 && a !== b) {
     diffs.push({ path: '(root)', left: a ?? '(empty)', right: b ?? '(empty)' });
   } else {
-    const allKeys = new Set([...keysA, ...keysB]);
-    for (const key of allKeys) {
-      const valA = JSON.stringify(objA[key] ?? null);
-      const valB = JSON.stringify(objB[key] ?? null);
-      if (valA !== valB) {
-        diffs.push({ path: key, left: valA, right: valB });
-      }
-    }
+    walkJsonDiff(objA, objB, '', diffs);
   }
   return diffs;
 }

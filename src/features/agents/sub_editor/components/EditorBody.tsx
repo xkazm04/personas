@@ -4,11 +4,10 @@ import { tabIdLabel, tabIdsToLabels } from '../libs/editorTabConstants';
 import { useShallow } from 'zustand/react/shallow';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
-import { RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
-import { UnsavedChangesBanner, PartialLoadBanner } from './EditorBanners';
+import { UnsavedChangesBanner, PartialLoadBanner, SaveFailedBanner } from './EditorBanners';
 import { EditorTabBar } from './EditorTabBar';
 import { EditorEmptyState } from './EditorEmptyState';
 import { PersonaDecisionsFooter } from './PersonaDecisionsFooter';
@@ -48,7 +47,7 @@ export function EditorBody() {
 
   const {
     draft, baseline, patch, setBaseline,
-    isSaving, modelDirty, saveError,
+    isSaving, saveError,
     isDirty, allDirtyTabs,
     saveAllTabs, cancelAllDebouncedSaves, clearAllDirty,
     undo, redo,
@@ -61,15 +60,21 @@ export function EditorBody() {
   // never drift. Memoized inside the hook, so this doesn't churn the tab bar.
   const { missingConnectorCount } = usePersonaReadiness();
 
-  const { handleDiscardAndSwitch, handleSaveAndSwitch } = usePersonaSwitchGuard({
+  // Surface per-tab save failures so the user can see WHICH tab failed and
+  // retry without having to make a dummy edit to re-trigger autosave. Written
+  // by every explicit save path (Save & Switch, the leave guard, Retry); its
+  // only writer used to be the Retry button inside the banner it gates, so the
+  // banner and the tab's failed badge could never appear.
+  const [failedTabs, setFailedTabs] = useState<string[]>([]);
+  const selectedPersonaId = selectedPersona?.id;
+  useEffect(() => { setFailedTabs([]); }, [selectedPersonaId]);
+
+  const { handleDiscardAndSwitch, handleSaveAndSwitch, isSwitching } = usePersonaSwitchGuard({
     cancelAllDebouncedSaves,
     saveAllTabs,
     clearAllDirty,
+    onSaveFailed: setFailedTabs,
   });
-
-  // Surface per-tab save failures so the user can see WHICH tab failed and
-  // retry without having to make a dummy edit to re-trigger autosave.
-  const [failedTabs, setFailedTabs] = useState<string[]>([]);
   const runSaveAll = useCallback(async () => {
     try {
       await saveAllTabs();
@@ -87,7 +92,12 @@ export function EditorBody() {
   const guard = useUnsavedGuard(isDirty, {
     onSave: async () => {
       cancelAllDebouncedSaves();
-      await saveAllTabs();
+      try {
+        await saveAllTabs();
+      } catch (err) {
+        if (err instanceof TabSaveError) setFailedTabs(err.failedTabs);
+        throw err;
+      }
     },
     onDiscard: () => {
       cancelAllDebouncedSaves();
@@ -155,37 +165,33 @@ export function EditorBody() {
         onSaveAndSwitch={handleSaveAndSwitch}
         onDiscardAndSwitch={handleDiscardAndSwitch}
         onDismiss={cancelPendingSwitch}
+        saving={isSwitching}
       />
 
       <EditorTabBar dirtyTabs={allDirtyTabs} connectorsMissing={missingConnectorCount} failedTabs={failedTabs} />
       <PartialLoadBanner warnings={partialLoadWarnings} onDismiss={dismissWarnings} />
 
       {failedTabs.length > 0 && (
-        <div className="animate-fade-slide-in mx-6 my-2 rounded-modal px-3 py-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20">
-          <RefreshCw className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-          <span className="typo-body text-red-300/90 flex-1">
-            {tx(t.agents.editor_ui.save_failed_tabs, { tabs: tabIdsToLabels(failedTabs, tabCatalog) })}
-          </span>
-          <AsyncButton
-            variant="accent"
-            tone="error"
-            size="xs"
-            onClick={runSaveAll}
-            isLoading={isSaving}
-            data-testid="editor-save-retry"
-          >
-            {t.agents.editor_ui.save_failed_retry_button}
-          </AsyncButton>
-        </div>
+        <SaveFailedBanner
+          message={tx(t.agents.editor_ui.save_failed_tabs, { tabs: tabIdsToLabels(failedTabs, tabCatalog) })}
+          actions={[
+            <AsyncButton
+              key="retry"
+              variant="accent"
+              tone="error"
+              size="xs"
+              onClick={runSaveAll}
+              isLoading={isSaving}
+              data-testid="editor-save-retry"
+            >
+              {t.agents.editor_ui.save_failed_retry_button}
+            </AsyncButton>,
+          ]}
+        />
       )}
 
       {saveError && failedTabs.length === 0 && (
-        <div className="animate-fade-slide-in mx-6 my-2 rounded-modal px-3 py-2 flex items-center gap-2 bg-red-500/10 border border-red-500/20">
-          {/* Static: nothing is in flight here ("will retry on next edit"), so
-              a spinning glyph claimed work the app was not doing. */}
-          <RefreshCw className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-          <span className="typo-body text-red-300/90">{t.agents.editor_ui.save_failed_retry}</span>
-        </div>
+        <SaveFailedBanner message={t.agents.editor_ui.save_failed_retry} />
       )}
 
       <div className="flex-1 overflow-y-auto p-4">
@@ -194,11 +200,7 @@ export function EditorBody() {
             {editorTab === 'activity' && <ActivityTab />}
             {editorTab === 'lab' && <LabTab />}
             {editorTab === 'design' && (
-              <DesignTab
-                draft={draft}
-                patch={patch}
-                modelDirty={modelDirty}
-              />
+              <DesignTab />
             )}
             {editorTab === 'settings' && (
               <EditorTabContent>

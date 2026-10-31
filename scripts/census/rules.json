@@ -593,8 +593,8 @@
         }
       ],
       "baseline": {
-        "files": 239,
-        "matches": 525
+        "files": 238,
+        "matches": 520
       },
       "floor": 4000
     },
@@ -634,8 +634,8 @@
         }
       ],
       "baseline": {
-        "files": 49,
-        "matches": 73
+        "files": 48,
+        "matches": 72
       },
       "floor": 4000
     },
@@ -989,7 +989,7 @@
       },
       "baseline": {
         "files": 10,
-        "matches": 41
+        "matches": 34
       },
       "floor": 4000
     },
@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 361,
-        "matches": 662
+        "files": 359,
+        "matches": 660
       },
       "floor": 2000
     },
@@ -1856,8 +1856,8 @@
         }
       ],
       "baseline": {
-        "files": 47,
-        "matches": 71
+        "files": 46,
+        "matches": 70
       },
       "floor": 4000
     },
@@ -1879,8 +1879,8 @@
         "description": "A `copyText(...)` call in STATEMENT position — it begins its line (after optional indentation, `await`, `void`, or an inline `try {`) — so the `Promise<boolean>` it returns is bound to nothing and the caller cannot distinguish a completed copy from a refused one. PROXY FOR the stack-free condition \"a copy affordance decides what to tell the user without knowing whether the write succeeded, so the confirmation is causally downstream of the click rather than of the result\". WHY THIS IS THE CONDITION AND NOT PEDANTRY, executed rather than reasoned: `copyText` (useCopyToClipboard.ts:11-19) catches internally and NEVER REJECTS. Run under Vitest+jsdom with navigator.clipboard.writeText stubbed to throw NotAllowedError, `copyText` did not throw and resolved `false`; with navigator.clipboard set to undefined (the non-secure-context case) it caught the synchronous TypeError and resolved `false`. Consequently `await copyText(x).then(f).catch(g)` runs f and NEVER g — measured handler order on failure is exactly [\"THEN-RAN\"] — so every try/catch and every .catch() written around a copyText call in this repo is UNREACHABLE code that reads as failure handling. 18 of the 32 matched sites go on to claim success (setCopied(true), addToast(...,'success'), or PrBridge's markDone() advancing a workflow checkpoint) on a clipboard that may be empty. LEGAL DESTINATIONS, all three of which this pattern leaves unmatched: (1) `<CopyButton text={...} />` — the component gates its flash on the resolved boolean (CopyButton.tsx:62-67 plus useCopyToClipboard.ts:42-47); (2) `useCopyToClipboard()` / `useKeyedCopyFlag()` — both write `.then((ok) => { if (!ok) return; ... })`; (3) a bound direct call, `const ok = await copyText(x); if (!ok) return;` (ChatMessageContent.tsx:70-74, DevInspector.tsx:45-46). NO EXCLUDE LIST BY DESIGN: the two primitives that legitimately call copyText are spared by the negative lookahead because their `.then` callbacks DECLARE a parameter — i.e. they are spared for reading the boolean, not for their filename. Deleting `ok` from either callback would make it match, which is the correct behaviour and is the proof the matcher keys on the condition rather than on a token. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE: a prefix-context classifier and a statement-shape scanner over the same corpus disagreed on exactly 4 sites, all four `.then(() => ...)` chains with a zero-arity callback; hand-adjudication ruled all 4 as DISCARDED (a zero-arity `.then` cannot read the boolean) and both implementations now agree at 32. PRECISION on the stated condition is 32/32 — every match is a call whose boolean is bound to nothing. Four of the 32 are clipboard WIPES rather than copies (BundleExportDialog.tsx:30,44 and FieldCaptureHelpers.tsx:105,113, all `copyText('')`); they are reported as true positives, not exempted, because not knowing whether a secret wipe landed is the same defect pointed the other way. PRECONDITION (must be re-derived per repo): this repo HAS a clipboard chokepoint named `copyText`, enforced by custom/prefer-shared-clipboard at eslint.config.js:109 — 2 production navigator.clipboard.writeText calls in 4,830 files. A repo without a chokepoint wears the identical condition on raw `navigator.clipboard.writeText(...)` calls and scores ZERO here while being fully affected: measured, personas-web has 11 raw write sites, 0 helpers, and 2 confirmed optimistic-success paths plus 4 silent-failure paths; brainiac/console has 4 raw sites and 0 helpers. Such a repo should re-key this signal on its own raw API call in statement position. Do NOT silence a match by adding a try/catch — that is the defect, not the fix; bind the result, or take the type change in the golden path's §9."
       },
       "baseline": {
-        "files": 14,
-        "matches": 24
+        "files": 13,
+        "matches": 22
       },
       "floor": 4000
     },
@@ -2128,8 +2128,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 29,
-        "matches": 30
+        "files": 28,
+        "matches": 29
       },
       "floor": 2000
     },
@@ -2151,8 +2151,8 @@
         "description": "The semantic body-text token composited toward the canvas at 45% alpha or less. PROXY FOR the stack-free condition: TEXT HIERARCHY EXPRESSED AS ALPHA ON THE BODY-TEXT TOKEN, TUNED ON ONE THEME FAMILY AND SHIPPED TO ALL OF THEM. Computed, not asserted: on the three light themes this repo ships, text-foreground at 45% alpha measures 2.65-2.93:1 across every configuration the app can be in (canvas and card surfaces, all three brightness levels of the Appearance setting) - below the 3:1 AA-large floor as well as the 4.5:1 AA floor, so no font size rescues it. The same class measures 4.52-4.94:1 on all eight dark themes, which is why it was authored and why it survives review. 45 is the highest alpha at which the failure is unconditional; 50-60 also fail AA on every light configuration but can clear 3:1 for large text, so they are excluded to keep precision at 100% of the WCAG floor that applies. Measured precision 94.0% (23 of 385 are aria-hidden decorative marks, WCAG-exempt but still 2.4:1). PRECONDITION: this repo expresses alpha with Tailwind's /N modifier on a CSS-variable-backed colour token, and renders light themes through a global brightness(0.82) filter that lowers their contrast further. A repo whose light theme is a separate stylesheet, or that has no light theme, must re-derive the proxy - the condition is the alpha, not the slash. The legal fix is bare text-foreground with hierarchy carried by the typo-* scale, per Design.md principle 4."
       },
       "baseline": {
-        "files": 125,
-        "matches": 259
+        "files": 122,
+        "matches": 256
       },
       "floor": 4000
     },
@@ -2254,8 +2254,8 @@
         "$falsePositiveNote": "Two independent implementations. (1) A standalone whole-file text matcher with its own walker and (2) the census engine's scanRule both return 9 files / 20 matches over 4829 walked files. `[^()]{0,160}?` is load-bearing: it cannot run past the setter's own argument list into a neighbouring call. `typeof` is DELIBERATELY EXCLUDED from the alternation even though it was in the first draft: it added bridge.ts:256,270,283 (`as typeof VALID_PLUGIN_TABS[number]`), which are each preceded by a real `includes()` membership check. Those are the weakest members of the population and a gate that fires on a checked value is worse than no gate, so the line is drawn at 'the assertion names no checkable set at all'. Their real defect - the hand-written list has drifted from the vocabulary (VALID_PLUGIN_TABS omits `scraper`, VALID_TEMPLATE_TABS omits `explore`) - is catalog drift and belongs to navigation-destination.md, not here. Of the 20 that DO match, 2 currently carry a value outside its union; the other 18 currently carry valid values and are counted because the cast is what removes the compiler's ability to say so, which is the whole condition. PRECONDITION, and an adopting repo must re-derive its own: this works because Personas' navigation setters take closed string unions, so the compliant form carries no assertion token at all. A repo whose destinations are filesystem routes (personas-web: 37 page.tsx, ZERO such casts) scores zero here while the arrival condition is present at full scale in another form."
       },
       "baseline": {
-        "files": 7,
-        "matches": 18
+        "files": 6,
+        "matches": 17
       },
       "floor": 4000
     },
@@ -3143,8 +3143,8 @@
         "description": "A rendering component under src/features imports an irreversible IPC door from @/api (deleteX / removeX / revokeX / purgeX / wipeX / clearAllX) and the whole file contains NO confirmation affordance of any kind. PROXY FOR the stack-free condition: an operation the user cannot undo is reachable from the UI without them being asked. Measured 2026-08-16 at 4f5621830: the anchor (an irreversible @/api import in a feature .tsx) matches 18 files; 12 have no consent step, 6 do — the positive control partitions the anchor exactly, 12 + 6 = 18. PRECISION 12/12 hand-read (each reaches a live delete_/revoke_ Tauri command from a click path with no dialog: LifecyclePage.tsx:120 deletes every trigger on a project in a loop; FleetPairDevice.tsx:75 un-pairs a device; ByomApiKeyManager.tsx:180 deletes a stored provider key). SCOPE is deliberately src/features/**.tsx: store slices, hooks and lib helpers legitimately carry no dialog, and including them took precision from 12/12 to 13/62. ignoreCommentLines is FALSE on purpose — the match is file-scoped and anchored at index 0, so the comment filter would look at line 1 and drop the count for any file that grows a JSDoc header. DO NOT key on the verb at the call site instead: an onClick-anchored variant of this rule scored ~3/17 because removeChip / removeRow / removeField edit unsaved form state. CORRECT END STATE is 0, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): this repo spells irreversibility as a named import from a generated Tauri command wrapper. In a Next.js app it is fetch(..., {method:'DELETE'}) or a useDeleteMutation hook; in a Rust TUI it is a repo call; this pattern scores ZERO on all of them."
       },
       "baseline": {
-        "files": 7,
-        "matches": 7
+        "files": 6,
+        "matches": 6
       },
       "floor": 1500
     },
@@ -4574,8 +4574,8 @@
         }
       ],
       "baseline": {
-        "files": 20,
-        "matches": 21
+        "files": 19,
+        "matches": 20
       },
       "floor": 4000
     },
@@ -5168,8 +5168,8 @@
         "description": "Object equality decided by JSON.stringify on both sides, in the inline form or the paired-const form. Key order is insertion order in JS and survives a JSON.parse round trip, so a value read from the database and an object literal of the same shape compare unequal. Replayed: two semantically identical payloads whose nested keys were serialized in a different order report as changed. Compare key-by-key, or serialize both sides through one canonicalizing stringifier. The paired-const alternative is load-bearing: it is the only one that sees comparisonHelpers.ts:85, the diff kernel behind execution comparison."
       },
       "baseline": {
-        "files": 4,
-        "matches": 4
+        "files": 3,
+        "matches": 3
       },
       "floor": 4000
     },
@@ -5597,8 +5597,8 @@
         "description": "A no-argument .get() followed by .unwrap() or .expect( -- an r2d2 pool checkout whose failure is converted into a panic. PROXY FOR the stack-free condition: the one operation in a persistence layer that is EXPECTED to fail under load -- waiting for a free connection -- is written as if it cannot, so the system's response to saturation is a crash rather than backpressure or an error the caller can report. CONCRETELY HERE this is the second half of clause 2(f): POOL_ACQUIRE_TIMEOUT (db/src/lib.rs:94) is 5s and IS set on all three production pools (:315, :385, :511), so r2d2's get() returns Err rather than hanging -- and then 323 call sites turn that Err into a panic inside whatever thread reached it, which defeats the clause without touching the pool configuration the clause is about. COMPLIANT SHAPE, present and dominant: 1650 propagating checkouts across 246 files (`pool.get()?`, `.map_err(`, `.await`), e.g. every repo function in db/src/repos. VIOLATING SHAPE: `let conn = pool.get().unwrap();` -- commands/core/data_portability.rs:10659, companion/turn_ledger.rs:753, db/src/repos/execution/policy_evidence.rs:148 (`.expect(\"conn\")`). THE NAMED PRIMITIVE IS A GHOST, and this is the finding the count sits on: this document's clause 2(f) called it `pool_get_logged`, which does not exist in 963 .rs files; the real symbol is `acquire_logged` (db/src/lib.rs:113), it carries #[allow(dead_code)], and its ONLY caller is db/src/vector_store.rs:127 behind the `ml` feature -- dead in a default build. MEASURED 2026-08-21 at b7fba447f: 323 matches across 92 of 963 files. PRECISION 27/27 hand-verified: the receiver vocabulary was enumerated EXHAUSTIVELY rather than sampled -- exactly seven identifiers ever appear (pool 293, target 17, target_user 5, user_db 3, sys 2, p 2, source 1) -- and all 13 non-pool sites were opened individually plus a 14-site systematic sample of the pool population; every one is `let conn = X.get().unwrap()` on a database pool. The EMPTY ARGUMENT LIST is the whole discriminator and is what keeps collections out: Map::get and Vec::get always take a key. KNOWN FALSE-POSITIVE SURFACE, stated rather than papered over: OnceLock::get().unwrap() and Cell::get().unwrap() have the same shape and would count; neither appears in this tree today, and if one arrives the honest response is to anchor the receiver list, not to raise the baseline. 10 of the 92 files are named *_tests.rs; they are counted, because a fixture that panics on acquire hides the same saturation the product would. TWO INDEPENDENT IMPLEMENTATIONS agree at 92/323 -- the census engine and a hand-written walker with its own recursion, comment filter and line mapping. A THIRD, line-oriented grep scores 266, 57 fewer, and the entire gap is chains split across lines (pool.get() newline .unwrap()), which a line-oriented tool cannot see and this whole-file matcher can; that ~18% invisible fraction is the reason the engine matches whole files. HISTORY: an earlier measurement recorded 327 at f0bed7a96; 6c54af125 fixed two sites and 4bf1845d7 removed two more (and took the walk from 969 to 963), which accounts for the delta exactly. PRECONDITION (must be re-derived per repo): this repo checks connections out of an r2d2 pool by hand at the call site. A repo whose handler is HANDED an already-checked-out connection, or whose checkout lives inside one wrapper, has the condition designed out and scores zero. LEGAL FIX, in order: (1) propagate -- pool.get()? with From<r2d2::Error> for the local error type; (2) call acquire_logged(&pool, \"label\") so a slow or failed acquire is observable, and delete its #[allow(dead_code)] once it has more than one caller; (3) best, take the checkout out of the call site entirely and hand callers a connection the layer already owns. Do NOT silence a match with unwrap_or_else(|_| panic!(..)) -- same outcome, and the anchor stops firing."
       },
       "baseline": {
-        "files": 111,
-        "matches": 370
+        "files": 110,
+        "matches": 369
       },
       "floor": 900
     },
@@ -5755,8 +5755,8 @@
         }
       ],
       "baseline": {
-        "files": 800,
-        "matches": 3721
+        "files": 796,
+        "matches": 3705
       },
       "floor": 5000
     },
@@ -5871,8 +5871,8 @@
         }
       ],
       "baseline": {
-        "files": 924,
-        "matches": 2046
+        "files": 917,
+        "matches": 2032
       },
       "floor": 2200
     },
@@ -5945,8 +5945,8 @@
         }
       ],
       "baseline": {
-        "files": 668,
-        "matches": 1628
+        "files": 661,
+        "matches": 1616
       },
       "floor": 5000
     },

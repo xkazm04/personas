@@ -777,9 +777,9 @@ mod tests {
         );
     }
 
-    /// The successor of `remote_instruct_is_not_on_the_generic_allowlist`: the
-    /// allowlist is gone, so what keeps a device op from firing by its name
-    /// alone is the autopilot routing every one of them into the device arm.
+    // The successor of `remote_instruct_is_not_on_the_generic_allowlist`: the
+    // allowlist is gone, so what keeps a device op from firing by its name
+    // alone is the autopilot routing every one of them into the device arm.
     // -- the mesh ops: all four consent cells, each ----------------------
 
     /// The decision `execute_mesh_*` and the autopilot arm both make: the

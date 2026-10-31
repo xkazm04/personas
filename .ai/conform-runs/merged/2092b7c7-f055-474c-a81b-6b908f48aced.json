@@ -1,0 +1,40 @@
+{"schema": "conform-run/1", "worker": "2092b7c7-f055-474c-a81b-6b908f48aced", "subject": "eval-harness",
+ "evaluatedAt": "2026-10-30T20:51:25Z",
+ "pairs": [
+  {"context": "a1223fbb-1e53-471b-9829-075cce8014f8", "subject": "eval-harness", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:131 a tie in the all-time win tally is broken alphabetically by model id, so the Standing Champion banner names a winner the runs never separated; comparison-modes requires ties to be reported as ties",
+   "techniques": [
+    {"technique": "comparison-modes", "verdict": "deviation", "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:131 forced winner on equal win counts; no win/loss/tie reported"},
+    {"technique": "resolution-precondition", "verdict": "deviation", "evidence": "src-tauri/engine/src/test_runner/summaries.rs:88 best_quality_model is the top of a sort on rounded composite with no within-condition spread check before the per-run winner is published"},
+    {"technique": "eval-economics", "verdict": "realized", "evidence": "src/features/agents/sub_lab/use-cases/MockModePanel.tsx:11 a mock execution mode exists beside the live arena"}
+   ]},
+  {"context": "f7a0fdbc-ccc1-46c1-a62f-c2b20321997b", "subject": "eval-harness", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:250 winnerId is simply the first of a composite-sorted list, and src/features/agents/sub_lab/libs/reportGenerator.ts:203 badges it Best with no spread or trial-count check, so a draw between versions ships as a ranking",
+   "techniques": [
+    {"technique": "resolution-precondition", "verdict": "deviation", "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:250 winner taken from aggs[0] after sort at :214, no between-vs-within comparison"},
+    {"technique": "metric-role-contract", "verdict": "deviation", "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:201 the ranking metric is a composite of three sub-scores; no optimized metric and no declared thresholds"},
+    {"technique": "outcome-conditioned-cost", "verdict": "realized", "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:207 incompleteCount and scored-only cost/duration are kept apart from the all-runs totals"}
+   ]},
+  {"context": "6a81750d-fdbf-4518-bae6-689303e1a884", "subject": "eval-harness", "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/eval.rs:615 the judge resolves through the tier constant SONNET_CURRENT (src-tauri/core/src/model_class.rs:114) and LlmEvalResult (src-tauri/engine/src/eval.rs:421) stamps no resolved model or rubric version, so a roster bump silently splices two instruments into one score series",
+   "techniques": [
+    {"technique": "judge-stability", "verdict": "deviation", "evidence": "src-tauri/engine/src/eval.rs:615 route.model is used for the call and the spend ledger but never written onto the eval result; the rubric is inline in build_llm_eval_prompt with no packet version"},
+    {"technique": "assertion-vs-judgment", "verdict": "realized", "evidence": "src-tauri/engine/src/eval.rs:476 deterministic scorers (keyword, tool accuracy, protocol, confusion) sit beside the judge and back it as a fallback"},
+    {"technique": "eval-economics", "verdict": "realized", "evidence": "src-tauri/engine/src/test_runner/lab.rs:355 a semaphore caps concurrent CLI cells across a lab run"},
+    {"technique": "reliability-aggregation", "verdict": "deviation", "evidence": "src-tauri/engine/src/test_runner/lab.rs:385 one spawn per model x variant pair per scenario, no repeat count; no declared N or aggregation rule travels with the composite"}
+   ],
+   "registryProposal": "judge-stability names the first-party tier constant as an alias; here the spend ledger already records the resolved model per judge call, a cheap join that the technique could name as the minimum stamp when the result schema cannot change yet"}
+ ],
+ "declined": [
+  {"subject": "eval-harness", "context": "942d2449-34ab-4f02-af7e-b130269d10ef", "reason": "budget: unknown pair with priorNotApplicable=15; left for a later run"},
+  {"subject": "eval-harness", "context": "e13cfc6c-f666-4959-81c0-2cfbc4815f04", "reason": "budget: unknown pair with priorNotApplicable=15; left for a later run"},
+  {"subject": "eval-harness", "context": "06ef5a64-1796-4637-a4d9-f860bbe67562", "reason": "budget: unknown pair with priorNotApplicable=15; left for a later run"}
+ ],
+ "consults": [
+  {"ts": "2026-10-30T20:51:25Z", "bundle": "software-engineering", "subjects": ["eval-harness"], "techniques": ["comparison-modes", "resolution-precondition", "eval-economics"], "deviations": 1},
+  {"ts": "2026-10-30T20:51:25Z", "bundle": "software-engineering", "subjects": ["eval-harness"], "techniques": ["resolution-precondition", "metric-role-contract", "outcome-conditioned-cost"], "deviations": 1},
+  {"ts": "2026-10-30T20:51:25Z", "bundle": "software-engineering", "subjects": ["eval-harness"], "techniques": ["judge-stability", "assertion-vs-judgment", "eval-economics", "reliability-aggregation"], "deviations": 1}
+ ]}

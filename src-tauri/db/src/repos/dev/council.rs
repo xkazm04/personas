@@ -2025,7 +2025,7 @@ mod tests {
             None,
             "capability",
             None,
-            &[context.id.clone()],
+            std::slice::from_ref(&context.id),
             Some("active"),
             "scan",
             None,

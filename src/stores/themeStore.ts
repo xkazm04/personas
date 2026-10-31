@@ -352,6 +352,7 @@ export const useThemeStore = create<ThemeState>()(
         applyBrightness(brightness, 'custom', config);
         // Single set() to avoid intermediate state where customTheme and themeId disagree
         set({ customTheme: config, themeId: 'custom', brightness });
+        storeBus.emit('appearance:changed', { field: 'customTheme', value: config.label ?? 'custom' });
       },
       clearCustomTheme: () => {
         removeCustomThemeStyle();
@@ -360,6 +361,7 @@ export const useThemeStore = create<ThemeState>()(
         const brightness = resolveBrightness(get().brightnessByMode, false);
         applyBrightness(brightness, fallback, null);
         set({ customTheme: null, themeId: fallback, brightness });
+        storeBus.emit('appearance:changed', { field: 'customTheme', value: 'cleared' });
       },
       setAmbientTimeOfDay: (enabled: boolean) => {
         set({ ambientTimeOfDay: enabled });

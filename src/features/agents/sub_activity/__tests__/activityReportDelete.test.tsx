@@ -54,11 +54,21 @@ describe('activity report delete', () => {
     expect(String(h.addToast.mock.calls[0]?.[0])).toContain('report is locked by a run');
   });
 
+  it('keeps the report modal open when the delete fails', async () => {
+    h.deleteReport.mockRejectedValue({ error: 'report is locked by a run', kind: 'Conflict' });
+    render(<Harness />);
+    fireEvent.click(await screen.findByText('delete-report'));
+    await waitFor(() => expect(h.addToast).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText('delete-report')).not.toBeNull();
+    expect(onDataChanged).not.toHaveBeenCalled();
+  });
+
   it('stays quiet when the delete lands', async () => {
     h.deleteReport.mockResolvedValue(undefined);
     render(<Harness />);
     fireEvent.click(await screen.findByText('delete-report'));
     await waitFor(() => expect(onDataChanged).toHaveBeenCalledTimes(1));
     expect(h.addToast).not.toHaveBeenCalled();
+    expect(screen.queryByText('delete-report')).toBeNull();
   });
 });

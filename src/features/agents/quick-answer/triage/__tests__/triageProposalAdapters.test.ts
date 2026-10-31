@@ -182,6 +182,15 @@ describe('policyProposalToTriage — a budget ceiling as a card', () => {
     );
   });
 
+  it('says "no monthly ceiling set" when there is none, never "a ceiling of None"', () => {
+    expect(policyProposalToTriage(budgetProposal(), copy).body).toBe(
+      'Spend is running at $42.00 a month across 12 charged runs, with no monthly ceiling set.',
+    );
+    expect(
+      policyProposalToTriage(budgetProposal({ direction: 'lower', currentCeilingUsd: 100 }), copy).body,
+    ).toBe('Spend is running at $42.00 a month across 12 charged runs, against a ceiling of $100.00.');
+  });
+
   it('INVERTS the spend meter — a nearly-full bar is the bad news', () => {
     const spend = factById(policyProposalToTriage(budgetProposal(), copy).facts, 'spend');
     expect(spend.score).toEqual({ value: 42, max: 60, invert: true });

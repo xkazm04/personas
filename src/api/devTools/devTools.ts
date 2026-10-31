@@ -31,7 +31,6 @@ import type { TasksPage } from "@/lib/bindings/TasksPage";
 import type { AutoRunStatus } from "@/lib/bindings/AutoRunStatus";
 import type { AthenaTriageBatch } from "@/lib/bindings/AthenaTriageBatch";
 import type { AppliedTriage } from "@/lib/bindings/AppliedTriage";
-import type { TriageVerdictsIngestSummary } from "@/lib/bindings/TriageVerdictsIngestSummary";
 import type { DispatchIdeasResult } from "@/lib/bindings/DispatchIdeasResult";
 
 // ---------------------------------------------------------------------------
@@ -330,8 +329,14 @@ export const undispatchedIdeas = (projectId?: string, limit?: number) =>
   invoke<UndispatchedIdea[]>("dev_tools_undispatched_ideas", { projectId, limit });
 
 /** Accept (→ done, off-board) or reject (→ in-progress, with a comment) a goal. */
-export const resolveGoalAcceptance = (goalId: string, decision: "accept" | "reject", comment?: string) =>
-  invoke<DevGoal>("dev_tools_resolve_goal_acceptance", { goalId, decision, comment });
+export const resolveGoalAcceptance = (
+  goalId: string,
+  decision: "accept" | "reject",
+  comment?: string,
+  /** Compare-and-swap: lose with the shared conflict error unless the goal still holds this status. Omit for unconditional. */
+  expectedStatus?: string,
+) =>
+  invoke<DevGoal>("dev_tools_resolve_goal_acceptance", { goalId, decision, comment, expectedStatus });
 
 /** All checklist items for one project's goals in a single query (Board card todos). */
 export const listGoalItemsForProject = (projectId: string) =>
@@ -876,9 +881,6 @@ export const runScan = (projectId: string, scanTypes: string[], opts?: RunScanOp
 export const cancelScan = (scanId: string) =>
   safeInvoke<boolean>(false, "dev_tools_cancel_scan", { scanId });
 
-export const getScan = (id: string) =>
-  safeInvoke<DevScan>({} as DevScan, "dev_tools_get_scan", { id });
-
 export const listScans = (projectId?: string, limit?: number) =>
   safeInvoke<DevScan[]>([], "dev_tools_list_scans", {
     projectId: projectId,
@@ -1093,45 +1095,20 @@ export const applyTriageVerdicts = (
   overrides: { ideaId: string; verdict: "accept" | "reject" | "skip"; reason?: string }[],
 ) => invoke<AppliedTriage>("dev_tools_apply_triage_verdicts", { approvalId, overrides });
 
-/**
- * Ingest a CLI triage-verdicts run (`.personas/triage-verdicts/runs/<id>/result.json`)
- * as a PENDING `backlog_apply_triage` approval — the same row shape
- * {@link athenaTriageBatch} persists, confirmable through the Approvals card or
- * the Backlog verdict card. All-or-nothing: any bad row refuses the whole run.
- * `runDir` optional — defaults to the newest un-ingested run.
- */
-export const triageVerdictsIngest = (projectId: string, runDir?: string) =>
-  invoke<TriageVerdictsIngestSummary>("dev_tools_triage_verdicts_ingest", {
-    projectId,
-    runDir,
-  });
-
-export const batchCreateTasks = (tasks: { title: string; description?: string; sourceIdeaId?: string; goalId?: string }[], projectId?: string) =>
-  safeInvoke<DevTask[]>([], "dev_tools_batch_create_tasks", {
-    tasks: tasks.map((t) => ({
-      title: t.title,
-      description: t.description,
-      sourceIdeaId: t.sourceIdeaId,
-      goalId: t.goalId,
-    })),
-    projectId: projectId,
-  });
-
-export const startTask = (id: string) =>
-  safeInvoke<DevTask>({} as DevTask, "dev_tools_start_task", { id });
-
-export const cancelTask = (id: string) =>
-  safeInvoke<DevTask>({} as DevTask, "dev_tools_cancel_task", { id });
-
-export const startBatch = (taskIds: string[]) =>
-  safeInvoke<{ batch_id: string; started: number }>({ batch_id: "", started: 0 }, "dev_tools_start_batch", { taskIds });
-
-export const getBatchStatus = (batchId: string) =>
-  safeInvoke<{ batch_id: string; total: number; completed: number; failed: number; running: number; pending: number; tasks: DevTask[] }>(
-    { batch_id: "", total: 0, completed: 0, failed: 0, running: 0, pending: 0, tasks: [] },
-    "dev_tools_get_batch_status",
-    { batchId },
-  );
+/** Create one task per entry, in order, through `dev_tools_create_task`.
+ *  There is no batch command: this used to call `dev_tools_batch_create_tasks`
+ *  (never implemented) through `safeInvoke`, so it resolved `[]` and the Run
+ *  Desk "From accepted" button created nothing. A real failure now rejects. */
+export const batchCreateTasks = async (
+  tasks: { title: string; description?: string; sourceIdeaId?: string; goalId?: string }[],
+  projectId?: string,
+): Promise<DevTask[]> => {
+  const created: DevTask[] = [];
+  for (const t of tasks) {
+    created.push(await createTask(t.title, projectId, t.description, t.sourceIdeaId, t.goalId));
+  }
+  return created;
+};
 
 // -- Task Execution (CLI-powered) -------------------------------------------
 
@@ -1332,60 +1309,9 @@ export interface RunCheckpointsView {
   unreachable: number;
 }
 
-export const listRunCheckpoints = (runId: string) =>
-  invoke<RunCheckpointsView>("dev_tools_list_run_checkpoints", { runId });
-
-/** Roll the run's workspace back to one of its checkpoints.
- *
- *  Resets TRACKED files only, and rewinds nothing else: the run ledger, the
- *  task rows and the companion history still describe work that may no longer
- *  exist on disk. Tell the operator that before calling this. */
-export const rollbackRunCheckpoint = (runId: string, sha: string) =>
-  invoke<void>("dev_tools_rollback_run_checkpoint", { runId, sha });
-
 // ============================================================================
 // Cross-Project (Codebases connector)
 // ============================================================================
-
-export const getCrossProjectMap = () =>
-  safeInvoke<{ projects: unknown[]; relations: unknown[]; generated_at: string }>(
-    { projects: [], relations: [], generated_at: '' },
-    "dev_tools_get_cross_project_map",
-  );
-
-export const createIdeaBatch = (ideas: {
-  project_id?: string;
-  context_id?: string;
-  scan_type?: string;
-  category?: string;
-  title: string;
-  description?: string;
-  effort?: number;
-  impact?: number;
-  risk?: number;
-}[]) =>
-  safeInvoke<DevIdea[]>([], "dev_tools_create_idea_batch", { ideas });
-
-export const searchAcrossProjects = (query: string, filePattern?: string, maxResultsPerProject?: number) =>
-  safeInvoke<{
-    query: string;
-    projects_searched: number;
-    projects_with_matches: number;
-    results: unknown[];
-  }>(
-    { query, projects_searched: 0, projects_with_matches: 0, results: [] },
-    "dev_tools_search_across_projects",
-    { query, filePattern, maxResultsPerProject },
-  );
-
-export const getProjectSummary = (projectId: string) =>
-  safeInvoke<unknown>({}, "dev_tools_get_project_summary", { projectId });
-
-export const getDependencyGraph = () =>
-  safeInvoke<{ total_unique_deps: number; shared_deps: number; dependencies: unknown[] }>(
-    { total_unique_deps: 0, shared_deps: 0, dependencies: [] },
-    "dev_tools_get_dependency_graph",
-  );
 
 // ============================================================================
 // Implementation Pipeline (Direction 3)
@@ -1416,13 +1342,6 @@ export const createBranch = (projectId: string, branchName: string, baseBranch?:
     { success: false, message: 'Command not available' },
     "dev_tools_create_branch",
     { projectId, branchName, baseBranch },
-  );
-
-export const applyDiff = (projectId: string, diffContent: string) =>
-  safeInvoke<GitOperationResult>(
-    { success: false, message: 'Command not available' },
-    "dev_tools_apply_diff",
-    { projectId, diffContent },
   );
 
 export const runTests = (projectId: string, testCommand?: string) =>
@@ -1728,16 +1647,6 @@ export interface SkillLessonRow {
 export const listSkillLessons = (skillName?: string | null) =>
   safeInvoke<SkillLessonRow[]>([], "skill_lessons_list", { skillName: skillName ?? null });
 
-/** Write/refresh `.personas/skill-registry.json` in the project's repo — the
- *  offline sibling/library-version snapshot the reflection contract's sync
- *  ritual reads. Called before skill dispatches. Returns the skill count. */
-/**
- * Refresh a repo's `.personas/skill-registry.json` snapshot.
- *
- * `libraryRoot` decides which library the snapshot COMPARES AGAINST — pass the
- * wired registry's `skills/` lane so the reflection ritual judges versions
- * against what the fleet reads, not against the machine-local home library.
- */
 /**
  * Contribute this installation's 30-day skill-usage counts to a paired registry's
  * `usage/` lane. WRITES the file into the working copy only — committing it is
@@ -1764,17 +1673,14 @@ export const syncRegistryClone = (clonePath: string) =>
   invoke<RegistrySync>("dev_tools_registry_sync", { clonePath });
 
 /**
- * Point persona executions at a knowledge-registry working copy, or clear it.
+ * Write/refresh `.personas/skill-registry.json` in the project's repo — the
+ * offline sibling/library-version snapshot the reflection contract's sync
+ * ritual reads. Called before skill dispatches. Returns the skill count.
  *
- * Deliberately a command rather than `setAppSetting('knowledge_registry_root')`:
- * the settings KEY NAME then lives only in Rust, so there is no second spelling
- * of it here to drift out of step with the registry that owns it. Pass `null`
- * to turn the consult lane off — a stale pointer means executions keep reading
- * a repo the operator believes they disconnected.
+ * `libraryRoot` decides which library the snapshot COMPARES AGAINST — pass the
+ * wired registry's `skills/` lane so the reflection ritual judges versions
+ * against what the fleet reads, not against the machine-local home library.
  */
-export const setKnowledgeRegistryRoot = (clonePath: string | null) =>
-  invoke<void>("dev_tools_set_knowledge_root", { clonePath });
-
 export const exportSkillRegistry = (projectId: string, libraryRoot?: string | null) =>
   safeInvoke<number>(0, "dev_tools_export_skill_registry", { projectId, libraryRoot: libraryRoot ?? null });
 

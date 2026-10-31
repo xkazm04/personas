@@ -1,5 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const invokeWithTimeout = vi.fn();
 vi.mock('@/lib/tauriInvoke', () => ({
@@ -8,8 +10,22 @@ vi.mock('@/lib/tauriInvoke', () => ({
 
 import { recordInteraction } from '@/api/twin/twin';
 
-/** The wrapper's trust-boundary cap (`TWIN_KEY_FACTS_JSON_MAX_BYTES`). */
-const CAP_BYTES = 64 * 1024;
+/**
+ * The cap, read from the db crate's `KEY_FACTS_JSON_MAX_BYTES` (comments
+ * stripped). That constant is documented as a mirror of the wrapper's
+ * `TWIN_KEY_FACTS_JSON_MAX_BYTES`; reading it here, instead of typing the
+ * number a third time, makes the boundary cases below fail when either side
+ * moves alone (a lower Rust cap would let the wrapper admit payloads the
+ * backend then rejects).
+ */
+const CAP_BYTES = (() => {
+  const src = readFileSync(resolve(__dirname, '../../..', 'src-tauri/db/src/repos/twin.rs'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '');
+  const m = /pub const KEY_FACTS_JSON_MAX_BYTES: usize = (\d+)(?:\s*\*\s*(\d+))?;/.exec(src);
+  if (!m) throw new Error('KEY_FACTS_JSON_MAX_BYTES not found in db/src/repos/twin.rs; update this pin');
+  return Number(m[1]) * (m[2] ? Number(m[2]) : 1);
+})();
 
 /** A valid JSON string literal whose UTF-8 encoding is exactly `bytes` long. */
 function asciiJsonOfBytes(bytes: number): string {
@@ -43,15 +59,18 @@ describe('recordInteraction keyFactsJson trust boundary', () => {
   });
 
   it('rejects one byte over the cap without calling the backend', () => {
-    expect(() => record(asciiJsonOfBytes(CAP_BYTES + 1))).toThrow(/exceeds 65536 bytes/);
+    expect(() => record(asciiJsonOfBytes(CAP_BYTES + 1))).toThrow(new RegExp(`exceeds ${CAP_BYTES} bytes`));
     expect(invokeWithTimeout).not.toHaveBeenCalled();
   });
 
   it('counts UTF-8 bytes, not UTF-16 code units', () => {
-    // 21,846 euro signs: 21,848 code units (under the cap) but 65,540 bytes (over it).
-    const value = JSON.stringify('€'.repeat(21_846));
+    // Enough euro signs (3 UTF-8 bytes, 1 code unit each) to pass the cap in
+    // bytes while staying far under it in code units - at 64 KiB, 21,846 signs:
+    // 21,848 code units but 65,540 bytes.
+    const value = JSON.stringify('€'.repeat(Math.ceil((CAP_BYTES - 1) / 3)));
+    expect(new TextEncoder().encode(value).length).toBeGreaterThan(CAP_BYTES);
     expect(value.length).toBeLessThan(CAP_BYTES);
-    expect(() => record(value)).toThrow(/exceeds 65536 bytes/);
+    expect(() => record(value)).toThrow(new RegExp(`exceeds ${CAP_BYTES} bytes`));
     expect(invokeWithTimeout).not.toHaveBeenCalled();
   });
 

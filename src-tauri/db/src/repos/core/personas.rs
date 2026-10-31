@@ -4218,9 +4218,8 @@ mod tests {
             )
             .unwrap();
         }
-        assert_eq!(
-            delete_draft_if_safe(&pool, &d.id).unwrap(),
-            false,
+        assert!(
+            !delete_draft_if_safe(&pool, &d.id).unwrap(),
             "a draft with executions must NOT be swept"
         );
         assert!(get_by_id(&pool, &d.id).is_ok());
@@ -4229,12 +4228,12 @@ mod tests {
         let mut c_in = lifecycle_input("Clean", "You are a helpful AI assistant.");
         c_in.lifecycle = Some("draft".into());
         let c = create(&pool, c_in).unwrap();
-        assert_eq!(delete_draft_if_safe(&pool, &c.id).unwrap(), true);
+        assert!(delete_draft_if_safe(&pool, &c.id).unwrap());
         assert!(get_by_id(&pool, &c.id).is_err());
 
         // An ACTIVE persona is never swept by this guard.
         let act = create(&pool, lifecycle_input("Act", "Real.")).unwrap();
-        assert_eq!(delete_draft_if_safe(&pool, &act.id).unwrap(), false);
+        assert!(!delete_draft_if_safe(&pool, &act.id).unwrap());
     }
 
     #[test]

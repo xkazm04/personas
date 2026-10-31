@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
 import { TabSaveError } from '../libs/EditorDocument';
@@ -9,12 +9,19 @@ interface SwitchGuardDeps {
   cancelAllDebouncedSaves: () => void;
   saveAllTabs: () => Promise<void>;
   clearAllDirty: () => void;
+  /** Told which tabs failed when Save & Switch could not save them all, so the
+   *  editor can mark those tabs and offer Retry (a toast alone is gone in
+   *  seconds and leaves no way back to the failed save). */
+  onSaveFailed?: (failedTabs: string[]) => void;
 }
 
-export function usePersonaSwitchGuard({ cancelAllDebouncedSaves, saveAllTabs, clearAllDirty }: SwitchGuardDeps) {
+export function usePersonaSwitchGuard({ cancelAllDebouncedSaves, saveAllTabs, clearAllDirty, onSaveFailed }: SwitchGuardDeps) {
   const { t, tx } = useTranslation();
   const commitPendingSwitch = useAgentStore((s) => s.commitPendingSwitch);
   const isSwitchingRef = useRef(false);
+  // Mirror of the ref for rendering: the ref drops re-entry synchronously, the
+  // state lets the banner show that the save is running.
+  const [isSwitching, setIsSwitching] = useState(false);
 
   const handleDiscardAndSwitch = () => {
     cancelAllDebouncedSaves();
@@ -25,6 +32,7 @@ export function usePersonaSwitchGuard({ cancelAllDebouncedSaves, saveAllTabs, cl
   const handleSaveAndSwitch = async () => {
     if (isSwitchingRef.current) return;
     isSwitchingRef.current = true;
+    setIsSwitching(true);
     cancelAllDebouncedSaves();
     try {
       try {
@@ -36,6 +44,7 @@ export function usePersonaSwitchGuard({ cancelAllDebouncedSaves, saveAllTabs, cl
         const catalog = t.agents.editor.tabs;
         let label: string = t.agents.editor.save_failed_generic;
         if (err instanceof TabSaveError) {
+          onSaveFailed?.(err.failedTabs);
           label = tx(t.agents.editor.save_failed, { tabs: tabIdsToLabels(err.failedTabs, catalog) });
           if (err.savedTabs.length > 0) {
             label += ` (${tabIdsToLabels(err.savedTabs, catalog)}: ${t.agents.editor_ui.saved})`;
@@ -48,8 +57,9 @@ export function usePersonaSwitchGuard({ cancelAllDebouncedSaves, saveAllTabs, cl
       commitPendingSwitch();
     } finally {
       isSwitchingRef.current = false;
+      setIsSwitching(false);
     }
   };
 
-  return { handleDiscardAndSwitch, handleSaveAndSwitch };
+  return { handleDiscardAndSwitch, handleSaveAndSwitch, isSwitching };
 }

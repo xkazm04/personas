@@ -101,6 +101,8 @@ import {
 /** One page of pending ideas is plenty for a triage session; the queue is a
  *  working set, not an archive. */
 const IDEA_PAGE_SIZE = 60;
+/** `triage_ideas` clamps `limit` to this server-side (TRIAGE_MAX_LIMIT); a re-read walks in chunks of it. */
+const IDEA_REQUEST_CAP = 200;
 
 /**
  * Both proposal ledgers are small by construction — the Fabric supersedes an
@@ -414,11 +416,15 @@ export function useUnifiedTriage(
    * the next page. `gen` makes a repeat request with the SAME cursor a distinct
    * state, so "load more" twice in a row is two fetches rather than one.
    */
-  const [ideaFetch, setIdeaFetch] = useState<{ cursor?: string; gen: number }>({ gen: 0 });
+  const [ideaFetch, setIdeaFetch] = useState<{ cursor?: string; gen: number; target?: number }>({
+    gen: 0,
+  });
   const [ideaPage, setIdeaPage] = useState(
     () => warmCache?.ideaPage ?? { loaded: 0, pending: 0, hasMore: false },
   );
   const cursorRef = useRef<string | null>(warmCache?.ideaCursor ?? null);
+  // How many ideas the session holds, so a revalidation can re-read that many.
+  const ideasLoadedRef = useRef(warmCache?.ideaPage.loaded ?? 0);
 
   /**
    * Which sources failed, and which came back full.
@@ -582,8 +588,33 @@ export function useUnifiedTriage(
     let cancelled = false;
     const appending = !!ideaFetch.cursor;
     setIdeasLoading(true);
-    void devApi
-      .triageIdeas(undefined, IDEA_PAGE_SIZE, ideaFetch.cursor, { status: 'pending' })
+    const filter = { status: 'pending' } as const;
+    const target = appending ? undefined : ideaFetch.target;
+    const read = async () => {
+      let page = await devApi.triageIdeas(
+        undefined,
+        Math.min(Math.max(target ?? 0, IDEA_PAGE_SIZE), IDEA_REQUEST_CAP),
+        ideaFetch.cursor,
+        filter,
+      );
+      // A revalidation re-reads as many ideas as the session had pulled in with
+      // Load more; past the server's limit cap that means walking the pages.
+      if (target) {
+        let acc = page.ideas;
+        while (!cancelled && acc.length < target && page.hasMore && page.cursor) {
+          page = await devApi.triageIdeas(
+            undefined,
+            Math.min(target - acc.length, IDEA_REQUEST_CAP),
+            page.cursor,
+            filter,
+          );
+          acc = [...acc, ...page.ideas];
+        }
+        page = { ...page, ideas: acc };
+      }
+      return page;
+    };
+    void read()
       .then((page) => {
         if (cancelled) return;
         cursorRef.current = page.cursor;
@@ -601,6 +632,7 @@ export function useUnifiedTriage(
           noteFailure('ideas', null);
           setIdeas((prev) => {
             const next = appending ? [...prev, ...page.ideas] : page.ideas;
+            ideasLoadedRef.current = next.length;
             // `counts` is scoped to the non-status filters, so `pending` is the
             // whole pending backlog rather than this page's slice.
             setIdeaPage({
@@ -854,6 +886,8 @@ export function useUnifiedTriage(
    * would re-create `decide` on every poll, so the successor is read through a
    * ref at call time instead — which is also when it is actually true.
    */
+  const allRef = useRef(all);
+  allRef.current = all;
   const projectionRef = useRef(projection);
   projectionRef.current = projection;
 
@@ -1007,7 +1041,7 @@ export function useUnifiedTriage(
    * worse outcome than the conflict itself.
    */
   const refreshSources = useCallback(() => {
-    setIdeaFetch((f) => ({ gen: f.gen + 1 }));
+    setIdeaFetch((f) => ({ gen: f.gen + 1, target: ideasLoadedRef.current }));
     setProposalGen((g) => g + 1);
     setGoalGen((g) => g + 1);
     // Whatever moved these sources moved the title-bar badge with them — a
@@ -1021,14 +1055,36 @@ export function useUnifiedTriage(
   /** Re-read only the goal ledger — what a goal verdict invalidates. */
   const refreshGoals = useCallback(() => setGoalGen((g) => g + 1), []);
 
+  /**
+   * Ideas whose Build now task has already LANDED from this deck.
+   *
+   * Build now writes the task first and the accept second (`triageDispatch`
+   * says why). When only the accept fails, the card is restored and the
+   * reviewer retries — and `dev_tools_create_task` does not dedupe on the
+   * source idea, so the retry used to queue a second task for the same work.
+   * Remembering the landed task makes the retry re-issue only the half that
+   * failed. A ref, not state: it gates a write, it never renders.
+   */
+  const taskedIdeasRef = useRef<Set<string>>(new Set());
+
+  // The three writers the ports borrow, by name. Depending on the whole
+  // `interactions` object re-created the ports — and `decide` with them — on
+  // every review poll and every isProcessing flip, though these three are
+  // identity-stable (the Monitor's handlers read the live row through a ref).
+  const { handleReviewAction, handleDispatchAction, submitQuestionAnswers } = interactions;
+
   /** Every write a verdict can reach, in one injected bundle — see
    *  `triageDispatch`, which owns the routing itself. */
   const ports = useMemo<TriagePorts>(
     () => ({
-      reviewAction: (id, status, notes) => interactions.handleReviewAction(id, status, notes),
-      dispatchReviewAction: (id, action) => interactions.handleDispatchAction(id, action),
-      createTask: (title, projectId, body, ideaId) =>
-        devApi.createTask(title, projectId, body, ideaId),
+      reviewAction: (id, status, notes) => handleReviewAction(id, status, notes),
+      dispatchReviewAction: (id, action) => handleDispatchAction(id, action),
+      createTask: async (title, projectId, body, ideaId) => {
+        if (taskedIdeasRef.current.has(ideaId)) return undefined;
+        const task = await devApi.createTask(title, projectId, body, ideaId);
+        taskedIdeasRef.current.add(ideaId);
+        return task;
+      },
       // Through the STORE, not `devApi` directly. The deck used to call the API
       // and bypass `devToolsTriageSlice` entirely, so accepting an idea here
       // never reached Approvals' Backlog tab: its rows and facet counts still
@@ -1037,7 +1093,7 @@ export function useUnifiedTriage(
       // rejects on failure so the restore below can fire.
       acceptIdea: (id, seenStatus) => acceptIdeaViaStore(id, seenStatus),
       rejectIdea: (id, reason, seenStatus) => rejectIdeaViaStore(id, reason, seenStatus),
-      submitAnswers: (sessionId, answers) => interactions.submitQuestionAnswers(sessionId, answers),
+      submitAnswers: (sessionId, answers) => submitQuestionAnswers(sessionId, answers),
       // Both proposal ledgers go through `rowWrites` for the same reason the
       // other three do: it is the module that owns the expectation contract and
       // the conflict wording, and a queue that wrote proposals directly through
@@ -1058,12 +1114,12 @@ export function useUnifiedTriage(
       // in the queue and the next verdict on one of them writes into a goal that
       // is already signed off. A rejected write throws before it gets here,
       // which is what leaves the restore path free to put the card back.
-      acceptGoal: async (id) => {
-        await acceptGoalViaStore(id);
+      acceptGoal: async (id, seenStatus) => {
+        await acceptGoalViaStore(id, seenStatus);
         refreshGoals();
       },
-      rejectGoal: async (id, comment) => {
-        await rejectGoalViaStore(id, comment);
+      rejectGoal: async (id, comment, seenStatus) => {
+        await rejectGoalViaStore(id, comment, seenStatus);
         refreshGoals();
       },
       reopenIdea: (id, seenStatus) => reopenIdeaRow(id, { seenStatus }),
@@ -1071,7 +1127,9 @@ export function useUnifiedTriage(
       openGoalBoard: onOpenGoalBoard,
     }),
     [
-      interactions,
+      handleReviewAction,
+      handleDispatchAction,
+      submitQuestionAnswers,
       onOpenBuilder,
       onOpenGoalBoard,
       acceptIdeaViaStore,
@@ -1129,6 +1187,26 @@ export function useUnifiedTriage(
       try {
         await routeDecision(decision, ports);
         journal(decision);
+        // "Accept all N from this KPI" signed off N goals, so the session owes N
+        // decisions: resolve and journal each sibling the router accepted, or the
+        // readout counts one and the siblings silently leave the denominator.
+        if (item.kind === 'goal' && decision.branchId === 'accept-kpi-batch') {
+          const siblingIds = new Set(
+            (item.payload?.batchGoalIds ?? '').split(',').filter(Boolean).map((g) => `goal:${g}`),
+          );
+          siblingIds.delete(item.id);
+          const siblings = allRef.current.filter((i) => siblingIds.has(i.id));
+          if (siblings.length > 0) {
+            setResolved((prev) => {
+              const next = new Set(prev);
+              for (const sib of siblings) next.add(sib.id);
+              return next;
+            });
+            for (const sib of siblings) {
+              journal({ item: sib, verdict: 'accept', branchId: 'accept-kpi-batch' });
+            }
+          }
+        }
         // The row is gone from a queue the title-bar badge counts, so the badge
         // owes an update NOW rather than on its next 30s tick — a reviewer who
         // clears the deck and watches the number sit there reads it as broken.

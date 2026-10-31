@@ -759,6 +759,36 @@ pub fn dev_tools_list_pending_ideas(
     )
 }
 
+/// Longest rejection reason carried into a decision memory, in characters.
+const DECISION_REASON_MAX_CHARS: usize = 500;
+
+/// Compose the body of an idea-verdict memory. A rejection's reviewer-given
+/// reason (trimmed, length-capped) is appended as a `Reason:` line so scanners
+/// learn WHY an item was declined, not only that it was.
+fn idea_decision_content(
+    subject: &str,
+    rejected: bool,
+    by_human: bool,
+    rejection_reason: Option<&str>,
+) -> String {
+    let mut content = if rejected && !by_human {
+        format!(
+            "{subject}. This is an automated judgement, not a human ruling — treat it as \
+             advisory. It records what one run concluded at one moment; if the item still \
+             matters, re-file it with evidence rather than reading this as settled."
+        )
+    } else {
+        format!("{subject}. Apply this to future scans + work — do not re-surface rejected items.")
+    };
+    if rejected {
+        if let Some(reason) = rejection_reason.map(str::trim).filter(|r| !r.is_empty()) {
+            let capped: String = reason.chars().take(DECISION_REASON_MAX_CHARS).collect();
+            content.push_str(&format!("\nReason: {capped}"));
+        }
+    }
+    content
+}
+
 /// Write a triage decision to the project's dev memory + the bound team's
 /// shared ledger (best-effort). Team-less projects skip the team memory; the
 /// Scanner-suppress loop (idea_scanner) covers re-surfacing for those. Deduped
@@ -815,15 +845,12 @@ pub(crate) fn record_idea_decision_by(
             .map(|d| format!(": {d}"))
             .unwrap_or_default(),
     );
-    let content = if rejected && !by_human {
-        format!(
-            "{subject}. This is an automated judgement, not a human ruling — treat it as \
-             advisory. It records what one run concluded at one moment; if the item still \
-             matters, re-file it with evidence rather than reading this as settled."
-        )
-    } else {
-        format!("{subject}. Apply this to future scans + work — do not re-surface rejected items.")
-    };
+    let content = idea_decision_content(
+        &subject,
+        rejected,
+        by_human,
+        idea.rejection_reason.as_deref(),
+    );
 
     // (1) PROJECT memory — the development loop's own store. Written FIRST and
     // unconditionally, because it is the only anchor every participant in the
@@ -3794,5 +3821,26 @@ mod fleet_dispatch_cap_tests {
             Some("/tmp/p/wt")
         );
         assert_eq!(outcome.settled[0].branch.as_deref(), Some("personas/idea"));
+    }
+}
+
+#[cfg(test)]
+mod idea_decision_content_tests {
+    use super::idea_decision_content;
+
+    #[test]
+    fn rejected_verdict_carries_trimmed_reason() {
+        let c = idea_decision_content("S", true, true, Some("  Already done  "));
+        assert!(c.ends_with("\nReason: Already done"), "{c}");
+    }
+
+    #[test]
+    fn reason_is_capped_and_absent_when_blank_or_accepted() {
+        let long = "x".repeat(900);
+        let c = idea_decision_content("S", true, false, Some(&long));
+        assert_eq!(c.rsplit("Reason: ").next().unwrap().chars().count(), 500);
+        assert!(!idea_decision_content("S", true, true, Some("  ")).contains("Reason:"));
+        assert!(!idea_decision_content("S", true, true, None).contains("Reason:"));
+        assert!(!idea_decision_content("S", false, true, Some("why")).contains("Reason:"));
     }
 }

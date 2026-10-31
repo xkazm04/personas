@@ -1,0 +1,67 @@
+{
+  "schema": "conform-run/1",
+  "worker": "add568a3-e8d1-4d82-b3b0-758c4710f942",
+  "subject": "guided-tours",
+  "evaluatedAt": "2026-10-30T20:59:37Z",
+  "pairs": [
+    {
+      "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50",
+      "subject": "guided-tours",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:5fd51481dedaf230",
+      "evaluatedRevision": 5,
+      "evidence": "src/features/onboarding/components/GuidedTour.tsx:270 Escape only sets local isMinimized while tourActive stays true, and TourSpotlight renders on tourActive+rect alone (src/features/onboarding/components/TourSpotlight.tsx:63), so the z-9998 dimming (:75) survives the leave gesture - exit is not one gesture that restores the product; re-verified against rev 5 at HEAD 5a5990999d",
+      "techniques": [
+        {"technique": "overlay-precedence", "verdict": "deviation", "evidence": "src/features/onboarding/components/GuidedTour.tsx:270 Escape while the tour is topmost minimizes instead of leaving; the spotlight gate at src/features/onboarding/components/TourSpotlight.tsx:63 ignores the minimized state, so the dimming stays"},
+        {"technique": "missing-anchor-degradation", "verdict": "deviation", "evidence": "src/features/onboarding/components/TourSpotlight.tsx:31 a missing anchor only sets an in-memory tourHighlightMissing flag; no record of which tour, step and anchor degraded reaches telemetry or the completion ledger - the save without the signal"},
+        {"technique": "anchor-contracts", "verdict": "realized", "evidence": "src/stores/slices/system/__tests__/tourAnchors.test.ts:125 anchor-drift gate asserts every tour highlightTestId is rendered as a testid in src/"},
+        {"technique": "spotlight-continuity", "verdict": "partial", "evidence": "src/hooks/utility/interaction/useTrackedElementRect.ts:102 keeps the previous rect object when nothing moved (no re-render pulse) and the missing-target retry is bounded (:41); no live flag separates a held box from the step's own element"}
+      ]
+    },
+    {
+      "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+      "subject": "guided-tours",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:5fd51481dedaf230",
+      "evaluatedRevision": 5,
+      "evidence": "src/features/home/sub_learning/HomeLearning.tsx:22 feeds every tour card the ACTIVE tour's in-memory tourStepCompleted (passed at :50, counted per card at src/features/home/sub_learning/TourSections.tsx:25); persisted per-tour progress is never read, so a paused non-active tour renders as fresh; re-verified against rev 5 at HEAD 5a5990999d",
+      "techniques": [
+        {"technique": "tour-lifecycle", "verdict": "deviation", "evidence": "src/features/home/sub_learning/TourSections.tsx:25 per-card progress is counted from the active tour's step map only; a resumable tour's persisted progress is unreachable from the launcher"}
+      ]
+    },
+    {
+      "context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba",
+      "subject": "guided-tours",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:5fd51481dedaf230",
+      "evaluatedRevision": 5,
+      "evidence": "src/stores/slices/system/tourSlice.ts:1573 allDone = steps.every(...) is vacuously true when getActiveTourSteps (:1112) returns [] for an unresolvable tour, so finishTour records it completed at :1637 - zero steps scored as success; :1459 hydrates tourActiveTourId to the default, dropping which-tour on resume; re-verified against rev 5 at HEAD 5a5990999d",
+      "techniques": [
+        {"technique": "tour-lifecycle", "verdict": "deviation", "evidence": "src/stores/slices/system/tourSlice.ts:1573 vacuous completion over an empty step list (refused by name in tour-lifecycle); src/stores/slices/system/tourSlice.ts:1459 resume state loses the which-tour half"},
+        {"technique": "action-driven-advancement", "verdict": "realized", "evidence": "src/stores/slices/system/tourSlice.ts:1573 a Skip on the last incomplete step closes without marking the tour complete, keeping did distinct from skipped-past (for non-empty tours)"}
+      ]
+    },
+    {
+      "context": "b30528dc-8655-4b38-800e-8cb73e96d618",
+      "subject": "guided-tours",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAgainst": "sha256-b2:5fd51481dedaf230",
+      "evaluatedRevision": 5,
+      "evidence": "tests/playwright/getting-started-tour-mock.spec.ts:10 the tour e2e suite guards only the completeOn contract; none of the 4 tests/playwright/*tour* specs removes an anchor (first or middle) or presses Escape against a running tour, and no test references highlightMissing - never-strand and exit lack fresh-profile coverage; re-verified against rev 5 at HEAD 5a5990999d",
+      "techniques": [
+        {"technique": "tour-lifecycle", "verdict": "deviation", "evidence": "tests/playwright/getting-started-tour-mock.spec.ts:10 fresh-profile e2e covers completion only, not exit or degraded paths"},
+        {"technique": "missing-anchor-degradation", "verdict": "deviation", "evidence": "tests/playwright/getting-started-tour-mock.spec.ts:10 never-strand is not verified with the first anchor removed, which the technique names as the most common failure site"}
+      ]
+    }
+  ],
+  "declined": [
+    {"subject": "guided-tours", "context": "aa2197a5-6b7c-46ff-a6cd-8172d2984f50", "reason": "rev-5 techniques tour-path-curriculum and product-performed-effects left unjudged inside the pair: the repo ships many topic tours rather than one whole-product path (curriculum precondition unclear) and no tour step presses product controls; the pair verdict rests on overlay-precedence and missing-anchor-degradation"}
+  ],
+  "consults": [
+    {"ts": "2026-10-30T20:59:37Z", "bundle": "software-engineering", "subjects": ["guided-tours"], "techniques": ["overlay-precedence", "missing-anchor-degradation", "anchor-contracts", "spotlight-continuity", "tour-lifecycle", "action-driven-advancement"], "deviations": 4}
+  ]
+}

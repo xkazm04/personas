@@ -194,6 +194,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[allow(clippy::await_holding_lock)] // deliberate: TEST_LOCK serialises tests over the shared hub
     async fn submit_and_resolve_round_trip() {
         let _g = lock_and_reset();
         let (id, rx) = submit("sess-1", RequestKind::Guidance);
@@ -210,6 +211,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "current_thread")]
+    #[allow(clippy::await_holding_lock)] // deliberate: TEST_LOCK serialises tests over the shared hub
     async fn cancel_for_session_releases_waiters() {
         let _g = lock_and_reset();
         let (_id, rx) = submit("sess-cancel", RequestKind::Approval);

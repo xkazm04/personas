@@ -91,9 +91,26 @@ export function buildSyntheticTrace(execution: PersonaExecution): SyntheticPipel
   const feCompleteDur = Math.max(totalDuration - cursorMs, 5);
   spans.push(makeSpan('frontend_complete', feCompleteDur, { metadata: { status: execution.status } }));
 
+  // The per-stage floors above can sum past the wall clock on a very short run
+  // (under ~100 ms), drawing stages after completedAt. Squeeze every span
+  // proportionally into the run; runs long enough to fit are untouched.
+  const lastEnd = spans.reduce((m, sp) => Math.max(m, sp.end_ms ?? 0), 0);
+  const fitted =
+    lastEnd > totalDuration
+      ? spans.map((sp) => {
+          const k = totalDuration / lastEnd;
+          return {
+            ...sp,
+            start_ms: sp.start_ms * k,
+            end_ms: (sp.end_ms ?? sp.start_ms) * k,
+            duration_ms: (sp.duration_ms ?? 0) * k,
+          };
+        })
+      : spans;
+
   return {
     executionId: execution.id,
-    spans,
+    spans: fitted,
     startedAt: startTime,
     completedAt: endTime,
     isSynthetic: true,

@@ -1,0 +1,42 @@
+{"schema": "conform-run/1", "worker": "5acd0d2f-41d7-4125-ad7b-7d7ae010a0d6", "subject": "mcp-tools",
+ "evaluatedAt": "2026-10-30T20:57:00Z",
+ "evaluatedAgainst": "sha256-b2:ed8e615f51454325", "evaluatedRevision": 34,
+ "pairs": [
+  {"context": "6a81750d-fdbf-4518-bae6-689303e1a884", "subject": "mcp-tools", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/engine/src/skill_scratchpad.rs:28 states 'no MCP'; this context's sidecars write SKILL.md and Claude Code hooks (src-tauri/engine/src/skills_sidecar/mod.rs:6), not an MCP host, client config or tool server; the run MCP config lives in src-tauri/engine/src/cli_mcp_config.rs, which belongs to another context and is already judged there (webhook-ingestion)",
+   "techniques": [
+    {"technique": "client-integration", "verdict": "not-applicable", "evidence": "src-tauri/engine/src/skills_sidecar/mod.rs:6 writes per-connector SKILL.md files into exec_dir, not a spawn entry in an MCP client config"},
+    {"technique": "server-composition", "verdict": "not-applicable", "evidence": "src-tauri/engine/src/skill_scratchpad.rs:28 the agent edits by shell append, with no MCP tool surface published from this context"}],
+   "registryProposal": "Lexical match ('tool', 'sidecar', 'capability') on a grab-bag engine context; capability_contract.rs resolves design-time PersonaToolDefinition references, which the golden path excludes as model function-calling / design-time IR."},
+  {"context": "8650ca36-36fe-4862-98f5-745e866a2687", "subject": "mcp-tools", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:95 a PERSON invokes a tool definition over Tauri IPC (invokeToolDirect) and reads the result; no model reads it and no MCP wire is spoken, and builtin:// MCP-sidecar tools are explicitly refused here (src/features/agents/sub_tool_runner/components/ToolInvocationCard.tsx:38)",
+   "techniques": [
+    {"technique": "untrusted-result-handling", "verdict": "not-applicable", "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:95 the result goes to a human-facing card, not into a model's context"},
+    {"technique": "caller-differentiated-capability", "verdict": "not-applicable", "evidence": "src/features/agents/sub_tool_runner/components/ToolInvocationCard.tsx:38 the human surface declines builtin:// tools that only exist on the agent (personas-mcp) surface; the engine split itself lives outside this context"}],
+   "registryProposal": "The golden path's 'What is not this subject' names generic RPC no model reads; a human-driven 'try this tool' runner over the same tool engine an agent uses is a common shape worth one sentence there, so the next judge does not have to argue it."},
+  {"context": "c06088ef-d143-4aa4-b60a-9d6f7aff9aba", "subject": "mcp-tools", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/stores/slices/system/devToolsSlice.ts:1 is a zustand StateCreator for the Dev Tools plugin's UI state; 'tool' matched the product name 'devTools', and the slices hold client state with no MCP host, client, server or tool catalog",
+   "techniques": [
+    {"technique": "server-composition", "verdict": "not-applicable", "evidence": "src/stores/slices/system/devToolsSlice.ts:5 re-exports project, context, scanner, triage and task UI slices, none a tool registry or dispatch door"}],
+   "registryProposal": "Matcher false positive: the token 'tool' inside the product name 'devTools' earned a probable pairing; worth a stoplist entry for compound identifiers in the matcher."},
+  {"context": "b0cf3902-0739-40a8-8c76-ae594f41421b", "subject": "mcp-tools", "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:22 the runtime joins LLM-cost and Sentry adapters onto the context map for display; it is React UI over IPC with no MCP host, client or tool surface",
+   "techniques": [
+    {"technique": "client-integration", "verdict": "not-applicable", "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:26 imports Sentry/LLM tracing adapters, not an MCP connection"}],
+   "registryProposal": "Same 'devTools' lexical false positive as stores-slices-system."}
+ ],
+ "declined": [
+  {"subject": "mcp-tools", "context": "3f38546e-e970-4837-97f7-f0504aa32daf", "reason": "the only strong unknown, but its row and context-map.json both list ZERO file paths; nothing can be anchored, so the pair stays unknown. The context map needs its paths repopulated."},
+  {"subject": "mcp-tools", "context": "b26fe932-b123-4b9e-8d1c-bbbf4e508265", "reason": "src/api/system/system.ts:58 and src/api/system/desktop.ts:65 are thin IPC wrappers for the Claude Desktop MCP register/import flows; the obligations (exact-command consent, token custody) sit in the backing commands and UI, already recorded as deviations on system-health and vault-catalog-autocred-ui. A wrapper verdict would only restate them, so it is left for a run that wants to decide whether wrappers inherit their command's verdict."},
+  {"subject": "mcp-tools", "context": "0b0ee725-52a2-4656-9e13-07c5204de60e", "reason": "src-tauri/db/src/builtin_connectors.rs seeds ~20 MCP auth methods (unversioned npm 'package' names plus suggested_env token slots). Whether that is a client-integration deviation depends on how consumers render and spawn them (vault-catalog-schemas is already a deviation on suggested_env). Unpinned packages are a supply-chain question, not an mcp-tools one. Needs a dedicated run."}
+ ],
+ "consults": [
+  {"ts": "2026-10-30T20:57:00Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["client-integration", "server-composition"], "deviations": 0, "context": "test-runner-lab"},
+  {"ts": "2026-10-30T20:57:00Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["untrusted-result-handling", "caller-differentiated-capability"], "deviations": 0, "context": "agents-design"},
+  {"ts": "2026-10-30T20:57:00Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["server-composition"], "deviations": 0, "context": "stores-slices-system"},
+  {"ts": "2026-10-30T20:57:00Z", "bundle": "software-engineering", "subjects": ["mcp-tools"], "techniques": ["client-integration"], "deviations": 0, "context": "plugins-dev-tools-context"}
+ ]}

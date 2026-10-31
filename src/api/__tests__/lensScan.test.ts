@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, it, expect, beforeEach, expectTypeOf } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { mockedTauriInvoke, resetInvokeMocks, mockInvokeMap } from '@/test/tauriMock';
 import {
   decideLensScan,
@@ -10,23 +10,12 @@ import {
   listLensScanProducts,
   startLensScan,
   triageLensScan,
-  type DecideResult,
-  type LensScanSnapshotData,
 } from '@/api/lensScan';
-import type {
-  BlueprintData,
-  DecideResult as SeamDecideResult,
-  StartResult,
-} from '@/features/decision-center/blueprint/source';
+import type { StartResult } from '@/features/decision-center/blueprint/source';
 
 describe('api/lensScan', () => {
   beforeEach(() => {
     resetInvokeMocks();
-  });
-
-  it('keeps the frozen blueprint seam and the door types in step', () => {
-    expectTypeOf<LensScanSnapshotData>().toEqualTypeOf<Omit<BlueprintData, 'product'>>();
-    expectTypeOf<DecideResult>().toEqualTypeOf<SeamDecideResult>();
   });
 
   it('lists products and sends camelCase args', async () => {

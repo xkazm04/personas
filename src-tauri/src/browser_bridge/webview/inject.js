@@ -223,6 +223,17 @@
     }
   }
 
+  /** The standard's tool-name alphabet and length bound. */
+  const TOOL_NAME = /^[A-Za-z0-9_.-]{1,128}$/;
+
+  /**
+   * The standard's refusal for a registration it will not take.
+   * @param {string} message
+   */
+  function invalid(message) {
+    return new DOMException(message, "InvalidStateError");
+  }
+
   /** The polyfill, used only when the browser has no `document.modelContext` of its own. */
   function polyfill() {
     class ModelContextPolyfill extends EventTarget {
@@ -234,21 +245,55 @@
       }
 
       /**
+       * The standard's registration door, not a looser one beside it: a page is written against
+       * the native registry and meets this one only in a build without it, so every refusal the
+       * native method makes is made here, in the same order and the same way — as a rejected
+       * promise, never a throw and never a silent overwrite. A second script registering a taken
+       * name used to replace the first script's tool, which native refuses.
+       * (WebMCP, "The registerTool(tool, options) method steps".)
        * @param {WebMCPTool} tool
        * @param {{ signal?: AbortSignal }} [options]
+       * @returns {Promise<void>}
        */
       registerTool(tool, options = {}) {
-        if (!tool || typeof tool.name !== "string" || !tool.name) {
-          throw new TypeError("registerTool: name is required");
+        try {
+          return Promise.resolve(this.admit(tool, options || {}));
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+
+      /**
+       * @param {WebMCPTool} tool
+       * @param {{ signal?: AbortSignal }} options
+       */
+      admit(tool, options) {
+        // The dictionary's required members, which the IDL conversion checks before any step runs.
+        if (!tool || typeof tool !== "object") throw new TypeError("registerTool: tool must be an object");
+        if (typeof tool.name !== "string") throw new TypeError("registerTool: name is required");
+        if (typeof tool.description !== "string") {
+          throw new TypeError(`registerTool(${tool.name}): description is required`);
         }
         if (typeof tool.execute !== "function") {
           throw new TypeError(`registerTool(${tool.name}): execute is required`);
         }
-        if (options.signal && options.signal.aborted) return;
-        this.registered.set(tool.name, tool);
+        const name = tool.name;
+        if (this.registered.has(name)) throw invalid(`a tool named ${name} is already registered`);
+        if (!TOOL_NAME.test(name)) {
+          throw invalid(`registerTool: ${JSON.stringify(name)} is not 1-128 of A-Z a-z 0-9 _ - .`);
+        }
+        if (tool.description === "") throw invalid(`registerTool(${name}): description is empty`);
+        if (tool.inputSchema !== undefined && JSON.stringify(tool.inputSchema) === undefined) {
+          throw new TypeError(`registerTool(${name}): inputSchema does not serialize to JSON`);
+        }
+        // Serializing the schema can run page script (a toJSON), which can register this name.
+        if (this.registered.has(name)) throw invalid(`a tool named ${name} is already registered`);
+        const signal = options.signal;
+        if (signal && signal.aborted) throw signal.reason;
+        this.registered.set(name, tool);
         this.dispatchEvent(new Event("toolchange"));
-        if (options.signal) {
-          options.signal.addEventListener("abort", () => this.unregisterTool(tool.name), { once: true });
+        if (signal) {
+          signal.addEventListener("abort", () => this.unregisterTool(name), { once: true });
         }
       }
 

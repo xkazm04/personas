@@ -515,11 +515,10 @@ mod tests {
     fn every_projection_prepares_against_the_real_schema() {
         let pool = crate::init_test_db().unwrap();
         let conn = pool.get().unwrap();
-        for (columns, table) in [(COLUMNS, "credential_audit_log")] {
-            let sql = format!("SELECT {columns} FROM {table} LIMIT 0");
-            conn.prepare(&sql)
-                .unwrap_or_else(|e| panic!("{table} projection does not match schema: {e}"));
-        }
+        let (columns, table) = (COLUMNS, "credential_audit_log");
+        let sql = format!("SELECT {columns} FROM {table} LIMIT 0");
+        conn.prepare(&sql)
+            .unwrap_or_else(|e| panic!("{table} projection does not match schema: {e}"));
     }
 
     /// The aggregate and join projections are not plain column lists, so the

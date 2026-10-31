@@ -1,6 +1,6 @@
 import { Trash2, AlertTriangle, Check } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
+import { AsyncButton, Button } from '@/features/shared/components/buttons';
 
 interface SettingsStatusBarProps {
   isSaving: boolean;
@@ -22,56 +22,56 @@ export function SettingsStatusBar({
   const { t, tx } = useTranslation();
   return (
     <div className="flex items-center justify-between pt-2 border-t border-primary/10">
-      <div className="flex items-center gap-2 typo-body text-foreground">
+      {/* Autosave is the only save path here, so this line is the only confirmation. */}
+      <div role="status" aria-live="polite" className="flex items-center gap-2 typo-body text-foreground">
         {isSaving ? (
           <>
-            <LoadingSpinner size="sm" className="text-primary/70" />
             <span>{tx(t.agents.settings_status.saving, { sections: changedSections.join(' + ').toLowerCase() })}</span>
           </>
         ) : isDirty ? (
           <>
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-status-warning animate-pulse" />
             <span>{tx(t.agents.settings_status.changed, { sections: changedSections.join(' + ') })}</span>
           </>
         ) : (
           <>
-            <Check className="w-3.5 h-3.5 text-emerald-400/70" aria-hidden="true" />
+            <Check className="w-3.5 h-3.5 text-status-success" aria-hidden="true" />
             <span className="text-foreground">{t.agents.settings_status.all_saved}</span>
           </>
         )}
       </div>
 
       {!showDeleteConfirm ? (
-        <button
-          type="button"
+        <Button
+          variant="accent"
+          tone="error"
+          size="sm"
           onClick={() => setShowDeleteConfirm(true)}
           data-testid="agent-delete-btn"
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-modal transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
           {t.common.delete}
-        </button>
+        </Button>
       ) : (
         <div className="flex items-center gap-2">
-          <span className="typo-body text-amber-400/70 flex items-center gap-1">
+          <span className="typo-body text-status-warning flex items-center gap-1">
             <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
             {t.agents.settings_status.irreversible}
           </span>
-          <button
-            type="button"
+          {/* AsyncButton arms its in-flight guard synchronously, so a double press
+              sends one delete_persona, not two racing ones. */}
+          <AsyncButton
+            variant="accent"
+            tone="error"
+            size="sm"
             onClick={onDelete}
             data-testid="agent-delete-confirm"
-            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-foreground rounded-modal typo-body transition-colors"
           >
             {t.common.confirm}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowDeleteConfirm(false)}
-            className="px-3 py-1.5 bg-secondary/50 text-foreground rounded-modal typo-body transition-colors hover:bg-secondary/70"
-          >
+          </AsyncButton>
+          <Button variant="secondary" size="sm" onClick={() => setShowDeleteConfirm(false)}>
             {t.common.cancel}
-          </button>
+          </Button>
         </div>
       )}
     </div>

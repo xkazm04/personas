@@ -17,6 +17,9 @@ export interface ChainTraceState {
   /** Ordered (oldest-first) reasons the chain relay did NOT continue at each
    *  non-continuation link — the "why did it end here" audit. */
   stopReasons: ChainStopReason[];
+  /** The stop-reason read failed: an empty `stopReasons` then means "could not
+   *  read why it stopped", not "the relay recorded no stop". */
+  stopReasonsError: boolean;
   /** Summed cost (USD) of the PRICED spans across every accessible trace in
    *  the chain. Read it together with `chainPricedTraces` — on its own it is
    *  not a chain total. */
@@ -34,6 +37,7 @@ const EMPTY: ChainTraceState = {
   hasChain: false,
   partial: false,
   stopReasons: [],
+  stopReasonsError: false,
   chainCostUsd: 0,
   chainPricedTraces: 0,
 };
@@ -104,8 +108,10 @@ export function useChainTrace(executionId: string, personaId: string, skip = fal
         const chain = await getChainTrace(chainId, personaId);
         const ordered = [...chain].sort((a, b) => a.created_at.localeCompare(b.created_at));
         // Stop reasons are best-effort: a chain still renders if they fail to load.
+        let stopReasonsError = false;
         const stopReasons = await getChainStopReasons(chainId, personaId).catch((err) => {
           silentCatch('useChainTrace:getChainStopReasons')(err);
+          stopReasonsError = true;
           return [] as ChainStopReason[];
         });
         if (!cancelled) {
@@ -117,6 +123,7 @@ export function useChainTrace(executionId: string, personaId: string, skip = fal
             hasChain: true,
             partial: ordered.length <= 1,
             stopReasons,
+            stopReasonsError,
             chainCostUsd: totals.cost,
             chainPricedTraces: totals.pricedTraces,
           });

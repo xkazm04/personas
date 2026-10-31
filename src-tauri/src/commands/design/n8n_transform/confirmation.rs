@@ -756,11 +756,11 @@ mod tests {
         .expect("test draft deserializes")
     }
 
-    /// `(id, trigger_type, raw stored config, next_trigger_at)` for every row.
-    fn trigger_rows(
-        pool: &DbPool,
-        persona_id: &str,
-    ) -> Result<Vec<(String, String, Option<String>, Option<String>)>, AppError> {
+    /// `(id, trigger_type, raw stored config, next_trigger_at)`.
+    type TriggerRow = (String, String, Option<String>, Option<String>);
+
+    /// Every trigger row of the persona, as a [`TriggerRow`].
+    fn trigger_rows(pool: &DbPool, persona_id: &str) -> Result<Vec<TriggerRow>, AppError> {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT id, trigger_type, config, next_trigger_at FROM persona_triggers

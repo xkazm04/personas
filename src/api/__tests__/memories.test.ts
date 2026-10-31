@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from "vitest";
-import { mockInvoke, mockInvokeError, resetInvokeMocks } from "@/test/tauriMock";
+import { mockInvoke, mockInvokeError, mockedTauriInvoke, resetInvokeMocks } from "@/test/tauriMock";
 import {
   listMemories,
   createMemory,
@@ -47,7 +47,11 @@ describe("api/overview/memories", () => {
       stats: { total: 1, avg_importance: 0.5, category_counts: [], agent_counts: [] },
     };
     mockInvoke("list_memories_with_stats", result);
-    expect(await listMemoriesWithStats(undefined, undefined, undefined, 10)).toEqual(result);
+    // (personaId, category, search, tier, limit, ...): `limit` is the FIFTH
+    // argument. Pinning the payload keeps this call honest when a positional
+    // parameter is inserted ahead of it, as `tier` once was.
+    expect(await listMemoriesWithStats(undefined, undefined, undefined, undefined, 10)).toEqual(result);
+    expect(mockedTauriInvoke.mock.calls.at(-1)?.[1]).toMatchObject({ tier: null, limit: 10 });
   });
 
   it("listMemoriesByExecution returns memories", async () => {

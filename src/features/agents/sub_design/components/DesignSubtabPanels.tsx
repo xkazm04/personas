@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { Plug } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useVaultStore } from '@/stores/vaultStore';
+import { useSystemStore } from '@/stores/systemStore';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ConnectorsSection } from '@/features/templates/sub_generated/design-preview/ConnectorsSection';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -20,8 +21,6 @@ import { toastCatch } from '@/lib/silentCatch';
  * recap) were views onto a saved BUILD RESULT rather than onto the agent, and
  * the four-tab hub keeps only surfaces the agent itself owns.
  */
-
-const NOOP = () => {};
 
 /**
  * Connectors & Tools. Live connector verification (test / link / swap) via
@@ -49,7 +48,7 @@ export function DesignConnectorsPanel() {
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   const saved = useSavedDesignResult(selectedPersona);
-  const selectedTools = useMemo(() => new Set(saved?.suggested_tools ?? []), [saved]);
+  const setDesignSubTab = useSystemStore((s) => s.setDesignSubTab);
   // Connector name whose credential is being provisioned from the recap.
   const [provisioning, setProvisioning] = useState<string | null>(null);
   // ONE verification instance, shared by the live panel and the recap below, so
@@ -66,7 +65,13 @@ export function DesignConnectorsPanel() {
   const testFromRecap = useCallback(async (connectorName: string, credentialId: string) => {
     setTestingFromRecap((prev) => new Set(prev).add(connectorName));
     try {
-      await verification.testConnector(connectorName, credentialId);
+      const result = await verification.testConnector(connectorName, credentialId);
+      // A recap-only connector has no status row to receive an unreachable
+      // verdict, and the vault store is untouched for it: without this the
+      // spinner just stops and the row reads as before.
+      if (result && result.state === 'unreachable') {
+        toastCatch('DesignConnectorsPanel:testFromRecap')(new Error(result.message || connectorName));
+      }
     } finally {
       setTestingFromRecap((prev) => {
         const next = new Set(prev);
@@ -88,7 +93,17 @@ export function DesignConnectorsPanel() {
     !saved ||
     ((saved.suggested_connectors?.length ?? 0) === 0 && (saved.suggested_tools?.length ?? 0) === 0);
   if (designIsEmpty && !hasLiveConnectors && personaTools.length === 0) {
-    return <SectionEmpty icon={Plug} title={t.agents.design_subtabs.connectors} />;
+    return (
+      <SectionEmpty
+        icon={Plug}
+        title={t.agents.design_subtabs.connectors}
+        description={t.agents.design_subtabs.connectors_empty_description}
+        action={{
+          label: t.agents.design_subtabs.connectors_empty_action,
+          onClick: () => setDesignSubTab('responsibilities'),
+        }}
+      />
+    );
   }
 
   return (
@@ -107,16 +122,17 @@ export function DesignConnectorsPanel() {
           </div>
         </SectionCard>
       )}
-      {!designIsEmpty && saved && (
+      {/* The recap resolves each proposed connector against the vault list, so
+          it waits for the first fetch the same way the live panel does
+          (`credentialsLoaded`): before it, an empty vault is "not yet", and the
+          recap would paint every connector "Configure credential". */}
+      {!designIsEmpty && saved && verification.credentialsLoaded && (
         <>
           <ConnectorsSection
             result={saved}
             allToolDefs={toolDefinitions}
-            currentToolNames={[]}
             credentials={credentials}
             connectorDefinitions={connectorDefinitions}
-            selectedTools={selectedTools}
-            onToolToggle={NOOP}
             onConnectorClick={(connector) => setProvisioning(connector.name)}
             hiddenConnectors={liveConnectors}
             onTestConnector={(name, credId) => void testFromRecap(name, credId)}
@@ -145,10 +161,20 @@ export function DesignConnectorsPanel() {
   );
 }
 
-function SectionEmpty({ icon, title }: { icon: typeof Plug; title: string }) {
+function SectionEmpty({
+  icon,
+  title,
+  description,
+  action,
+}: {
+  icon: typeof Plug;
+  title: string;
+  description: string;
+  action: { label: string; onClick: () => void };
+}) {
   return (
     <div className="py-12">
-      <EmptyState icon={icon} art="link" size="sm" title={title} />
+      <EmptyState icon={icon} art="link" size="sm" title={title} description={description} action={action} />
     </div>
   );
 }

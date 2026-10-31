@@ -459,60 +459,6 @@ fn parse_attempts_used(warnings_json: Option<&str>) -> Option<u32> {
     None
 }
 
-#[cfg(test)]
-mod automation_failure_tests {
-    use super::*;
-
-    #[test]
-    fn parses_attempts_from_retry_warning() {
-        let warnings = serde_json::to_string(&vec![
-            "Method fallback: ...".to_string(),
-            "Failed after 3/3 attempts".to_string(),
-        ])
-        .unwrap();
-        assert_eq!(parse_attempts_used(Some(&warnings)), Some(3));
-        assert_eq!(parse_attempts_used(None), None);
-        assert_eq!(parse_attempts_used(Some("not json")), None);
-    }
-
-    #[test]
-    fn timeout_run_is_retryable_with_attempt_context() {
-        let warnings =
-            serde_json::to_string(&vec!["Failed after 3/3 attempts".to_string()]).unwrap();
-        let info = classify_failure_parts(
-            "notify",
-            3,
-            Some("Webhook timed out after 5000ms: http://x"),
-            Some(&warnings),
-        );
-        assert_eq!(info.kind, ToolErrorKind::Timeout);
-        assert!(info.retryable);
-        assert_eq!(info.attempts_used, 3);
-        assert_eq!(info.max_attempts, 3);
-        assert!(info.message.contains("after 3/3 attempts"));
-    }
-
-    #[test]
-    fn http_401_run_is_auth_not_retryable() {
-        let info =
-            classify_failure_parts("notify", 1, Some("Webhook returned HTTP 401: nope"), None);
-        assert_eq!(info.kind, ToolErrorKind::Auth);
-        assert_eq!(info.http_status, Some(401));
-        assert!(!info.retryable);
-        // Single-attempt automations omit the attempt note.
-        assert!(!info.message.contains("attempts"));
-    }
-
-    #[test]
-    fn http_503_run_is_retryable_http() {
-        let info =
-            classify_failure_parts("notify", 2, Some("Webhook returned HTTP 503: down"), None);
-        assert_eq!(info.kind, ToolErrorKind::Http);
-        assert_eq!(info.http_status, Some(503));
-        assert!(info.retryable);
-    }
-}
-
 /// POST/GET to a webhook URL and return (response_body, status, warnings).
 async fn invoke_webhook(
     url: &str,
@@ -736,4 +682,58 @@ async fn invoke_github_dispatch(
         duration_ms,
         &[], // GitHub dispatch has no auth fallback path
     )
+}
+
+#[cfg(test)]
+mod automation_failure_tests {
+    use super::*;
+
+    #[test]
+    fn parses_attempts_from_retry_warning() {
+        let warnings = serde_json::to_string(&vec![
+            "Method fallback: ...".to_string(),
+            "Failed after 3/3 attempts".to_string(),
+        ])
+        .unwrap();
+        assert_eq!(parse_attempts_used(Some(&warnings)), Some(3));
+        assert_eq!(parse_attempts_used(None), None);
+        assert_eq!(parse_attempts_used(Some("not json")), None);
+    }
+
+    #[test]
+    fn timeout_run_is_retryable_with_attempt_context() {
+        let warnings =
+            serde_json::to_string(&vec!["Failed after 3/3 attempts".to_string()]).unwrap();
+        let info = classify_failure_parts(
+            "notify",
+            3,
+            Some("Webhook timed out after 5000ms: http://x"),
+            Some(&warnings),
+        );
+        assert_eq!(info.kind, ToolErrorKind::Timeout);
+        assert!(info.retryable);
+        assert_eq!(info.attempts_used, 3);
+        assert_eq!(info.max_attempts, 3);
+        assert!(info.message.contains("after 3/3 attempts"));
+    }
+
+    #[test]
+    fn http_401_run_is_auth_not_retryable() {
+        let info =
+            classify_failure_parts("notify", 1, Some("Webhook returned HTTP 401: nope"), None);
+        assert_eq!(info.kind, ToolErrorKind::Auth);
+        assert_eq!(info.http_status, Some(401));
+        assert!(!info.retryable);
+        // Single-attempt automations omit the attempt note.
+        assert!(!info.message.contains("attempts"));
+    }
+
+    #[test]
+    fn http_503_run_is_retryable_http() {
+        let info =
+            classify_failure_parts("notify", 2, Some("Webhook returned HTTP 503: down"), None);
+        assert_eq!(info.kind, ToolErrorKind::Http);
+        assert_eq!(info.http_status, Some(503));
+        assert!(info.retryable);
+    }
 }

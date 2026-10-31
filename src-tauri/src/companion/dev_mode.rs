@@ -1058,6 +1058,99 @@ pub fn build_task_prompt(
     p
 }
 
+/// DEV MODE prompt addendum — empty unless the toggle is on AND this is
+/// a debug build (`chat::dev_mode_enabled`). Teaches the self-model, the
+/// context-map index, and the `dev_improve` op with its ground rules:
+/// never auto-fires, checkout policy (frontend → main checkout / backend
+/// → worktree + merge handshake), and the post-run reflection contract.
+pub fn addendum_if_enabled(sys_db: &DbPool) -> String {
+    if !crate::commands::companion::chat::dev_mode_enabled(sys_db) {
+        return String::new();
+    }
+    // Self-healing containment: dev mode in use → the repo must be a
+    // registered Dev Tools project or dispatches will bounce.
+    ensure_repo_registered(sys_db);
+    let root = repo_root();
+    let root_str = root.to_string_lossy().replace('\\', "/");
+    let index_block = context_map_index()
+        .map(|idx| {
+            format!(
+                "\n## Feature → code map (context slugs by group)\n\n{idx}\n\
+                 Quote an exact slug in `dev_improve.context`. Full descriptions and \
+                 per-context file lists live in `context-map.json` at the repo root — \
+                 read it there when you need details; this index is only the table of \
+                 contents.\n"
+            )
+        })
+        .unwrap_or_else(|| {
+            "\n## Feature → code map\n\n(context-map.json unavailable — dispatch with \
+             `files_hint` and let the coding session locate the code.)\n"
+                .to_string()
+        });
+
+    format!(
+        r#"
+
+# DEV MODE — this app is your own code, and you may improve it
+
+The user flipped the wrench in your header: you are running from your own
+source checkout at `{root_str}`. The Personas desktop app — including
+you, Athena (the `companion` Rust modules and the companion React
+surfaces) — is built from that repo. In this mode his messages will mix
+NORMAL requests (answer, act via your usual ops) with DEVELOPMENT
+requests: fix a bug he just hit, adjust a feature you two are
+discussing, improve your own behavior.
+
+## The dev_improve op
+
+When a message is a development request, propose a coding dispatch:
+
+    OP: {{"op": "propose_action", "action": "dev_improve", "params": {{"request": "<the change, phrased for a coding agent — what/where/acceptance>", "context": "<context slug from the map below, if one fits>", "files_hint": "<optional: specific files/symbols you're confident about>", "backend": <true if the change needs Rust/src-tauri edits, else false>, "confidence": "high|medium|low", "rationale": "<one line: why this change, and why this scope>"}}}}
+
+Ground rules — these are hard policy, not suggestions:
+- **Every dev_improve is an approval card.** It NEVER auto-fires, in any
+  mode; the user clicks each dispatch. Frame `request` so it stands alone.
+- **One request = one focused change.** If the ask is really a project,
+  say so and propose `write_backlog_item` instead — don't dispatch an
+  open-ended rewrite.
+- **`backend` drives the workspace.** `false` (frontend/`src/**` only):
+  the session works in the MAIN checkout and edits go live via hot
+  reload — tell the user to just try it when it lands. `true` (any
+  `src-tauri/**` / Rust change): the session works in an ISOLATED git
+  worktree so the running app is undisturbed; nothing applies until the
+  MERGE HANDSHAKE — after your reflection, the user explicitly approves
+  when to merge + rebuild, so you two synchronize update expectations.
+  When unsure, set `backend: true` — the safe side.
+- **Reflection is part of every dev operation.** When the dispatched
+  session finishes you'll be woken to review what it did (diff summary,
+  files, commit). Report the outcome honestly — what changed, risk you
+  see, whether to merge (backend) or what to try (frontend). If the run
+  failed or drifted from the request, say so plainly and propose the
+  next step; never gloss a bad run.
+- **Ambiguity check.** If a message could be either a product action or
+  a code change ("make the orb bigger" — setting vs code?), ask one
+  short clarifying line before proposing the dispatch.
+- Requests about *your own* behavior (prompt, memory, proactivity,
+  orb) are legitimate dev_improve targets — your code lives in
+  `src-tauri/src/companion/**` and `src/features/companions/athena/**`.
+
+## The merge handshake (backend runs)
+
+A backend run's commits sit on an isolated branch until the user decides
+the moment to apply them. When — after your reflection — he agrees,
+propose:
+
+    OP: {{"op": "propose_action", "action": "dev_merge", "params": {{"op_id": "<the dev operation id from the reflection>", "rationale": "<one line: what merging applies>"}}}}
+
+Approving it fast-forwards the live checkout onto the dev branch and
+removes the worktree; the dev server rebuild follows, so tell him to
+expect an app restart right after. Never propose dev_merge before the
+reflection, and never when the run left uncommitted work (the merge
+refuses; say what needs resolving instead).
+{index_block}"#
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1482,97 +1575,4 @@ mod tests {
         assert!(out.contains("fast-forward"), "got: {out}");
         let _ = std::fs::remove_dir_all(&root);
     }
-}
-
-/// DEV MODE prompt addendum — empty unless the toggle is on AND this is
-/// a debug build (`chat::dev_mode_enabled`). Teaches the self-model, the
-/// context-map index, and the `dev_improve` op with its ground rules:
-/// never auto-fires, checkout policy (frontend → main checkout / backend
-/// → worktree + merge handshake), and the post-run reflection contract.
-pub fn addendum_if_enabled(sys_db: &DbPool) -> String {
-    if !crate::commands::companion::chat::dev_mode_enabled(sys_db) {
-        return String::new();
-    }
-    // Self-healing containment: dev mode in use → the repo must be a
-    // registered Dev Tools project or dispatches will bounce.
-    ensure_repo_registered(sys_db);
-    let root = repo_root();
-    let root_str = root.to_string_lossy().replace('\\', "/");
-    let index_block = context_map_index()
-        .map(|idx| {
-            format!(
-                "\n## Feature → code map (context slugs by group)\n\n{idx}\n\
-                 Quote an exact slug in `dev_improve.context`. Full descriptions and \
-                 per-context file lists live in `context-map.json` at the repo root — \
-                 read it there when you need details; this index is only the table of \
-                 contents.\n"
-            )
-        })
-        .unwrap_or_else(|| {
-            "\n## Feature → code map\n\n(context-map.json unavailable — dispatch with \
-             `files_hint` and let the coding session locate the code.)\n"
-                .to_string()
-        });
-
-    format!(
-        r#"
-
-# DEV MODE — this app is your own code, and you may improve it
-
-The user flipped the wrench in your header: you are running from your own
-source checkout at `{root_str}`. The Personas desktop app — including
-you, Athena (the `companion` Rust modules and the companion React
-surfaces) — is built from that repo. In this mode his messages will mix
-NORMAL requests (answer, act via your usual ops) with DEVELOPMENT
-requests: fix a bug he just hit, adjust a feature you two are
-discussing, improve your own behavior.
-
-## The dev_improve op
-
-When a message is a development request, propose a coding dispatch:
-
-    OP: {{"op": "propose_action", "action": "dev_improve", "params": {{"request": "<the change, phrased for a coding agent — what/where/acceptance>", "context": "<context slug from the map below, if one fits>", "files_hint": "<optional: specific files/symbols you're confident about>", "backend": <true if the change needs Rust/src-tauri edits, else false>, "confidence": "high|medium|low", "rationale": "<one line: why this change, and why this scope>"}}}}
-
-Ground rules — these are hard policy, not suggestions:
-- **Every dev_improve is an approval card.** It NEVER auto-fires, in any
-  mode; the user clicks each dispatch. Frame `request` so it stands alone.
-- **One request = one focused change.** If the ask is really a project,
-  say so and propose `write_backlog_item` instead — don't dispatch an
-  open-ended rewrite.
-- **`backend` drives the workspace.** `false` (frontend/`src/**` only):
-  the session works in the MAIN checkout and edits go live via hot
-  reload — tell the user to just try it when it lands. `true` (any
-  `src-tauri/**` / Rust change): the session works in an ISOLATED git
-  worktree so the running app is undisturbed; nothing applies until the
-  MERGE HANDSHAKE — after your reflection, the user explicitly approves
-  when to merge + rebuild, so you two synchronize update expectations.
-  When unsure, set `backend: true` — the safe side.
-- **Reflection is part of every dev operation.** When the dispatched
-  session finishes you'll be woken to review what it did (diff summary,
-  files, commit). Report the outcome honestly — what changed, risk you
-  see, whether to merge (backend) or what to try (frontend). If the run
-  failed or drifted from the request, say so plainly and propose the
-  next step; never gloss a bad run.
-- **Ambiguity check.** If a message could be either a product action or
-  a code change ("make the orb bigger" — setting vs code?), ask one
-  short clarifying line before proposing the dispatch.
-- Requests about *your own* behavior (prompt, memory, proactivity,
-  orb) are legitimate dev_improve targets — your code lives in
-  `src-tauri/src/companion/**` and `src/features/companions/athena/**`.
-
-## The merge handshake (backend runs)
-
-A backend run's commits sit on an isolated branch until the user decides
-the moment to apply them. When — after your reflection — he agrees,
-propose:
-
-    OP: {{"op": "propose_action", "action": "dev_merge", "params": {{"op_id": "<the dev operation id from the reflection>", "rationale": "<one line: what merging applies>"}}}}
-
-Approving it fast-forwards the live checkout onto the dev branch and
-removes the worktree; the dev server rebuild follows, so tell him to
-expect an app restart right after. Never propose dev_merge before the
-reflection, and never when the run left uncommitted work (the merge
-refuses; say what needs resolving instead).
-{index_block}"#
-    )
 }

@@ -1,0 +1,29 @@
+{"schema":"conform-run/1","worker":"597ef65a-899e-4f3f-a35e-4194f05c0a4d","subject":"hitl-approval",
+ "evaluatedAt":"2026-10-30T20:56:00Z",
+ "pairs":[
+  {"context":"3f38546e-e970-4837-97f7-f0504aa32daf","subject":"hitl-approval","bundle":"software-engineering","state":"deviation",
+   "evidence":"src/features/companions/athena/decision/useDecisionQueue.ts:130 the earlier dismiss/later swallow is fixed (both now rethrow, :146 and :220), but the mark_read option still swallows a failed markReportRead and then runs engage, so the orb consumes the nudge and runDecisionOption clears the decision as resolved while the message stays unread with no error shown; and a failed proactive list (:285) collapses to an empty source, so a pending credential re-auth decision silently drops out of the queue",
+   "techniques":[
+    {"technique":"review-queues","verdict":"deviation","evidence":"src/features/companions/athena/decision/useDecisionQueue.ts:130 a failed mark-read write is swallowed and the decision still settles as resolved; :285 a failed source reads as empty"},
+    {"technique":"decision-records","verdict":"deviation","evidence":"src/features/companions/athena/decision/useDecisionQueue.ts:130 the recorded outcome (nudge engaged, decision_resolved signal at src/features/companions/athena/decision/resolveDecision.ts:68) does not match the verdict that landed (message still unread)"},
+    {"technique":"gate-state-machines","verdict":"conformant","evidence":"src/features/companions/athena/decision/resolveDecision.ts:61 a thrown option keeps the decision pending with an in-place error instead of clearing it"},
+    {"technique":"resume-after-decision","verdict":"conformant","evidence":"src/features/companions/athena/decision/resolveDecision.ts:51 an in-flight guard allows one answer per decision across the five doors"}
+   ],
+   "registryProposal":"review-queues 'the verdict write must land' could name the composite option: when one option performs two writes (here mark-read then engage), swallowing the first and committing the second is the same optimistic removal, and it survives a fix that only rethrows the last write"},
+  {"context":"8cfb82ac-ebd6-4826-921d-d1399dba7a60","subject":"hitl-approval","bundle":"software-engineering","state":"deviation",
+   "evidence":"src/features/agents/quick-answer/triage/triageAdapters.ts:590 a review with no severity still classifies as medium and an unrecognised token falls to weight 50 at :667 with no marker, while the manual-review list resolves the same row to Unclassified with defaulted=true (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:32); the deciding deck spells an unreadable payload as a readable medium",
+   "techniques":[{"technique":"fail-loud-classification-default","verdict":"deviation","evidence":"src/features/agents/quick-answer/triage/triageAdapters.ts:590 missing severity defaults to medium with no defaulted marker"}]},
+  {"context":"ef73ca1c-fc54-4b9c-83ec-390c54929192","subject":"hitl-approval","bundle":"software-engineering","state":"deviation",
+   "evidence":"src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114 getSevCfg still falls an unrecognized severity through to the Info config with no marker and drives the focus view where reviews are decided (src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx:360); the loud resolveReviewSeverity default (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:32) reached the list and detail but not the deciding surface",
+   "techniques":[{"technique":"fail-loud-classification-default","verdict":"deviation","evidence":"src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114 unknown severity -> Info, quiet, on the deciding surface"},
+                 {"technique":"cosmetic-vs-enforced-threshold-invariant","verdict":"deviation","evidence":"src/features/overview/sub_manual-review/libs/reviewHelpers.ts:32 and src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114 are two classifiers of one severity vocabulary that disagree on an unknown token"}]}
+ ],
+ "declined":[
+  {"subject":"hitl-approval","context":"942d2449-34ab-4f02-af7e-b130269d10ef","reason":"dead context: its only paths (src/features/fleet/monitor/triage/triageModel.ts, MonitorProjectColumns.tsx, PersonaGlyph.tsx) were deleted in 926796dfce on 2026-09-02 and context-map.json still lists them as entry_points with empty file_paths; there is no code to judge. The likely successor is src/features/fleet/monitor/grid/rail/railTriageReview.ts, owned elsewhere. The context map needs a rescan, not a verdict"},
+  {"subject":"hitl-approval","context":"11fe7642-7a1a-47c5-8910-499850aa04fe","reason":"weak governance row (plugins-companion-inbox); per the skill, a coverage question for the registry rather than a pair to judge by default"}
+ ],
+ "consults":[
+  {"ts":"2026-10-30T20:56:00Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["review-queues","decision-records","gate-state-machines","resume-after-decision"],"deviations":1},
+  {"ts":"2026-10-30T20:56:00Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["fail-loud-classification-default"],"deviations":1},
+  {"ts":"2026-10-30T20:56:00Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":["fail-loud-classification-default","cosmetic-vs-enforced-threshold-invariant"],"deviations":1}
+ ]}

@@ -1,0 +1,79 @@
+{
+  "schema": "conform-run/1",
+  "worker": "4c4ac9b5-a4fd-48ba-b330-964250706f2f",
+  "subject": "settings",
+  "evaluatedAt": "2026-10-30T20:55:46Z",
+  "pairs": [
+    {
+      "context": "107445f8-c266-4671-8160-f854bd79319e",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/hooks/utility/data/useAppSetting.ts:42 the door still takes a bare key: string and src/features/settings/sub_engine/components/EngineCapabilityBadge.tsx:24 passes the literal 'cli_engine', so a frontend key typo compiles clean and reads the caller default forever - re-verified live 2026-10-30",
+      "techniques": [
+        {"technique": "read-batching", "verdict": "conformant", "evidence": "src/hooks/utility/data/useSettings.ts:69 same-tick single-key reads flush as one getAppSettingsBulk call, and :85 rejects every waiter when the bulk call fails; invalidation is key-only (src-tauri/src/commands/infrastructure/settings.rs:42 emits SettingsChangedPayload { key })"},
+        {"technique": "key-registry", "verdict": "deviation", "evidence": "src/hooks/utility/data/useAppSetting.ts:42 key: string - no caller-side constant layer on the frontend; only the store-side allowlist protects writes, and reads of a typo'd key silently default"},
+        {"technique": "typed-accessors", "verdict": "deviation", "evidence": "src/features/settings/sub_engine/components/EngineCapabilityBadge.tsx:24 each caller restates its own default ('claude_code') and parse instead of one accessor per key owning the default"},
+        {"technique": "save-experience", "verdict": "conformant", "evidence": "src/hooks/utility/data/useAppSetting.ts:31 the hook exposes loadFailed so a failed read is distinguishable from the stored value rather than presenting the caller default as truth"}
+      ],
+      "registryProposal": "react--read-batching application (verified_on 2026-08-18) still holds against this tree: coalescer at src/hooks/utility/data/useSettings.ts:99/:69, failure fan-out :85, key-only event at src-tauri/src/commands/infrastructure/settings.rs:42, GET_BATCH_MAX_KEYS at src-tauri/db/src/repos/core/settings.rs:186. One drift to fold in: flushBatch now chunks the batch (useSettings.ts:53 comment) so one oversized tick no longer rejects every waiter - the application's verbatim snippet predates that split. Safe to bump verified_on."
+    },
+    {
+      "context": "0b0ee725-52a2-4656-9e13-07c5204de60e",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/settings_keys.rs:636 MONTHLY_COST_CEILING_USD_DEFAULT is still 0.0 meaning 'no ceiling' (CHAIN_MAX_COST_USD_DEFAULT :1307 copies it) with no declared setting kind, so the unconfigured install is the most permissive one on the spend keys - re-verified live 2026-10-30",
+      "techniques": [
+        {"technique": "key-registry", "verdict": "conformant", "evidence": "src-tauri/db/src/repos/core/settings.rs:151 set() enforces validate_key + validate_value at the repo layer so internal writers pass the same door; ALLOWED_KEYS at src-tauri/db/src/settings_keys.rs:1486, quarantine via deprecated_replacement :2158. Gap noted: still no set-equality test between pub consts and ALLOWED_KEYS (only per-key tests, e.g. :2545)"},
+        {"technique": "typed-accessors", "verdict": "deviation", "evidence": "src-tauri/db/src/settings_keys.rs:636 a safety ceiling whose default reads absence as unlimited - the fail-direction rule requires closed"},
+        {"technique": "setting-kinds", "verdict": "deviation", "evidence": "src-tauri/db/src/settings_keys.rs:1486 ALLOWED_KEYS carries no kind per key, so spend ceilings share the preference contract"},
+        {"technique": "settings-audit-and-history", "verdict": "conformant", "evidence": "src-tauri/db/src/settings_keys.rs:2429 audit_category maps keys to categories (BYOM_POLICY | MODEL_ROUTING_RULES => \"byom\")"},
+        {"technique": "read-batching", "verdict": "conformant", "evidence": "src-tauri/db/src/repos/core/settings.rs:186 GET_BATCH_MAX_KEYS bounds the one-round-trip bulk read get_batch"}
+      ],
+      "registryProposal": "rust--key-registry application (verified_on 2026-08-18) still holds: allowlist door at src-tauri/db/src/repos/core/settings.rs:151-152, ALLOWED_KEYS :1486, AUTONOMOUS_DELIBERATION scar :1623, deprecated_replacement :2158. Update its size claim (~1,570 lines -> 3,380) and note the missing set-equality test it names is still missing. Safe to bump verified_on."
+    },
+    {
+      "context": "94b0b4ea-9adb-44d7-8222-4e2345de455b",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src-tauri/db/src/byom.rs:305 the policy is written through the generic validated settings::set door, validated against the exact consumer type at src-tauri/db/src/settings_keys.rs:2085, audited as 'byom' (:2429), and src/features/settings/sub_byom/libs/useByomSettings.ts:152 refuses to save over a failed load - re-verified live 2026-10-30, anchors moved",
+      "techniques": [
+        {"technique": "key-registry", "verdict": "conformant", "evidence": "src-tauri/db/src/byom.rs:245 reads and :305 writes only through repos::core::settings with the registered BYOM_POLICY_KEY constant"},
+        {"technique": "typed-accessors", "verdict": "conformant", "evidence": "src-tauri/db/src/settings_keys.rs:2085 BYOM_POLICY => validate_json_as::<crate::byom::ByomPolicy> - the write door validates against the reader's type"},
+        {"technique": "settings-audit-and-history", "verdict": "conformant", "evidence": "src-tauri/db/src/settings_keys.rs:2429 BYOM_POLICY audits under the 'byom' category"},
+        {"technique": "save-experience", "verdict": "conformant", "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:100 isDirty diffs against the saved snapshot (not touched-since-mount) and :152 blocks a save over a failed or corrupt load"},
+        {"technique": "read-batching", "verdict": "not-applicable", "evidence": "src-tauri/db/src/byom.rs:245 one document behind one key, read whole - no boot fan-out to batch"},
+        {"technique": "in-place-document-patch", "verdict": "not-applicable", "evidence": "src-tauri/db/src/byom.rs:305 one policy document owned and written by one build-version of one module; no older-build round trip surface in this context"},
+        {"technique": "cross-source-precedence-chain", "verdict": "not-applicable", "evidence": "src-tauri/db/src/byom.rs:245 single source (app_settings), no operator file or env layer"}
+      ]
+    },
+    {
+      "context": "cc76d419-f457-4fe4-833c-6869efbc9287",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:156 a failed Save keeps the guard open with the raw failure instead of closing on a still-dirty editor; the prior anchor useSettingsSaveToast.ts was deleted (85b4abb535) so the verdict now rests on the guard alone - re-verified live 2026-10-30",
+      "techniques": [
+        {"technique": "save-experience", "verdict": "conformant", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:156 failure loud and navigation held; :78 beforeunload guards window close; :121 intercepts settings-tab navigation while dirty; dirtiness is the caller's diff-vs-stored (src/features/settings/sub_byom/libs/useByomSettings.ts:100)"},
+        {"technique": "key-registry", "verdict": "not-applicable", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:51 the context's only settings-touching hook takes isDirty and callbacks from callers and reads/writes no settings key"},
+        {"technique": "typed-accessors", "verdict": "not-applicable", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:51 no key read or default owned here"},
+        {"technique": "read-batching", "verdict": "not-applicable", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:51 performs no settings read"},
+        {"technique": "settings-audit-and-history", "verdict": "not-applicable", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:51 performs no settings write; the caller's onSave owns the audited door"},
+        {"technique": "setting-kinds", "verdict": "not-applicable", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:51 kind-agnostic guard primitive, no key classified here"},
+        {"technique": "inherited-default-override", "verdict": "not-applicable", "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:51 no preference default is resolved here; the prior verdict's claim of realizing it had no anchor and is withdrawn"}
+      ]
+    }
+  ],
+  "declined": [
+    {"subject": "settings", "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0", "reason": "plugins-research-lab-shared is governance:weak with an empty paths list (the research-lab plugin was retired); a weak match is a coverage question, not a pair to judge"},
+    {"subject": "settings", "context": "*", "reason": "the remaining 16 judged settings pairs were evaluated against the current digest sha256-b2:85c48ec5bdb5581f (revision 13, revisionsBehind 0) between 2026-10-03 and 2026-10-22; left for a later run inside the 3-6 pair budget"}
+  ],
+  "consults": [
+    {"ts": "2026-10-30T20:55:46Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["read-batching", "key-registry", "typed-accessors", "save-experience"], "deviations": 2},
+    {"ts": "2026-10-30T20:55:46Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["key-registry", "typed-accessors", "setting-kinds", "settings-audit-and-history", "read-batching"], "deviations": 2},
+    {"ts": "2026-10-30T20:55:46Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["key-registry", "typed-accessors", "settings-audit-and-history", "save-experience"], "deviations": 0},
+    {"ts": "2026-10-30T20:55:46Z", "bundle": "software-engineering", "subjects": ["settings"], "techniques": ["save-experience"], "deviations": 0}
+  ]
+}

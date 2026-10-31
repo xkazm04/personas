@@ -159,15 +159,15 @@ mod tests {
         // It must be able to fire before the shortest deadline a run gets,
         // and generous enough not to shoot a cold CLI start.
         assert!(STARTUP_SILENCE_SECS * 1000 < stream_timeout_ms(0, 660_000, 0));
-        assert!(STARTUP_SILENCE_SECS >= 60, "too tight for a cold CLI start");
+        const _: () = assert!(STARTUP_SILENCE_SECS >= 60, "too tight for a cold CLI start");
     }
 
     #[test]
     fn vector_insert_batch_is_a_safe_default() {
         // The exact value isn't load-bearing for this test — we just want a
         // canary so a future bump is intentional rather than accidental.
-        assert!(VECTOR_INSERT_BATCH >= 100, "VECTOR_INSERT_BATCH too low");
-        assert!(
+        const _: () = assert!(VECTOR_INSERT_BATCH >= 100, "VECTOR_INSERT_BATCH too low");
+        const _: () = assert!(
             VECTOR_INSERT_BATCH <= 5000,
             "VECTOR_INSERT_BATCH risks blocking the SQLite write lock"
         );

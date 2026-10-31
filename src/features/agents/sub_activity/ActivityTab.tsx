@@ -12,7 +12,7 @@ import type { PersonaEvent, PersonaReport } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { AttentionLedgerEntry } from '@/lib/bindings/AttentionLedgerEntry';
-import type { ActivityItem, ActivityType } from './activityTypes';
+import { FILTER_TABS, type ActivityItem, type ActivityType } from './activityTypes';
 import { ActiveChainsBadge } from '../sub_executions/components/ActiveChainsBadge';
 import { ActivityFilters } from './ActivityFilters';
 import { ActivityList } from './ActivityList';
@@ -22,12 +22,16 @@ import { useExecutionList } from '../sub_executions/libs/useExecutionList';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { useExecutionAnnotations } from '@/hooks/agents/useExecutionAnnotations';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 // Tolerate bindings that haven't been regenerated yet — use_case_id is
 // optional on every row that carries it after Phase C5.
 type WithUseCase = { use_case_id?: string | null };
 const getUseCaseId = (raw: unknown): string | null =>
   ((raw as WithUseCase | null | undefined)?.use_case_id) ?? null;
+
+/** Rows each feed asks for. A feed that returns exactly this many may have more. */
+const FEED_LIMIT = 50;
 
 type FeedKey = 'execution' | 'event' | 'memory' | 'review' | 'message' | 'attention';
 type FeedMap = Record<FeedKey, ActivityItem[]>;
@@ -49,11 +53,16 @@ export function ActivityTab() {
   const [useCaseFilter, setUseCaseFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
   const [starredOnly, setStarredOnly] = useState(false);
-  // Partial-failure honesty for the attention feed (golden path
-  // partial-failure-read-envelope): a failed ledger read is disclosed instead
-  // of rendering as "no attention passes".
-  const [attentionUnavailable, setAttentionUnavailable] = useState(false);
+  // Partial-failure honesty for every feed (golden path
+  // partial-failure-read-envelope): a failed read is disclosed instead of
+  // rendering as "no activity". Attention had this alone; the other five
+  // landed [] on failure and a dead feed read as a quiet agent.
+  const [failedFeeds, setFailedFeeds] = useState<FeedKey[]>([]);
+  // Feeds whose window came back full: their tab count is a floor, not a total.
+  const [truncatedFeeds, setTruncatedFeeds] = useState<FeedKey[]>([]);
+  const attentionUnavailable = failedFeeds.includes('attention');
   const loadGenRef = useRef(0);
+  const execLatest = useRef(createLatestWins()).current;
 
   const personaId = selectedPersona?.id;
   const useCases = useSelectedUseCases();
@@ -70,26 +79,38 @@ export function ActivityTab() {
   // tab while the aggregate feed is deliberately not fetching them.
   const { executions: storeExecutions } = useExecutionList(personaId ?? '');
 
-  const loadData = useCallback(() => {
+  const markPending = useCallback((key: FeedKey) => {
+    setPending((p) => (p[key] ? p : { ...p, [key]: true }));
+  }, []);
+  const land = useCallback((key: FeedKey, rows: ActivityItem[], failed = false) => {
+    setFeeds((prev) => ({ ...prev, [key]: rows }));
+    setPending((p) => ({ ...p, [key]: false }));
+    const truncated = !failed && rows.length >= FEED_LIMIT;
+    setTruncatedFeeds((prev) => {
+      if (prev.includes(key) === truncated) return prev;
+      return truncated ? [...prev, key] : prev.filter((k) => k !== key);
+    });
+    setFailedFeeds((prev) => {
+      if (prev.includes(key) === failed) return prev;
+      return failed ? [...prev, key] : prev.filter((k) => k !== key);
+    });
+  }, []);
+
+  // The execution feed has its own loader and generation: entering or leaving
+  // the runs tab changes only this identity, so it no longer re-fires the five
+  // other feeds' reads (Events -> Runs -> Events cost ten IPCs, not five).
+  const loadExecutions = useCallback(() => {
     if (!personaId) return;
-    const gen = ++loadGenRef.current;
-    const stillCurrent = () => loadGenRef.current === gen;
-
-    const markPending = (key: FeedKey) => {
-      setPending((p) => (p[key] ? p : { ...p, [key]: true }));
+    const token = execLatest.next();
+    const landIfCurrent = (rows: ActivityItem[], failed = false) => {
+      if (execLatest.isCurrent(token)) land('execution', rows, failed);
     };
-    const land = (key: FeedKey, rows: ActivityItem[]) => {
-      if (!stillCurrent()) return;
-      setFeeds((prev) => ({ ...prev, [key]: rows }));
-      setPending((p) => ({ ...p, [key]: false }));
-    };
-
     if (runsRegionOwnsExecutions) {
-      land('execution', []);
+      landIfCurrent([]);
     } else {
       markPending('execution');
-      listExecutions(personaId, 50)
-        .then((executions: PersonaExecution[]) => land('execution', executions.map((e): ActivityItem => ({
+      listExecutions(personaId, FEED_LIMIT)
+        .then((executions: PersonaExecution[]) => landIfCurrent(executions.map((e): ActivityItem => ({
           type: 'execution', id: e.id,
           title: tx(t.agents.activity.execution_status, { status: e.status }),
           subtitle: e.output_data?.slice(0, 80) || t.agents.activity.no_output,
@@ -98,8 +119,16 @@ export function ActivityTab() {
           useCaseId: getUseCaseId(e),
           raw: e,
         }))))
-        .catch((err) => { silentCatch('ActivityTab:listExecutions')(err); land('execution', []); });
+        .catch((err) => { silentCatch('ActivityTab:listExecutions')(err); landIfCurrent([], true); });
     }
+  }, [personaId, t, tx, runsRegionOwnsExecutions, land, markPending]);
+
+  const loadData = useCallback(() => {
+    if (!personaId) return;
+    const gen = ++loadGenRef.current;
+    const landIfCurrent = (key: FeedKey, rows: ActivityItem[], failed = false) => {
+      if (loadGenRef.current === gen) land(key, rows, failed);
+    };
 
     markPending('event');
     searchEvents({
@@ -110,9 +139,9 @@ export function ActivityTab() {
       since: null,
       until: null,
       search: null,
-      limit: 50n,
+      limit: BigInt(FEED_LIMIT),
     })
-      .then((page) => land('event', page.events.map((e: PersonaEvent): ActivityItem => ({
+      .then((page) => landIfCurrent('event', page.events.map((e: PersonaEvent): ActivityItem => ({
         type: 'event', id: e.id,
         title: e.event_type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
         subtitle: e.source_type || 'System',
@@ -121,11 +150,11 @@ export function ActivityTab() {
         useCaseId: getUseCaseId(e),
         raw: e,
       }))))
-      .catch((err) => { silentCatch('ActivityTab:searchEvents')(err); land('event', []); });
+      .catch((err) => { silentCatch('ActivityTab:searchEvents')(err); landIfCurrent('event', [], true); });
 
     markPending('memory');
-    listMemories(personaId, undefined, undefined, 50)
-      .then((memories: PersonaMemory[]) => land('memory', memories.map((m): ActivityItem => ({
+    listMemories(personaId, undefined, undefined, FEED_LIMIT)
+      .then((memories: PersonaMemory[]) => landIfCurrent('memory', memories.map((m): ActivityItem => ({
         type: 'memory', id: m.id,
         title: m.title,
         subtitle: m.category,
@@ -134,11 +163,11 @@ export function ActivityTab() {
         useCaseId: getUseCaseId(m),
         raw: m,
       }))))
-      .catch((err) => { silentCatch('ActivityTab:listMemories')(err); land('memory', []); });
+      .catch((err) => { silentCatch('ActivityTab:listMemories')(err); landIfCurrent('memory', [], true); });
 
     markPending('review');
-    listManualReviewsPage({ personaId, limit: 50 })
-      .then((page) => land('review', page.rows.map((r: PersonaManualReview): ActivityItem => ({
+    listManualReviewsPage({ personaId, limit: FEED_LIMIT })
+      .then((page) => landIfCurrent('review', page.rows.map((r: PersonaManualReview): ActivityItem => ({
         type: 'review', id: r.id,
         title: r.title,
         subtitle: r.description?.slice(0, 80) || '',
@@ -147,11 +176,11 @@ export function ActivityTab() {
         useCaseId: getUseCaseId(r),
         raw: r,
       }))))
-      .catch((err) => { silentCatch('ActivityTab:listManualReviewsPage')(err); land('review', []); });
+      .catch((err) => { silentCatch('ActivityTab:listManualReviewsPage')(err); landIfCurrent('review', [], true); });
 
     markPending('message');
-    listReports(50, undefined, personaId)
-      .then((messages: PersonaReport[]) => land('message', messages.map((m): ActivityItem => ({
+    listReports(FEED_LIMIT, undefined, personaId)
+      .then((messages: PersonaReport[]) => landIfCurrent('message', messages.map((m): ActivityItem => ({
         type: 'message', id: m.id,
         title: m.title || t.agents.activity.report_title,
         subtitle: m.content?.slice(0, 80) || '',
@@ -160,13 +189,12 @@ export function ActivityTab() {
         useCaseId: getUseCaseId(m),
         raw: m,
       }))))
-      .catch((err) => { silentCatch('ActivityTab:listReports')(err); land('message', []); });
+      .catch((err) => { silentCatch('ActivityTab:listReports')(err); landIfCurrent('message', [], true); });
 
     markPending('attention');
-    listAttentionLedger(personaId, 50)
+    listAttentionLedger(personaId, FEED_LIMIT)
       .then((attention: AttentionLedgerEntry[]) => {
-        if (stillCurrent()) setAttentionUnavailable(false);
-        land('attention', attention.map((a): ActivityItem => ({
+        landIfCurrent('attention', attention.map((a): ActivityItem => ({
           type: 'attention', id: a.id,
           title: t.agents.life.activity_attention_row,
           subtitle: a.reason.slice(0, 80),
@@ -178,20 +206,24 @@ export function ActivityTab() {
       })
       .catch((err) => {
         silentCatch('ActivityTab:listAttentionLedger')(err);
-        if (stillCurrent()) setAttentionUnavailable(true);
-        land('attention', []);
+        landIfCurrent('attention', [], true);
       });
-  }, [personaId, t, tx, runsRegionOwnsExecutions]);
+  }, [personaId, t, tx, land, markPending]);
+
+  // A mutation (verdict, delete) refreshes every feed.
+  const reloadAll = useCallback(() => { loadData(); loadExecutions(); }, [loadData, loadExecutions]);
 
   useEffect(() => {
     setFeeds(emptyFeeds());
     setPending({
       execution: true, event: true, memory: true, review: true, message: true, attention: true,
     });
-    setAttentionUnavailable(false);
+    setFailedFeeds([]);
+    setTruncatedFeeds([]);
   }, [personaId]);
 
   useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadExecutions(); }, [loadExecutions]);
 
   const items = useMemo(() => {
     const all = [
@@ -221,12 +253,14 @@ export function ActivityTab() {
         ? result.filter((i) => !i.useCaseId)
         : result.filter((i) => i.useCaseId === useCaseFilter);
     }
-    if (starredOnly) {
+    // Run-only filters apply where the controls are offered (the All tab); a
+    // stale toggle must not empty the other tabs.
+    if (filter === 'all' && starredOnly) {
       result = result.filter(
         (i) => i.type === 'execution' && (annotationsByExecution.get(i.id)?.starred ?? false),
       );
     }
-    if (tagFilter !== 'all') {
+    if (filter === 'all' && tagFilter !== 'all') {
       result = result.filter(
         (i) => i.type === 'execution' && annotationsByExecution.get(i.id)?.tags.includes(tagFilter),
       );
@@ -260,10 +294,32 @@ export function ActivityTab() {
     return c;
   }, [items, runsRegionOwnsExecutions, storeExecutions.length]);
 
+  // Tab labels that must read "N+": a full feed window hides older rows. The
+  // runs tab is ExecutionList's region (store-counted), so it is never flagged
+  // while that region owns it.
+  const truncated = useMemo(() => {
+    const t2: Partial<Record<ActivityType, boolean>> = {};
+    for (const k of truncatedFeeds) {
+      if (k === 'execution' && runsRegionOwnsExecutions) continue;
+      t2[k] = true;
+      t2.all = true;
+    }
+    return t2;
+  }, [truncatedFeeds, runsRegionOwnsExecutions]);
+
+  // Failed feeds the current view would otherwise paint as empty. Attention
+  // keeps its own notice below; the runs tab is ExecutionList's region.
+  const visibleFailedFeedLabels = failedFeeds
+    .filter((k) => k !== 'attention' && (filter === 'all' || filter === k))
+    .map((k) => {
+      const key = FILTER_TABS.find((tab) => tab.id === k)?.labelKey;
+      return key ? t.agents.activity_filters[key] : k;
+    });
+
   const { handleRowClick, modals } = useActivityModals({
     personaName: selectedPersona?.name ?? '',
     personaColor: selectedPersona?.color || '#6366f1',
-    onDataChanged: loadData,
+    onDataChanged: reloadAll,
   });
 
   if (!selectedPersona) {
@@ -286,6 +342,7 @@ export function ActivityTab() {
         tagFilter={tagFilter}
         starredOnly={starredOnly}
         counts={counts}
+        truncated={truncated}
         availableStatuses={availableStatuses}
         availableTags={knownTags}
         useCaseOptions={useCaseOptions}
@@ -299,6 +356,11 @@ export function ActivityTab() {
       {attentionUnavailable && (filter === 'all' || filter === 'attention') && (
         <p className="typo-caption text-status-warning" data-testid="activity-attention-unavailable">
           {t.agents.life.activity_attention_unavailable}
+        </p>
+      )}
+      {!runsRegionOwnsExecutions && visibleFailedFeedLabels.length > 0 && (
+        <p className="typo-caption text-status-warning" data-testid="activity-feed-unavailable">
+          {visibleFailedFeedLabels.join(', ')}: {t.common.source_unreachable}
         </p>
       )}
       {runsRegionOwnsExecutions ? (

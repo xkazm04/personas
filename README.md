@@ -312,12 +312,22 @@ npm run build:team       # Simple + Power
 npm run build:builder    # everything (default)
 ```
 
-For desktop installers:
+For desktop installers, from macOS, Linux or Git Bash:
 
 ```bash
+# POSIX shell (macOS, Linux, Git Bash). PowerShell users: use the next block.
 VITE_APP_TIER=starter npm run tauri build   # Simple installer
 VITE_APP_TIER=team npm run tauri build      # Power installer
 npm run tauri build                         # Builder installer (default)
+```
+
+From PowerShell, where the variable stays set for the whole session:
+
+```powershell
+# PowerShell (Windows). Clear the variable before a default build.
+$env:VITE_APP_TIER = "starter"; npm run tauri build                   # Simple installer
+$env:VITE_APP_TIER = "team"; npm run tauri build                      # Power installer
+Remove-Item Env:VITE_APP_TIER -ErrorAction SilentlyContinue; npm run tauri build   # Builder installer (default)
 ```
 
 When `VITE_APP_TIER` is unset, the build includes every tier and users switch at runtime.

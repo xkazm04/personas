@@ -7,7 +7,6 @@ use super::origin::TurnOrigin;
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
-use super::*;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 

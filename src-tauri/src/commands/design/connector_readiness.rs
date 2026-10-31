@@ -1671,18 +1671,20 @@ mod tests {
         // useCases[].connectors (objects) + summary.connectors (strings) +
         // last_design_result.required/suggested_connectors, de-duplicated
         // case-insensitively.
-        let mut persona = crate::db::models::Persona::default();
-        persona.design_context = Some(
-            r#"{
+        let persona = crate::db::models::Persona {
+            design_context: Some(
+                r#"{
                 "useCases":[{"connectors":[{"name":"notion"},{"name":"gmail"}]}],
                 "summary":{"connectors":["Notion","slack"]}
             }"#
-            .to_string(),
-        );
-        persona.last_design_result = Some(
-            r#"{"required_connectors":["hubspot"],"suggested_connectors":[{"name":"gmail"}]}"#
                 .to_string(),
-        );
+            ),
+            last_design_result: Some(
+                r#"{"required_connectors":["hubspot"],"suggested_connectors":[{"name":"gmail"}]}"#
+                    .to_string(),
+            ),
+            ..Default::default()
+        };
         let names = persona_declared_connectors(&persona);
         let lower: Vec<String> = names.iter().map(|n| n.to_ascii_lowercase()).collect();
         assert!(lower.contains(&"notion".to_string()));
@@ -1713,9 +1715,12 @@ mod tests {
         // credential clears it (stale-needs → allowed).
         let conn = test_db();
         def(&conn, "notion", r#"{"auth_type":"api_key"}"#);
-        let mut persona = crate::db::models::Persona::default();
-        persona.design_context =
-            Some(r#"{"useCases":[{"connectors":[{"name":"notion"}]}]}"#.to_string());
+        let mut persona = crate::db::models::Persona {
+            design_context: Some(
+                r#"{"useCases":[{"connectors":[{"name":"notion"}]}]}"#.to_string(),
+            ),
+            ..Default::default()
+        };
 
         // Column claims ready, but the connector is actually missing → blocked.
         persona.setup_status = "ready".to_string();

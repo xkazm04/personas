@@ -1,0 +1,95 @@
+{
+  "schema": "conform-run/1",
+  "worker": "7c9d27d4-9d4a-4717-ae01-76587225568d",
+  "subject": "trace-rollup-and-attribution",
+  "evaluatedAt": "2026-10-30T20:55:25Z",
+  "evaluatedAgainst": "sha256-b2:3db1001b079944c5",
+  "evaluatedRevision": 8,
+  "pairs": [
+    {
+      "context": "03960450-6979-4412-9de3-35c897fe56d2",
+      "subject": "trace-rollup-and-attribution",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:116 skips null origCost into totalCostOriginal and BulkRunCohort (src/features/agents/sub_executions/libs/useBulkRerun.ts:61) carries no unmeasured-run count, so src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:90 prints a lower bound as the cohort total - re-judged against rev 8",
+      "techniques": [
+        {
+          "technique": "unpriced-span-accounting",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:116 null is held (not coerced) but the sum carries no unmeasured count, so src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:90 shows a lower bound as a total"
+        }
+      ]
+    },
+    {
+      "context": "208f50de-5d3b-4345-9fed-1c106a7a36e9",
+      "subject": "trace-rollup-and-attribution",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:187 counts unifiedTrace.spans.length while the waterfall comes from buildSpanTree (src/features/agents/sub_executions/detail/inspector/useTraceData.ts:255), which drops parent-cycle spans and overwrites duplicate span ids at src/features/agents/sub_executions/libs/traceHelpers.ts:110 - the Spans tile and the rows under it range over different collections (rev 8 pin-the-collection rule)",
+      "techniques": [
+        {
+          "technique": "derived-trace-rollup",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/libs/traceHelpers.ts:110 byId.set overwrites a duplicate span id, and cycle nodes never reach roots (stated at :101), so a malformed trace loses spans instead of rendering every event exactly once"
+        },
+        {
+          "technique": "single-shape-rule",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:187 the summary tile counts its own population (raw spans) instead of being handed the rendered collection"
+        }
+      ]
+    },
+    {
+      "context": "a6843b83-43a1-4eab-ae40-26f23b949a0d",
+      "subject": "trace-rollup-and-attribution",
+      "bundle": "llm-observability",
+      "state": "deviation",
+      "evidence": "src/hooks/execution/useReasoningTrace.ts:100 coerces the optional ResultEvent.duration_ms (src/lib/types/terminalEvents.ts:56) to 0, which src/hooks/execution/useExecutionSummary.ts:82 passes to src/features/agents/sub_executions/detail/views/ExecutionSummaryCard.tsx:122, whose != null guard cannot see it, so an unmeasured run reads as 0 ms - re-judged against rev 8",
+      "techniques": [
+        {
+          "technique": "unpriced-span-accounting",
+          "verdict": "deviation",
+          "evidence": "src/hooks/execution/useReasoningTrace.ts:100 cost on :101 stays nullable, but duration_ms ?? 0 turns absence into a displayed single-run 0 ms; the latency carve-out covers conservative sums, not a lone displayed value"
+        }
+      ],
+      "registryProposal": "unpriced-span-accounting's rule 'do not extend to measures with a true zero default' justifies latency-as-zero by its effect inside a SUM (a conservative duration); it is silent on one unmeasured value displayed alone, where 0 ms is fabricated, not conservative. Scope the carve-out to aggregation and state that never-present-absence-as-an-answer still governs a lone displayed measure."
+    }
+  ],
+  "declined": [],
+  "consults": [
+    {
+      "ts": "2026-10-30T20:55:25Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "trace-rollup-and-attribution"
+      ],
+      "techniques": [
+        "unpriced-span-accounting"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-30T20:55:25Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "trace-rollup-and-attribution"
+      ],
+      "techniques": [
+        "derived-trace-rollup",
+        "single-shape-rule"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-30T20:55:25Z",
+      "bundle": "llm-observability",
+      "subjects": [
+        "trace-rollup-and-attribution"
+      ],
+      "techniques": [
+        "unpriced-span-accounting"
+      ],
+      "deviations": 1
+    }
+  ]
+}

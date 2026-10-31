@@ -816,7 +816,7 @@ mod tests {
 
         let result = cascade_use_case_toggle(&mut conn, "p_1", "uc_1", false).expect("cascade ok");
 
-        assert_eq!(result.enabled, false);
+        assert!(!result.enabled);
         assert_eq!(
             result.triggers_updated, 2,
             "two triggers should be cascaded"
@@ -902,7 +902,7 @@ mod tests {
         ).unwrap();
 
         let result = cascade_use_case_toggle(&mut conn, "p_2", "uc_2", true).unwrap();
-        assert_eq!(result.enabled, true);
+        assert!(result.enabled);
         assert_eq!(
             result.automations_updated, 0,
             "automations stay paused on re-enable"

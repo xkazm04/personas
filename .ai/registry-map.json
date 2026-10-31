@@ -2541,8 +2541,8 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:161 batch archive still awaits the singular archivePersona IPC once per selected id in a loop (restore likewise at :185); src/api/agents/personas.ts:83 is the only archive door, so an N-row bulk action is N sequential round trips with no set-shaped operation",
-          "evaluatedAt": "2026-10-22",
+          "evidence": "src/features/agents/components/allPersonas/PersonaOverviewActions.tsx:176 batch archive still awaits the singular archivePersona IPC per selected id (restore likewise at :200); src/api/agents/personas.ts:83 offers no set-shaped archive/restore, though bulk delete now uses bulkDeletePersonas (:91)",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:2dba94be6400dea1",
           "evaluatedRevision": 19,
           "source": "retained",
@@ -2784,10 +2784,10 @@
           "changedAt": "2026-09-05",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:64 re-confirmed 2026-10-22 (no commit since 10-20): the deployment smoke test still calls local executePersona, not the endpoint the card advertises (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:45) though src/api/system/cloud.ts:50 cloudExecutePersona exists - a pass describes the local twin, never the deployed build",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
-          "evaluatedRevision": 4,
+          "evidence": "src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:68 re-judged at rev 5: the per-deployment smoke test still runs local executePersona, not the endpoint the card advertises (src/features/agents/sub_deployment/components/cloud/DeploymentCard.tsx:45) though src/api/system/cloud.ts:50 cloudExecutePersona exists - a pass is a verdict about the local twin, never the deployed build",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -2947,10 +2947,10 @@
           "changedAt": "2026-09-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudHistoryHelpers.tsx:12 'provider-capability-honesty' is the only tier/capability-adjacent hit in this component tree; grep for tier|entitle|capability|plan across the whole cloud/ directory finds nothing else. Cloud-deploy reachability is gated solely by Google OAuth (#[requires(cloud)]), a different axis from the product tier model in src/lib/constants/uiModes.ts:30 (TIERS) -- precondition (this context implements or reads a plan/tier gate) does not hold.",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
-          "evaluatedRevision": 7,
+          "evidence": "src-tauri/src/commands/infrastructure/cloud.rs:120 cloud deploy is gated by #[requires(cloud)] (a configured connection), not a plan; sub_deployment has zero tier/entitle/quota hits and .ai/manifest.yaml:116 excludes billing, so the precondition fails",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -3007,7 +3007,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_tool_runner/libs/useToolRunner.ts:95 a PERSON invokes a tool definition over Tauri IPC (invokeToolDirect) and reads the result; no model reads it and no MCP wire is spoken, and builtin:// MCP-sidecar tools are explicitly refused here (src/features/agents/sub_tool_runner/components/ToolInvocationCard.tsx:38)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "prompt-assembly",
@@ -3317,13 +3321,12 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "not-applicable",
-          "evidence": "src/features/agents/sub_editor/components/EditorTabContent.tsx:3 persona editor shell: tabbed form surface with draft/save lifecycle; no file in the context's sampled paths mentions memory, and the memory store/recall lives in other contexts (db-repos-core, overview-memories); match was lexical (agents/agent/draft)",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_activity/ActivityTab.tsx:137 a failed listMemories lands [] so the persona's memory feed renders as having no memories, while the same file discloses a failed attention read (:55); the read is also capped at 50 (:127) with no notice of what was not shown",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 3
         },
         {
           "subject": "agent-instruction-files",
@@ -3517,10 +3520,10 @@
           "changedAt": "2026-09-18",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:115 skips null origCost into totalCostOriginal and BulkRunCohort (src/features/agents/sub_executions/libs/useBulkRerun.ts:61) carries no unmeasured-run count, so src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:90 prints a lower bound as the cohort total - re-verified 2026-10-16, files unchanged",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:441741a78f8712b4",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:116 skips null origCost into totalCostOriginal and BulkRunCohort (src/features/agents/sub_executions/libs/useBulkRerun.ts:61) carries no unmeasured-run count, so src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:90 prints a lower bound as the cohort total - re-judged against rev 8",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:3db1001b079944c5",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -3897,8 +3900,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:590 the deck still classifies a review with a missing severity as medium and an unrecognised token falls to weight 50 at :667, with no marker, while the manual-review list resolves the same row to Unclassified with defaulted=true (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:37); the deciding surface spells an unreadable payload as a readable medium",
-          "evaluatedAt": "2026-10-14",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:590 a review with no severity still classifies as medium and an unrecognised token falls to weight 50 at :667 with no marker, while the manual-review list resolves the same row to Unclassified with defaulted=true (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:32); the deciding deck spells an unreadable payload as a readable medium",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
           "evaluatedRevision": 22,
           "revisionsBehind": 0
@@ -4640,7 +4643,11 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/repos/resources/external_api_keys.rs:3 The context issues bearer tokens and persists only their one-way SHA-256 digest, with no encrypted store, data key, keyring, root key or seal; a grep of src/features/settings/sub_api_keys/ for unseal/keyring/encrypt/cipher/rotate/root_key returned zero files, so the subject's precondition (a server encrypting its own store under a key hierarchy) does not hold here.",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:044e6e9d3f3395f0",
+          "evaluatedRevision": 3
         },
         {
           "subject": "llm-call-telemetry-model",
@@ -4818,7 +4825,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/devTools/devTools.ts:1604 the context is IPC pass-through (installSkill only forwards to skill_files_install); it neither authors nor delivers instruction content, and the install semantics are judged where they live (skill_files.rs under plugins-fleet-tests / resource-tracking)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "authorization",
@@ -5043,10 +5054,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 the WorkflowJob projection still drops the cancel_outcome JobSnapshot carries (src-tauri/src/background_job.rs:1002) though :134 says the snapshot reports it, and src/api/pipeline/workflows.ts:16 cancel resolves void, so no client can show cancelling or tell cancelled from failed",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:22ed2a99172ae050",
-          "evaluatedRevision": 5,
+          "evidence": "src-tauri/src/commands/infrastructure/workflows.rs:69 the WorkflowJob projection still drops the cancel_outcome JobSnapshot carries (src-tauri/src/background_job.rs:1002), and src/api/pipeline/workflows.ts:16 cancel resolves void, so no client can show cancelling or tell cancelled from failed",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:e3e7a428140a2fbb",
+          "evaluatedRevision": 6,
           "revisionsBehind": 0
         },
         {
@@ -5843,8 +5854,8 @@
           "changedAt": "2026-09-09",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:2143 re-verified 2026-10-22, anchors unchanged: the remote-HTTP (Qwen/DashScope) branch returns run_http_execution without receiving policy_decision (computed at src-tauri/src/engine/runner/mod.rs:2079), so it skips the failover chain's blocked_providers filter (src-tauri/engine/src/failover.rs:770) and the provider_audit insert (src-tauri/src/engine/runner/mod.rs:3832), while src/features/settings/sub_byom/components/ByomProviderList.tsx:37 lists Qwen beside policy-governed providers - a compliance-tagged persona can run on a blocked, unaudited upstream",
-          "evaluatedAt": "2026-10-22",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2143 re-verified 2026-10-30, unchanged: the remote-HTTP (Qwen/DashScope) branch returns run_http_execution without policy_decision (computed at src-tauri/src/engine/runner/mod.rs:2079), skipping the blocked_providers filter (src-tauri/engine/src/failover.rs:770) and the provider_audit insert (src-tauri/src/engine/runner/mod.rs:3832) while src/features/settings/sub_byom/components/ByomProviderList.tsx:37 lists Qwen beside policy-governed providers - a compliance-tagged persona can run on a blocked, unaudited upstream",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:f268193750c0a517",
           "evaluatedRevision": 9,
           "revisionsBehind": 0
@@ -5901,8 +5912,8 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "useByomSettings.ts routes through dedicated get_byom_policy/set_byom_policy/validate_byom_policy commands (src-tauri/src/commands/infrastructure/byom.rs:37-67) backed by src-tauri/db/src/byom.rs:244-305's ByomPolicy::load/save, which calls the generic settings::set - so key-registry, typed-accessors (validate_json_as::<ByomPolicy> at settings_keys.rs:1821) and settings-audit-and-history (audit_category 'byom' at settings_keys.rs:2143) all apply automatically; useByomSettings.ts:142-148 refuses to save over a corrupt load, protecting the stored policy (save-experience). read-batching, in-place-document-patch and cross-source-precedence-chain are not-applicable: this is one document behind one dedicated key, read and written whole (byom.rs:245,305), not a scattered-keys boot read or a multi-source config.",
-          "evaluatedAt": "2026-10-03",
+          "evidence": "src-tauri/db/src/byom.rs:305 the policy is written through the generic validated settings::set door, validated against the exact consumer type at src-tauri/db/src/settings_keys.rs:2085, audited as 'byom' (:2429), and src/features/settings/sub_byom/libs/useByomSettings.ts:152 refuses to save over a failed load - re-verified live 2026-10-30, anchors moved",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
           "evaluatedRevision": 13,
           "revisionsBehind": 0
@@ -5958,8 +5969,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:13 the BYOM providers are LLM CLI engines (EngineKind, only claude_code) routed by compliance/routing rules; a speech/tts/stt/microphone/audio regex over all 18 context files is empty, so neither voice pipeline exists here",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "quality-gates",
@@ -6386,8 +6401,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:190 the periodStartUtc returned beside the totals is computed by a second boundary function (chrono, :219), not by the SQLite datetime('now','start of month') the rows were actually filtered with (src-tauri/db/src/repos/execution/executions.rs:2346), and no period end is returned; :27 spend is a bare f64 from SUM over a nullable cost_usd (src-tauri/db/src/migrations/schema.rs:123) COALESCEd to 0.0 (:192), so an unpriced month renders as $0 beside max_budget_usd with no unpriced count (re-checked 2026-10-14 against rev 15: anchors unchanged)",
-          "evaluatedAt": "2026-10-14",
+          "evidence": "src-tauri/src/commands/communication/observability/metrics.rs:196 periodStartUtc still comes from a second chrono boundary fn (:225), not the SQLite datetime('now','start of month') the rows are filtered by (src-tauri/db/src/repos/execution/executions.rs:2369), and no period end is returned; spend is a bare f64 (:27) from SUM over nullable cost_usd COALESCEd to 0.0 (:198), so an unpriced month reads $0 beside max_budget_usd (re-checked 2026-10-30 after b2c51639f4, which windowed the dashboard/overview bundle only; anchors shifted)",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
           "evaluatedRevision": 15,
           "revisionsBehind": 0
@@ -6817,7 +6832,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/contest/draft.rs:126 cuts the owner's idea at MAX_IDEA_CHARS (4000) with no notice, and :101 then introduces it as \"The owner's idea, verbatim\", so an over-long idea is drafted from a silently partial text the prompt calls complete",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "test-harness",
@@ -7085,7 +7104,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/core/chat_turn.rs:484 a follow-up sent while the session's previous run is still going is neither injected additively nor refused/queued: it starts a second run resuming the stored Claude session id, which finish() only advances at :665 when the first run completes, so the new turn forks from turn N-1 and never sees turn N; the last finisher's session id then wins the next --resume. The phone chat_send reaches this same door with no UI guard",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "import-normalization",
@@ -7336,9 +7359,9 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src-tauri/src/commands/curator/tick.rs:176 an unreadable registry root (and :199 unreadable brakes) logs and returns from a unit tick, and src-tauri/src/engine/subscription/runner.rs:219 records only latency, so a curator loop that fails every tick looks identical to a healthy idle one on the health surface",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:22ed2a99172ae050",
-          "evaluatedRevision": 5,
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:e3e7a428140a2fbb",
+          "evaluatedRevision": 6,
           "revisionsBehind": 0
         },
         {
@@ -7430,7 +7453,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:306 compose is the one assembler for the dispatch family (compose_method :438 a separate family), takes a typed Brief, omits absent fields, quotes the operator note as verbatim (:337), ends on a done/stop rule (:342), and tick.rs:727 hands its output to the send path unappended",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "mcp-tools",
@@ -7547,7 +7574,11 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/teams/team_memories.rs:126 evict_team_memories is an IPC door to a hard-DELETE ranked by importance/created_at (src-tauri/db/src/repos/resources/team_memories.rs:481) with no tombstone and no shared value model, and :68 lets any caller hand-poke the importance that eviction reads",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52
         },
         {
           "subject": "agent-runtime-assembly",
@@ -8117,7 +8148,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/recipes/crud.rs:238 recipe generate/derive/execute are one-shot CLI artifact calls handed to the shared spawn_ai_artifact_task (commands-credentials), with no hook chain, extension loading, resume or durable run record to recover; single-flight is guarded at :230",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "codebase-scanning",
@@ -8273,10 +8308,10 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/platforms/deploy.rs:25 the only deploy here pushes a persona's design_result JSON to n8n/Zapier/GitHub via a thin wrapper (src-tauri/src/commands/tools/deploy_automation.rs:16): no host build, no environment ladder, no verification racing it, no served assets, so none of the subject's six techniques has its precondition met",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
-          "evaluatedRevision": 4,
+          "evidence": "src-tauri/src/engine/platforms/deploy.rs:108 re-judged at rev 5: the only deploy here pushes a persona design_result JSON to n8n/Zapier/GitHub via a thin wrapper (src-tauri/src/commands/tools/deploy_automation.rs:16) - no host build, upload filter, environment ladder, public demo build or renamed service, so none of the nine techniques has its precondition",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         }
       ],
@@ -9612,10 +9647,10 @@
           "changedAt": "2026-09-02",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "tests/playwright/getting-started-tour-mock.spec.ts:10 the tour e2e suite guards only the completeOn contract; none of the 4 tests/playwright/*tour* specs removes an anchor or presses Escape against a running tour, and no Vitest test in src/ references highlightMissing - never-strand and exit lack fresh-profile coverage; re-verified at HEAD e506a02874 2026-10-16",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:6f44ad03ebd5bd19",
-          "evaluatedRevision": 4,
+          "evidence": "tests/playwright/getting-started-tour-mock.spec.ts:10 the tour e2e suite guards only the completeOn contract; none of the 4 tests/playwright/*tour* specs removes an anchor (first or middle) or presses Escape against a running tour, and no test references highlightMissing - never-strand and exit lack fresh-profile coverage; re-verified against rev 5 at HEAD 5a5990999d",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:5fd51481dedaf230",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -10070,8 +10105,8 @@
           "source": "conform",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/core/src/types.rs:407 ExecutionResult.cost_usd (and ExecutionMetrics.cost_usd :526) is a non-optional f64 mid-pipeline, so a run killed before its result line persists as Some(0.0) (src-tauri/src/engine/execution.rs:2394) - unknown spelled as free, and the run-budget record API (src-tauri/core/src/run_budget.rs:188) likewise takes f64, so spawns of unknown cost can approach a ceiling but never cross it (re-checked 2026-10-14 against rev 15: anchors unchanged)",
-          "evaluatedAt": "2026-10-14",
+          "evidence": "src-tauri/core/src/types.rs:407 ExecutionResult.cost_usd (and ExecutionMetrics.cost_usd :526) is a non-optional f64, so a run killed before its result line persists as Some(0.0) (src-tauri/src/engine/execution.rs:2418): unknown spelled as free; the run-budget record API (src-tauri/core/src/run_budget.rs:188) also takes f64, so spawns of unknown cost never cross a ceiling (re-checked 2026-10-30 after b57e139c5e/31140b2b96, binding and doc changes only; execution.rs anchor :2394 -> :2418)",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
           "evaluatedRevision": 15,
           "digest": "sha256-b2:7247db31eb8f3dce",
@@ -10322,8 +10357,8 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/settings_keys.rs:636 MONTHLY_COST_CEILING_USD_DEFAULT is still 0.0 meaning 'no ceiling' (and CHAIN_MAX_COST_USD_DEFAULT :1307 copies the convention), with no declared setting kind, so the unconfigured install is the most permissive one on the spend keys - re-verified live 2026-10-22",
-          "evaluatedAt": "2026-10-22",
+          "evidence": "src-tauri/db/src/settings_keys.rs:636 MONTHLY_COST_CEILING_USD_DEFAULT is still 0.0 meaning 'no ceiling' (CHAIN_MAX_COST_USD_DEFAULT :1307 copies it) with no declared setting kind, so the unconfigured install is the most permissive one on the spend keys - re-verified live 2026-10-30",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
           "evaluatedRevision": 13,
           "revisionsBehind": 0
@@ -11182,10 +11217,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/test_runner/lab.rs:569 a budget-halted run (excluded from the completeness gate at :560) finalizes as LabRunStatus::Completed with no partial marker, and src-tauri/db/src/repos/lab/arena.rs:71 inserts runs with no dataset version or determinism stamp, so halted and unpinned runs store and compare as full ones (re-anchored: :551 had drifted to a comment)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src-tauri/engine/src/test_runner/lab.rs:569 a budget-halted run (exempted from the completeness gate at :560) still finalizes as LabRunStatus::Completed with no partial marker in the summary (:519), and src-tauri/db/src/repos/lab/arena.rs:71 inserts runs with no dataset version or determinism stamp, so halted and unpinned runs store and compare as full ones",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         }
       ],
@@ -11534,10 +11569,10 @@
           "changedAt": "2026-09-20",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/lib/utils/formatters.ts:635 re-verified: ms/s still route to formatDuration, which concatenates English unit glyphs (formatters.ts:704 `${ms}ms`) with no locale in all 14 locales; formatters.ts:114 still clamps any future instant to 'now' with no tolerance or telemetry",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:bea7b30fd48d528d",
-          "evaluatedRevision": 5,
+          "evidence": "src/lib/utils/formatters.ts:676 re-judged at rev 6: formatValue 'ms'/'s' (:630) still route to formatDuration, which concatenates English unit glyphs (`${ms}ms`, `${s}s`, `${m}m`) with no locale in all 14 locales; formatters.ts:115 still clamps any future instant to 'now' with no tolerance or telemetry",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6a9ab99285e2cac0",
+          "evaluatedRevision": 6,
           "revisionsBehind": 0
         },
         {
@@ -11806,7 +11841,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/shared/components/display/__tests__/grouping.test.ts:107 pins a DST zone so the case is real on a UTC runner and restores it; header type is read from the shared token (DataGridHeader.test.tsx:30), timers are faked per test (Tooltip.test.tsx:5), storage cleared per test (ColumnResize.test.tsx:12)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "fleet-orchestration",
@@ -12221,14 +12260,14 @@
           "grounding": "use_when",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/platforms/deploy.rs:22 the only deploy in this context ships a persona's design_result JSON plus a credential to n8n/Zapier/GitHub; the repository is not deployed through a host that builds its code, so the subject's precondition fails (the old model-tier finding is also fixed: fanout.rs:133 reads session_prompt::MODEL_TIER_RULE)",
-          "evaluatedAt": "2026-09-23",
-          "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
+          "evidence": "src-tauri/src/engine/platforms/deploy.rs:108 re-judged at rev 5: the only deploy reachable from this context ships a persona definition to n8n/Zapier/GitHub; the repository is not deployed through a host that builds its code, so the subject precondition (incl. the three rev-5 techniques) fails",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
           "digest": "sha256-b2:0aecb9f382210cdc",
           "source": "retained",
           "revision": 4,
           "changedAt": "2026-09-05",
-          "evaluatedRevision": 4,
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -12494,8 +12533,8 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/management_api.rs:759 writes an api_key_audit SQLite row (plus an unlatched warn at :757) on every 429, beside the limiter's once-per-streak latch at src-tauri/engine/src/rate_limiter.rs:78 - a refusal storm becomes per-request log and DB write amplification (re-verified 2026-10-22, anchors read back, unchanged)",
-          "evaluatedAt": "2026-10-22",
+          "evidence": "src-tauri/src/engine/management_api.rs:759 writes an api_key_audit SQLite row (plus an unlatched warn just above) on every 429, beside the limiter's once-per-streak latch at src-tauri/engine/src/rate_limiter.rs:78 - a refusal storm becomes per-request log and DB write amplification (re-verified 2026-10-30, anchors read back, unchanged)",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:c1ab95c98c885951",
           "evaluatedRevision": 8,
           "revisionsBehind": 0
@@ -12787,10 +12826,10 @@
           "changedAt": "2026-09-18",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_executions/detail/inspector/useTraceData.ts:250 builds the waterfall via buildSpanTree (src/features/agents/sub_executions/libs/traceHelpers.ts:105), which drops parent-cycle spans and overwrites duplicate ids at :110, while src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:185 counts unifiedTrace.spans.length - the Spans tile and the rows beneath it range over different sets - re-verified 2026-10-16",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:441741a78f8712b4",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/agents/sub_executions/detail/inspector/TraceInspector.tsx:187 counts unifiedTrace.spans.length while the waterfall comes from buildSpanTree (src/features/agents/sub_executions/detail/inspector/useTraceData.ts:255), which drops parent-cycle spans and overwrites duplicate span ids at src/features/agents/sub_executions/libs/traceHelpers.ts:110 - the Spans tile and the rows under it range over different collections (rev 8 pin-the-collection rule)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:3db1001b079944c5",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -13463,7 +13502,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/fleet/monitor/grid/sessionHome.ts:3 the monitor only reads a session's cwd and run label to place it in a bay; no file in the context writes, loads or re-delivers a repo-owned instruction file",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "feed",
@@ -13479,7 +13522,11 @@
           "revision": 4,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/mergedFeed.tsx:50 The cross-team union that feeds the live pop-ups is ranked by timestamp alone, with no identity tiebreak, and then cut at LIVE_FEED_WINDOW, so tied rows fall into input-iteration order and the window boundary keeps or drops them by accident. The sibling comparator in useConversation.ts:103 does carry the tiebreak, so the two rank sites in this context disagree.",
+          "evaluatedAt": "2026-10-26",
+          "evaluatedAgainst": "sha256-b2:fdaa24ca3f5177d9",
+          "evaluatedRevision": 4
         },
         {
           "subject": "voice-io",
@@ -13813,10 +13860,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:85 spawns a claude session with the renderer-supplied root_path as cwd; fleet_spawn_session (src-tauri/src/commands/fleet/commands.rs:33) takes any string with no require_auth and admission only checks non-empty (src-tauri/src/commands/fleet/queue.rs:1101), so the less trusted side chooses where an executing process runs - re-confirmed 2026-10-21, prior anchor :84 was one line high",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
+          "evidence": "src/features/plugins/fleet/useFleetOverlayActions.ts:85 spawns a claude session with renderer-supplied root_path as cwd; fleet_spawn_session takes any string (src-tauri/src/commands/fleet/commands.rs:33) and admission only checks non-empty (src-tauri/src/commands/fleet/queue.rs:1101), so the less trusted side picks where an executing process runs - re-confirmed against rev 5",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -14764,13 +14811,13 @@
           "state": "deviation",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:77 renders the dimension name from a local hardcoded-English DIM_LABEL copy (glyphLayoutHelpers.ts:10) instead of the translated useGlyphDimText, and falls back to the raw cellKey token - English or machine tokens in all 13 other locales",
+          "evidence": "src/features/agents/sub_glyph/GlyphAnswerCard.tsx:79 re-judged at rev 6: the prior DIM_LABEL finding is FIXED (566612c2ab, label now via useGlyphDimText), but an unmapped cellKey (typed `string`, src/lib/types/buildTypes.ts:290) still renders as its raw token with dashes swapped for spaces, in every locale",
           "digest": "sha256-b2:bea7b30fd48d528d",
           "revision": 5,
           "changedAt": "2026-09-20",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:bea7b30fd48d528d",
-          "evaluatedRevision": 5,
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6a9ab99285e2cac0",
+          "evaluatedRevision": 6,
           "revisionsBehind": 0
         }
       ],
@@ -14914,7 +14961,11 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/home/sub_cockpit/widgets/LinkedMemoriesWidget.tsx:65 the only memory touch is an operator display of rows by source_execution_id; no capture, consolidation, decay or recall into an agent lives here, and its failed read is already split from empty (:48-:72)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52
         },
         {
           "subject": "plan-entitlements",
@@ -14931,10 +14982,10 @@
           "changedAt": "2026-09-18",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:6-9 'tier' is an LLM-model capability tier (haiku|sonnet|opus), and ObservabilityPlanWidget.tsx's 'plan' is an operational runbook Athena proposes -- neither reads or writes src/lib/constants/uiModes.ts's TIERS (the actual product tier model). Precondition (this widget set implements plan/tier gating) does not hold; it is a vocabulary collision, not a deviation.",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:6 'tier' is an LLM model slug (haiku|sonnet|opus), a vocabulary collision; .ai/manifest.yaml:116 declares billing out of scope, so no plan entitlement exists for these widgets to read",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -15151,10 +15202,10 @@
           "changedAt": "2026-09-02",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/home/sub_learning/HomeLearning.tsx:22 feeds every tour card the ACTIVE tour's in-memory tourStepCompleted (passed at :50, counted per card at src/features/home/sub_learning/TourSections.tsx:25); persisted per-tour progress is never read, so a paused non-active tour renders as fresh; re-verified at HEAD e506a02874 2026-10-16",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:6f44ad03ebd5bd19",
-          "evaluatedRevision": 4,
+          "evidence": "src/features/home/sub_learning/HomeLearning.tsx:22 feeds every tour card the ACTIVE tour's in-memory tourStepCompleted (passed at :50, counted per card at src/features/home/sub_learning/TourSections.tsx:25); persisted per-tour progress is never read, so a paused non-active tour renders as fresh; re-verified against rev 5 at HEAD 5a5990999d",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:5fd51481dedaf230",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -15192,7 +15243,11 @@
           "revision": 11,
           "changedAt": "2026-09-20",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/home/sub_releases/HomeReleases.tsx:41 The in-app release notes (the shipped-release cards) come from a hand-kept releases.json whose active version is 0.0.2 while the app ships 1.1.0 and CHANGELOG.md's newest cut is 0.4.0. Users get a release description that is neither derived from commit history nor tied to the version they are running.",
+          "evaluatedAt": "2026-10-29",
+          "evaluatedAgainst": "sha256-b2:faf052699c35ced4",
+          "evaluatedRevision": 11
         },
         {
           "subject": "quality-gates",
@@ -15247,10 +15302,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/home/sub_releases/i18n/useReleasesTranslation.ts:7 is a display-shape adapter over the main i18n loader; it owns no locale data, list, store or pipeline step, so the topology precondition is unmet",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/home/sub_releases/i18n/useReleasesTranslation.ts:7 is a display adapter that relies on the main loader for fallback; it owns no locale list, store or pipeline step",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -15974,10 +16029,10 @@
           "changedAt": "2026-09-18",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/hooks/execution/useReasoningTrace.ts:100 coerces the optional ResultEvent.duration_ms (src/lib/types/terminalEvents.ts:56) to 0, and src/hooks/execution/useExecutionSummary.ts:82 hands it to src/features/agents/sub_executions/detail/views/ExecutionSummaryCard.tsx:124, whose != null guard cannot see the coercion, so an unmeasured run reads as 0 ms - re-verified 2026-10-16",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:441741a78f8712b4",
-          "evaluatedRevision": 7,
+          "evidence": "src/hooks/execution/useReasoningTrace.ts:100 coerces the optional ResultEvent.duration_ms (src/lib/types/terminalEvents.ts:56) to 0, which src/hooks/execution/useExecutionSummary.ts:82 passes to src/features/agents/sub_executions/detail/views/ExecutionSummaryCard.tsx:122, whose != null guard cannot see it, so an unmeasured run reads as 0 ms - re-judged against rev 8",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:3db1001b079944c5",
+          "evaluatedRevision": 8,
           "source": "retained",
           "revisionsBehind": 0
         }
@@ -16021,8 +16076,8 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/hooks/lab/useLabEvents.ts:54 subscribes to the literal \"lab-arena-status\" (also ab/matrix/eval), emitted as a bare literal at src-tauri/engine/src/test_runner/modes.rs:228 and absent from src/lib/eventRegistry.ts and src-tauri/core/src/events.rs; the gate (scripts/check-event-registry.mjs:268) sees only literal listen(x) and event_name::CONST, so a rename on either side silently stops Lab progress and completion",
-          "evaluatedAt": "2026-10-22",
+          "evidence": "src/hooks/lab/useLabEvents.ts:54 still subscribes to the literal \"lab-arena-status\" (and ab/matrix/eval), emitted as a bare literal at src-tauri/engine/src/test_runner/modes.rs:228 and absent from src/lib/eventRegistry.ts and src-tauri/core/src/events.rs; the gate regex at scripts/check-event-registry.mjs:268 sees only literal listen(x)/emit(x) calls, so a rename on either side silently stops Lab progress and completion (re-verified 2026-10-30, unchanged since 2026-10-22)",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:a0685592373df03f",
           "evaluatedRevision": 6,
           "revisionsBehind": 0
@@ -16260,8 +16315,8 @@
           "changedAt": "2026-09-05",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/hooks/utility/data/useAppSetting.ts:42 still takes a bare key: string and callers pass free literals ('cli_engine' src/features/settings/sub_engine/components/EngineCapabilityBadge.tsx:24), so a frontend key typo compiles clean and reads the default forever - re-verified live 2026-10-22",
-          "evaluatedAt": "2026-10-22",
+          "evidence": "src/hooks/utility/data/useAppSetting.ts:42 the door still takes a bare key: string and src/features/settings/sub_engine/components/EngineCapabilityBadge.tsx:24 passes the literal 'cli_engine', so a frontend key typo compiles clean and reads the caller default forever - re-verified live 2026-10-30",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
           "evaluatedRevision": 13,
           "revisionsBehind": 0
@@ -16421,10 +16476,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/hooks/utility/data/useAutoUpdater.ts:207 the 6-hourly update poller is skipped only in DEV, not on a mobile build where the updater plugin is compiled out (src-tauri/Cargo.toml:268 ties it to the desktop feature), so the absent capability is called every 6h and filed as a failure via silentCatch at :123 - Sentry noise indistinguishable from a dead update endpoint",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
+          "evidence": "src/hooks/utility/data/useAutoUpdater.ts:207 the 6-hourly update poller is skipped only in DEV, not on a mobile build where the updater plugin is compiled out (src-tauri/Cargo.toml:268 ties it to desktop), so the absent capability is called every 6h and filed as a failure via silentCatch at :123 - re-confirmed against rev 5; UpdateBanner is mounted unconditionally (src/App.tsx:406)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         }
       ],
@@ -16533,8 +16588,8 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:146 keeps the guard open with the reason when Save fails, and useSettingsSaveToast.ts:18 confirms quietly; the realized techniques are save-experience and inherited-default-override, and the store-level techniques have no key in this hooks-only context.",
-          "evaluatedAt": "2026-09-23",
+          "evidence": "src/hooks/utility/interaction/useUnsavedGuard.ts:156 a failed Save keeps the guard open with the raw failure instead of closing on a still-dirty editor; the prior anchor useSettingsSaveToast.ts was deleted (85b4abb535) so the verdict now rests on the guard alone - re-verified live 2026-10-30",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
           "evaluatedRevision": 13,
           "revisionsBehind": 0
@@ -16684,10 +16739,10 @@
           "source": "conform",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/hooks/utility/interaction/useTier.ts:4 the runtime mode toggle was retired and the tier is the build constant VITE_APP_TIER, a UI-audience edition that no payment confers; the repo declares no billing (.ai/manifest.yaml:104), so the subject precondition (a plan that money buys) does not hold",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
-          "evaluatedRevision": 7,
+          "evidence": "src/lib/constants/uiModes.ts:47 the tier is the build constant VITE_APP_TIER (defaults to builder), an edition no payment confers; .ai/manifest.yaml:116 declares billing out of scope and no payment code exists, so the subject precondition (what money buys) does not hold under rev 8 either",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba",
+          "evaluatedRevision": 8,
           "digest": "sha256-b2:58f21c0561a86e45",
           "revision": 7,
           "changedAt": "2026-09-18",
@@ -16730,10 +16785,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:13 still hand-lists 11 of the 14 locales in src/i18n/locales.manifest.ts (no bn/id/vi), so 3 shipped languages cannot be picked at onboarding, and the manifest says no other file lists locales",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:14 still hand-lists 11 of the 14 manifest locales (no bn/id/vi); now hidden behind UI_LANGUAGE_PICKER_ENABLED, but the manifest revive procedure (src/i18n/locales.manifest.ts:63) re-shows this picker without bn/id/vi, and src/features/home/sub_welcome/LanguageSwitcher.tsx:16 is a second shadow list",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -16849,8 +16904,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "deviation",
+          "priorNotApplicable": 20,
+          "evidence": "src/lib/lensScan/compare.ts:3 states the verbatim-port invariant (re-sync by copying, never hand-drift it) with no check comparing the four PORTED VERBATIM files to bp; they already drifted: bp aa3128a fixed the 100-bump cap returning a taken version, still live at src/lib/lensScan/release.ts:37",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "docs-sync",
@@ -16887,7 +16946,11 @@
           "revision": 6,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/i18n/useTranslation.ts:506 The runtime's only count tool is plain `{var}` substitution: it never selects a plural form, nothing in src/ uses Intl.PluralRules, and call sites pick between two `_one`/`_other` keys, so Russian's one/few/many categories cannot render, and 122 `_other` strings in ru.json are frozen genitive plurals («{count} файлов») that come out wrong at 2-4, 22-24 and so on.",
+          "evaluatedAt": "2026-10-29",
+          "evaluatedAgainst": "sha256-b2:8b3a6423f877cfa0",
+          "evaluatedRevision": 7
         },
         {
           "subject": "prompt-assembly",
@@ -16933,10 +16996,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/i18n/generated/types.ts:2 This context contains generated TypeScript type definitions from en.json and UI unit tests rather than a machine translation pipeline, derived store, or locale registry.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/i18n/generated/types.ts:2 is generated types from en.json plus unit tests; no locale registry, translation store, request or serving decision lives here",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -17169,8 +17232,8 @@
           "changedAt": "2026-09-29",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:131 In head-to-head persona arena matches, ties in win count are artificially broken by alphabetical model name comparison rather than preserving ties or completing position-mirrored controls.",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:131 a tie in the all-time win tally is broken alphabetically by model id, so the Standing Champion banner names a winner the runs never separated; comparison-modes requires ties to be reported as ties",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
           "evaluatedRevision": 37,
           "revisionsBehind": 0
@@ -17190,10 +17253,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:214 The priced confirm dialog starts the match with models and an optional version and no spend ceiling, so consent is the only gate and a halted matrix cannot be marked partial from this call.",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/agents/sub_lab/components/arena/ArenaPanelColosseum.tsx:214 the priced preflight confirm starts the match with models, filter and version only and no spend ceiling, so consent is the only gate and a halted matrix cannot be marked partial from this call",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -17540,8 +17603,8 @@
           "changedAt": "2026-09-29",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:193 Evaluates persona versions by sorting on an unconstrained weighted composite score and designating the top entry as winner without pre-declared thresholds or resolution verification against within-condition variance.",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src/features/agents/sub_lab/libs/evalAggregation.ts:250 winnerId is simply the first of a composite-sorted list, and src/features/agents/sub_lab/libs/reportGenerator.ts:203 badges it Best with no spread or trial-count check, so a draw between versions ships as a ranking",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
           "evaluatedRevision": 37,
           "source": "conform",
@@ -17578,10 +17641,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:554 The version report states that ratings are directly comparable because they share one generated scenario set, but scenario reuse is only a 600-second process cache, so the artifact asserts a freeze the stored ratings do not have.",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/agents/sub_lab/libs/reportGenerator.ts:557 the version report asserts all versions share one generated scenario set so ratings are directly comparable, but scenario reuse is a 600 s process cache (src-tauri/engine/src/test_runner/scenarios.rs:16), so the artifact claims a freeze the stored ratings do not have (re-anchored: :554 drifted)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -18749,10 +18812,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/lib/personas/templates/templateOverlays.ts:276 overlay glob still lists 13 per-language literals; a test catches drift, but adding a manifest language still means editing this file, which fails the one-line-diff test",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:273 the overlay import.meta.glob still hand-lists 13 per-language patterns; the code set is derived (line 270) and a test asserts coverage, but adding a manifest language still requires editing this file, so the one-line-diff test fails (file unchanged since 2026-08-28)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         }
       ],
@@ -19506,7 +19569,11 @@
           "revision": 7,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_mastermind/lib/llmSpend.ts:6 This context gets LLM spend that has already been normalized: it imports fetchLlmPinpoints from the sub_llm_overview adapter context and only sums totalCostUsd per project (llmSpend.ts:25). It has no ingestion door, span mapper, provider matcher, usage extractor or event-id rule. A grep of src/features/teams/sub_mastermind for gen_ai, spanId, span_id, otlp, prompt_tokens and completion_tokens found nothing, so the subject's precondition (ingesting or mapping telemetry it did not emit) does not hold here.",
+          "evaluatedAt": "2026-10-27",
+          "evaluatedAgainst": "sha256-b2:a0932e26160bfd85",
+          "evaluatedRevision": 7
         },
         {
           "subject": "operator-surfaces-for-llm-spend",
@@ -19892,8 +19959,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/agents/sub_model_config/libs/OllamaCloudPresets.ts:5 the two files are Ollama Cloud text-model presets and compare helpers; no capture, transcription, synthesis or playback",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "cross-provider-benchmark-operations",
@@ -20058,7 +20129,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nTransform.ts:307 these React hooks project a backend-owned transform snapshot and react to its terminal phases (:99); the run, its recovery and its closure are assembled in commands-design (judged there as a deviation), not here",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "fleet-orchestration",
@@ -20074,7 +20149,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizard.ts:34 the wizard drives one n8n import session through a local reducer; there are no concurrent agent sessions to register, dispatch or harvest",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "mcp-tools",
@@ -20359,10 +20438,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/notepad/notepadActions.ts:162 sends project.root_path as the write root to fleet_write_dispatch_brief, whose native side only checks is_dir (src-tauri/src/commands/fleet/external.rs:93) before writing under it, so a corrupted renderer picks any directory on disk - while :176 of the same function already sends project.id and lets the native side resolve the root; re-confirmed 2026-10-21",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
+          "evidence": "src/features/notepad/notepadActions.ts:162 sends project.root_path as the write root to fleet_write_dispatch_brief, whose native side checks only is_dir (src-tauri/src/commands/fleet/external.rs:93) before writing under it, while :176 of the same function already sends project.id - re-confirmed against rev 5",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -21369,10 +21448,10 @@
           "changedAt": "2026-09-02",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/onboarding/components/GuidedTour.tsx:267 Escape only sets local isMinimized while tourActive and tourHighlightTestId stay set, and TourSpotlight gates on tourActive+rect (src/features/onboarding/components/TourSpotlight.tsx:63), so the z-9998 dimming (:75) survives the leave gesture - exit is not one gesture that restores the product; re-verified at HEAD e506a02874 2026-10-16",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:6f44ad03ebd5bd19",
-          "evaluatedRevision": 4,
+          "evidence": "src/features/onboarding/components/GuidedTour.tsx:270 Escape only sets local isMinimized while tourActive stays true, and TourSpotlight renders on tourActive+rect alone (src/features/onboarding/components/TourSpotlight.tsx:63), so the z-9998 dimming (:75) survives the leave gesture - exit is not one gesture that restores the product; re-verified against rev 5 at HEAD 5a5990999d",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:5fd51481dedaf230",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -22353,7 +22432,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_missionControl/cards/FleetOptimizationCard.tsx:31 'fleet' here is the persona roster's cost/model advice and src/features/overview/sub_missionControl/sections/MissionStatusMonitor.tsx:48 reads per-persona health grades; no session registry, dispatch, liveness or harvest lives in this context",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "agent-instruction-files",
@@ -23149,8 +23232,8 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114 getSevCfg still falls an unrecognized severity through to the Info config with no marker, and it drives the focus view where reviews are decided (src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx:360); the loud resolveReviewSeverity default (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:37) reached the list and detail but not the deciding surface, so one vocabulary has two disagreeing classifiers",
-          "evaluatedAt": "2026-10-14",
+          "evidence": "src/features/overview/sub_manual-review/components/reviewFocusHelpers.tsx:114 getSevCfg still falls an unrecognized severity through to the Info config with no marker and drives the focus view where reviews are decided (src/features/overview/sub_manual-review/components/ReviewFocusFlow.tsx:360); the loud resolveReviewSeverity default (src/features/overview/sub_manual-review/libs/reviewHelpers.ts:32) reached the list and detail but not the deciding surface",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
           "evaluatedRevision": 22,
           "revisionsBehind": 0
@@ -24214,7 +24297,11 @@
           "revision": 1,
           "changedAt": "2026-09-07",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:2 Here a 'period' is an analytics display window (24h/7d/30d/90d, compared with the previous window as ghost lines). There are no recurring subscriptions, anchors, renewals or invoices to bound. A grep over src/features/overview/sub_usage/ for subscription, billing, invoice and renewal found nothing, so no technique's precondition holds.",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:3a0a03da985229a4",
+          "evaluatedRevision": 2
         },
         {
           "subject": "usage-event-ingestion",
@@ -24246,8 +24333,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/sub_usage/libs/chartConstants.ts:49 a unit tag (cost -> usd) is the context's only money knowledge: a generic chart kit (tooltip, gradients, period merge) that prices, records, attributes and gates nothing; spend semantics live in its consumers, judged under overview-activity-metrics and overview-observability",
-          "evaluatedAt": "2026-10-16",
+          "evidence": "src/features/overview/sub_usage/libs/chartConstants.ts:37 a unit tag (cost -> usd), formatted at src/features/overview/sub_usage/components/ChartTooltip.tsx:17, is the context's only money knowledge: a generic chart kit that prices, records, attributes and gates nothing; spend semantics live in its consumers, judged under overview-activity-metrics and overview-observability (re-checked 2026-10-30 after 2e3bc9d70a deleted four chart modules; anchor :49 -> :37)",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
           "evaluatedRevision": 15,
           "revisionsBehind": 0
@@ -24497,8 +24584,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:134 the context's only cost is a user-maintained flat monthly service list (no units, rates, ledger or metered call); its dispatches hand paid work to a Fleet session (src/features/teams/sub_factory/passport/actionConfirmCatalog.ts:94), whose context owns that spend (re-checked 2026-10-14 against rev 15: anchors unchanged)",
-          "evaluatedAt": "2026-10-14",
+          "evidence": "src/features/teams/sub_factory/passport/passportModel.ts:134 the context's only cost is a user-maintained flat monthly service list (no units, rates, ledger or metered call); its dispatches hand paid work to a Fleet session (src/features/teams/sub_factory/passport/actionConfirmCatalog.ts:94 'LLM tokens'), whose context owns that spend (re-checked 2026-10-30 after 4aff4d381a, dead-export deletion only)",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
           "evaluatedRevision": 15,
           "source": "retained",
@@ -24717,7 +24804,11 @@
           "revision": 3,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/PassportActionsRow.tsx:153 The wall's 'Copy readiness report' action hands the user a markdown claim block (scores, '/100', 'meets the standard ✓') that the action catalog says is meant to be pasted into a README, but the block links to nothing that would go red when the claim stops holding, so the pasted claim freezes at the day it was copied.",
+          "evaluatedAt": "2026-10-29",
+          "evaluatedAgainst": "sha256-b2:6f6a6c4541bc949b",
+          "evaluatedRevision": 4
         },
         {
           "subject": "quality-gates",
@@ -24733,8 +24824,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src/features/teams/sub_factory/passport/PopulateScopePicker.tsx:5 its freshness gates only pick which scan lanes run by default, and src/features/teams/sub_factory/passport/ActionConfirmModal.tsx:1 is a human consent gate (hitl-approval); nothing refuses a state against a quality standard",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "job-coordination",
@@ -26189,10 +26284,10 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 the Artist plugin and its hooks were removed on 2026-09-14; the context described a module-level data-URL cache over local files via Tauri IPC, not a cache lifetime on a served deploy, so the subject's precondition never held",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
-          "evaluatedRevision": 4
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 re-judged at rev 5: the Artist plugin and its hooks were removed 2026-09-14 (no src/features/plugins/artist file is tracked); it was a local data-URL cache over Tauri IPC, never a served deploy",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+          "evaluatedRevision": 5
         },
         {
           "subject": "codebase-scanning",
@@ -26458,8 +26553,8 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:140 the message dismiss option swallows a failed companionDismissProactive with silentCatch and does not rethrow (same at :213 for the credential later option), so runDecisionOption (src/features/companions/athena/decision/resolveDecision.ts:46 keeps a decision pending only on a throw) clears the bubble as resolved while the row stays pending and resurfaces on the next pump with no error shown; a failed decision write is spelled as a decision",
-          "evaluatedAt": "2026-10-14",
+          "evidence": "src/features/companions/athena/decision/useDecisionQueue.ts:130 the earlier dismiss/later swallow is fixed (both now rethrow, :146 and :220), but the mark_read option still swallows a failed markReportRead and then runs engage, so the orb consumes the nudge and runDecisionOption clears the decision as resolved while the message stays unread with no error shown; and a failed proactive list (:285) collapses to an empty source, so a pending credential re-auth decision silently drops out of the queue",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
           "evaluatedRevision": 22,
           "revisionsBehind": 0
@@ -26885,7 +26980,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:22 the runtime joins LLM-cost and Sentry adapters onto the context map for display; it is React UI over IPC with no MCP host, client or tool surface",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "codebase-scanning",
@@ -27901,8 +28000,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/StaticScanCard.tsx:38 the static-scan lane (fallow/knip/jscpd) only creates backlog ideas from findings; no file in the context makes a tool result refuse a commit, merge or release",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "usage-analytics",
@@ -28802,10 +28905,10 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1277 re-confirmed 2026-10-22 (no commit since 10-20): rollback rebuilds the agent from the snapshot prompt plus CURRENT tools/model and with no snapshot falls back to current persona state (gitlab.rs:1288) - rollback ships a never-run artifact instead of re-pointing to the last known-good one",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0aecb9f382210cdc",
-          "evaluatedRevision": 4,
+          "evidence": "src-tauri/src/commands/infrastructure/gitlab.rs:1277 re-judged at rev 5: rollback-from-history rebuilds the agent from the snapshot prompt plus CURRENT tools (gitlab.rs:1272) and with no snapshot falls back to current persona state (gitlab.rs:1288) - rollback ships a never-run artifact instead of re-pointing to the last known-good one",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         }
       ],
@@ -28978,8 +29081,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/plugins/twin/useTwinReadiness.ts:17 the twin voice milestone was retired with the 2026-07-10 ElevenLabs descope; the remaining 30 files (twin dashboards, Obsidian vault sync/graph/browse) carry no audio surface per a speech/tts/stt/audio regex",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "quality-gates",
@@ -29685,8 +29792,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/plugins/twin/__tests__/useTwinReadiness.test.ts:13 the voice milestone is retired; the 11 files are text reply channels (ContactThread, ReplyOutbox, SentReplies) with no capture or synthesis",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "structured-output",
@@ -29793,7 +29904,11 @@
           "revision": 2,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/twin/sub_training/TrainingStudio.tsx:18 This context is an interview-style Q&A authoring board that saves answers as twin memories, not a published documentation surface with category/topic records and body modules; a case-insensitive grep of sub_training and sub_profiles for sitemap, lastReviewed, reviewedAt, bodyMap and prevNext found no hits, and the only 'docs' hit is a comment citing docs/design/overview-loading.md (ProfilesAtelier.tsx:153), so the subject's precondition does not hold.",
+          "evaluatedAt": "2026-10-26",
+          "evaluatedAgainst": "sha256-b2:74839e7c9eeb3728",
+          "evaluatedRevision": 4
         },
         {
           "subject": "wizard-flows",
@@ -30102,8 +30217,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src/features/plugins/dev-tools/sub_overview/StandardsScanCard.tsx:78 the standards scan only computes a rendered compliance % and offers to queue a task per failing rule (:40); nothing in the context refuses a commit, merge or release - that is assessment, owned by conformance-checking",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "agent-memory",
@@ -31023,8 +31142,8 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:83 infers each bucket's limit from its key prefix (webhook: else event_source_max), so apikey: (120, src-tauri/src/engine/management_api.rs:403) and mcp_tool: (src-tauri/src/engine/mcp_tools.rs:825) buckets are charted against the wrong limit and feed approaching_limit at :109 - the limiter does not own its policy, so operator and caller arithmetic diverge (re-verified 2026-10-22, anchors read back, unchanged)",
-          "evaluatedAt": "2026-10-22",
+          "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:83 infers each bucket's limit from its key prefix (webhook: else event_source_max), so apikey: (120, src-tauri/src/engine/management_api.rs:403) and mcp_tool: (src-tauri/src/engine/mcp_tools.rs:824) buckets are charted against the wrong limit and feed approaching_limit at :109 - operator and caller arithmetic diverge (re-verified 2026-10-30, unchanged)",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:c1ab95c98c885951",
           "evaluatedRevision": 8,
           "revisionsBehind": 0
@@ -31272,10 +31391,10 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:100 heal cap is looked up by row id in session memory while every retry mints a new row whose persisted attempt (src-tauri/db/src/repos/dev/tasks.rs:963) is never checked, so auto-heal retries each child failure afresh and the lineage is unbounded - re-confirmed at registry 11037a6c",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:4ca1a8af506f44d9",
-          "evaluatedRevision": 13,
+          "evidence": "src/features/plugins/dev-tools/sub_runner/selfHealing.ts:100 auto-heal cap is looked up by row id in session useState while each retry mints a new row whose persisted attempt (src-tauri/db/src/repos/dev/tasks.rs:963) is never read, so every child failure is healed afresh and the lineage is unbounded - re-confirmed at registry 5058b962c (rev 14)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:0ff53fb3a87ad13c",
+          "evaluatedRevision": 14,
           "source": "retained",
           "revisionsBehind": 0
         }
@@ -31559,7 +31678,7 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src/features/scraper/ScrapeEditorWizard.tsx:56 the rail has two marker states (check or step number) and no visited set, so a Preview step that an extract edit invalidated looks the same as a step never reached",
-          "evaluatedAt": "2026-10-21",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:e0fac678b7164451",
           "evaluatedRevision": 4,
           "source": "retained",
@@ -31743,7 +31862,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/features/settings/sub_network/components/__tests__/BundleImportDialog.test.tsx:75 the supersession test reaches its decision (errMsg would render the raw error, src/stores/storeTypes.ts:75); refusal and success arms are paired (LimitsFailureSurfaces.test.tsx:54/:61), debounces run on fake timers (NotificationSettings.test.tsx:37), mocks reset per test",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "concurrent-vcs",
@@ -32267,10 +32390,10 @@
           "source": "conform",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:43 filterByTier hides nav items by minTier against the build edition, not against a paid plan; the repo declares no billing (.ai/manifest.yaml:104), so the subject precondition does not hold",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:43 filterByTier hides nav by minTier against the build edition, not a paid plan; .ai/manifest.yaml:116 puts billing out of scope, so the precondition fails and rev 8's new techniques (catalog edit, inherited/subtractive tiers) have nothing to bind to",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba",
+          "evaluatedRevision": 8,
           "digest": "sha256-b2:58f21c0561a86e45",
           "revision": 7,
           "changedAt": "2026-09-18",
@@ -32470,10 +32593,10 @@
           "changedAt": "2026-09-20",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/shared/components/forms/FormField.tsx:323 re-verified: AvailabilityStatus is still coloured by a nested ternary to raw text-emerald-400/text-amber-400 with icons in a parallel chain (:335-343), not one table keyed by the union; a new member silently gets neither colour nor icon",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:bea7b30fd48d528d",
-          "evaluatedRevision": 5,
+          "evidence": "src/features/shared/components/forms/FormField.tsx:328 re-judged at rev 6: AvailabilityStatus tone is still a nested ternary to raw text-emerald-400/text-amber-400 with icons in a parallel conditional chain below it, not one table keyed by the union; a new member silently gets neither colour nor icon",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6a9ab99285e2cac0",
+          "evaluatedRevision": 6,
           "revisionsBehind": 0
         },
         {
@@ -33260,12 +33383,11 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/stores/systemStore.ts:2 re-read: system store for UI chrome, cloud, GitLab, onboarding, dev-tools; client state, not an agent memory pipeline",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:7770d30ff5df3c25",
-          "evaluatedRevision": 48,
-          "revisionsBehind": 3,
-          "stale": true
+          "evidence": "src/api/director.ts:145 runDirectorMemoryCleanup is a pass-through invoke and src/stores/overviewStore.ts:29 only composes the memory slice; the cleanup policy and the slice's merge live in overview-director and stores-slices-overview, judged there",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 3
         },
         {
           "subject": "voice-io",
@@ -33334,7 +33456,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "conformant",
+          "evidence": "src/stores/__tests__/systemStore.rehydrate.test.ts:194 iterates the registry (ALL_SIDEBAR_SECTIONS, COMPANIONS_PAGES) instead of a copy after a per-test storage + dedup reset (:29); authStore.clearPendingOauth.test.ts:20 records its negative control and drives the timeout on fake timers (:52); lane-level techniques belong to vitest.config.ts",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "data-access",
@@ -33605,10 +33731,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/stores/slices/agents/labSlice.ts:206 cancelRun calls lc.markCancelled in finally even when the backend cancel threw (:197), so the client shows a stopped run with no cancelling or partial state while the worker can keep spending (re-anchored: :187 had drifted to fetchRuns)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/stores/slices/agents/labSlice.ts:206 cancelRun calls lc.markCancelled in finally even when the backend cancel threw (:197), so the client shows a stopped run with no cancelling or partial state while the worker can keep spending",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -33790,8 +33916,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/stores/slices/overview/personaHealthSlice.ts:273 keeps only MonthlySpendResult.items and discards its periodStartUtc, then :435 derives a burn rate over active days of a rolling 30-day chart and :440 projects exhaustion of the UTC-calendar-month ceiling with no reset - per-consumer period math whose projectedExhaustionDays drives a health charge (src/stores/slices/agents/healthCheckSlice.ts:111) (re-checked 2026-10-14 against rev 15: anchors unchanged)",
-          "evaluatedAt": "2026-10-14",
+          "evidence": "src/stores/slices/overview/personaHealthSlice.ts:274 keeps only MonthlySpendResult.items and drops periodStartUtc, then :436 derives a burn rate over active days of a rolling 30-day chart and :440 projects exhaustion of the UTC-calendar-month ceiling with no reset: per-consumer period math whose projectedExhaustionDays drives a health charge (src/features/agents/sub_health/agentHealth.ts:93) (re-checked 2026-10-30 after 578ec66e90, an error-printing fix; anchors shifted, charge moved out of healthCheckSlice)",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
           "evaluatedRevision": 15,
           "source": "retained",
@@ -34011,7 +34137,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/stores/slices/system/devToolsSlice.ts:1 is a zustand StateCreator for the Dev Tools plugin's UI state; 'tool' matched the product name 'devTools', and the slices hold client state with no MCP host, client, server or tool catalog",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "fleet-orchestration",
@@ -34133,10 +34263,10 @@
           "changedAt": "2026-09-02",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/stores/slices/system/tourSlice.ts:1573 allDone = steps.every(...) is vacuously true when getActiveTourSteps (:1112) returns [] for an unresolvable (e.g. unregistered dynamic) tour, so finishTour records it completed at :1637 - zero steps scored as success; :1459 hydrates tourActiveTourId to the default, dropping which-tour on resume; re-verified at HEAD e506a02874 2026-10-16",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:6f44ad03ebd5bd19",
-          "evaluatedRevision": 4,
+          "evidence": "src/stores/slices/system/tourSlice.ts:1573 allDone = steps.every(...) is vacuously true when getActiveTourSteps (:1112) returns [] for an unresolvable tour, so finishTour records it completed at :1637 - zero steps scored as success; :1459 hydrates tourActiveTourId to the default, dropping which-tour on resume; re-verified against rev 5 at HEAD 5a5990999d",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:5fd51481dedaf230",
+          "evaluatedRevision": 5,
           "source": "retained",
           "revisionsBehind": 0
         },
@@ -34867,7 +34997,11 @@
           "revision": 1,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/system/health.rs:582 The health report marks the hosted Ollama Cloud capability Ok ('free Ollama Cloud models available') when a settings key is merely non-empty, with no request sent and no basis recorded. It sits in the same rows as genuinely probed items (CLI --version, keyring round-trip, temp-table write), so an expired or rejected key reads exactly like proven availability.",
+          "evaluatedAt": "2026-10-29",
+          "evaluatedAgainst": "sha256-b2:9bb6b3bf0d353d66",
+          "evaluatedRevision": 3
         },
         {
           "subject": "mcp-tools",
@@ -35381,7 +35515,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/orchestration/team_assignments.rs:464 update_assignment_status writes any status by id alone (WHERE id = ?3, no from-state guard), so done/failed/aborted can be overwritten back to running; the guarded CAS shape exists only for claim_step (:561)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         }
       ],
       "governance": "governed"
@@ -35626,7 +35764,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/l2/useFactoryScans.ts:82 the Factory L2 'Scan for KPIs' and (:105) context re-scan buttons spawn a headless claude with cwd = the attached project root (src-tauri/src/commands/infrastructure/kpi_scan.rs:807, src-tauri/src/commands/infrastructure/context_generation.rs:1629) through build_cli_args, which emits --dangerously-skip-permissions with no --setting-sources restriction (src-tauri/engine/src/prompt/cli_args.rs:107), so the scanned repo's CLAUDE.md and .claude/settings.json hooks run under a read verb with no digest approval",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         }
       ],
       "governance": "governed"
@@ -35805,7 +35947,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/projects/development/goals/__tests__/partitionGoalTasks.test.ts:36 claims exact matching \"like the backend\" but pins only the TS half; parity rests on two Rust writers both trimming (src-tauri/db/src/repos/orchestration/team_assignments.rs:222, src-tauri/db/src/repos/dev/goals.rs:412) and dropping either trim duplicates team steps as to-dos with this suite green",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "agent-memory",
@@ -35924,7 +36070,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/projects/development/goals/goalStatus.ts:55 unknown/null/unrecognised (incl. failed) team statuses fall through to 'open', laundering an unobserved or failed state into a definite actionable one",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "hitl-approval",
@@ -36634,7 +36784,7 @@
           "digest": "sha256-b2:e0fac678b7164451",
           "revision": 4,
           "changedAt": "2026-08-22",
-          "evaluatedAt": "2026-10-21",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:e0fac678b7164451",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
@@ -36734,7 +36884,7 @@
           "digest": "sha256-b2:e0fac678b7164451",
           "revision": 4,
           "changedAt": "2026-08-22",
-          "evaluatedAt": "2026-10-21",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:e0fac678b7164451",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
@@ -37452,7 +37602,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:149 precondition unmet: the runner UI hands typed test cases (id, name, instruction, tools, trigger) to the backend via onStart; it renders no prompt text, and assembly happens server-side",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "test-input-generation",
@@ -37528,7 +37682,11 @@
           "revision": 3,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/designRunnerConstants.ts:18 The context is the React UI for a template-generation wizard and runner. The only numeric bound in it is a fixed form-validation minimum on input length, not a measurement compared against a recorded baseline. A case-insensitive search of src/features/templates/sub_generated/generation/ for baseline|ratchet|census|budget|threshold|regression|metric found no hits, so there is no metric gate here for any of the five techniques to apply to.",
+          "evaluatedAt": "2026-10-27",
+          "evaluatedAgainst": "sha256-b2:a673c17a2c4ddcea",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"
@@ -38345,7 +38503,7 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src/features/templates/sub_n8n/widgets/N8nStepIndicator.tsx:7 the indicator keeps a private VISIBLE_STEPS copy of navigationReducer.ts:63 SURFACED_STEPS and marks completion by position (:58 i < activeIndex), not validity - two authorities over one step vocabulary",
-          "evaluatedAt": "2026-10-21",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:e0fac678b7164451",
           "evaluatedRevision": 4,
           "revisionsBehind": 0
@@ -38876,8 +39034,8 @@
           "changedAt": "2026-09-29",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/eval.rs:616 Routes LLM evaluation through CallClass::Verdict resolving to SONNET_CURRENT without recording the concrete model identifier or judge packet version onto the result record, allowing model roster updates to silently drift the measurement baseline.",
-          "evaluatedAt": "2026-10-12",
+          "evidence": "src-tauri/engine/src/eval.rs:615 the judge resolves through the tier constant SONNET_CURRENT (src-tauri/core/src/model_class.rs:114) and LlmEvalResult (src-tauri/engine/src/eval.rs:421) stamps no resolved model or rubric version, so a roster bump silently splices two instruments into one score series",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
           "evaluatedRevision": 37,
           "source": "conform",
@@ -38960,7 +39118,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/skill_scratchpad.rs:28 states 'no MCP'; this context's sidecars write SKILL.md and Claude Code hooks (src-tauri/engine/src/skills_sidecar/mod.rs:6), not an MCP host, client config or tool server; the run MCP config lives in src-tauri/engine/src/cli_mcp_config.rs, which belongs to another context and is already judged there (webhook-ingestion)",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "prompt-assembly",
@@ -39333,10 +39495,10 @@
           "changedAt": "2026-09-20",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/hooks/utility/timing/useElapsedTimer.ts:16 a shared elapsed-display hook spins its own setInterval per instance beside the shared ticker, never slows, and keeps ticking while the document is hidden - the per-cell timer the technique retires (4 consumers incl. TerminalHeader, ExecutionMiniPlayer)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:bea7b30fd48d528d",
-          "evaluatedRevision": 5,
+          "evidence": "src/hooks/utility/timing/useElapsedTimer.ts:16 re-judged at rev 6, unchanged: a shared elapsed hook still spins its own setInterval per instance (4 consumers incl. TerminalHeader, ExecutionMiniPlayer), never slows with age, beside the existing self-scaling ticker at src/hooks/utility/timing/relativeTimeTicker.ts:221",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6a9ab99285e2cac0",
+          "evaluatedRevision": 6,
           "source": "retained",
           "revisionsBehind": 0
         }
@@ -42035,10 +42197,10 @@
           "changedAt": "2026-09-20",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:118 re-verified (anchor moved from :117): a saved query's last-run outcome is still a bare bg-emerald-400/bg-red-400 dot, raw palette, no semantic role, no shape or label, so colour alone carries the status",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:bea7b30fd48d528d",
-          "evaluatedRevision": 5,
+          "evidence": "src/features/vault/sub_databases/tabs/QuerySidebar.tsx:118 re-judged at rev 6: a saved query's last-run outcome is still a bare bg-emerald-400/bg-red-400 dot - raw palette, no semantic role, no shape, label or aria text, so colour alone carries the status",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6a9ab99285e2cac0",
+          "evaluatedRevision": 6,
           "source": "retained",
           "revisionsBehind": 0
         },
@@ -42622,7 +42784,11 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/shared/vector/VectorKbModal.tsx:20 an operator-curated document corpus (documents/search/extract/settings) whose only writers are operator commands (src-tauri/src/commands/credentials/vector_kb.rs:564); nothing the agent observed is carried forward, so the memory pipeline's precondition does not hold",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52
         },
         {
           "subject": "llm-extracted-entity-graph",
@@ -42794,10 +42960,10 @@
           "confidence": "probable",
           "state": "deviation",
           "priorNotApplicable": 4,
-          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:553 kb_ingest_files gates renderer-supplied paths only with a deny-list of sensitive prefixes (validate_path_safety), so any unlisted location is ingested and made searchable; the extension allow-list is applied only later, after the read (src-tauri/engine/src/chunker.rs:339) - re-anchored from the chunker to the real gate",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
+          "evidence": "src-tauri/src/commands/credentials/vector_kb.rs:553 kb_ingest_files gates renderer-supplied paths only with a deny-list (validate_path_safety, :261), so any unlisted location is read and made searchable; the extension allow-list applies only after the read (src-tauri/engine/src/chunker.rs:339) - re-confirmed against rev 5",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
           "source": "retained",
           "revisionsBehind": 0
         },
@@ -43193,7 +43359,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/cli_process.rs:1044 spawn_cwd launches design-analysis (src-tauri/src/commands/design/analysis.rs:353) and review (reviews.rs:2858) agent sessions in the Personas process cwd with no ancestry bound, so they inherit whatever instruction files sit above it (in dev, this repo's operator CLAUDE.md) and the loaded set is never asserted",
+          "evaluatedAt": "2026-10-30",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "agent-memory",
@@ -43298,8 +43468,8 @@
           "revision": 8,
           "changedAt": "2026-09-03",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/webhook.rs:499 refuses 429 with no_headers() (retry-after only in body prose; same at the auth-fail 429 :365) although the same file sets Retry-After on its active-window path at src-tauri/src/engine/webhook.rs:521 - header-honouring senders get nothing and guess (re-verified 2026-10-22, anchors read back, unchanged)",
-          "evaluatedAt": "2026-10-22",
+          "evidence": "src-tauri/src/engine/webhook.rs:499 refuses 429 with no_headers() (retry-after only in body prose; same at the auth-fail 429 :365) although the same file sets Retry-After on its active-window path at src-tauri/src/engine/webhook.rs:521 - header-honouring senders get nothing and guess (re-verified 2026-10-30, unchanged)",
+          "evaluatedAt": "2026-10-30",
           "evaluatedAgainst": "sha256-b2:c1ab95c98c885951",
           "evaluatedRevision": 8,
           "revisionsBehind": 0

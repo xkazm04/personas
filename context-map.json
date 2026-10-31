@@ -23,7 +23,11 @@
         "src/features/agents/sub_health/types.ts",
         "src/features/agents/sub_health/useHealthCheck.ts",
         "src/features/agents/sub_health/useHealthDigestScheduler.ts",
-        "src/features/agents/sub_health/index.ts"
+        "src/features/agents/sub_health/index.ts",
+        "src/features/agents/sub_health/HealthDigestPanel.test.tsx",
+        "src/features/agents/sub_health/HealthDigestPanel.tsx",
+        "src/features/agents/sub_health/agentHealth.ts",
+        "src/features/agents/sub_health/healthDefinition.test.ts"
       ],
       "group": "Overview Observability",
       "group_id": "a62af61f-45e6-4096-855f-c90f0248c4c0",
@@ -90,7 +94,21 @@
         "src/features/agents/components/allPersonas/__tests__/PersonaGroupDropRail.test.tsx",
         "src/features/agents/components/allPersonas/__tests__/StatusBadge.test.tsx",
         "src/features/agents/components/allPersonas/__tests__/usePersonaActions.batchDelete.test.tsx",
-        "src/features/agents/components/create/__tests__/useTemplateIntentMatch.test.ts"
+        "src/features/agents/components/create/__tests__/useTemplateIntentMatch.test.ts",
+        "src/features/agents/components/allPersonas/PersonaBatchTeamMenu.tsx",
+        "src/features/agents/components/allPersonas/PersonaOverviewCompactControls.tsx",
+        "src/features/agents/components/allPersonas/PersonaSelectionScopeBanner.tsx",
+        "src/features/agents/components/allPersonas/__tests__/PersonaOverviewColumns.filters.test.tsx",
+        "src/features/agents/components/allPersonas/__tests__/PersonaOverviewColumns.renders.test.tsx",
+        "src/features/agents/components/allPersonas/__tests__/PersonaOverviewCompactControls.test.tsx",
+        "src/features/agents/components/allPersonas/__tests__/rosterCount.test.ts",
+        "src/features/agents/components/allPersonas/__tests__/rosterViewStore.test.ts",
+        "src/features/agents/components/allPersonas/__tests__/usePersonaShareActions.test.tsx",
+        "src/features/agents/components/allPersonas/__tests__/useRosterSelection.test.ts",
+        "src/features/agents/components/allPersonas/rosterCount.ts",
+        "src/features/agents/components/allPersonas/rosterViewStore.ts",
+        "src/features/agents/components/allPersonas/usePersonaFilterOptions.ts",
+        "src/features/agents/components/allPersonas/useRosterSelection.ts"
       ],
       "group": "Agent Platform",
       "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
@@ -168,7 +186,11 @@
         "src/features/agents/sub_connectors/components/connectors/__tests__/StatusResult.test.tsx",
         "src/features/agents/sub_connectors/libs/__tests__/swapControlLabel.test.ts",
         "src/features/agents/sub_connectors/libs/__tests__/useConnectorStatuses.hook.test.ts",
-        "src/features/agents/sub_connectors/libs/findEditAutomation.test.ts"
+        "src/features/agents/sub_connectors/libs/findEditAutomation.test.ts",
+        "src/features/agents/sub_connectors/components/automation/AutomationPlatformListings.tsx",
+        "src/features/agents/sub_connectors/components/automation/__tests__/AutomationSetupModal.test.tsx",
+        "src/features/agents/sub_connectors/components/connectors/__tests__/ConnectorStatusCard.test.tsx",
+        "src/features/agents/sub_connectors/libs/__tests__/useAutomationSetup.hook.test.ts"
       ],
       "group": "Automation & Pipelines",
       "group_id": "51f08310-27f9-4df5-831f-a7fd2034ae2d",
@@ -229,7 +251,6 @@
         "src/features/agents/sub_deployment/components/cloud/TriggerListItem.tsx",
         "src/features/agents/sub_deployment/components/cloud/cloudSchedulesHelpers.tsx",
         "src/features/agents/sub_deployment/components/cloud/CloudStatusPanel.tsx",
-        "src/features/agents/sub_deployment/components/ExecutionProgressBar.tsx",
         "src/features/agents/sub_deployment/components/UnifiedDeploymentDashboard.tsx",
         "src/features/agents/sub_deployment/components/DeploymentFilters.tsx",
         "src/features/agents/sub_deployment/components/DeploymentSubComponents.tsx",
@@ -256,7 +277,15 @@
         "src/features/agents/sub_deployment/components/cloud/DeploymentCard.test.tsx",
         "src/features/agents/sub_deployment/components/cloud/__tests__/CloudSchedulesPanel.partialFailure.test.tsx",
         "src/features/agents/sub_deployment/hooks/__tests__/awaitExecutionResult.test.ts",
-        "src/features/agents/sub_deployment/hooks/awaitExecutionResult.ts"
+        "src/features/agents/sub_deployment/hooks/awaitExecutionResult.ts",
+        "src/features/agents/executionPlayer/miniPlayerViewport.ts",
+        "src/features/agents/sub_deployment/components/DeploymentFilters.test.tsx",
+        "src/features/agents/sub_deployment/components/cloud/CloudTokenIndicator.tsx",
+        "src/features/agents/sub_deployment/components/cloud/__tests__/CloudConnectionForm.test.tsx",
+        "src/features/agents/sub_deployment/components/cloud/__tests__/CloudDeploymentsPanel.test.tsx",
+        "src/features/agents/sub_deployment/components/cloud/__tests__/CloudOAuthPanel.test.tsx",
+        "src/features/agents/sub_deployment/components/cloud/__tests__/CloudReconcileBanner.test.tsx",
+        "src/features/agents/sub_deployment/hooks/__tests__/useDeploymentTest.identity.test.ts"
       ],
       "group": "Agent Platform",
       "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
@@ -296,19 +325,23 @@
         "personas",
         "design_sessions"
       ],
-      "description": "Conversational AI-driven design tab embedded in the persona editor. Guides the user through analysis, refining, previewing, and applying phases that generate or update a persona's prompt and parameters via an LLM conversation. Manages multi-phase state (analyzing, refining, preview, applied, error) and displays example input/output pairs. [Consolidated 2026-08-04: absorbed tool-runner]",
+      "description": "Design hub embedded in the persona editor: four store-backed sub-tabs, in the order an agent is authored - manifest (what it is), responsibilities (what it owns), brain (what it remembers) and connectors (what it reaches). DesignHub owns the WAI-ARIA tab strip and lazy-loads the panels; DesignLifePanels holds the manifest, responsibilities and brain panels, DesignSubtabPanels the connectors panel, and KpRequirementsPanel with kpRequirements.ts surfaces the knowledge-project requirements. Every panel reads the selected persona from the store. The earlier LLM design wizard (DesignTab and its phases) was retired 2026-09-04. [Consolidated 2026-08-04: absorbed tool-runner - ToolRunnerPanel, ToolInvocationCard and useToolRunner run a connector tool from the design surface]",
       "entry_points": [
-        "src/features/agents/sub_design/DesignTab.tsx",
-        "src/features/agents/sub_design/libs/useDesignTabState.ts",
+        "src/features/agents/sub_design/DesignHub.tsx",
+        "src/features/agents/sub_design/components/DesignLifePanels.tsx",
         "src/features/agents/sub_tool_runner/components/ToolRunnerPanel.tsx"
       ],
       "file_paths": [
         "src/features/agents/sub_design/DesignHub.tsx",
         "src/features/agents/sub_design/components/DesignSubtabPanels.tsx",
+        "src/features/agents/sub_design/components/DesignLifePanels.tsx",
+        "src/features/agents/sub_design/components/KpRequirementsPanel.tsx",
+        "src/features/agents/sub_design/libs/kpRequirements.ts",
+        "src/features/agents/sub_design/components/__tests__/KpRequirementsPanel.test.tsx",
+        "src/features/agents/sub_design/libs/__tests__/kpRequirements.test.ts",
         "src/features/agents/sub_design/libs/designStateHelpers.ts",
         "src/features/agents/sub_design/index.ts",
         "src/features/agents/sub_tool_runner/components/ToolRunnerPanel.tsx",
-        "src/features/agents/sub_tool_runner/components/ToolRunnerModal.tsx",
         "src/features/agents/sub_tool_runner/components/ToolInvocationCard.tsx",
         "src/features/agents/sub_tool_runner/libs/useToolRunner.ts",
         "src/features/agents/sub_tool_runner/index.ts",
@@ -319,15 +352,14 @@
       "id": "8650ca36-36fe-4862-98f5-745e866a2687",
       "keywords": [
         "design",
-        "conversation",
+        "sub-tabs",
+        "manifest",
+        "responsibilities",
+        "brain",
+        "connectors",
+        "kp-requirements",
+        "persona-editor",
         "AI",
-        "phase",
-        "analyze",
-        "refine",
-        "preview",
-        "apply",
-        "parameters",
-        "prompt",
         "tool",
         "runner"
       ],
@@ -440,7 +472,7 @@
         "executions",
         "execution_events"
       ],
-      "description": "Paginated execution history list with filtering, bulk rerun, cost sparklines, and a side-by-side comparison view for two selected executions. The ExecutionList drives useExecutionList for data fetching; ComparisonTable/Diff/Metrics delegate to a Web Worker for heavy diff computation; BulkRerun manages multi-select requeue flows. [Consolidated 2026-08-04: absorbed execution-trace-primitives]",
+      "description": "Paginated execution history list with filtering, bulk rerun, and a side-by-side comparison view for two selected executions. The ExecutionList drives useExecutionList for data fetching; ComparisonTable/Diff/Metrics delegate to a Web Worker for heavy diff computation; BulkRerun manages multi-select requeue flows. [Consolidated 2026-08-04: absorbed execution-trace-primitives]",
       "entry_points": [
         "src/features/agents/sub_executions/components/list/ExecutionList.tsx",
         "src/features/agents/sub_executions/libs/useExecutionList.ts",
@@ -496,7 +528,6 @@
         "bulk-rerun",
         "cost",
         "diff",
-        "sparkline",
         "trace",
         "span",
         "stage"
@@ -513,22 +544,17 @@
     },
     {
       "api_surface": "",
-      "business_feature": "Triage Swipe Deck",
+      "business_feature": "Triage Model and Pending Interactions",
       "category": "ui",
       "cross_refs": [],
       "db_tables": [],
-      "description": "The full-app swipe deck that replaced the 576px anchored popover. Shows one card at a time from the unified queue with drag-to-decide physics ported from the existing `SwipeCard` / `BacklogFocusDeck` — reviewers already know the gesture. Includes the deck chrome (top bar with filter chips and progress, action bar with flanks, loading and cleared states), the `TriageCard` (draggable verdict card with markdown body, facts ledger, tags, alert banner, and branch buttons), and `QuestionPanel` (non-draggable, collects answers for build-question items). Keyboard: arrows decide, digit keys fire branches, Escape skips. [Consolidated 2026-08-04: absorbed quick-answer-legacy-rails, quick-answer-shell, triage-core, triage-tests, triage-unified-hook, quick-config-shared]",
+      "description": "The triage model behind the decision queue, plus the shared quickConfig helpers. triageTypes defines the one item shape every triage surface speaks (three-verdict spine plus branches); triageAdapters turn reviews, ideas, practices, build questions, policy proposals, promotions and goal acceptance into that shape; triageQueue orders them, triageDispatch carries out a verdict, triageJournal and triageSession record and resume decisions, and useUnifiedTriage and useTriageCopy feed React surfaces. usePendingInteractions reads the pending interactions. The title-bar swipe deck (TriageDeckVariant, the draggable card and the build-question panel) was retired 2026-10-06; the drag deck now lives in src/features/decision-center/. shared/quickConfig holds quickConfigTypes (schedule and event config state) and useHealthyConnectors. [Consolidated 2026-08-04: absorbed quick-answer-legacy-rails, quick-answer-shell, triage-core, triage-tests, triage-unified-hook, quick-config-shared]",
       "entry_points": [
-        "src/features/agents/quick-answer/triage/TriageDeckVariant.tsx",
-        "src/features/agents/quick-answer/triage/deck/TriageCard.tsx",
-        "src/features/agents/quick-answer/triage/deck/useDeckControls.tsx"
+        "src/features/agents/quick-answer/triage/triageTypes.ts",
+        "src/features/agents/quick-answer/triage/triageQueue.ts",
+        "src/features/agents/quick-answer/triage/useUnifiedTriage.ts"
       ],
       "file_paths": [
-        "src/features/agents/quick-answer/triage/deck/DeckChips.tsx",
-        "src/features/agents/quick-answer/QuickAnswerBody.tsx",
-        "src/features/agents/quick-answer/QuickAnswerQuestionGroup.tsx",
-        "src/features/agents/quick-answer/QuickAnswerReviewCard.tsx",
-        "src/features/agents/quick-answer/QuickAnswerReviewStepper.tsx",
         "src/features/agents/quick-answer/usePendingInteractions.ts",
         "src/features/agents/quick-answer/triage/triageTypes.ts",
         "src/features/agents/quick-answer/triage/triageQueue.ts",
@@ -540,6 +566,17 @@
         "src/features/agents/quick-answer/triage/__tests__/triageFixtures.ts",
         "src/features/agents/quick-answer/triage/__tests__/triageQueue.test.ts",
         "src/features/agents/quick-answer/triage/useUnifiedTriage.ts",
+        "src/features/agents/quick-answer/triage/triageJournal.ts",
+        "src/features/agents/quick-answer/triage/triageSession.ts",
+        "src/features/agents/quick-answer/__tests__/usePendingInteractions.test.tsx",
+        "src/features/agents/quick-answer/triage/__tests__/deferredQuestionRule.test.ts",
+        "src/features/agents/quick-answer/triage/__tests__/triageCopyParity.test.ts",
+        "src/features/agents/quick-answer/triage/__tests__/triageGoalAdapter.test.ts",
+        "src/features/agents/quick-answer/triage/__tests__/triageJournal.test.ts",
+        "src/features/agents/quick-answer/triage/__tests__/triageProposalAdapters.test.ts",
+        "src/features/agents/quick-answer/triage/__tests__/triageRebuildCost.test.ts",
+        "src/features/agents/quick-answer/triage/__tests__/triageSession.test.ts",
+        "src/features/agents/quick-answer/triage/__tests__/useUnifiedTriage.test.ts",
         "src/features/agents/shared/quickConfig/quickConfigTypes.ts",
         "src/features/agents/shared/quickConfig/useHealthyConnectors.ts"
       ],
@@ -547,18 +584,16 @@
       "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
       "id": "8cfb82ac-ebd6-4826-921d-d1399dba7a60",
       "keywords": [
-        "triage-deck",
-        "swipe-card",
-        "keyboard-triage",
-        "drag-verdict",
-        "filter-chips",
-        "question-panel",
-        "reason-strip",
-        "metric-badge",
-        "deck-controls",
-        "framer-motion",
-        "review-card",
-        "question-group"
+        "triage",
+        "triage-model",
+        "triage-adapters",
+        "triage-dispatch",
+        "triage-queue",
+        "unified-triage",
+        "pending-interactions",
+        "quick-config",
+        "healthy-connectors",
+        "decision-queue"
       ],
       "last_written_at": "2026-09-21T21:05:58.596518500+00:00",
       "name": "agents-quick-answer",
@@ -566,7 +601,6 @@
       "tech_stack": [
         "React 19",
         "TypeScript",
-        "framer-motion",
         "Tailwind 4"
       ]
     },
@@ -801,7 +835,13 @@
         "src/features/settings/sub_api_keys/components/ApiKeyAuditDrawer.test.tsx",
         "src/features/settings/sub_api_keys/components/ApiKeyRowRevoke.test.tsx",
         "src/features/settings/sub_api_keys/libs/gigPolicyDraft.test.ts",
-        "src/features/settings/sub_api_keys/libs/gigPolicyDraft.ts"
+        "src/features/settings/sub_api_keys/libs/gigPolicyDraft.ts",
+        "src/features/settings/sub_api_keys/components/ConnectedAppsSection.tsx",
+        "src/features/settings/sub_api_keys/components/GigPersonaPolicySection.tsx",
+        "src/features/settings/sub_api_keys/components/RetireKeysDialog.tsx",
+        "src/features/settings/sub_api_keys/components/RetireKeysDialog.test.tsx",
+        "src/features/settings/sub_api_keys/libs/keyLifecycle.ts",
+        "src/features/settings/sub_api_keys/libs/keyLifecycle.test.ts"
       ],
       "group": "Security & Credentials",
       "group_id": "0240e2ac-2a14-49a8-8795-a80bbddae535",
@@ -3436,7 +3476,8 @@
         "src/features/shared/components/display/emptyArt/motifs.ts",
         "src/features/shared/components/display/emptyArt/motifsData.tsx",
         "src/features/shared/components/display/emptyArt/motifsWork.tsx",
-        "src/features/shared/components/display/tableTokens.ts"
+        "src/features/shared/components/display/tableTokens.ts",
+        "src/features/shared/components/display/__tests__/DataGridPageRows.test.tsx"
       ],
       "group": "Shared UI Components",
       "group_id": "91345f65-76ad-43da-abe4-a90174415f33",
@@ -5080,7 +5121,8 @@
         "src/hooks/utility/interaction/useScrollShadow.ts",
         "src/hooks/utility/interaction/useScrollRestoration.ts",
         "src/hooks/utility/interaction/__tests__/useScrollRestoration.test.ts",
-        "src/hooks/utility/interaction/__tests__/useMobilePreview.test.ts"
+        "src/hooks/utility/interaction/__tests__/useMobilePreview.test.ts",
+        "src/hooks/utility/interaction/useMenuKeyboard.ts"
       ],
       "group": "Platform Infrastructure",
       "group_id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
@@ -14388,14 +14430,14 @@
     "root": "C:\\Users\\kazda\\kiro\\personas"
   },
   "provenance": {
-    "git_commit": "8c21e2e4c9df4a3c307b35edebd744911378a6b8",
+    "git_commit": "a7fd34fdb206c615f8483451c4edc5f6cc5e3729",
     "git_commit_count": 10635,
-    "refreshed_at": "2026-10-30T17:02:56.296Z",
+    "refreshed_at": "2026-10-30T23:30:19.201Z",
     "refresh_mode": "deterministic"
   },
   "stats": {
     "contexts": 219,
-    "files": 4823,
+    "files": 4854,
     "groups": 16,
     "use_cases": 12
   },

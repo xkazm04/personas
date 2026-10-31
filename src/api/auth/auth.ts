@@ -12,3 +12,6 @@ export const getAuthState = () =>
 
 export const logoutUser = () =>
   invoke<void>("logout");
+
+export const clearPendingOauth = () =>
+  invoke<void>("clear_pending_oauth");

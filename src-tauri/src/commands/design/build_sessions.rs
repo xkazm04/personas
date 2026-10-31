@@ -4105,7 +4105,6 @@ mod tests {
             triggers: vec![schedule_trigger()],
             ..Default::default()
         };
-        let now = chrono::Utc::now().to_rfc3339();
         let (created, ids) = {
             let mut conn = pool.get()?;
             let tx = conn.transaction().unwrap();

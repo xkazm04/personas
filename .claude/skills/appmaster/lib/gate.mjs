@@ -245,8 +245,13 @@ export function runShell(command, cwd, timeoutMs = GATE_TIMEOUT_MS, env = {}) {
   // stdout comes first in `text`, so a failure printed there (libtest, a `pnpm -r` child) can sit far
   // above the tail; keep stdout's own tail too (2026-10-26: four overlord holds showed only cargo's
   // stderr doc-test list and an empty signature, and every standalone rerun passed)
-  return { ok, exit: r.status, tail: tail(text), ...(ok ? {} : { failures: failureSignature(text), stdoutTail: tail(r.stdout) }), ...(timedOut ? { timedOut: true } : {}) };
+  return { ok, exit: r.status, tail: tail(text), ...(ok ? {} : { failures: failureSignature(text), stdoutTail: tail(r.stdout), ...(isCacheRace(text) ? { cacheRace: true } : {}) }), ...(timedOut ? { timedOut: true } : {}) };
 }
+
+// Worktrees share the base checkout's node_modules through a junction, so they share its vitest
+// cache too; two overlapping runs make one fail to unlink a cache file (2026-10-26: five overlord
+// holds in a day, every rerun green). That failure says nothing about the branch.
+export const isCacheRace = (text) => /EPERM[^\n]*\n?[^\n]*\.vitest-cache|\.vitest-cache[^\n]*EPERM/.test(String(text || ''));
 
 /**
  * (worktree, gates, {timeoutMs}) => {typecheck?:{ok,exit,tail,skipped?},lint?:...,test?:...}
@@ -258,7 +263,10 @@ export function runGates(worktree, gates = {}, { timeoutMs = GATE_TIMEOUT_MS, on
     const command = gates[g];
     if (!command) { out[g] = { ok: false, skipped: true, reason: 'no command' }; continue; }
     const started = Date.now();
-    out[g] = { command, ...runShell(command, worktree, timeoutMs, env), ms: Date.now() - started };
+    let res = runShell(command, worktree, timeoutMs, env);
+    // a vitest cache race is retried once; a second race or any other failure stands
+    if (!res.ok && res.cacheRace) res = { ...runShell(command, worktree, timeoutMs, env), cacheRaceRetried: true };
+    out[g] = { command, ...res, ms: Date.now() - started };
   }
   return out;
 }

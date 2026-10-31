@@ -4,7 +4,7 @@
 
 use std::time::Duration;
 
-use chrono::{Duration as ChronoDuration, Utc};
+use chrono::Duration as ChronoDuration;
 use rusqlite::params;
 use serde_json::Value;
 
@@ -22,7 +22,6 @@ use crate::companion::brain::{
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
-use super::*;
 use crate::companion::brain::keyword;
 
 // ── harness ─────────────────────────────────────────────────────────
@@ -1256,7 +1255,7 @@ fn untrusted_evidence_is_fenced_with_the_rules_outside_it() {
     let b = fence("episodes", "x");
     assert_ne!(a, b);
 
-    let facts = vec![semantic::Fact {
+    let facts = [semantic::Fact {
         id: "fact_1".into(),
         scope: "user".into(),
         key: "k".into(),

@@ -1,0 +1,5 @@
+{"schema": "conform-run/1", "worker": "5b48095e-9506-491e-8fbb-21f27e202511", "subject": "terminal-multiplexing",
+ "evaluatedAt": "2026-10-30T20:52:57Z",
+ "pairs": [],
+ "declined": [{"subject": "terminal-multiplexing", "context": "2651f2ce-7fc1-4331-8b31-61e783e9746a", "reason": "the only unjudged pair (companions-page) sits on a governance: weak context with probable confidence (score 249.5); the skill forbids judging weak pairs by default - a coverage question for the registry, not a verdict. All 22 other pairs are already judged against the current subject digest sha256-b2:c3ef11aba4a471f5 rev 7 (revisionsBehind 0, none stale); the three deviations (commands-fleet, fleet-terminal-manager, plugins-fleet-tests) were spot-checked and remain live: src-tauri/src/commands/fleet/commands.rs:201 still frames only CR/LF-terminated payloads and src/features/plugins/fleet/FleetBroadcastModal.tsx:137 still sends unframed multi-line text when Enter is off; no commits since their 2026-10-22 verdicts change that logic"}],
+ "consults": []}

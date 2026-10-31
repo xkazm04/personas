@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useSyncExternalStore } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -6,12 +6,11 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { useDensity } from '@/hooks/utility/data/useDensity';
 import { useExecutionAnnotations } from '@/hooks/agents/useExecutionAnnotations';
-import { silentCatch } from '@/lib/silentCatch';
 import { UnifiedTable } from '@/features/shared/components/display/UnifiedTable';
 import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
 import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
-import { useExecutionList, getSampleInput } from '../../libs/useExecutionList';
+import { useExecutionList, deriveSampleInput } from '../../libs/useExecutionList';
 import { deriveExecutionOrigin, type ExecutionOrigin } from '../../libs/executionOrigin';
 import { matchesStatusFilter } from '../../libs/executionStatus';
 import { ActiveChainsBadge } from '../ActiveChainsBadge';
@@ -29,6 +28,52 @@ import { useExecutionCompare } from './useExecutionCompare';
 import { useExecutionBulk } from './useExecutionBulk';
 import { useExecutionColumns, type StatusFilter } from './useExecutionColumns';
 import { useExecutionDetail } from './useExecutionDetail';
+
+type BulkState = ReturnType<typeof useExecutionBulk>;
+type CompareState = ReturnType<typeof useExecutionCompare>;
+type DetailState = ReturnType<typeof useExecutionDetail>;
+
+/**
+ * The live selection state, held OUTSIDE the column definitions.
+ *
+ * UnifiedTableRow is memoized on `columns` / `onRowClick` identity. The hooks'
+ * results (`bulk`, `compare`, `detail`) are new literals each render, so
+ * threading them into those two made every selection toggle, progress tick and
+ * annotation load rebuild them and repaint every row. The columns and the click
+ * handler now close over this stable holder instead, and each select cell
+ * subscribes to ITS OWN key (checked / A / B), so a toggle repaints one row.
+ */
+interface LiveSelection {
+  set: (v: { bulk: BulkState; compare: CompareState; detail: DetailState }) => void;
+  get: () => { bulk: BulkState; compare: CompareState; detail: DetailState };
+  notify: () => void;
+  subscribe: (l: () => void) => () => void;
+  /** A primitive that changes exactly when this row's select cell must repaint. */
+  key: (rowId: string) => string;
+}
+
+function createLiveSelection(): LiveSelection {
+  let current: { bulk: BulkState; compare: CompareState; detail: DetailState } | null = null;
+  const listeners = new Set<() => void>();
+  return {
+    set: (v) => { current = v; },
+    get: () => current!,
+    notify: () => { listeners.forEach((l) => l()); },
+    subscribe: (l) => { listeners.add(l); return () => { listeners.delete(l); }; },
+    key: (id) => {
+      if (!current) return '';
+      const { bulk, compare } = current;
+      if (bulk.bulkMode) return `b${bulk.bulkSelected.has(id) ? 1 : 0}${bulk.running ? 1 : 0}`;
+      return `c${compare.compareLeft === id ? 'A' : compare.compareRight === id ? 'B' : '-'}`;
+    },
+  };
+}
+
+function LiveSelectCell({ row, live }: { row: ExecutionListItem; live: LiveSelection }) {
+  useSyncExternalStore(live.subscribe, () => live.key(row.id));
+  const { bulk, compare } = live.get();
+  return <ExecutionSelectCell row={row} bulk={bulk} compare={compare} />;
+}
 
 const ROW_HEIGHT = 48;
 
@@ -78,12 +123,15 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
   const compare = useExecutionCompare(personaId, paging.rows, annotationsByExecution, e);
   const bulk = useExecutionBulk(personaId, rows, e.bulk_rerun_failed_toast);
   const detail = useExecutionDetail(compare.hydrate, selectedPersona?.name);
-
-  const [sampleInput, setSampleInput] = useState('{}');
-  useEffect(() => {
-    // Keep the '{}' default — sample input is hint-only, not load-bearing.
-    getSampleInput(selectedPersona?.name).then(setSampleInput, silentCatch('execution-list:getSampleInput'));
-  }, [selectedPersona?.name]);
+  const [live] = useState(createLiveSelection);
+  live.set({ bulk, compare, detail });
+  // Tell the select cells after each commit; each one re-renders only if ITS key moved.
+  useEffect(() => { live.notify(); });
+  const renderSelectCell = useCallback(
+    (row: ExecutionListItem) => <LiveSelectCell row={row} live={live} />,
+    [live],
+  );
+  const compareRetry = useCallback((id: string) => { void live.get().compare.compareRetry(id); }, [live]);
 
   const titleById = useMemo(() => new Map(useCases.map((uc) => [uc.id, uc.title])), [useCases]);
   const capabilityTitle = useCallback((id: string | null) => (id ? titleById.get(id) ?? null : null), [titleById]);
@@ -96,11 +144,9 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
   const columnArgs = useMemo(() => ({
     capabilityTitle, capabilityOptions, capabilityFilter, onCapabilityFilter: setCapabilityFilter,
     statusFilter, onStatusFilter: setStatusFilter, originFilter, onOriginFilter: setOriginFilter,
-    selectCell: selecting
-      ? (row: ExecutionListItem) => <ExecutionSelectCell row={row} bulk={bulk} compare={compare} />
-      : null,
-    onCompareRetry: selecting ? null : (id: string) => { void compare.compareRetry(id); },
-  }), [capabilityTitle, capabilityOptions, capabilityFilter, statusFilter, originFilter, selecting, bulk, compare]);
+    selectCell: selecting ? renderSelectCell : null,
+    onCompareRetry: selecting ? null : compareRetry,
+  }), [capabilityTitle, capabilityOptions, capabilityFilter, statusFilter, originFilter, selecting, renderSelectCell, compareRetry]);
   const columns = useExecutionColumns(columnArgs);
 
   // The confirm body. The unpriced count is stated separately and NEVER folded
@@ -129,10 +175,11 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
   }, [groupLabels]);
 
   const handleRowClick = useCallback((row: ExecutionListItem) => {
+    const { bulk, compare, detail } = live.get();
     if (bulk.bulkMode) { if (!bulk.running) bulk.toggle(row.id); return; }
     if (compare.compareMode) { compare.select(row.id); return; }
     void detail.open(row.id);
-  }, [bulk, compare, detail]);
+  }, [live]);
 
   if (!selectedPersona) {
     return <div className="flex items-center justify-center py-8 text-foreground">{e.no_persona_selected}</div>;
@@ -184,7 +231,9 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
       {error && paging.rows.length === 0 ? (
         <ExecutionListError onRetry={() => { void refresh(); }} />
       ) : neverRan ? (
-        <ExecutionListFirstRun onTryIt={() => setRerunInputData(sampleInput)} />
+        // Seeded from the persona's own declared use-case input (sample_input,
+        // else input_schema defaults); '{}' only when none declares one.
+        <ExecutionListFirstRun onTryIt={() => setRerunInputData(deriveSampleInput(useCases))} />
       ) : (
         <div className="animate-fade-slide-in">
           <UnifiedTable<ExecutionListItem>

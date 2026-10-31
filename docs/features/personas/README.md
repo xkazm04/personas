@@ -349,7 +349,7 @@ in the order an agent is authored: what it **is**, what it **owns**, what it
 | Manifest | `ManifestTab` (`sub_manifest/`) | the two-author core document: operator-authored **law** sections (`# Mandate`, `# Boundaries`, `# Operation defaults`) editable in place, and agent-authored **self-model** sections (`# My work`, `# My self-reads`) that change only through approved diffs. A pending self-model proposal renders as a review card **under the section it would edit**, so the change and the text it changes are read together; accepting or rejecting it anywhere decides the whole proposal. |
 | Responsibilities | `ResponsibilitiesTab` (`sub_responsibilities/`) | the persona's standing **charters**, which are what it can do. A glyph master/detail surface: the hero sigil for the active charter, one row per charter, and a full detail pane with per-dimension editors, the charter's `{{param.*}}` knobs, a status ladder, and a per-charter **Run now**. It absorbed the retired Use Cases and Parameters sub-tabs. |
 | Brain | `BrainDashboard` (`sub_brain/`) via `BrainSection` | the memory and episode dashboard, plus the proposal inbox and a manual "Consolidate now". |
-| Connectors | `ConnectorVerificationPanel` + `ConnectorsSection` (via `DesignConnectorsPanel`) | **live** connector verification — per-connector Test, Test all, Link existing, Add new, Set up an alternative (opens credential creation for an interchangeable connector; it does not rebind the persona's requirement) — above a read-only view of the saved design's connectors + tools |
+| Connectors | `ConnectorVerificationPanel` + `ConnectorsSection` (via `DesignConnectorsPanel`) | **live** connector verification — per-connector Test, Test all, Link existing, Add new, Set up an alternative (opens credential creation for an interchangeable connector; it does not rebind the persona's requirement) — above a **Tool Runner** (`ToolRunnerPanel`, one card per assigned tool, Run calls `invoke_tool_direct` with the persona's credentials) and a read-only view of the saved design's connectors + tools |
 
 Six sub-tabs were retired when the charter became the capability. **Use Cases**
 is now Responsibilities. **Properties**, **Parameters**, **Events & Triggers**
@@ -396,7 +396,7 @@ that were never designed, groups interchangeable connectors by their
 `connectorRoles` functional role, auto-tests a connector when it gains a
 credential, and offers Test / Test all / Link existing / Add new / Set up an
 alternative (credential creation only; the requirement is unchanged) per row. The sub-tab's empty state now appears only when the persona
-has neither a live connector demand nor a saved design.
+has no live connector demand, no saved design and no assigned tools.
 
 Rows open showing the credential's **persisted** healthcheck
 (`healthcheck_last_success` / `_message` / `_tested_at`, restored by
@@ -491,9 +491,11 @@ the automation card reach it through `useSelectedPersonaCapabilities`
 over IPC and warm-caches them. Read capabilities through it, never
 `design_context.useCases` directly.
 
-The **Tool Runner** UI (inline invocation from the Connectors sub-tab)
-has been descoped; the backend `run_tool` command remains for future
-surfaces (Lab, test harnesses).
+The **Tool Runner** (inline invocation from the Connectors sub-tab,
+`ToolRunnerPanel` in `sub_design/components/DesignSubtabPanels.tsx`) ships:
+it lists every tool the persona carries and runs one through the
+`invoke_tool_direct` command (`src/api/agents/tools.ts`). `builtin://` tools
+show a note instead of Run, since they execute only inside persona runs.
 
 ### Lab — the Versions & Ratings table
 

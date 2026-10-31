@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState, useMemo } from 'react';
 import {
   Play,
   CheckCircle2,
@@ -17,6 +17,8 @@ import type { ToolInvocationResult } from '@/api/agents/tools';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tToken } from '@/i18n/tokenMaps';
 import { silentCatch } from '@/lib/silentCatch';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 
 interface ToolInvocationCardProps {
@@ -27,19 +29,34 @@ interface ToolInvocationCardProps {
   onRun: (inputJson: string) => void;
 }
 
-export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: ToolInvocationCardProps) {
-  const { t } = useTranslation();
+export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRunning, result, error, onRun }: ToolInvocationCardProps) {
+  const { t, tx } = useTranslation();
   const [inputJson, setInputJson] = useState(() => buildDefaultInput(tool));
   const [expanded, setExpanded] = useState(false);
+  const [confirmingRun, setConfirmingRun] = useState(false);
+  const bodyId = `tool-card-body-${tool.id}`;
 
   // builtin:// tools execute only inside persona runs (personas-mcp sidecar);
   // offering Run here produced a false "misconfigured" failure that read as
   // "my persona is broken" (2026-07-16 UAT). Show an honest note instead.
   const isBuiltin = tool.script_path?.startsWith('builtin://') ?? false;
-  const toolType = isBuiltin
+  // The backend runs a tool only when it has exactly one strategy: automation
+  // by category, else one of script_path / implementation_guide. Zero or two
+  // can only fail, so those shapes get a note instead of Run.
+  const hasScript = !!tool.script_path;
+  const hasGuide = !!tool.implementation_guide;
+  const strategyProblem: 'none' | 'conflict' | null =
+    isBuiltin || tool.category === 'automation' || hasScript !== hasGuide
+      ? null
+      : hasScript ? 'conflict' : 'none';
+  const toolType: 'builtin' | 'automation' | 'script' | 'api' | 'unconfigured' = isBuiltin
     ? 'builtin'
-    : tool.category === 'automation' ? 'automation' : tool.script_path ? 'script' : 'api';
-  const TypeIcon = toolType === 'automation' ? Zap : toolType === 'script' || toolType === 'builtin' ? Terminal : Globe;
+    : tool.category === 'automation' ? 'automation'
+    : strategyProblem ? 'unconfigured'
+    : hasScript ? 'script' : 'api';
+  const canOfferRun = !isBuiltin && !strategyProblem;
+  const schemaFields = useMemo(() => parseSchemaFields(tool.input_schema), [tool.input_schema]);
+  const TypeIcon = toolType === 'automation' ? Zap : toolType === 'script' || toolType === 'builtin' || toolType === 'unconfigured' ? Terminal : Globe;
 
   // Pre-flight JSON validation. Previously, malformed JSON (trailing comma,
   // unquoted key, smart quotes from paste) was forwarded to the Rust tool
@@ -58,9 +75,22 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
   })();
   const canRun = !isRunning && !jsonError;
 
+  // A tool bound to a credential type calls out with the persona's live
+  // credential, so a single stray click must not fire it.
+  const credentialType = tool.requires_credential_type || null;
+
+  const runNow = () => {
+    setConfirmingRun(false);
+    onRun(trimmed || '{}');
+  };
+
   const handleRun = () => {
     if (jsonError) return;
-    onRun(trimmed || '{}');
+    if (credentialType) {
+      setConfirmingRun(true);
+      return;
+    }
+    runNow();
   };
 
   return (
@@ -73,6 +103,8 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
         type="button"
         data-testid={`tool-card-toggle-${tool.name}`}
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-controls={bodyId}
         className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors"
       >
         {expanded ? (
@@ -84,9 +116,24 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
         <span className="typo-body text-foreground truncate">{tool.name}</span>
         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded border border-primary/10 bg-secondary/30 text-foreground">
           <TypeIcon className="w-2.5 h-2.5" />
-          {toolType}
+          {t.agents.tool_runner[`kind_${toolType}`]}
         </span>
-        {result && (
+        {/* The card starts collapsed and can be collapsed mid-run, so the header
+            has to tell idle, running and an IPC-level error apart too - not only
+            a settled result. */}
+        {isRunning && (
+          <span className="ml-auto inline-flex items-center gap-1 typo-body text-foreground">
+            <Clock className="w-3 h-3" />
+            {t.agents.tool_runner.running}
+          </span>
+        )}
+        {!isRunning && error && (
+          <span className="ml-auto inline-flex items-center gap-1 typo-body text-status-error">
+            <XCircle className="w-3 h-3" />
+            {t.agents.tool_runner.error}
+          </span>
+        )}
+        {!isRunning && !error && result && (
           <span className={`ml-auto inline-flex items-center gap-1 typo-body ${result.success ? 'text-emerald-400' : 'text-red-400'}`}>
             {result.success ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
             <Numeric value={Number(result.duration_ms)} unit="ms" />
@@ -97,6 +144,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
       {/* Expanded body */}
       {expanded && (
           <div
+            id={bodyId}
             className="animate-fade-slide-in overflow-hidden"
           >
             <div className="border-t border-primary/10 px-3.5 py-3 space-y-3">
@@ -115,8 +163,36 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
                 </p>
               )}
 
+              {strategyProblem && (
+                <p
+                  data-testid={`tool-strategy-note-${tool.name}`}
+                  className="typo-body text-foreground rounded-modal border border-primary/10 bg-secondary/20 px-3 py-2"
+                >
+                  {strategyProblem === 'conflict' ? t.agents.tool_runner.conflict_note : t.agents.tool_runner.no_strategy_note}
+                </p>
+              )}
+
+              {canOfferRun && schemaFields.length > 0 && (
+                <div data-testid={`tool-schema-${tool.name}`}>
+                  <p className="typo-heading text-foreground uppercase mb-1">{t.agents.tool_runner.schema_title}</p>
+                  <ul className="space-y-1 max-h-40 overflow-y-auto">
+                    {schemaFields.map((f) => (
+                      <li key={f.name} className="typo-body text-foreground">
+                        <span className="typo-code">{f.name}</span>
+                        {f.type && <span className="ml-1.5 typo-code">{f.type}</span>}
+                        {f.required && <span className="ml-1.5">({t.agents.tool_runner.schema_required})</span>}
+                        {f.enumValues && (
+                          <span className="ml-1.5">{tx(t.agents.tool_runner.schema_enum, { values: f.enumValues })}</span>
+                        )}
+                        {f.description && <span className="block">{f.description}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* Input */}
-              {!isBuiltin && (
+              {canOfferRun && (
               <div>
                 <label htmlFor={`tool-input-${tool.id}`} className="typo-heading text-foreground uppercase mb-1 block">
                   {t.agents.tool_runner.input_json}
@@ -144,7 +220,7 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
               )}
 
               {/* Run button */}
-              {!isBuiltin && (
+              {canOfferRun && (
               <Button
                 variant="accent"
                 tone="agent"
@@ -160,6 +236,17 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
               </Button>
               )}
 
+              {confirmingRun && credentialType && (
+                <ConfirmDialog
+                  title={tx(t.agents.tool_runner.confirm_title, { tool: tool.name })}
+                  body={tx(t.agents.tool_runner.confirm_body, { tool: tool.name, credential: credentialType })}
+                  danger
+                  confirmLabel={t.agents.tool_runner.run}
+                  onConfirm={runNow}
+                  onCancel={() => setConfirmingRun(false)}
+                />
+              )}
+
               {/* Result */}
               <ResultDisplay result={result} error={error} toolName={tool.name} />
             </div>
@@ -167,19 +254,22 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
         )}
     </div>
   );
-}
+});
 
 function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResult | null; error: string | null; toolName: string }) {
   const { t, tx } = useTranslation();
+  const output = result?.output;
+  const formattedOutput = useMemo(() => (output ? formatOutput(output) : ''), [output]);
   if (error) {
     return (
       <div
         data-testid={`tool-result-${toolName}`}
         className="rounded-modal border border-red-500/15 bg-red-500/5 px-3 py-2 typo-body text-red-400"
       >
-        <div className="flex items-center gap-1.5 mb-1">
+        <div role="alert" className="flex items-center gap-1.5 mb-1">
           <XCircle className="w-3 h-3 flex-shrink-0" />
           <span className="font-medium">{t.agents.tool_runner.error}</span>
+          <CopyButton text={error} className="ml-auto" />
         </div>
         <pre className="typo-code whitespace-pre-wrap break-all opacity-80">{error}</pre>
       </div>
@@ -187,6 +277,10 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
   }
 
   if (!result) return null;
+
+  // One click moves the whole payload (pretty-printed output, then any error
+  // text) out of the 64-line scroll box.
+  const copyText = [formattedOutput, result.error].filter(Boolean).join('\n\n');
 
   return (
     <div
@@ -196,7 +290,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
         ? 'border-emerald-500/15 bg-emerald-500/5'
         : 'border-red-500/15 bg-red-500/5'
     }`}>
-      <div className="flex items-center gap-2 mb-1.5">
+      <div role="status" className="flex items-center gap-2 mb-1.5">
         {result.success ? (
           <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
         ) : (
@@ -209,6 +303,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
           <Clock className="w-2.5 h-2.5" />
           <Numeric value={Number(result.duration_ms)} unit="ms" />
         </span>
+        <CopyButton text={copyText} />
       </div>
 
       {/* Typed failure metadata: the shared tool-outcome contract carries a
@@ -234,7 +329,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
 
       {result.output && (
         <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
-          {formatOutput(result.output)}
+          {formattedOutput}
         </pre>
       )}
       {result.output_truncated && (
@@ -249,14 +344,67 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
   );
 }
 
+/** The schema's declared `default`, else a blank of the declared JSON type. */
+function defaultForProperty(prop: unknown): unknown {
+  if (!prop || typeof prop !== 'object') return '';
+  const p = prop as { default?: unknown; type?: unknown };
+  if (p.default !== undefined) return p.default;
+  // `type` may be a union such as ["integer", "null"]; the first member wins.
+  const type = Array.isArray(p.type) ? p.type[0] : p.type;
+  switch (type) {
+    case 'number':
+    case 'integer':
+      return 0;
+    case 'boolean':
+      return false;
+    case 'array':
+      return [];
+    case 'object':
+      return {};
+    default:
+      return '';
+  }
+}
+
+interface SchemaField {
+  name: string;
+  type: string | null;
+  required: boolean;
+  description: string | null;
+  enumValues: string | null;
+}
+
+/** Flatten a JSON-schema object's top-level properties into display rows. */
+function parseSchemaFields(inputSchema: string | null): SchemaField[] {
+  if (!inputSchema) return [];
+  try {
+    const schema = JSON.parse(inputSchema) as { properties?: unknown; required?: unknown };
+    if (!schema.properties || typeof schema.properties !== 'object') return [];
+    const required = new Set(Array.isArray(schema.required) ? schema.required.map(String) : []);
+    return Object.entries(schema.properties as Record<string, unknown>).map(([name, raw]) => {
+      const p = (raw && typeof raw === 'object' ? raw : {}) as { type?: unknown; description?: unknown; enum?: unknown };
+      return {
+        name,
+        type: Array.isArray(p.type) ? p.type.join(' | ') : typeof p.type === 'string' ? p.type : null,
+        required: required.has(name),
+        description: typeof p.description === 'string' && p.description ? p.description : null,
+        enumValues: Array.isArray(p.enum) && p.enum.length > 0 ? p.enum.map(String).join(', ') : null,
+      };
+    });
+  } catch (err) {
+    silentCatch('features/agents/sub_tool_runner/components/ToolInvocationCard:parseSchemaFields')(err);
+    return [];
+  }
+}
+
 function buildDefaultInput(tool: PersonaToolDefinition): string {
   if (tool.input_schema) {
     try {
       const schema = JSON.parse(tool.input_schema);
       if (schema.properties) {
-        const defaults: Record<string, string> = {};
-        for (const key of Object.keys(schema.properties)) {
-          defaults[key] = '';
+        const defaults: Record<string, unknown> = {};
+        for (const [key, prop] of Object.entries(schema.properties as Record<string, unknown>)) {
+          defaults[key] = defaultForProperty(prop);
         }
         return JSON.stringify(defaults, null, 2);
       }

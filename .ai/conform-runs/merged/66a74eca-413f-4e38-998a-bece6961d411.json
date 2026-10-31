@@ -1,0 +1,164 @@
+{
+  "schema": "conform-run/1",
+  "worker": "66a74eca-413f-4e38-998a-bece6961d411",
+  "subject": "translation-pipeline-topology",
+  "evaluatedAt": "2026-10-30T21:05:53Z",
+  "pairs": [
+    {
+      "context": "2e1e105a-866c-4039-9620-7ed5d0d30b17",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "deviation",
+      "evidence": "src/features/onboarding/components/AppearanceStep.tsx:14 still hand-lists 11 of the 14 manifest locales (no bn/id/vi); now hidden behind UI_LANGUAGE_PICKER_ENABLED, but the manifest revive procedure (src/i18n/locales.manifest.ts:63) re-shows this picker without bn/id/vi, and src/features/home/sub_welcome/LanguageSwitcher.tsx:16 is a second shadow list",
+      "techniques": [
+        {
+          "technique": "language-registry-single-source",
+          "verdict": "deviation",
+          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:14 shadow language list; src/i18n/locales.manifest.ts:14 claims no other file references a locale by code, which is false; reviving a language still means editing these lists plus the lefthook/ci gates the manifest names, so the one-line-diff test fails"
+        },
+        {
+          "technique": "canonical-fallback-serving",
+          "verdict": "conformant",
+          "evidence": "src/i18n/locales.manifest.ts:73 toShippedUiLocale sends any persisted or requested unshipped language to English, so no switcher offers a language the bundle cannot serve"
+        },
+        {
+          "technique": "pseudo-localization-readiness",
+          "verdict": "conformant",
+          "evidence": "src/i18n/pseudoLocale.ts:2 dev-only pseudo-locale is generated from the English bundle at runtime, with no engine, and stays out of the coverage gate"
+        },
+        {
+          "technique": "source-identical-value-audit",
+          "verdict": "not-applicable",
+          "evidence": "src/i18n/locales.manifest.ts:70 SHIPPED_UI_LOCALES is ['en'], so no shipped catalog makes a translatedness claim to audit"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+      "evaluatedRevision": 13,
+      "registryProposal": "language-registry-single-source could name the shipped-subset case: a registry with a known set (LOCALES) and a shipped subset (SHIPPED_UI_LOCALES) where a dormant UI surface hides its shadow list until revival. That drift cannot be seen at runtime and only shows on the day a language is revived."
+    },
+    {
+      "context": "7826a48f-5883-4f26-8476-c3c515bda745",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "deviation",
+      "evidence": "src/lib/personas/templates/templateOverlays.ts:273 the overlay import.meta.glob still hand-lists 13 per-language patterns; the code set is derived (line 270) and a test asserts coverage, but adding a manifest language still requires editing this file, so the one-line-diff test fails (file unchanged since 2026-08-28)",
+      "techniques": [
+        {
+          "technique": "language-registry-single-source",
+          "verdict": "deviation",
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:273 static glob literal per language; a drift test (src/lib/personas/templates/__tests__/templateOverlays.test.ts:15) catches drift but does not remove the edit"
+        }
+      ],
+      "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+      "evaluatedRevision": 13,
+      "registryProposal": "language-registry-single-source has no ruling for build-tool constraints that require static literals (Vite import.meta.glob). It should say whether a generated glob is required or whether a parity test that fails on drift is an acceptable second-best."
+    },
+    {
+      "context": "1ffb5765-de47-4f01-87ec-06732a63522c",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evidence": "src/i18n/generated/types.ts:2 is generated types from en.json plus unit tests; no locale registry, translation store, request or serving decision lives here",
+      "techniques": [],
+      "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+      "evaluatedRevision": 13
+    },
+    {
+      "context": "b39776f5-3909-41e3-b69f-14c9a6c70bec",
+      "subject": "translation-pipeline-topology",
+      "bundle": "localization",
+      "state": "not-applicable",
+      "evidence": "src/features/home/sub_releases/i18n/useReleasesTranslation.ts:7 is a display adapter that relies on the main loader for fallback; it owns no locale list, store or pipeline step",
+      "techniques": [],
+      "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+      "evaluatedRevision": 13
+    }
+  ],
+  "declined": [
+    {
+      "subject": "translation-pipeline-topology",
+      "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+      "reason": "budget: api-pipeline is a probable-confidence lexical match (pipeline/job/matrix vocabulary) with a not-applicable verdict at revision 12; it stays stale against revision 13 for a later --stale run"
+    },
+    {
+      "subject": "translation-pipeline-topology",
+      "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+      "reason": "budget: commands-design is a probable-confidence lexical match (pipeline/job/matrix vocabulary) with a not-applicable verdict at revision 12; it stays stale against revision 13 for a later --stale run"
+    },
+    {
+      "subject": "translation-pipeline-topology",
+      "context": "059fdee0-40da-434a-a5cb-874bc9179a31",
+      "reason": "budget: engine-core-infrastructure is a probable-confidence lexical match (pipeline/job/matrix vocabulary) with a not-applicable verdict at revision 12; it stays stale against revision 13 for a later --stale run"
+    },
+    {
+      "subject": "translation-pipeline-topology",
+      "context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2",
+      "reason": "budget: lib-credentials is a probable-confidence lexical match (pipeline/job/matrix vocabulary) with a not-applicable verdict at revision 12; it stays stale against revision 13 for a later --stale run"
+    },
+    {
+      "subject": "translation-pipeline-topology",
+      "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+      "reason": "budget: persona-build-matrix is a probable-confidence lexical match (pipeline/job/matrix vocabulary) with a not-applicable verdict at revision 12; it stays stale against revision 13 for a later --stale run"
+    },
+    {
+      "subject": "translation-pipeline-topology",
+      "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+      "reason": "budget: prompt-assembly-engine is a probable-confidence lexical match (pipeline/job/matrix vocabulary) with a not-applicable verdict at revision 12; it stays stale against revision 13 for a later --stale run"
+    },
+    {
+      "subject": "translation-pipeline-topology",
+      "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+      "reason": "budget: template-adoption-persona-layout is a probable-confidence lexical match (pipeline/job/matrix vocabulary) with a not-applicable verdict at revision 12; it stays stale against revision 13 for a later --stale run"
+    },
+    {
+      "subject": "translation-pipeline-topology",
+      "context": "8a57c65c-06fd-45c9-9d32-d50c89c4c705",
+      "reason": "budget: template-generation is a probable-confidence lexical match (pipeline/job/matrix vocabulary) with a not-applicable verdict at revision 12; it stays stale against revision 13 for a later --stale run"
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-10-30T21:05:53Z",
+      "bundle": "localization",
+      "subjects": [
+        "translation-pipeline-topology"
+      ],
+      "techniques": [
+        "language-registry-single-source",
+        "canonical-fallback-serving",
+        "pseudo-localization-readiness",
+        "source-identical-value-audit"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-30T21:05:53Z",
+      "bundle": "localization",
+      "subjects": [
+        "translation-pipeline-topology"
+      ],
+      "techniques": [
+        "language-registry-single-source"
+      ],
+      "deviations": 1
+    },
+    {
+      "ts": "2026-10-30T21:05:53Z",
+      "bundle": "localization",
+      "subjects": [
+        "translation-pipeline-topology"
+      ],
+      "techniques": [],
+      "deviations": 0
+    },
+    {
+      "ts": "2026-10-30T21:05:53Z",
+      "bundle": "localization",
+      "subjects": [
+        "translation-pipeline-topology"
+      ],
+      "techniques": [],
+      "deviations": 0
+    }
+  ]
+}

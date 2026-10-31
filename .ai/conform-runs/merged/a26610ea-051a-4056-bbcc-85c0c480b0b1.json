@@ -1,0 +1,59 @@
+{
+ "schema": "conform-run/1",
+ "worker": "a26610ea-051a-4056-bbcc-85c0c480b0b1",
+ "subject": "feed",
+ "evaluatedAt": "2026-10-26T22:26:52.125557+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "fleet-monitor-channels",
+   "subject": "feed",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/fleet/monitor/channels/mergedFeed.tsx:50 The cross-team union that feeds the live pop-ups is ranked by timestamp alone, with no identity tiebreak, and then cut at LIVE_FEED_WINDOW, so tied rows fall into input-iteration order and the window boundary keeps or drops them by accident. The sibling comparator in useConversation.ts:103 does carry the tiebreak, so the two rank sites in this context disagree.",
+   "techniques": [
+    {
+     "technique": "reverse-chronology-semantics",
+     "verdict": "deviation",
+     "evidence": "src/features/fleet/monitor/channels/conversationModel.ts:81 The day bucket comes from slicing the stored timestamp string (UTC day), while dayLabel (line 90) computes Today/Yesterday from local midnight via setHours. The technique names this exact failure: boundary and label in different zones, and a calendar day derived by slicing a zone-suffixed string. Separately, the mergedFeed.tsx:50 comparator has no identity tiebreak."
+    },
+    {
+     "technique": "event-clustering",
+     "verdict": "deviation",
+     "evidence": "src/features/fleet/monitor/channels/conversationModel.ts:101 Clusters are view-only and keyed by the oldest member (line 133, `asg:${item.assignmentId}:${first.id}`), which conforms. But a cluster deliberately reaches across interleaved talk rows within a day, which breaks the technique's consecutive-only clause: earlier steps are pulled past a message to sit at the cluster's newest position."
+    },
+    {
+     "technique": "read-position-and-unseen",
+     "verdict": "deviation",
+     "evidence": "src/features/fleet/monitor/channels/ProjectRow.tsx:46 The NEW figure is counted over the loaded page (CHANNEL_PAGE=60 per page) and shown as exact. countUnread in channelSlice compares against a timestamp-only lastSeenAt anchor rather than a (timestamp, id) tuple, and a channel never read seeds at origin (fully unread). In-context, the conversation's 'N new' pill (VirtualConversation.tsx:151) is a maintained counter of row growth, so a step that extends an existing cluster is not counted."
+    },
+    {
+     "technique": "live-prepend",
+     "verdict": "conformant",
+     "evidence": "src/features/fleet/monitor/live/LiveChannelOverlay.tsx:73 The pop-up sink dedupes arrivals by occurrence id at the merge door and absorbs history present at mount silently. The conversation's entrance is keyed by row id (VirtualConversation.tsx:205), so a re-poll does not replay it. Scope: the conversation itself grows at the bottom (transcript geometry), so the top-growth scroll rules bind only the pop-up stack."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-26T22:26:52.125557+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "feed"
+   ],
+   "techniques": [
+    "event-clustering",
+    "live-prepend",
+    "read-position-and-unseen",
+    "reverse-chronology-semantics"
+   ],
+   "deviations": 1,
+   "context": "fleet-monitor-channels",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
