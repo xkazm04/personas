@@ -137,7 +137,7 @@ function useColumns(
           return <span className={`typo-body px-1.5 py-0.5 rounded ${badgeClass(statusEntry)}`}>{statusEntry.label}</span>;
         }
         if (item.type === 'memory') {
-          return <span className="typo-body text-amber-400/70" title={`Importance: ${item.status}`}>{renderImportanceStars(item.status)}</span>;
+          return <span className="typo-body text-amber-400/70" title={`Importance: ${item.status.replace(/^importance:\s*/i, '')}`}>{renderImportanceStars(item.status)}</span>;
         }
         if (item.type === 'review') {
           return (
