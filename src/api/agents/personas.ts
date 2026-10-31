@@ -20,6 +20,8 @@ export type { ImportResult } from "@/lib/bindings/ImportResult";
 import type { GalleryPublishResult } from "@/lib/bindings/GalleryPublishResult";
 import type { PresetPublishResult } from "@/lib/bindings/PresetPublishResult";
 import type { ReferralStats } from "@/lib/bindings/ReferralStats";
+import type { BlastRadiusItem } from "@/lib/bindings/BlastRadiusItem";
+export type { BlastRadiusItem };
 
 /** Batched persona detail returned by the single `get_persona_detail` IPC command. */
 export interface PersonaDetailResponse extends Persona {
@@ -55,7 +57,7 @@ export const createPersona = (input: CreatePersonaInput) =>
 
 /**
  * Partial update. Build the payload with {@link buildUpdateInput} rather than
- * assembling it by hand — for the 13 `Option<Option<T>>` columns an explicit
+ * assembling it by hand — for the 14 `Option<Option<T>>` columns an explicit
  * `null` means "clear this column", so a hand-written payload that nulls the
  * fields it does not care about will erase them. See
  * {@link PERSONA_NULLABLE_FIELDS}.
@@ -112,11 +114,6 @@ export const setPersonaStarred = (id: string, starred: boolean) =>
  */
 export const setPersonaEnabled = (personaId: string, enabled: boolean) =>
   invoke<Persona>("set_persona_enabled", { personaId, enabled });
-
-export interface BlastRadiusItem {
-  category: string;
-  description: string;
-}
 
 export const getPersonaBlastRadius = (id: string) =>
   invoke<BlastRadiusItem[]>("persona_blast_radius", { id });

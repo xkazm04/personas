@@ -98,7 +98,7 @@ export interface SendTurnResult {
   quickReplies: string[];
   /**
    * Spoken-version of the reply (1-3 sentences, conversational) for
-   * ElevenLabs playback. Present when voice is enabled AND Athena emitted
+   * local TTS playback. Present when voice is enabled AND Athena emitted
    * a `TTS:` line. Null otherwise. Frontend stashes this as the latest
    * unread playback and either auto-plays (if user is on the panel) or
    * makes it available via the footer Play button.
@@ -118,10 +118,15 @@ export interface SendTurnResult {
  * background tasks (codebase scans, idea generation, multi-step
  * reasoning); the default 90s invoke timeout is too short and surfaces
  * as a confusing "Tauri invoke timed out" error even though the
- * backend is still working. 25 minutes matches the backend's own
- * `TURN_TIMEOUT` so the frontend never gives up before the CLI does.
+ * backend is still working. The backend's own `TURN_TIMEOUT` (25 min,
+ * `companion/session/events.rs`) starts only after the turn lock and the
+ * prompt assembly, and the reply is persisted after it, so a wrapper that
+ * waits exactly 25 minutes always lost that tie. 27 minutes matches
+ * `REMOTE_TURN_TIMEOUT` (`companion/remote_jobs.rs`), which waits past the
+ * turn ceiling for the same reason: a turn that hits its OWN timeout reports
+ * that as the reason. Pinned by `__tests__/companionTurnTimeoutParity.test.ts`.
  */
-const COMPANION_TURN_TIMEOUT_MS = 25 * 60 * 1000;
+const COMPANION_TURN_TIMEOUT_MS = 27 * 60 * 1000;
 
 export async function companionSendMessage(
   message: string,
@@ -490,17 +495,15 @@ export async function companionDevOpSelfReview(): Promise<number> {
 }
 
 /**
- * ElevenLabs TTS proxy. Backend reads the decrypted API key from the
- * vault, calls ElevenLabs, and returns the audio bytes as base64 (which
- * crosses the Tauri IPC boundary cleanly). Frontend wraps the bytes in a
- * Blob and plays via an `<audio>` element.
- *
- * `credentialId` is the vault row id for an ElevenLabs credential. The
- * backend rejects anything else.
+ * Synthesized speech from a LOCAL engine (Kokoro or Pocket TTS sidecar, see
+ * {@link TtsEngineId}). The backend returns the audio bytes as base64 (which
+ * crosses the Tauri IPC boundary cleanly); the frontend wraps them in a Blob
+ * and plays them via an `<audio>` element. No vault credential is read: the
+ * cloud engines that did were descoped 2026-07-10.
  */
 export interface TtsAudio {
   audioBase64: string;
-  /** `audio/mpeg` for ElevenLabs (MP3), `audio/wav` for Piper. */
+  /** `audio/wav` from both local engines (`companion/tts/kokoro.rs`, `pocket.rs`). */
   mimeType: string;
   byteSize: number;
 }
