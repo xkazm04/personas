@@ -36,4 +36,11 @@ describe('ApiKeyRow stale chip', () => {
     expect(screen.queryByText('Expired')).not.toBeNull();
     expect(screen.queryByText('Stale')).toBeNull();
   });
+
+  it('has a tooltip that names both stale rules (never used for 7+ days, idle 30+ days)', () => {
+    renderRow({ ...base, created_at: new Date(Date.now() - 8 * 86_400_000).toISOString() });
+    const tip = screen.getByText('Stale').closest('span')!.getAttribute('title') ?? '';
+    expect(tip).toMatch(/7\+ days/);
+    expect(tip).toMatch(/30\+ days/);
+  });
 });
