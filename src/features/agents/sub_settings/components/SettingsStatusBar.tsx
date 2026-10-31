@@ -1,5 +1,4 @@
 import { Trash2, AlertTriangle, Check } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AsyncButton } from '@/features/shared/components/buttons';
 
@@ -27,7 +26,6 @@ export function SettingsStatusBar({
       <div role="status" aria-live="polite" className="flex items-center gap-2 typo-body text-foreground">
         {isSaving ? (
           <>
-            <LoadingSpinner size="sm" className="text-primary/70" />
             <span>{tx(t.agents.settings_status.saving, { sections: changedSections.join(' + ').toLowerCase() })}</span>
           </>
         ) : isDirty ? (
