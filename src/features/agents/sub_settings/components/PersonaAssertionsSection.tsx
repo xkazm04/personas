@@ -28,7 +28,11 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
   // Loading, failed and truly empty must not render alike: the empty line is
   // only said after a load succeeded with zero rows.
   const [loadState, setLoadState] = useState<'loading' | 'failed' | 'loaded'>('loading');
-  const [adding, setAdding] = useState(false);
+  // The form is open only for the persona it was opened on: the section stays
+  // mounted across a persona switch, so a bare boolean would carry a half-typed
+  // draft to the next persona and Create it there.
+  const [addingFor, setAddingFor] = useState<string | null>(null);
+  const adding = addingFor === personaId;
 
   // The section stays mounted across a persona switch, so a slower response for
   // the previous persona must not paint (or become deletable) under the new one.
@@ -107,9 +111,9 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
         ))}
 
         {adding ? (
-          <AssertionAddForm personaId={personaId} onCreated={refresh} onClose={() => setAdding(false)} />
+          <AssertionAddForm personaId={personaId} onCreated={refresh} onClose={() => setAddingFor(null)} />
         ) : (
-          <Button variant="secondary" size="sm" icon={<Plus className="w-4 h-4" />} onClick={() => setAdding(true)}>
+          <Button variant="secondary" size="sm" icon={<Plus className="w-4 h-4" />} onClick={() => setAddingFor(personaId)}>
             {a.add}
           </Button>
         )}
