@@ -1,0 +1,397 @@
+{
+ "worker": "cloud-20261031-personas-6",
+ "evaluatedAt": "2026-10-31",
+ "pairs": [
+  {
+   "context": "d146b88b-6223-41c7-8330-8b9d7a1b3ee0",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/api/pipeline/triggers.ts:20 the context is IPC wrappers for persona triggers/scheduler/workflows (invoke list_all_triggers); grep over all 11 files for locale|translat|i18n|language|lang hits only a 'natural-language' comment (src/api/pipeline/assignments.ts:77), so no translation store, registry or MT request exists here.",
+   "techniques": []
+  },
+  {
+   "context": "5d4b913e-4384-49d7-8854-5c7ddac7e19e",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/design/team_presets.rs:25 the list_team_presets/get_team_preset commands serve locale overlays and declare them partial (absent fields fall through to canonical, line 26: ship name + description first, member translations later), so one preset is served as translated headings over English body - the fragment-level splice canonical-fallback-serving forbids, with no per-unit staleness check.",
+   "techniques": [
+    {
+     "technique": "canonical-fallback-serving",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/design/team_presets.rs:25 'Overlays are partial - fields absent from the overlay fall through to canonical' is a declared intra-unit locale mix; the miss path itself is sound (None returns canonical English, line 24) but whole-unit fallback is not the contract."
+    },
+    {
+     "technique": "language-registry-single-source",
+     "verdict": "unread",
+     "evidence": "src-tauri/src/commands/design/team_presets.rs:31 language arrives as a free Option<String>; whether the offering surface derives from the registry lives outside this context."
+    },
+    {
+     "technique": "source-hash-translation-cache",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+    },
+    {
+     "technique": "sharded-translation-ci",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+    },
+    {
+     "technique": "serialization-transport-safety",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+    },
+    {
+     "technique": "fuzzy-reuse-under-a-threshold",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+    },
+    {
+     "technique": "prompt-context-contract",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+    },
+    {
+     "technique": "non-translatable-value-classification",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+    },
+    {
+     "technique": "pseudo-localization-readiness",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+    },
+    {
+     "technique": "source-identical-value-audit",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+    }
+   ],
+   "registryProposal": "canonical-fallback-serving defines the unit as a page/lesson; for structured catalog-like documents (a preset manifest of name/description/member strings) the standard could say whether per-field fallback counts as per-key catalog fallback (legitimate) or as splicing (forbidden). Judged here as splicing because the overlay zips arrays by index with no baseline."
+  },
+  {
+   "context": "059fdee0-40da-434a-a5cb-874bc9179a31",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/team_preset_loader.rs:140 apply_locale_overlay deep-merges a committed <id>.<lang>.json onto canonical and zips arrays by index with no recorded canonical baseline; the zh overlay's connections carry only 'label' (scripts/templates/_team_presets/backlog-execution.zh.json:14), so a reorder of canonical connections silently attaches Chinese labels to the wrong edges and the structural validation cannot see it.",
+   "techniques": [
+    {
+     "technique": "canonical-fallback-serving",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/team_preset_loader.rs:140 index-zipped field-level merge splices overlay strings into the canonical unit and tracks no staleness; the miss/parse path does fall back to whole canonical (line 166 'if !overlay_path.exists()' returns untouched canonical), which is the realized half."
+    },
+    {
+     "technique": "language-registry-single-source",
+     "verdict": "unread",
+     "evidence": "src-tauri/engine/src/team_preset_loader.rs:162 the loader admits any 2-3 lowercase-letter code by shape rather than against the i18n manifest; whether offered languages drift from served ones depends on the switcher outside this context."
+    },
+    {
+     "technique": "hand-authored-exception-contract",
+     "verdict": "unread",
+     "evidence": "scripts/templates/_team_presets/backlog-execution.zh.json:2 a committed translation with no author or canonical-revision field; its provenance (human vs machine) was not established, so which contract binds it was not judged."
+    },
+    {
+     "technique": "source-hash-translation-cache",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+    },
+    {
+     "technique": "sharded-translation-ci",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+    },
+    {
+     "technique": "serialization-transport-safety",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+    },
+    {
+     "technique": "fuzzy-reuse-under-a-threshold",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+    },
+    {
+     "technique": "prompt-context-contract",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+    },
+    {
+     "technique": "non-translatable-value-classification",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+    },
+    {
+     "technique": "pseudo-localization-readiness",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+    },
+    {
+     "technique": "source-identical-value-audit",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+    }
+   ]
+  },
+  {
+   "context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/lib/credentials/connectorRoles.ts:145 the context only consumes the app's translation bundle (resolveRoleLabel(r, t?)) over a static connector catalog; grep for locale|translat|i18n|language|lang hits only bundle consumers and an API param doc, no locale registry, translation store or MT request.",
+   "techniques": []
+  },
+  {
+   "context": "835ed922-2ebd-425b-a542-dbe5996e1e78",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:23 the sole i18n touch is consuming resolveErrorTranslated; grep for locale|translat|i18n|language|lang over the 6 files finds no translation storage, movement or serving - 'matrix' is the persona build UI.",
+   "techniques": []
+  },
+  {
+   "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src-tauri/engine/src/prompt/mod.rs:1 runtime persona prompt assembly; grep for locale|translat|i18n|language|lang over the 8 files hits only a 'natural-language' comment (capabilities.rs:406), so no translation request or store is built here.",
+   "techniques": []
+  },
+  {
+   "context": "b88ef121-d028-4999-bf34-6e44aed99959",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/adoption/persona-layout/adoptionDimHelpers.ts:13 the context only reads the generated Translations type to label channel cards; grep for locale|translat|i18n|language|lang finds no catalog, registry, overlay or MT path.",
+   "techniques": []
+  },
+  {
+   "context": "8a57c65c-06fd-45c9-9d32-d50c89c4c705",
+   "subject": "translation-pipeline-topology",
+   "bundle": "localization",
+   "state": "not-applicable",
+   "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:2 the context runs design reviews over template sources; grep for locale|translat|i18n|language|lang over its 9 files returns zero hits.",
+   "techniques": []
+  },
+  {
+   "context": "cf38b51d-aebb-4b36-bb8e-68a494a3662f",
+   "subject": "browser-credential-boundary",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/api/vault/autoCredBrowser.ts:18 start_auto_cred_browser returns AutoCredBrowserResult whose extracted_values (src/lib/bindings/AutoCredBrowserResult.ts:4) carry the raw secrets Rust just extracted, so plaintext credentials cross into the webview tier - unlike the OAuth path (oauthSessionRef, src/lib/bindings/CreateCredentialInput.ts:13) and foraging (masked, import-by-id) which keep them in Rust.",
+   "techniques": [
+    {
+     "technique": "broker-proxy-attaches-secret",
+     "verdict": "deviation",
+     "evidence": "src/api/vault/autoCredBrowser.ts:18 the auto-cred door hands extracted secret values to the webview instead of a server-held reference the Rust side redeems on save."
+    },
+    {
+     "technique": "server-sealed-client-roundtrip",
+     "verdict": "realized",
+     "evidence": "src/lib/bindings/CreateCredentialInput.ts:13 the OAuth create path carries back only a one-time oauthSessionRef redeemed server-side - 'token material never crosses the IPC boundary'."
+    },
+    {
+     "technique": "omit-the-column-not-the-value",
+     "verdict": "realized",
+     "evidence": "src/lib/bindings/PersonaCredential.ts:24 the credential row type the webview receives has no encrypted_data/iv/value field (id, name, serviceType, metadata, lastUsedAt, ...)."
+    },
+    {
+     "technique": "aggregate-view-not-base-table",
+     "verdict": "not-applicable",
+     "evidence": "src/api/vault/credentials.ts:21 the webview reaches the store only through IPC commands (list_credentials) into Rust-owned SQLite; no browser-held store grant exists (package.json carries no hosted-store client)."
+    },
+    {
+     "technique": "default-deny-plus-defaulted-owner",
+     "verdict": "not-applicable",
+     "evidence": "package.json:162 the only data client is @tauri-apps/api; there is no anonymous role or row policy for regime one to default-deny."
+    }
+   ]
+  },
+  {
+   "context": "cbb061cf-5c61-49d4-80d8-98b8f9b40600",
+   "subject": "browser-credential-boundary",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/browser/types.ts:62 BrowserTab carries url/title/origin/lease and no credential field; grep for credential|secret|token|password|api_key|vault|cookie over the 17 files hits only latest-wins staleness tokens and design-token imports, so no credential value is held by or crosses into this webview context.",
+   "techniques": []
+  },
+  {
+   "context": "1092db16-982f-4d99-b71b-14e6cf704a4f",
+   "subject": "browser-credential-boundary",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 token_endpoint_request POSTs client_secret/code via crate::SHARED_HTTP (default redirects, no resolved-address check) to a token URL that is caller-supplied (line 2073, unvalidated) or taken from an OIDC discovery response, while the repo's SSRF_SAFE_HTTP (src-tauri/core/src/http_clients.rs:30) goes unused; a name resolving inward or a redirect carries the secret to an internal target.",
+   "techniques": [
+    {
+     "technique": "outbound-fetch-destination-validation",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/credentials/oauth.rs:1205 validate_issuer_url judges only an IP literal in the string (no resolution, not bound to the connection), and the discovery fetch at line 1295 and token POST at line 105 both use SHARED_HTTP rather than the SSRF-safe resolver client."
+    },
+    {
+     "technique": "broker-proxy-attaches-secret",
+     "verdict": "realized",
+     "evidence": "src-tauri/src/commands/credentials/api_proxy.rs:36 execute_api_request is #[requires(privileged)] and takes credential_id + method + path, attaching the credential in Rust."
+    },
+    {
+     "technique": "omit-the-column-not-the-value",
+     "verdict": "realized",
+     "evidence": "src-tauri/src/commands/credentials/foraging.rs:725 import_foraged_credential re-reads real values server-side by id after scan results were masked (line 203), so the webview never holds them."
+    },
+    {
+     "technique": "server-sealed-client-roundtrip",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1230 the auto-cred result returns extracted_values intact to the webview (comment line 1224) for the client to send back on save, instead of a server-held reference like the OAuth session ref."
+    },
+    {
+     "technique": "opaque-upstream-errors",
+     "verdict": "unread",
+     "evidence": "src-tauri/src/commands/credentials/oauth.rs:86 token-endpoint failures relay the sanitized upstream body to the caller; in a single-operator desktop app whether this is a topology leak was not judged."
+    }
+   ]
+  },
+  {
+   "context": "e61f931c-25d7-4532-9ec7-ab6f3fc377e2",
+   "subject": "browser-credential-boundary",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/credentials/remediationExecutor.ts:42 the only credential action in the context dispatches by credentialId (rotateCredentialNow) and the rest is a committed connector catalog (src/lib/credentials/builtinConnectors.ts:2); grep for secret|password|apikey|api_key|value finds no credential value held or forwarded here.",
+   "techniques": []
+  },
+  {
+   "context": "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b",
+   "subject": "browser-credential-boundary",
+   "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:121 the whitelist binds a site to a vault credential by id only, persisted via the privileged browser_sites_bind_credential (src-tauri/src/commands/browser/sites.rs:79), so no secret value enters the webview context.",
+   "techniques": [
+    {
+     "technique": "broker-proxy-attaches-secret",
+     "verdict": "realized",
+     "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:121 the draft carries credentialId only; Rust holds and attaches the secret."
+    },
+    {
+     "technique": "omit-the-column-not-the-value",
+     "verdict": "realized",
+     "evidence": "src/lib/bindings/BrowserSite.ts:26 the site row the webview receives has credentialId and no secret column."
+    },
+    {
+     "technique": "aggregate-view-not-base-table",
+     "verdict": "not-applicable",
+     "evidence": "src/api/browser.ts:73 site data reaches the webview only through IPC (browser_sites_bind_credential); no browser-held store grant exists."
+    },
+    {
+     "technique": "default-deny-plus-defaulted-owner",
+     "verdict": "not-applicable",
+     "evidence": "package.json:162 the only data client is @tauri-apps/api; no anonymous role or row policy exists."
+    },
+    {
+     "technique": "opaque-upstream-errors",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/src/commands/browser/sites.rs:79 the bind command is a local DB write behind #[requires(privileged)]; no upstream is brokered by this context."
+    }
+   ]
+  },
+  {
+   "context": "ee9d4d9e-0414-4460-b159-5d9c7c4108a7",
+   "subject": "browser-credential-boundary",
+   "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src/features/vault/sub_credentials/components/workspace/useWorkspaceConnect.ts:86 workspace credentials are created from a one-time oauthSessionRef redeemed server-side (comment line 85: the token never crosses IPC), and the other panels address credentials by id only.",
+   "techniques": [
+    {
+     "technique": "server-sealed-client-roundtrip",
+     "verdict": "realized",
+     "evidence": "src/features/vault/sub_credentials/components/workspace/useWorkspaceConnect.ts:86 the client carries back only a server-issued one-time session ref, not token material."
+    },
+    {
+     "technique": "broker-proxy-attaches-secret",
+     "verdict": "realized",
+     "evidence": "src/features/vault/sub_credentials/components/picker/ResourcePicker.tsx:101 resource listing sends credentialId + spec id; Rust attaches the credential."
+    },
+    {
+     "technique": "omit-the-column-not-the-value",
+     "verdict": "realized",
+     "evidence": "src/lib/bindings/PersonaCredential.ts:24 the credential shape these panels consume has no secret column."
+    },
+    {
+     "technique": "aggregate-view-not-base-table",
+     "verdict": "not-applicable",
+     "evidence": "src/api/vault/credentials.ts:21 data reaches the webview only through IPC into Rust-owned SQLite; no browser-held store grant."
+    },
+    {
+     "technique": "default-deny-plus-defaulted-owner",
+     "verdict": "not-applicable",
+     "evidence": "package.json:162 the only data client is @tauri-apps/api; no anonymous role or row policy exists."
+    }
+   ]
+  },
+  {
+   "context": "647d6a54-3813-4149-bbf7-2d96a57a77c7",
+   "subject": "browser-credential-boundary",
+   "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:295 queries run via executeDbQuery(credentialId, sql) into the privileged execute_db_query (src-tauri/src/commands/credentials/db_schema.rs:223), so the database credential is attached in Rust and never held by the tab.",
+   "techniques": [
+    {
+     "technique": "broker-proxy-attaches-secret",
+     "verdict": "realized",
+     "evidence": "src/api/vault/database/dbSchema.ts:74 execute_db_query is sent credentialId + queryText only; the command is #[requires(privileged)] (src-tauri/src/commands/credentials/db_schema.rs:223)."
+    },
+    {
+     "technique": "omit-the-column-not-the-value",
+     "verdict": "realized",
+     "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:55 the tab's props carry credentialId: string, with no connection-string or password field."
+    },
+    {
+     "technique": "outbound-fetch-destination-validation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:48 the tabs send a query against a configured credential; no destination address arrives as data from a response in this context."
+    },
+    {
+     "technique": "aggregate-view-not-base-table",
+     "verdict": "not-applicable",
+     "evidence": "src/api/vault/database/dbSchema.ts:74 the external DB is reached by Rust, not by a browser-held grant."
+    },
+    {
+     "technique": "default-deny-plus-defaulted-owner",
+     "verdict": "not-applicable",
+     "evidence": "package.json:162 the only webview data client is @tauri-apps/api; no anonymous role or row policy exists."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-10-31T00:00:00Z",
+   "bundle": "localization",
+   "subjects": [
+    "translation-pipeline-topology"
+   ],
+   "techniques": [
+    "canonical-fallback-serving",
+    "language-registry-single-source",
+    "hand-authored-exception-contract"
+   ],
+   "deviations": 2
+  },
+  {
+   "ts": "2026-10-31T00:00:00Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "browser-credential-boundary"
+   ],
+   "techniques": [
+    "broker-proxy-attaches-secret",
+    "outbound-fetch-destination-validation",
+    "server-sealed-client-roundtrip",
+    "omit-the-column-not-the-value",
+    "aggregate-view-not-base-table",
+    "default-deny-plus-defaulted-owner",
+    "opaque-upstream-errors"
+   ],
+   "deviations": 2
+  }
+ ]
+}

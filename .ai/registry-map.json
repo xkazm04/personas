@@ -2338,10 +2338,10 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_health/healthScoring.ts:55 computeHealthScore returns a grade painted by the editor badge and Arena herald (src/features/agents/sub_health/healthScoring.ts:26); the only \"blocked\" status (src/features/agents/sub_health/types.ts:67) is mapped from text (useHealthCheck.ts:93) and no path refuses a run, save or deploy on it, so no refusal precondition holds - diagnostic, not a gate. Re-checked at revision 54.",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54,
+          "evidence": "src/features/agents/sub_health/HealthDigestPanel.tsx:68 the 'blocked' grade (computed at src/features/agents/sub_health/agentHealth.ts:152) only picks a row's paint tone; grepping the context and its consumers (useHealthCheck, assessAgentHealth, healthCheckSlice) for blocked/refuse/disable/enabled finds no execution, save or enable that is refused on the grade, so it is a diagnostic, not a gate.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55,
           "revisionsBehind": 0
         },
         {
@@ -2867,7 +2867,11 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_deployment/components/deploymentTypes.ts:9 the context's row type is a cloud/GitLab deployment target; a grep of all 54 context files for memor|recall|remember|episod|consolidat finds only comments (timeAgo hoisting, timer bookkeeping, unmount retention), so no agent memory store is written, distilled or recalled here and the subject's precondition is absent.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52
         },
         {
           "subject": "agent-cli-transport",
@@ -3364,10 +3368,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/agents/sub_editor/components/PersonaEditorHeader.tsx:95 is the only place readiness refuses an enable; src-tauri/src/commands/core/personas.rs:142 set_persona_enabled and :217 update_persona re-check nothing, so any other caller enables a persona with no trigger or missing credentials - a UI-only courtesy, not a gate",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54,
+          "evidence": "src/features/agents/sub_editor/libs/usePersonaReadiness.ts:72 the enable gate counts a credential as present when any vault row of that service_type exists, the predicate src-tauri/src/commands/design/connector_readiness.rs:1230 records as disagreeing BY CONSTRUCTION with the run gate (persona_live_blockers, :767, which needs one unique, usable bind over the design-context connectors). So the header can say 'can enable' for a persona that is then refused at every run.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55,
           "revisionsBehind": 0
         },
         {
@@ -3459,13 +3463,13 @@
           "state": "not-applicable",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:100-124 is a page-owned tab strip (reads/writes useSystemStore().editorTab locally; its ids are not in the navigation registry's section vocabulary) -- nav-hierarchy.md 'Level three does not live in the shell ... the page owns the depth (tabs, trees, master-detail)' names exactly this precondition: PersonaEditor's tab bar is the page's own structure, not shell navigation.",
+          "evidence": "src/features/agents/sub_editor/components/EditorTabBar.tsx:116 the editor's tabs are a page-owned strip writing page state (setEditorTab), the depth app-shell hands to the page beyond its two levels; a grep of the context's 36 files for setSidebarSection, NAV_SECTIONS, navigation/registry, passesGates, sidebarData and lazyRetry finds none, so no shell nav, slot or section loading lives here",
           "digest": "sha256-b2:62a9a7fc993ea8b5",
           "revision": 6,
           "changedAt": "2026-09-23",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -3773,10 +3777,10 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:804 the idea-verdict memory is built from title+description only and :819 makes a human rejection a permanent 'do not re-surface' constraint; rejection_reason (src-tauri/core/src/models/dev_tools.rs:1145) never reaches it, though the triage deck says it does (src/features/agents/quick-answer/triage/triageAdapters.ts:790)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:485 the deck promises a rejected idea's reason becomes a constraint memory the scanners read back, but the scanner's read-back builds its rejected list from titles only (src-tauri/src/commands/infrastructure/idea_scanner.rs:596) and labels every rejected idea, machine-decided ones included, as human-triaged (idea_scanner.rs:130), so the reason never reaches the scan and an advisory machine verdict is recalled as a human ruling.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "revisionsBehind": 0
         },
         {
@@ -3794,10 +3798,10 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 the deck turns one human reviewer verdict into one backend write; no mechanism here computes a verdict over a tree, change or release, so the quality-gates precondition does not hold (hitl-approval territory)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54,
+          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:2 the deck turns one human reviewer verdict into one backend write. Grepping the context for refuse/gate/blocking/threshold finds only display: the 'blocking' badge weight in triageAdapters.ts, and a challenger's improvement shown against a threshold the backend applied. No mechanism here computes a verdict that refuses anything.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55,
           "revisionsBehind": 0
         },
         {
@@ -4030,10 +4034,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:15 configures per-run output assertions on one persona (production quality gates), not a case set run across model targets; lexical match on case/cases/settings",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:16 declares per-run output assertions (quality gates) on ONE persona's production runs, not a matrix of provider x model targets over a shared frozen case set; a grep of all 6 context files for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|leaderboard|compare-model returned zero hits, so the subject's precondition (a cross-target benchmark run) is absent.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -4195,10 +4199,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:50 The check that the deadline comes before the sleep relies on the first place the bare identifier POLL_DEADLINE appears in the Rust function, so a check moved after the sleep would stay green if any earlier non-comment use of the name (for example a `let` alias) were left above it.",
-          "evaluatedAt": "2026-10-24",
-          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
-          "evaluatedRevision": 27
+          "evidence": "src/api/agents/__tests__/personaIconGenTimeoutParity.test.ts:51 the deadline-before-sleep ordering claim still compares indexOf('POLL_DEADLINE'), a bare identifier, so a later `let deadline = started + POLL_DEADLINE` above a check moved after the sleep keeps the test green while the budget it computes is wrong.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:2287af36a9532062",
+          "evaluatedRevision": 28
         },
         {
           "subject": "agent-memory",
@@ -4231,10 +4235,10 @@
           "changedAt": "2026-10-02",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/api/agents/evolution.ts:104 the probe door every readiness gate consumes documents that a rejection means 'binary missing OR no working subscription session' without distinguishing them (backend maps both to AppError::Internal, src-tauri/src/commands/execution/evolution.rs:167), and the wrapper at :107 passes no force, so installed vs authorized collapse into one rejection and a cached probe that a real run has falsified cannot be re-probed from the client",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
+          "evidence": "src/api/agents/evolution.ts:104 the capability-probe door every readiness gate consumes still documents that a rejection means 'binary missing OR no working subscription session' with no way to tell them apart, so install-vs-log-in repair advice must be guessed from message text.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
           "revisionsBehind": 0
         },
         {
@@ -4396,10 +4400,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/api/__tests__/enums.test.ts:14 claims 'a change on EITHER side fails this test' but the Rust sets are literal copies (:29) and nothing reads src-tauri/src/commands/infrastructure/twin.rs:524, whose own comment (twin.rs:512) names this file as its sync guard - narrowing VALID_CHANNELS (the historical defect the header records) stays green while TS-valid channels are rejected at runtime; each side believes the other pins it.",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
+          "evidence": "src/api/__tests__/enums.test.ts:15 claims 'a change on EITHER side fails this test' while the Rust side is a hand-copied literal list (:30) and the file never reads twin.rs, so a Rust-only change to VALID_CHANNELS stays green - the claim the file makes is the one it does not pin.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:2287af36a9532062",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -4582,10 +4586,10 @@
           "confidence": "probable",
           "state": "not-applicable",
           "priorNotApplicable": 20,
-          "evidence": "src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:2 The 'gate' here is a runtime pairing-approval modal, not a check on the tree. Searching components/ and libs/ for census, baseline, lefthook, process.exit, exitCode and max-warnings found 0 files. The context only consumes the lint gate through one waiver and builds no gate machinery.",
-          "evaluatedAt": "2026-10-24",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54
+          "evidence": "src/features/settings/sub_api_keys/libs/gigPolicyDraft.ts:3 the only gate-shaped thing in the context is the authoring form for the gig auto-approval policy. The evaluator that refuses or approves a hire is personas_db::kp_gig_policy::evaluate_request (src-tauri/db), outside this context. The 'gate' at src/features/settings/sub_api_keys/components/PairApprovalModal.tsx:2 is a runtime pairing-approval modal. Grep terms: refuse/gate/block/verdict/policy/threshold.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55
         },
         {
           "subject": "terminal-multiplexing",
@@ -4726,10 +4730,10 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 delete_all (exposed at src/api/overview/memories.ts:154) hard-DELETEs every non-core memory and writes no fact_key tombstone, unlike single delete (:1436), so a deliberate workspace forget is undone by the next consolidation re-deriving the same facts",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src/api/overview/memories.ts:154 deleteAllMemories exposes delete_all, which hard-DELETEs every non-core memory (src-tauri/db/src/repos/core/memories.rs:1506) and writes no fact_key tombstone, unlike the single delete (memories.rs:1436); the user's bulk forget is therefore re-derivable by the next consolidation pass, and batchDeleteMemories (memories.ts:189 -> memories.rs:1205) has the same gap.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "revisionsBehind": 0
         },
         {
@@ -4995,10 +4999,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/api/pipeline/triggers.ts:3 the context is IPC wrappers for persona triggers/scheduler/teams; 'pipeline' here is agent automation, not translation, so no translated content is stored or moved",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/api/pipeline/triggers.ts:20 the context is IPC wrappers for persona triggers/scheduler/workflows (invoke list_all_triggers); grep over all 11 files for locale|translat|i18n|language|lang hits only a 'natural-language' comment (src/api/pipeline/assignments.ts:77), so no translation store, registry or MT request exists here.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -5411,11 +5415,11 @@
           "revision": 3,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src/api/vault/credentials.ts:84 the only door carrying secret values sends them session-key encrypted (key minted at src-tauri/src/commands/credentials/crud.rs:31); every other door is id-only and the raw-token refresh door is retired (src/api/vault/oauthGatewayApi.ts:72)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
-          "evaluatedRevision": 3,
+          "state": "deviation",
+          "evidence": "src/api/vault/autoCredBrowser.ts:18 start_auto_cred_browser returns AutoCredBrowserResult whose extracted_values (src/lib/bindings/AutoCredBrowserResult.ts:4) carry the raw secrets Rust just extracted, so plaintext credentials cross into the webview tier - unlike the OAuth path (oauthSessionRef, src/lib/bindings/CreateCredentialInput.ts:13) and foraging (masked, import-by-id) which keep them in Rust.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:8c4e4cc37445b46c",
+          "evaluatedRevision": 4,
           "source": "retained",
           "revisionsBehind": 0
         }
@@ -5621,10 +5625,10 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/browser/types.ts:62 BrowserTab carries url/title/origin/lease and no credential field; no file in this context references credential/secret/vault (re-grepped 2026-10-10, files unchanged since the 2026-10-03 verdict) - the credential binding lives in site-whitelist-management",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
-          "evaluatedRevision": 3,
+          "evidence": "src/features/browser/types.ts:62 BrowserTab carries url/title/origin/lease and no credential field; grep for credential|secret|token|password|api_key|vault|cookie over the 17 files hits only latest-wins staleness tokens and design-token imports, so no credential value is held by or crosses into this webview context.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:8c4e4cc37445b46c",
+          "evaluatedRevision": 4,
           "revisionsBehind": 0
         },
         {
@@ -5772,10 +5776,10 @@
           "changedAt": "2026-10-02",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/twin.rs:2049 the page-draft call behind the Twin toolbar (src/features/browser/twinDraftLane.ts:245) reads the CLI stream without ever consulting the result envelope is_error/subtype (:2034) and falls back to returning raw stdout as the answer, which the lane types straight into the third-party page box (twinDraftLane.ts:252); a non-zero exit is flattened to one opaque Internal string with stderr discarded (src-tauri/src/engine/twin_setup/llm.rs:187, :208), so usage-limit, logged-out and crash all render as the same failure (twinDraftLane.ts:277)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
+          "evidence": "src-tauri/src/commands/infrastructure/twin.rs:2049 the text extractor behind the Twin toolbar's page draft (src/features/browser/twinDraftLane.ts:245 -> twin.rs:1177) still falls back to returning raw stdout when no result/assistant text parses, and :2034 accepts a result event without checking is_error, so a CLI error envelope or noise can be typed into the user's page box as a 'draft'.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
           "revisionsBehind": 0
         }
       ],
@@ -5949,10 +5953,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:212 New BYOM rules are task-complexity to provider and model dispatch policy, and a search of sub_byom found no benchmark, scorecard, determinism, preflight, or handicap instrument.",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:219 a new BYOM routing rule maps task_complexity to a provider/model, which is runtime dispatch policy (the builder-side model-routing subject the golden path explicitly excludes), not production of benchmark evidence; a grep of all 18 context files for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|leaderboard|compare-model returned zero hits.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -5992,10 +5996,10 @@
           "confidence": "probable",
           "state": "deviation",
           "priorNotApplicable": 20,
-          "evidence": "src-tauri/db/src/byom.rs:378 compliance rules match persona template_category (src-tauri/src/engine/runner/mod.rs:2054) so personas without a category pass an empty tag set and the restriction fails OPEN, reported only as a Warning; the corrupt-policy path at runner/mod.rs:2017 does fail closed",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54
+          "evidence": "src/features/settings/sub_byom/libs/byomHelpers.ts:79 the save pre-check runs on a hand-written TS copy of ByomPolicy::validate, although the backend's own enumeration is exposed as a command (src/api/system/byom.ts:32) that nothing calls. Nothing holds the two in parity, and the copy's pointer to its source (:92, src-tauri/src/engine/byom.rs) already names a file that does not exist.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55
         },
         {
           "subject": "credential-vault",
@@ -7048,10 +7052,10 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/core/memory_compile.rs:245 compile writes a new article beside its sources and links them only in body text; sources stay in default recall, so rollup-compaction's supersede-and-link obligation is unmet and the store grows instead of shrinking",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:244 compile inserts each article beside its sources and, by its own comment, links them only in body text: members are neither superseded nor taken out of default reads, so the store grows by the article instead of shrinking in what it recalls.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52
         },
         {
           "subject": "test-harness",
@@ -7246,11 +7250,11 @@
           "revision": 9,
           "changedAt": "2026-10-02",
           "confidence": "probable",
-          "state": "not-applicable",
-          "evidence": "src-tauri/src/commands/credentials/cli_capture.rs:1-14 shells out to gcloud/gh/vercel/netlify/heroku to extract already-issued OAuth tokens as app credentials; none is a coding-agent CLI run as an LLM transport (oauth.rs and cli_capture.rs carry zero claude/codex/gemini references) — the subject's precondition (spawning a headless coding-agent CLI as prompt-in/answer-out) does not hold in this context.",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:805 the prior not-applicable was wrong: this context spawns the Claude CLI (via ai_artifact_flow.rs:455) to drive a Playwright browser over third-party sites, and its only stance control is --allowedTools mcp__playwright__* layered on build_cli_args' --dangerously-skip-permissions (src-tauri/engine/src/prompt/cli_args.rs:107); --allowedTools pre-approves rather than restricts, so a child reading untrusted web pages keeps Bash/Write in the app's inherited cwd with the full host env.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
           "revisionsBehind": 0
         },
         {
@@ -7268,10 +7272,10 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 token_endpoint_request POSTs client_secret via crate::SHARED_HTTP to a caller/discovery-supplied token URL (oauth.rs:1323 validates domain by string only); SSRF_SAFE_HTTP (src-tauri/core/src/http_clients.rs:27) exists and is unused here - re-verified 2026-10-14, oauth.rs unchanged since 2026-09-16",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
-          "evaluatedRevision": 3,
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 token_endpoint_request POSTs client_secret/code via crate::SHARED_HTTP (default redirects, no resolved-address check) to a token URL that is caller-supplied (line 2073, unvalidated) or taken from an OIDC discovery response, while the repo's SSRF_SAFE_HTTP (src-tauri/core/src/http_clients.rs:30) goes unused; a name resolving inward or a redirect carries the secret to an internal target.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:8c4e4cc37445b46c",
+          "evaluatedRevision": 4,
           "revisionsBehind": 0
         },
         {
@@ -7399,12 +7403,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "not-applicable",
+          "state": "deviation",
           "priorNotApplicable": 20,
-          "evidence": "src-tauri/src/commands/curator/dispatch.rs:115 vet_autonomous refuses an invocation the app would invent, which is dispatch validation not a quality gate; line 291 only instructs workers not to bypass repo hooks and builds none",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54
+          "evidence": "src-tauri/src/commands/curator/dispatch.rs:290 the prohibitions on dispatched workers exist only as prompt prose: `--no-verify`, `LEFTHOOK=0`, any `*_SKIP_GATE`, force-pushing a default branch, discarding uncommitted changes. The workers are spawned with no extra args (src-tauri/src/commands/curator/tick.rs:727) on a base argv carrying --dangerously-skip-permissions (src-tauri/src/commands/fleet/headless.rs:106), into the registry root, which in this checkout tracks no .claude/settings.json deny and no hooks. Nothing at the action refuses these steps.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55
         },
         {
           "subject": "guest-execution-bounding",
@@ -7616,10 +7620,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:119 flips the seeded persona_executions row to 'completed' with a raw UPDATE, bypassing executions::update_status (src-tauri/db/src/repos/execution/executions.rs:1264) which redacts fields and owns the transition, so the fixture can hold a state the product door would shape differently",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
+          "evidence": "src-tauri/src/commands/testing/synthesize_review.rs:118 the test-bridge seeder still flips the persona_executions row to 'completed' with a raw UPDATE after creating it through the repo, so the seeded run skips the product's status-transition door and can hold a state the product could never write.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:2287af36a9532062",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -7637,10 +7641,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:961 an exact service_type match with 2+ vault credentials resolves to None and :584 refuses as VaultCredential, whose remedy :104 'add the credential in Settings -> Vault' adds a candidate and cannot clear it; persona_live_blockers :763 never reads design_context.credentialLinks, so a correctly bound persona is refused with a remedy that makes it worse",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54,
+          "evidence": "src-tauri/src/commands/design/connector_readiness.rs:961 an exact service_type match with 2+ vault credentials resolves to None. :584 then refuses it as VaultCredential, whose remedy at :104 ('add the credential in Settings → Vault') cannot clear the refusal: adding another credential keeps the match ambiguous. The run gate (:767) reads connector names only and never the persona's credentialLinks binding.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55,
           "revisionsBehind": 0
         },
         {
@@ -7720,11 +7724,11 @@
           "revision": 12,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:10 The design commands module implements n8n workflow transformation and template design commands rather than a localization or translation pipeline.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/design/team_presets.rs:25 the list_team_presets/get_team_preset commands serve locale overlays and declare them partial (absent fields fall through to canonical, line 26: ship name + description first, member translations later), so one preset is served as translated headings over English body - the fragment-level splice canonical-fallback-serving forbids, with no per-unit staleness check.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -7782,10 +7786,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/eval_runs.rs:839 The test loops over summaries with an archive containing zero judged runs and passes vacuously without asserting any judge panel contract.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
+          "evidence": "src-tauri/src/commands/eval_runs.rs:828 says the canonical archive holds no judged runs, so judge_panel_present_when_a_run_is_judged (:827) loops, finds none and passes without asserting anything - a green result over a population the decision never fired on, published as a pass.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:2287af36a9532062",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -8128,10 +8132,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:87 refuses on Incompatible, but the command (registered src-tauri/src/ipc_shards/shard_2.rs:206) has no frontend caller (only src/lib/commandNames.generated.ts:25) while UI adoption writes via src/features/templates/sub_recipes/libs/useAdoption.ts:62 - the gate refuses nothing a user does",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
-          "evaluatedRevision": 54,
+          "evidence": "src-tauri/src/commands/recipes/recipe_adoption.rs:87 the adoption gate refuses on Incompatible. Its command is registered (src-tauri/src/ipc_shards/shard_2.rs:206), but no frontend code invokes it: UI adoption appends the use case directly via src/features/templates/sub_recipes/libs/useAdoption.ts:62, behind a separate TS eligibility (RecipeAdoptionModal.tsx:45). So the gate refuses nothing a user does.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:d5f8a264c5f1b9ff",
+          "evaluatedRevision": 55,
           "revisionsBehind": 0
         },
         {
@@ -8504,10 +8508,10 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166 build_consolidation_prompt stamps each episode with its instant (:1253) but never states today nor asks the model to ground relative dates, so a deferred or replayed pass mis-dates them; the sibling sleep-cycle prompt does it (src-tauri/src/companion/brain/sleep_cycle/prompts.rs:61) - re-confirmed at revision 51",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1284 build_consolidation_prompt stamps each episode with its created_at but the prompt (fn at :1197) never states now nor instructs the model to resolve relative dates against the episode instant, so a deferred or replayed pass leaves the grounding to the model and can mis-date relative facts silently.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "revisionsBehind": 0
         },
         {
@@ -8855,10 +8859,10 @@
           "changedAt": "2026-10-02",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/session/launch.rs:280 Athena's attended Claude chat turn runs with --dangerously-skip-permissions and full native tools while the host has an approval queue (src/features/companions/athena/ApprovalCard.tsx:10) that never receives the child's own tool requests; host-routed-approval-round-trip is unrealized though a person is within reach of the turn",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
+          "evidence": "src-tauri/src/companion/session/launch.rs:280 Athena's attended Claude chat turn still runs with --dangerously-skip-permissions and full native tools (cwd home, :338) while the host's approval card (src/features/companions/athena/ApprovalCard.tsx:10) only receives Athena's self-declared propose_action ops; no permission-prompt route exists, so the child's own Bash/Write never reach the human who is present. (context-map.json lists zero filePaths for this context and its entry_points name the removed src/features/plugins/companion/; judged on the moved src/features/companions/athena/ components the description names.)",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
           "revisionsBehind": 0
         },
         {
@@ -8937,10 +8941,10 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/companions/athena/types.ts:5 UI-shape types that do not cross the IPC boundary; the memory pipeline lives in the Rust brain (companion-brain context)",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src/features/companions/athena/athenaStore.ts:501 the store only mirrors the backend's recall-preview event for display, session-scoped, and a grep of athenaStore.ts for memory|recall|remember|persist|insert|fact finds no write, distillation or recall of agent memory; the pipeline lives in the Rust brain (companion-brain). Note: this context's file_paths in context-map.json are empty and its entry_points name src/features/plugins/companion/, which does not exist, so the store was located by its description.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "revisionsBehind": 3
         },
         {
@@ -9099,10 +9103,10 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/prompt/recall.rs:27 both recall_for arms (:27, :50) still unwrap_or_default a retrieval error into an empty Recall, CompanionRecallPreview (src/api/companion.ts:2351) has no failure field and RecallStrip.tsx:68 hides the strip on zero: a down store is shown and treated as novelty",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src/features/companions/athena/RecallStrip.tsx:68 the recall strip renders nothing when nothing was consulted, and the preview it reads (src/api/companion.ts:2351) has no failure field because both recall_for arms collapse a retrieval error into an empty Recall (src-tauri/src/companion/prompt/recall.rs:27, :50); a down store is shown, and treated, as novelty.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "revisionsBehind": 3
         },
         {
@@ -9200,10 +9204,10 @@
           "changedAt": "2026-10-02",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/companions/athena/NarrationThread.tsx:7 renders already-parsed beats and tool calls of Athena's turn and DevOpLedger.tsx:46 reads a persisted dev-op ledger; nothing here spawns, probes, resumes or approves for a CLI child - Athena's spawn stance and approval routing are judged on companion-chat-bubbles",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
+          "evidence": "src/features/companions/athena/NarrationThread.tsx:7 the context renders already-parsed beats and tool calls of a turn; grep of its components (NarrationThread, OperationalThread, ActivityTray, TurnSummaryChip, RecallStrip, BrainLinksStrip, ConnectorCallCard, TaskTag, Composer) for invoke|spawn|claude|resume|session_id|thread_id found no spawn, probe or stored thread id, and extractStreamPhase.ts:2 reads stream lines only for a progress hint (streaming-output's subject, not the answer channel). (context-map.json lists zero filePaths for this context; judged on the moved src/features/companions/athena/ files its description names.)",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
           "source": "retained",
           "revisionsBehind": 0
         },
@@ -9406,10 +9410,10 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/companion/proactive/rollup.rs:1 the 'rollup' is an end-of-day audit digest card composed deterministically from the turn ledger and delivered as a notification, not a pass that supersedes accreted memory items; the pipeline (triggers, quiet hours, budget.rs:1 attention cap) writes no memory store, so rollup-compaction and the other memory-pipeline techniques have no precondition here",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src-tauri/src/companion/proactive/rollup.rs:3 the 'rollup' is a digest card composed deterministically from the turn ledger with no model call and no store family merged; the context's only memory touch is the on_this_day read of raw episodes/reflections (src-tauri/src/companion/proactive/triggers.rs:584) from an append-only log that is never deleted (src-tauri/src/companion/brain/episodic.rs:5). Grep of proactive/ for episodic::|semantic::|insert_fact|remember|companion_node|companion_fact|retrieval:: finds no write or distillation outside a test fixture.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "revisionsBehind": 0
         },
         {
@@ -9490,10 +9494,10 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "tests/playwright/athena-conversation.spec.ts:107 when data-testid=\"tab-memory\" is absent the test pushes a warn annotation and returns green (same at :254), and nothing in src produces that id (src/features/companions/athena/BrainViewer.tsx:250 SegmentedTabs declares no testId though src/features/shared/components/layout/SegmentedTabs.tsx:131 would emit one), so both Phase D tests pass while asserting nothing - live-app-harness makes a missing identifier a breaking change and a missing element a harness failure, never a pass. [re-judged at rev 26: code unchanged since the rev-25 verdict]",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
+          "evidence": "tests/playwright/athena-conversation.spec.ts:110 a missing tab-memory testid past the polling deadline still adds a warn annotation and returns, so the live-app spec reports green over an assertion it never reached.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:2287af36a9532062",
+          "evaluatedRevision": 28,
           "revisionsBehind": 0
         },
         {
@@ -9707,10 +9711,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "tests/playwright/companion-stop-button.spec.ts:51 Recursive searches found neither benchmark nor prompt_variant in tests/playwright, and the opened specs test companion, tour, and adoption behavior through synthetic state and some real turns rather than comparative model measurements.",
-          "evaluatedAt": "2026-10-17",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "tests/playwright/companion-stop-button.spec.ts:51 forces the companion streaming flag to test a UI control; the context is 32 Playwright/UI test files, and a grep for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|leaderboard|compare-model found only a prose 'judge copy quality' comment in tours-explore.spec.ts, so no benchmark operation exists here.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "source": "retained",
           "revisionsBehind": 0
         }
@@ -10473,10 +10477,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/db/src/model_routing.rs:1 db substrate: its model-selection code is the runtime routing cascade (model-routing territory); the lab code it holds is generic CRUD (src-tauri/db/src/macros.rs:386) and a settings key (src-tauri/db/src/settings_keys.rs:171), while lab run creation and finalization are judged under db-repos-lab",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src-tauri/db/src/macros.rs:392 the lab_crud! macro here is mode-agnostic CRUD (get/status/progress/delete) and states that the mode-specific run/result creation stays hand-written in each lab module outside this context, so the benchmark discipline (stamping, partial state, preflight) has no home in the db substrate; grep for benchmark|arena|judge|lab_eval|compare-model hit only that macro doc, a settings key and a connector description.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         }
       ],
@@ -10985,10 +10989,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:38 load_active (and upsert/purge_expired) is imported by no test, and its only caller, the restart-restore path src-tauri/engine/src/failover.rs:202 with_persistence, is constructed by no test - positional row.get mapping, the '-N minutes' TTL predicate and open-state reconstruction can break across a restart with every suite green",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26
+          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:38 load_active, like upsert and purge_expired, has no test (0 #[test] in the file). Its only caller, the restart-restore path at src-tauri/engine/src/failover.rs:206, is never built with a pool by any failover test, so a broken TTL filter or is_open decode would ship green.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "cost-metering",
@@ -11716,13 +11720,13 @@
           "state": "not-applicable",
           "source": "conform",
           "grounding": "precondition",
-          "evidence": "src/features/shared/components/display/RelativeTime.tsx:1-5 and Tooltip.tsx:1-10 are generic read-only display/overlay primitives reused across every feature, with no section vocabulary, nav badge, or shell-residency concept -- app-shell's techniques govern the persistent nav frame and its hosted services, which this context has none of.",
+          "evidence": "src/features/shared/components/display/RelativeTime.tsx:28 the context is generic display/formatting primitives (relative time, portal tooltip at src/features/shared/components/display/Tooltip.tsx:2, filter pills) reused by every feature; a grep of its 33 files for setSidebarSection, NAV_SECTIONS, navigation/registry, passesGates, sidebarData and minTier finds none (the one lazy() is the charting library in src/features/shared/charts/RechartsWrapper.tsx:14, not a section)",
           "digest": "sha256-b2:62a9a7fc993ea8b5",
           "revision": 6,
           "changedAt": "2026-09-23",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         }
       ],
@@ -12241,10 +12245,10 @@
           "changedAt": "2026-10-02",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:202 the agent_ir fix pass is a generate-shaped one-shot (JSON in/out) yet spawns with --dangerously-skip-permissions and cwd=home (:210) through a hand-rolled Command::new (:211) beside the shared headless door, so a 'generate' call holds write access over the operator's home dir and it never strips CLAUDECODE/CLAUDE_CODE (no occurrence in the file) so it can start as a nested session; auth strip (:218) and shim-immune resolver (:196) are now correctly reused",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:202 the agent_ir fix pass is a generate-shaped one-shot (JSON in, JSON out) yet still spawns with --dangerously-skip-permissions and cwd = the operator's home (:210), so a 'generate' call holds write access over the whole home directory.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
           "source": "retained",
           "revisionsBehind": 0
         },
@@ -12445,11 +12449,11 @@
           "revision": 12,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/mod.rs:28 The engine module root re-exports backend agent execution and workflow infrastructure and contains no localization or translation pipeline functionality.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/team_preset_loader.rs:140 apply_locale_overlay deep-merges a committed <id>.<lang>.json onto canonical and zips arrays by index with no recorded canonical baseline; the zh overlay's connections carry only 'label' (scripts/templates/_team_presets/backlog-execution.zh.json:14), so a reorder of canonical connections silently attaches Chinese labels to the wrong edges and the structural validation cannot see it.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -12782,10 +12786,10 @@
           "changedAt": "2026-10-02",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:2350 persona executions (children that read connector/web content) spawn via CliProcessDriver, whose build_and_spawn_core (src-tauri/engine/src/cli_process.rs:928) inherits the FULL host env (incl. PERSONAS_API_KEY set at boot/finalize.rs:52, already delivered to the sidecar by name at cli_mcp_config.rs:154) while the probe at cli_process.rs:774 env_clears to an allowlist; untrusted-content children must get a built env, not a denylist. Billing strip itself is right: last-applied at cli_process.rs:960, vault refuses reserved names at runner/credentials.rs:932",
-          "evaluatedAt": "2026-10-06",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
+          "evidence": "src-tauri/src/engine/runner/mod.rs:2386 persona executions (children that read connector and web content) spawn via CliProcessDriver::spawn, whose builder (src-tauri/engine/src/cli_process.rs:1092) inherits the full host environment with only a denylist - including the app's own bearer PERSONAS_API_KEY set on the parent at boot (src-tauri/src/boot/finalize.rs:52) - although a scrubbed allowlist spawn already exists and is used only for lens-scan.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
           "source": "retained",
           "revisionsBehind": 0
         }
@@ -14258,10 +14262,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 the pickers are in-document modals; no file in the context imports @/api or @tauri-apps (only stores and the read-only useTableIntrospection hook at composer/ConnectorTableScopeRow.tsx:18), so no native capability, destructive command, overlay or stream crosses here",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4
+          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 the pickers are in-document modals; a grep of the context's 19 files for @tauri-apps, @/api/, invoke, alwaysOnTop, globalShortcut, getCurrentWindow and setFocus finds no host import (the only keydown listener is window-scoped at :65), so no native capability, foreign surface or input synthesis exists here",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5
         },
         {
           "subject": "mcp-tools",
@@ -15463,10 +15467,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:67-68 filters Welcome cards by hand-copied SIMPLE_SECTIONS/DEV_MODE_SECTIONS (src/lib/utils/platform/platform.ts:102-103) instead of passesGates (src/lib/navigation/registry.ts:160), so on the default TEAM tier (src/lib/constants/uiModes.ts:65) the rail offers Plugins (registry.ts:84 minTier TEAM) while Welcome hides it - re-verified 2026-10-12, unfixed",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evidence": "src/features/home/sub_welcome/NavigationGrid.tsx:68 filters Welcome cards with the hand-copied DEV_MODE_SECTIONS set (src/lib/utils/platform/platform.ts:103 'plugins') instead of the registry's passesGates (src/lib/navigation/registry.ts:160), so on the default TEAM tier the rail offers Plugins (registry.ts:85 minTier TEAM) while Welcome hides it - two authorities disagree on one entrance",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -15965,10 +15969,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src/hooks/execution/usePersonaExecution.ts:389 execution output/status are produced by the native runner (src-tauri/src/engine/runner/mod.rs:737) and the hooks only subscribe on the local bus and render - no connection, reconnect or backoff state lives in the throttleable view",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
+          "evidence": "src/hooks/execution/usePersonaExecution.ts:389 the view only subscribes to EXECUTION_STATUS, which the native runner emits (src-tauri/src/engine/runner/mod.rs:745), so execution status keeps arriving whether or not the view is shown; every other technique's precondition is absent (only the event bus is imported from the host)",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -18023,10 +18027,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/lib/credentials/builtinConnectors.ts:2 the 'catalog' is a connector definition catalog, not a string catalog; no locale registry, translation store or MT request lives here",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/lib/credentials/connectorRoles.ts:145 the context only consumes the app's translation bundle (resolveRoleLabel(r, t?)) over a static connector catalog; grep for locale|translat|i18n|language|lang hits only bundle consumers and an API param doc, no locale registry, translation store or MT request.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -18130,10 +18134,10 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "Precondition (a credential value held by, or crossing into, the webview tier) does not hold: this context is a static connector catalog plus an ID-only action dispatcher - src/lib/credentials/remediationExecutor.ts:21 passes event.credentialId alone to rotation, src/lib/credentials/catalogApiEndpoints.ts:4 is endpoint metadata with no auth material, and parseCredentialLedger.ts:31 parses non-secret metadata; zero import.meta.env reads. Credential attachment for catalog endpoints happens in execute_api_request (commands-credentials, judged separately).",
-          "evaluatedAt": "2026-10-06",
-          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
-          "evaluatedRevision": 3,
+          "evidence": "src/lib/credentials/remediationExecutor.ts:42 the only credential action in the context dispatches by credentialId (rotateCredentialNow) and the rest is a committed connector catalog (src/lib/credentials/builtinConnectors.ts:2); grep for secret|password|apikey|api_key|value finds no credential value held or forwarded here.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:8c4e4cc37445b46c",
+          "evaluatedRevision": 4,
           "source": "retained",
           "revisionsBehind": 0
         }
@@ -19389,10 +19393,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:716 vault projection/import take only a project id (src/features/teams/sub_mastermind/lib/MemorySection.tsx:36); the native side resolves the write root from stored config and deletes only notes it stamped with personas_id (:850), so the renderer cannot pick a directory or a deletion set",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4
+          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:819 the vault write target is derived natively from the vault setting plus the project's own name, and the renderer (src/features/teams/sub_mastermind/lib/MemorySection.tsx:9) sends only a project id; the projection's deletions are limited to native-stamped notes no longer active (:954)",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5
         },
         {
           "subject": "multi-project",
@@ -22248,10 +22252,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:11 Overview shell lazy-loads subtabs, and the health popup covers install/config health; a grep of all 20 context paths finds no benchmark, scorecard or arena code, so the precondition (benchmark evidence for a model choice) does not hold",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:25 the Overview shell records that the former Leaderboard/Health tabs were consolidated into Mission Control; the context is dashboard shell plus install/config health popups, and a grep of all 21 files for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|compare-model hit only that comment, so no benchmark run or scorecard lives here.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -22343,10 +22347,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:73 renders IncidentsInbox with no tier check and src/stores/slices/overview/overviewSlice.ts:279 setOverviewTab writes unchecked, so src/features/companions/athena/ProactiveCard.tsx:53 (and decision/useDecisionQueue.ts:153) route to a tab the sidebar hides below TEAM (src/features/shared/chrome/sidebar/sidebarData.ts:81) - re-verified 2026-10-12, unfixed",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:76 renders the TEAM-gated Approvals tab (src/features/shared/chrome/sidebar/sidebarData.ts:87) with no tier check and src/stores/slices/overview/overviewSlice.ts:288 setOverviewTab writes any id, so src/features/overview/sub_reports/components/ReportDetailModal.tsx:239 (reached from the ungated Messages tab) opens a destination the sidebar hides below TEAM",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "source": "retained",
           "revisionsBehind": 0
         }
@@ -23163,10 +23167,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 ranks personas doing different jobs by production health signals; no shared case set or model targets, so the subject's precondition (evidence for which model serves one workload) does not hold",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:4 the leaderboard computes a composite score per persona from production health signals (input at :20 is PersonaHealthSignal[]), ranking personas doing different jobs on live traffic; there is no shared case set and no provider x model target matrix, so the subject's precondition does not hold.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -24020,10 +24024,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:14 the context's surface (Practice Detail modal, sub_patterns) was removed (git 6ea91dd77b, bec576bc8f) and its workspace_knowledge table retired; no tracked file remains under src/features/overview/sub_patterns, so no native capability, command target, overlay or stream exists to judge",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4
+          "evidence": "src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:1 the Workspace Knowledge practice library this context described was retired; context-map.json lists 0 filePaths for it and git ls-files finds no src/features/overview/sub_patterns file, so there is no code for the subject's precondition to hold in",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5
         },
         {
           "subject": "structured-output",
@@ -24921,10 +24925,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:137 Recursive searches found neither benchmark nor prompt_variant, and the opened simulation call previews one selected draft capability while lifecycle testing checks tools rather than comparing model targets.",
-          "evaluatedAt": "2026-10-17",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:151 the build wizard's simulation runs one draft persona on one chosen capability (a dry-run preview, per :4), not the same cases across provider x model targets; a grep of all 6 context files for benchmark|prompt_variant|arena|judge|lab_eval|run_lab|leaderboard|compare-model returned zero hits.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -24942,10 +24946,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useBuild.ts:2 here \"matrix\" means the persona build session UI, not a translation matrix; no locale or translation code in this context",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:23 the sole i18n touch is consuming resolveErrorTranslated; grep for locale|translat|i18n|language|lang over the 6 files finds no translation storage, movement or serving - 'matrix' is the persona build UI.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -25269,10 +25273,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_glyph/personaCore/PersonaCoreEntry.tsx:35 mounts a dimension badge plus its configurator modal inside a host page; the context has no primary nav, section vocabulary, entitlement gate or lazy section, so app-shell (the persistent frame around pages) has no precondition here",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evidence": "src/features/agents/sub_glyph/personaCore/PersonaCoreEntry.tsx:20 the context is a badge whose configurator opens in the host page's own surface; a grep of its 13 files for setSidebarSection, NAV_SECTIONS, navigation/registry, sidebarData and lazyRetry finds none - 'badge' here is a form chip, not nav attention",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -25361,10 +25365,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 the editor is an absolute layer over the in-page sigil; none of the context's 10 files imports @/api or @tauri-apps, so it reaches no native capability and no native command - revision 4's command-target technique has nothing to bound here either",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
+          "evidence": "src/features/shared/glyph/persona-layout/SigilEditModal.tsx:53 the editor is an absolute overlay over the in-page sigil stage; a grep of the context's 7 files for @tauri-apps, @/api/, invoke, alwaysOnTop, globalShortcut, getCurrentWindow, setFocus and keydown returns nothing, so no native surface or capability is involved",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -27091,10 +27095,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src-tauri/src/commands/infrastructure/context_generation.rs:797 the renderer-sent scan root (src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:410) is canonicalized and confined component-wise to the project's registered root before it becomes the cwd of a permission-disabled agent; scan output is native-owned and rendered from events",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
+          "evidence": "src-tauri/src/commands/infrastructure/context_generation.rs:797 the renderer-sent scan root (src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:410) is confined natively to the project's registered root by canonicalize plus component-wise starts_with (:735) and refused otherwise; the scan itself runs natively and the page only renders its events",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -29141,10 +29145,10 @@
           "changedAt": "2026-09-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10-15 splits six sub-panels with plain React lazy(), skipping the chunk-retry wrapper src/lib/lazyRetry.ts that sibling src/features/plugins/twin/TwinPage.tsx:19-24 uses; a transient chunk blip goes straight to the reload prompt - re-verified 2026-10-12, unfixed",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evidence": "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx:10 splits its six sub-panels with plain React lazy(), skipping the repo's retry wrapper src/lib/lazyRetry.ts that sibling src/features/plugins/twin/TwinPage.tsx:19 uses, so a transient chunk-fetch blip goes straight to the error boundary instead of retrying first",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "source": "retained",
           "revisionsBehind": 0
         },
@@ -30532,10 +30536,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/engine/src/prompt/mod.rs:1 assembles persona runtime prompts; no locale registry, translation store or MT request is built here (no locale/language reference across src-tauri/engine/src/prompt/*.rs)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src-tauri/engine/src/prompt/mod.rs:1 runtime persona prompt assembly; grep for locale|translat|i18n|language|lang over the 8 files hits only a 'natural-language' comment (capabilities.rs:406), so no translation request or store is built here.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -32198,10 +32202,10 @@
           "changedAt": "2026-09-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120-122 casts untyped sub-nav ids (id as DevToolsTab/ObsidianBrainTab/TwinTab); only top-level sections derive from the registry (src/features/shared/chrome/sidebar/sidebarData.ts:34) while the sub-nav arrays stay hand-kept - sidebarData.ts:161-164 records this cast shipping a blank page; re-verified 2026-10-12, unfixed",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evidence": "src/features/shared/chrome/sidebar/sections/PluginsSidebarNav.tsx:120 casts untyped sub-nav ids (id as DevToolsTab / ObsidianBrainTab / TwinTab at :120-122) from hand-kept arrays, while only top-level sections derive from the registry; src/features/shared/chrome/sidebar/sidebarData.ts:163 records this exact cast having shipped a blank page",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -32841,10 +32845,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 the fullest surface is a document overlay below the title bar; none of the context's 33 files imports @/api or @tauri-apps, so no host capability, foreign window, synthesized input or native command crosses here",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
+          "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 the fullest surface is a document overlay below the title bar; a grep of the context's 38 files for @tauri-apps, @/api/, invoke, alwaysOnTop, globalShortcut, getCurrentWindow and setFocus hits only comments, so no native capability, foreign window or synthesized input exists here",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
           "revisionsBehind": 0
         },
         {
@@ -33241,10 +33245,10 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src/features/browser/whitelist/siteEdit.ts:73 binds a site to a credential id only via the privileged browser_sites_bind_credential (src-tauri/src/commands/browser/sites.rs:79); the site shape carries credential_id and no secret (src/lib/bindings/BrowserSite.ts:26)",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
-          "evaluatedRevision": 3,
+          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:121 the whitelist binds a site to a vault credential by id only, persisted via the privileged browser_sites_bind_credential (src-tauri/src/commands/browser/sites.rs:79), so no secret value enters the webview context.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:8c4e4cc37445b46c",
+          "evaluatedRevision": 4,
           "revisionsBehind": 0
         },
         {
@@ -34278,13 +34282,13 @@
           "source": "conform",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/stores/slices/system/uiSlice.ts:570 setSettingsTab writes any id unchecked and src/stores/systemStore.ts:95 persists settingsTab with no restore validation (only sidebarSection is checked, systemStore.ts:234), so a retired id makes src/features/settings/components/SettingsPage.tsx:72 tabComponents[tab] undefined and Settings crashes to its boundary - same for cloudTab/homeTab (systemStore.ts:82,88); re-verified 2026-10-12, unfixed (anchor moved from uiSlice.ts:571; 0afa77a0a1 added inert/aria-hidden only)",
+          "evidence": "src/stores/slices/system/uiSlice.ts:542 setSettingsTab writes any id unchecked and src/stores/systemStore.ts:115 persists settingsTab with no restore validation (only sidebarSection is checked, :262), so a retired id makes src/features/settings/components/SettingsPage.tsx:73 tabComponents[tab] undefined and Settings crashes to its boundary",
           "digest": "sha256-b2:62a9a7fc993ea8b5",
           "revision": 6,
           "changedAt": "2026-09-23",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:62a9a7fc993ea8b5",
-          "evaluatedRevision": 6,
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:b55c5172e3d9fac0",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         }
       ],
@@ -36514,10 +36518,10 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src-tauri/src/commands/core/gallery.rs:260 the outward publish and the rollback delete (src/features/teams/sub_teamWorkspace/useAutoTeam.ts:157) send only a team id; the native side re-derives the payload and refuses a delete while a pipeline runs (src-tauri/src/commands/teams/teams.rs:71); no other native-only capability is reached",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4
+          "evidence": "src-tauri/src/commands/core/gallery.rs:290 the outward publish builds its blueprint natively from the team id the renderer sends (src/features/teams/sub_teamWorkspace/teamStudio/TeamPublishButton.tsx:6), and the rollback delete (src/features/teams/sub_teamWorkspace/useAutoTeam.ts:157) sends only an id that src-tauri/src/commands/teams/teams.rs:71 can refuse",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5
         },
         {
           "subject": "sidecar-provisioning",
@@ -36696,10 +36700,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/index.ts:1 The persona layout adoption module renders interactive template configuration petal views and contains no translation pipeline or localization topology code.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/adoptionDimHelpers.ts:13 the context only reads the generated Translations type to label channel cards; grep for locale|translat|i18n|language|lang finds no catalog, registry, overlay or MT path.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -37550,10 +37554,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:2 runs design reviews over template sources; it neither generates nor serves translated content",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:2 the context runs design reviews over template sources; grep for locale|translat|i18n|language|lang over its 9 files returns zero hits.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -41347,10 +41351,10 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "broker-proxy-attaches-secret: useWorkspaceConnect.ts:83-85 sends a one-time oauthSessionRef redeemed server-side, the token never crosses IPC; omit-the-column-not-the-value: src-tauri/core/src/models/credential.rs:40-42 serde-skips encrypted_data off the webview shape and src/lib/bindings/CredentialFieldMeta.ts:3 carries no value column; outbound-fetch-destination-validation n/a: the only data-borne address (authorize_url) is scheme-allowlisted at src-tauri/src/engine/mcp_tools.rs:532 and opened in the user browser with no credential (PendingAuthModal.tsx:58); public-vs-server-env-split n/a: zero import.meta.env reads; RLS techniques n/a: no browser-reachable store; audit detail is a fixed vocabulary (src-tauri/src/commands/credentials/crud.rs:201).",
-          "evaluatedAt": "2026-10-06",
-          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
-          "evaluatedRevision": 3,
+          "evidence": "src/features/vault/sub_credentials/components/workspace/useWorkspaceConnect.ts:86 workspace credentials are created from a one-time oauthSessionRef redeemed server-side (comment line 85: the token never crosses IPC), and the other panels address credentials by id only.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:8c4e4cc37445b46c",
+          "evaluatedRevision": 4,
           "revisionsBehind": 0
         }
       ],
@@ -42219,10 +42223,10 @@
           "changedAt": "2026-09-03",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "broker-proxy-attaches-secret: ChatTab.tsx:256 / src/api/vault/database/dbSchema.ts:74 send credentialId + SQL only, credential attached in Rust; outbound-fetch-destination-validation: that broker fetches via SSRF_SAFE_HTTP (src-tauri/src/engine/db_query.rs:138); opaque-upstream-errors (operator-owned DB, so detail is legitimate) with credential material scrubbed by sanitize_error before return (db_query.rs:148, :244); allowlisted-operator-stream: telemetry carries only read/mutation, never the statement (ChatTab.tsx:249-250) and console history is memory-only (ConsoleTab.tsx:47); env-split and RLS techniques n/a (no env reads, no browser-held DB role key).",
-          "evaluatedAt": "2026-10-06",
-          "evaluatedAgainst": "sha256-b2:d3eef10e9ed8459f",
-          "evaluatedRevision": 3,
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:295 queries run via executeDbQuery(credentialId, sql) into the privileged execute_db_query (src-tauri/src/commands/credentials/db_schema.rs:223), so the database credential is attached in Rust and never held by the tab.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:8c4e4cc37445b46c",
+          "evaluatedRevision": 4,
           "source": "retained",
           "revisionsBehind": 0
         },
