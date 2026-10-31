@@ -5,7 +5,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { RouteChunkSkeleton } from '@/features/shared/components/layout/RouteChunkSkeleton';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { useSystemStore } from '@/stores/systemStore';
-import type { PersonaDraft } from '@/features/agents/sub_editor';
 import type { DesignSubTab } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -25,14 +24,6 @@ const DesignBrainPanel = lazyRetry(() =>
 const DesignConnectorsPanel = lazyRetry(() =>
   import('./components/DesignSubtabPanels').then((m) => ({ default: m.DesignConnectorsPanel })),
 );
-
-interface DesignHubProps {
-  draft: PersonaDraft;
-  patch: (updates: Partial<PersonaDraft>) => void;
-  modelDirty: boolean;
-  /** Retained for the EditorBody contract; not wired by any current sub-tab. */
-  onConnectorsMissingChange?: (count: number) => void;
-}
 
 interface SubTabDef {
   id: DesignSubTab;
@@ -60,13 +51,11 @@ const SUB_TABS: SubTabDef[] = [
 const FALLBACK_SUB_TAB: DesignSubTab = 'manifest';
 
 /**
- * `_props` is deliberately unbound: all four panels read the selected persona
- * from the store rather than through the editor draft, so nothing is threaded
- * down today. The prop contract stays declared because `EditorBody` passes it
- * and a future panel that needs the in-flight draft should take it from here
- * rather than re-deriving one.
+ * Takes no props: all four panels read the selected persona from the store
+ * rather than through the editor draft. A future panel that needs the in-flight
+ * draft should add the prop here when it has a reader.
  */
-export function DesignHub(_props: DesignHubProps) {
+export function DesignHub() {
   const { t } = useTranslation();
   const subtabLabels = t.agents.design_subtabs as Record<string, string>;
   const { designSubTab, setDesignSubTab } = useSystemStore(

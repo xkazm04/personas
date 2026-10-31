@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useSystemStore } from '@/stores/systemStore';
-import type { PersonaDraft } from '@/features/agents/sub_editor';
 import { DesignHub } from '../DesignHub';
 
 vi.mock('../components/DesignLifePanels', () => ({
@@ -16,8 +15,7 @@ vi.mock('../components/DesignSubtabPanels', () => ({
 const TABS = ['manifest', 'responsibilities', 'brain', 'connectors'] as const;
 
 function renderHub() {
-  // Cast: DesignHub ignores its props (all panels read the store).
-  return render(<DesignHub draft={{} as PersonaDraft} patch={() => {}} modelDirty={false} />);
+  return render(<DesignHub />);
 }
 
 describe('DesignHub sub-tab fallback', () => {
