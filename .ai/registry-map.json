@@ -2621,7 +2621,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_connectors/libs/useConnectorStatuses.ts:17 The only parallelism here is credential healthcheck probes ('Test all', capped at 4 in flight). A case-insensitive grep of src/features/agents/sub_connectors for fleet, hibernat, sweeper, harvest and worktree found no hits, so this context dispatches no agent sessions.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "quality-gates",
@@ -21547,7 +21551,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/onboarding/components/tourConstants.ts:20 These are guided-tour UI components (rail geometry, step progress, narration). A case-insensitive grep of src/features/onboarding/components for fleet, hibernat, sweeper, harvest, dispatch and worktree found no hits, so nothing here registers, dispatches or harvests agent sessions.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "chat-transcript",
@@ -34638,7 +34646,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/studio/studioStore.ts:669 The autonomous build chain stops as finished when the worker's own BUILD_PLAN phases all say 'done' (AUTO_INSTRUCTION tells it to 'mark all phases done'), so the run's completion rests on the worker's self-report and nothing parent-side reads the artifact.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "supply-chain",

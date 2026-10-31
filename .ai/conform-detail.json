@@ -40822,6 +40822,92 @@
       "evaluatedTs": "2026-10-31T22:21:32.145Z",
       "worker": "8d6e2bbb-c28d-4272-87db-1c83171bd875",
       "techniques": []
+    },
+    "7741725e-8124-4899-b17e-8e39e7fcf1ed/fleet-orchestration": {
+      "context": "studio",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T22:27:58.716Z",
+      "worker": "e6d93c46-39df-46bd-9764-2b406ae4e523",
+      "techniques": [
+        {
+          "technique": "completion-claim-verification",
+          "verdict": "deviation",
+          "evidence": "src/features/studio/studioStore.ts:669 The stop condition is the model-authored phase list. No receipt, no decidable leaf and no UNVERIFIED outcome exist."
+        },
+        {
+          "technique": "soft-budget-under-the-hard-cap",
+          "verdict": "deviation",
+          "evidence": "src/features/studio/studioStore.ts:111 There is only the enforced cap. AUTO_INSTRUCTION (line 135) carries no turn budget derived from it, and nothing counts how often the cap fired versus an elected stop."
+        },
+        {
+          "technique": "absent-status-passthrough",
+          "verdict": "deviation",
+          "evidence": "src/features/studio/studioStore.ts:586 An empty reply is replaced with a fabricated 'Done.' bubble, a completion statement the session never sent. This is a reply text, not a registry status, so it is a borderline application of the technique."
+        },
+        {
+          "technique": "session-registry",
+          "verdict": "deviation",
+          "evidence": "src/features/studio/studioStore.ts:242 A runtime is keyed by project id, but its state is split across phase, busy, autonomous and resumeAuto. Writers poke those fields through a generic patch, with no transition door and no edge rules."
+        },
+        {
+          "technique": "durable-fleet-state",
+          "verdict": "deviation",
+          "evidence": "src/features/studio/studioStore.ts:310 Open tabs are mirrored and rehydrate re-attaches dev servers (line 772). An in-flight build turn is not mirrored, though, so after a mid-turn WebView reload the tab comes back idle while the backend turn may still be running."
+        },
+        {
+          "technique": "substrate-reconciliation",
+          "verdict": "deviation",
+          "evidence": "src/features/studio/studioStore.ts:809 Closing a tab is a one-shot, fire-and-forget stop. The adjacent comment admits a server that refuses to die keeps its port with nothing in Studio pointing at it, and no convergence pass reaps it."
+        },
+        {
+          "technique": "lifecycle-signals",
+          "verdict": "conformant",
+          "evidence": "src/features/studio/studioStore.ts:722 Tier one comes from session stream events. Tier two is a liveness heartbeat with a two-miss rule (lines 487-513) plus a bounded boot poll."
+        },
+        {
+          "technique": "worker-trajectory-anatomy",
+          "verdict": "conformant",
+          "evidence": "src/features/studio/studioStore.ts:635 A failed turn turns autonomy off and records the cause, so the chain stops and escalates instead of retrying."
+        },
+        {
+          "technique": "result-harvest",
+          "verdict": "not-applicable",
+          "evidence": "src/features/studio/studioStore.ts:46 The tabs are independent projects. Nothing fans out into a run roster that would need harvesting."
+        },
+        {
+          "technique": "heterogeneous-model-panels",
+          "verdict": "not-applicable",
+          "evidence": "src/features/studio/studioStore.ts:584 Each turn goes to one build session. No panel of models is convened."
+        },
+        {
+          "technique": "outbound-compute-plane",
+          "verdict": "not-applicable",
+          "evidence": "src/features/studio/studioStore.ts:48 Executors are local Rust-managed processes. There is no remote executor plane."
+        }
+      ]
+    },
+    "fbfcd99a-a333-42da-b85e-2ec1f560b4be/fleet-orchestration": {
+      "context": "agents-connectors",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T22:27:58.716Z",
+      "worker": "e6d93c46-39df-46bd-9764-2b406ae4e523",
+      "techniques": []
+    },
+    "aa2197a5-6b7c-46ff-a6cd-8172d2984f50/fleet-orchestration": {
+      "context": "onboarding-components",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T22:27:58.716Z",
+      "worker": "e6d93c46-39df-46bd-9764-2b406ae4e523",
+      "techniques": []
     }
   }
 }
