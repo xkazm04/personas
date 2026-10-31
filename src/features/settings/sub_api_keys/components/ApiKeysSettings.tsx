@@ -166,8 +166,10 @@ export default function ApiKeysSettings() {
       setActioning(group.current?.id ?? null);
       try {
         const out = await runRetire(disconnectIds(group), revokePairing);
-        if (out.failed.length > 0) setError(out.failed.map((f) => f.message).join('; '));
+        // Reload first: load() clears the error banner, which would erase a
+        // failed-revoke message set before it.
         await load();
+        if (out.failed.length > 0) setError(out.failed.map((f) => f.message).join('; '));
       } catch (e) {
         setError(extractMessage(e));
       } finally {
