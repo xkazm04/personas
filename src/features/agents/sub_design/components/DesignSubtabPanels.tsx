@@ -107,7 +107,11 @@ export function DesignConnectorsPanel() {
           </div>
         </SectionCard>
       )}
-      {!designIsEmpty && saved && (
+      {/* The recap resolves each proposed connector against the vault list, so
+          it waits for the first fetch the same way the live panel does
+          (`credentialsLoaded`): before it, an empty vault is "not yet", and the
+          recap would paint every connector "Configure credential". */}
+      {!designIsEmpty && saved && verification.credentialsLoaded && (
         <>
           <ConnectorsSection
             result={saved}
