@@ -9,6 +9,8 @@ import { createLogger } from '@/lib/log';
 
 const logger = createLogger('active-chains-badge');
 const POLL_INTERVAL_MS = 5_000;
+/** Consecutive failed polls before the snapshot is flagged stale (one blip stays silent). */
+const STALE_AFTER_FAILURES = 3;
 
 /**
  * Compact operator badge answering "what chains are running right now?" — the
@@ -22,13 +24,18 @@ export function ActiveChainsBadge() {
 
   const [chains, setChains] = useState<ActiveChain[]>([]);
   const [expanded, setExpanded] = useState(false);
+  const [failures, setFailures] = useState(0);
+  const [confirmedAt, setConfirmedAt] = useState<number | null>(null);
 
   const fetchChains = useCallback(async () => {
     try {
       setChains(await listActiveChains());
+      setFailures(0);
+      setConfirmedAt(Date.now());
     } catch (err) {
-      // Best-effort widget — keep last good state, but leave a breadcrumb so a
-      // chronic IPC failure isn't silently invisible.
+      // Best-effort widget — keep last good state, count the failure so a
+      // chronic outage flags the snapshot stale, and leave a breadcrumb.
+      setFailures((n) => n + 1);
       logger.warn('Failed to fetch active chains', { error: err });
     }
   }, []);
@@ -56,6 +63,7 @@ export function ActiveChainsBadge() {
   if (chains.length === 0) return null;
 
   const total = chains.length;
+  const stale = failures >= STALE_AFTER_FAILURES;
 
   return (
     <div
@@ -76,6 +84,14 @@ export function ActiveChainsBadge() {
           {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </span>
       </button>
+
+      <p role="status">
+        {stale && (
+          <span className="block px-3 pb-1.5 typo-caption text-foreground" data-testid="active-chains-stale">
+            {e.active_chains_stale} <RelativeTime timestamp={confirmedAt} />
+          </span>
+        )}
+      </p>
 
       {expanded && (
         <div className="px-3 pb-2.5 pt-1.5 border-t border-primary/10 flex flex-col gap-2">
