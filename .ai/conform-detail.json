@@ -13379,25 +13379,25 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T17:22:13.000Z",
-      "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-3",
       "techniques": [
         {
           "technique": "decay-and-forgetting",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 bulk forget leaves no key bar; the section 'A deliberate forget bars re-derivation' is met only by the single-row path at :1436"
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 bulk delete removes rows with no key bar; only the single-row delete calls tombstone_fact (memories.rs:1436), so 'a deliberate forget bars re-derivation' holds for one path of three."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 the bulk purge is scoped tier != 'core', so the user-pinned identity tier cannot be wiped by the unscoped call."
         },
         {
           "technique": "durable-store-failure-posture",
           "verdict": "partially realized",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1509 victims are captured and handed to the reaper ledger and the core tier is spared"
-        },
-        {
-          "technique": "memory-governance",
-          "verdict": "partly: core tier guarded, reaper ledger run",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1486",
-          "carriedFrom": "2026-10-14"
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1509 victims are captured and handed to the reaper ledger and the core tier is spared",
+          "carriedFrom": "2026-10-21"
         }
       ],
       "superseded": [
@@ -13414,6 +13414,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by 64299ba0-27fd-40c1-8af0-ddc7df52b12c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 delete_all (exposed at src/api/overview/memories.ts:154) hard-DELETEs every non-core memory and writes no fact_key tombstone, unlike single delete (:1436), so a deliberate workspace forget is undone by the next consolidation re-deriving the same facts",
+          "evaluatedAt": "2026-10-21T17:22:13.000Z",
+          "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+          "reason": "replaced by cloud-20261031-personas-3"
         }
       ]
     },
@@ -16091,30 +16098,29 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T17:22:13.000Z",
-      "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-3",
       "techniques": [
         {
           "technique": "memory-governance",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819 an operator correction is remembered without its stated grounds, so an audit of the constraint cannot answer why"
+          "evidence": "src-tauri/src/commands/infrastructure/idea_scanner.rs:130 the prompt header says 'the human triaged these away' over a list drawn from every status=rejected idea, though dev_tools.rs:833 records automated rejections as advisory decisions; the evidence's author is lost at the read door."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:832 only a human rejection becomes an importance-8 constraint; an automated one is an importance-5 advisory decision (:833)."
         },
         {
           "technique": "pending-beliefs-live-apart",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819 the rejection bars the whole subject forever instead of recording the claim as refused for its reason; a re-scoped idea is silently blocked"
-        },
-        {
-          "technique": "memory-governance",
-          "verdict": "realized (author tier)",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:797 automated rejections are advisory importance-5 decisions, human ones constraints"
+          "evidence": "src-tauri/src/commands/infrastructure/idea_scanner.rs:596 the rejection check handed to the proposer is a title list with the instruction to skip 'close variants', not a whole-claim identity, and it drops the reason the memory row now carries."
         },
         {
           "technique": "memory-value-model",
-          "verdict": "not realized: the reason separating 'already done' from 'not worth it' is dropped",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819",
-          "carriedFrom": "2026-10-14"
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:784 the reviewer's rejection reason is now appended to the decision memory as a 'Reason:' line, resolving the prior finding that 'Already done' and 'Not worth it' were stored identically."
         }
       ],
       "superseded": [
@@ -16131,6 +16137,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by 64299ba0-27fd-40c1-8af0-ddc7df52b12c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:804 the idea-verdict memory is built from title+description only and :819 makes a human rejection a permanent 'do not re-surface' constraint; rejection_reason (src-tauri/core/src/models/dev_tools.rs:1145) never reaches it, though the triage deck says it does (src/features/agents/quick-answer/triage/triageAdapters.ts:790)",
+          "evaluatedAt": "2026-10-21T17:22:13.000Z",
+          "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+          "reason": "replaced by cloud-20261031-personas-3"
         }
       ]
     },
@@ -20409,9 +20422,9 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T19:48:16.584Z",
-      "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-3",
       "techniques": [],
       "superseded": [
         {
@@ -20427,6 +20440,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
           "reason": "replaced by ffe8a68a-826a-4845-ab8e-4e952c701b13"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/companions/athena/types.ts:5 UI-shape types that do not cross the IPC boundary; the memory pipeline lives in the Rust brain (companion-brain context)",
+          "evaluatedAt": "2026-10-22T19:48:16.584Z",
+          "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
+          "reason": "replaced by cloud-20261031-personas-3"
         }
       ]
     },
@@ -25846,19 +25866,34 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:04:48.459Z",
-      "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-3",
       "techniques": [
         {
           "technique": "observation-clock",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166 prompt prints episode instants, never `now`, never a grounding instruction - the inverse failure the technique names"
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1284 instants are printed per episode with no grounding instruction and no labelled now, the 'grounding is an instruction, not a hope' failure."
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1211 every proposal must cite at least one source episode_id; supersedence goes by demotion (src-tauri/src/companion/brain/semantic.rs:221)."
         },
         {
           "technique": "filter-at-the-id-door",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/companion/brain/retrieval.rs:734 vector hits re-filtered by id with importance > 0, so retired nodes cannot re-enter"
+          "verdict": "realized",
+          "evidence": "src-tauri/src/companion/brain/retrieval.rs:740 vector hits are reloaded by id with importance > 0, so retired nodes cannot re-enter through the vector lane."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:773 retire_expired_facts retires facts past their own expires_at by importance=0, an expiry distinct from a deliberate forget."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/companion/brain/identity.rs:9 identity-layer edits are anchored diffs each gated by an approval card."
         }
       ],
       "superseded": [
@@ -25875,6 +25910,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by 8fb27c07-7f33-4b12-ad6b-9b9a01366973"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166 build_consolidation_prompt stamps each episode with its instant (:1253) but never states today nor asks the model to ground relative dates, so a deferred or replayed pass mis-dates them; the sibling sleep-cycle prompt does it (src-tauri/src/companion/brain/sleep_cycle/prompts.rs:61) - re-confirmed at revision 51",
+          "evaluatedAt": "2026-10-16T18:04:48.459Z",
+          "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
+          "reason": "replaced by cloud-20261031-personas-3"
         }
       ]
     },
@@ -25883,14 +25925,14 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:42:36.000Z",
-      "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-3",
       "techniques": [
         {
           "technique": "recall-injection",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/prompt/recall.rs:50 .unwrap_or_default() collapses failed recall into empty recall; the empty-vs-failed status signal is absent"
+          "evidence": "src-tauri/src/companion/prompt/recall.rs:50 .unwrap_or_default() turns failed recall into empty recall; a grep for recall_failed|recallFailed|recall_error|recall_unavailable|memory_unavailable across src and src-tauri/src finds no status signal anywhere downstream."
         }
       ],
       "superseded": [
@@ -25907,6 +25949,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by d424e3fc-5423-4b76-b2b8-c767a78d3d1a"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/prompt/recall.rs:27 both recall_for arms (:27, :50) still unwrap_or_default a retrieval error into an empty Recall, CompanionRecallPreview (src/api/companion.ts:2351) has no failure field and RecallStrip.tsx:68 hides the strip on zero: a down store is shown and treated as novelty",
+          "evaluatedAt": "2026-10-22T02:42:36.000Z",
+          "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
+          "reason": "replaced by cloud-20261031-personas-3"
         }
       ]
     },
@@ -27357,17 +27406,25 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T12:00:00.000Z",
-      "worker": "9640126c-236c-4871-b8f2-5ff1c48cafca",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-3",
       "techniques": [
         {
           "technique": "rollup-compaction",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/companion/proactive/rollup.rs:1 digest card over the ledger, no store family is merged or superseded"
+          "evidence": "src-tauri/src/companion/proactive/rollup.rs:3 deterministic audit digest, not a pass that supersedes a family of memory items."
         }
       ],
-      "registryProposal": "Matcher resonance on the token 'rollup' (why: rollup, budget, writes): daily-digest notification rollups are not rollup-compaction. Consider a not-when line in rollup-compaction naming report/digest cards."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/companion/proactive/rollup.rs:1 the 'rollup' is an end-of-day audit digest card composed deterministically from the turn ledger and delivered as a notification, not a pass that supersedes accreted memory items; the pipeline (triggers, quiet hours, budget.rs:1 attention cap) writes no memory store, so rollup-compaction and the other memory-pipeline techniques have no precondition here",
+          "evaluatedAt": "2026-10-15T12:00:00.000Z",
+          "worker": "9640126c-236c-4871-b8f2-5ff1c48cafca",
+          "reason": "replaced by cloud-20261031-personas-3"
+        }
+      ]
     },
     "7f6d3238-7136-4361-af8f-bca556ae2042/agent-memory": {
       "context": "mcp-server",
@@ -37508,32 +37565,41 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T12:00:00.000Z",
-      "worker": "fe870690-5a4d-48ed-875a-217a1e2c96f1",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-3",
       "techniques": [
         {
           "technique": "rollup-compaction",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/core/memory_compile.rs:245 sources are not marked superseded or linked (comment admits no link table); article is inserted alongside them"
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:244 no supersede link or member demotion; and memory_compile.rs:225 admits a two-member family, below the technique's family-needs-three bar."
         },
         {
           "technique": "scope-before-similarity",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/core/memory_compile.rs:87 window is partitioned by persona only; use_case_id is not partitioned and the article is written with use_case_id None, so the merged item takes no scope from its members"
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:237 the compiled article is written with use_case_id None, so the merged item does not inherit its members' capability scope."
         },
         {
           "technique": "memory-governance",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/core/memories.rs:950 review proposals apply via compare-and-swap on pending_review status (human-approved door); memories.rs:556 core-tier rows are shielded from LLM re-scoring"
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/core/memories.rs:556 a low LLM review score on a user-pinned core memory is treated as kept, never deleted."
         },
         {
           "technique": "addresses-before-compression",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/core/memory_compile.rs:226 compile is triggered by caller on any 3+ memories with no measurement that the pass saves recall seats or accuracy"
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:226 compile is triggered by caller on any 3+ memories with no measurement that the pass saves recall seats or accuracy",
+          "carriedFrom": "2026-10-22"
         }
       ],
-      "registryProposal": "Pair is a technique-shaped match for memory-compile; the rest of the agent-memory pairs listed as unknown are mostly UI/hook/lib contexts that only mention memory in passing and probably should not be governed by this subject (14+ contexts look like vocabulary resonance)."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:245 compile writes a new article beside its sources and links them only in body text; sources stay in default recall, so rollup-compaction's supersede-and-link obligation is unmet and the store grows instead of shrinking",
+          "evaluatedAt": "2026-10-22T12:00:00.000Z",
+          "worker": "fe870690-5a4d-48ed-875a-217a1e2c96f1",
+          "reason": "replaced by cloud-20261031-personas-3"
+        }
+      ]
     },
     "2fb16136-586e-478d-823f-38434d2d5b9a/eval-harness": {
       "context": "commands-communication",
@@ -40837,6 +40903,16 @@
           "reason": "replaced by cloud-20261031-personas-1"
         }
       ]
+    },
+    "e0a448bc-24d4-4663-ba31-27d4ce378a14/agent-memory": {
+      "context": "agents-deployment",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-3",
+      "techniques": []
     }
   }
 }

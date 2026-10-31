@@ -2867,7 +2867,11 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_deployment/components/deploymentTypes.ts:9 the context's row type is a cloud/GitLab deployment target; a grep of all 54 context files for memor|recall|remember|episod|consolidat finds only comments (timeAgo hoisting, timer bookkeeping, unmount retention), so no agent memory store is written, distilled or recalled here and the subject's precondition is absent.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52
         },
         {
           "subject": "agent-cli-transport",
@@ -3773,10 +3777,10 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:804 the idea-verdict memory is built from title+description only and :819 makes a human rejection a permanent 'do not re-surface' constraint; rejection_reason (src-tauri/core/src/models/dev_tools.rs:1145) never reaches it, though the triage deck says it does (src/features/agents/quick-answer/triage/triageAdapters.ts:790)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:485 the deck promises a rejected idea's reason becomes a constraint memory the scanners read back, but the scanner's read-back builds its rejected list from titles only (src-tauri/src/commands/infrastructure/idea_scanner.rs:596) and labels every rejected idea, machine-decided ones included, as human-triaged (idea_scanner.rs:130), so the reason never reaches the scan and an advisory machine verdict is recalled as a human ruling.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "revisionsBehind": 0
         },
         {
@@ -4726,10 +4730,10 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 delete_all (exposed at src/api/overview/memories.ts:154) hard-DELETEs every non-core memory and writes no fact_key tombstone, unlike single delete (:1436), so a deliberate workspace forget is undone by the next consolidation re-deriving the same facts",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src/api/overview/memories.ts:154 deleteAllMemories exposes delete_all, which hard-DELETEs every non-core memory (src-tauri/db/src/repos/core/memories.rs:1506) and writes no fact_key tombstone, unlike the single delete (memories.rs:1436); the user's bulk forget is therefore re-derivable by the next consolidation pass, and batchDeleteMemories (memories.ts:189 -> memories.rs:1205) has the same gap.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "revisionsBehind": 0
         },
         {
@@ -7048,10 +7052,10 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/core/memory_compile.rs:245 compile writes a new article beside its sources and links them only in body text; sources stay in default recall, so rollup-compaction's supersede-and-link obligation is unmet and the store grows instead of shrinking",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:244 compile inserts each article beside its sources and, by its own comment, links them only in body text: members are neither superseded nor taken out of default reads, so the store grows by the article instead of shrinking in what it recalls.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52
         },
         {
           "subject": "test-harness",
@@ -8504,10 +8508,10 @@
           "changedAt": "2026-10-15",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166 build_consolidation_prompt stamps each episode with its instant (:1253) but never states today nor asks the model to ground relative dates, so a deferred or replayed pass mis-dates them; the sibling sleep-cycle prompt does it (src-tauri/src/companion/brain/sleep_cycle/prompts.rs:61) - re-confirmed at revision 51",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1284 build_consolidation_prompt stamps each episode with its created_at but the prompt (fn at :1197) never states now nor instructs the model to resolve relative dates against the episode instant, so a deferred or replayed pass leaves the grounding to the model and can mis-date relative facts silently.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "revisionsBehind": 0
         },
         {
@@ -8937,10 +8941,10 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/companions/athena/types.ts:5 UI-shape types that do not cross the IPC boundary; the memory pipeline lives in the Rust brain (companion-brain context)",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src/features/companions/athena/athenaStore.ts:501 the store only mirrors the backend's recall-preview event for display, session-scoped, and a grep of athenaStore.ts for memory|recall|remember|persist|insert|fact finds no write, distillation or recall of agent memory; the pipeline lives in the Rust brain (companion-brain). Note: this context's file_paths in context-map.json are empty and its entry_points name src/features/plugins/companion/, which does not exist, so the store was located by its description.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "revisionsBehind": 3
         },
         {
@@ -9099,10 +9103,10 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/prompt/recall.rs:27 both recall_for arms (:27, :50) still unwrap_or_default a retrieval error into an empty Recall, CompanionRecallPreview (src/api/companion.ts:2351) has no failure field and RecallStrip.tsx:68 hides the strip on zero: a down store is shown and treated as novelty",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src/features/companions/athena/RecallStrip.tsx:68 the recall strip renders nothing when nothing was consulted, and the preview it reads (src/api/companion.ts:2351) has no failure field because both recall_for arms collapse a retrieval error into an empty Recall (src-tauri/src/companion/prompt/recall.rs:27, :50); a down store is shown, and treated, as novelty.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "revisionsBehind": 3
         },
         {
@@ -9406,10 +9410,10 @@
           "changedAt": "2026-10-15",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/companion/proactive/rollup.rs:1 the 'rollup' is an end-of-day audit digest card composed deterministically from the turn ledger and delivered as a notification, not a pass that supersedes accreted memory items; the pipeline (triggers, quiet hours, budget.rs:1 attention cap) writes no memory store, so rollup-compaction and the other memory-pipeline techniques have no precondition here",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src-tauri/src/companion/proactive/rollup.rs:3 the 'rollup' is a digest card composed deterministically from the turn ledger with no model call and no store family merged; the context's only memory touch is the on_this_day read of raw episodes/reflections (src-tauri/src/companion/proactive/triggers.rs:584) from an append-only log that is never deleted (src-tauri/src/companion/brain/episodic.rs:5). Grep of proactive/ for episodic::|semantic::|insert_fact|remember|companion_node|companion_fact|retrieval:: finds no write or distillation outside a test fixture.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "revisionsBehind": 0
         },
         {
