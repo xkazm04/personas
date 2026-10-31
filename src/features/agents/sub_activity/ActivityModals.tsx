@@ -93,7 +93,14 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
             // The user pressed Delete and confirmed: a failure is theirs to see.
             // It went to silentCatch, so the modal closed, the feed refreshed and
             // the "deleted" report simply came back with no word why.
-            await deleteReport(selectedMessage.id).catch(toastCatch('ActivityModals:deleteReport'));
+            // Close only when the delete landed, like a verdict: on failure the
+            // report stays in hand so the retry is one click.
+            try {
+              await deleteReport(selectedMessage.id);
+            } catch (err) {
+              toastCatch('ActivityModals:deleteReport')(err);
+              return;
+            }
             setSelectedMessage(null);
             onDataChanged();
           }}
