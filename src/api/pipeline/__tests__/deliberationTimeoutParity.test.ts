@@ -24,6 +24,7 @@ vi.mock('@/lib/tauriInvoke', () => ({
 }));
 
 import {
+  advanceTeamDeliberation,
   mergeDeliberationTracks,
   resolveDeliberationEscalation,
   splitTeamDeliberation,
@@ -37,6 +38,15 @@ function cliLegBudgetMs(): number {
   const m = /let timeout = std::time::Duration::from_secs\((\d+)\);/.exec(src.slice(at));
   expect(m, 'cli_text_inner timeout not found').not.toBeNull();
   return Number(m![1]) * 1000;
+}
+
+/** engine/deliberation.rs `pub const MAX_TURNS_PER_TICK: usize = N;` - the cap on
+ *  persona turns one Continue round runs sequentially (deliberation.rs:879). */
+function maxTurnsPerTick(): number {
+  const raw = readFileSync(resolve(process.cwd(), 'src-tauri/src/engine/deliberation.rs'), 'utf8');
+  const m = /pub const MAX_TURNS_PER_TICK: usize = (\d+);/.exec(raw);
+  expect(m, 'MAX_TURNS_PER_TICK not found').not.toBeNull();
+  return Number(m![1]);
 }
 
 function resolvedTimeoutMs(args: unknown[]): number {
@@ -64,5 +74,17 @@ describe('deliberation LLM-leg timeout parity', () => {
     await resolveDeliberationEscalation('d1', 'resolve');
     expect(calls[0]?.[0]).toBe('resolve_deliberation_escalation');
     expect(resolvedTimeoutMs(calls[0]!)).toBeGreaterThan(cliLegBudgetMs());
+  });
+
+  it('advance_team_deliberation outlives its worst-case round', async () => {
+    // advance_one_deliberation: moderator leg, then EITHER Continue (up to
+    // MAX_TURNS_PER_TICK sequential persona turns, each one cli_text_inner leg via
+    // cli_decision_with_model) OR Resolve (one synthesize_proposal leg). The
+    // branches are exclusive, so worst case = moderator + turns x leg.
+    await advanceTeamDeliberation('d1');
+    expect(calls[0]?.[0]).toBe('advance_team_deliberation');
+    const leg = cliLegBudgetMs();
+    const worst = leg * (1 + Math.max(maxTurnsPerTick(), 1));
+    expect(resolvedTimeoutMs(calls[0]!)).toBeGreaterThan(worst);
   });
 });

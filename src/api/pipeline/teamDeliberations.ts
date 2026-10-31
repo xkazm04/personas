@@ -14,6 +14,13 @@ import type { CompanionAssignTeamResult } from '@/lib/bindings/CompanionAssignTe
  *  __tests__/deliberationTimeoutParity.test.ts. */
 const SINGLE_CLI_LEG_TIMEOUT_MS = 210_000;
 
+/** One advance round is a moderator CLI leg, then EITHER up to
+ *  MAX_TURNS_PER_TICK (3) sequential persona turns (Continue) OR one proposal
+ *  synthesis (Resolve) - each leg bounded at 180 s - so the worst case is
+ *  180 s x (1 + 3) = 720 s. Padded 30 s. Pinned by
+ *  __tests__/deliberationTimeoutParity.test.ts. */
+const ADVANCE_ROUND_TIMEOUT_MS = 750_000;
+
 /** Open a deliberation on a team (the DB enforces one active per team).
  *  `costBudgetUsd` is the hard cost floor + the "Run to budget" stop (null ⇒
  *  unbounded — the run loop then ends on convergence / round cap instead). */
@@ -66,12 +73,12 @@ export const mergeDeliberationTracks = (deliberationId: string) =>
 /** Advance a deliberation by one moderated round on demand (user-initiated;
  *  not gated by the autonomous flag). Returns the updated deliberation. */
 export const advanceTeamDeliberation = (deliberationId: string) =>
-  // One round fans out to a Haiku moderator + up to 3 persona turns (+ a proposal
-  // synthesis on convergence) — well past the 90s default. Give it 4 minutes.
+  // One round = a moderator leg + up to 3 sequential persona turns, or a
+  // proposal synthesis on convergence; see ADVANCE_ROUND_TIMEOUT_MS.
   invoke<TeamDeliberation>(
     'advance_team_deliberation',
     { deliberationId },
-    { timeoutMs: 240_000 },
+    { timeoutMs: ADVANCE_ROUND_TIMEOUT_MS },
   );
 
 /** Approve a gated mid-deliberation capability action (decision 8): runs the
