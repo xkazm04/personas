@@ -9,9 +9,8 @@ import type { UpdateCredentialEventInput } from "@/lib/bindings/UpdateCredential
 import type { HealthcheckResult } from "@/lib/bindings/HealthcheckResult";
 import type { BulkHealthcheckSummary } from "@/lib/bindings/BulkHealthcheckSummary";
 import type { VaultStatus } from "@/lib/bindings/VaultStatus";
-import type { MigrationResult } from "@/lib/bindings/MigrationResult";
 import type { CredentialFieldMeta } from "@/lib/bindings/CredentialFieldMeta";
-export type { HealthcheckResult, VaultStatus, MigrationResult, CredentialFieldMeta };
+export type { HealthcheckResult, VaultStatus, CredentialFieldMeta };
 
 // ============================================================================
 // Credentials
@@ -101,9 +100,6 @@ export const healthcheckAllCredentials = () =>
 export const vaultStatus = () =>
   invoke<VaultStatus>("vault_status");
 
-
-export const migratePlaintextCredentials = () =>
-  invoke<MigrationResult>("migrate_plaintext_credentials");
 
 // -- Field-level Credential Storage ------------------------------------
 

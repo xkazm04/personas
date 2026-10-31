@@ -1,12 +1,10 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { GoogleCredentialOAuthStartResult } from "@/lib/bindings/GoogleCredentialOAuthStartResult";
-import type { OAuthProvider } from "@/lib/bindings/OAuthProvider";
-import type { OAuthProviderListResult } from "@/lib/bindings/OAuthProviderListResult";
 import type { OAuthStartResult } from "@/lib/bindings/OAuthStartResult";
 import type { OAuthStatusResult } from "@/lib/bindings/OAuthStatusResult";
 import type { StartOAuthParams } from "@/lib/bindings/StartOAuthParams";
-export type { GoogleCredentialOAuthStartResult, OAuthProvider, OAuthProviderListResult, OAuthStartResult, OAuthStatusResult, StartOAuthParams };
+export type { GoogleCredentialOAuthStartResult, OAuthStartResult, OAuthStatusResult, StartOAuthParams };
 
 // ============================================================================
 // Google OAuth
@@ -47,9 +45,6 @@ export const getGoogleCredentialOAuthStatus = (sessionId: string) =>
 // ============================================================================
 // Universal OAuth Gateway
 // ============================================================================
-
-export const listOAuthProviders = () =>
-  invoke<OAuthProviderListResult>("list_oauth_providers");
 
 export const startOAuth = (params: StartOAuthParams) =>
   invoke<OAuthStartResult>("start_oauth", {
