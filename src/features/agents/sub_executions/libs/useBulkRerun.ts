@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { executePersona, getExecution } from '@/api/agents/executions';
 import { createLogger } from '@/lib/log';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
@@ -244,6 +244,12 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
     (token: number) => !cancelledRef.current && latestWins.isCurrent(token),
     [latestWins],
   );
+
+  // The cohort state lives in this hook, so once its owner unmounts nothing can
+  // show, cancel or report it. Stop dispatching NEW re-runs (runs already
+  // dispatched keep running on the backend). `start()` clears the flag again,
+  // so a StrictMode mount/unmount/mount probe before any start is harmless.
+  useEffect(() => () => { cancelledRef.current = true; }, []);
 
   const updateItem = useCallback((token: number, originalId: string, patch: Partial<BulkRunItem>) => {
     if (!latestWins.isCurrent(token)) return; // a newer batch has since started

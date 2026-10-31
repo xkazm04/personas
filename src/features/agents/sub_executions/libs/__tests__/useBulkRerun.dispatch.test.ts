@@ -158,3 +158,29 @@ describe('useBulkRerun terminal accounting', () => {
     expect(result.current.phase).toBe('completed');
   });
 });
+
+describe('useBulkRerun unmount', () => {
+  it('dispatches nothing further once the owning view unmounts mid-cohort', async () => {
+    const held: Array<(v: PersonaExecution) => void> = [];
+    executePersonaMock.mockImplementation(
+      () => new Promise<PersonaExecution>((r) => { held.push(r); }),
+    );
+    getExecutionMock.mockImplementation(async (id: string) => exec(id, 'completed', 1));
+
+    const { result, unmount } = renderHook(() => useBulkRerun({ pollIntervalMs: 0, pollTimeoutMs: 1_000 }));
+    let started!: Promise<void>;
+    await act(async () => {
+      started = result.current.start(['a', 'b', 'c', 'd', 'e'].map((id) => row(id)), 'p1');
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(executePersonaMock).toHaveBeenCalledTimes(3);
+
+    unmount();
+    await act(async () => {
+      held.forEach((resolve, i) => resolve(exec(`n${i}`, 'queued', 0)));
+      await started;
+    });
+    // 'd' and 'e' were still queued when the view went away: never dispatched.
+    expect(executePersonaMock).toHaveBeenCalledTimes(3);
+  });
+});
