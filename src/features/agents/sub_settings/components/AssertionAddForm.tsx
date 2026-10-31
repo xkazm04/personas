@@ -63,6 +63,7 @@ export function AssertionAddForm({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder={a.name_placeholder}
+        aria-label={a.name_placeholder}
         className="w-full px-2 py-1 bg-background/50 border border-primary/15 rounded-card typo-body text-foreground placeholder:text-foreground focus-ring"
       />
       <div className="flex flex-wrap items-center gap-2">
@@ -90,6 +91,7 @@ export function AssertionAddForm({
         value={phrase}
         onChange={(e) => setPhrase(e.target.value)}
         placeholder={a.phrase_placeholder}
+        aria-label={a.phrase_placeholder}
         className="w-full px-2 py-1 bg-background/50 border border-primary/15 rounded-card typo-body text-foreground placeholder:text-foreground focus-ring"
       />
       <div className="flex items-center gap-2">
