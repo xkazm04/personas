@@ -73,8 +73,16 @@ export interface BulkRunCohort {
    */
   meanCostDelta: number | null;
   meanDurationDeltaMs: number | null;
+  /** Re-runs that reached a terminal status; both cost totals cover exactly these. */
+  landedCount: number;
+  /** Original cost summed over the LANDED runs that have one. */
   totalCostOriginal: number;
+  /** Re-run cost summed over the same landed runs that have one. */
   totalCostNew: number;
+  /** Landed runs whose original cost was never recorded (left out of totalCostOriginal). */
+  unpricedOriginalCount: number;
+  /** Landed runs whose re-run cost is missing (left out of totalCostNew). */
+  unpricedNewCount: number;
 }
 
 export interface UseBulkRerun {
@@ -96,12 +104,15 @@ function emptyCohort(): BulkRunCohort {
     recoveredCount: 0,
     meanCostDelta: null,
     meanDurationDeltaMs: null,
+    landedCount: 0,
     totalCostOriginal: 0,
     totalCostNew: 0,
+    unpricedOriginalCount: 0,
+    unpricedNewCount: 0,
   };
 }
 
-function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
+export function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
   const total = items.length;
   let finished = 0;
   let successCount = 0;
@@ -110,15 +121,24 @@ function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
   let recoveredCount = 0;
   let totalCostOriginal = 0;
   let totalCostNew = 0;
+  let landedCount = 0;
+  let unpricedOriginalCount = 0;
+  let unpricedNewCount = 0;
   let costDeltaSum = 0;
   let costDeltaN = 0;
   let durDeltaSum = 0;
   let durDeltaN = 0;
 
   for (const it of items) {
-    // An unrecorded original cost contributes nothing to the total and no
-    // delta — it is not a $0 run.
-    if (it.origCost !== null) totalCostOriginal += it.origCost;
+    // Both cost totals cover the same population: re-runs that landed. An
+    // unrecorded cost contributes nothing to its total and no delta — it is not
+    // a $0 run — and is counted so the report can say how many were skipped.
+    if (it.newStatus !== null) {
+      landedCount += 1;
+      if (it.origCost !== null) totalCostOriginal += it.origCost;
+      else unpricedOriginalCount += 1;
+      if (it.newCost === null) unpricedNewCount += 1;
+    }
     if (it.status === 'success' || it.status === 'failed') finished += 1;
     if (it.status === 'success') successCount += 1;
     if (it.status === 'failed') failedCount += 1;
@@ -151,8 +171,11 @@ function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
     recoveredCount,
     meanCostDelta: costDeltaN > 0 ? costDeltaSum / costDeltaN : null,
     meanDurationDeltaMs: durDeltaN > 0 ? durDeltaSum / durDeltaN : null,
+    landedCount,
     totalCostOriginal,
     totalCostNew,
+    unpricedOriginalCount,
+    unpricedNewCount,
   };
 }
 

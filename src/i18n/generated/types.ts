@@ -3747,6 +3747,7 @@ export type Translations = {
       bulk_rerun_mean_duration_delta: string;
       bulk_rerun_total_cost_original: string;
       bulk_rerun_total_cost_new: string;
+      bulk_rerun_unpriced_note: string;
       bulk_rerun_failed_count: string;
       bulk_rerun_cheaper: string;
       bulk_rerun_pricier: string;

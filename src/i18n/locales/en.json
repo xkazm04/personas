@@ -3741,6 +3741,7 @@
       "bulk_rerun_mean_duration_delta": "Mean duration Δ",
       "bulk_rerun_total_cost_original": "Original total cost",
       "bulk_rerun_total_cost_new": "Re-run total cost",
+      "bulk_rerun_unpriced_note": "{n} landed run(s) had no recorded cost",
       "bulk_rerun_failed_count": "Failed re-runs",
       "bulk_rerun_cheaper": "cheaper on average",
       "bulk_rerun_pricier": "pricier on average",

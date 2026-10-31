@@ -61,7 +61,7 @@ const bulkRerun = {
   cohort: {
     total: 0, finished: 0, successCount: 0, failedCount: 0, regressionCount: 0,
     recoveredCount: 0, meanCostDelta: 0, meanDurationDeltaMs: 0,
-    totalCostOriginal: 0, totalCostNew: 0,
+    landedCount: 0, totalCostOriginal: 0, totalCostNew: 0, unpricedOriginalCount: 0, unpricedNewCount: 0,
   },
   start: bulkStart,
   cancel: vi.fn(),

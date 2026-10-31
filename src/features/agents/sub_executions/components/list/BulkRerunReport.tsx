@@ -92,8 +92,12 @@ export function BulkRerunReport({ cohort, items, onClose, onCompareItem }: BulkR
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 typo-body">
-        <KvCell label={e.bulk_rerun_total_cost_original} value={fmtCost(cohort.totalCostOriginal)} />
-        <KvCell label={e.bulk_rerun_total_cost_new} value={fmtCost(cohort.totalCostNew)} />
+        <KvCell label={e.bulk_rerun_total_cost_original} value={fmtCost(cohort.totalCostOriginal)}
+          note={cohort.unpricedOriginalCount > 0 ? tx(e.bulk_rerun_unpriced_note, { n: cohort.unpricedOriginalCount }) : undefined}
+        />
+        <KvCell label={e.bulk_rerun_total_cost_new} value={fmtCost(cohort.totalCostNew)}
+          note={cohort.unpricedNewCount > 0 ? tx(e.bulk_rerun_unpriced_note, { n: cohort.unpricedNewCount }) : undefined}
+        />
         <KvCell
           label={e.bulk_rerun_mean_duration_delta}
           value={meanDur === null ? EM_DASH : formatDuration(Math.abs(meanDur))}
@@ -150,13 +154,16 @@ interface KvCellProps {
   label: string;
   value: string;
   tone?: string;
+  /** Disclosure under the value, e.g. how many runs the total skipped. */
+  note?: string;
 }
 
-function KvCell({ label, value, tone = 'text-foreground' }: KvCellProps) {
+function KvCell({ label, value, tone = 'text-foreground', note }: KvCellProps) {
   return (
     <div className="px-3 py-2 bg-secondary/20 border border-primary/10 rounded-card">
       <div className="typo-code uppercase text-foreground tracking-wider">{label}</div>
       <div className={`typo-code mt-0.5 ${tone}`}>{value}</div>
+      {note && <div className="typo-body text-foreground mt-0.5">{note}</div>}
     </div>
   );
 }
