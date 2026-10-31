@@ -101,6 +101,8 @@ import {
 /** One page of pending ideas is plenty for a triage session; the queue is a
  *  working set, not an archive. */
 const IDEA_PAGE_SIZE = 60;
+/** `triage_ideas` clamps `limit` to this server-side (TRIAGE_MAX_LIMIT); a re-read walks in chunks of it. */
+const IDEA_REQUEST_CAP = 200;
 
 /**
  * Both proposal ledgers are small by construction — the Fabric supersedes an
@@ -414,11 +416,15 @@ export function useUnifiedTriage(
    * the next page. `gen` makes a repeat request with the SAME cursor a distinct
    * state, so "load more" twice in a row is two fetches rather than one.
    */
-  const [ideaFetch, setIdeaFetch] = useState<{ cursor?: string; gen: number }>({ gen: 0 });
+  const [ideaFetch, setIdeaFetch] = useState<{ cursor?: string; gen: number; target?: number }>({
+    gen: 0,
+  });
   const [ideaPage, setIdeaPage] = useState(
     () => warmCache?.ideaPage ?? { loaded: 0, pending: 0, hasMore: false },
   );
   const cursorRef = useRef<string | null>(warmCache?.ideaCursor ?? null);
+  // How many ideas the session holds, so a revalidation can re-read that many.
+  const ideasLoadedRef = useRef(warmCache?.ideaPage.loaded ?? 0);
 
   /**
    * Which sources failed, and which came back full.
@@ -582,8 +588,33 @@ export function useUnifiedTriage(
     let cancelled = false;
     const appending = !!ideaFetch.cursor;
     setIdeasLoading(true);
-    void devApi
-      .triageIdeas(undefined, IDEA_PAGE_SIZE, ideaFetch.cursor, { status: 'pending' })
+    const filter = { status: 'pending' } as const;
+    const target = appending ? undefined : ideaFetch.target;
+    const read = async () => {
+      let page = await devApi.triageIdeas(
+        undefined,
+        Math.min(Math.max(target ?? 0, IDEA_PAGE_SIZE), IDEA_REQUEST_CAP),
+        ideaFetch.cursor,
+        filter,
+      );
+      // A revalidation re-reads as many ideas as the session had pulled in with
+      // Load more; past the server's limit cap that means walking the pages.
+      if (target) {
+        let acc = page.ideas;
+        while (!cancelled && acc.length < target && page.hasMore && page.cursor) {
+          page = await devApi.triageIdeas(
+            undefined,
+            Math.min(target - acc.length, IDEA_REQUEST_CAP),
+            page.cursor,
+            filter,
+          );
+          acc = [...acc, ...page.ideas];
+        }
+        page = { ...page, ideas: acc };
+      }
+      return page;
+    };
+    void read()
       .then((page) => {
         if (cancelled) return;
         cursorRef.current = page.cursor;
@@ -601,6 +632,7 @@ export function useUnifiedTriage(
           noteFailure('ideas', null);
           setIdeas((prev) => {
             const next = appending ? [...prev, ...page.ideas] : page.ideas;
+            ideasLoadedRef.current = next.length;
             // `counts` is scoped to the non-status filters, so `pending` is the
             // whole pending backlog rather than this page's slice.
             setIdeaPage({
@@ -1007,7 +1039,7 @@ export function useUnifiedTriage(
    * worse outcome than the conflict itself.
    */
   const refreshSources = useCallback(() => {
-    setIdeaFetch((f) => ({ gen: f.gen + 1 }));
+    setIdeaFetch((f) => ({ gen: f.gen + 1, target: ideasLoadedRef.current }));
     setProposalGen((g) => g + 1);
     setGoalGen((g) => g + 1);
     // Whatever moved these sources moved the title-bar badge with them — a

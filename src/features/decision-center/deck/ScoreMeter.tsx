@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 import { ArrowDown, Hammer, ShieldAlert, Target, Trophy, Zap, type LucideIcon } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
-import { bandTone } from '@/features/agents/quick-answer/triage/deck/DeckChips';
+import { bandTone } from './tones';
 import type { TriageFact, TriageTone } from '@/features/agents/quick-answer/triage/triageTypes';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { MonitorCopy } from './deckMeta';

@@ -1,4 +1,4 @@
-// DeckChips — the tone→token bridge the Decision Deck reads.
+// tones — the tone→token bridge the Decision Deck reads.
 //
 // `TriageItem` names semantic tones ('success', 'danger', …) and never a
 // palette class; this module is the single place that turns one into the
@@ -6,7 +6,7 @@
 // slightly different reds. The Quick Answer deck that used to share it (with
 // its chips, keycaps and kind copy) was retired 2026-10-06 when the Decision
 // Center replaced it; what is left is what the Decision Deck still imports.
-import type { TriageTone } from '../triageTypes';
+import type { TriageTone } from '@/features/agents/quick-answer/triage/triageTypes';
 
 /** Text-only, for use over a surface that owns its own background. */
 export const TONE_TEXT: Record<TriageTone, string> = {

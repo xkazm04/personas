@@ -22,7 +22,7 @@ import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal
 
 import { DEFAULT_TRIAGE_COPY, goalToTriage } from '../triageAdapters';
 import { reasonPromptFor, type TriageFact } from '../triageTypes';
-import { bandTone } from '../deck/DeckChips';
+import { bandTone } from '@/features/decision-center/deck/tones';
 
 const copy = DEFAULT_TRIAGE_COPY;
 
