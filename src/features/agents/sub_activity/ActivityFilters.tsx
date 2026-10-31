@@ -12,6 +12,8 @@ interface ActivityFiltersProps {
   tagFilter: string;
   starredOnly: boolean;
   counts: Record<ActivityType, number>;
+  /** Tabs whose count is a floor (a feed returned its full window): rendered "N+". */
+  truncated?: Partial<Record<ActivityType, boolean>>;
   availableStatuses: string[];
   availableTags: string[];
   useCaseOptions: { id: string; title: string }[];
@@ -32,7 +34,7 @@ interface ActivityFiltersProps {
 
 export function ActivityFilters({
   filter, statusFilter, useCaseFilter, tagFilter, starredOnly,
-  counts, availableStatuses, availableTags, useCaseOptions,
+  counts, truncated, availableStatuses, availableTags, useCaseOptions,
   hideSecondaryFilters = false,
   onFilterChange, onStatusFilterChange, onUseCaseFilterChange,
   onTagFilterChange, onStarredOnlyChange,
@@ -59,7 +61,7 @@ export function ActivityFilters({
             >
               {label}
               {counts[tab.id] > 0 && (
-                <span className="ml-1.5 text-foreground">({counts[tab.id]})</span>
+                <span className="ml-1.5 text-foreground">({counts[tab.id]}{truncated?.[tab.id] ? '+' : ''})</span>
               )}
               {isActive && (
                 <motion.div

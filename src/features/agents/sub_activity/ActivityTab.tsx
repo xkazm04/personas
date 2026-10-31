@@ -29,6 +29,9 @@ type WithUseCase = { use_case_id?: string | null };
 const getUseCaseId = (raw: unknown): string | null =>
   ((raw as WithUseCase | null | undefined)?.use_case_id) ?? null;
 
+/** Rows each feed asks for. A feed that returns exactly this many may have more. */
+const FEED_LIMIT = 50;
+
 type FeedKey = 'execution' | 'event' | 'memory' | 'review' | 'message' | 'attention';
 type FeedMap = Record<FeedKey, ActivityItem[]>;
 type PendingMap = Record<FeedKey, boolean>;
@@ -54,6 +57,8 @@ export function ActivityTab() {
   // rendering as "no activity". Attention had this alone; the other five
   // landed [] on failure and a dead feed read as a quiet agent.
   const [failedFeeds, setFailedFeeds] = useState<FeedKey[]>([]);
+  // Feeds whose window came back full: their tab count is a floor, not a total.
+  const [truncatedFeeds, setTruncatedFeeds] = useState<FeedKey[]>([]);
   const attentionUnavailable = failedFeeds.includes('attention');
   const loadGenRef = useRef(0);
 
@@ -84,6 +89,11 @@ export function ActivityTab() {
       if (!stillCurrent()) return;
       setFeeds((prev) => ({ ...prev, [key]: rows }));
       setPending((p) => ({ ...p, [key]: false }));
+      const truncated = !failed && rows.length >= FEED_LIMIT;
+      setTruncatedFeeds((prev) => {
+        if (prev.includes(key) === truncated) return prev;
+        return truncated ? [...prev, key] : prev.filter((k) => k !== key);
+      });
       setFailedFeeds((prev) => {
         if (prev.includes(key) === failed) return prev;
         return failed ? [...prev, key] : prev.filter((k) => k !== key);
@@ -94,7 +104,7 @@ export function ActivityTab() {
       land('execution', []);
     } else {
       markPending('execution');
-      listExecutions(personaId, 50)
+      listExecutions(personaId, FEED_LIMIT)
         .then((executions: PersonaExecution[]) => land('execution', executions.map((e): ActivityItem => ({
           type: 'execution', id: e.id,
           title: tx(t.agents.activity.execution_status, { status: e.status }),
@@ -116,7 +126,7 @@ export function ActivityTab() {
       since: null,
       until: null,
       search: null,
-      limit: 50n,
+      limit: BigInt(FEED_LIMIT),
     })
       .then((page) => land('event', page.events.map((e: PersonaEvent): ActivityItem => ({
         type: 'event', id: e.id,
@@ -130,7 +140,7 @@ export function ActivityTab() {
       .catch((err) => { silentCatch('ActivityTab:searchEvents')(err); land('event', [], true); });
 
     markPending('memory');
-    listMemories(personaId, undefined, undefined, 50)
+    listMemories(personaId, undefined, undefined, FEED_LIMIT)
       .then((memories: PersonaMemory[]) => land('memory', memories.map((m): ActivityItem => ({
         type: 'memory', id: m.id,
         title: m.title,
@@ -143,7 +153,7 @@ export function ActivityTab() {
       .catch((err) => { silentCatch('ActivityTab:listMemories')(err); land('memory', [], true); });
 
     markPending('review');
-    listManualReviewsPage({ personaId, limit: 50 })
+    listManualReviewsPage({ personaId, limit: FEED_LIMIT })
       .then((page) => land('review', page.rows.map((r: PersonaManualReview): ActivityItem => ({
         type: 'review', id: r.id,
         title: r.title,
@@ -156,7 +166,7 @@ export function ActivityTab() {
       .catch((err) => { silentCatch('ActivityTab:listManualReviewsPage')(err); land('review', [], true); });
 
     markPending('message');
-    listReports(50, undefined, personaId)
+    listReports(FEED_LIMIT, undefined, personaId)
       .then((messages: PersonaReport[]) => land('message', messages.map((m): ActivityItem => ({
         type: 'message', id: m.id,
         title: m.title || t.agents.activity.report_title,
@@ -169,7 +179,7 @@ export function ActivityTab() {
       .catch((err) => { silentCatch('ActivityTab:listReports')(err); land('message', [], true); });
 
     markPending('attention');
-    listAttentionLedger(personaId, 50)
+    listAttentionLedger(personaId, FEED_LIMIT)
       .then((attention: AttentionLedgerEntry[]) => {
         land('attention', attention.map((a): ActivityItem => ({
           type: 'attention', id: a.id,
@@ -193,6 +203,7 @@ export function ActivityTab() {
       execution: true, event: true, memory: true, review: true, message: true, attention: true,
     });
     setFailedFeeds([]);
+    setTruncatedFeeds([]);
   }, [personaId]);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -264,6 +275,19 @@ export function ActivityTab() {
     return c;
   }, [items, runsRegionOwnsExecutions, storeExecutions.length]);
 
+  // Tab labels that must read "N+": a full feed window hides older rows. The
+  // runs tab is ExecutionList's region (store-counted), so it is never flagged
+  // while that region owns it.
+  const truncated = useMemo(() => {
+    const t2: Partial<Record<ActivityType, boolean>> = {};
+    for (const k of truncatedFeeds) {
+      if (k === 'execution' && runsRegionOwnsExecutions) continue;
+      t2[k] = true;
+      t2.all = true;
+    }
+    return t2;
+  }, [truncatedFeeds, runsRegionOwnsExecutions]);
+
   // Failed feeds the current view would otherwise paint as empty. Attention
   // keeps its own notice below; the runs tab is ExecutionList's region.
   const visibleFailedFeedLabels = failedFeeds
@@ -299,6 +323,7 @@ export function ActivityTab() {
         tagFilter={tagFilter}
         starredOnly={starredOnly}
         counts={counts}
+        truncated={truncated}
         availableStatuses={availableStatuses}
         availableTags={knownTags}
         useCaseOptions={useCaseOptions}
