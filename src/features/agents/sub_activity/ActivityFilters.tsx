@@ -44,8 +44,8 @@ export function ActivityFilters({
   // other types; offering them on Events/Memories/... could only empty the feed.
   const runOnlyFilters = filter === 'all';
   return (
-    <div className="flex items-center gap-3 border-b border-primary/10 pb-0">
-      <div className="flex gap-1">
+    <div data-testid="activity-filter-strip" className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-primary/10 pb-0">
+      <div className="flex flex-wrap gap-1 min-w-0">
         {FILTER_TABS.map((tab) => {
           const isActive = filter === tab.id;
           // Six of these labels were English literals while their translated
@@ -57,7 +57,7 @@ export function ActivityFilters({
               key={tab.id}
               onClick={() => { onFilterChange(tab.id); onStatusFilterChange('all'); }}
               aria-pressed={isActive}
-              className={`relative px-3 py-1.5 typo-body rounded-t-card transition-colors duration-150 ease-out ${
+              className={`relative px-3 py-1.5 typo-body whitespace-nowrap rounded-t-card transition-colors duration-150 ease-out ${
                 isActive
                   ? 'bg-primary/10 text-primary'
                   : 'text-foreground hover:text-foreground hover:bg-primary/5'
@@ -79,7 +79,7 @@ export function ActivityFilters({
         })}
       </div>
       {!hideSecondaryFilters && (
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex flex-wrap items-center gap-2 min-w-0">
         {runOnlyFilters && (
         <button
           type="button"

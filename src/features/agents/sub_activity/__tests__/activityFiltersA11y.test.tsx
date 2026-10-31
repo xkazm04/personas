@@ -50,4 +50,13 @@ describe('ActivityFilters accessibility', () => {
     expect(typeButtons.length).toBe(FILTER_TABS.length);
     expect(screen.getByRole('button', { pressed: true }).textContent).toContain('activity_filters.events');
   });
+
+  it('lets the strip and its control groups wrap instead of overflowing at narrow widths', () => {
+    renderFilters();
+    const strip = screen.getByTestId('activity-filter-strip');
+    expect(strip.className).toContain('flex-wrap');
+    const groups = Array.from(strip.children) as HTMLElement[];
+    expect(groups.length).toBe(2);
+    for (const g of groups) expect(g.className).toContain('flex-wrap');
+  });
 });
