@@ -14081,6 +14081,7 @@ export type Translations = {
       contrast_badge_aaa: string;
       contrast_badge_aa: string;
       contrast_badge_low: string;
+      contrast_low_warning: string;
       contrast_badge_aria: string;
       contrast_readout_title: string;
       contrast_pair_body: string;
@@ -14118,6 +14119,9 @@ export type Translations = {
       save_apply: string;
       applied: string;
       reset: string;
+      reset_confirm_title: string;
+      reset_confirm_body: string;
+      reset_confirm_action: string;
       enter_theme_name: string;
       reset_to_auto: string;
       preview_dashboard: string;

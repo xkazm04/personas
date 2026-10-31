@@ -6,6 +6,7 @@ import type { CustomThemeConfig } from '@/stores/themeStore';
 import { deriveCustomThemeVars } from '@/lib/theme/deriveCustomTheme';
 import { getContrastRatio, getContrastLevel, type ContrastLevel } from '@/lib/theme/contrastRatio';
 import { Button } from '@/features/shared/components/buttons';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { Slider } from '@/features/shared/components/forms/Slider';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { ColorRow } from './ColorRow';
@@ -18,7 +19,7 @@ import { useTranslation } from '@/i18n/useTranslation';
    so a "Low" badge appears the moment a pick falls below AA. */
 function ContrastReadout({ vars, labels }: {
   vars: Record<string, string>;
-  labels: { title: string; body: string; primaryBtn: string; accentText: string; aaa: string; aa: string; low: string };
+  labels: { title: string; body: string; primaryBtn: string; accentText: string; aaa: string; aa: string; low: string; lowWarning: string };
 }) {
   const fg = vars['--foreground'] ?? '#e2e8f0';
   const bg = vars['--background'] ?? '#0a0e14';
@@ -58,6 +59,7 @@ function ContrastReadout({ vars, labels }: {
           </div>
         ))}
       </div>
+      <p role="status" className="typo-caption text-status-warning">{getContrastLevel(fg, bg) === 'low' ? labels.lowWarning : null}</p>
     </div>
   );
 }
@@ -71,6 +73,14 @@ const DRAFT_DEFAULTS = {
   backgroundAngle: 135,
 };
 
+/** Field-wise equality: null/undefined are the same "unset", and the angle only counts with an end colour. */
+function sameCustomTheme(a: CustomThemeConfig, b: CustomThemeConfig): boolean {
+  const keys = ['baseMode', 'primaryColor', 'accentColor', 'label', 'backgroundColor', 'backgroundEndColor',
+    'foregroundColor', 'secondaryColor', 'borderColor', 'cardBgColor', 'mutedFgColor'] as const;
+  if (keys.some((k) => (a[k] ?? null) !== (b[k] ?? null))) return false;
+  return !a.backgroundEndColor || (a.backgroundAngle ?? 135) === (b.backgroundAngle ?? 135);
+}
+
 export default function CustomThemeCreator() {
   const existingConfig = useThemeStore((s) => s.customTheme);
   const setCustomTheme = useThemeStore((s) => s.setCustomTheme);
@@ -80,6 +90,7 @@ export default function CustomThemeCreator() {
   const { t } = useTranslation();
   const s = t.settings.appearance;
   const nameInputId = useId();
+  const [confirmReset, setConfirmReset] = useState(false);
 
   // Local draft state — initialized from store or defaults
   const [baseMode, setBaseMode] = useState<'dark' | 'light'>(existingConfig?.baseMode ?? DRAFT_DEFAULTS.baseMode);
@@ -122,7 +133,7 @@ export default function CustomThemeCreator() {
   }), [baseMode, primaryColor, accentColor, label]);
 
   const isDirty = !existingConfig
-    || JSON.stringify(existingConfig) !== JSON.stringify(draftConfig);
+    || !sameCustomTheme(existingConfig, draftConfig);
 
   const handleSave = () => {
     setCustomTheme(draftConfig);
@@ -192,7 +203,7 @@ export default function CustomThemeCreator() {
                   onClick={() => setBaseMode(mode)}
                   aria-pressed={active}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-modal border typo-caption transition-all ${
-                    active ? 'border-primary/30 bg-primary/10 text-foreground/90' : 'border-primary/10 text-foreground hover:border-primary/20 hover:bg-primary/5'
+                    active ? 'border-primary/30 bg-primary/10 text-foreground' : 'border-primary/10 text-foreground hover:border-primary/20 hover:bg-primary/5'
                   }`}
                 >
                   <Icon className="w-3 h-3" />
@@ -269,6 +280,7 @@ export default function CustomThemeCreator() {
           aaa: s.contrast_badge_aaa,
           aa: s.contrast_badge_aa,
           low: s.contrast_badge_low,
+          lowWarning: s.contrast_low_warning,
         }}
       />
 
@@ -284,9 +296,19 @@ export default function CustomThemeCreator() {
           {isDirty || !isActiveCustom ? s.save_apply : s.applied}
         </Button>
         {existingConfig && (
-          <Button variant="ghost" size="sm" icon={<RotateCcw className="w-3.5 h-3.5" />} onClick={handleReset}>{s.reset}</Button>
+          <Button variant="ghost" size="sm" icon={<RotateCcw className="w-3.5 h-3.5" />} onClick={() => setConfirmReset(true)}>{s.reset}</Button>
         )}
       </div>
+      {confirmReset && (
+        <ConfirmDialog
+          danger
+          title={s.reset_confirm_title}
+          body={s.reset_confirm_body}
+          confirmLabel={s.reset_confirm_action}
+          onConfirm={() => { handleReset(); setConfirmReset(false); }}
+          onCancel={() => setConfirmReset(false)}
+        />
+      )}
     </div>
   );
 }
