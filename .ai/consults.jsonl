@@ -2249,3 +2249,11 @@
 {"ts":"2026-10-31T00:27:33.045Z","bundle":"software-engineering","subjects":["diff-comparison","fleet-orchestration","table","agent-chaining","tracing"],"techniques":["diff-honesty","semantic-level-selection","presentation-modes","result-harvest"],"deviations":5,"context":"agents-executions-components","via":"scan-sweep@4.10.0"}
 {"ts":"2026-10-31T00:27:33.045Z","bundle":"llm-observability","subjects":["trace-rollup-and-attribution"],"techniques":["unpriced-span-accounting","single-shape-rule"],"deviations":1,"context":"agents-executions-components","via":"scan-sweep@4.10.0"}
 {"ts":"2026-10-31T00:27:33.045Z","bundle":"software-engineering","subjects":["hitl-approval","agent-memory","triage-queues"],"techniques":["fail-loud-classification-default"],"deviations":2,"context":"agents-quick-answer","via":"scan-sweep@4.10.0"}
+{"ts":"2026-10-31T16:00:00Z","bundle":"software-engineering","subjects":["client-state","async-ui-states"],"techniques":["async-race-guards","action-busy-states"],"deviations":2}
+{"ts":"2026-10-31T16:00:00Z","bundle":"software-engineering","subjects":["mcp-tools","test-harness"],"techniques":[],"deviations":1}
+{"ts":"2026-10-31T16:00:00Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["negative-control-tests","gate-scope-is-not-report-scope","unreached-decisions-pin-nothing"],"deviations":3}
+{"ts":"2026-10-31T16:00:00Z","bundle":"software-engineering","subjects":["mcp-tools","settings"],"techniques":["authentication-and-scoping"],"deviations":2}
+{"ts":"2026-10-31T16:00:00Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":["decay-and-forgetting"],"deviations":1}
+{"ts":"2026-10-31T16:00:00Z","bundle":"software-engineering","subjects":["ipc-contract"],"techniques":["generated-type-contracts","call-wrapping"],"deviations":3}
+{"ts":"2026-10-31T16:00:00Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["acquisition","brokered-egress","health-probing"],"deviations":1}
+{"ts":"2026-10-31T16:00:00Z","bundle":"software-engineering","subjects":["design-tokens"],"techniques":["theme-architecture","motion-tokens"],"deviations":4}
