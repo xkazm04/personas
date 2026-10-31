@@ -82,3 +82,18 @@ describe('Activity run-only filters', () => {
     expect(screen.queryByTitle('activity.filter_tag')).toBeNull();
   });
 });
+
+describe('Activity tab toggles', () => {
+  it('does not refetch the other feeds when entering and leaving the Runs tab', async () => {
+    render(<ActivityTab />);
+    await waitFor(() => expect(h.listMemories).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByText(/^activity_filters.events/));
+    await waitFor(() => expect(screen.getByText('Foo Bar')).toBeTruthy());
+    fireEvent.click(screen.getByText(/^activity_filters.executions/));
+    fireEvent.click(screen.getByText(/^activity_filters.events/));
+    await waitFor(() => expect(screen.getByText('Foo Bar')).toBeTruthy());
+    // Events -> Runs -> Events: the memory feed did not change.
+    expect(h.listMemories).toHaveBeenCalledTimes(1);
+    expect(h.searchEvents).toHaveBeenCalledTimes(1);
+  });
+});
