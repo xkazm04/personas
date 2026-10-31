@@ -24,6 +24,7 @@ import {
   ContentHeader,
   ContentBody,
 } from '@/features/shared/components/layout/ContentLayout';
+import Button from '@/features/shared/components/buttons/Button';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import {
   createExternalApiKey,
@@ -252,14 +253,9 @@ export default function ApiKeysSettings() {
                   className="typo-caption text-foreground py-6 text-center bg-secondary/20 rounded flex flex-col items-center gap-3"
                 >
                   {s.empty}
-                  <button
-                    type="button"
-                    onClick={() => setShowCreate(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption hover:opacity-90 transition-opacity"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
+                  <Button variant="primary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowCreate(true)}>
                     {s.create_key}
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 regularKeys.map((key, index) => (
