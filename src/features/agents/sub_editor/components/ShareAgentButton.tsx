@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Share2, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
@@ -8,6 +8,7 @@ import type { GalleryPublishResult } from '@/lib/bindings/GalleryPublishResult';
 import { getInstallId, markActivation } from '@/lib/analytics';
 import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 
 /**
  * @catalog Share an agent to the public gallery and surface its share link.
@@ -27,6 +28,10 @@ export function ShareAgentButton({ personaId }: { personaId: string }) {
   const [published, setPublished] = useState<{ personaId: string; result: GalleryPublishResult } | null>(null);
   const result = published?.personaId === personaId ? published.result : null;
   const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const headingId = useId();
+  // Same dismissal as the readiness popover beside it: Escape and outside click.
+  useClickOutside(rootRef, open, () => setOpen(false));
   // The referral code is this install's pseudonymous id; whoever installs from
   // this link gets the referrer credited on their first activation.
   const inviteUrl = `https://personas.ai/?ref=${getInstallId()}`;
@@ -47,7 +52,7 @@ export function ShareAgentButton({ personaId }: { personaId: string }) {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={rootRef}>
       <Button
         variant="ghost"
         size="sm"
@@ -64,6 +69,7 @@ export function ShareAgentButton({ personaId }: { personaId: string }) {
           <motion.div
             // eslint-disable-next-line custom/enforce-base-modal -- anchored share popover, not a centered modal
             role="dialog"
+            aria-labelledby={headingId}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
@@ -71,7 +77,7 @@ export function ShareAgentButton({ personaId }: { personaId: string }) {
             className="absolute top-full right-0 mt-2 w-80 bg-background border border-primary/15 rounded-card shadow-elevation-3 p-3 z-50"
           >
             <div className="flex items-start justify-between gap-2">
-              <p className="typo-heading text-foreground">{s.published}</p>
+              <p id={headingId} className="typo-heading text-foreground">{s.published}</p>
               <Button
                 variant="ghost"
                 size="icon-sm"

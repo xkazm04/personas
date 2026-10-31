@@ -49,3 +49,23 @@ describe('ShareAgentButton across an agent switch', () => {
     expect(h.publish).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('ShareAgentButton popover a11y', () => {
+  async function openPopover() {
+    render(<div><button data-testid="outside">out</button><ShareAgentButton personaId="pA" /></div>);
+    fireEvent.click(screen.getByTestId('agent-share-btn'));
+    await waitFor(() => expect(screen.getByRole('dialog', { name: /shared/i })).toBeInTheDocument());
+  }
+
+  it('names the dialog and closes on Escape', async () => {
+    await openPopover();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('closes on an outside click', async () => {
+    await openPopover();
+    fireEvent.mouseDown(screen.getByTestId('outside'));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+});
