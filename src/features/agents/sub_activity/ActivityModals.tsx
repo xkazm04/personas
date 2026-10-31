@@ -4,6 +4,7 @@ import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { PersonaEvent, PersonaReport } from '@/lib/types/types';
 import type { PersonaMemory } from '@/lib/types/types';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
+import type { AttentionLedgerEntry } from '@/lib/bindings/AttentionLedgerEntry';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { resolveReviewRow } from '@/lib/decisions/rowWrites';
 import { deleteReport } from '@/api/overview/reports';
@@ -14,6 +15,7 @@ import MemoryDetailModal from '@/features/overview/sub_memories/components/Memor
 import { ReportDetailModal } from '@/features/overview/sub_reports/components/ReportDetailModal';
 import type { ActivityItem } from './activityTypes';
 import { toastCatch } from '@/lib/silentCatch';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import Button from '@/features/shared/components/buttons/Button';
 
 interface ActivityModalsProps {
@@ -29,6 +31,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
   const [selectedMemory, setSelectedMemory] = useState<PersonaMemory | null>(null);
   const [selectedReview, setSelectedReview] = useState<PersonaManualReview | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<PersonaReport | null>(null);
+  const [selectedAttention, setSelectedAttention] = useState<AttentionLedgerEntry | null>(null);
   // Which verdict is in flight, so only the pressed control shows busy and
   // the other one is merely held (a scalar flag lit neither and dimmed both).
   const [reviewProcessing, setReviewProcessing] = useState<ManualReviewStatus | null>(null);
@@ -40,6 +43,7 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
       case 'memory': setSelectedMemory(item.raw as PersonaMemory); break;
       case 'review': setSelectedReview(item.raw as PersonaManualReview); break;
       case 'message': setSelectedMessage(item.raw as PersonaReport); break;
+      case 'attention': setSelectedAttention(item.raw as AttentionLedgerEntry); break;
     }
   }, []);
 
@@ -93,11 +97,47 @@ export function useActivityModals({ personaName, personaColor, onDataChanged }: 
             // The user pressed Delete and confirmed: a failure is theirs to see.
             // It went to silentCatch, so the modal closed, the feed refreshed and
             // the "deleted" report simply came back with no word why.
-            await deleteReport(selectedMessage.id).catch(toastCatch('ActivityModals:deleteReport'));
+            // Close only when the delete landed, like a verdict: on failure the
+            // report stays in hand so the retry is one click.
+            try {
+              await deleteReport(selectedMessage.id);
+            } catch (err) {
+              toastCatch('ActivityModals:deleteReport')(err);
+              return;
+            }
             setSelectedMessage(null);
             onDataChanged();
           }}
         />
+      )}
+
+      {selectedAttention && (
+        <DetailModal
+          title={t.agents.life.activity_attention_row}
+          subtitle={selectedAttention.verdict}
+          onClose={() => setSelectedAttention(null)}
+        >
+          <div className="p-4 space-y-3">
+            <div>
+              <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.attention_detail_reason}</div>
+              <p className="typo-body text-foreground whitespace-pre-wrap">{selectedAttention.reason}</p>
+            </div>
+            <div>
+              <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.col_verdict}</div>
+              <p className="typo-body text-foreground">{selectedAttention.verdict}</p>
+            </div>
+            <div>
+              <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.attention_detail_started}</div>
+              <p className="typo-body text-foreground"><AbsoluteTime timestamp={selectedAttention.startedAt} /></p>
+            </div>
+            {selectedAttention.completedAt && (
+              <div>
+                <div className="typo-code text-foreground uppercase mb-1">{t.agents.activity.attention_detail_completed}</div>
+                <p className="typo-body text-foreground"><AbsoluteTime timestamp={selectedAttention.completedAt} /></p>
+              </div>
+            )}
+          </div>
+        </DetailModal>
       )}
 
       {selectedReview && (

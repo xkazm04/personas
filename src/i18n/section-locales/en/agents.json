@@ -1967,6 +1967,13 @@
     "annotation_tags_label": "Tags",
     "annotation_note_label": "Note",
     "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later.",
+    "review_status_pending": "Pending",
+    "review_status_approved": "Approved",
+    "review_status_rejected": "Rejected",
+    "review_status_resolved": "Resolved",
+    "attention_detail_reason": "Reason",
+    "attention_detail_started": "Started",
+    "attention_detail_completed": "Completed",
     "report_title": "Report"
   },
   "settings_status": {

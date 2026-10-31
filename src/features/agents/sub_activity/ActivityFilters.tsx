@@ -40,9 +40,12 @@ export function ActivityFilters({
   onTagFilterChange, onStarredOnlyChange,
 }: ActivityFiltersProps) {
   const { t } = useTranslation();
+  // Starred / tag narrow to execution rows, which only the All tab lists beside
+  // other types; offering them on Events/Memories/... could only empty the feed.
+  const runOnlyFilters = filter === 'all';
   return (
-    <div className="flex items-center gap-3 border-b border-primary/10 pb-0">
-      <div className="flex gap-1">
+    <div data-testid="activity-filter-strip" className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-primary/10 pb-0">
+      <div className="flex flex-wrap gap-1 min-w-0">
         {FILTER_TABS.map((tab) => {
           const isActive = filter === tab.id;
           // Six of these labels were English literals while their translated
@@ -53,7 +56,8 @@ export function ActivityFilters({
               type="button"
               key={tab.id}
               onClick={() => { onFilterChange(tab.id); onStatusFilterChange('all'); }}
-              className={`relative px-3 py-1.5 typo-body rounded-t-card transition-colors duration-150 ease-out ${
+              aria-pressed={isActive}
+              className={`relative px-3 py-1.5 typo-body whitespace-nowrap rounded-t-card transition-colors duration-150 ease-out ${
                 isActive
                   ? 'bg-primary/10 text-primary'
                   : 'text-foreground hover:text-foreground hover:bg-primary/5'
@@ -75,7 +79,8 @@ export function ActivityFilters({
         })}
       </div>
       {!hideSecondaryFilters && (
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex flex-wrap items-center gap-2 min-w-0">
+        {runOnlyFilters && (
         <button
           type="button"
           onClick={() => onStarredOnlyChange(!starredOnly)}
@@ -90,7 +95,8 @@ export function ActivityFilters({
           <Star className="w-3 h-3" fill={starredOnly ? 'currentColor' : 'none'} />
           {t.agents.activity.filter_starred_only}
         </button>
-        {availableTags.length > 0 && (
+        )}
+        {runOnlyFilters && availableTags.length > 0 && (
           <select
             value={tagFilter}
             onChange={(e) => onTagFilterChange(e.target.value)}
@@ -121,6 +127,7 @@ export function ActivityFilters({
           <select
             value={statusFilter}
             onChange={(e) => onStatusFilterChange(e.target.value)}
+            aria-label={t.agents.activity.col_status}
             className="px-2 py-1 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground outline-none"
           >
             <option value="all">{t.agents.activity.all_statuses}</option>
