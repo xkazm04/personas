@@ -11,8 +11,10 @@ import { renderHook, act } from '@testing-library/react';
  */
 
 const getRotationStatus = vi.fn();
+const getAllRotationStatuses = vi.fn();
 vi.mock('@/api/vault/rotation', () => ({
   getRotationStatus: (...a: unknown[]) => getRotationStatus(...a),
+  getAllRotationStatuses: (...a: unknown[]) => getAllRotationStatuses(...a),
 }));
 vi.mock('@/lib/credentials/remediationExecutor', () => ({
   executeRemediationAction: vi.fn(async () => undefined),
@@ -35,7 +37,8 @@ describe('useRemediationEvaluator cadence', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     getRotationStatus.mockReset();
-    getRotationStatus.mockResolvedValue(null);
+    getAllRotationStatuses.mockReset();
+    getAllRotationStatuses.mockResolvedValue({});
     useVaultStore.setState({ credentials: [actionable('c1')] });
   });
   afterEach(() => {
@@ -46,7 +49,7 @@ describe('useRemediationEvaluator cadence', () => {
     renderHook(() => useRemediationEvaluator());
 
     await act(async () => { await vi.advanceTimersByTimeAsync(15_000); });
-    expect(getRotationStatus).toHaveBeenCalledTimes(1);
+    expect(getAllRotationStatuses).toHaveBeenCalledTimes(1);
 
     // Three unrelated store writes over the next ~20 minutes.
     for (let i = 0; i < 3; i++) {
@@ -55,11 +58,13 @@ describe('useRemediationEvaluator cadence', () => {
         await vi.advanceTimersByTimeAsync(6 * 60_000);
       });
     }
-    expect(getRotationStatus).toHaveBeenCalledTimes(1);
+    expect(getAllRotationStatuses).toHaveBeenCalledTimes(1);
 
     // The 30-minute tick still fires, and reads the CURRENT credentials.
     useVaultStore.setState({ credentials: [actionable('c1'), actionable('c2')] });
     await act(async () => { await vi.advanceTimersByTimeAsync(30 * 60_000); });
-    expect(getRotationStatus.mock.calls.map((c) => c[0])).toEqual(['c1', 'c1', 'c2']);
+    // One batched call per evaluation pass, not one per credential.
+    expect(getAllRotationStatuses).toHaveBeenCalledTimes(2);
+    expect(getRotationStatus).not.toHaveBeenCalled();
   });
 });
