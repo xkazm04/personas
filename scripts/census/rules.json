@@ -3139,8 +3139,8 @@
         "description": "A rendering component under src/features imports an irreversible IPC door from @/api (deleteX / removeX / revokeX / purgeX / wipeX / clearAllX) and the whole file contains NO confirmation affordance of any kind. PROXY FOR the stack-free condition: an operation the user cannot undo is reachable from the UI without them being asked. Measured 2026-08-16 at 4f5621830: the anchor (an irreversible @/api import in a feature .tsx) matches 18 files; 12 have no consent step, 6 do — the positive control partitions the anchor exactly, 12 + 6 = 18. PRECISION 12/12 hand-read (each reaches a live delete_/revoke_ Tauri command from a click path with no dialog: LifecyclePage.tsx:120 deletes every trigger on a project in a loop; FleetPairDevice.tsx:75 un-pairs a device; ByomApiKeyManager.tsx:180 deletes a stored provider key). SCOPE is deliberately src/features/**.tsx: store slices, hooks and lib helpers legitimately carry no dialog, and including them took precision from 12/12 to 13/62. ignoreCommentLines is FALSE on purpose — the match is file-scoped and anchored at index 0, so the comment filter would look at line 1 and drop the count for any file that grows a JSDoc header. DO NOT key on the verb at the call site instead: an onClick-anchored variant of this rule scored ~3/17 because removeChip / removeRow / removeField edit unsaved form state. CORRECT END STATE is 0, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): this repo spells irreversibility as a named import from a generated Tauri command wrapper. In a Next.js app it is fetch(..., {method:'DELETE'}) or a useDeleteMutation hook; in a Rust TUI it is a repo call; this pattern scores ZERO on all of them."
       },
       "baseline": {
-        "files": 7,
-        "matches": 7
+        "files": 6,
+        "matches": 6
       },
       "floor": 1500
     },
