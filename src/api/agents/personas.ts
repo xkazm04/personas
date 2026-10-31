@@ -437,7 +437,7 @@ export type PersonaUpdatePayload =
  * of those nulls silently inverted to `Some(None)`, and any caller passing a
  * genuinely partial update — `buildUpdateInput({ parameters })` from the
  * deep-fanout toggle, `buildUpdateInput({ disabled_dims_json })` from the
- * persona layout view — wiped the other twelve columns.
+ * persona layout view — wiped the other thirteen columns.
  */
 export function buildUpdateInput(partial: PartialPersonaUpdate): PersonaUpdatePayload {
   const payload: PersonaUpdatePayload = {
