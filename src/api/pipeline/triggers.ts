@@ -11,6 +11,10 @@ import type { RecentScheduleRun } from "@/lib/bindings/RecentScheduleRun";
 import type { WebhookRequestLog } from "@/lib/bindings/WebhookRequestLog";
 import type { TriggerCleanupResult } from "@/lib/bindings/TriggerCleanupResult";
 import type { RenameEventTypeResult } from "@/lib/bindings/RenameEventTypeResult";
+import type { CronPreview } from "@/lib/bindings/CronPreview";
+import type { DryRunResult } from "@/lib/bindings/DryRunResult";
+import type { DryRunSimulatedEvent } from "@/lib/bindings/DryRunSimulatedEvent";
+import type { DryRunMatchedSubscription } from "@/lib/bindings/DryRunMatchedSubscription";
 
 // ============================================================================
 // Triggers
@@ -158,12 +162,8 @@ export const validateTrigger = (id: string) =>
 // Cron Preview
 // ============================================================================
 
-export interface CronPreview {
-  valid: boolean;
-  description: string;
-  next_runs: string[];
-  error: string | null;
-}
+// The binding, not a hand copy (`commands/tools/triggers.rs` CronPreview).
+export type { CronPreview };
 
 export const previewCronSchedule = (
   cronExpression: string,
@@ -217,29 +217,12 @@ export const getWebhookStatus = () =>
 // Dry Run
 // ============================================================================
 
-export interface DryRunSimulatedEvent {
-  event_type: string;
-  source_type: string;
-  source_id: string;
-  target_persona_id: string | null;
-  target_persona_name: string | null;
-  payload: Record<string, unknown>;
-}
-
-export interface DryRunMatchedSubscription {
-  subscription_id: string;
-  persona_id: string;
-  persona_name: string;
-  event_type: string;
-  source_filter: string | null;
-}
-
-export interface DryRunResult {
-  valid: boolean;
-  validation: import("@/lib/bindings/TriggerValidationResult").TriggerValidationResult;
-  simulated_event: DryRunSimulatedEvent | null;
-  matched_subscriptions: DryRunMatchedSubscription[];
-}
+// The bindings, not hand copies. The copy that stood here had drifted from the
+// wire: it dropped `chain_targets`, typed `simulated_event` and the target
+// persona fields as nullable (Rust always sends them) and `payload` as never
+// null (it is `Option<serde_json::Value>`). Pinned by
+// __tests__/noHandCopiedBindings.test.ts.
+export type { DryRunResult, DryRunSimulatedEvent, DryRunMatchedSubscription };
 
 export const dryRunTrigger = (id: string) =>
   invoke<DryRunResult>("dry_run_trigger", { id });
