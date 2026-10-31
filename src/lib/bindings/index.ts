@@ -107,6 +107,7 @@ export type { BoardScenarioResult } from "./BoardScenarioResult";
 export type { BoardVerdict } from "./BoardVerdict";
 export type { BpFocusOp } from "./BpFocusOp";
 export type { BpFocusRead } from "./BpFocusRead";
+export type { BpMorningRead } from "./BpMorningRead";
 export type { BpProductLink } from "./BpProductLink";
 export type { BrainCounters } from "./BrainCounters";
 export type { BrainHealth } from "./BrainHealth";

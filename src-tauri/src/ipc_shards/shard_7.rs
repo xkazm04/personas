@@ -384,5 +384,6 @@ pub(super) fn shard(
         commands::infrastructure::bp_link::bp_focus_read,
         commands::infrastructure::bp_link::bp_focus_move,
         commands::infrastructure::bp_link::bp_products,
+        commands::infrastructure::bp_link::bp_morning,
     ])
 }

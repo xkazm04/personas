@@ -16,6 +16,11 @@
 //! [`OFFLINE_RETRY`]: it answers the last offline report at once, so the 1 Hz
 //! surface says "offline" every 5 s instead of failing every second.
 //!
+//! THE MORNING. `bp_morning` reads bp's computed Morning deck (read-only).
+//! Approving (or declining a repeat) from it goes through Personas' own
+//! `lens_scan_decide`, into the same store bp reads: bp's deck drops the card
+//! on its next read.
+//!
 //! WHERE. The base URL is the existing `lens_scan.bp_url` setting (default
 //! `http://localhost:3010`), held to a loopback host: the setting can never
 //! point these calls off the machine.
@@ -97,6 +102,26 @@ pub struct BpProductLink {
     /// "Not in Personas".
     #[serde(skip_serializing_if = "Option::is_none")]
     pub project_id: Option<String>,
+}
+
+/// One read of bp's Morning deck (`GET /api/companion/morning`): bp's
+/// computed `MorningDeck` (morning-deck-1), read-only.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct BpMorningRead {
+    /// The base URL read (after the loopback check).
+    pub base: String,
+    /// bp answered.
+    pub online: bool,
+    /// bp's `MorningDeck`, passed through as bp sent it; the webview reads it
+    /// field by field. Absent when offline.
+    #[ts(type = "unknown")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deck: Option<Value>,
+    /// Why bp did not answer (connection refused, a status, a timeout).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -223,6 +248,32 @@ impl OfflineGate {
     }
 }
 
+/// The deck's query: `since` and `opened` are ISO instants the webview
+/// passes back from bp's own deck (`deck.since`, the first read's `until`).
+/// Anything that is not an ISO-shaped instant is refused, never forwarded.
+pub fn morning_query(
+    since: Option<&str>,
+    opened: Option<&str>,
+) -> Result<Vec<(&'static str, String)>, AppError> {
+    let mut q = Vec::new();
+    for (k, v) in [("since", since), ("opened", opened)] {
+        let Some(v) = v.and_then(non_blank) else {
+            continue;
+        };
+        let iso = v.len() <= 40
+            && v.chars().next().is_some_and(|c| c.is_ascii_digit())
+            && v.chars()
+                .all(|c| c.is_ascii_digit() || matches!(c, '-' | ':' | '.' | 'T' | 'Z' | '+'));
+        if !iso {
+            return Err(AppError::Validation(format!(
+                "{k} must be an ISO instant, got {v}"
+            )));
+        }
+        q.push((k, v.to_string()));
+    }
+    Ok(q)
+}
+
 /// The setting trimmed, or None when it is blank.
 fn non_blank(s: &str) -> Option<&str> {
     let t = s.trim();
@@ -308,6 +359,9 @@ where
     {
         return held;
     }
+    // the hold runs from when the attempt STARTED: a refused connect on Windows takes ~1.5 s, and timing from its end
+    // would knock on bp every ~6.5 s instead of every 5 s
+    let started = Instant::now();
     let read = attempt().await.unwrap_or_else(|error| BpFocusRead {
         base: base.into(),
         online: false,
@@ -318,17 +372,24 @@ where
     gate()
         .lock()
         .unwrap_or_else(|e| e.into_inner())
-        .record(&read, Instant::now());
+        .record(&read, started);
     read
 }
 
+/// A transport error worth one immediate retry: the pooled keep-alive socket
+/// was closed by bp while idle (Node closes idle sockets after 5 s), which is
+/// not bp being down. A refused connect or a timeout is never retried.
+fn stale_socket(e: &reqwest::Error) -> bool {
+    e.is_request() && !e.is_connect() && !e.is_timeout()
+}
+
 async fn get_json(http: &reqwest::Client, url: &str) -> Result<Value, String> {
-    let r = http
-        .get(url)
-        .timeout(READ_TIMEOUT)
-        .send()
-        .await
-        .map_err(|e| short(&e))?;
+    let send = || http.get(url).timeout(READ_TIMEOUT).send();
+    let r = match send().await {
+        Err(e) if stale_socket(&e) => send().await,
+        r => r,
+    }
+    .map_err(|e| short(&e))?;
     let status = r.status();
     if !status.is_success() {
         return Err(format!("bp answered {status}"));
@@ -336,6 +397,46 @@ async fn get_json(http: &reqwest::Client, url: &str) -> Result<Value, String> {
     r.json::<Value>()
         .await
         .map_err(|e| format!("bp's answer is not JSON: {}", short(&e)))
+}
+
+/// How long the deck read waits: bp reads every product's store for it.
+const MORNING_TIMEOUT: Duration = Duration::from_secs(8);
+
+/// `GET <base>/api/companion/morning[?since=&opened=]`. bp down is
+/// `online: false`, never an error: the Morning tab says so and offers a retry.
+pub async fn read_morning(
+    http: &reqwest::Client,
+    base: &str,
+    query: &[(&'static str, String)],
+) -> BpMorningRead {
+    let sent = http
+        .get(format!("{base}/api/companion/morning"))
+        .query(query)
+        .timeout(MORNING_TIMEOUT)
+        .send()
+        .await;
+    let got = match sent {
+        Err(e) => Err(short(&e)),
+        Ok(r) if !r.status().is_success() => Err(format!("bp answered {}", r.status())),
+        Ok(r) => r
+            .json::<Value>()
+            .await
+            .map_err(|e| format!("bp's answer is not JSON: {}", short(&e))),
+    };
+    match got {
+        Ok(deck) => BpMorningRead {
+            base: base.into(),
+            online: true,
+            deck: Some(deck),
+            error: None,
+        },
+        Err(error) => BpMorningRead {
+            base: base.into(),
+            online: false,
+            deck: None,
+            error: Some(error),
+        },
+    }
 }
 
 /// Why a move did not land: bp is not there, or bp said no.
@@ -351,14 +452,19 @@ pub async fn send_move(
     op: BpFocusOp,
     reader: &str,
 ) -> Result<Value, MoveError> {
-    let r = http
-        .post(format!("{base}/api/session/focus"))
-        .timeout(READ_TIMEOUT)
-        .header(reqwest::header::CONTENT_TYPE, "application/json")
-        .json(&move_body(op, reader))
-        .send()
-        .await
-        .map_err(|e| MoveError::Down(short(&e)))?;
+    // every move is idempotent in bp's record (hello, follow, unfollow, forget), so a stale socket is retried once
+    let send = || {
+        http.post(format!("{base}/api/session/focus"))
+            .timeout(READ_TIMEOUT)
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .json(&move_body(op, reader))
+            .send()
+    };
+    let r = match send().await {
+        Err(e) if stale_socket(&e) => send().await,
+        r => r,
+    }
+    .map_err(|e| MoveError::Down(short(&e)))?;
     let status = r.status();
     let body: Value = r.json().await.unwrap_or(Value::Null);
     if !status.is_success() {
@@ -442,6 +548,21 @@ pub async fn bp_products(state: State<'_, Arc<AppState>>) -> Result<Vec<BpProduc
     })
     .await?;
     Ok(link_products(&bp, &personas))
+}
+
+/// bp's Morning deck, read-only (the Monitor's Morning tab). Personas decides
+/// a card only through its own `lens_scan_decide`, never through bp's
+/// `POST /api/companion/morning` (that needs bp's human token).
+#[tauri::command]
+pub async fn bp_morning(
+    state: State<'_, Arc<AppState>>,
+    since: Option<String>,
+    opened: Option<String>,
+) -> Result<BpMorningRead, AppError> {
+    require_auth(&state).await?;
+    let query = morning_query(since.as_deref(), opened.as_deref())?;
+    let base = base_of(&state).await?;
+    Ok(read_morning(&crate::SHARED_HTTP, &base, &query).await)
 }
 
 #[cfg(test)]
