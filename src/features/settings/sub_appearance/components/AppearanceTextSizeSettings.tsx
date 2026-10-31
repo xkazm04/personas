@@ -21,7 +21,7 @@ export default function AppearanceTextSizeSettings() {
               active={isActive}
               onSelect={() => setTextScale(scale.id as TextScale)}
               icon={
-                <span className={`typo-body-lg ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>Aa</span>
+                <span className="typo-body-lg text-foreground">Aa</span>
               }
               label={s[scale.labelKey]}
               description={s[scale.descriptionKey]}

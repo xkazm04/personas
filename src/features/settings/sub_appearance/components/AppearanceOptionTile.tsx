@@ -24,7 +24,7 @@ export function AppearanceOptionTile({ active, onSelect, icon, label, descriptio
       }`}
     >
       {icon}
-      <span className={`typo-heading ${active ? 'text-foreground/90' : 'text-foreground'}`}>{label}</span>
+      <span className="typo-heading text-foreground">{label}</span>
       {description && <span className="typo-caption text-foreground">{description}</span>}
       {active && (
         <div className="absolute top-2 right-2">
