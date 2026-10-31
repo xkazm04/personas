@@ -41,6 +41,8 @@ export function OutputDiffSection({
   // the condition the fetch effect waits for, so without this latch it re-fired
   // (and re-toasted) in a loop while the section stayed open. Only Retry clears it.
   const [loadFailed, setLoadFailed] = useState(false);
+  // A side that came back with a full page may run longer: the diff is a prefix.
+  const [clipped, setClipped] = useState(false);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -50,6 +52,7 @@ export function OutputDiffSection({
         getExecutionLogLines(leftId, personaId, 0, LOG_PAGE_SIZE),
         getExecutionLogLines(rightId, personaId, 0, LOG_PAGE_SIZE),
       ]);
+      setClipped(l.length >= LOG_PAGE_SIZE || r.length >= LOG_PAGE_SIZE);
       setLogLeft(l.join('\n'));
       setLogRight(r.join('\n'));
     } catch (err) {
@@ -128,6 +131,12 @@ export function OutputDiffSection({
             ) : diff.length === 0 ? (
               <p className="typo-body text-foreground py-3">{e.no_log_data}</p>
             ) : (
+              <>
+              {clipped && (
+                <p className="typo-body text-status-warning py-1">
+                  {tx(e.diff_clipped, { count: LOG_PAGE_SIZE })}
+                </p>
+              )}
               <div className="max-h-64 overflow-y-auto rounded-card border border-primary/10 bg-background/50 typo-code">
                 {diff.reduce<{ elements: React.ReactNode[]; leftLine: number; rightLine: number }>(
                   (acc, d, i) => {
@@ -161,6 +170,7 @@ export function OutputDiffSection({
                   { elements: [], leftLine: 0, rightLine: 0 }
                 ).elements}
               </div>
+              </>
             )}
           </div>
         )}

@@ -3644,6 +3644,7 @@
       "terminal_output_diff": "Terminal Output Diff",
       "differences_count": "{count} differences",
       "no_log_data": "No log data available",
+      "diff_clipped": "Only the first {count} lines of each log were compared; later differences are not shown.",
       "identical": "identical",
       "diff_count_one": "{count} diff",
       "diff_count_other": "{count} diffs",

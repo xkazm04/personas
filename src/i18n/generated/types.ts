@@ -3650,6 +3650,7 @@ export type Translations = {
       terminal_output_diff: string;
       differences_count: string;
       no_log_data: string;
+      diff_clipped: string;
       identical: string;
       diff_count_one: string;
       diff_count_other: string;
