@@ -165,9 +165,11 @@ pub fn all_category_info() -> Vec<MemoryCategoryInfo> {
 //     KNOWN GAP (not yet fixed): `engine::claude_md_projection` selects
 //     through `get_for_injection_v2` and renders into a file the consumer
 //     imports and re-reads on `/compact` — a delivery, at a higher rate than
-//     the prompt path — and it does not increment. Latent today because
-//     `install_projection` is env-gated and has no production caller. It must
-//     not stay latent past the day it gets one, because `decay_score` anchors
+//     the prompt path — and it does not increment. Latent today only because
+//     `install_projection`, though called on every run by the runner
+//     (`engine/runner/mod.rs`), is a no-op unless PERSONAS_CLAUDE_MD_PROJECTION
+//     is set, and nothing sets it. It must not stay latent past the day that
+//     flag is turned on, because `decay_score` anchors
 //     age at `last_accessed_at`: memories delivered only through the
 //     projection would age as though never read, and the plan to retire the
 //     prompt-path injection would take the store's whole usage signal with

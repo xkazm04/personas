@@ -177,9 +177,9 @@ const REEMBED_BATCH: usize = 32;
 
 /// One node that needs a vector.
 ///
-/// Compiled under both feature sets even though only the `ml` build acts on it,
-/// because [`reembed_candidates`] is the part of the backfill a test can reach
-/// without an ONNX model and it is worth keeping honest in both.
+/// Compiled under both feature sets, though only the `ml` build constructs it:
+/// [`reembed_candidates`] has been `ml`-only since the unreachable non-`ml`
+/// surface was deleted (4bf1845d70), and its selection tests went with it.
 #[derive(Debug, Clone)]
 #[cfg_attr(not(feature = "ml"), allow(dead_code))]
 pub struct ReembedCandidate {
@@ -192,9 +192,10 @@ pub struct ReembedCandidate {
 
 /// Which nodes have no vector, or a vector recorded under a different model.
 ///
-/// Compiled under both feature sets and free of any embedder dependency, so
-/// the selection rule — the part with actual room to be wrong — is unit
-/// testable without an ONNX model.
+/// `ml`-only (it was compiled under both feature sets until 4bf1845d70, which
+/// deleted its non-`ml` tests with it). It still has no embedder dependency,
+/// so the selection rule — the part with actual room to be wrong — remains
+/// unit testable without an ONNX model; no such test exists today.
 ///
 /// A NULL `embedding_model` with a vector present is deliberately LEFT ALONE:
 /// `retrieval::filter_by_model` grandfathers an unstamped node as
