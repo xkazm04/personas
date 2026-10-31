@@ -5,6 +5,15 @@ import { X } from 'lucide-react';
 import { ColorPicker } from '@/features/shared/components/forms/ColorPicker';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 
+// The shared ColorPicker commits a 3-digit hex ("#abc"), but the theme derivation and the
+// contrast math (deriveCustomTheme / contrastRatio hexToRgb) only parse six digits and turn a
+// short hex into "#NaNNaNNaN". Every custom-theme colour passes through this row, so expand here.
+const SHORT_HEX = /^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/;
+function toSixDigitHex(color: string): string {
+  const m = SHORT_HEX.exec(color);
+  return m ? `#${m[1]}${m[1]}${m[2]}${m[2]}${m[3]}${m[3]}` : color;
+}
+
 // ---------------------------------------------------------------------------
 // Inline popup color picker — compact swatch that opens palette on click
 // ---------------------------------------------------------------------------
@@ -76,7 +85,7 @@ export function ColorRow({
           >
             <ColorPicker
               value={displayValue}
-              onChange={(c) => onChange(c)}
+              onChange={(c) => onChange(toSixDigitHex(c))}
               size="sm"
             />
           </motion.div>
