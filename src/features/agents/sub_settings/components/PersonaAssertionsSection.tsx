@@ -26,6 +26,9 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
   const { t } = useTranslation();
   const a = t.agents.assertions;
   const [assertions, setAssertions] = useState<OutputAssertion[]>([]);
+  // Loading, failed and truly empty must not render alike: the empty line is
+  // only said after a load succeeded with zero rows.
+  const [loadState, setLoadState] = useState<'loading' | 'failed' | 'loaded'>('loading');
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
   const [assertionType, setAssertionType] = useState<'contains' | 'not_contains'>('contains');
@@ -42,13 +45,17 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
       const rows = await listOutputAssertions(personaId);
       if (!latestWins.isCurrent(token)) return;
       setAssertions(rows);
+      setLoadState('loaded');
     } catch (err) {
       if (!latestWins.isCurrent(token)) return;
+      setLoadState((prev) => (prev === 'loaded' ? prev : 'failed'));
       toastCatch('assertions:list')(err);
     }
   }, [personaId, latestWins]);
 
   useEffect(() => {
+    setLoadState('loading');
+    setAssertions([]);
     void refresh();
     // A persona switch or unmount retires every response still in flight.
     return () => { latestWins.next(); };
@@ -107,8 +114,17 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
       <div className="bg-secondary/40 border border-primary/20 rounded-modal p-3 space-y-2.5">
         <p className="typo-caption text-foreground">{a.subtitle}</p>
 
-        {assertions.length === 0 && !adding && (
+        {loadState === 'loaded' && assertions.length === 0 && !adding && (
           <p className="typo-body text-foreground py-1">{a.empty}</p>
+        )}
+
+        {loadState === 'failed' && (
+          <div className="flex items-center gap-2 py-1">
+            <p className="typo-body text-status-error">{a.load_failed}</p>
+            <Button variant="ghost" size="sm" onClick={() => void refresh()}>
+              {t.common.retry}
+            </Button>
+          </div>
         )}
 
         {assertions.map((row) => (
