@@ -708,6 +708,7 @@
     "deep_fanout": "Deep fan-out",
     "deep_fanout_hint": "Delegate independent parallel sub-tasks to subagents. Set a budget cap.",
     "deep_fanout_unavailable": "Unavailable on this plan — needs the Workflow/Task tools (Max/Team).",
+    "deep_fanout_probe_failed": "Couldn't check whether this plan supports it. Try again later.",
     "tab_chain": "Chain",
     "verdict_field": "Verdict",
     "retry_of_field": "Retry of",

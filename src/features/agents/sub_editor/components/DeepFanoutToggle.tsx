@@ -54,6 +54,9 @@ export function DeepFanoutToggle({
   const e = t.agents.executions;
   const [on, setOn] = useState(() => readDeepFanout(parameters));
   const [available, setAvailable] = useState<boolean | null>(null);
+  // A failed probe is its own state, not a "no" answer: it must not tell a Max
+  // user their plan lacks the capability.
+  const [probeFailed, setProbeFailed] = useState(false);
 
   useEffect(() => {
     setOn(readDeepFanout(parameters));
@@ -67,7 +70,7 @@ export function DeepFanoutToggle({
       })
       .catch((err) => {
         silentCatch('DeepFanoutToggle:probeCliCapabilities')(err);
-        if (!cancelled) setAvailable(false);
+        if (!cancelled) setProbeFailed(true);
       });
     return () => {
       cancelled = true;
@@ -110,7 +113,9 @@ export function DeepFanoutToggle({
           {e.deep_fanout}
         </div>
         <div className="typo-caption text-foreground/90">
-          {available === false ? e.deep_fanout_unavailable : e.deep_fanout_hint}
+          {probeFailed
+            ? e.deep_fanout_probe_failed
+            : available === false ? e.deep_fanout_unavailable : e.deep_fanout_hint}
         </div>
       </div>
       <AccessibleToggle
@@ -120,7 +125,7 @@ export function DeepFanoutToggle({
         // Held only when it would turn the flag ON: switching a capability OFF
         // never needs the capability, so a persona already fanning out can
         // always be switched back (probe failure or a plan downgrade).
-        disabled={available === false && !on}
+        disabled={(available === false || probeFailed) && !on}
       />
     </div>
   );

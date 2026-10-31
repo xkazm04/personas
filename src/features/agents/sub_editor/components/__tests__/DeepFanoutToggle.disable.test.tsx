@@ -8,7 +8,7 @@
  * writes the parameters WITHOUT deep_fanout; with the flag OFF it stays held.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import type { Persona } from '@/lib/bindings/Persona';
 
 const h = vi.hoisted(() => ({ updatePersona: vi.fn(), probe: vi.fn() }));
@@ -57,5 +57,22 @@ describe('DeepFanoutToggle availability gate', () => {
     h.probe.mockResolvedValue({ deepFanoutAvailable: false });
     render(<DeepFanoutToggle personaId="p1" parameters={null} />);
     await waitFor(() => expect(screen.getByRole('switch')).toBeDisabled());
+  });
+});
+
+describe('DeepFanoutToggle probe failure copy', () => {
+  it('does not claim the plan lacks the capability when the probe itself fails', async () => {
+    h.probe.mockRejectedValue(new Error('ipc down'));
+    render(<DeepFanoutToggle personaId="p1" parameters={null} />);
+    await waitFor(() => expect(h.probe).toHaveBeenCalled());
+    await act(async () => { await Promise.resolve(); });
+    expect(screen.queryByText(/Unavailable on this plan/)).toBeNull();
+    expect(screen.getByText(/Couldn't check/)).toBeInTheDocument();
+  });
+
+  it('still names the plan when the probe answers no', async () => {
+    h.probe.mockResolvedValue({ deepFanoutAvailable: false });
+    render(<DeepFanoutToggle personaId="p1" parameters={null} />);
+    await waitFor(() => expect(screen.getByText(/Unavailable on this plan/)).toBeInTheDocument());
   });
 });
