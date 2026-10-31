@@ -20,7 +20,13 @@ export function fmtPct(v: number): string {
   return `${sign}${v.toFixed(0)}%`;
 }
 
-export function fmtTokens(n: number, opts?: { withMillions?: boolean }): string {
+/**
+ * The one token-count formatter for the execution surfaces. A measured zero
+ * renders as "0"; a caller that treats zero as "absent" (the ledger: a run
+ * that failed before any model call) names its label with `zeroAs`.
+ */
+export function fmtTokens(n: number, opts?: { withMillions?: boolean; zeroAs?: string }): string {
+  if (n === 0 && opts?.zeroAs !== undefined) return opts.zeroAs;
   if (opts?.withMillions && n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}${opts?.withMillions ? 'K' : 'k'}`;
   return String(n);

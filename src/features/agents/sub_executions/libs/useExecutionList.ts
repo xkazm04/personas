@@ -2,12 +2,6 @@ import { useEffect, useRef, useMemo } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
 
-export function formatTokens(tokens: number): string {
-  if (tokens === 0) return '-';
-  if (tokens >= 1000) return `${(tokens / 1000).toFixed(1)}k`;
-  return String(tokens);
-}
-
 /**
  * Single source of truth for the persona execution list.
  * Fetches on mount / personaId change and auto-refreshes when isExecuting transitions false.
