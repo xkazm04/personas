@@ -1112,32 +1112,20 @@ export const triageVerdictsIngest = (projectId: string, runDir?: string) =>
     runDir,
   });
 
-export const batchCreateTasks = (tasks: { title: string; description?: string; sourceIdeaId?: string; goalId?: string }[], projectId?: string) =>
-  safeInvoke<DevTask[]>([], "dev_tools_batch_create_tasks", {
-    tasks: tasks.map((t) => ({
-      title: t.title,
-      description: t.description,
-      sourceIdeaId: t.sourceIdeaId,
-      goalId: t.goalId,
-    })),
-    projectId: projectId,
-  });
-
-export const startTask = (id: string) =>
-  safeInvoke<DevTask>({} as DevTask, "dev_tools_start_task", { id });
-
-export const cancelTask = (id: string) =>
-  safeInvoke<DevTask>({} as DevTask, "dev_tools_cancel_task", { id });
-
-export const startBatch = (taskIds: string[]) =>
-  safeInvoke<{ batch_id: string; started: number }>({ batch_id: "", started: 0 }, "dev_tools_start_batch", { taskIds });
-
-export const getBatchStatus = (batchId: string) =>
-  safeInvoke<{ batch_id: string; total: number; completed: number; failed: number; running: number; pending: number; tasks: DevTask[] }>(
-    { batch_id: "", total: 0, completed: 0, failed: 0, running: 0, pending: 0, tasks: [] },
-    "dev_tools_get_batch_status",
-    { batchId },
-  );
+/** Create one task per entry, in order, through `dev_tools_create_task`.
+ *  There is no batch command: this used to call `dev_tools_batch_create_tasks`
+ *  (never implemented) through `safeInvoke`, so it resolved `[]` and the Run
+ *  Desk "From accepted" button created nothing. A real failure now rejects. */
+export const batchCreateTasks = async (
+  tasks: { title: string; description?: string; sourceIdeaId?: string; goalId?: string }[],
+  projectId?: string,
+): Promise<DevTask[]> => {
+  const created: DevTask[] = [];
+  for (const t of tasks) {
+    created.push(await createTask(t.title, projectId, t.description, t.sourceIdeaId, t.goalId));
+  }
+  return created;
+};
 
 // -- Task Execution (CLI-powered) -------------------------------------------
 
@@ -1734,16 +1722,6 @@ export interface SkillLessonRow {
 export const listSkillLessons = (skillName?: string | null) =>
   safeInvoke<SkillLessonRow[]>([], "skill_lessons_list", { skillName: skillName ?? null });
 
-/** Write/refresh `.personas/skill-registry.json` in the project's repo — the
- *  offline sibling/library-version snapshot the reflection contract's sync
- *  ritual reads. Called before skill dispatches. Returns the skill count. */
-/**
- * Refresh a repo's `.personas/skill-registry.json` snapshot.
- *
- * `libraryRoot` decides which library the snapshot COMPARES AGAINST — pass the
- * wired registry's `skills/` lane so the reflection ritual judges versions
- * against what the fleet reads, not against the machine-local home library.
- */
 /**
  * Contribute this installation's 30-day skill-usage counts to a paired registry's
  * `usage/` lane. WRITES the file into the working copy only — committing it is
@@ -1781,6 +1759,15 @@ export const syncRegistryClone = (clonePath: string) =>
 export const setKnowledgeRegistryRoot = (clonePath: string | null) =>
   invoke<void>("dev_tools_set_knowledge_root", { clonePath });
 
+/**
+ * Write/refresh `.personas/skill-registry.json` in the project's repo — the
+ * offline sibling/library-version snapshot the reflection contract's sync
+ * ritual reads. Called before skill dispatches. Returns the skill count.
+ *
+ * `libraryRoot` decides which library the snapshot COMPARES AGAINST — pass the
+ * wired registry's `skills/` lane so the reflection ritual judges versions
+ * against what the fleet reads, not against the machine-local home library.
+ */
 export const exportSkillRegistry = (projectId: string, libraryRoot?: string | null) =>
   safeInvoke<number>(0, "dev_tools_export_skill_registry", { projectId, libraryRoot: libraryRoot ?? null });
 
