@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Star, Trash2, Plus, X } from 'lucide-react';
 import type { ExecutionAnnotation } from '@/lib/bindings/ExecutionAnnotation';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -36,11 +36,35 @@ export function AnnotationEditor({
   const [draftTag, setDraftTag] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Last values taken from the annotation prop (or the empty defaults), and the
+  // execution they belong to. A prop change resets the form only when the user
+  // has not edited since that snapshot - otherwise a load that lands after the
+  // user started typing would wipe the draft. Switching execution always resets.
+  const syncedRef = useRef({ executionId, tags, note, starred });
+  const localRef = useRef({ tags, note, starred });
+  localRef.current = { tags, note, starred };
+
   useEffect(() => {
-    setTags(annotation?.tags ?? []);
-    setNote(annotation?.note ?? '');
-    setStarred(annotation?.starred ?? false);
-  }, [annotation?.id, annotation?.execution_id, annotation?.tags, annotation?.note, annotation?.starred]);
+    const synced = syncedRef.current;
+    const local = localRef.current;
+    const untouched =
+      local.note === synced.note &&
+      local.starred === synced.starred &&
+      local.tags.length === synced.tags.length &&
+      local.tags.every((tag, i) => tag === synced.tags[i]);
+    const next = {
+      executionId,
+      tags: annotation?.tags ?? [],
+      note: annotation?.note ?? '',
+      starred: annotation?.starred ?? false,
+    };
+    syncedRef.current = next;
+    if (untouched || synced.executionId !== executionId) {
+      setTags(next.tags);
+      setNote(next.note);
+      setStarred(next.starred);
+    }
+  }, [executionId, annotation?.id, annotation?.execution_id, annotation?.tags, annotation?.note, annotation?.starred]);
 
   const tagSuggestions = useMemo(
     () =>
