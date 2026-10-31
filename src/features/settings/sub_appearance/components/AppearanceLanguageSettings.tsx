@@ -12,7 +12,7 @@ export default function AppearanceLanguageSettings() {
   const { t } = useTranslation();
   return (
     <div className="space-y-3">
-      <p className="typo-body text-foreground">{t.settings.appearance.language_hint}</p>
+      <p className="typo-caption">{t.settings.appearance.language_hint}</p>
       <LanguageCardGrid />
     </div>
   );

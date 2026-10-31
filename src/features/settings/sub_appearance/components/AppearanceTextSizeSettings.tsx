@@ -12,6 +12,7 @@ export default function AppearanceTextSizeSettings() {
 
   return (
     <div className="space-y-4">
+      <p className="typo-caption">{s.text_size_hint}</p>
       <div className="grid grid-cols-3 gap-3">
         {TEXT_SCALES.map((scale) => {
           const isActive = textScale === scale.id;

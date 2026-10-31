@@ -35,7 +35,7 @@ export default function AppearanceTimezoneSettings() {
 
   return (
     <div className="space-y-4">
-      <p className="typo-caption text-foreground">{s.timezone_hint}</p>
+      <p className="typo-caption">{s.timezone_hint}</p>
       <div className="grid grid-cols-2 2xl:grid-cols-3 gap-3">
         {TIMEZONE_OPTIONS.map((tz) => {
           const isActive = timezone === tz.value;

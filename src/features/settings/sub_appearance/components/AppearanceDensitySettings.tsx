@@ -19,7 +19,7 @@ export default function AppearanceDensitySettings() {
 
   return (
     <div className="space-y-4">
-      <p className="typo-caption text-foreground">{s.density_hint}</p>
+      <p className="typo-caption">{s.density_hint}</p>
       <div className="grid grid-cols-3 gap-3">
         {options.map(({ value, Icon, label, description }) => {
           const isActive = density === value;
