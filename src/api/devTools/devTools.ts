@@ -1722,16 +1722,6 @@ export interface SkillLessonRow {
 export const listSkillLessons = (skillName?: string | null) =>
   safeInvoke<SkillLessonRow[]>([], "skill_lessons_list", { skillName: skillName ?? null });
 
-/** Write/refresh `.personas/skill-registry.json` in the project's repo — the
- *  offline sibling/library-version snapshot the reflection contract's sync
- *  ritual reads. Called before skill dispatches. Returns the skill count. */
-/**
- * Refresh a repo's `.personas/skill-registry.json` snapshot.
- *
- * `libraryRoot` decides which library the snapshot COMPARES AGAINST — pass the
- * wired registry's `skills/` lane so the reflection ritual judges versions
- * against what the fleet reads, not against the machine-local home library.
- */
 /**
  * Contribute this installation's 30-day skill-usage counts to a paired registry's
  * `usage/` lane. WRITES the file into the working copy only — committing it is
@@ -1769,6 +1759,15 @@ export const syncRegistryClone = (clonePath: string) =>
 export const setKnowledgeRegistryRoot = (clonePath: string | null) =>
   invoke<void>("dev_tools_set_knowledge_root", { clonePath });
 
+/**
+ * Write/refresh `.personas/skill-registry.json` in the project's repo — the
+ * offline sibling/library-version snapshot the reflection contract's sync
+ * ritual reads. Called before skill dispatches. Returns the skill count.
+ *
+ * `libraryRoot` decides which library the snapshot COMPARES AGAINST — pass the
+ * wired registry's `skills/` lane so the reflection ritual judges versions
+ * against what the fleet reads, not against the machine-local home library.
+ */
 export const exportSkillRegistry = (projectId: string, libraryRoot?: string | null) =>
   safeInvoke<number>(0, "dev_tools_export_skill_registry", { projectId, libraryRoot: libraryRoot ?? null });
 
