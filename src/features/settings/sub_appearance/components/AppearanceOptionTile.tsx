@@ -17,7 +17,7 @@ export function AppearanceOptionTile({ active, onSelect, icon, label, descriptio
       type="button"
       onClick={onSelect}
       aria-pressed={active}
-      className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors text-center ${
+      className={`focus-ring relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors text-center ${
         active
           ? 'border-primary/30 bg-primary/5'
           : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'

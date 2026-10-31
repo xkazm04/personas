@@ -1,16 +1,21 @@
 import type { ThemeDefinition } from '@/stores/themeStore';
+import { useThemeStore } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { deriveCustomThemeVars, customThemeAttr } from '@/lib/theme/deriveCustomTheme';
 
 /* Hover-expand popover — renders a larger fidelity app-surface sample of
    the theme: titlebar, sidebar with nav items, header card, status row,
    chart sparkline, button row. Unlike the swatch tile (inline styles),
    it re-scopes CSS variables with data-theme={theme.id}, so child Tailwind
    utility classes paint with the previewed theme - for ids that have a
-   [data-theme="<id>"] binding block (dark-midnight and custom have none). Positioned below the tile; pointer-events-none so the
+   [data-theme="<id>"] binding block (dark-midnight binds with :root; the custom
+   sheet only exists while custom is active, so its palette is applied inline). Positioned below the tile; pointer-events-none so the
    hover target stays the tile itself. */
 export function AppearanceThemeHoverPreview({ theme }: { theme: ThemeDefinition }) {
   const { t } = useTranslation();
   const s = t.settings.appearance;
+  const customTheme = useThemeStore((st) => (theme.id === 'custom' ? st.customTheme : null));
+  const customVars = customTheme ? deriveCustomThemeVars(customTheme) : undefined;
   return (
     <div
       className="absolute top-full left-1/2 -translate-x-1/2 mt-2 pointer-events-none animate-expand-in"
@@ -18,7 +23,8 @@ export function AppearanceThemeHoverPreview({ theme }: { theme: ThemeDefinition 
       aria-hidden="true"
     >
       <div
-        data-theme={theme.id}
+        data-theme={customTheme ? customThemeAttr(customTheme.baseMode) : theme.id}
+        style={customVars}
         className="w-[280px] rounded-modal overflow-hidden shadow-elevation-4 border border-card-border bg-background text-foreground"
       >
         {/* Faux titlebar */}

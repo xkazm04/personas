@@ -202,7 +202,7 @@ export default function CustomThemeCreator() {
                   key={mode}
                   onClick={() => setBaseMode(mode)}
                   aria-pressed={active}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-modal border typo-caption transition-all ${
+                  className={`focus-ring flex items-center gap-1.5 px-3 py-2 rounded-modal border typo-caption transition-all ${
                     active ? 'border-primary/30 bg-primary/10 text-foreground' : 'border-primary/10 text-foreground hover:border-primary/20 hover:bg-primary/5'
                   }`}
                 >
@@ -241,7 +241,7 @@ export default function CustomThemeCreator() {
         <button
           type="button"
           onClick={() => { const next = !showGradient; setShowGradient(next); if (!next) setBackgroundEndColor(null); }}
-          className="flex items-center gap-1.5 typo-caption text-foreground hover:text-muted-foreground transition-colors"
+          className="focus-ring flex items-center gap-1.5 typo-caption text-foreground hover:text-muted-foreground transition-colors"
         >
           <ChevronRight className={`w-3 h-3 transition-transform ${showGradient ? 'rotate-90' : ''}`} />
           {s.background_gradient}
