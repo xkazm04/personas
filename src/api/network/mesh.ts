@@ -50,6 +50,3 @@ export const meshSendVerb = (peerId: string, payload: MeshVerbPayload) =>
 export const meshQueueMove = (sessionId: string, peerId: string) =>
   invoke<RemoteJob>('mesh_queue_move', { sessionId, peerId }, { timeoutMs: MESH_ACK_TIMEOUT_MS });
 
-/** Onboarding/probe verdicts recorded against one paired device, newest first. */
-export const meshProbeResults = (peerId: string) =>
-  invoke<MeshProbeVerdict[]>('mesh_probe_results', { peerId });
