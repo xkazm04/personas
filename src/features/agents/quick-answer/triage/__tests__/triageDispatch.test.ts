@@ -269,12 +269,12 @@ describe('routeDecision — goal acceptance', () => {
     const ports = makePorts();
 
     await routeDecision({ item: goal(), verdict: 'accept' }, ports);
-    expect(ports.acceptGoal).toHaveBeenCalledWith('goal-1');
+    expect(ports.acceptGoal).toHaveBeenCalledWith('goal-1', 'awaiting_acceptance');
 
     // The comment becomes the goal's `goal_rejected` signal — the only thing the
     // team is ever told about why their finished work came back.
     await routeDecision({ item: goal(), verdict: 'reject', reason: 'Needs rework' }, ports);
-    expect(ports.rejectGoal).toHaveBeenCalledWith('goal-1', 'Needs rework');
+    expect(ports.rejectGoal).toHaveBeenCalledWith('goal-1', 'Needs rework', 'awaiting_acceptance');
   });
 
   it('still sends back when the reviewer skipped the reason', async () => {
@@ -282,7 +282,7 @@ describe('routeDecision — goal acceptance', () => {
     await routeDecision({ item: goal(), verdict: 'reject' }, ports);
     // `resolveGoalAcceptance` types the comment as required, so the empty case is
     // an empty string rather than a dropped argument.
-    expect(ports.rejectGoal).toHaveBeenCalledWith('goal-1', '');
+    expect(ports.rejectGoal).toHaveBeenCalledWith('goal-1', '', 'awaiting_acceptance');
   });
 
   it('accepts every sibling on the KPI CONCURRENTLY on the batch branch', async () => {
@@ -294,9 +294,9 @@ describe('routeDecision — goal acceptance', () => {
     await routeDecision({ item, verdict: 'accept', branchId: 'accept-kpi-batch' }, ports);
 
     expect(ports.acceptGoal).toHaveBeenCalledTimes(3);
-    expect(ports.acceptGoal).toHaveBeenCalledWith('goal-1');
-    expect(ports.acceptGoal).toHaveBeenCalledWith('goal-2');
-    expect(ports.acceptGoal).toHaveBeenCalledWith('goal-3');
+    expect(ports.acceptGoal).toHaveBeenCalledWith('goal-1', 'awaiting_acceptance');
+    expect(ports.acceptGoal).toHaveBeenCalledWith('goal-2', 'awaiting_acceptance');
+    expect(ports.acceptGoal).toHaveBeenCalledWith('goal-3', 'awaiting_acceptance');
   });
 
   it('propagates a partial batch failure rather than reporting N accepts', async () => {

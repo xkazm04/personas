@@ -863,7 +863,7 @@ describe('useUnifiedTriage — goals reach the same spine', () => {
 
     // Through the SLICE, not `devApi` — it owns the row write and the pending
     // count, and no seen-status because goals have no compare-and-swap.
-    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1');
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1', 'awaiting_acceptance');
     expect(result.current.items).toHaveLength(0);
     expect(result.current.decidedCount).toBe(1);
     // A goal verdict invalidates the goal ledger, so it is re-read the way a
@@ -886,7 +886,7 @@ describe('useUnifiedTriage — goals reach the same spine', () => {
 
     // The comment is the only account the team gets of why finished work came
     // back, so a dropped reason is a silent regression.
-    expect(mockRejectGoal).toHaveBeenCalledWith('goal-1', 'The KPI never moved');
+    expect(mockRejectGoal).toHaveBeenCalledWith('goal-1', 'The KPI never moved', 'awaiting_acceptance');
     expect(result.current.items).toHaveLength(0);
   });
 
@@ -933,8 +933,8 @@ describe('useUnifiedTriage — goals reach the same spine', () => {
     });
 
     expect(mockAcceptGoal).toHaveBeenCalledTimes(2);
-    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1');
-    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-2');
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-1', 'awaiting_acceptance');
+    expect(mockAcceptGoal).toHaveBeenCalledWith('goal-2', 'awaiting_acceptance');
     // The siblings were signed off but their cards are still in the deck, so
     // the re-read is what stops the next verdict writing into a decided goal.
     await waitFor(() => expect(mockPendingAcceptance).toHaveBeenCalledTimes(2));

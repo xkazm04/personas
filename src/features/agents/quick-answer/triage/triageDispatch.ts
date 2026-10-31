@@ -32,6 +32,9 @@ export function filledAnswers(answers: Record<string, string> | undefined): Reco
 }
 
 /** Every write the queue can perform, injected. */
+/** The only status a goal card in the deck can be in; sent as the CAS expectation. */
+export const GOAL_SEEN_STATUS = 'awaiting_acceptance';
+
 export interface TriagePorts {
   reviewAction: (id: string, status: 'approved' | 'rejected', notes?: string) => Promise<void>;
   dispatchReviewAction: (id: string, action: string) => Promise<void>;
@@ -76,17 +79,17 @@ export interface TriagePorts {
   /**
    * Sign a completed goal off, or send it back to the team with a comment.
    *
-   * No `seenStatus` on either, and that asymmetry is deliberate rather than an
-   * omission: `resolveGoalAcceptance(goalId, decision, comment)` takes no
-   * seen-status, so goals are the one decidable row in the app with no
-   * compare-and-swap. A token threaded here would be a token nothing reads.
+   * `seenStatus` is the status the card was rendered against; the backend
+   * resolves as a compare-and-swap and loses loudly (as a decision conflict)
+   * when the goal has since moved. The router always passes
+   * {@link GOAL_SEEN_STATUS}, the only status a deck card can be in.
    *
    * `comment` is required rather than optional because the command's parameter
    * is — the router passes an empty string when the reviewer skipped the reason
    * rather than pretending the argument is absent.
    */
-  acceptGoal: (id: string) => Promise<void>;
-  rejectGoal: (id: string, comment: string) => Promise<void>;
+  acceptGoal: (id: string, seenStatus: string) => Promise<void>;
+  rejectGoal: (id: string, comment: string, seenStatus: string) => Promise<void>;
   /**
    * Put a decided row BACK — the undo half of the one kind that has a reverse
    * door. `seenStatus` is the status the verdict produced, so the reopen is a
@@ -235,7 +238,7 @@ export async function routeDecision(
         // Concurrent, and `Promise.all` on purpose: one failed sign-off must
         // reach the caller rather than being averaged away by the others
         // succeeding. The queue restores what it optimistically removed.
-        await Promise.all(ids.map((id) => ports.acceptGoal(id)));
+        await Promise.all(ids.map((id) => ports.acceptGoal(id, GOAL_SEEN_STATUS)));
         return;
       }
       if (branchId === 'open-board') {
@@ -250,10 +253,10 @@ export async function routeDecision(
         ports.openGoalBoard(projectId);
         return;
       }
-      if (verdict === 'accept') await ports.acceptGoal(item.sourceId);
+      if (verdict === 'accept') await ports.acceptGoal(item.sourceId, GOAL_SEEN_STATUS);
       // The comment becomes the goal's `goal_rejected` signal ("Sent back: …"),
       // which is the only account the team gets of why finished work came back.
-      else await ports.rejectGoal(item.sourceId, reason ?? '');
+      else await ports.rejectGoal(item.sourceId, reason ?? '', GOAL_SEEN_STATUS);
       return;
     }
   }

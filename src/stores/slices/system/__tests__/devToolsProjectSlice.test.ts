@@ -78,9 +78,22 @@ describe('devToolsProjectSlice — goal acceptance verdicts', () => {
 
     await h.get().acceptGoal('g1');
 
-    expect(resolveMock).toHaveBeenCalledWith('g1', 'accept');
+    expect(resolveMock).toHaveBeenCalledWith('g1', 'accept', undefined, undefined);
     expect(h.get().goals[0]!.status).toBe('done');
     expect(h.get().pendingAcceptanceCount).toBe(0);
+  });
+
+  it('threads the seen status to the CAS door on both verdicts', async () => {
+    resolveMock.mockResolvedValue(goal({ status: 'done' }));
+    countMock.mockResolvedValue(0);
+    const h = harness();
+    h.set({ goals: [goal()], pendingAcceptanceCount: 1 });
+
+    await h.get().acceptGoal('g1', 'awaiting_acceptance');
+    await h.get().rejectGoal('g1', 'rework', 'awaiting_acceptance');
+
+    expect(resolveMock).toHaveBeenCalledWith('g1', 'accept', undefined, 'awaiting_acceptance');
+    expect(resolveMock).toHaveBeenCalledWith('g1', 'reject', 'rework', 'awaiting_acceptance');
   });
 
   it('REJECTS on a failed accept write instead of swallowing it', async () => {
@@ -99,7 +112,7 @@ describe('devToolsProjectSlice — goal acceptance verdicts', () => {
     resolveMock.mockRejectedValueOnce(new Error('goal g1 is not awaiting acceptance'));
 
     await expect(h.get().rejectGoal('g1', 'needs rework')).rejects.toThrow(/not awaiting acceptance/);
-    expect(resolveMock).toHaveBeenCalledWith('g1', 'reject', 'needs rework');
+    expect(resolveMock).toHaveBeenCalledWith('g1', 'reject', 'needs rework', undefined);
   });
 });
 

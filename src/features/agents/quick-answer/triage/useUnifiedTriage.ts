@@ -1114,12 +1114,12 @@ export function useUnifiedTriage(
       // in the queue and the next verdict on one of them writes into a goal that
       // is already signed off. A rejected write throws before it gets here,
       // which is what leaves the restore path free to put the card back.
-      acceptGoal: async (id) => {
-        await acceptGoalViaStore(id);
+      acceptGoal: async (id, seenStatus) => {
+        await acceptGoalViaStore(id, seenStatus);
         refreshGoals();
       },
-      rejectGoal: async (id, comment) => {
-        await rejectGoalViaStore(id, comment);
+      rejectGoal: async (id, comment, seenStatus) => {
+        await rejectGoalViaStore(id, comment, seenStatus);
         refreshGoals();
       },
       reopenIdea: (id, seenStatus) => reopenIdeaRow(id, { seenStatus }),

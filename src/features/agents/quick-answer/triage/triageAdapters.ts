@@ -1294,13 +1294,10 @@ function goalOffTrack(row: PendingAcceptanceGoal): boolean {
  *    raw `current → target` in the ledger and no gauge at all. This is the exact
  *    bug the retired `goalAcceptanceModel` documented having already fixed once,
  *    where a defaulted baseline rendered a precise, fabricated 0%.
- *  • **No `seenStatus`.** Every other decidable row in the app carries the status
- *    the card rendered so the write can be a single-winner compare-and-swap.
- *    `resolveGoalAcceptance(goalId, decision, comment)` takes no such token, so
- *    goals are last-writer-wins and two reviewers can silently overwrite each
- *    other. Closing that is a backend change; carrying a token nothing reads
- *    would advertise a protection that does not exist, so this adapter omits it
- *    rather than implying it.
+ *  • **No `seenStatus` in the payload.** A goal card is only ever dealt while
+ *    `awaiting_acceptance`, so the router sends that constant
+ *    (`GOAL_SEEN_STATUS`) as the compare-and-swap expectation instead of
+ *    reading a per-card token.
  *  • **The bulk affordance is a branch.** `GoalsTriage` was built around
  *    "accept everything on this KPI", and branches are the deck's existing
  *    digit-hotkeyed escape hatch for anything beyond the spine — so the
