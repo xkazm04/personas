@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 
 const listPersonas = vi.fn();
 vi.mock('@/api/agents/personas', () => ({ listPersonas: () => listPersonas() }));
@@ -26,5 +26,22 @@ describe('ExecutePersonaPicker', () => {
     expect(alpha.getAttribute('aria-pressed')).toBe('true');
     expect(beta.getAttribute('aria-pressed')).toBe('false');
     expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+  });
+
+  it('says loading failed (not "No agents yet") when listing agents rejects, and retries', async () => {
+    listPersonas.mockRejectedValueOnce(new Error('db locked'));
+    render(<ExecutePersonaPicker selectedIds={new Set()} onToggle={vi.fn()} />);
+    expect(await screen.findByText(/couldn.t load your agents/i)).not.toBeNull();
+    expect(screen.queryByText(/No agents yet/)).toBeNull();
+    listPersonas.mockResolvedValueOnce(rows);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByRole('button', { name: 'Alpha' })).not.toBeNull();
+    expect(screen.queryByText(/couldn.t load your agents/i)).toBeNull();
+  });
+
+  it('still says "No agents yet" when the roster is genuinely empty', async () => {
+    listPersonas.mockResolvedValue([]);
+    render(<ExecutePersonaPicker selectedIds={new Set()} onToggle={vi.fn()} />);
+    expect(await screen.findByText(/No agents yet/)).not.toBeNull();
   });
 });

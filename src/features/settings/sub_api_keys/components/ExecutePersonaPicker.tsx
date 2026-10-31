@@ -30,21 +30,28 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
   const [personas, setPersonas] = useState<Persona[]>(() => storePersonas);
   const [loading, setLoading] = useState(() => storePersonas.length === 0);
   const [filter, setFilter] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let alive = true;
+    setLoading(true);
+    setLoadFailed(false);
     listPersonas()
       .then((rows) => {
         if (alive) setPersonas(rows);
       })
-      .catch(silentCatch('ExecutePersonaPicker:listPersonas'))
+      .catch((err) => {
+        silentCatch('ExecutePersonaPicker:listPersonas')(err);
+        if (alive) setLoadFailed(true);
+      })
       .finally(() => {
         if (alive) setLoading(false);
       });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [attempt]);
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -69,6 +76,18 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
       </div>
       {showGhost ? (
         <PersonaPickerGhostRows />
+      ) : personas.length === 0 && loadFailed ? (
+        <div className="typo-caption text-foreground py-3 text-center bg-secondary/20 rounded-input space-y-1.5" role="alert">
+          <p>{s.execute_load_failed}</p>
+          <button
+            type="button"
+            onClick={() => setAttempt((n) => n + 1)}
+            disabled={disabled}
+            className="text-primary hover:opacity-80 transition-opacity focus-ring disabled:opacity-50"
+          >
+            {t.common.retry}
+          </button>
+        </div>
       ) : personas.length === 0 ? (
         <p className="typo-caption text-foreground py-3 text-center bg-secondary/20 rounded-input">
           {s.execute_no_personas}
