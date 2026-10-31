@@ -36,8 +36,16 @@ describe("api/agents/executions", () => {
 
   it("listAllExecutions calls list_all_executions", async () => {
     mockInvoke("list_all_executions", []);
-    const result = await listAllExecutions(5, 0, "completed");
+    const result = await listAllExecutions(5, 0, "completed", "p-1");
     expect(result).toEqual([]);
+    // executions.rs list_all_executions(limit, offset, status, persona_id): all
+    // Option, so a renamed key arrives as None with no error and no gate sees it.
+    expect(mockedInvoke.mock.calls.at(-1)?.[1]).toEqual({
+      limit: 5,
+      offset: 0,
+      status: "completed",
+      personaId: "p-1",
+    });
   });
 
   it("getExecution calls get_execution", async () => {
@@ -56,8 +64,28 @@ describe("api/agents/executions", () => {
   it("executePersona calls execute_persona", async () => {
     const exec = { id: "e-new", status: "running" };
     mockInvoke("execute_persona", exec);
-    const result = await executePersona("p-1", "t-1", '{"key":"val"}');
+    const result = await executePersona("p-1", "t-1", '{"key":"val"}', "uc-1", undefined, "idem-1");
     expect(result).toEqual(exec);
+    // executions.rs execute_persona(persona_id, trigger_id, input_data,
+    // use_case_id, continuation, idempotency_key): everything after persona_id
+    // is Option, so check-command-contract (required params only) cannot see a
+    // renamed key - the run would start with no input and no dedup key.
+    expect(mockedInvoke.mock.calls.at(-1)?.[1]).toEqual({
+      personaId: "p-1",
+      triggerId: "t-1",
+      inputData: '{"key":"val"}',
+      useCaseId: "uc-1",
+      continuation: null,
+      idempotencyKey: "idem-1",
+    });
+  });
+
+  it("executePersona always sends an idempotency key, defaulting one when the caller has none", async () => {
+    mockInvoke("execute_persona", { id: "e-new" });
+    await executePersona("p-1");
+    const sent = mockedInvoke.mock.calls.at(-1)?.[1] as Record<string, unknown>;
+    expect(typeof sent.idempotencyKey).toBe("string");
+    expect((sent.idempotencyKey as string).length).toBeGreaterThan(0);
   });
 
   it("getExecutionLog returns log string", async () => {
