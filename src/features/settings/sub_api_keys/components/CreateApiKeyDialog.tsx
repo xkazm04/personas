@@ -103,7 +103,11 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 surface-blur-modal"
-      onClick={onClose}
+      // Same rule as Cancel and X: no dismissal while the key is being minted,
+      // or a failed create reports into a dialog that is already gone.
+      onClick={() => {
+        if (!submitting) onClose();
+      }}
     >
       <div
         className="bg-secondary border border-border/40 rounded-modal shadow-elevation-3 w-full max-w-md mx-4 max-h-[90vh] flex flex-col"
