@@ -50,7 +50,7 @@ export function ColorRow({
         ref={triggerRef}
         type="button"
         onClick={() => setOpen((p) => !p)}
-        className={`w-7 h-7 rounded-card border flex-shrink-0 transition-all cursor-pointer ${
+        className={`focus-ring w-7 h-7 rounded-card border flex-shrink-0 transition-all cursor-pointer ${
           open
             ? 'border-primary/40 ring-2 ring-primary/20'
             : 'border-primary/15 hover:border-primary/30 hover:scale-105'
@@ -67,7 +67,7 @@ export function ColorRow({
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="p-1 rounded-input text-foreground hover:text-muted-foreground/80 hover:bg-primary/5 transition-colors flex-shrink-0"
+          className="focus-ring p-1 rounded-input text-foreground hover:text-muted-foreground/80 hover:bg-primary/5 transition-colors flex-shrink-0"
           title={t.settings.appearance.reset_to_auto}
         >
           <X className="w-3 h-3" />
