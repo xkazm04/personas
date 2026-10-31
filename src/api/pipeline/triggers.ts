@@ -30,15 +30,15 @@ export const createTrigger = (input: CreateTriggerInput) =>
   invoke<PersonaTrigger>("create_trigger", { input });
 
 // `Partial<>` since 2026-08-15. `next_trigger_at` is `Option<Option<String>>`
-// with `double_option` (core/src/models/trigger.rs:510), so callers filling in
+// with `double_option` (src-tauri/core/src/models/trigger.rs:626-627), so callers filling in
 // `next_trigger_at: null` to satisfy a required field were CLEARING the column,
 // not leaving it alone.
 //
 // That is not cosmetic: `get_due` requires `next_trigger_at IS NOT NULL`
-// (repos/resources/triggers.rs:1590) and it is the only source of scheduler
+// (src-tauri/db/src/repos/resources/triggers/scheduling.rs:139) and it is the only source of scheduler
 // work, so a NULLed trigger stops firing permanently and reports success. The
 // guard written to prevent exactly this — `input.next_trigger_at.is_none()` at
-// commands/tools/triggers.rs:450 — does not fire, because an explicit null
+// src-tauri/db/src/repos/resources/triggers/definitions.rs:447 — does not fire, because an explicit null
 // deserializes to `Some(None)` whose `is_none()` is false. So the column was
 // nulled AND the cron recompute was skipped.
 //
@@ -73,7 +73,6 @@ export const resolvePendingTriggerFire = (id: string, approved: boolean) =>
 
 // ============================================================================
 // Builder: atomic persona <-> event linking
-// See docs/design/event-routing-proposal.md
 // ============================================================================
 
 /**
@@ -103,7 +102,6 @@ export const unlinkPersonaFromEvent = (triggerId: string) =>
 // ============================================================================
 // Trigger / event cleanup (Fix 1 + Fix 4a)
 // Self-healing sweep for dead trigger audit rows + missing auto-listeners.
-// See docs/design/event-routing-proposal.md
 // ============================================================================
 
 // The wire shape is the ts-rs binding (`commands/tools/triggers.rs`), not a
@@ -121,7 +119,7 @@ export const cleanupDeadTriggerEvents = () =>
 
 // ============================================================================
 // Rename event type — atomic across every store that references it
-// See docs/design/event-routing-proposal.md + src-tauri/src/db/repos/resources/triggers.rs
+// See src-tauri/db/src/repos/resources/triggers/event_wiring.rs (rename_event_type)
 // ============================================================================
 
 // The binding, not a hand copy: the Rust struct is `rename_all = "camelCase"`
