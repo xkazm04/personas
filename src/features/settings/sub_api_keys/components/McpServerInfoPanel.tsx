@@ -39,6 +39,13 @@ const ENDPOINTS = [
     path: '/api/build/:id/promote',
     descriptionKey: 'endpoint_build_promote' as const,
   },
+  { method: 'GET', path: '/api/build/:id/pending', descriptionKey: 'endpoint_build_pending' as const },
+  { method: 'POST', path: '/api/build/:id/cancel', descriptionKey: 'endpoint_build_cancel' as const },
+  { method: 'GET', path: '/api/personas', descriptionKey: 'endpoint_personas_list' as const },
+  { method: 'GET', path: '/api/personas/:id', descriptionKey: 'endpoint_persona_get' as const },
+  { method: 'POST', path: '/api/execute/:id', descriptionKey: 'endpoint_execute' as const },
+  { method: 'GET', path: '/api/executions', descriptionKey: 'endpoint_executions_list' as const },
+  { method: 'GET', path: '/api/executions/:id', descriptionKey: 'endpoint_execution_get' as const },
 ];
 
 export function McpServerInfoPanel() {
