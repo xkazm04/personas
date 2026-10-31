@@ -323,6 +323,7 @@ export type Translations = {
     triage_policy_basis_lab: string;
     triage_policy_basis_success: string;
     triage_policy_budget_body: string;
+    triage_policy_budget_body_no_ceiling: string;
     triage_policy_budget_introduce: string;
     triage_policy_budget_lower: string;
     triage_policy_budget_raise: string;
@@ -725,6 +726,7 @@ export type Translations = {
     triage_source_cloud: string;
     triage_source_local: string;
     triage_submit: string;
+    triage_untitled_agent: string;
     triage_view_run: string;
     triage_view_run_hint: string;
     quick_loading: string;

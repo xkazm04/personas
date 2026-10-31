@@ -77,6 +77,7 @@ export function useTriageCopy(): TriageCopy {
       policyBudgetRaiseTitle: m.triage_policy_budget_raise,
       policyBudgetLowerTitle: m.triage_policy_budget_lower,
       policyBudgetBody: m.triage_policy_budget_body,
+      policyBudgetBodyNoCeiling: m.triage_policy_budget_body_no_ceiling,
       fromModel: m.triage_fact_from_model,
       toModel: m.triage_fact_to_model,
       saving: m.triage_fact_saving,
