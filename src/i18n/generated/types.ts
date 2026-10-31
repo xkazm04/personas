@@ -14959,6 +14959,13 @@ export type Translations = {
       endpoint_build_answer: string;
       endpoint_build_test: string;
       endpoint_build_promote: string;
+      endpoint_build_pending: string;
+      endpoint_build_cancel: string;
+      endpoint_personas_list: string;
+      endpoint_persona_get: string;
+      endpoint_execute: string;
+      endpoint_executions_list: string;
+      endpoint_execution_get: string;
       server_auth_label: string;
       server_auth_description: string;
       live_of_total: string;
