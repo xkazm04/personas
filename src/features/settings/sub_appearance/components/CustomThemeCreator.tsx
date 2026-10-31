@@ -59,7 +59,7 @@ function ContrastReadout({ vars, labels }: {
           </div>
         ))}
       </div>
-      {getContrastLevel(fg, bg) === 'low' && <p role="status" className="typo-caption text-status-warning">{labels.lowWarning}</p>}
+      <p role="status" className="typo-caption text-status-warning">{getContrastLevel(fg, bg) === 'low' ? labels.lowWarning : null}</p>
     </div>
   );
 }
