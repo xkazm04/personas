@@ -5102,6 +5102,9 @@ export type Translations = {
       kind_script: string;
       kind_automation: string;
       kind_builtin: string;
+      schema_title: string;
+      schema_required: string;
+      schema_enum: string;
       kind_unconfigured: string;
       no_strategy_note: string;
       conflict_note: string;

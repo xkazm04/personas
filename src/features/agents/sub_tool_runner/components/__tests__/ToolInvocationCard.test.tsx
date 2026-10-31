@@ -226,3 +226,36 @@ describe('ToolInvocationCard execution-strategy rule (mirrors backend tool_kind)
     });
   }
 });
+
+describe('ToolInvocationCard input schema', () => {
+  it('shows type, required, enum and description for each field', () => {
+    const schema = {
+      type: 'object',
+      required: ['to'],
+      properties: {
+        to: { type: 'string', description: 'Recipient address' },
+        mode: { type: 'string', enum: ['draft', 'send'] },
+        retries: { type: 'integer' },
+      },
+    };
+    render(
+      <ToolInvocationCard tool={{ ...tool(), input_schema: JSON.stringify(schema) }} isRunning={false} result={null} error={null} onRun={() => {}} />,
+    );
+    fireEvent.click(screen.getByTestId('tool-card-toggle-gmail_reader'));
+    const box = within(screen.getByTestId('tool-schema-gmail_reader'));
+    const to = box.getByText('to').closest('li') as HTMLElement;
+    expect(to).toHaveTextContent('string');
+    expect(to).toHaveTextContent('required');
+    expect(to).toHaveTextContent('Recipient address');
+    const mode = box.getByText('mode').closest('li') as HTMLElement;
+    expect(mode).toHaveTextContent('one of: draft, send');
+    expect(mode).not.toHaveTextContent('required');
+    expect(box.getByText('retries').closest('li')).toHaveTextContent('integer');
+  });
+
+  it('renders no schema block when the tool declares no properties', () => {
+    render(<ToolInvocationCard tool={tool()} isRunning={false} result={null} error={null} onRun={() => {}} />);
+    fireEvent.click(screen.getByTestId('tool-card-toggle-gmail_reader'));
+    expect(screen.queryByTestId('tool-schema-gmail_reader')).toBeNull();
+  });
+});

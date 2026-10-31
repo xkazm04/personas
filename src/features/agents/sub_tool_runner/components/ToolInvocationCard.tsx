@@ -29,7 +29,7 @@ interface ToolInvocationCardProps {
 }
 
 export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRunning, result, error, onRun }: ToolInvocationCardProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [inputJson, setInputJson] = useState(() => buildDefaultInput(tool));
   const [expanded, setExpanded] = useState(false);
   const bodyId = `tool-card-body-${tool.id}`;
@@ -53,6 +53,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
     : strategyProblem ? 'unconfigured'
     : hasScript ? 'script' : 'api';
   const canOfferRun = !isBuiltin && !strategyProblem;
+  const schemaFields = useMemo(() => parseSchemaFields(tool.input_schema), [tool.input_schema]);
   const TypeIcon = toolType === 'automation' ? Zap : toolType === 'script' || toolType === 'builtin' || toolType === 'unconfigured' ? Terminal : Globe;
 
   // Pre-flight JSON validation. Previously, malformed JSON (trailing comma,
@@ -154,6 +155,25 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
                 >
                   {strategyProblem === 'conflict' ? t.agents.tool_runner.conflict_note : t.agents.tool_runner.no_strategy_note}
                 </p>
+              )}
+
+              {canOfferRun && schemaFields.length > 0 && (
+                <div data-testid={`tool-schema-${tool.name}`}>
+                  <p className="typo-heading text-foreground uppercase mb-1">{t.agents.tool_runner.schema_title}</p>
+                  <ul className="space-y-1 max-h-40 overflow-y-auto">
+                    {schemaFields.map((f) => (
+                      <li key={f.name} className="typo-body text-foreground">
+                        <span className="typo-code">{f.name}</span>
+                        {f.type && <span className="ml-1.5 typo-code">{f.type}</span>}
+                        {f.required && <span className="ml-1.5">({t.agents.tool_runner.schema_required})</span>}
+                        {f.enumValues && (
+                          <span className="ml-1.5">{tx(t.agents.tool_runner.schema_enum, { values: f.enumValues })}</span>
+                        )}
+                        {f.description && <span className="block">{f.description}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
 
               {/* Input */}
@@ -317,6 +337,37 @@ function defaultForProperty(prop: unknown): unknown {
       return {};
     default:
       return '';
+  }
+}
+
+interface SchemaField {
+  name: string;
+  type: string | null;
+  required: boolean;
+  description: string | null;
+  enumValues: string | null;
+}
+
+/** Flatten a JSON-schema object's top-level properties into display rows. */
+function parseSchemaFields(inputSchema: string | null): SchemaField[] {
+  if (!inputSchema) return [];
+  try {
+    const schema = JSON.parse(inputSchema) as { properties?: unknown; required?: unknown };
+    if (!schema.properties || typeof schema.properties !== 'object') return [];
+    const required = new Set(Array.isArray(schema.required) ? schema.required.map(String) : []);
+    return Object.entries(schema.properties as Record<string, unknown>).map(([name, raw]) => {
+      const p = (raw && typeof raw === 'object' ? raw : {}) as { type?: unknown; description?: unknown; enum?: unknown };
+      return {
+        name,
+        type: Array.isArray(p.type) ? p.type.join(' | ') : typeof p.type === 'string' ? p.type : null,
+        required: required.has(name),
+        description: typeof p.description === 'string' && p.description ? p.description : null,
+        enumValues: Array.isArray(p.enum) && p.enum.length > 0 ? p.enum.map(String).join(', ') : null,
+      };
+    });
+  } catch (err) {
+    silentCatch('features/agents/sub_tool_runner/components/ToolInvocationCard:parseSchemaFields')(err);
+    return [];
   }
 }
 
