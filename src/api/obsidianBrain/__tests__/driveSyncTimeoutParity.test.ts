@@ -83,4 +83,12 @@ describe('Obsidian Drive sync IPC timeout parity', () => {
     await obsidianDrivePullSync([]);
     expect(calls).toHaveLength(0);
   });
+
+  it('the ceiling doc does not claim the Drive client has no request deadline', () => {
+    const doc = readFileSync(resolve(process.cwd(), 'src/api/obsidianBrain/index.ts'), 'utf8')
+      .split(/[\r\n]+\s*\*?\s*/)
+      .join(' ');
+    expect(doc).not.toMatch(/sets no request deadline/);
+    expect(doc).toMatch(/per-call deadline/);
+  });
 });

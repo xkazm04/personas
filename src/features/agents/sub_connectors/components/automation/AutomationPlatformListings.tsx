@@ -1,11 +1,11 @@
-import { AlertCircle, Zap } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { GitHubRepo, GitHubPermissions, ZapierZap } from '@/api/agents/automations';
+import type { GitHubRepo, GitHubPermissions } from '@/api/agents/automations';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import Button from '@/features/shared/components/buttons/Button';
 
 /**
- * The platform listings of the trigger step (GitHub repos, Zapier zaps).
+ * The platform listings of the trigger step (GitHub repos).
  * A listing that FAILED renders its own line with a retry; it used to collapse
  * to [] and read as an empty account ("No repositories found. Check your token
  * permissions." for a network outage).
@@ -81,48 +81,6 @@ export function GithubRepoPicker({
           <p className="mt-1 typo-body text-foreground">{t.agents.connectors.auto_no_repos}</p>
         )}
       </div>
-    </div>
-  );
-}
-
-interface ZapierZapListProps {
-  zapierZaps: ZapierZap[];
-  loadingZaps: boolean;
-  zapsFailed: boolean;
-  onRetry: () => void;
-}
-
-export function ZapierZapList({ zapierZaps, loadingZaps, zapsFailed, onRetry }: ZapierZapListProps) {
-  const { t } = useTranslation();
-  return (
-    <div className="space-y-2">
-      <label className="typo-body text-foreground">{t.agents.connectors.auto_your_zaps}</label>
-      {loadingZaps ? (
-        <div className="h-[4.5rem] rounded-modal border border-border/60 bg-secondary/30 animate-fade-in" style={{ animationDelay: '120ms' }}>
-          <span className="sr-only">{t.agents.connectors.auto_loading_zaps}</span>
-        </div>
-      ) : zapsFailed ? (
-        <ListingFailed message={t.agents.connectors.auto_zaps_load_failed} onRetry={onRetry} />
-      ) : zapierZaps.length > 0 ? (
-        <div className="max-h-36 overflow-y-auto rounded-modal border border-border/60 divide-y divide-border/40">
-          {zapierZaps.map((zap) => (
-            <div key={zap.id} className="flex items-center gap-2.5 px-3 py-2">
-              <Zap className={`w-3.5 h-3.5 flex-shrink-0 ${zap.status === 'on' ? 'text-brand-amber' : 'text-foreground'}`} />
-              <span className="typo-body text-foreground truncate flex-1">{zap.title}</span>
-              <span className={`typo-caption px-1.5 py-0.5 rounded-card ${
-                zap.status === 'on' ? 'bg-brand-emerald/10 text-brand-emerald border border-brand-emerald/20' :
-                zap.status === 'off' ? 'bg-secondary/60 text-foreground border border-border/40' :
-                'bg-brand-amber/10 text-brand-amber border border-brand-amber/20'
-              }`}>{zap.status}</span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="typo-body text-foreground px-1">{t.agents.connectors.auto_no_zaps}</p>
-      )}
-      <p className="typo-caption text-foreground px-1">
-        {t.agents.connectors.auto_zaps_ref}
-      </p>
     </div>
   );
 }
