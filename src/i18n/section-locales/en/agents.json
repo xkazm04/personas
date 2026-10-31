@@ -3082,6 +3082,7 @@
       "editor": "Editor",
       "header": "Header",
       "fanout": "Fan-out",
+      "gallery": "Public gallery",
       "other": "Other"
     },
     "fields": {
@@ -3103,7 +3104,8 @@
       "lifecycle": "Lifecycle",
       "cli_awareness_enabled": "CLI awareness",
       "model_profile": "Model",
-      "notification_channels": "Notifications"
+      "notification_channels": "Notifications",
+      "published_to_gallery": "Published to public gallery"
     }
   },
   "assertions": {

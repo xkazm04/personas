@@ -6163,6 +6163,7 @@ export type Translations = {
         editor: string;
         header: string;
         fanout: string;
+        gallery: string;
         other: string;
       };
       fields: {
@@ -6185,6 +6186,7 @@ export type Translations = {
         cli_awareness_enabled: string;
         model_profile: string;
         notification_channels: string;
+        published_to_gallery: string;
       };
     };
     assertions: {
