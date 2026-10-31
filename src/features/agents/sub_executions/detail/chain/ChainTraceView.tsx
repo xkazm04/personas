@@ -12,6 +12,8 @@ interface ChainTraceViewProps {
   error: string | null;
   partial: boolean;
   stopReasons: ChainStopReason[];
+  /** The stop-reason read failed (distinct from "no stop recorded"). */
+  stopReasonsError?: boolean;
   chainCostUsd: number;
   /** How many traces contributed a priced span; see `useChainTrace`. */
   chainPricedTraces: number;
@@ -27,7 +29,7 @@ interface ChainTraceViewProps {
  * depth/budget ceiling, unmet predicate, quarantine). Handles loading, broken
  * (error), empty, and partial-chain states.
  */
-export function ChainTraceView({ traces, loading, error, partial, stopReasons, chainCostUsd, chainPricedTraces, currentExecutionId, onOpenExecution }: ChainTraceViewProps) {
+export function ChainTraceView({ traces, loading, error, partial, stopReasons, stopReasonsError = false, chainCostUsd, chainPricedTraces, currentExecutionId, onOpenExecution }: ChainTraceViewProps) {
   const { t, tx, language } = useTranslation();
   const e = t.agents.executions;
 
@@ -131,6 +133,15 @@ export function ChainTraceView({ traces, loading, error, partial, stopReasons, c
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {stopReasonsError && (
+        <div
+          data-testid="chain-stop-reasons-unavailable"
+          className="flex items-center gap-2 p-2.5 bg-status-warning/10 border border-status-warning/25 rounded-modal typo-body text-status-warning"
+        >
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />{e.chain_stop_reasons_unavailable}
         </div>
       )}
 

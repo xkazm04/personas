@@ -3747,6 +3747,7 @@ export type Translations = {
       bulk_rerun_mean_duration_delta: string;
       bulk_rerun_total_cost_original: string;
       bulk_rerun_total_cost_new: string;
+      bulk_rerun_unpriced_note: string;
       bulk_rerun_failed_count: string;
       bulk_rerun_cheaper: string;
       bulk_rerun_pricier: string;
@@ -3812,6 +3813,7 @@ export type Translations = {
       chain_total_cost: string;
       chain_cost_partial: string;
       chain_ended_because: string;
+      chain_stop_reasons_unavailable: string;
       span_orphaned: string;
       lines_counter: string;
       timeline_scrubber_label: string;
