@@ -12,7 +12,7 @@ export function isFailedExecutionStatus(status: string): boolean {
   // writes when a run is abandoned by a dead process — 20 live rows, all with
   // no output, no duration and no tokens. Because it was missing here, the user
   // could not select or bulk-rerun a lost execution at all
-  // (ExecutionList.tsx:292), which is the one class of run most worth rerunning.
+  // (the bulk-rerun "select all failed" filter), which is the one class of run most worth rerunning.
   //
   // The docstring above says this helper exists so a new terminal status only
   // needs adding in one place. It was right, and the status was added to the

@@ -13,7 +13,7 @@ const MAX_CONCURRENT = 3;
 
 /** How often a dispatched re-run is re-read while waiting for it to land. */
 const DEFAULT_POLL_INTERVAL_MS = 2_000;
-/** How long a single re-run is waited on before its row is left pending. */
+/** How long a single re-run is waited on before its row is left 'running' (unsettled). */
 const DEFAULT_POLL_TIMEOUT_MS = 15 * 60_000;
 
 /**
@@ -216,7 +216,7 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
   /**
    * Re-read a dispatched re-run until it lands. Returns the landed execution,
    * or null when the batch was cancelled/superseded or the run was still going
-   * when the wait budget ran out — in which case the row stays pending and is
+   * when the wait budget ran out — in which case the row stays 'running' and is
    * never reported as a zero-cost success.
    */
   const waitForLanding = useCallback(
@@ -237,7 +237,7 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
           logger.warn('Failed to read re-run status; retrying', { id: executionId, err });
         }
         if (Date.now() >= deadline) {
-          logger.warn('Re-run did not land within the wait budget; left pending', {
+          logger.warn('Re-run did not land within the wait budget; left running', {
             id: executionId,
           });
           return null;
@@ -278,7 +278,7 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
       updateItem(token, row.id, { newExecutionId: dispatched.id });
 
       const landed = await waitForLanding(dispatched.id, personaId, token);
-      if (!landed) return; // cancelled, superseded, or still running — stays pending
+      if (!landed) return; // cancelled, superseded, or still running — the row stays 'running', no outcome claimed
 
       const successful = !isFailedExecutionStatus(landed.status);
       updateItem(token, row.id, {
