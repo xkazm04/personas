@@ -21,7 +21,11 @@ export function ShareAgentButton({ personaId }: { personaId: string }) {
   const { t } = useTranslation();
   const s = t.agents.share;
   const [publishing, setPublishing] = useState(false);
-  const [result, setResult] = useState<GalleryPublishResult | null>(null);
+  // The result is bound to the agent it was published for. The editor is not
+  // remounted per agent, so a bare cached result outlived an agent switch and
+  // Share re-opened the PREVIOUS agent's link without publishing this one.
+  const [published, setPublished] = useState<{ personaId: string; result: GalleryPublishResult } | null>(null);
+  const result = published?.personaId === personaId ? published.result : null;
   const [open, setOpen] = useState(false);
   // The referral code is this install's pseudonymous id; whoever installs from
   // this link gets the referrer credited on their first activation.
@@ -32,7 +36,7 @@ export function ShareAgentButton({ personaId }: { personaId: string }) {
     setPublishing(true);
     try {
       const r = await publishPersonaToGallery(personaId, null, getInstallId());
-      setResult(r);
+      setPublished({ personaId, result: r });
       setOpen(true);
       markActivation('shared');
     } catch (err) {

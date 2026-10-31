@@ -25,7 +25,10 @@ function useColumns(
     for (const uc of useCaseOptions) m.set(uc.id, uc.title);
     return m;
   }, [useCaseOptions]);
-  return [
+  // Memoized: UnifiedTableRow compares `columns` by reference, so a fresh array
+  // per render re-rendered every mounted row on each feed landing and filter
+  // change (pinned by activityListColumnsStable.test.tsx).
+  return useMemo((): TableColumn<ActivityItem>[] => [
     {
       key: 'icon',
       label: '',
@@ -159,7 +162,7 @@ function useColumns(
         <span className="typo-body text-foreground whitespace-nowrap">{formatRelativeTime(item.timestamp)}</span>
       ),
     },
-  ];
+  ], [t, tx, useCaseTitleById, annotationsByExecution]);
 }
 
 export function ActivityList({ items, isLoading, useCaseOptions, annotationsByExecution, onRowClick }: ActivityListProps) {
