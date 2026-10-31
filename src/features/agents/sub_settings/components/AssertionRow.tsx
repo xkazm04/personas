@@ -1,6 +1,8 @@
 import { Trash2 } from 'lucide-react';
 import type { OutputAssertion } from '@/lib/bindings/OutputAssertion';
 import type { AssertionType } from '@/lib/bindings/AssertionType';
+import { Numeric } from '@/features/shared/components/display/Numeric';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 
 /** One saved quality gate in the settings list. */
@@ -23,24 +25,36 @@ export function AssertionRow({ row, onDelete }: { row: OutputAssertion; onDelete
 
   return (
     <div
-      className={`flex items-center gap-2 rounded-card border border-primary/10 bg-background/30 px-2.5 py-1.5 ${row.enabled ? '' : 'opacity-60'}`}
+      className={`rounded-card border border-primary/10 bg-background/30 px-2.5 py-1.5 ${row.enabled ? '' : 'opacity-60'}`}
     >
-      <span className="typo-body text-foreground truncate flex-1">{row.name}</span>
-      {!row.enabled && (
-        <span className="typo-caption rounded-input border border-status-warning/30 bg-status-warning/10 px-1.5 text-status-warning">
-          {a.paused}
-        </span>
-      )}
-      <span className="typo-caption text-foreground">{typeLabels[row.assertionType] ?? row.assertionType}</span>
-      <span className="typo-caption text-primary">{actionLabel(row.onFailure)}</span>
-      <button
-        type="button"
-        onClick={() => onDelete(row.id)}
-        aria-label={a.delete}
-        className="p-1 rounded-input text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
-      >
-        <Trash2 className="w-3.5 h-3.5" />
-      </button>
+      <div className="flex items-center gap-2">
+        <span className="typo-body text-foreground truncate flex-1">{row.name}</span>
+        {!row.enabled && (
+          <span className="typo-caption rounded-input border border-status-warning/30 bg-status-warning/10 px-1.5 text-status-warning">
+            {a.paused}
+          </span>
+        )}
+        <span className="typo-caption text-foreground">{typeLabels[row.assertionType] ?? row.assertionType}</span>
+        <span className="typo-caption text-primary">{actionLabel(row.onFailure)}</span>
+        <button
+          type="button"
+          onClick={() => onDelete(row.id)}
+          aria-label={a.delete}
+          className="p-1 rounded-input text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      {/* The hit rate lives where the gate is managed, not only in executions. */}
+      <p className="typo-caption text-foreground" data-testid="assertion-stats">
+        <Numeric value={row.passCount} /> {a.stat_pass} / <Numeric value={row.failCount} /> {a.stat_fail}
+        {' - '}
+        {row.lastEvaluatedAt ? (
+          <RelativeTime timestamp={row.lastEvaluatedAt} />
+        ) : (
+          a.never_evaluated
+        )}
+      </p>
     </div>
   );
 }

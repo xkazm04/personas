@@ -3136,7 +3136,10 @@
     "create": "Create",
     "cancel": "Cancel",
     "delete": "Delete gate",
-    "paused": "Paused"
+    "paused": "Paused",
+    "stat_pass": "pass",
+    "stat_fail": "fail",
+    "never_evaluated": "not evaluated yet"
   },
   "brain": {
     "tiers_title": "Memory",

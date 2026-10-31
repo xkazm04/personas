@@ -6218,6 +6218,9 @@ export type Translations = {
       cancel: string;
       delete: string;
       paused: string;
+      stat_pass: string;
+      stat_fail: string;
+      never_evaluated: string;
     };
     brain: {
       tiers_title: string;

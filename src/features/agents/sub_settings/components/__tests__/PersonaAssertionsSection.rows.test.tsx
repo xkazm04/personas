@@ -73,3 +73,21 @@ describe('gate row enabled state', () => {
     expect(screen.getByText('On gate').parentElement).not.toContainElement(screen.queryByText('assertions.paused'));
   });
 });
+
+describe('gate row evaluation meta', () => {
+  it('shows pass count, fail count and last-evaluated time', async () => {
+    const at = new Date(Date.now() - 2 * 3600_000).toISOString();
+    await renderWith([row({ passCount: 12, failCount: 3, lastEvaluatedAt: at })]);
+    const stats = screen.getByTestId('assertion-stats');
+    expect(stats).toHaveTextContent(/12\s*assertions\.stat_pass/);
+    expect(stats).toHaveTextContent(/3\s*assertions\.stat_fail/);
+    expect(stats).not.toHaveTextContent('assertions.never_evaluated');
+    expect(stats.textContent).toMatch(/2/);
+    expect(stats.textContent).toMatch(/ago|h/i);
+  });
+
+  it('says a gate was never evaluated when it has no timestamp', async () => {
+    await renderWith([row()]);
+    expect(screen.getByTestId('assertion-stats')).toHaveTextContent('assertions.never_evaluated');
+  });
+});
