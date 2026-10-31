@@ -66,7 +66,13 @@ export function DesignConnectorsPanel() {
   const testFromRecap = useCallback(async (connectorName: string, credentialId: string) => {
     setTestingFromRecap((prev) => new Set(prev).add(connectorName));
     try {
-      await verification.testConnector(connectorName, credentialId);
+      const result = await verification.testConnector(connectorName, credentialId);
+      // A recap-only connector has no status row to receive an unreachable
+      // verdict, and the vault store is untouched for it: without this the
+      // spinner just stops and the row reads as before.
+      if (result && result.state === 'unreachable') {
+        toastCatch('DesignConnectorsPanel:testFromRecap')(new Error(result.message || connectorName));
+      }
     } finally {
       setTestingFromRecap((prev) => {
         const next = new Set(prev);
