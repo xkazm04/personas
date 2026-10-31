@@ -86,10 +86,12 @@ interface UseEditorSaveOptions {
   setDraft: React.Dispatch<React.SetStateAction<PersonaDraft>>;
   setBaseline: React.Dispatch<React.SetStateAction<PersonaDraft>>;
   pendingPersonaId: string | null;
-  /** When true, the model-fields debounced auto-save is paused. Used when
-   *  the persisted model_profile JSON is corrupt — saving the reset state
-   *  would overwrite the still-recoverable original. The user must
-   *  explicitly re-select a model to unblock. */
+  /** When true, the model-fields save is refused on BOTH paths (debounced
+   *  autosave and explicit saveAll, which rejects so the tab is reported as
+   *  failed). Used when the persisted model_profile JSON is corrupt - saving
+   *  the reset state would overwrite the still-recoverable original. The flag
+   *  derives from the persisted blob, so it lifts once a valid profile is
+   *  stored or the persona is repaired elsewhere. */
   suppressModelSave?: boolean;
 }
 
@@ -104,6 +106,8 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
   draftRef.current = draft;
   const baselineRef = useRef(baseline);
   baselineRef.current = baseline;
+  const suppressModelSaveRef = useRef(suppressModelSave);
+  suppressModelSaveRef.current = suppressModelSave;
 
   const settingsDirty = draftChanged(draft, baseline, SETTINGS_KEYS);
   const modelDirty = draftChanged(draft, baseline, MODEL_KEYS);
@@ -191,6 +195,13 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
 
   const performModelSave = useCallback(async (d: PersonaDraft) => {
     if (!selectedPersonaId) return;
+    // The corrupt-profile guard holds on EVERY path: the debounced section is
+    // gated off below, and an explicit save (Save & Switch, the leave guard,
+    // Retry) refuses here instead of writing the reset profile over the
+    // still-recoverable JSON. The tab stays dirty and is reported as failed.
+    if (suppressModelSaveRef.current) {
+      throw new Error('Model settings not saved: the stored model profile is unreadable');
+    }
     const savePersonaId = selectedPersonaId;
     const prevBaseline = { ...baselineRef.current };
     const op = buildModelOp(d);
