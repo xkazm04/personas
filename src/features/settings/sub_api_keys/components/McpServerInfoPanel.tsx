@@ -1,10 +1,11 @@
 /**
  * Read-only "what you'll point clients at" panel.
  *
- * The production HTTP server (engine/webhook.rs:118) auto-starts on
- * 127.0.0.1:9420 — no enable toggle needed. Auth is enforced at the
- * router middleware (require_api_key); revoking a key is the kill
- * switch. This panel just surfaces the URL + endpoint reference so
+ * The production HTTP server (engine/webhook.rs) auto-starts on 127.0.0.1,
+ * port 9420 unless PERSONAS_WEBHOOK_PORT overrides it — no enable toggle
+ * needed. The URL shown is the port the liveness probe actually reached.
+ * Auth is enforced at the router middleware (require_api_key); revoking a
+ * key is the kill switch. This panel just surfaces the URL + endpoint reference so
  * users know what to configure their MCP client with.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -14,7 +15,7 @@ import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { probeMcpServer, type McpServerLiveness } from '@/api/agents/mcpTools';
-import { MCP_BASE_URL } from '../libs/mcpServer';
+import { DEFAULT_MCP_PORT, mcpBaseUrl } from '../libs/mcpServer';
 
 /** How often the panel re-probes the local server's live state. */
 const PROBE_INTERVAL_MS = 30_000;
@@ -47,14 +48,17 @@ export function McpServerInfoPanel() {
   // null = probe in flight / not yet resolved (Checking…); otherwise the live result.
   const [liveness, setLiveness] = useState<McpServerLiveness | null>(null);
   const mounted = useRef(true);
+  // The probe reports the port the server is really on; the default only
+  // stands in until it answers.
+  const baseUrl = mcpBaseUrl(liveness?.port ?? DEFAULT_MCP_PORT);
 
   const copyUrl = useCallback(async () => {
     try {
-      await copyText(MCP_BASE_URL);
+      await copyText(baseUrl);
       setUrlCopied(true);
       setTimeout(() => setUrlCopied(false), 2000);
     } catch (err) { silentCatch("features/settings/sub_api_keys/components/McpServerInfoPanel:catch1")(err); }
-  }, []);
+  }, [baseUrl]);
 
   useEffect(() => {
     mounted.current = true;
@@ -64,7 +68,7 @@ export function McpServerInfoPanel() {
         if (mounted.current) setLiveness(result);
       } catch (err) {
         // A failed probe IS the down signal — render Down, not a crash.
-        if (mounted.current) setLiveness({ live: false, port: 9420 });
+        if (mounted.current) setLiveness({ live: false, port: DEFAULT_MCP_PORT });
         silentCatch('features/settings/sub_api_keys/components/McpServerInfoPanel:probe')(err);
       }
     };
@@ -111,7 +115,7 @@ export function McpServerInfoPanel() {
 
       <div className="flex items-center gap-2">
         <code className="flex-1 typo-code text-foreground bg-background/60 border border-border/30 rounded-input px-2.5 py-1.5 truncate">
-          {MCP_BASE_URL}
+          {baseUrl}
         </code>
         <button
           type="button"

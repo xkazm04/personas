@@ -182,7 +182,9 @@ export default function ApiKeysSettings() {
       <ContentHeader
         icon={<Key className="w-5 h-5 text-fuchsia-400" />}
         title={s.title}
-        subtitle={keys === null ? s.loading : tx(s.live_of_total, { live: liveKeys, total: unrevokedCount })}
+        // keys === null with no fetch in flight means the first load failed: the
+        // error banner speaks, so neither "Loading" nor "no keys" is claimed.
+        subtitle={keys === null ? (loading ? s.loading : undefined) : tx(s.live_of_total, { live: liveKeys, total: unrevokedCount })}
         actions={
           <div className="flex items-center gap-2">
             <RecentChangeChip category="api_keys" />
@@ -226,7 +228,7 @@ export default function ApiKeysSettings() {
                   <span className="sr-only" role="status">{s.loading_keys}</span>
                   <ApiKeyGhostRows />
                 </>
-              ) : regularKeys.length === 0 ? (
+              ) : keys === null ? null : regularKeys.length === 0 ? (
                 <div className="typo-caption text-foreground py-6 text-center bg-secondary/20 rounded">
                   {s.empty}
                 </div>
