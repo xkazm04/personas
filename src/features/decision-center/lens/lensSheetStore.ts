@@ -9,11 +9,18 @@
 import { create } from 'zustand';
 
 import { refreshLensScanProducts } from '../roster/lensScanSource';
+import type { FocusPlace } from '../blueprint/model/focus';
 import type { LensKind } from './lensKinds';
 
 export interface LensSheetRequest {
   kind: LensKind;
   projectId: string;
+  /**
+   * Where to open the drawing: a place bp's shared focus moved to (spark roadmap S6, the follower in bpFollower.ts).
+   * The sheet is keyed by product, so a place on another product remounts it; it applies the place once its camera
+   * exists.
+   */
+  place?: FocusPlace;
 }
 
 interface LensSheetState {

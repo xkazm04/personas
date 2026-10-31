@@ -2875,6 +2875,10 @@
       },
       "exclude": [
         {
+          "path": "src-tauri/src/commands/infrastructure/bp_link/tests.rs",
+          "reason": "test-only: an in-test stand-in for bp's /api/session/focus on an ephemeral 127.0.0.1 port, aborted when the test ends; nothing ships"
+        },
+        {
           "path": "src-tauri/src/engine/management_api.rs",
           "reason": "the only router-level auth layer in 963 Rust files: middleware::from_fn_with_state(require_api_key) + per-route scope check"
         },
@@ -3796,6 +3800,10 @@
       },
       "exclude": [
         {
+          "path": "src/features/decision-center/blueprint/model/focus.ts",
+          "reason": "a verbatim port of bp's session/focus.ts: followingWords' age ladder ('just now', 's', 'min', 'h') is bp's wire text for a follow chip, not a UI verdict band; the port is not edited here"
+        },
+        {
           "path": "src/features/overview/components/shared/KpiTile.tsx",
           "reason": "the file's only match is a display truncation, not a verdict: absPct >= 1000 renders the string '999+%' and absPct < 0.1 renders '<0.1%'. Both arms are number-formatting for one delta, owned by number-and-cost-formatting.md, and neither arm picks a tone, grade or status word"
         }
@@ -4549,12 +4557,20 @@
       },
       "exclude": [
         {
+          "path": "src/features/decision-center/blueprint/model/focus.ts",
+          "reason": "a verbatim port of bp's session/focus.ts (followingWords: an unknown reader id is shown as the id, by bp's own rule); held to bp by its pinned header and bp's drift report, so it is not edited here"
+        },
+        {
           "path": "src/features/shared/chrome/sidebar/Sidebar.tsx",
           "reason": "resolves a ROUTE id against the code-determined nav registry (SIDEBAR_SECTIONS), not a fetched entity; an unknown route falling back to the Overview label is the deliberate default, not a dangling row"
         },
         {
           "path": "src/hooks/navigation/useBreadcrumbTrail.ts",
           "reason": "same shape over the nav sub-tab constants — the collection is a literal in the code, so its members cannot be deleted out from under the id"
+        },
+        {
+          "path": "src/features/decision-center/blueprint/model/brief.ts",
+          "reason": "a verbatim port of bp's decision brief, held byte for byte by bp's golden: a lens id the map does not name is printed as the id by bp's own documented rule ('Lens names fall back to the id'), not a chooser hiding a deleted entity; editing the line would break the golden"
         }
       ],
       "baseline": {

@@ -28,6 +28,7 @@ import {
   type LensScanProduct,
 } from '@/api/lensScan';
 
+import { liveFollower } from '../../lens/bpFollowLive';
 import { openLensSheet } from '../../lens/lensSheetStore';
 import { readinessLevel } from '../../lens/readiness';
 import { getLensScanState, refreshLensScanProducts } from '../../roster/lensScanSource';
@@ -105,5 +106,6 @@ export function createLiveActions(product: BlueprintProduct, onChanged: () => vo
     },
     refresh: () => readBlueprint(product),
     openProduct,
+    follow: liveFollower(),
   };
 }

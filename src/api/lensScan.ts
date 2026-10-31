@@ -49,7 +49,7 @@ export interface LensScanSnapshotData {
   events: string;
   /** The store, as bp's wire: column names, NULL columns omitted, JSON columns parsed. */
   scan: ScanSnapshot;
-  /** `PRAGMA user_version` of the store when it was read (1, 2 or 3 today). */
+  /** `PRAGMA user_version` of the store when it was read (1 to 4 today; v4 adds tier, risk_class, origin and external_ref to proposals). */
   storeVersion: number;
 }
 

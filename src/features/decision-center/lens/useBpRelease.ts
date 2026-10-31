@@ -14,7 +14,9 @@ import { getAppSetting } from '@/api/system/settings';
 import { openExternalUrl } from '@/api/system/system';
 import { silentCatch } from '@/lib/silentCatch';
 
-import { BP_URL_SETTING, bpBaseUrl, bpReleaseUrl, bpSlug } from './bpLink';
+import { listBpProducts } from '@/api/bpLink';
+
+import { BP_URL_SETTING, bpBaseUrl, bpReleaseUrl, bpSlug, bpSlugByRoot } from './bpLink';
 
 export type BpReach = 'checking' | 'up' | 'down' | 'unknown';
 
@@ -64,8 +66,15 @@ export function useBpRelease(root: string): BpRelease {
         silentCatch('decisionCenter.lensRelease:bpUrl')(err);
       }
       const base = bpBaseUrl(setting);
+      // bp's own slug for this root (its product table, read from Rust); the folder name only when bp does not answer
+      let slug: string | undefined;
+      try {
+        slug = bpSlugByRoot(await listBpProducts(), root);
+      } catch (err) {
+        silentCatch('decisionCenter.lensRelease:bpProducts')(err);
+      }
       if (cancelled) return;
-      setUrl(bpReleaseUrl(base, bpSlug(root)));
+      setUrl(bpReleaseUrl(base, slug ?? bpSlug(root)));
       const r = await probeBp(base);
       if (!cancelled) setReach(r);
     })();

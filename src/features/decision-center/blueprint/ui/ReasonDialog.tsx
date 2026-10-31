@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useSheet } from '../controller/SheetContext';
+import { cardBrief, declinePrefill } from '../model/cardBrief';
 import type { NoteMove } from '../state/uiState';
 import { BpDialog } from './dialog/BpDialog';
 import { deltaText } from './format';
@@ -7,7 +8,7 @@ import { Keycap } from './Keycap';
 import { LensGlyphIcon } from './LensGlyphIcon';
 
 /**
- * The note prompt: the decline reason (X), and the note a triage asks (WP4b: R rework, S descope, Y on a failed build).
+ * The note prompt: the decline reason (X; pre-filled on a repeat of a declined idea), and the note a triage asks (WP4b: R rework, S descope, Y on a failed build).
  * The item's card, one labelled field, and a live preview of the exact call that will be made (`decide` or `triage`,
  * the id, the decision and the note). Enter sends it, Esc cancels. A decline without words sends "no reason given"; a
  * triage sends exactly what was typed, and nothing when nothing was: the store has the last word, and a refusal (a
@@ -17,7 +18,9 @@ export function ReasonDialog({ itemId, move, ids }: { itemId: string; move: Note
   const s = useSheet();
   const { B, tx, language } = s.text;
   const p = s.work.byId.get(itemId);
-  const [note, setNote] = useState('');
+  // A decline of ONE item that repeats a declined idea opens with the note naming the decision it repeats (the brief's
+  // repeatNote): the person may edit it, and Enter sends it as the new row's decision_note. A batch opens empty.
+  const [note, setNote] = useState(() => (move === 'decline' && !(ids && ids.length > 1) && p ? declinePrefill(cardBrief(s.data, s.plan, p)) : ''));
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => { const id = requestAnimationFrame(() => input.current?.focus()); return () => cancelAnimationFrame(id); }, []);
   if (!p) return null;
