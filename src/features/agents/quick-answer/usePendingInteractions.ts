@@ -30,6 +30,7 @@ import {
 } from '@/features/fleet/monitor/useMonitorData';
 import { answerBuildQuestion } from '@/api/agents/buildSession';
 import { buildBatchedAnswerPayload } from '@/lib/build/answerPayload';
+import { isDeferredQuestion } from './triage/triageAdapters';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 
@@ -66,11 +67,13 @@ export interface QuickAnswerData {
 }
 
 /** A question that needs the full builder UI (file/URL attach or connector
- *  picker) rather than a plain inline answer. The Quick Answer popover defers
- *  these to "Open in builder" — the C-ready deep-link seam. */
-export function isComplexQuestion(q: BuildQuestion): boolean {
-  return !!(q.connectorCategory || q.acceptsReference || q.acceptsWebhookSource);
-}
+ *  picker) rather than a plain inline answer — deferred to "Open in builder".
+ *
+ *  The SAME function as the deck's `isDeferredQuestion`, not a copy of its
+ *  body: the Needs-you rail reads this name and the triage adapter reads that
+ *  one, and two bodies of one rule drift the first time a deferral reason is
+ *  added to only one of them. */
+export const isComplexQuestion: (q: BuildQuestion) => boolean = isDeferredQuestion;
 
 /**
  * What this surface can actually render.
