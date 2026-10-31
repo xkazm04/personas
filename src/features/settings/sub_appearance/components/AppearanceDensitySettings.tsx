@@ -1,7 +1,8 @@
-import { AlignJustify, Check, Rows2, Rows3 } from 'lucide-react';
+import { AlignJustify, Rows2, Rows3 } from 'lucide-react';
 import { useThemeStore } from '@/stores/themeStore';
 import type { Density } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { AppearanceOptionTile } from './AppearanceOptionTile';
 
 /** Density selector — scales spacing tokens app-wide via `--density-*` vars. */
 export default function AppearanceDensitySettings() {
@@ -23,28 +24,14 @@ export default function AppearanceDensitySettings() {
         {options.map(({ value, Icon, label, description }) => {
           const isActive = density === value;
           return (
-            <button
-              type="button"
+            <AppearanceOptionTile
               key={value}
-              onClick={() => setDensity(value)}
-              aria-pressed={isActive}
-              className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors text-center ${
-                isActive
-                  ? 'border-primary/30 bg-primary/5'
-                  : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-              }`}
-            >
-              <Icon className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-foreground'}`} />
-              <span className={`typo-heading ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
-                {label}
-              </span>
-              <span className="typo-caption text-foreground">{description}</span>
-              {isActive && (
-                <div className="absolute top-2 right-2">
-                  <Check className="w-3.5 h-3.5 text-primary" />
-                </div>
-              )}
-            </button>
+              active={isActive}
+              onSelect={() => setDensity(value)}
+              icon={<Icon className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-foreground'}`} />}
+              label={label}
+              description={description}
+            />
           );
         })}
       </div>

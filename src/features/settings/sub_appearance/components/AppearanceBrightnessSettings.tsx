@@ -1,4 +1,4 @@
-import { Check, Sun } from 'lucide-react';
+import { Sun } from 'lucide-react';
 import {
   useThemeStore, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS,
   BRIGHTNESS_ICON_OPACITY_BY_INDEX, useIsDarkTheme,
@@ -6,6 +6,7 @@ import {
 import type { BrightnessLevel } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AppearanceToggleRow } from './AppearanceToggleRow';
+import { AppearanceOptionTile } from './AppearanceOptionTile';
 
 /**
  * Brightness ramp + the four a11y axes that stack on top of it:
@@ -36,28 +37,14 @@ export default function AppearanceBrightnessSettings() {
           const isActive = brightness === level.id;
           const iconOpacity = BRIGHTNESS_ICON_OPACITY_BY_INDEX[i] ?? 'opacity-100';
           return (
-            <button
-              type="button"
+            <AppearanceOptionTile
               key={level.id}
-              onClick={() => setBrightness(level.id as BrightnessLevel)}
-              aria-pressed={isActive}
-              className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors text-center ${
-                isActive
-                  ? 'border-primary/30 bg-primary/5'
-                  : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-              }`}
-            >
-              <Sun className={`w-5 h-5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-foreground'}`} />
-              <span className={`typo-heading ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
-                {s[level.labelKey]}
-              </span>
-              <span className="typo-caption text-foreground">{s[level.descriptionKey]}</span>
-              {isActive && (
-                <div className="absolute top-2 right-2">
-                  <Check className="w-3.5 h-3.5 text-primary" />
-                </div>
-              )}
-            </button>
+              active={isActive}
+              onSelect={() => setBrightness(level.id as BrightnessLevel)}
+              icon={<Sun className={`w-5 h-5 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-foreground'}`} />}
+              label={s[level.labelKey]}
+              description={s[level.descriptionKey]}
+            />
           );
         })}
       </div>
