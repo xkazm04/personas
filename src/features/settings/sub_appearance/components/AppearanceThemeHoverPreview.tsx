@@ -3,9 +3,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 /* Hover-expand popover — renders a larger fidelity app-surface sample of
    the theme: titlebar, sidebar with nav items, header card, status row,
-   chart sparkline, button row. Same data-theme cascade trick as the
-   swatch tile, so all child Tailwind utility classes paint with the
-   previewed theme. Positioned below the tile; pointer-events-none so the
+   chart sparkline, button row. Unlike the swatch tile (inline styles),
+   it re-scopes CSS variables with data-theme={theme.id}, so child Tailwind
+   utility classes paint with the previewed theme - for ids that have a
+   [data-theme="<id>"] binding block (dark-midnight and custom have none). Positioned below the tile; pointer-events-none so the
    hover target stays the tile itself. */
 export function AppearanceThemeHoverPreview({ theme }: { theme: ThemeDefinition }) {
   const { t } = useTranslation();

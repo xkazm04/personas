@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, memo, useMemo } from 'react';
 import { Check } from 'lucide-react';
-import type { ThemeDefinition } from '@/stores/themeStore';
+import type { ThemeDefinition, ThemeId } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getContrastRatio, getContrastLevel } from '@/lib/theme/contrastRatio';
 import { AppearanceThemeHoverPreview } from './AppearanceThemeHoverPreview';
@@ -13,7 +13,12 @@ import { AppearanceThemeHoverPreview } from './AppearanceThemeHoverPreview';
    timing so every tile visibly previews ITS OWN theme. */
 export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
   theme, active, onSelect,
-}: { theme: ThemeDefinition; active: boolean; onSelect: () => void }) {
+}: {
+  theme: ThemeDefinition;
+  active: boolean;
+  /** A stable callback (the store's setTheme): an inline closure here would defeat memo(). */
+  onSelect: (id: ThemeId) => void;
+}) {
   const { tx, t } = useTranslation();
   const previewAriaLabel = tx(t.settings.appearance.theme_preview_aria, { name: theme.label });
 
@@ -53,7 +58,7 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
       {showHover && !active && <AppearanceThemeHoverPreview theme={theme} />}
       <button
         type="button"
-        onClick={onSelect}
+        onClick={() => onSelect(theme.id)}
         onFocus={handleEnter}
         onBlur={handleLeave}
         aria-label={previewAriaLabel}
@@ -68,7 +73,7 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
           className="relative w-full flex flex-col gap-2.5 px-3 py-3 pointer-events-none"
           style={{ minHeight: '110px', backgroundColor: theme.backgroundSample, color: theme.foregroundSample }}
         >
-          {/* Contrast badge — neutral chip so it stays legible on every tile */}
+          {/* Contrast badge — tinted with the APP theme's status tokens, not the previewed theme's */}
           <span
             aria-label={badgeAriaLabel}
             title={badgeAriaLabel}

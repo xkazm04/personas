@@ -3,7 +3,6 @@ import { Palette } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useThemeStore, THEMES, customThemeDef } from '@/stores/themeStore';
-import type { ThemeId } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { AppearanceThemeSwatch } from './AppearanceThemeSwatch';
 import CustomThemeCreator from './CustomThemeCreator';
@@ -52,7 +51,7 @@ export default function AppearanceThemingSection() {
             <span className="typo-body text-foreground">{labels.dark}</span>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
               {darkThemes.map((th) => (
-                <AppearanceThemeSwatch key={th.id} theme={th} active={themeId === th.id} onSelect={() => setTheme(th.id as ThemeId)} />
+                <AppearanceThemeSwatch key={th.id} theme={th} active={themeId === th.id} onSelect={setTheme} />
               ))}
             </div>
           </div>
@@ -60,7 +59,7 @@ export default function AppearanceThemingSection() {
             <span className="typo-body text-foreground">{labels.light}</span>
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
               {lightThemes.map((th) => (
-                <AppearanceThemeSwatch key={th.id} theme={th} active={themeId === th.id} onSelect={() => setTheme(th.id as ThemeId)} />
+                <AppearanceThemeSwatch key={th.id} theme={th} active={themeId === th.id} onSelect={setTheme} />
               ))}
             </div>
           </div>

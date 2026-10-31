@@ -26,7 +26,7 @@ const TIMEZONE_OPTIONS: Array<{ value: string; labelKey: TimezoneLabelKey; descr
   { value: 'Asia/Tokyo', labelKey: 'tz_label_tokyo', descriptionKey: 'tz_description_tokyo' },
 ];
 
-/** Timezone selector — controls how every RelativeTime / date renders. */
+/** Timezone selector — persists themeStore.timezone (and mirrors it); no display code reads it yet. */
 export default function AppearanceTimezoneSettings() {
   const { t } = useTranslation();
   const timezone = useThemeStore((s) => s.timezone);
