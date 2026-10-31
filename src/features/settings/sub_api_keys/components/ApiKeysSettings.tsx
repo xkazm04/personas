@@ -339,7 +339,8 @@ export function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: Ap
     : null;
   const createdRelative = formatRelativeTime(apiKey.created_at, '', { dateFallbackDays: 60 });
   const createdAbsolute = formatTimestamp(apiKey.created_at);
-  const stale = !isRevoked && isStaleKey(apiKey);
+  // Stale only applies to a key that can still authenticate: an expired key is dead, not forgotten.
+  const stale = keyState(apiKey) === 'live' && isStaleKey(apiKey);
 
   return (
     <div
