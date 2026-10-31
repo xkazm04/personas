@@ -26,7 +26,8 @@ import { Copy, Check, AlertTriangle, X } from 'lucide-react';
 import type { CreateApiKeyResponse } from '@/api/auth/externalApiKeys';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import { MCP_BASE_URL } from '../libs/mcpServer';
+import { probeMcpServer } from '@/api/agents/mcpTools';
+import { DEFAULT_MCP_PORT, mcpBaseUrl } from '../libs/mcpServer';
 
 
 interface CreatedKeyDialogProps {
@@ -47,6 +48,22 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
   const [keyCopied, setKeyCopied] = useState(false);
   const [configCopied, setConfigCopied] = useState(false);
 
+  // The snippet travels next to the live key, so its base URL must name the
+  // server that minted it: the port the probe actually reached, falling back
+  // to the default until (or unless) the probe answers.
+  const [mcpPort, setMcpPort] = useState(DEFAULT_MCP_PORT);
+  useEffect(() => {
+    let alive = true;
+    probeMcpServer()
+      .then((r) => {
+        if (alive) setMcpPort(r.port);
+      })
+      .catch(silentCatch('features/settings/sub_api_keys/components/CreatedKeyDialog:probe'));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const mcpConfig = JSON.stringify(
     {
       mcpServers: {
@@ -55,7 +72,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
           args: ['<path-to>/personas/tools/build-mcp/server.py'],
           env: {
             PERSONAS_API_KEY: response.plaintext_token,
-            PERSONAS_API_BASE: MCP_BASE_URL,
+            PERSONAS_API_BASE: mcpBaseUrl(mcpPort),
           },
         },
       },

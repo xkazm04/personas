@@ -71,3 +71,18 @@ describe('CreatedKeyDialog clipboard hygiene', () => {
     expect(writeText).not.toHaveBeenCalled();
   });
 });
+
+describe('CreatedKeyDialog MCP snippet base URL', () => {
+  it('points PERSONAS_API_BASE at the port the probe reached, not the default', async () => {
+    render(<CreatedKeyDialog response={response} onClose={vi.fn()} />);
+    await waitFor(() => expect(document.body.textContent).toContain('"PERSONAS_API_BASE": "http://127.0.0.1:9555"'));
+  });
+
+  it('falls back to the default port when the probe fails', async () => {
+    const { probeMcpServer } = await import('@/api/agents/mcpTools');
+    vi.mocked(probeMcpServer).mockRejectedValueOnce(new Error('ipc down'));
+    render(<CreatedKeyDialog response={response} onClose={vi.fn()} />);
+    await waitFor(() => expect(probeMcpServer).toHaveBeenCalled());
+    expect(document.body.textContent).toContain('"PERSONAS_API_BASE": "http://127.0.0.1:9420"');
+  });
+});
