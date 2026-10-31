@@ -92,6 +92,10 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
         <p className="typo-caption text-foreground py-3 text-center bg-secondary/20 rounded-input">
           {s.execute_no_personas}
         </p>
+      ) : filtered.length === 0 ? (
+        <p className="typo-caption text-foreground py-3 text-center bg-secondary/20 rounded-input">
+          {t.common.no_results}
+        </p>
       ) : (
         <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
           {filtered.map((p) => {

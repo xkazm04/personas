@@ -44,4 +44,15 @@ describe('ExecutePersonaPicker', () => {
     render(<ExecutePersonaPicker selectedIds={new Set()} onToggle={vi.fn()} />);
     expect(await screen.findByText(/No agents yet/)).not.toBeNull();
   });
+
+  it('says nothing matched when the filter excludes every agent', async () => {
+    listPersonas.mockResolvedValue(rows);
+    render(<ExecutePersonaPicker selectedIds={new Set()} onToggle={vi.fn()} />);
+    await screen.findByRole('button', { name: 'Alpha' });
+    fireEvent.change(screen.getByPlaceholderText(/Filter agents/), { target: { value: 'zzz' } });
+    expect(screen.queryByText('No results found')).not.toBeNull();
+    expect(screen.queryByRole('button', { name: 'Alpha' })).toBeNull();
+    fireEvent.change(screen.getByPlaceholderText(/Filter agents/), { target: { value: 'alp' } });
+    expect(screen.queryByText('No results found')).toBeNull();
+  });
 });
