@@ -2,8 +2,9 @@
 // shared with the Monitor's Blueprint and Morning tabs; the open sheet is one more visible surface (bp's follow chip
 // lists "Personas" while it is open), and the place its own product receives lands here, the bp way, on Personas' plan
 // (model/focusPlace.ts):
-//   site / no target -> level 0;  wing -> the wing;  room -> the bay (a bp room is a capability, a Personas bay);
-//   room <cap>.<kind> -> its capability's bay;  feature -> its L4 sheet, on `lens=` from the hash when known;
+//   site / no target -> level 0;  wing -> the wing;  room -> the same Personas bay or room (model/focusPlace.ts says which
+//   map shape draws a capability as which);  bp bay -> the same bay, else its capability's;  feature -> its L4 sheet, on
+//   `lens=` from the hash when known;
 //   an id this plan does not draw -> the camera holds still and the status line says "<kind> <id> is not on Personas' plan".
 // A place on another Personas product reopens the sheet there (the follower's `open`, `place` on LensSheetRequest); a
 // product bp names that Personas has not got says "Not in Personas: <slug>". Nothing is ever published (G7 is the
@@ -55,12 +56,12 @@ export function useFocusFollow({ follower, projectId, plan, nav, dispatch, text,
   useBpFollowSurface(follower, true);
   const st = useFollowerState(follower);
 
-  /** Apply one place on this product's plan; what it could not do, or null when it landed. */
-  const applyHere = useCallback((place: FocusPlace): FollowNote | null => {
+  /** Apply one place on this product's plan; what it could not do, or null when it landed. `ms` 0 lands at once. */
+  const applyHere = useCallback((place: FocusPlace, ms?: number): FollowNote | null => {
     const { plan: P, nav: N, dispatch: D } = latest.current;
     const m = placeMove(place, P);
     if (m.kind === 'site') N.toLevel(0);
-    else if (m.kind === 'wing' || m.kind === 'bay') N.flyToPlace(m.kind, m.id);
+    else if (m.kind === 'wing' || m.kind === 'room' || m.kind === 'bay') N.flyToPlace(m.kind, m.id, ms);
     else if (m.kind === 'feature') N.openSheet(m.fid, m.lens);
     else return { kind: 'missing', what: m.what, id: m.id };
     if (place.say) D({ type: 'say', text: place.say });
@@ -78,7 +79,8 @@ export function useFocusFollow({ follower, projectId, plan, nav, dispatch, text,
   useEffect(() => {
     if (!ready || opened.current || !initialPlace) return;
     opened.current = true;
-    const note = applyHere(initialPlace);
+    // at once, as the first feature a sheet opens at: a camera still flying from home is snapped back by the first resize
+    const note = applyHere(initialPlace, 0);
     if (note) dispatch({ type: 'say', text: noteWords(note, latest.current.text) });
   }, [ready, initialPlace, applyHere, dispatch]);
 

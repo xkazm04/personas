@@ -69,10 +69,11 @@ describe('a bp place on the Kettle plan', () => {
     expect(at('wing', room.id)).toEqual({ kind: 'wing', id: room.wing.id });
   });
 
-  it('a room is a capability since bp 57ee810: a Personas bay; a bp bay `<cap>.<kind>` lands on its capability', () => {
+  it('a room is a capability since bp 57ee810: on this map a Personas bay; a bp bay `<cap>.<kind>` lands on its capability', () => {
     expect(at('room', bay.id)).toEqual({ kind: 'bay', id: bay.id });
     expect(at('room', bay.id + '.screens')).toEqual({ kind: 'bay', id: bay.id });
-    expect(at('room', room.id)).toEqual({ kind: 'wing', id: room.wing.id });
+    // an id this plan draws as a room (a v3 map's capability) lands on that room
+    expect(at('room', room.id)).toEqual({ kind: 'room', id: room.id });
   });
 
   it('a feature opens its sheet, on the lens the hash names when the plan knows it', () => {

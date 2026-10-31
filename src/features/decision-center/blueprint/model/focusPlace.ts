@@ -1,14 +1,21 @@
 // Where a shared bp place lands on Personas' plan (spark roadmap S6; bp docs/concepts/one-morning-brief/personas.md
-// section 3.2 and one-morning/personas-adoption.md section 2.3). Personas' layout is bp's fbef867 port, and bp has moved
-// since: a bp room is a capability since bp 57ee810, which is a Personas BAY; a bp wing is `<building>:<domainId>`, and
-// Personas has one building, `0:`. An id that resolves to nothing never guesses: the camera holds still and the sheet
-// says so. Pure: the sheet controller (useFocusFollow) turns a move into the navigation call.
+// section 3.2 and one-morning/personas-adoption.md section 2.3). Personas' layout is bp's fbef867 port, which draws a
+// map in one of two shapes, and bp's ids are looked up in that order:
+//   - a v3 map (bp's demo products, measured live 2026-10-31): Personas draws one wing and one room per capability
+//     (`0:<cap>`, `<cap>`) and bp's own bays (`<cap>.<kind>`) as its bays. A bp room (a capability since bp 57ee810) is
+//     then a Personas ROOM, and a bp bay is the same Personas bay;
+//   - the older fixture map (Kettle): a Personas bay is a capability, so a bp room is a Personas BAY, and a bp bay
+//     `<cap>.<kind>` lands on its capability's bay.
+// A bp wing is `<building>:<domain group>` (`0:FND`); Personas' layout has no node for a domain group unless its own
+// wing ids match. An id that resolves to nothing never guesses: the camera holds still and the sheet says so. Pure: the
+// sheet controller (useFocusFollow) turns a move into the navigation call.
 import type { FocusPlace } from './focus';
 import type { Plan } from './plan';
 
 export type PlaceMove =
   | { kind: 'site' }
   | { kind: 'wing'; id: string }
+  | { kind: 'room'; id: string }
   | { kind: 'bay'; id: string }
   | { kind: 'feature'; fid: string; lens?: string }
   /** The place names something this plan does not draw: hold still and say it. */
@@ -37,11 +44,12 @@ export function placeMove(place: FocusPlace, plan: Plan): PlaceMove {
     const room = L.ROOM[t.id];
     return room ? { kind: 'wing', id: room.wing.id } : missing;
   }
-  // a room: bp's room is a capability (a Personas bay); a bp bay id `<capability>.<kind>` lands on its capability
+  // a room (or a bay, which bp publishes as a room place): the same Personas bay (a v3 map's bay, or the fixture's
+  // capability), else the same Personas room (a v3 map's capability), else a bp bay `<cap>.<kind>` on its capability's bay
   if (L.BAY[t.id]) return { kind: 'bay', id: t.id };
-  const cap = /^(.+)\.[a-z]+$/.exec(t.id)?.[1];
+  if (L.ROOM[t.id]) return { kind: 'room', id: t.id };
+  const cap = /^(.+)\.[a-z0-9-]+$/.exec(t.id)?.[1];
   if (cap && L.BAY[cap]) return { kind: 'bay', id: cap };
-  // bp before 57ee810 named a domain as a room: its Personas room spans its wing
-  const room = L.ROOM[t.id];
-  return room ? { kind: 'wing', id: room.wing.id } : missing;
+  if (cap && L.ROOM[cap]) return { kind: 'room', id: cap };
+  return missing;
 }
