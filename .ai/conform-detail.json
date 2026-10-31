@@ -8198,14 +8198,34 @@
       "subject": "browser-credential-boundary",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T07:51:38.000Z",
-      "worker": "e3892d60-d932-4e8e-9fe8-1cf2cc251907",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
       "techniques": [
         {
           "technique": "outbound-fetch-destination-validation",
-          "verdict": "not realized: credential-bearing POST to data-borne address on the default client",
-          "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 SHARED_HTTP; src-tauri/core/src/http_clients.rs:27 safe client unused"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:1205 validate_issuer_url judges only an IP literal in the string (no resolution, not bound to the connection), and the discovery fetch at line 1295 and token POST at line 105 both use SHARED_HTTP rather than the SSRF-safe resolver client."
+        },
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/credentials/api_proxy.rs:36 execute_api_request is #[requires(privileged)] and takes credential_id + method + path, attaching the credential in Rust."
+        },
+        {
+          "technique": "omit-the-column-not-the-value",
+          "verdict": "realized",
+          "evidence": "src-tauri/src/commands/credentials/foraging.rs:725 import_foraged_credential re-reads real values server-side by id after scan results were masked (line 203), so the webview never holds them."
+        },
+        {
+          "technique": "server-sealed-client-roundtrip",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/auto_cred_browser.rs:1230 the auto-cred result returns extracted_values intact to the webview (comment line 1224) for the client to send back on save, instead of a server-held reference like the OAuth session ref."
+        },
+        {
+          "technique": "opaque-upstream-errors",
+          "verdict": "unread",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:86 token-endpoint failures relay the sanitized upstream body to the caller; in a single-operator desktop app whether this is a topology leak was not judged."
         }
       ],
       "superseded": [
@@ -8229,6 +8249,13 @@
           "evaluatedAt": "2026-10-10T11:25:36.000Z",
           "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
           "reason": "replaced by e3892d60-d932-4e8e-9fe8-1cf2cc251907"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/credentials/oauth.rs:105 token_endpoint_request POSTs client_secret via crate::SHARED_HTTP to a caller/discovery-supplied token URL (oauth.rs:1323 validates domain by string only); SSRF_SAFE_HTTP (src-tauri/core/src/http_clients.rs:27) exists and is unused here - re-verified 2026-10-14, oauth.rs unchanged since 2026-09-16",
+          "evaluatedAt": "2026-10-14T07:51:38.000Z",
+          "worker": "e3892d60-d932-4e8e-9fe8-1cf2cc251907",
+          "reason": "replaced by cloud-20261031-personas-6"
         }
       ]
     },
@@ -8236,43 +8263,49 @@
       "context": "api-vault",
       "subject": "browser-credential-boundary",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:25:36.000Z",
-      "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
       "techniques": [
         {
           "technique": "broker-proxy-attaches-secret",
-          "verdict": "conformant",
-          "evidence": "src/api/vault/credentials.ts:84 preview healthcheck sends sessionEncryptedData; healthcheck/rotation/db queries pass credentialId and Rust attaches the secret; src/api/vault/oauthGatewayApi.ts:72 raw refresh_token IPC retired"
+          "verdict": "deviation",
+          "evidence": "src/api/vault/autoCredBrowser.ts:18 the auto-cred door hands extracted secret values to the webview instead of a server-held reference the Rust side redeems on save."
+        },
+        {
+          "technique": "server-sealed-client-roundtrip",
+          "verdict": "realized",
+          "evidence": "src/lib/bindings/CreateCredentialInput.ts:13 the OAuth create path carries back only a one-time oauthSessionRef redeemed server-side - 'token material never crosses the IPC boundary'."
         },
         {
           "technique": "omit-the-column-not-the-value",
-          "verdict": "conformant",
-          "evidence": "src/api/vault/credentials.ts:21 list_credentials returns PersonaCredential, whose encrypted_data is serde-skipped (src-tauri/core/src/models/credential.rs:40); foraged values arrive masked (src-tauri/src/commands/credentials/foraging.rs:203)"
-        },
-        {
-          "technique": "outbound-fetch-destination-validation",
-          "verdict": "not-applicable",
-          "evidence": "src/api/vault/oauthGatewayApi.ts:61 forwards caller tokenUrl/oidcIssuer to Rust; the guard belongs at the Rust fetch door, where it is missing and recorded as the commands-credentials deviation (not double-counted here)"
-        },
-        {
-          "technique": "public-vs-server-env-split",
-          "verdict": "not-applicable",
-          "evidence": "src/api/vault/credentials.ts:1 every door is an IPC invoke; zero import.meta.env reads under src/api/vault"
+          "verdict": "realized",
+          "evidence": "src/lib/bindings/PersonaCredential.ts:24 the credential row type the webview receives has no encrypted_data/iv/value field (id, name, serviceType, metadata, lastUsedAt, ...)."
         },
         {
           "technique": "aggregate-view-not-base-table",
           "verdict": "not-applicable",
-          "evidence": "src/api/vault/credentials.ts:1 the webview reaches the store only through privileged IPC commands; no browser-held role key"
+          "evidence": "src/api/vault/credentials.ts:21 the webview reaches the store only through IPC commands (list_credentials) into Rust-owned SQLite; no browser-held store grant exists (package.json carries no hosted-store client)."
         },
         {
           "technique": "default-deny-plus-defaulted-owner",
           "verdict": "not-applicable",
-          "evidence": "src/api/vault/credentials.ts:1 no row-policy store is browser-reachable"
+          "evidence": "package.json:162 the only data client is @tauri-apps/api; there is no anonymous role or row policy for regime one to default-deny."
+        },
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "not-applicable",
+          "evidence": "src/api/vault/oauthGatewayApi.ts:61 forwards caller tokenUrl/oidcIssuer to Rust; the guard belongs at the Rust fetch door, where it is missing and recorded as the commands-credentials deviation (not double-counted here)",
+          "carriedFrom": "2026-10-10"
+        },
+        {
+          "technique": "public-vs-server-env-split",
+          "verdict": "not-applicable",
+          "evidence": "src/api/vault/credentials.ts:1 every door is an IPC invoke; zero import.meta.env reads under src/api/vault",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "Upward lesson for an application (tauri--broker-proxy-attaches-secret): on a desktop shell the broker is the IPC command layer, and secrets typed into the webview cross it encrypted to a per-session public key (src-tauri/src/commands/credentials/crud.rs:31, src/features/vault/shared/hooks/health/useCredentialHealth.ts:216) - a stronger shape than the technique's same-origin route, worth teaching.",
       "superseded": [
         {
           "state": "conformant",
@@ -8287,6 +8320,13 @@
           "evaluatedAt": "2026-10-09T16:24:24.000Z",
           "worker": "0a06b266-72a8-44ea-9aac-b1d021f8a02c",
           "reason": "replaced by 24614e38-f160-48b2-ad89-8ffd559a3765"
+        },
+        {
+          "state": "conformant",
+          "evidence": "src/api/vault/credentials.ts:84 the only door carrying secret values sends them session-key encrypted (key minted at src-tauri/src/commands/credentials/crud.rs:31); every other door is id-only and the raw-token refresh door is retired (src/api/vault/oauthGatewayApi.ts:72)",
+          "evaluatedAt": "2026-10-10T11:25:36.000Z",
+          "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
+          "reason": "replaced by cloud-20261031-personas-6"
         }
       ]
     },
@@ -8295,37 +8335,42 @@
       "subject": "browser-credential-boundary",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:25:36.000Z",
-      "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
       "techniques": [
         {
           "technique": "broker-proxy-attaches-secret",
-          "verdict": "conformant",
-          "evidence": "src/features/browser/whitelist/siteEdit.ts:73 the webview sends origin + credentialId; browser_login attaches the secret Rust-side (src/features/browser/whitelist/SiteCredentialField.tsx:2)"
+          "verdict": "realized",
+          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:121 the draft carries credentialId only; Rust holds and attaches the secret."
         },
         {
           "technique": "omit-the-column-not-the-value",
-          "verdict": "conformant",
-          "evidence": "src/lib/bindings/BrowserSite.ts:26 credential_id only; the picker lists id/name/service_type (src/features/browser/whitelist/SiteCredentialField.tsx:43)"
-        },
-        {
-          "technique": "public-vs-server-env-split",
-          "verdict": "not-applicable",
-          "evidence": "src/features/browser/whitelist/siteEdit.ts:73 configuration moves over IPC; zero import.meta.env reads under src/features/browser"
+          "verdict": "realized",
+          "evidence": "src/lib/bindings/BrowserSite.ts:26 the site row the webview receives has credentialId and no secret column."
         },
         {
           "technique": "aggregate-view-not-base-table",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/browser/sites.rs:79 site rows are reached only through privileged commands; no browser-held store role"
+          "evidence": "src/api/browser.ts:73 site data reaches the webview only through IPC (browser_sites_bind_credential); no browser-held store grant exists."
         },
         {
           "technique": "default-deny-plus-defaulted-owner",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/browser/sites.rs:79 no row-policy store is browser-reachable"
+          "evidence": "package.json:162 the only data client is @tauri-apps/api; no anonymous role or row policy exists."
+        },
+        {
+          "technique": "opaque-upstream-errors",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/browser/sites.rs:79 the bind command is a local DB write behind #[requires(privileged)]; no upstream is brokered by this context."
+        },
+        {
+          "technique": "public-vs-server-env-split",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/siteEdit.ts:73 configuration moves over IPC; zero import.meta.env reads under src/features/browser",
+          "carriedFrom": "2026-10-10"
         }
       ],
-      "registryProposal": "The context map's path list for this context omits siteEdit.ts and SiteCredentialField.tsx, which carry its entire credential surface; the context scan lags the whitelist->server-control refactor (e385cc353e).",
       "superseded": [
         {
           "state": "conformant",
@@ -8340,6 +8385,13 @@
           "evaluatedAt": "2026-10-09T16:24:24.000Z",
           "worker": "0a06b266-72a8-44ea-9aac-b1d021f8a02c",
           "reason": "replaced by 24614e38-f160-48b2-ad89-8ffd559a3765"
+        },
+        {
+          "state": "conformant",
+          "evidence": "src/features/browser/whitelist/siteEdit.ts:73 binds a site to a credential id only via the privileged browser_sites_bind_credential (src-tauri/src/commands/browser/sites.rs:79); the site shape carries credential_id and no secret (src/lib/bindings/BrowserSite.ts:26)",
+          "evaluatedAt": "2026-10-10T11:25:36.000Z",
+          "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
+          "reason": "replaced by cloud-20261031-personas-6"
         }
       ]
     },
@@ -16776,9 +16828,9 @@
       "subject": "browser-credential-boundary",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T11:25:36.000Z",
-      "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
       "techniques": [],
       "superseded": [
         {
@@ -16787,6 +16839,13 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by 24614e38-f160-48b2-ad89-8ffd559a3765"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/browser/types.ts:62 BrowserTab carries url/title/origin/lease and no credential field; no file in this context references credential/secret/vault (re-grepped 2026-10-10, files unchanged since the 2026-10-03 verdict) - the credential binding lives in site-whitelist-management",
+          "evaluatedAt": "2026-10-10T11:25:36.000Z",
+          "worker": "24614e38-f160-48b2-ad89-8ffd559a3765",
+          "reason": "replaced by cloud-20261031-personas-6"
         }
       ]
     },
@@ -22060,70 +22119,80 @@
       "context": "engine-core-infrastructure",
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:34:37.368Z",
-      "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
       "techniques": [
         {
-          "technique": "canonical-and-derived-split",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/mod.rs:1 Engine root re-exports agent modules and contains no translation artifact split."
-        },
-        {
           "technique": "canonical-fallback-serving",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/mod.rs:4 Background task scheduling has no translation fallback serving logic."
-        },
-        {
-          "technique": "fuzzy-reuse-under-a-threshold",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/ai_helpers.rs:3 AI helper primitives extract code blocks and build database schema context, not translation memory matching."
-        },
-        {
-          "technique": "hand-authored-exception-contract",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/recipe_seed.rs:1 Seeds recipe definition rows into SQLite at startup from bundled recipe seed JSON."
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/team_preset_loader.rs:140 index-zipped field-level merge splices overlay strings into the canonical unit and tracks no staleness; the miss/parse path does fall back to whole canonical (line 166 'if !overlay_path.exists()' returns untouched canonical), which is the realized half."
         },
         {
           "technique": "language-registry-single-source",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/discovery.rs:1 Dynamic resource discovery populates questionnaire options from real external services, not translation catalogs."
+          "verdict": "unread",
+          "evidence": "src-tauri/engine/src/team_preset_loader.rs:162 the loader admits any 2-3 lowercase-letter code by shape rather than against the i18n manifest; whether offered languages drift from served ones depends on the switcher outside this context."
         },
         {
-          "technique": "non-translatable-value-classification",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/mod.rs:22 Re-exports core primitives from personas-core crate with no localization concerns."
-        },
-        {
-          "technique": "prompt-context-contract",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/llm_topology.rs:8 LLM topology builds multi-persona workflow blueprint graphs, not translation pipeline topologies."
-        },
-        {
-          "technique": "pseudo-localization-readiness",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/leadership.rs:1 Coordinates singleton process leadership across daemon and desktop instances."
-        },
-        {
-          "technique": "serialization-transport-safety",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/management_api.rs:1 Provides HTTP API endpoints for external tools, having no relation to translation pipelines."
-        },
-        {
-          "technique": "sharded-translation-ci",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/curation_scheduler.rs:1 Scheduled curation worker scans memory curation schedules, not translation CI jobs."
+          "technique": "hand-authored-exception-contract",
+          "verdict": "unread",
+          "evidence": "scripts/templates/_team_presets/backlog-execution.zh.json:2 a committed translation with no author or canonical-revision field; its provenance (human vs machine) was not established, so which contract binds it was not judged."
         },
         {
           "technique": "source-hash-translation-cache",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/persona_jobs.rs:1 Executes asynchronous background curation jobs for user personas with no translation duties."
+          "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+        },
+        {
+          "technique": "sharded-translation-ci",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+        },
+        {
+          "technique": "serialization-transport-safety",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+        },
+        {
+          "technique": "fuzzy-reuse-under-a-threshold",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+        },
+        {
+          "technique": "prompt-context-contract",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+        },
+        {
+          "technique": "non-translatable-value-classification",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+        },
+        {
+          "technique": "pseudo-localization-readiness",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
         },
         {
           "technique": "source-identical-value-audit",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/system_ops.rs:1 Executes backend system operations like context_scan, completely unrelated to translation pipelines."
+          "evidence": "src-tauri/engine/src/team_preset_loader.rs:165 serving only reads a committed sibling file (dir.join(\"{id}.{lang}.json\")); no MT request, translation cache or CI shard is produced in this context."
+        },
+        {
+          "technique": "canonical-and-derived-split",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/mod.rs:1 Engine root re-exports agent modules and contains no translation artifact split.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/mod.rs:28 The engine module root re-exports backend agent execution and workflow infrastructure and contains no localization or translation pipeline functionality.",
+          "evaluatedAt": "2026-10-12T18:34:37.368Z",
+          "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+          "reason": "replaced by cloud-20261031-personas-6"
         }
       ]
     },
@@ -22131,70 +22200,82 @@
       "context": "commands-design",
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:34:37.368Z",
-      "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+      "state": "deviation",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
       "techniques": [
         {
-          "technique": "canonical-and-derived-split",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:3 Build sessions module manages agent design sessions rather than translation storage."
-        },
-        {
           "technique": "canonical-fallback-serving",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:4 Build simulation dry-runs agent pipelines rather than serving translations with fallback."
-        },
-        {
-          "technique": "fuzzy-reuse-under-a-threshold",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:13 Smart search indexes automation templates rather than translation memory matches."
-        },
-        {
-          "technique": "hand-authored-exception-contract",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:16 Template adoption creates user personas rather than managing hand-authored translations."
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/design/team_presets.rs:25 'Overlays are partial - fields absent from the overlay fall through to canonical' is a declared intra-unit locale mix; the miss path itself is sound (None returns canonical English, line 24) but whole-unit fallback is not the contract."
         },
         {
           "technique": "language-registry-single-source",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:11 Platform definitions declare external integrations rather than language registry metadata."
-        },
-        {
-          "technique": "non-translatable-value-classification",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/n8n_transform/prompt_sanitizer.rs:1 Sanitizes untrusted workflow data against prompt injection rather than classifying non-translatable catalog values."
-        },
-        {
-          "technique": "prompt-context-contract",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:8 Formats persona generation prompts for n8n workflow synthesis, not MT translation context."
-        },
-        {
-          "technique": "pseudo-localization-readiness",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:2 Archetypes module manages persona templates without pseudo-localization transforms."
-        },
-        {
-          "technique": "serialization-transport-safety",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/n8n_transform/streaming.rs:3 Parses streaming sections from Claude CLI n8n transformation, not batch translation wire payloads."
-        },
-        {
-          "technique": "sharded-translation-ci",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:8 Enforces rate limits on n8n transformation requests rather than sharding CI translation jobs."
+          "verdict": "unread",
+          "evidence": "src-tauri/src/commands/design/team_presets.rs:31 language arrives as a free Option<String>; whether the offering surface derives from the registry lives outside this context."
         },
         {
           "technique": "source-hash-translation-cache",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:9 Tracks n8n workflow transformation session states rather than hashing source strings for translation caches."
+          "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+        },
+        {
+          "technique": "sharded-translation-ci",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+        },
+        {
+          "technique": "serialization-transport-safety",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+        },
+        {
+          "technique": "fuzzy-reuse-under-a-threshold",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+        },
+        {
+          "technique": "prompt-context-contract",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+        },
+        {
+          "technique": "non-translatable-value-classification",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+        },
+        {
+          "technique": "pseudo-localization-readiness",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
         },
         {
           "technique": "source-identical-value-audit",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:12 Persona design review reviews generated persona blueprints rather than auditing translation catalogs."
+          "evidence": "src-tauri/src/commands/design/team_presets.rs:34 the command only delegates reads of committed overlay files to the loader; no MT request, cache or CI shard is built in this context."
+        },
+        {
+          "technique": "canonical-and-derived-split",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/mod.rs:3 Build sessions module manages agent design sessions rather than translation storage.",
+          "carriedFrom": "2026-10-12"
+        },
+        {
+          "technique": "hand-authored-exception-contract",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/mod.rs:16 Template adoption creates user personas rather than managing hand-authored translations.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "registryProposal": "canonical-fallback-serving defines the unit as a page/lesson; for structured catalog-like documents (a preset manifest of name/description/member strings) the standard could say whether per-field fallback counts as per-key catalog fallback (legitimate) or as splicing (forbidden). Judged here as splicing because the overlay zips arrays by index with no baseline.",
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/mod.rs:10 The design commands module implements n8n workflow transformation and template design commands rather than a localization or translation pipeline.",
+          "evaluatedAt": "2026-10-12T18:34:37.368Z",
+          "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+          "reason": "replaced by cloud-20261031-personas-6"
         }
       ]
     },
@@ -22203,69 +22284,90 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:34:37.368Z",
-      "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
       "techniques": [
         {
           "technique": "canonical-and-derived-split",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:14 Adoption layout props manage UI state for persona adoption, not translation storage."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:14 Adoption layout props manage UI state for persona adoption, not translation storage.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "canonical-fallback-serving",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:12 Template design result model handles automation structure, not localized content fallback."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:12 Template design result model handles automation structure, not localized content fallback.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "fuzzy-reuse-under-a-threshold",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/questionDimMap.ts:6 Maps questionnaire items to persona dimension petals, not translation memory matching."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/questionDimMap.ts:6 Maps questionnaire items to persona dimension petals, not translation memory matching.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "hand-authored-exception-contract",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/ErrorPolicyCard.tsx:2 Consumes useTranslation hook for UI labels in error policy card; manages no hand-authored translation exceptions."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/ErrorPolicyCard.tsx:2 Consumes useTranslation hook for UI labels in error policy card; manages no hand-authored translation exceptions.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "language-registry-single-source",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/CapabilityTagSwitcher.tsx:2 Renders a capability tag switcher in adoption UI, having no relation to a language registry or language switcher."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/CapabilityTagSwitcher.tsx:2 Renders a capability tag switcher in adoption UI, having no relation to a language registry or language switcher.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "non-translatable-value-classification",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/adoptionImpact.ts:1 Translates persona configuration state into plain-English UI summary strings, not catalog value classification."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/adoptionImpact.ts:1 Translates persona configuration state into plain-English UI summary strings, not catalog value classification.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "prompt-context-contract",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:4 Displays questionnaire answers in the adoption wizard, not MT engine prompt context."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:4 Displays questionnaire answers in the adoption wizard, not MT engine prompt context.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "pseudo-localization-readiness",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionLeftPanel.tsx:2 Renders adoption sidebar panel using standard translation hook with no pseudo-locale transforms."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionLeftPanel.tsx:2 Renders adoption sidebar panel using standard translation hook with no pseudo-locale transforms.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "serialization-transport-safety",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:2 Bridges builder schedule picker to adoption trigger model; does not handle batch MT transport."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:2 Bridges builder schedule picker to adoption trigger model; does not handle batch MT transport.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "sharded-translation-ci",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/adoptionDimHelpers.ts:1 Helper functions format persona dimension notification channels, not CI translation jobs."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/adoptionDimHelpers.ts:1 Helper functions format persona dimension notification channels, not CI translation jobs.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "source-hash-translation-cache",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:1 Maintains petal state and question navigation in adoption UI, having no translation hashing cache."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:1 Maintains petal state and question navigation in adoption UI, having no translation hashing cache.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "source-identical-value-audit",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx:3 Renders build execution panel in template adoption, not catalog source-identical auditing."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx:3 Renders build execution panel in template adoption, not catalog source-identical auditing.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/index.ts:1 The persona layout adoption module renders interactive template configuration petal views and contains no translation pipeline or localization topology code.",
+          "evaluatedAt": "2026-10-12T18:34:37.368Z",
+          "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+          "reason": "replaced by cloud-20261031-personas-6"
         }
       ]
     },
@@ -29195,20 +29297,38 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:45:00.000Z",
-      "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
-      "techniques": []
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/api/pipeline/triggers.ts:3 the context is IPC wrappers for persona triggers/scheduler/teams; 'pipeline' here is agent automation, not translation, so no translated content is stored or moved",
+          "evaluatedAt": "2026-10-16T17:45:00.000Z",
+          "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
+          "reason": "replaced by cloud-20261031-personas-6"
+        }
+      ]
     },
     "e61f931c-25d7-4532-9ec7-ab6f3fc377e2/translation-pipeline-topology": {
       "context": "lib-credentials",
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:45:00.000Z",
-      "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
-      "techniques": []
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/lib/credentials/builtinConnectors.ts:2 the 'catalog' is a connector definition catalog, not a string catalog; no locale registry, translation store or MT request lives here",
+          "evaluatedAt": "2026-10-16T17:45:00.000Z",
+          "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
+          "reason": "replaced by cloud-20261031-personas-6"
+        }
+      ]
     },
     "1db5c86e-3237-4d2a-8e2f-1426d680757c/audit-logging": {
       "context": "lib-execution",
@@ -31924,10 +32044,19 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:44:16.000Z",
-      "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
-      "techniques": []
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/prompt/mod.rs:1 assembles persona runtime prompts; no locale registry, translation store or MT request is built here (no locale/language reference across src-tauri/engine/src/prompt/*.rs)",
+          "evaluatedAt": "2026-10-21T12:44:16.000Z",
+          "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
+          "reason": "replaced by cloud-20261031-personas-6"
+        }
+      ]
     },
     "7826a48f-5883-4f26-8476-c3c515bda745/translation-pipeline-topology": {
       "context": "lib-personas",
@@ -34598,20 +34727,38 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:44:16.000Z",
-      "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
-      "techniques": []
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useBuild.ts:2 here \"matrix\" means the persona build session UI, not a translation matrix; no locale or translation code in this context",
+          "evaluatedAt": "2026-10-21T12:44:16.000Z",
+          "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
+          "reason": "replaced by cloud-20261031-personas-6"
+        }
+      ]
     },
     "8a57c65c-06fd-45c9-9d32-d50c89c4c705/translation-pipeline-topology": {
       "context": "template-generation",
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:44:16.000Z",
-      "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
-      "techniques": []
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:2 runs design reviews over template sources; it neither generates nor serves translated content",
+          "evaluatedAt": "2026-10-21T12:44:16.000Z",
+          "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
+          "reason": "replaced by cloud-20261031-personas-6"
+        }
+      ]
     },
     "37cd64d2-bd42-47b9-8c17-7ea1b466135c/chat-transcript": {
       "context": "persona-glyph-layout",
@@ -41171,6 +41318,115 @@
           "evaluatedAt": "2026-10-03",
           "worker": null,
           "reason": "replaced by cloud-20261031-personas-5"
+        }
+      ]
+    },
+    "e61f931c-25d7-4532-9ec7-ab6f3fc377e2/browser-credential-boundary": {
+      "context": "lib-credentials",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "Precondition (a credential value held by, or crossing into, the webview tier) does not hold: this context is a static connector catalog plus an ID-only action dispatcher - src/lib/credentials/remediationExecutor.ts:21 passes event.credentialId alone to rotation, src/lib/credentials/catalogApiEndpoints.ts:4 is endpoint metadata with no auth material, and parseCredentialLedger.ts:31 parses non-secret metadata; zero import.meta.env reads. Credential attachment for catalog endpoints happens in execute_api_request (commands-credentials, judged separately).",
+          "evaluatedAt": "2026-10-06",
+          "worker": null,
+          "reason": "replaced by cloud-20261031-personas-6"
+        }
+      ]
+    },
+    "ee9d4d9e-0414-4460-b159-5d9c7c4108a7/browser-credential-boundary": {
+      "context": "vault-credentials-components-features",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
+      "techniques": [
+        {
+          "technique": "server-sealed-client-roundtrip",
+          "verdict": "realized",
+          "evidence": "src/features/vault/sub_credentials/components/workspace/useWorkspaceConnect.ts:86 the client carries back only a server-issued one-time session ref, not token material."
+        },
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "realized",
+          "evidence": "src/features/vault/sub_credentials/components/picker/ResourcePicker.tsx:101 resource listing sends credentialId + spec id; Rust attaches the credential."
+        },
+        {
+          "technique": "omit-the-column-not-the-value",
+          "verdict": "realized",
+          "evidence": "src/lib/bindings/PersonaCredential.ts:24 the credential shape these panels consume has no secret column."
+        },
+        {
+          "technique": "aggregate-view-not-base-table",
+          "verdict": "not-applicable",
+          "evidence": "src/api/vault/credentials.ts:21 data reaches the webview only through IPC into Rust-owned SQLite; no browser-held store grant."
+        },
+        {
+          "technique": "default-deny-plus-defaulted-owner",
+          "verdict": "not-applicable",
+          "evidence": "package.json:162 the only data client is @tauri-apps/api; no anonymous role or row policy exists."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "broker-proxy-attaches-secret: useWorkspaceConnect.ts:83-85 sends a one-time oauthSessionRef redeemed server-side, the token never crosses IPC; omit-the-column-not-the-value: src-tauri/core/src/models/credential.rs:40-42 serde-skips encrypted_data off the webview shape and src/lib/bindings/CredentialFieldMeta.ts:3 carries no value column; outbound-fetch-destination-validation n/a: the only data-borne address (authorize_url) is scheme-allowlisted at src-tauri/src/engine/mcp_tools.rs:532 and opened in the user browser with no credential (PendingAuthModal.tsx:58); public-vs-server-env-split n/a: zero import.meta.env reads; RLS techniques n/a: no browser-reachable store; audit detail is a fixed vocabulary (src-tauri/src/commands/credentials/crud.rs:201).",
+          "evaluatedAt": "2026-10-06",
+          "worker": null,
+          "reason": "replaced by cloud-20261031-personas-6"
+        }
+      ]
+    },
+    "647d6a54-3813-4149-bbf7-2d96a57a77c7/browser-credential-boundary": {
+      "context": "vault-databases-tabs",
+      "subject": "browser-credential-boundary",
+      "bundle": "software-engineering",
+      "state": "conformant",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T00:00:00.000Z",
+      "worker": "cloud-20261031-personas-6",
+      "techniques": [
+        {
+          "technique": "broker-proxy-attaches-secret",
+          "verdict": "realized",
+          "evidence": "src/api/vault/database/dbSchema.ts:74 execute_db_query is sent credentialId + queryText only; the command is #[requires(privileged)] (src-tauri/src/commands/credentials/db_schema.rs:223)."
+        },
+        {
+          "technique": "omit-the-column-not-the-value",
+          "verdict": "realized",
+          "evidence": "src/features/vault/sub_databases/tabs/ChatTab.tsx:55 the tab's props carry credentialId: string, with no connection-string or password field."
+        },
+        {
+          "technique": "outbound-fetch-destination-validation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_databases/tabs/TablesTab.tsx:48 the tabs send a query against a configured credential; no destination address arrives as data from a response in this context."
+        },
+        {
+          "technique": "aggregate-view-not-base-table",
+          "verdict": "not-applicable",
+          "evidence": "src/api/vault/database/dbSchema.ts:74 the external DB is reached by Rust, not by a browser-held grant."
+        },
+        {
+          "technique": "default-deny-plus-defaulted-owner",
+          "verdict": "not-applicable",
+          "evidence": "package.json:162 the only webview data client is @tauri-apps/api; no anonymous role or row policy exists."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "broker-proxy-attaches-secret: ChatTab.tsx:256 / src/api/vault/database/dbSchema.ts:74 send credentialId + SQL only, credential attached in Rust; outbound-fetch-destination-validation: that broker fetches via SSRF_SAFE_HTTP (src-tauri/src/engine/db_query.rs:138); opaque-upstream-errors (operator-owned DB, so detail is legitimate) with credential material scrubbed by sanitize_error before return (db_query.rs:148, :244); allowlisted-operator-stream: telemetry carries only read/mutation, never the statement (ChatTab.tsx:249-250) and console history is memory-only (ConsoleTab.tsx:47); env-split and RLS techniques n/a (no env reads, no browser-held DB role key).",
+          "evaluatedAt": "2026-10-06",
+          "worker": null,
+          "reason": "replaced by cloud-20261031-personas-6"
         }
       ]
     }
