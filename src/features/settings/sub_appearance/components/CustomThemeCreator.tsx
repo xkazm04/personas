@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useId } from 'react';
 import { Paintbrush, Sun, Moon, ChevronRight, RotateCcw } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useThemeStore } from '@/stores/themeStore';
@@ -70,6 +70,7 @@ export default function CustomThemeCreator() {
   const currentThemeId = useThemeStore((s) => s.themeId);
   const { t } = useTranslation();
   const s = t.settings.appearance;
+  const nameInputId = useId();
 
   // Local draft state — initialized from store or defaults
   const [baseMode, setBaseMode] = useState<'dark' | 'light'>(existingConfig?.baseMode ?? 'dark');
@@ -193,8 +194,9 @@ export default function CustomThemeCreator() {
           </div>
         </div>
         <div className="space-y-2 flex-1 max-w-xs">
-          <label className="typo-caption text-foreground">{s.theme_name}</label>
+          <label htmlFor={nameInputId} className="typo-caption text-foreground">{s.theme_name}</label>
           <input
+            id={nameInputId}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder={s.custom_theme_name_placeholder}
