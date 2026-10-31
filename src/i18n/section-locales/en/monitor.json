@@ -713,6 +713,7 @@
   "triage_reason_title": "Why?",
   "triage_reason_wrong_approach": "Wrong approach",
   "triage_reject": "Reject",
+  "triage_severity_unclassified": "Unclassified",
   "triage_skip": "Skip",
   "triage_source_cloud": "Cloud",
   "triage_source_local": "Local",

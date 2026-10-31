@@ -720,6 +720,7 @@ export type Translations = {
     triage_reason_title: string;
     triage_reason_wrong_approach: string;
     triage_reject: string;
+    triage_severity_unclassified: string;
     triage_skip: string;
     triage_source_cloud: string;
     triage_source_local: string;

@@ -414,3 +414,45 @@ describe('reason prompts — who can record why', () => {
     expect(reasonPromptFor(item, 'reject')).toBeUndefined();
   });
 });
+
+describe('reviewToTriage — every severity a producer emits is ranked', () => {
+  // Producers write info|warning|error|critical (and `high`); the weight table
+  // used to know only critical/high/medium/low, so an `error` review fell to
+  // the neutral default and was dealt BELOW a routine `medium` one.
+  const weightOf = (severity: string) => reviewToTriage(review({ severity }), copy).weight;
+  const toneOf = (severity: string) => reviewToTriage(review({ severity }), copy).tags[0].tone;
+
+  it('ranks an error with critical, a warning with medium and info with low', () => {
+    expect(weightOf('error')).toBe(weightOf('critical'));
+    expect(toneOf('error')).toBe('danger');
+    expect(weightOf('warning')).toBe(weightOf('medium'));
+    expect(toneOf('warning')).toBe('warning');
+    expect(weightOf('info')).toBe(weightOf('low'));
+  });
+
+  it('never deals an error-severity review behind a medium one', () => {
+    expect(weightOf('error')).toBeGreaterThan(weightOf('medium'));
+    expect(weightOf('info')).toBeLessThan(weightOf('medium'));
+  });
+});
+
+describe('reviewToTriage — an unreadable severity is loud, never a quiet medium', () => {
+  // The hitl-approval rule every sibling surface follows: the manual-review list
+  // resolves a missing or unknown token to `Unclassified` (defaulted) and the
+  // Monitor to its LOUDEST bucket. The deck used to spell a missing severity as
+  // a readable `medium`, filing an item nobody could classify mid-queue.
+  for (const severity of ['', null, 'bogus']) {
+    it(`labels ${JSON.stringify(severity)} Unclassified and deals it in the top band`, () => {
+      const item = reviewToTriage(review({ severity: severity as string }), copy);
+      expect(item.tags[0]).toMatchObject({ id: 'severity', label: copy.severityUnclassified, tone: 'danger' });
+      expect(factValue(item, 'severity')).toBe(copy.severityUnclassified);
+      expect(item.weight).toBe(reviewToTriage(review({ severity: 'critical' }), copy).weight);
+    });
+  }
+
+  it('leaves a readable severity exactly as it was', () => {
+    const item = reviewToTriage(review({ severity: 'Medium' }), copy);
+    expect(item.tags[0]).toMatchObject({ label: 'medium', tone: 'warning' });
+    expect(item.weight).toBe(60);
+  });
+});

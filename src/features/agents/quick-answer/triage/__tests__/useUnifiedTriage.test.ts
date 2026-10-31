@@ -54,8 +54,13 @@ const interactions = {
   handleDispatchAction: vi.fn(),
 };
 
+// What the hook returns THIS render. A test that replaces it simulates a poll
+// (or a write's isProcessing flip) producing a fresh `usePendingInteractions`
+// object, which is exactly what the real hook does every 15-30 s.
+const mockInteractionsNow = { current: interactions };
+
 vi.mock('../../usePendingInteractions', () => ({
-  usePendingInteractions: () => interactions,
+  usePendingInteractions: () => mockInteractionsNow.current,
 }));
 
 vi.mock('@/api/devTools/devTools', () => ({
@@ -242,6 +247,7 @@ beforeEach(() => {
   // pre-seeded with whatever queue the PREVIOUS test's fetches left behind.
   resetTriageWarmCache();
   interactions.reviewsError = null;
+  mockInteractionsNow.current = interactions;
   mockTriageIdeas.mockResolvedValue(page([idea()]));
   mockAcceptIdea.mockResolvedValue(undefined);
   mockRejectIdea.mockResolvedValue(undefined);
@@ -370,6 +376,42 @@ describe('useUnifiedTriage — a REJECTED write restores the card', () => {
     expect(result.current.items.map((i) => i.id)).toEqual([card.id]);
     expect(result.current.decidedCount).toBe(0);
     expect(mockAcceptIdea).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries a failed Build now WITHOUT creating a second task', async () => {
+    // Build now writes the task first, then the accept. When only the accept
+    // fails the card comes back, and the reviewer's natural retry used to run
+    // the whole branch again: `dev_tools_create_task` does not dedupe on the
+    // source idea, so one idea ended up with two tasks doing the same work.
+    mockCreateTask.mockResolvedValue({ id: 'task-1' });
+    mockAcceptIdea.mockRejectedValueOnce(new Error('disk I/O error'));
+    const { result } = await mount();
+
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept', branchId: 'build' });
+    });
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept', branchId: 'build' });
+    });
+
+    expect(mockCreateTask).toHaveBeenCalledTimes(1);
+    expect(mockAcceptIdea).toHaveBeenCalledTimes(2);
+    expect(result.current.decidedCount).toBe(1);
+  });
+
+  it('still creates the task again when the FIRST task write was the one that failed', async () => {
+    mockCreateTask.mockRejectedValueOnce(new Error('disk I/O error')).mockResolvedValue({ id: 'task-1' });
+    const { result } = await mount();
+
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept', branchId: 'build' });
+    });
+    await act(async () => {
+      await result.current.decide({ item: itemOfKind(result, 'idea'), verdict: 'accept', branchId: 'build' });
+    });
+
+    expect(mockCreateTask).toHaveBeenCalledTimes(2);
+    expect(mockAcceptIdea).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -1037,5 +1079,24 @@ describe('useUnifiedTriage — opening the deck does not write the session back'
 
     const second = await mount();
     expect(second.result.current.summary.decided).toBe(1);
+  });
+});
+
+describe('useUnifiedTriage — decide keeps its identity across a review poll', () => {
+  it('does not re-create the ports or decide when the borrowed source re-reads', async () => {
+    // `decide` roots the deck's memo chain (TriageCard's doc counts the cost of
+    // one unstable callback). The ports used to depend on the WHOLE
+    // `usePendingInteractions` object, which is new on every poll and on every
+    // isProcessing flip, while reading only three identity-stable callbacks.
+    const hook = await mount();
+    const { decide, ports } = hook.result.current;
+
+    mockInteractionsNow.current = { ...interactions, reviews: [] };
+    hook.rerender();
+    mockInteractionsNow.current = { ...interactions, reviews: [], isProcessing: true };
+    hook.rerender();
+
+    expect(hook.result.current.ports).toBe(ports);
+    expect(hook.result.current.decide).toBe(decide);
   });
 });
