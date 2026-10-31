@@ -76,7 +76,7 @@ const FEEDS = [
 ];
 
 function load(counts: Record<string, number>) {
-  for (const f of FEEDS) f.mock.mockResolvedValue(f.resolve(counts[f.name] ?? 0));
+  for (const f of FEEDS) f.mock.mockResolvedValue(f.resolve(f.name in counts ? counts[f.name] : 0));
 }
 const tabText = (label: RegExp) => screen.getByText(label).closest('button')!.textContent;
 
