@@ -271,7 +271,7 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
     [latestWins, pollIntervalMs, pollTimeoutMs],
   );
 
-  const runOne = useCallback(async (row: ExecutionListItem, personaId: string, token: number) => {
+  const runOne = useCallback(async (row: ExecutionListItem, personaId: string, token: number, cohortId: string) => {
     if (!isLive(token)) return;
     updateItem(token, row.id, { status: 'running' });
     try {
@@ -285,7 +285,9 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
       // Dispatching after either bills a run nobody will see (updateItem drops a
       // stale token's writes), so this is the last point to stop.
       if (!isLive(token)) return;
-      const idempotencyKey = `bulk-rerun-${row.id}-${Date.now()}`;
+      // Derived from (cohort, original), never from the clock: a retried dispatch
+      // of this row in this cohort must carry the SAME key to be deduplicated.
+      const idempotencyKey = `bulk-rerun-${cohortId}-${row.id}`;
       const dispatched: PersonaExecution = await executePersona(
         personaId,
         undefined,
@@ -325,6 +327,7 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
     if (rows.length === 0) return;
     cancelledRef.current = false;
     const token = latestWins.next();
+    const cohortId = crypto.randomUUID();
     const initial: BulkRunItem[] = rows.map((r) => ({
       originalId: r.id,
       origStatus: r.status,
@@ -353,7 +356,7 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
           if (!isLive(token)) return;
           const next = queue.shift();
           if (!next) return;
-          await runOne(next, personaId, token);
+          await runOne(next, personaId, token, cohortId);
         }
       })());
     }
