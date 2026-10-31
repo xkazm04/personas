@@ -35,4 +35,23 @@ describe('CreateApiKeyDialog', () => {
     render(<CreateApiKeyDialog onSubmit={vi.fn()} onClose={vi.fn()} />);
     expect(screen.queryByRole('button', { name: 'Close' })).not.toBeNull();
   });
+
+  it('binds its labels to their controls', () => {
+    render(<CreateApiKeyDialog onSubmit={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.queryByLabelText('Name')).not.toBeNull();
+    expect(screen.queryByRole('group', { name: 'Scopes' })).not.toBeNull();
+    expect(screen.queryByRole('group', { name: 'Expires' })).not.toBeNull();
+  });
+  it('exposes scope toggles as pressed buttons without a nested checkbox', () => {
+    render(<CreateApiKeyDialog onSubmit={vi.fn()} onClose={vi.fn()} />);
+    const build = screen.getByRole('button', { name: /personas:build/ });
+    const read = screen.getByRole('button', { name: /personas:read/ });
+    expect(build.getAttribute('aria-pressed')).toBe('true');
+    expect(read.getAttribute('aria-pressed')).toBe('false');
+    const execute = screen.getByRole('button', { name: /Execute/ });
+    expect(execute.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(read);
+    expect(read.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
+  });
 });

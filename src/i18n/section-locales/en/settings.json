@@ -985,6 +985,7 @@
     "execute_pick_hint": "Choose which agents this key may run",
     "execute_filter_placeholder": "Filter agents…",
     "execute_no_personas": "No agents yet — create one first.",
+    "execute_load_failed": "Couldn't load your agents.",
     "field_expiry_label": "Expires",
     "expiry_never": "Never",
     "expiry_7d": "7 days",
