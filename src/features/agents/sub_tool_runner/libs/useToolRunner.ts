@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { invokeToolDirect, type ToolInvocationResult } from '@/api/agents/tools';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 import { createKeyedLatestWins } from '@/stores/util/latestWins';
 
 interface ToolRunState {
@@ -20,6 +21,7 @@ const EMPTY_STATE: ToolRunState = {
 };
 
 export function useToolRunner(personaId: string | undefined) {
+  const { t } = useTranslation();
   const [states, setStates] = useState<Record<string, ToolRunState>>({});
 
   // Track the latest personaId in a ref so the runTool result-write code can
@@ -74,7 +76,7 @@ export function useToolRunner(personaId: string | undefined) {
             personaId: '',
             isRunning: false,
             result: null,
-            error: 'No active persona. Open a persona before running tools.',
+            error: t.agents.tool_runner.no_persona,
           },
         }));
         return;
@@ -117,7 +119,7 @@ export function useToolRunner(personaId: string | undefined) {
         // Tauri rejects with structured AppError objects, not Error instances —
         // `String(err)` on those renders "[object Object]" (2026-07-16 UAT
         // blocker). extractMessage probes .message/.error/JSON before giving up.
-        const msg = extractMessage(err) || 'Tool invocation failed';
+        const msg = extractMessage(err) || t.agents.tool_runner.invocation_failed;
         // A tool FAILURE resolves (success:false); a rejection is the IPC path
         // itself failing (wrapper timeout, AppError). The card state is cleared
         // on the next persona switch, so leave a trace that outlives it.
@@ -137,7 +139,7 @@ export function useToolRunner(personaId: string | undefined) {
         }
       }
     },
-    [personaId, latestRun],
+    [personaId, latestRun, t],
   );
 
   return { getState, runTool };

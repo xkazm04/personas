@@ -2128,8 +2128,8 @@
         "$comment": "Recall is deliberately partial: it cannot see a toggle whose button lives in a child component while the state lives in the parent, nor a non-button disclosure. Both are stated in the golden path rather than papered over."
       },
       "baseline": {
-        "files": 29,
-        "matches": 30
+        "files": 28,
+        "matches": 29
       },
       "floor": 2000
     },
