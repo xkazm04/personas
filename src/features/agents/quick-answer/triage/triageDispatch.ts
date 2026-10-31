@@ -294,8 +294,11 @@ export function reversibleStatus(decision: TriageDecision): string | null {
   const { item, verdict, branchId } = decision;
   switch (item.kind) {
     case 'idea':
-      // `build` accepts and queues a task; the accept is what would be undone.
-      return branchId === 'build' || verdict === 'accept' ? 'accepted' : 'rejected';
+      // `build` accepts AND queues a task. Reopening the idea cannot take the
+      // task back (and a second build would queue a second one), so a build is
+      // not offered an undo at all.
+      if (branchId === 'build') return null;
+      return verdict === 'accept' ? 'accepted' : 'rejected';
     // Reviews (the backend state machine has no path back to `pending`), build
     // questions (the CLI already resumed), policy proposals (the rule is
     // written, and there is deliberately no second policy writer), promotions

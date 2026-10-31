@@ -445,8 +445,8 @@ describe('reversibleStatus — which verdicts may be offered back, and as what',
     const item = makeItem('idea');
     expect(reversibleStatus({ item, verdict: 'accept' })).toBe('accepted');
     expect(reversibleStatus({ item, verdict: 'reject' })).toBe('rejected');
-    // `build` accepts and queues a task; the accept is what gets undone.
-    expect(reversibleStatus({ item, verdict: 'accept', branchId: 'build' })).toBe('accepted');
+    // `build` queues a task that a reopen cannot retract: no undo is offered.
+    expect(reversibleStatus({ item, verdict: 'accept', branchId: 'build' })).toBeNull();
   });
 
   it('refuses the five kinds whose act is already out in the world', () => {
