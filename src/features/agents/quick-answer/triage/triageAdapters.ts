@@ -218,7 +218,7 @@ export interface TriageCopy {
   reasonNeedsRework: string;
 }
 
-/** Provisional English. Replaced wholesale by translated copy at consolidation. */
+/** The English fallback. Pinned word-for-word to `en.json` by `triageCopyParity.test.ts`. */
 export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   accept: 'Accept',
   reject: 'Reject',
@@ -229,7 +229,7 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   buildNow: 'Build now',
   buildNowHint: 'Accept and queue a task for it',
   openBuilder: 'Open in builder',
-  openBuilderHint: 'Needs the full picker — answer it in the persona builder',
+  openBuilderHint: 'Needs the full picker: answer it in the persona builder',
   carryOutHint: 'Resolve the review and carry this out',
   severity: 'Severity',
   severityUnclassified: 'Unclassified',
@@ -249,7 +249,7 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   cloud: 'Cloud',
   local: 'Local',
   blocking: 'Blocking a team step',
-  blockingDetail: 'A held step is waiting on this — approving it resumes the work.',
+  blockingDetail: 'A held step is waiting on this: approving it resumes the work.',
   viewRun: 'See the run',
   viewRunHint: 'Open the execution that raised this review',
   priority: 'Priority',
@@ -274,7 +274,7 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   policyKindBudget: 'Budget',
   policyRoutingTitle: 'Route {category} work to {to}',
   policyRoutingBody:
-    'Sending {category} runs to {to} instead of {from} projects a saving of {saving} a month — {pct} of what that work costs today.',
+    'Sending {category} runs to {to} instead of {from} projects a saving of {saving} a month: {pct} of what that work costs today.',
   policyBudgetIntroduceTitle: 'Introduce a monthly ceiling of {proposed}',
   policyBudgetRaiseTitle: 'Raise the monthly ceiling to {proposed}',
   policyBudgetLowerTitle: 'Lower the monthly ceiling to {proposed}',
@@ -325,7 +325,7 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   goalBatch: 'Accept all {count} from this KPI',
   goalBatchHint: 'Signs off every completed goal on this KPI at once',
   goalOpenBoard: 'Open the goals board',
-  goalOpenBoardHint: 'See this goal in its project — decides nothing',
+  goalOpenBoardHint: 'See this goal in its project: decides nothing',
   reasonNotFinished: 'Not finished yet',
   reasonNoEvidence: 'No evidence it landed',
   reasonMissedTarget: 'Missed the KPI target',
