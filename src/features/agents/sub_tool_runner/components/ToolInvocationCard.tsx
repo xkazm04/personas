@@ -277,14 +277,36 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
   );
 }
 
+/** The schema's declared `default`, else a blank of the declared JSON type. */
+function defaultForProperty(prop: unknown): unknown {
+  if (!prop || typeof prop !== 'object') return '';
+  const p = prop as { default?: unknown; type?: unknown };
+  if (p.default !== undefined) return p.default;
+  // `type` may be a union such as ["integer", "null"]; the first member wins.
+  const type = Array.isArray(p.type) ? p.type[0] : p.type;
+  switch (type) {
+    case 'number':
+    case 'integer':
+      return 0;
+    case 'boolean':
+      return false;
+    case 'array':
+      return [];
+    case 'object':
+      return {};
+    default:
+      return '';
+  }
+}
+
 function buildDefaultInput(tool: PersonaToolDefinition): string {
   if (tool.input_schema) {
     try {
       const schema = JSON.parse(tool.input_schema);
       if (schema.properties) {
-        const defaults: Record<string, string> = {};
-        for (const key of Object.keys(schema.properties)) {
-          defaults[key] = '';
+        const defaults: Record<string, unknown> = {};
+        for (const [key, prop] of Object.entries(schema.properties as Record<string, unknown>)) {
+          defaults[key] = defaultForProperty(prop);
         }
         return JSON.stringify(defaults, null, 2);
       }

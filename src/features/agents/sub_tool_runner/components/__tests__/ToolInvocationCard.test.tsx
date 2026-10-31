@@ -187,3 +187,23 @@ describe('ToolInvocationCard result copy', () => {
     expect(writeText).toHaveBeenCalledWith('IPC timeout');
   });
 });
+
+describe('ToolInvocationCard default input', () => {
+  it('uses declared defaults and type-matched blanks', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        q: { type: 'string' },
+        limit: { type: 'integer', default: 10 },
+        dry: { type: 'boolean' },
+        tags: { type: 'array' },
+      },
+    };
+    render(
+      <ToolInvocationCard tool={{ ...tool(), input_schema: JSON.stringify(schema) }} isRunning={false} result={null} error={null} onRun={() => {}} />,
+    );
+    fireEvent.click(screen.getByTestId('tool-card-toggle-gmail_reader'));
+    const value = (screen.getByLabelText('Input JSON') as HTMLTextAreaElement).value;
+    expect(JSON.parse(value)).toEqual({ q: '', limit: 10, dry: false, tags: [] });
+  });
+});
