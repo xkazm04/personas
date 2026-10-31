@@ -66,6 +66,7 @@ export default function CustomThemeCreator() {
   const existingConfig = useThemeStore((s) => s.customTheme);
   const setCustomTheme = useThemeStore((s) => s.setCustomTheme);
   const clearCustomTheme = useThemeStore((s) => s.clearCustomTheme);
+  const setTheme = useThemeStore((s) => s.setTheme);
   const currentThemeId = useThemeStore((s) => s.themeId);
   const { t } = useTranslation();
   const s = t.settings.appearance;
@@ -118,7 +119,11 @@ export default function CustomThemeCreator() {
   };
 
   const handleReset = () => {
+    // clearCustomTheme always applies the built-in fallback; when the custom theme was not the
+    // active one, Reset must not change the theme the user is actually on.
+    const activeThemeId = currentThemeId;
     clearCustomTheme();
+    if (activeThemeId !== 'custom') setTheme(activeThemeId);
     setBaseMode('dark');
     setPrimaryColor('#8b5cf6');
     setAccentColor(null);
