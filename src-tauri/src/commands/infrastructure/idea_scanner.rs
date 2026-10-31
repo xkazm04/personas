@@ -1584,10 +1584,10 @@ mod tests {
     /// (`BacklogSource::native_scale_max` names `IdeaScanner`), so a 1-5
     /// answer shipped raw would store risk 5 ("irreversible or external") as 3
     /// - and walk it straight through a live triage rule that accepts risk
-    /// below 4. A 1-5 answer is therefore expressed on whatever scale the door
-    /// says it is converting FROM, and the factor is READ from that
-    /// declaration: the day the `IdeaScanner` arm becomes 5, this is the
-    /// identity function and this test still passes.
+    ///   below 4. A 1-5 answer is therefore expressed on whatever scale the door
+    ///   says it is converting FROM, and the factor is READ from that
+    ///   declaration: the day the `IdeaScanner` arm becomes 5, this is the
+    ///   identity function and this test still passes.
     #[test]
     fn an_answer_on_either_scale_lands_on_the_queues_own() {
         let scored = |v: i64| {

@@ -799,7 +799,10 @@ mod tests {
 
         // Door 3: batch_delete.
         let m = make_memory(&pool, &persona_id, "door-batch");
-        assert_eq!(memories::batch_delete(&pool, &[m.clone()]).unwrap(), 1);
+        assert_eq!(
+            memories::batch_delete(&pool, std::slice::from_ref(&m)).unwrap(),
+            1
+        );
         assert!(ledger_row(&pool, &m).is_some());
 
         // Door 4: delete_all (non-core).
@@ -818,7 +821,10 @@ mod tests {
         // it is deliberately unledgered (the parent-first archived-GC sweep is
         // the repair path when the relational row still exists).
         let m = make_memory(&pool, &persona_id, "door-archive");
-        assert_eq!(memories::archive_by_ids(&pool, &[m.clone()]).unwrap(), 1);
+        assert_eq!(
+            memories::archive_by_ids(&pool, std::slice::from_ref(&m)).unwrap(),
+            1
+        );
         assert!(ledger_row(&pool, &m).is_none());
 
         // Door 7: persona delete — the FK cascade destroys the memories, so

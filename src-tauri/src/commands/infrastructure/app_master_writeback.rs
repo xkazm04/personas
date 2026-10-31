@@ -1595,7 +1595,7 @@ mod tests {
     }
 
     fn accepted_idea(pool: &DbPool, project_id: &str, title: &str) -> DevIdea {
-        let idea = repo::create_idea(
+        repo::create_idea(
             pool,
             Some(project_id),
             None,
@@ -1611,8 +1611,7 @@ mod tests {
             None,
             None,
         )
-        .expect("idea");
-        idea
+        .expect("idea")
     }
 
     // ── Wire casing: camelCase canonical, snake_case still accepted ───────

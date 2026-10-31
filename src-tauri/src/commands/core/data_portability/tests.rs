@@ -1,4 +1,6 @@
 #[cfg(test)]
+// The file is `tests.rs` and wraps its body in `mod tests`; unwrapping is a 3,000-line re-indent.
+#[allow(clippy::module_inception)]
 mod tests {
     use crate::commands::core::data_portability::*;
     use crate::db::init_test_db;
@@ -2819,6 +2821,7 @@ mod tests {
     /// joined onto. This test pins the std behaviour that makes them dangerous
     /// and asserts every layer of the fix refuses them.
     #[test]
+    #[allow(clippy::join_absolute_paths)] // deliberate: asserts what joining a rooted path does
     fn validate_athena_refuses_every_anchored_file_path() {
         // A brain root shaped like the host's, so the `join` / `strip_prefix`
         // assertions below mean the same thing on either platform.

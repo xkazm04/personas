@@ -1395,6 +1395,6 @@ mod refresh_threshold_tests {
     /// threshold must never grow into that range.
     #[test]
     fn the_threshold_never_reaches_the_staleness_ceiling() {
-        assert!(MAX_REFRESH_THRESHOLD_SECS < STALENESS_CEILING_SECS);
+        const _: () = assert!(MAX_REFRESH_THRESHOLD_SECS < STALENESS_CEILING_SECS);
     }
 }

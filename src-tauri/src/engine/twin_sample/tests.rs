@@ -601,12 +601,12 @@ fn twin_sample_proposals_skip_what_the_channel_already_holds() {
 // The accept door
 // ---------------------------------------------------------------------------
 
+/// Proposal id by kind.
+type ProposalIds = Vec<(&'static str, String)>;
+
 /// A ready sample with one open proposal of each kind on `email`, whose tone
 /// row has every column set. Returns (proposal id by kind, sample id).
-fn ready_sample(
-    pool: &DbPool,
-    twin: &str,
-) -> Result<(Vec<(&'static str, String)>, String), AppError> {
+fn ready_sample(pool: &DbPool, twin: &str) -> Result<(ProposalIds, String), AppError> {
     twin_repo::upsert_tone(
         pool,
         twin,

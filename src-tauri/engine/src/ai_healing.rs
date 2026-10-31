@@ -821,8 +821,8 @@ mod tests {
         assert_eq!(TIMEOUT_MS_MAX, 1_800_000);
         assert_eq!(MAX_TURNS_MIN, 1);
         assert_eq!(MAX_TURNS_MAX, 100);
-        assert!(TIMEOUT_MS_MIN > 0, "timeout lower bound must be positive");
-        assert!(MAX_TURNS_MIN > 0, "max_turns lower bound must be positive");
+        const _: () = assert!(TIMEOUT_MS_MIN > 0, "timeout lower bound must be positive");
+        const _: () = assert!(MAX_TURNS_MIN > 0, "max_turns lower bound must be positive");
     }
 
     #[test]

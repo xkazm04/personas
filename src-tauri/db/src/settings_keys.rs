@@ -2623,9 +2623,9 @@ mod tests {
             assert!(validate_value(key, "true").is_ok());
         }
         // Athena runs unless told otherwise; the other two are opt-in.
-        assert!(ATHENA_ENABLED_DEFAULT);
-        assert!(!OVERSEER_ENABLED_DEFAULT);
-        assert!(!CURATOR_ENABLED_DEFAULT);
+        const _: () = assert!(ATHENA_ENABLED_DEFAULT);
+        const _: () = assert!(!OVERSEER_ENABLED_DEFAULT);
+        const _: () = assert!(!CURATOR_ENABLED_DEFAULT);
         // The switches are autonomy changes; the onboarding marker is not a
         // change anyone made.
         assert_eq!(audit_category(ATHENA_ENABLED), Some("autonomy"));
@@ -2970,7 +2970,7 @@ mod tests {
         assert!(validate_value(FLEET_STRICT_QUEUE_ORDER, "false").is_ok());
         assert!(validate_value(FLEET_STRICT_QUEUE_ORDER, "strict").is_err());
         assert_eq!(audit_category(FLEET_STRICT_QUEUE_ORDER), Some("limits"));
-        assert!(!FLEET_STRICT_QUEUE_ORDER_DEFAULT, "strict order is opt-in");
+        const _: () = assert!(!FLEET_STRICT_QUEUE_ORDER_DEFAULT, "strict order is opt-in");
         assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "1").is_ok());
         assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "10").is_ok());
         assert!(validate_value(FLEET_AUTOPILOT_MAX_PARALLEL, "0").is_err());
@@ -2995,7 +2995,7 @@ mod tests {
         assert_eq!(audit_category(FLEET_QUEUED_EXPIRY_MS), Some("limits"));
         // 24 h expiry must stay far above AGING_MAX_WAIT_MS (30 min) so a row
         // being aged is never mistaken for one about to be retired.
-        assert!(FLEET_QUEUED_EXPIRY_MS_DEFAULT > 30 * 60 * 1000 * 10);
+        const _: () = assert!(FLEET_QUEUED_EXPIRY_MS_DEFAULT > 30 * 60 * 1000 * 10);
         assert!(validate_value(FLEET_AUTOPILOT_WEEKLY_TARGET_PCT, "90").is_ok());
         assert!(validate_value(FLEET_AUTOPILOT_WEEKLY_TARGET_PCT, "5").is_err());
         assert!(validate_value(FLEET_AUTOPILOT_MEMORY_STOP_PCT, "75").is_ok());
@@ -3036,7 +3036,7 @@ mod tests {
         assert!(validate_value(SKILLS_SIDECAR_ENABLED, "false").is_ok());
         assert!(validate_value(SKILLS_SIDECAR_ENABLED, "1").is_err());
         assert!(validate_value(SKILLS_SIDECAR_ENABLED, "").is_err());
-        assert!(SKILLS_SIDECAR_ENABLED_DEFAULT);
+        const _: () = assert!(SKILLS_SIDECAR_ENABLED_DEFAULT);
         assert_eq!(audit_category(SKILLS_SIDECAR_ENABLED), Some("engine"));
     }
 
@@ -3048,7 +3048,7 @@ mod tests {
         assert!(validate_value(SCRATCHPAD_ENABLED, "1").is_err());
         assert!(validate_value(SCRATCHPAD_ENABLED, "").is_err());
         // Ships enabled, and the audit bucket is `engine`.
-        assert!(SCRATCHPAD_ENABLED_DEFAULT);
+        const _: () = assert!(SCRATCHPAD_ENABLED_DEFAULT);
         assert_eq!(audit_category(SCRATCHPAD_ENABLED), Some("engine"));
     }
 
@@ -3061,7 +3061,7 @@ mod tests {
         assert!(validate_value(EXECUTION_WORKTREE_ISOLATION, "1").is_err());
         assert!(validate_value(EXECUTION_WORKTREE_ISOLATION, "yes").is_err());
         assert!(validate_value(EXECUTION_WORKTREE_ISOLATION, "").is_err());
-        assert!(!EXECUTION_WORKTREE_ISOLATION_DEFAULT);
+        const _: () = assert!(!EXECUTION_WORKTREE_ISOLATION_DEFAULT);
     }
 
     #[test]

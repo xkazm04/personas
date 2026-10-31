@@ -195,7 +195,7 @@ mod tests {
         );
 
         assert_eq!(
-            mark_processed(&pool, &[id.clone()], "cyc_alpha").unwrap(),
+            mark_processed(&pool, std::slice::from_ref(&id), "cyc_alpha").unwrap(),
             1
         );
         assert!(
@@ -227,11 +227,11 @@ mod tests {
         let id = insert_delta(&pool, "workstation-b", KIND_TAXONOMY, "{}").unwrap();
 
         assert_eq!(
-            mark_processed(&pool, &[id.clone()], "cyc_first").unwrap(),
+            mark_processed(&pool, std::slice::from_ref(&id), "cyc_first").unwrap(),
             1
         );
         assert_eq!(
-            mark_processed(&pool, &[id.clone()], "cyc_second").unwrap(),
+            mark_processed(&pool, std::slice::from_ref(&id), "cyc_second").unwrap(),
             0,
             "re-stamping must report zero rows changed"
         );

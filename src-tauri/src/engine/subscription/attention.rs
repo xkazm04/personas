@@ -8333,7 +8333,7 @@ mod attention_tests {
         );
         // And a resume delay has to be expressible in the pacing range the rest
         // of the loop trusts.
-        assert!(
+        const _: () = assert!(
             USAGE_LIMIT_DEFAULT_RESUME_MINUTES >= attention_decide::MIN_NEXT_WAKE_MINUTES
                 && USAGE_LIMIT_DEFAULT_RESUME_MINUTES <= attention_decide::MAX_NEXT_WAKE_MINUTES
         );
@@ -12438,7 +12438,7 @@ mod attention_tests {
         let charter = decide_charter(&charter_id, Some(&pid), None);
         let stats = serde_json::json!({ "charterId": charter_id, "sessionId": "sess-dead" });
         let task_id = mint_dispatch_task(&pool, &charter, &idea_id, &stats).expect("task minted");
-        let row = decide_row(
+        let _row = decide_row(
             &pool,
             "p1",
             &charter_id,
