@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
 import { TabSaveError } from '../libs/EditorDocument';
@@ -19,6 +19,9 @@ export function usePersonaSwitchGuard({ cancelAllDebouncedSaves, saveAllTabs, cl
   const { t, tx } = useTranslation();
   const commitPendingSwitch = useAgentStore((s) => s.commitPendingSwitch);
   const isSwitchingRef = useRef(false);
+  // Mirror of the ref for rendering: the ref drops re-entry synchronously, the
+  // state lets the banner show that the save is running.
+  const [isSwitching, setIsSwitching] = useState(false);
 
   const handleDiscardAndSwitch = () => {
     cancelAllDebouncedSaves();
@@ -29,6 +32,7 @@ export function usePersonaSwitchGuard({ cancelAllDebouncedSaves, saveAllTabs, cl
   const handleSaveAndSwitch = async () => {
     if (isSwitchingRef.current) return;
     isSwitchingRef.current = true;
+    setIsSwitching(true);
     cancelAllDebouncedSaves();
     try {
       try {
@@ -53,8 +57,9 @@ export function usePersonaSwitchGuard({ cancelAllDebouncedSaves, saveAllTabs, cl
       commitPendingSwitch();
     } finally {
       isSwitchingRef.current = false;
+      setIsSwitching(false);
     }
   };
 
-  return { handleDiscardAndSwitch, handleSaveAndSwitch };
+  return { handleDiscardAndSwitch, handleSaveAndSwitch, isSwitching };
 }

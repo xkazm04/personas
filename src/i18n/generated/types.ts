@@ -3795,6 +3795,7 @@ export type Translations = {
       deep_fanout: string;
       deep_fanout_hint: string;
       deep_fanout_unavailable: string;
+      deep_fanout_probe_failed: string;
       tab_chain: string;
       verdict_field: string;
       retry_of_field: string;

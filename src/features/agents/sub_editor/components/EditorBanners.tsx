@@ -1,9 +1,9 @@
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, RefreshCw, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 
-type BannerColorScheme = 'amber' | 'violet' | 'sky' | 'red';
+type BannerColorScheme = 'amber' | 'red';
 
 interface BannerPrimitiveProps {
   visible: boolean;
@@ -11,21 +11,14 @@ interface BannerPrimitiveProps {
   icon: ReactNode;
   message: ReactNode;
   actions?: ReactNode[];
-  onDismiss: () => void;
+  /** Omit for a banner the user cannot dismiss (it clears with its cause). */
+  onDismiss?: () => void;
 }
 
 const COLOR_SCHEMES: Record<BannerColorScheme, { container: string; message: string }> = {
   amber: {
     container: 'bg-amber-500/10 border border-amber-500/20',
     message: 'text-amber-400/90',
-  },
-  violet: {
-    container: 'bg-violet-500/10 border border-violet-500/20',
-    message: 'text-violet-300/90',
-  },
-  sky: {
-    container: 'bg-sky-500/10 border border-sky-500/20',
-    message: 'text-sky-300/90',
   },
   red: {
     container: 'bg-red-500/10 border border-red-500/20',
@@ -49,9 +42,11 @@ function BannerPrimitive({ visible, colorScheme, icon, message, actions = [], on
             {actions.map((action, index) => (
               <span key={index}>{action}</span>
             ))}
-            <Button variant="ghost" size="icon-sm" onClick={onDismiss} aria-label={t.common.dismiss} className="w-7 h-7">
-              <X className="w-3.5 h-3.5" />
-            </Button>
+            {onDismiss && (
+              <Button variant="ghost" size="icon-sm" onClick={onDismiss} aria-label={t.common.dismiss} className="w-7 h-7">
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -65,10 +60,13 @@ interface UnsavedBannerProps {
   onSaveAndSwitch: () => void;
   onDiscardAndSwitch: () => void;
   onDismiss: () => void;
+  /** True while Save & Switch is writing every dirty tab: the save button
+   *  shows its busy state and Discard is held so the two cannot race. */
+  saving?: boolean;
 }
 
 export function UnsavedChangesBanner({
-  visible, changedSections, onSaveAndSwitch, onDiscardAndSwitch, onDismiss,
+  visible, changedSections, onSaveAndSwitch, onDiscardAndSwitch, onDismiss, saving = false,
 }: UnsavedBannerProps) {
   const { t, tx } = useTranslation();
   return (
@@ -80,10 +78,10 @@ export function UnsavedChangesBanner({
         ? tx(t.agents.editor.unsaved_changes, { sections: changedSections.join(', ') })
         : t.agents.editor.unsaved_changes_generic}
       actions={[
-        <Button key="save" variant="accent" tone="warning" size="sm" onClick={onSaveAndSwitch}>
+        <Button key="save" variant="accent" tone="warning" size="sm" onClick={onSaveAndSwitch} loading={saving}>
           {t.agents.editor.save_and_switch}
         </Button>,
-        <Button key="discard" variant="secondary" size="sm" onClick={onDiscardAndSwitch}>
+        <Button key="discard" variant="secondary" size="sm" onClick={onDiscardAndSwitch} disabled={saving}>
           {t.agents.editor.discard}
         </Button>,
       ]}
@@ -106,6 +104,26 @@ export function PartialLoadBanner({ warnings, onDismiss }: PartialLoadBannerProp
       icon={<AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />}
       message={`${t.agents.editor_ui.partial_load} ${warnings.join('; ')}`}
       onDismiss={onDismiss}
+    />
+  );
+}
+
+interface SaveFailedBannerProps {
+  message: ReactNode;
+  /** Controls such as Retry; the banner has no dismiss - it clears with the failure. */
+  actions?: ReactNode[];
+}
+
+/** Red, non-dismissable banner for a failed save. Static glyph: nothing is in
+ *  flight while it shows, so a spinning one would claim work not being done. */
+export function SaveFailedBanner({ message, actions }: SaveFailedBannerProps) {
+  return (
+    <BannerPrimitive
+      visible
+      colorScheme="red"
+      icon={<RefreshCw className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}
+      message={message}
+      actions={actions}
     />
   );
 }

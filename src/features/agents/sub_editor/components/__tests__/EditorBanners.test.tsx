@@ -12,7 +12,7 @@ vi.mock('@/i18n/useTranslation', () => ({
   getActiveTranslations: () => t,
 }));
 
-import { UnsavedChangesBanner } from '../EditorBanners';
+import { UnsavedChangesBanner, SaveFailedBanner } from '../EditorBanners';
 
 describe('editor banners', () => {
   it('names the icon-only dismiss control for assistive tech', () => {
@@ -30,5 +30,39 @@ describe('editor banners', () => {
     // reader announced "button" and nothing else.
     fireEvent.click(screen.getByRole('button', { name: 'common.dismiss' }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Save & Switch busy state', () => {
+  const renderBanner = (saving: boolean) => render(
+    <UnsavedChangesBanner
+      visible
+      changedSections={['Settings']}
+      onSaveAndSwitch={() => {}}
+      onDiscardAndSwitch={() => {}}
+      onDismiss={() => {}}
+      saving={saving}
+    />,
+  );
+
+  it('disables both actions while the save runs, so it never looks idle', () => {
+    renderBanner(true);
+    expect(screen.getByRole('button', { name: /save_and_switch/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /discard/ })).toBeDisabled();
+  });
+
+  it('leaves both actions enabled when no save is running', () => {
+    renderBanner(false);
+    expect(screen.getByRole('button', { name: /save_and_switch/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /discard/ })).toBeEnabled();
+  });
+});
+
+describe('SaveFailedBanner', () => {
+  it('renders its message and action with no dismiss control', () => {
+    render(<SaveFailedBanner message="Could not save" actions={[<button key="r">Retry</button>]} />);
+    expect(screen.getByText('Could not save')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'common.dismiss' })).toBeNull();
   });
 });

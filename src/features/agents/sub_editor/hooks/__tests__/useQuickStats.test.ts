@@ -104,4 +104,24 @@ describe('useQuickStats', () => {
     await waitFor(() => expect(result.current.stats).not.toBeNull());
     expect(result.current.stats?.successRate).toBeNull();
   });
+
+  it('never shows the previous agent stats after a switch, even once a run completed', async () => {
+    const { result, rerender } = renderHook(({ id }) => useQuickStats(id), { initialProps: { id: 'p1' } });
+    await waitFor(() => expect(result.current.stats).not.toBeNull());
+
+    // A completion bumps reloadTick, which used to switch the skeleton off for good.
+    await act(async () => {
+      storeBus.emit('execution:completed', { personaId: 'p1' });
+      await new Promise((r) => setTimeout(r, 450));
+    });
+    await waitFor(() => expect(listExecutions).toHaveBeenCalledTimes(2));
+
+    // The new persona's fetch stays pending.
+    listExecutions.mockReturnValue(new Promise(() => {}));
+    rerender({ id: 'p2' });
+
+    expect(result.current.stats).toBeNull();
+    await waitFor(() => expect(result.current.loading).toBe(true));
+    expect(result.current.stats).toBeNull();
+  });
 });
