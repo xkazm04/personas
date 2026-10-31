@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState, useMemo } from 'react';
 import {
   Play,
   CheckCircle2,
@@ -27,7 +27,7 @@ interface ToolInvocationCardProps {
   onRun: (inputJson: string) => void;
 }
 
-export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: ToolInvocationCardProps) {
+export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRunning, result, error, onRun }: ToolInvocationCardProps) {
   const { t } = useTranslation();
   const [inputJson, setInputJson] = useState(() => buildDefaultInput(tool));
   const [expanded, setExpanded] = useState(false);
@@ -182,10 +182,12 @@ export function ToolInvocationCard({ tool, isRunning, result, error, onRun }: To
         )}
     </div>
   );
-}
+});
 
 function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResult | null; error: string | null; toolName: string }) {
   const { t, tx } = useTranslation();
+  const output = result?.output;
+  const formattedOutput = useMemo(() => (output ? formatOutput(output) : ''), [output]);
   if (error) {
     return (
       <div
@@ -249,7 +251,7 @@ function ResultDisplay({ result, error, toolName }: { result: ToolInvocationResu
 
       {result.output && (
         <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
-          {formatOutput(result.output)}
+          {formattedOutput}
         </pre>
       )}
       {result.output_truncated && (
