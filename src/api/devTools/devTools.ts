@@ -1112,16 +1112,20 @@ export const triageVerdictsIngest = (projectId: string, runDir?: string) =>
     runDir,
   });
 
-export const batchCreateTasks = (tasks: { title: string; description?: string; sourceIdeaId?: string; goalId?: string }[], projectId?: string) =>
-  safeInvoke<DevTask[]>([], "dev_tools_batch_create_tasks", {
-    tasks: tasks.map((t) => ({
-      title: t.title,
-      description: t.description,
-      sourceIdeaId: t.sourceIdeaId,
-      goalId: t.goalId,
-    })),
-    projectId: projectId,
-  });
+/** Create one task per entry, in order, through `dev_tools_create_task`.
+ *  There is no batch command: this used to call `dev_tools_batch_create_tasks`
+ *  (never implemented) through `safeInvoke`, so it resolved `[]` and the Run
+ *  Desk "From accepted" button created nothing. A real failure now rejects. */
+export const batchCreateTasks = async (
+  tasks: { title: string; description?: string; sourceIdeaId?: string; goalId?: string }[],
+  projectId?: string,
+): Promise<DevTask[]> => {
+  const created: DevTask[] = [];
+  for (const t of tasks) {
+    created.push(await createTask(t.title, projectId, t.description, t.sourceIdeaId, t.goalId));
+  }
+  return created;
+};
 
 export const startTask = (id: string) =>
   safeInvoke<DevTask>({} as DevTask, "dev_tools_start_task", { id });
