@@ -229,7 +229,14 @@ function CohortRowList({ rows, onCompareItem }: CohortRowListProps) {
                   duration yet — say "running", never a dash that reads as
                   "nothing happened" next to a $0.00 cost column. */}
               <span className="text-foreground/95">
-                {it.newStatus ?? (it.status === 'pending' || it.status === 'running' ? e.running_state : '—')}
+                {it.newStatus ??
+                  (it.status === 'timed_out'
+                    ? e.bulk_rerun_timed_out_state
+                    : it.status === 'cancelled'
+                      ? e.bulk_rerun_cancelled_state
+                      : it.status === 'pending' || it.status === 'running'
+                        ? e.running_state
+                        : '—')}
               </span>
             </div>
             <div className="col-span-2 typo-code text-foreground/90 flex items-center">

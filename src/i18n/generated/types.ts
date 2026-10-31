@@ -3728,6 +3728,9 @@ export type Translations = {
       bulk_rerun_preflight_confirm: string;
       bulk_rerun_strip_in_flight: string;
       bulk_rerun_strip_done: string;
+      bulk_rerun_strip_done_partial: string;
+      bulk_rerun_timed_out_state: string;
+      bulk_rerun_cancelled_state: string;
       bulk_rerun_open_report: string;
       bulk_rerun_cancel: string;
       bulk_rerun_close: string;

@@ -131,3 +131,30 @@ describe('useBulkRerun idempotency key', () => {
     expect(m1![1]).toBe(m2![1]);
   });
 });
+
+describe('useBulkRerun terminal accounting', () => {
+  it('ends a cancelled cohort with no pending/running rows', async () => {
+    const held: Array<(v: PersonaExecution) => void> = [];
+    executePersonaMock.mockImplementation(
+      () => new Promise<PersonaExecution>((r) => { held.push(r); }),
+    );
+    getExecutionMock.mockImplementation(async (id: string) => exec(id, 'failed', 1));
+
+    const { result } = renderHook(() => useBulkRerun({ pollIntervalMs: 0, pollTimeoutMs: 1_000 }));
+    let started!: Promise<void>;
+    await act(async () => {
+      started = result.current.start(['a', 'b', 'c', 'd', 'e'].map((id) => row(id)), 'p1');
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    act(() => { result.current.cancel(); });
+    await act(async () => {
+      held.forEach((resolve, i) => resolve(exec(`n${i}`, 'queued', 0)));
+      await started;
+    });
+
+    const open = result.current.items.filter((i) => i.status === 'pending' || i.status === 'running');
+    expect(open).toHaveLength(0);
+    expect(result.current.cohort.cancelledCount).toBe(5);
+    expect(result.current.phase).toBe('completed');
+  });
+});

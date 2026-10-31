@@ -37,7 +37,13 @@ export interface UseBulkRerunOptions {
   pollTimeoutMs?: number;
 }
 
-export type BulkRunStatus = 'pending' | 'running' | 'success' | 'failed';
+/**
+ * `timed_out` (the wait budget ran out while the re-run was still going) and
+ * `cancelled` (the operator stopped the cohort, or it was never dispatched) are
+ * terminal for THIS view: we stopped watching. Without them such rows stayed
+ * 'running'/'pending' under a "Cohort complete" strip.
+ */
+export type BulkRunStatus = 'pending' | 'running' | 'success' | 'failed' | 'timed_out' | 'cancelled';
 
 export interface BulkRunItem {
   originalId: string;
@@ -64,6 +70,10 @@ export interface BulkRunCohort {
   finished: number;
   successCount: number;
   failedCount: number;
+  /** Rows whose wait budget ran out while the re-run was still going. */
+  timedOutCount: number;
+  /** Rows stopped by a cancel (in flight or never dispatched). */
+  cancelledCount: number;
   regressionCount: number;
   recoveredCount: number;
   /**
@@ -100,6 +110,8 @@ function emptyCohort(): BulkRunCohort {
     finished: 0,
     successCount: 0,
     failedCount: 0,
+    timedOutCount: 0,
+    cancelledCount: 0,
     regressionCount: 0,
     recoveredCount: 0,
     meanCostDelta: null,
@@ -117,6 +129,8 @@ export function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
   let finished = 0;
   let successCount = 0;
   let failedCount = 0;
+  let timedOutCount = 0;
+  let cancelledCount = 0;
   let regressionCount = 0;
   let recoveredCount = 0;
   let totalCostOriginal = 0;
@@ -142,6 +156,8 @@ export function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
     if (it.status === 'success' || it.status === 'failed') finished += 1;
     if (it.status === 'success') successCount += 1;
     if (it.status === 'failed') failedCount += 1;
+    if (it.status === 'timed_out') timedOutCount += 1;
+    if (it.status === 'cancelled') cancelledCount += 1;
 
     if (it.newCost !== null) {
       totalCostNew += it.newCost;
@@ -167,6 +183,8 @@ export function deriveCohort(items: BulkRunItem[]): BulkRunCohort {
     finished,
     successCount,
     failedCount,
+    timedOutCount,
+    cancelledCount,
     regressionCount,
     recoveredCount,
     meanCostDelta: costDeltaN > 0 ? costDeltaSum / costDeltaN : null,
@@ -303,7 +321,12 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
       updateItem(token, row.id, { newExecutionId: dispatched.id });
 
       const landed = await waitForLanding(dispatched.id, personaId, token);
-      if (!landed) return; // cancelled, superseded, or still running — the row stays 'running', no outcome claimed
+      if (!landed) {
+        // Cancelled/superseded vs. wait budget spent: either way no outcome is
+        // claimed, but the row ends in a terminal, labelled state.
+        updateItem(token, row.id, { status: isLive(token) ? 'timed_out' : 'cancelled' });
+        return;
+      }
 
       const successful = !isFailedExecutionStatus(landed.status);
       updateItem(token, row.id, {
@@ -368,6 +391,16 @@ export function useBulkRerun(options: UseBulkRerunOptions = {}): UseBulkRerun {
 
   const cancel = useCallback(() => {
     cancelledRef.current = true;
+    // Rows still queued or in flight will never be reported on: close them out.
+    setItems((prev) => {
+      const next = prev.map((it) =>
+        it.status === 'pending' || it.status === 'running'
+          ? { ...it, status: 'cancelled' as const }
+          : it,
+      );
+      setCohort(deriveCohort(next));
+      return next;
+    });
     setPhase('completed');
   }, []);
 
