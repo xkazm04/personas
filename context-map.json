@@ -472,7 +472,7 @@
         "executions",
         "execution_events"
       ],
-      "description": "Paginated execution history list with filtering, bulk rerun, cost sparklines, and a side-by-side comparison view for two selected executions. The ExecutionList drives useExecutionList for data fetching; ComparisonTable/Diff/Metrics delegate to a Web Worker for heavy diff computation; BulkRerun manages multi-select requeue flows. [Consolidated 2026-08-04: absorbed execution-trace-primitives]",
+      "description": "Paginated execution history list with filtering, bulk rerun, and a side-by-side comparison view for two selected executions. The ExecutionList drives useExecutionList for data fetching; ComparisonTable/Diff/Metrics delegate to a Web Worker for heavy diff computation; BulkRerun manages multi-select requeue flows. [Consolidated 2026-08-04: absorbed execution-trace-primitives]",
       "entry_points": [
         "src/features/agents/sub_executions/components/list/ExecutionList.tsx",
         "src/features/agents/sub_executions/libs/useExecutionList.ts",
@@ -528,7 +528,6 @@
         "bulk-rerun",
         "cost",
         "diff",
-        "sparkline",
         "trace",
         "span",
         "stage"
