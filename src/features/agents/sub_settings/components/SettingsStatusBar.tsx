@@ -1,6 +1,6 @@
 import { Trash2, AlertTriangle, Check } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { AsyncButton } from '@/features/shared/components/buttons';
+import { AsyncButton, Button } from '@/features/shared/components/buttons';
 
 interface SettingsStatusBarProps {
   isSaving: boolean;
@@ -30,30 +30,31 @@ export function SettingsStatusBar({
           </>
         ) : isDirty ? (
           <>
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-status-warning animate-pulse" />
             <span>{tx(t.agents.settings_status.changed, { sections: changedSections.join(' + ') })}</span>
           </>
         ) : (
           <>
-            <Check className="w-3.5 h-3.5 text-emerald-400/70" aria-hidden="true" />
+            <Check className="w-3.5 h-3.5 text-status-success" aria-hidden="true" />
             <span className="text-foreground">{t.agents.settings_status.all_saved}</span>
           </>
         )}
       </div>
 
       {!showDeleteConfirm ? (
-        <button
-          type="button"
+        <Button
+          variant="accent"
+          tone="error"
+          size="sm"
           onClick={() => setShowDeleteConfirm(true)}
           data-testid="agent-delete-btn"
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-body text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-modal transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
           {t.common.delete}
-        </button>
+        </Button>
       ) : (
         <div className="flex items-center gap-2">
-          <span className="typo-body text-amber-400/70 flex items-center gap-1">
+          <span className="typo-body text-status-warning flex items-center gap-1">
             <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
             {t.agents.settings_status.irreversible}
           </span>
@@ -68,13 +69,9 @@ export function SettingsStatusBar({
           >
             {t.common.confirm}
           </AsyncButton>
-          <button
-            type="button"
-            onClick={() => setShowDeleteConfirm(false)}
-            className="px-3 py-1.5 bg-secondary/50 text-foreground rounded-modal typo-body transition-colors hover:bg-secondary/70"
-          >
+          <Button variant="secondary" size="sm" onClick={() => setShowDeleteConfirm(false)}>
             {t.common.cancel}
-          </button>
+          </Button>
         </div>
       )}
     </div>
