@@ -7,9 +7,9 @@ import { useAutomationDesign } from '@/hooks/design/core/useAutomationDesign';
 import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
 import type { AutomationFallbackMode } from '@/lib/bindings/AutomationFallbackMode';
 import type { CredentialMetadata } from '@/lib/types/types';
-import { githubListRepos, githubCheckPermissions, zapierListZaps } from '@/api/agents/automations';
-import { silentCatch, silentCatchNull } from "@/lib/silentCatch";
-import type { GitHubRepo, GitHubPermissions, DeployAutomationResult, ZapierZap } from '@/api/agents/automations';
+import { githubListRepos, githubCheckPermissions } from '@/api/agents/automations';
+import { silentCatchNull } from "@/lib/silentCatch";
+import type { GitHubRepo, GitHubPermissions, DeployAutomationResult } from '@/api/agents/automations';
 import { usePersonaCapabilities } from '@/hooks/personas/usePersonaCapabilities';
 
 export type ModalPhase = 'idle' | 'analyzing' | 'preview' | 'deploying' | 'success' | 'error';
@@ -119,8 +119,6 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
   const [githubPerms, setGithubPerms] = useState<GitHubPermissions | null>(null);
   const [githubRepo, setGithubRepo] = useState<string | null>(null);
   const [loadingRepos, setLoadingRepos] = useState(false);
-  const [zapierZaps, setZapierZaps] = useState<ZapierZap[]>([]);
-  const [loadingZaps, setLoadingZaps] = useState(false);
   const [localPhase, setLocalPhase] = useState<'deploying' | 'success' | null>(null);
   const [deployResult, setDeployResult] = useState<DeployAutomationResult | null>(null);
   const [deployError, setDeployError] = useState<string | null>(null);
@@ -181,7 +179,6 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
   // step say so (with a retry) instead of "No repositories found. Check your
   // token permissions." for an outage. `listingAttempt` re-runs both fetches.
   const [reposFailed, setReposFailed] = useState(false);
-  const [zapsFailed, setZapsFailed] = useState(false);
   const [listingAttempt, setListingAttempt] = useState(0);
   const retryListings = useCallback(() => setListingAttempt((n) => n + 1), []);
 
@@ -201,21 +198,6 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
       if (cancelled) return;
       setGithubRepos(repos ?? []); setReposFailed(repos === null); setGithubPerms(perms); setLoadingRepos(false);
     });
-    return () => { cancelled = true; };
-  }, [platform, platformCredentialId, listingAttempt]);
-
-  useEffect(() => {
-    setZapsFailed(false);
-    if (platform !== 'zapier' || !platformCredentialId) { setZapierZaps([]); return; }
-    let cancelled = false;
-    setLoadingZaps(true);
-    zapierListZaps(platformCredentialId)
-      .then((zaps) => { if (cancelled) return; setZapierZaps(zaps); setLoadingZaps(false); })
-      .catch((err) => {
-        silentCatch("useAutomationSetup:zapierListZaps")(err);
-        if (cancelled) return;
-        setZapierZaps([]); setZapsFailed(true); setLoadingZaps(false);
-      });
     return () => { cancelled = true; };
   }, [platform, platformCredentialId, listingAttempt]);
 
@@ -285,9 +267,9 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     design.reset(); setDescription(''); setShowAdvanced(false); setName('');
     setInputSchema(''); setTimeoutSecs(TIMEOUT_SECS_DEFAULT); setFallbackMode('connector');
     setPlatformCredentialId(null); setGithubRepo(null); setGithubRepos([]);
-    setGithubPerms(null); setZapierZaps([]); setLocalPhase(null);
+    setGithubPerms(null); setLocalPhase(null);
     setDeployResult(null); setDeployError(null); setUseCaseId(null);
-    setReposFailed(false); setZapsFailed(false);
+    setReposFailed(false);
     prefilledIdRef.current = null;
   }, [design]);
 
@@ -310,7 +292,7 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     platformCredentialId, setPlatformCredentialId,
     useCaseId, setUseCaseId, availableUseCases,
     githubRepos, githubPerms, githubRepo, setGithubRepo, loadingRepos,
-    zapierZaps, loadingZaps, reposFailed, zapsFailed, retryListings,
+    reposFailed, retryListings,
     localPhase, setLocalPhase, deployResult, deployError, setDeployError,
     elapsed, platformCredentials, hasPlatformCredential, needsCredential,
     platformConnector, handleDesign, handleDeploy, handleClose,
