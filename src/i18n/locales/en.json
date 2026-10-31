@@ -5092,6 +5092,10 @@
       "http_status_label": "HTTP {status}",
       "retryable_hint": "This may succeed on retry.",
       "failure_kind_label": "Failure",
+      "kind_api": "API",
+      "kind_script": "Script",
+      "kind_automation": "Automation",
+      "kind_builtin": "Built-in",
       "builtin_note": "Built-in tool — it runs inside persona executions (not manually from here). Trigger one of the persona's capabilities to exercise it."
     },
     "health_check": {

@@ -5098,6 +5098,10 @@ export type Translations = {
       http_status_label: string;
       retryable_hint: string;
       failure_kind_label: string;
+      kind_api: string;
+      kind_script: string;
+      kind_automation: string;
+      kind_builtin: string;
       builtin_note: string;
     };
     health_check: {

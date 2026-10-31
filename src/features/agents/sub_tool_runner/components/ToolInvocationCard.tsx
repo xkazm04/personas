@@ -87,7 +87,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
         <span className="typo-body text-foreground truncate">{tool.name}</span>
         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-body rounded border border-primary/10 bg-secondary/30 text-foreground">
           <TypeIcon className="w-2.5 h-2.5" />
-          {toolType}
+          {t.agents.tool_runner[`kind_${toolType}`]}
         </span>
         {/* The card starts collapsed and can be collapsed mid-run, so the header
             has to tell idle, running and an IPC-level error apart too - not only

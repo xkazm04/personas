@@ -145,3 +145,23 @@ describe('ToolInvocationCard result announcements', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Error');
   });
 });
+
+describe('ToolInvocationCard kind chip', () => {
+  it('renders catalog labels, not raw classifier tokens', () => {
+    const cases: Array<[Partial<PersonaToolDefinition>, string]> = [
+      [{}, 'API'],
+      [{ script_path: 'tools/x.ts', implementation_guide: null }, 'Script'],
+      [{ category: 'automation' }, 'Automation'],
+      [{ script_path: 'builtin://x', implementation_guide: null }, 'Built-in'],
+    ];
+    for (const [over, label] of cases) {
+      const { unmount } = render(
+        <ToolInvocationCard tool={{ ...tool(), ...over }} isRunning={false} result={null} error={null} onRun={() => {}} />,
+      );
+      const toggle = screen.getByTestId('tool-card-toggle-gmail_reader');
+      expect(toggle).toHaveTextContent(label);
+      expect(toggle.textContent).not.toMatch(/\b(api|script|automation|builtin)\b/);
+      unmount();
+    }
+  });
+});
