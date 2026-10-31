@@ -548,6 +548,7 @@
     "active_chains_agents_one": "{count} agent",
     "active_chains_agents_other": "{count} agents",
     "active_chains_depth": "depth {count}",
+    "active_chains_stale": "Live status unavailable. Last confirmed",
     "cb_all_paused": "All providers paused",
     "cb_providers_unavailable_one": "{count} provider temporarily unavailable",
     "cb_providers_unavailable_other": "{count} providers temporarily unavailable",
