@@ -23,7 +23,8 @@ export function SettingsStatusBar({
   const { t, tx } = useTranslation();
   return (
     <div className="flex items-center justify-between pt-2 border-t border-primary/10">
-      <div className="flex items-center gap-2 typo-body text-foreground">
+      {/* Autosave is the only save path here, so this line is the only confirmation. */}
+      <div role="status" aria-live="polite" className="flex items-center gap-2 typo-body text-foreground">
         {isSaving ? (
           <>
             <LoadingSpinner size="sm" className="text-primary/70" />
