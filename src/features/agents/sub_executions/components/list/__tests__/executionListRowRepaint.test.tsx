@@ -10,12 +10,12 @@ import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
 
 // Stable per-key proxies, as the real translation object is: a fresh object per
 // access would change `e` every render and defeat every memo downstream.
-const cache = new Map<string, unknown>();
+const stableLeaves = new Map<string, unknown>();
 const leaf = (prefix: string): unknown => {
-  if (!cache.has(prefix)) {
-    cache.set(prefix, new Proxy({}, { get: (_o, k) => `${prefix}.${String(k)}` }));
+  if (!stableLeaves.has(prefix)) {
+    stableLeaves.set(prefix, new Proxy({}, { get: (_o, k) => `${prefix}.${String(k)}` }));
   }
-  return cache.get(prefix);
+  return stableLeaves.get(prefix);
 };
 const agentsSub = new Map<string, unknown>();
 const t = new Proxy({}, {
