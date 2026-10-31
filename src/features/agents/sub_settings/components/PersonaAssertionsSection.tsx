@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ShieldCheck, Plus, Trash2, X } from 'lucide-react';
 import {
   listOutputAssertions,
@@ -9,6 +9,7 @@ import type { OutputAssertion } from '@/lib/bindings/OutputAssertion';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { toastCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 import { useTranslation } from '@/i18n/useTranslation';
 import { assertionConfigJson, parsePhrases } from './assertionConfig';
 
@@ -32,17 +33,26 @@ export function PersonaAssertionsSection({ personaId }: { personaId: string }) {
   const [onFailure, setOnFailure] = useState<'log' | 'review' | 'heal'>('review');
   const [saving, setSaving] = useState(false);
 
+  // The section stays mounted across a persona switch, so a slower response for
+  // the previous persona must not paint (or become deletable) under the new one.
+  const latestWins = useRef(createLatestWins()).current;
   const refresh = useCallback(async () => {
+    const token = latestWins.next();
     try {
-      setAssertions(await listOutputAssertions(personaId));
+      const rows = await listOutputAssertions(personaId);
+      if (!latestWins.isCurrent(token)) return;
+      setAssertions(rows);
     } catch (err) {
+      if (!latestWins.isCurrent(token)) return;
       toastCatch('assertions:list')(err);
     }
-  }, [personaId]);
+  }, [personaId, latestWins]);
 
   useEffect(() => {
     void refresh();
-  }, [refresh]);
+    // A persona switch or unmount retires every response still in flight.
+    return () => { latestWins.next(); };
+  }, [refresh, latestWins]);
 
   const reset = () => {
     setAdding(false);
