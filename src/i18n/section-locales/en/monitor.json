@@ -316,6 +316,7 @@
   "triage_policy_basis_lab": "Lab scores",
   "triage_policy_basis_success": "Success rate",
   "triage_policy_budget_body": "Spend is running at {observed} a month across {rows} charged runs, against a ceiling of {current}.",
+  "triage_policy_budget_body_no_ceiling": "Spend is running at {observed} a month across {rows} charged runs, with no monthly ceiling set.",
   "triage_policy_budget_introduce": "Introduce a monthly ceiling of {proposed}",
   "triage_policy_budget_lower": "Lower the monthly ceiling to {proposed}",
   "triage_policy_budget_raise": "Raise the monthly ceiling to {proposed}",

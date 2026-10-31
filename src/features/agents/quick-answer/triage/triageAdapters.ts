@@ -147,6 +147,8 @@ export interface TriageCopy {
   policyBudgetLowerTitle: string;
   /** `{observed}` `{rows}` `{current}`. */
   policyBudgetBody: string;
+  /** `{observed}` `{rows}`: the body when no ceiling exists yet. */
+  policyBudgetBodyNoCeiling: string;
   fromModel: string;
   toModel: string;
   saving: string;
@@ -280,6 +282,8 @@ export const DEFAULT_TRIAGE_COPY: TriageCopy = {
   policyBudgetLowerTitle: 'Lower the monthly ceiling to {proposed}',
   policyBudgetBody:
     'Spend is running at {observed} a month across {rows} charged runs, against a ceiling of {current}.',
+  policyBudgetBodyNoCeiling:
+    'Spend is running at {observed} a month across {rows} charged runs, with no monthly ceiling set.',
   fromModel: 'Now',
   toModel: 'Proposed',
   saving: 'Saving',
@@ -1048,7 +1052,9 @@ export function policyProposalToTriage(proposal: PolicyProposal, copy: TriageCop
           : copy.policyBudgetLowerTitle,
       { proposed: usd(budget.proposedCeilingUsd) },
     );
-    body = fill(copy.policyBudgetBody, {
+    // `ceiling` is a ledger value ("None"), not a noun phrase: with no ceiling the
+    // sentence gets its own wording instead of "against a ceiling of None".
+    body = fill(budget.currentCeilingUsd > 0 ? copy.policyBudgetBody : copy.policyBudgetBodyNoCeiling, {
       observed: usd(budget.observedMonthlySpendUsd),
       rows: budget.spendRows,
       current: ceiling,
