@@ -40812,6 +40812,16 @@
           "evidence": "src/features/plugins/fleet/fleetAttention.ts:193 No role-priming opener. Locate (session and project) and Done (propose one action or say it needs a human) are present, but there is no explicit Check step before reporting. The technique names Check as one of its three required parts."
         }
       ]
+    },
+    "9fca099d-94e4-4fd0-8460-3cf5d8c85acf/eval-harness": {
+      "context": "templates-generated-gallery-cards",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-10-31",
+      "evaluatedTs": "2026-10-31T22:21:32.145Z",
+      "worker": "8d6e2bbb-c28d-4272-87db-1c83171bd875",
+      "techniques": []
     }
   }
 }

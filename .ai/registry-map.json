@@ -38319,8 +38319,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 15
+          "state": "not-applicable",
+          "priorNotApplicable": 15,
+          "evidence": "src/features/templates/sub_generated/gallery/cards/useGalleryActions.ts:66 The gallery's only score is connector and credential adoption readiness, used for sorting and filtering, and the cards only display stored design reviews; nothing here runs scenarios, trials or judges. A case-insensitive search of src/features/templates/sub_generated/gallery for judge, benchmark, scenario, rubric, trial, passRate and grader found 0 files.",
+          "evaluatedAt": "2026-10-31",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "terminal-multiplexing",
