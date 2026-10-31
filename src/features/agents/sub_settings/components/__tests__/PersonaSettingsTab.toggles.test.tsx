@@ -57,4 +57,13 @@ describe('PersonaSettingsTab described switches', () => {
     expect(sensitive).toHaveAccessibleDescription('settings_status.sensitive_preview_desc');
     expect(cli).toHaveAccessibleDescription('settings_status.cli_awareness_desc');
   });
+
+  it('sets each description in the caption step, below its label', () => {
+    renderTab();
+    for (const id of ['persona-sensitive-preview-desc', 'persona-cli-awareness-desc']) {
+      const desc = document.getElementById(id);
+      expect(desc?.className).toContain('typo-caption');
+      expect(desc?.className).not.toContain('typo-body');
+    }
+  });
 });

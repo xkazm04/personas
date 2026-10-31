@@ -255,7 +255,7 @@ export function PersonaSettingsTab({
             <div className="flex items-center justify-between gap-3 py-1">
               <div>
                 <span className="typo-body text-foreground">{t.agents.settings_status.sensitive_preview}</span>
-                <p id="persona-sensitive-preview-desc" className="typo-body text-foreground">{t.agents.settings_status.sensitive_preview_desc}</p>
+                <p id="persona-sensitive-preview-desc" className="typo-caption">{t.agents.settings_status.sensitive_preview_desc}</p>
               </div>
               <AccessibleToggle
                 checked={draft.sensitive}
@@ -272,7 +272,7 @@ export function PersonaSettingsTab({
             <div className="flex items-center justify-between gap-3 py-1">
               <div>
                 <span className="typo-body text-foreground">{t.agents.settings_status.cli_awareness}</span>
-                <p id="persona-cli-awareness-desc" className="typo-body text-foreground">{t.agents.settings_status.cli_awareness_desc}</p>
+                <p id="persona-cli-awareness-desc" className="typo-caption">{t.agents.settings_status.cli_awareness_desc}</p>
               </div>
               <AccessibleToggle
                 checked={draft.cliAwarenessEnabled}
