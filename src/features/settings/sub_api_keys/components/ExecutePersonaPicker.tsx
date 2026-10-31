@@ -12,6 +12,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { listPersonas } from '@/api/agents/personas';
 import { silentCatch } from '@/lib/silentCatch';
 import { useAgentStore } from '@/stores/agentStore';
+import Button from '@/features/shared/components/buttons/Button';
 import type { Persona } from '@/lib/types/types';
 
 interface ExecutePersonaPickerProps {
@@ -79,14 +80,9 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
       ) : personas.length === 0 && loadFailed ? (
         <div className="typo-caption text-foreground py-3 text-center bg-secondary/20 rounded-input space-y-1.5" role="alert">
           <p>{s.execute_load_failed}</p>
-          <button
-            type="button"
-            onClick={() => setAttempt((n) => n + 1)}
-            disabled={disabled}
-            className="text-primary hover:opacity-80 transition-opacity focus-ring disabled:opacity-50"
-          >
+          <Button variant="ghost" size="sm" onClick={() => setAttempt((n) => n + 1)} disabled={disabled}>
             {t.common.retry}
-          </button>
+          </Button>
         </div>
       ) : personas.length === 0 ? (
         <p className="typo-caption text-foreground py-3 text-center bg-secondary/20 rounded-input">
