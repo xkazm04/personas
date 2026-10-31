@@ -68,7 +68,7 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
           className="relative w-full flex flex-col gap-2.5 px-3 py-3 pointer-events-none"
           style={{ minHeight: '110px', backgroundColor: theme.backgroundSample, color: theme.foregroundSample }}
         >
-          {/* Contrast badge — neutral chip so it stays legible on every tile */}
+          {/* Contrast badge — tinted with the APP theme's status tokens, not the previewed theme's */}
           <span
             aria-label={badgeAriaLabel}
             title={badgeAriaLabel}
