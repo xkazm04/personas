@@ -12,7 +12,6 @@ import type { TwinStudioBatch } from "@/lib/bindings/TwinStudioBatch";
 import type { TwinStudioSeed } from "@/lib/bindings/TwinStudioSeed";
 import type { TwinContact } from "@/lib/bindings/TwinContact";
 import type { TwinReflection } from "@/lib/bindings/TwinReflection";
-import type { TwinRecallBundle } from "@/lib/bindings/TwinRecallBundle";
 import type { StyleCandidate } from "@/lib/bindings/StyleCandidate";
 import type { StyleChannelTarget } from "@/lib/bindings/StyleChannelTarget";
 import type { StyleToneDraft } from "@/lib/bindings/StyleToneDraft";
@@ -533,9 +532,6 @@ export const deleteDistilledFact = (id: string) =>
 export const listTwinContacts = (twinId: string) =>
   invoke<TwinContact[]>("twin_list_contacts", { twinId });
 
-export const updateTwinContact = (id: string, alias?: string, notes?: string) =>
-  invoke<TwinContact>("twin_update_contact", { id, alias, notes });
-
 // ============================================================================
 // Reflections (Cycle 15 Stage 1)
 // ============================================================================
@@ -560,13 +556,3 @@ export const deleteTwinReflection = (id: string) =>
 // Recall preview (Cycle 16 Stage 1 — read-only)
 // ============================================================================
 
-/**
- * Structured slice of twin state a persona prompt-builder would need at
- * runtime. Returns { profile, tone, recent_communications, top_facts,
- * top_contacts, contact_filter }. Stage 1 is read-only — the Brain preview
- * panel calls this to show operators "here's what a persona adopting this
- * twin would see." Stage 2 will wire this bundle into the connector tool
- * that assembles the runtime prompt.
- */
-export const twinRecall = (twinId: string, contactHandle?: string) =>
-  invoke<TwinRecallBundle>("twin_recall", { twinId, contactHandle });

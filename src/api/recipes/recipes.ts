@@ -2,16 +2,8 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { RecipeDefinition } from "@/lib/bindings/RecipeDefinition";
 import type { CreateRecipeInput } from "@/lib/bindings/CreateRecipeInput";
-import type { UpdateRecipeInput } from "@/lib/bindings/UpdateRecipeInput";
-import type { PersonaRecipeLink } from "@/lib/bindings/PersonaRecipeLink";
-import type { CreatePersonaRecipeLinkInput } from "@/lib/bindings/CreatePersonaRecipeLinkInput";
-import type { RecipeExecutionInput } from "@/lib/bindings/RecipeExecutionInput";
-import type { RecipeExecutionResult } from "@/lib/bindings/RecipeExecutionResult";
-import type { RecipeVersion } from "@/lib/bindings/RecipeVersion";
 import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
 import type { RecipeSuggestionEventType } from "@/lib/bindings/RecipeSuggestionEventType";
-import type { RecipeSuggestionStats } from "@/lib/bindings/RecipeSuggestionStats";
-import type { RecipeOutcomeTally } from "@/lib/bindings/RecipeOutcomeTally";
 
 export interface CancelResult {
   was_running: boolean;
@@ -37,9 +29,6 @@ export const getRecipe = (id: string) =>
 export const createRecipe = (input: CreateRecipeInput) =>
   invoke<RecipeDefinition>("create_recipe", { input });
 
-export const updateRecipe = (id: string, input: UpdateRecipeInput) =>
-  invoke<RecipeDefinition>("update_recipe", { id, input });
-
 export const deleteRecipe = (id: string) =>
   invoke<boolean>("delete_recipe", { id });
 
@@ -47,21 +36,9 @@ export const deleteRecipe = (id: string) =>
 // Persona <-> Recipe Links
 // ============================================================================
 
-export const linkRecipeToPersona = (input: CreatePersonaRecipeLinkInput) =>
-  invoke<PersonaRecipeLink>("link_recipe_to_persona", { input });
-
-export const unlinkRecipeFromPersona = (personaId: string, recipeId: string) =>
-  invoke<boolean>("unlink_recipe_from_persona", { personaId, recipeId });
-
-export const getPersonaRecipes = (personaId: string) =>
-  invoke<RecipeDefinition[]>("get_persona_recipes", { personaId });
-
 // ============================================================================
 // Recipe Execution (Test Runner)
 // ============================================================================
-
-export const executeRecipe = (input: RecipeExecutionInput) =>
-  invoke<RecipeExecutionResult>("execute_recipe", { input });
 
 export const startRecipeExecution = (recipeId: string, inputData: Record<string, unknown>) =>
   invoke<{ execution_id: string }>("start_recipe_execution", { recipeId, inputData });
@@ -90,9 +67,6 @@ export const cancelRecipeGeneration = () =>
 // Recipe Versioning
 // ============================================================================
 
-export const getRecipeVersions = (recipeId: string) =>
-  invoke<RecipeVersion[]>("get_recipe_versions", { recipeId });
-
 export const startRecipeVersioning = (recipeId: string, changeRequirements: string) =>
   invoke<{ versioning_id: string }>("start_recipe_versioning", { recipeId, changeRequirements });
 
@@ -114,22 +88,6 @@ export interface AcceptRecipeVersionInput {
 // Options object (not positional args) — six same-typed `string | null` fields
 // invite a silent mis-mapping (e.g. transposed description/changesSummary) that
 // TypeScript can't catch across a flat positional signature.
-export const acceptRecipeVersion = ({
-  recipeId,
-  promptTemplate,
-  inputSchema,
-  sampleInputs,
-  description,
-  changesSummary,
-  expectedUpdatedAt,
-}: AcceptRecipeVersionInput) =>
-  invoke<RecipeDefinition>("accept_recipe_version", {
-    recipeId, promptTemplate, inputSchema, sampleInputs, description, changesSummary, expectedUpdatedAt,
-  });
-
-export const revertRecipeVersion = (recipeId: string, versionId: string) =>
-  invoke<RecipeDefinition>("revert_recipe_version", { recipeId, versionId });
-
 // ============================================================================
 // Intent matching + suggestion telemetry
 // ============================================================================
@@ -158,44 +116,7 @@ export const logRecipeSuggestionEvent = (
   score: number,
 ) => invoke<void>("log_recipe_suggestion_event", { recipeId, eventType, score });
 
-/**
- * Aggregated suggestion stats over the most recent `window` events (backend
- * default 50 when null/omitted; non-positive values are ignored). Read
- * `mode_2_eligible` rather than re-deriving the threshold on the frontend.
- */
-export const getRecipeSuggestionStats = (window: number | null = null) =>
-  invoke<RecipeSuggestionStats>("get_recipe_suggestion_stats", { window });
-
-/**
- * Run outcomes per recipe, ordered by run count desc (backend default limit
- * 100, clamped 1..500).
- *
- * Recipes that have never been run are **absent** — this reports outcomes, and
- * a recipe with no runs has none. Read `terminal` as the denominator (queued
- * and running rows are not outcomes yet) and `value_delivered` as the strict
- * bar: runs whose persona self-assessed that it actually delivered its job.
- * The backend deliberately returns raw counts rather than a pre-computed rate
- * — what belongs in a success-rate denominator is a product judgement, so do
- * not bake one in here either.
- */
-export const getRecipeOutcomeTallies = (limit: number | null = null) =>
-  invoke<RecipeOutcomeTally[]>("get_recipe_outcome_tallies", { limit });
-
 // ============================================================================
 // Use Case <-> Recipe Connection
 // ============================================================================
 
-export const promoteUseCaseToRecipe = (
-  credentialId: string | null,
-  useCaseId: string,
-  name: string,
-  description: string | null,
-  category: string | null,
-) =>
-  invoke<RecipeDefinition>("promote_use_case_to_recipe", {
-    credentialId,
-    useCaseId,
-    name,
-    description,
-    category,
-  });
