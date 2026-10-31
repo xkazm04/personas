@@ -24,7 +24,7 @@ function tool(i: number): PersonaToolDefinition {
     script_path: '',
     input_schema: JSON.stringify({ properties: { [`field_${i}`]: {} } }),
     output_schema: null,
-    requires_credential_type: 'x',
+    requires_credential_type: null,
     implementation_guide: 'Curl: curl https://example.com',
     is_builtin: false,
     created_at: '',

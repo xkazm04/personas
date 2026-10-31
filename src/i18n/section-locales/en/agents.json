@@ -2023,6 +2023,8 @@
     "kind_script": "Script",
     "kind_automation": "Automation",
     "kind_builtin": "Built-in",
+    "confirm_title": "Run {tool} for real?",
+    "confirm_body": "This calls {tool} with the persona's live {credential} credential. Side effects such as sending a message or writing data cannot be undone from here.",
     "schema_title": "Input fields",
     "schema_required": "required",
     "schema_enum": "one of: {values}",

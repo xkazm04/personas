@@ -259,3 +259,36 @@ describe('ToolInvocationCard input schema', () => {
     expect(screen.queryByTestId('tool-schema-gmail_reader')).toBeNull();
   });
 });
+
+describe('ToolInvocationCard live-credential confirm', () => {
+  it('asks before running a credential-backed tool and runs only on confirm', () => {
+    const onRun = vi.fn();
+    render(<ToolInvocationCard tool={tool()} isRunning={false} result={null} error={null} onRun={onRun} />);
+    fireEvent.click(screen.getByTestId('tool-card-toggle-gmail_reader'));
+    fireEvent.click(screen.getByTestId('tool-run-gmail_reader'));
+    expect(onRun).not.toHaveBeenCalled();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('gmail_reader');
+    expect(dialog).toHaveTextContent('gmail');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Run' }));
+    expect(onRun).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not run when the confirm is cancelled', () => {
+    const onRun = vi.fn();
+    render(<ToolInvocationCard tool={tool()} isRunning={false} result={null} error={null} onRun={onRun} />);
+    fireEvent.click(screen.getByTestId('tool-card-toggle-gmail_reader'));
+    fireEvent.click(screen.getByTestId('tool-run-gmail_reader'));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }));
+    expect(onRun).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('runs a tool with no credential requirement immediately', () => {
+    const onRun = vi.fn();
+    render(<ToolInvocationCard tool={{ ...tool(), requires_credential_type: null }} isRunning={false} result={null} error={null} onRun={onRun} />);
+    fireEvent.click(screen.getByTestId('tool-card-toggle-gmail_reader'));
+    fireEvent.click(screen.getByTestId('tool-run-gmail_reader'));
+    expect(onRun).toHaveBeenCalledTimes(1);
+  });
+});

@@ -17,6 +17,7 @@ import type { ToolInvocationResult } from '@/api/agents/tools';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tToken } from '@/i18n/tokenMaps';
 import { silentCatch } from '@/lib/silentCatch';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 
@@ -32,6 +33,7 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
   const { t, tx } = useTranslation();
   const [inputJson, setInputJson] = useState(() => buildDefaultInput(tool));
   const [expanded, setExpanded] = useState(false);
+  const [confirmingRun, setConfirmingRun] = useState(false);
   const bodyId = `tool-card-body-${tool.id}`;
 
   // builtin:// tools execute only inside persona runs (personas-mcp sidecar);
@@ -73,9 +75,22 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
   })();
   const canRun = !isRunning && !jsonError;
 
+  // A tool bound to a credential type calls out with the persona's live
+  // credential, so a single stray click must not fire it.
+  const credentialType = tool.requires_credential_type || null;
+
+  const runNow = () => {
+    setConfirmingRun(false);
+    onRun(trimmed || '{}');
+  };
+
   const handleRun = () => {
     if (jsonError) return;
-    onRun(trimmed || '{}');
+    if (credentialType) {
+      setConfirmingRun(true);
+      return;
+    }
+    runNow();
   };
 
   return (
@@ -219,6 +234,17 @@ export const ToolInvocationCard = memo(function ToolInvocationCard({ tool, isRun
               >
                 {t.agents.tool_runner.run}
               </Button>
+              )}
+
+              {confirmingRun && credentialType && (
+                <ConfirmDialog
+                  title={tx(t.agents.tool_runner.confirm_title, { tool: tool.name })}
+                  body={tx(t.agents.tool_runner.confirm_body, { tool: tool.name, credential: credentialType })}
+                  danger
+                  confirmLabel={t.agents.tool_runner.run}
+                  onConfirm={runNow}
+                  onCancel={() => setConfirmingRun(false)}
+                />
               )}
 
               {/* Result */}

@@ -5102,6 +5102,8 @@ export type Translations = {
       kind_script: string;
       kind_automation: string;
       kind_builtin: string;
+      confirm_title: string;
+      confirm_body: string;
       schema_title: string;
       schema_required: string;
       schema_enum: string;
