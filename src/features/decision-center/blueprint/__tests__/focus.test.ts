@@ -20,7 +20,7 @@ const view = (rev: number, reader: string, place = { product: 'kettle' }): Share
 
 describe('the focus port', () => {
   it('names the bp commit and file hash it was ported from', () => {
-    expect(focusSource).toMatch(/^\/\/ PORTED from bp packages\/core\/src\/session\/focus\.ts @ 51e193e sha256:[0-9a-f]{64}$/m);
+    expect(focusSource).toMatch(/^\/\/ PORTED from bp packages\/core\/src\/session\/focus\.ts @ c16732c sha256:[0-9a-f]{64}$/m);
   });
 
   it('applies a newer place from whoever it follows, never its own write or an applied rev', () => {
