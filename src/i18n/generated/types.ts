@@ -5050,6 +5050,9 @@ export type Translations = {
       review_status_approved: string;
       review_status_rejected: string;
       review_status_resolved: string;
+      attention_detail_reason: string;
+      attention_detail_started: string;
+      attention_detail_completed: string;
       report_title: string;
     };
     settings_status: {

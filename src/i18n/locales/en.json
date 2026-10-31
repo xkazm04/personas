@@ -5044,6 +5044,9 @@
       "review_status_approved": "Approved",
       "review_status_rejected": "Rejected",
       "review_status_resolved": "Resolved",
+      "attention_detail_reason": "Reason",
+      "attention_detail_started": "Started",
+      "attention_detail_completed": "Completed",
       "report_title": "Report"
     },
     "settings_status": {
