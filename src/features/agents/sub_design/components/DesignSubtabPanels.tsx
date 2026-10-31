@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { Plug } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useVaultStore } from '@/stores/vaultStore';
+import { useSystemStore } from '@/stores/systemStore';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ConnectorsSection } from '@/features/templates/sub_generated/design-preview/ConnectorsSection';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -47,6 +48,7 @@ export function DesignConnectorsPanel() {
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   const saved = useSavedDesignResult(selectedPersona);
+  const setDesignSubTab = useSystemStore((s) => s.setDesignSubTab);
   // Connector name whose credential is being provisioned from the recap.
   const [provisioning, setProvisioning] = useState<string | null>(null);
   // ONE verification instance, shared by the live panel and the recap below, so
@@ -91,7 +93,17 @@ export function DesignConnectorsPanel() {
     !saved ||
     ((saved.suggested_connectors?.length ?? 0) === 0 && (saved.suggested_tools?.length ?? 0) === 0);
   if (designIsEmpty && !hasLiveConnectors && personaTools.length === 0) {
-    return <SectionEmpty icon={Plug} title={t.agents.design_subtabs.connectors} />;
+    return (
+      <SectionEmpty
+        icon={Plug}
+        title={t.agents.design_subtabs.connectors}
+        description={t.agents.design_subtabs.connectors_empty_description}
+        action={{
+          label: t.agents.design_subtabs.connectors_empty_action,
+          onClick: () => setDesignSubTab('responsibilities'),
+        }}
+      />
+    );
   }
 
   return (
@@ -149,10 +161,20 @@ export function DesignConnectorsPanel() {
   );
 }
 
-function SectionEmpty({ icon, title }: { icon: typeof Plug; title: string }) {
+function SectionEmpty({
+  icon,
+  title,
+  description,
+  action,
+}: {
+  icon: typeof Plug;
+  title: string;
+  description: string;
+  action: { label: string; onClick: () => void };
+}) {
   return (
     <div className="py-12">
-      <EmptyState icon={icon} art="link" size="sm" title={title} />
+      <EmptyState icon={icon} art="link" size="sm" title={title} description={description} action={action} />
     </div>
   );
 }

@@ -3090,6 +3090,8 @@ export type Translations = {
     design_subtabs: {
       manifest: string;
       connectors: string;
+      connectors_empty_description: string;
+      connectors_empty_action: string;
       responsibilities: string;
       brain: string;
     };

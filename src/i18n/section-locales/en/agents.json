@@ -11,6 +11,8 @@
   "design_subtabs": {
     "manifest": "Manifest",
     "connectors": "Connectors",
+    "connectors_empty_description": "This agent reaches no tools yet. Add a responsibility that needs one.",
+    "connectors_empty_action": "Open Responsibilities",
     "responsibilities": "Responsibilities",
     "brain": "Brain"
   },
