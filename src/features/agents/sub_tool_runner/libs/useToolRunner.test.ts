@@ -4,12 +4,19 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 const invokeMock = vi.fn();
 vi.mock('@/api/agents/tools', () => ({ invokeToolDirect: (...a: unknown[]) => invokeMock(...a) }));
 
+const reported = vi.fn();
+const silentCatchMock = vi.fn((_context: string) => reported);
+vi.mock('@/lib/silentCatch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/silentCatch')>()),
+  silentCatch: (context: string) => silentCatchMock(context),
+}));
+
 import { useToolRunner } from './useToolRunner';
 
 const ok = { success: true, output: 'hi', duration_ms: 5 };
 
 describe('useToolRunner', () => {
-  beforeEach(() => { invokeMock.mockReset(); });
+  beforeEach(() => { invokeMock.mockReset(); reported.mockReset(); silentCatchMock.mockClear(); });
   afterEach(() => { vi.useRealTimers(); });
 
   it('lands a result under the persona that started the run', async () => {
@@ -80,5 +87,23 @@ describe('useToolRunner', () => {
     const { result } = renderHook(() => useToolRunner('p1'));
     await act(async () => { await result.current.runTool('t1', '{}'); });
     await waitFor(() => expect(result.current.getState('t1').error).toBe('credential missing'));
+  });
+
+  it('reports a rejected direct run to the error door, not only to the card', async () => {
+    // A tool FAILURE resolves as success:false; a rejection is infrastructure
+    // (IPC timeout, AppError) and must leave a trace after the card clears.
+    const err = { message: 'Tauri invoke "invoke_tool_direct" timed out' };
+    invokeMock.mockRejectedValue(err);
+    const { result } = renderHook(() => useToolRunner('p1'));
+    await act(async () => { await result.current.runTool('t1', '{}'); });
+    expect(silentCatchMock).toHaveBeenCalledWith('useToolRunner:invokeToolDirect');
+    expect(reported).toHaveBeenCalledWith(err);
+  });
+
+  it('does not report a resolved tool failure as an error', async () => {
+    invokeMock.mockResolvedValue({ ...ok, success: false, error: 'HTTP 503' });
+    const { result } = renderHook(() => useToolRunner('p1'));
+    await act(async () => { await result.current.runTool('t1', '{}'); });
+    expect(reported).not.toHaveBeenCalled();
   });
 });

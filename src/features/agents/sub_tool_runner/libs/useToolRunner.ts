@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { invokeToolDirect, type ToolInvocationResult } from '@/api/agents/tools';
-import { extractMessage } from '@/lib/silentCatch';
+import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { createKeyedLatestWins } from '@/stores/util/latestWins';
 
 interface ToolRunState {
@@ -118,6 +118,10 @@ export function useToolRunner(personaId: string | undefined) {
         // `String(err)` on those renders "[object Object]" (2026-07-16 UAT
         // blocker). extractMessage probes .message/.error/JSON before giving up.
         const msg = extractMessage(err) || 'Tool invocation failed';
+        // A tool FAILURE resolves (success:false); a rejection is the IPC path
+        // itself failing (wrapper timeout, AppError). The card state is cleared
+        // on the next persona switch, so leave a trace that outlives it.
+        silentCatch('useToolRunner:invokeToolDirect')(err);
         setStates((prev) => {
           if (!isLatest()) return prev;
           return {
