@@ -1,5 +1,5 @@
 import { Layers, X, TrendingDown, TrendingUp, ChevronRight } from 'lucide-react';
-import { formatDuration } from '@/lib/utils/formatters';
+import { formatDuration, getStatusEntry } from '@/lib/utils/formatters';
 import { fmtCost } from '../../libs/comparisonHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BulkRunItem, BulkRunCohort } from '../../libs/useBulkRerun';
@@ -223,13 +223,13 @@ function CohortRowList({ rows, onCompareItem }: CohortRowListProps) {
               )}
             </div>
             <div className="col-span-3 flex items-center gap-1.5 typo-body">
-              <span className="text-foreground">{it.origStatus}</span>
+              <span className="text-foreground">{getStatusEntry(it.origStatus).label}</span>
               <span className="text-foreground">→</span>
               {/* A dispatched-but-not-yet-landed re-run has no status, cost or
                   duration yet — say "running", never a dash that reads as
                   "nothing happened" next to a $0.00 cost column. */}
               <span className="text-foreground/95">
-                {it.newStatus ??
+                {(it.newStatus !== null ? getStatusEntry(it.newStatus).label : null) ??
                   (it.status === 'timed_out'
                     ? e.bulk_rerun_timed_out_state
                     : it.status === 'cancelled'
