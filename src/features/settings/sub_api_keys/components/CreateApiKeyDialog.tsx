@@ -119,6 +119,7 @@ export function CreateApiKeyDialog({ onSubmit, onClose }: CreateApiKeyDialogProp
             type="button"
             onClick={onClose}
             disabled={submitting}
+            aria-label={s.close}
             className="text-foreground hover:text-foreground transition-colors disabled:opacity-50"
           >
             <X size={16} />

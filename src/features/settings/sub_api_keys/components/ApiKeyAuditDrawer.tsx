@@ -86,6 +86,7 @@ export function ApiKeyAuditDrawer({ keyId, keyName, onClose }: ApiKeyAuditDrawer
           <button
             type="button"
             onClick={onClose}
+            aria-label={s.close}
             className="text-foreground hover:text-foreground transition-colors"
           >
             <X size={16} />

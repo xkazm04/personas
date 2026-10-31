@@ -1,7 +1,7 @@
 /**
  * While a key is being minted the dialog's Cancel and X are disabled; the
  * backdrop must hold the same rule, or a failed create reports into a dialog
- * that is already gone.
+ * that is already gone. The icon-only X needs an accessible name.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -29,5 +29,10 @@ describe('CreateApiKeyDialog', () => {
     const { container } = render(<CreateApiKeyDialog onSubmit={vi.fn()} onClose={onClose} />);
     fireEvent.click(container.firstChild as Element);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('names its close button', () => {
+    render(<CreateApiKeyDialog onSubmit={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Close' })).not.toBeNull();
   });
 });
