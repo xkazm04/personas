@@ -203,7 +203,7 @@ export default function CustomThemeCreator() {
                   onClick={() => setBaseMode(mode)}
                   aria-pressed={active}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-modal border typo-caption transition-all ${
-                    active ? 'border-primary/30 bg-primary/10 text-foreground/90' : 'border-primary/10 text-foreground hover:border-primary/20 hover:bg-primary/5'
+                    active ? 'border-primary/30 bg-primary/10 text-foreground' : 'border-primary/10 text-foreground hover:border-primary/20 hover:bg-primary/5'
                   }`}
                 >
                   <Icon className="w-3 h-3" />

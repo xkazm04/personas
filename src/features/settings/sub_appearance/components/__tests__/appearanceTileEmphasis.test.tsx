@@ -6,6 +6,7 @@ import AppearanceBrightnessSettings from '../AppearanceBrightnessSettings';
 import AppearanceTextSizeSettings from '../AppearanceTextSizeSettings';
 import AppearanceDensitySettings from '../AppearanceDensitySettings';
 import AppearanceTimezoneSettings from '../AppearanceTimezoneSettings';
+import CustomThemeCreator from '../CustomThemeCreator';
 
 /** The chosen tile's text must not be dimmer than its unchosen siblings. */
 function expectSelectedNotDimmed() {
@@ -38,5 +39,11 @@ describe('selected picker tile keeps full-strength label text', () => {
     useThemeStore.setState({ timezone: 'utc' });
     render(<AppearanceTimezoneSettings />);
     expectSelectedNotDimmed();
+  });
+  it('custom theme base mode', () => {
+    useThemeStore.setState({ customTheme: null });
+    render(<CustomThemeCreator />);
+    const selected = screen.getAllByRole('button').find((b) => b.getAttribute('aria-pressed') === 'true')!;
+    expect(selected.className).not.toMatch(/text-foreground\/\d+/);
   });
 });
