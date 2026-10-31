@@ -117,7 +117,10 @@ export function DeepFanoutToggle({
         checked={on}
         onChange={toggle}
         label={e.deep_fanout}
-        disabled={available === false}
+        // Held only when it would turn the flag ON: switching a capability OFF
+        // never needs the capability, so a persona already fanning out can
+        // always be switched back (probe failure or a plan downgrade).
+        disabled={available === false && !on}
       />
     </div>
   );
