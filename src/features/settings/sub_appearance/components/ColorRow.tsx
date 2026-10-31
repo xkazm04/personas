@@ -32,7 +32,13 @@ export function ColorRow({
   const { t, tx } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const close = useCallback(() => setOpen(false), []);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  // Closing unmounts whatever inside the popup holds focus (the hex field, a preset), which would
+  // drop focus to <body>; hand it back to the swatch button that opened the popup.
+  const close = useCallback(() => {
+    if (ref.current?.contains(document.activeElement)) triggerRef.current?.focus();
+    setOpen(false);
+  }, []);
   useClickOutside(ref, open, close);
 
   const displayValue = value ?? derivedValue ?? '#888888';
@@ -41,6 +47,7 @@ export function ColorRow({
   return (
     <div ref={ref} className="relative flex items-center gap-3 py-1.5">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((p) => !p)}
         className={`w-7 h-7 rounded-card border flex-shrink-0 transition-all cursor-pointer ${
@@ -51,7 +58,6 @@ export function ColorRow({
         style={{ backgroundColor: displayValue }}
         title={tx(t.settings.appearance.color_pick_title, { label })}
         aria-expanded={open}
-        aria-haspopup="true"
       />
       <span className="typo-caption text-foreground w-24 flex-shrink-0">{label}</span>
       <span className="typo-code flex-1 min-w-0 truncate text-foreground">
