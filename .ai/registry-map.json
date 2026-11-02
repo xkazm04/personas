@@ -34028,7 +34028,11 @@
           "revision": 1,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/stores/slices/overview/personaHealthSlice.ts:275 computePersonaHealth fully re-reads a declared slice (getHealthBundle(7)), but a source that still fails after its one retry is written as [] or null over the last good values. healingFrequency then becomes 0, which inflates heartbeatScore, and the result is committed with a replica-wide healthLastRefreshedAt = now, so a failed read becomes a confident zero instead of unknown with the last good rows kept.",
+          "evaluatedAt": "2026-11-02",
+          "evaluatedAgainst": "sha256-b2:26e858c401316003",
+          "evaluatedRevision": 3
         },
         {
           "subject": "data-access",
