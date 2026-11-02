@@ -24240,7 +24240,11 @@
           "revision": 1,
           "changedAt": "2026-09-07",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:2 This context only displays usage. It overlays the previous period's flow values (tokens, runs, cost, latency) as ghost lines on a chart and never folds events into a stored per-customer, per-period quantity for an invoice. A case-insensitive search of src/features/overview/sub_usage/ for invoice, billing, subscription, seat, licence/license, recurring, integral and high-water/watermark found nothing, so the subject's metered-billing precondition does not hold.",
+          "evaluatedAt": "2026-11-02",
+          "evaluatedAgainst": "sha256-b2:8c2dd21982ce8fe9",
+          "evaluatedRevision": 1
         },
         {
           "subject": "metrics-rollups",

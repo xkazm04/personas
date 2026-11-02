@@ -41000,6 +41000,37 @@
       "evaluatedTs": "2026-11-02T22:22:00.349Z",
       "worker": "a3a27680-e2f6-4193-a4be-a30b4605ce41",
       "techniques": []
+    },
+    "7901fd6c-0346-430b-aefe-fc4cd623b167/usage-aggregation-semantics": {
+      "context": "overview-usage-charts",
+      "subject": "usage-aggregation-semantics",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:25:11.533Z",
+      "worker": "0d7a69c7-8f57-46ca-baea-31a5f41737bb",
+      "techniques": [
+        {
+          "technique": "high-water-mark-advance-billing",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:2 Nothing here issues a charge at event time or at period close. The period logic is a chart overlay, so there is no ratchet to keep."
+        },
+        {
+          "technique": "level-valued-time-integral",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/chartConstants.ts:34 Every metric unit is a flow or a measurement (count, tokens, usd, ms, percent). No held level is charted, so there is nothing to integrate over time."
+        },
+        {
+          "technique": "replayed-state-machine-count",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:31 Counts are counts of invocations (chargeable acts), not identifiers held through add/remove operations."
+        },
+        {
+          "technique": "seeded-recurring-aggregate",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:77 Each period is window-closed per-day flow data. A quiet day has no carried-over level, so no period-crossing seed exists."
+        }
+      ]
     }
   }
 }

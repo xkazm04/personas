@@ -1,0 +1,66 @@
+{
+ "schema": "conform-run/1",
+ "worker": "0d7a69c7-8f57-46ca-baea-31a5f41737bb",
+ "subject": "usage-aggregation-semantics",
+ "evaluatedAt": "2026-11-02T22:25:11.533628+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "overview-usage-charts",
+   "subject": "usage-aggregation-semantics",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:2 This context only displays usage. It overlays the previous period's flow values (tokens, runs, cost, latency) as ghost lines on a chart and never folds events into a stored per-customer, per-period quantity for an invoice. A case-insensitive search of src/features/overview/sub_usage/ for invoice, billing, subscription, seat, licence/license, recurring, integral and high-water/watermark found nothing, so the subject's metered-billing precondition does not hold.",
+   "techniques": [
+    {
+     "technique": "high-water-mark-advance-billing",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:2 Nothing here issues a charge at event time or at period close. The period logic is a chart overlay, so there is no ratchet to keep."
+    },
+    {
+     "technique": "level-valued-time-integral",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/libs/chartConstants.ts:34 Every metric unit is a flow or a measurement (count, tokens, usd, ms, percent). No held level is charted, so there is nothing to integrate over time."
+    },
+    {
+     "technique": "replayed-state-machine-count",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:31 Counts are counts of invocations (chargeable acts), not identifiers held through add/remove operations."
+    },
+    {
+     "technique": "seeded-recurring-aggregate",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:77 Each period is window-closed per-day flow data. A quiet day has no carried-over level, so no period-crossing seed exists."
+    }
+   ],
+   "absenceTerms": [
+    "invoice",
+    "billing",
+    "subscription",
+    "recurring",
+    "watermark"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-02T22:25:11.533628+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "usage-aggregation-semantics"
+   ],
+   "techniques": [
+    "high-water-mark-advance-billing",
+    "level-valued-time-integral",
+    "replayed-state-machine-count",
+    "seeded-recurring-aggregate"
+   ],
+   "deviations": 0,
+   "context": "overview-usage-charts",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
