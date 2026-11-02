@@ -1,0 +1,54 @@
+{
+ "schema": "conform-run/1",
+ "worker": "4f9f3424-632b-4de2-ae93-71b4c072bdb6",
+ "subject": "windowed-inference-over-oversized-inputs",
+ "evaluatedAt": "2026-11-02T22:34:19.566121+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "schedules-components",
+   "subject": "windowed-inference-over-oversized-inputs",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/schedules/libs/calendarHelpers.ts:193 The only 'windows' in this context are time windows: a 5-minute conflict window and a 90s slot-to-run tolerance used to group and match cron fires on a calendar. No model runs anywhere in it, so nothing is stitched over an oversized input. A grep of src/features/schedules/ for stitch, blend, inference, tensor and accelerator found no matches; 'overlap' only matches calendar conflict-overlap UI.",
+   "techniques": [
+    {
+     "technique": "overlap-weighted-stitching",
+     "verdict": "not-applicable",
+     "evidence": "src/features/schedules/libs/calendarHelpers.ts:223 Overlapping windows here are merged into conflict ranges for badge counts. No predictions are blended into a canvas."
+    },
+    {
+     "technique": "strictly-positive-blend-weights",
+     "verdict": "not-applicable",
+     "evidence": "src/features/schedules/libs/calendarHelpers.ts:300 This is a matching tolerance, not a taper weight. There are no blend weights or normaliser division."
+    }
+   ],
+   "absenceTerms": [
+    "stitch",
+    "blend",
+    "inference",
+    "tensor",
+    "accelerator"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-02T22:34:19.566121+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "windowed-inference-over-oversized-inputs"
+   ],
+   "techniques": [
+    "overlap-weighted-stitching",
+    "strictly-positive-blend-weights"
+   ],
+   "deviations": 0,
+   "context": "schedules-components",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

@@ -41109,6 +41109,27 @@
         }
       ],
       "registryProposal": "The golden path frames the polled replica around 'hosted platforms a product integrates with'. In a desktop app, the same failure (a failed source written as empty and stamped fresh) occurs in a UI read model over the app's own local backend whose slice is declared rather than caller-keyed. The standard could say explicitly whether a declared, fully re-read derived bundle over a local source falls under the polled-replica techniques or under client-fetch-cache."
+    },
+    "56a0fd55-279d-428b-b2f6-7c89154abd6f/windowed-inference-over-oversized-inputs": {
+      "context": "schedules-components",
+      "subject": "windowed-inference-over-oversized-inputs",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:34:19.566Z",
+      "worker": "4f9f3424-632b-4de2-ae93-71b4c072bdb6",
+      "techniques": [
+        {
+          "technique": "overlap-weighted-stitching",
+          "verdict": "not-applicable",
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:223 Overlapping windows here are merged into conflict ranges for badge counts. No predictions are blended into a canvas."
+        },
+        {
+          "technique": "strictly-positive-blend-weights",
+          "verdict": "not-applicable",
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:300 This is a matching tolerance, not a taper weight. There are no blend weights or normaliser division."
+        }
+      ]
     }
   }
 }

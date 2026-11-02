@@ -31591,7 +31591,11 @@
           "revision": 3,
           "changedAt": "2026-09-22",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:193 The only 'windows' in this context are time windows: a 5-minute conflict window and a 90s slot-to-run tolerance used to group and match cron fires on a calendar. No model runs anywhere in it, so nothing is stitched over an oversized input. A grep of src/features/schedules/ for stitch, blend, inference, tensor and accelerator found no matches; 'overlap' only matches calendar conflict-overlap UI.",
+          "evaluatedAt": "2026-11-02",
+          "evaluatedAgainst": "sha256-b2:be767e8151f6602a",
+          "evaluatedRevision": 3
         },
         {
           "subject": "fleet-orchestration",
