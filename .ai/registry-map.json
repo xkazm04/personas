@@ -24341,7 +24341,11 @@
           "revision": 3,
           "changedAt": "2026-09-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:58 This context only reads usage that was already aggregated (a read IPC call over tool_execution_audit_log) and draws it as charts. It has no admission endpoint, no dedupe key, no subscription attachment and no counter-update rule; a grep of src/features/overview/sub_usage for ingest, idempoten, dedup, subscription, transmission_id and occurred_at returned zero hits.",
+          "evaluatedAt": "2026-11-02",
+          "evaluatedAgainst": "sha256-b2:74ce470dc4579c08",
+          "evaluatedRevision": 3
         },
         {
           "subject": "cost-metering",

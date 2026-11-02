@@ -1,0 +1,66 @@
+{
+ "schema": "conform-run/1",
+ "worker": "bd400f34-d142-490a-ae23-5df76cec9028",
+ "subject": "usage-event-ingestion",
+ "evaluatedAt": "2026-11-02T22:28:02.554301+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "overview-usage-charts",
+   "subject": "usage-event-ingestion",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:58 This context only reads usage that was already aggregated (a read IPC call over tool_execution_audit_log) and draws it as charts. It has no admission endpoint, no dedupe key, no subscription attachment and no counter-update rule; a grep of src/features/overview/sub_usage for ingest, idempoten, dedup, subscription, transmission_id and occurred_at returned zero hits.",
+   "techniques": [
+    {
+     "technique": "thin-ingest-deferred-validation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:58 Read-only fetch of a summary, so there is no ingest door whose checks could block a caller."
+    },
+    {
+     "technique": "running-total-or-increment",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:83 Copies rolled-up values onto the chart row for display. Emitter counters are never admitted or stored here, so the running-total-vs-increment rule has nothing to act on."
+    },
+    {
+     "technique": "late-event-subscription-resolution",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/libs/periodComparison.ts:79 Aligns days by calendar for the chart. No event is attached to a subscription window."
+    },
+    {
+     "technique": "dedupe-key-survives-soft-delete",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_usage/components/ToolPerformancePanel.tsx:39 The data source is an internal audit log that is read here. No idempotency key is chosen or enforced in this context."
+    }
+   ],
+   "absenceTerms": [
+    "ingest",
+    "idempoten",
+    "dedup",
+    "subscription",
+    "transmission_id"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-02T22:28:02.554301+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "usage-event-ingestion"
+   ],
+   "techniques": [
+    "dedupe-key-survives-soft-delete",
+    "late-event-subscription-resolution",
+    "running-total-or-increment",
+    "thin-ingest-deferred-validation"
+   ],
+   "deviations": 0,
+   "context": "overview-usage-charts",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
