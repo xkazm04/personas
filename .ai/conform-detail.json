@@ -38537,14 +38537,14 @@
       "subject": "agent-instruction-files",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T01:25:06.345Z",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:11:02.511Z",
       "techniques": [],
       "withdrawn": {
-        "worker": "c3fbd39b-4686-4cc8-9529-a20d0496fdae",
+        "worker": "50ebc12c-1210-4179-821b-70c36e237433",
         "state": "not-applicable",
-        "at": "2026-10-24T01:25:27.350714+00:00",
-        "reason": "reviewer (sonnet): The anchor is only the TeamStudioSplitVariant function signature, so it does not show the precondition is absent. The evidence says searches for 'instruction file' and 'agent instructions' had no hits. Yet teamStudio/TeamWorkspacePane.tsx, inside this context, authors and saves a team-level `shared_"
+        "at": "2026-11-02T22:11:48.479014+00:00",
+        "reason": "reviewer (sonnet): Each anchor is an incidental line that does not show the precondition is absent (an import in useAutoTeam.ts:13, a re-export in gallery/index.ts:1, a type in useManualReviewQueue.ts:7, a doc comment in registry.ts:11); and the subject is a repo-level concern, since the repo has instruction files (.c"
       }
     },
     "9fca099d-94e4-4fd0-8460-3cf5d8c85acf/agent-instruction-files": {
@@ -38552,14 +38552,14 @@
       "subject": "agent-instruction-files",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T01:25:06.345Z",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:11:02.511Z",
       "techniques": [],
       "withdrawn": {
-        "worker": "c3fbd39b-4686-4cc8-9529-a20d0496fdae",
+        "worker": "50ebc12c-1210-4179-821b-70c36e237433",
         "state": "not-applicable",
-        "at": "2026-10-24T01:25:27.486037+00:00",
-        "reason": "reviewer (sonnet): The anchor is only the GeneratedReviewsTab component declaration, so it does not itself show that no agent instruction file exists. The cards directory also renders `review.instruction` and a 'System Prompt Preview' (TemplateCardPreview.tsx:120), which touch agent-instruction content, so a bare abse"
+        "at": "2026-11-02T22:11:48.479014+00:00",
+        "reason": "reviewer (sonnet): Each anchor is an incidental line that does not show the precondition is absent (an import in useAutoTeam.ts:13, a re-export in gallery/index.ts:1, a type in useManualReviewQueue.ts:7, a doc comment in registry.ts:11); and the subject is a repo-level concern, since the repo has instruction files (.c"
       }
     },
     "ef73ca1c-fc54-4b9c-83ec-390c54929192/agent-instruction-files": {
@@ -38567,14 +38567,14 @@
       "subject": "agent-instruction-files",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T01:25:06.345Z",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:11:02.511Z",
       "techniques": [],
       "withdrawn": {
-        "worker": "c3fbd39b-4686-4cc8-9529-a20d0496fdae",
+        "worker": "50ebc12c-1210-4179-821b-70c36e237433",
         "state": "not-applicable",
-        "at": "2026-10-24T01:25:27.625418+00:00",
-        "reason": "reviewer (sonnet): The anchor is only the ManualReviewList function declaration with a comment about the approvals shell. It is incidental and does not show that no instruction file is authored or loaded. The claim rests on a keyword-absence search, and I could not confirm it from the cited line."
+        "at": "2026-11-02T22:11:48.479014+00:00",
+        "reason": "reviewer (sonnet): Each anchor is an incidental line that does not show the precondition is absent (an import in useAutoTeam.ts:13, a re-export in gallery/index.ts:1, a type in useManualReviewQueue.ts:7, a doc comment in registry.ts:11); and the subject is a repo-level concern, since the repo has instruction files (.c"
       }
     },
     "895b4bb2-16fd-4e8e-aae8-11315fe6436b/test-harness": {
@@ -40944,6 +40944,21 @@
       "evaluatedTs": "2026-11-02T22:05:16.989Z",
       "worker": "02c7a619-c4dd-4deb-ac8a-6790e281f86f",
       "techniques": []
+    },
+    "b39776f5-3909-41e3-b69f-14c9a6c70bec/agent-instruction-files": {
+      "context": "home-learning",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:11:02.511Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "50ebc12c-1210-4179-821b-70c36e237433",
+        "state": "not-applicable",
+        "at": "2026-11-02T22:11:48.479014+00:00",
+        "reason": "reviewer (sonnet): Each anchor is an incidental line that does not show the precondition is absent (an import in useAutoTeam.ts:13, a re-export in gallery/index.ts:1, a type in useManualReviewQueue.ts:7, a doc comment in registry.ts:11); and the subject is a repo-level concern, since the repo has instruction files (.c"
+      }
     }
   }
 }
