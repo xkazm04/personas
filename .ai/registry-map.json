@@ -26324,7 +26324,11 @@
           "revision": 12,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:3 The Artist plugin was removed in commit 0697f13438 and its artist_assets/artist_tags tables are dropped by this migration (registered at mod.rs:108/208); src/features/plugins/artist/ does not exist and a grep of src/ and src-tauri/ for useArtistAssets, artistScanFolder and artist_scan_folder found nothing, so there is no code here, and its former 'scan' was an image-folder listing, not a codebase scan.",
+          "evaluatedAt": "2026-11-02",
+          "evaluatedAgainst": "sha256-b2:06416fce13bc2342",
+          "evaluatedRevision": 12
         },
         {
           "subject": "agent-memory",

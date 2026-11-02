@@ -40990,6 +40990,16 @@
       "evaluatedTs": "2026-11-02T22:14:28.368Z",
       "worker": "77458070-3e79-436c-bfe4-44a982041e0e",
       "techniques": []
+    },
+    "cab45fee-e439-4bff-9924-217b1acc17f8/codebase-scanning": {
+      "context": "plugins-artist-hooks",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:22:00.349Z",
+      "worker": "a3a27680-e2f6-4193-a4be-a30b4605ce41",
+      "techniques": []
     }
   }
 }
