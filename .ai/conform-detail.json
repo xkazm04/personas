@@ -33445,45 +33445,46 @@
       "subject": "ui-controls",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-10-19",
-      "evaluatedTs": "2026-10-19T08:19:20.079Z",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:17:15.373Z",
       "techniques": [
-        {
-          "technique": "call-site-ownership",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucPicker.tsx:73 The call site injects full visual appearance classes into the button root instead of letting the control own its styling."
-        },
         {
           "technique": "micro-interaction-contracts",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:71 Uses native title attributes on action buttons instead of the shared Tooltip primitive."
-        },
-        {
-          "technique": "adoption-enforcement",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/chronology/commandCenterParts.tsx:24 Renders LoadingSpinner, hitting the null-spinner-busy-state signature that produces an invisible busy indicator."
-        },
-        {
-          "technique": "variant-discipline",
-          "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucRouteToggle.tsx:33 Constructs ad-hoc visual styling with template strings and ternary operators instead of a closed variant enum."
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:71 Native title used as the tooltip on an icon-only control; the technique names this a temptation signature, not a tooltip."
         },
         {
           "technique": "composition-contracts",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:50 Forks checkbox/toggle behavior using a raw button and Check icon rather than rendering AccessibleToggle."
+          "evidence": "src/features/templates/sub_generated/adoption/chronology/TestReportModal.tsx:581 A local fork of the shared buttons/CopyButton, not a wrapper: it re-implements the copy control over useCopyToClipboard. A failed write shows nothing (the hook returns early on !ok), there is no announcement, and the colours are hand-picked (text-emerald-400)."
+        },
+        {
+          "technique": "adoption-enforcement",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:123 Hand-built busy button (disabled while running, Loader2 spin swap) instead of AsyncButton or Button loading. Predicate: grep '<button|<motion.button' over the context's .tsx files on 2026-11-02 found 24 raw buttons across 11 files, and 0 files import @/features/shared/components/buttons. Shadows 24 : adopters 0 in this context."
+        },
+        {
+          "technique": "variant-discipline",
+          "verdict": "deviation",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucCardHeader.tsx:113 The same icon-button style string is copied across sites (also lines 75 and 98) instead of a Button variant or size, so the call sites hold copies of the vocabulary and a re-theme touches every file."
+        },
+        {
+          "technique": "call-site-ownership",
+          "verdict": "conformant",
+          "evidence": "src/features/templates/sub_generated/adoption/ucPicker/ucTimeControls.tsx:74 The only class passed to a shared control (NumberStepper) is a width constraint, i.e. placement; ThemedSelect in ucPowerRail.tsx gets no className at all."
         },
         {
           "technique": "control-inventory-and-discovery",
           "verdict": "deviation",
-          "evidence": "src/features/templates/sub_generated/adoption/chronology/ChronologyCommandHub.tsx:218 Hand-rolls a custom spinner via Lucide Loader2 and animate-spin rather than routing to a catalogued loading primitive."
+          "evidence": "src/features/templates/sub_generated/adoption/chronology/ChronologyCommandHub.tsx:218 Hand-rolls a custom spinner via Lucide Loader2 and animate-spin rather than routing to a catalogued loading primitive.",
+          "carriedFrom": "2026-10-19"
         }
       ],
       "withdrawn": {
-        "worker": "08263e89-8d2e-4c2d-984e-8af8e157fdbf",
+        "worker": "49ab47df-83e0-4c84-a60a-a16fb5040ed7",
         "state": "deviation",
-        "at": "2026-10-19T08:19:54.388509+00:00",
-        "reason": "reviewer (sonnet): The ucPicker.tsx:73, ucCardHeader.tsx:71 and ucRouteToggle.tsx:33 anchors are confirmed, but the technique anchor commandCenterParts.tsx:24 sits in the chronology directory, which is not among this context's files, so the verdict rests partly on another context's code."
+        "at": "2026-11-02T22:17:39.174092+00:00",
+        "reason": "reviewer (sonnet): The title-attribute claim at ucCardHeader.tsx:71 holds, but two technique anchors don't. The CopyButton fork in chronology/TestReportModal.tsx:581 is outside the ucPicker context. The '24 raw buttons across 11 files' predicate doesn't match ucPicker, where I counted about 17 raw buttons across 8 fil"
       }
     },
     "a7ece012-8300-4780-b286-b9cea81801fc/usage-pricing-models": {
