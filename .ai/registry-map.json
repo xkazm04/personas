@@ -28450,8 +28450,12 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "not-applicable",
+          "priorNotApplicable": 5,
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:67 The only 'seed' in this context is a client-side view cache that warms a remount, not a first-start seed of durable rows; Drive is frontend hooks, components and tests with no boot order, reload partition or seal, and a search for bootstrap/unseal/reloadable/first_start in src/features/plugins/drive found nothing.",
+          "evaluatedAt": "2026-11-02",
+          "evaluatedAgainst": "sha256-b2:1c83f54ea0028875",
+          "evaluatedRevision": 3
         },
         {
           "subject": "quality-gates",
@@ -39719,8 +39723,12 @@
           "revision": 3,
           "changedAt": "2026-09-26",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 5
+          "state": "not-applicable",
+          "priorNotApplicable": 5,
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:5 This context is React form state and per-type config panels for triggers, with no node startup sequence, reload signal, first-start bootstrap or pre-unseal component; a search of src/features/triggers for bootstrap/unseal/reloadable/first_start found nothing, and the only 'marker'/'preseed' hits are a schedule-preview 'Now' marker and a form type preset.",
+          "evaluatedAt": "2026-11-02",
+          "evaluatedAgainst": "sha256-b2:1c83f54ea0028875",
+          "evaluatedRevision": 3
         }
       ],
       "governance": "governed"

@@ -41130,6 +41130,43 @@
           "evidence": "src/features/schedules/libs/calendarHelpers.ts:300 This is a matching tolerance, not a taper weight. There are no blend weights or normaliser division."
         }
       ]
+    },
+    "f197653d-267c-4a91-bffc-b3be17434877/node-boot-and-declarative-bootstrap": {
+      "context": "trigger-config",
+      "subject": "node-boot-and-declarative-bootstrap",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:36:45.375Z",
+      "worker": "c37368d3-bdfa-4705-8f21-1f6667cf2b89",
+      "techniques": [
+        {
+          "technique": "ordered-boot-dag",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:5 UI form state with no boot graph"
+        },
+        {
+          "technique": "config-objects-are-api-immutable",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/configs/buildTriggerConfig.ts:5 Trigger configs are user-authored API objects; nothing is born from a node config file"
+        }
+      ]
+    },
+    "3c107fe6-ec95-4f45-bf31-665e9ccfe223/node-boot-and-declarative-bootstrap": {
+      "context": "plugins-drive",
+      "subject": "node-boot-and-declarative-bootstrap",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:36:45.375Z",
+      "worker": "c37368d3-bdfa-4705-8f21-1f6667cf2b89",
+      "techniques": [
+        {
+          "technique": "once-only-bootstrap-with-marker",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/drive/hooks/useDrive.ts:67 UI warm cache, not a durable first-start seed"
+        }
+      ]
     }
   }
 }
