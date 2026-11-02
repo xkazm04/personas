@@ -16341,8 +16341,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/hooks/utility/data/useEngineCapabilities.ts:14 The 'engine' in these settings hooks is a CLI/LLM provider (CliEngine), not a speech engine; a search of src/hooks/utility/data for voice, speech, microphone and getUserMedia found nothing (the only 'transcript' hits are install/CLI output logs), so the voice engine-abstraction and setup techniques do not apply.",
+          "evaluatedAt": "2026-11-02",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "agent-memory",
@@ -18246,8 +18250,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/lib/execution/middleware/index.ts:4 This context registers execution-pipeline middleware (knowledge, audit, budget, drift, notification, analytics, timing); a case-insensitive search of src/lib/execution for voice, speech, microphone and getUserMedia found no matches, so the product neither listens nor speaks here and the subject's precondition does not hold.",
+          "evaluatedAt": "2026-11-02",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "mcp-tools",
@@ -39909,8 +39917,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/triggers/sub_studio/libs/studioCommit.ts:2 Chain Studio maps patch-cable drafts to trigger bindings; a case-insensitive search of src/features/triggers (sub_studio and hooks included) for voice, speech, microphone and getUserMedia found nothing, so there is no capture or synthesis pipeline for any technique to govern.",
+          "evaluatedAt": "2026-11-02",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "multi-provider-gateway-plane",

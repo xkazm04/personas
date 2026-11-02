@@ -40959,6 +40959,36 @@
         "at": "2026-11-02T22:11:48.479014+00:00",
         "reason": "reviewer (sonnet): Each anchor is an incidental line that does not show the precondition is absent (an import in useAutoTeam.ts:13, a re-export in gallery/index.ts:1, a type in useManualReviewQueue.ts:7, a doc comment in registry.ts:11); and the subject is a repo-level concern, since the repo has instruction files (.c"
       }
+    },
+    "1db5c86e-3237-4d2a-8e2f-1426d680757c/voice-io": {
+      "context": "lib-execution",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:14:28.368Z",
+      "worker": "77458070-3e79-436c-bfe4-44a982041e0e",
+      "techniques": []
+    },
+    "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc/voice-io": {
+      "context": "triggers-studio",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:14:28.368Z",
+      "worker": "77458070-3e79-436c-bfe4-44a982041e0e",
+      "techniques": []
+    },
+    "107445f8-c266-4671-8160-f854bd79319e/voice-io": {
+      "context": "hooks-utility-data",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:14:28.368Z",
+      "worker": "77458070-3e79-436c-bfe4-44a982041e0e",
+      "techniques": []
     }
   }
 }
