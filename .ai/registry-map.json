@@ -16655,7 +16655,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/hooks/utility/interaction/useMotion.ts:6 These are DOM interaction hooks (motion preference, scroll, roving tab index, clipboard). A case-insensitive search of src/hooks/utility/interaction for middleware, checkpoint, subagent, plugin, tool_call and toolCall returned nothing, so the folder has no hook chain, no contributed code and no agent run state for the subject to govern.",
+          "evaluatedAt": "2026-11-02",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "accessibility",
@@ -30776,7 +30780,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/build_session.rs:11 The build-session status vocabulary has no indeterminate or interrupted status, so a build the app restarted under is closed as `failed`, with `interrupted_by_restart` written only into a message string (db repo recover_orphans, build_sessions.rs:577). That is exactly the closure the technique forbids.",
+          "evaluatedAt": "2026-11-02",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "data-access",

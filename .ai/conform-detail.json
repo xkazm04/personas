@@ -40918,6 +40918,32 @@
       "evaluatedTs": "2026-10-31T22:31:23.619Z",
       "worker": "f2e084b1-2044-4bd1-a282-ba91d5690557",
       "techniques": []
+    },
+    "ae80cd74-5beb-4d76-ae0a-16a4b581a2df/agent-runtime-assembly": {
+      "context": "recipe-build-models",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:05:16.989Z",
+      "worker": "02c7a619-c4dd-4deb-ac8a-6790e281f86f",
+      "techniques": [
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/build_session.rs:18 Restart orphans that cannot be resumed are written `phase = 'failed'`, and the interruption is encoded in error_message text through INTERRUPTED_BY_RESTART. The rule is 'when the vocabulary has no such status, add one; do not encode it in a message string'. The resume branch does count restarts and checks the cap before the freshness window, which conforms."
+        }
+      ]
+    },
+    "cc76d419-f457-4fe4-833c-6869efbc9287/agent-runtime-assembly": {
+      "context": "hooks-utility-interaction",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-02",
+      "evaluatedTs": "2026-11-02T22:05:16.989Z",
+      "worker": "02c7a619-c4dd-4deb-ac8a-6790e281f86f",
+      "techniques": []
     }
   }
 }
