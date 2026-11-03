@@ -27147,7 +27147,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:1 a UI hook joining LLM-cost and Sentry telemetry onto the context map (:18 degrades to empty maps); it consumes telemetry and assembles no runtime around a model call",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "native-shell-integration",
@@ -31189,7 +31193,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:1 a ledger door that ingests an append-only JSONL outbox into memory tables (:3-:8); it validates records of finished work and does not assemble hooks, extension loading or checkpoint custody around a model call",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "usage-limit-governance",
@@ -33557,7 +33565,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/stores/systemStore.ts:1 Zustand domain store for UI chrome, cloud, GitLab, onboarding and P2P state; the agent runtime assembly lives in the Rust backend, not in these client stores",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "test-harness",
@@ -35397,7 +35409,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:8 React CRUD hook over team-memory IPC calls; memory storage is agent-memory territory and no hook chain, loader or resumable store is assembled in this UI context",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "supply-chain",
@@ -43270,7 +43286,11 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/webbuild/devserver.rs:1 dev-server supervision (spawn door, kill-tree, adoption) plus a dev-only preview agent injected into generated apps (preview_agent.rs:1); no hook chain around model/tool calls, no extension loader or session store is assembled - process lifecycle belongs to subprocess-lifecycle",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "mcp-tools",

@@ -1,0 +1,60 @@
+{
+ "schema": "conform-run/1",
+ "worker": "2872940f-8b21-416a-b702-4ebd318a12b4",
+ "subject": "agent-runtime-assembly",
+ "evaluatedAt": "2026-11-03T08:31:15.124Z",
+ "pairs": [
+  {
+   "context": "b0cf3902-0739-40a8-8c76-ae594f41421b",
+   "subject": "agent-runtime-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_context/useContextRuntime.ts:1 a UI hook joining LLM-cost and Sentry telemetry onto the context map (:18 degrades to empty maps); it consumes telemetry and assembles no runtime around a model call",
+   "techniques": []
+  },
+  {
+   "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+   "subject": "agent-runtime-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:1 a ledger door that ingests an append-only JSONL outbox into memory tables (:3-:8); it validates records of finished work and does not assemble hooks, extension loading or checkpoint custody around a model call",
+   "techniques": []
+  },
+  {
+   "context": "63a0a6fc-fa9a-453c-943d-4579b83f0ca3",
+   "subject": "agent-runtime-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/stores/systemStore.ts:1 Zustand domain store for UI chrome, cloud, GitLab, onboarding and P2P state; the agent runtime assembly lives in the Rust backend, not in these client stores",
+   "techniques": []
+  },
+  {
+   "context": "fd092e44-fcec-4418-8337-ed2b7b2c8473",
+   "subject": "agent-runtime-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_teamMemory/useTeamMemories.ts:8 React CRUD hook over team-memory IPC calls; memory storage is agent-memory territory and no hook chain, loader or resumable store is assembled in this UI context",
+   "techniques": []
+  },
+  {
+   "context": "59918f8a-62ca-4e52-9435-1e5bf9a18bbd",
+   "subject": "agent-runtime-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/src/webbuild/devserver.rs:1 dev-server supervision (spawn door, kill-tree, adoption) plus a dev-only preview agent injected into generated apps (preview_agent.rs:1); no hook chain around model/tool calls, no extension loader or session store is assembled - process lifecycle belongs to subprocess-lifecycle",
+   "techniques": []
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:31:15.125Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-runtime-assembly"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

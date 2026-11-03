@@ -41572,6 +41572,56 @@
       "evaluatedTs": "2026-11-03T08:30:52.396Z",
       "worker": "5aec8b7d-f76f-4c1e-9f67-870ea2e3ffaf",
       "techniques": []
+    },
+    "b0cf3902-0739-40a8-8c76-ae594f41421b/agent-runtime-assembly": {
+      "context": "plugins-dev-tools-context",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:31:15.124Z",
+      "worker": "2872940f-8b21-416a-b702-4ebd318a12b4",
+      "techniques": []
+    },
+    "f9c8b6b9-7a46-4c84-a31a-19356b174d10/agent-runtime-assembly": {
+      "context": "resource-tracking",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:31:15.124Z",
+      "worker": "2872940f-8b21-416a-b702-4ebd318a12b4",
+      "techniques": []
+    },
+    "63a0a6fc-fa9a-453c-943d-4579b83f0ca3/agent-runtime-assembly": {
+      "context": "stores",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:31:15.124Z",
+      "worker": "2872940f-8b21-416a-b702-4ebd318a12b4",
+      "techniques": []
+    },
+    "fd092e44-fcec-4418-8337-ed2b7b2c8473/agent-runtime-assembly": {
+      "context": "team-memory",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:31:15.124Z",
+      "worker": "2872940f-8b21-416a-b702-4ebd318a12b4",
+      "techniques": []
+    },
+    "59918f8a-62ca-4e52-9435-1e5bf9a18bbd/agent-runtime-assembly": {
+      "context": "webbuild",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:31:15.124Z",
+      "worker": "2872940f-8b21-416a-b702-4ebd318a12b4",
+      "techniques": []
     }
   }
 }
