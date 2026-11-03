@@ -1,0 +1,46 @@
+{
+ "schema": "conform-run/1",
+ "worker": "94850a18-eec6-419b-907a-d77681f97e5e",
+ "subject": "agent-memory",
+ "evaluatedAt": "2026-11-03T08:18:34.659Z",
+ "pairs": [
+  {
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+   "evaluatedRevision": 52,
+   "techniques": [],
+   "context": "e0a448bc-24d4-4663-ba31-27d4ce378a14",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_deployment/components/cloud/CloudDeploymentsPanel.tsx:4 cloud-deployment UI over agentStore and CloudDeployment rows; the only memory hit in 54 files is React unmount retention (src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:37), no agent-written store, capture, consolidation or recall"
+  },
+  {
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+   "evaluatedRevision": 52,
+   "techniques": [],
+   "context": "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc",
+   "state": "not-applicable",
+   "evidence": "src/features/triggers/sub_studio/system_ops/SystemEventCommitModal.tsx:97 the only memory touch is an operator form choosing the scope of a memory-reflection automation (:138 builds params JSON); the reflection pass itself lives in the engine, judged under webhook-ingestion, so this context holds no store or pipeline stage"
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-memory",
+   "context": "ae80cd74-5beb-4d76-ae0a-16a4b581a2df",
+   "reason": "Only src-tauri/core/src/models/team_memory.rs:10 (a bare TeamMemory record: importance, tags, run_id, persona_id; no decay, supersede or provenance fields) touches the subject; the store policy is already judged as deviation under team-memory and the other 37 files are recipe/build/lab models. Judging the DTO would duplicate that deviation, so left unknown."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:18:34.659Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}

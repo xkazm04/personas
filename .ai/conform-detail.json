@@ -41189,6 +41189,26 @@
         }
       ],
       "registryProposal": "Worth an application note: TS tests that pin a Rust contract by reading .rs (EffortRiskFilter.test.tsx:18 reads IDEA_SCALE_MAX, TriageRuleForm.test.tsx:32 strips comments) sit on a spectrum from good (constant extracted) to weak (substring); technique could name the cross-language variant explicitly."
+    },
+    "e0a448bc-24d4-4663-ba31-27d4ce378a14/agent-memory": {
+      "context": "agents-deployment",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:18:34.659Z",
+      "worker": "94850a18-eec6-419b-907a-d77681f97e5e",
+      "techniques": []
+    },
+    "ff513ec2-b52d-403b-b3e3-b94e45a8c2dc/agent-memory": {
+      "context": "triggers-studio",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:18:34.659Z",
+      "worker": "94850a18-eec6-419b-907a-d77681f97e5e",
+      "techniques": []
     }
   }
 }

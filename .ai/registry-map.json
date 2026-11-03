@@ -2871,7 +2871,11 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_deployment/components/cloud/CloudDeploymentsPanel.tsx:4 cloud-deployment UI over agentStore and CloudDeployment rows; the only memory hit in 54 files is React unmount retention (src/features/agents/sub_deployment/hooks/useDeploymentTest.ts:37), no agent-written store, capture, consolidation or recall",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52
         },
         {
           "subject": "agent-cli-transport",
@@ -39810,7 +39814,11 @@
           "revision": 51,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_studio/system_ops/SystemEventCommitModal.tsx:97 the only memory touch is an operator form choosing the scope of a memory-reflection automation (:138 builds params JSON); the reflection pass itself lives in the engine, judged under webhook-ingestion, so this context holds no store or pipeline stage",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52
         },
         {
           "subject": "streaming-output",
