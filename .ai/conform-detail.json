@@ -41394,6 +41394,23 @@
       "evaluatedTs": "2026-11-03T00:00:00.000Z",
       "worker": "07bf11df-a5ef-4e83-a7ce-44eace0a951f",
       "techniques": []
+    },
+    "969f50a2-b70d-41e3-b573-284a75a67425/mcp-tools": {
+      "context": "prompt-assembly-engine",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:28:22.644Z",
+      "worker": "e980a8ae-5ce1-441f-a2ff-5945bed4f1b4",
+      "techniques": [
+        {
+          "technique": "client-integration",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/engine/src/prompt/cli_args.rs:179 emits --allowedTools from resolve_allowed_tools; the roster is the host side of what the model sees, but the decision lives in the persona resolver, not in prompt assembly"
+        }
+      ],
+      "registryProposal": "Matcher paired mcp-tools by the word tool; a prompt composer that merely names tools is not a tool-protocol surface. Consider a lead for how prompt text that hard-codes tool-family names (assemble.rs:886 lists *_post/*_send/drive_*) is kept in sync with the live catalog - tool-schema-design covers the catalog, not the prose describing it."
     }
   }
 }

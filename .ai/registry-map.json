@@ -30488,7 +30488,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:1292 the context only writes prose that tells the model which mcp__personas__* tools exist (and the spawn-time MCP_TOOLS_UNAVAILABLE_SECTION); it hosts no MCP server, client, registry, transport or result path - those live in src-tauri/src/engine/mcp_tools.rs and src-tauri/src/mcp_server, judged under their own contexts",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "agent-memory",

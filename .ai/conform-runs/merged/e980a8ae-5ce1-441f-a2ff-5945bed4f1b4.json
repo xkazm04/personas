@@ -1,0 +1,58 @@
+{
+ "schema": "conform-run/1",
+ "worker": "e980a8ae-5ce1-441f-a2ff-5945bed4f1b4",
+ "subject": "mcp-tools",
+ "evaluatedAt": "2026-11-03T08:28:22.644Z",
+ "pairs": [
+  {
+   "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+   "subject": "mcp-tools",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src-tauri/engine/src/prompt/assemble.rs:1292 the context only writes prose that tells the model which mcp__personas__* tools exist (and the spawn-time MCP_TOOLS_UNAVAILABLE_SECTION); it hosts no MCP server, client, registry, transport or result path - those live in src-tauri/src/engine/mcp_tools.rs and src-tauri/src/mcp_server, judged under their own contexts",
+   "techniques": [
+    {
+     "technique": "client-integration",
+     "verdict": "not-applicable",
+     "evidence": "src-tauri/engine/src/prompt/cli_args.rs:179 emits --allowedTools from resolve_allowed_tools; the roster is the host side of what the model sees, but the decision lives in the persona resolver, not in prompt assembly"
+    }
+   ],
+   "registryProposal": "Matcher paired mcp-tools by the word tool; a prompt composer that merely names tools is not a tool-protocol surface. Consider a lead for how prompt text that hard-codes tool-family names (assemble.rs:886 lists *_post/*_send/drive_*) is kept in sync with the live catalog - tool-schema-design covers the catalog, not the prose describing it."
+  }
+ ],
+ "declined": [
+  {
+   "subject": "mcp-tools",
+   "context": "3f38546e-e970-4837-97f7-f0504aa32daf",
+   "reason": "map row has an empty paths list, so there is no code to anchor a verdict against"
+  },
+  {
+   "subject": "mcp-tools",
+   "context": "3619ab0d-0367-43d0-b4eb-ec39c1302d65",
+   "reason": "grep for mcp over the picker/design paths finds nothing; MCP surfaces in this subtree sit in desktop/ and schemas/ contexts judged separately; left unknown"
+  },
+  {
+   "subject": "mcp-tools",
+   "context": "6da794b4-7a5f-4087-a4d4-fb8a416456e5",
+   "reason": "no mcp reference in src-tauri/src/commands/execution; match is lexical (tool/agent); left unknown rather than guessed"
+  },
+  {
+   "subject": "mcp-tools",
+   "context": "fbfcd99a-a333-42da-b85e-2ec1f560b4be",
+   "reason": "no mcp reference under agents/sub_connectors; UI connector status only; left unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:28:22.644Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "mcp-tools"
+   ],
+   "techniques": [
+    "client-integration"
+   ],
+   "deviations": 0
+  }
+ ]
+}
