@@ -2290,3 +2290,4 @@
 {"ts":"2026-11-03T12:00:00Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["session-registry","parallel-dispatch"],"deviations":0}
 {"ts":"2026-11-03T00:00:00Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":[],"deviations":0}
 {"ts":"2026-11-03T00:00:00Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":[],"deviations":0}
+{"ts":"2026-11-03T08:26:54.450Z","bundle":"software-engineering","subjects":["settings"],"techniques":["typed-accessors","key-registry","settings-audit-and-history"],"deviations":0}

@@ -9198,64 +9198,81 @@
       "subject": "settings",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:47:20.000Z",
-      "worker": "56a7993f-bb41-4733-84ea-9205ee3d2bbb",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:26:54.450Z",
+      "worker": "ea332cd9-6454-465a-b5f9-b5c470b57b8c",
       "techniques": [
-        {
-          "technique": "key-registry",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/cloud/sync/cursor.rs:34 cursor keys are built from settings_keys::CLOUD_SYNC_CURSOR_PREFIX, which the store allowlists at src-tauri/db/src/settings_keys.rs:1650"
-        },
         {
           "technique": "typed-accessors",
           "verdict": "realized",
-          "evidence": "src-tauri/src/cloud/sync/cursor.rs:12 one accessor per key with the default (off) owned beside it; the store validator restricts the flag to true/false (src-tauri/db/src/settings_keys.rs:2006); reset-to-platform-label is a delete, not a write of the default (cursor.rs:135); peek_cursor (cursor.rs:56) keeps never-synced distinct from the backfill placeholder"
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:12 is_enabled reads settings_keys::CLOUD_SYNC_ENABLED through a typed accessor"
+        },
+        {
+          "technique": "key-registry",
+          "verdict": "realized",
+          "evidence": "src-tauri/db/src/settings_keys.rs:1661 cursor prefix registered in the allowlist"
         },
         {
           "technique": "settings-audit-and-history",
           "verdict": "realized",
-          "evidence": "src-tauri/db/src/settings_keys.rs:2279 device id / last-at / row counter and :2313 the cursor prefix family are declared audit-excluded in the registry, so the 45s tick cannot flood History; the enable toggles keep category sync at :2483"
+          "evidence": "src-tauri/db/src/settings_keys.rs:2338 per-tick cursors excluded from audit; :2503 user toggles audited as sync"
         },
         {
           "technique": "setting-kinds",
           "verdict": "not-judged",
-          "evidence": "store-level taxonomy absence is already recorded on the db pair; this context's keys are one flag defaulting off plus engine bookkeeping"
+          "evidence": "store-level taxonomy absence is already recorded on the db pair; this context's keys are one flag defaulting off plus engine bookkeeping",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "save-experience",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 backend-only module persisting engine bookkeeping; the context has no settings surface"
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 backend-only module persisting engine bookkeeping; the context has no settings surface",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "read-batching",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/cloud/sync/mod.rs:448 reads happen engine-side per background pass over the local pool, not as a boot fan-out across the IPC boundary"
+          "evidence": "src-tauri/src/cloud/sync/mod.rs:448 reads happen engine-side per background pass over the local pool, not as a boot fan-out across the IPC boundary",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "inherited-default-override",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/cloud/sync/cursor.rs:142 the unnamed-device fallback is a compile-time per-OS constant, not a live upstream source"
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:142 the unnamed-device fallback is a compile-time per-OS constant, not a live upstream source",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "cross-source-precedence-chain",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 one source only: the app_settings table"
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 one source only: the app_settings table",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "presence-decides-precedence",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 the store is app-writable; no read-only source carries two names for one key"
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 the store is app-writable; no read-only source carries two names for one key",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "in-place-document-patch",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 row-per-key store, not one stored document"
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 row-per-key store, not one stored document",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "applied-defaults-ledger",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 no shipped default entries in a user-editable collection"
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:2 no shipped default entries in a user-editable collection",
+          "carriedFrom": "2026-10-09"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:12 the sync pipeline reads its flag, cursors and counters only through typed accessors over registered keys (cursor prefix allowlisted at src-tauri/db/src/settings_keys.rs:1650), and its per-tick bookkeeping is excluded from the audit trail (settings_keys.rs:2279, :2313) while the user-facing enable toggle is audited as sync (:2483)",
+          "evaluatedAt": "2026-10-09T16:47:20.000Z",
+          "worker": "56a7993f-bb41-4733-84ea-9205ee3d2bbb",
+          "reason": "replaced by ea332cd9-6454-465a-b5f9-b5c470b57b8c"
         }
       ]
     },
@@ -9264,49 +9281,65 @@
       "subject": "settings",
       "bundle": "software-engineering",
       "state": "conformant",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T16:47:20.000Z",
-      "worker": "56a7993f-bb41-4733-84ea-9205ee3d2bbb",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:26:54.450Z",
+      "worker": "ea332cd9-6454-465a-b5f9-b5c470b57b8c",
       "techniques": [
         {
           "technique": "settings-audit-and-history",
           "verdict": "realized",
-          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:28 before_value beside after_value (:31) makes revert and no-op detection possible; category :19 makes History filterable by feature; actor :35 is Option, None when the layer cannot attribute"
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:13 record has every contract field with optional actor at :35"
         },
         {
           "technique": "key-registry",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 serde/ts-rs type definitions only; no key space is declared or read here"
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 serde/ts-rs type definitions only; no key space is declared or read here",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "typed-accessors",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no settings read path in this context"
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no settings read path in this context",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "read-batching",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no read path"
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no read path",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "setting-kinds",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no key classification lives in the model crate"
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no key classification lives in the model crate",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "save-experience",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no settings surface"
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no settings surface",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "inherited-default-override",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no defaults resolved here"
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no defaults resolved here",
+          "carriedFrom": "2026-10-09"
         },
         {
           "technique": "config-backup-and-restore",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no persisted config file owned here"
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:1 no persisted config file owned here",
+          "carriedFrom": "2026-10-09"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:13 SettingsAuditEntry carries every field the record contract names (category :19, key :23, old :28, new :31, optional origin :35, timestamp :36), with origin optional rather than invented as the technique sanctions; the rest of the subject has no surface in a type-definition context",
+          "evaluatedAt": "2026-10-09T16:47:20.000Z",
+          "worker": "56a7993f-bb41-4733-84ea-9205ee3d2bbb",
+          "reason": "replaced by ea332cd9-6454-465a-b5f9-b5c470b57b8c"
         }
       ]
     },

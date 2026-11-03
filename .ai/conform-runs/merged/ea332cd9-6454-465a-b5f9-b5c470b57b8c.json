@@ -1,0 +1,62 @@
+{
+ "schema": "conform-run/1",
+ "worker": "ea332cd9-6454-465a-b5f9-b5c470b57b8c",
+ "subject": "settings",
+ "evaluatedAt": "2026-11-03T08:26:54.450Z",
+ "pairs": [
+  {
+   "context": "937c9d47-b0ca-4e3b-90e3-25baefe04474",
+   "subject": "settings",
+   "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src-tauri/src/cloud/sync/cursor.rs:12 sync flag read through a typed accessor over a registered key; cursor prefix is registered (src-tauri/db/src/settings_keys.rs:1661), excluded from the audit trail (:2338) while the user-facing toggle is audited as sync (:2503)",
+   "techniques": [
+    {
+     "technique": "typed-accessors",
+     "verdict": "realized",
+     "evidence": "src-tauri/src/cloud/sync/cursor.rs:12 is_enabled reads settings_keys::CLOUD_SYNC_ENABLED through a typed accessor"
+    },
+    {
+     "technique": "key-registry",
+     "verdict": "realized",
+     "evidence": "src-tauri/db/src/settings_keys.rs:1661 cursor prefix registered in the allowlist"
+    },
+    {
+     "technique": "settings-audit-and-history",
+     "verdict": "realized",
+     "evidence": "src-tauri/db/src/settings_keys.rs:2338 per-tick cursors excluded from audit; :2503 user toggles audited as sync"
+    }
+   ]
+  },
+  {
+   "context": "a7ece012-8300-4780-b286-b9cea81801fc",
+   "subject": "settings",
+   "bundle": "software-engineering",
+   "state": "conformant",
+   "evidence": "src-tauri/core/src/models/settings_audit_log.rs:13 SettingsAuditEntry carries category :19, setting_key :23, before :28, after :31, optional actor :35, created_at :36 - optional origin not invented",
+   "techniques": [
+    {
+     "technique": "settings-audit-and-history",
+     "verdict": "realized",
+     "evidence": "src-tauri/core/src/models/settings_audit_log.rs:13 record has every contract field with optional actor at :35"
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:26:54.450Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "settings"
+   ],
+   "techniques": [
+    "typed-accessors",
+    "key-registry",
+    "settings-audit-and-history"
+   ],
+   "deviations": 0
+  }
+ ]
+}

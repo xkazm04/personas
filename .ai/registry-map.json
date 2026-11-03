@@ -21256,8 +21256,8 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:13 SettingsAuditEntry carries every field the record contract names (category :19, key :23, old :28, new :31, optional origin :35, timestamp :36), with origin optional rather than invented as the technique sanctions; the rest of the subject has no surface in a type-definition context",
-          "evaluatedAt": "2026-10-09",
+          "evidence": "src-tauri/core/src/models/settings_audit_log.rs:13 SettingsAuditEntry carries category :19, setting_key :23, before :28, after :31, optional actor :35, created_at :36 - optional origin not invented",
+          "evaluatedAt": "2026-11-03",
           "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
           "evaluatedRevision": 13,
           "revisionsBehind": 0
@@ -35019,8 +35019,8 @@
           "changedAt": "2026-09-05",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src-tauri/src/cloud/sync/cursor.rs:12 the sync pipeline reads its flag, cursors and counters only through typed accessors over registered keys (cursor prefix allowlisted at src-tauri/db/src/settings_keys.rs:1650), and its per-tick bookkeeping is excluded from the audit trail (settings_keys.rs:2279, :2313) while the user-facing enable toggle is audited as sync (:2483)",
-          "evaluatedAt": "2026-10-09",
+          "evidence": "src-tauri/src/cloud/sync/cursor.rs:12 sync flag read through a typed accessor over a registered key; cursor prefix is registered (src-tauri/db/src/settings_keys.rs:1661), excluded from the audit trail (:2338) while the user-facing toggle is audited as sync (:2503)",
+          "evaluatedAt": "2026-11-03",
           "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
           "evaluatedRevision": 13,
           "revisionsBehind": 0
