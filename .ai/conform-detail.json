@@ -2140,19 +2140,35 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:16:30.000Z",
-      "worker": "a8cfb2ff-e320-4851-83e6-2d58684935b9",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T22:36:54.467Z",
+      "worker": "967d004d-d36d-4adf-9777-760532d8c107",
       "techniques": [
+        {
+          "technique": "rollup-compaction",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 A rollup should leave its members linked, auditable and out of default reads. Here they are deleted."
+        },
         {
           "technique": "consolidation",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 DELETE of delete_id_a inside the merge tx; supersedence requires the overturned items stay inspectable"
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1631 Only one source_execution_id survives the merge, so the other original's provenance is dropped, and no supersedence lineage is recorded."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:131 Keeping one side retires the other to the archive tier (never injected, still searchable) rather than deleting it."
+        },
+        {
+          "technique": "scope-before-similarity",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:148 A similarity-detected pair from two personas is refused a merge, and the backend enforces the same rule (memories.rs:1581)."
         },
         {
           "technique": "memory-governance",
           "verdict": "deviation",
-          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:156 the review surface's only consolidating action is irreversible"
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:156 the review surface's only consolidating action is irreversible",
+          "carriedFrom": "2026-10-21"
         }
       ],
       "superseded": [
@@ -2176,6 +2192,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by a8cfb2ff-e320-4851-83e6-2d58684935b9"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:156 resolves a duplicate via mergeMemoriesAction, still the hard-DELETE merge at src-tauri/db/src/repos/core/memories.rs:1662 that drops both originals and their provenance rows; re-confirmed at rev 51, anchors moved",
+          "evaluatedAt": "2026-10-21T12:16:30.000Z",
+          "worker": "a8cfb2ff-e320-4851-83e6-2d58684935b9",
+          "reason": "replaced by 967d004d-d36d-4adf-9777-760532d8c107"
         }
       ]
     },
@@ -2184,19 +2207,39 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:04:48.459Z",
-      "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T22:36:54.467Z",
+      "worker": "967d004d-d36d-4adf-9777-760532d8c107",
       "techniques": [
         {
           "technique": "decay-and-forgetting",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477 cap enforcement is a trapdoor DELETE ordered by importance/created_at, not demotion"
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:478 Hard delete instead of demote, with no audit trail. The manual tier as a whole is exempt from retirement (:437)."
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:289 Each node's raw output, cut at 500 bytes, is written straight into the injected team store as an 'observation'. No distillation pass runs, so transcript text is served as team memory."
         },
         {
           "technique": "memory-governance",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:289 operator delete is a hard DELETE; edits keep a revision log (:226) but retirement keeps none"
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:250 The human-edit path rewrites tags into a revisions object, and for JSON-object tags without revisions (e.g. the conversation pin's {source:'conversation-pin'}) it resets source to an empty string. The marker of who authored the evidence is erased on the first edit."
+        },
+        {
+          "technique": "recall-injection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:1210 A failed read collapses into an empty one: the memory block is omitted and the model cannot tell 'store failed' from 'nothing stored'."
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/pipeline_executor.rs:1219 Runs inject 20 of up to 200 rows (the scanner injects 12), with no in-band notice of how many were left out or why. Meanwhile the operator's panel pages through every row, so the operator and the agent see different stores."
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:129 Recall order is the exact mirror of the eviction order (:481 importance ASC, created_at ASC), so remembering and forgetting share one ordering. There is no usage term."
         }
       ],
       "superseded": [
@@ -2220,6 +2263,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by 8fb27c07-7f33-4b12-ad6b-9b9a01366973"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477 evict_excess, called after every pipeline run that created memories (src-tauri/src/engine/pipeline_executor.rs:1108), hard-DELETEs the lowest-importance auto memories with no demotion tier - a scoring bug becomes permanent amnesia; re-confirmed at revision 51",
+          "evaluatedAt": "2026-10-16T18:04:48.459Z",
+          "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
+          "reason": "replaced by 967d004d-d36d-4adf-9777-760532d8c107"
         }
       ]
     },
@@ -7599,19 +7649,31 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T17:22:13.000Z",
-      "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T22:36:54.467Z",
+      "worker": "967d004d-d36d-4adf-9777-760532d8c107",
       "techniques": [
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:28 No pointer to the source TeamChannelItem (item.id/kind are dropped), so the stored belief has no trail back to the episode it came from. The first human edit then erases even this tag: team_memories.rs:250 resets an object-shaped tag's source to an empty string."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:21 run_id null puts every pin in the manual tier, and evict_excess exempts that whole tier from retirement (src-tauri/db/src/repos/resources/team_memories.rs:437). Pins never age out, yet they count toward the cap that evicts auto memories."
+        },
         {
           "technique": "memory-governance",
           "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:23 the evidence's author is not harness-stamped from the channel (section 'The evidence has an author')"
+          "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:23 the evidence's author is not harness-stamped from the channel (section 'The evidence has an author')",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "episodic-capture",
           "verdict": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:21 run_id null and no pointer to the channel item, so the pinned row's provenance does not terminate at a real event"
+          "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:21 run_id null and no pointer to the channel item, so the pinned row's provenance does not terminate at a real event",
+          "carriedFrom": "2026-10-21"
         }
       ],
       "superseded": [
@@ -7628,6 +7690,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by 64299ba0-27fd-40c1-8af0-ddc7df52b12c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:19 pins a channel row verbatim into team memory with persona_id = the speaker (:23), run_id null and provenance only {source:'conversation-pin'} (:28); it is injected into scanner prompts (src-tauri/src/commands/infrastructure/idea_scanner.rs:623), so relayed third-party text becomes a standing team belief in the speaker's voice",
+          "evaluatedAt": "2026-10-21T17:22:13.000Z",
+          "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+          "reason": "replaced by 967d004d-d36d-4adf-9777-760532d8c107"
         }
       ]
     },
@@ -16150,24 +16219,35 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T17:22:13.000Z",
-      "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T22:36:54.467Z",
+      "worker": "967d004d-d36d-4adf-9777-760532d8c107",
       "techniques": [
         {
-          "technique": "memory-governance",
+          "technique": "consolidation",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819 an operator correction is remembered without its stated grounds, so an audit of the constraint cannot answer why"
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:80 An operator correction should supersede immediately and keep the lineage. Here a later verdict on the same idea is silently dropped from project memory, and in the team ledger it replaces the earlier row with no link to it."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:832 Only a human triage ruling becomes a standing constraint. A machine decline is an advisory decision at importance 5 (:833) whose text says it is not a ruling. The earlier stale deviation is fixed: the reviewer's rejection_reason now reaches the memory body (dev_tools.rs:852 and :784)."
+        },
+        {
+          "technique": "rejected-revision-leaves-its-evidence",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/quick-answer/triage/triageDispatch.ts:215 A rejected evolution promotion still sends the reviewer's note to the backend as the decision_note, so the diagnosis survives when the artifact is not installed."
+        },
+        {
+          "technique": "durable-store-failure-posture",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageJournal.ts:115 The triage journal is a reviewer-telemetry ring in localStorage that no model reads, so the agent-memory precondition is weak. Even so, it reads a corrupt store as empty, and recordDecision (:167) then rewrites over it, which is the very failure this technique names. Flagged for the reviewer rather than judged."
         },
         {
           "technique": "pending-beliefs-live-apart",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819 the rejection bars the whole subject forever instead of recording the claim as refused for its reason; a re-scoped idea is silently blocked"
-        },
-        {
-          "technique": "memory-governance",
-          "verdict": "realized (author tier)",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:797 automated rejections are advisory importance-5 decisions, human ones constraints"
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:819 the rejection bars the whole subject forever instead of recording the claim as refused for its reason; a re-scoped idea is silently blocked",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "memory-value-model",
@@ -16190,6 +16270,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by 64299ba0-27fd-40c1-8af0-ddc7df52b12c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:804 the idea-verdict memory is built from title+description only and :819 makes a human rejection a permanent 'do not re-surface' constraint; rejection_reason (src-tauri/core/src/models/dev_tools.rs:1145) never reaches it, though the triage deck says it does (src/features/agents/quick-answer/triage/triageAdapters.ts:790)",
+          "evaluatedAt": "2026-10-21T17:22:13.000Z",
+          "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+          "reason": "replaced by 967d004d-d36d-4adf-9777-760532d8c107"
         }
       ]
     },

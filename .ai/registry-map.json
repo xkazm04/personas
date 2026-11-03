@@ -4192,12 +4192,11 @@
           "changedAt": "2026-10-25",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:804 the idea-verdict memory is built from title+description only and :819 makes a human rejection a permanent 'do not re-surface' constraint; rejection_reason (src-tauri/core/src/models/dev_tools.rs:1145) never reaches it, though the triage deck says it does (src/features/agents/quick-answer/triage/triageAdapters.ts:790)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools.rs:868 Each idea's verdict memory is keyed one row per idea through INSERT OR IGNORE, so when a human reverses a machine verdict (scan_contract.rs:306 names this flow) the project store the task executor reads keeps the first, machine verdict. The team ledger meanwhile overwrites its row in place (dev_tools.rs:922), so the two stores disagree and neither records supersedence.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "fleet-orchestration",
@@ -14522,12 +14521,11 @@
           "changedAt": "2026-10-25",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:19 pins a channel row verbatim into team memory with persona_id = the speaker (:23), run_id null and provenance only {source:'conversation-pin'} (:28); it is injected into scanner prompts (src-tauri/src/commands/infrastructure/idea_scanner.rs:623), so relayed third-party text becomes a standing team belief in the speaker's voice",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/fleet/monitor/channels/useTeamPin.ts:28 A pinned channel row becomes a team memory whose only provenance is the channel name, with no source row id, row kind or pinning actor. It is then injected into scanner prompts as a bare '- [category] title: content' line (src-tauri/src/commands/infrastructure/idea_scanner.rs:628), so 'why does the team believe this' cannot be traced back to the event.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "fleet-orchestration",
@@ -25489,13 +25487,12 @@
           "changedAt": "2026-10-25",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:156 resolves a duplicate via mergeMemoriesAction, still the hard-DELETE merge at src-tauri/db/src/repos/core/memories.rs:1662 that drops both originals and their provenance rows; re-confirmed at rev 51, anchors moved",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:156 Resolving a duplicate by merge calls memories::merge, which hard-DELETEs both originals (src-tauri/db/src/repos/core/memories.rs:1662/1666) with no superseded-by link. The members cannot be audited or restored, even though the keep_a/keep_b path in the same component was changed to archive instead.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "source": "conform",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
@@ -37944,13 +37941,12 @@
           "changedAt": "2026-10-25",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:477 evict_excess, called after every pipeline run that created memories (src-tauri/src/engine/pipeline_executor.rs:1108), hard-DELETEs the lowest-importance auto memories with no demotion tier - a scoring bug becomes permanent amnesia; re-confirmed at revision 51",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src-tauri/db/src/repos/resources/team_memories.rs:478 After every pipeline run that created memories (pipeline_executor.rs:1144), evict_excess hard-DELETEs the lowest-importance auto memories, with no demotion tier and only a tracing count left behind. A scoring mistake therefore becomes permanent loss, and nothing records what was forgotten.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "source": "conform",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
