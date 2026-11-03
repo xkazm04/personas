@@ -30136,8 +30136,12 @@
           "revision": 9,
           "changedAt": "2026-09-09",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 10
+          "state": "not-applicable",
+          "priorNotApplicable": 10,
+          "evidence": "src/features/shared/components/progress/ContentLoader.tsx:33 and src/features/shared/components/progress/EstimatedProgressBar.tsx:40 are presentational loaders/progress bars - no request path and no candidate set of interchangeable upstreams, so the plane's precondition is unmet",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:f268193750c0a517",
+          "evaluatedRevision": 9
         },
         {
           "subject": "agent-memory",

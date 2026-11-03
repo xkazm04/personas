@@ -41659,6 +41659,16 @@
       "worker": "cdf022e5-3d12-4733-b7d2-edbe4660339b",
       "techniques": [],
       "registryProposal": "agent-instruction-files matches 80 contexts, mostly UI/IPC code with no instruction-file authoring; the matcher keys on persona/instructions vocabulary. Consider a precondition note (the code writes or ships an AGENTS.md/CLAUDE.md-style file to an agent host) to reduce false pairings."
+    },
+    "89d44c76-ec4c-4388-843e-503cf6ca2507/multi-provider-gateway-plane": {
+      "context": "progress-transform",
+      "subject": "multi-provider-gateway-plane",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T00:00:00.000Z",
+      "worker": "5deaffe5-b04f-425e-bf86-ff1e30a791e4",
+      "techniques": []
     }
   }
 }
