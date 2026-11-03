@@ -3035,7 +3035,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_design/DesignHub.tsx:6 tabbed UI hub with lazy panels; kpRequirements.ts:1 only parses a persona row for display, no prompt family is assembled here",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "fleet-orchestration",
@@ -4090,7 +4094,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_settings/components/assertionConfig.ts:1 builds output-assertion config JSON for the engine; settings UI, no prompt assembly",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "mcp-tools",
@@ -4259,7 +4267,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/agents/personas.ts:293 IPC wrappers that pass prompt edit ops (UpdatePrompt) through to Rust; no prompt is assembled, budgeted or fingerprinted in this context",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "agent-runtime-assembly",
@@ -18291,7 +18303,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:96 the context is frontend pipeline middleware that owns no assembler; the one prompt-bound write is a typed key merged into input_data JSON (not raw suffix text), which the Rust assembler in src-tauri/engine/src/prompt/assemble.rs renders",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "quality-gates",
@@ -30414,8 +30430,8 @@
           "changedAt": "2026-10-14",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/prompt/assemble.rs:112 assemble_prompt still returns a bare String and the runner appends layers after it returns (src-tauri/src/engine/runner/mod.rs:1488 format!(\"{prompt_text}{mem_section}\"); src-tauri/engine/src/prepared_run_cache.rs:156 same), so late layers sit outside budget, fence and fingerprint; append_spawn_time_section (assemble.rs:1236) is a named post-return append, not a section input. Re-judged against revision 44; verdict unchanged (the rev 43->44 amendment touches only foreign-harness-history-folding, which does not govern this context)",
-          "evaluatedAt": "2026-10-15",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:131 assemble_prompt still returns a bare String and the runner appends after it returns (src-tauri/src/engine/runner/mod.rs:1516 format!(\"{prompt_text}{mem_section}\"); src-tauri/engine/src/prepared_run_cache.rs:156 same; append_spawn_time_section assemble.rs:1278 is a named post-return append), so late layers sit outside budget, fence and fingerprint; pinned-prompt-clock: variables.rs:35 still reads a per-request sub-second now (latent, no shipped template uses it). Re-verified at rev 44 against current anchors",
+          "evaluatedAt": "2026-11-03",
           "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
           "evaluatedRevision": 44,
           "source": "conform",

@@ -2284,3 +2284,4 @@
 {"ts":"2026-11-03T08:18:35.033Z","bundle":"software-engineering","subjects":["test-harness"],"techniques":["pin-the-call-not-the-name","unreached-decisions-pin-nothing","negative-control-tests"],"deviations":1}
 {"ts":"2026-11-03T08:18:34.659Z","bundle":"software-engineering","subjects":["agent-memory"],"techniques":[],"deviations":0}
 {"ts":"2026-11-03T00:00:00Z","bundle":"software-engineering","subjects":["quality-gates"],"techniques":[],"deviations":0}
+{"ts":"2026-11-03T08:21:17.339Z","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["layered-composition","pinned-prompt-clock","variable-interpolation"],"deviations":1}

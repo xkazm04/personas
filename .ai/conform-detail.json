@@ -691,30 +691,30 @@
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T16:11:19.025Z",
-      "worker": "4a53b76c-2473-47f7-8a91-70274594a907",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:21:17.339Z",
+      "worker": "02368701-5509-4682-b074-5df49e23ae22",
       "techniques": [
         {
           "technique": "layered-composition",
-          "verdict": "deviation: door does not seal",
-          "evidence": "src-tauri/engine/src/prompt/assemble.rs:112 returns String; src-tauri/src/engine/runner/mod.rs:1488 appends after return"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1516 post-return concatenation onto the assembled String"
+        },
+        {
+          "technique": "pinned-prompt-clock",
+          "verdict": "deviation (latent)",
+          "evidence": "src-tauri/engine/src/prompt/variables.rs:35 now inserted per assembly with sub-second precision, not frozen per session; spawn-time section is correctly tail-appended at src-tauri/src/engine/runner/mod.rs:1726"
         },
         {
           "technique": "fingerprinting-and-cache-keys",
           "verdict": "deviation: appends sit outside any fingerprint",
-          "evidence": "src-tauri/engine/src/prepared_run_cache.rs:156 appends mem_section to cached prompt_text"
+          "evidence": "src-tauri/engine/src/prepared_run_cache.rs:156 appends mem_section to cached prompt_text",
+          "carriedFrom": "2026-10-15"
         },
         {
           "technique": "variable-interpolation",
           "verdict": "deviation: an unresolved {{var}} ships literally to the model and is only warn-logged; no fail/default/omit choice per variable",
           "evidence": "src-tauri/engine/src/prompt/variables.rs:122 returns the raw placeholder; the warn is at :128",
-          "carriedFrom": "2026-10-14"
-        },
-        {
-          "technique": "pinned-prompt-clock",
-          "verdict": "deviation: {{now}}/{{today}}/{{iso8601}} are read from the wall clock on every render, so any persona template that uses them is byte-unstable per call (and {{now}} per second)",
-          "evidence": "src-tauri/engine/src/prompt/variables.rs:18 chrono::Utc::now() and :24 'today'; run_budget_section also embeds clock times at assemble.rs:1201 (tail, so acceptable by the gradient)",
           "carriedFrom": "2026-10-14"
         },
         {
@@ -724,6 +724,7 @@
           "carriedFrom": "2026-10-14"
         }
       ],
+      "registryProposal": "rust--pinned-prompt-clock--personas cites assemble.rs:1172 and runner/mod.rs:1690; the tree has moved to assemble.rs:1249 and runner/mod.rs:1726, and variables.rs now sits at :35. The claim still holds; refresh the anchors.",
       "superseded": [
         {
           "state": "deviation",
@@ -738,6 +739,13 @@
           "evaluatedAt": "2026-10-14T00:00:00.000Z",
           "worker": "03ab05cd-5f89-4d7c-bd2c-1d7e91fc69b2",
           "reason": "replaced by 4a53b76c-2473-47f7-8a91-70274594a907"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:112 assemble_prompt still returns a bare String and the runner appends layers after it returns (src-tauri/src/engine/runner/mod.rs:1488 format!(\"{prompt_text}{mem_section}\"); src-tauri/engine/src/prepared_run_cache.rs:156 same), so late layers sit outside budget, fence and fingerprint; append_spawn_time_section (assemble.rs:1236) is a named post-return append, not a section input. Re-judged against revision 44; verdict unchanged (the rev 43->44 amendment touches only foreign-harness-history-folding, which does not govern this context)",
+          "evaluatedAt": "2026-10-15T16:11:19.025Z",
+          "worker": "4a53b76c-2473-47f7-8a91-70274594a907",
+          "reason": "replaced by 02368701-5509-4682-b074-5df49e23ae22"
         }
       ]
     },
@@ -41220,6 +41228,46 @@
       "worker": "469d6ac6-9a2a-4e7a-81b0-ceeeb67c883f",
       "techniques": [],
       "registryProposal": "Matcher resonance on pipeline/gate/job vocabulary: a product feature that DISPLAYS a third party's CI is not a gate. Consider a precondition line in quality-gates.md separating gating one's own pipeline from monitoring someone else's; cicd-monitoring should govern plugins-gitlab."
+    },
+    "1db5c86e-3237-4d2a-8e2f-1426d680757c/prompt-assembly": {
+      "context": "lib-execution",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:21:17.339Z",
+      "worker": "02368701-5509-4682-b074-5df49e23ae22",
+      "techniques": []
+    },
+    "895b4bb2-16fd-4e8e-aae8-11315fe6436b/prompt-assembly": {
+      "context": "api-agents",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:21:17.339Z",
+      "worker": "02368701-5509-4682-b074-5df49e23ae22",
+      "techniques": []
+    },
+    "8650ca36-36fe-4862-98f5-745e866a2687/prompt-assembly": {
+      "context": "agents-design",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:21:17.339Z",
+      "worker": "02368701-5509-4682-b074-5df49e23ae22",
+      "techniques": []
+    },
+    "5d538a29-a2bb-4d61-8ec2-c51bcde105fe/prompt-assembly": {
+      "context": "agents-use-cases",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:21:17.339Z",
+      "worker": "02368701-5509-4682-b074-5df49e23ae22",
+      "techniques": []
     }
   }
 }

@@ -1,0 +1,82 @@
+{
+ "schema": "conform-run/1",
+ "worker": "02368701-5509-4682-b074-5df49e23ae22",
+ "subject": "prompt-assembly",
+ "evaluatedAt": "2026-11-03T08:21:17.339Z",
+ "pairs": [
+  {
+   "context": "969f50a2-b70d-41e3-b573-284a75a67425",
+   "subject": "prompt-assembly",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/prompt/assemble.rs:131 assemble_prompt still returns a bare String and the runner appends after it returns (src-tauri/src/engine/runner/mod.rs:1516 format!(\"{prompt_text}{mem_section}\"); src-tauri/engine/src/prepared_run_cache.rs:156 same; append_spawn_time_section assemble.rs:1278 is a named post-return append), so late layers sit outside budget, fence and fingerprint; pinned-prompt-clock: variables.rs:35 still reads a per-request sub-second now (latent, no shipped template uses it). Re-verified at rev 44 against current anchors",
+   "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+   "evaluatedRevision": 44,
+   "techniques": [
+    {
+     "technique": "layered-composition",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/engine/runner/mod.rs:1516 post-return concatenation onto the assembled String"
+    },
+    {
+     "technique": "pinned-prompt-clock",
+     "verdict": "deviation (latent)",
+     "evidence": "src-tauri/engine/src/prompt/variables.rs:35 now inserted per assembly with sub-second precision, not frozen per session; spawn-time section is correctly tail-appended at src-tauri/src/engine/runner/mod.rs:1726"
+    }
+   ],
+   "registryProposal": "rust--pinned-prompt-clock--personas cites assemble.rs:1172 and runner/mod.rs:1690; the tree has moved to assemble.rs:1249 and runner/mod.rs:1726, and variables.rs now sits at :35. The claim still holds; refresh the anchors."
+  },
+  {
+   "context": "1db5c86e-3237-4d2a-8e2f-1426d680757c",
+   "subject": "prompt-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/lib/execution/knowledgeMiddleware.ts:96 the context is frontend pipeline middleware that owns no assembler; the one prompt-bound write is a typed key merged into input_data JSON (not raw suffix text), which the Rust assembler in src-tauri/engine/src/prompt/assemble.rs renders",
+   "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+   "evaluatedRevision": 44
+  },
+  {
+   "context": "895b4bb2-16fd-4e8e-aae8-11315fe6436b",
+   "subject": "prompt-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/api/agents/personas.ts:293 IPC wrappers that pass prompt edit ops (UpdatePrompt) through to Rust; no prompt is assembled, budgeted or fingerprinted in this context",
+   "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+   "evaluatedRevision": 44
+  },
+  {
+   "context": "8650ca36-36fe-4862-98f5-745e866a2687",
+   "subject": "prompt-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_design/DesignHub.tsx:6 tabbed UI hub with lazy panels; kpRequirements.ts:1 only parses a persona row for display, no prompt family is assembled here",
+   "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+   "evaluatedRevision": 44
+  },
+  {
+   "context": "5d538a29-a2bb-4d61-8ec2-c51bcde105fe",
+   "subject": "prompt-assembly",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_settings/components/assertionConfig.ts:1 builds output-assertion config JSON for the engine; settings UI, no prompt assembly",
+   "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+   "evaluatedRevision": 44
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:21:17.339Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "prompt-assembly"
+   ],
+   "techniques": [
+    "layered-composition",
+    "pinned-prompt-clock",
+    "variable-interpolation"
+   ],
+   "deviations": 1
+  }
+ ]
+}
