@@ -1,0 +1,89 @@
+{
+ "schema": "conform-run/1",
+ "worker": "61954eee-a18f-4544-8ae1-f9c3514c2972",
+ "subject": "table",
+ "evaluatedAt": "2026-11-03T10:17:33.883210+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "templates-draft-editor",
+   "subject": "table",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/templates/sub_explore/level2/DomainTable.tsx:58 The context's one table (Explore level-2 DomainTable) sorts with a comparator that has no row-identity tiebreaker and no explicit reader locale, a catalog load failure renders as 'No matches.', and the filter count is not announced, so three of the standard's techniques are realized in their named failure shape.",
+   "techniques": [
+    {
+     "technique": "sorting",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_explore/level2/DomainTable.tsx:58 Comparator returns equal for distinct rows (many ties on category/kind/tools); no identity tiebreaker is appended, localeCompare gets no explicit reader locale, and nothing announces the sort change (no live region or caption). The header does expose aria-sort and is a real button (line 192/195)."
+    },
+    {
+     "technique": "loading-and-empty-states",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_explore/useExploreCatalog.ts:118 On getTemplateCatalog failure the hook only clears loading and exposes no error, so DomainTable falls through to the l2_no_matches row: error wears empty's clothes, with no retry. Empty is untyped (does not name the predicate). The delayed (120ms+) ghost rows under persistent chrome are conformant."
+    },
+    {
+     "technique": "filtering",
+     "verdict": "deviation",
+     "evidence": "src/features/templates/sub_explore/level2/DomainTable.tsx:145 Keystroke filtering is fine in the all-client regime, but the result count is not a status message (no role=status/aria-live), there is no single clear action across the three axes, and the empty text does not name the applied predicate. Also the category chip set is recomputed per type (line 47), so a selected category can vanish from the chips while still applied."
+    },
+    {
+     "technique": "client-server-split",
+     "verdict": "conformant",
+     "evidence": "src/features/templates/sub_explore/level2/DomainTable.tsx:53 All-client regime over a complete bundled dataset (template catalog + build-time recipe index): filter, sort and count all run on the tier holding every row."
+    },
+    {
+     "technique": "performance",
+     "verdict": "conformant",
+     "evidence": "src/features/templates/sub_explore/level2/DomainTable.tsx:112 Rows keyed by system identity (kind+id), row derivation memoized; no premature windowing for a catalog of a few hundred rows."
+    },
+    {
+     "technique": "grid-keyboard-model",
+     "verdict": "conformant",
+     "evidence": "src/features/templates/sub_explore/level2/DomainTable.tsx:114 Cells are read-only text, so it stays a native table with each actionable row a tab stop opened by Enter/Space. Judgment call: on large domains that is one tab stop per row, which is the cost the technique names, and the row has no role saying it is actionable."
+    },
+    {
+     "technique": "pagination",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_explore/level2/DomainTable.tsx:111 There is no window. Every row of a finite, bundled per-domain catalog renders (132 recipes in total, split across 7 domains), so offset/keyset decisions do not arise. The footer says 'shown', which is an honest bound."
+    },
+    {
+     "technique": "one-door-for-range-writes",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_explore/level2/DomainTable.tsx:122 Cells are read-only display. A grep of sub_explore and sub_presets found no paste, fill or edit path."
+    },
+    {
+     "technique": "clipboard-range-round-trip",
+     "verdict": "not-applicable",
+     "evidence": "src/features/templates/sub_explore/level2/DomainTable.tsx:132 Read-only cells with no range selection. A grep found no clipboard or onPaste code in the context."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-03T10:17:33.883210+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "table"
+   ],
+   "techniques": [
+    "client-server-split",
+    "clipboard-range-round-trip",
+    "filtering",
+    "grid-keyboard-model",
+    "loading-and-empty-states",
+    "one-door-for-range-writes",
+    "pagination",
+    "performance",
+    "sorting"
+   ],
+   "deviations": 1,
+   "context": "templates-draft-editor",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

@@ -2305,3 +2305,4 @@
 {"ts":"2026-11-03T08:36:53.007Z","bundle":"localization","subjects":["translation-pipeline-topology"],"techniques":["language-registry-single-source"],"deviations":2}
 {"ts":"2026-11-03T08:39:18.136Z","bundle":"software-engineering","subjects":["codebase-scanning"],"techniques":[],"deviations":0}
 {"ts":"2026-11-03T00:00:00Z","bundle":"software-engineering","subjects":["realtime-events"],"techniques":["event-registry","subscription-lifecycle"],"deviations":1}
+{"ts":"2026-11-03T10:17:33.883210+00:00","bundle":"software-engineering","subjects":["table"],"techniques":["client-server-split","clipboard-range-round-trip","filtering","grid-keyboard-model","loading-and-empty-states","one-door-for-range-writes","pagination","performance","sorting"],"deviations":1,"context":"templates-draft-editor","via":"curator-multi:claude","model":"claude-opus-5-5"}

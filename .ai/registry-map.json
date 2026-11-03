@@ -40996,7 +40996,11 @@
           "revision": 14,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/templates/sub_explore/level2/DomainTable.tsx:58 The context's one table (Explore level-2 DomainTable) sorts with a comparator that has no row-identity tiebreaker and no explicit reader locale, a catalog load failure renders as 'No matches.', and the filter count is not announced, so three of the standard's techniques are realized in their named failure shape.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:c587a204413d5373",
+          "evaluatedRevision": 14
         },
         {
           "subject": "wizard-flows",
