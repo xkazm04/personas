@@ -11294,7 +11294,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools/git_ops.rs:174 the only run of project code is dev_tools_run_tests (:161), an auth-gated, operator-invoked test run in the operator's own project root (reading-is-not-running's knowingly-armed exclusion); the context fetches, unpacks and resolves no dependencies",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "test-harness",
@@ -30072,7 +30076,11 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/progress/ContentLoader.tsx:19 pure presentational progress/skeleton UI (imports only a ghost component; EstimatedProgressBar.tsx:1 only React hooks); no dependency, archive, secret, install or manifest crossing; match came from import/loader vocabulary",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "deterministic-prefix-caching",

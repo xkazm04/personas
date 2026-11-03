@@ -41546,6 +41546,32 @@
           "reason": "replaced by c74399d2-4849-4c75-aaca-07696945d9f1"
         }
       ]
+    },
+    "aebcd52a-07a3-4305-bf42-d961b4f37a62/supply-chain": {
+      "context": "dev-tools-features",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:30:52.396Z",
+      "worker": "5aec8b7d-f76f-4c1e-9f67-870ea2e3ffaf",
+      "techniques": [
+        {
+          "technique": "reading-is-not-running",
+          "verdict": "not-applicable: the run verb is the explicit request, not a silent upgrade of a read",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools/git_ops.rs:174 cargo test chosen only when the operator asks to run tests"
+        }
+      ]
+    },
+    "89d44c76-ec4c-4388-843e-503cf6ca2507/supply-chain": {
+      "context": "progress-transform",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:30:52.396Z",
+      "worker": "5aec8b7d-f76f-4c1e-9f67-870ea2e3ffaf",
+      "techniques": []
     }
   }
 }
