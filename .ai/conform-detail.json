@@ -41411,6 +41411,16 @@
         }
       ],
       "registryProposal": "Matcher paired mcp-tools by the word tool; a prompt composer that merely names tools is not a tool-protocol surface. Consider a lead for how prompt text that hard-codes tool-family names (assemble.rs:886 lists *_post/*_send/drive_*) is kept in sync with the live catalog - tool-schema-design covers the catalog, not the prose describing it."
+    },
+    "19e4120b-6020-4103-8a3d-a9fd0e13640b/multi-project": {
+      "context": "plugins-research-lab-reports",
+      "subject": "multi-project",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T00:00:00.000Z",
+      "worker": "3df01507-3aa3-4114-9901-00c8afad5e86",
+      "techniques": []
     }
   }
 }

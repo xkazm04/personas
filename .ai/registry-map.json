@@ -29549,7 +29549,11 @@
           "revision": 3,
           "changedAt": "2026-08-29",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/c06_retire_artist_research_lab.rs:1 retires the Research Lab plugin and drops research_reports (:20); git ls-files finds no src/features/plugins/research-lab code, so the context has no code (map paths: []) and no portfolio surface to judge",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:07b32de44fd25fc6",
+          "evaluatedRevision": 3
         },
         {
           "subject": "executive-reporting",
