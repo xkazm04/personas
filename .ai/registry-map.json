@@ -38728,7 +38728,11 @@
           "revision": 15,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/l2/FactoryObservabilityTab.tsx:56 The Factory L2 LLM-spend surface shows a 30-day total and a per-feature breakdown with the untagged bucket visible. It shows no ceiling or run-rate projection, rows cannot be opened to see the calls behind them, there is no outlier view, failed-call spend is not shown, and features past the top 12 are reduced to a 'more' caption, so an anomaly in one call class can hide behind a feature total.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
+          "evaluatedRevision": 15
         }
       ],
       "governance": "governed"

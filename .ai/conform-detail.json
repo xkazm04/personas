@@ -42284,6 +42284,38 @@
       "evaluatedTs": "2026-11-03T23:11:12.549Z",
       "worker": "b4efbf3e-fae5-4683-88f0-0caef6a63a17",
       "techniques": []
+    },
+    "d7b7eb04-730f-4450-9a68-affc95f93267/cost-metering": {
+      "context": "teams-factory-l2",
+      "subject": "cost-metering",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T23:22:19.423Z",
+      "worker": "dda25f18-edf1-415d-82ec-f3700e6cf38b",
+      "techniques": [
+        {
+          "technique": "spend-observability",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/l2/FactoryObservabilityTab.tsx:56 The standard asks for total, then class, then axis, then row. This tab gives the total (line 103) and the per-feature axis, but rows have no drill-down (no onPress), there is no budget or projection, no most-expensive-calls list, no failed-spend series and no default-priced or unattributed share. These are the smells the technique names: 'no way to get from a bar to the calls underneath it' and 'failed-call spend folded invisibly into totals'."
+        },
+        {
+          "technique": "spend-attribution",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/l2/FactoryObservabilityTab.tsx:41 Spend with no feature tag becomes its own visible 'untagged' row (split by model). It is not dropped or folded into a real feature. Caveat: rows are keyed by the use case's display name rather than a stable id, which conflicts with identity-survives-reuse: a renamed feature splits its history."
+        },
+        {
+          "technique": "usage-ledgers",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/l2/useObservabilityFeeds.ts:47 This context writes no ledger. It reads aggregated pinpoints from the managed project's external LLM tracker over a fixed 30-day window."
+        },
+        {
+          "technique": "price-tables",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/l2/FactoryObservabilityTab.tsx:43 Cost arrives already priced by the external tracker. This context has no price table and does no unit-to-currency conversion."
+        }
+      ],
+      "registryProposal": "spend-observability is written for the product's own spend console. The standard should say whether a read-only, per-project summary of a managed project's EXTERNAL tracker (here Langfuse-style pinpoints) owes the full total-to-row reading order and the self-watch instruments, or only a link out to the tracker's own drill-down. As written, every summary card that shows a spend total is a deviation."
     }
   }
 }
