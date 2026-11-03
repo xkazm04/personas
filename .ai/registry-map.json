@@ -11373,7 +11373,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:240 render_for_prompt is the shared renderer for the dev-memory section that task_executor, idea_scanner, night_plan, unattended and backlog_triage inject. It drops entries that do not fit without leaving a notice in the prompt, and it reads the wall clock while rendering. Under pressure the model sees a partial memory block that presents as complete, and the ranking can change between two calls on the same corpus.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "migrations",
@@ -29447,7 +29451,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/useLifecycleView.ts:185 The Lifecycle writes the task layer it hands Athena. It names where to look (project name and id, 'Start with describe_lifecycle'), but none of its task templates states a check, and the general ask ('Help me change the development practice for {name}') has no done criterion either.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "mcp-tools",
@@ -33659,7 +33667,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/TaskModal.tsx:67 Run Desk hands the backend typed task fields (title, description, goalId, depth) and renders queue state and output. It writes no prompt text: a case-insensitive grep of src/features/plugins/dev-tools/sub_runner for prompt, max_tokens, token_budget and compaction returned zero hits, and the dev-task prompt is assembled in src-tauri/src/commands/infrastructure/task_executor.rs, which is outside this context.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "hitl-approval",
@@ -38996,7 +39008,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/projects/development/goals/GoalsPage.tsx:71 The Goals page auto-sends a fixed task prompt to Athena ('Help me set up development goals for this project...'). The prompt never names the project, gives no done artifact and no check, so the model starts with nothing to locate.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "fleet-orchestration",

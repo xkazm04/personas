@@ -42205,6 +42205,85 @@
           "evidence": "src/features/projects/development/goals/goalStatus.ts:28 An unrecognised status is silently mapped to a real state instead of an explicit unknown."
         }
       ]
+    },
+    "d9cffe6c-a868-4ed4-b5e8-6c8add36918a/prompt-assembly": {
+      "context": "plugins-dev-tools-lifecycle",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T23:11:12.549Z",
+      "worker": "b4efbf3e-fae5-4683-88f0-0caef6a63a17",
+      "techniques": [
+        {
+          "technique": "task-envelope",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/useLifecycleView.ts:185 Locate is present: the project name and id plus describe_lifecycle. The rendered en.json text is 'Help me change the development practice for {name} (id {id}). Start with describe_lifecycle.' It has no done artifact and no check. The doc-fix templates (docsAsk.ts) do state a done but also have no read-back check."
+        },
+        {
+          "technique": "context-budgeting",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/presets/docs/docsAsk.ts:24 Path lists are capped at 30, and the truncation names what it dropped (' and {count} more'). That is the 'truncation names what it dropped' rule."
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/presets/docs/docsAsk.ts:1 One builder for the doc-fix task family. The Next panel, FixPanel and DocsPreset all call fixDocsPrompt rather than concatenating their own text. Scope is the task layer only; Athena's own assembler owns the other layers."
+        }
+      ],
+      "registryProposal": "task-envelope is scoped to delegated or dispatched calls. It does not say whether an app-composed 'Help me ...' opener sent into an interactive companion chat (a human present, the companion then acts) owes the same done and check parts. A rule for that case would settle the verdicts for UI 'ask the assistant' buttons."
+    },
+    "fd961ee9-bf7c-4ec7-90c3-a728045d3d44/prompt-assembly": {
+      "context": "teams-goals",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T23:11:12.549Z",
+      "worker": "b4efbf3e-fae5-4683-88f0-0caef6a63a17",
+      "techniques": [
+        {
+          "technique": "task-envelope",
+          "verdict": "deviation",
+          "evidence": "src/features/projects/development/goals/GoalsPage.tsx:71 The en.json text is 'Help me set up development goals for this project. Suggest a few high-level goals based on what you know about it...'. There is no locate pointer: activeProjectId is in scope at the call site but is not interpolated. Per the rule, if there is nowhere to point, the task lacks its inputs. It also has no done shape and no check."
+        }
+      ]
+    },
+    "1bad7967-29dc-4e12-b99a-cb5177b4fb9b/prompt-assembly": {
+      "context": "db-repos",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T23:11:12.549Z",
+      "worker": "b4efbf3e-fae5-4683-88f0-0caef6a63a17",
+      "techniques": [
+        {
+          "technique": "context-budgeting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:218 Each caller passes a per-feeder character budget (900-2400), which is good. But a skipped entry leaves no '...and N not shown' line, and line 221 lets a single over-budget memory through, so the documented 'hard cap' is not hard."
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:244 Rendering reads the clock instead of taking 'now' as a declared input, so it is not pure. Decay scores move with age, at different half-lives per category, so the same corpus can render a different order or selection later. That undercuts the line 208-210 comment claiming the same corpus always renders the same block."
+        },
+        {
+          "technique": "layered-composition",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/dev_memories.rs:249 The section renders on its own from typed rows and returns None when there is nothing to inject, so an absent section is absent rather than an empty header."
+        }
+      ]
+    },
+    "a3cb83b5-7325-4d1c-b10d-b249ab1a186f/prompt-assembly": {
+      "context": "run-desk",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T23:11:12.549Z",
+      "worker": "b4efbf3e-fae5-4683-88f0-0caef6a63a17",
+      "techniques": []
     }
   }
 }
