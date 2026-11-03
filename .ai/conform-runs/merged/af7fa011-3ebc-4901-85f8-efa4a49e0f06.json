@@ -1,0 +1,4 @@
+{"schema":"conform-run/1","worker":"af7fa011-3ebc-4901-85f8-efa4a49e0f06","subject":"chat-transcript",
+"evaluatedAt":"2026-11-03T00:00:00Z","pairs":[],
+"declined":[{"subject":"chat-transcript","context":"glyph-persona-card","reason":"only unjudged pair; context is weak (governance coverage question) and priorNotApplicable=8, so judging it by default would manufacture a verdict. All 13 other chat-transcript pairs are already judged at revision 5 = current index revision, none stale."}],
+"consults":[]}
