@@ -2293,3 +2293,4 @@
 {"ts":"2026-11-03T08:26:54.450Z","bundle":"software-engineering","subjects":["settings"],"techniques":["typed-accessors","key-registry","settings-audit-and-history"],"deviations":0}
 {"ts":"2026-11-03T08:28:22.644Z","bundle":"software-engineering","subjects":["mcp-tools"],"techniques":["client-integration"],"deviations":0}
 {"ts":"2026-11-03T00:00:00Z","bundle":"software-engineering","subjects":["multi-project"],"techniques":[],"deviations":0}
+{"ts":"2026-11-03T08:29:46.002Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["tier-model-single-source"],"deviations":0}

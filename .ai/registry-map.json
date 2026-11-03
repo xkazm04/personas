@@ -6346,10 +6346,10 @@
           "changedAt": "2026-09-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:6 'TierSlug' is an LLM-model capability tier (haiku|sonnet|opus) and ObservabilityPlanWidget's 'plan' is an operational runbook, not a subscription/billing plan; these tests exercise those widgets, not the product tier model in src/lib/constants/uiModes.ts -- precondition (tests cover plan/tier gating) does not hold.",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/home/sub_cockpit/widgets/ModelTierChoiceWidget.tsx:6 TierSlug is an LLM model slug (haiku|sonnet|opus), a vocabulary collision, and the tests exercise these widgets; precondition (money buys access) fails: .ai/manifest.yaml:116 declares billing out of scope, so rev 8 techniques (catalog edit, inherited/subtractive tiers) have nothing to bind to",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -21013,10 +21013,10 @@
           "changedAt": "2026-09-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/notepad/plan/ShipMilestoneComposer.tsx and the rest of this context's files use 'plan' for a Ship delivery/milestone plan (ShipGoalRail, ShipDispatch, ShipCriteriaPanel); grep for tier|entitle|TIER|minTier across src/features/notepad/plan finds zero hits -- precondition (this context models a subscription/billing plan) does not hold, confirming the generator's own 'lexical-only' grounding flag.",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/notepad/plan/ShipMilestoneComposer.tsx:34 imports ShipGoal/ShipMilestoneVM, a Ship delivery plan not a subscription plan; no entitle/minTier hits in the context; precondition (money buys access) fails: .ai/manifest.yaml:116 declares billing out of scope, so rev 8 techniques (catalog edit, inherited/subtractive tiers) have nothing to bind to",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -22945,10 +22945,10 @@
           "changedAt": "2026-09-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts and the rest of this context are persona/agent health scoring and event detail views; grep for tier|entitle|TIER|minTier across src/features/overview/sub_health finds zero hits -- precondition (this context reads or renders plan/tier entitlement state) does not hold.",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/overview/sub_health/libs/compositeHealthScore.ts:1 is persona SLA/health scoring, no entitlement state; no entitle/minTier hits in the context; precondition (money buys access) fails: .ai/manifest.yaml:116 declares billing out of scope, so rev 8 techniques (catalog edit, inherited/subtractive tiers) have nothing to bind to",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -25516,10 +25516,10 @@
           "changedAt": "2026-09-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/glyph/persona-layout/CapabilityTabBar.tsx:9 imports PersonaCapability from '@/lib/personas/capabilities' -- a persona use-case/skill, not a plan/tier entitlement; grep for tier|entitle|TIER|minTier across this context finds zero hits. Precondition (this context implements capability-gate-predicates over a tier) does not hold; 'capability' here is a vocabulary collision with the subject's 'capability'.",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/shared/glyph/persona-layout/PersonaHero.tsx:7 PersonaCapability is a persona use-case, a vocabulary collision with entitlement capability; precondition (money buys access) fails: .ai/manifest.yaml:116 declares billing out of scope, so rev 8 techniques (catalog edit, inherited/subtractive tiers) have nothing to bind to",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba",
+          "evaluatedRevision": 8,
           "revisionsBehind": 0
         },
         {
@@ -36672,10 +36672,10 @@
           "changedAt": "2026-09-18",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/teams/sub_teamWorkspace/CreateTeamForm.tsx and useAutoTeam.ts implement the in-app multi-persona Team workspace feature, not a billing team seat count; grep for tier|entitle|TIER|minTier across this context's files finds zero hits (the sibling teamStudio/teamStudioShared.tsx:19 TIER_TONE/MemberTierChip is an LLM-model tier per member, also unrelated to billing). Precondition (this context models team-plan entitlements) does not hold.",
-          "evaluatedAt": "2026-10-03",
-          "evaluatedAgainst": "sha256-b2:58f21c0561a86e45",
-          "evaluatedRevision": 7,
+          "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/teamStudioShared.tsx:19 TIER_TONE colours an LLM-model tier per member, not a billing seat; the workspace is a multi-persona feature; precondition (money buys access) fails: .ai/manifest.yaml:116 declares billing out of scope, so rev 8 techniques (catalog edit, inherited/subtractive tiers) have nothing to bind to",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:66961f93b3ce02ba",
+          "evaluatedRevision": 8,
           "source": "retained",
           "revisionsBehind": 0
         }
