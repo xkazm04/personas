@@ -2781,7 +2781,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/components/allPersonas/personaBuildStatus.ts:21 The only session-like construct in this list view is a predicate over one active build (a single buildPersonaId and its phase), not a registry of concurrent sessions; a case-insensitive recursive search of allPersonas/ and create/ for fleet, hibernat, harvest, orchestrat and worker found zero files (the 'dispatch' and 'session' hits are React.Dispatch types, DOM dispatchEvent, and cache-scope comments).",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "optional-dependency-degradation",
@@ -43723,7 +43727,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/triggers/sub_triggers/triggerArmState.ts:111 This context is the per-persona trigger CRUD UI; its only dispatch concept is the engine's trigger-due predicates (get_due / get_enabled_by_type), and a case-insensitive recursive search of src/features/triggers/sub_triggers for fleet, hibernat, session, harvest, worker and orchestrat found zero files, so there is no session registry, dispatch roster or harvest for the standard to govern here.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "proactive-nudges",

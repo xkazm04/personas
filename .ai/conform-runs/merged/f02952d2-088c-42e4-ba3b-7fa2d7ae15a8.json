@@ -1,0 +1,83 @@
+{
+ "schema": "conform-run/1",
+ "worker": "f02952d2-088c-42e4-ba3b-7fa2d7ae15a8",
+ "subject": "fleet-orchestration",
+ "evaluatedAt": "2026-11-03T23:56:29.555666+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "triggers-triggers",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/triggers/sub_triggers/triggerArmState.ts:111 This context is the per-persona trigger CRUD UI; its only dispatch concept is the engine's trigger-due predicates (get_due / get_enabled_by_type), and a case-insensitive recursive search of src/features/triggers/sub_triggers for fleet, hibernat, session, harvest, worker and orchestrat found zero files, so there is no session registry, dispatch roster or harvest for the standard to govern here.",
+   "techniques": [],
+   "absenceTerms": [
+    "fleet",
+    "hibernat",
+    "session",
+    "harvest",
+    "orchestrat"
+   ]
+  },
+  {
+   "context": "agents-components-allpersonas",
+   "subject": "fleet-orchestration",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/components/allPersonas/personaBuildStatus.ts:21 The only session-like construct in this list view is a predicate over one active build (a single buildPersonaId and its phase), not a registry of concurrent sessions; a case-insensitive recursive search of allPersonas/ and create/ for fleet, hibernat, harvest, orchestrat and worker found zero files (the 'dispatch' and 'session' hits are React.Dispatch types, DOM dispatchEvent, and cache-scope comments).",
+   "techniques": [],
+   "absenceTerms": [
+    "fleet",
+    "hibernat",
+    "harvest",
+    "orchestrat",
+    "worker"
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "fleet-orchestration",
+   "context": "agents-deployment",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "i18n",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "fleet-orchestration",
+   "context": "overview-patterns",
+   "reason": "The context lists no files, so there is no code of its own to judge. The practice-review modal it describes, a knowledge-practice ledger, has no fleet mechanics in its stated purpose, but an absence verdict needs directories to search."
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T23:56:29.555666+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "triggers-triggers",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-03T23:56:29.555666+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "fleet-orchestration"
+   ],
+   "techniques": [],
+   "deviations": 0,
+   "context": "agents-components-allpersonas",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

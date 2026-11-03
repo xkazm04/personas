@@ -42372,6 +42372,26 @@
       "evaluatedTs": "2026-11-03T23:41:33.128Z",
       "worker": "4a72fd62-d1e4-428e-a279-0e07978d2881",
       "techniques": []
+    },
+    "0dabb588-48ce-4c35-b425-c344fd723ce7/fleet-orchestration": {
+      "context": "triggers-triggers",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T23:56:29.555Z",
+      "worker": "f02952d2-088c-42e4-ba3b-7fa2d7ae15a8",
+      "techniques": []
+    },
+    "a8857307-216c-46e0-9571-e05e8cf06112/fleet-orchestration": {
+      "context": "agents-components-allpersonas",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T23:56:29.555Z",
+      "worker": "f02952d2-088c-42e4-ba3b-7fa2d7ae15a8",
+      "techniques": []
     }
   }
 }

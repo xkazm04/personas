@@ -2135,3 +2135,5 @@
 {"ts":"2026-11-03T23:41:33.128215+00:00","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0,"context":"settings-network","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-11-03T23:41:33.128215+00:00","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0,"context":"display-table-primitives","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-11-03T23:41:33.128215+00:00","bundle":"software-engineering","subjects":["eval-harness"],"techniques":[],"deviations":0,"context":"glyph-persona-card","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-03T23:56:29.555666+00:00","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":[],"deviations":0,"context":"triggers-triggers","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-03T23:56:29.555666+00:00","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":[],"deviations":0,"context":"agents-components-allpersonas","via":"curator-multi:claude","model":"claude-opus-5-5"}
