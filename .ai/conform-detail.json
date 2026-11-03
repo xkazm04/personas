@@ -41351,6 +41351,16 @@
       "evaluatedTs": "2026-11-03T12:00:00.000Z",
       "worker": "539e143e-0b3e-4057-90c8-177f1626b87d",
       "techniques": []
+    },
+    "2651f2ce-7fc1-4331-8b31-61e783e9746a/terminal-multiplexing": {
+      "context": "companions-page",
+      "subject": "terminal-multiplexing",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T00:00:00.000Z",
+      "worker": "07bf11df-a5ef-4e83-a7ce-44eace0a951f",
+      "techniques": []
     }
   }
 }

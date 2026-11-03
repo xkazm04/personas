@@ -9901,8 +9901,12 @@
           "revision": 7,
           "changedAt": "2026-09-04",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "state": "not-applicable",
+          "priorNotApplicable": 18,
+          "evidence": "src/features/companions/CompanionsPage.tsx:56 is a lazy route switch mounting AthenaPage/Overseer/Curator pages; no file under src/features/companions imports @xterm or touches a PTY (grepped; repo-wide @xterm/portable_pty live only in plugins/fleet, features/fleet and src-tauri/src/commands/fleet), so the PTY-backed interactive session precondition is unmet; the match was lexical (companion/session vocabulary)",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:c3ef11aba4a471f5",
+          "evaluatedRevision": 7
         }
       ],
       "governance": "weak"

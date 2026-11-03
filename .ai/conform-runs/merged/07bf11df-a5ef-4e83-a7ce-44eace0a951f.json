@@ -1,0 +1,7 @@
+{"schema":"conform-run/1","worker":"07bf11df-a5ef-4e83-a7ce-44eace0a951f","subject":"terminal-multiplexing",
+"evaluatedAt":"2026-11-03T00:00:00Z",
+"pairs":[{"context":"2651f2ce-7fc1-4331-8b31-61e783e9746a","subject":"terminal-multiplexing","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/features/companions/CompanionsPage.tsx:56 is a lazy route switch mounting AthenaPage/Overseer/Curator pages; no file under src/features/companions imports @xterm or touches a PTY (grepped; repo-wide @xterm/portable_pty live only in plugins/fleet, features/fleet and src-tauri/src/commands/fleet), so the PTY-backed interactive session precondition is unmet; the match was lexical (companion/session vocabulary)",
+"techniques":[]}],
+"declined":[],
+"consults":[{"ts":"2026-11-03T00:00:00Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":[],"deviations":0}]}
