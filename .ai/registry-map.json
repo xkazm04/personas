@@ -5023,10 +5023,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/api/pipeline/triggers.ts:3 the context is IPC wrappers for persona triggers/scheduler/teams; 'pipeline' here is agent automation, not translation, so no translated content is stored or moved",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/api/pipeline/triggers.ts:3 IPC wrappers for persona triggers/scheduler/teams; pipeline here is agent automation, no translated content stored or moved",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -7749,10 +7749,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:10 The design commands module implements n8n workflow transformation and template design commands rather than a localization or translation pipeline.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src-tauri/src/commands/design/mod.rs:10 design commands are n8n workflow transformation, not a localization pipeline",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -12485,10 +12485,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/engine/mod.rs:28 The engine module root re-exports backend agent execution and workflow infrastructure and contains no localization or translation pipeline functionality.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src-tauri/src/engine/mod.rs:28 engine root re-exports agent execution infrastructure; no translation store, locale registry or MT request",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -16839,8 +16839,8 @@
           "changedAt": "2026-10-06",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:14 still hand-lists 11 of the 14 manifest locales (no bn/id/vi); now hidden behind UI_LANGUAGE_PICKER_ENABLED, but the manifest revive procedure (src/i18n/locales.manifest.ts:63) re-shows this picker without bn/id/vi, and src/features/home/sub_welcome/LanguageSwitcher.tsx:16 is a second shadow list",
-          "evaluatedAt": "2026-10-30",
+          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:14 still hand-lists 11 of the 14 manifest locales (no bn/id/vi); picker hidden behind UI_LANGUAGE_PICKER_ENABLED but the revive procedure (src/i18n/locales.manifest.ts:63) re-shows it, and src/features/home/sub_welcome/LanguageSwitcher.tsx:16 is a second shadow list",
+          "evaluatedAt": "2026-11-03",
           "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
           "evaluatedRevision": 13,
           "revisionsBehind": 0
@@ -18081,10 +18081,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/lib/credentials/builtinConnectors.ts:2 the 'catalog' is a connector definition catalog, not a string catalog; no locale registry, translation store or MT request lives here",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/lib/credentials/builtinConnectors.ts:2 catalog is connector definitions, not a string catalog; no locale registry or translation store",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -18881,8 +18881,8 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/lib/personas/templates/templateOverlays.ts:273 the overlay import.meta.glob still hand-lists 13 per-language patterns; the code set is derived (line 270) and a test asserts coverage, but adding a manifest language still requires editing this file, so the one-line-diff test fails (file unchanged since 2026-08-28)",
-          "evaluatedAt": "2026-10-30",
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:273 overlay import.meta.glob still hand-lists per-language patterns; code set is derived at line 270 and a test asserts coverage, but adding a manifest language still requires editing this file",
+          "evaluatedAt": "2026-11-03",
           "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
           "evaluatedRevision": 13,
           "revisionsBehind": 0
@@ -25035,10 +25035,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/components/matrix/useBuild.ts:2 here \"matrix\" means the persona build session UI, not a translation matrix; no locale or translation code in this context",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/agents/components/matrix/useBuild.ts:2 matrix means the persona build session UI, not a translation matrix",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -30657,10 +30657,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/engine/src/prompt/mod.rs:1 assembles persona runtime prompts; no locale registry, translation store or MT request is built here (no locale/language reference across src-tauri/engine/src/prompt/*.rs)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src-tauri/engine/src/prompt/mod.rs:1 assembles persona runtime prompts; no locale registry, translation store or MT request is built here",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -36869,10 +36869,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/index.ts:1 The persona layout adoption module renders interactive template configuration petal views and contains no translation pipeline or localization topology code.",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/index.ts:1 renders template adoption layout views; no translation pipeline code",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {
@@ -37727,10 +37727,10 @@
           "changedAt": "2026-10-06",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:2 runs design reviews over template sources; it neither generates nor serves translated content",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:678c2208c5b0dfc0",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:2 runs design reviews over template sources; neither generates nor serves translated content",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7a5b5afa04e7f7ad",
+          "evaluatedRevision": 13,
           "revisionsBehind": 0
         },
         {

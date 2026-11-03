@@ -21731,29 +21731,32 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "deviation",
-      "evaluatedAt": "2026-10-30",
-      "evaluatedTs": "2026-10-30T21:05:53.000Z",
-      "worker": "66a74eca-413f-4e38-998a-bece6961d411",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:36:53.007Z",
+      "worker": "3170d73e-f625-46b3-af89-b2436c1799ef",
       "techniques": [
         {
           "technique": "language-registry-single-source",
           "verdict": "deviation",
-          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:14 shadow language list; src/i18n/locales.manifest.ts:14 claims no other file references a locale by code, which is false; reviving a language still means editing these lists plus the lefthook/ci gates the manifest names, so the one-line-diff test fails"
+          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:14 hand-written language list duplicates the manifest; adding a language needs more than the one-line manifest diff"
         },
         {
           "technique": "canonical-fallback-serving",
           "verdict": "conformant",
-          "evidence": "src/i18n/locales.manifest.ts:73 toShippedUiLocale sends any persisted or requested unshipped language to English, so no switcher offers a language the bundle cannot serve"
+          "evidence": "src/i18n/locales.manifest.ts:73 toShippedUiLocale sends any persisted or requested unshipped language to English, so no switcher offers a language the bundle cannot serve",
+          "carriedFrom": "2026-10-30"
         },
         {
           "technique": "pseudo-localization-readiness",
           "verdict": "conformant",
-          "evidence": "src/i18n/pseudoLocale.ts:2 dev-only pseudo-locale is generated from the English bundle at runtime, with no engine, and stays out of the coverage gate"
+          "evidence": "src/i18n/pseudoLocale.ts:2 dev-only pseudo-locale is generated from the English bundle at runtime, with no engine, and stays out of the coverage gate",
+          "carriedFrom": "2026-10-30"
         },
         {
           "technique": "source-identical-value-audit",
           "verdict": "not-applicable",
-          "evidence": "src/i18n/locales.manifest.ts:70 SHIPPED_UI_LOCALES is ['en'], so no shipped catalog makes a translatedness claim to audit"
+          "evidence": "src/i18n/locales.manifest.ts:70 SHIPPED_UI_LOCALES is ['en'], so no shipped catalog makes a translatedness claim to audit",
+          "carriedFrom": "2026-10-30"
         },
         {
           "technique": "canonical-and-derived-split",
@@ -21804,7 +21807,6 @@
           "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "language-registry-single-source could name the shipped-subset case: a registry with a known set (LOCALES) and a shipped subset (SHIPPED_UI_LOCALES) where a dormant UI surface hides its shadow list until revival. That drift cannot be seen at runtime and only shows on the day a language is revived.",
       "superseded": [
         {
           "state": "deviation",
@@ -21826,6 +21828,13 @@
           "evaluatedAt": "2026-10-21T12:44:16.000Z",
           "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
           "reason": "replaced by 66a74eca-413f-4e38-998a-bece6961d411"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/onboarding/components/AppearanceStep.tsx:14 still hand-lists 11 of the 14 manifest locales (no bn/id/vi); now hidden behind UI_LANGUAGE_PICKER_ENABLED, but the manifest revive procedure (src/i18n/locales.manifest.ts:63) re-shows this picker without bn/id/vi, and src/features/home/sub_welcome/LanguageSwitcher.tsx:16 is a second shadow list",
+          "evaluatedAt": "2026-10-30T21:05:53.000Z",
+          "worker": "66a74eca-413f-4e38-998a-bece6961d411",
+          "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
         }
       ]
     },
@@ -21926,69 +21935,90 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:34:37.368Z",
-      "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:36:53.007Z",
+      "worker": "3170d73e-f625-46b3-af89-b2436c1799ef",
       "techniques": [
         {
           "technique": "canonical-and-derived-split",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/mod.rs:1 Engine root re-exports agent modules and contains no translation artifact split."
+          "evidence": "src-tauri/src/engine/mod.rs:1 Engine root re-exports agent modules and contains no translation artifact split.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "canonical-fallback-serving",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/mod.rs:4 Background task scheduling has no translation fallback serving logic."
+          "evidence": "src-tauri/src/engine/mod.rs:4 Background task scheduling has no translation fallback serving logic.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "fuzzy-reuse-under-a-threshold",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/ai_helpers.rs:3 AI helper primitives extract code blocks and build database schema context, not translation memory matching."
+          "evidence": "src-tauri/src/engine/ai_helpers.rs:3 AI helper primitives extract code blocks and build database schema context, not translation memory matching.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "hand-authored-exception-contract",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/recipe_seed.rs:1 Seeds recipe definition rows into SQLite at startup from bundled recipe seed JSON."
+          "evidence": "src-tauri/src/engine/recipe_seed.rs:1 Seeds recipe definition rows into SQLite at startup from bundled recipe seed JSON.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "language-registry-single-source",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/discovery.rs:1 Dynamic resource discovery populates questionnaire options from real external services, not translation catalogs."
+          "evidence": "src-tauri/src/engine/discovery.rs:1 Dynamic resource discovery populates questionnaire options from real external services, not translation catalogs.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "non-translatable-value-classification",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/mod.rs:22 Re-exports core primitives from personas-core crate with no localization concerns."
+          "evidence": "src-tauri/src/engine/mod.rs:22 Re-exports core primitives from personas-core crate with no localization concerns.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "prompt-context-contract",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/llm_topology.rs:8 LLM topology builds multi-persona workflow blueprint graphs, not translation pipeline topologies."
+          "evidence": "src-tauri/src/engine/llm_topology.rs:8 LLM topology builds multi-persona workflow blueprint graphs, not translation pipeline topologies.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "pseudo-localization-readiness",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/leadership.rs:1 Coordinates singleton process leadership across daemon and desktop instances."
+          "evidence": "src-tauri/src/engine/leadership.rs:1 Coordinates singleton process leadership across daemon and desktop instances.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "serialization-transport-safety",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/management_api.rs:1 Provides HTTP API endpoints for external tools, having no relation to translation pipelines."
+          "evidence": "src-tauri/src/engine/management_api.rs:1 Provides HTTP API endpoints for external tools, having no relation to translation pipelines.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "sharded-translation-ci",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/curation_scheduler.rs:1 Scheduled curation worker scans memory curation schedules, not translation CI jobs."
+          "evidence": "src-tauri/src/engine/curation_scheduler.rs:1 Scheduled curation worker scans memory curation schedules, not translation CI jobs.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "source-hash-translation-cache",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/persona_jobs.rs:1 Executes asynchronous background curation jobs for user personas with no translation duties."
+          "evidence": "src-tauri/src/engine/persona_jobs.rs:1 Executes asynchronous background curation jobs for user personas with no translation duties.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "source-identical-value-audit",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/engine/system_ops.rs:1 Executes backend system operations like context_scan, completely unrelated to translation pipelines."
+          "evidence": "src-tauri/src/engine/system_ops.rs:1 Executes backend system operations like context_scan, completely unrelated to translation pipelines.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/engine/mod.rs:28 The engine module root re-exports backend agent execution and workflow infrastructure and contains no localization or translation pipeline functionality.",
+          "evaluatedAt": "2026-10-12T18:34:37.368Z",
+          "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+          "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
         }
       ]
     },
@@ -21997,69 +22027,90 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:34:37.368Z",
-      "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:36:53.007Z",
+      "worker": "3170d73e-f625-46b3-af89-b2436c1799ef",
       "techniques": [
         {
           "technique": "canonical-and-derived-split",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:3 Build sessions module manages agent design sessions rather than translation storage."
+          "evidence": "src-tauri/src/commands/design/mod.rs:3 Build sessions module manages agent design sessions rather than translation storage.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "canonical-fallback-serving",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:4 Build simulation dry-runs agent pipelines rather than serving translations with fallback."
+          "evidence": "src-tauri/src/commands/design/mod.rs:4 Build simulation dry-runs agent pipelines rather than serving translations with fallback.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "fuzzy-reuse-under-a-threshold",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:13 Smart search indexes automation templates rather than translation memory matches."
+          "evidence": "src-tauri/src/commands/design/mod.rs:13 Smart search indexes automation templates rather than translation memory matches.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "hand-authored-exception-contract",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:16 Template adoption creates user personas rather than managing hand-authored translations."
+          "evidence": "src-tauri/src/commands/design/mod.rs:16 Template adoption creates user personas rather than managing hand-authored translations.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "language-registry-single-source",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:11 Platform definitions declare external integrations rather than language registry metadata."
+          "evidence": "src-tauri/src/commands/design/mod.rs:11 Platform definitions declare external integrations rather than language registry metadata.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "non-translatable-value-classification",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/n8n_transform/prompt_sanitizer.rs:1 Sanitizes untrusted workflow data against prompt injection rather than classifying non-translatable catalog values."
+          "evidence": "src-tauri/src/commands/design/n8n_transform/prompt_sanitizer.rs:1 Sanitizes untrusted workflow data against prompt injection rather than classifying non-translatable catalog values.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "prompt-context-contract",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:8 Formats persona generation prompts for n8n workflow synthesis, not MT translation context."
+          "evidence": "src-tauri/src/commands/design/n8n_transform/prompts.rs:8 Formats persona generation prompts for n8n workflow synthesis, not MT translation context.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "pseudo-localization-readiness",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:2 Archetypes module manages persona templates without pseudo-localization transforms."
+          "evidence": "src-tauri/src/commands/design/mod.rs:2 Archetypes module manages persona templates without pseudo-localization transforms.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "serialization-transport-safety",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/n8n_transform/streaming.rs:3 Parses streaming sections from Claude CLI n8n transformation, not batch translation wire payloads."
+          "evidence": "src-tauri/src/commands/design/n8n_transform/streaming.rs:3 Parses streaming sections from Claude CLI n8n transformation, not batch translation wire payloads.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "sharded-translation-ci",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:8 Enforces rate limits on n8n transformation requests rather than sharding CI translation jobs."
+          "evidence": "src-tauri/src/commands/design/mod.rs:8 Enforces rate limits on n8n transformation requests rather than sharding CI translation jobs.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "source-hash-translation-cache",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:9 Tracks n8n workflow transformation session states rather than hashing source strings for translation caches."
+          "evidence": "src-tauri/src/commands/design/mod.rs:9 Tracks n8n workflow transformation session states rather than hashing source strings for translation caches.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "source-identical-value-audit",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/commands/design/mod.rs:12 Persona design review reviews generated persona blueprints rather than auditing translation catalogs."
+          "evidence": "src-tauri/src/commands/design/mod.rs:12 Persona design review reviews generated persona blueprints rather than auditing translation catalogs.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/design/mod.rs:10 The design commands module implements n8n workflow transformation and template design commands rather than a localization or translation pipeline.",
+          "evaluatedAt": "2026-10-12T18:34:37.368Z",
+          "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+          "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
         }
       ]
     },
@@ -22068,69 +22119,90 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T18:34:37.368Z",
-      "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:36:53.007Z",
+      "worker": "3170d73e-f625-46b3-af89-b2436c1799ef",
       "techniques": [
         {
           "technique": "canonical-and-derived-split",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:14 Adoption layout props manage UI state for persona adoption, not translation storage."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:14 Adoption layout props manage UI state for persona adoption, not translation storage.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "canonical-fallback-serving",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:12 Template design result model handles automation structure, not localized content fallback."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/personaLayoutAdoptionTypes.ts:12 Template design result model handles automation structure, not localized content fallback.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "fuzzy-reuse-under-a-threshold",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/questionDimMap.ts:6 Maps questionnaire items to persona dimension petals, not translation memory matching."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/questionDimMap.ts:6 Maps questionnaire items to persona dimension petals, not translation memory matching.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "hand-authored-exception-contract",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/ErrorPolicyCard.tsx:2 Consumes useTranslation hook for UI labels in error policy card; manages no hand-authored translation exceptions."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/ErrorPolicyCard.tsx:2 Consumes useTranslation hook for UI labels in error policy card; manages no hand-authored translation exceptions.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "language-registry-single-source",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/CapabilityTagSwitcher.tsx:2 Renders a capability tag switcher in adoption UI, having no relation to a language registry or language switcher."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/CapabilityTagSwitcher.tsx:2 Renders a capability tag switcher in adoption UI, having no relation to a language registry or language switcher.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "non-translatable-value-classification",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/adoptionImpact.ts:1 Translates persona configuration state into plain-English UI summary strings, not catalog value classification."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/adoptionImpact.ts:1 Translates persona configuration state into plain-English UI summary strings, not catalog value classification.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "prompt-context-contract",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:4 Displays questionnaire answers in the adoption wizard, not MT engine prompt context."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionAnswerCard.tsx:4 Displays questionnaire answers in the adoption wizard, not MT engine prompt context.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "pseudo-localization-readiness",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionLeftPanel.tsx:2 Renders adoption sidebar panel using standard translation hook with no pseudo-locale transforms."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/AdoptionLeftPanel.tsx:2 Renders adoption sidebar panel using standard translation hook with no pseudo-locale transforms.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "serialization-transport-safety",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:2 Bridges builder schedule picker to adoption trigger model; does not handle batch MT transport."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/composerScheduleToTriggerSelection.ts:2 Bridges builder schedule picker to adoption trigger model; does not handle batch MT transport.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "sharded-translation-ci",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/adoptionDimHelpers.ts:1 Helper functions format persona dimension notification channels, not CI translation jobs."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/adoptionDimHelpers.ts:1 Helper functions format persona dimension notification channels, not CI translation jobs.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "source-hash-translation-cache",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:1 Maintains petal state and question navigation in adoption UI, having no translation hashing cache."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/useAdoptionDimensionModel.tsx:1 Maintains petal state and question navigation in adoption UI, having no translation hashing cache.",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "source-identical-value-audit",
           "verdict": "not-applicable",
-          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx:3 Renders build execution panel in template adoption, not catalog source-identical auditing."
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/PersonaLayoutBuild.tsx:3 Renders build execution panel in template adoption, not catalog source-identical auditing.",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/adoption/persona-layout/index.ts:1 The persona layout adoption module renders interactive template configuration petal views and contains no translation pipeline or localization topology code.",
+          "evaluatedAt": "2026-10-12T18:34:37.368Z",
+          "worker": "70179329-1ff7-4e15-bcd5-b855c9d451b4",
+          "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
         }
       ]
     },
@@ -29009,20 +29081,38 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:45:00.000Z",
-      "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
-      "techniques": []
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:36:53.007Z",
+      "worker": "3170d73e-f625-46b3-af89-b2436c1799ef",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/api/pipeline/triggers.ts:3 the context is IPC wrappers for persona triggers/scheduler/teams; 'pipeline' here is agent automation, not translation, so no translated content is stored or moved",
+          "evaluatedAt": "2026-10-16T17:45:00.000Z",
+          "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
+          "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
+        }
+      ]
     },
     "e61f931c-25d7-4532-9ec7-ab6f3fc377e2/translation-pipeline-topology": {
       "context": "lib-credentials",
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T17:45:00.000Z",
-      "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
-      "techniques": []
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:36:53.007Z",
+      "worker": "3170d73e-f625-46b3-af89-b2436c1799ef",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/lib/credentials/builtinConnectors.ts:2 the 'catalog' is a connector definition catalog, not a string catalog; no locale registry, translation store or MT request lives here",
+          "evaluatedAt": "2026-10-16T17:45:00.000Z",
+          "worker": "19b298ea-84af-4d34-9283-f671997cccf4",
+          "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
+        }
+      ]
     },
     "1db5c86e-3237-4d2a-8e2f-1426d680757c/audit-logging": {
       "context": "lib-execution",
@@ -31738,24 +31828,33 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:44:16.000Z",
-      "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
-      "techniques": []
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:36:53.007Z",
+      "worker": "3170d73e-f625-46b3-af89-b2436c1799ef",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/engine/src/prompt/mod.rs:1 assembles persona runtime prompts; no locale registry, translation store or MT request is built here (no locale/language reference across src-tauri/engine/src/prompt/*.rs)",
+          "evaluatedAt": "2026-10-21T12:44:16.000Z",
+          "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
+          "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
+        }
+      ]
     },
     "7826a48f-5883-4f26-8476-c3c515bda745/translation-pipeline-topology": {
       "context": "lib-personas",
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "deviation",
-      "evaluatedAt": "2026-10-30",
-      "evaluatedTs": "2026-10-30T21:05:53.000Z",
-      "worker": "66a74eca-413f-4e38-998a-bece6961d411",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:36:53.007Z",
+      "worker": "3170d73e-f625-46b3-af89-b2436c1799ef",
       "techniques": [
         {
           "technique": "language-registry-single-source",
           "verdict": "deviation",
-          "evidence": "src/lib/personas/templates/templateOverlays.ts:273 static glob literal per language; a drift test (src/lib/personas/templates/__tests__/templateOverlays.test.ts:15) catches drift but does not remove the edit"
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:273 hand-listed glob patterns break the one-line-diff test"
         },
         {
           "technique": "canonical-fallback-serving",
@@ -31764,7 +31863,6 @@
           "carriedFrom": "2026-10-21"
         }
       ],
-      "registryProposal": "language-registry-single-source has no ruling for build-tool constraints that require static literals (Vite import.meta.glob). It should say whether a generated glob is required or whether a parity test that fails on drift is an acceptable second-best.",
       "superseded": [
         {
           "state": "deviation",
@@ -31779,6 +31877,13 @@
           "evaluatedAt": "2026-10-21T12:44:16.000Z",
           "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
           "reason": "replaced by 66a74eca-413f-4e38-998a-bece6961d411"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/lib/personas/templates/templateOverlays.ts:273 the overlay import.meta.glob still hand-lists 13 per-language patterns; the code set is derived (line 270) and a test asserts coverage, but adding a manifest language still requires editing this file, so the one-line-diff test fails (file unchanged since 2026-08-28)",
+          "evaluatedAt": "2026-10-30T21:05:53.000Z",
+          "worker": "66a74eca-413f-4e38-998a-bece6961d411",
+          "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
         }
       ]
     },
@@ -34413,20 +34518,38 @@
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:44:16.000Z",
-      "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
-      "techniques": []
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:36:53.007Z",
+      "worker": "3170d73e-f625-46b3-af89-b2436c1799ef",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useBuild.ts:2 here \"matrix\" means the persona build session UI, not a translation matrix; no locale or translation code in this context",
+          "evaluatedAt": "2026-10-21T12:44:16.000Z",
+          "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
+          "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
+        }
+      ]
     },
     "8a57c65c-06fd-45c9-9d32-d50c89c4c705/translation-pipeline-topology": {
       "context": "template-generation",
       "subject": "translation-pipeline-topology",
       "bundle": "localization",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:44:16.000Z",
-      "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
-      "techniques": []
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:36:53.007Z",
+      "worker": "3170d73e-f625-46b3-af89-b2436c1799ef",
+      "techniques": [],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/generation/runner/useDesignRunnerState.ts:2 runs design reviews over template sources; it neither generates nor serves translated content",
+          "evaluatedAt": "2026-10-21T12:44:16.000Z",
+          "worker": "a7c3c3b8-4960-489c-a199-8356b7325260",
+          "reason": "replaced by 3170d73e-f625-46b3-af89-b2436c1799ef"
+        }
+      ]
     },
     "37cd64d2-bd42-47b9-8c17-7ea1b466135c/chat-transcript": {
       "context": "persona-glyph-layout",
