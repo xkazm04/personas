@@ -1,0 +1,111 @@
+{
+ "schema": "conform-run/1",
+ "worker": "70a818b7-9ad9-4b40-8ded-17a45b5f119f",
+ "subject": "cross-provider-benchmark-operations",
+ "evaluatedAt": "2026-11-03T08:36:53.092Z",
+ "pairs": [
+  {
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_settings/components/PersonaAssertionsSection.tsx:15 per-run output assertions on one persona are production quality gates, not a case set run across model targets; the match was lexical (case/settings)",
+   "techniques": []
+  },
+  {
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:219 BYOM rules map task_complexity to provider/model dispatch policy (runtime routing, model-routing territory); no benchmark, scorecard or preflight instrument in sub_byom",
+   "techniques": []
+  },
+  {
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "tests/playwright/companion-stop-button.spec.ts:36 specs drive companion streaming state; no benchmark or prompt_variant code, so no comparative model measurement exists here",
+   "techniques": []
+  },
+  {
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src-tauri/db/src/model_routing.rs:1 db substrate holds the runtime routing cascade (model-routing territory); lab run creation and finalization are judged under db-repos-lab",
+   "techniques": []
+  },
+  {
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:21 compareHelpers is now 25 lines, only the ANTHROPIC_TIERS price book consumed by the lab arena preflight (arenaSpendEstimate.ts:15); the context runs no comparison, so its price book is judged with lab-arena",
+   "techniques": []
+  },
+  {
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/components/dashboard/OverviewPage.tsx:11 Overview shell lazy-loads subtabs and shows fleet health; no benchmark, scorecard or arena code, precondition (benchmark evidence for a model choice) does not hold",
+   "techniques": []
+  },
+  {
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:6 ranks personas doing different jobs by production health signals; computeFleetBenchmark (useLeaderboardData.ts:13) is a fleet average, not cases across model targets",
+   "techniques": []
+  },
+  {
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/components/matrix/BuildSimulatePanel.tsx:9 simulates one build draft via simulate_build_draft; it does not compare model targets over a shared case set",
+   "techniques": []
+  },
+  {
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_context/ContextLedger.tsx:9 ledger maps use-case/context membership; no execution of cases across model targets",
+   "techniques": []
+  },
+  {
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_llm_overview/AssignmentMatrix.tsx:2 projects x observability-connector wiring matrix; reads external tracing, runs no cases and produces no scorecard",
+   "techniques": []
+  },
+  {
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:109 queue fetches development tasks by status, not benchmark cases across model targets",
+   "techniques": []
+  },
+  {
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/teams/sub_factory/ContextMatrix.tsx:11 matrix columns are KPI categories (project readiness), not provider/model targets",
+   "techniques": []
+  },
+  {
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:3 Chain Studio persists source-to-persona trigger drafts; no benchmark, scorecard, determinism or preflight instrument",
+   "techniques": []
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:36:53.092Z",
+   "bundle": "llm-observability",
+   "subjects": [
+    "cross-provider-benchmark-operations"
+   ],
+   "techniques": [],
+   "deviations": 0
+  }
+ ]
+}
