@@ -35898,8 +35898,12 @@
           "revision": 6,
           "changedAt": "2026-09-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "deviation",
+          "priorNotApplicable": 4,
+          "evidence": "src/features/browser/whitelist/WhitelistPage.tsx:66 A site edit is sent as separate, non-atomic IPC writes in the order upsert (label/budget), then credential bind, then tool overrides. If the save fails partway, the row can keep a widening (a bound credential or a raised budget) without the 'ask first' gates the operator paired it with. That partial policy matches neither the old one nor the new one, and it is more permissive than the intended final state (the comment at :81 admits the row is left half-written; the UI only re-reads afterwards).",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:57d60a438fa36d05",
+          "evaluatedRevision": 6
         },
         {
           "subject": "mcp-tools",

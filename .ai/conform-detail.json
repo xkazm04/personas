@@ -42015,6 +42015,53 @@
           "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:188 Postgres shows up here only as a credential subtype, so this context executes no statements and has nothing to guard. Safe mode lives in sub_databases."
         }
       ]
+    },
+    "0f1de245-e9ba-41df-9b6c-d9ccd91dfb4b/authorization": {
+      "context": "site-whitelist-management",
+      "subject": "authorization",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T17:14:01.469Z",
+      "worker": "40ffbdd1-a635-4c7d-8f5e-dcb31036a599",
+      "techniques": [
+        {
+          "technique": "failure-direction",
+          "verdict": "deviation",
+          "evidence": "src/features/browser/whitelist/WhitelistPage.tsx:81 The degraded state of a multi-write policy edit is not ordered to fail closed. siteEdit.planSiteWrites puts the credential bind before the tightening overrides, so a mid-sequence failure leaves the widening without the gating. Sending tightenings first, or using one atomic command, would make the partial state the restrictive one."
+        },
+        {
+          "technique": "scope-design",
+          "verdict": "conformant",
+          "evidence": "src/features/browser/whitelist/SiteChips.tsx:86 Per-origin overrides only intersect (narrow) what the page's tools declared and never widen it. The wildcard is shown as its own visible form (PatternChip), and the matcher tests insist on label-boundary matching, never substring matching (origin.test.ts:95)."
+        },
+        {
+          "technique": "privilege-tiers",
+          "verdict": "conformant",
+          "evidence": "src/features/browser/whitelist/SiteChips.tsx:48 The control tier is a closed, ordered set of three (0/1/2). A null or out-of-range tier renders as 'unknown' in a muted style and is never promoted to a granted-looking badge."
+        },
+        {
+          "technique": "dispatch-chokepoint-gating",
+          "verdict": "conformant",
+          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:6 Client-side origin validation only stops a submit that would fail anyway. Enforcement stays behind the IPC command at the backend; this UI makes no authorization decision of its own."
+        },
+        {
+          "technique": "read-write-predicate-symmetry",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/useWhitelistActions.ts:81 The whitelist is one operator's app-wide policy keyed by origin. No list query filters by owner, so there is no read-side tenancy predicate for writes to mirror."
+        },
+        {
+          "technique": "identity-bearing-keys",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/useWhitelistActions.ts:42 Rows are addressed by bare origin in a single-operator local store. There is no cross-tenant read for the key to make unrepresentable."
+        },
+        {
+          "technique": "machine-credential-consumption",
+          "verdict": "not-applicable",
+          "evidence": "src/features/browser/whitelist/AddSiteModal.tsx:118 The context only binds an existing vault credential id to an origin. It does not issue, store, count or renew machine login secrets."
+        }
+      ],
+      "registryProposal": "failure-direction lists degraded states of the decision path but not the degraded state of a multi-write grant or policy edit. When one policy change is applied as several writes, order tightenings before widenings, or apply it atomically, so a partial failure leaves the more restrictive state. This could be a named row in the enumeration."
     }
   }
 }
