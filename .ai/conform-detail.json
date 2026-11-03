@@ -41648,6 +41648,17 @@
       "evaluatedTs": "2026-11-03T08:31:15.124Z",
       "worker": "2872940f-8b21-416a-b702-4ebd318a12b4",
       "techniques": []
+    },
+    "895b4bb2-16fd-4e8e-aae8-11315fe6436b/agent-instruction-files": {
+      "context": "api-agents",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:32:44.587Z",
+      "worker": "cdf022e5-3d12-4733-b7d2-edbe4660339b",
+      "techniques": [],
+      "registryProposal": "agent-instruction-files matches 80 contexts, mostly UI/IPC code with no instruction-file authoring; the matcher keys on persona/instructions vocabulary. Consider a precondition note (the code writes or ships an AGENTS.md/CLAUDE.md-style file to an agent host) to reduce false pairings."
     }
   }
 }

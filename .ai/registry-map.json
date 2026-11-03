@@ -4319,7 +4319,11 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/api/companion.ts:62 the context is Tauri IPC wrappers over persona CRUD; its only CLAUDE.md mention is a comment citing a convention, it authors no instruction file content",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:25b61236a62604b0",
+          "evaluatedRevision": 31
         },
         {
           "subject": "untrusted-extension-host",
