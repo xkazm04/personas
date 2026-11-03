@@ -2296,3 +2296,4 @@
 {"ts":"2026-11-03T08:29:46.002Z","bundle":"software-engineering","subjects":["plan-entitlements"],"techniques":["tier-model-single-source"],"deviations":0}
 {"ts":"2026-11-03T08:30:52.396Z","bundle":"software-engineering","subjects":["supply-chain"],"techniques":["reading-is-not-running","archive-extraction-safety","permission-manifest-scoping"],"deviations":0}
 {"ts":"2026-11-03T08:31:15.125Z","bundle":"software-engineering","subjects":["agent-runtime-assembly"],"techniques":[],"deviations":0}
+{"ts":"2026-11-03T08:32:09.624Z","bundle":"software-engineering","subjects":["rate-limiting"],"techniques":[],"deviations":3}

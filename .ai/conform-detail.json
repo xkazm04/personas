@@ -10917,19 +10917,21 @@
       "subject": "rate-limiting",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-30",
-      "evaluatedTs": "2026-10-30T21:00:33.000Z",
-      "worker": "cd6a954b-d2fc-4d40-9865-6cadb0907ad9",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:32:09.624Z",
+      "worker": "0584f4d0-51c0-41ae-8cae-202736f52c16",
       "techniques": [
         {
           "technique": "storm-hygiene",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/management_api.rs:759 record_audit on every rejected request; the latch at src-tauri/engine/src/rate_limiter.rs:78 is bypassed by the caller"
+          "evidence": "src-tauri/src/engine/management_api.rs:759 record_audit on every rejected request; the latch at src-tauri/engine/src/rate_limiter.rs:78 is bypassed by the caller",
+          "carriedFrom": "2026-10-30"
         },
         {
           "technique": "refusal-contract",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/management_api.rs:838 rate_limited_response sets a Retry-After header from the limiter's computed retry_after"
+          "evidence": "src-tauri/src/engine/management_api.rs:838 rate_limited_response sets a Retry-After header from the limiter's computed retry_after",
+          "carriedFrom": "2026-10-30"
         },
         {
           "technique": "limit-derivation",
@@ -11000,6 +11002,13 @@
           "evaluatedAt": "2026-10-22T15:36:28.236Z",
           "worker": "13afa82c-604e-4498-8334-5beb7944662f",
           "reason": "replaced by cd6a954b-d2fc-4d40-9865-6cadb0907ad9"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/management_api.rs:759 writes an api_key_audit SQLite row (plus an unlatched warn just above) on every 429, beside the limiter's once-per-streak latch at src-tauri/engine/src/rate_limiter.rs:78 - a refusal storm becomes per-request log and DB write amplification (re-verified 2026-10-30, anchors read back, unchanged)",
+          "evaluatedAt": "2026-10-30T21:00:33.000Z",
+          "worker": "cd6a954b-d2fc-4d40-9865-6cadb0907ad9",
+          "reason": "replaced by 0584f4d0-51c0-41ae-8cae-202736f52c16"
         }
       ]
     },
@@ -11008,14 +11017,15 @@
       "subject": "rate-limiting",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-30",
-      "evaluatedTs": "2026-10-30T21:00:33.000Z",
-      "worker": "cd6a954b-d2fc-4d40-9865-6cadb0907ad9",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:32:09.624Z",
+      "worker": "0584f4d0-51c0-41ae-8cae-202736f52c16",
       "techniques": [
         {
           "technique": "limit-observability",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:83 limit guessed from key prefix instead of owned by the limiter; src-tauri/src/commands/infrastructure/tier_usage.rs:109 approaching_limit computed on the wrong denominators"
+          "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:83 limit guessed from key prefix instead of owned by the limiter; src-tauri/src/commands/infrastructure/tier_usage.rs:109 approaching_limit computed on the wrong denominators",
+          "carriedFrom": "2026-10-30"
         },
         {
           "technique": "limiter-topology",
@@ -11080,6 +11090,13 @@
           "evaluatedAt": "2026-10-22T15:36:28.236Z",
           "worker": "13afa82c-604e-4498-8334-5beb7944662f",
           "reason": "replaced by cd6a954b-d2fc-4d40-9865-6cadb0907ad9"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:83 infers each bucket's limit from its key prefix (webhook: else event_source_max), so apikey: (120, src-tauri/src/engine/management_api.rs:403) and mcp_tool: (src-tauri/src/engine/mcp_tools.rs:824) buckets are charted against the wrong limit and feed approaching_limit at :109 - operator and caller arithmetic diverge (re-verified 2026-10-30, unchanged)",
+          "evaluatedAt": "2026-10-30T21:00:33.000Z",
+          "worker": "cd6a954b-d2fc-4d40-9865-6cadb0907ad9",
+          "reason": "replaced by 0584f4d0-51c0-41ae-8cae-202736f52c16"
         }
       ]
     },
@@ -11088,19 +11105,21 @@
       "subject": "rate-limiting",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-30",
-      "evaluatedTs": "2026-10-30T21:00:33.000Z",
-      "worker": "cd6a954b-d2fc-4d40-9865-6cadb0907ad9",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:32:09.624Z",
+      "worker": "0584f4d0-51c0-41ae-8cae-202736f52c16",
       "techniques": [
         {
           "technique": "refusal-contract",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/webhook.rs:499 no_headers() on the rate-limit 429; src-tauri/src/engine/webhook.rs:365 same on the auth-failure 429"
+          "evidence": "src-tauri/src/engine/webhook.rs:499 no_headers() on the rate-limit 429; src-tauri/src/engine/webhook.rs:365 same on the auth-failure 429",
+          "carriedFrom": "2026-10-30"
         },
         {
           "technique": "storm-hygiene",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/webhook.rs:492 unlatched tracing::warn! per rejected webhook call, duplicating the limiter's once-per-streak warn at src-tauri/engine/src/rate_limiter.rs:78"
+          "evidence": "src-tauri/src/engine/webhook.rs:492 unlatched tracing::warn! per rejected webhook call, duplicating the limiter's once-per-streak warn at src-tauri/engine/src/rate_limiter.rs:78",
+          "carriedFrom": "2026-10-30"
         }
       ],
       "superseded": [
@@ -11159,6 +11178,13 @@
           "evaluatedAt": "2026-10-22T15:36:28.236Z",
           "worker": "13afa82c-604e-4498-8334-5beb7944662f",
           "reason": "replaced by cd6a954b-d2fc-4d40-9865-6cadb0907ad9"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/webhook.rs:499 refuses 429 with no_headers() (retry-after only in body prose; same at the auth-fail 429 :365) although the same file sets Retry-After on its active-window path at src-tauri/src/engine/webhook.rs:521 - header-honouring senders get nothing and guess (re-verified 2026-10-30, unchanged)",
+          "evaluatedAt": "2026-10-30T21:00:33.000Z",
+          "worker": "cd6a954b-d2fc-4d40-9865-6cadb0907ad9",
+          "reason": "replaced by 0584f4d0-51c0-41ae-8cae-202736f52c16"
         }
       ]
     },

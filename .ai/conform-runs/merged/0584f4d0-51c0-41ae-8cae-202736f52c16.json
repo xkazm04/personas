@@ -1,0 +1,47 @@
+{
+ "schema": "conform-run/1",
+ "worker": "0584f4d0-51c0-41ae-8cae-202736f52c16",
+ "subject": "rate-limiting",
+ "evaluatedAt": "2026-11-03T08:32:09.624Z",
+ "pairs": [
+  {
+   "context": "059fdee0-40da-434a-a5cb-874bc9179a31",
+   "subject": "rate-limiting",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/management_api.rs:759 writes an api_key_audit SQLite row (plus an unlatched warn just above) on every 429, beside the limiter's once-per-streak latch at src-tauri/engine/src/rate_limiter.rs:78 - a refusal storm becomes per-request log and DB write amplification (anchors re-read 2026-11-03; cited files unchanged since 2026-10-21, subject digest unchanged at revision 8)"
+  },
+  {
+   "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+   "subject": "rate-limiting",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/tier_usage.rs:83 infers each bucket's limit from its key prefix (webhook: else event_source_max), so apikey: (120, src-tauri/src/engine/management_api.rs:403) and mcp_tool: (src-tauri/src/engine/mcp_tools.rs:824) buckets are charted against the wrong limit and feed approaching_limit at :109 - operator and caller arithmetic diverge (anchors re-read 2026-11-03; cited files unchanged since 2026-10-21, subject digest unchanged at revision 8)"
+  },
+  {
+   "context": "767b2bb5-4662-4be1-ad24-c881ac334016",
+   "subject": "rate-limiting",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/engine/webhook.rs:499 refuses 429 with no_headers() (retry-after only in body prose; same at the auth-fail 429 :365) although the same file sets Retry-After on its active-window path at src-tauri/src/engine/webhook.rs:521 - header-honouring senders get nothing and guess (anchors re-read 2026-11-03; cited files unchanged since 2026-10-21, subject digest unchanged at revision 8)"
+  }
+ ],
+ "declined": [
+  {
+   "subject": "rate-limiting",
+   "context": "742be60e-3ddf-4160-b7cb-4c5cac5965a0",
+   "reason": "weak context (declared domains barely cover it) - coverage question, not judged"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:32:09.624Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "rate-limiting"
+   ],
+   "techniques": [],
+   "deviations": 3
+  }
+ ]
+}
