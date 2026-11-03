@@ -41852,6 +41852,17 @@
       "evaluatedTs": "2026-11-03T08:35:47.995Z",
       "worker": "faef001a-263d-4517-bc01-c1528a7e09da",
       "techniques": []
+    },
+    "fc62a53a-85f9-4491-8b54-9b5f1795ef91/codebase-scanning": {
+      "context": "overview-patterns",
+      "subject": "codebase-scanning",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:39:18.136Z",
+      "worker": "2aefd1f1-f8e2-4c5b-8650-27a15c327a1f",
+      "techniques": [],
+      "registryProposal": "context-map.json still lists overview-patterns (entry points under src/features/overview/sub_patterns/) though the directory was removed by bec576bc8f; the context is a stale ghost - rescan."
     }
   }
 }

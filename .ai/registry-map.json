@@ -24141,7 +24141,11 @@
           "revision": 12,
           "changedAt": "2026-09-23",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:1 The Workspace Knowledge library (practice review modals, harvest dispatch) was retired and its data deleted (registered at mod.rs:53/148); src/features/overview/sub_patterns/ no longer exists and git ls-files lists no PracticeDetailModal/ExtractionMenu, so no code remains here, and the surface was a practice review UI, never a codebase sensor/emission pipeline.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:06416fce13bc2342",
+          "evaluatedRevision": 12
         }
       ],
       "governance": "governed"
