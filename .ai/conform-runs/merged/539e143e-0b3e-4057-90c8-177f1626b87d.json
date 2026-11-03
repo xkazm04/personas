@@ -1,0 +1,18 @@
+{"schema":"conform-run/1","worker":"539e143e-0b3e-4057-90c8-177f1626b87d","subject":"fleet-orchestration",
+"evaluatedAt":"2026-11-03T12:00:00Z",
+"pairs":[
+{"context":"56a0fd55-279d-428b-b2f6-7c89154abd6f","subject":"fleet-orchestration","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/features/schedules/libs/calendarHelpers.ts:5 the context is a week/month calendar projecting cron fire times and matching past slots to run records; it holds no session registry, dispatch door or harvest, so the fleet precondition (a set of live agent sessions with state, slots and write scopes) is unmet. 'slot' here is a calendar time slot, a vocabulary resonance only (rev 28 read)."},
+{"context":"ba0d4722-bfde-40aa-8e1d-52591719f834","subject":"fleet-orchestration","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src/features/agents/sub_lab/components/shared/LabProgress.tsx:8 Lab primitives render a four-phase progress strip (drafting/generating/executing/summarizing) of one lab run; one run's phases are not a fleet registry, and nothing here dispatches, hibernates or harvests multiple sessions (rev 28 read)."},
+{"context":"a7ece012-8300-4780-b286-b9cea81801fc","subject":"fleet-orchestration","bundle":"software-engineering","state":"not-applicable",
+"evidence":"src-tauri/core/src/models/audit_log.rs:5 context is passive audit/spend/credential DTOs (ts-rs structs, e.g. llm_spend.rs:4 spend ledger); no status machine, transition door or dispatch lives in these types. The fleet session registry is owned elsewhere (src-tauri/src/commands/fleet, judged under commands-fleet), so session_id fields here (build_session.rs:110) are build-session wire data, not fleet state (rev 28 read)."}
+],
+"declined":[
+{"subject":"fleet-orchestration","context":"738f591b-60e9-4701-b786-cf868db66c51","reason":"notepad-editor is presentation over dispatchNoteToFleet (src/features/notepad/notepadActions.ts), which is judged under notepad-core (deviation); NoteStatusTimeline.tsx:42 derives steps from stamps, which would need a separate read of the timeline against absent-status-passthrough and evidence-outranks-a-liveness-claim before a verdict; left unknown rather than guessed."},
+{"subject":"fleet-orchestration","context":"12d5948a-76a4-4db1-ac6a-ac554eb12020","reason":"cockpit widget tests: a test-only context whose governing code is judged under home-cockpit-widgets (not-applicable); not read."},
+{"subject":"fleet-orchestration","context":"942d2449-34ab-4f02-af7e-b130269d10ef","reason":"map row lists no paths, so there is no code to anchor a verdict to; likely a fleet-triage context worth a path repair in the context map."},
+{"subject":"fleet-orchestration","context":"fc62a53a-85f9-4491-8b54-9b5f1795ef91","reason":"map row lists no paths; cannot be read."},
+{"subject":"fleet-orchestration","context":"fbc22b36-e0c9-486e-a9d9-838ac272ed2f","reason":"weak governance (personas-page router); coverage question, not judged by default."}
+],
+"consults":[{"ts":"2026-11-03T12:00:00Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["session-registry","parallel-dispatch"],"deviations":0}]}

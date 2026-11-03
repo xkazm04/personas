@@ -17548,7 +17548,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_lab/components/shared/LabProgress.tsx:8 Lab primitives render a four-phase progress strip (drafting/generating/executing/summarizing) of one lab run; one run's phases are not a fleet registry, and nothing here dispatches, hibernates or harvests multiple sessions (rev 28 read).",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "diff-comparison",
@@ -21384,7 +21388,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src-tauri/core/src/models/audit_log.rs:5 context is passive audit/spend/credential DTOs (ts-rs structs, e.g. llm_spend.rs:4 spend ledger); no status machine, transition door or dispatch lives in these types. The fleet session registry is owned elsewhere (src-tauri/src/commands/fleet, judged under commands-fleet), so session_id fields here (build_session.rs:110) are build-session wire data, not fleet state (rev 28 read).",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "node-boot-and-declarative-bootstrap",
@@ -31643,7 +31651,11 @@
           "revision": 28,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:5 the context is a week/month calendar projecting cron fire times and matching past slots to run records; it holds no session registry, dispatch door or harvest, so the fleet precondition (a set of live agent sessions with state, slots and write scopes) is unmet. 'slot' here is a calendar time slot, a vocabulary resonance only (rev 28 read).",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:93bd71853ab468b1",
+          "evaluatedRevision": 28
         },
         {
           "subject": "agent-runtime-assembly",

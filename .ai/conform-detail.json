@@ -41321,6 +41321,36 @@
           "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:1 evidence-derived levels, not scored model runs"
         }
       ]
+    },
+    "56a0fd55-279d-428b-b2f6-7c89154abd6f/fleet-orchestration": {
+      "context": "schedules-components",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T12:00:00.000Z",
+      "worker": "539e143e-0b3e-4057-90c8-177f1626b87d",
+      "techniques": []
+    },
+    "ba0d4722-bfde-40aa-8e1d-52591719f834/fleet-orchestration": {
+      "context": "lab-shared-primitives",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T12:00:00.000Z",
+      "worker": "539e143e-0b3e-4057-90c8-177f1626b87d",
+      "techniques": []
+    },
+    "a7ece012-8300-4780-b286-b9cea81801fc/fleet-orchestration": {
+      "context": "observability-audit-models",
+      "subject": "fleet-orchestration",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T12:00:00.000Z",
+      "worker": "539e143e-0b3e-4057-90c8-177f1626b87d",
+      "techniques": []
     }
   }
 }
