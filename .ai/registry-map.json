@@ -2658,8 +2658,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/agents/sub_connectors/components/connectors/PersonaConnectorsTab.tsx:1 persona connector status and credential binding UI; an audio/speech regex over all 34 context files is empty",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "mcp-tools",
@@ -9691,8 +9695,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "tests/playwright/companion-header-controls.spec.ts:1 the context is 32 Playwright specs for chat panel controls (autonomous toggle, stop button, stream phase); a speech/audio/dictation regex over all 32 files hits only an elevenlabs connector-catalog fixture (template-marathon-fixtures.ts:249), so no capture, synthesis or playback precondition holds",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "session-continuation",
@@ -13573,8 +13581,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/fleet/monitor/channels/ConversationBriefing.tsx:1 fleet conversation channels are text session briefings, not audio; an audio/speech regex over all 170 context files is empty",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "conversation-orchestration",
@@ -18142,8 +18154,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/lib/credentials/connectorRoles.ts:127 elevenlabs and deepgram appear only as credential role catalog entries (ai_platform), binding a key and moving no audio; the 11 files hold no capture or synthesis pipeline",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "agent-instruction-files",
@@ -19889,8 +19905,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src-tauri/src/mcp_server/vault.rs:1 standalone MCP sidecar for Obsidian vault search; an audio/speech regex over all 8 context files is empty",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "agent-memory",
@@ -43392,8 +43412,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src-tauri/src/webbuild/bun.rs:1 web-build Bun sidecar locator; the only audio word is a comment citing the Whisper-STT resolution convention (bun.rs:6), no speech is captured or synthesized in the 9 files",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         }
       ],
       "governance": "governed"

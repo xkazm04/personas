@@ -41669,6 +41669,66 @@
       "evaluatedTs": "2026-11-03T00:00:00.000Z",
       "worker": "5deaffe5-b04f-425e-bf86-ff1e30a791e4",
       "techniques": []
+    },
+    "b30528dc-8655-4b38-800e-8cb73e96d618/voice-io": {
+      "context": "companion-ui-controls",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:35:47.995Z",
+      "worker": "faef001a-263d-4517-bc01-c1528a7e09da",
+      "techniques": []
+    },
+    "fbfcd99a-a333-42da-b85e-2ec1f560b4be/voice-io": {
+      "context": "agents-connectors",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:35:47.995Z",
+      "worker": "faef001a-263d-4517-bc01-c1528a7e09da",
+      "techniques": []
+    },
+    "0f1b56ac-cd96-4355-993e-dc445a20e63e/voice-io": {
+      "context": "fleet-monitor-channels",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:35:47.995Z",
+      "worker": "faef001a-263d-4517-bc01-c1528a7e09da",
+      "techniques": []
+    },
+    "e61f931c-25d7-4532-9ec7-ab6f3fc377e2/voice-io": {
+      "context": "lib-credentials",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:35:47.995Z",
+      "worker": "faef001a-263d-4517-bc01-c1528a7e09da",
+      "techniques": []
+    },
+    "59918f8a-62ca-4e52-9435-1e5bf9a18bbd/voice-io": {
+      "context": "webbuild",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:35:47.995Z",
+      "worker": "faef001a-263d-4517-bc01-c1528a7e09da",
+      "techniques": []
+    },
+    "7f6d3238-7136-4361-af8f-bca556ae2042/voice-io": {
+      "context": "mcp-server",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:35:47.995Z",
+      "worker": "faef001a-263d-4517-bc01-c1528a7e09da",
+      "techniques": []
     }
   }
 }
