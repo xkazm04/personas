@@ -41209,6 +41209,17 @@
       "evaluatedTs": "2026-11-03T08:18:34.659Z",
       "worker": "94850a18-eec6-419b-907a-d77681f97e5e",
       "techniques": []
+    },
+    "2b61b648-d166-4255-b7b7-5d32ffdd6751/quality-gates": {
+      "context": "plugins-gitlab",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T00:00:00.000Z",
+      "worker": "469d6ac6-9a2a-4e7a-81b0-ceeeb67c883f",
+      "techniques": [],
+      "registryProposal": "Matcher resonance on pipeline/gate/job vocabulary: a product feature that DISPLAYS a third party's CI is not a gate. Consider a precondition line in quality-gates.md separating gating one's own pipeline from monitoring someone else's; cicd-monitoring should govern plugins-gitlab."
     }
   }
 }

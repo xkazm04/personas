@@ -28874,8 +28874,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 20
+          "state": "not-applicable",
+          "priorNotApplicable": 20,
+          "evidence": "src/features/plugins/gitlab/components/GitLabPipelineViewer.tsx:23 is a viewer that lists and triggers a user's external GitLab pipelines; it owns no refusal mechanism, so quality-gates (engineering of the repo's own blocking checks) has no precondition here; cicd-monitoring is the governing subject",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "job-coordination",
