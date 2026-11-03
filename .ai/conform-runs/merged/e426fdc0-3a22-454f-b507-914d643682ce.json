@@ -1,0 +1,8 @@
+{"schema":"conform-run/1","worker":"e426fdc0-3a22-454f-b507-914d643682ce","subject":"hitl-approval",
+"evaluatedAt":"2026-11-03T00:00:00Z",
+"pairs":[],
+"declined":[
+{"subject":"hitl-approval","context":"942d2449-34ab-4f02-af7e-b130269d10ef","reason":"fleet-triage-columns: its entry points (src/features/fleet/monitor/triage/triageModel.ts, MonitorProjectColumns.tsx) no longer exist at HEAD - git ls-files finds no triageModel under src/features/fleet; the only triageModel.ts left is src/features/projects/development/goals/triage/triageModel.ts, a different feature. Nothing to judge; context looks dead and needs a context-map refresh, not a verdict."},
+{"subject":"hitl-approval","context":"11fe7642-7a1a-47c5-8910-499850aa04fe","reason":"plugins-companion-inbox: code retired - moved to src/features/companions/athena/inbox by bf4fe6c052 then deleted by f5a1c27d2b (chore(decision-center): C3 retire what the Decision Center replaced); no inbox adapter files remain at HEAD. The successor surface is the Decision Center roster (already judged under home-cockpit-widgets). Nothing to judge."}
+],
+"consults":[{"ts":"2026-11-03T00:00:00Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":[],"deviations":0}]}

@@ -2289,3 +2289,4 @@
 {"ts":"2026-11-03T08:23:14.742Z","bundle":"software-engineering","subjects":["eval-harness"],"techniques":["scenario-design","metric-role-contract"],"deviations":0}
 {"ts":"2026-11-03T12:00:00Z","bundle":"software-engineering","subjects":["fleet-orchestration"],"techniques":["session-registry","parallel-dispatch"],"deviations":0}
 {"ts":"2026-11-03T00:00:00Z","bundle":"software-engineering","subjects":["terminal-multiplexing"],"techniques":[],"deviations":0}
+{"ts":"2026-11-03T00:00:00Z","bundle":"software-engineering","subjects":["hitl-approval"],"techniques":[],"deviations":0}
