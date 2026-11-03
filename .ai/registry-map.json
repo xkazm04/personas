@@ -21208,7 +21208,11 @@
           "revision": 17,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/layoutStore.ts:118 parseLayout turns a JSON.parse failure of the persisted layout doc into null with no log, telemetry or user door, hydrate then substitutes emptyLayout(), and the next write-through overwrites the stored doc; that is a fallback with no door, which the standard says is not handling.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:d811928687fd4faf",
+          "evaluatedRevision": 17
         },
         {
           "subject": "data-access",
@@ -38658,7 +38662,11 @@
           "revision": 17,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/l2/factoryL2Data.ts:29 parseStringArray turns a malformed file_paths JSON column into [] with no door, so a context silently loses its file list in the runtime join, and nothing records that the stored value was corrupt.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:d811928687fd4faf",
+          "evaluatedRevision": 17
         },
         {
           "subject": "mcp-tools",
@@ -38869,7 +38877,11 @@
           "revision": 17,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/StandardsScan.tsx:80 User-action failures (standards scan, applying standards, connecting, saving data links, starting a scan) are caught with a bare catch and shown only as a fixed toast, so the error is discarded and never reaches telemetry; the standard requires user-facing failures to reach the user and telemetry both.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:d811928687fd4faf",
+          "evaluatedRevision": 17
         },
         {
           "subject": "standards-layered-runtime",

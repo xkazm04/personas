@@ -41926,6 +41926,79 @@
           "evidence": "src/features/templates/sub_explore/level2/DomainTable.tsx:132 Read-only cells with no range selection. A grep found no clipboard or onPaste code in the context."
         }
       ]
+    },
+    "e0ea6f08-ebdf-4c9e-aab4-969eee32f573/error-handling": {
+      "context": "mastermind-scene-store",
+      "subject": "error-handling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T11:24:00.063Z",
+      "worker": "c5a000e4-60f2-4206-9078-bedfc3e06de9",
+      "techniques": [
+        {
+          "technique": "swallowed-error-prevention",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_mastermind/lib/layoutStore.ts:118 Bare catch returning null on a corrupt layout doc. The doc comment says 'never throws' but never says why the drop is safe, so no door and no declared-drop marker."
+        },
+        {
+          "technique": "error-doors",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_mastermind/lib/sceneStore.ts:239 A background family load goes to the silentCatch door (log, breadcrumb, swallow rollup) and also sets a failed/stale status that deriveScene renders as unknown, not as absent."
+        }
+      ]
+    },
+    "7e214a7d-44c6-4e6c-8b54-b30f4483ce12/error-handling": {
+      "context": "teams-factory-passport-improve",
+      "subject": "error-handling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T11:24:00.063Z",
+      "worker": "c5a000e4-60f2-4206-9078-bedfc3e06de9",
+      "techniques": [
+        {
+          "technique": "error-doors",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/StandardsScan.tsx:80 User door only, no telemetry. The same shape repeats at ImprovePopover.tsx:69-70, ConnectorSection.tsx:64-65, DataLinksPopover.tsx:59-60 and ImprovePlanPanel.tsx:104-105, while ImprovePlanPanel.tsx:93 in the same context uses toastCatch correctly."
+        },
+        {
+          "technique": "user-facing-mapping",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/ImprovePopover.tsx:70 Each call site writes its own generic failure copy and drops the error, so no classification and no category-derived suggestion. The mapping lives at call sites, not in the registry (resolveError/toastCatch)."
+        },
+        {
+          "technique": "swallowed-error-prevention",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/passport/improve/ConnectorSection.tsx:45 Background reads route through silentCatch before falling back, so the fallback is paired with a door."
+        }
+      ]
+    },
+    "d7b7eb04-730f-4450-9a68-affc95f93267/error-handling": {
+      "context": "teams-factory-l2",
+      "subject": "error-handling",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T11:24:00.063Z",
+      "worker": "c5a000e4-60f2-4206-9078-bedfc3e06de9",
+      "techniques": [
+        {
+          "technique": "swallowed-error-prevention",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/l2/factoryL2Data.ts:29 Bare catch returning a fallback. 'Tolerantly' in the doc comment does not declare why the drop is safe."
+        },
+        {
+          "technique": "error-doors",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/l2/factoryL2Data.ts:102 A failed groups/contexts read (the tab's primary content) gets telemetry only. Unlike the KPI and goals reads (kpisFailed/goalsFailed), it sets no failed flag, so the user sees an empty map that cannot be told apart from a project with no contexts."
+        },
+        {
+          "technique": "user-facing-mapping",
+          "verdict": "conformant",
+          "evidence": "src/features/teams/sub_factory/l2/FactoryOverviewTab.tsx:63 A user action failure goes through toastCatch with no custom message, so the copy comes from the shared classifier and registry, not from the call site."
+        }
+      ]
     }
   }
 }
