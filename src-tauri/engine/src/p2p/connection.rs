@@ -119,6 +119,7 @@ impl ConnectionMetrics {
 /// apart, so the two-node loopback test injects a keypair per node instead.
 /// The injected variant does not exist outside `cfg(test)`, so no production
 /// path can reach it.
+#[allow(clippy::large_enum_variant)] // the big variant is cfg(test)-only; boxing would only serve tests
 enum LocalSigner {
     Process,
     #[cfg(test)]

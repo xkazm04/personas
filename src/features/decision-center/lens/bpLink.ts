@@ -9,10 +9,13 @@
  * `http://localhost:3010` (bp's own dev and start port, clear of the 3000
  * that local test servers take) when unset or blank.
  *
- * The slug: bp names a product by the slug in its own registry
- * (`bp.products.local.json`), which Personas cannot read. A product's registry
- * slug is, by convention, its repo folder name, so the slug is derived from
- * the row's root as bp's slug rule allows it (`^[a-z0-9][a-z0-9-]{0,62}$`).
+ * The slug: bp names a product by the slug in its own registry, which
+ * Personas does not read. Personas asks bp instead (spark roadmap S6): bp's
+ * product table (`bp_products`, `GET /api/products` from Rust) matched on the
+ * canonical root (`bpSlugByRoot`). Only when bp does not answer does the
+ * folder-name convention stand in (`bpSlug`), as bp's slug rule allows it
+ * (`^[a-z0-9][a-z0-9-]{0,62}$`); a product registered under another slug, or
+ * a worktree, is then wrong, which is why the table comes first.
  *
  * React-free.
  */
@@ -33,6 +36,19 @@ export function bpSlug(root: string): string {
   const folder = root.replace(/[\\/]+$/, '').split(/[\\/]/).pop() ?? '';
   const slug = folder.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 63);
   return slug || 'product';
+}
+
+/** A root as bp's product table and Personas' projects compare it (Rust `normalize_root`): forward slashes, no verbatim
+ *  prefix, no trailing slash, case-folded. */
+export function normalizeRoot(root: string): string {
+  const r = root.trim().replace(/\\/g, '/');
+  return (r.startsWith('//?/') ? r.slice(4) : r).replace(/\/+$/, '').toLowerCase();
+}
+
+/** bp's slug for the product at this root, from bp's own product table; undefined when bp lists none there. */
+export function bpSlugByRoot(rows: readonly { slug: string; root?: string }[], root: string): string | undefined {
+  const key = normalizeRoot(root);
+  return rows.find((r) => r.root !== undefined && normalizeRoot(r.root) === key)?.slug;
 }
 
 /** The Release tab of one product in bp. */

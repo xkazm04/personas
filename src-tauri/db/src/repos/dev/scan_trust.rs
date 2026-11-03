@@ -107,6 +107,14 @@ pub enum ProofChange {
 /// the exception: it is written only while the item is still `pending`,
 /// because a prediction recorded after a human decided is not a prediction and
 /// would contaminate the agreement the ladder is earned on.
+///
+/// `lens` and `size` are frozen by the same rule, for the same reason: they are
+/// two of the four parts of the item's slice key. Once a verdict is recorded the
+/// item's slice is the slice that decided it - the one a human reversal must
+/// demote and the one whose window counts the decision. A re-sweep that re-files
+/// the same finding with a re-scored size would otherwise move a machine
+/// decision into another slice, demote that slice on reversal, and leave the
+/// slice that decided at its level.
 pub fn record_scan_finding(
     pool: &DbPool,
     idea_id: &str,
@@ -125,7 +133,8 @@ pub fn record_scan_finding(
 
         conn.execute(
             "UPDATE dev_ideas SET
-                 lens         = COALESCE(?1, lens),
+                 lens         = CASE WHEN status = 'pending'
+                     THEN COALESCE(?1, lens) ELSE lens END,
                  impact_why   = COALESCE(?2, impact_why),
                  confidence   = COALESCE(?3, confidence),
                  score        = COALESCE(?4, score),
@@ -140,7 +149,8 @@ pub fn record_scan_finding(
                      THEN COALESCE(?11, predicted_why) ELSE predicted_why END,
                  predicted_by = CASE WHEN status = 'pending'
                      THEN COALESCE(?12, predicted_by) ELSE predicted_by END,
-                 size         = COALESCE(?13, size),
+                 size         = CASE WHEN status = 'pending'
+                     THEN COALESCE(?13, size) ELSE size END,
                  routing      = COALESCE(?14, routing),
                  sweep_run_id = COALESCE(?15, sweep_run_id)
              WHERE id = ?16",
@@ -662,7 +672,6 @@ pub fn trust_report(
 
 /// One recorded decision, as a scanner reads it before predicting.
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanDecision {
     pub idea_id: String,
@@ -687,7 +696,6 @@ pub struct ScanDecision {
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
-#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanDecisionList {
     pub decisions: Vec<ScanDecision>,

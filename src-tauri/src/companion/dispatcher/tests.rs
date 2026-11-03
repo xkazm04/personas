@@ -1834,9 +1834,8 @@ fn knowledge_action_ops_create_approval_rows() {
     // The skills action must be grammar-legal or Athena's proposals are
     // silently dropped (the exact failure the build_oneshot comment on
     // ALLOWED_ACTIONS documents).
-    for op in [
-        r###"{"op":"propose_action","action":"skill_sync","params":{"skill":"research","action":"sync","targets":["personas"]},"rationale":"r"}"###,
-    ] {
+    {
+        let op = r###"{"op":"propose_action","action":"skill_sync","params":{"skill":"research","action":"sync","targets":["personas"]},"rationale":"r"}"###;
         let out = dispatch_op(op);
         assert_eq!(
             out.approvals.len(),
@@ -1851,7 +1850,8 @@ fn knowledge_action_ops_create_approval_rows() {
 fn knowledge_read_ops_answer_without_a_query() {
     // The digest is query-optional: an empty query is the overview, so it
     // must not be rejected as "missing query".
-    for action in ["describe_skill_fleet"] {
+    {
+        let action = "describe_skill_fleet";
         let op = format!(r###"{{"op":"propose_action","action":"{action}","params":{{}}}}"###);
         let out = dispatch_op(&op);
         assert!(

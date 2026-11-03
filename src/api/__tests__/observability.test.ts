@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from "vitest";
-import { mockInvoke, mockInvokeError, resetInvokeMocks } from "@/test/tauriMock";
+import { mockInvoke, mockInvokeError, mockedTauriInvoke, resetInvokeMocks } from "@/test/tauriMock";
 import {
   getMetricsSummary,
   getMetricsChartData,
@@ -20,6 +20,14 @@ import {
   dismissFiredAlert,
   clearFiredAlerts,
 } from "@/api/overview/observability";
+
+/**
+ * The command the wrapper actually sent. A void wrapper's test cannot pin it
+ * through the return: an unmatched command also resolves `undefined`.
+ */
+function lastCommand(): unknown {
+  return mockedTauriInvoke.mock.calls.at(-1)?.[0];
+}
 
 describe("api/overview/observability", () => {
   beforeEach(() => {
@@ -106,6 +114,7 @@ describe("api/overview/observability", () => {
   it("deleteAlertRule resolves", async () => {
     mockInvoke("delete_alert_rule", undefined);
     await expect(deleteAlertRule("ar-1")).resolves.toBeUndefined();
+    expect(lastCommand()).toBe("delete_alert_rule");
   });
 
   it("toggleAlertRule returns toggled rule", async () => {
@@ -121,11 +130,13 @@ describe("api/overview/observability", () => {
   it("dismissFiredAlert resolves", async () => {
     mockInvoke("dismiss_fired_alert", undefined);
     await expect(dismissFiredAlert("fa-1")).resolves.toBeUndefined();
+    expect(lastCommand()).toBe("dismiss_fired_alert");
   });
 
   it("clearFiredAlerts resolves", async () => {
     mockInvoke("clear_fired_alerts", undefined);
     await expect(clearFiredAlerts()).resolves.toBeUndefined();
+    expect(lastCommand()).toBe("clear_fired_alerts");
   });
 
   it("rejects on backend error", async () => {

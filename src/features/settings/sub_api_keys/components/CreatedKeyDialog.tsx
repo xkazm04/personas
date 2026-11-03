@@ -18,7 +18,7 @@
  * key pre-substituted so the user can paste it straight into their
  * config file.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
@@ -26,7 +26,8 @@ import { Copy, Check, AlertTriangle, X } from 'lucide-react';
 import type { CreateApiKeyResponse } from '@/api/auth/externalApiKeys';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import { MCP_BASE_URL } from '../libs/mcpServer';
+import { probeMcpServer } from '@/api/agents/mcpTools';
+import { DEFAULT_MCP_PORT, mcpBaseUrl } from '../libs/mcpServer';
 
 
 interface CreatedKeyDialogProps {
@@ -47,6 +48,22 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
   const [keyCopied, setKeyCopied] = useState(false);
   const [configCopied, setConfigCopied] = useState(false);
 
+  // The snippet travels next to the live key, so its base URL must name the
+  // server that minted it: the port the probe actually reached, falling back
+  // to the default until (or unless) the probe answers.
+  const [mcpPort, setMcpPort] = useState(DEFAULT_MCP_PORT);
+  useEffect(() => {
+    let alive = true;
+    probeMcpServer()
+      .then((r) => {
+        if (alive) setMcpPort(r.port);
+      })
+      .catch(silentCatch('features/settings/sub_api_keys/components/CreatedKeyDialog:probe'));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const mcpConfig = JSON.stringify(
     {
       mcpServers: {
@@ -55,7 +72,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
           args: ['<path-to>/personas/tools/build-mcp/server.py'],
           env: {
             PERSONAS_API_KEY: response.plaintext_token,
-            PERSONAS_API_BASE: MCP_BASE_URL,
+            PERSONAS_API_BASE: mcpBaseUrl(mcpPort),
           },
         },
       },
@@ -64,9 +81,30 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
     2,
   );
 
+  // Last secret-bearing text this dialog put on the clipboard. Cleared when the
+  // dialog closes, but only while the clipboard still holds exactly that text,
+  // so a later, unrelated copy is never wiped.
+  const copiedRef = useRef<string | null>(null);
+  const clearClipboardIfUnchanged = useCallback(async () => {
+    const copied = copiedRef.current;
+    copiedRef.current = null;
+    if (copied === null) return;
+    try {
+      if ((await navigator.clipboard.readText()) === copied) await copyText('');
+    } catch (err) {
+      silentCatch('features/settings/sub_api_keys/components/CreatedKeyDialog:clearClipboard')(err);
+    }
+  }, []);
+  // Backstop for a parent that unmounts the dialog without going through Done / X.
+  useEffect(() => () => void clearClipboardIfUnchanged(), [clearClipboardIfUnchanged]);
+  const handleClose = useCallback(() => {
+    void clearClipboardIfUnchanged();
+    onClose();
+  }, [clearClipboardIfUnchanged, onClose]);
+
   const copyKey = useCallback(async () => {
     try {
-      await copyText(response.plaintext_token);
+      if (await copyText(response.plaintext_token)) copiedRef.current = response.plaintext_token;
       setKeyCopied(true);
       setTimeout(() => setKeyCopied(false), 2000);
     } catch (err) { silentCatch("features/settings/sub_api_keys/components/CreatedKeyDialog:catch1")(err); }
@@ -74,7 +112,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
 
   const copyConfig = useCallback(async () => {
     try {
-      await copyText(mcpConfig);
+      if (await copyText(mcpConfig)) copiedRef.current = mcpConfig;
       setConfigCopied(true);
       setTimeout(() => setConfigCopied(false), 2000);
     } catch (err) { silentCatch("features/settings/sub_api_keys/components/CreatedKeyDialog:catch2")(err); }
@@ -104,7 +142,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
           {acknowledged && (
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="text-foreground hover:bg-secondary/60 rounded p-1 transition-colors focus-ring"
               aria-label={s.close}
             >
@@ -184,7 +222,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border/30">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={!acknowledged}
             className={[
               'inline-flex items-center gap-1.5 px-4 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption transition-all duration-200 focus-ring',

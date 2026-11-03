@@ -322,12 +322,12 @@ describe('Escape belongs to whatever is on screen', () => {
 });
 
 describe('the header router', () => {
-  it('offers Blueprint as a peer destination right after Activity', () => {
+  it("offers Blueprint as a peer destination right after Activity, and bp's Morning deck beside it", () => {
     render(<PersonaMonitor visible onClose={onClose} />);
 
     const tabs = [...screen.getByTestId('monitor-view-tabs').querySelectorAll('[data-testid^="monitor-view-"]')]
       .map((el) => el.getAttribute('data-testid'));
 
-    expect(tabs).toEqual(['monitor-view-activity', 'monitor-view-blueprint', 'monitor-view-conversations', 'monitor-view-map']);
+    expect(tabs).toEqual(['monitor-view-activity', 'monitor-view-blueprint', 'monitor-view-morning', 'monitor-view-conversations', 'monitor-view-map']);
   });
 });

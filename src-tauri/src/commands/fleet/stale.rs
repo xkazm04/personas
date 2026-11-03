@@ -2410,8 +2410,8 @@ mod tests {
     fn cutoff_is_sane() {
         // Sanity: the cutoff (6 min) sits between 1 minute (too jumpy — fires while
         // the user is still typing into the console) and 60 minutes (too slow).
-        assert!(STALE_AFTER_SECS >= 60);
-        assert!(STALE_AFTER_SECS <= 3600);
+        const _: () = assert!(STALE_AFTER_SECS >= 60);
+        const _: () = assert!(STALE_AFTER_SECS <= 3600);
     }
 
     // now=10_000_000ms, cutoff=5min. "fresh" grew 1min ago, "old" grew 6min ago.
@@ -3128,7 +3128,7 @@ mod tests {
             i64::from(k::FLEET_QUEUED_EXPIRY_MS_MIN) >= aging * 2,
             "the SHORTEST expiry anyone can configure still outlasts the aging window"
         );
-        assert!(k::FLEET_QUEUED_EXPIRY_MS_DEFAULT > k::FLEET_QUEUED_EXPIRY_MS_MIN);
-        assert!(k::FLEET_QUEUED_EXPIRY_MS_MAX > k::FLEET_QUEUED_EXPIRY_MS_DEFAULT);
+        const _: () = assert!(k::FLEET_QUEUED_EXPIRY_MS_DEFAULT > k::FLEET_QUEUED_EXPIRY_MS_MIN);
+        const _: () = assert!(k::FLEET_QUEUED_EXPIRY_MS_MAX > k::FLEET_QUEUED_EXPIRY_MS_DEFAULT);
     }
 }

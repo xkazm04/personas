@@ -626,8 +626,3 @@ fn short_random() -> String {
 // Path is intentionally unused on builds without the ml feature — silence.
 #[cfg(not(feature = "ml"))]
 fn _silence_unused(_p: &Path) {}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

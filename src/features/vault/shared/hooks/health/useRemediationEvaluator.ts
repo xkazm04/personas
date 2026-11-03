@@ -15,7 +15,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useVaultStore } from "@/stores/vaultStore";
-import { getRotationStatus, type RotationStatus } from '@/api/vault/rotation';
+import { getAllRotationStatuses, getRotationStatus, type RotationStatus } from '@/api/vault/rotation';
 import {
   remediationBus,
   actionsForRemediation,
@@ -95,6 +95,24 @@ export function useRemediationEvaluator() {
 
     const results: EvaluationResult[] = [];
 
+    // One batched round-trip for the whole pass, fetched only when at least one
+    // credential is a candidate (see the fast-path filter below). If the batch
+    // itself fails, `statuses` stays null and each candidate falls back to the
+    // per-credential command, so a batch failure does not lose evaluations.
+    let statuses: Record<string, RotationStatus> | null | undefined;
+    const hasCandidate = credentials.some((c) => {
+      const k = classifyEmbeddedAnomaly(c.metadata);
+      return k !== 'absent' && k !== 'healthy';
+    });
+    if (hasCandidate) {
+      try {
+        statuses = await getAllRotationStatuses();
+      } catch (err) {
+        silentCatch('useRemediationEvaluator:batchStatus')(err);
+        statuses = null;
+      }
+    }
+
     for (const cred of credentials) {
       if (!mountedRef.current) break;
 
@@ -115,10 +133,16 @@ export function useRemediationEvaluator() {
 
       // Credential has non-healthy remediation -- fetch full rotation status
       let rotationStatus: RotationStatus | null;
-      try {
-        rotationStatus = await getRotationStatus(cred.id);
-      } catch {
-        continue;
+      if (statuses) {
+        // The batch omits a credential whose status failed to compute, which is
+        // the same outcome as a failed per-credential fetch: skip it.
+        rotationStatus = statuses[cred.id] ?? null;
+      } else {
+        try {
+          rotationStatus = await getRotationStatus(cred.id);
+        } catch {
+          continue;
+        }
       }
 
       if (!rotationStatus?.anomaly_score) continue;

@@ -412,33 +412,6 @@ pub async fn search_similar_kind(
     Ok(rows)
 }
 
-#[cfg(test)]
-mod reembed_selection_tests {
-    //! The selection rule behind `companion_reembed_missing`, tested without an
-    //! ONNX model — deliberately, because the embedder is the one part of that
-    //! command a test cannot have and the *choice of what to re-embed* is the
-    //! part that can actually be wrong.
-    //!
-    //! `companion_embedding` is a `vec0` virtual table in production, but this
-    //! code only ever runs `SELECT node_id FROM companion_embedding` against
-    //! it, so a plain table stands in exactly.
-    use rusqlite::params;
-
-    const MODEL: &str = "AllMiniLML6V2Q";
-
-    fn seed(pool: &crate::db::UserDbPool, rows: &[(&str, Option<&str>)]) {
-        let conn = pool.get().unwrap();
-        for (id, model) in rows {
-            conn.execute(
-                "INSERT INTO companion_node (id, kind, file_path, content_hash, embedding_model) \
-                 VALUES (?1, 'fact', ?2, 'sha256:x', ?3)",
-                params![id, format!("semantic/user/{id}.md"), model],
-            )
-            .unwrap();
-        }
-    }
-}
-
 #[cfg(all(test, feature = "ml"))]
 mod tests {
     //! Verifies the one runtime unknown behind the dedicated doctrine lane:

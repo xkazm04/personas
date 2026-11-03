@@ -3104,7 +3104,7 @@ mod tests {
         let t0 = 10_000;
         // Found unfit with nothing promoted past it: stamped, not skipped.
         assert_eq!(
-            mark_unfit(&reg, &[xl.clone()], t0, false),
+            mark_unfit(&reg, std::slice::from_ref(&xl), t0, false),
             vec![(xl.clone(), 0, Some(t0))]
         );
         let just_before = scan_queue(&reg, t0 + AGING_MAX_WAIT_MS - 1, &inputs, used);
@@ -3849,7 +3849,7 @@ mod tests {
         );
         // The operator drags the LAST row to the front - the whole queue is
         // reordered and her seat is not part of the bargain.
-        let ranks = reg.renumber_queue(&[behind.clone()]);
+        let ranks = reg.renumber_queue(std::slice::from_ref(&behind));
         assert_eq!(
             ranks,
             vec![
@@ -3992,7 +3992,7 @@ mod tests {
         );
         // The same drag that could not move her a moment ago now does.
         assert_eq!(
-            reg.renumber_queue(&[behind.clone()]),
+            reg.renumber_queue(std::slice::from_ref(&behind)),
             vec![
                 (behind.clone(), 1),
                 (curator.clone(), 2),

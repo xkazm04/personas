@@ -1572,7 +1572,6 @@ mod tests {
         }
     }
 
-    #[test]
     /// The Fleet Monitor groups its grid by `personas.home_team_id`, and this
     /// door set none — so every persona an Architect adopted landed in the
     /// ungrouped tray beside every other agent, and the operator could not
@@ -1625,6 +1624,7 @@ mod tests {
         );
     }
 
+    #[test]
     fn adopting_twice_creates_one_persona_and_no_duplicate_charters() {
         // `adopt` seeds the persona's manifest on disk, and the brain root is
         // a process-global env var — take the one shared lock rather than a
@@ -1809,8 +1809,10 @@ mod tests {
     /// untouched.
     #[test]
     fn the_codebase_stewardship_slug_is_stamped_onto_the_codex_lane() {
-        let mut spec = crate::db::models::ResponsibilitySpec::default();
-        spec.model_override = Some(personas_core::model_ids::OPUS_CURRENT.to_string());
+        let mut spec = crate::db::models::ResponsibilitySpec {
+            model_override: Some(personas_core::model_ids::OPUS_CURRENT.to_string()),
+            ..Default::default()
+        };
         apply_worker_engine("accepted-idea-delivery", &mut spec);
         assert_eq!(spec.worker_engine, None);
         assert_eq!(

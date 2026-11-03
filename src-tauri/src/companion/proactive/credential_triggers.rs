@@ -154,8 +154,10 @@ mod tests {
     /// writer — and it must read the same as absent. Set through the typed
     /// field rather than hand-written JSON, for the reason on `ledger_meta`.
     fn ledger_meta_flag_explicitly_false() -> String {
-        let mut l = CredentialLedger::default();
-        l.needs_reauth = Some(false);
+        let l = CredentialLedger {
+            needs_reauth: Some(false),
+            ..Default::default()
+        };
         l.to_json_string().expect("ledger json")
     }
 

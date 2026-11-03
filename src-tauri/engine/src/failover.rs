@@ -841,7 +841,7 @@ mod tests {
         classify_error("some billing issue suspended");
         let after = unclassified_error_count();
         assert!(
-            after >= before + 1,
+            after > before,
             "unclassified counter should increment for unknown patterns"
         );
     }

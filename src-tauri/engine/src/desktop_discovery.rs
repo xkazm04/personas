@@ -513,6 +513,34 @@ fn humanize_mcp_name(name: &str) -> String {
     personas_core::utils::text::humanize_identifier(name, true)
 }
 
+/// Get the app version by running the binary with --version (1s timeout).
+pub async fn get_app_version(binary_path: &str) -> Option<String> {
+    let mut cmd = tokio::process::Command::new(binary_path);
+    cmd.arg("--version");
+
+    #[cfg(target_os = "windows")]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    cmd.kill_on_drop(true);
+    let output = tokio::time::timeout(std::time::Duration::from_secs(1), cmd.output())
+        .await
+        .ok()? // timeout
+        .ok()?; // IO error
+
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        // Take first line, trim common prefixes
+        let version = stdout.lines().next()?.trim().to_string();
+        Some(version)
+    } else {
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -578,33 +606,5 @@ mod tests {
                 "KNOWN_CLIS missing expected entry: {expected}"
             );
         }
-    }
-}
-
-/// Get the app version by running the binary with --version (1s timeout).
-pub async fn get_app_version(binary_path: &str) -> Option<String> {
-    let mut cmd = tokio::process::Command::new(binary_path);
-    cmd.arg("--version");
-
-    #[cfg(target_os = "windows")]
-    {
-        #[allow(unused_imports)]
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
-
-    cmd.kill_on_drop(true);
-    let output = tokio::time::timeout(std::time::Duration::from_secs(1), cmd.output())
-        .await
-        .ok()? // timeout
-        .ok()?; // IO error
-
-    if output.status.success() {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        // Take first line, trim common prefixes
-        let version = stdout.lines().next()?.trim().to_string();
-        Some(version)
-    } else {
-        None
     }
 }

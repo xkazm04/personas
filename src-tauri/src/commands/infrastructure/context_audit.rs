@@ -773,7 +773,7 @@ mod tests {
     #[test]
     fn a_report_without_a_walked_tree_is_not_disk_verified() {
         let c = ctx("alpha", &["src/a.rs"], &[]);
-        let none = audit("p", &[], &[c.clone()], None, None, None);
+        let none = audit("p", &[], std::slice::from_ref(&c), None, None, None);
         assert!(
             !none.disk_verified,
             "no tree walked: structural checks only"

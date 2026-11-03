@@ -17,17 +17,20 @@ import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { LensSheetFrame } from '../../lens/LensSheetFrame';
+import type { FocusPlace } from '../model/focus';
 import { BlueprintSheet } from '../BlueprintSheet';
 import type { LoadErrorKind } from './loadError';
 import { evidenceFeature, useLiveBlueprint } from './useLiveBlueprint';
 
-export function LiveBlueprint({ projectId, name, eyebrow, focus, onClose }: {
+export function LiveBlueprint({ projectId, name, eyebrow, focus, place, onClose }: {
   projectId: string;
   /** The product's name, for the frame while the snapshot reads. */
   name: string;
   eyebrow: string;
   /** `evidence`: open at the first feature waiting for triage. */
   focus: 'product' | 'evidence';
+  /** Open at a place bp's shared focus moved to (the follower). */
+  place?: FocusPlace | undefined;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -37,7 +40,7 @@ export function LiveBlueprint({ projectId, name, eyebrow, focus, onClose }: {
   const initialFeature = useMemo(() => (scan && focus === 'evidence' ? evidenceFeature(scan) : undefined), [scan, focus]);
 
   if (live.status === 'ready') {
-    return <BlueprintSheet data={live.data} actions={live.actions} initialFeature={initialFeature} onClose={onClose} />;
+    return <BlueprintSheet data={live.data} actions={live.actions} initialFeature={initialFeature} {...(place ? { initialPlace: place } : {})} onClose={onClose} />;
   }
   const close = <Button variant="secondary" size="md" onClick={onClose} data-testid="lens-sheet-close">{L.close}</Button>;
   return (

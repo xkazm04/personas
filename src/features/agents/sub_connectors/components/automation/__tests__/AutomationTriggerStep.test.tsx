@@ -22,7 +22,7 @@ function renderStep(selectedId: string | null) {
       platformCredentialId={selectedId} setPlatformCredentialId={() => {}}
       platformConnector={null}
       githubRepos={[]} githubPerms={null} githubRepo={null} setGithubRepo={() => {}} loadingRepos={false}
-      zapierZaps={[]} loadingZaps={false} reposFailed={false} zapsFailed={false} onRetryListings={() => {}}
+      reposFailed={false} onRetryListings={() => {}}
       availableUseCases={[]} useCaseId={null} setUseCaseId={() => {}}
       canDesign={false} onDesign={() => {}}
     />,
@@ -30,7 +30,7 @@ function renderStep(selectedId: string | null) {
 }
 
 describe('AutomationTriggerStep platform listings (card 24)', () => {
-  function renderListing(platform: 'github_actions' | 'zapier', failed: boolean) {
+  function renderListing(platform: 'github_actions' | 'zapier', failed: boolean, retired: object = {}) {
     const ghCred = { id: 'c1', name: 'Work', service_type: platform } as unknown as CredentialMetadata;
     return render(
       <AutomationTriggerStep
@@ -42,9 +42,10 @@ describe('AutomationTriggerStep platform listings (card 24)', () => {
         platformCredentialId="c1" setPlatformCredentialId={() => {}}
         platformConnector={null}
         githubRepos={[]} githubPerms={null} githubRepo={null} setGithubRepo={() => {}} loadingRepos={false}
-        zapierZaps={[]} loadingZaps={false} reposFailed={failed} zapsFailed={failed} onRetryListings={() => {}}
+        reposFailed={failed} onRetryListings={() => {}}
         availableUseCases={[]} useCaseId={null} setUseCaseId={() => {}}
         canDesign={false} onDesign={() => {}}
+        {...retired}
       />,
     );
   }
@@ -61,10 +62,14 @@ describe('AutomationTriggerStep platform listings (card 24)', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('a failed zap listing says it failed, not "A new Zap will be created"', () => {
-    renderListing('zapier', true);
-    expect(screen.getByRole('alert').textContent).toMatch(/Couldn't load your Zaps/);
-    expect(screen.queryByText(/No existing Zaps found/)).toBeNull();
+  it('zapier offers no zap picker (no backend command lists zaps)', () => {
+    // The retired zap-picker props are still passed so a regression that renders
+    // the picker again shows it, instead of crashing on undefined.
+    const { container } = renderListing('zapier', true, { zapierZaps: [], loadingZaps: false, zapsFailed: true });
+    expect(container).toBeTruthy();
+    expect(screen.queryByText(/Your existing Zaps/)).toBeNull();
+    expect(screen.queryByText(/Couldn't load your Zaps/)).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('card 26: the scope warning reads both scopes through the catalog', () => {
@@ -75,7 +80,7 @@ describe('AutomationTriggerStep platform listings (card 24)', () => {
         editAutomation={null} needsCredential hasPlatformCredential platformCredentials={[ghCred]}
         platformCredentialId="c1" setPlatformCredentialId={() => {}} platformConnector={null}
         githubRepos={[]} githubPerms={{ hasRepo: false, hasWorkflow: false } as never} githubRepo={null} setGithubRepo={() => {}} loadingRepos={false}
-        zapierZaps={[]} loadingZaps={false} reposFailed={false} zapsFailed={false} onRetryListings={() => {}}
+        reposFailed={false} onRetryListings={() => {}}
         availableUseCases={[]} useCaseId={null} setUseCaseId={() => {}} canDesign={false} onDesign={() => {}}
       />,
     );

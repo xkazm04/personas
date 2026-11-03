@@ -1501,7 +1501,7 @@ mod tests {
         ];
         let map = build_predecessor_map(&connections);
         assert_eq!(map.get("b").map(|v| v.len()), Some(1));
-        assert!(map.get("a").is_none());
+        assert!(!map.contains_key("a"));
     }
 
     #[test]

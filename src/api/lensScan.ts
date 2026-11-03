@@ -20,6 +20,10 @@ import type { LensScanStartResult } from '@/lib/bindings/LensScanStartResult';
 import type { LensScanTriageDecision } from '@/lib/bindings/LensScanTriageDecision';
 import type { LensScanTriageResult } from '@/lib/bindings/LensScanTriageResult';
 import type { CommitDiff, ScanSnapshot, TriageResult } from '@/lib/lensScan/wire';
+import type {
+  BlueprintData,
+  DecideResult as SeamDecideResult,
+} from '@/features/decision-center/blueprint/source';
 
 export type {
   LensScanDecideDecision,
@@ -45,7 +49,7 @@ export interface LensScanSnapshotData {
   events: string;
   /** The store, as bp's wire: column names, NULL columns omitted, JSON columns parsed. */
   scan: ScanSnapshot;
-  /** `PRAGMA user_version` of the store when it was read (1, 2 or 3 today). */
+  /** `PRAGMA user_version` of the store when it was read (1 to 4 today; v4 adds tier, risk_class, origin and external_ref to proposals). */
   storeVersion: number;
 }
 
@@ -151,3 +155,16 @@ export async function getLensScanCommitDiff(projectId: string, sha: string): Pro
 /** The bytes of a screenshot or recording under the store's `shots/` directory. */
 export const getLensScanShot = (projectId: string, path: string) =>
   invoke<ArrayBuffer>('lens_scan_shot', { projectId, path });
+
+// Frozen-seam guard. It lives here, not in `__tests__`, because tsconfig excludes
+// `src/**/__tests__/**`: an `expectTypeOf` there is a runtime no-op tsc never sees (it sat red
+// on `products` unseen). Here a drift fails `tsc --noEmit`.
+type Same<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
+type Assert<T extends true> = T;
+// `products` and `lastRunAt` are joined in by `readBlueprint` from the products store
+// (`live/liveActions.ts`), not carried by the snapshot door, so they are outside this type.
+export type _SnapshotMatchesSeam = Assert<
+  Same<LensScanSnapshotData, Omit<BlueprintData, 'product' | 'products' | 'lastRunAt'>>
+>;
+export type _DecideMatchesSeam = Assert<Same<DecideResult, SeamDecideResult>>;

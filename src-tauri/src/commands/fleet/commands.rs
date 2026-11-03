@@ -619,12 +619,12 @@ mod tests {
 
     #[allow(dead_code)]
     fn _commands_compile(app: AppHandle) {
-        let _ = fleet_spawn_session(app.clone(), String::new(), None, None, None);
-        let _ = fleet_write_input(String::new(), String::new());
-        let _ = fleet_resize_session(String::new(), 80, 24);
-        let _ = fleet_kill_session(app.clone(), String::new());
-        let _ = fleet_list_sessions(None, None);
-        let _ = fleet_remove_session(app, String::new());
+        let _fut = fleet_spawn_session(app.clone(), String::new(), None, None, None);
+        let _fut = fleet_write_input(String::new(), String::new());
+        let _fut = fleet_resize_session(String::new(), 80, 24);
+        let _fut = fleet_kill_session(app.clone(), String::new());
+        let _fut = fleet_list_sessions(None, None);
+        let _fut = fleet_remove_session(app, String::new());
     }
 
     #[test]

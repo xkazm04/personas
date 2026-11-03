@@ -27,7 +27,11 @@ function rustRiskLevels(): Record<string, string> {
   const src = rustSource('src-tauri/engine/src/desktop_security.rs');
   const start = src.indexOf('pub fn risk_level(&self)');
   if (start < 0) throw new Error('DesktopCapability::risk_level not found; update this pin');
-  const body = src.slice(start, src.indexOf('\n    }\n', start));
+  // An unmatched end needle (-1) would slice to end of file and let a later
+  // fn's arms answer for this one; fail loudly instead.
+  const end = src.indexOf('\n    }\n', start);
+  if (end < 0) throw new Error('end of DesktopCapability::risk_level not found; update this pin');
+  const body = src.slice(start, end);
   const out: Record<string, string> = {};
   for (const arm of body.matchAll(/((?:Self::\w+(?:\s*\|)?\s*)+)=>\s*"(\w+)"/g)) {
     for (const v of arm[1]!.matchAll(/Self::(\w+)/g)) out[snake(v[1]!)] = arm[2]!;

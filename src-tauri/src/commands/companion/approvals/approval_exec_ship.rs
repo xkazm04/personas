@@ -1523,7 +1523,7 @@ mod ship_milestone_tests {
         assert_eq!(SHIP_MILESTONE_MAX_ROWS, FLEET_PLAN_MAX_ROWS);
         assert_eq!(SHIP_MILESTONE_NAME_MAX, FLEET_PLAN_INTENT_MAX);
         assert_eq!(SHIP_MILESTONE_DESC_MAX, FLEET_PLAN_OBJECTIVE_MAX);
-        assert!(
+        const _: () = assert!(
             SHIP_MILESTONE_GOAL_MAX < FLEET_PLAN_OBJECTIVE_MAX,
             "the objective is a title; a brief-sized bound is what let a paragraph become the heading",
         );
@@ -1574,8 +1574,6 @@ mod ship_milestone_tests {
 #[cfg(test)]
 mod ship_scope_tests {
     use super::*;
-    use r2d2::Pool;
-    use r2d2_sqlite::SqliteConnectionManager;
 
     /// The shared fixture plus the rows this path needs: a SECOND project (so
     /// the cross-project guard is tested against something real rather than

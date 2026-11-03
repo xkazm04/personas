@@ -1138,6 +1138,69 @@ pub async fn cli_capture_save(
     Ok(cred)
 }
 
+/// Internal verify helper -- callable from both the Tauri command and the
+/// healthcheck engine without going through the Tauri state machinery.
+pub(crate) async fn run_verify(service_type: &str) -> CliVerifyResult {
+    let Some(spec) = find_spec(service_type) else {
+        return CliVerifyResult {
+            service_type: service_type.to_string(),
+            authenticated: false,
+            identity: None,
+            message: format!("No CLI spec registered for `{}`", service_type),
+        };
+    };
+
+    let binary_name = spec.binary;
+    let bin_path = tokio::task::spawn_blocking(move || resolve_cli_path(binary_name, &[]))
+        .await
+        .unwrap_or(None);
+
+    let Some(path) = bin_path else {
+        return CliVerifyResult {
+            service_type: service_type.to_string(),
+            authenticated: false,
+            identity: None,
+            message: format!("`{}` not installed or not on the allowlist", spec.binary),
+        };
+    };
+
+    // Auth check first so an unauthenticated state produces a targeted message.
+    match run_step(&path, &spec.auth_check).await {
+        Ok(identity) => {
+            // If the spec has a dedicated verify step, run it too.
+            if let Some(vs) = spec.verify_step.as_ref() {
+                match run_step(&path, vs).await {
+                    Ok(_) => CliVerifyResult {
+                        service_type: service_type.to_string(),
+                        authenticated: true,
+                        identity: Some(identity.clone()),
+                        message: format!("Authenticated as {}", identity),
+                    },
+                    Err(e) => CliVerifyResult {
+                        service_type: service_type.to_string(),
+                        authenticated: false,
+                        identity: Some(identity),
+                        message: format!("Auth check passed but verify step failed: {}", e),
+                    },
+                }
+            } else {
+                CliVerifyResult {
+                    service_type: service_type.to_string(),
+                    authenticated: true,
+                    identity: Some(identity.clone()),
+                    message: format!("Authenticated as {}", identity),
+                }
+            }
+        }
+        Err(_) => CliVerifyResult {
+            service_type: service_type.to_string(),
+            authenticated: false,
+            identity: None,
+            message: spec.auth_instruction.to_string(),
+        },
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1354,68 +1417,5 @@ mod tests {
                 );
             }
         }
-    }
-}
-
-/// Internal verify helper -- callable from both the Tauri command and the
-/// healthcheck engine without going through the Tauri state machinery.
-pub(crate) async fn run_verify(service_type: &str) -> CliVerifyResult {
-    let Some(spec) = find_spec(service_type) else {
-        return CliVerifyResult {
-            service_type: service_type.to_string(),
-            authenticated: false,
-            identity: None,
-            message: format!("No CLI spec registered for `{}`", service_type),
-        };
-    };
-
-    let binary_name = spec.binary;
-    let bin_path = tokio::task::spawn_blocking(move || resolve_cli_path(binary_name, &[]))
-        .await
-        .unwrap_or(None);
-
-    let Some(path) = bin_path else {
-        return CliVerifyResult {
-            service_type: service_type.to_string(),
-            authenticated: false,
-            identity: None,
-            message: format!("`{}` not installed or not on the allowlist", spec.binary),
-        };
-    };
-
-    // Auth check first so an unauthenticated state produces a targeted message.
-    match run_step(&path, &spec.auth_check).await {
-        Ok(identity) => {
-            // If the spec has a dedicated verify step, run it too.
-            if let Some(vs) = spec.verify_step.as_ref() {
-                match run_step(&path, vs).await {
-                    Ok(_) => CliVerifyResult {
-                        service_type: service_type.to_string(),
-                        authenticated: true,
-                        identity: Some(identity.clone()),
-                        message: format!("Authenticated as {}", identity),
-                    },
-                    Err(e) => CliVerifyResult {
-                        service_type: service_type.to_string(),
-                        authenticated: false,
-                        identity: Some(identity),
-                        message: format!("Auth check passed but verify step failed: {}", e),
-                    },
-                }
-            } else {
-                CliVerifyResult {
-                    service_type: service_type.to_string(),
-                    authenticated: true,
-                    identity: Some(identity.clone()),
-                    message: format!("Authenticated as {}", identity),
-                }
-            }
-        }
-        Err(_) => CliVerifyResult {
-            service_type: service_type.to_string(),
-            authenticated: false,
-            identity: None,
-            message: spec.auth_instruction.to_string(),
-        },
     }
 }

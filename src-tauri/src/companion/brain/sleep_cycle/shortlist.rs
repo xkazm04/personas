@@ -356,7 +356,7 @@ mod tests {
 
     #[test]
     fn groups_seed_on_what_the_cycle_wrote_and_skip_seeds_with_no_neighbour() {
-        let written = vec![
+        let written = [
             fact("f_a", "project", "quill_framework", "FastAPI"),
             fact(
                 "f_lonely",

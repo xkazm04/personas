@@ -26,7 +26,8 @@ export interface Nav {
   zoom(f: number): void;
   /** Fly a camera target in (find results). */
   flyToFeature(fid: string): void;
-  flyToPlace(kind: 'wing' | 'bay', id: string): void;
+  /** Fly to a wing, room or bay by id; `ms` 0 lands at once (a sheet opening at a place, before its first resize). */
+  flyToPlace(kind: 'wing' | 'room' | 'bay', id: string, ms?: number): void;
 }
 
 interface Deps {
@@ -134,12 +135,13 @@ export function useNavigation({ engine, plan, work, ui, dispatch, queue }: Deps)
     engine.setFocus({ fid, pid: null });
   }, [engine, plan, dispatch]);
 
-  const flyToPlace = useCallback((kind: 'wing' | 'bay', id: string) => {
+  const flyToPlace = useCallback((kind: 'wing' | 'room' | 'bay', id: string, ms?: number) => {
     if (!engine) return;
-    const o = kind === 'wing' ? plan.L.WING[id] : plan.L.BAY[id];
+    const o = kind === 'wing' ? plan.L.WING[id] : kind === 'room' ? plan.L.ROOM[id] : plan.L.BAY[id];
     if (!o) return;
     dispatch({ type: 'closeSheet' });
-    engine.cam.flyTo(engine.cam.fitOf(o));
+    if (ms === undefined) engine.cam.flyTo(engine.cam.fitOf(o));
+    else engine.cam.flyTo(engine.cam.fitOf(o), ms);
   }, [engine, plan, dispatch]);
 
   return useMemo(() => ({ toLevel, openSheet, closeSheet, compare, select, step, wing, zoom, flyToFeature, flyToPlace }), [toLevel, openSheet, closeSheet, compare, select, step, wing, zoom, flyToFeature, flyToPlace]);

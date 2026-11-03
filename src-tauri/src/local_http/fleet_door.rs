@@ -574,7 +574,8 @@ mod tests {
 
     #[test]
     fn the_flags_a_caller_can_shape_are_checked() {
-        let cases: Vec<Box<dyn Fn(&mut EnqueueBody)>> = vec![
+        type Mutation = Box<dyn Fn(&mut EnqueueBody)>;
+        let cases: Vec<Mutation> = vec![
             Box::new(|b| b.output_format = "json".into()),
             Box::new(|b| b.model = Some("--dangerously-skip-permissions".into())),
             Box::new(|b| b.model = Some("opus; rm -rf".into())),

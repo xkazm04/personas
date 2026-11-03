@@ -281,7 +281,10 @@
 }
 
 /* -- Design Tokens --
-   Default :root values (dark base). Theme variants override below. */
+   Default :root values (dark base). Theme variants override below.
+   Midnight is applied by REMOVING data-theme, so the hover preview's
+   data-theme="dark-midnight" scope needs the same values bound explicitly. */
+[data-theme="dark-midnight"],
 :root {
   --background: #0a0e14;
   --foreground: #e2e8f0;

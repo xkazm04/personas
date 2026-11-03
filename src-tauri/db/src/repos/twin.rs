@@ -2194,7 +2194,7 @@ mod tests {
             None,
             "Writes in short sentences.",
             5,
-            &[comm.id.clone()],
+            std::slice::from_ref(&comm.id),
         )
         .expect("self fact");
         create_distilled_fact(
@@ -2203,7 +2203,7 @@ mod tests {
             Some("alice"),
             "Alice prefers email.",
             4,
-            &[comm.id.clone()],
+            std::slice::from_ref(&comm.id),
         )
         .expect("contact fact");
 

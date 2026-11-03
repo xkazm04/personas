@@ -167,7 +167,7 @@ fn provider_cost_known_only_for_non_ollama() {
 /// zero (which would deadlock the semaphore) or unbounded.
 #[test]
 fn lab_cell_concurrency_is_bounded() {
-    assert!(LAB_CELL_CONCURRENCY >= 1 && LAB_CELL_CONCURRENCY <= 8);
+    const _: () = assert!(LAB_CELL_CONCURRENCY >= 1 && LAB_CELL_CONCURRENCY <= 8);
 }
 
 /// `await_cancel` resolves promptly once the flag flips — this is what lets a

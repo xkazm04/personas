@@ -998,7 +998,8 @@ mod tests {
     #[test]
     fn the_app_master_cutoff_is_shorter_than_the_nights() {
         assert_eq!(APP_MASTER_AWAITING_SLOT_CUTOFF_SECS, 15 * 60);
-        assert!(APP_MASTER_AWAITING_SLOT_CUTOFF_SECS < OVERNIGHT_AWAITING_SLOT_CUTOFF_SECS);
+        const _: () =
+            assert!(APP_MASTER_AWAITING_SLOT_CUTOFF_SECS < OVERNIGHT_AWAITING_SLOT_CUTOFF_SECS);
     }
 
     #[test]

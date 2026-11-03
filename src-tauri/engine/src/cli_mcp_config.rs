@@ -449,7 +449,7 @@ mod tests {
         assert_eq!(note_sidecar_missing(p), 1);
         assert_eq!(note_sidecar_missing(p), 2);
         assert_eq!(note_sidecar_missing(p), 3);
-        assert!(3 >= SIDECAR_MISSING_INCIDENT_THRESHOLD);
+        const _: () = assert!(3 >= SIDECAR_MISSING_INCIDENT_THRESHOLD);
 
         // A different persona is tracked independently.
         let other = "test-persona-note-sidecar-B";

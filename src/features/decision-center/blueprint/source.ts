@@ -8,6 +8,7 @@
 // through verbatim: the drawing shows `skipped[]` and its reasons as the store
 // gave them, and never decides on its own whether a transition is allowed.
 
+import type { BpFollower } from '../lens/bpFollower';
 import type { CommitDiff, ScanSnapshot, TriageResult } from '@/lib/lensScan/wire';
 
 /** One product: a `dev_projects` row whose root holds `.ai/lens-scan/scan.db`. */
@@ -57,7 +58,7 @@ export interface BlueprintData {
   events: string;
   /** The store, as bp's wire: column names, NULL columns omitted. */
   scan: ScanSnapshot;
-  /** `PRAGMA user_version` of the store when it was read (1, 2 or 3 today). */
+  /** `PRAGMA user_version` of the store when it was read (1 to 4 today; v4 adds tier, risk_class, origin and external_ref to proposals). */
   storeVersion: number;
 }
 
@@ -104,6 +105,21 @@ export interface StartResult {
   pid: number;
 }
 
+/**
+ * bp's shared focus, read through Personas' Rust (spark roadmap S6): the sheet FOLLOWS the place bp's owner is looking
+ * at, and never publishes one. Every call answers bp's own JSON; `view` is bp's `SharedView`, validated by the sheet.
+ */
+export interface FollowSource {
+  /** This window's bp reader id, `personas:<window>`. */
+  reader: string;
+  /** One read; `online: false` while bp is down (Rust holds that answer for 5 s instead of knocking every second). */
+  read(): Promise<{ online: boolean; view?: unknown; error?: string }>;
+  /** A presence move: hello (every 15 s while a Blueprint surface is visible), follow `*`, unfollow, forget (on close). */
+  move(op: 'hello' | 'follow' | 'unfollow' | 'forget'): Promise<unknown>;
+  /** bp's products, each with the Personas project at the same root: the slug a place names, looked up, never guessed. */
+  products(): Promise<{ slug: string; name: string; root?: string; projectId?: string }[]>;
+}
+
 /** Every write and every side read the drawing may make. */
 export interface BlueprintActions {
   decide(ids: string[], decision: DecideDecision, note?: string): Promise<DecideResult>;
@@ -120,4 +136,6 @@ export interface BlueprintActions {
    * product; the drawing does nothing else. Absent = no switching (the fixture, a test).
    */
   openProduct?(projectId: string): void;
+  /** The window's follower of bp's shared focus (lens/bpFollower.ts). Absent = no Follow chip (the fixture, a test). */
+  follow?: BpFollower;
 }

@@ -714,6 +714,32 @@ fn mark_triggered_and_publish(
     event_repo::get_by_id(pool, &event_id)
 }
 
+/// Windows: clear HANDLE_FLAG_INHERIT on the listener socket. Sockets are
+/// inheritable by default, the app spawns many children (claude sessions,
+/// shell helpers), and a child that outlives a killed desktop keeps the
+/// LISTEN handle alive — a ghost :9420/:9421 owned by a dead PID that no
+/// restart can bind past (bench nights 2026-08-25, twice, two ports). A
+/// listener no child can inherit dies with this process, always.
+fn unset_listener_inheritance(listener: &tokio::net::TcpListener) {
+    #[cfg(windows)]
+    {
+        use std::os::windows::io::AsRawSocket;
+        use windows::Win32::Foundation::{
+            SetHandleInformation, HANDLE, HANDLE_FLAGS, HANDLE_FLAG_INHERIT,
+        };
+        let raw = listener.as_raw_socket();
+        // SAFETY: the raw socket is a valid handle for the lifetime of
+        // `listener`, and clearing the inherit flag does not invalidate it.
+        let _ = unsafe {
+            SetHandleInformation(HANDLE(raw as _), HANDLE_FLAG_INHERIT.0, HANDLE_FLAGS(0))
+        };
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = listener;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -874,31 +900,5 @@ mod tests {
         assert!(!verify_hmac_sha256("secret", b"body", "deadbeef"));
         assert!(!verify_hmac_sha256("secret", b"body", "sha256=deadbeef"));
         assert!(!verify_hmac_sha256("secret", b"body", "not-hex"));
-    }
-}
-
-/// Windows: clear HANDLE_FLAG_INHERIT on the listener socket. Sockets are
-/// inheritable by default, the app spawns many children (claude sessions,
-/// shell helpers), and a child that outlives a killed desktop keeps the
-/// LISTEN handle alive — a ghost :9420/:9421 owned by a dead PID that no
-/// restart can bind past (bench nights 2026-08-25, twice, two ports). A
-/// listener no child can inherit dies with this process, always.
-fn unset_listener_inheritance(listener: &tokio::net::TcpListener) {
-    #[cfg(windows)]
-    {
-        use std::os::windows::io::AsRawSocket;
-        use windows::Win32::Foundation::{
-            SetHandleInformation, HANDLE, HANDLE_FLAGS, HANDLE_FLAG_INHERIT,
-        };
-        let raw = listener.as_raw_socket();
-        // SAFETY: the raw socket is a valid handle for the lifetime of
-        // `listener`, and clearing the inherit flag does not invalidate it.
-        let _ = unsafe {
-            SetHandleInformation(HANDLE(raw as _), HANDLE_FLAG_INHERIT.0, HANDLE_FLAGS(0))
-        };
-    }
-    #[cfg(not(windows))]
-    {
-        let _ = listener;
     }
 }

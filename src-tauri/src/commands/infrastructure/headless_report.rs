@@ -778,7 +778,8 @@ mod tests {
 
         let bad_request = |e: &DoorError| matches!(e, DoorError::BadRequest(_));
         let not_found = |e: &DoorError| matches!(e, DoorError::NotFound(_));
-        let cases: Vec<(&str, Mutate, &dyn Fn(&DoorError) -> bool)> = vec![
+        type Case<'a> = (&'a str, Mutate, &'a dyn Fn(&DoorError) -> bool);
+        let cases: Vec<Case<'_>> = vec![
             (
                 "unknown project",
                 Box::new(|b| b.project_id = "nope".into()),

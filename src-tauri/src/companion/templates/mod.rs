@@ -628,7 +628,7 @@ mod tests {
 
     #[test]
     fn the_constitution_teaches_layer_one_at_v69() {
-        assert!(CONSTITUTION_VERSION >= 69);
+        const _: () = assert!(CONSTITUTION_VERSION >= 69);
         assert!(CONSTITUTION_MD.contains("\n# Layer one\n"));
         assert!(CONSTITUTION_MD.contains("Layer one this turn:"));
         // Canonical `propose_action` envelope, as the op reference teaches.
@@ -648,7 +648,7 @@ mod tests {
 
     #[test]
     fn the_constitution_teaches_the_lifecycle_toolset_at_v70() {
-        assert!(CONSTITUTION_VERSION >= 70);
+        const _: () = assert!(CONSTITUTION_VERSION >= 70);
         assert!(CONSTITUTION_MD.contains("\n### Lifecycle ("));
         assert!(CONSTITUTION_MD.contains("\"action\": \"describe_lifecycle\""));
         assert!(CONSTITUTION_MD.contains("\"action\": \"show_lifecycle_proposal\""));

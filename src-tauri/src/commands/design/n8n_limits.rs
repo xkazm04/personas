@@ -93,7 +93,7 @@ mod tests {
         // previous draft. If the transform cap ever drops to or below the
         // session cap, a legitimate workflow at the session limit cannot be
         // transformed. Keep at least 2× headroom.
-        assert!(
+        const _: () = assert!(
             MAX_TRANSFORM_PAYLOAD_BYTES >= MAX_WORKFLOW_JSON_BYTES * 2,
             "transform payload cap must be at least 2x the session workflow cap"
         );

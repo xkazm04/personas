@@ -1575,7 +1575,8 @@ mod tests {
                 "{needs_argument} documents an invocation and none of its lines is bare"
             );
         }
-        for undocumented in ["forge"] {
+        {
+            let undocumented = "forge";
             let s = by_name(&skills, undocumented);
             assert!(
                 !s.invocation_documented,

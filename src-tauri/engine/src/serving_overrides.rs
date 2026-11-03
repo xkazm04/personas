@@ -940,7 +940,7 @@ const _: () = Mechanism::assert_all_covered();
 /// ratchet, not an ignore file.
 ///
 /// `(family, file relative to src-tauri/, occurrences, why it is not a member)`
-pub const NON_MEMBERS: [(Family, &str, usize, &str); 10] = [
+pub const NON_MEMBERS: [(Family, &str, usize, &str); 9] = [
     (
         Family::ModelProfileSubstitution,
         "src/engine/runner/mod.rs",
@@ -961,12 +961,6 @@ pub const NON_MEMBERS: [(Family, &str, usize, &str); 10] = [
         "src/commands/core/chat_turn.rs",
         1,
         "assertion inside an inline #[cfg(test)] module; the production site is claimed by \n         Mechanism::ChatTurnSessionResume",
-    ),
-    (
-        Family::ModelProfileSubstitution,
-        "db/src/repos/resources/persona_change_log.rs",
-        1,
-        "test fixture inside an inline #[cfg(test)] module",
     ),
     (
         Family::DurablePromptRewrite,

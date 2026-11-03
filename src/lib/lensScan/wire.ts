@@ -1,6 +1,10 @@
 // PORTED VERBATIM from bp src/lib/scan/types.ts @ 519c80f (spark one-control, Stage 2 contract).
 // The lens-scan store wire: store column names, NULL columns omitted. Personas' lens_scan_* doors return exactly this shape.
 // Re-sync by copying the file again and re-applying only the marked edits; never hand-drift it.
+// EDIT (port, store v4): the v4 proposal columns (origin, external_ref, external_url, tier, risk_class, ranked_by,
+// ranked_at), ProposalOrigin, RiskClass, Tier and the 'work-item' kind, copied from bp packages/core/src/scan/types.ts
+// @ 51e193e. The rest of the file is still the 519c80f port. The Rust reader reads columns by presence, so a v4 row
+// already carried these at runtime; this edit only types them (src-tauri/db/src/repos/dev/lens_scan_tests.rs holds it).
 // Wire types for the lens-scan store: one SQLite file per product repo, `<root>/.ai/lens-scan/scan.db`,
 // written by the /lens-scan skill and read (plus proposal decisions) by the blueprint's routes. The
 // DDL is docs/standard/lens-scan-store.sql, name for name. Absent values are omitted, never null or 0:
@@ -11,7 +15,13 @@ export type MetricMethod = 'static' | 'probe' | 'harness' | 'judgement';
 
 export type RunPhase = 'measure' | 'propose' | 'execute' | 'propagate';
 export type RunStatus = 'running' | 'done' | 'failed' | 'aborted';
-export type ProposalKind = 'fix' | 'baseline-upgrade' | 'propagation';
+export type ProposalKind = 'fix' | 'baseline-upgrade' | 'propagation' | 'work-item';
+/** v4: where a backlog item came from. */
+export type ProposalOrigin = 'scan' | 'ado' | 'sweep';
+/** v4: what kind of harm the problem is. */
+export type RiskClass = 'secret' | 'authz' | 'money' | 'data' | 'llm' | 'perf' | 'reliability' | 'ux' | 'debt';
+/** v4: how bad the problem is: 0 stop-ship, 1 before production, 2 soon after, 3 backlog. */
+export type Tier = 0 | 1 | 2 | 3;
 /** v2 adds a person's triage of a built item (accepted, rework, descoped) and `released` (its release was tagged). */
 export type ProposalStatus = 'proposed' | 'approved' | 'declined' | 'executing' | 'done' | 'failed' | 'accepted' | 'rework' | 'descoped' | 'released';
 export type ProposalSize = 'XS' | 'S' | 'M' | 'L' | 'XL';
@@ -103,6 +113,16 @@ export interface Proposal {
   /** `<kind>:<name>`, e.g. `user:octocat`. */
   triaged_by?: string;
   triaged_at?: string;
+  /** v4: omitted = 'scan'; only an imported item carries it. */
+  origin?: ProposalOrigin;
+  /** v4: '<origin>:<id>' in the source system, e.g. 'ado:1234'. */
+  external_ref?: string;
+  external_url?: string;
+  /** v4: severity; omitted = untriaged. Not the same as risk (the risk of the change). */
+  tier?: Tier;
+  risk_class?: RiskClass;
+  ranked_by?: string;
+  ranked_at?: string;
 }
 
 export interface Activity {

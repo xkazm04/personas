@@ -1980,9 +1980,9 @@ mod tests {
         // Shape A JSON still parses via legacy parse_prefs with correct values.
         // The `approvals` field is not in NotificationPrefs; `execution_completed` is.
         let prefs = parse_prefs(Some(shape_a_prefs_json()));
-        assert_eq!(prefs.execution_completed, true);
+        assert!(prefs.execution_completed);
         // Other fields default to true when not in JSON (serde ignores unknown keys).
-        assert_eq!(prefs.manual_review, true);
+        assert!(prefs.manual_review);
     }
 
     #[test]

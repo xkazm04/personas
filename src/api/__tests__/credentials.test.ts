@@ -1,9 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from "vitest";
-// eslint-disable-next-line no-restricted-imports
-import { invoke } from "@tauri-apps/api/core";
-import { vi } from "vitest";
-import { mockInvoke, mockInvokeError, resetInvokeMocks } from "@/test/tauriMock";
+import { mockInvoke, mockInvokeError, mockedTauriInvoke, resetInvokeMocks } from "@/test/tauriMock";
 import {
   listCredentials,
   createCredential,
@@ -22,7 +19,7 @@ import {
   getCredentialDependents,
 } from "@/api/vault/credentials";
 
-const mockedInvoke = vi.mocked(invoke);
+const mockedInvoke = mockedTauriInvoke;
 
 describe("api/vault/credentials", () => {
   beforeEach(() => {

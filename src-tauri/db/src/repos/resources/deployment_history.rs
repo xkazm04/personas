@@ -123,6 +123,23 @@ pub fn list_by_project(
     )
 }
 
+/// List deployment history across ALL projects and targets (GitLab + cloud),
+/// newest first. Backs the unified deployment audit trail.
+pub fn list_all(pool: &DbPool, limit: u32) -> Result<Vec<GitLabDeploymentRecord>, AppError> {
+    timed_query!("deployment_history", "deployment_history::list_all", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {COLUMNS} FROM deployment_history
+             ORDER BY created_at DESC
+             LIMIT ?1",
+        ))?;
+        let rows = stmt
+            .query_map(params![limit], row_to_record)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -188,21 +205,4 @@ mod tests {
             .expect("gitlab row");
         assert_eq!(gitlab.target, "gitlab");
     }
-}
-
-/// List deployment history across ALL projects and targets (GitLab + cloud),
-/// newest first. Backs the unified deployment audit trail.
-pub fn list_all(pool: &DbPool, limit: u32) -> Result<Vec<GitLabDeploymentRecord>, AppError> {
-    timed_query!("deployment_history", "deployment_history::list_all", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(&format!(
-            "SELECT {COLUMNS} FROM deployment_history
-             ORDER BY created_at DESC
-             LIMIT ?1",
-        ))?;
-        let rows = stmt
-            .query_map(params![limit], row_to_record)?
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(rows)
-    })
 }

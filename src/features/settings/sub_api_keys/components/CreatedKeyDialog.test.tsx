@@ -1,0 +1,88 @@
+/**
+ * The one-time plaintext token must not outlive its reveal on the clipboard:
+ * closing the dialog clears the clipboard, but only while it still holds what
+ * this dialog copied (never someone else's later copy).
+ */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+
+vi.mock('@/api/agents/mcpTools', () => ({
+  probeMcpServer: vi.fn(() => Promise.resolve({ live: true, port: 9555 })),
+}));
+
+import { CreatedKeyDialog } from './CreatedKeyDialog';
+import type { CreateApiKeyResponse } from '@/api/auth/externalApiKeys';
+
+(globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
+
+const response = { plaintext_token: 'pk_secret_123' } as CreateApiKeyResponse;
+
+let clipboard = '';
+const writeText = vi.fn(async (v: string) => {
+  clipboard = v;
+});
+const readText = vi.fn(async () => clipboard);
+
+beforeEach(() => {
+  clipboard = '';
+  writeText.mockClear();
+  readText.mockClear();
+  Object.defineProperty(navigator, 'clipboard', { value: { writeText, readText }, configurable: true });
+});
+
+async function ackAndDone() {
+  fireEvent.click(screen.getByRole('checkbox'));
+  fireEvent.click(await screen.findByRole('button', { name: 'Done' }));
+}
+
+describe('CreatedKeyDialog clipboard hygiene', () => {
+  it('clears the clipboard on close when it still holds the copied key', async () => {
+    const onClose = vi.fn();
+    render(<CreatedKeyDialog response={response} onClose={onClose} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Copy' }));
+    await waitFor(() => expect(clipboard).toBe('pk_secret_123'));
+    await ackAndDone();
+    await waitFor(() => expect(clipboard).toBe(''));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears a copied MCP config (which embeds the token) on close', async () => {
+    render(<CreatedKeyDialog response={response} onClose={vi.fn()} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Copy MCP config/i }));
+    await waitFor(() => expect(clipboard).toContain('pk_secret_123'));
+    await ackAndDone();
+    await waitFor(() => expect(clipboard).toBe(''));
+  });
+
+  it('leaves the clipboard alone when the user copied something else since', async () => {
+    render(<CreatedKeyDialog response={response} onClose={vi.fn()} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Copy' }));
+    await waitFor(() => expect(clipboard).toBe('pk_secret_123'));
+    clipboard = 'something else';
+    await ackAndDone();
+    await waitFor(() => expect(readText).toHaveBeenCalled());
+    expect(clipboard).toBe('something else');
+  });
+
+  it('never touches the clipboard when nothing was copied', async () => {
+    render(<CreatedKeyDialog response={response} onClose={vi.fn()} />);
+    await ackAndDone();
+    expect(readText).not.toHaveBeenCalled();
+    expect(writeText).not.toHaveBeenCalled();
+  });
+});
+
+describe('CreatedKeyDialog MCP snippet base URL', () => {
+  it('points PERSONAS_API_BASE at the port the probe reached, not the default', async () => {
+    render(<CreatedKeyDialog response={response} onClose={vi.fn()} />);
+    await waitFor(() => expect(document.body.textContent).toContain('"PERSONAS_API_BASE": "http://127.0.0.1:9555"'));
+  });
+
+  it('falls back to the default port when the probe fails', async () => {
+    const { probeMcpServer } = await import('@/api/agents/mcpTools');
+    vi.mocked(probeMcpServer).mockRejectedValueOnce(new Error('ipc down'));
+    render(<CreatedKeyDialog response={response} onClose={vi.fn()} />);
+    await waitFor(() => expect(probeMcpServer).toHaveBeenCalled());
+    expect(document.body.textContent).toContain('"PERSONAS_API_BASE": "http://127.0.0.1:9420"');
+  });
+});

@@ -255,12 +255,13 @@ export function PersonaSettingsTab({
             <div className="flex items-center justify-between gap-3 py-1">
               <div>
                 <span className="typo-body text-foreground">{t.agents.settings_status.sensitive_preview}</span>
-                <p className="typo-body text-foreground">{t.agents.settings_status.sensitive_preview_desc}</p>
+                <p id="persona-sensitive-preview-desc" className="typo-caption">{t.agents.settings_status.sensitive_preview_desc}</p>
               </div>
               <AccessibleToggle
                 checked={draft.sensitive}
                 onChange={() => patch({ sensitive: !draft.sensitive })}
                 label={t.agents.settings_status.sensitive_preview}
+                aria-describedby="persona-sensitive-preview-desc"
                 size="md"
                 className="flex-shrink-0"
               />
@@ -271,12 +272,13 @@ export function PersonaSettingsTab({
             <div className="flex items-center justify-between gap-3 py-1">
               <div>
                 <span className="typo-body text-foreground">{t.agents.settings_status.cli_awareness}</span>
-                <p className="typo-body text-foreground">{t.agents.settings_status.cli_awareness_desc}</p>
+                <p id="persona-cli-awareness-desc" className="typo-caption">{t.agents.settings_status.cli_awareness_desc}</p>
               </div>
               <AccessibleToggle
                 checked={draft.cliAwarenessEnabled}
                 onChange={() => patch({ cliAwarenessEnabled: !draft.cliAwarenessEnabled })}
                 label={t.agents.settings_status.cli_awareness}
+                aria-describedby="persona-cli-awareness-desc"
                 data-testid="agent-cli-awareness"
                 size="md"
                 className="flex-shrink-0"

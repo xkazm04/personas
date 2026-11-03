@@ -1,7 +1,7 @@
 // The Monitor header: the title, the ROUTER (four peer destinations, one click
 // apart, no nesting), the live-mode pop-up toggle and the close button.
 
-import { X, Activity, MessagesSquare, Bell, LayoutGrid, Orbit, DraftingCompass } from 'lucide-react';
+import { X, Activity, MessagesSquare, Bell, LayoutGrid, Orbit, DraftingCompass, Sunrise } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import type { MonitorView } from './monitorRouter';
@@ -21,6 +21,7 @@ export function MonitorHeader({ activeTab, onSelect, onClose }: {
   const VIEWS: Array<{ id: MonitorView; label: string; hint: string; icon: typeof LayoutGrid }> = [
     { id: 'activity', label: t.monitor.activity_mode, hint: t.monitor.activity_mode_title, icon: LayoutGrid },
     { id: 'blueprint', label: t.decisionCenter.lens.tab_blueprint, hint: t.decisionCenter.lens.tab_blueprint_hint, icon: DraftingCompass },
+    { id: 'morning', label: t.decisionCenter.lens.tab_morning, hint: t.decisionCenter.lens.tab_morning_hint, icon: Sunrise },
     { id: 'conversations', label: t.monitor.channels_layout_grid, hint: t.monitor.channels_layout_grid_hint, icon: MessagesSquare },
     { id: 'map', label: t.monitor.channels_layout_map, hint: t.monitor.channels_layout_map_hint, icon: Orbit },
   ];

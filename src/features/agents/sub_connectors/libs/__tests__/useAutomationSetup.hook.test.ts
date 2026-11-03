@@ -4,7 +4,7 @@
  *  - 16: a deploy failure reaches the banner as its own message (the store used
  *        to collapse every failure to null -> "check your platform credentials").
  *  - 17: the custom platform (no credential type) can deploy as a draft.
- *  - 24: a repo / zap listing failure is flagged, distinct from an empty account.
+ *  - 24: a repo listing failure is flagged, distinct from an empty account.
  *  - 28: a persona refresh mid-edit does not reset the user's edits.
  */
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
@@ -23,10 +23,10 @@ const design = {
 vi.mock('@/hooks/design/core/useAutomationDesign', () => ({ useAutomationDesign: () => design }));
 vi.mock('@/hooks/personas/usePersonaCapabilities', () => ({ usePersonaCapabilities: () => ({ capabilities: [] }) }));
 vi.mock('@/api/agents/automations', () => ({
-  githubListRepos: vi.fn(), githubCheckPermissions: vi.fn(), zapierListZaps: vi.fn(),
+  githubListRepos: vi.fn(), githubCheckPermissions: vi.fn(),
 }));
 
-import { githubListRepos, githubCheckPermissions, zapierListZaps } from '@/api/agents/automations';
+import { githubListRepos, githubCheckPermissions } from '@/api/agents/automations';
 import { useAutomationSetup } from '../useAutomationSetup';
 
 const deployAutomation = vi.fn();
@@ -43,7 +43,6 @@ beforeEach(() => {
   deployAutomation.mockReset();
   vi.mocked(githubListRepos).mockReset();
   vi.mocked(githubCheckPermissions).mockReset().mockResolvedValue({ hasRepo: true, hasWorkflow: true } as never);
-  vi.mocked(zapierListZaps).mockReset();
   act(() => {
     useVaultStore.setState({
       automations: [], credentials: [cred('n8n-1', 'n8n'), cred('gh-1', 'github_actions'), cred('zap-1', 'zapier')],
@@ -83,13 +82,6 @@ describe('useAutomationSetup', () => {
     act(() => { result.current.retryListings(); });
     await waitFor(() => expect(result.current.reposFailed).toBe(false));
     expect(vi.mocked(githubListRepos).mock.calls.length).toBe(calls + 1);
-  });
-
-  it('24: a zap listing failure is flagged', async () => {
-    vi.mocked(zapierListZaps).mockRejectedValue(new Error('network down'));
-    const { result } = renderHook(() => useAutomationSetup('p1'));
-    act(() => { result.current.setPlatform('zapier'); });
-    await waitFor(() => expect(result.current.zapsFailed).toBe(true));
   });
 
   it('28: a persona refresh mid-edit keeps the edited name', async () => {

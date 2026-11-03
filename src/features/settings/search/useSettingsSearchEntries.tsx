@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import {
   Wind, SunDim, Contrast, Eye, Sunrise,
-  Palette, Type, Sun, LayoutGrid, Clock,
+  Palette, Type, Sun, LayoutGrid,
   type LucideIcon,
 } from 'lucide-react';
 import { useThemeStore } from '@/stores/themeStore';
@@ -113,7 +113,6 @@ export function useSettingsSearchEntries(): SettingsSearchEntries {
       settingEntry({ id: 'text-size', label: s.text_size, description: appearance, icon: icon(Type), keywords: ['font', 'scale', 'larger', 'readability'], onNavigate: goto('appearance') }),
       settingEntry({ id: 'brightness', label: s.brightness, description: appearance, icon: icon(Sun), keywords: ['bright', 'dim', 'screen'], onNavigate: goto('appearance') }),
       densityEntry,
-      settingEntry({ id: 'timezone', label: s.timezone, description: appearance, icon: icon(Clock), keywords: ['time', 'zone', 'utc', 'local'], onNavigate: goto('appearance') }),
     ];
 
     // -- One entry per visible settings tab (tier / dev aware) ----------

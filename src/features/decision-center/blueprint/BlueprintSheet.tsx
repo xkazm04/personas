@@ -37,6 +37,7 @@ import { FeatureSheet } from './ui/sheet/FeatureSheet';
 import { LedgerPage } from './ledger/LedgerPage';
 import { Flyout } from './ui/rail/Flyout';
 import { TimelinePanel } from './ui/timeline/TimelinePanel';
+import type { FocusPlace } from './model/focus';
 import { DecisionCard } from './ui/overlays/DecisionCard';
 import { SelBar } from './ui/overlays/SelBar';
 
@@ -47,11 +48,13 @@ export interface BlueprintSheetProps {
   onClose: () => void;
   /** Open the L4 sheet of this feature at once (a Build card's item). */
   initialFeature?: string;
+  /** Open at a place bp's shared focus moved to (the follower, spark roadmap S6). */
+  initialPlace?: FocusPlace;
 }
 
-export function BlueprintSheet({ data, actions, onClose, initialFeature }: BlueprintSheetProps) {
+export function BlueprintSheet({ data, actions, onClose, initialFeature, initialPlace }: BlueprintSheetProps) {
   const root = useRef<HTMLDivElement>(null);
-  const { sheet, words, hooks, tip, setEngine } = useSheetController({ data, actions, onClose, initialFeature });
+  const { sheet, words, hooks, tip, setEngine } = useSheetController({ data, actions, onClose, initialFeature, ...(initialPlace ? { initialPlace } : {}) });
   const { B, tx } = sheet.text;
   // the modal focuses its first control a frame after mount; the sheet takes the keyboard back for its keymap
   useEffect(() => {

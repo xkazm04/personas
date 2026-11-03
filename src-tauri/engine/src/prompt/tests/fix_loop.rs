@@ -113,7 +113,7 @@ fn the_correction_is_instruction_but_its_evidence_is_not() {
     let reentry_json = crate::fix_loop::build_reentry_input(
         Some(&fix_loop_input().to_string()),
         1,
-        &crate::fix_loop::build_fix_instruction(&[failure.clone()]),
+        &crate::fix_loop::build_fix_instruction(std::slice::from_ref(&failure)),
     );
     let reentry: serde_json::Value = serde_json::from_str(&reentry_json).unwrap();
     let prompt = assemble_for(&fix_loop_persona(), &reentry);

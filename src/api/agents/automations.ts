@@ -6,8 +6,6 @@ import type { CreateAutomationInput } from "@/lib/bindings/CreateAutomationInput
 import type { UpdateAutomationInput } from "@/lib/bindings/UpdateAutomationInput";
 import type { N8nWorkflow } from "@/lib/bindings/N8nWorkflow";
 import type { N8nActivateResult } from "@/lib/bindings/N8nActivateResult";
-import type { ZapierZap } from "@/lib/bindings/ZapierZap";
-import type { ZapierWebhookResult } from "@/lib/bindings/ZapierWebhookResult";
 import type { GitHubRepo } from "@/lib/bindings/GitHubRepo";
 import type { GitHubPermissions } from "@/lib/bindings/GitHubPermissions";
 import type { DeployAutomationInput } from "@/lib/bindings/DeployAutomationInput";
@@ -15,7 +13,6 @@ import type { DeployAutomationResult } from "@/lib/bindings/DeployAutomationResu
 
 export type { N8nWorkflow } from "@/lib/bindings/N8nWorkflow";
 export type { N8nActivateResult } from "@/lib/bindings/N8nActivateResult";
-export type { ZapierZap } from "@/lib/bindings/ZapierZap";
 export type { ZapierStep } from "@/lib/bindings/ZapierStep";
 export type { ZapierWebhookResult } from "@/lib/bindings/ZapierWebhookResult";
 export type { GitHubRepo } from "@/lib/bindings/GitHubRepo";
@@ -39,14 +36,14 @@ export const createAutomation = (input: CreateAutomationInput) =>
  * generated type declares every field REQUIRED (`string | null`), because ts-rs
  * emits `Option<Option<T>>` as `T | null | null` and TypeScript collapses that
  * to `T | null` with no `?`. So a caller writing type-correct code was FORCED to
- * name every field, and the only value available was `null` — which for the ten
+ * name every field, and the only value available was `null` — which for the nine
  * fields carrying `#[serde(default, deserialize_with = "double_option")]` means
  * CLEAR, not "leave alone". The generated type made data loss mandatory.
  *
  * On the wire, omission is the correct spelling of "leave alone": the
  * double_option fields have `#[serde(default)]`, and serde maps a missing plain
  * `Option<T>` to `None`. Verified against
- * `src-tauri/core/src/models/automation.rs:250-279`.
+ * `UpdateAutomationInput` in `src-tauri/core/src/models/automation.rs`.
  *
  * The real fix is `#[ts(optional)]` on those Rust fields so the generated type
  * says `field?: T | null`; that needs a binding regen. Until then this signature
@@ -136,17 +133,6 @@ export const n8nCreateWorkflow = (credentialId: string, definition: Record<strin
 
 export const n8nTriggerWebhook = (credentialId: string, webhookUrl: string, body?: Record<string, unknown>) =>
   invoke<Record<string, unknown>>("n8n_trigger_webhook", { credentialId, webhookUrl, body: body });
-
-// Zapier Platform API
-
-export const zapierListZaps = (credentialId: string) =>
-  invoke<ZapierZap[]>("zapier_list_zaps", { credentialId });
-
-export const zapierCreateZap = (credentialId: string, definition: Record<string, unknown>) =>
-  invoke<{ zapId: string; webhookUrl: string | null }>("zapier_create_zap", { credentialId, definition });
-
-export const zapierTriggerWebhook = (credentialId: string, webhookUrl: string, body?: Record<string, unknown>) =>
-  invoke<ZapierWebhookResult>("zapier_trigger_webhook", { credentialId, webhookUrl, body: body });
 
 // GitHub Platform API
 

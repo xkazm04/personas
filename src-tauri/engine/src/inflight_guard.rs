@@ -46,6 +46,7 @@ impl InflightGuard {
 
     /// Test/diagnostic helper: number of keys currently in flight.
     #[cfg(test)]
+    #[allow(clippy::len_without_is_empty)] // test-only diagnostic helper; an is_empty would have no caller
     pub fn len(&self) -> usize {
         self.keys.lock().unwrap_or_else(|e| e.into_inner()).len()
     }

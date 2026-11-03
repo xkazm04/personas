@@ -253,8 +253,3 @@ pub fn extract_engine(archive: &Path, bin_dir: &Path) -> Result<(), AppError> {
     }
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-}

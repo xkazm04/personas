@@ -145,6 +145,11 @@ export default function PairApprovalModal() {
               ))}
             </div>
           )}
+          {/* Unticking everything is not "grant nothing": reads need only a
+              valid key (management_api.rs), so say what the floor still is. */}
+          {current.requested_scopes.length > 0 && scopes.size === 0 && (
+            <p className="typo-caption text-foreground bg-secondary/30 rounded-card p-2">{s.pair_no_scopes}</p>
+          )}
         </div>
 
         <div className="space-y-1.5">

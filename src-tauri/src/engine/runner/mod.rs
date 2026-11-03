@@ -4555,11 +4555,10 @@ mod tests {
     #[test]
     fn default_execution_timeout_exceeds_cli_subagent_stall_cutoff() {
         const CLI_SUBAGENT_STALL_CUTOFF_MS: u64 = 600_000;
-        assert!(
+        const _: () = assert!(
             DEFAULT_EXECUTION_TIMEOUT_MS > CLI_SUBAGENT_STALL_CUTOFF_MS,
-            "DEFAULT_EXECUTION_TIMEOUT_MS ({DEFAULT_EXECUTION_TIMEOUT_MS} ms) must be > \
-             CLI_SUBAGENT_STALL_CUTOFF_MS ({CLI_SUBAGENT_STALL_CUTOFF_MS} ms) so the CLI's \
-             clearer error can surface before personas' generic timeout fires"
+            "DEFAULT_EXECUTION_TIMEOUT_MS must be > CLI_SUBAGENT_STALL_CUTOFF_MS so the \
+             CLI's clearer error can surface before personas' generic timeout fires"
         );
     }
 

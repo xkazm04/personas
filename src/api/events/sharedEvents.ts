@@ -5,7 +5,6 @@ import type { SharedEventChange } from "@/lib/bindings/SharedEventChange";
 import type { SharedEventFeedActivity } from "@/lib/bindings/SharedEventFeedActivity";
 import type { SharedEventProjectRoute } from "@/lib/bindings/SharedEventProjectRoute";
 import type { SharedEventImpactRun } from "@/lib/bindings/SharedEventImpactRun";
-import type { FeedImpactIngestSummary } from "@/lib/bindings/FeedImpactIngestSummary";
 
 export const browseCatalog = (category?: string, search?: string) =>
   invoke<SharedEventCatalogEntry[]>("shared_events_browse_catalog", { category, search });
@@ -43,6 +42,3 @@ export const setProjectRoutes = (entryId: string, projectIds: string[]) =>
 export const listImpactRuns = (entryId: string, limit?: number) =>
   invoke<SharedEventImpactRun[]>("shared_events_list_impact_runs", { entryId, limit });
 
-/** Ingest finished feed-impact runs for one project through the gated door. */
-export const ingestFeedImpact = (projectId: string) =>
-  invoke<FeedImpactIngestSummary>("dev_tools_feed_impact_ingest", { projectId });

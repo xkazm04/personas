@@ -5,6 +5,7 @@
  *
  *   decision-center/blueprint   --query "feature=<slug>"   open the L4 sheet of a feature at once
  *                               --query "lens=<id>"        (reserved) start on a lens sheet
+ *                               --query "brief=demo"       add the decision brief's repeat case (fixture/briefDemo.ts)
  *
  * The sheet closes on Esc at the whole-site level; the page then shows a stand-in with a reopen control so a
  * driver can tell "closed by the sheet" from "never opened". `window.__BLUEPRINT__` exposes what happened
@@ -25,17 +26,19 @@ async function keyboardProvider() {
 export const BLUEPRINT_MODULES: Record<string, HarnessModule> = {
   'decision-center/blueprint': {
     load: async () => {
-      const [{ BlueprintSheet }, { kettleData }, { createFixtureActions }, { useTranslation }] = await Promise.all([
+      const [{ BlueprintSheet }, { kettleData }, { createFixtureActions }, { useTranslation }, { withBriefDemo }] = await Promise.all([
         import('@/features/decision-center/blueprint/BlueprintSheet'),
         import('@/features/decision-center/blueprint/fixture/kettle'),
         import('@/features/decision-center/blueprint/fixture/actions'),
         import('@/i18n/useTranslation'),
+        import('@/features/decision-center/blueprint/fixture/briefDemo'),
       ]);
       function BlueprintPage() {
         const { t } = useTranslation();
         const params = new URLSearchParams(window.location.search);
         const feature = params.get('feature') ?? undefined;
-        const data = useMemo(() => kettleData(), []);
+        const brief = params.get('brief') === 'demo';
+        const data = useMemo(() => (brief ? withBriefDemo(kettleData()) : kettleData()), [brief]);
         const actions = useMemo(() => createFixtureActions(data), [data]);
         const [open, setOpen] = useState(true);
         window.__BLUEPRINT__ = window.__BLUEPRINT__ ?? { closed: 0, actions };

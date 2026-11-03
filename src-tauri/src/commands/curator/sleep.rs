@@ -383,8 +383,8 @@ mod tests {
     /// is longer than the floor. Both would be easy to invert in an edit.
     #[test]
     fn the_two_clocks_are_ordered() {
-        assert!(MIN_INTERVAL_HOURS >= 1);
-        assert!(
+        const _: () = assert!(MIN_INTERVAL_HOURS >= 1);
+        const _: () = assert!(
             STALENESS_HOURS > MIN_INTERVAL_HOURS,
             "a valve inside the floor would never fire"
         );

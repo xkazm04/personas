@@ -92,7 +92,7 @@ mod tests {
         for n in 0..=s.len() + 2 {
             let t = truncate_on_char_boundary(s, n);
             assert!(s.starts_with(t)); // always a valid prefix
-            assert!(t.len() <= n.max(0)); // never exceeds the budget
+            assert!(t.len() <= n); // never exceeds the budget
         }
     }
 

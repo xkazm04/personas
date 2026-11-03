@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback, memo, useMemo } from 'react';
+import { useState, useRef, useCallback, memo, useMemo, useId } from 'react';
 import { Check } from 'lucide-react';
-import type { ThemeDefinition } from '@/stores/themeStore';
+import type { ThemeDefinition, ThemeId } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getContrastRatio, getContrastLevel } from '@/lib/theme/contrastRatio';
 import { AppearanceThemeHoverPreview } from './AppearanceThemeHoverPreview';
@@ -13,8 +13,14 @@ import { AppearanceThemeHoverPreview } from './AppearanceThemeHoverPreview';
    timing so every tile visibly previews ITS OWN theme. */
 export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
   theme, active, onSelect,
-}: { theme: ThemeDefinition; active: boolean; onSelect: () => void }) {
+}: {
+  theme: ThemeDefinition;
+  active: boolean;
+  /** A stable callback (the store's setTheme): an inline closure here would defeat memo(). */
+  onSelect: (id: ThemeId) => void;
+}) {
   const { tx, t } = useTranslation();
+  const badgeId = useId();
   const previewAriaLabel = tx(t.settings.appearance.theme_preview_aria, { name: theme.label });
 
   const [showHover, setShowHover] = useState(false);
@@ -43,22 +49,18 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
     : contrastLevel === 'AA' ? a.contrast_badge_aa
     : a.contrast_badge_low;
   const badgeAriaLabel = tx(a.contrast_badge_aria, { level: badgeLabel, ratio: contrastRatio.toFixed(1) });
-  const badgeClass =
-    contrastLevel === 'AAA' ? 'bg-status-success/20 text-status-success'
-    : contrastLevel === 'AA' ? 'bg-status-info/20 text-status-info'
-    : 'bg-status-warning/25 text-status-warning';
-
   return (
     <div className="relative" onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
       {showHover && !active && <AppearanceThemeHoverPreview theme={theme} />}
       <button
         type="button"
-        onClick={onSelect}
+        onClick={() => onSelect(theme.id)}
         onFocus={handleEnter}
         onBlur={handleLeave}
         aria-label={previewAriaLabel}
+        aria-describedby={badgeId}
         aria-pressed={active}
-        className={`group relative flex flex-col w-full p-0 overflow-hidden rounded-modal border transition-all ${
+        className={`focus-ring group relative flex flex-col w-full p-0 overflow-hidden rounded-modal border transition-all ${
           active
             ? 'border-primary/40 ring-2 ring-primary/20'
             : 'border-primary/10 hover:border-primary/30'
@@ -68,11 +70,16 @@ export const AppearanceThemeSwatch = memo(function AppearanceThemeSwatch({
           className="relative w-full flex flex-col gap-2.5 px-3 py-3 pointer-events-none"
           style={{ minHeight: '110px', backgroundColor: theme.backgroundSample, color: theme.foregroundSample }}
         >
-          {/* Contrast badge — neutral chip so it stays legible on every tile */}
+          {/* Contrast badge — the previewed theme's own fg-on-bg pair (the ratio it reports), so it is legible on every tile whatever the app theme */}
           <span
+            id={badgeId}
             aria-label={badgeAriaLabel}
-            title={badgeAriaLabel}
-            className={`absolute top-2 right-2 px-1.5 py-0.5 rounded-pill text-[9px] font-semibold tracking-wide ${badgeClass}`}
+            className="absolute top-2 right-2 px-1.5 py-0.5 rounded-pill border text-[9px] font-semibold tracking-wide"
+            style={{
+              backgroundColor: theme.backgroundSample,
+              color: theme.foregroundSample,
+              borderColor: `color-mix(in srgb, ${theme.foregroundSample} 35%, transparent)`,
+            }}
           >
             {badgeLabel}
           </span>

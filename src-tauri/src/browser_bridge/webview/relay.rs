@@ -772,8 +772,8 @@ mod tests {
         // The third wall, on the socket. `hands.js` bounds its reads and the
         // shell cuts again at the snapshot cap; this one is for a page that
         // sends something neither script produced.
-        assert!(MAX_FRAME_BYTES >= 64 * 1024, "an honest answer must fit");
-        assert!(
+        const _: () = assert!(MAX_FRAME_BYTES >= 64 * 1024, "an honest answer must fit");
+        const _: () = assert!(
             MAX_FRAME_BYTES <= 1024 * 1024,
             "a page must not be able to hand the shell a megabyte per frame"
         );

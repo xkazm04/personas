@@ -634,8 +634,8 @@
         }
       ],
       "baseline": {
-        "files": 49,
-        "matches": 73
+        "files": 48,
+        "matches": 72
       },
       "floor": 4000
     },
@@ -989,7 +989,7 @@
       },
       "baseline": {
         "files": 10,
-        "matches": 41
+        "matches": 34
       },
       "floor": 4000
     },
@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 360,
-        "matches": 661
+        "files": 359,
+        "matches": 660
       },
       "floor": 2000
     },
@@ -1856,8 +1856,8 @@
         }
       ],
       "baseline": {
-        "files": 47,
-        "matches": 71
+        "files": 46,
+        "matches": 70
       },
       "floor": 4000
     },
@@ -1879,8 +1879,8 @@
         "description": "A `copyText(...)` call in STATEMENT position — it begins its line (after optional indentation, `await`, `void`, or an inline `try {`) — so the `Promise<boolean>` it returns is bound to nothing and the caller cannot distinguish a completed copy from a refused one. PROXY FOR the stack-free condition \"a copy affordance decides what to tell the user without knowing whether the write succeeded, so the confirmation is causally downstream of the click rather than of the result\". WHY THIS IS THE CONDITION AND NOT PEDANTRY, executed rather than reasoned: `copyText` (useCopyToClipboard.ts:11-19) catches internally and NEVER REJECTS. Run under Vitest+jsdom with navigator.clipboard.writeText stubbed to throw NotAllowedError, `copyText` did not throw and resolved `false`; with navigator.clipboard set to undefined (the non-secure-context case) it caught the synchronous TypeError and resolved `false`. Consequently `await copyText(x).then(f).catch(g)` runs f and NEVER g — measured handler order on failure is exactly [\"THEN-RAN\"] — so every try/catch and every .catch() written around a copyText call in this repo is UNREACHABLE code that reads as failure handling. 18 of the 32 matched sites go on to claim success (setCopied(true), addToast(...,'success'), or PrBridge's markDone() advancing a workflow checkpoint) on a clipboard that may be empty. LEGAL DESTINATIONS, all three of which this pattern leaves unmatched: (1) `<CopyButton text={...} />` — the component gates its flash on the resolved boolean (CopyButton.tsx:62-67 plus useCopyToClipboard.ts:42-47); (2) `useCopyToClipboard()` / `useKeyedCopyFlag()` — both write `.then((ok) => { if (!ok) return; ... })`; (3) a bound direct call, `const ok = await copyText(x); if (!ok) return;` (ChatMessageContent.tsx:70-74, DevInspector.tsx:45-46). NO EXCLUDE LIST BY DESIGN: the two primitives that legitimately call copyText are spared by the negative lookahead because their `.then` callbacks DECLARE a parameter — i.e. they are spared for reading the boolean, not for their filename. Deleting `ok` from either callback would make it match, which is the correct behaviour and is the proof the matcher keys on the condition rather than on a token. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE: a prefix-context classifier and a statement-shape scanner over the same corpus disagreed on exactly 4 sites, all four `.then(() => ...)` chains with a zero-arity callback; hand-adjudication ruled all 4 as DISCARDED (a zero-arity `.then` cannot read the boolean) and both implementations now agree at 32. PRECISION on the stated condition is 32/32 — every match is a call whose boolean is bound to nothing. Four of the 32 are clipboard WIPES rather than copies (BundleExportDialog.tsx:30,44 and FieldCaptureHelpers.tsx:105,113, all `copyText('')`); they are reported as true positives, not exempted, because not knowing whether a secret wipe landed is the same defect pointed the other way. PRECONDITION (must be re-derived per repo): this repo HAS a clipboard chokepoint named `copyText`, enforced by custom/prefer-shared-clipboard at eslint.config.js:109 — 2 production navigator.clipboard.writeText calls in 4,830 files. A repo without a chokepoint wears the identical condition on raw `navigator.clipboard.writeText(...)` calls and scores ZERO here while being fully affected: measured, personas-web has 11 raw write sites, 0 helpers, and 2 confirmed optimistic-success paths plus 4 silent-failure paths; brainiac/console has 4 raw sites and 0 helpers. Such a repo should re-key this signal on its own raw API call in statement position. Do NOT silence a match by adding a try/catch — that is the defect, not the fix; bind the result, or take the type change in the golden path's §9."
       },
       "baseline": {
-        "files": 14,
-        "matches": 24
+        "files": 13,
+        "matches": 22
       },
       "floor": 4000
     },
@@ -2875,6 +2875,10 @@
       },
       "exclude": [
         {
+          "path": "src-tauri/src/commands/infrastructure/bp_link/tests.rs",
+          "reason": "test-only: an in-test stand-in for bp's /api/session/focus on an ephemeral 127.0.0.1 port, aborted when the test ends; nothing ships"
+        },
+        {
           "path": "src-tauri/src/engine/management_api.rs",
           "reason": "the only router-level auth layer in 963 Rust files: middleware::from_fn_with_state(require_api_key) + per-route scope check"
         },
@@ -3139,8 +3143,8 @@
         "description": "A rendering component under src/features imports an irreversible IPC door from @/api (deleteX / removeX / revokeX / purgeX / wipeX / clearAllX) and the whole file contains NO confirmation affordance of any kind. PROXY FOR the stack-free condition: an operation the user cannot undo is reachable from the UI without them being asked. Measured 2026-08-16 at 4f5621830: the anchor (an irreversible @/api import in a feature .tsx) matches 18 files; 12 have no consent step, 6 do — the positive control partitions the anchor exactly, 12 + 6 = 18. PRECISION 12/12 hand-read (each reaches a live delete_/revoke_ Tauri command from a click path with no dialog: LifecyclePage.tsx:120 deletes every trigger on a project in a loop; FleetPairDevice.tsx:75 un-pairs a device; ByomApiKeyManager.tsx:180 deletes a stored provider key). SCOPE is deliberately src/features/**.tsx: store slices, hooks and lib helpers legitimately carry no dialog, and including them took precision from 12/12 to 13/62. ignoreCommentLines is FALSE on purpose — the match is file-scoped and anchored at index 0, so the comment filter would look at line 1 and drop the count for any file that grows a JSDoc header. DO NOT key on the verb at the call site instead: an onClick-anchored variant of this rule scored ~3/17 because removeChip / removeRow / removeField edit unsaved form state. CORRECT END STATE is 0, at which point DELETE this rule rather than baselining it at zero. PRECONDITION (re-derive per repo, do NOT port): this repo spells irreversibility as a named import from a generated Tauri command wrapper. In a Next.js app it is fetch(..., {method:'DELETE'}) or a useDeleteMutation hook; in a Rust TUI it is a repo call; this pattern scores ZERO on all of them."
       },
       "baseline": {
-        "files": 7,
-        "matches": 7
+        "files": 6,
+        "matches": 6
       },
       "floor": 1500
     },
@@ -3795,6 +3799,10 @@
         "description": "a chained ternary mapping a number onto TWO OR MORE categorical outcomes with bare numeric boundaries written at the call site. THE SECOND COMPARISON IS THE DISCRIMINATOR: one comparison against a literal is ambiguous (a boolean test, a `.length > 60` truncation, a `> 1 ? 's' : ''` pluralization — all measured, all rejected at ~30% precision); two boundaries in one expression is a BAND TABLE. Zero is excluded from both literals so `c.red > 0 ? 'red' : c.yellow > 0 ? 'yellow'` (presence tests, not bands) does not match. The gap between the arms forbids `$`, `{` and `}` so the matcher cannot cross a template-literal interpolation — that was the one surviving false positive. PROXY FOR the stack-free condition: a band boundary lives where the pixel is drawn rather than beside the formula, so it cannot be changed in one place. Measured 2026-08-16: 52 sites in 37 files use TEN distinct three-way boundary sets to band one kind of 0-100 quality number, of which exactly one set (80/50) is the value GRADE_THRESHOLDS declares — and 6 of the 8 sites using it re-type it as literals. 43 of the 52 (83%) have no unmeasured arm in front of the ladder. Replayed against the operator's live database: banding the 59 measured personas' success rates with QuickStatsBar.tsx:50 (80/50) and VitalsLedger.tsx:177 (90/70) renders a DIFFERENT tone for 13 of them (22%). LEGAL FIX: import the shared band — GRADE_THRESHOLDS + computeGrade (compositeHealthScore.ts:133,238), whose own comment records that computeGrade was already collapsed out of three duplicates and a fourth inline; or, if the concept genuinely needs different bands, declare a named const beside the formula with a comment saying why it differs. If the payload already carries a grade, render the grade. CONVERGENT: brainiac/brainiac-server/src/console.rs:2731 imports three constants from its health registry and redefines grade_of two lines below, so 50-54 grades 'At risk' from the core and 'Critical' from the API; brainiac console/src/health/KnowledgeHealth.tsx:116 re-derives a grade the server already sent, rendering 82 as 'Watch' in the header and 'Healthy' in the chart. ascent/src/lib/maturity/model.ts is the counter-example with ZERO band disagreements and a SCORING_RUBRIC_VERSION wired into its cache key. PRECONDITION (must be re-derived per repo): this repo spells a band as a chained TypeScript conditional expression with quoted string arms. A repo using an if/else-if chain, a switch, a `.find(b => v >= b.min)` table walk, or Rust match arms will score zero while the condition is present at scale."
       },
       "exclude": [
+        {
+          "path": "src/features/decision-center/blueprint/model/focus.ts",
+          "reason": "a verbatim port of bp's session/focus.ts: followingWords' age ladder ('just now', 's', 'min', 'h') is bp's wire text for a follow chip, not a UI verdict band; the port is not edited here"
+        },
         {
           "path": "src/features/overview/components/shared/KpiTile.tsx",
           "reason": "the file's only match is a display truncation, not a verdict: absPct >= 1000 renders the string '999+%' and absPct < 0.1 renders '<0.1%'. Both arms are number-formatting for one delta, owned by number-and-cost-formatting.md, and neither arm picks a tone, grade or status word"
@@ -4549,12 +4557,20 @@
       },
       "exclude": [
         {
+          "path": "src/features/decision-center/blueprint/model/focus.ts",
+          "reason": "a verbatim port of bp's session/focus.ts (followingWords: an unknown reader id is shown as the id, by bp's own rule); held to bp by its pinned header and bp's drift report, so it is not edited here"
+        },
+        {
           "path": "src/features/shared/chrome/sidebar/Sidebar.tsx",
           "reason": "resolves a ROUTE id against the code-determined nav registry (SIDEBAR_SECTIONS), not a fetched entity; an unknown route falling back to the Overview label is the deliberate default, not a dangling row"
         },
         {
           "path": "src/hooks/navigation/useBreadcrumbTrail.ts",
           "reason": "same shape over the nav sub-tab constants — the collection is a literal in the code, so its members cannot be deleted out from under the id"
+        },
+        {
+          "path": "src/features/decision-center/blueprint/model/brief.ts",
+          "reason": "a verbatim port of bp's decision brief, held byte for byte by bp's golden: a lens id the map does not name is printed as the id by bp's own documented rule ('Lens names fall back to the id'), not a chooser hiding a deleted entity; editing the line would break the golden"
         }
       ],
       "baseline": {
@@ -5152,8 +5168,8 @@
         "description": "Object equality decided by JSON.stringify on both sides, in the inline form or the paired-const form. Key order is insertion order in JS and survives a JSON.parse round trip, so a value read from the database and an object literal of the same shape compare unequal. Replayed: two semantically identical payloads whose nested keys were serialized in a different order report as changed. Compare key-by-key, or serialize both sides through one canonicalizing stringifier. The paired-const alternative is load-bearing: it is the only one that sees comparisonHelpers.ts:85, the diff kernel behind execution comparison."
       },
       "baseline": {
-        "files": 4,
-        "matches": 4
+        "files": 3,
+        "matches": 3
       },
       "floor": 4000
     },
@@ -5581,8 +5597,8 @@
         "description": "A no-argument .get() followed by .unwrap() or .expect( -- an r2d2 pool checkout whose failure is converted into a panic. PROXY FOR the stack-free condition: the one operation in a persistence layer that is EXPECTED to fail under load -- waiting for a free connection -- is written as if it cannot, so the system's response to saturation is a crash rather than backpressure or an error the caller can report. CONCRETELY HERE this is the second half of clause 2(f): POOL_ACQUIRE_TIMEOUT (db/src/lib.rs:94) is 5s and IS set on all three production pools (:315, :385, :511), so r2d2's get() returns Err rather than hanging -- and then 323 call sites turn that Err into a panic inside whatever thread reached it, which defeats the clause without touching the pool configuration the clause is about. COMPLIANT SHAPE, present and dominant: 1650 propagating checkouts across 246 files (`pool.get()?`, `.map_err(`, `.await`), e.g. every repo function in db/src/repos. VIOLATING SHAPE: `let conn = pool.get().unwrap();` -- commands/core/data_portability.rs:10659, companion/turn_ledger.rs:753, db/src/repos/execution/policy_evidence.rs:148 (`.expect(\"conn\")`). THE NAMED PRIMITIVE IS A GHOST, and this is the finding the count sits on: this document's clause 2(f) called it `pool_get_logged`, which does not exist in 963 .rs files; the real symbol is `acquire_logged` (db/src/lib.rs:113), it carries #[allow(dead_code)], and its ONLY caller is db/src/vector_store.rs:127 behind the `ml` feature -- dead in a default build. MEASURED 2026-08-21 at b7fba447f: 323 matches across 92 of 963 files. PRECISION 27/27 hand-verified: the receiver vocabulary was enumerated EXHAUSTIVELY rather than sampled -- exactly seven identifiers ever appear (pool 293, target 17, target_user 5, user_db 3, sys 2, p 2, source 1) -- and all 13 non-pool sites were opened individually plus a 14-site systematic sample of the pool population; every one is `let conn = X.get().unwrap()` on a database pool. The EMPTY ARGUMENT LIST is the whole discriminator and is what keeps collections out: Map::get and Vec::get always take a key. KNOWN FALSE-POSITIVE SURFACE, stated rather than papered over: OnceLock::get().unwrap() and Cell::get().unwrap() have the same shape and would count; neither appears in this tree today, and if one arrives the honest response is to anchor the receiver list, not to raise the baseline. 10 of the 92 files are named *_tests.rs; they are counted, because a fixture that panics on acquire hides the same saturation the product would. TWO INDEPENDENT IMPLEMENTATIONS agree at 92/323 -- the census engine and a hand-written walker with its own recursion, comment filter and line mapping. A THIRD, line-oriented grep scores 266, 57 fewer, and the entire gap is chains split across lines (pool.get() newline .unwrap()), which a line-oriented tool cannot see and this whole-file matcher can; that ~18% invisible fraction is the reason the engine matches whole files. HISTORY: an earlier measurement recorded 327 at f0bed7a96; 6c54af125 fixed two sites and 4bf1845d7 removed two more (and took the walk from 969 to 963), which accounts for the delta exactly. PRECONDITION (must be re-derived per repo): this repo checks connections out of an r2d2 pool by hand at the call site. A repo whose handler is HANDED an already-checked-out connection, or whose checkout lives inside one wrapper, has the condition designed out and scores zero. LEGAL FIX, in order: (1) propagate -- pool.get()? with From<r2d2::Error> for the local error type; (2) call acquire_logged(&pool, \"label\") so a slow or failed acquire is observable, and delete its #[allow(dead_code)] once it has more than one caller; (3) best, take the checkout out of the call site entirely and hand callers a connection the layer already owns. Do NOT silence a match with unwrap_or_else(|_| panic!(..)) -- same outcome, and the anchor stops firing."
       },
       "baseline": {
-        "files": 111,
-        "matches": 370
+        "files": 110,
+        "matches": 369
       },
       "floor": 900
     },
@@ -5739,8 +5755,8 @@
         }
       ],
       "baseline": {
-        "files": 797,
-        "matches": 3710
+        "files": 796,
+        "matches": 3705
       },
       "floor": 5000
     },
@@ -5855,8 +5871,8 @@
         }
       ],
       "baseline": {
-        "files": 921,
-        "matches": 2038
+        "files": 917,
+        "matches": 2032
       },
       "floor": 2200
     },
@@ -5929,8 +5945,8 @@
         }
       ],
       "baseline": {
-        "files": 665,
-        "matches": 1621
+        "files": 661,
+        "matches": 1616
       },
       "floor": 5000
     },

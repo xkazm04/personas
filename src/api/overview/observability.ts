@@ -11,7 +11,6 @@ import type { MetricsChartData } from "@/lib/bindings/MetricsChartData";
 import type { MetricsSummary } from "@/lib/bindings/MetricsSummary";
 import type { ValueRollup } from "@/lib/bindings/ValueRollup";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
-import type { PromptAbTestResult } from "@/lib/bindings/PromptAbTestResult";
 import type { PromptPerformanceData } from "@/lib/bindings/PromptPerformanceData";
 import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardData";
 import type { ExecutionHeatmapData } from "@/lib/bindings/ExecutionHeatmapData";
@@ -180,19 +179,6 @@ export const getPromptErrorRate = (personaId: string, window?: number) =>
     window: window,
   });
 
-export const runPromptAbTest = (
-  personaId: string,
-  versionAId: string,
-  versionBId: string,
-  testInput?: string,
-) =>
-  invoke<PromptAbTestResult>("run_prompt_ab_test", {
-    personaId,
-    versionAId,
-    versionBId,
-    testInput: testInput,
-  });
-
 // ============================================================================
 // Alert Rules (backend-persisted)
 // ============================================================================
@@ -246,14 +232,3 @@ export const clearFiredAlerts = () =>
 // Performance Digest
 // ============================================================================
 
-export const getDigestConfig = () =>
-  invoke<import("@/lib/bindings/DigestConfig").DigestConfig>("get_digest_config");
-
-export const setDigestConfig = (config: import("@/lib/bindings/DigestConfig").DigestConfig) =>
-  invoke<import("@/lib/bindings/DigestConfig").DigestConfig>("set_digest_config", { config });
-
-export const previewDigest = (days?: number) =>
-  invoke<import("@/lib/bindings/PerformanceDigest").PerformanceDigest>("preview_digest", { days });
-
-export const sendDigestNow = () =>
-  invoke<void>("send_digest_now");

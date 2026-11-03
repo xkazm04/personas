@@ -1015,6 +1015,7 @@ mod tests {
     /// Live: the probe reports grok installed with both models, and a bogus
     /// override reports not-installed without erroring (HYBRID_LIVE=1 only).
     #[tokio::test]
+    #[allow(clippy::await_holding_lock)] // deliberate: ENV_LOCK serialises the process-global env var across the await
     async fn live_probe_reports_grok_models_and_bogus_override() {
         if std::env::var("HYBRID_LIVE").is_err() {
             return;

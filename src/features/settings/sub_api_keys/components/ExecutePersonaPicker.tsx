@@ -12,6 +12,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { listPersonas } from '@/api/agents/personas';
 import { silentCatch } from '@/lib/silentCatch';
 import { useAgentStore } from '@/stores/agentStore';
+import Button from '@/features/shared/components/buttons/Button';
 import type { Persona } from '@/lib/types/types';
 
 interface ExecutePersonaPickerProps {
@@ -30,21 +31,28 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
   const [personas, setPersonas] = useState<Persona[]>(() => storePersonas);
   const [loading, setLoading] = useState(() => storePersonas.length === 0);
   const [filter, setFilter] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let alive = true;
+    setLoading(true);
+    setLoadFailed(false);
     listPersonas()
       .then((rows) => {
         if (alive) setPersonas(rows);
       })
-      .catch(silentCatch('ExecutePersonaPicker:listPersonas'))
+      .catch((err) => {
+        silentCatch('ExecutePersonaPicker:listPersonas')(err);
+        if (alive) setLoadFailed(true);
+      })
       .finally(() => {
         if (alive) setLoading(false);
       });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [attempt]);
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -69,9 +77,20 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
       </div>
       {showGhost ? (
         <PersonaPickerGhostRows />
+      ) : personas.length === 0 && loadFailed ? (
+        <div className="typo-caption text-foreground py-3 text-center bg-secondary/20 rounded-input space-y-1.5" role="alert">
+          <p>{s.execute_load_failed}</p>
+          <Button variant="ghost" size="sm" onClick={() => setAttempt((n) => n + 1)} disabled={disabled}>
+            {t.common.retry}
+          </Button>
+        </div>
       ) : personas.length === 0 ? (
         <p className="typo-caption text-foreground py-3 text-center bg-secondary/20 rounded-input">
           {s.execute_no_personas}
+        </p>
+      ) : filtered.length === 0 ? (
+        <p className="typo-caption text-foreground py-3 text-center bg-secondary/20 rounded-input">
+          {t.common.no_results}
         </p>
       ) : (
         <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
@@ -82,6 +101,7 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
                 key={p.id}
                 type="button"
                 onClick={() => onToggle(p.id)}
+                aria-pressed={isSelected}
                 disabled={disabled}
                 className={`w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-input border transition-colors disabled:opacity-50 ${
                   isSelected
@@ -89,7 +109,7 @@ export function ExecutePersonaPicker({ selectedIds, onToggle, disabled }: Execut
                     : 'border-border/30 bg-secondary/20 hover:bg-secondary/40'
                 }`}
               >
-                <input type="checkbox" checked={isSelected} readOnly tabIndex={-1} />
+                <input type="checkbox" checked={isSelected} readOnly tabIndex={-1} aria-hidden="true" />
                 <span className="typo-caption text-foreground truncate">{p.name}</span>
               </button>
             );
