@@ -12298,8 +12298,8 @@
           "revision": 15,
           "changedAt": "2026-10-14",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/http_engine/config.rs:44 cost_of prices every model outside two Qwen SKUs (:33) at $0.0, the test at :149 pins that zero, and src-tauri/engine/src/http_engine/openai.rs:232 repeats the zero branch inline - a newer remote model is free under every ceiling, and a second price authority beside src-tauri/engine/src/cost.rs:34 with the opposite unknown-model policy (re-anchored: 9708af6d23 moved http_engine out of src-tauri/src/engine; defect unchanged) (re-checked 2026-10-14 against rev 15: anchors unchanged)",
-          "evaluatedAt": "2026-10-14",
+          "evidence": "src-tauri/engine/src/http_engine/config.rs:44 cost_of still maps an unpriced model to 0.0 and src-tauri/engine/src/http_engine/openai.rs:232 repeats it inline, so a newer remote model is free under every ceiling (re-checked 2026-11-03 against rev 15: anchors unchanged)",
+          "evaluatedAt": "2026-11-03",
           "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
           "evaluatedRevision": 15,
           "revisionsBehind": 0
@@ -21322,8 +21322,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/core/src/models/llm_spend.rs:49 LlmSpendTotals.cost_usd is a non-optional f64 and the struct (:46) carries no unpriced-row count, so rows whose cost_usd was NULL (LlmSpendInsert keeps it Option) sum as $0 instead of a floor; cache_creation_tokens is stored per row but absent from the rollup (:46), and the dashboard echoes only window_days (:89), not period start/end, so consumers re-derive the window (re-checked 2026-10-14 against rev 15: anchors unchanged)",
-          "evaluatedAt": "2026-10-14",
+          "evidence": "src-tauri/core/src/models/llm_spend.rs:49 LlmSpendTotals.cost_usd is still a non-optional f64 with no unpriced-row count, so NULL-cost rows sum as $0 (re-checked 2026-11-03 against rev 15: anchors unchanged)",
+          "evaluatedAt": "2026-11-03",
           "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
           "evaluatedRevision": 15,
           "revisionsBehind": 0
@@ -31096,8 +31096,8 @@
           "changedAt": "2026-10-14",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/idea_scanner.rs:909 books spend only by observe_line on the stream's `result` line inside the 1200s timeout (:895); the timeout branch (:1071) kills the child and writes no ledger row, so failed-call spend is invisible; the observe_line shape is hand-repeated at 20 call sites across 14 files (e.g. kpi_scan.rs:846, standards_scan.rs:334) with no chokepoint, a dropped write only warns uncounted (src-tauri/db/src/repos/llm_spend.rs:30), and the dashboard command returns no unpriced share or period window (src-tauri/src/commands/infrastructure/llm_spend.rs:20) (re-checked 2026-10-14 against rev 15: anchors unchanged)",
-          "evaluatedAt": "2026-10-14",
+          "evidence": "src-tauri/src/commands/infrastructure/idea_scanner.rs:909 books spend only via observe_line on the result line; the timeout branch at :1071 kills the child and writes no ledger row, so failed-call spend stays invisible (re-checked 2026-11-03 against rev 15; only aaf8159ca2, an index change, touched the ledger repo since)",
+          "evaluatedAt": "2026-11-03",
           "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
           "evaluatedRevision": 15,
           "revisionsBehind": 0

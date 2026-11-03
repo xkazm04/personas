@@ -1,0 +1,58 @@
+{
+ "schema": "conform-run/1",
+ "worker": "b80e5d8e-69e9-4168-95ac-d49f474f0ee8",
+ "subject": "cost-metering",
+ "evaluatedAt": "2026-11-03T08:21:49.103Z",
+ "pairs": [
+  {
+   "context": "cd8712a3-9546-4c21-895b-9e64a4b161b1",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/http_engine/config.rs:44 cost_of still maps an unpriced model to 0.0 and src-tauri/engine/src/http_engine/openai.rs:232 repeats it inline, so a newer remote model is free under every ceiling (re-checked 2026-11-03 against rev 15: anchors unchanged)",
+   "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
+   "evaluatedRevision": 15,
+   "techniques": []
+  },
+  {
+   "context": "a7ece012-8300-4780-b286-b9cea81801fc",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/core/src/models/llm_spend.rs:49 LlmSpendTotals.cost_usd is still a non-optional f64 with no unpriced-row count, so NULL-cost rows sum as $0 (re-checked 2026-11-03 against rev 15: anchors unchanged)",
+   "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
+   "evaluatedRevision": 15,
+   "techniques": []
+  },
+  {
+   "context": "f9c8b6b9-7a46-4c84-a31a-19356b174d10",
+   "subject": "cost-metering",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/infrastructure/idea_scanner.rs:909 books spend only via observe_line on the result line; the timeout branch at :1071 kills the child and writes no ledger row, so failed-call spend stays invisible (re-checked 2026-11-03 against rev 15; only aaf8159ca2, an index change, touched the ledger repo since)",
+   "evaluatedAgainst": "sha256-b2:7247db31eb8f3dce",
+   "evaluatedRevision": 15,
+   "techniques": []
+  }
+ ],
+ "declined": [
+  {
+   "subject": "cost-metering",
+   "context": "5ab49df3-3442-4ea6-a405-077dec64850d",
+   "reason": "persona-core-codex is a weak context (a badge/config-tile UI); the match is doubtful, left as a coverage question rather than judged"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:21:49.103Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "cost-metering"
+   ],
+   "techniques": [
+    "price-tables"
+   ],
+   "deviations": 3
+  }
+ ]
+}
