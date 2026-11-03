@@ -41167,6 +41167,28 @@
           "evidence": "src/features/plugins/drive/hooks/useDrive.ts:67 UI warm cache, not a durable first-start seed"
         }
       ]
+    },
+    "6229df3d-d54e-47bb-8091-abb479003c18/test-harness": {
+      "context": "vault-catalog-schemas",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:18:35.033Z",
+      "worker": "023b130e-4aa8-475f-9801-532691557547",
+      "techniques": [
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "not realized: bare substring over raw .rs text; the sibling TriageRuleForm.test.tsx:32-37 strips // comments and matches a shape regex, so the repo knows the pattern",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/__tests__/buildCustomHealthcheck.test.ts:47 expect(rust).toContain('strip_prefix(\"base64(\")')"
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "not realized: the backend resolver decision is lifted into no reachable unit; a text match stands in and does not say it is interim",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/__tests__/buildCustomHealthcheck.test.ts:46 readFileSync of src-tauri/src/engine/healthcheck.rs"
+        }
+      ],
+      "registryProposal": "Worth an application note: TS tests that pin a Rust contract by reading .rs (EffortRiskFilter.test.tsx:18 reads IDEA_SCALE_MAX, TriageRuleForm.test.tsx:32 strips comments) sit on a spectrum from good (constant extracted) to weak (substring); technique could name the cross-language variant explicitly."
     }
   }
 }

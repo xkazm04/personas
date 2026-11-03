@@ -41083,7 +41083,11 @@
           "revision": 26,
           "changedAt": "2026-10-06",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/__tests__/buildCustomHealthcheck.test.ts:47 pins the Rust resolver with a bare toContain('strip_prefix(\"base64(\")') over unstripped source, no comment strip, no floor, no stated reason; the claim survives the call being dead or commented out",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "quality-gates",

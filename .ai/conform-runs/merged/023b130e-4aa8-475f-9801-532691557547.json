@@ -1,0 +1,60 @@
+{
+ "schema": "conform-run/1",
+ "worker": "023b130e-4aa8-475f-9801-532691557547",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-03T08:18:35.033Z",
+ "pairs": [
+  {
+   "context": "6229df3d-d54e-47bb-8091-abb479003c18",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/vault/sub_catalog/components/schemas/__tests__/buildCustomHealthcheck.test.ts:47 pins the Rust resolver with a bare toContain('strip_prefix(\"base64(\")') over unstripped source, no comment strip, no floor, no stated reason; the claim survives the call being dead or commented out",
+   "techniques": [
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "not realized: bare substring over raw .rs text; the sibling TriageRuleForm.test.tsx:32-37 strips // comments and matches a shape regex, so the repo knows the pattern",
+     "evidence": "src/features/vault/sub_catalog/components/schemas/__tests__/buildCustomHealthcheck.test.ts:47 expect(rust).toContain('strip_prefix(\"base64(\")')"
+    },
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "not realized: the backend resolver decision is lifted into no reachable unit; a text match stands in and does not say it is interim",
+     "evidence": "src/features/vault/sub_catalog/components/schemas/__tests__/buildCustomHealthcheck.test.ts:46 readFileSync of src-tauri/src/engine/healthcheck.rs"
+    }
+   ],
+   "registryProposal": "Worth an application note: TS tests that pin a Rust contract by reading .rs (EffortRiskFilter.test.tsx:18 reads IDEA_SCALE_MAX, TriageRuleForm.test.tsx:32 strips comments) sit on a spectrum from good (constant extracted) to weak (substring); technique could name the cross-language variant explicitly."
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "50f50f97-be0e-4a93-8f1c-c0b967cd45d0",
+   "reason": "plugins-dev-tools-triage: pin-the-call realized (src/features/plugins/dev-tools/sub_triage/__tests__/TriageRuleForm.test.tsx:32 strips comments, token-shaped regex; EffortRiskFilter.test.tsx:18 derives IDEA_SCALE_MAX from Rust), but no evidence found for half of the 25 techniques (no negative-control or mutation notes in 88 tests), so conformant is below the evidence floor; left unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "66bc7a14-bf15-41d7-8d9a-900aa670f47e",
+   "reason": "passport-wall-model: 74 unit tests, only skillTasks.test.ts:96 hints at a failure path; no technique-level anchors read in depth; left unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "0a6ae5fd-fb42-446c-9602-0d2abdd220d5",
+   "reason": "vault-shared-playground: component tests (busyControls.test.tsx, apiExplorerErrors.test.tsx) are regression-shaped but nothing read against fixture-economics/negative-control; left unknown. Note: most remaining unknown pairs (agents-*, templates-*, overview-*) are lexical resonance on words like test/fixture/runner in UI code, and the suite's real machinery (vitest.config.ts lanes) is not owned by any context in this map; that is a coverage question for the map"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-03T08:18:35.033Z",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "pin-the-call-not-the-name",
+    "unreached-decisions-pin-nothing",
+    "negative-control-tests"
+   ],
+   "deviations": 1
+  }
+ ]
+}
