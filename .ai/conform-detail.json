@@ -7098,22 +7098,39 @@
       "context": "lib-harness",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-10-09",
-      "evaluatedTs": "2026-10-09T17:37:37.000Z",
-      "worker": "d3586c5a-c4f5-48dc-ba6f-f81f31a9b347",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T22:14:23.905Z",
+      "worker": "000cbee2-307a-43b9-8837-2e591afa0cb0",
       "techniques": [
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "deviation",
+          "evidence": "src/lib/harness/__tests__/verifier.test.ts:88 The emitted shell pipeline is checked against a mocked execSync that throws, and the real reader (sh) never throws on `| wc -l`. The shell is available and cheap, but the oracle never runs it."
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/lib/harness/__tests__/verifier.test.ts:119 'still reads a zero-count custom gate as a pass' pins a decision that real commands never reach, because the pipeline's exit is wc's 0. The test is green while every nonzero count also passes."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/lib/harness/__tests__/verifier.test.ts:12 Unit tests inherit no machine state because child_process is stubbed. That same stub is why the reader is never consulted."
+        },
         {
           "technique": "suite-partitioning",
           "verdict": "not-applicable",
-          "evidence": "src/lib/harness/verifier.ts:13 gates are typecheck/lint/build commands, not test suites"
+          "evidence": "src/lib/harness/verifier.ts:37 The module wires `npm run test -- --run` as one required gate and owns no partition of its own. Lane design is the repo's, not this context's."
         },
         {
           "technique": "context-starved-executor",
           "verdict": "not-applicable",
-          "evidence": "src/lib/harness/orchestrator.ts:3 the loop executes code changes against goals; it does not run prose user journeys against the product"
+          "evidence": "src/lib/harness/orchestrator.ts:3 the loop executes code changes against goals; it does not run prose user journeys against the product",
+          "carriedFrom": "2026-10-09"
         }
       ],
+      "registryProposal": "assert-through-the-reader could name shell pipeline exit semantics (the exit status is the last stage's, so `| wc -l` always exits 0) as a third shape. It is the commonest way a count-gate's verdict detaches from its count.",
       "superseded": [
         {
           "state": "not-applicable",
@@ -7121,6 +7138,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by d3586c5a-c4f5-48dc-ba6f-f81f31a9b347"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/lib/harness/verifier.ts:13 PERSONAS_GATES wires only typecheck/lint/build (plus grep-count custom gates); the module is an autonomous Plan->Execute->Verify codebase-improvement loop (src/lib/harness/orchestrator.ts:3) run from the CLI (src/lib/harness/run-harness.ts:3) that owns no suite, lane, fixture or journey, so the harness machinery this subject governs is absent here. [re-judged at rev 26: only an application file changed; precondition still unmet]",
+          "evaluatedAt": "2026-10-09T17:37:37.000Z",
+          "worker": "d3586c5a-c4f5-48dc-ba6f-f81f31a9b347",
+          "reason": "replaced by 000cbee2-307a-43b9-8837-2e591afa0cb0"
         }
       ]
     },

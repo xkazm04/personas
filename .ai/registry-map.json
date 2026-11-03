@@ -19899,13 +19899,12 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "not-applicable",
-          "evidence": "src/lib/harness/verifier.ts:13 PERSONAS_GATES wires only typecheck/lint/build (plus grep-count custom gates); the module is an autonomous Plan->Execute->Verify codebase-improvement loop (src/lib/harness/orchestrator.ts:3) run from the CLI (src/lib/harness/run-harness.ts:3) that owns no suite, lane, fixture or journey, so the harness machinery this subject governs is absent here. [re-judged at rev 26: only an application file changed; precondition still unmet]",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/lib/harness/verifier.ts:131 The '0 means pass' check only runs inside the catch branch, but every custom gate is a `grep ... | wc -l` pipeline that exits 0 (probed: a 51-line count exits 0). So runGate takes the success branch and reports every typography, i18n and notification audit as passed whatever the count, and the final report (orchestrator.ts:318) publishes those passes.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "eval-harness",
