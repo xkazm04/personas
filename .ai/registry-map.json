@@ -39067,8 +39067,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "deviation",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/projects/development/goals/progressShared.tsx:145 The goals surface counts every goal that isn't done as active, with no last-touched predicate. A goal nobody has touched in a year reads exactly like one worked yesterday, even though DevGoal carries updated_at to derive it from.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "supply-chain",
@@ -46077,8 +46081,12 @@
           "revision": 54,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 31
+          "state": "deviation",
+          "priorNotApplicable": 31,
+          "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:60 Missing anomaly data (and, at line 65, a missing rotation policy) scores 100, so absence reads as compliance. An unreachable or unverifiable probe therefore still produces a composite of 80 and tier 'healthy'; the threestate test asserts tier 'healthy' for unreachable. That defeats the neutral-50 fix the comment above it claims.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:0d8378dd13155e59",
+          "evaluatedRevision": 54
         },
         {
           "subject": "agent-instruction-files",

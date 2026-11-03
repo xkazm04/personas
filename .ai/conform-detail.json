@@ -41075,16 +41075,22 @@
       "context": "vault-shared-playground",
       "subject": "quality-gates",
       "bundle": "software-engineering",
-      "state": "unknown",
-      "evaluatedAt": "2026-10-31",
-      "evaluatedTs": "2026-10-31T22:15:17.201Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "26234dd8-51c6-412d-9171-722a8e604b97",
-        "state": "not-applicable",
-        "at": "2026-10-31T22:15:44.186701+00:00",
-        "reason": "reviewer (sonnet): The anchor PlaygroundTabContent.tsx:13 is a PlaygroundTab type alias that does not show the absence of any gate; the claim rests only on a keyword grep, so the anchor is incidental."
-      }
+      "state": "deviation",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T22:52:59.665Z",
+      "worker": "0e7f39c4-829c-4db9-96dc-84ff7ef96b99",
+      "techniques": [
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:60 Unmeasured sub-scores are folded in at full marks instead of being skipped or announced. Only the all-null case refuses, with tier 'unknown' (line 137)."
+        },
+        {
+          "technique": "false-positive-economics",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/shared/utils/credentialHealthScore.ts:50 A known false alarm (unreachable scored 0, critical) was fixed by narrowing the mapping rather than dropping the signal."
+        }
+      ]
     },
     "f838d49f-2928-441e-ac8d-f6e6c412b262/quality-gates": {
       "context": "shared-glyph",
@@ -42173,6 +42179,32 @@
         }
       ],
       "registryProposal": "failure-direction lists degraded states of the decision path but not the degraded state of a multi-write grant or policy edit. When one policy change is applied as several writes, order tightenings before widenings, or apply it atomically, so a partial failure leaves the more restrictive state. This could be a named row in the enumeration."
+    },
+    "fd961ee9-bf7c-4ec7-90c3-a728045d3d44/quality-gates": {
+      "context": "teams-goals",
+      "subject": "quality-gates",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T22:52:59.665Z",
+      "worker": "0e7f39c4-829c-4db9-96dc-84ff7ef96b99",
+      "techniques": [
+        {
+          "technique": "item-liveness",
+          "verdict": "deviation",
+          "evidence": "src/features/projects/development/goals/progressShared.tsx:145 The active count's predicate is 'admitted and not done'. A grep of the goals directory for stale/last-touched/updated_at found no staleness rendering, even though updated_at exists on the DevGoal binding."
+        },
+        {
+          "technique": "advancement-evidence-fields",
+          "verdict": "deviation",
+          "evidence": "src/features/projects/development/goals/goalStatus.ts:49 'skipped' is normalised to 'done', so a waived obligation is filed as satisfied. Unknown statuses fall back to 'open' (line 28, asserted in goalStatus.test.ts:39), so an unknown state is rendered as a definite value."
+        },
+        {
+          "technique": "unmeasurable-criteria",
+          "verdict": "deviation",
+          "evidence": "src/features/projects/development/goals/goalStatus.ts:28 An unrecognised status is silently mapped to a real state instead of an explicit unknown."
+        }
+      ]
     }
   }
 }
