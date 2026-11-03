@@ -1,0 +1,14 @@
+{"schema":"conform-run/1","worker":"c6ac905a-ccb3-418d-ab3a-377bc56b97d0","subject":"realtime-events",
+"evaluatedAt":"2026-11-03T00:00:00Z",
+"pairs":[{"context":"03e7f46a-3f19-47b8-98a5-398efed815b4","subject":"realtime-events","bundle":"software-engineering",
+"state":"deviation",
+"evidence":"src/hooks/lab/useLabEvents.ts:54 still subscribes to the literal \"lab-arena-status\", emitted as a bare literal at src-tauri/engine/src/test_runner/modes.rs:228 and absent from src/lib/eventRegistry.ts and src-tauri/core/src/events.rs; scripts/check-event-registry.mjs:268 matches only literal listen/emit calls, so a rename on either side silently stops Lab progress (re-verified 2026-11-03, unchanged)",
+"techniques":[
+{"technique":"event-registry","verdict":"deviation","evidence":"src/hooks/lab/useLabEvents.ts:54 lab-arena-status literal is outside the registry and the gate regex at scripts/check-event-registry.mjs:268 cannot see it"},
+{"technique":"subscription-lifecycle","verdict":"realized","evidence":"src/hooks/realtime/createSingletonListener.ts:19 shared listener per event name with unlisten cleanup at :156"}
+]}],
+"declined":[
+{"subject":"realtime-events","context":"2fb16136-586e-478d-823f-38434d2d5b9a","reason":"weak context (commands-communication, Rust observability commands); match is lexical, not judged"},
+{"subject":"realtime-events","context":"e0563a39-fb7e-485f-a698-f9c4dc1004a7","reason":"weak context (triggers-test); match is lexical, not judged"}
+],
+"consults":[{"ts":"2026-11-03T00:00:00Z","bundle":"software-engineering","subjects":["realtime-events"],"techniques":["event-registry","subscription-lifecycle"],"deviations":1}]}
