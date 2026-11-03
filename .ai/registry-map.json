@@ -4053,8 +4053,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "deviation",
+          "priorNotApplicable": 30,
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:165 The bulk-rerun cohort (original run vs re-run, both able to fail) averages cost and duration deltas over every pair that has both figures, whatever its outcome, and shows no both-succeeded view and no subset count, so a re-run that is cheaper only because it failed early reads as a saving.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "agent-memory",
@@ -12882,8 +12886,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "not-applicable",
+          "priorNotApplicable": 30,
+          "evidence": "src/features/shared/components/display/UnifiedTable.tsx:2 This context is presentational table and list primitives. A grep of src/features/shared/components/display for benchmark, rubric, judge, passRate and grader found zero hits, so there is no eval harness here to judge.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "fleet-orchestration",
@@ -15997,8 +16005,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "not-applicable",
+          "priorNotApplicable": 30,
+          "evidence": "src/features/agents/sub_glyph/GlyphCapabilityPreview.tsx:71 This context is the persona detail card's layout and contact-sheet UI. A grep of src/features/agents/sub_glyph for benchmark, rubric, judge, passRate and grader found zero hits (substring 'eval' only matches frameValues identifiers), so no scenario scoring exists here.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "agent-memory",
@@ -34349,8 +34361,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 30
+          "state": "not-applicable",
+          "priorNotApplicable": 30,
+          "evidence": "src/features/settings/sub_network/components/ExposureManager.tsx:245 This context is P2P exposure, bundle and identity settings UI. A grep of its directories (sub_network, components, search, shared, sub_account, sub_history) for benchmark, rubric, judge, passRate and grader found zero hits, and it runs nothing against scenarios and scores nothing.",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "supply-chain",

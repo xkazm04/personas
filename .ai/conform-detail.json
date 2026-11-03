@@ -42316,6 +42316,62 @@
         }
       ],
       "registryProposal": "spend-observability is written for the product's own spend console. The standard should say whether a read-only, per-project summary of a managed project's EXTERNAL tracker (here Langfuse-style pinpoints) owes the full total-to-row reading order and the self-watch instruments, or only a link out to the tracker's own drill-down. As written, every summary card that shows a spend total is a deviation."
+    },
+    "03960450-6979-4412-9de3-35c897fe56d2/eval-harness": {
+      "context": "agents-executions-components",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T23:41:33.128Z",
+      "worker": "4a72fd62-d1e4-428e-a279-0e07978d2881",
+      "techniques": [
+        {
+          "technique": "outcome-conditioned-cost",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:165 Delta is taken over all priced pairs regardless of success or failure. There is no conditioned (both-succeeded) figure beside it, and costDeltaN is never shown. Also, the success rate's denominator counts timed_out rows, which hit the view's own 15-minute wait budget (a harness-owned stop), as non-success."
+        },
+        {
+          "technique": "measurement-revision",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_executions/libs/useBulkRerun.ts:177 A single re-sample that disagrees with the original is labelled a 'regression' (or 'recovery'). The technique calls an n=1 re-run a second sample, not a correction."
+        },
+        {
+          "technique": "comparison-modes",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_executions/components/list/BulkRerunReport.tsx:113 The report lists losing rows (regressions) in their own section beside the headline success rate, so the headline does not hide them."
+        }
+      ]
+    },
+    "7159d27d-86c2-43be-a83f-8b50c4c816be/eval-harness": {
+      "context": "settings-network",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T23:41:33.128Z",
+      "worker": "4a72fd62-d1e4-428e-a279-0e07978d2881",
+      "techniques": []
+    },
+    "739b6d67-2c36-41ee-9794-a74bc0b25cfd/eval-harness": {
+      "context": "display-table-primitives",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T23:41:33.128Z",
+      "worker": "4a72fd62-d1e4-428e-a279-0e07978d2881",
+      "techniques": []
+    },
+    "1d8a480b-eac4-4110-a60e-47a6ab281c97/eval-harness": {
+      "context": "glyph-persona-card",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T23:41:33.128Z",
+      "worker": "4a72fd62-d1e4-428e-a279-0e07978d2881",
+      "techniques": []
     }
   }
 }
