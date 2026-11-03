@@ -41289,6 +41289,38 @@
       "evaluatedTs": "2026-11-03T08:21:17.339Z",
       "worker": "02368701-5509-4682-b074-5df49e23ae22",
       "techniques": []
+    },
+    "9b6cc17c-3add-4152-a349-c189b15a109f/eval-harness": {
+      "context": "template-design-preview",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:23:14.742Z",
+      "worker": "5177ad99-f58c-488f-a9e2-8a03d99d131e",
+      "techniques": [
+        {
+          "technique": "scenario-design",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/design-preview/DesignTestResults.tsx:42 no scenarios, only a display of one DesignTestResult"
+        }
+      ]
+    },
+    "66bc7a14-bf15-41d7-8d9a-900aa670f47e/eval-harness": {
+      "context": "passport-wall-model",
+      "subject": "eval-harness",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T08:23:14.742Z",
+      "worker": "5177ad99-f58c-488f-a9e2-8a03d99d131e",
+      "techniques": [
+        {
+          "technique": "metric-role-contract",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:1 evidence-derived levels, not scored model runs"
+        }
+      ]
     }
   }
 }

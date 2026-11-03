@@ -24670,8 +24670,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 15
+          "state": "not-applicable",
+          "priorNotApplicable": 15,
+          "evidence": "src/features/teams/sub_factory/passport/passportDerive.ts:1 derives a readiness passport from observed repo evidence (scan output + DevProject row); EvalsLevel only records whether a target repo has evals, this code runs no candidate against scenarios, so the subject precondition is unmet",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "trust-base",
@@ -37169,8 +37173,12 @@
           "revision": 37,
           "changedAt": "2026-09-29",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 15
+          "state": "not-applicable",
+          "priorNotApplicable": 15,
+          "evidence": "src/features/templates/sub_generated/design-preview/DesignTestResults.tsx:42 renders a one-shot feasibility verdict (ready/partial/blocked) over a single design result; precondition unmet: no declared scenario set, trials, judge or aggregation exists, so nothing is measured repeatably",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:7ccead00b7f92aba",
+          "evaluatedRevision": 37
         },
         {
           "subject": "embedded-preview",
