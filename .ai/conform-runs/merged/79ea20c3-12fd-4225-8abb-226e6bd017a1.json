@@ -1,0 +1,47 @@
+{
+ "schema": "conform-run/1",
+ "worker": "79ea20c3-12fd-4225-8abb-226e6bd017a1",
+ "subject": "sql-console",
+ "evaluatedAt": "2026-11-03T14:47:50.588523+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "vault-catalog-schemas",
+   "subject": "sql-console",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:173 This context only declares the credential-capture form for database connectors (host/port/database/user/password fields, lines 188-197). Nothing here executes, guards, introspects or renders SQL. Searching the context's directories (schemas/, forms/, autoCred/helpers/, vault/components/) for safeMode, safe_mode, dialect, information_schema and executeQuery found zero hits; the only 'sql' hits are the 'postgresql' subtype id and label at schemaConfigs.tsx:188,197. The repo's SQL console lives in a different context, src/features/vault/sub_databases (safeModeUtils.ts, useQuerySafeMode.ts, useDbQueryRunner.ts, QueryEditorPane.tsx, ChatTab.tsx).",
+   "techniques": [
+    {
+     "technique": "safe-mode-guarding",
+     "verdict": "not-applicable",
+     "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:188 Postgres shows up here only as a credential subtype, so this context executes no statements and has nothing to guard. Safe mode lives in sub_databases."
+    }
+   ],
+   "absenceTerms": [
+    "safeMode",
+    "dialect",
+    "information_schema",
+    "executeQuery"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-03T14:47:50.588523+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "sql-console"
+   ],
+   "techniques": [
+    "safe-mode-guarding"
+   ],
+   "deviations": 0,
+   "context": "vault-catalog-schemas",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

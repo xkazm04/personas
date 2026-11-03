@@ -44467,8 +44467,12 @@
           "revision": 1,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 7
+          "state": "not-applicable",
+          "priorNotApplicable": 7,
+          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:173 This context only declares the credential-capture form for database connectors (host/port/database/user/password fields, lines 188-197). Nothing here executes, guards, introspects or renders SQL. Searching the context's directories (schemas/, forms/, autoCred/helpers/, vault/components/) for safeMode, safe_mode, dialect, information_schema and executeQuery found zero hits; the only 'sql' hits are the 'postgresql' subtype id and label at schemaConfigs.tsx:188,197. The repo's SQL console lives in a different context, src/features/vault/sub_databases (safeModeUtils.ts, useQuerySafeMode.ts, useDbQueryRunner.ts, QueryEditorPane.tsx, ChatTab.tsx).",
+          "evaluatedAt": "2026-11-03",
+          "evaluatedAgainst": "sha256-b2:60a26f15745fd8c1",
+          "evaluatedRevision": 1
         },
         {
           "subject": "declarative-object-graph-configs",

@@ -41999,6 +41999,22 @@
           "evidence": "src/features/teams/sub_factory/l2/FactoryOverviewTab.tsx:63 A user action failure goes through toastCatch with no custom message, so the copy comes from the shared classifier and registry, not from the call site."
         }
       ]
+    },
+    "6229df3d-d54e-47bb-8091-abb479003c18/sql-console": {
+      "context": "vault-catalog-schemas",
+      "subject": "sql-console",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-03",
+      "evaluatedTs": "2026-11-03T14:47:50.588Z",
+      "worker": "79ea20c3-12fd-4225-8abb-226e6bd017a1",
+      "techniques": [
+        {
+          "technique": "safe-mode-guarding",
+          "verdict": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/schemas/schemaConfigs.tsx:188 Postgres shows up here only as a credential subtype, so this context executes no statements and has nothing to guard. Safe mode lives in sub_databases."
+        }
+      ]
     }
   }
 }
