@@ -348,5 +348,38 @@ class NightGuard(unittest.TestCase):
         self.assertFalse(g["in_window"])
 
 
+class Retry(unittest.TestCase):
+    """`tried` was forever until 2026-11-03: 603 of 624 owed subjects were locked out."""
+
+    def test_a_try_that_made_progress_comes_back(self):
+        self.assertTrue(M.may_retry(M.tried_mark(1, 12, "d1"), 7, "d1"))
+
+    def test_a_try_that_judged_nothing_stays_locked(self):
+        self.assertFalse(M.may_retry(M.tried_mark(1, 7, "d1"), 7, "d1"))
+
+    def test_nothing_owed_is_never_retried(self):
+        self.assertFalse(M.may_retry(M.tried_mark(1, 12, "d1"), 0, "d1"))
+        self.assertFalse(M.may_retry(3, 0, None))
+
+    def test_a_changed_subject_comes_back(self):
+        self.assertTrue(M.may_retry(M.tried_mark(1, 7, "d1"), 9, "d2"))
+
+    def test_a_legacy_mark_gets_one_more_try(self):
+        self.assertTrue(M.may_retry(1554, 4, "d1"))
+
+    def test_owed_counts_unknown_and_stale_on_live_contexts_only(self):
+        import json
+        import tempfile
+        root = pathlib.Path(tempfile.mkdtemp())
+        (root / ".ai").mkdir()
+        rows = [{"context": "a", "subjects": [
+                    {"bundle": "se", "subject": "x", "state": "unknown"},
+                    {"bundle": "se", "subject": "x", "state": "deviation", "stale": True},
+                    {"bundle": "se", "subject": "x", "state": "conformant"}]},
+                {"context": "b", "governance": "weak", "subjects": [{"bundle": "se", "subject": "x", "state": "unknown"}]}]
+        (root / M.L.MAP_REL).write_text(json.dumps({"contexts": rows}), encoding="utf-8")
+        self.assertEqual(M.owed_by_subject({"root": str(root)}), {"se/x": 2})
+
+
 if __name__ == "__main__":
     unittest.main()
