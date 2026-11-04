@@ -1,0 +1,135 @@
+{
+ "schema": "conform-run/1",
+ "worker": "6d6fcfc6-6a70-4d6e-aeda-b9eff0e84889",
+ "subject": "module-design",
+ "evaluatedAt": "2026-11-04T00:33:07.582833+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "test-runner-lab",
+   "subject": "module-design",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/engine/src/failover.rs:554 The provider circuit breaker reads the clock inside its own state transitions instead of taking the instant as a parameter, so its cooldown and half-open branches are unreachable by tests: circuit_breakers_integration_tests.rs:137 admits it can only 'simulate the cooldown path by re-failing the provider'.",
+   "techniques": [
+    {
+     "technique": "io-free-core",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/failover.rs:554 The breaker is a transition function (state + failure + time -> state + CircuitTransitionEvent values). Outputs are already returned as values (record_failure returns Vec<CircuitTransitionEvent>), but time is read internally (also line 567). It also persists itself through persist_all. So the cooldown branch has no test. queue.rs ConcurrencyTracker::admit (line 408, &mut self, returns AdmitResult, no I/O) shows the correct form in the same context."
+    },
+    {
+     "technique": "concurrency-at-the-edge",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/session_pool.rs:48 Removal test: every await in SessionPool is acquiring a tokio RwLock (lines 49, 70, 103, 111, 122), and no lock is held across another await. The sequential form is the same code with a std Mutex and without the async keyword, so the module pushes an async flow-control model onto every caller for no logic reason."
+    },
+    {
+     "technique": "module-depth",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/queue.rs:400 admit() has a 5-argument signature and documents its informal interface: what None means, and that exclusion runs before capacity and shed. It hides the queue/priority/backpressure policy behind one call that returns AdmitResult."
+    },
+    {
+     "technique": "seams-and-adapters",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/eval.rs:622 The LLM evaluator reaches the Claude CLI through the shared CliProcessDriver door rather than a raw Command, so process handling is owned in one place."
+    },
+    {
+     "technique": "declarative-or-sequential",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/eval.rs:664 Effects sit at the ends: the prompt is built purely (build_llm_eval_prompt), the process I/O runs in the middle, and the result is parsed and validated purely at the end. The heuristic strategies (eval_keyword_match and the others) are pure functions over EvalInput values."
+    },
+    {
+     "technique": "marked-unverifiable-region",
+     "verdict": "conformant",
+     "evidence": "src-tauri/engine/src/verification_command.rs:229 The unsafe FFI block is minimal and enclosed in a private fn (release_own_std_handles). It carries a SAFETY comment stating the invariant. The test-side unsafe at line 335 does the same."
+    },
+    {
+     "technique": "locality-and-leverage",
+     "verdict": "deviation",
+     "evidence": "src-tauri/engine/src/circuit_breakers_integration_tests.rs:27 The provider threshold is copied into the test, and a comment says it is kept in sync by hand because failover::CIRCUIT_BREAKER_THRESHOLD is private. One fact lives in two files. If the real threshold is lowered, this test still passes and no longer pins the threshold."
+    }
+   ]
+  },
+  {
+   "context": "lib-execution",
+   "subject": "module-design",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/lib/execution/pipeline.ts:725 The middleware registry erases each middleware's stage-specific type with a chained assertion, and the assertion does not state the invariant that makes it safe (entries are keyed by the same stage S that types fn, and runMiddleware re-asserts at line 744). The one unverifiable operation in the pipeline is therefore unexplained, even though knowledgeMiddleware.ts:95 in the same context shows the correct form.",
+   "techniques": [
+    {
+     "technique": "marked-unverifiable-region",
+     "verdict": "deviation",
+     "evidence": "src/lib/execution/pipeline.ts:725 The region is enclosed (the registry is private; addMiddleware and runMiddleware are the only doors) and small. Property 4 fails: no written invariant at this use or at the matching cast at line 744. Contrast knowledgeMiddleware.ts:95 ('// Invariant: the guard above leaves only a plain JSON object.')."
+    },
+    {
+     "technique": "declarative-or-sequential",
+     "verdict": "conformant",
+     "evidence": "src/lib/execution/executionState.ts:111 The execution state machine is explicit: a named enumerated state plus a transition table, not booleans encoding state between them."
+    },
+    {
+     "technique": "io-free-core",
+     "verdict": "conformant",
+     "evidence": "src/lib/execution/knowledgeMiddleware.ts:83 Guidance compilation and injection are pure functions over values. The middleware is the driver: fetch at line 106, then pure transforms. drift middleware likewise delegates to the pure detectDesignDrift with a pre-captured snapshot. Tests need a single mock."
+    },
+    {
+     "technique": "module-depth",
+     "verdict": "conformant",
+     "evidence": "src/lib/execution/pipeline.ts:662 The middleware contract is a 3-argument function type, and its informal interface (continue/abort semantics, priority ordering, key dedup for HMR) is stated at the declaration."
+    },
+    {
+     "technique": "seams-and-adapters",
+     "verdict": "conformant",
+     "evidence": "src/lib/execution/knowledgeMiddleware.ts:11 The backend is reached only through the api-layer adapter, and the test substitutes exactly that module."
+    },
+    {
+     "technique": "locality-and-leverage",
+     "verdict": "conformant",
+     "evidence": "src/lib/execution/middleware/index.ts:21 All stage registrations live in one registry, called once from App.tsx. Per-stage priorities are visible in one place (the comment at line 31 matches the values in each file)."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-04T00:33:07.582833+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "module-design"
+   ],
+   "techniques": [
+    "concurrency-at-the-edge",
+    "declarative-or-sequential",
+    "io-free-core",
+    "locality-and-leverage",
+    "marked-unverifiable-region",
+    "module-depth",
+    "seams-and-adapters"
+   ],
+   "deviations": 1,
+   "context": "test-runner-lab",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T00:33:07.582833+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "module-design"
+   ],
+   "techniques": [
+    "declarative-or-sequential",
+    "io-free-core",
+    "locality-and-leverage",
+    "marked-unverifiable-region",
+    "module-depth",
+    "seams-and-adapters"
+   ],
+   "deviations": 1,
+   "context": "lib-execution",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

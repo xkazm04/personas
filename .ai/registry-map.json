@@ -19881,7 +19881,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/execution/pipeline.ts:725 The middleware registry erases each middleware's stage-specific type with a chained assertion, and the assertion does not state the invariant that makes it safe (entries are keyed by the same stage S that types fn, and runMiddleware re-asserts at line 744). The one unverifiable operation in the pipeline is therefore unexplained, even though knowledgeMiddleware.ts:95 in the same context shows the correct form.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         }
       ],
       "governance": "governed"
@@ -42513,7 +42517,11 @@
           "revision": 18,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/failover.rs:554 The provider circuit breaker reads the clock inside its own state transitions instead of taking the instant as a parameter, so its cooldown and half-open branches are unreachable by tests: circuit_breakers_integration_tests.rs:137 admits it can only 'simulate the cooldown path by re-failing the provider'.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:7c8008f2207b1946",
+          "evaluatedRevision": 18
         },
         {
           "subject": "quality-gates",
