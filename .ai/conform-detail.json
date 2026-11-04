@@ -42521,6 +42521,37 @@
         }
       ],
       "registryProposal": "This subject is written for the backend data layer. For a frontend hooks context that only reaches the store through an IPC api module, the techniques that still bite are batching (fetch-one used in a loop across IPC) and units of work (multi-write sequences composed on the client, where no transaction can span the calls). The standard could say outright that a client that composes several IPC writes for one invariant should get a single backend command that owns the boundary."
+    },
+    "63a0a6fc-fa9a-453c-943d-4579b83f0ca3/docs-sync": {
+      "context": "stores",
+      "subject": "docs-sync",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T01:10:34.260Z",
+      "techniques": [
+        {
+          "technique": "source-doc-mapping",
+          "verdict": "deviation",
+          "evidence": "scripts/docs/feature-doc-map.json:605 Renaming the file stripped its coverage: src/api/radio.ts (moved from plugins/radio/api) matches no sourceGlob. The overseer and live-roadmap entries map only the Rust half, not src/api/director.ts or src/api/liveRoadmap.ts."
+        },
+        {
+          "technique": "doc-rot-detection",
+          "verdict": "deviation",
+          "evidence": "docs/features/radio.md:186 The coupled doc still links a file that does not exist (ls confirms it is gone; it now lives at src/api/radio.ts). This is the 'references a path that is gone' rot shape, and it survives in the tree, so nothing detected it."
+        },
+        {
+          "technique": "coupled-surface-inventory",
+          "verdict": "deviation",
+          "evidence": "docs/features/live-roadmap/live-roadmap.md:163 The doc names this context's file as part of the surface it describes, but the doc's map entry (sourceGlobs sub_releases/** + live_roadmap.rs) does not list it, so the doc and the map disagree about what the surface includes."
+        }
+      ],
+      "withdrawn": {
+        "worker": "c5143240-0e3b-4c37-8d7e-ebb7eb6f2c16",
+        "state": "deviation",
+        "at": "2026-11-04T01:10:58.408304+00:00",
+        "reason": "reviewer (sonnet): The claims about the map and docs hold (radio.ts, director.ts and liveRoadmap.ts exist, no sourceGlob covers them, radio.md:186 links a path that is gone, and live-roadmap.md:163 names src/api/liveRoadmap.ts), but none of those files are in or called by the `stores` context. Nothing in src/stores re"
+      }
     }
   }
 }

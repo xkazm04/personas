@@ -36178,8 +36178,8 @@
           "revision": 14,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 7
+          "priorNotApplicable": 7,
+          "state": "unknown"
         },
         {
           "subject": "node-boot-and-declarative-bootstrap",
