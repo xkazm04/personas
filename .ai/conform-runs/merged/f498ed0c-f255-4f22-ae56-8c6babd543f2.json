@@ -1,0 +1,47 @@
+{
+ "schema": "conform-run/1",
+ "worker": "f498ed0c-f255-4f22-ae56-8c6babd543f2",
+ "subject": "background-jobs",
+ "evaluatedAt": "2026-11-04T04:47:39.432258+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "overview-components",
+   "subject": "background-jobs",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/components/health/SystemHealthPanel.tsx:58 The install of node or claude_cli is a watched job: InstallButton draws a progress strip for it. The panel takes only the states and `install` from useAutoInstaller and drops the `cancel` the hook returns, so a running install has no cancel affordance anywhere in this context, and a backend `cancelled` terminal state comes back as the idle install button instead of being shown as cancelled.",
+   "techniques": [
+    {
+     "technique": "job-progress-and-cancellation",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/components/health/InstallButton.tsx:38 The in-flight branch renders only the progress strip and the last output line, with no cancel control and no cancelling state. The fall-through at :99 renders the idle Install button for any other phase, so `cancelled` (mapped to idle by the hook) collapses into the not-started endpoint instead of being a distinct terminal state."
+    },
+    {
+     "technique": "loop-supervision",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/components/health/SystemHealthPanel.tsx:77 The only timer in the context is a one-shot delayed re-check that the effect cleanup clears at :78. The context has no recurring loop to register: a search for setInterval, poll and refetchInterval over both directories found nothing."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-04T04:47:39.432258+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "background-jobs"
+   ],
+   "techniques": [
+    "job-progress-and-cancellation",
+    "loop-supervision"
+   ],
+   "deviations": 1,
+   "context": "overview-components",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

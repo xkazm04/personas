@@ -24265,7 +24265,11 @@
           "revision": 6,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/components/health/SystemHealthPanel.tsx:58 The install of node or claude_cli is a watched job: InstallButton draws a progress strip for it. The panel takes only the states and `install` from useAutoInstaller and drops the `cancel` the hook returns, so a running install has no cancel affordance anywhere in this context, and a backend `cancelled` terminal state comes back as the idle install button instead of being shown as cancelled.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:e3e7a428140a2fbb",
+          "evaluatedRevision": 6
         },
         {
           "subject": "mcp-tools",
