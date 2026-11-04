@@ -1,0 +1,99 @@
+{
+ "schema": "conform-run/1",
+ "worker": "7978ec01-6d6d-4708-8376-18a56b82c499",
+ "subject": "client-fetch-cache",
+ "evaluatedAt": "2026-11-04T01:59:05.392309+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "overview-health",
+   "subject": "client-fetch-cache",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:75 The SLA, healing and daily series the status page fetched live only in component state, so every navigation back to Health remounts empty: the first frames compute entries with no SLA data and grade every persona 'unknown' until a fresh round trip lands, a cold paint for data the client held seconds earlier.",
+   "techniques": [
+    {
+     "technique": "warm-remount-caches",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:75 Fetched data is held in useState with no module-scoped last-result cache, so unmount throws it away. HealingEffectivenessPanel.tsx:43 (`useState<HealingEffectivenessReport | null>(null)`) does the same."
+    },
+    {
+     "technique": "swr-design",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:183 Every return to the tab refetches no matter how old the data is. That is an environmental focus trigger, and no fresh window or stale ceiling is declared (only a 60s poll). One part does conform: a rejected SLA read only calls setSlaError at line 115 and keeps the stale rows on screen beside the error."
+    },
+    {
+     "technique": "prefetch-and-defer",
+     "verdict": "conformant",
+     "evidence": "src/features/overview/sub_events/libs/useEventLog.ts:156 The event log paints a small first page, then defers the 50-row backfill to idle with a timeout fallback. An `active` flag guards it so the backfill dies with the view."
+    },
+    {
+     "technique": "parse-and-derive-caches",
+     "verdict": "conformant",
+     "evidence": "src/features/overview/sub_events/HighlightedJson.tsx:49 The parse and colorize step is memoized on the raw string, which is its content identity. A parse failure falls back to the raw text and is not memoized as a transient error."
+    }
+   ]
+  },
+  {
+   "context": "overview-memories",
+   "subject": "client-fetch-cache",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:182 Resolving a conflict calls fetchMemories() with no filters, and the result goes into the single, unkeyed store slot `memories` that the Memories tab paints under its active search, persona, tier and sort filters. Dense's fetch effect does not re-run on a tab switch, so the list then shows an unfiltered first page labelled with filters that did not produce it.",
+   "techniques": [
+    {
+     "technique": "cache-key-discipline",
+     "verdict": "deviation",
+     "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:182 The store entry is not keyed by query arguments, so one slot answers several different questions. The same happens at MemoriesPageDense.tsx:615 after delete-all, and at MemoriesPageGraph.tsx:72, which fetches its own unfiltered query into the slot Dense paints as 'pre-warmed'."
+    },
+    {
+     "technique": "parse-and-derive-caches",
+     "verdict": "conformant",
+     "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:75 The pairwise conflict derivation is pure and memoized on the array reference, and detectConflicts stays the single place it is computed."
+    },
+    {
+     "technique": "sibling-entry-warmth",
+     "verdict": "not-applicable",
+     "evidence": "src/features/overview/sub_memories/components/MemoryDetailModal.tsx:22 The detail modal renders the full list row it is handed and makes no separate detail read, so there is no lag for a borrowed summary to cover."
+    }
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-04T01:59:05.392309+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "client-fetch-cache"
+   ],
+   "techniques": [
+    "parse-and-derive-caches",
+    "prefetch-and-defer",
+    "swr-design",
+    "warm-remount-caches"
+   ],
+   "deviations": 1,
+   "context": "overview-health",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T01:59:05.392309+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "client-fetch-cache"
+   ],
+   "techniques": [
+    "cache-key-discipline",
+    "parse-and-derive-caches",
+    "sibling-entry-warmth"
+   ],
+   "deviations": 1,
+   "context": "overview-memories",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

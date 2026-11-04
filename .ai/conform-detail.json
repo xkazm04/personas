@@ -42614,6 +42614,63 @@
           "evidence": "src/api/__tests__/settings.test.ts:25 Asserts that an unknown key reads as null. The backend rejects it with 'unknown settings key'. 'theme' (lines 15/30/36) is also not on ALLOWED_KEYS, and no test pins the rejection of an unregistered write."
         }
       ]
+    },
+    "90f639de-ffc7-4225-b67f-1566e5d66b8b/client-fetch-cache": {
+      "context": "overview-health",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T01:59:05.392Z",
+      "worker": "7978ec01-6d6d-4708-8376-18a56b82c499",
+      "techniques": [
+        {
+          "technique": "warm-remount-caches",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:75 Fetched data is held in useState with no module-scoped last-result cache, so unmount throws it away. HealingEffectivenessPanel.tsx:43 (`useState<HealingEffectivenessReport | null>(null)`) does the same."
+        },
+        {
+          "technique": "swr-design",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:183 Every return to the tab refetches no matter how old the data is. That is an environmental focus trigger, and no fresh window or stale ceiling is declared (only a 60s poll). One part does conform: a rejected SLA read only calls setSlaError at line 115 and keeps the stale rows on screen beside the error."
+        },
+        {
+          "technique": "prefetch-and-defer",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_events/libs/useEventLog.ts:156 The event log paints a small first page, then defers the 50-row backfill to idle with a timeout fallback. An `active` flag guards it so the backfill dies with the view."
+        },
+        {
+          "technique": "parse-and-derive-caches",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_events/HighlightedJson.tsx:49 The parse and colorize step is memoized on the raw string, which is its content identity. A parse failure falls back to the raw text and is not memoized as a transient error."
+        }
+      ]
+    },
+    "e62d5595-2bbd-480a-a757-2d3a126545a0/client-fetch-cache": {
+      "context": "overview-memories",
+      "subject": "client-fetch-cache",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T01:59:05.392Z",
+      "worker": "7978ec01-6d6d-4708-8376-18a56b82c499",
+      "techniques": [
+        {
+          "technique": "cache-key-discipline",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:182 The store entry is not keyed by query arguments, so one slot answers several different questions. The same happens at MemoriesPageDense.tsx:615 after delete-all, and at MemoriesPageGraph.tsx:72, which fetches its own unfiltered query into the slot Dense paints as 'pre-warmed'."
+        },
+        {
+          "technique": "parse-and-derive-caches",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:75 The pairwise conflict derivation is pure and memoized on the array reference, and detectConflicts stays the single place it is computed."
+        },
+        {
+          "technique": "sibling-entry-warmth",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_memories/components/MemoryDetailModal.tsx:22 The detail modal renders the full list row it is handed and makes no separate detail read, so there is no lag for a borrowed summary to cover."
+        }
+      ]
     }
   }
 }

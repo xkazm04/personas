@@ -24837,7 +24837,11 @@
           "revision": 15,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_health/libs/useStatusPageData.ts:75 The SLA, healing and daily series the status page fetched live only in component state, so every navigation back to Health remounts empty: the first frames compute entries with no SLA data and grade every persona 'unknown' until a fresh round trip lands, a cold paint for data the client held seconds earlier.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+          "evaluatedRevision": 15
         },
         {
           "subject": "test-harness",
@@ -25598,7 +25602,11 @@
           "revision": 15,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_memories/components/MemoryConflictReview.tsx:182 Resolving a conflict calls fetchMemories() with no filters, and the result goes into the single, unkeyed store slot `memories` that the Memories tab paints under its active search, persona, tier and sort filters. Dense's fetch effect does not re-run on a tab switch, so the list then shows an unfiltered first page labelled with filters that did not produce it.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:20824426732ffb6a",
+          "evaluatedRevision": 15
         },
         {
           "subject": "table",
