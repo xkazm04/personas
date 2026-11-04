@@ -4949,7 +4949,11 @@
           "revision": 13,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/api/__tests__/settings.test.ts:25 The bridge test mocks an unregistered key returning null. The real store does the opposite: get_app_setting calls require_valid_key, and validate_key returns Err(\"unknown settings key\") (src-tauri/db/src/settings_keys.rs:1701). So the suite pins and documents the free-string, typo-reads-as-default contract that the store-side allowlist was built to remove.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
+          "evaluatedRevision": 13
         },
         {
           "subject": "agent-cli-transport",
@@ -34195,7 +34199,11 @@
           "revision": 13,
           "changedAt": "2026-09-05",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/scraper/useScraperData.ts:95 The wizard saves scraper configurations as entity rows through the scraper API, not through the app settings key-value store. A case-insensitive grep of src/features/scraper (including __tests__) for 'setting', 'preference', 'localStorage' and 'settingKeys' found zero hits, so no technique of the settings subject has a precondition here.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:85c48ec5bdb5581f",
+          "evaluatedRevision": 13
         },
         {
           "subject": "wizard-flows",

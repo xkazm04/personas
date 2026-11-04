@@ -42588,6 +42588,32 @@
         "at": "2026-11-04T01:27:53.327418+00:00",
         "reason": "reviewer (sonnet): The not-applicable rests on a grep that left out 'confirm', and the context still has human confirmation surfaces before the build handoff: the platform-confirmation banner (N8nParserResults, N8nImportTab) and the entity selection checkboxes. The cited SURFACED_STEPS line only shows that steps were "
       }
+    },
+    "68e3a26f-d83a-447b-a2d0-ad875004506f/settings": {
+      "context": "scraper",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T01:43:21.715Z",
+      "worker": "7b746272-ec44-430d-97a3-f9d03cd8d712",
+      "techniques": []
+    },
+    "cd7e7cc7-cc5b-44a1-9bff-76b34af21966/settings": {
+      "context": "api-bridge-tests",
+      "subject": "settings",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T01:43:21.715Z",
+      "worker": "7b746272-ec44-430d-97a3-f9d03cd8d712",
+      "techniques": [
+        {
+          "technique": "key-registry",
+          "verdict": "deviation",
+          "evidence": "src/api/__tests__/settings.test.ts:25 Asserts that an unknown key reads as null. The backend rejects it with 'unknown settings key'. 'theme' (lines 15/30/36) is also not on ALLOWED_KEYS, and no test pins the rejection of an unregistered write."
+        }
+      ]
     }
   }
 }
