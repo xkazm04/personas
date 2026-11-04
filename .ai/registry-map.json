@@ -4305,8 +4305,8 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "priorNotApplicable": 18,
+          "state": "unknown"
         },
         {
           "subject": "test-harness",
@@ -25409,8 +25409,8 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "priorNotApplicable": 18,
+          "state": "unknown"
         },
         {
           "subject": "mcp-tools",
@@ -39146,8 +39146,8 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "priorNotApplicable": 18,
+          "state": "unknown"
         },
         {
           "subject": "quality-gates",
@@ -39589,8 +39589,8 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "priorNotApplicable": 18,
+          "state": "unknown"
         },
         {
           "subject": "mcp-tools",
@@ -41538,8 +41538,8 @@
           "revision": 31,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 18
+          "priorNotApplicable": 18,
+          "state": "unknown"
         },
         {
           "subject": "templates-scaffolding",

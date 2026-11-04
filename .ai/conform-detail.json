@@ -38867,14 +38867,20 @@
       "subject": "agent-instruction-files",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-11-02",
-      "evaluatedTs": "2026-11-02T22:11:02.511Z",
-      "techniques": [],
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T03:31:08.642Z",
+      "techniques": [
+        {
+          "technique": "line-earning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_teamWorkspace/teamStudio/TeamStudioSplitVariant.tsx:27 team workspace UI; no instruction file"
+        }
+      ],
       "withdrawn": {
-        "worker": "50ebc12c-1210-4179-821b-70c36e237433",
+        "worker": "72366c58-a2da-4b82-9ff4-880234061a2e",
         "state": "not-applicable",
-        "at": "2026-11-02T22:11:48.479014+00:00",
-        "reason": "reviewer (sonnet): Each anchor is an incidental line that does not show the precondition is absent (an import in useAutoTeam.ts:13, a re-export in gallery/index.ts:1, a type in useManualReviewQueue.ts:7, a doc comment in registry.ts:11); and the subject is a repo-level concern, since the repo has instruction files (.c"
+        "at": "2026-11-04T03:31:39.502496+00:00",
+        "reason": "reviewer (sonnet): Each anchor is an incidental UI line (a type-file docblock, an import, a logger const, a comment or a page docblock) that doesn't show that no agent instruction file is in scope, and the repo has root AGENTS.md and CLAUDE.md. The 'no hit' grep over feature directories only shows these UI folders don"
       }
     },
     "9fca099d-94e4-4fd0-8460-3cf5d8c85acf/agent-instruction-files": {
@@ -38882,14 +38888,20 @@
       "subject": "agent-instruction-files",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-11-02",
-      "evaluatedTs": "2026-11-02T22:11:02.511Z",
-      "techniques": [],
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T03:31:08.642Z",
+      "techniques": [
+        {
+          "technique": "line-earning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_generated/gallery/cards/GeneratedReviewsTab.tsx:6 gallery UI; no instruction file"
+        }
+      ],
       "withdrawn": {
-        "worker": "50ebc12c-1210-4179-821b-70c36e237433",
+        "worker": "72366c58-a2da-4b82-9ff4-880234061a2e",
         "state": "not-applicable",
-        "at": "2026-11-02T22:11:48.479014+00:00",
-        "reason": "reviewer (sonnet): Each anchor is an incidental line that does not show the precondition is absent (an import in useAutoTeam.ts:13, a re-export in gallery/index.ts:1, a type in useManualReviewQueue.ts:7, a doc comment in registry.ts:11); and the subject is a repo-level concern, since the repo has instruction files (.c"
+        "at": "2026-11-04T03:31:39.502496+00:00",
+        "reason": "reviewer (sonnet): Each anchor is an incidental UI line (a type-file docblock, an import, a logger const, a comment or a page docblock) that doesn't show that no agent instruction file is in scope, and the repo has root AGENTS.md and CLAUDE.md. The 'no hit' grep over feature directories only shows these UI folders don"
       }
     },
     "ef73ca1c-fc54-4b9c-83ec-390c54929192/agent-instruction-files": {
@@ -38897,14 +38909,20 @@
       "subject": "agent-instruction-files",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-11-02",
-      "evaluatedTs": "2026-11-02T22:11:02.511Z",
-      "techniques": [],
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T03:31:08.642Z",
+      "techniques": [
+        {
+          "technique": "line-earning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:7 review-queue UI state; no instruction file"
+        }
+      ],
       "withdrawn": {
-        "worker": "50ebc12c-1210-4179-821b-70c36e237433",
+        "worker": "72366c58-a2da-4b82-9ff4-880234061a2e",
         "state": "not-applicable",
-        "at": "2026-11-02T22:11:48.479014+00:00",
-        "reason": "reviewer (sonnet): Each anchor is an incidental line that does not show the precondition is absent (an import in useAutoTeam.ts:13, a re-export in gallery/index.ts:1, a type in useManualReviewQueue.ts:7, a doc comment in registry.ts:11); and the subject is a repo-level concern, since the repo has instruction files (.c"
+        "at": "2026-11-04T03:31:39.502496+00:00",
+        "reason": "reviewer (sonnet): Each anchor is an incidental UI line (a type-file docblock, an import, a logger const, a comment or a page docblock) that doesn't show that no agent instruction file is in scope, and the repo has root AGENTS.md and CLAUDE.md. The 'no hit' grep over feature directories only shows these UI folders don"
       }
     },
     "895b4bb2-16fd-4e8e-aae8-11315fe6436b/test-harness": {
@@ -42868,6 +42886,48 @@
         }
       ],
       "registryProposal": "The technique states the indeterminate status must not be rendered as a value for the model and for machine consumers. It could say explicitly that operator-facing summaries (counts, tones) must keep it distinct from failure too: the gap seen here is a correct writer with a consumer that collapses its status."
+    },
+    "8cfb82ac-ebd6-4826-921d-d1399dba7a60/agent-instruction-files": {
+      "context": "agents-quick-answer",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T03:31:08.642Z",
+      "techniques": [
+        {
+          "technique": "line-earning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageTypes.ts:2 UI triage data model; no always-loaded instruction file in scope"
+        }
+      ],
+      "withdrawn": {
+        "worker": "72366c58-a2da-4b82-9ff4-880234061a2e",
+        "state": "not-applicable",
+        "at": "2026-11-04T03:31:39.502496+00:00",
+        "reason": "reviewer (sonnet): Each anchor is an incidental UI line (a type-file docblock, an import, a logger const, a comment or a page docblock) that doesn't show that no agent instruction file is in scope, and the repo has root AGENTS.md and CLAUDE.md. The 'no hit' grep over feature directories only shows these UI folders don"
+      }
+    },
+    "fd961ee9-bf7c-4ec7-90c3-a728045d3d44/agent-instruction-files": {
+      "context": "teams-goals",
+      "subject": "agent-instruction-files",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T03:31:08.642Z",
+      "techniques": [
+        {
+          "technique": "line-earning",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/GoalsPage.tsx:19 goals UI; no instruction file"
+        }
+      ],
+      "withdrawn": {
+        "worker": "72366c58-a2da-4b82-9ff4-880234061a2e",
+        "state": "not-applicable",
+        "at": "2026-11-04T03:31:39.502496+00:00",
+        "reason": "reviewer (sonnet): Each anchor is an incidental UI line (a type-file docblock, an import, a logger const, a comment or a page docblock) that doesn't show that no agent instruction file is in scope, and the repo has root AGENTS.md and CLAUDE.md. The 'no hit' grep over feature directories only shows these UI folders don"
+      }
     }
   }
 }
