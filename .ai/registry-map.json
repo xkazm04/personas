@@ -14694,7 +14694,11 @@
           "revision": 22,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:37 An unparseable engine-written pendingAction becomes the same `null` as 'no pending action', so DeliberationDecisions drops the gated-capability approve/skip block with no marker. The deliberation's warn lamp still says awaiting_action, but the operator has no way to decide and cannot see why, which leaves an invisible stall at the human boundary.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:52d7f3cfb87a79d9",
+          "evaluatedRevision": 22
         },
         {
           "subject": "test-harness",

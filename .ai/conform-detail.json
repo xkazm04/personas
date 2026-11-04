@@ -42552,6 +42552,42 @@
         "at": "2026-11-04T01:10:58.408304+00:00",
         "reason": "reviewer (sonnet): The claims about the map and docs hold (radio.ts, director.ts and liveRoadmap.ts exist, no sourceGlob covers them, radio.md:186 links a path that is gone, and live-roadmap.md:163 names src/api/liveRoadmap.ts), but none of those files are in or called by the `stores` context. Nothing in src/stores re"
       }
+    },
+    "0f1b56ac-cd96-4355-993e-dc445a20e63e/hitl-approval": {
+      "context": "fleet-monitor-channels",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T01:27:21.137Z",
+      "worker": "c118fd46-bf1c-4a0a-9c49-3616bbf1988b",
+      "techniques": [
+        {
+          "technique": "fail-loud-classification-default",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/DeliberationRail.tsx:37 An unreadable payload is spelled the same as an absent one: no marker, no raw payload shown, no severe default. The file header states 'Engine-written JSON is parsed once and never thrown from'."
+        },
+        {
+          "technique": "review-queues",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/channels/ConversationRail.tsx:87 Reviews and held questions share one NEEDS YOU rail fed by the single usePendingAsks read. A read failure is surfaced with a retry, not rendered as an empty queue."
+        }
+      ]
+    },
+    "5dc3cb6a-6612-4909-995d-86e92394ec94/hitl-approval": {
+      "context": "templates-n8n-steps",
+      "subject": "hitl-approval",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T01:27:21.137Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "c118fd46-bf1c-4a0a-9c49-3616bbf1988b",
+        "state": "not-applicable",
+        "at": "2026-11-04T01:27:53.327418+00:00",
+        "reason": "reviewer (sonnet): The not-applicable rests on a grep that left out 'confirm', and the context still has human confirmation surfaces before the build handoff: the platform-confirmation banner (N8nParserResults, N8nImportTab) and the entity selection checkboxes. The cited SURFACED_STEPS line only shows that steps were "
+      }
     }
   }
 }
