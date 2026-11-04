@@ -14842,7 +14842,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/fleet/monitor/drawer/DrawerParts.tsx:159 The monitor only displays a tool-call count and cost for an execution, as telemetry. A recursive search of src/features/fleet/monitor for McpServer, inputSchema, registerTool and callTool found no files and no 'mcp' token, so it has no tool server, catalog or client wiring that the techniques govern.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "prompt-assembly",
@@ -25406,7 +25410,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/overview/sub_manual-review/hooks/useManualReviewQueue.ts:2 The review inbox pages through manual-review rows over the app's own IPC. A recursive search of sub_manual-review/ and sub_analytics/components for mcp (any case), McpServer, inputSchema, registerTool and callTool returned zero files. Its human approvals belong to hitl-approval, not to tool-protocol request suspension.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "test-harness",
@@ -29511,7 +29519,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx:2 This context is a page that views a project's development lifecycle. A recursive search of sub_lifecycle/ for mcp (any case), McpServer, inputSchema, registerTool and callTool returned zero files, so it neither offers nor uses tools over a tool protocol.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "quality-gates",
@@ -44144,7 +44156,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/sub_catalog/components/picker/CredentialPicker.tsx:17 The picker is a filtered grid of connector cards that hands the chosen connector to a callback. A search of picker/, design/, design/setup/ and negotiator/ for McpServer, inputSchema, registerTool, callTool and tools/list found nothing. The only 'mcp' text is an acronym in a label formatter (NegotiatorStepCardHelpers.tsx:21), so this context has no tool-protocol surface to judge.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:ed8e615f51454325",
+          "evaluatedRevision": 34
         },
         {
           "subject": "connector-catalog",

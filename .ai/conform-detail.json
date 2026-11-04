@@ -42707,6 +42707,46 @@
         "at": "2026-11-04T02:20:23.238726+00:00",
         "reason": "reviewer (sonnet): The claim is true in the code (the latch is set at useCredentialDesignOrchestrator.ts:49 and the cleanup cancels the in-flight result without releasing it). But that hook and NegotiatorPanel.tsx are not in the context's file list, and no picker file or the three design helper files import them. The "
       }
+    },
+    "3619ab0d-0367-43d0-b4eb-ec39c1302d65/mcp-tools": {
+      "context": "vault-catalog-picker",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T02:30:37.984Z",
+      "worker": "a870ca98-1257-4ccd-830a-b1b4f42e6b02",
+      "techniques": []
+    },
+    "d9cffe6c-a868-4ed4-b5e8-6c8add36918a/mcp-tools": {
+      "context": "plugins-dev-tools-lifecycle",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T02:30:37.984Z",
+      "worker": "a870ca98-1257-4ccd-830a-b1b4f42e6b02",
+      "techniques": []
+    },
+    "743a0ae5-b7d0-46a6-a915-cb82c7834bf8/mcp-tools": {
+      "context": "fleet-monitor-shell",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T02:30:37.984Z",
+      "worker": "a870ca98-1257-4ccd-830a-b1b4f42e6b02",
+      "techniques": []
+    },
+    "ef73ca1c-fc54-4b9c-83ec-390c54929192/mcp-tools": {
+      "context": "overview-manual-review",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T02:30:37.984Z",
+      "worker": "a870ca98-1257-4ccd-830a-b1b4f42e6b02",
+      "techniques": []
     }
   }
 }
