@@ -27248,8 +27248,12 @@
           "revision": 5,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 4
+          "state": "not-applicable",
+          "priorNotApplicable": 4,
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:11 Here 'build' means an LLM assembling a persona definition, and 'promote to production' means updating a local database row through updatePersona. No hosting platform, served build output, upload filter or deploy trigger is involved, so the subject's precondition does not hold. A search of the whole matrix directory for vercel, netlify, cache-control, immutable and dockerignore found 0 hits. The only 'deploy' hit is an import path (sub_deployment/hooks/awaitExecutionResult) used for simulation.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:dc1097a08c9022d9",
+          "evaluatedRevision": 5
         },
         {
           "subject": "agent-cli-transport",

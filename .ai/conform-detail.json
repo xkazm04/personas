@@ -43278,6 +43278,27 @@
           "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/TurnRow.tsx:150 Who and when sit in a side gutter, and the fold, summary chip and copy sit in a quiet strip below the prose, never interleaved with it. No cost or duration figures are shown, so there are no predicate rules to break."
         }
       ]
+    },
+    "835ed922-2ebd-425b-a542-dbe5996e1e78/deployment-contract": {
+      "context": "persona-build-matrix",
+      "subject": "deployment-contract",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T22:05:23.815Z",
+      "worker": "50a7954a-5ebe-46a6-8a9e-86c45e2805d7",
+      "techniques": [
+        {
+          "technique": "environment-promotion",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:2 Draft, test and promote is a data lifecycle for an agent record, not a build moving between hosted environments."
+        },
+        {
+          "technique": "platform-build-parity",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/components/matrix/useLifecycle.ts:19 The build is a build session over IPC that produces a persona, not a code build with a second executor on a host."
+        }
+      ]
     }
   }
 }
