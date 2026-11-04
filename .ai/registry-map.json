@@ -4359,8 +4359,12 @@
           "revision": 9,
           "changedAt": "2026-09-09",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 11
+          "state": "not-applicable",
+          "priorNotApplicable": 11,
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:2 This context is a client-side decision queue: its 'adapters' map six internal domain rows (reviews, ideas, proposals, goals...) into one UI item shape, with no interchangeable upstreams, no candidate tree, no failover and no stream translation, so the gateway plane's precondition does not hold. A case-insensitive search of src/features/agents/quick-answer and src/features/agents/shared/quickConfig found no hits for gateway, upstream, failover, candidate or normaliz; 'fallback' appears only as i18n copy defaults and an event-bridge comment.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:f268193750c0a517",
+          "evaluatedRevision": 9
         },
         {
           "subject": "prompt-assembly",

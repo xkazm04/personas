@@ -42969,6 +42969,27 @@
           "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:11 No peer records or reconnect logic here."
         }
       ]
+    },
+    "8cfb82ac-ebd6-4826-921d-d1399dba7a60/multi-provider-gateway-plane": {
+      "context": "agents-quick-answer",
+      "subject": "multi-provider-gateway-plane",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T03:53:47.618Z",
+      "worker": "0a821bf6-97b3-45f3-a784-2d7832dce6aa",
+      "techniques": [
+        {
+          "technique": "named-members-over-a-uniform-collection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:15 Adapters are pure mappers over rows that are already loaded, not upstream members probed or fanned out to by a plane."
+        },
+        {
+          "technique": "adapter-direction-asymmetry",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:2 The mapping goes one way only, from domain rows into a UI item. No published request shape is translated into upstream dialects."
+        }
+      ]
     }
   }
 }
