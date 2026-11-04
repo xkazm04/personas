@@ -12459,8 +12459,12 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/plugins/dev-tools/DevToolsPage.tsx:19 The shell is a lazy tab router plus constant catalogs and ledger UI. It owns none of the subject's crossings: no dependency resolution, archive extraction, deserialization of untrusted artifacts, permission manifest or secret scanning. A recursive search of src/features/plugins/dev-tools for lockfile|unzip|tarball|pickle|sbom|zip-slip|cargo-deny|npm audit|renovate found nothing.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "codebase-scanning",
@@ -22931,8 +22935,12 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/notepad/__tests__/notepadStore.test.ts:1 These are Vitest unit and component tests of the notepad store, text utilities and UI. Nothing in them crosses a supply-chain boundary. A recursive search of src/features/notepad for lockfile|unzip|tarball|pickle|sbom|zip-slip|cargo-deny|npm audit|renovate found nothing.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "agent-memory",
@@ -39172,8 +39180,12 @@
           "revision": 6,
           "changedAt": "2026-09-25",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 21
+          "state": "not-applicable",
+          "priorNotApplicable": 21,
+          "evidence": "src/features/projects/development/goals/GoalsPage.tsx:19 This context is a React goal-tracking UI plus team-channel hooks that call the app's own IPC. It owns no dependency manifest, lockfile, archive unpack, deserializer, permission manifest or vendored code. A case-insensitive recursive search of goals/, teams/sub_collab/ and teams/sub_deliberations/ for lockfile|unzip|tarball|pickle|sbom|zip-slip|cargo-deny|npm audit|renovate found nothing. 'Dependency' appears only as the goal-to-goal DevGoalDependency domain type, and 'capability' only as deliberation actions.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:f5666db1094acd9f",
+          "evaluatedRevision": 6
         },
         {
           "subject": "voice-io",

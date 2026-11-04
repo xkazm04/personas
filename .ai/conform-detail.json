@@ -42763,6 +42763,64 @@
           "evidence": "src-tauri/engine/src/chunker.rs:142 Boundaries are a character count with a 100-char sentence lookback; when no break is found the cut lands mid-sentence or mid-word, and no source's structural seams (headings, paragraphs) are used. Overlap is applied unconditionally (line 161: `start = actual_end.saturating_sub(overlap_chars);`). No runt floor merges tiny chunks. Partly conformant: provenance carries the page and extraction_confidence (line 52), and zero-yield pages are counted (line 27, empty_pages/unreadable_pages)."
         }
       ]
+    },
+    "fd961ee9-bf7c-4ec7-90c3-a728045d3d44/supply-chain": {
+      "context": "teams-goals",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T03:00:22.786Z",
+      "worker": "7f7b8070-98c2-4111-9887-eb7568104142",
+      "techniques": [
+        {
+          "technique": "archive-extraction-safety",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/goalDetail/blocks/leadBlocks.tsx:34 Here 'archived' means a KPI's lifecycle state. No archive is ever unpacked."
+        },
+        {
+          "technique": "dependency-policy-gates",
+          "verdict": "not-applicable",
+          "evidence": "src/features/projects/development/goals/goalDetail/parts.tsx:43 'Dependency' here is a link between goals, not a third-party package. The context has no manifest or lockfile for a gate to read."
+        }
+      ]
+    },
+    "4cfcafbc-1964-4d65-994f-66c4cd1f8820/supply-chain": {
+      "context": "dev-tools-shell",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T03:00:22.786Z",
+      "worker": "7f7b8070-98c2-4111-9887-eb7568104142",
+      "techniques": [
+        {
+          "technique": "dependency-policy-gates",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/constants/scanAgents.ts:37 This is only a display catalog entry for an LLM scan agent aimed at other projects. It is not a policy gate on this repo's own dependency graph."
+        },
+        {
+          "technique": "permission-manifest-scoping",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/hooks/useContextScanBackground.ts:31 This is a runtime notification-permission prompt. The install-time capability grant lives in src-tauri capabilities, outside this context."
+        }
+      ]
+    },
+    "cd17ecec-1587-4c38-8ec1-934632aa09fa/supply-chain": {
+      "context": "notepad-tests",
+      "subject": "supply-chain",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T03:00:22.786Z",
+      "worker": "7f7b8070-98c2-4111-9887-eb7568104142",
+      "techniques": [
+        {
+          "technique": "archive-extraction-safety",
+          "verdict": "not-applicable",
+          "evidence": "src/features/notepad/__tests__/NoteArchiveModal.test.tsx:3 Here 'archive' means a note status (filed away). No archive file is unpacked."
+        }
+      ]
     }
   }
 }
