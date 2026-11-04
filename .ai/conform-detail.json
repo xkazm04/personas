@@ -43299,6 +43299,32 @@
           "evidence": "src/features/agents/components/matrix/useLifecycle.ts:19 The build is a build session over IPC that produces a persona, not a code build with a second executor on a host."
         }
       ]
+    },
+    "e0563a39-fb7e-485f-a698-f9c4dc1004a7/realtime-events": {
+      "context": "triggers-test",
+      "subject": "realtime-events",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T22:20:25.425Z",
+      "worker": "4368823f-056d-403d-8124-dca5b1bb0a11",
+      "techniques": [
+        {
+          "technique": "subscription-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_shared/useSubscribedFeeds.ts:46 This effect cleanup only guards in-flight promise reads against unmount. The context creates no push listener, so there is nothing to reap."
+        },
+        {
+          "technique": "push-vs-refetch-reconciliation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:77 State comes only from authoritative refetches (load after refresh, plus a seq-ref stale-response guard). No pushed payload competes with the reads."
+        },
+        {
+          "technique": "capacity-packed-subscription-pool",
+          "verdict": "not-applicable",
+          "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:82 A feed subscription here is one IPC command that writes a DB row. There is no push provider with per-connection caps."
+        }
+      ]
     }
   }
 }

@@ -1,0 +1,60 @@
+{
+ "schema": "conform-run/1",
+ "worker": "4368823f-056d-403d-8124-dca5b1bb0a11",
+ "subject": "realtime-events",
+ "evaluatedAt": "2026-11-04T22:20:25.425020+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "triggers-test",
+   "subject": "realtime-events",
+   "bundle": "software-engineering",
+   "state": "not-applicable",
+   "evidence": "src/features/triggers/sub_shared/useSubscribedFeeds.ts:9 Every read in this context (catalog, subscriptions, change activity, firings, impact runs, test-fire vocabulary) is a one-shot invokeWithTimeout read on mount or on an explicit refresh/retry. The word \"subscribe\" here means a durable feed-subscription record created over IPC, not a push listener. I searched sub_shared and sub_test for @tauri-apps/api/event, eventBridge, EventName, useTauriEvent and unlisten and found zero hits, so this context has no event-bus or realtime subscription surface to judge.",
+   "techniques": [
+    {
+     "technique": "subscription-lifecycle",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_shared/useSubscribedFeeds.ts:46 This effect cleanup only guards in-flight promise reads against unmount. The context creates no push listener, so there is nothing to reap."
+    },
+    {
+     "technique": "push-vs-refetch-reconciliation",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:77 State comes only from authoritative refetches (load after refresh, plus a seq-ref stale-response guard). No pushed payload competes with the reads."
+    },
+    {
+     "technique": "capacity-packed-subscription-pool",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:82 A feed subscription here is one IPC command that writes a DB row. There is no push provider with per-connection caps."
+    }
+   ],
+   "absenceTerms": [
+    "@tauri-apps/api/event",
+    "eventBridge",
+    "EventName",
+    "useTauriEvent",
+    "unlisten"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-04T22:20:25.425020+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "realtime-events"
+   ],
+   "techniques": [
+    "capacity-packed-subscription-pool",
+    "push-vs-refetch-reconciliation",
+    "subscription-lifecycle"
+   ],
+   "deviations": 0,
+   "context": "triggers-test",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
