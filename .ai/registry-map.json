@@ -23658,8 +23658,12 @@
           "revision": 19,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 9
+          "state": "deviation",
+          "priorNotApplicable": 9,
+          "evidence": "src-tauri/engine/src/chunker.rs:138 The knowledge-base chunker in this context cuts every source, .md included, into fixed max_chars windows. It only looks back up to 100 chars for a sentence break and otherwise falls back to the raw character count. It ignores headings, paragraphs and list items and always adds overlap. That is the arithmetic, overlap-by-default cut that chunking-and-indexing names as the failure mode.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:a49d27f889212d3f",
+          "evaluatedRevision": 19
         },
         {
           "subject": "test-harness",

@@ -42747,6 +42747,22 @@
       "evaluatedTs": "2026-11-04T02:30:37.984Z",
       "worker": "a870ca98-1257-4ccd-830a-b1b4f42e6b02",
       "techniques": []
+    },
+    "a3b615d2-05d8-47bd-ad92-672c6b42b0f3/retrieval": {
+      "context": "output-stream-parser",
+      "subject": "retrieval",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T02:48:04.965Z",
+      "worker": "34efcb7f-1374-4f05-96ed-bccf1f9f8800",
+      "techniques": [
+        {
+          "technique": "chunking-and-indexing",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/chunker.rs:142 Boundaries are a character count with a 100-char sentence lookback; when no break is found the cut lands mid-sentence or mid-word, and no source's structural seams (headings, paragraphs) are used. Overlap is applied unconditionally (line 161: `start = actual_end.saturating_sub(overlap_chars);`). No runt floor merges tiny chunks. Partly conformant: provenance carries the page and extraction_confidence (line 52), and zero-yield pages are counted (line 27, empty_pages/unreadable_pages)."
+        }
+      ]
     }
   }
 }
