@@ -4663,8 +4663,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "deviation",
+          "priorNotApplicable": 34,
+          "evidence": "src/api/companion.ts:716 The cloned-voice import door takes only a voiceId and a WAV (the Rust command at src-tauri/src/commands/companion/voice.rs:125-136 just validates and writes the file), so a real person's likeness enters the catalog with no consent or provenance record, which authored-voice-identity names as the failure.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "agent-cli-transport",
@@ -10504,8 +10508,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "deviation",
+          "priorNotApplicable": 34,
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:47 The composer's mic captures through useSpeechInput, which picks athenaSttEngine. Its default is 'browser' (src/stores/slices/system/athenaSlice.ts:353), and src/api/companion.ts:756-757 says that engine's audio goes to the OS vendor's cloud. So capture leaves the device by default, and the composer's labels ('Talk to Athena') never say so. on-device-vs-cloud requires on-device by default with cloud as a disclosed opt-in.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "hitl-approval",
@@ -18287,8 +18295,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/i18n/englishSections.ts:46 The context is the English translation bundle, its lazy-parse cache and the error/translation helpers. A recursive search of src/i18n and src/lib found no speechSynthesis, SpeechRecognition, getUserMedia, MediaRecorder or companionTts. The only matches for 'voice'/'whisper' are translated UI strings in generated bundles, so no voice pipeline lives here.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "i18n",
@@ -29667,8 +29679,12 @@
           "revision": 23,
           "changedAt": "2026-10-18",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 34
+          "state": "not-applicable",
+          "priorNotApplicable": 34,
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx:2 The context is the Lifecycle Lens dev-tools surface. A recursive search of src/features/plugins/dev-tools/sub_lifecycle found no speechSynthesis, SpeechRecognition, getUserMedia, MediaRecorder or companionTts. The only 'speak' hits are figurative prose in comments (AdherenceSection.tsx:6, useLifecycleHeadline.ts:27).",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:29f8b158c4d44054",
+          "evaluatedRevision": 23
         },
         {
           "subject": "client-state",

@@ -43044,6 +43044,93 @@
           "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:2 The mapping goes one way only, from domain rows into a UI item. No published request shape is translated into upstream dialects."
         }
       ]
+    },
+    "895b4bb2-16fd-4e8e-aae8-11315fe6436b/voice-io": {
+      "context": "api-agents",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T04:19:41.469Z",
+      "worker": "c88ec980-590a-4a5d-98a6-c330165bce76",
+      "techniques": [
+        {
+          "technique": "authored-voice-identity",
+          "verdict": "deviation",
+          "evidence": "src/api/companion.ts:711 Clone import carries no record of who was cloned, on what evidence, for what use. The 'cloned' vs 'premade' category (line 733) does keep the two kinds distinguishable, which is the part it gets right."
+        },
+        {
+          "technique": "engine-abstraction",
+          "verdict": "conformant",
+          "evidence": "src/api/companion.ts:552 One synthesis door with a typed TtsEngineId parameter dispatching to per-engine adapters. Descoped engines are recorded at line 518. Only the synthesis side was judged: the browser STT engine lives in the renderer, outside this context."
+        },
+        {
+          "technique": "bounded-playback-wait",
+          "verdict": "not-applicable",
+          "evidence": "src/api/companion.ts:501 The IPC returns audio bytes and the renderer plays them, so no wrapper here waits on playback. The synthesis wait is bounded separately (VOICE_IPC_TIMEOUT_MS, line 544)."
+        },
+        {
+          "technique": "voice-setup-experience",
+          "verdict": "conformant",
+          "evidence": "src/api/companion.ts:658 Only rule 2 judged: the installer takes no URL from the client (addresses live in the installing process), and progress has named terminal phases (line 617). Rule 1, the default recognizer, is judged in companions-page."
+        }
+      ]
+    },
+    "2651f2ce-7fc1-4331-8b31-61e783e9746a/voice-io": {
+      "context": "companions-page",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T04:19:41.469Z",
+      "worker": "c88ec980-590a-4a5d-98a6-c330165bce76",
+      "techniques": [
+        {
+          "technique": "on-device-vs-cloud",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:47 Default capture engine is the cloud-routed Web Speech engine, not local whisper. The mic affordance in this context carries no disclosure."
+        },
+        {
+          "technique": "stt-pipeline",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:56 Interim text is shown only while listening and is never committed to the draft. Only finals are kept."
+        },
+        {
+          "technique": "transcript-normalization",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:52 The final transcript goes into the editable draft unrewritten. Its destination is Athena (a reasoner), where the technique says not to normalize."
+        },
+        {
+          "technique": "spoken-intent-parsing",
+          "verdict": "not-applicable",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:63 Dictation is prose sent only on the user's explicit submit. No transcript is turned into a typed command here."
+        },
+        {
+          "technique": "voice-ux-integration",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:86 One toggle both starts and stops capture, and its listening label is visible ('Listening… click to stop', nextCopy.ts:95). How unsupported/denied states render lives in the shared ChatInputBar, outside this context, and was not judged."
+        }
+      ]
+    },
+    "2e1e105a-866c-4039-9620-7ed5d0d30b17/voice-io": {
+      "context": "i18n",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T04:19:41.469Z",
+      "worker": "c88ec980-590a-4a5d-98a6-c330165bce76",
+      "techniques": []
+    },
+    "d9cffe6c-a868-4ed4-b5e8-6c8add36918a/voice-io": {
+      "context": "plugins-dev-tools-lifecycle",
+      "subject": "voice-io",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T04:19:41.469Z",
+      "worker": "c88ec980-590a-4a5d-98a6-c330165bce76",
+      "techniques": []
     }
   }
 }
