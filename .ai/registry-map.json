@@ -10543,8 +10543,12 @@
           "revision": 5,
           "changedAt": "2026-09-25",
           "confidence": "strong",
-          "state": "unknown",
-          "priorNotApplicable": 8
+          "state": "deviation",
+          "priorNotApplicable": 8,
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Transcript.tsx:129 Athena's live turn is a separate StreamingTurn element at the foot of the list, and when it settles a different TurnRow reply takes its place, which is exactly the live-bubble swap the turn-model technique names: selection, the scroll anchor and the entrance animation are all lost at settlement.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:5b4e7d399a4d924e",
+          "evaluatedRevision": 5
         },
         {
           "subject": "agent-runtime-assembly",

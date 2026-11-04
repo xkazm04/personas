@@ -43232,6 +43232,52 @@
           "evidence": "src/features/overview/components/health/SystemHealthPanel.tsx:77 The only timer in the context is a one-shot delayed re-check that the effect cleanup clears at :78. The context has no recurring loop to register: a search for setInterval, poll and refetchInterval over both directories found nothing."
         }
       ]
+    },
+    "2651f2ce-7fc1-4331-8b31-61e783e9746a/chat-transcript": {
+      "context": "companions-page",
+      "subject": "chat-transcript",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T04:56:24.743Z",
+      "worker": "30178033-3b62-459e-b949-626cddee695c",
+      "techniques": [
+        {
+          "technique": "turn-model",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Transcript.tsx:129 Turns are keyed by a stable message id (key={turn.id}, from the ask's id in exchange.ts), but streaming and settled are two different elements. The live one sits outside turns.map and is replaced by a Reply inside TurnRow."
+        },
+        {
+          "technique": "composer-turn-queue",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:78 Enter-submit while busy does reach sendOrQueue (queue or interrupt). But ChatInputBar passes busy to the Send Button as loading, and Button sets isDisabled = disabled || loading, so the send control is disabled while a turn runs. There is also no separate interject intent: a classifier picks between queue and interrupt."
+        },
+        {
+          "technique": "transcript-scroll",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Transcript.tsx:140 There is a pin-while-at-foot follow with a forgiving 96px threshold (line 78) and a jump-to-latest pill, but the pill carries no unseen count. Open-at-latest waits on a double requestAnimationFrame, a proxy rather than a check that layout has settled. Switching threads always lands at the bottom, so per-thread position is not restored (athenaChatSession.ts)."
+        },
+        {
+          "technique": "inline-structured-rows",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Transcript.tsx:52 Approvals and chat cards are answered on a DecisionStage that flies in over the app, not as rows in history. The turn carries only a summary chip that opens that separate surface. Machine rows do stay at their turn's position, through MachineFold."
+        },
+        {
+          "technique": "markdown-and-code-rendering",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/StreamingTurn.tsx:39 The settled reply goes through one door (AssistantProse to MarkdownRenderer, with sanitizeExternalUrl and code-block actions, TurnRow.tsx:83). While streaming, though, markdown is stripped to plain words instead of parsed with provisional closure, so lists and code blocks reflow when the turn settles."
+        },
+        {
+          "technique": "progress-narration",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/MachineFold.tsx:47 Live: a beat or phase line plus the OperationalThread. Settled: machine rows fold into an 'N steps' chip that expands in place, and the steps persist per episode (TurnRow.tsx:86), so the collapse changes presentation and deletes nothing."
+        },
+        {
+          "technique": "turn-metadata",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/TurnRow.tsx:150 Who and when sit in a side gutter, and the fold, summary chip and copy sit in a quiet strip below the prose, never interleaved with it. No cost or duration figures are shown, so there are no predicate rules to break."
+        }
+      ]
     }
   }
 }
