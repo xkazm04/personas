@@ -15602,12 +15602,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 the pickers are in-document modals; no file in the context imports @/api or @tauri-apps (only stores and the read-only useTableIntrospection hook at composer/ConnectorTableScopeRow.tsx:18), so no native capability, destructive command, overlay or stream crosses here",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell.tsx:2 The pickers are in-document modals. A search of commandPanel/ for @tauri-apps, invokeWithTimeout, setAlwaysOnTop and setIgnoreCursorEvents found nothing, and a search for app_focus, clipboard and listen( also came back empty, so no host-specific capability, destructive native command, overlay or stream crosses here.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
+          "revisionsBehind": 1
         },
         {
           "subject": "model-composed-workspace",
@@ -26159,12 +26158,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:14 the context's surface (Practice Detail modal, sub_patterns) was removed (git 6ea91dd77b, bec576bc8f) and its workspace_knowledge table retired; no tracked file remains under src/features/overview/sub_patterns, so no native capability, command target, overlay or stream exists to judge",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/db/src/migrations/incremental/e28_retire_workspace_knowledge.rs:1 The Practice Detail surface was removed (commits 6ea91dd77b and bec576bc8f): git ls-files under src/features/overview/sub_patterns returns 0 files, and git grep for PracticeDetailModal, decidePractice and practice_decide over src and src-tauri finds nothing, so there is no native capability, command target, overlay or stream left to judge.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
+          "revisionsBehind": 1
         },
         {
           "subject": "supply-chain",
@@ -29397,12 +29395,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "conformant",
-          "evidence": "src-tauri/src/commands/infrastructure/context_generation.rs:797 the renderer-sent scan root (src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:410) is canonicalized and confined component-wise to the project's registered root before it becomes the cwd of a permission-disabled agent; scan output is native-owned and rendered from events",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:362 The scan job is owned natively (BackgroundJobManager plus events), and the view holds no connection state: it resyncs from native job status on mount. The renderer-sent root path is confined component-wise to the project's registered root before a permission-disabled agent runs there.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
+          "revisionsBehind": 1
         },
         {
           "subject": "sidecar-provisioning",
@@ -35488,12 +35485,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 the fullest surface is a document overlay below the title bar; none of the context's 33 files imports @/api or @tauri-apps, so no host capability, foreign window, synthesized input or native command crosses here",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/shared/components/layout/FullScreenOverlay.tsx:2 The only overlay is an in-document dialog inside the app window, and a search of layout/, kanban/ and buttons/ for @tauri-apps, invokeWithTimeout, setAlwaysOnTop and setIgnoreCursorEvents found no hits, so no host capability, foreign-window surface or native command is reached from this context.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
+          "revisionsBehind": 1
         },
         {
           "subject": "quality-gates",
@@ -43156,13 +43152,12 @@
           "revision": 5,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src/features/triggers/sub_smee_relay/SmeeRelayTab.tsx:16 the relay stream is native-owned and the tab renders its status event; external links go through open_external_url, which allow-lists the scheme and hands one argument to the host open primitive (src-tauri/src/commands/infrastructure/system/mod.rs:28)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:0ab230f2977430e7",
-          "evaluatedRevision": 4,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/triggers/sub_studio/libs/triggerStudioConstants.ts:34 The Chain Studio rail offers the app_focus trigger on every host. Its rail filter (StudioRails.tsx:64) filters only by search text, while the native side returns None on every non-Windows host (src-tauri/engine/src/app_focus.rs:61, 'not yet implemented'), so a macOS or Linux user can commit a route that silently never fires.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:9034ad02704d9c88",
+          "evaluatedRevision": 5,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-runtime-assembly",
