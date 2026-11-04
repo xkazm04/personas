@@ -1,0 +1,72 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5cb7fdc0-bd43-42f9-97b9-4e3c63546744",
+ "subject": "data-access",
+ "evaluatedAt": "2026-11-04T00:51:15.028132+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "hooks-design",
+   "subject": "data-access",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/hooks/design/core/useAiSearch.ts:66 AI search gets back a list of ranked ids and then sends one get_design_review IPC call per id, because src/api/overview/reviews.ts only offers getDesignReview(id) and has no fetch-many-by-ids read, so a list read is built as N+1 round trips.",
+   "techniques": [
+    {
+     "technique": "batching-and-n-plus-one",
+     "verdict": "deviation",
+     "evidence": "src/hooks/design/core/useAiSearch.ts:66 rankedIds.map runs one fetch per id inside Promise.all. A grep of src/api found no design-review by-ids or batch read, so the surface only offers fetch-one for data that is shown as a list."
+    },
+    {
+     "technique": "transactions-and-units-of-work",
+     "verdict": "deviation",
+     "evidence": "src/hooks/design/credential/applyDesignResult.ts:87 The doc comment calls this a 'Standalone business transaction', but it is one persona write plus a loop of createTrigger and createSubscription IPC calls with no shared boundary. The persona update commits even if some triggers or subscriptions fail, and the partial result comes back as warnings plus a retry list rather than an atomic unit."
+    },
+    {
+     "technique": "layering-rules",
+     "verdict": "conformant",
+     "evidence": "src/hooks/design/core/useDesignAnalysis.ts:2 Every store access in these hooks goes through named @/api operations. A grep found no raw invoke and no query text in the context's non-test files."
+    },
+    {
+     "technique": "query-construction",
+     "verdict": "conformant",
+     "evidence": "src/hooks/design/template/useGalleryQuery.ts:306 Filters reach the backend as typed values in a params object (sortBy, perPage, coverageFilter), never as query fragments, so the hooks cannot inject an identifier or SQL."
+    },
+    {
+     "technique": "read-models-and-projections",
+     "verdict": "conformant",
+     "evidence": "src/hooks/design/template/useDesignReviews.ts:11 The count comes from a dedicated aggregate read (the comment at line 40 says 'one indexed aggregate') instead of loading the review list and measuring its length."
+    },
+    {
+     "technique": "repo-testing",
+     "verdict": "conformant",
+     "evidence": "src/hooks/design/__tests__/useDesignReviews.test.ts:22 These hook tests mock at the IPC boundary, which is one layer above the store. The technique names that as the legitimate place for a mock, since application logic is tested against a mocked store."
+    }
+   ],
+   "registryProposal": "This subject is written for the backend data layer. For a frontend hooks context that only reaches the store through an IPC api module, the techniques that still bite are batching (fetch-one used in a loop across IPC) and units of work (multi-write sequences composed on the client, where no transaction can span the calls). The standard could say outright that a client that composes several IPC writes for one invariant should get a single backend command that owns the boundary."
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-04T00:51:15.028132+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "data-access"
+   ],
+   "techniques": [
+    "batching-and-n-plus-one",
+    "layering-rules",
+    "query-construction",
+    "read-models-and-projections",
+    "repo-testing",
+    "transactions-and-units-of-work"
+   ],
+   "deviations": 1,
+   "context": "hooks-design",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}
