@@ -42671,6 +42671,42 @@
           "evidence": "src/features/overview/sub_memories/components/MemoryDetailModal.tsx:22 The detail modal renders the full list row it is handed and makes no separate detail read, so there is no lag for a borrowed summary to cover."
         }
       ]
+    },
+    "3619ab0d-0367-43d0-b4eb-ec39c1302d65/concurrency-guards": {
+      "context": "vault-catalog-picker",
+      "subject": "concurrency-guards",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T02:19:50.217Z",
+      "techniques": [
+        {
+          "technique": "release-guarantees",
+          "verdict": "deviation",
+          "evidence": "src/features/vault/sub_catalog/components/design/useCredentialDesignOrchestrator.ts:49 The guard is latched when the attempt begins, not when it completes. The cancel path (cleanup at the phase change) drops the result without releasing the latch, so no retry runs until reset(). The panel's own detect is a fallback, so this degrades rather than wedges."
+        },
+        {
+          "technique": "attempt-attribution",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/negotiator/NegotiatorPanel.tsx:40 Each effect run gets its own cancelled flag, which is checked at the write site, so a superseded detect cannot overwrite newer state. Gap: CliConnectionPanel's runInstallCheck/runVerify write setState with no attempt check."
+        },
+        {
+          "technique": "cache-value-not-handle",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/picker/useRecipeIndicators.ts:44 The module cache stores the settled Map value with a TTL, not a shared in-flight promise, so an abandoned caller cannot wedge later mounts."
+        },
+        {
+          "technique": "single-flight-primitives",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_catalog/components/picker/CliConnectionPanel.tsx:271 The CLI credential save refuses a second caller through the saving flag and the disabled control. This is a per-site bespoke flag, not a shared keyed primitive."
+        }
+      ],
+      "withdrawn": {
+        "worker": "32dcab45-063f-4ab9-828e-9e8846f750d6",
+        "state": "deviation",
+        "at": "2026-11-04T02:20:23.238726+00:00",
+        "reason": "reviewer (sonnet): The claim is true in the code (the latch is set at useCredentialDesignOrchestrator.ts:49 and the cleanup cancels the in-flight result without releasing it). But that hook and NegotiatorPanel.tsx are not in the context's file list, and no picker file or the three design helper files import them. The "
+      }
     }
   }
 }
