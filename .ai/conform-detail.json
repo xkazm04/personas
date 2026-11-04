@@ -43189,6 +43189,28 @@
       "evaluatedTs": "2026-11-04T04:19:41.469Z",
       "worker": "c88ec980-590a-4a5d-98a6-c330165bce76",
       "techniques": []
+    },
+    "7e214a7d-44c6-4e6c-8b54-b30f4483ce12/copy-quality-gates": {
+      "context": "teams-factory-passport-improve",
+      "subject": "copy-quality-gates",
+      "bundle": "localization",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T04:37:15.014Z",
+      "worker": "f101711c-2a09-4011-86b4-1ef416e39be9",
+      "techniques": [
+        {
+          "technique": "rendered-string-extraction",
+          "verdict": "deviation",
+          "evidence": "src/features/teams/sub_factory/passport/improve/standards.ts:32 The technique says copy outside the catalog (literals in code) must be extracted through the same pipeline or declared out of scope. This hint is rendered at ImprovePopover.tsx:132 ({a.hint}) and is neither. The same pattern appears in goldenStandard.ts labels, levels.ts titles and notes, and ImproveCell.tsx:74 title literals."
+        },
+        {
+          "technique": "copy-contract-before-drafting",
+          "verdict": "not-applicable",
+          "evidence": "src/features/teams/sub_factory/passport/improve/goldenStandard.ts:28 This context consumes copy; it is not where a copy contract, brief or fact sheet would live. Its 'golden standard' is a repo-readiness rubric, not a copy standard."
+        }
+      ],
+      "registryProposal": "rendered-string-extraction's 'copy outside the catalog' rule could name the common UI-code shape directly: typed config arrays of {label, hint} objects in .ts files. JSX-text lint rules structurally miss these, and they are the dominant escape route in a React codebase whose JSX is already lint-gated."
     }
   }
 }

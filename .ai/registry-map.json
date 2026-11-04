@@ -38937,8 +38937,12 @@
           "revision": 10,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 3
+          "state": "deviation",
+          "priorNotApplicable": 3,
+          "evidence": "src/features/teams/sub_factory/passport/improve/standards.ts:31 User-facing action labels and hints are written as English object literals in a .ts data file, outside the i18n catalog, and ImprovePopover renders them, so no catalog-walking copy gate extracts them and none declares them out of scope: a coverage hole with a green light over it.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:f00a2dbd4e8fdce1",
+          "evaluatedRevision": 10
         },
         {
           "subject": "test-harness",
