@@ -1,0 +1,183 @@
+{
+ "schema": "conform-run/1",
+ "worker": "b01c9590-0b8c-47cd-ad27-8b749342539d",
+ "subject": "cross-provider-benchmark-operations",
+ "evaluatedAt": "2026-11-04T04:26:33.186141+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "triggers-studio",
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:3 Chain Studio models source-to-persona trigger links persisted to localStorage; a search of sub_studio and triggers/hooks for benchmark, scorecard, leaderboard and prompt_variant found nothing (the only 'matrix' hit is the event-routing matrix in AddPersonaModal), so there is no cross-target benchmark for the subject to govern.",
+   "techniques": [
+    {
+     "technique": "target-matrix-runs",
+     "verdict": "not-applicable",
+     "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:3 Targets here are personas receiving routed events, not provider\u00d7model\u00d7variant benchmark targets."
+    }
+   ],
+   "absenceTerms": [
+    "benchmark",
+    "scorecard",
+    "leaderboard",
+    "prompt_variant"
+   ]
+  },
+  {
+   "context": "run-desk",
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:113 The Run Desk pages dispatched dev tasks by status for retry/cancel; a search of sub_runner for benchmark, scorecard, leaderboard and prompt_variant found nothing and no 'model' term appears in the context, so its queue and cancel are not benchmark runs over a target matrix.",
+   "techniques": [
+    {
+     "technique": "async-run-queue-with-cancel",
+     "verdict": "not-applicable",
+     "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:113 A cancellable task queue exists, but its jobs are dev tasks, not paid benchmark runs, so the technique's precondition does not hold."
+    }
+   ],
+   "absenceTerms": [
+    "benchmark",
+    "scorecard",
+    "leaderboard",
+    "prompt_variant"
+   ]
+  },
+  {
+   "context": "byom-provider-settings",
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:219 BYOM creates runtime routing rules (task complexity to provider/model) and shows production per-engine cost/duration trends (ByomProviderList.tsx:56); the golden path assigns runtime dispatch to builder-side model routing, and a search of sub_byom for benchmark, scorecard, leaderboard and prompt_variant found no evidence-producing benchmark.",
+   "techniques": [
+    {
+     "technique": "cheapest-sufficient-configuration",
+     "verdict": "not-applicable",
+     "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:219 Routing rules are hand-set by the operator. The technique's 'when not to use' explicitly excludes acting as a runtime router."
+    }
+   ],
+   "absenceTerms": [
+    "benchmark",
+    "scorecard",
+    "leaderboard",
+    "prompt_variant"
+   ]
+  },
+  {
+   "context": "companion-ui-controls",
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "tests/playwright/companion-stop-button.spec.ts:13 These Playwright specs drive companion, tour and adoption UI through a synthetic bridge state; a search of tests/playwright for benchmark, scorecard, leaderboard and prompt_variant found nothing, so no comparative model measurement is present.",
+   "techniques": [
+    {
+     "technique": "target-matrix-runs",
+     "verdict": "not-applicable",
+     "evidence": "tests/playwright/companion-stop-button.spec.ts:13 UI behaviour tests, not a cross-target benchmark."
+    }
+   ],
+   "absenceTerms": [
+    "benchmark",
+    "scorecard",
+    "leaderboard",
+    "prompt_variant"
+   ]
+  },
+  {
+   "context": "model-config",
+   "subject": "cross-provider-benchmark-operations",
+   "bundle": "llm-observability",
+   "state": "not-applicable",
+   "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:6 The A/B compare panel and its aggregation and telemetry helpers have been deleted. The context now holds only the ANTHROPIC_TIERS price table (read by the lab arena's arenaSpendEstimate.ts) and Ollama presets, and a search of sub_model_config for benchmark, scorecard, leaderboard and prompt_variant found nothing, so the context runs no comparison.",
+   "techniques": [
+    {
+     "technique": "budget-preflight-and-ceiling",
+     "verdict": "not-applicable",
+     "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:8 Only the price constants live here. The preflight itself belongs to sub_lab/arena and should be judged there."
+    }
+   ],
+   "absenceTerms": [
+    "benchmark",
+    "scorecard",
+    "leaderboard",
+    "prompt_variant"
+   ]
+  }
+ ],
+ "declined": [],
+ "consults": [
+  {
+   "ts": "2026-11-04T04:26:33.186141+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "cross-provider-benchmark-operations"
+   ],
+   "techniques": [
+    "target-matrix-runs"
+   ],
+   "deviations": 0,
+   "context": "triggers-studio",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T04:26:33.186141+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "cross-provider-benchmark-operations"
+   ],
+   "techniques": [
+    "async-run-queue-with-cancel"
+   ],
+   "deviations": 0,
+   "context": "run-desk",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T04:26:33.186141+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "cross-provider-benchmark-operations"
+   ],
+   "techniques": [
+    "cheapest-sufficient-configuration"
+   ],
+   "deviations": 0,
+   "context": "byom-provider-settings",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T04:26:33.186141+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "cross-provider-benchmark-operations"
+   ],
+   "techniques": [
+    "target-matrix-runs"
+   ],
+   "deviations": 0,
+   "context": "companion-ui-controls",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-04T04:26:33.186141+00:00",
+   "bundle": "llm-observability",
+   "subjects": [
+    "cross-provider-benchmark-operations"
+   ],
+   "techniques": [
+    "budget-preflight-and-ceiling"
+   ],
+   "deviations": 0,
+   "context": "model-config",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

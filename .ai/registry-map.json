@@ -6622,13 +6622,12 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:212 New BYOM rules are task-complexity to provider and model dispatch policy, and a search of sub_byom found no benchmark, scorecard, determinism, preflight, or handicap instrument.",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:219 BYOM creates runtime routing rules (task complexity to provider/model) and shows production per-engine cost/duration trends (ByomProviderList.tsx:56); the golden path assigns runtime dispatch to builder-side model routing, and a search of sub_byom for benchmark, scorecard, leaderboard and prompt_variant found no evidence-producing benchmark.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "table",
@@ -10432,13 +10431,12 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "tests/playwright/companion-stop-button.spec.ts:51 Recursive searches found neither benchmark nor prompt_variant in tests/playwright, and the opened specs test companion, tour, and adoption behavior through synthetic state and some real turns rather than comparative model measurements.",
-          "evaluatedAt": "2026-10-17",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "tests/playwright/companion-stop-button.spec.ts:13 These Playwright specs drive companion, tour and adoption UI through a synthetic bridge state; a search of tests/playwright for benchmark, scorecard, leaderboard and prompt_variant found nothing, so no comparative model measurement is present.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         }
       ],
       "governance": "governed"
@@ -21766,12 +21764,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:311 buildCompareOutcomeEvent still has no production caller; the only live import is ANTHROPIC_TIERS (:57) consumed by src/features/agents/sub_lab/components/arena/arenaSpendEstimate.ts:15, so the context runs no comparison and its price book is judged with the lab-arena preflight",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/agents/sub_model_config/libs/compareHelpers.ts:6 The A/B compare panel and its aggregation and telemetry helpers have been deleted. The context now holds only the ANTHROPIC_TIERS price table (read by the lab arena's arenaSpendEstimate.ts) and Ollama presets, and a search of sub_model_config for benchmark, scorecard, leaderboard and prompt_variant found nothing, so the context runs no comparison.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
+          "revisionsBehind": 1
         },
         {
           "subject": "eval-harness",
@@ -33835,12 +33832,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:109 Recursive searches found neither benchmark nor prompt_variant in this context, whose queue fetches development tasks by project and status rather than executing benchmark cases across model targets.",
-          "evaluatedAt": "2026-10-17",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/plugins/dev-tools/sub_runner/useTaskQueue.ts:113 The Run Desk pages dispatched dev tasks by status for retry/cancel; a search of sub_runner for benchmark, scorecard, leaderboard and prompt_variant found nothing and no 'model' term appears in the context, so its queue and cancel are not benchmark runs over a target matrix.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
+          "revisionsBehind": 1
         },
         {
           "subject": "codegen",
@@ -43333,13 +43329,12 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "not-applicable",
-          "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:3 Chain Studio persists source-to-persona trigger drafts with run conditions, and a search of sub_studio and triggers/hooks found no benchmark, scorecard, determinism, preflight, or handicap instrument.",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:609da9e2f3c21869",
-          "evaluatedRevision": 12,
+          "evidence": "src/features/triggers/sub_studio/libs/studioDraftModel.ts:3 Chain Studio models source-to-persona trigger links persisted to localStorage; a search of sub_studio and triggers/hooks for benchmark, scorecard, leaderboard and prompt_variant found nothing (the only 'matrix' hit is the event-routing matrix in AddPersonaModal), so there is no cross-target benchmark for the subject to govern.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:a6d9e74af45916cc",
+          "evaluatedRevision": 13,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "codegen",
