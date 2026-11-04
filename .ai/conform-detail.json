@@ -42928,6 +42928,47 @@
         "at": "2026-11-04T03:31:39.502496+00:00",
         "reason": "reviewer (sonnet): Each anchor is an incidental UI line (a type-file docblock, an import, a logger const, a comment or a page docblock) that doesn't show that no agent instruction file is in scope, and the repo has root AGENTS.md and CLAUDE.md. The 'no hit' grep over feature directories only shows these UI folders don"
       }
+    },
+    "1d8a480b-eac4-4110-a60e-47a6ab281c97/p2p-networking": {
+      "context": "glyph-persona-card",
+      "subject": "p2p-networking",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T03:43:33.708Z",
+      "worker": "fcded239-0154-47ed-af0d-a9603d31c50b",
+      "techniques": [
+        {
+          "technique": "connection-lifecycle",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/contactSheet/dial/DialGrid.tsx:1 'dial' here is a visual drawing component, not a network dial; no connections are opened in this context."
+        },
+        {
+          "technique": "discovery-advertisement",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:11 Pure UI props; no mDNS or broadcast announcement anywhere in sub_glyph."
+        },
+        {
+          "technique": "exposure-controls",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:11 No data is shared with paired peers from this surface."
+        },
+        {
+          "technique": "manifest-negotiation",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:11 No peer capability exchange happens here."
+        },
+        {
+          "technique": "peer-state-honesty",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:11 No peer state is rendered; the card shows persona build state only."
+        },
+        {
+          "technique": "resilience-and-reconnection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:11 No peer records or reconnect logic here."
+        }
+      ]
     }
   }
 }

@@ -15971,7 +15971,11 @@
           "revision": 2,
           "changedAt": "2026-09-03",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/sub_glyph/glyphLayoutTypes.ts:11 The context is the React persona-card presentation layer (layout props, composer, contact-sheet dial drawings); a case-insensitive search of src/features/agents/sub_glyph for p2p, mdns, peer and quinn found zero files, so it never discovers, connects to or exposes data to peer devices and the subject's precondition does not hold.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:c6291d8abe49c1d3",
+          "evaluatedRevision": 2
         },
         {
           "subject": "operator-surfaces-for-llm-spend",
