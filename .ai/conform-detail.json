@@ -42821,6 +42821,53 @@
           "evidence": "src/features/notepad/__tests__/NoteArchiveModal.test.tsx:3 Here 'archive' means a note status (filed away). No archive file is unpacked."
         }
       ]
+    },
+    "dc471d31-ae30-4ac9-b015-d51969df458d/agent-runtime-assembly": {
+      "context": "shared-chrome",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T03:18:13.088Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "43b5dd11-d9f5-4317-9dda-b15721d301e6",
+        "state": "not-applicable",
+        "at": "2026-11-04T03:18:36.804473+00:00",
+        "reason": "reviewer (sonnet): The anchor at BackgroundServices.tsx:8 is a doc-comment line, and the file it sits in mounts a credential remediation loop, an assignment-progress listener, a channel service and Athena reconciliation. That contradicts 'the chrome is navigation, a palette, banners and a refresh-hook host', and the a"
+      }
+    },
+    "fbfcd99a-a333-42da-b85e-2ec1f560b4be/agent-runtime-assembly": {
+      "context": "agents-connectors",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T03:18:13.088Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "43b5dd11-d9f5-4317-9dda-b15721d301e6",
+        "state": "not-applicable",
+        "at": "2026-11-04T03:18:36.942217+00:00",
+        "reason": "reviewer (sonnet): PersonaConnectorsTab.tsx:24-25 says the hook mounts 'auto-test loops'. That contradicts the verdict's 'does not ... run a loop', and the cited line is the persona selector rather than evidence of absence."
+      }
+    },
+    "4560e824-e952-45a9-8aef-fe88d721952e/agent-runtime-assembly": {
+      "context": "home-welcome",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-04",
+      "evaluatedTs": "2026-11-04T03:18:13.088Z",
+      "worker": "43b5dd11-d9f5-4317-9dda-b15721d301e6",
+      "techniques": [
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:84 The record keeps `incomplete` as its own status, which is good. This consumer folds it back into the failure count (via isLostRun in src/features/home/lib/lostRun.ts), so a person sees a definite failure verdict for work the record marks as unknown. Surfacing these runs on the resume pointer (useResumeContext.ts:202) is the human-decides disposition the technique asks for, but there too they are labelled as failures."
+        }
+      ],
+      "registryProposal": "The technique states the indeterminate status must not be rendered as a value for the model and for machine consumers. It could say explicitly that operator-facing summaries (counts, tones) must keep it distinct from failure too: the gap seen here is a correct writer with a consumer that collapses its status."
     }
   }
 }

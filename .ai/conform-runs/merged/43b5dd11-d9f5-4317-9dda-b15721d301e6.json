@@ -1,0 +1,87 @@
+{
+  "schema": "conform-run/1",
+  "worker": "43b5dd11-d9f5-4317-9dda-b15721d301e6",
+  "subject": "agent-runtime-assembly",
+  "evaluatedAt": "2026-11-04T03:18:13.088332+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "home-welcome",
+      "subject": "agent-runtime-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:84 The since-you-left briefing counts a run whose process died (status `incomplete`, written by the zombie sweep as a distinct status) as `failed`. SinceYouLeftBriefing.tsx:41 then shows it to the operator as \"N failed\" in the error tone, so this projection renders an unknown outcome as a definite failure verdict.",
+      "techniques": [
+        {
+          "technique": "indeterminate-closure-on-interruption",
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:84 The record keeps `incomplete` as its own status, which is good. This consumer folds it back into the failure count (via isLostRun in src/features/home/lib/lostRun.ts), so a person sees a definite failure verdict for work the record marks as unknown. Surfacing these runs on the resume pointer (useResumeContext.ts:202) is the human-decides disposition the technique asks for, but there too they are labelled as failures."
+        }
+      ],
+      "registryProposal": "The technique states the indeterminate status must not be rendered as a value for the model and for machine consumers. It could say explicitly that operator-facing summaries (counts, tones) must keep it distinct from failure too: the gap seen here is a correct writer with a consumer that collapses its status."
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "companions-page",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "api-agents",
+      "reason": "the seat returned unknown"
+    },
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "shared-chrome",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor at BackgroundServices.tsx:8 is a doc-comment line, and the file it sits in mounts a credential remediation loop, an assignment-progress listener, a channel service and Athena reconciliation. That contradicts 'the chrome is navigation, a palette, banners and a refresh-hook host', and the a"
+    },
+    {
+      "subject": "agent-runtime-assembly",
+      "context": "agents-connectors",
+      "reason": "withdrawn after review: reviewer (sonnet): PersonaConnectorsTab.tsx:24-25 says the hook mounts 'auto-test loops'. That contradicts the verdict's 'does not ... run a loop', and the cited line is the persona selector rather than evidence of absence."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-04T03:18:13.088332+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "shared-chrome",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-04T03:18:13.088332+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "agents-connectors",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-04T03:18:13.088332+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-runtime-assembly"
+      ],
+      "techniques": [
+        "indeterminate-closure-on-interruption"
+      ],
+      "deviations": 1,
+      "context": "home-welcome",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

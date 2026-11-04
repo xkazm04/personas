@@ -2957,8 +2957,8 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 24
+          "priorNotApplicable": 24,
+          "state": "unknown"
         },
         {
           "subject": "fleet-orchestration",
@@ -16835,8 +16835,12 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 24
+          "state": "deviation",
+          "priorNotApplicable": 24,
+          "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.ts:84 The since-you-left briefing counts a run whose process died (status `incomplete`, written by the zombie sweep as a distinct status) as `failed`. SinceYouLeftBriefing.tsx:41 then shows it to the operator as \"N failed\" in the error tone, so this projection renders an unknown outcome as a definite failure verdict.",
+          "evaluatedAt": "2026-11-04",
+          "evaluatedAgainst": "sha256-b2:45b3f952560a4cbc",
+          "evaluatedRevision": 28
         },
         {
           "subject": "app-shell",
@@ -34945,8 +34949,8 @@
           "revision": 28,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 24
+          "priorNotApplicable": 24,
+          "state": "unknown"
         },
         {
           "subject": "agent-instruction-files",
