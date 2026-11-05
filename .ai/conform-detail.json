@@ -19930,19 +19930,23 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:15:42.608Z",
-      "worker": "0373b7ef-b5c9-4a36-8518-e536fbf77e53",
+      "evaluatedAt": "2026-11-05",
+      "evaluatedTs": "2026-11-05T23:04:00.079Z",
       "techniques": [
         {
-          "technique": "negative-control-tests",
+          "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/output_assertion.rs:224 a correspondence probe whose population is the list it checks: the mutation \"add a variant, omit it from parse_token+TOKENS\" leaves all three tests green"
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:225 The population is the hand-kept list, not the enum, so the decision 'every variant parses back' is never reached for a variant missing from the list."
         },
         {
-          "technique": "unreached-decisions-pin-nothing",
-          "verdict": "realized",
-          "evidence": "src-tauri/core/src/models/trigger.rs:1040 every from_raw arm plus the Unknown fallback has its own test, so no arm answers for another; recipe.rs:738 pairs the valid control with each mutated-field refusal (:773)"
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:255 The test chooses its own population (six literals). The population setting defaults toward green when a variant is added."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:244 Coarse non-normalizable inputs prove the parser refuses instead of folding case. That is the mutation class the technique calls out."
         },
         {
           "technique": "fixture-economics",
@@ -19966,12 +19970,6 @@
           "technique": "assert-through-the-reader",
           "verdict": "not-applicable",
           "evidence": "src-tauri/core/src/models/output_assertion.rs:252 Models define internal domain data structures rather than code or snippets emitted for a foreign runtime.",
-          "carriedFrom": "2026-10-12"
-        },
-        {
-          "technique": "pin-the-call-not-the-name",
-          "verdict": "not-applicable",
-          "evidence": "src-tauri/core/src/models/recipe.rs:773 Tests execute validation functions against domain models directly rather than scanning source text.",
           "carriedFrom": "2026-10-12"
         },
         {
@@ -20017,7 +20015,21 @@
           "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "This context is domain model types, matched on product vocabulary (suite/build/assertion = the user-facing persona Test Suite feature). test-harness only governs it through the in-module #[cfg(test)] blocks; the matcher conflates a product feature NAMED test-suite with the team harness. A strong-confidence pairing on a models context is a technique-shaped resonance, not governance."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/output_assertion.rs:224 assertion_tokens_round_trip iterates the hand-kept TOKENS list (and :255 hand-lists 6 variants) instead of the enum, so a new AssertionType given an as_token arm but no parse_token/TOKENS entry stays green while the row mapper (src-tauri/db/src/repos/execution/assertions.rs:98) refuses every stored row of it",
+          "evaluatedAt": "2026-10-21T12:15:42.608Z",
+          "worker": "0373b7ef-b5c9-4a36-8518-e536fbf77e53",
+          "reason": "replaced by 242c01eb-661f-492b-99c1-bbcc2c9b0d9b"
+        }
+      ],
+      "withdrawn": {
+        "worker": "242c01eb-661f-492b-99c1-bbcc2c9b0d9b",
+        "state": "deviation",
+        "at": "2026-11-05T23:05:10.527896+00:00",
+        "reason": "reviewer (sonnet): The anchor core/src/models/output_assertion.rs is not among the context's listed files (recipe, build_session, persona and so on). The :244 technique claim is also wrong: the inputs there (\"Contains\", \"LOG\") are case variants, not 'non-normalizable' ones. The hand-kept TOKENS and six-literal observa"
+      }
     },
     "959baa73-f18f-42c8-8569-466939b9050d/test-harness": {
       "context": "notepad-plan",
@@ -34141,22 +34153,41 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:15:42.608Z",
-      "worker": "0373b7ef-b5c9-4a36-8518-e536fbf77e53",
+      "evaluatedAt": "2026-11-05",
+      "evaluatedTs": "2026-11-05T23:04:00.079Z",
+      "worker": "242c01eb-661f-492b-99c1-bbcc2c9b0d9b",
       "techniques": [
         {
-          "technique": "negative-control-tests",
+          "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/output_assertions.rs:398 evaluate_assertions (critical count, failure action, persistence) is a path the ordinary suite never executes, the exact place the technique says a passing suite proves least"
+          "evidence": "src-tauri/engine/src/output_assertions.rs:486 The tests drive only the pure evaluate_one. The severity decision and its downgrade payload are never executed."
         },
         {
           "technique": "fixture-economics",
-          "verdict": "realized",
-          "evidence": "src-tauri/engine/src/active_persona_cap.rs:195 init_test_db copies the once-migrated template, so a DB-backed test of evaluate_assertions costs nothing new"
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:626 The only fixture pins severity to warning, so it carries none of the critical-path data the module exists to act on. The db template (init_test_db) that evaluate_assertions needs is never used in this module."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/rate_limiter.rs:218 This assertion relies on a real 50 ms window still being open, and the same file uses thread::sleep(60ms) for expiry (:220). A stall over 50 ms on a loaded runner flips it red with no defect. An injected clock would assert the schedule instead."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:398 evaluate_assertions (critical count, failure action, persistence) is a path the ordinary suite never executes, the exact place the technique says a passing suite proves least",
+          "carriedFrom": "2026-10-21"
         }
       ],
-      "registryProposal": "context-map lists src-tauri/src/engine/circuit_breakers_integration_tests.rs and src-tauri/src/engine/failover.rs, which no longer exist; the governing match leaned partly on those names."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/output_assertions.rs:486 the critical-severity branch that downgrades an execution (the branch output_assertion.rs:76-78 records as having silently never fired) is reached by no test: the module tests (:594) drive only the pure evaluators, though the crate already uses the migrated template (src-tauri/engine/src/active_persona_cap.rs:195)",
+          "evaluatedAt": "2026-10-21T12:15:42.608Z",
+          "worker": "0373b7ef-b5c9-4a36-8518-e536fbf77e53",
+          "reason": "replaced by 242c01eb-661f-492b-99c1-bbcc2c9b0d9b"
+        }
+      ]
     },
     "0b0ee725-52a2-4656-9e13-07c5204de60e/agent-memory": {
       "context": "db",
