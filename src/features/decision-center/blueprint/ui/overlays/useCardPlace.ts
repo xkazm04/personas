@@ -1,4 +1,4 @@
-// Keeps a card beside a feature on the plan as the camera moves (PORTED from bp Overlays.tsx DecisionCard's `place`):
+// Keeps a card beside a feature on the plan as the camera moves (PORTED from bp Overlays.tsx @ 7eec7d5 DecisionCard's `place`):
 // to the right of the feature's screen rect, else to its left, clamped into the safe area (never under the rail or the
 // title block). It runs on every drawn frame, outside React, and writes the transform straight to the element; the
 // card's height comes from a ResizeObserver, never from a read per frame.

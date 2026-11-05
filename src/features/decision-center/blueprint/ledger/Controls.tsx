@@ -1,4 +1,4 @@
-// The ledger's controls and callouts (PORTED from bp src/components/ledger/train/ui/Controls.tsx): its one action
+// The ledger's controls and callouts (PORTED from bp src/components/ledger/train/ui/Controls.tsx @ 48171a1): its one action
 // button, a segmented control and a boxed message. Every press is the sheet's one press target (ui/Press.tsx) wearing
 // bp's `.tr-btn` look (styles/ledger-train.css); a hover hint is the shared Tooltip, never `title=`.
 import type { ReactNode } from 'react';

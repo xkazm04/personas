@@ -1,4 +1,4 @@
-// The legend (PORTED from bp src/components/Legend.tsx and variants/subtle/Legend.tsx, the adopted lens expression):
+// The legend (PORTED from bp src/components/Legend.tsx @ 29bf00a and variants/subtle/Legend.tsx, the adopted lens expression):
 // General shows the lens strip's key (each lens's glyph and line type, in registry order), the stage swatches and the
 // marks the plan draws; a lens sheet shows what its fill measures, the "?" and the fade, then sample fixtures drawn with
 // that lens alone. Every specimen is the plan's own drawing (Specimens.tsx).

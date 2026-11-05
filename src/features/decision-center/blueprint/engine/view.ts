@@ -1,4 +1,4 @@
-// A camera snapshot plus the screen rectangle to draw into (PORTED from bp src/engine/render/view.ts verbatim). The
+// A camera snapshot plus the screen rectangle to draw into (PORTED from bp src/engine/render/view.ts @ b11d8a0 verbatim). The
 // static raster draws through a View whose cull bounds reach past the screen by the cache's pan margin.
 import type { Box } from '../model/layout';
 

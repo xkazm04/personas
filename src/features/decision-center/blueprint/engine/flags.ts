@@ -1,4 +1,4 @@
-// Trouble flags (PORTED from bp src/engine/render/flags.ts, near verbatim at u = 1): every lens that is bad or on
+// Trouble flags (PORTED from bp src/engine/render/flags.ts @ cc98836, near verbatim at u = 1): every lens that is bad or on
 // watch for a feature raises a flag over it, drawn at the live camera on top of every other layer at an on-screen
 // size that does not shrink with the zoom (32 px on the site plan, up to 44 px over large tiles; watch is 0.8 of
 // bad). Flags that would collide merge into one cluster flag with a count. Over a tile, flags stand in registry

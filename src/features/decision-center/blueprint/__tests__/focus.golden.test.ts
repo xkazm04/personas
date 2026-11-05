@@ -19,8 +19,8 @@ import {
 /** bp's golden as copied: its path in bp, the bp commit it was copied at, and the sha256 of its LF bytes. */
 const GOLDEN_PIN = {
   path: 'packages/schema/golden/shared-focus.json',
-  commit: 'c16732c',
-  sha256: '88041abd77f5d3ca91ea3a5ff50a083cb600a698bbf271ed82329c7b1fc3f489',
+  commit: '93f30b0',
+  sha256: '408196b623049977c1328f0ad827bedb0317021dcefe627434e16c61f837802d',
 } as const;
 const PORT_PIN = /^\/\/ PORTED from bp packages\/core\/src\/session\/focus\.ts @ ([0-9a-f]{7,40}) sha256:([0-9a-f]{64})$/m;
 

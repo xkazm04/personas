@@ -1,4 +1,4 @@
-// PORTED from bp src/engine/render/patterns.ts verbatim; EDIT (port): imports, and a null-checked 2d context.
+// PORTED from bp src/engine/render/patterns.ts @ 29bf00a verbatim; EDIT (port): imports, and a null-checked 2d context.
 // Body textures of the lens views (docs/blueprint-ui.md, "Lens fill and unknowns"): a lens's own line type
 // laid as a fill across the fixture up to its measure, and the "?" over a feature no scan has measured yet.
 // Both are ink only, faint enough that the tile's text reads over them in either theme. A pattern is built

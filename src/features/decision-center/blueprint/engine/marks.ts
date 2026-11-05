@@ -1,4 +1,4 @@
-// PORTED from bp src/variants/subtle/marks.ts (the variant bp's index page draws, `subtle`) verbatim; EDIT (port):
+// PORTED from bp src/variants/subtle/marks.ts @ 29bf00a (the variant bp's index page draws, `subtle`) verbatim; EDIT (port):
 // imports; the glyph re-export is dropped (engine/glyphs.ts owns the glyph set here).
 // Drawing primitives for the subtle variant: the shared glyph set and the shared line set of the
 // standard (spec 8.6), drawn by NAME so any lens manifest can pick them, plus custom glyph paths.

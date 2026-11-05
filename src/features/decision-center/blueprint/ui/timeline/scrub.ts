@@ -1,4 +1,4 @@
-// The one x <-> time mapping of the two time sliders (PORTED from bp src/components/timeline/scrub.ts and keys.ts): the
+// The one x <-> time mapping of the two time sliders (PORTED from bp src/components/timeline/scrub.ts @ a6d2fe3 and keys.ts): the
 // strip's hairline and the panel's revisions chart. History x for a date, the date a pointer x lands on (the nearest
 // week, snapping to now at the right end), a week step, and the slider's key map. Pure and React-free.
 // EDIT (port): bp's simulated hour ahead (its zone, `hourX`, `hourAt`, the forward-only seek) is simulation and is

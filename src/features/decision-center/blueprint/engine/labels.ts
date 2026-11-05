@@ -1,4 +1,4 @@
-// Place labels (PORTED from bp src/engine/render/plan.ts drawBayTags / drawRoomLabels / drawWingLabels /
+// Place labels (PORTED from bp src/engine/render/plan.ts @ 36c6126 drawBayTags / drawRoomLabels / drawWingLabels /
 // drawChronology, near verbatim at u = 1): boxed bay tags (code | NAME | count), room names (on a 92% label plate
 // when they float) with their 13 px aggregate line, wing titles with the circled letter, the RFI pin with the
 // wing's waiting count, the 7 px stacked stage bar and "N features · N live · ..." with a right-aligned

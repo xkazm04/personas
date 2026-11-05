@@ -1,4 +1,4 @@
-// PORTED from bp packages/core/src/session/focus.ts @ c16732c sha256:c465adb56626f62fa37f30bb6b688340d6b389d8d26d415985ab641cb7680867
+// PORTED from bp packages/core/src/session/focus.ts @ 93f30b0 sha256:c465adb56626f62fa37f30bb6b688340d6b389d8d26d415985ab641cb7680867
 // (spark roadmap S6, "Personas follows the morning"). The hash is of bp's file at that commit (LF bytes), as bp's
 // packages/schema/contract.json lists it for scripts/personas-drift.mjs. Held by bp's golden
 // packages/schema/golden/shared-focus.json, copied byte for byte to ../standard/shared-focus.golden.json and run by

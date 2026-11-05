@@ -1,4 +1,4 @@
-// bp's on-plan decision card (PORTED from bp src/components/Overlays.tsx DecisionCard, blueprint.css #dcard / .op): the
+// bp's on-plan decision card (PORTED from bp src/components/Overlays.tsx @ 7eec7d5 DecisionCard, blueprint.css #dcard / .op): the
 // current item's decision, drawn on the plan beside its feature (the drawing's own control; the queue lists the same
 // work). 372 px, a 4 px amber rule on top (red at high risk), the RFI kicker, the item's title and summary, what it
 // expects to move, one option row per move its status offers (each calls the sheet's single-item writes), and the

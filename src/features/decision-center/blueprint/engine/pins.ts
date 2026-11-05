@@ -1,4 +1,4 @@
-// The dynamic layer under the flags (PORTED from bp src/engine/render/dynamic.ts drawPins / drawOverlays selBox
+// The dynamic layer under the flags (PORTED from bp src/engine/render/dynamic.ts @ 3ea7514 drawPins / drawOverlays selBox
 // and hover / drawFocus, at u = 1), drawn at the live camera every frame: one RFI pennant per room on the site and
 // wing plans and one per item on a fixture (bp's decisions are this sheet's waiting work: proposed flies amber, red
 // at high risk; approved-not-built flies mint), the hover outline, the selection's dashed box in the lens accent,

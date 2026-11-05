@@ -1,4 +1,4 @@
-// A proposal's one-line summary (PORTED from bp src/components/Queue.tsx bodySections / proposalSummary): the body's
+// A proposal's one-line summary (PORTED from bp src/components/Queue.tsx @ 36c6126 bodySections / proposalSummary): the body's
 // "Summary" section (else its first), its first sentence, at most 180 characters, and nothing when it only repeats the
 // title. The store writes bodies as markdown sections; the card shows a sentence, never the markup.
 const MAX_SUM = 180;

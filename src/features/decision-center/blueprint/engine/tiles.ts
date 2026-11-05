@@ -1,4 +1,4 @@
-// Fixtures and ribbon segments (PORTED from bp src/engine/render/plan.ts makeGeom / healthMarks / lensVerdict /
+// Fixtures and ribbon segments (PORTED from bp src/engine/render/plan.ts @ 36c6126 makeGeom / healthMarks / lensVerdict /
 // paintTile / ribSeg, near verbatim at u = 1): a feature's stage fill and stroke (ink only), its trouble cloud or
 // watch tick, the delta triangle when its stage moved in the last week, the lens marks, the "?" over the unmeasured,
 // and at fixture scale its code, evidence line, name (doubling at L3) and trouble stamp.

@@ -1,4 +1,4 @@
-// A · Plan (PORTED from bp src/components/rail/wide/plan.tsx): the list is the features in trouble (or every feature)
+// A · Plan (PORTED from bp src/components/rail/wide/plan.tsx @ 36c6126): the list is the features in trouble (or every feature)
 // grouped by wing and room; the detail reads the selected feature (stage, each lens's health and why, the work waiting
 // on it) or, with the overview row selected, the legend, trouble by lens, the title block and the keys.
 // EDIT (port): bp's room schedule (the list narrowing to the room the camera is in) and its lens-key marking are not

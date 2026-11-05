@@ -1,4 +1,4 @@
-// The Plan workbench's overview (PORTED from bp src/components/rail/wide/plan.tsx Overview): the legend of the sheet
+// The Plan workbench's overview (PORTED from bp src/components/rail/wide/plan.tsx @ 36c6126 Overview): the legend of the sheet
 // in view, trouble by lens (a lens opens its sheet), the drawing's title block and the keys.
 import { useMemo } from 'react';
 import '../../../styles/counts.css';

@@ -1,4 +1,4 @@
-// The drawing's marks (PORTED from bp src/engine/render/glyphs.ts and lens-glyph.ts, with this sheet's
+// The drawing's marks (PORTED from bp src/engine/render/glyphs.ts @ 29bf00a and lens-glyph.ts, with this sheet's
 // approved-not-built pennant): lens glyphs by NAME or by a custom 16x16 path, pennants, clouds, stage fills and
 // strokes, and the two bars (stage, health). Colour only through the theme.
 import type { GlyphName } from '../standard/types';

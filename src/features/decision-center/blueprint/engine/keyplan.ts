@@ -1,4 +1,4 @@
-// The key plan (PORTED from bp src/engine/render/keyplan.ts renderBase + draw): every room filled by its built share,
+// The key plan (PORTED from bp src/engine/render/keyplan.ts @ 66e8ec5 renderBase + draw): every room filled by its built share,
 // a red mark in the corner of a room with features in trouble, the building outline, the waiting work as amber
 // pennant ticks, and the camera's view (the part of the canvas the chrome leaves free) as an amber box. On the L4
 // sheet the feature's fixture is marked instead of the view. Drawn on its own small canvas, outside the engine's

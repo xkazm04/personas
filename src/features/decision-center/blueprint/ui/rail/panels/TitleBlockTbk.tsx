@@ -1,4 +1,4 @@
-// The drawing's title block (PORTED from bp src/components/rail/panels.tsx TitleBlock, `.tbk`): the project, the sheet
+// The drawing's title block (PORTED from bp src/components/rail/panels.tsx @ 36c6126 TitleBlock, `.tbk`): the project, the sheet
 // number and its place in the set, the date drawn and the sheet's title, and the schedule: how many features stand in
 // each stage on that date, how many are in trouble now and how many changed in the View's window.
 // EDIT (port): bp's "rev n/27" and its sample-data disclaimer are not brought (the live revision count is the

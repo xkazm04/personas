@@ -1,4 +1,4 @@
-// What the strip's hairline and the panel's revisions chart share (PORTED from bp timeline/shared.ts useScrub and the
+// What the strip's hairline and the panel's revisions chart share (PORTED from bp timeline/shared.ts @ cd68faf useScrub and the
 // sliders' onKeyDown): the pointer drag that travels in time, the keys, the aria the slider announces, and the measured
 // size. A drag or a key sets `ui.asOf` (null at now); BACK TO NOW and Esc clear it through the sheet's own ladder.
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type RefObject } from 'react';

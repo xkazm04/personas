@@ -1,4 +1,4 @@
-// The ledger's Release tab, read-only (PORTED from bp src/components/ledger/train/release/releaseState.ts, the pure
+// The ledger's Release tab, read-only (PORTED from bp src/components/ledger/train/release/releaseState.ts @ 010ad8f, the pure
 // half): which release is the open one, the history, each package item's evidence (verdict, before -> after, flag), the
 // step a release stands at, the suggested next version and the header's summary counts. bp's Build / Finish actions are
 // not here: every write control opens bp's Release tab instead (operator decision, spark bp-fidelity).

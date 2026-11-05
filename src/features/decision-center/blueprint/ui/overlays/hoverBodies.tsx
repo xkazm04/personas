@@ -1,4 +1,4 @@
-// The hover card's bodies (PORTED from bp src/components/Overlays.tsx HoverBody): a fixture (kicker, name, the plain
+// The hover card's bodies (PORTED from bp src/components/Overlays.tsx @ 7eec7d5 HoverBody): a fixture (kicker, name, the plain
 // stage on the date shown, the lens's evidence, what is in trouble and what waits), a place (a room or, at the site
 // level, its wing: kicker, name, summary, the 8 px stacked stage bar and its counts) and a cluster of trouble flags.
 // EDIT (port): bp's agent, pin and swarm lines and the 96x64 place illustration have no data here and are not brought.

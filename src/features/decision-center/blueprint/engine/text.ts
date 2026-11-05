@@ -1,4 +1,4 @@
-// Canvas text (PORTED from bp src/engine/text.ts): font strings with the 12 px floor, a width cache (each string
+// Canvas text (PORTED from bp src/engine/text.ts @ 3ea7514): font strings with the 12 px floor, a width cache (each string
 // measured once) and a word-wrap cache. Wrap never truncates: it returns null when the text does not fit. bp scales
 // sizes by its UI factor U; the sheet's chrome is not scaled here, so U stays 1 (the floor holds either way).
 

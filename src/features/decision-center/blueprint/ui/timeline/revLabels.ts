@@ -1,4 +1,4 @@
-// The revisions chart's label placement (PORTED from bp BaseBar.tsx Revisions, the `cand` / `kept` pass): every label
+// The revisions chart's label placement (PORTED from bp BaseBar.tsx @ cd68faf Revisions, the `cand` / `kept` pass): every label
 // is a candidate with a priority; they are placed in priority order and a label that would leave the chart or collide
 // with one already kept is culled, so a narrow panel shows fewer labels instead of overprinted ones. The handle plate
 // is kept first and is never culled. Pure: the chart passes its words and positions in.

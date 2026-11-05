@@ -1,4 +1,4 @@
-// The blueprint's canvas engine (PORTED from bp src/engine/Engine.ts: its frame, its static raster cache and its
+// The blueprint's canvas engine (PORTED from bp src/engine/Engine.ts @ 36c6126: its frame, its static raster cache and its
 // dynamic layers). It owns one canvas the page hands it, the camera, the colour theme and the frame loop. The plan
 // (grid, walls, fixtures, labels) is rastered once into an offscreen bitmap (static-cache.ts) and only transformed
 // while the camera moves, re-rastered when it settles; pins, hover, selection, the current item and the trouble

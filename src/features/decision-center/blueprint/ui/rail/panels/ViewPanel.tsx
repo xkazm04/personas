@@ -1,4 +1,4 @@
-// A · View (PORTED from bp src/components/rail/wide/view.tsx): a section nav on the left (Window, What changed, Health)
+// A · View (PORTED from bp src/components/rail/wide/view.tsx @ 36c6126): a section nav on the left (Window, What changed, Health)
 // and every section stacked on the right at a reading size. The nav scrolls the detail to a section and follows the
 // detail's scroll. The window (24 h, 7 d, 14 d) is the sheet's `viewDays`: the delta marks, the title block's
 // "changed" count and the list below read it.

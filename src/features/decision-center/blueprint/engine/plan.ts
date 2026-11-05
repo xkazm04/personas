@@ -1,4 +1,4 @@
-// The static plan (PORTED from bp src/engine/render/plan.ts: drawGrid, drawRibbons, drawBuildings, buildWallPaths,
+// The static plan (PORTED from bp src/engine/render/plan.ts @ 36c6126: drawGrid, drawRibbons, drawBuildings, buildWallPaths,
 // featRect, near verbatim for one building at u = 1): the 40/200 world-unit grid in accent, wing floors by their
 // built share, ribbons crossfading into fixtures, bay rules, thick ink walls and the outline's 5 px diagonal hatch
 // over the poche. Everything here is drawn into the cached raster (static-cache.ts), never per frame in a gesture.

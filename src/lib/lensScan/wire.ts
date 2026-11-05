@@ -1,10 +1,17 @@
-// PORTED VERBATIM from bp src/lib/scan/types.ts @ 519c80f (spark one-control, Stage 2 contract).
+// PORTED VERBATIM from bp packages/core/src/scan/types.ts @ 93f30b0 (first ported from bp src/lib/scan/types.ts @ 519c80f,
+// spark one-control, Stage 2 contract; re-synced to store v5 by spark bp-sync).
 // The lens-scan store wire: store column names, NULL columns omitted. Personas' lens_scan_* doors return exactly this shape.
 // Re-sync by copying the file again and re-applying only the marked edits; never hand-drift it.
 // EDIT (port, store v4): the v4 proposal columns (origin, external_ref, external_url, tier, risk_class, ranked_by,
-// ranked_at), ProposalOrigin, RiskClass, Tier and the 'work-item' kind, copied from bp packages/core/src/scan/types.ts
-// @ 51e193e. The rest of the file is still the 519c80f port. The Rust reader reads columns by presence, so a v4 row
-// already carried these at runtime; this edit only types them (src-tauri/db/src/repos/dev/lens_scan_tests.rs holds it).
+// ranked_at), ProposalOrigin, RiskClass, Tier and the 'work-item' kind, copied from bp @ 51e193e. The Rust reader reads
+// columns by presence, so a v4 row already carried these at runtime; this edit only types them
+// (src-tauri/db/src/repos/dev/lens_scan_tests.rs holds it).
+// EDIT (port, store v5): the 17 v5 proposal columns and Confidence, Band, MvpRule, FindingCategory, PredictedVerdict,
+// copied from bp @ 93f30b0; score_parts, proof and mvp are typed as Personas' reader delivers them (marked below).
+// Left out of bp @ 93f30b0 on purpose: trust_events / TrustEvent (Personas does not read the autonomy ledger), VetoBody,
+// ScoreParts, Proof, ProofVerdict (no parsed JSON reaches here), MAX_TRIAGE / triageCapText (bp's triage route cap),
+// Readiness.setup / LensSetupNeed (bp's lens-setup probe). bp's isEmptyScan reads an optional table; here every table
+// is always present.
 // Wire types for the lens-scan store: one SQLite file per product repo, `<root>/.ai/lens-scan/scan.db`,
 // written by the /lens-scan skill and read (plus proposal decisions) by the blueprint's routes. The
 // DDL is docs/standard/lens-scan-store.sql, name for name. Absent values are omitted, never null or 0:
@@ -123,7 +130,52 @@ export interface Proposal {
   risk_class?: RiskClass;
   ranked_by?: string;
   ranked_at?: string;
+  // v5: scan-finding/1 (docs/standard/lens-scan-store.sql, the contract's "Fields every finding carries"). The skill stores
+  // them; the blueprint reads them and never recomputes `score`. A v4 store has none of these keys.
+  /** v5: 1-10, the severity of a defect or the value of an opportunity. */
+  impact?: number;
+  /** v5: the one-line reason for `impact`. */
+  impact_why?: string;
+  confidence?: Confidence;
+  /** v5: 1-10 build effort. */
+  effort?: number;
+  /** v5: scan-score/1, one decimal, stored by the skill. Omitted = unscored (impact or effort unknown): never 0. */
+  score?: number;
+  // EDIT (port, store v5): bp types score_parts as ScoreParts and proof as Proof because bp's reader parses them
+  // (store.server.ts JSON_COLS); Personas' Rust reader (src-tauri/db/src/repos/dev/lens_scan.rs json_shape) parses only
+  // runs.lenses / runs.scope / shots.report, so these two arrive as the column's raw JSON TEXT.
+  /** v5: the score's breakdown as stored JSON text ({impact, confidence_w, effort_div, risk_factor, formula}). */
+  score_parts?: string;
+  /** v5: 'ranked' (the store's NOT NULL default, which Personas' reader does not drop) or 'reserve' (verified and
+   *  scored, over the run's cap). */
+  band?: Band;
+  // EDIT (port, store v5): bp's wire is `mvp?: true` (its reader drops the 0 default and reads 1 as true, BOOL_COLS);
+  // Personas' reader passes the INTEGER through, so a v5 row always carries 0 or 1.
+  /** v5: 1 on the top finding of its lens in its run, else 0. */
+  mvp?: 0 | 1;
+  mvp_rule?: MvpRule;
+  /** v5: why the MVP is not the top score (with mvp_rule 'override'). */
+  mvp_why?: string;
+  category?: FindingCategory;
+  /** v5: the model's verdict, recorded before any person decided (shadow mode). */
+  predicted_verdict?: PredictedVerdict;
+  predicted_why?: string;
+  /** v5: `<skill>@<version>:<model>`. */
+  predicted_by?: string;
+  predicted_at?: string;
+  /** v5: set when a machine decided under L1 (`decided_by` 'machine:lens-scan'): a person may veto it until then. */
+  veto_until?: string;
+  /** v5: a built change's proof as stored JSON text ({metric, method, unit, before, after, verdict, control, base_sha,
+   *  head_sha}); see score_parts for why it is a string here. */
+  proof?: string;
 }
+
+/** v5 (scan-finding/1). */
+export type Confidence = 'low' | 'medium' | 'high';
+export type Band = 'ranked' | 'reserve';
+export type MvpRule = 'top-score' | 'override';
+export type FindingCategory = 'technical' | 'product';
+export type PredictedVerdict = 'accept' | 'reject' | 'defer';
 
 export interface Activity {
   id: number;

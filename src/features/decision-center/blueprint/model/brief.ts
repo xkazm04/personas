@@ -1,12 +1,20 @@
-// PORTED from bp packages/core/src/scan/brief.ts @ 51e193e sha256:084365934940fb3a7af83e8e5229a72171a47f8e22bb02c9f19abae9cbbfeb99
-// (spark roadmap S3, "Personas decides with memory"). The hash is of bp's file at that commit, for bp's cross-repo
-// drift report; this copy is held by bp's golden (standard/decision-brief.golden.json, __tests__/brief.golden.test.ts).
-// Re-sync by copying the file again and re-applying only the marked edits; never hand-drift it.
-// EDIT (port): the wire types come from '@/lib/lensScan/wire' (store v4); TIER_SAYS (bp scan/derive.ts) and
+// PORTED from bp packages/core/src/scan/brief.ts @ 93f30b0 sha256:db0f8e9d0a76c7ca00cc0a9eee9dd387e14f6ef64b25e751c2900a86e29d4068
+// (spark roadmap S3, "Personas decides with memory"; re-synced by spark bp-sync to bp 43dbac3's precedent outcomes, the
+// content at HEAD 93f30b0). The hash is of bp's file at that commit (LF bytes, = bp packages/schema/contract.json), for
+// bp's cross-repo drift report; this copy is held by bp's golden (standard/decision-brief.golden.json,
+// __tests__/brief.golden.test.ts). Re-sync by copying the file again and re-applying only the marked edits; never
+// hand-drift it.
+// EDIT (port): the wire types come from '@/lib/lensScan/wire' (store v5); TIER_SAYS (bp scan/derive.ts) and
 // BRIEF_MATCHES (bp standard/schema-vocab.ts, = decision-brief-1 briefDecided.match) are copied below as constants
 // rather than porting their modules; briefMapOfStructure is left out (it reads bp's loader's Structure, which the
 // Personas port does not carry: the sheet reads briefMapOf over the raw map, see ui/sheet/useBrief.ts); this repo
-// compiles with noUncheckedIndexedAccess, so median's two indexed reads carry a `!`. Nothing else differs from bp.
+// compiles with noUncheckedIndexedAccess, so median's two indexed reads carry a `!`.
+// EDIT (port): scan/outcome.ts and the scan/track.ts it reads are NOT copied (Personas has no landings reader and no
+// track): the outcome block below copies outcome.ts's pure Tally helpers verbatim and stubs `outcomeAt` to answer null,
+// as bp contract-1 section 4 (rev 6) prescribes for such a port. So no row carries an on-main outcome, the precedent
+// never carries `outcome`, the advice never asks on outcomes, and the brief reads as bp's does without readings or
+// landings. A descoped row is still counted apart and a failed build in `failed` (those need no track). Nothing else
+// differs from bp.
 // The decision brief: one pure function, read by two audiences. The person sees it on the decision card (web Review,
 // VR's BpLink card, Personas through docs/concepts/decision-brief/personas-adoption.md); an agent reads it through the
 // plan.brief tool (catalog.ts) before it proposes. Both read the SAME object, so the context cannot drift between them.
@@ -15,8 +23,11 @@
 //   precedent  - decided rows under the same lens (and tier, when the subject has one), plus every row that is the same
 //                idea (on its attempt_of / parent_id chain, or the same feature + lens with a shared idea word or the same
 //                standard - the same place alone is not the same idea), the same standard, or a title with
-//                the same words; counted approved vs declined. Declines that match the idea are quoted, latest first,
-//                one per standard, so an agent hears the owner's own words back;
+//                the same words; counted approved vs declined, and each approval by what it came to (scan/outcome.ts,
+//                one tally with the Trust panel): held, short or not measured since on main (a track.ts stage under
+//                TrackOpts' landings), failed, or still open; a descoped row is counted apart, never as an approval.
+//                Declines that match the idea are quoted, latest first, one per standard, so an agent hears the
+//                owner's own words back;
 //   reversible - approving builds on a pack branch and ships only through triage and a release; declining is final (no
 //                route reopens a decided proposal); after a release the risk_class says whether a revert PR undoes it;
 //   cost       - the median minutes per item of the finished execute runs under the lens (else any lens), from runs and
@@ -30,6 +41,53 @@ import type { Pack, Proposal, ProposalSize, RiskClass, Run, ScanSnapshot, Tier }
 export const TIER_SAYS = ['stop-ship', 'before production', 'soon after production', 'backlog'] as const;
 // EDIT (port): bp packages/core/src/standard/schema-vocab.ts BRIEF_MATCHES (decision-brief-1 $defs.briefDecided.properties.match.enum), copied.
 export const BRIEF_MATCHES = ['same idea', 'same standard', 'similar words', 'same lens'] as const;
+
+// EDIT (port): in place of `import { addOutcome, emptyTally, measured, onMain, outcomeAt, tallyWords, type Tally } from
+// './outcome.ts'` and `import type { MainOutcome, TrackOpts } from './track.ts'`. MainOutcome, RATE_N, Tally, emptyTally,
+// measured, onMain, ratesOf and tallyWords are bp outcome.ts / track.ts @ 93f30b0, copied; Track and TrackOpts carry
+// nothing (no track is ever built here) and outcomeAt answers null (contract-1 section 4), so addOutcome is never reached.
+type MainOutcome = 'held' | 'short' | 'unmeasured' | 'no-target' | 'out-of-bounds';
+type Track = never;
+export type TrackOpts = Record<string, never>;
+const RATE_N = 10;
+export interface Tally {
+  held: number;
+  short: number;
+  unmeasured: number;
+  noTarget: number;
+  /** Unresolved: the expected value lies outside the metric's declared bounds (track.ts eligibility). */
+  outOfBounds: number;
+  /** Of held and short: those whose reading was taken by judgement (a model's read, noisy). */
+  byJudgement: { held: number; short: number };
+  /** The short items, so a number opens its list. */
+  shortIds: string[];
+}
+const emptyTally = (): Tally => ({ held: 0, short: 0, unmeasured: 0, noTarget: 0, outOfBounds: 0, byJudgement: { held: 0, short: 0 }, shortIds: [] });
+const addOutcome = (_t: Tally, _tr: Track): boolean => false;
+const measured = (t: Pick<Tally, 'held' | 'short'>): number => t.held + t.short;
+const onMain = (t: Tally): number => t.held + t.short + t.unmeasured + t.noTarget + t.outOfBounds;
+function ratesOf(t: Tally): { judgement?: number; measured?: number } {
+  const j = t.byJudgement, m = { held: t.held - j.held, short: t.short - j.short }, out: { judgement?: number; measured?: number } = {};
+  if (measured(j) >= RATE_N) out.judgement = j.held / measured(j);
+  if (measured(m) >= RATE_N) out.measured = m.held / measured(m);
+  return out;
+}
+const outcomeAt = (_scan: unknown, _p: Pick<Proposal, 'id' | 'status'>, _opts: TrackOpts = {}): { track: Track; outcome: MainOutcome } | null => null;
+const pct = (x: number) => Math.round(x * 100) + '%';
+function tallyWords(t: Tally, sep = ' · ', terse = false): string {
+  if (!onMain(t)) return 'nothing on main yet';
+  const j = measured(t.byJudgement), r = ratesOf(t), out: string[] = [];
+  if (t.held) out.push(t.held + ' held');
+  if (t.short) out.push(t.short + ' short');
+  const by = terse ? 'judged' : 'by judgement';
+  const m = out.join(sep) + (j && measured(t) ? (j === measured(t) ? (terse ? ' (judged)' : ' (all by judgement)') : ` (${j} ${by})`) : '');
+  const parts = m ? [m] : [];
+  if (t.unmeasured) parts.push(t.unmeasured + (terse ? ' unmeasured' : ' not measured since'));
+  if (t.noTarget) parts.push(t.noTarget + ' no expected value');
+  if (t.outOfBounds) parts.push(t.outOfBounds + (terse ? ' out of bounds' : ' target out of bounds'));
+  const rate = [r.measured !== undefined ? 'static/probe ' + pct(r.measured) + ' held' : '', r.judgement !== undefined ? 'judgement ' + pct(r.judgement) + ' held' : ''].filter(Boolean).join(', ');
+  return parts.join(sep) + (rate ? sep + rate : '');
+}
 
 export const BRIEF_VERSION = 1;
 /** The line budget every surface shares (a VR decision card shows exactly this). */
@@ -50,16 +108,22 @@ export interface BriefSubject {
 }
 /** How a decided row matches the subject, strongest first (the schema's order: decision-brief-1 briefDecided.match). */
 export type Match = (typeof BRIEF_MATCHES)[number];
+/** What an approval came to: on main (held, short, not measured since), descoped at judging, or a failed build. Omitted
+ *  while it is still open (approved, building, built, rework, accepted and not on main, on main with no expected value to
+ *  judge it by) and on a decline. */
+export type BriefOutcome = Exclude<MainOutcome, 'no-target'> | 'descoped' | 'failed';
 export interface BriefDecided {
   id: string; title: string; feature: string; lens: string; verdict: 'approved' | 'declined'; at: string;
-  by?: string; note?: string; standard?: string; match: Match;
+  by?: string; note?: string; standard?: string; match: Match; outcome?: BriefOutcome;
 }
 export interface Brief {
   v: typeof BRIEF_VERSION;
   subject: BriefSubject;
   /** `feature`, `room`, `wing` omitted = not on the plan (never null: the wire omits what is absent). */
   blast: { feature?: BriefRef; room?: BriefRef; wing?: BriefRef; stage?: string; dependents: BriefRef[]; rooms: number; openHere: string[] };
-  precedent: { rows: BriefDecided[]; approved: number; declined: number; basis: string };
+  /** `approved` leaves descoped rows out (counted in `descoped`); `failed` counts the approvals whose build failed; `outcome`
+   *  tallies the approvals on main that have an expected value, present only when one does. */
+  precedent: { rows: BriefDecided[]; approved: number; declined: number; descoped?: number; failed?: number; outcome?: Tally; basis: string };
   /** Declines that match the idea (not merely the lens), latest first, one per standard. */
   declines: BriefDecided[];
   reversible: { approve: 'until-triage'; decline: 'final'; afterRelease: 'revert' | 'care' | 'unknown'; riskClass?: RiskClass };
@@ -72,7 +136,8 @@ export interface Brief {
 }
 export type FactKey = 'blast' | 'declined' | 'precedent' | 'undo' | 'cost';
 export interface BriefFact { key: FactKey; text: string; ids: string[] }
-type Scan = Pick<ScanSnapshot, 'proposals' | 'runs' | 'packs'>;
+/** `measurements` and `releases` let the precedent read what approvals came to on main; without them it counts decisions only. */
+type Scan = Pick<ScanSnapshot, 'proposals' | 'runs' | 'packs'> & Partial<Pick<ScanSnapshot, 'measurements' | 'releases'>>;
 
 // ------------------------------------------------------------------------------------------- the map
 const arr = (x: unknown): Record<string, unknown>[] => (Array.isArray(x) ? x.filter((v): v is Record<string, unknown> => !!v && typeof v === 'object') : []);
@@ -184,7 +249,7 @@ const byIdOf = (ps: readonly Proposal[]) => { let m = BY_ID.get(ps); if (!m) BY_
 const newestFirst = (a: BriefDecided, b: BriefDecided) => (a.at < b.at ? 1 : a.at > b.at ? -1 : a.id < b.id ? 1 : -1);
 
 /** `lean` (the live feed's advice on every open card, every tick): 'same lens' rows are counted, never built or sorted. */
-function precedentOf(sub: BriefSubject, scan: Pick<Scan, 'proposals'>, lean = false): { precedent: Brief['precedent']; declines: BriefDecided[] } {
+function precedentOf(sub: BriefSubject, scan: Pick<Scan, 'proposals'> & Partial<Scan>, lean = false, opts: TrackOpts = {}): { precedent: Brief['precedent']; declines: BriefDecided[] } {
   const byId = byIdOf(scan.proposals);
   const chain = new Set<string>(), self = sub.id ? byId.get(sub.id) : undefined, todo = [self?.attempt_of, self?.parent_id];
   while (todo.length) {
@@ -193,7 +258,10 @@ function precedentOf(sub: BriefSubject, scan: Pick<Scan, 'proposals'>, lean = fa
     chain.add(x.id); todo.push(x.attempt_of, x.parent_id);
   }
   const mine = ideaWords(sub.title, sub.feature), mineAll = allWords(sub.title), mineNeg = negated(sub.title), mineAct = actionOf(sub.title), rows: BriefDecided[] = [];
-  let approved = 0, declined = 0;
+  let approved = 0, declined = 0, descoped = 0, failed = 0, on = false;
+  const tally = emptyTally();
+  // what an approval came to on main: a track's stage, read through outcome.ts (never judged here)
+  const tracked = scan.measurements && scan.releases && scan.packs ? { proposals: scan.proposals, measurements: scan.measurements, releases: scan.releases, packs: scan.packs } : null;
   for (const x of scan.proposals) {
     if (x.id === sub.id || x.status === 'proposed') continue;
     const rw = rowWords(x), theirs = rw.idea, shared = overlap(mine, theirs);
@@ -217,12 +285,22 @@ function precedentOf(sub: BriefSubject, scan: Pick<Scan, 'proposals'>, lean = fa
       : alike ? 'similar words'
       : sub.lens && x.lens === sub.lens && (x.feature === sub.feature || sub.tier === undefined || x.tier === sub.tier) ? 'same lens' : null;
     if (!match) continue;
-    if (x.status === 'declined') declined++; else approved++;
+    let outcome: BriefOutcome | undefined;
+    if (x.status === 'declined') declined++;
+    else if (x.status === 'descoped') { descoped++; outcome = 'descoped'; }
+    else {
+      approved++;
+      if (x.status === 'failed') { failed++; outcome = 'failed'; }
+      // no expected value: nothing to judge it by, so it reads as an approval still open
+      const o = tracked ? outcomeAt(tracked, x, opts) : null;
+      if (o && o.outcome !== 'no-target') { addOutcome(tally, o.track); outcome = o.outcome; on = true; }
+    }
     if (lean && match === 'same lens') continue;
     const note = (x.status === 'declined' ? x.decision_note : x.decision_note ?? x.triage_note)?.trim();
     rows.push({
       id: x.id, title: x.title, feature: x.feature, lens: x.lens, verdict: x.status === 'declined' ? 'declined' : 'approved', at: decidedAt(x),
       ...(x.decided_by ? { by: x.decided_by } : {}), ...(note ? { note } : {}), ...(x.standard && x.standard !== 'none' ? { standard: x.standard } : {}), match,
+      ...(outcome ? { outcome } : {}),
     });
   }
   if (!lean) rows.sort((a, b) => BRIEF_MATCHES.indexOf(a.match) - BRIEF_MATCHES.indexOf(b.match) || newestFirst(a, b));
@@ -234,7 +312,8 @@ function precedentOf(sub: BriefSubject, scan: Pick<Scan, 'proposals'>, lean = fa
     seen.add(k); declines.push(r);
   }
   const basis = sub.lens ? 'the same lens' + (sub.tier !== undefined ? ' and tier' : '') + ', the same idea or the same words' : 'the same idea or the same words';
-  return { precedent: { rows, approved, declined, basis }, declines };
+  const precedent: Brief['precedent'] = { rows, approved, declined, ...(descoped ? { descoped } : {}), ...(failed ? { failed } : {}), ...(on ? { outcome: tally } : {}), basis };
+  return { precedent, declines };
 }
 
 /** A revert PR restores code; it does not take back a leaked secret, a widened grant, money moved or data written. */
@@ -260,14 +339,25 @@ function costOf(sub: BriefSubject, scan: Scan): Brief['cost'] {
   return (sub.lens ? pick(done.filter((r) => r.lenses.includes(sub.lens!)), 'lens') : null) ?? pick(done, 'any lens') ?? { builds: 0, basis: 'none', runs: [] };
 }
 
-/** withdraw: a decline of this same idea stands (the card flips to Decline). ask: a like idea was declined elsewhere, or
- *  similar decisions were mostly declines (shown, never flipped). proceed: neither. */
+/** The fewest like approvals measured on main (held + short) the outcome may ask on. */
+export const ASK_MEASURED = 3;
+/** Whether what like approvals came to asks for a second look: at least ASK_MEASURED measured on main, and short at least
+ *  as often as held. Outcomes only ever ask, never decline or withdraw. */
+export const outcomeAsks = (o: Tally | undefined): o is Tally => !!o && measured(o) >= ASK_MEASURED && o.short >= o.held;
+
+/** withdraw: a decline of this same idea stands (the card flips to Decline). ask: a like idea was declined elsewhere,
+ *  similar decisions were mostly declines, or like approvals measured on main fell short as often as they held (shown,
+ *  never flipped). proceed: none of these. */
 function adviceOf(declines: BriefDecided[], p: Brief['precedent']): Brief['advice'] {
   const d = declines[0], said = (x: BriefDecided) => `${x.at}${x.by ? ' by ' + x.by : ''}${x.note ? ': "' + x.note + '"' : ' (no note)'}`;
   if (d?.match === 'same idea') return { say: 'withdraw', why: `This idea was declined ${said(d)}` };
   if (d) return { say: 'ask', why: `${d.match === 'same standard' ? 'An idea under the same standard' : 'A similarly worded idea'} was declined on ${d.feature} ${said(d)}` };
   if (p.declined >= 3 && p.declined > p.approved) return { say: 'ask', why: `${p.declined} of ${p.declined + p.approved} similar decisions were declines` };
-  const n = p.approved + p.declined;
+  if (outcomeAsks(p.outcome)) {
+    const o = p.outcome, j = measured(o.byJudgement);
+    return { say: 'ask', why: `${o.short} of ${measured(o)} like approvals measured on main fell short (${o.held} held${j ? ', ' + j + ' by judgement' : ''}): ${o.shortIds.join(', ')}` };
+  }
+  const n = p.approved + p.declined + (p.descoped ?? 0);
   return { say: 'proceed', why: !n ? 'no precedent yet' : p.approved >= p.declined ? `${p.approved} of ${n} similar decisions were approvals`
     : `${p.declined} of ${n} similar decisions were declines, none of this idea` };
 }
@@ -287,8 +377,14 @@ export function briefFacts(b: Omit<Brief, 'facts' | 'lines'>, map: Pick<BriefMap
   const d = b.declines[0];
   // the provenance before the quote, so a long note is what the budget cuts, never which decision it was
   if (d) fact('declined', `Declined ${d.at}${d.by ? ' by ' + d.by.replace(/^user:/, '') : ''} (${d.match !== 'same idea' ? d.match + ', ' : ''}${d.id}): ` + (d.note ? `"${d.note}"` : 'no note given'), b.declines.map((x) => x.id));
-  fact('precedent', !(P.approved + P.declined) ? `No precedent yet${lens ? ' under ' + lens : ''}`
-    : `You approved ${P.approved} of ${plural(P.approved + P.declined, 'similar decision')}${lens ? ' under ' + lens : ''}` + (P.declined ? ` · declined ${P.declined}` : ''), P.rows.map((x) => x.id));
+  // what the approvals came to, when one is on main ("on main 9 held, 3 short (judged), 5 unmeasured": judged = by
+  // judgement), first, as the line's news (the budget cuts the tail, and declined + descoped = n - approved); descoped
+  // counted apart; the short ids are the evidence when they are what the advice asks on
+  const n = P.approved + P.declined + (P.descoped ?? 0), o = P.outcome;
+  fact('precedent', !n ? `No precedent yet${lens ? ' under ' + lens : ''}`
+    : `You approved ${P.approved} of ${plural(n, 'similar decision')}${lens ? ' under ' + lens : ''}` + (o && onMain(o) ? ' · on main ' + tallyWords(o, ', ', true) : '')
+      + (P.declined ? ` · declined ${P.declined}` : '') + (P.descoped ? ` · descoped ${P.descoped}` : ''),
+  outcomeAsks(o) ? [...o.shortIds] : P.rows.map((x) => x.id));
   const after = R.afterRelease === 'care' ? `${R.riskClass} risk, a revert PR may not undo it` : R.afterRelease === 'revert' ? 'after release, a revert PR' : 'after release unknown (no risk class)';
   fact('undo', `Undo: ships only after you accept it; ${after}. A decline is final`);
   fact('cost', C.builds ? `Cost: about ${C.minutes} min per item, from ${plural(C.builds, 'build')}${C.basis === 'lens' && lensOnly ? ' under ' + lensOnly : ' (any lens)'}${C.model ? ' on ' + C.model : ''}` : 'Cost: no build history yet', C.runs);
@@ -296,16 +392,17 @@ export function briefFacts(b: Omit<Brief, 'facts' | 'lines'>, map: Pick<BriefMap
 }
 
 /** The advice alone (no map needed): what the live feed recommends on a card. `decline` is the stand it rests on. */
-export function briefAdvice(sub: BriefSubject, scan: Pick<ScanSnapshot, 'proposals'>): Brief['advice'] & { decline?: BriefDecided } {
-  const { precedent, declines } = precedentOf(sub, scan, true);
+export function briefAdvice(sub: BriefSubject, scan: Pick<ScanSnapshot, 'proposals'> & Partial<Scan>, opts: TrackOpts = {}): Brief['advice'] & { decline?: BriefDecided } {
+  const { precedent, declines } = precedentOf(sub, scan, true, opts);
   return { ...adviceOf(declines, precedent), ...(declines[0] ? { decline: declines[0] } : {}) };
 }
 /** The note a Decline taken on that advice carries, so the new row points at the decision it repeats (<= 500 chars). */
 export const repeatNote = (d: BriefDecided): string => (`Repeats ${d.id}, declined ${d.at}` + (d.note ? `: "${d.note}"` : '')).slice(0, 500);
 
-/** The brief of `sub` over a product's store and map. */
-export function briefFor(sub: BriefSubject, scan: Scan, map: BriefMap): Brief {
-  const { precedent, declines } = precedentOf(sub, scan);
+/** The brief of `sub` over a product's store and map; `opts.landed` (scan/landed.ts) lets an accepted row already on the
+ *  base branch count by its outcome there. */
+export function briefFor(sub: BriefSubject, scan: Scan, map: BriefMap, opts: TrackOpts = {}): Brief {
+  const { precedent, declines } = precedentOf(sub, scan, false, opts);
   const base = { v: BRIEF_VERSION, subject: sub, blast: blastOf(sub, map, scan), precedent, declines, reversible: reversibleOf(sub), cost: costOf(sub, scan), advice: adviceOf(declines, precedent) } as const;
   const facts = briefFacts(base, map);
   return { ...base, facts, lines: facts.map((f) => f.text) };
