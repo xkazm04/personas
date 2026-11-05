@@ -17,6 +17,7 @@ import { buildPlan } from '../model/plan';
 import { buildWork } from '../model/work';
 import { initialUi, type UiState } from '../state/uiState';
 import { ViewStore } from '../state/viewStore';
+import { TroubleIndex } from '../engine/trouble';
 import { deltaText, kindWord, placeLine } from '../ui/format';
 import { DecisionCard } from '../ui/overlays/DecisionCard';
 import { PlanOverview } from '../ui/rail/panels/PlanOverview';
@@ -30,7 +31,7 @@ function Host({ ui, p = plan, work, children }: { ui?: Partial<UiState>; p?: typ
   const current = u.itemId ? work.byId.get(u.itemId) ?? null : null;
   const queue = work.items.filter((x) => x.status === 'proposed' || x.status === 'approved');
   const noop = vi.fn();
-  const sheet = { data, actions: {}, plan: p, work, ui: u, dispatch: noop, engine: null, view: new ViewStore(), text, words, scope: {}, queue, queueAll: queue, current, nav: { select: noop, step: noop, openSheet: noop, toLevel: noop, closeSheet: noop }, writes: {}, onClose: noop } as unknown as Sheet;
+  const sheet = { data, actions: {}, plan: p, work, ui: u, dispatch: noop, engine: null, view: new ViewStore(), text, words, scope: {}, queue, queueAll: queue, current, nav: { select: noop, step: noop, openSheet: noop, toLevel: noop, closeSheet: noop }, writes: {}, sync: { trouble: new TroubleIndex(p.S.features, { healthV: 0 }), troubleV: 0 }, onClose: noop } as unknown as Sheet;
   return <SheetContext.Provider value={sheet}>{children}</SheetContext.Provider>;
 }
 

@@ -253,3 +253,14 @@ Module map (bp -> here): `ComparePanel.tsx` -> `ui/compare/ComparePanel.tsx` + `
 | Enter | extended | owner decision D14: Enter takes the recommended answer on every decision, Decline on a repeat, else Approve (bp's deck binds Enter on a repeat only); the same on the sheet's waiting items |
 | Defer and Hold | dropped | G8: they write bp's steering log; a link opens the card in bp (`?product=<slug>&morning=<card id>`) |
 | Publishing the shared focus | dropped | G7, the owner's decision |
+
+## bp-sync WP2 (2026-11-05): bp @ 93f30b0's trouble index, replay, compare, readiness and trouble walk, wired
+
+| bp | Personas | Note |
+|---|---|---|
+| `TroubleIndex` on `sim.healthV` | `controller/useSyncModels.ts` over `useSheetData`'s `healthV` | Health here is the map's facets: `healthV` moves only when a read brings a new map that judges a feature differently (`healthSig`). Flags and "Trouble by lens" read the index. |
+| `ReplayIndex`, past-date flags and marks | `useSyncModels` + `engine/flags.ts`, `engine/syncMarks.ts markHealth` | A pair that cannot be replayed draws nothing. The raster re-keys on the index version. |
+| `cmpA`, `compareDates`, `compareMarks`, "N changed" | `ui.cmpA`, `useSyncModels.comparison`, `syncMarks.compareMarks`, `labels.ts` | P pins only off now (at now it says why); P again unpins. bp binds A; A is approve here. |
+| `readyScope`, `readinessNow`, GA outline | `model/readyScope.ts`, `useSyncModels.readiness`, `syncMarks.drawScope` | **Milestone scope is out for v1** (Personas has no milestone scope kind). |
+| `stepTrouble`, route Enter | `controller/useTroubleWalk.ts`, `useSheetKeys` | Enter opens the stop whenever a walk is active; opening another feature ends the walk. |
+| `saySoon` / `placeSaid` | `controller/spokenPlan.ts`, `useSpokenPlan.ts` | Through the existing live region (`ui.say`); the same place is never said twice in a row. |

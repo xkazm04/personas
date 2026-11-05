@@ -74,7 +74,7 @@ describe('state table', () => {
 });
 
 describe('keymap', () => {
-  const all = KEYMAP.flatMap((b) => b.keys.map((k) => ({ key: k.length === 1 ? k.toLowerCase() : k, act: b.act })));
+  const all = KEYMAP.flatMap((b) => b.keys.map((k) => ({ key: k, act: b.act })));
 
   it('binds no key twice', () => {
     const seen = new Map<string, string>();
@@ -82,6 +82,21 @@ describe('keymap', () => {
       expect(seen.has(key), `${key} is bound to ${seen.get(key)} and ${act}`).toBe(false);
       seen.set(key, act);
     }
+  });
+
+  it('every key reaches the act it is bound to (a capital binding is the only one of its letter that differs by case)', () => {
+    for (const { key, act } of all) expect(actOf(key), key).toBe(act);
+    const capitals = all.filter(({ key }) => key.length === 1 && key !== key.toLowerCase()).map(({ key }) => key);
+    expect(capitals).toEqual(['N']);
+  });
+
+  it('spark bp-sync WP2: P pins A, G readiness, N walks the trouble and Shift+N walks back; capitals still fold', () => {
+    expect(actOf('p')).toBe('pinA');
+    expect(actOf('P')).toBe('pinA');
+    expect(actOf('g')).toBe('ready');
+    expect(actOf('n')).toBe('troubleNext');
+    expect(actOf('N')).toBe('troublePrev');
+    expect(actOf('Y')).toBe('accept');
   });
 
   it('names each action once', () => {

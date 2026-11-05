@@ -4,6 +4,9 @@
 // rework (asks a note), descope (asks a note) and reopen, the undo. bp's ledger accepts with A; here A is already
 // approve, and a key is bound once, so accept is Y (yes, ship it). Every triage key sends to the store and the dock
 // console prints its answer: a key is never withheld because the drawing guesses the store would refuse.
+// spark bp-sync WP2 adds bp's P (pin baseline A for comparing two dates), G (readiness of what is in view) and the
+// trouble walk N / Shift+N. Shift+N is the one key bound by its capital: actOf matches the key as typed first, and only
+// then folds a letter to lower case, so every other capital still names its lower-case act.
 
 export type KeyAct =
   | 'next' | 'prev' | 'find' | 'queue'
@@ -11,7 +14,8 @@ export type KeyAct =
   | 'accept' | 'rework' | 'descope' | 'reopen'
   | 'enter' | 'back' | 'wingNext' | 'wingPrev' | 'site' | 'zoomOut' | 'zoomIn'
   | 'lens' | 'help'
-  | 'ledger' | 'timeline' | 'select';
+  | 'ledger' | 'timeline' | 'select'
+  | 'pinA' | 'ready' | 'troubleNext' | 'troublePrev';
 export type KeyGroup = 'walk' | 'decide' | 'triage' | 'move' | 'sheets';
 
 export interface Binding { act: KeyAct; group: KeyGroup; keys: readonly string[] }
@@ -41,13 +45,17 @@ export const KEYMAP: readonly Binding[] = [
   { act: 'ledger', group: 'sheets', keys: ['l'] },
   { act: 'timeline', group: 'sheets', keys: ['t'] },
   { act: 'select', group: 'decide', keys: [' '] },
+  { act: 'troubleNext', group: 'walk', keys: ['n'] },
+  { act: 'troublePrev', group: 'walk', keys: ['N'] },
+  { act: 'pinA', group: 'sheets', keys: ['p'] },
+  { act: 'ready', group: 'sheets', keys: ['g'] },
 ];
 
 const BY_KEY: ReadonlyMap<string, KeyAct> = new Map(KEYMAP.flatMap((b) => b.keys.map((k): [string, KeyAct] => [k, b.act])));
 
-/** The action a key event names, or undefined. `e.key` is normalised: single letters fold to lower case. */
+/** The action a key event names, or undefined. The key as typed wins (Shift+N); else a single letter folds to lower case. */
 export function actOf(key: string): KeyAct | undefined {
-  return BY_KEY.get(key.length === 1 ? key.toLowerCase() : key);
+  return BY_KEY.get(key) ?? (key.length === 1 ? BY_KEY.get(key.toLowerCase()) : undefined);
 }
 
 /** The keys an action is bound to, as the keymap says (the hints read this, never a literal). */
@@ -59,5 +67,5 @@ export function lensIndexOfKey(key: string): number | null {
 }
 
 /** How a key prints on a keycap. */
-export const KEYCAP: Readonly<Record<string, string>> = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→', Escape: 'Esc', Backspace: 'Bksp', Enter: 'Enter', ' ': 'Space' };
+export const KEYCAP: Readonly<Record<string, string>> = { ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→', Escape: 'Esc', Backspace: 'Bksp', Enter: 'Enter', ' ': 'Space', N: 'Shift+N' };
 export const capOf = (key: string): string => KEYCAP[key] ?? key.toUpperCase();

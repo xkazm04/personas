@@ -27,6 +27,8 @@ export interface EngineWords {
   bad(n: number): string;
   unmeasured(n: number): string;
   inTrouble(n: number): string;
+  /** "n changed" (two dates compared: a place's changed features). */
+  changed(n: number): string;
   waiting(n: number): string;
   oldestWork: string;
   newestWork: string;

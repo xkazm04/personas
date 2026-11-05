@@ -4,6 +4,7 @@
 // data (proposals and their statuses) is NOT here: it is the store's, read from the source and re-read after a write.
 import type { TriageResult } from '@/lib/lensScan/wire';
 import type { DecideResult, StartResult, TriageDecisionInput } from '../source';
+import type { ReadyScope } from '../model/readyScope';
 
 export type Overlay =
   | { kind: 'find' }
@@ -58,6 +59,11 @@ export interface UiState {
   selected: string[];
   /** bp's View window: how many days back counts as recent (the rail's View, default 7). */
   viewDays: number;
+  // ---- spark bp-sync WP2 ----
+  /** Compare two dates: the baseline A (YYYY-MM-DD) pinned with P on a travelled date; null = not comparing. B is `asOf` (or now). */
+  cmpA: string | null;
+  /** Readiness (G): the scope it reads, resolved as it opened; null = off. */
+  ready: ReadyScope | null;
 }
 
 export type UiAction =
@@ -79,10 +85,12 @@ export type UiAction =
   | { type: 'asOf'; date: string | null }
   | { type: 'select'; id: string }
   | { type: 'selectClear' }
-  | { type: 'viewDays'; days: number };
+  | { type: 'viewDays'; days: number }
+  | { type: 'cmpA'; date: string | null }
+  | { type: 'ready'; scope: ReadyScope | null };
 
 export function initialUi(initialFeature?: string): UiState {
-  return { lens: 'general', itemId: null, sheet: initialFeature ?? null, sheetLens: 'general', compare: null, queueOpen: true, overlay: null, armed: null, busy: false, pending: null, lines: [], say: null, nextKey: 1, page: 'plan', flyout: null, timelineOpen: false, asOf: null, selected: [], viewDays: 7 };
+  return { lens: 'general', itemId: null, sheet: initialFeature ?? null, sheetLens: 'general', compare: null, queueOpen: true, overlay: null, armed: null, busy: false, pending: null, lines: [], say: null, nextKey: 1, page: 'plan', flyout: null, timelineOpen: false, asOf: null, selected: [], viewDays: 7, cmpA: null, ready: null };
 }
 
 const MAX_LINES = 40;
@@ -108,5 +116,7 @@ export function uiReducer(s: UiState, a: UiAction): UiState {
     case 'select': return { ...s, selected: s.selected.includes(a.id) ? s.selected.filter((x) => x !== a.id) : [...s.selected, a.id] };
     case 'selectClear': return s.selected.length ? { ...s, selected: [] } : s;
     case 'viewDays': return s.viewDays === a.days ? s : { ...s, viewDays: a.days };
+    case 'cmpA': return s.cmpA === a.date ? s : { ...s, cmpA: a.date };
+    case 'ready': return s.ready === a.scope ? s : { ...s, ready: a.scope };
   }
 }

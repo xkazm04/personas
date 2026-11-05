@@ -23,6 +23,7 @@ const FROM_KEYMAP: Partial<Record<KeyAct, LedgerAct>> = {
   accept: 'accept', rework: 'rework', descope: 'descope', reopen: 'reopen', approve: 'approve', decline: 'decline',
   back: 'back', ledger: 'pass', queue: 'pass', help: 'pass',
   wingNext: 'swallow', wingPrev: 'swallow', site: 'swallow', zoomIn: 'swallow', zoomOut: 'swallow', build: 'swallow', timeline: 'swallow',
+  pinA: 'swallow', ready: 'swallow', troubleNext: 'swallow', troublePrev: 'swallow',
 };
 
 /** What a key does while the ledger is up; null for a key no one binds. */
