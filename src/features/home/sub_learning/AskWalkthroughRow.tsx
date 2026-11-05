@@ -13,8 +13,8 @@ type AskState = 'idle' | 'composing' | 'failed';
  * with a Validation error, which this row can only render as the generic
  * "could not compose" line. Capping the field at the same number stops a long
  * topic from being typed into a request that is refused before Athena sees it.
- * The backend counts UTF-8 bytes, not characters, so a non-Latin topic can still
- * be refused under this cap; that half is the backend's to fix.
+ * Both sides count characters, not UTF-8 bytes, so the caps agree for any script
+ * (`maxLength` counts UTF-16 units, so the field is never looser than the backend).
  */
 export const COMPOSE_TOPIC_MAX = 120;
 
