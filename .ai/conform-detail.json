@@ -43351,6 +43351,94 @@
           "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:128 No repair loop runs automatically. Each continue is a single operator-initiated call guarded by a lock."
         }
       ]
+    },
+    "739b6d67-2c36-41ee-9794-a74bc0b25cfd/status-vocabulary": {
+      "context": "display-table-primitives",
+      "subject": "status-vocabulary",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-05",
+      "evaluatedTs": "2026-11-05T22:17:41.285Z",
+      "worker": "09675cf3-a10c-4ac9-9f1b-f9d7bf2b67e9",
+      "techniques": [
+        {
+          "technique": "status-color-mapping",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/display/StatusDot.tsx:45 Keyed by a bare string rather than the union. Colour and shape (SHAPE, line 120) sit in two parallel tables. Raw palette literals are used instead of semantic roles. The unknown-member fallback is neutral, even for the severity kind."
+        }
+      ]
+    },
+    "d7525012-ab19-4b29-99bb-0d4b6b9e084b/status-vocabulary": {
+      "context": "plugins-fleet-tests",
+      "subject": "status-vocabulary",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-05",
+      "evaluatedTs": "2026-11-05T22:17:41.285Z",
+      "worker": "09675cf3-a10c-4ac9-9f1b-f9d7bf2b67e9",
+      "techniques": [
+        {
+          "technique": "vocabulary-chain-integrity",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_harvest/FleetRunSessionRow.tsx:29 Falls back to the raw machine token; the meta lookup is an array .find, so the type system does not check it covers every member."
+        },
+        {
+          "technique": "number-formatting",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_harvest/FleetRunSessionRow.tsx:46 The UI row uses the markdown helper formatTokens (toFixed + k/M, no locale). FleetContextPill.tsx:92 in the same context uses the shared Numeric primitive."
+        },
+        {
+          "technique": "timestamp-display",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_harvest/fleetRunMarkdown.ts:39 Bare toLocaleString() lets the host machine pick locale and format, even though the file header calls the output 'locale-independent on purpose'."
+        },
+        {
+          "technique": "status-color-mapping",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/sub_grid/FleetContextPill.tsx:64 Size verdict maps to semantic status roles, not raw hues, and the Gauge icon plus label mean colour is not the only signal."
+        },
+        {
+          "technique": "reserved-attention-hue",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:76 Stale is pinned to its own amber class, separate from awaiting_input's 'waiting' class (violet in globals.css). A test pins this."
+        }
+      ]
+    },
+    "90f639de-ffc7-4225-b67f-1566e5d66b8b/status-vocabulary": {
+      "context": "overview-health",
+      "subject": "status-vocabulary",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-05",
+      "evaluatedTs": "2026-11-05T22:17:41.285Z",
+      "worker": "09675cf3-a10c-4ac9-9f1b-f9d7bf2b67e9",
+      "techniques": [
+        {
+          "technique": "status-color-mapping",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_events/components/EventLogList.tsx:218 Per-call-site status-to-hue decision with raw red/amber literals and no table keyed by PersonaEventStatus. HealingEffectivenessPanel's rateColor does the same. SLACard.tsx:53 does use HEALTH_STATUS_TOKEN."
+        },
+        {
+          "technique": "number-formatting",
+          "verdict": "deviation",
+          "evidence": "src/features/overview/sub_sla/libs/slaHelpers.ts:2 Hand-rolled percent with toFixed and no locale binding, rendered by SLACard.tsx:59. Elsewhere in the same context, HealingEffectivenessPanel uses Numeric."
+        },
+        {
+          "technique": "timestamp-display",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_health/components/heartbeats/HealingEffectivenessPanel.tsx:146 Elapsed labels go through the shared RelativeTime primitive."
+        },
+        {
+          "technique": "vocabulary-chain-integrity",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_events/libs/eventStatusOptions.ts:18 Filter vocabulary is checked against the generated wire type, and labels resolve through tokenLabel."
+        },
+        {
+          "technique": "untrusted-label-rendering",
+          "verdict": "conformant",
+          "evidence": "src/features/overview/sub_events/libs/eventTypeLabel.ts:30 Free-form fleet event identifiers are only typographically humanized, never promoted to curated vocabulary. The raw id stays in a tooltip."
+        }
+      ]
     }
   }
 }

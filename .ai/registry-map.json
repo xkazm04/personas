@@ -12954,7 +12954,11 @@
           "revision": 6,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/shared/components/display/StatusDot.tsx:45 StatusDot keys its colour table and its separate SHAPE table by a bare string. That turns off the compile check on the ConnectionState/SeverityState unions, splits colour and glyph into two parallel maps, and lets an unknown severity fall back to calm `text-foreground` (line 139) with no shape, when it should fall back to the most severe member.",
+          "evaluatedAt": "2026-11-05",
+          "evaluatedAgainst": "sha256-b2:6a9ab99285e2cac0",
+          "evaluatedRevision": 6
         },
         {
           "subject": "concurrency-guards",
@@ -24921,7 +24925,11 @@
           "revision": 6,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/overview/sub_events/components/EventLogList.tsx:218 The events table chooses each row's accent with an inline ternary over status strings, using raw palette literals. This bypasses the status-token table, and `dead_letter`/`discarded` get no accent at all, so a failure-class member reads as calm.",
+          "evaluatedAt": "2026-11-05",
+          "evaluatedAgainst": "sha256-b2:6a9ab99285e2cac0",
+          "evaluatedRevision": 6
         },
         {
           "subject": "plan-entitlements",
@@ -31041,7 +31049,11 @@
           "revision": 6,
           "changedAt": "2026-10-27",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/fleet/sub_harvest/FleetRunSessionRow.tsx:29 When a FleetSessionState member has no FLEET_STATE_META entry, the run-report row shows the raw wire token (e.g. `awaiting_input`) as its visible label instead of a translated unknown label.",
+          "evaluatedAt": "2026-11-05",
+          "evaluatedAgainst": "sha256-b2:6a9ab99285e2cac0",
+          "evaluatedRevision": 6
         },
         {
           "subject": "sidecar-provisioning",
