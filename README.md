@@ -465,7 +465,7 @@ More in [docs/development/build.md](./docs/development/build.md) and [docs/devop
 - External traffic is HTTPS through rustls
 - The dev-tools bridge binds to loopback and requires a token
 
-Architecture details: [docs/architecture](./docs/architecture/README.md). Please do not file security issues publicly; contact the maintainers directly through the [repository](https://github.com/xkazm04/personas).
+Architecture details: [docs/architecture](./docs/architecture/README.md). Please do not file security issues publicly: report them privately as [SECURITY.md](./SECURITY.md) describes (GitHub private vulnerability reporting, with the response times we aim for).
 
 ---
 
