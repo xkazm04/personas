@@ -43325,6 +43325,32 @@
           "evidence": "src/features/triggers/sub_shared/useSharedEvents.ts:82 A feed subscription here is one IPC command that writes a DB row. There is no push provider with per-connection caps."
         }
       ]
+    },
+    "2418ddaf-0e6e-446f-968f-28a4bf6e7120/session-continuation": {
+      "context": "n8n-wizard-orchestration",
+      "subject": "session-continuation",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-05",
+      "evaluatedTs": "2026-11-05T22:01:47.152Z",
+      "worker": "88b06c7f-bcd8-4ca7-86dd-c3f5bddb48fa",
+      "techniques": [
+        {
+          "technique": "continuation-as-state",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardHandlers.ts:19 Continuation is a UI action the operator triggers. No harness blocks a model's stop here."
+        },
+        {
+          "technique": "ordered-teardown",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:84 Cancel stops a backend transform and clears wizard state. No stop-blocking guards exist that a teardown would have to clear."
+        },
+        {
+          "technique": "stuck-loop-detection",
+          "verdict": "not-applicable",
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardTransformHandlers.ts:128 No repair loop runs automatically. Each continue is a single operator-initiated call guarded by a lock."
+        }
+      ]
     }
   }
 }

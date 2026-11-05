@@ -22029,8 +22029,12 @@
           "revision": 8,
           "changedAt": "2026-10-09",
           "confidence": "probable",
-          "state": "unknown",
-          "priorNotApplicable": 9
+          "state": "not-applicable",
+          "priorNotApplicable": 9,
+          "evidence": "src/features/templates/sub_n8n/hooks/useN8nWizardHandlers.ts:19 The only 'continue' here is the operator pressing Next after answering questions, which calls a backend transform IPC. These React wizard hooks have no agent turn boundary, keep-working mode, stop gate or compaction event, so the subject's precondition does not hold. A search of the context's hooks directory and of sub_n8n for compaction, stopHook, stop_hook, keepWorking, keep_working and stuck found 0 files.",
+          "evaluatedAt": "2026-11-05",
+          "evaluatedAgainst": "sha256-b2:b0eabf78abd856a4",
+          "evaluatedRevision": 8
         },
         {
           "subject": "generated-workflow-candidates",
