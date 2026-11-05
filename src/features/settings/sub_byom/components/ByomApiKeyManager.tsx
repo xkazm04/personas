@@ -1,8 +1,9 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useId, useMemo, useRef } from 'react';
 import { Eye, EyeOff, Trash2, Check, X, Loader2, Copy } from 'lucide-react';
 import { getAppSetting, getAppSettingsBulk, setAppSetting, deleteAppSetting } from '@/api/system/settings';
 import { getQwenStatus, setQwenCredentials, clearQwenCredentials } from '@/api/system/qwen';
 import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
+import Button from '@/features/shared/components/buttons/Button';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
@@ -283,6 +284,7 @@ function QwenKeyRow() {
   // logged, so a refused key left the editor open with no signal and the user
   // could believe Qwen was configured. Same badge the settings-key rows use.
   const [failed, setFailed] = useState(false);
+  const labelId = useId();
 
   useEffect(() => {
     let cancelled = false;
@@ -336,7 +338,7 @@ function QwenKeyRow() {
     <div className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="typo-body text-foreground">{s.provider_qwen_label}</span>
+          <span id={labelId} className="typo-body text-foreground">{s.provider_qwen_label}</span>
           {failed && <ConnectionBadge state="error" />}
           {configured && (
             <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-secondary/40 border border-primary/15 text-foreground">
@@ -370,6 +372,9 @@ function QwenKeyRow() {
             onChange={(e) => setValue(e.target.value)}
             placeholder="sk-..."
             autoComplete="off"
+            // Only when the person opened the editor, never on first render
+            // (an unconfigured row shows the editor without being asked).
+            autoFocus={editing}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && value.trim()) void save();
               if (e.key === 'Escape') { setEditing(false); setValue(''); }
@@ -386,12 +391,22 @@ function QwenKeyRow() {
           </button>
         </div>
       ) : (
-        <div onClick={() => setEditing(true)} className="flex items-center gap-2 cursor-pointer group">
-          <div className="flex-1 px-3 py-1.5 typo-code rounded-card border border-primary/10 bg-secondary/30
+        // A real button (DW-55): the masked key was a click-only div, so the keyboard and
+        // screen readers could never replace a stored key.
+        <Button
+          variant="ghost"
+          size="sm"
+          block
+          onClick={() => setEditing(true)}
+          aria-label={t.common.edit}
+          aria-describedby={labelId}
+          className="group p-0 hover:bg-transparent active:bg-transparent"
+        >
+          <span aria-hidden="true" className="flex-1 px-3 py-1.5 typo-code rounded-card border border-primary/10 bg-secondary/30
             group-hover:border-primary/20 transition-all min-h-[32px] flex items-center">
             <span className="text-foreground">{'•'.repeat(16)}</span>
-          </div>
-        </div>
+          </span>
+        </Button>
       )}
       {confirmingRemove && (
         <ConfirmDialog
