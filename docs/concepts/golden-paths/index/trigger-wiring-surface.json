@@ -43,6 +43,7 @@
       ],
       "resolved": false
     },
+    "ContextEvent.ts": {"count":1,"sections":[9],"contexts":["`ContextEvent.ts`, `ContextPattern.ts`). **Two unrelated vocabularies share three literals**, and a"],"resolved":false},
     "LifecycleConfigPanel.tsx": {
       "count": 1,
       "sections": [6],
@@ -399,7 +400,6 @@
       "verbatim": "triggerArmState.ts"
     },
     "src/lib.rs": {"count":1,"sections":[9],"lines":["1092"],"contexts":["a different table and already runs from `src/lib.rs:1092`. It is the single highest-value missing"],"resolved":false},
-    "src/lib/bindings/ContextEvent.ts": {"count":1,"sections":[9],"contexts":["`ContextEvent.ts`, `ContextPattern.ts`). **Two unrelated vocabularies share three literals**, and a"],"resolvedFrom":"basename","verbatim":"ContextEvent.ts"},
     "src/lib/bindings/ContextPattern.ts": {
       "count": 1,
       "sections": [9],

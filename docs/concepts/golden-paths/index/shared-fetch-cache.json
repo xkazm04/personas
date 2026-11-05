@@ -48,15 +48,6 @@
       ],
       "resolved": false
     },
-    "HealthDigestPanel.tsx": {
-      "count": 1,
-      "sections": [6],
-      "lines": ["28"],
-      "contexts": [
-        "| 5 | **A named staleness component** | **MINORITY (2/6), and Personas is BEHIND — with the measurement inverted** | `personas-web/src/components/dashboard/StalenessIndicator.tsx` has **7 render site…"
-      ],
-      "resolved": false
-    },
     "MemoryActionsPanel.tsx": {
       "count": 1,
       "sections": [6],
@@ -223,6 +214,16 @@
       "contexts": ["`SettingsHistoryTab.tsx`, `ByomProviderList.tsx`, `PersonaConfigPanel.tsx`,"],
       "resolvedFrom": "basename",
       "verbatim": "PersonaConfigPanel.tsx"
+    },
+    "src/features/agents/sub_health/HealthDigestPanel.tsx": {
+      "count": 1,
+      "sections": [6],
+      "lines": ["28"],
+      "contexts": [
+        "| 5 | **A named staleness component** | **MINORITY (2/6), and Personas is BEHIND — with the measurement inverted** | `personas-web/src/components/dashboard/StalenessIndicator.tsx` has **7 render site…"
+      ],
+      "resolvedFrom": "basename",
+      "verbatim": "HealthDigestPanel.tsx"
     },
     "src/features/plugins/dev-tools/sub_lifecycle/LifecyclePage.tsx": {"count":3,"sections":[7,12],"lines":["34-36"],"contexts":["`useDrive.ts`, `LlmTrackingCell.tsx`, `LifecyclePage.tsx`,"],"resolvedFrom":"basename","verbatim":"LifecyclePage.tsx"},
     "src/features/plugins/dev-tools/sub_llm_overview/useLlmPinpoints.ts": {

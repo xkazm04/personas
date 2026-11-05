@@ -2119,3 +2119,5 @@
 {"ts":"2026-10-31T16:00:00Z","bundle":"software-engineering","subjects":["ipc-contract"],"techniques":["generated-type-contracts","call-wrapping"],"deviations":3}
 {"ts":"2026-10-31T16:00:00Z","bundle":"software-engineering","subjects":["credential-vault"],"techniques":["acquisition","brokered-egress","health-probing"],"deviations":1}
 {"ts":"2026-10-31T16:00:00Z","bundle":"software-engineering","subjects":["design-tokens"],"techniques":["theme-architecture","motion-tokens"],"deviations":4}
+{"ts":"2026-11-05T12:00:00Z","bundle":"software-engineering","subjects":["vendored-patch-stack"],"techniques":["least-invasive-carrier","reject-triage-is-a-port-not-a-merge"],"deviations":0}
+{"ts":"2026-11-05T10:17:14Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model","commit-boundary"],"deviations":0}

@@ -508,7 +508,7 @@
     },
     "src/i18n/locales/en.json": {"count":2,"sections":[4,8],"contexts":["in `src/i18n/locales/en.json` and into all 13 other locales in the same"]},
     "src/i18n/useTranslatedError.ts": {"count":1,"sections":[7],"lines":["170"],"contexts":["(`useTranslatedError.ts:170`) exists and has the matching keys"],"resolvedFrom":"basename","verbatim":"useTranslatedError.ts"},
-    "src/lib/bindings/ValidationError.ts": {"count":1,"sections":[7],"contexts":["(`contract.rs:9-19`) and `src/lib/bindings/ValidationError.ts` is committed —"]},
+    "src/lib/bindings/ValidationError.ts": {"count":1,"sections":[7],"contexts":["(`contract.rs:9-19`) and `src/lib/bindings/ValidationError.ts` is committed —"],"resolved":false},
     "src/lib/errors/errorRegistry.ts": {"count":1,"sections":[7],"lines":["637"],"contexts":["`resolveError` (`errorRegistry.ts:637`). `resolveErrorTranslated`"],"resolvedFrom":"basename","verbatim":"errorRegistry.ts"},
     "src/lib/silentCatch.ts": {"count":1,"sections":[7],"lines":["100-130"],"contexts":["(`tauriInvoke.ts:534`) → `toastCatch` (`silentCatch.ts:100-130`) →"],"resolvedFrom":"basename","verbatim":"silentCatch.ts"},
     "src/lib/tauriInvoke.ts": {"count":1,"sections":[7],"lines":["534"],"contexts":["(`tauriInvoke.ts:534`) → `toastCatch` (`silentCatch.ts:100-130`) →"],"resolvedFrom":"basename","verbatim":"tauriInvoke.ts"},
