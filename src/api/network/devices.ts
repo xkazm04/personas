@@ -10,8 +10,9 @@ import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { DevicePairingRequest } from "@/lib/bindings/DevicePairingRequest";
 import type { PairingRole } from "@/lib/bindings/PairingRole";
 import type { OwnedDevice } from "@/lib/bindings/OwnedDevice";
+import type { PairCodeVerdict } from "@/lib/bindings/PairCodeVerdict";
 
-export type { DevicePairingRequest, PairingRole, OwnedDevice };
+export type { DevicePairingRequest, PairingRole, OwnedDevice, PairCodeVerdict };
 
 // -- Pairing ceremony -------------------------------------------------------
 
@@ -22,6 +23,16 @@ export const pairRequest = (peerId: string) =>
 /** Confirm an inbound pairing. Only valid on the RECEIVING device. */
 export const pairConfirm = (peerId: string) =>
   invoke<OwnedDevice>("pair_confirm", { peerId });
+
+/**
+ * Confirm an inbound pairing by TYPING the code the other device shows. Only
+ * valid on the RECEIVING device. A wrong code or a missing request is a
+ * verdict (`mismatch` with the attempts left, `noPending`), not a rejection;
+ * only a failure after the code matched rejects.
+ */
+export function confirmPairingCode(peerId: string, code: string): Promise<PairCodeVerdict> {
+  return invoke<PairCodeVerdict>("pair_confirm_code", { peerId, code });
+}
 
 /** Abandon a pairing from either side. Idempotent. */
 export const pairCancel = (peerId: string) =>

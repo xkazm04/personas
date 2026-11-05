@@ -128,6 +128,8 @@ pub(super) fn shard(
         #[cfg(feature = "p2p")]
         commands::network::pairing::pair_confirm,
         #[cfg(feature = "p2p")]
+        commands::network::pairing::pair_confirm_code,
+        #[cfg(feature = "p2p")]
         commands::network::pairing::pair_cancel,
         #[cfg(feature = "p2p")]
         commands::network::pairing::list_pending_device_pairings,
