@@ -4051,11 +4051,15 @@
         {
           "path": "src/features/triggers/sub_test/testFireRouting.ts",
           "reason": "TETHERED mirror (repo law): the test-fire listener preview mirrors the event bus matching rules (canonical event types, source filter) in src-tauri/engine bus.rs; the parity tests under src/features/triggers/sub_test read bus.rs at run time, so the two cannot drift (scan-sweep 2026-10-20, 5a91a25cef, de67938c85)"
+        },
+        {
+          "path": "src/features/home/sub_cockpit/briefing/actionTypes.ts",
+          "reason": "TETHERED mirror (repo law): actionAllowedOn and MAX_WIDGET_ACTIONS mirror action_allowed_on and MAX_ACTIONS in src-tauri/src/companion/brain/briefing.rs; src/features/home/sub_cockpit/briefing/__tests__/actionTypesParity.test.ts reads briefing.rs at run time, so the two cannot drift. The render-side gate exists because the persistent compose_cockpit path stores a board unvalidated (temper 2026-11-05, DW-95 1/2)"
         }
       ],
       "baseline": {
-        "files": 42,
-        "matches": 46
+        "files": 41,
+        "matches": 45
       },
       "floor": 2000
     },
