@@ -25,6 +25,17 @@ The sharing UI does not own a top-level sidebar entry; pieces are mounted from m
 
 The Settings → Network tab (dev-only — see [settings/README.md](../settings/README.md)) hosts `ExposureManager` and the broader sharing/network controls.
 
+### Settings → Devices ("Your PCs")
+
+The page where the operator pairs and manages their own computers. It ships in production builds. Code: `src/features/settings/sub_devices/`.
+
+- **Header.** "Your PCs", with an **Add a PC** button that opens the wizard.
+- **This PC.** The name your other PCs see (the p2p identity's display name, `set_display_name`), with **Rename** in place.
+- **Your other PCs.** One card per paired PC: its name, whether it can be reached (**Online**, **On this network**, **Not seen lately**, from the discovered-peer list), when it last synced (or **Not synced yet**), and a **Main PC** badge on the main PC. Cards show no raw ids. While the list first loads the cards are ghosts; with nothing paired the section says **Only this PC so far**, explains that pairing makes your agents, queue and remote jobs work across your PCs, and offers **Add a PC**.
+- **The drawer.** Pressing a card opens that PC: its status, last sync and pairing date; the **Main PC** switch (Athena sends work there when you don't name a PC; only one PC can be main, so turning it on moves it); **Remote jobs for this PC** (the instruction composer aimed at that PC and the job history narrowed to it); **Forget this PC**, behind a confirm ("It stops syncing at once. Pair it again to undo."); and a collapsed **Technical details** with the peer id and public key. To rename another PC, change its name on that PC.
+- **Add a PC wizard.** Four steps: **Find** (pick the other PC on this network), **Code** (this PC shows a code), **Approve** (the other PC types the code; it gets 5 tries), **Done**. The wizard also opens by itself on the receiving PC when a pairing request arrives, straight on its Approve step.
+- If device linking cannot start on this PC, the page says so and asks you to restart Personas.
+
 ## Backend command surface — `commands/network/`
 
 The Rust modules below handle the IPC. The API wrappers live under `src/api/network/`.
@@ -388,7 +399,7 @@ Pairing (above) makes two of the operator's own machines trust each other. Once 
 
 **Where you watch it.** A sent session appears in the Monitor's Activity board as a remote tile (see [Monitor](../monitor.md#remote-sessions)). On the machine that runs it, the ordinary local tile says **From <device>**.
 
-**Where it is recorded.** Settings → Devices keeps the history of both kinds. Each row carries a kind label (**Instruction** or **Fleet session**); a finished fleet session shows its **Returned work** line (branch, short SHA, and verified / not found after fetch / could not verify here) under the row, and a job still waiting in the outbox reads **Queued**.
+**Where it is recorded.** Settings → Devices keeps the history of both kinds, per PC, in each paired PC's drawer (**Remote jobs for this PC**). Each row carries a kind label (**Instruction** or **Fleet session**); a finished fleet session shows its **Returned work** line (branch, short SHA, and verified / not found after fetch / could not verify here) under the row, and a job still waiting in the outbox reads **Queued**.
 
 Code: `src/stores/slices/network/remoteSessionsSlice.ts` (state, the p2p gate, the reconcile), `src/lib/network/remoteSessionModel.ts` (the client liveness rule, merge and receipt verdict, pure and tested), `src/features/shared/dispatch/` (the picker, the remote dispatch, the receipt line), `src/features/settings/sub_devices/` (the history).
 

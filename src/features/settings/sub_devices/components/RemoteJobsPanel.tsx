@@ -38,10 +38,14 @@ const STATUS_STATE: Record<RemoteJobStatus, 'live' | 'paused' | 'offline'> = {
   cancelled: 'offline',
 };
 
-export function RemoteJobsPanel() {
+/**
+ * `peerId` = one paired PC's view (the device drawer): the history narrows to its jobs, the
+ * composer targets it, and the device column and cross-PC direction filter are hidden.
+ */
+export function RemoteJobsPanel({ peerId }: { peerId?: string } = {}) {
   const { t } = useTranslation();
   const st = t.sharing;
-  const jobs = useRemoteJobs();
+  const jobs = useRemoteJobs(peerId);
   const { selectedId, selectedJob, toggleSelected } = jobs;
 
   const columns: TableColumn<RemoteJob>[] = useMemo(
@@ -111,22 +115,23 @@ export function RemoteJobsPanel() {
     ],
     [t, st],
   );
+  const shownColumns = peerId ? columns.filter((c) => c.key !== 'device') : columns;
 
   return (
     <SectionCard
-      title={st.remote_jobs_title}
-      subtitle={st.remote_jobs_subtitle}
+      title={peerId ? st.remote_jobs_for_pc_title : st.remote_jobs_title}
+      subtitle={peerId ? st.remote_jobs_for_pc_subtitle : st.remote_jobs_subtitle}
       icon={<Radio className="w-4 h-4 text-cyan-400" />}
       titleClassName="text-primary"
       action={
-        <RemoteJobDirectionFilter value={jobs.direction} onChange={jobs.setDirection} />
+        peerId ? undefined : <RemoteJobDirectionFilter value={jobs.direction} onChange={jobs.setDirection} />
       }
     >
-      <RemoteInstructionComposer />
+      <RemoteInstructionComposer peerId={peerId} />
 
       <div data-testid="remote-jobs" className="mt-3">
         <UnifiedTable
-          columns={columns}
+          columns={shownColumns}
           data={jobs.jobs}
           getRowKey={(row) => row.id}
           isLoading={jobs.isLoading}

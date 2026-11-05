@@ -19,7 +19,11 @@ import {
 
 const logger = createLogger('remote-jobs');
 
-export function useRemoteJobs() {
+/**
+ * @param peerId when set, the history narrows to the jobs exchanged with that
+ *   one paired PC (the device drawer); the direction filter still applies.
+ */
+export function useRemoteJobs(peerId?: string) {
   const jobs = useSystemStore((s) => s.remoteJobs);
   const isLoading = useSystemStore((s) => s.remoteJobsLoading);
   const synced = useSystemStore((s) => s.remoteJobsSynced);
@@ -37,8 +41,8 @@ export function useRemoteJobs() {
   }, [fetchRemoteJobs]);
 
   const visibleJobs = useMemo(
-    () => selectJobsForDirection(jobs, direction),
-    [jobs, direction],
+    () => selectJobsForDirection(peerId ? jobs.filter((job) => job.peerId === peerId) : jobs, direction),
+    [jobs, direction, peerId],
   );
 
   const selectedJob = useMemo(
