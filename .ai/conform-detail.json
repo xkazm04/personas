@@ -36919,31 +36919,57 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:44:00.000Z",
-      "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+      "evaluatedAt": "2026-11-05",
+      "evaluatedTs": "2026-11-05T23:29:44.890Z",
       "techniques": [
-        {
-          "technique": "negative-control-tests",
-          "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/desktop_security.rs:141 a security fix with no test ever observed red against the basename ends_with check it replaced"
-        },
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/desktop_security.rs:172 path denial decisions are pure, reachable methods yet unexercised; desktop_bridges tests cover only the obsidian vault resolver, not the manifest allowlist"
+          "evidence": "src-tauri/engine/src/path_safety.rs:612 A later check answers with the same shape (Err), the reason string is never asserted, and the test name claims traversal. test_rejects_unix/windows_system_dirs have the same shape, but the refusal-floor test covers those prefixes."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/path_safety.rs:648 The test reads the developer's or runner's real home directory and skips its only assertion on some machines, passing vacuously. test_allows_user_home_subdirs (:633) also depends on the runner's real home."
         },
         {
           "technique": "fixture-economics",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/engine/management_api.rs:5315 user-db tests take init_test_user_db instead of a hand-copied CREATE TABLE (reason stated at :5314)"
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/path_safety.rs:789 Each test gets a private tempdir sandbox whose cleanup is the owned TempDir dropping."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/file_watcher.rs:848 Debounce pruning takes an injected `now`, with entries placed relative to it. No sleeping or elapsed-time assertion."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "deviation",
+          "evidence": "src-tauri/engine/src/desktop_security.rs:141 a security fix with no test ever observed red against the basename ends_with check it replaced",
+          "carriedFrom": "2026-10-22"
         },
         {
           "technique": "pin-the-call-not-the-name",
           "verdict": "realized",
-          "evidence": "src-tauri/engine/src/path_safety.rs:605 the neighbouring path guard is executed directly (26 tests) rather than pinned structurally"
+          "evidence": "src-tauri/engine/src/path_safety.rs:605 the neighbouring path guard is executed directly (26 tests) rather than pinned structurally",
+          "carriedFrom": "2026-10-22"
         }
-      ]
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/desktop_security.rs:124 is_binary_allowed (the planted-binary code-exec fix, :141) and is_path_allowed (:172, traversal/ADS/junction denial) carry zero tests in the file and no test anywhere constructs a DesktopConnectorManifest, so reopening either hole ships green",
+          "evaluatedAt": "2026-10-22T02:44:00.000Z",
+          "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+          "reason": "replaced by 58006383-471d-4ab9-a142-05bb48be7bef"
+        }
+      ],
+      "withdrawn": {
+        "worker": "58006383-471d-4ab9-a142-05bb48be7bef",
+        "state": "deviation",
+        "at": "2026-11-05T23:30:25.225935+00:00",
+        "reason": "reviewer (sonnet): The code claims check out (test_rejects_traversal only asserts is_err(), and watch_path_refusal's floor test pins only the leading '../' form), but path_safety.rs and file_watcher.rs are not among this context's listed files. Neither is reached by any of the context's files: the only mention is a co"
+      }
     },
     "cc76d419-f457-4fe4-833c-6869efbc9287/table": {
       "context": "hooks-utility-interaction",

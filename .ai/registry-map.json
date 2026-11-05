@@ -13477,11 +13477,7 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src-tauri/engine/src/desktop_security.rs:124 is_binary_allowed (the planted-binary code-exec fix, :141) and is_path_allowed (:172, traversal/ADS/junction denial) carry zero tests in the file and no test anywhere constructs a DesktopConnectorManifest, so reopening either hole ships green",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-22"
         },
         {
           "subject": "supply-chain",
