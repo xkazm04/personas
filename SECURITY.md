@@ -45,8 +45,9 @@ Only the latest release gets security fixes.
   runs gitleaks when it is installed and skips otherwise); no CI job runs it
 - [ ] Container image scanning: not applicable, no container image is shipped
 - [ ] SBOM + signed, attested build artifacts (cosign/SLSA): updater bundles are signed with the Tauri updater key
-  (`.github/workflows/release.yml`, `TAURI_SIGNING_PRIVATE_KEY`); no SBOM is published with a release and no build
-  provenance is attested yet
+  (`.github/workflows/release.yml`, `TAURI_SIGNING_PRIVATE_KEY`); `scripts/sbom.mjs` generates CycloneDX SBOMs from the
+  lockfiles (`docs/development/release.md`, "SBOM"), but no release step publishes them and no build provenance is
+  attested yet
 
 ## Notes
 
