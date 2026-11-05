@@ -3,11 +3,14 @@
  * failure toast. Each refusal code the backend can produce has a concrete next
  * action (reconnect, unpair on the other side, confirm on the other screen);
  * burying that behind "Pairing failed" is what strands the operator.
+ *
+ * Lives in the wizard: a refusal renders on the step whose action caused it.
  */
 import { AlertTriangle, X } from 'lucide-react';
+import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { PairingRefusalCode } from '../lib/pairingRefusal';
-import type { PairingOutcome } from '../lib/pairingMachine';
+import type { PairingRefusalCode } from '../../lib/pairingRefusal';
+import type { PairingOutcome } from '../../lib/pairingMachine';
 
 /**
  * Codes whose backend message adds information the localized copy cannot: the
@@ -48,30 +51,29 @@ export function PairingRefusalNotice({ outcome, onDismiss }: PairingRefusalNotic
       role="alert"
       className="flex items-start gap-3 rounded-modal border border-amber-500/30 bg-amber-500/10 p-3"
     >
-      <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+      <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" aria-hidden />
       <div className="min-w-0 flex-1 space-y-1">
         <p className="typo-body text-foreground">
           {tx(st.refusal_title, { device: outcome.displayName })}
         </p>
         <p className="typo-caption text-foreground">{copy.title}</p>
-        <p className="typo-caption text-foreground/90">{copy.fix}</p>
+        <p className="typo-caption text-foreground">{copy.fix}</p>
         {/* The backend's own words, kept for the codes we could not classify. */}
         {DETAIL_CODES.has(outcome.refusal.code) && outcome.refusal.detail && (
-          <p data-testid="pairing-refusal-detail" className="typo-code text-foreground/90 break-words">
+          <p data-testid="pairing-refusal-detail" className="typo-code text-foreground break-words">
             {outcome.refusal.detail}
           </p>
         )}
       </div>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         onClick={onDismiss}
         data-testid="pairing-refusal-dismiss"
         aria-label={st.refusal_dismiss}
-        title={st.refusal_dismiss}
-        className="p-1 rounded-card hover:bg-secondary/50 text-foreground flex-shrink-0"
       >
         <X className="w-3.5 h-3.5" />
-      </button>
+      </Button>
     </div>
   );
 }

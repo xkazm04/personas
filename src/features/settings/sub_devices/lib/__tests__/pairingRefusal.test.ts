@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
-import { classifyPairingRefusal } from '../pairingRefusal';
+import { classifyCodeConfirmFailure, classifyPairingRefusal } from '../pairingRefusal';
 
 /** Shape the Rust `AppError` serialises to over IPC. */
 function appError(error: string, kind = 'validation') {
@@ -101,5 +101,23 @@ describe('classifyPairingRefusal', () => {
     const r = classifyPairingRefusal(appError('Some brand new backend refusal'));
     expect(r.code).toBe('unknown');
     expect(r.detail).toBe('Some brand new backend refusal');
+  });
+});
+
+describe('classifyCodeConfirmFailure', () => {
+  it('reads the typed group conflict and auth kinds', () => {
+    expect(classifyCodeConfirmFailure(appError('x', 'device_group_conflict')).code).toBe('group_conflict');
+    expect(classifyCodeConfirmFailure(appError('x', 'auth')).code).toBe('unauthorized');
+  });
+
+  it('never reclassifies on the message text', () => {
+    // The regex path would call this `declined`; the typed-code path must not.
+    const r = classifyCodeConfirmFailure(appError('Peer declined the pairing request'));
+    expect(r.code).toBe('unknown');
+    expect(r.detail).toBe('Peer declined the pairing request');
+  });
+
+  it('still names a missing feature', () => {
+    expect(classifyCodeConfirmFailure('Command pair_confirm_code not found').code).toBe('unavailable');
   });
 });

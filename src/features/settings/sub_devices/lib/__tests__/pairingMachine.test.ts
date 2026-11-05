@@ -147,6 +147,31 @@ describe('pairingReducer', () => {
   });
 });
 
+describe('pairingReducer - wizard additions', () => {
+  it('dismissing ends the run: outcome, choice and mismatch go together', () => {
+    let s = pairingReducer(initialPairingState, { type: 'peer-chosen', peerId: 'peer-a', displayName: 'Studio Mac' });
+    s = pairingReducer(s, { type: 'code-mismatch', peerId: 'peer-b', displayName: 'Laptop', attemptsLeft: 2, withdrawn: false });
+    s = pairingReducer(s, { type: 'outcome-dismissed' });
+    expect(s.chosen).toBeNull();
+    expect(s.mismatch).toBeNull();
+  });
+
+  it('a wrong code releases the busy lock so the operator can retry', () => {
+    let s = pairingReducer(initialPairingState, { type: 'pending-synced', pending: [req()] });
+    s = pairingReducer(s, { type: 'action-started', peerId: 'peer-a', action: 'confirm' });
+    s = pairingReducer(s, { type: 'code-mismatch', peerId: 'peer-a', displayName: 'Studio Mac', attemptsLeft: 4, withdrawn: false });
+    expect(s.busyPeerId).toBeNull();
+    expect(s.pending).toHaveLength(1);
+  });
+
+  it('declining clears a stale mismatch for that peer', () => {
+    let s = pairingReducer(initialPairingState, { type: 'pending-synced', pending: [req()] });
+    s = pairingReducer(s, { type: 'code-mismatch', peerId: 'peer-a', displayName: 'Studio Mac', attemptsLeft: 4, withdrawn: false });
+    s = pairingReducer(s, { type: 'cancel-succeeded', peerId: 'peer-a', displayName: 'Studio Mac' });
+    expect(s.mismatch).toBeNull();
+  });
+});
+
 describe('selectors', () => {
   const state = pairingReducer(initialPairingState, {
     type: 'pending-synced',

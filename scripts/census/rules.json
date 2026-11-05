@@ -1426,8 +1426,8 @@
         "description": "the native `title` attribute on a lowercase DOM element. PROXY FOR the stack-free condition: explanatory text is attached to a control through a channel the user agent alone renders, so it appears only on mouse hover - it is never reachable by keyboard, never appears on a touch device, cannot be dismissed, is not reliably announced by assistive technology, and is not routed through the application's own translation layer. PRECONDITION (must be re-derived per repo): this repo renders to a DOM where `title` has that user-agent behaviour AND owns a shared Tooltip primitive that is the alternative; a repo with no primitive would find this rule fires on 100% of its tooltip sites and should read that as the finding, not baseline it. Measured precision 1109/1109 (zero false positives) and recall 99.7% against a JSX-parser ground truth of 1112 on the 2026-08-14 corpus; the 3 misses are opening tags whose attribute region exceeds 1200 characters before `title=`. `iframe` is deliberately absent from the tag list: `title` on an iframe is a REQUIRED accessible name (WCAG 4.1.2), not a tooltip, so including it would gate a correct construct."
       },
       "baseline": {
-        "files": 358,
-        "matches": 659
+        "files": 357,
+        "matches": 658
       },
       "floor": 2000
     },
@@ -5755,8 +5755,8 @@
         }
       ],
       "baseline": {
-        "files": 795,
-        "matches": 3703
+        "files": 793,
+        "matches": 3701
       },
       "floor": 5000
     },
@@ -5871,8 +5871,8 @@
         }
       ],
       "baseline": {
-        "files": 916,
-        "matches": 2031
+        "files": 915,
+        "matches": 2030
       },
       "floor": 2200
     },
@@ -5945,8 +5945,8 @@
         }
       ],
       "baseline": {
-        "files": 660,
-        "matches": 1615
+        "files": 658,
+        "matches": 1611
       },
       "floor": 5000
     },

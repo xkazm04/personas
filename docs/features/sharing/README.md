@@ -74,7 +74,8 @@ Pairing turns two installs that merely *see* each other into two installs that *
 | Command | Behavior |
 | --- | --- |
 | `pair_request` | Ask a discovered peer to pair; mints the session nonce both sides derive the code from |
-| `pair_confirm` | Accept an inbound request after the operator has compared the code |
+| `pair_confirm_code` | Accept an inbound request by the code the operator TYPED (5 tries); returns a typed verdict `paired` / `mismatch {attemptsLeft, withdrawn}` / `noPending`. This is what Settings > Devices calls |
+| `pair_confirm` | Accept an inbound request without a typed code (kept for scripted callers; the app UI no longer calls it) |
 | `pair_cancel` | Withdraw or decline a pairing in flight |
 | `list_pending_device_pairings` | Recovery path when the `network:device-pairing-requested` event was missed |
 | `list_owned_devices` / `forget_owned_device` | The paired-device roster |

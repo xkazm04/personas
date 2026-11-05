@@ -21,7 +21,6 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import type { OwnedDevice } from '@/api/network/devices';
 import { useDeviceLink } from '../lib/useDeviceLink';
-import { PairingRefusalNotice } from './PairingRefusalNotice';
 import { ThisPcCard } from './ThisPcCard';
 import { DeviceCards } from './DeviceCards';
 import { DeviceDrawer } from './DeviceDrawer';
@@ -106,10 +105,6 @@ export default function DeviceLinkPage() {
       <ContentBody centered>
         <KitHost testId="devices-kit">
           <Surface>
-            {link.outcome?.kind === 'refused' && (
-              <PairingRefusalNotice outcome={link.outcome} onDismiss={link.dismissOutcome} />
-            )}
-
             <ThisPcCard />
 
             <DeviceCards
