@@ -2266,3 +2266,5 @@
 {"ts":"2026-11-06T05:33:43.783474+00:00","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":["context-budgeting"],"deviations":1,"context":"lib-utils-sanitizers","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-11-06T05:33:43.783474+00:00","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":[],"deviations":0,"context":"agents-quick-answer","via":"curator-multi:claude","model":"claude-opus-5-5"}
 {"ts":"2026-11-06T05:33:43.783474+00:00","bundle":"software-engineering","subjects":["prompt-assembly"],"techniques":[],"deviations":0,"context":"settings-network","via":"curator-multi:claude","model":"claude-opus-5-5"}
+{"ts":"2026-11-05T12:00:00Z","bundle":"software-engineering","subjects":["vendored-patch-stack"],"techniques":["least-invasive-carrier","reject-triage-is-a-port-not-a-merge"],"deviations":0}
+{"ts":"2026-11-05T10:17:14Z","bundle":"software-engineering","subjects":["wizard-flows"],"techniques":["step-state-model","commit-boundary"],"deviations":0}

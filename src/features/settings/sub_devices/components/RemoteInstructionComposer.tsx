@@ -22,14 +22,16 @@ import { createLogger } from '@/lib/log';
 
 const logger = createLogger('remote-instruction-composer');
 
-export function RemoteInstructionComposer() {
+/** `peerId` pins the target (the device drawer): the device picker is hidden. */
+export function RemoteInstructionComposer({ peerId: fixedPeerId }: { peerId?: string } = {}) {
   const { t, tx } = useTranslation();
   const st = t.sharing;
   const addToast = useToastStore((s) => s.addToast);
   const devices = useSystemStore((s) => s.ownedDevices);
   const sendRemoteInstruction = useSystemStore((s) => s.sendRemoteInstruction);
 
-  const [peerId, setPeerId] = useState<string | null>(null);
+  const [pickedPeerId, setPeerId] = useState<string | null>(null);
+  const peerId = fixedPeerId ?? pickedPeerId;
   const [instruction, setInstruction] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -59,54 +61,58 @@ export function RemoteInstructionComposer() {
 
   return (
     <div data-testid="remote-instruction-composer" className="space-y-2">
-      <p className="typo-caption text-foreground">{st.send_instruction_hint}</p>
+      <p className="typo-caption text-foreground">
+        {fixedPeerId ? st.send_instruction_hint_fixed : st.send_instruction_hint}
+      </p>
 
       <div className="flex flex-wrap items-start gap-2">
-        <Listbox
-          ariaLabel={st.send_instruction_device_label}
-          className="min-w-[170px]"
-          renderTrigger={({ isOpen, toggle }) => (
-            <button
-              type="button"
-              onClick={toggle}
-              aria-expanded={isOpen}
-              data-testid="remote-instruction-device"
-              className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-input typo-caption border border-primary/15 bg-secondary/40 text-foreground hover:border-primary/30 transition-colors"
-            >
-              <span className="flex-1 text-left truncate">
-                {target ? target.displayName : st.send_instruction_pick_device}
-              </span>
-              <ChevronDown
-                className={`w-3 h-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                aria-hidden
-              />
-            </button>
-          )}
-        >
-          {({ close }) => (
-            <div className="py-1">
-              {devices.map((device) => (
-                <button
-                  key={device.peerId}
-                  type="button"
-                  role="option"
-                  aria-selected={device.peerId === peerId}
-                  data-testid={`remote-instruction-device-${device.peerId}`}
-                  onClick={() => {
-                    setPeerId(device.peerId);
-                    close();
-                  }}
-                  className={`flex items-center gap-2 w-full px-3 py-1.5 typo-caption transition-colors hover:bg-secondary/40 ${
-                    device.peerId === peerId ? 'text-primary' : 'text-foreground'
-                  }`}
-                >
-                  <span className="flex-1 text-left truncate">{device.displayName}</span>
-                  {device.peerId === peerId && <Check className="w-3.5 h-3.5 shrink-0" aria-hidden />}
-                </button>
-              ))}
-            </div>
-          )}
-        </Listbox>
+        {!fixedPeerId && (
+          <Listbox
+            ariaLabel={st.send_instruction_device_label}
+            className="min-w-[170px]"
+            renderTrigger={({ isOpen, toggle }) => (
+              <button
+                type="button"
+                onClick={toggle}
+                aria-expanded={isOpen}
+                data-testid="remote-instruction-device"
+                className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-input typo-caption border border-primary/15 bg-secondary/40 text-foreground hover:border-primary/30 transition-colors"
+              >
+                <span className="flex-1 text-left truncate">
+                  {target ? target.displayName : st.send_instruction_pick_device}
+                </span>
+                <ChevronDown
+                  className={`w-3 h-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                  aria-hidden
+                />
+              </button>
+            )}
+          >
+            {({ close }) => (
+              <div className="py-1">
+                {devices.map((device) => (
+                  <button
+                    key={device.peerId}
+                    type="button"
+                    role="option"
+                    aria-selected={device.peerId === peerId}
+                    data-testid={`remote-instruction-device-${device.peerId}`}
+                    onClick={() => {
+                      setPeerId(device.peerId);
+                      close();
+                    }}
+                    className={`flex items-center gap-2 w-full px-3 py-1.5 typo-caption transition-colors hover:bg-secondary/40 ${
+                      device.peerId === peerId ? 'text-primary' : 'text-foreground'
+                    }`}
+                  >
+                    <span className="flex-1 text-left truncate">{device.displayName}</span>
+                    {device.peerId === peerId && <Check className="w-3.5 h-3.5 shrink-0" aria-hidden />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </Listbox>
+        )}
 
         <input
           type="text"

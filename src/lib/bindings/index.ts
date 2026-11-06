@@ -855,6 +855,7 @@ export type { OverviewBundle } from "./OverviewBundle";
 export type { OwnedDevice } from "./OwnedDevice";
 export type { PageSelection } from "./PageSelection";
 export type { PaginatedEvents } from "./PaginatedEvents";
+export type { PairCodeVerdict } from "./PairCodeVerdict";
 export type { PairingRole } from "./PairingRole";
 export type { ParamType } from "./ParamType";
 export type { PartialMatchResult } from "./PartialMatchResult";

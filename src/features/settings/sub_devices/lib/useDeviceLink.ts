@@ -1,7 +1,8 @@
 /**
  * Wires the pure pairing reducer to the store, the IPC calls and the event
- * bridge. Everything decision-shaped lives in `pairingMachine.ts`; this hook is
- * only plumbing, so the ceremony stays testable without React.
+ * bridge. Everything decision-shaped lives in `pairingMachine.ts` and
+ * `wizardStep.ts`; this hook is only plumbing, so the ceremony stays testable
+ * without React.
  */
 import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
@@ -19,7 +20,7 @@ import {
   selectOutgoing,
   selectPendingPeerIds,
 } from './pairingMachine';
-import { classifyPairingRefusal } from './pairingRefusal';
+import { classifyCodeConfirmFailure, classifyPairingRefusal, type PairingRefusal } from './pairingRefusal';
 
 const logger = createLogger('device-link');
 
@@ -55,6 +56,17 @@ export function useDeviceLink() {
     void fetchDiscoveredPeers();
   }, [fetchOwnedDevices, fetchPendingDevicePairings, fetchDiscoveredPeers]);
 
+  // The initiator's request vanished from the pending list: the other PC
+  // either typed the code (it is owned now) or did not. Only a fresh owned
+  // list can tell, so refetch it, then let `wizardStep` read the answer.
+  const chosenPhase = state.chosen?.phase;
+  useEffect(() => {
+    if (chosenPhase !== 'settling') return;
+    fetchOwnedDevices()
+      .catch(silentCatch('features/settings/sub_devices/useDeviceLink:settle'))
+      .finally(() => dispatch({ type: 'owned-refetched' }));
+  }, [chosenPhase, fetchOwnedDevices]);
+
   const pairedIds = useMemo(() => new Set(ownedDevices.map((d) => d.peerId)), [ownedDevices]);
   const pendingIds = useMemo(() => selectPendingPeerIds(state), [state]);
 
@@ -64,14 +76,14 @@ export function useDeviceLink() {
     [discoveredPeers, pairedIds, pendingIds],
   );
 
-  const fail = useCallback((peerId: string, displayName: string, err: unknown) => {
-    const refusal = classifyPairingRefusal(err);
+  const failWith = useCallback((peerId: string, displayName: string, refusal: PairingRefusal) => {
     logger.warn('Pairing action refused', { peerId, code: refusal.code, detail: refusal.detail });
     dispatch({ type: 'action-failed', peerId, displayName, refusal });
   }, []);
 
   const startPairing = useCallback(
     async (peer: DiscoveredPeer) => {
+      dispatch({ type: 'peer-chosen', peerId: peer.peer_id, displayName: peer.display_name });
       dispatch({ type: 'action-started', peerId: peer.peer_id, action: 'request' });
       try {
         // Pairing sits on top of the authenticated handshake, so an idle peer
@@ -81,25 +93,35 @@ export function useDeviceLink() {
         const request = await devicesApi.pairRequest(peer.peer_id);
         dispatch({ type: 'request-succeeded', request });
       } catch (err) {
-        fail(peer.peer_id, peer.display_name, err);
+        failWith(peer.peer_id, peer.display_name, classifyPairingRefusal(err));
       }
     },
-    [connectToPeer, fail],
+    [connectToPeer, failWith],
   );
 
-  const confirmPairing = useCallback(
-    async (peerId: string, displayName: string) => {
+  /** The receiving PC types the code the other PC shows. */
+  const confirmCode = useCallback(
+    async (peerId: string, displayName: string, code: string) => {
       dispatch({ type: 'action-started', peerId, action: 'confirm' });
       try {
-        await devicesApi.pairConfirm(peerId);
-        dispatch({ type: 'confirm-succeeded', peerId, displayName });
-        addToast(st.pairing_paired_toast, 'success');
-        await fetchOwnedDevices();
+        const verdict = await devicesApi.confirmPairingCode(peerId, code);
+        if (verdict.kind === 'paired') {
+          dispatch({ type: 'confirm-succeeded', peerId, displayName });
+          addToast(st.pairing_paired_toast, 'success');
+          await fetchOwnedDevices();
+        } else if (verdict.kind === 'mismatch') {
+          dispatch({
+            type: 'code-mismatch', peerId, displayName,
+            attemptsLeft: verdict.attemptsLeft, withdrawn: verdict.withdrawn,
+          });
+        } else {
+          dispatch({ type: 'code-no-pending', peerId, displayName });
+        }
       } catch (err) {
-        fail(peerId, displayName, err);
+        failWith(peerId, displayName, classifyCodeConfirmFailure(err));
       }
     },
-    [addToast, fetchOwnedDevices, fail, st.pairing_paired_toast],
+    [addToast, fetchOwnedDevices, failWith, st.pairing_paired_toast],
   );
 
   const cancelPairing = useCallback(
@@ -111,10 +133,10 @@ export function useDeviceLink() {
       } catch (err) {
         // `pair_cancel` is idempotent backend-side, so a failure here is
         // genuinely unexpected — surface it rather than pretending it worked.
-        fail(peerId, displayName, err);
+        failWith(peerId, displayName, classifyPairingRefusal(err));
       }
     },
-    [fail],
+    [failWith],
   );
 
   const refresh = useCallback(() => {
@@ -125,16 +147,20 @@ export function useDeviceLink() {
   return {
     ownedDevices,
     ownedDevicesLoading,
+    ownedPeerIds: pairedIds,
     discoveredPeers,
     linkablePeers,
     p2pUnavailable,
+    pending: state.pending,
+    chosen: state.chosen,
+    mismatch: state.mismatch,
     outgoing: selectOutgoing(state),
     incoming: selectIncoming(state),
     outcome: state.outcome,
     pendingSynced: state.synced,
     isBusy: (peerId: string) => isBusyWith(state, peerId),
     startPairing,
-    confirmPairing,
+    confirmCode,
     cancelPairing,
     dismissOutcome: useCallback(() => dispatch({ type: 'outcome-dismissed' }), []),
     refresh,
