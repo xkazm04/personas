@@ -889,6 +889,25 @@ pub const COMPANION_NIGHT_SHIFT_MAX_SESSIONS_DEFAULT: u32 = 3;
 /// Free-form date value (no typed validation; audit-excluded bookkeeping).
 pub const COMPANION_NIGHT_SHIFT_PLAN_LAST: &str = "companion_night_shift_plan_last";
 
+/// Standup dead spot (spark app-standup): the host CPU share, in percent,
+/// below which the machine counts as idle for backfill. Read by
+/// `engine::resources::dead_spot`. Integer 1-100, default 35.
+pub const STANDUP_DEAD_SPOT_CPU_PCT: &str = "standup.dead_spot_cpu_pct";
+/// Default for [`STANDUP_DEAD_SPOT_CPU_PCT`].
+pub const STANDUP_DEAD_SPOT_CPU_PCT_DEFAULT: u32 = 35;
+/// Standup dead spot: the host GPU share, in percent, below which the GPU
+/// counts as idle (ignored where no GPU reading exists). Integer 1-100,
+/// default 20.
+pub const STANDUP_DEAD_SPOT_GPU_PCT: &str = "standup.dead_spot_gpu_pct";
+/// Default for [`STANDUP_DEAD_SPOT_GPU_PCT`].
+pub const STANDUP_DEAD_SPOT_GPU_PCT_DEFAULT: u32 = 20;
+/// Standup dead spot: how many consecutive minutes both shares must stay
+/// under their thresholds before filler is backfilled. Integer 1-120,
+/// default 3.
+pub const STANDUP_DEAD_SPOT_MINUTES: &str = "standup.dead_spot_minutes";
+/// Default for [`STANDUP_DEAD_SPOT_MINUTES`].
+pub const STANDUP_DEAD_SPOT_MINUTES_DEFAULT: u32 = 3;
+
 /// Whether Athena runs the weekly behavioral profile-synthesis pass (F3) —
 /// learns how the user works from engage/dismiss / refine-chip / approval stats
 /// and proposes evidence-cited identity diffs (always approval-gated). Default
@@ -1603,6 +1622,9 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_NIGHT_SHIFT_WAKE_HOUR,
     COMPANION_NIGHT_SHIFT_GUIDANCE_MINUTES,
     COMPANION_NIGHT_SHIFT_MAX_SESSIONS,
+    STANDUP_DEAD_SPOT_CPU_PCT,
+    STANDUP_DEAD_SPOT_GPU_PCT,
+    STANDUP_DEAD_SPOT_MINUTES,
     COMPANION_NIGHT_SHIFT_PLAN_LAST,
     COMPANION_PROFILE_SYNTHESIS,
     COMPANION_PROFILE_SYNTHESIS_LAST,
@@ -2074,6 +2096,10 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 )),
             }
         }
+        STANDUP_DEAD_SPOT_CPU_PCT | STANDUP_DEAD_SPOT_GPU_PCT => {
+            validate_int_range(key, value, 1, 100)
+        }
+        STANDUP_DEAD_SPOT_MINUTES => validate_int_range(key, value, 1, 120),
         APPEARANCE_PREFERENCES => validate_appearance_preferences(value),
         // -------------------------------------------------------------------
         // JSON-blob keys (Direction 2): validate against the ACTUAL consumer

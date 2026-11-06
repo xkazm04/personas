@@ -663,6 +663,9 @@
   "decay_none": "No facts old enough to decay yet.",
   "page_title": "Athena",
   "page_subtitle": "Setup, memory inspector, and voice configuration for your thinking partner.",
+  "standup": {
+    "placeholder": "No standup yet. Open one to reconcile what moved, pick tomorrow's directions and arm the plan."
+  },
   "tab_setup": "Setup",
   "tab_memory": "Memory",
   "tab_voice": "Voice",

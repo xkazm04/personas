@@ -31,6 +31,7 @@ mod frontend_crash;
 mod genome;
 mod gitlab;
 mod healing;
+mod host_utilization;
 #[cfg(feature = "p2p")]
 mod identity;
 mod incident_diagnosis;
@@ -125,6 +126,7 @@ pub use frontend_crash::*;
 pub use genome::*;
 pub use gitlab::*;
 pub use healing::*;
+pub use host_utilization::*;
 #[cfg(feature = "p2p")]
 pub use identity::*;
 pub use incident_diagnosis::*;

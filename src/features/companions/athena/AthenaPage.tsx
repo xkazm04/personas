@@ -17,11 +17,12 @@ const SetupPanel = lazy(() => import('./sub_setup/SetupPanel'));
 const MemoryPanel = lazy(() => import('./sub_memory/MemoryPanel'));
 const VoicePanel = lazy(() => import('./sub_voice/VoicePanel'));
 const DecisionsPanel = lazy(() => import('./sub_decisions/DecisionsPanel'));
+const StandupPanel = lazyRetry(() => import('./sub_standup/StandupPanel'));
 
 /**
  * Athena's page — her manager surface inside the Companions section.
  *
- * Her five pages (Create Athena, Setup, Memory, Voice, Decisions) are rows in
+ * Her six pages (Create Athena, Setup, Memory, Voice, Decisions, Standup) are rows in
  * `CompanionsSidebarNav`, and each is a `CompanionsPage` of the form
  * `athena:<tab>`. This page reads the tab half and renders one panel, which is
  * why the Companions router mounts it as ONE branch: switching between her
@@ -57,6 +58,7 @@ export default function AthenaPage() {
               {tab === 'memory' && <MemoryPanel />}
               {tab === 'voice' && <VoicePanel />}
               {tab === 'decisions' && <DecisionsPanel />}
+              {tab === 'standup' && <StandupPanel />}
             </Suspense>
           </ErrorBoundary>
         </div>

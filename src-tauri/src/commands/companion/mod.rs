@@ -32,6 +32,7 @@ pub mod project_tracking;
 #[cfg(feature = "desktop")]
 pub mod sensory;
 pub mod sidecars;
+pub mod standup;
 pub mod stt;
 pub mod templates;
 pub mod tours;

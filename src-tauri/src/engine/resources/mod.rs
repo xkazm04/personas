@@ -36,7 +36,11 @@
 //! (`personas_engine::responsibility::apply_measured_profile`) folds the
 //! measurement back into the charter's resource profile.
 
+/// Whole-machine dead-spot detection (spark app-standup, WP2).
+pub mod dead_spot;
 pub mod gpu;
+/// Whole-machine 1-minute utilisation rollups (spark app-standup, WP2).
+pub mod host_sampler;
 pub mod probe;
 pub mod summary;
 pub mod tree;

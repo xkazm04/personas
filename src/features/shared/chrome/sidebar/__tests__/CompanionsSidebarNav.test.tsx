@@ -104,6 +104,7 @@ describe('CompanionsSidebarNav', () => {
       'companions-nav-athena-memory',
       'companions-nav-athena-voice',
       'companions-nav-athena-decisions',
+      'companions-nav-athena-standup',
       'companions-nav-overseer-reviews',
       'companions-nav-overseer-setup',
       'companions-nav-curator-council',

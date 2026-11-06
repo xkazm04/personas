@@ -450,6 +450,21 @@ event_names! {
     // files one (profile synthesis, the reply-register reflection). Payload:
     // `Vec<CreatedApproval>`. `companion::session::APPROVALS_EVENT` aliases it.
     COMPANION_APPROVALS          => "companion://approvals",
+    // A standup revision moved (opened, proposed, item edited, armed, ended,
+    // or the supervisor wrote an away act). Payload:
+    // [`StandupUpdatedPayload`] ({ standupId }); listeners
+    // re-read with `standup_current` (spark app-standup).
+    STANDUP_UPDATED              => "standup://updated",
+}
+
+/// Payload of [`event_name::STANDUP_UPDATED`]: which standup revision moved
+/// (spark app-standup). Listeners re-read it with `standup_current`; the
+/// standup itself never rides on the event.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct StandupUpdatedPayload {
+    pub standup_id: String,
 }
 
 /// Payload of [`event_name::FLEET_QUEUE_CHANGED`]. `kind` is one of

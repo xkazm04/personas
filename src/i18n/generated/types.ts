@@ -21675,6 +21675,9 @@ export type Translations = {
     decay_none: string;
     page_title: string;
     page_subtitle: string;
+    standup: {
+      placeholder: string;
+    };
     tab_setup: string;
     tab_memory: string;
     tab_voice: string;
@@ -27383,6 +27386,7 @@ export type Translations = {
       page_memory: string;
       page_voice: string;
       page_decisions: string;
+      page_standup: string;
       page_overseer: string;
       page_council: string;
       page_blueprint: string;

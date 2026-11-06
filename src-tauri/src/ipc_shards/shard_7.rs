@@ -324,6 +324,8 @@ pub(super) fn shard(
         // Measured resources per run (CPU / RAM / GPU).
         commands::fleet::resources::resource_live_samples,
         commands::fleet::resources::resource_run_summaries,
+        // Whole-machine 1-minute utilisation (spark app-standup).
+        commands::fleet::host_utilization::host_utilization_series,
         commands::fleet::claude_usage::fleet_claude_usage,
         commands::fleet::cli_usage::fleet_cli_usage,
         commands::fleet::autopilot::fleet_autopilot_status,

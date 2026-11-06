@@ -43,6 +43,8 @@ pub mod remote_jobs;
 pub mod reports;
 pub mod session;
 pub mod ship_ops;
+/// Standup (spark app-standup): the plan, its go-gate and away supervision.
+pub mod standup;
 pub mod stt;
 pub mod templates;
 pub mod tours;

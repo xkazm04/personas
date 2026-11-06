@@ -612,6 +612,7 @@ export const SECTION_SHAPES: Readonly<Record<string, Record<string, unknown>>> =
     }
   },
   "athena": {
+    "standup": {},
     "orchestration": {}
   },
   "media_studio": {},

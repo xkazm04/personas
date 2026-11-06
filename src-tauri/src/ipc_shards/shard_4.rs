@@ -229,5 +229,18 @@ pub(super) fn shard(
         commands::companion::jobs::companion_enqueue_job,
         commands::companion::templates::companion_match_templates,
         commands::companion::decisions::companion_list_design_decisions,
+        // Standup (spark app-standup): the plan, its go-gate, away acts. The
+        // forecast sits in WP2's file beside the host series.
+        commands::companion::standup::standup_current,
+        commands::companion::standup::standup_open,
+        commands::companion::standup::standup_propose,
+        commands::companion::standup::standup_update_item,
+        commands::companion::standup::standup_set_away_rules,
+        commands::companion::standup::standup_arm,
+        commands::companion::standup::standup_end,
+        commands::companion::standup::standup_events,
+        commands::companion::standup::standup_history,
+        commands::companion::standup::standup_discuss,
+        commands::fleet::host_utilization::standup_forecast,
     ])
 }
