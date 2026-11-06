@@ -44734,6 +44734,37 @@
           "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer2/__tests__/stepPrefetch.test.tsx:41 The hover-intent delay is driven with fake timers by the named constant instead of being measured with a real clock."
         }
       ]
+    },
+    "a3cb83b5-7325-4d1c-b10d-b249ab1a186f/test-harness": {
+      "context": "run-desk",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T04:31:51.824Z",
+      "worker": "f1a66d3c-d4fc-4f27-a0e2-9c4c8b61cba4",
+      "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/__tests__/selfHealing.test.ts:17 the condition was extracted into a shared predicate and only the predicate's behaviour is asserted, not its adoption by the panel's effect; bringing the original defect back stays green"
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/__tests__/prBridgeContent.test.ts:13 the cross-language parity pin needles a typed declaration that prose cannot spell, strips // comments first, and throws a named error when nothing matches"
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/__tests__/taskRunnerDrainWiring.test.ts:58 the debounced drain is driven on fake timers, never on wall time"
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/__tests__/porcelainPaths.test.ts:1 a pure parser runs in the node environment, not the DOM lane"
+        }
+      ]
     }
   }
 }

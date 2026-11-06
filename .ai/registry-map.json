@@ -33697,7 +33697,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_runner/SelfHealingPanel.tsx:136 selfHealing.test.ts claims to guard the fix for the Auto-heal checkbox that 'was read by nothing', but it only drives the extracted predicate; no test anywhere renders SelfHealingPanel (grep over src finds only selfHealing.test.ts), so deleting this call site brings the original defect back with every test green.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "fleet-orchestration",
