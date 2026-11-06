@@ -538,7 +538,7 @@ function DetailPanel({
             <p className="typo-caption text-foreground mt-0.5">{personaName}</p>
           </div>
         </div>
-        <button type="button" onClick={onClose} className="p-1 rounded-input hover:bg-secondary/40 text-foreground flex-shrink-0">
+        <button type="button" aria-label={t.common.close} onClick={onClose} className="p-1 rounded-input hover:bg-secondary/40 text-foreground flex-shrink-0">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
