@@ -10464,7 +10464,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:63 The fusion composer adds a context fragment (the `[re: <kind> \"<title>\"]` prefix) in front of the operator's text at a UI call site, so the text Athena receives is partly assembled outside any assembler and outside its budget, trust classification and fingerprint.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "agent-memory",
@@ -14645,7 +14649,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/ConversationComposer.tsx:66 The channel composer writes an Athena prompt inline at the call site and splices the operator's raw channel text between plain double quotes, with no declared variable, trust class or delimiter that a quote inside the text cannot break.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "model-composed-workspace",
@@ -18354,7 +18362,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/lib/errors/errorRegistry.ts:454 This context only maps a backend prompt-size error to a friendly message. A search of src/i18n and src/lib for assemblePrompt, buildPrompt and tokenBudget found zero files, so no prompt is assembled, budgeted or interpolated here.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "docs-sync",

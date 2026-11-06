@@ -40211,13 +40211,13 @@
       "bundle": "software-engineering",
       "state": "unknown",
       "evaluatedAt": "2026-11-06",
-      "evaluatedTs": "2026-11-06T05:02:14.320Z",
+      "evaluatedTs": "2026-11-06T05:21:28.035Z",
       "techniques": [],
       "withdrawn": {
-        "worker": "265ab190-5d28-4123-a0a0-2032d4388cb1",
+        "worker": "03d898d1-8c32-4648-965a-2f2d17c8f06d",
         "state": "not-applicable",
-        "at": "2026-11-06T05:02:39.655665+00:00",
-        "reason": "reviewer (sonnet): The anchor, ExposureManager.tsx:9, is a type import line and does not show that prompt composition is absent. I also did not confirm the claim about AmbientContextPanel. My grep for prompt in the context found only store and message-metric hits, but that does not make the incidental anchor valid."
+        "at": "2026-11-06T05:21:58.961889+00:00",
+        "reason": "reviewer (sonnet): The anchor ExposureManager.tsx:9 is only an import line, so it does not show that no prompt is assembled; the grep also covered all of src/features/settings, not this context."
       }
     },
     "aa2197a5-6b7c-46ff-a6cd-8172d2984f50/prompt-assembly": {
@@ -44839,16 +44839,27 @@
       "context": "fleet-monitor-channels",
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
-      "state": "unknown",
+      "state": "deviation",
       "evaluatedAt": "2026-11-06",
-      "evaluatedTs": "2026-11-06T05:02:14.320Z",
-      "techniques": [],
-      "withdrawn": {
-        "worker": "265ab190-5d28-4123-a0a0-2032d4388cb1",
-        "state": "not-applicable",
-        "at": "2026-11-06T05:02:39.550348+00:00",
-        "reason": "reviewer (sonnet): The verdict says no prompt is assembled in this context, but ConversationComposer.tsx:64-68 builds an Athena prompt in the frontend. It interpolates teamName, teamId and the user's text into a template and passes it to setPendingPrompt with autoSend. The anchor, useConversation.ts:233, only shows th"
-      }
+      "evaluatedTs": "2026-11-06T05:21:28.035Z",
+      "worker": "03d898d1-8c32-4648-965a-2f2d17c8f06d",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/ConversationComposer.tsx:64 Prompt text is born in a React component's send handler and passed to setPendingPrompt as a pre-rendered string. It does not go through an assembler as typed inputs."
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation",
+          "evidence": "src/features/fleet/monitor/channels/ConversationComposer.tsx:66 Untrusted operator text is interpolated inside bare quotes. It has no trust class or safety wrapping, and an embedded quote ends the span."
+        },
+        {
+          "technique": "task-envelope",
+          "verdict": "conformant",
+          "evidence": "src/features/fleet/monitor/channels/ConversationComposer.tsx:68 The task names where to act (team_id is given above), what done looks like (a short reply posted into the channel) and the capability to use. It opens with no role claim."
+        }
+      ]
     },
     "0a6ae5fd-fb42-446c-9602-0d2abdd220d5/prompt-assembly": {
       "context": "vault-shared-playground",
@@ -44859,6 +44870,68 @@
       "evaluatedTs": "2026-11-06T05:02:14.320Z",
       "worker": "265ab190-5d28-4123-a0a0-2032d4388cb1",
       "techniques": []
+    },
+    "2651f2ce-7fc1-4331-8b31-61e783e9746a/prompt-assembly": {
+      "context": "companions-page",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T05:21:28.035Z",
+      "worker": "03d898d1-8c32-4648-965a-2f2d17c8f06d",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:63 Context (the item being discussed) is joined onto the task text at the call site instead of being passed as a typed input. The same concatenation is repeated in FrameBottom.tsx, so this is the sprawl the standard names."
+        },
+        {
+          "technique": "task-envelope",
+          "verdict": "conformant",
+          "evidence": "src/features/companions/athena/chat/next/frame/variants/fusion/Composer.tsx:10 The prefix spends the opening of the task on locating what the message is about. That is the 'locate' part, not role priming."
+        }
+      ]
+    },
+    "2e1e105a-866c-4039-9620-7ed5d0d30b17/prompt-assembly": {
+      "context": "i18n",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T05:21:28.035Z",
+      "worker": "03d898d1-8c32-4648-965a-2f2d17c8f06d",
+      "techniques": []
+    },
+    "8cfb82ac-ebd6-4826-921d-d1399dba7a60/prompt-assembly": {
+      "context": "agents-quick-answer",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T05:21:28.035Z",
+      "techniques": [
+        {
+          "technique": "layered-composition",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/shared/quickConfig/quickConfigTypes.ts:99 The output is a string suffix with its own delimiter, made to be concatenated onto the build prompt. This is the 'late layers become suffixes' failure."
+        },
+        {
+          "technique": "variable-interpolation",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/shared/quickConfig/quickConfigTypes.ts:79 Trigger descriptions and persona names written by other personas or users are interpolated raw. They carry no declared trust class or delimiting."
+        },
+        {
+          "technique": "context-budgeting",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/shared/quickConfig/quickConfigTypes.ts:88 An empty channel selection renders as a stated absence rather than silence, so the model is not misled by a missing section."
+        }
+      ],
+      "withdrawn": {
+        "worker": "03d898d1-8c32-4648-965a-2f2d17c8f06d",
+        "state": "deviation",
+        "at": "2026-11-06T05:21:59.117739+00:00",
+        "reason": "reviewer (sonnet): serializeQuickConfig lives in agents/shared/quickConfig and is called from agents/components/matrix/UnifiedBuildEntry.tsx:738, not the cited shared/UnifiedBuildEntry.tsx:739, and neither file belongs to the quick-answer/triage context, so the verdict is about a different context."
+      }
     }
   }
 }
