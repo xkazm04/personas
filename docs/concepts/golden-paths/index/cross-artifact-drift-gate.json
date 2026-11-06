@@ -35,7 +35,7 @@
     "console/package.json": {"count":1,"sections":[12],"lines":["13"],"contexts":["`console/package.json:13` declares `gen:api` (`openapi.json` →"],"resolved":false},
     "contexts.rs": {"count":1,"sections":[12],"lines":["194"],"contexts":["`dev_tools_move_context_to_group` (`contexts.rs:194`), and"],"resolved":false},
     "crates/brainiac-server/src/openapi.rs": {"count":1,"sections":[12],"lines":["425-440"],"contexts":["`crates/brainiac-server/src/openapi.rs:425-440` — `committed_document_is_current`"],"resolved":false},
-    "index.json": {"count":2,"sections":[],"contexts":["`CATALOG.md`; the three `tauri.*.conf.json`; the corpus's own `index.json` /"],"resolved":false},
+    "docs/concepts/golden-paths/index.json": {"count":2,"sections":[],"contexts":["`CATALOG.md`; the three `tauri.*.conf.json`; the corpus's own `index.json` /"],"resolvedFrom":"basename","verbatim":"index.json"},
     "lefthook.yml": {"count":2,"sections":[7],"lines":["37-39"],"contexts":["`.gitlab-ci.yml`'s `check-bindings` (`:159-173`), all **10** `lefthook.yml`"]},
     "openapi.json": {"count":2,"sections":[12],"contexts":["byte-equality (EOL-normalized) against the committed `openapi.json`, as a"],"resolved":false},
     "pt.json": {"count":1,"sections":[7],"contexts":["than reading a hardcoded list, a brand-new untracked `pt.json` **is** picked up"],"resolved":false},

@@ -31,6 +31,8 @@
   ],
   "citations": {
     ".claude/worktrees/**": {"count":1,"sections":[],"contexts":["new one. `.claude/worktrees/**` excluded (the file list is `git ls-files`, so `.gitignore`"],"resolved":false,"isDir":true},
+    "ValidationError.ts": {"count":6,"sections":[5,7,9],"contexts":["has nothing to funnel and `ValidationError.ts` has nothing to receive. This is the mechanism"],"resolved":false},
+    "ValidationRule.ts": {"count":2,"sections":[3,9],"contexts":["- **`src/lib/bindings/ValidationError.ts` · `ValidationRule.ts`** — the generated mirrors of the"],"resolved":false},
     "census-cmdinput-4b7e19.json": {"count":1,"sections":[9],"contexts":["`census-cmdinput-4b7e19.json` — unique to this composition, because a previous composer's"],"resolved":false},
     "chat.rs": {"count":2,"sections":[3,8],"contexts":["- **`persona.rs` (569 lines) · `trigger.rs` (462) · `chat.rs` (101) · `memory.rs` (62).** The"],"resolved":false},
     "commands/artist/mod.rs": {"count":1,"sections":[9],"lines":["262"],"contexts":["(`commands/artist/mod.rs:262`) as validating `id` — but the guard there checks"],"resolved":false},
@@ -211,14 +213,8 @@
       "resolvedFrom": "basename",
       "verbatim": "buildTriggerConfig.ts"
     },
-    "src/lib/bindings/ValidationError.ts": {"count":7,"sections":[3,5,7,9],"contexts":["- **`src/lib/bindings/ValidationError.ts` · `ValidationRule.ts`** — the generated mirrors of the"]},
-    "src/lib/bindings/ValidationRule.ts": {
-      "count": 3,
-      "sections": [3,7,9],
-      "contexts": ["- **`src/lib/bindings/ValidationError.ts` · `ValidationRule.ts`** — the generated mirrors of the"],
-      "resolvedFrom": "basename",
-      "verbatim": "ValidationRule.ts"
-    },
+    "src/lib/bindings/ValidationError.ts": {"count":1,"sections":[3],"contexts":["- **`src/lib/bindings/ValidationError.ts` · `ValidationRule.ts`** — the generated mirrors of the"],"resolved":false},
+    "src/lib/bindings/ValidationRule.ts": {"count":1,"sections":[7],"contexts":["| `src/lib/bindings/ValidationRule.ts` · `ValidationError.ts` | Generated, committed |"],"resolved":false},
     "src/lib/bindings/index.ts": {"count":2,"sections":[7,9],"lines":["917"],"contexts":["*used*, and these are — by the barrel at `src/lib/bindings/index.ts:917`, which itself has zero"]},
     "src/lib/commandNames.generated.ts": {"count":1,"sections":[7],"contexts":["| `src/lib/commandNames.generated.ts` | Neither name present |"]},
     "trigger.rs": {"count":3,"sections":[3,4,5],"lines":["207-248","74-91"],"contexts":["- **`persona.rs` (569 lines) · `trigger.rs` (462) · `chat.rs` (101) · `memory.rs` (62).** The"],"resolved":false},

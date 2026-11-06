@@ -37,6 +37,7 @@
       "resolvedFrom": "basename",
       "verbatim": "ci.yml"
     },
+    "SensorySourceState.ts": {"count":2,"sections":[2,7],"contexts":["the author was *right about the value and wrong about the mechanism*. `SensorySourceState.ts` declares"],"resolved":false},
     "api-schema.d.ts": {"count":1,"sections":[6],"lines":["1469-1473"],"contexts":["`format: int64` schema fields to `number` with a JSDoc comment (`api-schema.d.ts:1469-1473`,"],"resolved":false},
     "brainiac/console/src/lib/types.ts": {
       "count": 2,
@@ -246,13 +247,6 @@
     },
     "src/lib/bindings/Persona.ts": {"count":1,"sections":[6],"contexts":["**37 fields** in `core/src/models/persona.rs:556` → **37** in the generated `src/lib/bindings/Persona.ts`"]},
     "src/lib/bindings/PersonaSlaStats.ts": {"count":1,"sections":[7],"contexts":["counters, `src/lib/bindings/PersonaSlaStats.ts` emits four `bigint` fields plus three more, and the unit"]},
-    "src/lib/bindings/SensorySourceState.ts": {
-      "count": 2,
-      "sections": [2,7],
-      "contexts": ["the author was *right about the value and wrong about the mechanism*. `SensorySourceState.ts` declares"],
-      "resolvedFrom": "basename",
-      "verbatim": "SensorySourceState.ts"
-    },
     "src/lib/bindings/VaultStatus.ts": {"count":2,"sections":[1,5],"contexts":["- \"I deleted the Rust struct and the app still compiles\" / \"what is `src/lib/bindings/VaultStatus.ts`?\""]},
     "src/lib/bindings/index.ts": {"count":3,"sections":[3,7,9],"contexts":["- **`src/lib/bindings/index.ts`** — the barrel. **950 lines, 946 export specifiers, 0 importers.** Do not"]},
     "src/lib/bindings/serde_json/JsonValue.ts": {

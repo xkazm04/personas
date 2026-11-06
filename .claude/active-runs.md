@@ -8,6 +8,140 @@
 
 - **[2026-10-30 18:04]**
 - **Paths:** `src/features/agents/sub_health/**` · `src/features/agents/components/**` · `src/features/agents/sub_connectors/**` · `src/features/agents/sub_deployment/**` · `src/features/agents/executionPlayer/**`
+- **[2026-10-25 18:05]**
+- **Paths:** `.claude/skills/appmaster/**` · `docs/architecture/headless-app-master.md`
+- **Status:** started
+
+- **[2026-10-20 15:00]**
+- **Paths:** `src/**` · `src-tauri/**`
+- **Status:** started
+
+- **[2026-10-20 10:15]**
+- **Paths:** `scripts/perf/**` · `scripts/census/rules.json` · `src/test/automation/bridge.ts`
+- **Status:** started
+
+- **[2026-10-18 20:46]**
+- **Paths:** `.claude/skills/athena/**` · `.claude/skills/appmaster/lib/standup*`
+- **Status:** started
+
+- **[2026-10-18 20:41]**
+- **Paths:** `src/**` · `src-tauri/**`
+- **Status:** started
+
+- **[2026-10-18 19:14]**
+- **Paths:** `.claude/skills/appmaster/**` · `docs/architecture/headless-app-master.md`
+- **Status:** started
+
+- **[2026-10-17 20:38]**
+- **Paths:** `src-tauri/src/commands/fleet/claude_accounts/**` · `src/features/fleet/monitor/grid/**` · `src/lib/bindings/Claude*`
+- **Status:** started
+
+- **[2026-10-17 19:25]**
+- **Paths:** `src/features/decision-center/blueprint/**`
+- **Status:** started
+
+- **[2026-10-16 19:13]**
+- **Paths:** `src/features/decision-center/blueprint/**` · `src/features/decision-center/lens/**`
+- **Status:** started
+
+- **[2026-10-16 17:41]**
+- **Paths:** `src/features/plugins/dev-tools/sub_lifecycle/**` · `src-tauri/src/commands/infrastructure/lifecycle.rs` · `src-tauri/src/lifecycle/**` · `src/api/devTools/lifecycle.ts` · `docs/design/lifecycle-lens/**`
+- **Status:** started
+
+- **[2026-10-16 17:08]**
+- **Paths:** `src/features/fleet/monitor/grid/QuickDispatchDock.tsx` · `src/features/fleet/monitor/grid/dock/DockCommandRow.tsx` · `src/features/fleet/monitor/grid/dock/DockConsoleShell.tsx` · `src/features/fleet/monitor/grid/dock/DockPanels.tsx` · `src/features/fleet/monitor/grid/dock/DockParts.tsx` · `src/features/fleet/monitor/grid/dock/DockToolbar.tsx` · `src/features/fleet/monitor/grid/dock/dockShell.ts` · `src/features/fleet/monitor/grid/dock/useDockConsole.ts` · `src/features/fleet/monitor/grid/DockActTicker.tsx` · `src/features/fleet/monitor/grid/DockAthenaToggle.tsx` · `src/features/fleet/monitor/grid/DockLandingPill.tsx` · `src/features/fleet/monitor/grid/DockPresetSelect.tsx` · `src/features/fleet/monitor/grid/DockRestingRow.tsx` · `src/features/fleet/monitor/grid/DockSkillPicker.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SchedulePlate.test.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SchedulePlate.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/PlanPlates.test.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/PlanPlates.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/PlanPopover.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/UsageSlot.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/entryE.css`
+- **Status:** started
+
+- **[2026-10-16 17:08]**
+- **Paths:** `src/features/fleet/monitor/grid/**` · `scripts/style/page-harness/**` · `docs/design/mandate-lanes/polish-shots/bays-*` · `docs/features/monitor.md` · `CHANGELOG.md`
+- **Status:** started
+
+- **[2026-10-16 13:46]**
+- **Paths:** `src/features/shared/components/feedback/ScenarioEmptyState.tsx` · `src/features/shared/components/display/emptyArt/**` · `src/features/shared/components/display/EmptyIllustration.tsx`
+- **Status:** started
+
+- **[2026-10-16 11:00]**
+- **Paths:** `src/features/fleet/monitor/grid/prototype/entry-e/**` · `scripts/style/page-harness/**` · `docs/design/mandate-lanes/wp11-shots/c-*` · `docs/features/monitor.md` · `CHANGELOG.md`
+- **Status:** started
+
+- **[2026-10-16 10:59]**
+- **Paths:** `src-tauri/src/commands/core/mandates.rs` · `src-tauri/src/mesh/charter_mirror*` · `src-tauri/db/src/repos/core/charter*` · `src-tauri/db/src/repos/core/mandates*` · `src-tauri/db/src/repos/core/orphan_archive.rs` · `src-tauri/src/engine/mandate_*` · `src-tauri/src/engine/attention*` · `src-tauri/src/local_http/**` · `src-tauri/src/app_master_writeback.rs`
+- **Status:** started
+
+- **[2026-10-16 10:41]**
+- **Paths:** `src/features/teams/sub_goals/**` · `src/features/projects/**` · `src/features/shared/chrome/sidebar/sections/TeamsSidebarNav.tsx` · `src/stores/slices/system/uiSlice.ts` · `src/lib/types/types.ts` · `src/lib/analytics/navCatalog.ts`
+- **Status:** started
+
+- **[2026-10-16 09:03]**
+- **Paths:** `src/features/fleet/monitor/grid/**` · `src/stores/**` · `scripts/style/page-harness/personaCard*` · `docs/design/mandate-lanes/wp11-shots/**` · `docs/features/monitor.md` · `CHANGELOG.md` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-10-16 09:03]**
+- **Paths:** `src/features/fleet/monitor/channels/**` · `scripts/style/page-harness/conversation*` · `docs/design/mandate-lanes/wp12-shots/**` · `docs/features/monitor.md` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-10-15 21:51]**
+- **Paths:** `src/features/decision-center/deck/**` · `src/features/decision-center/hub/**` · `src/features/decision-center/lanes/**` · `src/features/fleet/monitor/**` · `src/features/shared/chrome/useTitleBarTray.tsx` · `src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx` · `scripts/style/page-harness/monitor*` · `docs/design/mandate-lanes/residue-shots/**`
+- **Status:** started
+
+- **[2026-10-15 20:58]**
+- **Paths:** `src/features/decision-center/hub/**` · `src/features/decision-center/lanes/**` · `src/features/decision-center/model/**` · `src/features/fleet/monitor/**` · `src/stores/**` · `scripts/style/page-harness/monitor*` · `docs/features/**` · `CHANGELOG.md` · `src/i18n/**` · `docs/design/mandate-lanes/wp10-shots/**`
+- **Status:** started
+
+- **[2026-10-15 20:32]**
+- **Paths:** `src/features/decision-center/**` · `src/lib/lensScan/**` · `src/api/lensScan.ts` · `src-tauri/src/commands/infrastructure/lens_scan.rs` · `src-tauri/db/src/repos/dev/lens_scan.rs` · `src-tauri/core/src/models/lens_scan.rs` · `src-tauri/engine/src/mandate_router.rs` · `scripts/fleet/**` · `scripts/style/page-harness/blueprint*`
+- **Status:** started
+
+- **[2026-10-15 18:29]**
+- **Paths:** `src-tauri/src/mesh/charter_mirror.rs` · `src-tauri/src/companion/remote_jobs.rs` · `src-tauri/src/commands/network/**` · `src-tauri/src/engine/mandates/**` · `src-tauri/db/src/repos/**/charter*` · `src/api/mandates.ts` · `src/lib/bindings/**` · `src/features/fleet/monitor/grid/prototype/entry-e/mandate/**` · `src/features/decision-center/lanes/**` · `docs/design/mandate-lanes/wp9-shots/**`
+- **Status:** started
+
+- **[2026-10-15 17:44]**
+- **Paths:** `src-tauri/src/local_http/**` · `src-tauri/src/commands/fleet/queue.rs` · `src-tauri/db/src/settings_keys.rs` · `src-tauri/src/boot/services.rs` · `scripts/fleet/**` · `src/lib/bindings/DispatchOrigin.ts`
+- **Status:** started
+
+- **[2026-10-15 16:53]**
+- **Paths:** `src/features/fleet/monitor/grid/prototype/entry-e/mandate/**` · `src/features/fleet/monitor/MonitorDrawerShell.tsx` · `docs/design/mandate-lanes/polish2-shots/B/**` · `scripts/style/page-harness/mandateDrawerB*`
+- **Status:** started
+
+- **[2026-10-15 16:47]**
+- **Paths:** `src/features/fleet/monitor/grid/prototype/entry-e/SupplyDeck.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/CommandBar.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/Bay.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/stewards/**` · `src/features/decision-center/hub/lanes/**` · `src/features/fleet/monitor/grid/dock/**` · `src/i18n/locales/**`
+- **Status:** started
+
+- **[2026-10-15 13:52]**
+- **Paths:** `src/features/decision-center/__tests__` · `src/features/decision-center/deck` · `src/features/decision-center/hub` · `src/features/decision-center/lanes` · `src/features/decision-center/mandate` · `src/features/decision-center/model` · `src/features/decision-center/roster` · `src/features/decision-center/useDecisionRoster.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/ActivityEntryE.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/AutopilotTip.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/Bay.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/BayServerMenu.test.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/BayServerMenu.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/ClassicPanel.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/CommandBar.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/CompanionMark.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/Ghosts.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/LanesPanel.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/NOTES.md` · `src/features/fleet/monitor/grid/prototype/entry-e/PersonaLine.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/PersonaMenu.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/PlanPlates.test.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/PlanPlates.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/PlanPopover.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/QueueLadder.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/QueueLane.test.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/QueueLane.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/QueueRung.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/QuickChatComposer.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/RemoteLine.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/RunwayPanel.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SchedulePlate.test.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SchedulePlate.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SessionLine.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SessionMenu.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SessionWindow.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SlotGhosts.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SupplyDeck.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/UsageSlot.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/WorkspaceTabs.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/activityLazy.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/boardFilter.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/devices` · `src/features/fleet/monitor/grid/prototype/entry-e/entryE.css` · `src/features/fleet/monitor/grid/prototype/entry-e/mandate` · `src/features/fleet/monitor/grid/prototype/entry-e/parts.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/pileSkin.test.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/pileSkin.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/scheduleModel.test.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/scheduleModel.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/sessionBits.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/tone.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/useAmbientMotion.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/useBayServer.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/useScheduledTasks.ts` · `src/features/fleet/monitor/grid/prototype/entry-e/workspaceScope.ts` · `src/features/fleet/monitor/MonitorDrawerShell.tsx` · `src/features/fleet/monitor/grid/dockActLine.ts` · `src/i18n/CONTRACT.md` · `src/i18n/DebtText.tsx` · `src/i18n/__tests__` · `src/i18n/en.ts` · `src/i18n/englishSections.ts` · `src/i18n/generated` · `src/i18n/locales` · `src/i18n/locales.manifest.ts` · `src/i18n/pseudoLocale.ts` · `src/i18n/routeSections.ts` · `src/i18n/section-locales` · `src/i18n/tokenMaps.ts` · `src/i18n/useSidebarTranslation.ts` · `src/i18n/useTranslatedError.ts` · `src/i18n/useTranslation.ts` · `docs/design/mandate-lanes/PLAN.md` · `docs/design/mandate-lanes/README.md` · `docs/design/mandate-lanes/deck-shots` · `docs/design/mandate-lanes/prototype` · `docs/design/mandate-lanes/prototype-perfect` · `docs/design/mandate-lanes/surfaces` · `docs/design/mandate-lanes/wp4-shots` · `docs/design/mandate-lanes/wp5-shots` · `docs/design/mandate-lanes/wp5p-shots` · `docs/design/mandate-lanes/wp6-shots` · `docs/design/mandate-lanes/wp7-shots` · `docs/design/mandate-lanes/wp8-shots`
+- **Status:** started
+
+- **[2026-10-15 11:04]**
+- **Paths:** `src/features/decision-center/deck/shapes/Breach*` · `src/features/decision-center/deck/shapes/useBreachShape.ts` · `src/features/decision-center/mandate/breachPlan.ts` · `src/features/decision-center/deck/outcome.ts` · `src/features/decision-center/deck/CardHeader.tsx` · `src/features/decision-center/deck/DeckCard.tsx` · `src/features/decision-center/hub/**` · `src/features/fleet/monitor/PersonaMonitor.tsx` · `docs/features/monitor.md` · `**/FleetTerminalModal.test.tsx` · `docs/design/mandate-lanes/wp5p-shots/**`
+- **Status:** started
+
+- **[2026-10-15 10:59]**
+- **Paths:** `src-tauri/**` · `src/lib/bindings/**` · `src/api/mandates.ts` · `src/features/decision-center/mandate/**` · `src/features/decision-center/deck/shapes/Sign*` · `src/features/decision-center/deck/shapes/useSignShape.ts` · `src/features/decision-center/deck/shapes/ClaimBody.tsx` · `src/features/decision-center/deck/shapes/useClaimShape.ts` · `src/features/decision-center/deck/shapes/AuditSample.tsx` · `src/features/decision-center/lanes/**` · `src/features/decision-center/orphans/**` · `src/features/fleet/monitor/grid/prototype/entry-e/mandate/**` · `src/i18n/**` · `docs/design/mandate-lanes/wp6-shots/**`
+- **Status:** started
+
+- **[2026-10-15 01:12]**
+- **Paths:** `src/features/decision-center/hub/lanes/**` · `src/features/fleet/monitor/grid/prototype/entry-e/mandate/**` · `src/features/fleet/monitor/grid/QuickDispatchDock.tsx` · `scripts/style/page-harness/mandateLanes*` · `docs/design/mandate-lanes/wp4-shots/**` · `docs/design/mandate-lanes/wp7-shots/**`
+- **Status:** started
+
+- **[2026-10-15 01:09]**
+- **Paths:** `src/features/decision-center/**` · `src/i18n/**` · `scripts/style/page-harness/mandateCardsSurfaces.tsx` · `docs/design/mandate-lanes/wp5-shots/**`
+- **Status:** started
+
+- **[2026-10-14 23:59]**
+- **Paths:** `src/features/fleet/monitor/PersonaMonitor.tsx` · `src/styles/globals.css` · `src/features/fleet/monitor/grid/prototype/entry-e/LanesPanel.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/entryE.css` · `src/features/fleet/monitor/channels/ConversationBriefing.tsx` · `src/features/fleet/monitor/channels/ConversationCards.tsx` · `src/features/fleet/monitor/channels/ConversationComposer.tsx` · `src/features/fleet/monitor/channels/ConversationSidebar.tsx` · `src/features/fleet/monitor/channels/DeliberationRail.tsx` · `src/features/fleet/monitor/channels/LinkedChannelChip.tsx` · `src/features/fleet/monitor/channels/MergedRow.tsx` · `src/features/fleet/monitor/channels/PersonaConversation.tsx` · `src/features/fleet/monitor/channels/PersonaConversationCards.tsx` · `src/features/fleet/monitor/channels/QueuedPromptRow.tsx` · `src/features/fleet/monitor/channels/RailSplitter.tsx` · `src/features/fleet/monitor/channels/ReviewsRail.tsx` · `src/features/fleet/monitor/channels/VirtualConversation.tsx` · `src/features/fleet/monitor/channels/__tests__` · `src/features/fleet/monitor/channels/conversationModel.ts` · `src/features/fleet/monitor/channels/index.ts` · `src/features/fleet/monitor/channels/map` · `src/features/fleet/monitor/channels/mergedFeed.tsx` · `src/features/fleet/monitor/channels/personaConversationModel.ts` · `src/features/fleet/monitor/channels/types.ts` · `src/features/fleet/monitor/channels/useChannelWorkspace.ts` · `src/features/fleet/monitor/channels/useConversation.ts` · `public/illustrations/monitor-network-dark.webp` · `scripts/style/page-harness/monitorRoofSurfaces.tsx` · `docs/design/mandate-lanes/wp8-shots/**`
+- **Status:** started
+
+- **[2026-10-14 23:59]**
+- **Paths:** `src/features/decision-center/**` · `src/features/fleet/monitor/grid/prototype/entry-e/CommandBar.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/SupplyDeck.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/AutopilotTip.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/Bay.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/ActivityEntryE.tsx` · `src/features/fleet/monitor/grid/prototype/entry-e/mandate/**` · `src/features/fleet/monitor/MonitorDrawerShell.tsx` · `src/i18n/**`
+- **Status:** started
+
+- **[2026-10-14 21:03]**
+- **Paths:** `src-tauri/**` · `src/api/mandates.ts`
+- **Status:** started
+
+- **[2026-10-14 17:37]**
+- **Paths:** `src/features/fleet/monitor/**` · `src/features/decision-center/**`
 - **Status:** started
 
 - **[2026-10-11 18:57]**
@@ -1473,6 +1607,83 @@
 
 ### scan-sweep-w1-1030 — scan-sweep wave 1 (agent-health, agents-components-allpersonas, agents-connectors, agents-deployment) on scan/1030
 
+### appmaster-codex — appmaster codex builder engine
+
+### backlog-drain-2026-10-20 — Backlog drain: 5 Sonnet lanes over 304 Athena-accepted ideas (RUNBOOK wave loop)
+
+### render-path-session-1 — render-path lens, cold-load probe, census rules
+
+### scan-sweep-optimize-2026-10-18 — scan-sweep --optimize over all 219 contexts, director fan-out waves of 4 (units in scratchpad/scan-sweep-optimize-2026-10-18/units.json)
+
+### spark-athena-standup — spark: /athena --standup pre-away planning for Athena-directed appmaster runs
+
+### appmaster-throughput — appmaster: auto-restart watchers, flake retry fix, two deliveries, leaner builders
+
+### spark-drain-first-rotate — Claude plan auto-rotate: drain soonest-reset plan first
+
+### perfect-blueprint-live — /perfect wave on decision-center/blueprint: UI/UX + realtime data transparency
+
+### spark-bp-fidelity — Blueprint round 2: bp palette, ground, components, L0 clarity + project nesting restored
+
+### lifecycle-lens — Lifecycle Lens: portfolio landing + 3-level lens (contest lifecycle-portfolio-r2 A/3 promotion)
+
+### spark-mandate-lanes-polish-rail — mandate-lanes polish P2: schedule plate two-row, plan plates header + usage hover, dispatch dock migration
+
+### spark-mandate-lanes-polish-bays — mandate-lanes polish P1: bays (row weight, fleet pattern, App Master grouping, needs-you wash, run+needs tone)
+
+### empty-states-art — Empty states: shared illustrated art slot + type ramp, convert top screens
+
+### spark-mandate-lanes-wp11c — WP11C: every bay row (sessions, remote, queue rung) in the persona line's Tail anatomy
+
+### spark-mandate-lanes-rust-close — mandate-lanes Rust close-out: security review of WP6/WP9 doors, merge acts, isolated handshake
+
+### spark-goals-consolidation — Goals consolidation: single Goals item, Board retired into Ledger, folder move to features/projects/development/goals
+
+### spark-mandate-lanes-wp12b — WP12 Phase B: port V1 Needs-you rail into Conversations
+
+### spark-mandate-lanes-wp11b — WP11 Phase B: port V1 Tail persona card into the Monitor bays
+
+### spark-one-control-s2 — one-control Stage 2: lens-scan doors, Build/Evidence/Release cards, blueprint port + compare triage, bp/appmaster wiring
+
+### spark-mandate-lanes-residue — mandate-lanes residue: peek count, badge tooltip/flash, dock wrap, sign fold, queued verdict, verbs, rail tape, merge act, tour anchors
+
+### spark-mandate-lanes-wp10 — mandate-lanes WP10 cutover: delete Chips surface and decisionSurface setting, Lanes unconditional
+
+### spark-mandate-lanes-wp9 — mandate-lanes WP9: charter_mirror remote job, peers render mirrored mandates read-only, verdicts forwarded home
+
+### spark-one-control — one-control Stage 1: fleet door + personas-run shim (lens-scan / appmaster runs under the ONE cap)
+
+### spark-mandate-lanes-design-b — mandate-lanes design pass B: mandate drawer register, page, act log, scopes, orphanage
+
+### spark-mandate-lanes-design-a — mandate-lanes design pass A: stewards plate, lane chips, dock ticker, bay lamp
+
+### spark-mandate-lanes-polish — mandate-lanes polish pass before owner test (frontend only)
+
+### spark-mandate-lanes-wp6 — mandate-lanes WP6: re-read, widen/narrow scopes, orphans, WP5 backend doors (drop w/ reason, met_when), Sign/Accept polish, all i18n strings this wave
+
+### spark-mandate-lanes-wp5p — mandate-lanes WP5P: Breach outcome lines + unsigned/no-mandate state, hub peek Sign rows, ticker tab switch, monitor docs, stale FleetTerminalModal test
+
+### spark-mandate-lanes-wp5 — spark mandate-lanes WP5: Sign/Breach/Valve/Accept/Talk card shapes in the decision deck + wave i18n
+
+### spark-mandate-lanes-wp7 — mandate-lanes WP7: dock act ticker + WP4 polish (lane buttons, act log words, rail keys)
+
+### spark-mandate-lanes-wp4 — mandate-lanes WP4: lanes, Stewards plate, mandate drawer (frontend)
+
+### spark-mandate-lanes-wp8 — mandate-lanes WP8: one roof - monitor surface port, Queue + Conversations restyle
+
+### spark-mandate-lanes-wp3 — Mandate lanes WP3: router, steward sweep, decision_lanes_snapshot
+
+### spark-mandate-lanes — Plan: migrate B/1 Mandate Lanes into the Fleet monitor (analysis + plan only)
+
+### friend - agents
+- **Started:** 2026-10-14 19:14
+- **Status:** completed (branch: worktree-friend-agents-191433, commits: 1, last: 9096c5fd1e)
+- **Branch:** worktree-friend-agents-191433
+- **Worktree:** .claude/worktrees/friend-agents-191433
+- **Paths:** `src/features/agents/**` · `src-tauri/src/commands/core/personas.rs`
+- **Note:** /friend development loop
+
+### curator-night-1014 — Curator overnight: 10 parallel subagent workers, registry worktrees
 ### backlog-waves-1011 — Athena: triage+build 464 dev_ideas across 6 repos in waves (builders in .claude/worktrees/bl-*, ff-merge to master)
 
 ### spark-device-mesh — spark: PersonaMonitor resource dominance per agent + multi-device mesh (enable/disable agents, shared queue, CLI-driven onboarding)

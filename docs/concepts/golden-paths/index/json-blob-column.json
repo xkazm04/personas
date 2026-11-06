@@ -39,6 +39,13 @@
       "resolvedFrom": "basename",
       "verbatim": "ci.yml"
     },
+    "MemorySnapshot.ts": {
+      "count": 1,
+      "sections": [7],
+      "lines": ["11"],
+      "contexts": ["| `tags` typed inconsistently | **2** | `ExecutionAnnotation.ts:12` `Array<string>` vs `MemorySnapshot.ts:11` `string \\| null` |"],
+      "resolved": false
+    },
     "agents/sub_use_cases/libs/useCaseDetailHelpers.ts": {
       "count": 1,
       "sections": [7],
@@ -457,14 +464,6 @@
       "contexts": ["| `tags` typed inconsistently | **2** | `ExecutionAnnotation.ts:12` `Array<string>` vs `MemorySnapshot.ts:11` `string \\| null` |"],
       "resolvedFrom": "basename",
       "verbatim": "ExecutionAnnotation.ts"
-    },
-    "src/lib/bindings/MemorySnapshot.ts": {
-      "count": 1,
-      "sections": [7],
-      "lines": ["11"],
-      "contexts": ["| `tags` typed inconsistently | **2** | `ExecutionAnnotation.ts:12` `Array<string>` vs `MemorySnapshot.ts:11` `string \\| null` |"],
-      "resolvedFrom": "basename",
-      "verbatim": "MemorySnapshot.ts"
     },
     "src/lib/bindings/N8nSessionResponse.ts": {
       "count": 2,
