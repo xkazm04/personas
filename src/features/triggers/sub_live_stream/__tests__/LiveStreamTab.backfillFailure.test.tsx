@@ -127,12 +127,13 @@ describe('LiveStreamTab failed backfill', () => {
   it('a successful Retry keeps the live rows that arrived during the failure', async () => {
     listEvents.mockRejectedValueOnce(REJECTION);
     render(<LiveStreamTab />);
-    const banner = await findBanner();
+    await findBanner();
     await deliver(event('live-1', 'deal_won'));
     await screen.findByText('deal_won');
 
+    // Re-read after the delivery: the first row may repaint the failure as another element.
     listEvents.mockResolvedValueOnce([event('old-1', 'github_push')]);
-    fireEvent.click(within(banner).getByRole('button', { name: enCommon.retry }));
+    fireEvent.click(within(await findBanner()).getByRole('button', { name: enCommon.retry }));
 
     expect(await screen.findByText('github_push')).toBeInTheDocument();
     expect(screen.getByText('deal_won')).toBeInTheDocument();
