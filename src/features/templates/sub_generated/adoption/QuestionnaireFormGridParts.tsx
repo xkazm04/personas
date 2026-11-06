@@ -151,6 +151,7 @@ function DynamicSelectBody({
           type="text"
           value={answer}
           onChange={(e) => onAnswer(e.target.value)}
+          aria-label={question.question}
           placeholder={question.default ?? t.templates.adopt_modal.type_a_value}
           className="w-full max-w-sm px-3 py-1.5 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
         />
@@ -466,6 +467,7 @@ export function QuestionCard({
           <textarea
             value={answer}
             onChange={(e) => onAnswer(e.target.value)}
+            aria-label={question.question}
             placeholder={question.default ?? t.templates.adopt_modal.describe_in_detail}
             rows={question.type === 'long_text' ? 8 : 3}
             className="w-full max-w-lg px-3 py-2 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all resize-y min-h-[60px]"
@@ -476,6 +478,7 @@ export function QuestionCard({
             type="text"
             value={answer}
             onChange={(e) => onAnswer(e.target.value)}
+            aria-label={question.question}
             placeholder={question.default ?? t.templates.adopt_modal.type_your_answer}
             className="w-full max-w-sm px-3 py-1.5 typo-body rounded-card border border-border bg-foreground/[0.03] text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 focus:bg-foreground/[0.05] transition-all"
           />

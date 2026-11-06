@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useId, useState, useMemo } from 'react';
 import { X, ArrowLeft, Loader2, CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -273,6 +273,7 @@ function InlineCredentialForm({
   saving,
   onSubmit,
 }: InlineCredentialFormProps) {
+  const nameId = useId();
   const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
   const summary = typeof metadata.summary === 'string' ? metadata.summary : null;
   const setupGuide = typeof metadata.setup_guide === 'string' ? metadata.setup_guide : null;
@@ -284,8 +285,9 @@ function InlineCredentialForm({
       )}
 
       <div className="space-y-1.5">
-        <label className="typo-body text-foreground">Name</label>
+        <label htmlFor={nameId} className="typo-body text-foreground">Name</label>
         <input
+          id={nameId}
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
