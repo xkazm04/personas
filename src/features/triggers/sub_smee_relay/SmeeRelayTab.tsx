@@ -26,6 +26,7 @@ import { DebtText } from '@/i18n/DebtText';
 import { useToastStore } from '@/stores/toastStore';
 import { isValidSmeeChannelUrl, SMEE_CHANNEL_PREFIX } from './smeeChannelUrl';
 import { inlineErrorCopy } from '../lib/inlineErrorCopy';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 
 /** Minimum gap between per-relay stat refreshes while webhooks stream in. */
@@ -57,6 +58,9 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
   // Confirm delete
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  // The list read's rejection: with no rows, "no relays" would be a false claim
+  // that invites adding a duplicate of a relay that may still be running.
+  const [loadError, setLoadError] = useState<{ raw: unknown } | null>(null);
   // Track items being animated out
   const [exitingIds, setExitingIds] = useState<Set<string>>(new Set());
 
@@ -64,7 +68,11 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
     try {
       const list = await smeeRelayList();
       setRelays(list);
-    } catch (err) { silentCatch("features/triggers/sub_smee_relay/SmeeRelayTab:catch1")(err); } finally {
+      setLoadError(null);
+    } catch (err) {
+      silentCatch("features/triggers/sub_smee_relay/SmeeRelayTab:catch1")(err);
+      setLoadError({ raw: err });
+    } finally {
       setIsLoading(false);
     }
   }, []);
@@ -351,8 +359,17 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
           </div>
         )}
 
+        {/* A failed read with rows listed keeps them; only the claim of none is false. */}
+        {!isLoading && relays.length === 0 && loadError && (
+          <InlineErrorBanner
+            severity="error"
+            message={inlineErrorCopy(t, loadError.raw)}
+            onRetry={fetchRelays}
+          />
+        )}
+
         {/* Empty state */}
-        {!isLoading && relays.length === 0 && !showAdd && (
+        {!isLoading && relays.length === 0 && !loadError && !showAdd && (
           <EmptyState
             glyph={RELAY_GLYPH}
             title={t.triggers.no_smee_relays}
@@ -500,7 +517,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
         )}
 
         {/* Setup guide (collapsed) */}
-        {relays.length === 0 && !showAdd && !isLoading && (
+        {relays.length === 0 && !loadError && !showAdd && !isLoading && (
           <SetupGuide />
         )}
       </div>
