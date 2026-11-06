@@ -18,6 +18,7 @@ import { resolveEventSource } from '@/features/overview/sub_events/libs/eventSou
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { silentCatch } from '@/lib/silentCatch';
+import { createLatestWins } from '@/stores/util/latestWins';
 
 const STREAM_WINDOW_MS = 60_000; // rolling window for events/min calculation
 const STREAM_TIMESTAMP_CAP = 10_000; // hard cap on timestamp buffer to prevent OOM under sustained bursts
@@ -77,6 +78,10 @@ export function LiveStreamTab() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // The tab keeps listing live events while this stands, and an empty grid must
+  // not then claim a quiet bus.
+  const [backfillFailed, setBackfillFailed] = useState(false);
+  const backfillLatest = useRef(createLatestWins()).current;
   const [isPaused, setIsPaused] = useState(false);
   const [pausedQueueCount, setPausedQueueCount] = useState(0);
   // Receive counts since component mounted (resets on Clear)
@@ -152,22 +157,30 @@ export function LiveStreamTab() {
   // the bus pushes while it is in flight was still discarded by the wholesale
   // assign. The snapshot is now MERGED under the live rows — they are strictly
   // newer than it, and their status is at least as fresh for any id it repeats.
-  useEffect(() => {
-    let stale = false;
+  const readBackfill = useCallback(() => {
+    const token = backfillLatest.next();
     listEvents(100).then((backfill) => {
-      if (stale) return;
+      if (!backfillLatest.isCurrent(token)) return;
       setEvents((live) => {
         const capped = mergeBackfillIntoLiveBuffer(live, backfill);
         eventIdIndex.current = new Set(capped.map((e) => e.id));
         return capped;
       });
+      setBackfillFailed(false);
       setIsLoading(false);
     }).catch((err) => {
       silentCatch("features/triggers/sub_live_stream/LiveStreamTab:listEvents")(err);
-      if (!stale) setIsLoading(false);
+      if (!backfillLatest.isCurrent(token)) return;
+      setBackfillFailed(true);
+      setIsLoading(false);
     });
-    return () => { stale = true; };
-  }, []);
+  }, [backfillLatest]);
+
+  useEffect(() => {
+    readBackfill();
+    // Minting a token nobody holds is what makes a response landing after unmount stale.
+    return () => { backfillLatest.next(); };
+  }, [readBackfill, backfillLatest]);
 
   const attached = useEventBusListener((evt: PersonaEvent) => {
     // CDC emits a FULL PersonaEvent on the event-bus channel for every
@@ -500,6 +513,8 @@ export function LiveStreamTab() {
           onSort={() => { }}
           pageSize={20}
           isLoading={isLoading}
+          error={backfillFailed ? t.triggers.could_not_load_history : null}
+          onRetry={readBackfill}
           loadingLabel={t.triggers.connecting_to_bus}
           emptyIcon={Radio}
           emptyArt="stream"
