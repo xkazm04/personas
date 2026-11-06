@@ -39,6 +39,11 @@ import { mandateWp6Tapes } from './mandateWp6Tapes.mjs';
 import { breachStatesTapes } from './breachStatesTapes.mjs';
 import { athenaChatTapes } from './athenaChatTapes.mjs';
 import { consoleStyleTapes } from './consoleStyleTapes.mjs';
+import { fanoutATapes } from './fanoutATapes.mjs';
+import { fanoutBTapes } from './fanoutBTapes.mjs';
+import { fanoutCTapes } from './fanoutCTapes.mjs';
+import { fanoutDTapes } from './fanoutDTapes.mjs';
+import { fanoutETapes } from './fanoutETapes.mjs';
 
 export const RECORDED_AT = '2026-09-22T15:40:00.000Z';
 const T0 = Date.parse(RECORDED_AT);
@@ -437,6 +442,11 @@ const BUILDERS = {
   ...athenaChatBuilders(),
   // Console-style WP0 (consoleStyleSurfaces.tsx, consoleStyleTapes.mjs).
   ...consoleStyleTapes({ RECORDED_AT, PERSONAS }).builders,
+  ...fanoutATapes({ RECORDED_AT, PERSONAS }).builders,
+  ...fanoutBTapes({ RECORDED_AT, PERSONAS }).builders,
+  ...fanoutCTapes({ RECORDED_AT, PERSONAS }).builders,
+  ...fanoutDTapes({ RECORDED_AT, PERSONAS }).builders,
+  ...fanoutETapes({ RECORDED_AT, PERSONAS }).builders,
   // shoot.mjs --self-test probes: no data needed.
   '__selftest/empty': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),
   '__selftest/console-error': () => ({ version: 1, source: 'synthetic', recordedAt: RECORDED_AT, calls: [] }),
