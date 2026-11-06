@@ -44601,6 +44601,21 @@
           "evidence": "src/features/overview/sub_events/libs/eventTypeLabel.ts:30 Free-form fleet event identifiers are only typographically humanized, never promoted to curated vocabulary. The raw id stays in a tooltip."
         }
       ]
+    },
+    "a8857307-216c-46e0-9571-e05e8cf06112/agent-memory": {
+      "context": "agents-components-allpersonas",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T03:40:21.487Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "ec636477-dd1e-420b-a510-cad4c2b3f0d6",
+        "state": "not-applicable",
+        "at": "2026-11-06T03:41:11.674772+00:00",
+        "reason": "reviewer (sonnet): The anchor (DirectorPanel.tsx:10) is a header comment that doesn't show memory is absent. It says the panel's `useDirector` hook reads portfolio, verdicts, brain and vault data, so the Director teaser touches a memory-like store. The absence search used narrow terms (recall, episode, memories, decay"
+      }
     }
   }
 }
