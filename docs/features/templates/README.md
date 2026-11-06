@@ -309,16 +309,6 @@ cross-cutting refactor.
 4. Seed upsert fires on next adoption hook mount — `ON CONFLICT DO
    UPDATE` writes the new `design_result` into the existing DB row.
 
-### Audit the catalog
-
-```bash
-node scripts/audit-adoption-questions.cjs
-```
-
-Classifies every adoption question into five buckets (dynamic /
-vault-aware / text / static-select / boolean) and flags cloud alias
-mismatches. This is the authoritative catalog health check.
-
 ### Add a new discovery op for an existing connector
 
 1. Add an entry to the `REGISTRY` in
