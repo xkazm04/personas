@@ -1,27 +1,29 @@
-import { useCallback, useMemo, useState } from 'react';
-import { CalendarClock } from 'lucide-react';
+import { useCallback, useMemo, useState, type ComponentType } from 'react';
 
-import { Button } from '@/features/shared/components/buttons';
-import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { KitHost } from '@/features/shared/components/kit';
-import { useTranslation } from '@/i18n/useTranslation';
 import { useFixtureChoice, type FixtureChoice } from './data/fixtureToggle';
-import type { StandupSource } from './data/types';
 import { useFixtureBuilder, useStandupFixture } from './data/useStandupFixture';
 import { useStandupLive } from './data/useStandupLive';
 import { buildView } from './model/buildView';
 import { INITIAL_UI, type UiState } from './model/keymap';
 import { AwayRulesSheet } from './parts/AwayRulesSheet';
 import { DossierDrawer } from './parts/DossierDrawer';
-import { FixtureSwitch, HeaderActions } from './parts/HeaderActions';
 import { KeyLegend } from './parts/KeyLegend';
-import { MachineBand } from './parts/MachineBand';
-import { SinceLastStrip } from './parts/SinceLastStrip';
-import { StandupFooter } from './parts/StandupFooter';
-import { StandupHeader } from './parts/StandupHeader';
-import { StandupTable } from './parts/StandupTable';
 import { useStandupController } from './useStandupController';
+import { BaselineLayout } from './variants/BaselineLayout';
+import { BriefingLayout } from './variants/briefing/BriefingLayout';
+import { FocusLayout } from './variants/focus/FocusLayout';
+import { LedgerLayout } from './variants/ledger/LedgerLayout';
+import type { StandupLayoutProps } from './variants/types';
+import { useLayoutVariant, VariantSwitch, type LayoutVariant } from './variants/VariantSwitch';
 import './standup.css';
+
+const LAYOUTS: Record<LayoutVariant, ComponentType<StandupLayoutProps>> = {
+  baseline: BaselineLayout,
+  ledger: LedgerLayout,
+  focus: FocusLayout,
+  briefing: BriefingLayout,
+};
 
 /** Hatches the band and the rows reference by id (one definition per page). */
 function SvgDefs() {
@@ -40,19 +42,6 @@ function SvgDefs() {
   );
 }
 
-/** Inline errors (Athena's two-surface doctrine: the page never speaks in toasts). */
-function Errors({ source }: { source: StandupSource }) {
-  const { t } = useTranslation();
-  const lines = [source.errors.standup, source.errors.events, source.errors.action].filter(Boolean);
-  if (lines.length === 0) return null;
-  return (
-    <div role="alert" className="flex items-center gap-3 px-5 py-2 border-b border-primary/10">
-      <div className="flex-1 min-w-0">{lines.map((l) => <p key={l} className="typo-body su-error">{l}</p>)}</div>
-      {source.errors.action && <Button variant="ghost" size="sm" onClick={source.actions.clearError}>{t.athena.standup.dismiss}</Button>}
-    </div>
-  );
-}
-
 /**
  * Athena > Standup (spark app-standup, WP4): the contest winner B/1
  * "Timetable" on the app's own material. Every project is one line through
@@ -62,7 +51,7 @@ function Errors({ source }: { source: StandupSource }) {
  * explicit fixture switch.
  */
 export default function StandupPanel() {
-  const { t } = useTranslation();
+  const [variant, setVariant] = useLayoutVariant();
   const [choice, setChoice] = useFixtureChoice();
   const [ui, setUi] = useState<UiState>(INITIAL_UI);
   const fixtureOn = choice !== 'off';
@@ -76,63 +65,14 @@ export default function StandupPanel() {
   const rules = source.input.standup?.awayRules ?? null;
   const loading = fixtureOn ? !fixture : source.loading.standup;
 
+  const Layout = LAYOUTS[variant];
+
   return (
     <KitHost testId="athena-standup-panel">
-      <div className="su-page" data-standup-id={view.id ?? undefined} data-life={view.life} data-source={source.kind}>
+      <div className="su-proto" data-variant={variant}>
         <SvgDefs />
-        <StandupHeader
-          view={view}
-          proposing={source.proposing}
-          actions={(
-            <>
-              <HeaderActions view={view} busy={source.busy} onOpen={source.actions.open} onPropose={source.actions.propose} />
-              <FixtureSwitch fixture={choice} onFixture={setChoice} />
-            </>
-          )}
-        />
-        <Errors source={source} />
-        {view.sinceLast && <SinceLastStrip since={view.sinceLast} />}
-        {view.life === 'none' && !loading ? (
-          <div className="flex-1 min-h-0 flex items-center justify-center">
-            <ScenarioEmptyState
-              icon={CalendarClock}
-              size="lg"
-              title={t.athena.standup.empty_title}
-              subtitle={t.athena.standup.placeholder}
-              action={{ label: t.athena.standup.actions.open, onClick: () => { void source.actions.open(); } }}
-            />
-          </div>
-        ) : (
-          <>
-            <MachineBand view={view} zoom={c.ui.zoom} utilizationLong={source.utilizationLong} loading={source.loading.machine} error={source.errors.machine} />
-            {view.life === 'decide' && view.rows.length === 0 && !loading ? (
-              <div className="flex-1 min-h-0 flex items-center justify-center">
-                <ScenarioEmptyState icon={CalendarClock} size="md" title={t.athena.standup.nothing_title} subtitle={t.athena.standup.nothing_subtitle} />
-              </div>
-            ) : (
-              <StandupTable
-                view={view}
-                sel={c.ui.sel}
-                typingKey={c.ui.typing}
-                proposing={source.proposing}
-                loading={loading}
-                onSelect={c.select}
-                onPick={c.pick}
-                onTyped={c.typed}
-              />
-            )}
-          </>
-        )}
-        <StandupFooter
-          view={view}
-          rules={rules}
-          busy={source.busy}
-          onRules={() => c.set({ rules: true })}
-          onKeys={() => c.set({ keys: true })}
-          onArm={() => { void c.arm(); }}
-          onAmend={() => { void c.amend(); }}
-          onEnd={() => { void c.end(); }}
-        />
+        <VariantSwitch value={variant} onChange={setVariant} />
+        <Layout view={view} source={source} c={c} fixture={choice} onFixture={setChoice} loading={loading} rules={rules} />
       </div>
       <DossierDrawer row={row} open={c.ui.dossier} onClose={() => c.set({ dossier: false })} />
       {rules && (

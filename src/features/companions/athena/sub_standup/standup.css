@@ -150,7 +150,9 @@
 :root[data-motion="reduce"] :is(.su-exp, .su-blk, .su-row, .su-opt) { transition: none; }
 
 /* The page fills the Athena body: the kit host becomes the flex column it hangs from. */
-.k-host:has(> .su-page) { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
+.k-host:has(> .su-page), .k-host:has(> .su-proto) { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
+/* PROTOTYPE (2026-11-06): the variant switcher's column; every layout root fills it (flex: 1; min-height: 0). */
+.su-proto { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
 /* In a scrolling (non-full-bleed) body the strip and the gate still stay in reach. */
 .su-head { position: sticky; top: 0; z-index: 3; background: var(--background); }
 .su-foot { position: sticky; bottom: 0; z-index: 3; background: var(--background); }
