@@ -4479,7 +4479,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/agents/sub_settings/components/__tests__/SettingsStatusBar.chrome.test.ts:12 This source-text pin regexes the whole SettingsStatusBar.tsx file, comments included, for `<button` and palette class names. Those are needles prose can spell, so a JSX comment explaining the choice would turn it red. The component is also executable in jsdom (SettingsStatusBar.doubleDelete.test.tsx already renders it), so a structural pin was not needed at all.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "eval-harness",

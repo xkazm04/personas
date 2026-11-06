@@ -44765,6 +44765,37 @@
           "evidence": "src/features/plugins/dev-tools/sub_runner/__tests__/porcelainPaths.test.ts:1 a pure parser runs in the node environment, not the DOM lane"
         }
       ]
+    },
+    "5d538a29-a2bb-4d61-8ec2-c51bcde105fe/test-harness": {
+      "context": "agents-use-cases",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T04:40:37.373Z",
+      "worker": "a887f22f-ab21-41df-bada-49b8304f5768",
+      "techniques": [
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "deviation",
+          "evidence": "src/features/agents/sub_settings/components/__tests__/SettingsStatusBar.chrome.test.ts:12 Prose can spell the needle and the haystack still contains the file's JSX comments; the technique says 'Where the site can be executed, execute it'. By contrast, assertionConfig.test.ts:17 strips comments before matching."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_settings/components/__tests__/PersonaAssertionsSection.staleList.test.tsx:58 The stale-response race is set up by resolving deferreds in a chosen order, not by timing."
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src/features/agents/sub_settings/components/__tests__/PersonaAssertionsSection.staleList.test.tsx:71 The two responses carry different labels, so the assertion shows which producer won."
+        },
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "not-applicable",
+          "evidence": "src/features/agents/sub_settings/components/__tests__/assertionConfig.test.ts:17 The reader is the product's own Rust engine, not a foreign interpreter, so the technique's own exclusion applies. The test reads the struct declaration after stripping comments rather than running serde."
+        }
+      ]
     }
   }
 }
