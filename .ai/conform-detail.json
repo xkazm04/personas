@@ -28487,12 +28487,51 @@
       "context": "mcp-server",
       "subject": "agent-memory",
       "bundle": "software-engineering",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T12:00:00.000Z",
-      "worker": "9640126c-236c-4871-b8f2-5ff1c48cafca",
-      "techniques": [],
-      "registryProposal": "Matched on generic tokens (search, write, notes); a note-vault search tool is markdown-vault territory, not agent-memory."
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T03:31:30.076Z",
+      "worker": "db2ae6e7-fa5f-4a06-a40f-3fe66ece22ab",
+      "techniques": [
+        {
+          "technique": "owner-and-counterpart-scope",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:2017 an unknown owner is replaced by an arbitrary first row instead of being refused"
+        },
+        {
+          "technique": "exposure-is-not-credit",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:2048 re-annotating counts as a success. Two calls reach the (success+failure)>=2 bar used by tool/connector injection (knowledge.rs:346): rediscovery credited as reinforcement"
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:2037 one key per scope per persona, so a new annotation overwrites the prior text in place. No supersedence link and no invalidation; the old belief is gone"
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:2046 unconfirmed client notes go into the live table with is_verified=0 as a status column. The search at :1976 ranks them with verified items"
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1976 MCP ranks by confidence alone; the app's own reads rank is_verified first (knowledge.rs:383). The same store is valued two ways"
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:1997 rows that fail to decode are silently dropped from the client's result with no count or notice"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/mcp_server/vault.rs:1 the sidecar only walks and TF-IDF-searches an Obsidian vault on the filesystem for external MCP clients; it captures, consolidates, decays and injects nothing for an agent, so the memory pipeline's preconditions do not hold in this context (the agent memory pipeline lives in src-tauri/src/companion/brain/)",
+          "evaluatedAt": "2026-10-15T12:00:00.000Z",
+          "worker": "9640126c-236c-4871-b8f2-5ff1c48cafca",
+          "reason": "replaced by db2ae6e7-fa5f-4a06-a40f-3fe66ece22ab"
+        }
+      ]
     },
     "e0a448bc-24d4-4663-ba31-27d4ce378a14/cost-metering": {
       "context": "agents-deployment",
@@ -35025,22 +35064,56 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:16:30.000Z",
-      "worker": "a8cfb2ff-e320-4851-83e6-2d58684935b9",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T03:31:30.076Z",
+      "worker": "db2ae6e7-fa5f-4a06-a40f-3fe66ece22ab",
       "techniques": [
         {
           "technique": "exposure-is-not-credit",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:194 ON CONFLICT on the same text hash counts the distiller's repetition as success; the tool/connector injection door (:346 success_count+failure_count >= 2) is reachable only through that repetition"
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:194 rediscovery as reinforcement: the write path credits repetition, not use"
+        },
+        {
+          "technique": "cross-context-promotion",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:382 the shared global tier admits on a confidence that same-persona repetition can raise. No count of distinct contexts decides sharing"
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:383 verification is a status column used only to sort, so unverified notes are still injected as settled guidance"
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:273 dismiss is a hard delete with no archive or tombstone; the audit trail is lost"
+        },
+        {
+          "technique": "durable-store-failure-posture",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:81 a row read error aborts (good), but unparseable stored pattern_data reads as empty history and the write goes ahead over it. The write path should refuse"
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:365 rows that fail to decode leave injection with only a tracing line; nothing reaches the reader's channel"
         },
         {
           "technique": "recall-injection",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:382 the always-on global tier is admitted by that repetition-derived confidence alone, cross-persona, with no review step"
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:382 the always-on global tier is admitted by that repetition-derived confidence alone, cross-persona, with no review step",
+          "carriedFrom": "2026-10-21"
         }
       ],
-      "registryProposal": "exposure-is-not-credit's 'rediscovery as reinforcement' channel would gain from naming the variant where the injection door itself requires the repeat count (here min 2 sightings), so the store can only ever admit what agents echo."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:197 an agent re-emitting the same annotation text raises confidence +0.1 (and success_count +1 at :194), so one rediscovery lifts a 0.5 note over the global tier's 0.6 bar (:382) into every persona's injected top-10 - rediscovery credited as use, on a ratchet",
+          "evaluatedAt": "2026-10-21T12:16:30.000Z",
+          "worker": "a8cfb2ff-e320-4851-83e6-2d58684935b9",
+          "reason": "replaced by db2ae6e7-fa5f-4a06-a40f-3fe66ece22ab"
+        }
+      ]
     },
     "767b2bb5-4662-4be1-ad24-c881ac334016/agent-memory": {
       "context": "webhook-ingestion",
@@ -38896,32 +38969,66 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T12:00:00.000Z",
-      "worker": "fe870690-5a4d-48ed-875a-217a1e2c96f1",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T03:31:30.076Z",
+      "worker": "db2ae6e7-fa5f-4a06-a40f-3fe66ece22ab",
       "techniques": [
         {
           "technique": "rollup-compaction",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/core/memory_compile.rs:245 sources are not marked superseded or linked (comment admits no link table); article is inserted alongside them"
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:244 compile writes the rollup but never supersedes or archives its members. The reflection 'synthesize' path does (archive_by_ids at memories.rs:1052), so the repo knows the right pattern and compile skips it"
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/core/memories.rs:1044 reflection insights are written with their source ids as provenance, and sources are archived, not deleted, so a bad synthesis can be recovered"
+        },
+        {
+          "technique": "read-set-bounded-links",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:217 model-authored source ids are kept only if they are in the set the pass actually read, so hallucinated links are dropped"
         },
         {
           "technique": "scope-before-similarity",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:86 the compile input window is partitioned to one persona before the LLM groups by concept"
+        },
+        {
+          "technique": "decay-and-forgetting",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/core/memory_compile.rs:87 window is partitioned by persona only; use_case_id is not partitioned and the article is written with use_case_id None, so the merged item takes no scope from its members"
+          "evidence": "src-tauri/src/commands/core/memories.rs:792 in auto-apply review, any non-core memory scoring below threshold is hard-deleted with no archive or tombstone: delete-first, not demote-gradually"
         },
         {
           "technique": "memory-governance",
-          "verdict": "conformant",
-          "evidence": "src-tauri/src/commands/core/memories.rs:950 review proposals apply via compare-and-swap on pending_review status (human-approved door); memories.rs:556 core-tier rows are shielded from LLM re-scoring"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/memories.rs:705 LLM-decided deletions and importance changes land live by default. The proposal/approval lane is opt-in, so destructive store writes go through the ungated path"
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/memories.rs:702 forgetting is gated on an ad-hoc LLM relevance score (<7), while recall ranks by importance (comment at :360). Two valuations, so remembering and forgetting can disagree"
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:250 a failed article insert is dropped with no notice. The result reports a created count that cannot be told apart from 'model proposed fewer'"
         },
         {
           "technique": "addresses-before-compression",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/core/memory_compile.rs:226 compile is triggered by caller on any 3+ memories with no measurement that the pass saves recall seats or accuracy"
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:226 compile is triggered by caller on any 3+ memories with no measurement that the pass saves recall seats or accuracy",
+          "carriedFrom": "2026-10-22"
         }
       ],
-      "registryProposal": "Pair is a technique-shaped match for memory-compile; the rest of the agent-memory pairs listed as unknown are mostly UI/hook/lib contexts that only mention memory in passing and probably should not be governed by this subject (14+ contexts look like vocabulary resonance)."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:245 compile writes a new article beside its sources and links them only in body text; sources stay in default recall, so rollup-compaction's supersede-and-link obligation is unmet and the store grows instead of shrinking",
+          "evaluatedAt": "2026-10-22T12:00:00.000Z",
+          "worker": "fe870690-5a4d-48ed-875a-217a1e2c96f1",
+          "reason": "replaced by db2ae6e7-fa5f-4a06-a40f-3fe66ece22ab"
+        }
+      ]
     },
     "2fb16136-586e-478d-823f-38434d2d5b9a/eval-harness": {
       "context": "commands-communication",

@@ -1,0 +1,210 @@
+{
+ "schema": "conform-run/1",
+ "worker": "db2ae6e7-fa5f-4a06-a40f-3fe66ece22ab",
+ "subject": "agent-memory",
+ "evaluatedAt": "2026-11-06T03:31:30.076286+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "commands-core",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/commands/core/memory_compile.rs:244 compile_persona_memories adds an importance-4 'wiki' article next to its sources. Sources are linked only in body text and stay live in default recall, so the store grows instead of shrinking, while the sibling reflection path (memories.rs:1044/1052) does supersede with provenance and archive.",
+   "techniques": [
+    {
+     "technique": "rollup-compaction",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/core/memory_compile.rs:244 compile writes the rollup but never supersedes or archives its members. The reflection 'synthesize' path does (archive_by_ids at memories.rs:1052), so the repo knows the right pattern and compile skips it"
+    },
+    {
+     "technique": "consolidation",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/core/memories.rs:1044 reflection insights are written with their source ids as provenance, and sources are archived, not deleted, so a bad synthesis can be recovered"
+    },
+    {
+     "technique": "read-set-bounded-links",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/core/memory_compile.rs:217 model-authored source ids are kept only if they are in the set the pass actually read, so hallucinated links are dropped"
+    },
+    {
+     "technique": "scope-before-similarity",
+     "verdict": "conformant",
+     "evidence": "src-tauri/src/commands/core/memory_compile.rs:86 the compile input window is partitioned to one persona before the LLM groups by concept"
+    },
+    {
+     "technique": "decay-and-forgetting",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/core/memories.rs:792 in auto-apply review, any non-core memory scoring below threshold is hard-deleted with no archive or tombstone: delete-first, not demote-gradually"
+    },
+    {
+     "technique": "memory-governance",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/core/memories.rs:705 LLM-decided deletions and importance changes land live by default. The proposal/approval lane is opt-in, so destructive store writes go through the ungated path"
+    },
+    {
+     "technique": "memory-value-model",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/core/memories.rs:702 forgetting is gated on an ad-hoc LLM relevance score (<7), while recall ranks by importance (comment at :360). Two valuations, so remembering and forgetting can disagree"
+    },
+    {
+     "technique": "loss-site-inventory",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/commands/core/memory_compile.rs:250 a failed article insert is dropped with no notice. The result reports a created count that cannot be told apart from 'model proposed fewer'"
+    }
+   ]
+  },
+  {
+   "context": "mcp-server",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/src/mcp_server/tools.rs:2017 personas_annotate, a shared-memory write door for external MCP clients, files the note under whichever persona row SQLite returns first when the caller names none, so the owner is a guess rather than derivable. The earlier not-applicable verdict was wrong: tools.rs exposes personas_knowledge_search and personas_annotate over execution_knowledge, the store injected into execution prompts.",
+   "techniques": [
+    {
+     "technique": "owner-and-counterpart-scope",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/mcp_server/tools.rs:2017 an unknown owner is replaced by an arbitrary first row instead of being refused"
+    },
+    {
+     "technique": "exposure-is-not-credit",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/mcp_server/tools.rs:2048 re-annotating counts as a success. Two calls reach the (success+failure)>=2 bar used by tool/connector injection (knowledge.rs:346): rediscovery credited as reinforcement"
+    },
+    {
+     "technique": "consolidation",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/mcp_server/tools.rs:2037 one key per scope per persona, so a new annotation overwrites the prior text in place. No supersedence link and no invalidation; the old belief is gone"
+    },
+    {
+     "technique": "pending-beliefs-live-apart",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/mcp_server/tools.rs:2046 unconfirmed client notes go into the live table with is_verified=0 as a status column. The search at :1976 ranks them with verified items"
+    },
+    {
+     "technique": "memory-value-model",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/mcp_server/tools.rs:1976 MCP ranks by confidence alone; the app's own reads rank is_verified first (knowledge.rs:383). The same store is valued two ways"
+    },
+    {
+     "technique": "loss-site-inventory",
+     "verdict": "deviation",
+     "evidence": "src-tauri/src/mcp_server/tools.rs:1997 rows that fail to decode are silently dropped from the client's result with no count or notice"
+    }
+   ]
+  },
+  {
+   "context": "db",
+   "subject": "agent-memory",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:194 upsert_annotation treats re-emitting identical text (same hash key) as a success: +1 success and +0.1 confidence (:197). One rediscovery lifts an unverified 0.5 agent note to the 0.6 global bar (:382), and it is then injected into every persona's prompts.",
+   "techniques": [
+    {
+     "technique": "exposure-is-not-credit",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:194 rediscovery as reinforcement: the write path credits repetition, not use"
+    },
+    {
+     "technique": "cross-context-promotion",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:382 the shared global tier admits on a confidence that same-persona repetition can raise. No count of distinct contexts decides sharing"
+    },
+    {
+     "technique": "pending-beliefs-live-apart",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:383 verification is a status column used only to sort, so unverified notes are still injected as settled guidance"
+    },
+    {
+     "technique": "decay-and-forgetting",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:273 dismiss is a hard delete with no archive or tombstone; the audit trail is lost"
+    },
+    {
+     "technique": "durable-store-failure-posture",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:81 a row read error aborts (good), but unparseable stored pattern_data reads as empty history and the write goes ahead over it. The write path should refuse"
+    },
+    {
+     "technique": "loss-site-inventory",
+     "verdict": "deviation",
+     "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:365 rows that fail to decode leave injection with only a tracing line; nothing reaches the reader's channel"
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "agent-memory",
+   "context": "companion-core-store",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "agent-memory",
+   "context": "overview-director",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-06T03:31:30.076286+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "consolidation",
+    "decay-and-forgetting",
+    "loss-site-inventory",
+    "memory-governance",
+    "memory-value-model",
+    "read-set-bounded-links",
+    "rollup-compaction",
+    "scope-before-similarity"
+   ],
+   "deviations": 1,
+   "context": "commands-core",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T03:31:30.076286+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "consolidation",
+    "exposure-is-not-credit",
+    "loss-site-inventory",
+    "memory-value-model",
+    "owner-and-counterpart-scope",
+    "pending-beliefs-live-apart"
+   ],
+   "deviations": 1,
+   "context": "mcp-server",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T03:31:30.076286+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "agent-memory"
+   ],
+   "techniques": [
+    "cross-context-promotion",
+    "decay-and-forgetting",
+    "durable-store-failure-posture",
+    "exposure-is-not-credit",
+    "loss-site-inventory",
+    "pending-beliefs-live-apart"
+   ],
+   "deviations": 1,
+   "context": "db",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

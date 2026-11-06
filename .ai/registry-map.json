@@ -7699,12 +7699,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/core/memory_compile.rs:245 compile writes a new article beside its sources and links them only in body text; sources stay in default recall, so rollup-compaction's supersede-and-link obligation is unmet and the store grows instead of shrinking",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/commands/core/memory_compile.rs:244 compile_persona_memories adds an importance-4 'wiki' article next to its sources. Sources are linked only in body text and stay live in default recall, so the store grows instead of shrinking, while the sibling reflection path (memories.rs:1044/1052) does supersede with provenance and archive.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
@@ -11184,12 +11183,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:197 an agent re-emitting the same annotation text raises confidence +0.1 (and success_count +1 at :194), so one rediscovery lifts a 0.5 note over the global tier's 0.6 bar (:382) into every persona's injected top-10 - rediscovery credited as use, on a ratchet",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:194 upsert_annotation treats re-emitting identical text (same hash key) as a success: +1 success and +0.1 confidence (:197). One rediscovery lifts an unverified 0.5 agent note to the 0.6 global bar (:382), and it is then injected into every persona's prompts.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "settings",
@@ -21614,13 +21612,12 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "not-applicable",
-          "evidence": "src-tauri/src/mcp_server/vault.rs:1 the sidecar only walks and TF-IDF-searches an Obsidian vault on the filesystem for external MCP clients; it captures, consolidates, decays and injects nothing for an agent, so the memory pipeline's preconditions do not hold in this context (the agent memory pipeline lives in src-tauri/src/companion/brain/)",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src-tauri/src/mcp_server/tools.rs:2017 personas_annotate, a shared-memory write door for external MCP clients, files the note under whichever persona row SQLite returns first when the caller names none, so the owner is a guess rather than derivable. The earlier not-applicable verdict was wrong: tools.rs exposes personas_knowledge_search and personas_annotate over execution_knowledge, the store injected into execution prompts.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "prompt-assembly",
