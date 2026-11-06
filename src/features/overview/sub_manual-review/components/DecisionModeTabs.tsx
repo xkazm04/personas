@@ -24,7 +24,7 @@ function TabLabel({ icon: Icon, label, count }: { icon: LucideIcon; label: strin
       <Icon className="w-3.5 h-3.5" aria-hidden />
       {label}
       {count > 0 && (
-        <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-interactive bg-primary/15 text-foreground typo-caption tabular-nums">
+        <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-interactive bg-primary/15 text-ink-2 typo-data">
           {count}
         </span>
       )}

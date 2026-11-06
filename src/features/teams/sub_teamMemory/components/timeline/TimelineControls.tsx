@@ -1,4 +1,6 @@
 import { GitCommitVertical, ChevronRight } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import { MemoryEntry } from './TimelineItem';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -50,7 +52,7 @@ export function RunMarker({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="typo-code text-foreground truncate">
+            <span className="typo-code text-ink-2 truncate">
               {shortRunId(group.runId)}
             </span>
             <span className="typo-body text-role-agent">
@@ -58,10 +60,10 @@ export function RunMarker({
             </span>
             {/* What this run changed vs its predecessor (full per-run sets, not the paged list) */}
             {diff && (diff.added > 0 || diff.removed > 0) && (
-              <span className="flex items-center gap-1 typo-caption flex-shrink-0" title={t.pipeline.timeline_diff_tooltip}>
+              <Tooltip content={t.pipeline.timeline_diff_tooltip}><span className="flex items-center gap-1 typo-caption flex-shrink-0">
                 {diff.added > 0 && <span className="text-status-success">+{diff.added}</span>}
                 {diff.removed > 0 && <span className="text-status-error">−{diff.removed}</span>}
-              </span>
+              </span></Tooltip>
             )}
           </div>
           <RelativeTime timestamp={group.firstCreatedAt} className="typo-body text-foreground" />
@@ -76,13 +78,9 @@ export function RunMarker({
             <MemoryEntry key={m.id} memory={m} />
           ))}
           {!isFiltered && (
-            <button
-              type="button"
-              onClick={() => onFilterRun(group.runId)}
-              className="typo-body text-role-agent hover:text-role-agent transition-colors pl-1 py-0.5"
-            >
+            <Button variant="ghost" size="xs" onClick={() => onFilterRun(group.runId)}>
               {t.pipeline.filter_to_run}
-            </button>
+            </Button>
           )}
         </div>
       )}

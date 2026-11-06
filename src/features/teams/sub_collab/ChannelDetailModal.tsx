@@ -142,7 +142,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
               ) : Glyph ? (
                 <Glyph className="w-4 h-4" style={{ color: accent }} />
               ) : (
-                <span className="typo-caption text-foreground">·</span>
+                <span className="typo-caption text-ink-2">·</span>
               )}
             </span>
             <div className="min-w-0 flex-1">
@@ -151,11 +151,11 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
               </h2>
               <p className="flex items-center gap-2 flex-wrap mt-0.5 min-w-0">
                 {eventLabel && (
-                  <span className="typo-code px-1.5 py-0.5 rounded-interactive bg-surface-1 border border-hair text-foreground truncate max-w-[16rem]">
+                  <span className="typo-code px-1.5 py-0.5 rounded-interactive bg-surface-1 border border-hair text-ink-2 truncate max-w-[16rem]">
                     {eventLabel}
                   </span>
                 )}
-                {absolute && <span className="typo-caption text-foreground whitespace-nowrap">{absolute}</span>}
+                {absolute && <span className="typo-caption text-ink-2 whitespace-nowrap">{absolute}</span>}
                 <span className="typo-caption text-muted whitespace-nowrap">
                   <RelativeTime timestamp={item.at} showTooltip={false} />
                 </span>
@@ -182,7 +182,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
               <dl className="grid grid-cols-[minmax(6rem,9rem)_1fr] gap-x-4 gap-y-2.5 rounded-card border border-hair bg-surface-1 px-4 py-3.5">
                 {detail.fields.map(([k, v]) => (
                   <div key={k} className="contents">
-                    <dt className="typo-label text-foreground pt-px truncate">{k}</dt>
+                    <dt className="typo-label text-ink-2 pt-px truncate">{k}</dt>
                     <dd className="typo-body text-foreground min-w-0 whitespace-pre-wrap break-words">{v}</dd>
                   </div>
                 ))}
@@ -197,7 +197,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
                 5-dot scale the memory panel and stream row use. */}
             {item.kind === 'memory' && item.importance != null && (
               <p className="flex items-center gap-2">
-                <span className="typo-label text-foreground">{t.monitor.channel_importance}</span>
+                <span className="typo-label text-ink-2">{t.monitor.channel_importance}</span>
                 <ImportanceDots value={item.importance} ariaLabel={`${t.monitor.channel_importance} ${item.importance}`} />
               </p>
             )}
@@ -207,7 +207,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
                 it server-side and hands us `consumers`. */}
             {item.consumers && item.consumers.length > 0 && (
               <div>
-                <p className="typo-label text-foreground mb-2">{t.monitor.channel_heard_by}</p>
+                <p className="typo-label text-ink-2 mb-2">{t.monitor.channel_heard_by}</p>
                 <div className="flex items-center gap-2 flex-wrap">
                   {item.consumers.map((pid) => (
                     <PersonaChip key={pid} persona={personaIndex.get(pid)} />
@@ -219,13 +219,13 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
               <details className="group rounded-card border border-hair overflow-hidden">
                 <summary className="flex items-center gap-2 px-3.5 py-2.5 cursor-pointer list-none select-none bg-secondary/25 hover:bg-surface-2 transition-colors focus-ring">
                   <ChevronRight className="w-3.5 h-3.5 text-muted transition-transform group-open:rotate-90" />
-                  <span className="typo-label text-foreground flex-1">{t.monitor.channel_raw_payload}</span>
+                  <span className="typo-label text-ink-2 flex-1">{t.monitor.channel_raw_payload}</span>
                   {/* preventDefault keeps the copy click from toggling <details> */}
                   <span onClick={(e) => e.preventDefault()} className="opacity-0 group-hover:opacity-100 group-open:opacity-100 transition-opacity">
                     <CopyButton text={raw} />
                   </span>
                 </summary>
-                <pre className="border-t border-hair bg-secondary/15 px-4 py-3 typo-code text-foreground overflow-x-auto max-h-72 overflow-y-auto whitespace-pre-wrap break-words">
+                <pre className="border-t border-hair bg-secondary/15 px-4 py-3 typo-code text-ink-2 overflow-x-auto max-h-72 overflow-y-auto whitespace-pre-wrap break-words">
                   {raw}
                 </pre>
               </details>
@@ -244,8 +244,8 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
                 channel surfaces own navigation). */}
             {item.assignmentId && (
               <span className="inline-flex items-center gap-1.5 min-w-0 whitespace-nowrap">
-                <span className="typo-label text-foreground">{t.monitor.conv_card_assignment}</span>
-                <span className="typo-code px-1.5 py-0.5 rounded-interactive bg-surface-1 border border-hair text-foreground">
+                <span className="typo-label text-ink-2">{t.monitor.conv_card_assignment}</span>
+                <span className="typo-code px-1.5 py-0.5 rounded-interactive bg-surface-1 border border-hair text-ink-2">
                   {item.assignmentId.slice(0, 8)}
                 </span>
                 <CopyButton text={item.assignmentId} tooltip={t.shared.copy_full_id} />

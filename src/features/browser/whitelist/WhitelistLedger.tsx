@@ -62,7 +62,7 @@ export default function WhitelistLedger({
         <div className="min-w-0" data-testid={`whitelist-row-${site.origin}`}>
           <div className="typo-body text-foreground truncate">{site.label || site.origin}</div>
           <div className="flex items-center gap-1.5 min-w-0">
-            <div className="typo-caption text-foreground font-mono truncate">{site.origin}</div>
+            <div className="typo-code text-ink-2 truncate">{site.origin}</div>
             <PatternChip origin={site.origin} />
           </div>
         </div>

@@ -38,7 +38,7 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
         )}
         {event.processed_at && (
           <div className="rounded-modal border border-hair bg-background/30 px-2.5 py-2">
-            <span className="typo-code text-foreground">{t.overview.event_log_item.processed}</span>
+            <span className="typo-code text-ink-2">{t.overview.event_log_item.processed}</span>
             <span className="ml-2 typo-body text-foreground">
               <AbsoluteTime timestamp={event.processed_at} />
             </span>

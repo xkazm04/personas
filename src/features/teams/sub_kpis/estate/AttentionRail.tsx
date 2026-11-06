@@ -88,7 +88,7 @@ export function AttentionRail({
                         >
                           <span
                             aria-hidden="true"
-                            className="flex size-5 shrink-0 items-center justify-center rounded-full typo-label tabular-nums"
+                            className="flex size-5 shrink-0 items-center justify-center rounded-full typo-data"
                             style={{ background: KIND_TONE[moveKind(move)], color: 'var(--background)' }}
                           >
                             {pick.rank}

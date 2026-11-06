@@ -5,6 +5,7 @@
 // INVITATION ("set up →"), not a grey gap. Owned by the Factory — the cockpit
 // bench keeps its own copies until it is consolidated.
 import type { LucideIcon } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 import { resolveTechIcon } from '@/features/shared/components/display/techIcons';
 import type { CellValue } from './passportRows';
@@ -78,8 +79,8 @@ export function SegBar({ steps, reached, hue, faded }: {
           className="h-[4px] flex-1 rounded-full"
           style={
             i < reached
-              ? { background: hue, boxShadow: faded ? undefined : `0 0 4px ${hue}55` }
-              : { background: 'rgba(148,163,184,.14)' }
+              ? { background: hue, opacity: faded ? 0.55 : 1 }
+              : { background: 'color-mix(in srgb, var(--foreground) 14%, transparent)' }
           }
         />
       ))}
@@ -92,16 +93,16 @@ export function SegBar({ steps, reached, hue, faded }: {
 export function TechInk({ label, muted }: { label: string; muted?: boolean }) {
   const match = resolveTechIcon(label);
   return (
-    <span className="inline-flex items-center gap-1.5 min-w-0" title={label}>
+    <Tooltip content={label}><span className="inline-flex items-center gap-1.5 min-w-0">
       {match && (
         <svg width={15} height={15} viewBox="0 0 24 24" fill={match.icon.color ?? 'currentColor'} aria-hidden className="shrink-0">
           <path d={match.icon.path} />
         </svg>
       )}
-      <span className={`typo-caption truncate ${muted ? 'text-foreground/70' : 'text-foreground/90'}`}>
+      <span className={`typo-caption truncate ${muted ? 'text-ink-3' : 'text-ink-2'}`}>
         {match?.residual ? `${match.icon.title} · ${match.residual}` : label}
       </span>
-    </span>
+    </span></Tooltip>
   );
 }
 
@@ -133,11 +134,11 @@ export function InkTabs<T extends string>({ tabs, active, onChange, label, icon:
   return (
     <div className="inline-flex items-center gap-3" role="tablist" aria-label={label}>
       {Icon ? (
-        <span title={label} className="inline-flex shrink-0 text-foreground/40">
+        <Tooltip content={label}><span className="inline-flex shrink-0 text-ink-3">
           <Icon className="w-5 h-5" aria-hidden />
-        </span>
+        </span></Tooltip>
       ) : (
-        <span className="typo-body-lg uppercase tracking-[0.08em] text-foreground/40">{label}</span>
+        <span className="typo-eyebrow text-ink-3">{label}</span>
       )}
       {tabs.map((t) => {
         const on = t.id === active;
@@ -148,8 +149,8 @@ export function InkTabs<T extends string>({ tabs, active, onChange, label, icon:
             role="tab"
             aria-selected={on}
             onClick={() => onChange(t.id)}
-            className={`typo-body-lg uppercase tracking-[0.06em] pb-0.5 border-b transition-colors focus-ring ${
-              on ? 'text-foreground' : 'text-foreground/45 hover:text-foreground/75 border-transparent'
+            className={`typo-eyebrow pb-0.5 border-b transition-colors focus-ring ${
+              on ? 'text-ink-1' : 'text-ink-3 hover:text-ink-2 border-transparent'
             }`}
             style={on ? { borderColor: INK.teal } : undefined}
           >

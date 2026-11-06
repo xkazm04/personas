@@ -18,6 +18,7 @@
 // this surface added no new translation keys.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Lightbulb, Play, X } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 
 import { listContexts } from '@/api/devTools/devTools';
 import { AGENT_CATEGORIES, SCAN_AGENTS } from '@/features/plugins/dev-tools/constants/scanAgents';
@@ -148,12 +149,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
     return next;
   };
 
-  const chip = (active: boolean) =>
-    `inline-flex items-center gap-1 px-2 py-1 typo-caption rounded-interactive border transition-colors focus-ring disabled:opacity-40 ${
-      active
-        ? 'border-primary/40 bg-primary/15 text-foreground'
-        : 'border-hair text-ink-2 hover:bg-primary/10 hover:text-foreground'
-    }`;
+  const chipVariant = (active: boolean) => (active ? 'secondary' : 'ghost') as 'secondary' | 'ghost';
 
   return (
     <div
@@ -164,21 +160,22 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
     >
       <div className="flex items-center gap-2 px-3 py-2 border-b border-hair">
         <Lightbulb className="w-4 h-4 text-status-warning shrink-0" aria-hidden />
-        <span className="typo-caption text-foreground truncate">{t.mastermind.scan_title} — {name}</span>
-        <button
-          type="button"
+        <span className="typo-caption text-ink-1 truncate">{t.mastermind.scan_title} — {name}</span>
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={onClose}
           aria-label={t.common.close}
-          className="ml-auto shrink-0 p-1 rounded-interactive text-ink-3 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
+          className="ml-auto shrink-0"
         >
           <X className="w-3.5 h-3.5" aria-hidden />
-        </button>
+        </Button>
       </div>
 
-      <div className="px-3 py-1.5 border-b border-foreground/[0.07] typo-caption text-ink-3">
+      <div className="px-3 py-1.5 border-b border-hair typo-caption text-ink-3">
         {busy ? t.mastermind.scan_running : last ? (
           <span className="inline-flex items-center gap-1">
-            {t.mastermind.scan_last} <RelativeTime timestamp={last.created_at} className="tabular-nums" /> · {last.scan_type.split(',')[0]}{last.scan_type.includes(',') ? '…' : ''}
+            {t.mastermind.scan_last} <RelativeTime timestamp={last.created_at} className="num" /> · {last.scan_type.split(',')[0]}{last.scan_type.includes(',') ? '…' : ''}
           </span>
         ) : t.mastermind.scan_never}
       </div>
@@ -187,27 +184,23 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
         {/* ── Context scope ─────────────────────────────────────────────── */}
         <section>
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="typo-label text-ink-3">{ds.scan_config_scope_label}</span>
+            <span className="typo-eyebrow text-ink-3">{ds.scan_config_scope_label}</span>
             {contextIds.size > 0 && (
-              <button
-                type="button"
-                onClick={() => setContextIds(new Set())}
-                className="ml-auto typo-caption text-primary hover:underline focus-ring rounded-interactive"
-              >
+              <Button variant="link" className="ml-auto" onClick={() => setContextIds(new Set())}>
                 {ds.scan_config_clear}
-              </button>
+              </Button>
             )}
           </div>
           <div className="flex flex-wrap gap-1">
-            <button
-              type="button"
+            <Button
+              variant={chipVariant(contextIds.size === 0)}
+              size="xs"
               disabled={busy}
               onClick={() => setContextIds(new Set())}
-              className={chip(contextIds.size === 0)}
               data-testid="mm-scan-scope-all"
             >
               {ds.scan_config_whole_project}
-            </button>
+            </Button>
             {contextsLoading && contexts.length === 0 && (
               <span aria-hidden="true" className="flex flex-wrap gap-1">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -220,17 +213,17 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
               </span>
             )}
             {contexts.map((c) => (
-              <button
+              <Button
                 key={c.id}
-                type="button"
+                variant={chipVariant(contextIds.has(c.id))}
+                size="xs"
                 disabled={busy}
                 onClick={() => setContextIds((prev) => toggle(prev, c.id))}
-                title={c.description ?? c.name}
-                className={chip(contextIds.has(c.id))}
+                tooltip={c.description ?? c.name}
                 data-testid={`mm-scan-scope-${c.id}`}
               >
                 {c.name}
-              </button>
+              </Button>
             ))}
           </div>
           {!contextsLoading && contexts.length === 0 ? (
@@ -242,19 +235,19 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
 
         {/* ── Target findings (granularity) ─────────────────────────────── */}
         <section>
-          <span className="block typo-label text-ink-3 mb-1">{ds.scan_config_granularity_label}</span>
+          <span className="block typo-eyebrow text-ink-3 mb-1">{ds.scan_config_granularity_label}</span>
           <div className="flex flex-wrap gap-1">
             {TARGETS.map((n) => (
-              <button
+              <Button
                 key={n ?? 'auto'}
-                type="button"
+                variant={chipVariant(targetCount === n)}
+                size="xs"
                 disabled={busy}
                 onClick={() => setTargetCount(n)}
-                className={chip(targetCount === n)}
                 data-testid={`mm-scan-target-${n ?? 'auto'}`}
               >
                 {n ?? ds.scan_config_granularity_auto}
-              </button>
+              </Button>
             ))}
           </div>
           <p className="typo-caption text-ink-3 mt-1">{ds.scan_config_granularity_hint}</p>
@@ -263,18 +256,14 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
         {/* ── Agent combination ─────────────────────────────────────────── */}
         <section>
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="typo-label text-ink-3">{ds.history_col_agents}</span>
-            <span className="typo-caption text-ink-3 tabular-nums">
+            <span className="typo-eyebrow text-ink-3">{ds.history_col_agents}</span>
+            <span className="typo-data text-ink-3">
               {tx(ds.scan_config_selected_count, { count: agentKeys.size })}
             </span>
             {agentKeys.size > 0 && (
-              <button
-                type="button"
-                onClick={() => setAgentKeys(new Set())}
-                className="ml-auto typo-caption text-primary hover:underline focus-ring rounded-interactive"
-              >
+              <Button variant="link" className="ml-auto" onClick={() => setAgentKeys(new Set())}>
                 {ds.clear_all_btn}
-              </button>
+              </Button>
             )}
           </div>
           <div className="space-y-2">
@@ -286,19 +275,19 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
                   <span className="block typo-caption text-ink-3 mb-1">{cat.label}</span>
                   <div className="flex flex-wrap gap-1">
                     {agents.map((a) => (
-                      <button
+                      <Button
                         key={a.key}
-                        type="button"
+                        variant={chipVariant(agentKeys.has(a.key))}
+                        size="xs"
                         disabled={busy}
                         aria-pressed={agentKeys.has(a.key)}
                         onClick={() => toggleAgent(a.key)}
-                        title={a.description}
-                        className={chip(agentKeys.has(a.key))}
+                        tooltip={a.description}
                         data-testid={`mm-scan-agent-${a.key}`}
                       >
                         <span aria-hidden>{a.emoji}</span>
                         {a.label}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -310,20 +299,21 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
 
       {/* ── Dispatch ───────────────────────────────────────────────────── */}
       <div className="px-3 py-2 border-t border-hair">
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          size="sm"
+          block
           disabled={busy || agentKeys.size === 0}
           onClick={() => onRun({
             agentKeys: [...agentKeys],
             contextIds: [...contextIds],
             targetCount,
           })}
-          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 typo-caption rounded-interactive bg-primary/15 text-foreground border border-hair hover:bg-primary/25 disabled:opacity-40 disabled:hover:bg-primary/15 transition-colors focus-ring"
+          icon={<Play className="w-3.5 h-3.5" aria-hidden />}
           data-testid="mm-scan-run"
         >
-          <Play className="w-3.5 h-3.5" aria-hidden />
           {ds.run_scan_btn}{agentKeys.size})
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@
 // re-derive readiness) or disabled (not connected yet → click routes to the Vault
 // to add one). Reads the user's vault + a live health dot per connected tool.
 import { useEffect, useMemo, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { Plug, ExternalLink } from 'lucide-react';
 
 import { listCredentials } from '@/api/vault/credentials';
@@ -77,7 +78,7 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
       <div className="flex items-start gap-2">
         <Plug className="w-3.5 h-3.5 mt-0.5 text-primary/70 flex-shrink-0" aria-hidden />
         <div className="min-w-0">
-          <span className="typo-caption text-foreground block">{tx(d.improve_conn_title, { category: d[spec.categoryKey] })}</span>
+          <span className="typo-caption text-ink-2 block">{tx(d.improve_conn_title, { category: d[spec.categoryKey] })}</span>
           <span className="typo-caption text-ink-3 block" style={{ fontWeight: 400 }}>{d.improve_conn_hint}</span>
         </div>
       </div>
@@ -85,9 +86,9 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
       {loading ? (
         <p className="typo-caption text-ink-3 mt-2">{d.improve_conn_checking}</p>
       ) : tools.length === 0 ? (
-        <button type="button" onClick={openVault} className="mt-2 inline-flex items-center gap-1 typo-caption text-primary hover:underline">
-          <ExternalLink className="w-3 h-3" /> {d.improve_conn_add_first}
-        </button>
+        <Button variant="ghost" size="sm" className="mt-2" onClick={openVault} icon={<ExternalLink className="w-3 h-3" />}>
+{d.improve_conn_add_first}
+</Button>
       ) : (
         <>
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -110,7 +111,7 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
                     onClick={() => (enabled && cred ? connect(cred) : openVault())}
                     disabled={enabled && cred ? binding === cred.id : false}
                     aria-label={toolStatus}
-                    className={`group/tool relative flex flex-col items-center gap-1 w-[4.25rem] px-1.5 py-2 rounded-interactive border transition-colors disabled:opacity-50 ${
+                    className={`group/tool relative flex flex-col items-center gap-1 w-[4.25rem] px-1.5 py-2 rounded-interactive border transition-colors disabled:is-disabled ${
                       enabled
                         ? 'border-hair bg-primary/[0.07] hover:bg-primary/[0.14]'
                         : 'border-hair bg-surface-1 opacity-55 hover:opacity-100 hover:bg-secondary/25'
@@ -131,9 +132,9 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
               );
             })}
           </div>
-          <button type="button" onClick={openVault} className="inline-flex items-center gap-1 typo-caption text-ink-3 hover:text-foreground mt-2">
-            <ExternalLink className="w-3 h-3" /> {d.improve_conn_manage}
-          </button>
+          <Button variant="ghost" size="sm" className="mt-2" onClick={openVault} icon={<ExternalLink className="w-3 h-3" />}>
+{d.improve_conn_manage}
+</Button>
         </>
       )}
     </div>

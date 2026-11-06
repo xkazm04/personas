@@ -53,7 +53,7 @@ export function EmptyOffers({ offers }: { offers: ChipOffer[] }) {
           className="au-branch au-sheen au-lift min-w-0 justify-start! rounded-input px-3! hover:bg-transparent [&>span:last-child]:flex [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1 [&>span:last-child]:items-center [&>span:last-child]:gap-2"
         >
           <span className="min-w-0 flex-1 text-left typo-body text-foreground">{label}</span>
-          <span className="typo-heading tabular-nums text-foreground">{o.n}</span>
+          <span className="typo-data text-foreground">{o.n}</span>
           <Keycap>{i + 1}</Keycap>
         </Button>
         );

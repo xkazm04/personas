@@ -12,6 +12,7 @@
 // context-grouped distance chart — the alerts and the measurement now read
 // together, per project.
 import type { ReactNode } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { FolderKanban, ShieldAlert, Star } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
@@ -61,7 +62,7 @@ export function KpiSignalBoard({
               <h3 className="typo-eyebrow text-foreground flex-1 truncate">{g.label}</h3>
               <HeadlineCount n={g.rows.filter(isHeadline).length} />
               <OffCount n={off.length} />
-              <span className="typo-caption text-ink-2 tabular-nums">{g.rows.length}</span>
+              <span className="typo-data text-ink-2">{g.rows.length}</span>
             </div>
 
             {renderAutopilot && (
@@ -96,7 +97,7 @@ function HeadlineCount({ n }: { n: number }) {
   const { t, tx } = useTranslation();
   if (n === 0) return null;
   return (
-    <span className="inline-flex items-center gap-1 typo-caption text-foreground tabular-nums">
+    <span className="inline-flex items-center gap-1 typo-data text-ink-2">
       <Star className="w-3 h-3 text-primary" aria-hidden />
       {tx(t.kpis.headline_count, { count: n })}
     </span>
@@ -107,7 +108,7 @@ function HeadlineCount({ n }: { n: number }) {
 function OffCount({ n }: { n: number }) {
   const { t, tx } = useTranslation();
   if (n === 0) return null;
-  return <span className="typo-caption text-status-error tabular-nums">{tx(t.kpis.attn_off_count, { count: n })}</span>;
+  return <span className="typo-data text-status-error">{tx(t.kpis.attn_off_count, { count: n })}</span>;
 }
 
 function useReasonLabel() {
@@ -128,23 +129,16 @@ function IncidentChip({ row, onOpen }: { row: DistanceRow; onOpen: (id: string) 
   const CatIcon = categoryMeta(row.category).icon;
   const reason = reasonLabel(row.reason);
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(row.id)}
-      data-testid={`kpi-attention-${row.id}`}
-      className="inline-flex items-center gap-1.5 rounded-interactive border border-status-error/40 bg-status-error/10 hover:bg-status-error/20 transition-colors px-2 py-1"
-    >
-      <CatIcon className="w-3.5 h-3.5 text-status-error flex-shrink-0" aria-hidden />
+    <Button variant="danger" size="sm" onClick={() => onOpen(row.id)} data-testid={`kpi-attention-${row.id}`}><span className="inline-flex items-center gap-1.5"><CatIcon className="w-3.5 h-3.5 text-status-error flex-shrink-0" aria-hidden />
       {isHeadline(row) && (
         <Star className="w-3 h-3 text-status-error flex-shrink-0" aria-hidden />
       )}
-      <span className="typo-caption text-foreground">{row.name}</span>
-      <span className="typo-caption text-ink-2 tabular-nums">
+      <span className="typo-caption text-ink-2">{row.name}</span>
+      <span className="typo-data text-ink-2">
         {row.current ?? '—'}/{row.target ?? '—'} {row.unit}
       </span>
       {reason && (
         <span className="typo-eyebrow text-status-error border-l border-status-error/30 pl-1.5">{reason}</span>
-      )}
-    </button>
+      )}</span></Button>
   );
 }

@@ -90,7 +90,7 @@ export function WritesChip({ site }: { site: BrowserSite }) {
   const { t, tx } = useTranslation();
   const count = Object.keys(site.overrides).length;
   if (count === 0) {
-    return <span className="typo-caption text-foreground">{t.browser.whitelist.writes_none}</span>;
+    return <span className="typo-caption text-ink-2">{t.browser.whitelist.writes_none}</span>;
   }
   return (
     <StatusBadge accent="amber" size="sm" icon={<ShieldAlert className="w-3 h-3" />}>
@@ -102,7 +102,7 @@ export function WritesChip({ site }: { site: BrowserSite }) {
 export function CredentialChip({ site }: { site: BrowserSite }) {
   const { t } = useTranslation();
   if (!site.credentialId) {
-    return <span className="typo-caption text-foreground">{t.browser.whitelist.credential_none}</span>;
+    return <span className="typo-caption text-ink-2">{t.browser.whitelist.credential_none}</span>;
   }
   return (
     <StatusBadge accent="violet" size="sm" icon={<KeyRound className="w-3 h-3" />}>

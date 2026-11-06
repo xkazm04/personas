@@ -4,6 +4,7 @@
 // measure / pause / archive actions pinned to a footer bar. Built on the shared
 // BaseModal primitive; reuses the shared data hook + detail parts.
 import { useMemo, useState } from 'react';
+import { StateMark, type StateMarkState } from '@/features/shared/components/display/StateMark';
 import { Archive, Cable, Gauge, History, Pause, Play, Ruler } from 'lucide-react';
 
 import type { DevKpi } from '@/lib/bindings/DevKpi';
@@ -146,7 +147,7 @@ function ModalHeader({ kpi, projectName, onClose }: { kpi: DevKpi; projectName: 
           <CatIcon className="w-4.5 h-4.5" style={{ color: TRACK_COLOR[d.track] }} aria-hidden />
         </span>
         <div className="min-w-0">
-          <p className="typo-caption text-foreground truncate">{projectName}</p>
+          <p className="typo-caption text-ink-2 truncate">{projectName}</p>
           <h2 id={TITLE_ID} className="typo-title truncate">{kpi.name}</h2>
           <p className="typo-caption text-ink-2">
             {cat.label(t)} · {kind.label(t)} · {cad.label(t)}
@@ -179,11 +180,11 @@ function HeroBlock({ kpi }: { kpi: DevKpi }) {
   return (
     <div className="rounded-card border border-hair bg-surface-1 p-4 space-y-2.5">
       <div className="flex items-baseline gap-2">
-        <span className="typo-hero text-foreground tabular-nums">
+        <span className="typo-hero text-foreground num">
           {kpi.current_value != null ? <Numeric value={kpi.current_value} /> : '—'}
         </span>
         {kpi.target_value != null && (
-          <span className="typo-body-lg tabular-nums">
+          <span className="typo-data-lg">
             / <Numeric value={kpi.target_value} /> {kpi.unit}
           </span>
         )}
@@ -227,11 +228,11 @@ function StoryWithConvergence({
     stable: t.kpis.conv_verdict_stable,
     insufficient: t.kpis.conv_verdict_insufficient,
   };
-  const verdictTone: Record<Convergence['verdict'], string> = {
-    converging: 'border-status-success/30 bg-status-success/10 text-status-success',
-    diverging: 'border-status-error/30 bg-status-error/10 text-status-error',
-    stable: 'border-hair bg-surface-1 text-foreground',
-    insufficient: 'border-hair bg-surface-1 text-foreground opacity-70',
+  const verdictState: Record<Convergence['verdict'], StateMarkState> = {
+    converging: 'success',
+    diverging: 'error',
+    stable: 'neutral',
+    insufficient: 'blank',
   };
 
   return (
@@ -240,7 +241,7 @@ function StoryWithConvergence({
       {sim.length > 0 && (
         <div className="mt-2 space-y-1" data-testid="kpi-convergence-readout">
           {/* channel legend */}
-          <div className="flex items-center gap-3 typo-caption text-foreground opacity-80">
+          <div className="flex items-center gap-3 typo-caption text-ink-2">
             <span className="inline-flex items-center gap-1.5">
               <span className="inline-block w-4 border-t-2" style={{ borderColor: 'var(--primary)' }} aria-hidden />
               {t.kpis.env_labels.production}
@@ -249,17 +250,17 @@ function StoryWithConvergence({
               <span className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: '#8B5CF6' }} aria-hidden />
               {t.kpis.trend_sim_suffix}
             </span>
-            <span className={`ml-auto typo-caption px-1.5 py-0.5 rounded border ${verdictTone[conv.verdict]}`} data-testid="kpi-convergence-verdict">
-              {verdictLabel[conv.verdict]}
+            <span className="ml-auto" data-testid="kpi-convergence-verdict">
+              <StateMark state={verdictState[conv.verdict]} label={verdictLabel[conv.verdict]} />
             </span>
           </div>
           {production.length === 0 ? (
-            <p className="typo-caption text-foreground opacity-70">{t.kpis.conv_no_prod}</p>
+            <p className="typo-caption text-ink-2">{t.kpis.conv_no_prod}</p>
           ) : conv.latest ? (
             <>
               <p className="typo-body text-foreground">
                 {t.kpis.conv_gap_label}{' '}
-                <span className="font-medium tabular-nums">
+                <span className="font-medium num">
                   {conv.latest.gap > 0 ? '+' : ''}
                   <Numeric value={conv.latest.gap} /> {kpi.unit}
                 </span>{' '}
@@ -312,7 +313,7 @@ function HistoryBlock({ kpi, measurements }: { kpi: DevKpi; measurements: Return
     <KpiSection
       title={t.kpis.history_title}
       icon={History}
-      aside={measurements.length > 0 ? <span className="typo-caption tabular-nums">{measurements.length}</span> : undefined}
+      aside={measurements.length > 0 ? <span className="typo-data">{measurements.length}</span> : undefined}
     >
       {measurements.length === 0 ? (
         <p className="typo-caption">{t.kpis.history_empty}</p>
@@ -332,11 +333,11 @@ function HistoryBlock({ kpi, measurements }: { kpi: DevKpi; measurements: Return
                   </span>
                   <span className="ml-auto inline-flex items-center gap-1">
                     {(m.env ?? 'production') !== 'production' && (
-                      <span className="typo-caption px-1.5 py-0.5 rounded border border-role-agent/30 bg-role-agent/10 text-role-agent" data-testid="kpi-measurement-env-chip">
+                      <span className="typo-eyebrow text-role-agent" data-testid="kpi-measurement-env-chip">
                         {(t.kpis.env_labels as Record<string, string>)[m.env] ?? m.env}
                       </span>
                     )}
-                    <span className="typo-caption px-1.5 py-0.5 rounded border border-border/20 bg-surface-1 text-foreground">
+                    <span className="typo-eyebrow text-ink-3">
                       {sourceLabels[m.source] ?? m.source}
                     </span>
                   </span>
@@ -344,13 +345,13 @@ function HistoryBlock({ kpi, measurements }: { kpi: DevKpi; measurements: Return
                 {prov.summary && (
                   prov.full ? (
                     <Tooltip content={prov.full} placement="top">
-                      <p className="typo-caption text-foreground mt-0.5 font-mono truncate cursor-help">{prov.summary}</p>
+                      <p className="typo-code text-ink-2 mt-0.5 truncate cursor-help">{prov.summary}</p>
                     </Tooltip>
                   ) : (
-                    <p className="typo-caption text-foreground mt-0.5 font-mono truncate">{prov.summary}</p>
+                    <p className="typo-code text-ink-2 mt-0.5 truncate">{prov.summary}</p>
                   )
                 )}
-                {m.note && <p className="typo-caption text-foreground mt-0.5">{m.note}</p>}
+                {m.note && <p className="typo-caption text-ink-2 mt-0.5">{m.note}</p>}
               </li>
             );
           })}
@@ -396,13 +397,13 @@ function ActionBar({
 
       {kpi.measure_kind === 'manual' && (
         <div className="flex items-end gap-2">
-          <label className="flex flex-col gap-0.5 typo-caption text-foreground">
+          <label className="flex flex-col gap-0.5 typo-caption text-ink-2">
             {tx(t.kpis.manual_entry_label, { unit: kpi.unit || '—' })}
             <input
               type="number"
               value={manualValue}
               onChange={(e) => setManualValue(e.target.value)}
-              className="rounded-input border border-hair bg-background px-2 py-1 typo-body text-foreground tabular-nums w-28"
+              className="rounded-input border border-hair bg-background px-2 py-1 typo-data text-foreground w-28"
             />
           </label>
           <AsyncButton

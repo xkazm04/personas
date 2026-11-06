@@ -20,9 +20,9 @@ export const GRADE_THEME: Record<HealthGrade, {
     chip: 'bg-status-warning/15 text-status-warning border-status-warning/25',
   },
   unknown: {
-    text: 'text-zinc-400', bar: 'bg-zinc-500', track: 'bg-zinc-500/10', soft: 'bg-zinc-500/[0.06]',
-    border: 'border-zinc-500/20', ring: 'ring-zinc-500/30', dot: 'bg-zinc-500',
-    chip: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/25',
+    text: 'text-ink-3', bar: 'bg-ink-4', track: 'bg-surface-2', soft: 'bg-surface-1',
+    border: 'border-hair', ring: 'ring-hair-2', dot: 'bg-ink-4',
+    chip: 'bg-surface-2 text-ink-3 border-hair',
   },
   healthy: {
     text: 'text-status-success', bar: 'bg-status-success', track: 'bg-status-success/10', soft: 'bg-status-success/[0.06]',

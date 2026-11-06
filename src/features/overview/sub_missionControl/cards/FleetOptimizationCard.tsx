@@ -173,7 +173,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
             <div className="px-4 pb-3 pt-1 border-t border-hair space-y-2.5">
               {/* Impact */}
               <div className="flex items-start gap-2">
-                <span className="typo-label text-foreground mt-0.5 w-16 flex-shrink-0">
+                <span className="typo-label text-ink-2 mt-0.5 w-16 flex-shrink-0">
                   {t.overview.fleet_optimization.label_impact}
                 </span>
                 <span className="typo-body text-foreground">{rec.impact}</span>
@@ -181,7 +181,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
 
               {/* Action */}
               <div className="flex items-start gap-2">
-                <span className="typo-label text-foreground mt-0.5 w-16 flex-shrink-0">
+                <span className="typo-label text-ink-2 mt-0.5 w-16 flex-shrink-0">
                   {t.overview.fleet_optimization.label_action}
                 </span>
                 <span className="typo-body text-foreground">{rec.suggestedAction}</span>
@@ -190,7 +190,7 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
               {/* Affected agents */}
               {rec.personaNames.length > 0 && (
                 <div className="flex items-start gap-2">
-                  <span className="typo-label text-foreground mt-0.5 w-16 flex-shrink-0">
+                  <span className="typo-label text-ink-2 mt-0.5 w-16 flex-shrink-0">
                     {t.overview.fleet_optimization.label_agent}
                   </span>
                   <span className="typo-body text-foreground">
@@ -259,7 +259,7 @@ export default function FleetOptimizationCard() {
 
   return (
     <div className="space-y-1.5">
-      <h3 className="typo-label text-foreground px-1 flex items-center gap-1.5">
+      <h3 className="typo-label text-ink-2 px-1 flex items-center gap-1.5">
         <Sparkles className="w-3 h-3" />
         {t.overview.fleet_optimization.title}
       </h3>

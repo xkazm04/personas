@@ -51,7 +51,7 @@ export default function SitePolicyFields({
                 key={tool}
                 className="flex items-center gap-2 px-3 py-2 rounded-card border border-hair bg-background/40 min-w-0"
               >
-                <span className="typo-body text-foreground font-mono truncate flex-1">{tool}</span>
+                <span className="typo-code text-foreground truncate flex-1">{tool}</span>
                 <AccessibleToggle
                   checked={gated[tool] === true}
                   onChange={() => onGatedChange(tool, gated[tool] !== true)}
@@ -74,7 +74,7 @@ export default function SitePolicyFields({
             value={budget}
             onChange={(e) => onBudgetChange(e.target.value)}
             placeholder={String(BROWSER_DEFAULT_BUDGET)}
-            className={`${INPUT_FIELD} w-28 tabular-nums`}
+            className={`${INPUT_FIELD} w-28 num`}
             data-testid="whitelist-edit-budget"
           />
         )}

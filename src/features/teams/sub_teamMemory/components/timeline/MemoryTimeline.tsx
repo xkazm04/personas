@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { GitCommitVertical } from 'lucide-react';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -113,14 +114,14 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
               reach every run, saying "12 runs" above three markers asserts
               nine runs contributed nothing. Disclose the cut where it happens. */}
           {renderedRuns < totalRuns && (
-            <span className="typo-caption text-foreground">
+            <span className="typo-caption text-ink-2">
               {tx(t.pipeline.showing_count, { shown: renderedRuns, total: totalRuns })}
             </span>
           )}
           {activeRunFilter && (
-            <button type="button" onClick={() => onFilterRun(null)} className="typo-body text-role-agent hover:text-role-agent transition-colors ml-auto">
+            <Button variant="ghost" size="sm" className="ml-auto" onClick={() => onFilterRun(null)}>
               {pt.clear_filter}
-            </button>
+            </Button>
           )}
         </div>
       )}

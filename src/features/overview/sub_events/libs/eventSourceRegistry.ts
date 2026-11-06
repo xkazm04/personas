@@ -69,12 +69,12 @@ export type EventSourceOrigin = 'you' | 'agent' | 'app' | 'external';
 export const ORIGIN_TONE: Record<EventSourceOrigin, string> = {
   // Gate 5: a thing waiting on the operator reads info-blue, never the pink
   // human role.
-  you: 'text-sky-400',
+  you: 'text-status-info',
   // The established persona violet (the old map's `persona` tone).
-  agent: 'text-violet-400',
+  agent: 'text-role-agent',
   // Brand indigo: the platform acting as itself.
   app: 'text-primary',
-  external: 'text-emerald-400',
+  external: 'text-status-success',
 };
 
 interface SourceEntry {

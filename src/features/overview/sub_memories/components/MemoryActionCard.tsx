@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 import { Lightbulb, X, Gauge, Clock, AlertTriangle, Settings, GitBranch } from 'lucide-react';
 import type { MemoryAction, MemoryActionKind } from '../libs/memoryActions';
 import { ACTION_KIND_META } from '../libs/memoryActions';
@@ -25,14 +26,9 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
     <div
       className={`animate-fade-slide-in group relative rounded-modal border ${meta.borderClass} ${meta.bgClass} p-3 transition-colors hover:border-opacity-40`}
     >
-      <button
-        type="button"
-        onClick={() => onDismiss(action.id)}
-        className="absolute top-2 right-2 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-surface-2 text-foreground hover:text-ink-2 transition-all"
-        title={t.overview.memory_actions.dismiss_suggestion}
-      >
+      <Button variant="ghost" size="icon-sm" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100" onClick={() => onDismiss(action.id)} tooltip={t.overview.memory_actions.dismiss_suggestion}>
         <X className="w-3 h-3" />
-      </button>
+      </Button>
 
       <div className="flex items-start gap-2.5">
         <div className={`w-7 h-7 rounded-card ${meta.bgClass} border ${meta.borderClass} flex items-center justify-center flex-shrink-0 mt-0.5`}>
@@ -43,7 +39,7 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
             <span className={`typo-heading px-1.5 py-0.5 rounded-input ${meta.bgClass} ${meta.textClass}`}>
               {t.overview.memory_actions[`kind_${action.kind}`]}
             </span>
-            <span className="typo-code text-foreground">{action.score}/10</span>
+            <span className="typo-code text-ink-2">{action.score}/10</span>
           </div>
           <p className="typo-heading text-ink-2 line-clamp-2">{action.memoryTitle}</p>
           <p className="typo-body text-foreground line-clamp-2">{action.rule}</p>
@@ -69,7 +65,7 @@ export function MemoryActionsPanel({ actions, onDismiss }: MemoryActionsPanelPro
         <div className="p-1.5 rounded-card bg-status-warning/10 text-status-warning">
           <Lightbulb className="w-3.5 h-3.5" />
         </div>
-        <h3 className="typo-label text-foreground">
+        <h3 className="typo-label text-ink-2">
           {t.overview.memory_actions.memory_insights}
         </h3>
         <span className="typo-body text-foreground ml-auto">{visible.length !== 1 ? tx(t.overview.memory_actions.suggestions, { count: visible.length }) : tx(t.overview.memory_actions.suggestions_one, { count: visible.length })}</span>

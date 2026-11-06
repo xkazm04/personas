@@ -2,6 +2,7 @@
 // list or key-value grid, and the doors that belong to it; none of them knows
 // where it sits.
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 import { MemorySection } from '../../lib/MemorySection';
 import type { IslandEdge } from '../../lib/types';
@@ -48,8 +49,8 @@ export function FleetColumn({ station, h }: { station: Station; h: CardHandlers 
         {island.fleet.length === 0 && island.personasRunning.length === 0 && island.runners.length === 0 && <li className="sd-muted">{m.far_idle}</li>}
       </ul>
       <div className="sd-acts">
-        <button type="button" className="sd-act" onClick={h.onDispatch}>{m.dispatch_fleet}</button>
-        {h.canTerminal && <button type="button" className="sd-act" onClick={h.onTerminal}>{m.open_terminal}</button>}
+        <Button variant="secondary" size="sm" onClick={h.onDispatch}>{m.dispatch_fleet}</Button>
+        {h.canTerminal && <Button variant="secondary" size="sm" onClick={h.onTerminal}>{m.open_terminal}</Button>}
       </div>
     </div>
   );
@@ -106,7 +107,7 @@ export function ReadinessColumn({ station, h }: { station: Station; h: CardHandl
         <dd className={island.monitorErrors === null ? 'sd-muted' : 'typo-data'}>{island.monitorErrors === null ? m.soundings_not_bound : island.monitorErrors}</dd>
       </dl>
       <div className="sd-acts">
-        <button type="button" className="sd-act" onClick={h.onFactory}>{m.open_in_factory}</button>
+        <Button variant="secondary" size="sm" onClick={h.onFactory}>{m.open_in_factory}</Button>
       </div>
       {!island.slug.startsWith('demo-') && <MemorySection projectId={island.slug} />}
     </div>
@@ -136,13 +137,7 @@ export function RelationsColumn({ station, stations, edges, h }: {
         if (o === undefined) return null;
         const name = stations[o]!.island.name;
         return (
-          <button
-            key={`${e.from}-${e.to}-${e.kind}`}
-            type="button"
-            className="sd-d-rel"
-            aria-label={tx(m.soundings_follow_current, { name, label: e.label ?? '' })}
-            onClick={(ev) => { ev.stopPropagation(); h.onFollow(o, e); }}
-          >
+          <button type="button" className="sd-d-rel" key={`${e.from}-${e.to}-${e.kind}`} aria-label={tx(m.soundings_follow_current, { name, label: e.label ?? '' })} onClick={(ev) => { ev.stopPropagation(); h.onFollow(o, e); }}>
             <svg width="24" height="10" viewBox="0 0 24 10" aria-hidden>
               <path d="M1.5 9 C1.5 1.5 22.5 1.5 22.5 9" fill="none" stroke="var(--sd-ink3)" strokeWidth="1.4" strokeDasharray={e.kind === 'similarity' ? '3 3' : undefined} />
             </svg>

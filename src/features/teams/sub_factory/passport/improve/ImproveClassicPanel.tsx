@@ -15,6 +15,7 @@
 // same ones in the modal's own visual language, and "queue for all N projects"
 // must not exist twice.
 import { useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { Rocket, ScanSearch, ChevronDown, ChevronRight } from 'lucide-react';
 
 import { useImprove } from './ImproveContext';
@@ -64,20 +65,15 @@ export function ImproveClassicPanel({ slug, rowKey, onDone }: {
               ? <ScanSearch className="w-3.5 h-3.5 mt-0.5 text-primary/70 flex-shrink-0" aria-hidden />
               : <Rocket className="w-3.5 h-3.5 mt-0.5 text-primary/70 flex-shrink-0" aria-hidden />}
             <div className="min-w-0">
-              <span className="typo-caption text-foreground block">{a.label}</span>
+              <span className="typo-caption text-ink-2 block">{a.label}</span>
               <span className="typo-caption text-ink-3 block" style={{ fontWeight: 400 }}>{a.hint}</span>
             </div>
           </div>
 
           {a.kind === 'task' && (
-            <button
-              type="button"
-              onClick={() => setExpanded((e) => (e === a.id ? null : a.id))}
-              className="mt-1.5 inline-flex items-center gap-1 typo-caption text-ink-3 hover:text-foreground transition-colors"
-            >
-              {expanded === a.id ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              {expanded === a.id ? 'Hide prompt' : 'View prompt'}
-            </button>
+            <Button variant="ghost" size="sm" className="mt-1.5" onClick={() => setExpanded((e) => (e === a.id ? null : a.id))} icon={expanded === a.id ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}>
+{expanded === a.id ? 'Hide prompt' : 'View prompt'}
+</Button>
           )}
           {a.kind === 'task' && expanded === a.id && (
             <pre className="mt-1 max-h-44 overflow-y-auto rounded-interactive bg-background/60 border border-hair p-2 typo-code text-ink-2 whitespace-pre-wrap">{ops.promptFor(a)}</pre>
@@ -101,7 +97,7 @@ export function ImproveClassicPanel({ slug, rowKey, onDone }: {
             )}
           </div>
           {a.kind === 'task' && ops.batchSize(a) > 1 && (
-            <button type="button" onClick={() => void ops.runBatch(a)} disabled={ops.busy === a.id} className="block ml-auto mt-1 typo-caption text-primary hover:underline disabled:opacity-50">
+            <button type="button" onClick={() => void ops.runBatch(a)} disabled={ops.busy === a.id} className="block ml-auto mt-1 typo-caption text-primary hover:underline disabled:is-disabled">
               Queue for all {ops.batchSize(a)} projects that need this →
             </button>
           )}
@@ -113,18 +109,8 @@ export function ImproveClassicPanel({ slug, rowKey, onDone }: {
 
 function ActionButton({ label, onClick, busy, primary, title }: { label: string; onClick: () => void; busy: boolean; primary?: boolean; title?: string }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={busy}
-      title={title}
-      className={`px-2.5 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-        primary
-          ? 'text-primary bg-primary/15 hover:bg-primary/25 border border-hair'
-          : 'text-foreground hover:bg-surface-2 border border-hair'
-      }`}
-    >
+    <Button variant={primary ? "primary" : "secondary"} size="sm" onClick={onClick} disabled={busy} tooltip={title}>
       {busy ? '…' : label}
-    </button>
+    </Button>
   );
 }

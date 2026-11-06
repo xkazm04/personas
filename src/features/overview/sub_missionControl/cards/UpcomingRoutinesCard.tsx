@@ -15,7 +15,7 @@ import { SCHEDULE_TRIGGER_TYPES } from '../variants/shared/useSideReadings';
 
 const MAX_ROWS = 5;
 const ROW_HEIGHT = 44;
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-surface-2';
 const GHOST_NAME_WIDTHS = ['w-32', 'w-24', 'w-28'];
 
 interface UpcomingRow {
@@ -151,7 +151,7 @@ export default function UpcomingRoutinesCard() {
         <ArrowRight className="w-3 h-3 text-foreground" />
       </PaneHeader>
       {showFailed ? (
-        <p className="typo-caption px-3 py-4 text-foreground">{t.overview.observability.error_recovery.panel_failed}</p>
+        <p className="typo-caption px-3 py-4 text-ink-2">{t.overview.observability.error_recovery.panel_failed}</p>
       ) : showGhost ? (
         <RoutinesGhostRows />
       ) : rows.length === 0 ? (
@@ -174,7 +174,7 @@ export default function UpcomingRoutinesCard() {
                   {row.trigger.trigger_type}
                 </div>
               </div>
-              <div className="typo-caption font-mono tabular-nums flex-shrink-0">
+              <div className="typo-data font-mono flex-shrink-0">
                 {row.rel ? (
                   <span className={row.rel.overdue ? 'text-status-error' : 'text-foreground'}>
                     {row.rel.label}
@@ -213,7 +213,7 @@ function RoutinesGhostRows() {
               <span className={`block h-3 ${nameW} max-w-full ${GHOST_BAR}`} />
               <span className={`block h-2.5 w-16 ${GHOST_BAR}`} />
             </div>
-            <span className="h-2.5 w-10 flex-shrink-0 rounded bg-primary/[0.06]" />
+            <span className="h-2.5 w-10 flex-shrink-0 rounded-interactive bg-surface-2" />
           </div>
         );
       })}

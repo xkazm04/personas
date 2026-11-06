@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -53,14 +54,14 @@ export default function MemoryRowDetail({
         <span className="typo-body text-role-agent">{pt.edit_memory_title}</span>
         <div className="flex items-center gap-1">
           <Tooltip content={t.common.save}>
-            <button type="button" onClick={handleSave} className="p-1 rounded-card hover:bg-status-success/15 text-status-success" aria-label={t.common.save}>
+            <Button variant="ghost" size="icon-sm" onClick={handleSave} aria-label={t.common.save}>
               <Check className="w-3 h-3" />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content={t.common.cancel}>
-            <button type="button" onClick={onCancel} className="p-1 rounded-card hover:bg-primary/10 text-foreground" aria-label={t.common.cancel}>
+            <Button variant="ghost" size="icon-sm" onClick={onCancel} aria-label={t.common.cancel}>
               <X className="w-3 h-3" />
-            </button>
+            </Button>
           </Tooltip>
         </div>
       </div>
@@ -92,15 +93,9 @@ export default function MemoryRowDetail({
             if (picked) setEditCategory(picked);
           }}
           renderTrigger={({ isOpen, toggle }) => (
-            <button
-              type="button"
-              onClick={toggle}
-              aria-label={pt.category_label}
-              className="inline-flex items-center gap-1 typo-body bg-secondary/60 border border-hair rounded-card px-1.5 py-0.5 text-foreground hover:border-hair focus-visible:outline-none focus-visible:border-role-agent/30 transition-colors"
-            >
-              {tokenLabel(t, 'memory_category', editCategory)}
-              <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
+            <Button variant="secondary" size="xs" onClick={toggle} aria-label={pt.category_label} iconRight={<ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}>
+{tokenLabel(t, 'memory_category', editCategory)}
+</Button>
           )}
         >
           {({ close, focusIndex }) => (

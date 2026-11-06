@@ -87,7 +87,7 @@ export function DeckDispatchModal({
 
       <div className="grid min-h-0 flex-1 gap-4 overflow-hidden p-4 md:grid-cols-2">
         <section className="flex min-h-0 flex-col gap-2" aria-label={m.triage_dispatch_work_heading}>
-          <span className="typo-label text-foreground">{m.triage_dispatch_work_heading}</span>
+          <span className="typo-label text-ink-2">{m.triage_dispatch_work_heading}</span>
           <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
             {picked.map((row) => (
               <WorkRow

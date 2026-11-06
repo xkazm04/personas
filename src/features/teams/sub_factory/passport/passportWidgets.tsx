@@ -45,7 +45,7 @@ export function ReadinessSeal({
         className={`inline-flex items-center gap-1.5 rounded-card border ${pad} ${tint.bg} ${seal ? 'ring-1 ' + tint.ring + ' shadow-elevation-1' : ''} cursor-default`}
         style={{ borderColor: `color-mix(in srgb, ${tint.hex} 40%, transparent)` }}
       >
-        <span className={`${codeCls} font-bold tabular-nums leading-none ${tint.text}`}>{code}</span>
+        <span className={`${codeCls} font-bold num leading-none ${tint.text}`}>{code}</span>
         <span className={`typo-data ${tint.text} opacity-75`}>{score}</span>
       </span>
     </Tooltip>
@@ -81,8 +81,8 @@ export function ScoreBar({
         <span className="typo-label text-ink-3">{label}</span>
         <Tooltip content={`${name}: ${score}/100`}>
           <span className="inline-flex items-baseline gap-1 cursor-default">
-            <span className={`typo-caption tabular-nums ${tint.text}`}>{code}</span>
-            <span className={`typo-caption tabular-nums ${tint.text} opacity-70`}>{score}</span>
+            <span className={`typo-data ${tint.text}`}>{code}</span>
+            <span className={`typo-data ${tint.text} opacity-70`}>{score}</span>
           </span>
         </Tooltip>
       </div>
@@ -109,7 +109,7 @@ export function Pips({ items, size = 7 }: { items: Array<{ label: string; on: bo
               background: it.on ? '#10b981' : 'color-mix(in srgb, var(--foreground) 14%, transparent)',
             }}
           />
-          <span className={`typo-caption tabular-nums ${it.on ? 'text-ink-2' : 'text-ink-3'}`}>{it.label}</span>
+          <span className={`typo-data ${it.on ? 'text-ink-2' : 'text-ink-3'}`}>{it.label}</span>
         </span>
       ))}
     </span>
@@ -147,7 +147,7 @@ export function RowInfoLabel({ label, info }: { label: string; info: string }) {
 
   return (
     <>
-      <button
+      <Tooltip content={`What "${label}" means`}><button
         ref={triggerRef}
         type="button"
         onClick={(e) => {
@@ -157,12 +157,11 @@ export function RowInfoLabel({ label, info }: { label: string; info: string }) {
           setAnchor((a) => (a ? null : rect));
         }}
         aria-expanded={Boolean(anchor)}
-        title={`What "${label}" means`}
         className="group/rl inline-flex items-center gap-1 text-left rounded-interactive -mx-1 px-1 py-0.5 hover:bg-primary/[0.05] transition-colors cursor-help focus-ring"
       >
         <span className="typo-caption text-ink-3 group-hover/rl:text-ink-2 transition-colors">{label}</span>
         <Info className="w-3 h-3 flex-shrink-0 text-primary/70 opacity-0 group-hover/rl:opacity-100 transition-opacity" aria-hidden />
-      </button>
+      </button></Tooltip>
       {anchor && pos && createPortal(
         <div
           ref={panelRef}
@@ -171,7 +170,7 @@ export function RowInfoLabel({ label, info }: { label: string; info: string }) {
           style={{ top: pos.top, left: pos.left, width: INFO_TIP_WIDTH }}
           className="fixed z-[9996] rounded-modal border border-hair bg-background shadow-elevation-4 px-3 py-2.5"
         >
-          <span className="flex items-center gap-1.5 typo-caption text-foreground mb-1">
+          <span className="flex items-center gap-1.5 typo-caption text-ink-2 mb-1">
             <Info className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" aria-hidden />
             {label}
           </span>
@@ -208,21 +207,20 @@ export function Chip({ label, tone = 'neutral' }: { label: string; tone?: 'neutr
 export function BlockersBadge({ blockers, clearLabel }: { blockers: string[]; clearLabel: string }) {
   if (blockers.length === 0) {
     return (
-      <span title={clearLabel} className="inline-flex items-center shrink-0" data-testid="cover-blockers-clear">
+      <Tooltip content={clearLabel}><span className="inline-flex items-center shrink-0" data-testid="cover-blockers-clear">
         <CheckCircle2 className="w-5 h-5" style={{ color: INK.emerald }} aria-hidden />
         <span className="sr-only">{clearLabel}</span>
-      </span>
+      </span></Tooltip>
     );
   }
   return (
-    <span
-      title={blockers.join(' · ')}
+    <Tooltip content={blockers.join(' · ')}><span
       className="inline-flex items-center gap-1 rounded-input border px-1.5 py-0.5 shrink-0"
       style={{ borderColor: `${INK.red}66`, background: `${INK.red}1f` }}
       data-testid="cover-blockers-badge"
     >
       <AlertTriangle className="w-5 h-5" style={{ color: INK.red }} aria-hidden />
-      <span className="typo-body-lg tabular-nums" style={{ color: INK.red }}>{blockers.length}</span>
-    </span>
+      <span className="typo-data-lg" style={{ color: INK.red }}>{blockers.length}</span>
+    </span></Tooltip>
   );
 }

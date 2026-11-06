@@ -111,7 +111,7 @@ export function CalibrationTrack({ kpi, height = 30 }: { kpi: MockKpi; height?: 
           />
         )}
       </div>
-      <div className="flex justify-between mt-1 typo-caption tabular-nums">
+      <div className="flex justify-between mt-1 typo-data">
         <span>base {fmtUnit(kpi.baseline, kpi.unit)}</span>
         <span>target {fmtUnit(kpi.target, kpi.unit)}</span>
       </div>

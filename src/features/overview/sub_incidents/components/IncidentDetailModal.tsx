@@ -217,7 +217,7 @@ export function IncidentDetailModal({
             </span>
           </StatusBadge>
           <StatusBadge variant="neutral">{statusLabel(t, incident.status)}</StatusBadge>
-          <span className="typo-caption text-foreground">{severityUrgencyLabel(t, incident.severity)}</span>
+          <span className="typo-caption text-ink-2">{severityUrgencyLabel(t, incident.severity)}</span>
         </div>
 
         <div className="flex items-start gap-2.5 rounded-card border border-hair bg-surface-1 px-3.5 py-3">
@@ -270,7 +270,7 @@ export function IncidentDetailModal({
             {siblingsFailed ? (
               <p className="typo-caption text-status-warning">{t.overview.incidents.load_failed}</p>
             ) : siblings.length === 0 ? (
-              <p className="typo-caption text-foreground">{t.overview.incidents.siblings_none}</p>
+              <p className="typo-caption text-ink-2">{t.overview.incidents.siblings_none}</p>
             ) : (
               <ul className="flex flex-col gap-1">
                 {siblings.map((sib) => (
@@ -282,7 +282,7 @@ export function IncidentDetailModal({
                     >
                       <StatusShape status={severityShapeStatus(sib.severity)} size="sm" />
                       <span className="typo-body text-foreground truncate flex-1 min-w-0">{sib.title}</span>
-                      <span className="typo-caption text-foreground shrink-0">
+                      <span className="typo-caption text-ink-2 shrink-0">
                         {sourceTableLabel(t, sib.sourceTable)} · {relativeTime(t, sib.createdAt)}
                       </span>
                     </button>
@@ -291,17 +291,12 @@ export function IncidentDetailModal({
               </ul>
             )}
             {onFilterPersona && (
-              <button
-                type="button"
-                onClick={() => {
+              <Button variant="ghost" size="xs" className="mt-2" onClick={() => {
                   onFilterPersona(personaId);
                   onClose();
-                }}
-                className="mt-2 inline-flex items-center gap-1 typo-caption text-primary rounded-card px-1.5 py-1 hover:bg-surface-2 transition-colors focus-ring"
-              >
-                {t.overview.incidents.view_all_from_agent}
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
+                }} iconRight={<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />}>
+{t.overview.incidents.view_all_from_agent}
+</Button>
             )}
           </div>
         )}
@@ -334,14 +329,9 @@ export function IncidentDetailModal({
             </label>
             <div className="mb-2 flex flex-wrap gap-1.5">
               {RESOLUTION_PRESETS.map((presetKey) => (
-                <button
-                  key={presetKey}
-                  type="button"
-                  onClick={() => setNote(t.overview.incidents[presetKey])}
-                  className="px-2 py-0.5 typo-caption rounded-card border border-hair text-foreground hover:bg-surface-2 transition-colors focus-ring"
-                >
+                <Button variant="secondary" size="xs" key={presetKey} onClick={() => setNote(t.overview.incidents[presetKey])}>
                   {t.overview.incidents[presetKey]}
-                </button>
+                </Button>
               ))}
             </div>
             <textarea

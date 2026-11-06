@@ -6,6 +6,7 @@
 // Group headings are items in the same flat list and one of them is pinned via
 // the range extractor, which is how a sticky heading survives virtualisation.
 import { useCallback, useMemo, useRef } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Search } from 'lucide-react';
 
@@ -158,20 +159,9 @@ export function FeatureColumn({
             would then have to keep. A row of pressed buttons is what it is. */}
         <div role="group" aria-label={t.sort_label} className="flex items-center gap-1">
           {sortTabs.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              aria-pressed={sort === option.id}
-              data-testid={`features-sort-${option.id}`}
-              onClick={() => onSort(option.id)}
-              className={`whitespace-nowrap rounded-interactive border px-2 py-1 typo-caption focus-ring ${
-                sort === option.id
-                  ? 'border-primary/60 bg-primary/15 text-primary'
-                  : 'border-border text-foreground hover:bg-surface-2'
-              }`}
-            >
+            <Button variant={sort === option.id ? "secondary" : "ghost"} size="sm" className="whitespace-nowrap" key={option.id} aria-pressed={sort === option.id} data-testid={`features-sort-${option.id}`} onClick={() => onSort(option.id)}>
               {option.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -200,7 +190,7 @@ export function FeatureColumn({
           {standingIn ? (
             <div className="sticky top-0 z-[2] h-0" aria-hidden="true">
               <div className="flex h-[30px] items-center justify-between border-b border-border bg-background px-3">
-                <span className="typo-caption text-foreground">{moveLabel(standingIn.move, t)}</span>
+                <span className="typo-caption text-ink-2">{moveLabel(standingIn.move, t)}</span>
                 <span className="typo-data text-foreground">{standingIn.count}</span>
               </div>
             </div>
@@ -218,7 +208,7 @@ export function FeatureColumn({
                 >
                   {item.kind === 'heading' ? (
                     <div className="flex items-center justify-between border-b border-border bg-background px-3 py-1.5">
-                      <span className="typo-caption text-foreground">{moveLabel(item.move, t)}</span>
+                      <span className="typo-caption text-ink-2">{moveLabel(item.move, t)}</span>
                       <span className="typo-data text-foreground">{item.count}</span>
                     </div>
                   ) : (

@@ -9,6 +9,7 @@
 // This page owns the data and every surface a reading opens (Improve, goals,
 // KPIs, idea scans, dispatch, previews); SoundingsView owns the chart.
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { AnimatePresence } from 'framer-motion';
 import { GitFork, LifeBuoy } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -833,15 +834,9 @@ function MastermindInner() {
         // is a set of stations that quietly refuse every action (demo projects
         // have no passport, so nothing resolves one). Clicking it re-opens the
         // two exits — scan the workspace, or add a project.
-        <button
-          type="button"
-          onClick={() => setDemoDismissed(false)}
-          title={t.mastermind.demo_badge_reopen}
-          className="absolute bottom-16 left-3 z-10 typo-caption text-ink-3 px-2 py-1 rounded-interactive bg-secondary border border-hair shadow-elevation-2 hover:text-foreground transition-colors focus-ring"
-          data-testid="mm-demo-badge"
-        >
+        <Button variant="secondary" size="sm" className="absolute bottom-16 left-3 z-10" onClick={() => setDemoDismissed(false)} tooltip={t.mastermind.demo_badge_reopen} data-testid="mm-demo-badge">
           {t.mastermind.demo_badge}
-        </button>
+        </Button>
       )}
 
     </div>

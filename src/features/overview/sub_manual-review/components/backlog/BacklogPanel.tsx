@@ -280,39 +280,32 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
           const label = { default: r.backlog_sort_default, value: r.backlog_sort_value, quick: r.backlog_sort_quick, newest: r.backlog_sort_newest }[mode];
           const tip = { default: r.backlog_sort_default_tip, value: r.backlog_sort_value_tip, quick: r.backlog_sort_quick_tip, newest: undefined }[mode];
           return (
-            <button
+            <Button
               key={mode}
-              type="button"
+              variant={active ? 'secondary' : 'ghost'}
+              size="xs"
               onClick={() => setSortMode(mode)}
-              title={tip}
+              tooltip={tip}
               aria-pressed={active}
-              className={`typo-label rounded-card px-2 py-1 border transition-colors ${
-                active
-                  ? 'bg-primary/10 text-foreground border-hair'
-                  : 'text-ink-3 border-transparent hover:bg-surface-2'
-              }`}
             >
               {label}
-            </button>
+            </Button>
           );
         })}
       </div>
       <div className="relative" ref={levelsRef}>
-        <button
-          type="button"
+        <Button
+          variant={levelFilterActive ? 'accent' : 'secondary'}
+          tone={levelFilterActive ? 'warning' : undefined}
+          size="xs"
           onClick={() => setLevelsOpen((o) => !o)}
           aria-expanded={levelsOpen}
-          title={r.backlog_levels_filter}
+          tooltip={r.backlog_levels_filter}
           aria-label={r.backlog_levels_filter}
-          className={`flex items-center gap-1 typo-label rounded-card px-2 py-1 border transition-colors ${
-            levelFilterActive
-              ? 'bg-status-warning/15 text-status-warning border-status-warning/30'
-              : 'text-ink-3 border-hair hover:bg-surface-2'
-          }`}
+          icon={<SlidersHorizontal className="w-3.5 h-3.5" aria-hidden />}
         >
-          <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden />
           {r.backlog_levels_filter}
-        </button>
+        </Button>
         {levelsOpen && (
           <div className="absolute right-0 top-full mt-1 z-30 w-64 p-3 rounded-card border border-hair bg-background shadow-elevation-3">
             <EffortRiskFilter
@@ -340,40 +333,32 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
           const count = queue.counts?.[s] ?? 0;
           const active = queue.status === s;
           return (
-            <button
+            <Button
               key={s}
-              type="button"
+              variant={active ? 'secondary' : 'ghost'}
+              size="sm"
               onClick={() => setStatus(s)}
               aria-pressed={active}
-              className={`typo-label rounded-interactive px-2.5 py-1 border transition-colors ${
-                active
-                  ? 'bg-primary/15 text-foreground border-hair'
-                  : 'bg-surface-1 text-ink-3 border-hair hover:bg-primary/10'
-              }`}
             >
               {statusLabel[s]}
-              <span className="ml-1.5 tabular-nums opacity-70">{count}</span>
-            </button>
+              <span className="num ml-1.5 text-ink-3">{count}</span>
+            </Button>
           );
         })}
         <div className="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={sendToAthena}
-            className="flex items-center gap-1.5 typo-label rounded-interactive border border-hair bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/15 transition-colors"
-          >
-            <Bot className="w-3.5 h-3.5" aria-hidden />
+          <Button variant="secondary" size="sm" onClick={sendToAthena} icon={<Bot className="w-3.5 h-3.5" aria-hidden />}>
             {r.backlog_athena_send}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="accent"
+            tone="success"
+            size="sm"
             onClick={() => void executeAccepted()}
             disabled={dispatching}
-            className="flex items-center gap-1.5 typo-label rounded-interactive border border-status-success/25 bg-status-success/10 px-2.5 py-1 text-status-success hover:bg-status-success/15 disabled:opacity-40 transition-colors"
+            icon={<Play className="w-3.5 h-3.5" aria-hidden />}
           >
-            <Play className="w-3.5 h-3.5" aria-hidden />
             {r.backlog_execute_accepted}
-          </button>
+          </Button>
           <SweepButton projectId={activeProjectId} onSwept={queue.reload} />
           {activeProjectId && <ScanTrustPopover projectId={activeProjectId} />}
           <SegmentedTabs<BacklogView>
@@ -396,14 +381,9 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
             idPrefix="backlog-view"
           />
           {queue.hasMore && (
-            <button
-              type="button"
-              onClick={queue.loadMore}
-              disabled={queue.loadingMore}
-              className="typo-label rounded-interactive border border-hair bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/15 disabled:opacity-40 transition-colors"
-            >
+            <Button variant="secondary" size="sm" onClick={queue.loadMore} disabled={queue.loadingMore}>
               {tx(r.backlog_load_more, { count: queue.rows.length })}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -504,7 +484,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
 // paints one.
 // ---------------------------------------------------------------------------
 
-const BACKLOG_GHOST_BAR = 'rounded bg-primary/[0.06]';
+const BACKLOG_GHOST_BAR = 'rounded-interactive bg-surface-2';
 const BACKLOG_GHOST_TITLE_WIDTHS = ['w-48', 'w-36', 'w-44', 'w-40'];
 
 function BacklogGhostRows() {
@@ -530,7 +510,7 @@ function BacklogGhostRows() {
             >
               <span className="h-2.5 w-16 rounded-full bg-primary/[0.06] shrink-0" />
               <span className={`block h-3 ${titleW} max-w-full ${BACKLOG_GHOST_BAR}`} />
-              <span className="ml-auto h-2.5 w-20 rounded bg-primary/[0.06] shrink-0" />
+              <span className="ml-auto h-2.5 w-20 rounded-interactive bg-surface-2 shrink-0" />
             </li>
           );
         })}

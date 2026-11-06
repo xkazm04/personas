@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { BarChart3, RefreshCw } from 'lucide-react';
 import { createLogger } from "@/lib/log";
 import { en } from '@/i18n/en';
@@ -41,15 +42,10 @@ export class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, Chart
       return (
         <div className="flex flex-col items-center justify-center h-full w-full gap-2 py-6">
           <BarChart3 className="w-5 h-5 text-foreground" />
-          <span className="typo-caption text-foreground">{en.overview.chart_error.chart_unavailable}</span>
-          <button
-            type="button"
-            onClick={this.handleRetry}
-            className="flex items-center gap-1.5 px-2.5 py-1 typo-caption rounded-card border border-hair text-foreground hover:text-ink-3 hover:bg-surface-2 transition-colors"
-          >
-            <RefreshCw className="w-3 h-3" />
-            Retry
-          </button>
+          <span className="typo-caption text-ink-2">{en.overview.chart_error.chart_unavailable}</span>
+          <Button variant="secondary" size="sm" onClick={this.handleRetry} icon={<RefreshCw className="w-3 h-3" />}>
+Retry
+</Button>
         </div>
       );
     }

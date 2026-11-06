@@ -1,19 +1,27 @@
 import { useMemo } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { Translations } from '@/i18n/en';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StateMark, type StateMarkState } from '@/features/shared/components/display/StateMark';
 import type { TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
-import { EVENT_STATUS_COLORS, getEventTypeColor } from '@/lib/utils/formatters';
-import { getEventStatusIcon } from '@/lib/design/eventTokens';
 import type { PersonaEvent, Persona } from '@/lib/types/types';
 import { eventTypeLabel } from '../libs/eventTypeLabel';
 import { resolveEventSource } from '../libs/eventSourceRegistry';
 
-// Fallback for a status token EVENT_STATUS_COLORS does not know. Amber means
-// "unexpected", so it reads through the status palette rather than a raw hue.
-const defaultStatus = { bg: 'bg-status-warning/10', text: 'text-status-warning', border: 'border-status-warning/20' };
+// An event status is a state, so it reads as a glyph + word (StateMark), not a pill.
+// A status token this map does not know is "unexpected": it takes the warning mark.
+const EVENT_STATE: Record<string, StateMarkState> = {
+  completed: 'done',
+  processed: 'done',
+  processing: 'running',
+  failed: 'error',
+  pending: 'proposed',
+  skipped: 'skipped',
+  discarded: 'refused',
+  cancelled: 'refused',
+};
 
 // The source icon/label/tone map used to live here, 15 keys wide, with a
 // `HelpCircle` fallback — and it was missing the three sources that produced
@@ -81,9 +89,8 @@ export function useEventLogColumns({
         const { icon: Icon, tone, label, originLabel, known } =
           resolveEventSource(t, event.source_type || '');
         return (
-          <span
+          <Tooltip content={`${label} · ${originLabel}`}><span
             className="inline-flex items-center gap-2 min-w-0 max-w-full"
-            title={`${label} · ${originLabel}`}
             aria-label={`${label} · ${originLabel}`}
           >
             <Icon className={`w-3.5 h-3.5 shrink-0 ${tone}`} />
@@ -91,10 +98,10 @@ export function useEventLogColumns({
                 takes the warning colour on the text too, so it reads as a
                 defect rather than as a valid state — and it still prints the
                 raw token, because this cell is never allowed to be empty. */}
-            <span className={`block truncate typo-body ${known ? 'text-foreground' : 'text-status-warning'}`}>
+            <span className={`block truncate typo-body ${known ? 'text-ink-1' : 'text-status-warning'}`}>
               {label}
             </span>
-          </span>
+          </span></Tooltip>
         );
       },
     },
@@ -115,7 +122,7 @@ export function useEventLogColumns({
         const raw = event.source_type || '';
         const isPersonaTrigger = raw === 'persona' || raw.startsWith('persona:');
         if (!isPersonaTrigger) {
-          return <span className="typo-body text-foreground">—</span>;
+          return <span className="typo-body text-ink-3">—</span>;
         }
 
         const personaId = raw.startsWith('persona:')
@@ -125,7 +132,7 @@ export function useEventLogColumns({
         if (persona) {
           // No truncation — the full persona name is always shown (wraps if
           // the column is too narrow). Users can drag the column wider.
-          return <span className="typo-body text-foreground break-words">{persona.name}</span>;
+          return <span className="typo-body text-ink-1 break-words">{persona.name}</span>;
         }
         if (personaId) {
           // Show the full id — the column is wide (minmax(320px, 2fr)), so long
@@ -133,12 +140,12 @@ export function useEventLogColumns({
           // Same typo-body as every other value cell: this table uses ONE type
           // scale across columns (no mono/caption variance).
           return (
-            <span className="typo-body text-foreground break-all" title={personaId}>
+            <Tooltip content={personaId}><span className="typo-code text-ink-2 break-all">
               {personaId}
-            </span>
+            </span></Tooltip>
           );
         }
-        return <span className="typo-body text-foreground">—</span>;
+        return <span className="typo-body text-ink-3">—</span>;
       },
     },
     {
@@ -149,15 +156,14 @@ export function useEventLogColumns({
       filterValue: typeFilter,
       onFilterChange: setTypeFilter,
       render: (event) => {
-        const typeColor = getEventTypeColor(event.event_type).tailwind;
         // `block truncate` (not inline): the cell wrapper is a min-w-0 grid
         // cell, so only a block-level span actually clips overflow. typo-body
         // matches every other column's value font — the raw technical id
         // stays reachable via the title tooltip.
         return (
-          <span className={`block max-w-full truncate typo-body ${typeColor}`} title={event.event_type}>
+          <Tooltip content={event.event_type}><span className="block max-w-full truncate typo-body text-ink-1">
             {eventTypeLabel(t, event.event_type)}
-          </span>
+          </span></Tooltip>
         );
       },
     },
@@ -169,18 +175,7 @@ export function useEventLogColumns({
       filterValue: statusFilter,
       onFilterChange: setStatusFilter,
       render: (event) => {
-        const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-        const StatusIcon = getEventStatusIcon(event.status);
-        // typo-body like every other value cell — the pill carries the status
-        // colour, it does not need a second (smaller) type scale to do it.
-        return (
-          <span className={`inline-flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-card ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
-            {event.status === 'processing'
-              ? <LoadingSpinner size="xs" />
-              : <StatusIcon className="w-3 h-3" />}
-            {event.status}
-          </span>
-        );
+        return <StateMark state={EVENT_STATE[event.status] ?? 'warning'} label={event.status} />;
       },
     },
     {
@@ -190,7 +185,7 @@ export function useEventLogColumns({
       sortable: true,
       align: 'right' as const,
       render: (event) => (
-        <RelativeTime timestamp={event.created_at} className="typo-body text-foreground" />
+        <RelativeTime timestamp={event.created_at} className="typo-data text-ink-3" />
       ),
     },
   ], [

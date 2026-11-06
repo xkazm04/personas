@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { RefreshCw } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -248,12 +249,11 @@ export default function LlmCallsTable() {
                 <span className="typo-body text-foreground">{'—'}</span>
               )}
               {e.thinkingLevel && (
-                <span
-                  title={t.agents.executions.thinking_tooltip}
-                  className="shrink-0 px-1.5 py-0.5 rounded-card typo-caption bg-surface-1 border border-hair text-foreground"
+                <Tooltip content={t.agents.executions.thinking_tooltip}><span
+                  className="shrink-0 px-1.5 py-0.5 rounded-card typo-caption bg-surface-1 border border-hair text-ink-2"
                 >
                   {tokenLabel(t, 'thinking', e.thinkingLevel)}
-                </span>
+                </span></Tooltip>
               )}
             </span>
           );
@@ -320,17 +320,10 @@ export default function LlmCallsTable() {
           fullWidth={false}
           ariaLabel={t.overview.usage_filters.time_range_label}
         />
-        <button
-          type="button"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors border text-foreground hover:text-ink-3 bg-surface-1 hover:bg-surface-2 border-hair disabled:opacity-60"
-          title={t.common.refresh}
-        >
-          <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span className="typo-body">{t.common.refresh}</span>
-        </button>
-        <span className="ml-auto typo-code text-foreground">
+        <Button variant="secondary" size="sm" onClick={handleRefresh} disabled={isRefreshing} tooltip={t.common.refresh} icon={<RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />}>
+<span className="typo-body">{t.common.refresh}</span>
+</Button>
+        <span className="ml-auto typo-code text-ink-2">
           {tx(t.overview.activity.showing, { count: rows.length, total: globalExecutionCounts.total })}
         </span>
       </div>

@@ -50,12 +50,12 @@ export function KpiOverflowTable({
               type="button"
               onClick={() => onOpen(s.kpi.id)}
               aria-label={s.kpi.name}
-              className="typo-caption text-foreground truncate flex-1 min-w-0 text-left hover:text-primary focus-ring rounded-interactive"
+              className="typo-caption text-ink-2 truncate flex-1 min-w-0 text-left hover:text-primary focus-ring rounded-interactive"
             >
               {s.kpi.name}
             </button>
             <span
-              className="rounded-pill px-2 py-0.5 typo-label text-foreground shrink-0"
+              className="typo-label text-ink-2 shrink-0"
               style={{ background: bandFill(TRACK_COLOR[s.track], 1) }}
             >
               {trackLabel(s.track, t)}

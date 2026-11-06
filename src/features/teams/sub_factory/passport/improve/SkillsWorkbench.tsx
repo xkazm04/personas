@@ -21,6 +21,7 @@
 // tall because these surfaces are a two-panel board and a skills × projects
 // matrix, not a list.
 import { useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { ArrowRight, ChevronLeft, Puzzle, Rocket, Wand2 } from 'lucide-react';
 
 import { BaseModal } from '@/features/shared/components/modals';
@@ -87,15 +88,9 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
                 <div className="flex items-start gap-2">
                   <CardTitle icon={Rocket} title={d.skills_workbench_dispatch_title} />
                   {/* the aimed path: skill × context-group registry */}
-                  <button
-                    type="button"
-                    onClick={() => setMode('dispatch')}
-                    className="ml-auto flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive border border-hair typo-caption text-ink-2 hover:text-foreground hover:border-primary/35 hover:bg-surface-2 transition-colors focus-ring"
-                    data-testid="skills-workbench-choose-dispatch"
-                  >
-                    {d.skills_workbench_open_registry}
-                    <ArrowRight className="w-3 h-3" aria-hidden />
-                  </button>
+                  <Button variant="secondary" size="sm" className="ml-auto flex-shrink-0" onClick={() => setMode('dispatch')} data-testid="skills-workbench-choose-dispatch" iconRight={<ArrowRight className="w-3 h-3" aria-hidden />}>
+{d.skills_workbench_open_registry}
+</Button>
                 </div>
                 <p className="typo-caption text-ink-3" style={{ fontWeight: 400 }}>
                   {d.skills_workbench_dispatch_body}
@@ -109,17 +104,11 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
         ) : (
           <>
             <div className="flex items-center gap-2 px-3 py-2.5 border-b border-hair bg-surface-1 flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setMode(null)}
-                className="inline-flex items-center gap-1 pl-1 pr-2 py-1 rounded-interactive typo-caption text-ink-3 hover:text-foreground hover:bg-primary/10 transition-colors"
-                data-testid="skills-workbench-back"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" aria-hidden />
-                {d.skills_title}
-              </button>
+              <Button variant="ghost" size="sm" onClick={() => setMode(null)} data-testid="skills-workbench-back" icon={<ChevronLeft className="w-3.5 h-3.5" aria-hidden />}>
+{d.skills_title}
+</Button>
               <span className="typo-caption text-ink-3">/</span>
-              <span className="typo-caption text-foreground">
+              <span className="typo-caption text-ink-2">
                 {mode === 'dispatch' ? d.skills_workbench_crumb_registry : d.skills_workbench_crumb_manage}
               </span>
               <span className="typo-label text-ink-3 truncate">· {wb.projectName}</span>

@@ -26,7 +26,7 @@ export function LensMvpStrip({
   if (mvps.length === 0) return null;
   return (
     <section aria-label={r.backlog_mvps_title} className="flex flex-col gap-1.5">
-      <h3 className="typo-label text-foreground">{r.backlog_mvps_title}</h3>
+      <h3 className="typo-label text-ink-2">{r.backlog_mvps_title}</h3>
       <ul className="flex gap-2 overflow-x-auto pb-1">
         {mvps.map((m) => (
           <li key={m.lens ?? m.id} className="shrink-0 w-64">

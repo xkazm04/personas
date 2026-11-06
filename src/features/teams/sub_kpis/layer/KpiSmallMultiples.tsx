@@ -4,6 +4,7 @@
 // claim a trend we cannot see); a simulated/composed series is dashed. A
 // failed read is stated as a failure with a Retry, never as empty axes.
 import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { AXIS_PROPS, GRID_PROPS, SIMULATED_DASH, TARGET_LINE_PROPS, TOOLTIP_STYLE } from '../kpiChartTheme';
@@ -45,13 +46,9 @@ export function KpiSmallMultiples({
       {status === 'failed' ? (
         <div className="space-y-2">
           <p className="typo-caption">{o.trends_failed}</p>
-          <button
-            type="button"
-            onClick={onRetry}
-            className="rounded-interactive border border-hair bg-surface-1 px-2.5 py-1 typo-label text-foreground hover:bg-surface-2 focus-ring"
-          >
+          <Button variant="secondary" size="sm" onClick={onRetry}>
             {o.retry}
-          </button>
+          </Button>
         </div>
       ) : series.length === 0 ? (
         status === 'loading' ? (
@@ -103,7 +100,7 @@ function MiniPanel({
         type="button"
         onClick={() => onOpen(kpi.id)}
         aria-label={kpi.name}
-        className="typo-label text-foreground truncate max-w-full text-left hover:text-primary focus-ring rounded-interactive"
+        className="typo-label text-ink-2 truncate max-w-full text-left hover:text-primary focus-ring rounded-interactive"
       >
         {kpi.name}
       </button>

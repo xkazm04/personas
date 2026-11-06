@@ -63,7 +63,7 @@ const AcceptedRow = memo(function AcceptedRow({
         checked={selected}
         onChange={() => onToggle(row.id)}
         aria-label={tx(t.monitor.triage_accepted_row_aria, { title: row.title })}
-        className="h-3.5 w-3.5 shrink-0 cursor-pointer rounded border-hair bg-surface-1 accent-primary"
+        className="h-3.5 w-3.5 shrink-0 cursor-pointer rounded-interactive border-hair bg-surface-1 accent-primary"
       />
       {/* Same token and same single-line treatment as the decide row — see the
           note there about why `typo-body` is not tightened with a utility. */}

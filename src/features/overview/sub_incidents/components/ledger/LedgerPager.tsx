@@ -44,7 +44,7 @@ export function LedgerPager({
       }`}
     >
       <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <span className="typo-caption text-foreground tabular-nums">
+        <span className="typo-data text-ink-2">
           {tx(l.showing_range, { start: rangeStart, end: rangeEnd, total })}
         </span>
         {/* The caveat reads as the second clause of the range, muted one tier
@@ -63,7 +63,7 @@ export function LedgerPager({
         {/* ThemedSelect, not a native select element — native options render
             OS-styled. `hideSearch` because three fixed sizes need no
             type-ahead. */}
-        <label className="flex items-center gap-1.5 typo-caption text-foreground">
+        <label className="flex items-center gap-1.5 typo-caption text-ink-2">
           <ThemedSelect
             filterable
             hideSearch
@@ -83,7 +83,7 @@ export function LedgerPager({
           <PagerButton label={l.prev_page} disabled={atFirst} onClick={() => onPageChange(pageIndex - 1)}>
             <ChevronLeft className="h-3.5 w-3.5" />
           </PagerButton>
-          <span className="px-2 typo-caption text-foreground tabular-nums">
+          <span className="px-2 typo-data text-ink-2">
             {tx(l.page_indicator, { page: pageIndex + 1, pages: pageCount })}
           </span>
           <PagerButton label={l.next_page} disabled={atLast} onClick={() => onPageChange(pageIndex + 1)}>

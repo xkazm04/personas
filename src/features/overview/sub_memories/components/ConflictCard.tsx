@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Check, GitMerge, ChevronDown, X } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
@@ -35,10 +36,10 @@ function MemoryPreview({
         </span>
       </div>
       <div className="px-2.5 py-2 space-y-1">
-        <p className="typo-caption text-foreground line-clamp-2">{stripHtml(memory.title)}</p>
-        <p className="typo-caption text-foreground line-clamp-3 whitespace-pre-wrap">{stripHtml(memory.content)}</p>
-        <div className="flex items-center gap-2 typo-caption text-foreground pt-0.5">
-          <span className="px-1.5 py-0.5 rounded bg-surface-1 border border-hair typo-caption">{memory.category}</span>
+        <p className="typo-caption text-ink-2 line-clamp-2">{stripHtml(memory.title)}</p>
+        <p className="typo-caption text-ink-2 line-clamp-3 whitespace-pre-wrap">{stripHtml(memory.content)}</p>
+        <div className="flex items-center gap-2 typo-caption text-ink-2 pt-0.5">
+          <span className="px-1.5 py-0.5 rounded-interactive bg-surface-1 border border-hair typo-caption">{memory.category}</span>
           <span>{new Date(memory.created_at).toLocaleDateString()}</span>
         </div>
       </div>
@@ -79,7 +80,7 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
 
   return (
     <div className={`rounded-modal border transition-colors ${isActive ? 'border-hair bg-surface-1' : 'border-hair bg-background/30'}`}>
-      <button type="button" onClick={onToggle} disabled={isProcessing} title={isProcessing ? mc.processing : undefined} className="w-full flex items-center gap-3 px-3 py-2.5 text-left cursor-pointer disabled:opacity-50">
+      <Tooltip content={isProcessing ? mc.processing : undefined}><button type="button" onClick={onToggle} disabled={isProcessing} className="w-full flex items-center gap-3 px-3 py-2.5 text-left cursor-pointer disabled:is-disabled">
         {kindBadge(conflict.kind, mc[`kind_${conflict.kind}`])}
         <span className="typo-body text-foreground flex-1 truncate">
           {stripHtml(conflict.memoryA.title)}
@@ -88,12 +89,12 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
         </span>
         {similarityBadge(conflict.similarity)}
         <ChevronDown className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform ${isActive ? 'rotate-180' : ''}`} />
-      </button>
+      </button></Tooltip>
 
       {isActive && (
         <div className="animate-fade-slide-in overflow-hidden">
           <div className="px-3 pb-3 space-y-3 border-t border-hair pt-3">
-            <p className="typo-caption text-foreground">{tx(mc[`reason_${conflict.reasonKey}`], { pct: conflict.reasonPct })}</p>
+            <p className="typo-caption text-ink-2">{tx(mc[`reason_${conflict.reasonKey}`], { pct: conflict.reasonPct })}</p>
             <div className="grid grid-cols-2 gap-2">
               <MemoryPreview label={t.overview.memory_conflict.memory_a} memory={conflict.memoryA} agentName={nameA} accent="blue" />
               <MemoryPreview label={t.overview.memory_conflict.memory_b} memory={conflict.memoryB} agentName={nameB} accent="amber" />

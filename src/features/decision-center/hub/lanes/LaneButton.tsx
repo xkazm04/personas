@@ -79,22 +79,21 @@ export const LaneButton = forwardRef<HTMLButtonElement, LaneButtonProps>(functio
         data-failed={count.failed ? '' : undefined}
         data-open={open ? '' : undefined}
         className={`au-chip au-l-${count.lamp} rounded-input hover:bg-transparent ${count.failed ? 'text-status-error' : zero ? 'text-ink-3' : 'text-foreground'} ${fit === 0 ? 'px-2! [&>span]:gap-1.5' : 'px-1.5! [&>span]:gap-1'} [&>span]:inline-flex [&>span]:items-center`}
-      >
-        <span className="relative inline-flex">
-          <Icon className="h-4 w-4" aria-hidden />
-          {lit && <Lamp tone={count.lamp} breathe={isNext} className="au-chip-lamp" />}
-        </span>
-        <span className="typo-caption text-current" data-testid={`decision-lane-${lane}-name`}>{label}</span>
-        {count.failed ? (
+       iconRight={count.failed ? (
           <TriangleAlert className="h-4 w-4 text-status-error" aria-hidden data-testid={`decision-lane-${lane}-failed`} />
         ) : (
           <span className="relative inline-flex h-5 min-w-[0.8rem] items-center justify-center">
             {settled
-              ? <span className="au-count typo-body-lg tabular-nums text-foreground">{count.n}</span>
+              ? <span className="au-count typo-data-lg text-foreground">{count.n}</span>
               : <span className="au-hero-tile inline-block h-4 w-3 rounded-interactive" aria-hidden />}
           </span>
-        )}
-      </Button>
+        )}>
+<span className="relative inline-flex">
+          <Icon className="h-4 w-4" aria-hidden />
+          {lit && <Lamp tone={count.lamp} breathe={isNext} className="au-chip-lamp" />}
+        </span>
+        <span className="typo-caption text-current" data-testid={`decision-lane-${lane}-name`}>{label}</span>
+</Button>
     </Tooltip>
   );
 });

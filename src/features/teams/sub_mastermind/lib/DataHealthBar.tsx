@@ -24,7 +24,7 @@ export function DataHealthBar({ failed, onRetry }: {
       data-testid="mm-data-health"
     >
       <AlertTriangle className="size-4 text-status-warning shrink-0" aria-hidden />
-      <span className="typo-caption text-foreground">
+      <span className="typo-caption text-ink-2">
         {t.mastermind.data_health_title}
       </span>
       <span className="typo-caption text-status-warning">{failed.join(' · ')}</span>

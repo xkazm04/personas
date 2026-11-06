@@ -79,12 +79,12 @@ export function LlmTrackingCell({ slug, label }: { slug: string; label: string |
   return (
     <span className="inline-flex flex-col gap-0.5 min-w-0">
       {headline ? (
-        <span className="typo-caption text-foreground truncate">{headline}</span>
+        <span className="typo-caption text-ink-2 truncate">{headline}</span>
       ) : (
         <span className="typo-caption text-ink-3">—</span>
       )}
       {typeof spend === 'number' && (
-        <span className="typo-label text-ink-3 tabular-nums">
+        <span className="typo-data text-ink-3">
           ≈$<Numeric value={spend} precision={spend >= 1 ? 2 : 4} />
           <span className="ml-0.5">/30d</span>
         </span>

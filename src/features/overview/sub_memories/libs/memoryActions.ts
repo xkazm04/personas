@@ -177,9 +177,9 @@ export function extractActionsFromReview(
 }
 
 export const ACTION_KIND_META: Record<MemoryActionKind, { color: string; bgClass: string; borderClass: string; textClass: string }> = {
-  throttle: { color: '#f59e0b', bgClass: 'bg-amber-500/10', borderClass: 'border-amber-500/20', textClass: 'text-amber-400' },
-  schedule: { color: '#8b5cf6', bgClass: 'bg-violet-500/10', borderClass: 'border-violet-500/20', textClass: 'text-violet-400' },
-  alert: { color: '#f43f5e', bgClass: 'bg-rose-500/10', borderClass: 'border-rose-500/20', textClass: 'text-rose-400' },
-  config: { color: '#06b6d4', bgClass: 'bg-cyan-500/10', borderClass: 'border-cyan-500/20', textClass: 'text-cyan-400' },
-  routing: { color: '#10b981', bgClass: 'bg-emerald-500/10', borderClass: 'border-emerald-500/20', textClass: 'text-emerald-400' },
+  throttle: { color: '#f59e0b', bgClass: 'bg-status-warning/10', borderClass: 'border-status-warning/20', textClass: 'text-status-warning' },
+  schedule: { color: '#8b5cf6', bgClass: 'bg-role-highlight/10', borderClass: 'border-role-highlight/20', textClass: 'text-role-highlight' },
+  alert: { color: '#f43f5e', bgClass: 'bg-status-error/10', borderClass: 'border-status-error/20', textClass: 'text-status-error' },
+  config: { color: '#06b6d4', bgClass: 'bg-role-external/10', borderClass: 'border-role-external/20', textClass: 'text-role-external' },
+  routing: { color: '#10b981', bgClass: 'bg-status-success/10', borderClass: 'border-status-success/20', textClass: 'text-status-success' },
 };

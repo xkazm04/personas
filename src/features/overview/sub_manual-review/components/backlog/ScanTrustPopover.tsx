@@ -91,15 +91,15 @@ function SliceRow({ slice }: { slice: ScanTrustSlice }) {
   return (
     <li className="flex flex-col gap-1 py-2 min-w-0">
       <span className="flex items-center gap-2 min-w-0">
-        <span className={`typo-caption rounded-interactive border px-2 py-0.5 tabular-nums ${LEVEL_TONE[slice.level] ?? LEVEL_TONE[0]}`}>
+        <span className={`typo-data rounded-interactive border px-2 py-0.5 ${LEVEL_TONE[slice.level] ?? LEVEL_TONE[0]}`}>
           {tx(r.backlog_trust_level, { level: slice.level })}
         </span>
-        <span className="typo-caption text-foreground truncate min-w-0 flex-1">{slice.slice}</span>
+        <span className="typo-caption text-ink-2 truncate min-w-0 flex-1">{slice.slice}</span>
         <span className="typo-caption whitespace-nowrap">
           {tx(r.backlog_trust_ceiling, { ceiling: slice.ceiling })}
         </span>
       </span>
-      <span className="typo-caption tabular-nums">
+      <span className="typo-data">
         {agreement === null
           ? r.backlog_trust_no_window
           : tx(r.backlog_trust_agreement, {

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { Plus, X, ChevronDown } from 'lucide-react';
 import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput';
 import { IMPORTANCE_MIN, IMPORTANCE_MAX, IMPORTANCE_DEFAULT } from '../../libs/memoryConstants';
@@ -52,14 +53,9 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
 
   if (!expanded) {
     return (
-      <button
-        type="button"
-        className="w-full flex items-center justify-center gap-1.5 py-1.5 typo-body text-foreground hover:text-ink-2 border border-dashed border-hair hover:border-hair rounded-card transition-colors"
-        onClick={() => setExpanded(true)}
-      >
-        <Plus className="w-3 h-3" />
-        {t.pipeline.add_memory}
-      </button>
+      <Button variant="secondary" size="sm" className="w-full" onClick={() => setExpanded(true)} icon={<Plus className="w-3 h-3" />}>
+{t.pipeline.add_memory}
+</Button>
     );
   }
 
@@ -67,14 +63,9 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
     <div className="border border-hair rounded-card p-2.5 space-y-2">
       <div className="flex items-center justify-between">
         <span className="typo-body text-foreground">{t.pipeline.new_memory}</span>
-        <button
-          type="button"
-          className="p-0.5 rounded-interactive hover:bg-primary/10 text-foreground"
-          onClick={() => setExpanded(false)}
-          aria-label={t.common.cancel}
-        >
+        <Button variant="ghost" size="icon-sm" onClick={() => setExpanded(false)} aria-label={t.common.cancel}>
           <X className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       <input
@@ -102,15 +93,9 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
             if (picked) setCategory(picked);
           }}
           renderTrigger={({ isOpen, toggle }) => (
-            <button
-              type="button"
-              onClick={toggle}
-              aria-label={t.pipeline.category_label}
-              className="inline-flex items-center gap-1 typo-body bg-secondary/60 border border-hair rounded-card px-1.5 py-1 text-foreground hover:border-hair focus-visible:outline-none focus-visible:border-role-agent/30 transition-colors"
-            >
-              {tokenLabel(t, 'memory_category', category)}
-              <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
+            <Button variant="secondary" size="xs" onClick={toggle} aria-label={t.pipeline.category_label} iconRight={<ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}>
+{tokenLabel(t, 'memory_category', category)}
+</Button>
           )}
         >
           {({ close, focusIndex }) => (
@@ -152,7 +137,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
 
       <button
         type="button"
-        className="w-full typo-body py-1.5 rounded-card bg-role-agent/15 text-role-agent hover:bg-role-agent/25 transition-colors disabled:opacity-40"
+        className="w-full typo-body py-1.5 rounded-card bg-role-agent/15 text-role-agent hover:bg-role-agent/25 transition-colors disabled:is-disabled"
         disabled={!title.trim() || !content.trim()}
         onClick={() => { void handleSubmit(); }}
       >

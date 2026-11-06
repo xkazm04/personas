@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { HelpCircle, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -106,16 +107,11 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-64 rounded-modal border border-hair bg-card p-3 shadow-elevation-3 text-left">
           <div className="flex items-start justify-between gap-2 mb-2">
             <h4 className="typo-heading text-foreground">{info.label}</h4>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
-              className="text-foreground hover:text-foreground transition-colors flex-shrink-0"
-              aria-label={t.overview.metric_help_popover.dismiss_help}
-            >
+            <Button variant="ghost" size="icon-sm" className="flex-shrink-0" onClick={(e) => { e.stopPropagation(); handleDismiss(); }} aria-label={t.overview.metric_help_popover.dismiss_help}>
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </div>
-          <p className="typo-caption text-foreground mb-2">{info.description}</p>
+          <p className="typo-caption text-ink-2 mb-2">{info.description}</p>
           <div className="typo-caption space-y-1.5">
             <p className="text-status-success">
               <span className="font-medium">{t.overview.metric_help_popover.healthy}</span> {info.healthyRange}
@@ -127,7 +123,7 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
-            className="mt-2.5 w-full typo-caption text-center py-1 rounded-card bg-surface-1 hover:bg-primary/10 text-foreground hover:text-foreground transition-colors"
+            className="mt-2.5 w-full typo-caption text-center py-1 rounded-card bg-surface-1 hover:bg-primary/10 text-ink-2 hover:text-ink-2 transition-colors"
           >
             {t.overview.metric_help_popover.got_it}
           </button>

@@ -4,6 +4,7 @@
 // DashboardHomeMissionControl during the 2026-08-25 monitoring consolidation.
 
 import { memo, useMemo } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useReducedMotion } from 'framer-motion';
 import { ClipboardCheck, Activity, Cpu, Bell } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -152,7 +153,7 @@ function SuccessRing({ rate }: { rate: number | null }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="font-mono text-4xl tabular-nums text-foreground">
+        <div className="font-mono text-4xl num text-foreground">
           {measured ? (
             <>
               <AnimatedCounter value={rate} formatFn={(v) => `${Math.round(v)}`} />
@@ -176,11 +177,10 @@ function SuccessRing({ rate }: { rate: number | null }) {
 export function FleetTag() {
   const { t } = useTranslation();
   return (
-    <span
-      title={t.overview.dashboard.scope_fleet_hint}
+    <Tooltip content={t.overview.dashboard.scope_fleet_hint}><span
       className="typo-eyebrow px-1.5 py-0.5 rounded-interactive border border-hair bg-surface-1 flex-shrink-0"
     >
       {t.overview.dashboard.scope_fleet}
-    </span>
+    </span></Tooltip>
   );
 }

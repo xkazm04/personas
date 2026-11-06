@@ -75,8 +75,8 @@ export function DeckTray({
         <span className="flex items-baseline gap-1 typo-caption" aria-live="polite">
           {pending ? null : queue.length === 0 ? m.dc_deck_empty : (
             <>
-              <span className="typo-heading tabular-nums text-foreground">{index + 1}</span>
-              <span className="tabular-nums">{tx(m.dc_deck_position, { total: queue.length })}</span>
+              <span className="typo-data text-foreground">{index + 1}</span>
+              <span className="num">{tx(m.dc_deck_position, { total: queue.length })}</span>
             </>
           )}
         </span>
@@ -140,7 +140,7 @@ export function DeckTray({
               data-testid="deck-stack-left"
             >
               <Layers className="h-3.5 w-3.5" aria-hidden />
-              <span className="typo-heading tabular-nums text-foreground">{left}</span> {m.dc_deck_more}
+              <span className="typo-data text-foreground">{left}</span> {m.dc_deck_more}
             </motion.span>
           </Tooltip>
         )}

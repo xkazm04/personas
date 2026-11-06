@@ -66,16 +66,16 @@ export function MissionLearning({ assignmentId, teamId }: {
     <div className="mt-4 rounded-card border border-hair bg-surface-1 px-4 py-3 space-y-3" data-testid="mission-learning">
       <div className="flex items-center gap-2">
         <GraduationCap className="w-3.5 h-3.5 text-role-agent" />
-        <h4 className="typo-label text-foreground">{ts.learning_heading}</h4>
+        <h4 className="typo-label text-ink-2">{ts.learning_heading}</h4>
       </div>
 
       {!outcome ? (
-        <p className="typo-caption text-foreground italic">{ts.learning_empty}</p>
+        <p className="typo-caption text-ink-2 italic">{ts.learning_empty}</p>
       ) : (
         <>
           {/* Outcome summary — the recorded evidence, not a recomputation. */}
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="typo-caption text-foreground tabular-nums">
+            <span className="typo-data text-ink-2">
               {tx(ts.learning_steps_summary, {
                 done: outcome.stepsDone,
                 failed: outcome.stepsFailed,
@@ -83,17 +83,17 @@ export function MissionLearning({ assignmentId, teamId }: {
               })}
             </span>
             {outcome.reviewInterventions > 0 && (
-              <span className="typo-caption text-status-warning tabular-nums">
+              <span className="typo-data text-status-warning">
                 {tx(ts.learning_interventions, { count: outcome.reviewInterventions })}
               </span>
             )}
-            <span className="typo-caption text-foreground">{retroLabel(ts, outcome)}</span>
+            <span className="typo-caption text-ink-2">{retroLabel(ts, outcome)}</span>
           </div>
 
           {/* Per-step trust deltas — what this mission taught the matcher. */}
           {trustSteps.length > 0 && (
             <div className="space-y-1.5">
-              <p className="typo-label text-foreground">{ts.learning_trust_heading}</p>
+              <p className="typo-label text-ink-2">{ts.learning_trust_heading}</p>
               {trustSteps.map((s) => (
                 <TrustDeltaRow key={s.stepId} step={s} personaIndex={personaIndex} />
               ))}
@@ -104,11 +104,11 @@ export function MissionLearning({ assignmentId, teamId }: {
 
       {/* Team lessons — retrieved from the same ledger the matcher reads. */}
       <div className="space-y-1.5">
-        <p className="flex items-center gap-1.5 typo-label text-foreground">
+        <p className="flex items-center gap-1.5 typo-label text-ink-2">
           <BookOpen className="w-3 h-3" /> {ts.learning_lessons_heading}
         </p>
         {lessons.length === 0 ? (
-          <p className="typo-caption text-foreground italic">{ts.learning_no_lessons}</p>
+          <p className="typo-caption text-ink-2 italic">{ts.learning_no_lessons}</p>
         ) : (
           lessons.map((l) => (
             <p key={l.id} className="typo-caption text-ink-2 line-clamp-2">
@@ -134,8 +134,8 @@ function TrustDeltaRow({ step, personaIndex }: {
   return (
     <div className="flex items-center gap-2 flex-wrap">
       <PersonaChip persona={persona} />
-      <span className="typo-caption text-foreground truncate max-w-52">{step.title}</span>
-      <span className={`inline-flex items-center gap-1 typo-caption tabular-nums ${up ? 'text-status-success' : 'text-status-warning'}`}>
+      <span className="typo-caption text-ink-2 truncate max-w-52">{step.title}</span>
+      <span className={`inline-flex items-center gap-1 typo-data ${up ? 'text-status-success' : 'text-status-warning'}`}>
         {up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
         {before.toFixed(2)}
         <ArrowRight className="w-2.5 h-2.5" />

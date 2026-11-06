@@ -179,7 +179,7 @@ export function KPIConnectWizard({
             <h2 id="kpi-connect-wizard-title" className="typo-heading text-foreground">
               {t.kpis.connect_wizard_title}
             </h2>
-            <p className="typo-caption text-foreground mt-0.5 truncate">
+            <p className="typo-caption text-ink-2 mt-0.5 truncate">
               {kpi.name}
               {metricType ? ` · ${metricType.label}` : ''}
             </p>
@@ -219,7 +219,7 @@ export function KPIConnectWizard({
                     data-testid={`kpi-metric-type-${mt.id}`}
                   >
                     <span className="typo-body text-foreground">{mt.label}</span>
-                    <span className="typo-caption text-foreground block opacity-80">{mt.contract}</span>
+                    <span className="typo-caption text-ink-2 block">{mt.contract}</span>
                   </button>
                 ))}
                 {types.length === 0 && <LoadingSpinner size="sm" />}
@@ -247,7 +247,7 @@ export function KPIConnectWizard({
                         <span className="typo-body text-foreground block truncate">
                           {c.name}
                         </span>
-                        <span className="typo-caption text-foreground opacity-80">
+                        <span className="typo-caption text-ink-2">
                           {c.connector_label}
                         </span>
                       </span>
@@ -275,7 +275,7 @@ export function KPIConnectWizard({
               <p className="typo-body text-foreground">
                 {tx(t.kpis.wizard_composing, { service: picked.connector_label })}
               </p>
-              <p className="typo-caption text-foreground opacity-80">{t.kpis.wizard_testing_note}</p>
+              <p className="typo-caption text-ink-2">{t.kpis.wizard_testing_note}</p>
             </div>
           )}
 
@@ -289,11 +289,11 @@ export function KPIConnectWizard({
             <>
               <Section title={t.kpis.wizard_verify_section}>
                 <div className="rounded-card border border-status-success/25 bg-status-success/10 px-4 py-3 flex items-baseline gap-2">
-                  <span className="typo-title tabular-nums">
+                  <span className="typo-title num">
                     <Numeric value={result.value} />
                   </span>
                   <span className="typo-body text-foreground">{kpi.unit || metricType?.unit || ''}</span>
-                  <span className="typo-caption text-foreground opacity-80 ml-auto">
+                  <span className="typo-caption text-ink-2 ml-auto">
                     {t.kpis.wizard_measured_now}
                   </span>
                 </div>
@@ -303,7 +303,7 @@ export function KPIConnectWizard({
                 <p className="typo-body text-foreground">
                   {result.procedure.plan || result.procedure.extract}
                 </p>
-                <p className="typo-caption text-foreground opacity-80 mt-1 flex items-center gap-1.5 flex-wrap">
+                <p className="typo-caption text-ink-2 mt-1 flex items-center gap-1.5 flex-wrap">
                   <ComposedByBadge composedBy={result.composed_by} />
                   {result.composed_by === 'recipe'
                     ? t.kpis.wizard_freeze_note_recipe
@@ -316,7 +316,7 @@ export function KPIConnectWizard({
                   {result.procedure.http.method} {result.procedure.http.url}
                 </code>
                 {result.evidence && (
-                  <details className="typo-caption text-foreground opacity-80 mt-1.5">
+                  <details className="typo-caption text-ink-2 mt-1.5">
                     <summary className="cursor-pointer select-none">
                       {t.kpis.wizard_evidence_toggle}
                     </summary>

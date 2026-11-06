@@ -57,7 +57,7 @@ function ShowcaseCard({ preset, onPick }: { preset: import('@/lib/bindings/TeamP
         <h3 className="typo-heading text-ink-2">{preset.name}</h3>
         <p className="typo-body text-foreground line-clamp-2">{preset.description}</p>
         <div className="mt-auto pt-2 flex items-center justify-between">
-          <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
+          <span className="inline-flex items-center gap-1.5 typo-caption text-ink-2">
             <Users className="w-3.5 h-3.5" />
             {tx(
               preset.members.length === 1

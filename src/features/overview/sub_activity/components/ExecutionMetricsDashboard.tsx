@@ -1,4 +1,6 @@
 import { useCallback } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TrendingUp, AlertTriangle, Zap, DollarSign, CheckCircle, Clock, Timer, RefreshCw } from 'lucide-react';
@@ -66,19 +68,18 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
         <TrendingUp className="w-4 h-4 text-status-info flex-shrink-0" aria-hidden="true" />
         <DayRangePicker value={m.days} onChange={m.setDayRange} customDateRange={m.customDateRange} onCustomDateRangeChange={m.setCustomDateRange} />
         <CompareToggle enabled={m.compareEnabled} onChange={m.setCompareEnabled} />
-        <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-card bg-status-info/8 border border-status-info/15 text-[11px] text-status-info">
+        <span className="hidden sm:inline-flex items-center gap-1 typo-data text-ink-3">
           <Timer className="w-3 h-3" />
           {m.activeRangeLabel}
         </span>
         {m.isRefreshing && (
-          <span
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] text-status-info"
+          <Tooltip content={t.common.refresh}><span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption text-status-info"
             aria-live="polite"
             aria-label={t.common.refresh}
-            title={t.common.refresh}
           >
             <RefreshCw className="w-3 h-3 animate-spin" />
-          </span>
+          </span></Tooltip>
         )}
       </div>
 
@@ -88,7 +89,7 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
         <div className="text-center py-8">
           <AlertTriangle className="w-6 h-6 text-status-error mx-auto mb-2" />
           <p className="typo-body text-status-error">{m.error}</p>
-          <button type="button" onClick={m.load} className="mt-2 typo-body text-status-info hover:text-status-info underline">{t.common.retry}</button>
+          <Button variant="link" size="sm" className="mt-2" onClick={m.load}>{t.common.retry}</Button>
         </div>
       ) : m.isInitialLoading || !m.data ? (
         <KpiGhosts />

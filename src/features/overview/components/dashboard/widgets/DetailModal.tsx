@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { X } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -40,14 +41,9 @@ export default function DetailModal({ title, subtitle, onClose, actions, maxWidt
             <p className="typo-body text-foreground mt-1">{subtitle}</p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-ink-2 transition-colors focus-ring"
-          aria-label={t.overview.detail_modal.close}
-        >
+        <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t.overview.detail_modal.close}>
           <X className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Scrollable body */}

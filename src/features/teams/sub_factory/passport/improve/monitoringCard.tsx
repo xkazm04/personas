@@ -20,6 +20,7 @@
 //    label  typo-caption text-ink-3
 //    value  typo-caption text-foreground  + fontWeight 400
 import type { LucideIcon } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { Check, Code2, Plug, Rocket, Unplug, X } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -181,7 +182,7 @@ export function SideHalf({ side, toolLabel, serviceType, children }: {
       {toolLabel
         ? <ToolMark label={toolLabel} serviceType={serviceType} />
         : <EmptyMark icon={side === 'code' ? Code2 : Unplug} />}
-      <span className="typo-caption text-foreground truncate max-w-full" style={{ fontWeight: 400 }}>
+      <span className="typo-caption text-ink-2 truncate max-w-full" style={{ fontWeight: 400 }}>
         {toolLabel ?? <span className="text-ink-3">{d.monitoring_none_dash}</span>}
       </span>
       {children}
@@ -222,15 +223,9 @@ export function UnbindButton({ busy, onClick }: { busy: boolean; onClick: () => 
   const d = t.plugins.dev_tools;
   return (
     <Tooltip content={d.envslot_unassign} placement="top">
-      <button
-        type="button"
-        disabled={busy}
-        onClick={onClick}
-        aria-label={d.envslot_unassign}
-        className="p-0.5 rounded-interactive text-ink-3 hover:text-[var(--status-error)] hover:bg-[var(--status-error)]/10 transition-colors disabled:opacity-40"
-      >
+      <Button variant="ghost" size="icon-sm" disabled={busy} onClick={onClick} aria-label={d.envslot_unassign}>
         <X className="w-3 h-3" />
-      </button>
+      </Button>
     </Tooltip>
   );
 }
@@ -248,16 +243,11 @@ export function CardAction({ row, busy, deploying, onPick, onDeploy }: {
   const d = t.plugins.dev_tools;
   const isDeploy = row.state === 'not_implemented';
   return (
-    <button
-      type="button"
-      disabled={isDeploy ? deploying : busy}
-      onClick={isDeploy ? onDeploy : onPick}
-      className="relative w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/10 hover:bg-primary/20 border border-hair transition-colors disabled:opacity-40"
-    >
+    <Button variant="secondary" size="sm" className="relative w-full" disabled={isDeploy ? deploying : busy} onClick={isDeploy ? onDeploy : onPick}>
       {isDeploy
         ? <><Rocket className="w-3 h-3" aria-hidden />{deploying ? d.monitoring_deploying : d.monitoring_deploy}</>
         : <><Plug className="w-3 h-3" aria-hidden />{row.bound ? d.envslot_reassign : d.envslot_assign}</>}
-    </button>
+    </Button>
   );
 }
 
@@ -277,16 +267,15 @@ export function CandidateRow({ credential, healthy, selected, busy, onClick }: {
       type="button"
       disabled={busy}
       onClick={onClick}
-      className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive hover:bg-primary/10 transition-colors focus-ring disabled:opacity-40"
+      className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive hover:bg-primary/10 transition-colors focus-ring disabled:is-disabled"
     >
       <ToolMark label={credential.name} serviceType={credential.serviceType} size={18} />
-      <span className="typo-caption text-foreground truncate flex-1 min-w-0 text-left" style={{ fontWeight: 400 }}>{credential.name}</span>
-      <span
+      <span className="typo-caption text-ink-2 truncate flex-1 min-w-0 text-left" style={{ fontWeight: 400 }}>{credential.name}</span>
+      <Tooltip content={label}><span
         className="w-1.5 h-1.5 rounded-full shrink-0"
         style={{ background: healthy === true ? 'var(--status-success)' : healthy === false ? 'var(--status-error)' : 'var(--status-neutral)' }}
-        title={label}
         aria-label={label}
-      />
+      /></Tooltip>
       {selected && <Check className="w-3 h-3 text-primary shrink-0" aria-hidden />}
     </button>
   );

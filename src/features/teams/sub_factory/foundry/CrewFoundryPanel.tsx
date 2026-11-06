@@ -7,6 +7,8 @@
 // assignment success rate (instrumented now, even while sparse) with the
 // AthenaComposedBadge marking foundry provenance.
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 import { Hammer, Loader2, RefreshCw, Users } from 'lucide-react';
 
 import { getCrossProjectMetadata } from '@/api/devTools/devTools';
@@ -158,13 +160,12 @@ export function CrewFoundryPanel({ data }: { data: FactoryL2Data }) {
                 <span className="text-ink-2 truncate">{p.personaName}</span>
                 <span className="text-ink-3">{p.role}</span>
                 {p.stepsTotal > 0 ? (
-                  <span
-                    className="tabular-nums font-medium"
+                  <Tooltip content={`${p.stepsDone} done · ${p.stepsFailed} failed`}><span
+                    className="num font-medium"
                     style={{ color: (p.successRate ?? 0) >= 0.7 ? INK.emerald : (p.successRate ?? 0) >= 0.4 ? INK.amber : INK.red }}
-                    title={`${p.stepsDone} done · ${p.stepsFailed} failed`}
                   >
                     {Math.round((p.successRate ?? 0) * 100)}% of {p.stepsTotal}
-                  </span>
+                  </span></Tooltip>
                 ) : (
                   <span className="text-ink-3 italic">no runs yet</span>
                 )}
@@ -196,19 +197,11 @@ export function CrewFoundryPanel({ data }: { data: FactoryL2Data }) {
               ? `I found ${compiled.deficits.length} deficit${compiled.deficits.length === 1 ? '' : 's'} to staff against: ${compiled.deficits.map((d) => d.split(':')[0]).join(' · ')}`
               : 'Telemetry is thin — I will forge a minimal implementer crew for the open goals.'}
         </span>
-        <button
-          type="button"
-          onClick={doForge}
-          disabled={composing || noContexts || !compiled}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-card px-2.5 py-1 typo-caption transition-colors focus-ring hover:bg-foreground/[0.05] disabled:opacity-50 shrink-0"
-          style={{ color: INK.violet, border: `1px solid ${INK.violet}55` }}
-          data-testid="crew-foundry-forge"
-        >
-          {composing
+        <Button variant="ghost" size="sm" className="ml-auto shrink-0" onClick={doForge} disabled={composing || noContexts || !compiled} style={{ color: INK.violet, border: `1px solid ${INK.violet}55` }} data-testid="crew-foundry-forge" icon={composing
             ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />
-            : <Hammer className="w-3.5 h-3.5" aria-hidden />}
-          {composing ? 'Forging crew…' : "Forge this project's crew"}
-        </button>
+            : <Hammer className="w-3.5 h-3.5" aria-hidden />}>
+{composing ? 'Forging crew…' : "Forge this project's crew"}
+</Button>
       </span>
       {composing && (
         <p className="typo-caption text-ink-3 mt-1">
@@ -218,15 +211,9 @@ export function CrewFoundryPanel({ data }: { data: FactoryL2Data }) {
       {forge.kind === 'failed' && (
         <p className="typo-caption mt-1 flex items-center gap-2" style={{ color: INK.red }} data-testid="crew-foundry-error">
           Forge failed: {forge.error}
-          <button
-            type="button"
-            onClick={doForge}
-            className="inline-flex items-center gap-1 rounded-interactive px-1.5 py-0.5 transition-colors hover:bg-foreground/[0.08] focus-ring"
-            style={{ color: INK.violet }}
-          >
-            <RefreshCw className="w-3 h-3" aria-hidden />
-            Retry
-          </button>
+          <Button variant="ghost" size="xs" onClick={doForge} style={{ color: INK.violet }} icon={<RefreshCw className="w-3 h-3" aria-hidden />}>
+Retry
+</Button>
         </p>
       )}
     </div>

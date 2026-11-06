@@ -130,7 +130,7 @@ export function PeekShell({
         <span className="typo-heading text-foreground">{label}</span>
         {count !== null && (
           <span className="flex items-baseline gap-1 typo-caption">
-            <span className="typo-heading tabular-nums text-foreground" data-testid="decision-peek-count">{count}</span>
+            <span className="typo-data text-foreground" data-testid="decision-peek-count">{count}</span>
             {m.dc_hub_peek_waiting}
           </span>
         )}

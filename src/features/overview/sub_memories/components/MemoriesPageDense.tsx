@@ -314,23 +314,26 @@ export default function MemoriesPageDense() {
         subtitle={tx(memoriesTotal === 1 ? mui.stored_subtitle_one : mui.stored_subtitle, { count: memoriesTotal })}
         actions={
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              variant={viewTab === 'memories' ? 'secondary' : 'ghost'}
+              size="sm"
+              aria-pressed={viewTab === 'memories'}
               onClick={() => setViewTab('memories')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'memories' ? 'bg-primary/10 text-foreground border border-hair' : 'text-foreground hover:text-ink-3 bg-surface-1 hover:bg-surface-2 border border-hair'}`}
+              icon={<Brain className="w-4 h-4" />}
             >
-              <Brain className="w-4 h-4" />
-              <span className="typo-body">{mui.tab_memories}</span>
-            </button>
-            <button
-              type="button"
+              {mui.tab_memories}
+            </Button>
+            <Button
+              variant={viewTab === 'conflicts' ? 'accent' : 'ghost'}
+              tone={viewTab === 'conflicts' ? 'warning' : undefined}
+              size="sm"
+              aria-pressed={viewTab === 'conflicts'}
               onClick={() => setViewTab('conflicts')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'conflicts' ? 'bg-status-warning/15 text-status-warning border border-status-warning/25' : 'text-foreground hover:text-ink-3 bg-surface-1 hover:bg-surface-2 border border-hair'}`}
+              icon={<Shield className="w-4 h-4" />}
             >
-              <Shield className="w-4 h-4" />
-              <span className="typo-body">{mui.tab_conflicts}</span>
-            </button>
-            <div className="w-px h-6 bg-primary/10" />
+              {mui.tab_conflicts}
+            </Button>
+            <div className="w-px h-6 bg-hair" />
             {/* `Button loading` renders a REAL spinner and sets aria-busy.
                 What stood here rendered the null-returning feedback spinner in
                 place of the icon, so pressing Review deleted the icon and put
@@ -362,39 +365,44 @@ export default function MemoriesPageDense() {
                 onClick={() => setReflectMenuOpen((v) => !v)}
                 aria-haspopup="menu"
                 aria-expanded={reflectMenuOpen}
-                title={t.overview.memories.reflect_hint}
+                tooltip={t.overview.memories.reflect_hint}
               >
                 {t.overview.memories.reflect}
               </Button>
               {reflectMenuOpen && (
                 <div className="absolute right-0 top-full mt-1 z-30 min-w-[220px] max-h-72 overflow-y-auto rounded-modal border border-hair bg-background shadow-elevation-3 p-1">
-                  <p className="px-2 py-1.5 typo-caption text-foreground">{t.overview.memories.reflect_pick_persona}</p>
+                  <p className="px-2 py-1.5 typo-eyebrow text-ink-3">{t.overview.memories.reflect_pick_persona}</p>
                   {reflectablePersonas.map((p) => (
-                    <button
-                      type="button"
-                      key={p.id}
-                      onClick={() => handleReflect(p.id)}
-                      className="w-full flex items-center justify-between gap-3 px-2 py-1.5 rounded-card typo-body text-ink-2 hover:bg-surface-2 transition-colors"
-                    >
+                    <button type="button" className="w-full flex items-center justify-between gap-3 px-2 min-h-[var(--row-h)] rounded-interactive typo-body text-ink-2 hover:bg-surface-2 transition-colors" key={p.id} onClick={() => handleReflect(p.id)}>
                       <span className="truncate">{p.name}</span>
-                      <span className="typo-caption text-foreground flex-shrink-0">{p.count}</span>
+                      <span className="typo-data text-ink-3 flex-shrink-0">{p.count}</span>
                     </button>
                   ))}
                 </div>
               )}
             </div>
-            <button type="button" onClick={() => setShowAddForm((v) => !v)} className={`flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all ${showAddForm ? 'bg-role-agent/30 text-role-agent border-role-agent/40' : 'bg-role-agent/20 text-role-agent border-role-agent/30 hover:bg-role-agent/30'}`}>
-              <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
+            <Button
+              variant={showAddForm ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={() => setShowAddForm((v) => !v)}
+              icon={<Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />}
+            >
               {t.common.add}
-            </button>
+            </Button>
             {memories.length > 0 && (
-              <button type="button" onClick={() => {
-                countDeletableMemories()
-                  .then((n) => { setDeleteAllCount(n); setConfirmingDeleteAll(true); })
-                  .catch(toastCatch('MemoriesPageDense:deleteAllCount', mui.delete_all_error));
-              }} className="flex items-center gap-1.5 px-2.5 py-1.5 typo-heading rounded-modal border transition-all bg-status-error/15 text-status-error border-status-error/30 hover:bg-status-error/25" title={t.overview.memories.delete_all}>
+              <Button
+                variant="danger"
+                size="icon-sm"
+                tooltip={t.overview.memories.delete_all}
+                aria-label={t.overview.memories.delete_all}
+                onClick={() => {
+                  countDeletableMemories()
+                    .then((n) => { setDeleteAllCount(n); setConfirmingDeleteAll(true); })
+                    .catch(toastCatch('MemoriesPageDense:deleteAllCount', mui.delete_all_error));
+                }}
+              >
                 <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             )}
           </div>
         }
@@ -413,7 +421,7 @@ export default function MemoriesPageDense() {
       ) : (
       <ContentBody flex>
         {/* Numeric KPI strip — borrows the personas-web "TopMetric | Divider" pattern */}
-        <div className="flex items-center gap-3 flex-wrap px-4 md:px-6 py-2 border-b border-hair bg-secondary/5 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-wrap px-4 md:px-6 py-2 border-b border-hair flex-shrink-0">
           {stats && (
             <div className="flex items-center gap-3 typo-body flex-wrap">
               <KpiMetric label={mui.kpi_total} value={stats.total} />
@@ -471,33 +479,30 @@ export default function MemoriesPageDense() {
             <option value="working">{t.overview.memory_filter.tier_working}</option>
             <option value="archive">{t.overview.memory_filter.tier_archived}</option>
           </ThemedSelect>
-          <span className="typo-label text-foreground mr-1">{mui.category_label}</span>
+          <span className="typo-eyebrow text-ink-3 mr-1">{mui.category_label}</span>
           {ALL_MEMORY_CATEGORIES.map((cat) => {
             const colors = MEMORY_CATEGORY_COLORS[cat]!;
             const active = categoryFilters.has(cat);
             return (
-              <button
-                type="button"
+              <Button
                 key={cat}
+                variant={active ? 'secondary' : 'ghost'}
+                size="xs"
+                aria-pressed={active}
                 onClick={() => toggleCategory(cat)}
-                className={`flex items-center gap-1 rounded-interactive px-2.5 py-1 typo-body transition-all border ${
-                  active
-                    ? `${colors.bg} ${colors.text} border-current/30`
-                    : 'text-foreground hover:text-foreground hover:bg-surface-2 border-transparent'
-                }`}
               >
                 {colors.label}
-              </button>
+              </Button>
             );
           })}
           {hasActiveFilters && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="xs"
               onClick={() => { setCategoryFilters(new Set()); setPersonaFilter(null); setTierFilter(null); setSearch(''); }}
-              className="typo-body text-foreground hover:text-foreground px-2 py-1"
             >
               {t.common.clear}
-            </button>
+            </Button>
           )}
         </div>
 
@@ -516,7 +521,7 @@ export default function MemoriesPageDense() {
               to sort descending." label. role="row" on the container mirrors the
               sibling faux tables (GlobalExecutionList, ReportList). */}
           <div role="row" className="flex items-center border-b border-hair bg-background/80 flex-shrink-0 relative z-10">
-            <div role="columnheader" className={`${COL_WIDTHS.type} flex justify-center px-2 py-2 typo-caption font-mono uppercase tracking-widest text-foreground`}>{mui.col_type}</div>
+            <div role="columnheader" className={`${COL_WIDTHS.type} flex justify-center px-2 py-2 typo-eyebrow text-ink-2`}>{mui.col_type}</div>
             <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.title} label={t.overview.memory_detail.title_label} active={sortField === 'title'} dir={sortDir} onSort={() => handleSort('title')} align="left" />
             <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.persona} label={t.overview.reports.columns.persona} active={sortField === 'persona'} dir={sortDir} onSort={() => handleSort('persona')} align="left" />
             <SortableHeader as="div" padding={SORT_HEADER_PADDING} className={COL_WIDTHS.importance} label={t.overview.memory_detail.importance_label} active={sortField === 'importance'} dir={sortDir} onSort={() => handleSort('importance')} align="left" />
@@ -569,14 +574,15 @@ export default function MemoriesPageDense() {
                 />
               ))}
               {hasMore && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  block
                   onClick={() => void handleLoadMore()}
                   disabled={loadingMore}
-                  className="w-full py-2 typo-caption text-primary/80 hover:text-primary transition-colors disabled:opacity-50 focus-ring rounded-interactive"
                 >
                   {loadingMore ? t.common.loading : t.overview.activity.load_more}
-                </button>
+                </Button>
               )}
               </>
             )}
@@ -630,7 +636,7 @@ export default function MemoriesPageDense() {
 
 // -- Cells & helpers -------------------------------------------------------
 
-const DENSE_GHOST_BAR = 'rounded bg-primary/[0.06]';
+const DENSE_GHOST_BAR = 'rounded-interactive bg-surface-2';
 /** Deterministic width variation so ghosts read as rows, not a barcode. */
 const DENSE_GHOST_TITLE_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
 const DENSE_ROW_HEIGHT = 40;
@@ -738,7 +744,7 @@ function DenseRow({
           <div className="flex-1 h-1.5 rounded-full bg-foreground/10 overflow-hidden">
             <div className="h-full rounded-full transition-all duration-300" style={{ width: `${importancePct}%`, backgroundColor: importanceHex }} />
           </div>
-          <span className="typo-code tabular-nums text-foreground w-7 text-right">{memory.importance}/5</span>
+          <span className="typo-data text-ink-2 w-7 text-right">{memory.importance}/5</span>
         </div>
       </div>
       <div className={`${COL_WIDTHS.tier} px-2 py-2`}>
@@ -751,7 +757,7 @@ function DenseRow({
         </span>
       </div>
       <div className={`${COL_WIDTHS.access} px-2 py-2 text-right`}>
-        <span className="typo-code tabular-nums text-status-success">{memory.access_count}</span>
+        <span className="typo-data text-status-success">{memory.access_count}</span>
       </div>
       {/* A hand-rolled " ago" strip stood here to squeeze the label into a
           w-20 track, and it trimmed inconsistently: "5m ago" became "5m" but
@@ -762,10 +768,10 @@ function DenseRow({
           live-updates on the shared ticker and puts the absolute timestamp in
           a tooltip, neither of which the raw call did. */}
       <div className={`${COL_WIDTHS.lastSeen} px-2 py-2 text-right`}>
-        <RelativeTime timestamp={lastSeen} className="typo-code tabular-nums text-foreground whitespace-nowrap" />
+        <RelativeTime timestamp={lastSeen} className="typo-data text-ink-2 whitespace-nowrap" />
       </div>
       <div className={`${COL_WIDTHS.created} px-2 py-2 text-right`}>
-        <RelativeTime timestamp={memory.created_at} className="typo-code tabular-nums text-foreground whitespace-nowrap" />
+        <RelativeTime timestamp={memory.created_at} className="typo-data text-ink-2 whitespace-nowrap" />
       </div>
     </RevealItem>
   );

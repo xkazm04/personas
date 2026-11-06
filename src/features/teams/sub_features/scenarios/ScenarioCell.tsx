@@ -15,10 +15,10 @@ import { ProofLadder, ScoreBar } from '../svg/RowFigures';
 import type { ScenarioProof } from '@/api/devTools/features';
 
 const SCOPE_TONE: Record<string, string> = {
-  must_hold: 'border-primary/50 text-primary',
-  tracked: 'border-status-info/50 text-status-info',
-  out_of_scope: 'border-border text-ink-2',
-  proposed: 'border-role-agent/50 text-role-agent',
+  must_hold: 'text-primary',
+  tracked: 'text-status-info',
+  out_of_scope: 'text-ink-2',
+  proposed: 'text-role-agent',
 };
 
 export interface ScenarioCellProps {
@@ -51,7 +51,7 @@ export function ScenarioCell({ scenario, onEdit, onDelete, t, tx, language }: Sc
       <div className="flex items-start justify-between gap-2">
         <h4 className="min-w-0 typo-body text-foreground">{scenario.title}</h4>
         <span
-          className={`flex-none rounded-pill border px-1.5 typo-caption ${SCOPE_TONE[scenario.scope] ?? 'border-border text-ink-2'}`}
+          className={`flex-none typo-caption ${SCOPE_TONE[scenario.scope] ?? 'text-ink-2'}`}
         >
           {scopeLabel(scenario.scope, t)}
         </span>
@@ -62,7 +62,7 @@ export function ScenarioCell({ scenario, onEdit, onDelete, t, tx, language }: Sc
           {Object.entries(scenario.axes).map(([key, value]) => (
             <li
               key={key}
-              className="rounded-pill border border-border bg-surface-1 px-1.5 typo-caption text-foreground"
+              className="typo-caption text-ink-2"
             >
               {key}: {value}
             </li>

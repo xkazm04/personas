@@ -90,7 +90,7 @@ export function TeamPublishButton({ teamId }: { teamId: string; teamName?: strin
               />
               <CopyButton text={shareUrl} label={t.common.copy} />
             </div>
-            <p className="mt-2 typo-caption text-foreground">{s.team_publish_hint}</p>
+            <p className="mt-2 typo-caption text-ink-2">{s.team_publish_hint}</p>
           </motion.div>
         )}
       </AnimatePresence>

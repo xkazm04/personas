@@ -48,10 +48,10 @@ function RailGroupHeader({ label, count, first }: { label: string; count: number
         first ? '' : 'pt-2'
       }`}
     >
-      <span data-rail-group-name className="typo-label truncate text-foreground">
+      <span data-rail-group-name className="typo-label truncate text-ink-2">
         {label}
       </span>
-      <span className="typo-code shrink-0 text-foreground">{count}</span>
+      <span className="typo-code shrink-0 text-ink-2">{count}</span>
     </div>
   );
 }

@@ -307,10 +307,10 @@ export const LIFECYCLE_LABEL: Record<Lifecycle, string> = {
 export interface Tint { text: string; bg: string; ring: string; hex: string }
 
 export function scoreTint(score: number): Tint {
-  if (score >= 80) return { text: 'text-emerald-300', bg: 'bg-emerald-500/12', ring: 'ring-emerald-500/30', hex: '#10b981' };
-  if (score >= 60) return { text: 'text-blue-300', bg: 'bg-blue-500/12', ring: 'ring-blue-500/30', hex: '#3b82f6' };
-  if (score >= 40) return { text: 'text-amber-300', bg: 'bg-amber-500/12', ring: 'ring-amber-500/30', hex: '#f59e0b' };
-  return { text: 'text-red-300', bg: 'bg-red-500/12', ring: 'ring-red-500/30', hex: '#ef4444' };
+  if (score >= 80) return { text: 'text-status-success', bg: 'bg-status-success/10', ring: 'ring-status-success/30', hex: '#10b981' };
+  if (score >= 60) return { text: 'text-status-info', bg: 'bg-status-info/10', ring: 'ring-status-info/30', hex: '#3b82f6' };
+  if (score >= 40) return { text: 'text-status-warning', bg: 'bg-status-warning/10', ring: 'ring-status-warning/30', hex: '#f59e0b' };
+  return { text: 'text-status-error', bg: 'bg-status-error/10', ring: 'ring-status-error/30', hex: '#ef4444' };
 }
 
 /** Tint for an ordinal value by its position in its scale (0..1 → red→emerald). */

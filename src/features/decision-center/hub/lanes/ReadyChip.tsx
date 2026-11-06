@@ -44,7 +44,7 @@ function RollingCount({ n }: { n: number }) {
           animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
           exit={still ? { opacity: 0 } : { y: -dir * 14, opacity: 0, filter: 'blur(2px)' }}
           transition={still ? { duration: MOTION.duration.fast / 1000 } : { type: 'spring', ...MOTION.spring.snappy }}
-          className="au-count typo-body-lg tabular-nums text-foreground"
+          className="au-count typo-data-lg text-foreground"
         >
           {n}
         </motion.span>

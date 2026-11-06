@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 import { Pencil, Trash2 } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
@@ -15,25 +16,15 @@ export default function MemoryRowActions({ canEdit, onEdit, onDelete }: MemoryRo
     <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5">
       {canEdit && (
         <Tooltip content={pt.edit_memory}>
-          <button
-            type="button"
-            className="p-1 rounded-card bg-role-agent/10 text-role-agent hover:bg-role-agent/20 transition-colors"
-            onClick={onEdit}
-            aria-label={pt.edit_memory}
-          >
+          <Button variant="accent" tone="agent" size="icon-sm" onClick={onEdit} aria-label={pt.edit_memory}>
             <Pencil className="w-3 h-3" />
-          </button>
+          </Button>
         </Tooltip>
       )}
       <Tooltip content={pt.delete_memory}>
-        <button
-          type="button"
-          className="p-1 rounded-card bg-status-error/10 text-status-error hover:bg-status-error/20 transition-colors"
-          onClick={onDelete}
-          aria-label={pt.delete_memory}
-        >
+        <Button variant="danger" size="icon-sm" onClick={onDelete} aria-label={pt.delete_memory}>
           <Trash2 className="w-3 h-3" />
-        </button>
+        </Button>
       </Tooltip>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import {
   AlertTriangle,
   XCircle,
@@ -103,28 +104,22 @@ export function CrashLogsSection() {
         <div className="w-6 h-6 rounded-card flex items-center justify-center bg-status-error/10">
           <FileWarning className="w-3.5 h-3.5 text-status-error" />
         </div>
-        <span className="typo-label text-foreground">
+        <span className="typo-label text-ink-2">
           <DebtText k="auto_crash_logs_c2b8b441" />
         </span>
         {totalCount > 0 && (
-          <span className="ml-1 px-1.5 py-0.5 typo-heading rounded-interactive bg-status-error/15 text-status-error">
+          <span className="ml-1 typo-data text-status-error">
             {totalCount}
           </span>
         )}
         <div className="ml-auto flex items-center gap-2">
           {totalCount > 0 && expanded && (
-            <button
-              type="button"
-              onClick={(e) => {
+            <Button variant="danger" size="sm" onClick={(e) => {
                 e.stopPropagation();
                 void handleClear();
-              }}
-              disabled={clearing}
-              className="flex items-center gap-1 px-2 py-1 typo-body rounded-card text-status-error hover:text-status-error hover:bg-status-error/10 transition-colors disabled:opacity-40"
-            >
-              <Trash2 className="w-3 h-3" />
-              Clear
-            </button>
+              }} disabled={clearing} icon={<Trash2 className="w-3 h-3" />}>
+Clear
+</Button>
           )}
           {expanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
         </div>
@@ -160,7 +155,7 @@ export function CrashLogsSection() {
                   </button>
                   {selectedLog === log.filename && (
                     <div className="border-t border-hair px-3 py-2">
-                      <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
+                      <pre className="typo-code text-ink-2 whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
                         {log.content}
                       </pre>
                     </div>
@@ -187,12 +182,12 @@ export function CrashLogsSection() {
                         {log.createdAt}{log.appVersion ? ` (v${log.appVersion})` : ''}
                       </p>
                       {log.stack && (
-                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
+                        <pre className="typo-code text-ink-2 whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
                           {log.stack}
                         </pre>
                       )}
                       {log.componentStack && (
-                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-24 overflow-y-auto mt-1">
+                        <pre className="typo-code text-ink-2 whitespace-pre-wrap break-all max-h-24 overflow-y-auto mt-1">
                           <DebtText k="auto_component_stack_f77592eb" />{'\n'}{log.componentStack}
                         </pre>
                       )}
@@ -219,7 +214,7 @@ export function CrashLogsSection() {
                         {log.timestamp}
                       </p>
                       {log.stack && (
-                        <pre className="typo-code text-foreground whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
+                        <pre className="typo-code text-ink-2 whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
                           {log.stack}
                         </pre>
                       )}

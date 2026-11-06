@@ -87,8 +87,8 @@ export function MapTerritory({
 
       {labelled && (
         <div className="pointer-events-none absolute inset-x-1.5 top-0.5 flex items-baseline justify-between gap-1">
-          <span className="truncate typo-label text-foreground">{territory.label}</span>
-          <span className="shrink-0 typo-code text-foreground tabular-nums">
+          <span className="truncate typo-label text-ink-2">{territory.label}</span>
+          <span className="shrink-0 typo-data text-ink-2">
             {`${tally.measured}/${tally.total}`}
           </span>
         </div>
@@ -96,7 +96,7 @@ export function MapTerritory({
       {territory.rank != null && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full typo-code tabular-nums"
+          className="pointer-events-none absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full typo-data"
           style={{ background: 'var(--primary)', color: 'var(--background)' }}
         >
           {territory.rank}

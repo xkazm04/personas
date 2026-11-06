@@ -226,7 +226,7 @@ export function PresetConnectionGraph({
               >
                 <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: colorWithAlpha(teamColor, active ? 1 : 0.5) }} />
                 <span
-                  className="typo-body-lg uppercase tracking-wider whitespace-nowrap"
+                  className="typo-eyebrow whitespace-nowrap"
                   style={{ color: active ? teamColor : undefined }}
                 >
                   {n.role}
@@ -239,13 +239,13 @@ export function PresetConnectionGraph({
 
       {!hideLegend && (
         <div className="flex items-center gap-4 mt-1 px-1">
-          <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
+          <span className="inline-flex items-center gap-1.5 typo-caption text-ink-2">
             <svg width="24" height="8" aria-hidden>
               <line x1="0" y1="4" x2="24" y2="4" stroke={colorWithAlpha(teamColor, 0.85)} strokeWidth="2" />
             </svg>
             {t.templates.presets.graph_legend_sequential}
           </span>
-          <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
+          <span className="inline-flex items-center gap-1.5 typo-caption text-ink-2">
             <svg width="24" height="8" aria-hidden>
               <line x1="0" y1="4" x2="24" y2="4" className="stroke-status-warning" strokeWidth="2" strokeDasharray="6 4" />
             </svg>

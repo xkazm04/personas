@@ -5,6 +5,7 @@
 // the selected work lands. This is the "build golden apps easily" surface: one
 // list that says what to do next, everywhere.
 import { useMemo, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { Rocket, ScanSearch, Plug, Sparkles, Wrench, X, Target } from 'lucide-react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -128,9 +129,9 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
               </>
             )}
           </div>
-          <button type="button" onClick={onClose} aria-label={t.common.close} className="p-1 rounded-interactive text-foreground hover:bg-surface-2 transition-colors">
+          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t.common.close}>
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* ranked list */}
@@ -145,7 +146,7 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
                 const selectable = it.kind === 'task';
                 return (
                   <li key={key(it)} className="flex items-center gap-2.5 px-3 py-2 rounded-interactive border border-hair bg-secondary/15 hover:bg-secondary/25 transition-colors">
-                    <span className="typo-caption tabular-nums text-ink-3 w-5 flex-shrink-0 text-right">{i + 1}</span>
+                    <span className="typo-data text-ink-3 w-5 flex-shrink-0 text-right">{i + 1}</span>
                     {selectable ? (
                       <input type="checkbox" checked={selected.has(key(it))} onChange={() => toggle(it)} className="w-3.5 h-3.5 flex-shrink-0 cursor-pointer" style={{ accentColor: 'var(--primary)' }} />
                     ) : (
@@ -155,15 +156,15 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
                       <Icon className="w-3 h-3" aria-hidden /> {d[meta.labelKey]}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <span className="typo-caption text-foreground block truncate">
+                      <span className="typo-caption text-ink-2 block truncate">
                         <span className="font-medium">{it.projectName}</span>
                         <span className="text-ink-3"> · {it.dimLabel}</span>
                       </span>
                       {it.action && <span className="typo-label text-ink-3 block truncate">{it.action.label}</span>}
                     </div>
-                    <span className="typo-caption tabular-nums text-status-success flex-shrink-0">+{it.estGoldenLift}%</span>
+                    <span className="typo-data text-status-success flex-shrink-0">+{it.estGoldenLift}%</span>
                     {it.kind === 'scan' ? (
-                      <button type="button" onClick={() => runScan(it)} className="px-2 py-0.5 rounded-interactive typo-label text-primary bg-primary/15 hover:bg-primary/25 border border-hair transition-colors flex-shrink-0">{d.improve_plan_run}</button>
+                      <Button variant="secondary" size="xs" className="flex-shrink-0" onClick={() => runScan(it)}>{d.improve_plan_run}</Button>
                     ) : it.kind !== 'task' ? (
                       <span className="typo-label text-ink-3 flex-shrink-0 whitespace-nowrap">{d.improve_plan_in_matrix}</span>
                     ) : (
@@ -184,15 +185,9 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
           <span className="typo-caption text-ink-3">
             {selectableTasks.length > 0 ? tx(selectableTasks.length === 1 ? d.improve_plan_selected_one : d.improve_plan_selected_other, { count: selectableTasks.length }) : d.improve_plan_select_hint}
           </span>
-          <button
-            type="button"
-            onClick={queueSelected}
-            disabled={selectableTasks.length === 0 || busy}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-hair transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Rocket className="w-3.5 h-3.5" />
-            {busy ? d.improve_plan_queuing : selectableTasks.length > 0 ? tx(d.improve_plan_queue, { count: selectableTasks.length }) : d.improve_plan_queue_none}
-          </button>
+          <Button variant="secondary" size="sm" onClick={queueSelected} disabled={selectableTasks.length === 0 || busy} icon={<Rocket className="w-3.5 h-3.5" />}>
+{busy ? d.improve_plan_queuing : selectableTasks.length > 0 ? tx(d.improve_plan_queue, { count: selectableTasks.length }) : d.improve_plan_queue_none}
+</Button>
         </div>
       </div>
     </BaseModal>

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import Button from '@/features/shared/components/buttons/Button';
 import type { EmptyStateAction } from './types';
 
 /** Primary + secondary CTA row, shared across both variants. Mirrors the
@@ -15,24 +16,16 @@ export function EmptyStateActions({
   return (
     <div className="flex items-center gap-3 mt-1">
       {action && (
-        <button
-          type="button"
-          onClick={action.onClick}
-          className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal bg-primary/10 border border-hair text-primary hover:bg-primary/15 transition-colors focus-ring"
-        >
+        <Button variant="secondary" size="sm" onClick={action.onClick}>
           {action.icon && <action.icon className="w-3.5 h-3.5" />}
           {action.label}
-        </button>
+        </Button>
       )}
       {secondaryAction && (
-        <button
-          type="button"
-          onClick={secondaryAction.onClick}
-          className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal text-foreground hover:text-foreground hover:bg-primary/8 border border-hair transition-colors focus-ring"
-        >
+        <Button variant="secondary" size="sm" onClick={secondaryAction.onClick}>
           {secondaryAction.icon && <secondaryAction.icon className="w-3.5 h-3.5" />}
           {secondaryAction.label}
-        </button>
+        </Button>
       )}
     </div>
   );

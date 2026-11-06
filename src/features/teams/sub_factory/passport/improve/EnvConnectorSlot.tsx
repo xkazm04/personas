@@ -13,6 +13,7 @@
 // can honestly be detected-but-unbound (we see Postgres, nothing is wired) or
 // bound-but-undetected (a connector is wired, the code shows nothing yet).
 import { useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { Check, ChevronDown, Plug, X } from 'lucide-react';
 
 import { getConnectorMeta, ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
@@ -74,7 +75,7 @@ export function EnvConnectorSlot({
           {bound ? (
             <div className="flex items-center gap-2 min-w-0">
               <ConnectorGlyph serviceType={bound.serviceType} size="w-4 h-4" />
-              <span className="typo-caption text-foreground truncate flex-1 min-w-0">{bound.name}</span>
+              <span className="typo-caption text-ink-2 truncate flex-1 min-w-0">{bound.name}</span>
               <span
                 className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                 style={{
@@ -84,16 +85,9 @@ export function EnvConnectorSlot({
                 }}
                 aria-hidden
               />
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => onAssign(null)}
-                aria-label={d.envslot_unassign}
-                title={d.envslot_unassign}
-                className="p-0.5 rounded-interactive text-ink-3 hover:text-[var(--status-error)] hover:bg-[var(--status-error)]/10 transition-colors disabled:opacity-40"
-              >
+              <Button variant="ghost" size="icon-sm" disabled={busy} onClick={() => onAssign(null)} aria-label={d.envslot_unassign} tooltip={d.envslot_unassign}>
                 <X className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </div>
           ) : (
             <p className="typo-caption text-ink-3 italic">{d.envslot_connector_none}</p>
@@ -113,10 +107,10 @@ export function EnvConnectorSlot({
                   type="button"
                   disabled={busy}
                   onClick={() => { onAssign(c.id); setPicking(false); }}
-                  className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive hover:bg-primary/10 transition-colors focus-ring disabled:opacity-40"
+                  className="w-full flex items-center gap-2 px-1.5 py-1 rounded-interactive hover:bg-primary/10 transition-colors focus-ring disabled:is-disabled"
                 >
                   <ConnectorGlyph serviceType={c.serviceType} size="w-3.5 h-3.5" />
-                  <span className="typo-caption text-foreground truncate flex-1 min-w-0 text-left">{c.name}</span>
+                  <span className="typo-caption text-ink-2 truncate flex-1 min-w-0 text-left">{c.name}</span>
                   {health[c.id] === false && (
                     <span className="typo-caption text-[var(--status-error)] shrink-0" style={{ fontWeight: 400 }}>{d.envslot_unhealthy}</span>
                   )}
@@ -126,16 +120,9 @@ export function EnvConnectorSlot({
             ))}
           </ul>
         ) : (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setPicking(true)}
-            className="w-full inline-flex items-center justify-center gap-1.5 px-2 py-1 rounded-interactive typo-caption text-primary bg-primary/10 hover:bg-primary/20 border border-hair transition-colors disabled:opacity-40"
-          >
-            <Plug className="w-3 h-3" aria-hidden />
+          <Button variant="secondary" size="sm" className="w-full" disabled={busy} onClick={() => setPicking(true)}><span className="inline-flex items-center gap-1.5"><Plug className="w-3 h-3" aria-hidden />
             {bound ? d.envslot_reassign : d.envslot_assign}
-            <ChevronDown className="w-3 h-3" aria-hidden />
-          </button>
+            <ChevronDown className="w-3 h-3" aria-hidden /></span></Button>
         )}
       </div>
     </section>

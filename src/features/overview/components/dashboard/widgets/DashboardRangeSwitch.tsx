@@ -1,4 +1,5 @@
 import { memo, useCallback } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useOverviewStore } from '@/stores/overviewStore';
 import {
@@ -44,18 +45,9 @@ export const DashboardRangeSwitch = memo(function DashboardRangeSwitch() {
       {RANGE_OPTIONS.map((opt) => {
         const isActive = active === opt.value;
         return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onPick(opt.value)}
-            disabled={loading}
-            aria-pressed={isActive}
-            className={`typo-caption font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-interactive transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 ${
-              isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-surface-2'
-            }`}
-          >
+          <Button variant={isActive ? "secondary" : "ghost"} size="xs" key={opt.value} onClick={() => onPick(opt.value)} disabled={loading} aria-pressed={isActive}>
             {opt.label}
-          </button>
+          </Button>
         );
       })}
     </div>

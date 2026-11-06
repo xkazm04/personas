@@ -25,9 +25,9 @@ export function ForkTeamButton({ teamId }: { teamId: string }) {
     <div className="mt-2 pt-4 border-t border-hair flex flex-col gap-2 flex-shrink-0">
       <div className="flex items-center gap-2">
         <Copy className="w-4 h-4 text-primary/80" />
-        <h3 className="typo-label text-foreground">{ts.fork_heading}</h3>
+        <h3 className="typo-label text-ink-2">{ts.fork_heading}</h3>
       </div>
-      <p className="typo-caption text-foreground">{ts.fork_hint}</p>
+      <p className="typo-caption text-ink-2">{ts.fork_hint}</p>
       <div className="mt-1">
         {/* AsyncButton owns the busy state from the returned promise — no local
             flag, and the double-submit guard stays armed. */}

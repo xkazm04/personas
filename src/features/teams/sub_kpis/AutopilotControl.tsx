@@ -15,6 +15,7 @@
  * `engine/autopilot.rs`; keep the copy below in sync with that matrix.
  */
 import { useEffect, useState } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Power, Activity, Lightbulb, Rocket, type LucideIcon } from 'lucide-react';
 
 import { getAutopilotMode, setAutopilotMode, type AutopilotMode } from '@/api/devTools/autopilot';
@@ -86,21 +87,20 @@ export function AutopilotControl({ projectId, className }: { projectId: string; 
           const Icon = m.icon;
           const isActive = m.mode === mode;
           return (
-            <button
+            <Tooltip content={m.desc(t)}><button
               key={m.mode}
               type="button"
               role="radio"
               aria-checked={isActive}
               disabled={busy || mode === null}
               onClick={() => select(m.mode)}
-              title={m.desc(t)}
-              className={`inline-flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 typo-caption transition-colors disabled:opacity-60 ${
+              className={`inline-flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 typo-caption transition-colors disabled:is-disabled ${
                 isActive ? 'bg-background shadow-elevation-1' : 'text-ink-3 hover:text-ink-2'
               }`}
               style={isActive ? { color: m.accent } : undefined}
             >
               <Icon className="w-3.5 h-3.5" /> {m.label(t)}
-            </button>
+            </button></Tooltip>
           );
         })}
       </div>

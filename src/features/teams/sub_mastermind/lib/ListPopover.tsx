@@ -69,7 +69,7 @@ export function ListPopover({
           : <Icon className="w-4 h-4 shrink-0" style={{ color: ink }} aria-hidden />}
         <span className="typo-label text-ink-2 truncate">{title}</span>
         {trailing != null && (
-          <span className="ml-auto typo-caption text-ink-3 tabular-nums shrink-0">{trailing}</span>
+          <span className="ml-auto typo-data text-ink-3 shrink-0">{trailing}</span>
         )}
       </div>
       <ul className="overflow-y-auto py-1" style={{ maxHeight: maxListHeight }}>

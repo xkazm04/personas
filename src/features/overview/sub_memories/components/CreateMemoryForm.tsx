@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CheckCircle2 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
@@ -25,7 +27,7 @@ function InteractiveImportanceBar({ value, onChange }: { value: number; onChange
   const label = `Importance: ${value} of ${maxScale}`;
 
   return (
-    <div className="flex items-center gap-1.5" title={label}>
+    <Tooltip content={label}><div className="flex items-center gap-1.5">
       {/* The element carried `ref={(el) => barRef[1](el)}` over a `useState`
           held as a ref. Nothing ever read `barRef[0]`, so the only effect was a
           setState from the ref callback on mount and on unmount — two extra
@@ -50,7 +52,7 @@ function InteractiveImportanceBar({ value, onChange }: { value: number; onChange
         />
       </div>
       <span className="typo-data text-foreground min-w-[24px]">({value}/{maxScale})</span>
-    </div>
+    </div></Tooltip>
   );
 }
 
@@ -125,11 +127,9 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
                 const colors = MEMORY_CATEGORY_COLORS[cat];
                 const isActive = category === cat;
                 return (
-                  <button key={cat} type="button" onClick={() => setCategory(cat)} aria-pressed={isActive}
-                    className={`rounded-card transition-all ${isActive ? 'ring-1 ring-offset-1 ring-offset-background ring-current' : 'opacity-50 hover:opacity-80'}`}
-                  >
+                  <Button variant="ghost" size="icon-sm" key={cat} onClick={() => setCategory(cat)} aria-pressed={isActive}>
                     <CategoryChip category={cat} colors={colors} />
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -159,8 +159,8 @@ export function InlineAddMemoryForm({ onClose }: { onClose: () => void }) {
 
 
         <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="px-3 py-1.5 typo-body text-foreground hover:text-ink-2 transition-colors">{t.common.cancel}</button>
-          <button type="submit" disabled={!canSave || saving} title={saving ? t.overview.memory_form.saving_memory : !canSave ? t.overview.memory_form.fill_required : undefined} className="px-4 py-1.5 typo-heading rounded-modal bg-role-agent/20 border border-role-agent/30 text-role-agent hover:bg-role-agent/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all">{saving ? t.overview.memory_form.saving : t.overview.memory_form.save_memory}</button>
+          <Button variant="ghost" size="sm" onClick={onClose}>{t.common.cancel}</Button>
+          <Button variant="accent" tone="agent" size="sm" type="submit" disabled={!canSave || saving} tooltip={saving ? t.overview.memory_form.saving_memory : !canSave ? t.overview.memory_form.fill_required : undefined}>{saving ? t.overview.memory_form.saving : t.overview.memory_form.save_memory}</Button>
         </div>
       </form>
     </div>

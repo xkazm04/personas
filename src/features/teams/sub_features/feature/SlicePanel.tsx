@@ -47,24 +47,16 @@ export function SlicePanel({
       <ul className="mt-3 flex flex-col gap-2">
         {[...byGroup.entries()].map(([groupId, group]) => (
           <li key={groupId}>
-            <p className="typo-caption text-foreground">{groupNameById.get(groupId) ?? groupId}</p>
+            <p className="typo-caption text-ink-2">{groupNameById.get(groupId) ?? groupId}</p>
             <div className="mt-1 flex flex-wrap gap-1.5">
               {group.map((cell) => {
                 const primary = cell.context.id === primaryContextId;
                 return (
                   <Tooltip key={cell.context.id} content={roleLabel(cell.role, t)}>
-                    <button
-                      type="button"
-                      onClick={() => onOpenContext(cell.context.id)}
-                      className={`rounded-pill border px-2 py-0.5 typo-caption focus-ring ${
-                        primary
-                          ? 'border-primary/60 bg-primary/10 text-primary'
-                          : 'border-border text-foreground hover:border-primary/50'
-                      }`}
-                    >
+                    <Button variant={primary ? "secondary" : "ghost"} size="xs" onClick={() => onOpenContext(cell.context.id)}>
                       {cell.context.name}
                       {primary ? <span className="ml-1 opacity-70">{t.slice_primary}</span> : null}
-                    </button>
+                    </Button>
                   </Tooltip>
                 );
               })}

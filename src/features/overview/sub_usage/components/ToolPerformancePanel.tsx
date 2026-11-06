@@ -110,7 +110,7 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
         render: (row) => (
           <span className="inline-flex items-baseline gap-2 min-w-0">
             <span className="text-foreground truncate">{row.tool_name}</span>
-            <span className="typo-caption text-foreground shrink-0">{row.tool_type}</span>
+            <span className="typo-caption text-ink-2 shrink-0">{row.tool_type}</span>
           </span>
         ),
       },
@@ -133,7 +133,7 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
         sortable: true,
         sortFn: (a, b) => (Number(a.avg_duration_ms) || 0) - (Number(b.avg_duration_ms) || 0),
         render: (row) => (
-          <span className="tabular-nums text-foreground">{formatMs(row.avg_duration_ms ?? null, ms)}</span>
+          <span className="num text-foreground">{formatMs(row.avg_duration_ms ?? null, ms)}</span>
         ),
       },
       {
@@ -144,7 +144,7 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
         sortable: true,
         sortFn: (a, b) => (Number(a.max_duration_ms) || 0) - (Number(b.max_duration_ms) || 0),
         render: (row) => (
-          <span className="tabular-nums text-foreground">
+          <span className="num text-foreground">
             {formatMs(
               row.max_duration_ms === null || row.max_duration_ms === undefined
                 ? null
@@ -166,7 +166,7 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
           const errClass =
             errPct >= 10 ? 'text-status-error' : errPct >= 1 ? 'text-status-warning' : 'text-foreground';
           return (
-            <span className={`tabular-nums ${errClass}`}>
+            <span className={`num ${errClass}`}>
               {Number(row.error_runs) === 0 ? (
                 '0'
               ) : (
@@ -188,13 +188,13 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
       aria-label={t.overview.widgets.tool_performance}
     >
       <div className="flex items-center justify-between relative z-10">
-        <h3 className="typo-label text-foreground flex items-center gap-2">
+        <h3 className="typo-label text-ink-2 flex items-center gap-2">
           <div className="p-1.5 rounded-card bg-role-agent/10 text-role-agent">
             <Activity className="w-3.5 h-3.5" />
           </div>
           {t.overview.widgets.tool_performance}
         </h3>
-        <span className="typo-caption text-foreground">
+        <span className="typo-caption text-ink-2">
           {t.overview.widgets.tool_performance_subtitle}
         </span>
       </div>

@@ -55,7 +55,7 @@ function Row({ skill, index, busy, onDispatch }: {
       transition={{ duration: 0.2, delay: Math.min(index * 0.025, 0.35) }}
       onClick={() => onDispatch(skill.name)}
       disabled={busy || skill.running}
-      className="group grid grid-cols-[minmax(9rem,14rem)_1fr_3.5rem_2.5rem] items-center gap-3 px-3 h-10 border-b border-hair last:border-b-0 hover:bg-surface-2 transition-colors text-left disabled:cursor-not-allowed"
+      className="group grid grid-cols-[minmax(9rem,14rem)_1fr_3.5rem_2.5rem] items-center gap-3 px-3 h-10 border-b border-hair last:border-b-0 hover:bg-surface-2 transition-colors text-left disabled:is-disabled"
       data-testid={`quick-dispatch-row-${skill.name}`}
       aria-label={tx(d.skills_workbench_quick_dispatch_aria, { skill: skill.name })}
     >
@@ -65,7 +65,7 @@ function Row({ skill, index, busy, onDispatch }: {
           style={{ color: hue, borderColor: withAlpha(hue, 0.25), backgroundColor: withAlpha(hue, 0.08) }}>
           <Icon className="w-3 h-3" strokeWidth={1.75} aria-hidden />
         </span>
-        <span className="typo-caption text-foreground truncate">{skill.name}</span>
+        <span className="typo-caption text-ink-2 truncate">{skill.name}</span>
         {skill.running && <span className="typo-label text-status-info flex-shrink-0">{d.skills_workbench_quick_running}</span>}
       </span>
 
@@ -87,11 +87,11 @@ function Row({ skill, index, busy, onDispatch }: {
       </span>
 
       {/* total */}
-      <span className="typo-caption tabular-nums text-right" style={{ color: hue }}>{skill.pct}%</span>
+      <span className="typo-data text-right" style={{ color: hue }}>{skill.pct}%</span>
 
       {/* activity / action */}
       <span className="flex items-center justify-end">
-        <span className="typo-label text-ink-3 tabular-nums group-hover:hidden">{skill.invokes30d > 0 ? `${skill.invokes30d}×` : ''}</span>
+        <span className="typo-data text-ink-3 group-hover:hidden">{skill.invokes30d > 0 ? `${skill.invokes30d}×` : ''}</span>
         <Play className="w-3.5 h-3.5 text-primary hidden group-hover:block" aria-hidden />
       </span>
     </motion.button>

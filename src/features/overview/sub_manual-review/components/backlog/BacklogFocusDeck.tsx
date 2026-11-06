@@ -237,7 +237,7 @@ export function BacklogFocusDeck({
               whileTap={{ scale: 0.9 }}
               disabled={busy}
               onClick={() => swipe('left')}
-              className="w-14 h-14 rounded-full bg-status-error/10 border border-status-error/20 flex items-center justify-center hover:bg-status-error/20 disabled:opacity-40 transition-colors"
+              className="w-14 h-14 rounded-full bg-status-error/10 border border-status-error/20 flex items-center justify-center hover:bg-status-error/20 disabled:is-disabled transition-colors"
               title={r.backlog_deck_reject_title}
               aria-label={r.backlog_deck_reject_title}
             >
@@ -250,7 +250,7 @@ export function BacklogFocusDeck({
               whileTap={{ scale: 0.9 }}
               disabled={busy}
               onClick={removeTop}
-              className="w-10 h-10 rounded-full bg-primary/10 border border-hair flex items-center justify-center hover:bg-primary/15 disabled:opacity-40 transition-colors"
+              className="w-10 h-10 rounded-full bg-primary/10 border border-hair flex items-center justify-center hover:bg-primary/15 disabled:is-disabled transition-colors"
               title={r.backlog_deck_delete_title}
               aria-label={r.backlog_deck_delete_title}
             >
@@ -263,7 +263,7 @@ export function BacklogFocusDeck({
               whileTap={{ scale: 0.9 }}
               disabled={busy}
               onClick={() => void buildNow()}
-              className="w-10 h-10 rounded-full bg-status-warning/10 border border-status-warning/20 flex items-center justify-center hover:bg-status-warning/20 disabled:opacity-40 transition-colors"
+              className="w-10 h-10 rounded-full bg-status-warning/10 border border-status-warning/20 flex items-center justify-center hover:bg-status-warning/20 disabled:is-disabled transition-colors"
               title={r.backlog_build_now_title}
               aria-label={r.backlog_build_now_title}
             >
@@ -292,7 +292,7 @@ export function BacklogFocusDeck({
               whileTap={{ scale: 0.9 }}
               disabled={busy}
               onClick={() => swipe('right')}
-              className="w-14 h-14 rounded-full bg-status-success/10 border border-status-success/20 flex items-center justify-center hover:bg-status-success/20 disabled:opacity-40 transition-colors"
+              className="w-14 h-14 rounded-full bg-status-success/10 border border-status-success/20 flex items-center justify-center hover:bg-status-success/20 disabled:is-disabled transition-colors"
               title={r.backlog_deck_accept_title}
               aria-label={r.backlog_deck_accept_title}
             >

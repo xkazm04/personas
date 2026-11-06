@@ -155,7 +155,7 @@ export const MetricsCharts = memo(function MetricsCharts({
               const pct = (p.total_cost / maxCost) * 100;
               return (
                 <div key={p.persona_id} className="flex items-center gap-3 px-3 py-2 rounded-modal border border-hair bg-surface-1">
-                  <span className="typo-code text-foreground w-4 text-right">#{i + 1}</span>
+                  <span className="typo-code text-ink-2 w-4 text-right">#{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <span className="typo-heading text-foreground truncate">{p.persona_name}</span>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useId } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { Key } from 'lucide-react';
 import { getAppSettingsBulk, setAppSetting } from "@/api/system/settings";
 import { useToastStore } from '@/stores/toastStore';
@@ -34,12 +35,10 @@ const ACCENT_STYLES = {
   emerald: {
     ring: 'focus-visible:ring-status-success/40',
     icon: 'text-status-success',
-    button: 'bg-status-success/15 text-status-success border border-status-success/25 hover:bg-status-success/25',
   },
   sky: {
     ring: 'focus-visible:ring-role-external/40',
     icon: 'text-role-external',
-    button: 'bg-role-external/15 text-role-external border border-role-external/25 hover:bg-role-external/25',
   },
 };
 
@@ -144,7 +143,7 @@ export function ConfigurationPopup({
                 placeholder={loaded ? field.placeholder : t.common.loading}
                 disabled={!loaded}
                 autoFocus={field.autoFocus}
-                className={`w-full px-3 py-2 bg-surface-1 border border-hair rounded-modal typo-body text-foreground placeholder-muted-foreground/30 focus-visible:outline-none focus-visible:ring-2 ${styles.ring} transition-all disabled:opacity-50`}
+                className={`w-full px-3 py-2 bg-surface-1 border border-hair rounded-modal typo-body text-ink-1 placeholder:text-ink-3 focus-visible:outline-none focus-visible:ring-2 ${styles.ring} transition-all disabled:is-disabled`}
               />
             </div>
           ))}
@@ -157,25 +156,21 @@ export function ConfigurationPopup({
 
         <div className="px-4 py-3 border-t border-hair">
           <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-1.5 typo-body rounded-modal text-foreground hover:bg-surface-2 transition-colors"
-            >
+            <Button variant="ghost" size="sm" onClick={onClose}>
               {t.common.cancel}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
               onClick={handleSave}
               disabled={!hasAnyValue || saving}
-              className={`px-3 py-1.5 typo-body rounded-modal ${styles.button} transition-colors disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               {saving ? t.common.saving : saveLabel}
-            </button>
+            </Button>
           </div>
           {!hasAnyValue && !saving && loaded && (
             <p
-              className="animate-fade-slide-in text-foreground typo-caption mt-1.5 text-right"
+              className="animate-fade-slide-in text-ink-2 typo-caption mt-1.5 text-right"
             >
               {t.agents.config_popup.fill_hint}
             </p>

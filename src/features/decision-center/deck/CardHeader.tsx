@@ -30,7 +30,7 @@ function OutcomeBand({ side, tone, outcome }: { side: 'yes' | 'no'; tone: string
   const { t, tx } = useTranslation();
   return (
     <p className={`au-l-${tone} au-${side} flex min-w-0 flex-col gap-0.5 rounded-r-input py-1.5 pl-3 pr-3`} data-testid={`deck-${side}-band`} data-verb={outcome.verb}>
-      <span className={`${side === 'yes' ? 'au-ink-lamp' : 'text-foreground'} typo-label`}>{tx(t.monitor.dc_deck_if_you, { verb: outcome.verb })}</span>
+      <span className={`${side === 'yes' ? 'au-ink-lamp' : 'text-ink-2'} typo-label`}>{tx(t.monitor.dc_deck_if_you, { verb: outcome.verb })}</span>
       <span className="min-w-0 typo-body text-foreground [text-wrap:pretty]">{outcome.effect}</span>
     </p>
   );

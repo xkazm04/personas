@@ -9,6 +9,8 @@ import {
   ExternalLink, Loader2,
 } from 'lucide-react';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from "@/stores/toastStore";
@@ -27,7 +29,7 @@ function rotationBadge(item: RotationOverviewItem, t: Translations) {
   }
 
   if (!status.policy_enabled) {
-    return { label: tokenLabel(t, 'rotation', 'paused'), classes: 'bg-zinc-500/15 border-zinc-500/25 text-ink-3', Icon: ShieldOff };
+    return { label: tokenLabel(t, 'rotation', 'paused'), classes: 'bg-surface-1 border-hair text-ink-3', Icon: ShieldOff };
   }
 
   const rem = status.anomaly_score?.remediation;
@@ -203,15 +205,15 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
               {stats.anomalies}
             </StatusBadge>
           )}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="xs"
             onClick={openConnections}
-            className="inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card text-role-agent hover:text-role-agent hover:bg-role-agent/10 transition-colors flex-shrink-0"
-            title={t.overview.analytics_dashboard.rotation_manage_all}
+            className="flex-shrink-0"
+            iconRight={<ExternalLink className="w-2.5 h-2.5" />}
           >
             {t.overview.analytics_dashboard.rotation_manage_all}
-            <ExternalLink className="w-2.5 h-2.5" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -226,7 +228,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
           />
         </div>
       ) : (
-        <div className="divide-y divide-primary/5">
+        <div className="divide-y divide-hair">
           {rotationOverviewList.map((item) => {
             const badge = rotationBadge(item, t);
             const cd = countdownParts(item.status.next_rotation_at);
@@ -246,36 +248,37 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
             // red, rotations due now read amber, healthy rows stay neutral —
             // so the credentials needing attention are scannable down the gutter.
             const rowAccent = (item.status.anomaly_detected || item.status.consecutive_failures > 0)
-              ? 'border-l-red-400/70'
+              ? 'border-l-status-error'
               : isDue
-                ? 'border-l-amber-400/70'
+                ? 'border-l-status-warning'
                 : 'border-l-transparent';
 
             return (
               <div
                 key={item.credentialId}
-                className={`flex items-center gap-2 border-l-2 ${rowAccent} px-3 py-1.5 hover:bg-white/[0.03] transition-colors group`}
+                className={`flex items-center gap-2 border-l-2 ${rowAccent} px-3 min-h-[var(--row-h)] hover:bg-surface-2 transition-colors group`}
               >
                 {/* Status — icon-only chip, label in title attr */}
                 {badge && (
-                  <span
-                    className={`inline-flex items-center justify-center w-5 h-5 rounded-card border flex-shrink-0 ${badge.classes}`}
-                    title={badge.label}
-                    aria-label={badge.label}
-                  >
-                    <badge.Icon className="w-3 h-3" />
-                  </span>
+                  <Tooltip content={badge.label}>
+                    <span
+                      className={`inline-flex items-center justify-center w-5 h-5 rounded-card border flex-shrink-0 ${badge.classes}`}
+                      aria-label={badge.label}
+                    >
+                      <badge.Icon className="w-3 h-3" />
+                    </span>
+                  </Tooltip>
                 )}
 
                 {/* Credential info — single line: name · service */}
                 <div className="flex-1 min-w-0 flex items-baseline gap-1.5">
                   <span className="typo-body text-ink-2 truncate">{item.credentialName}</span>
-                  <span className="typo-caption text-foreground truncate">· {item.serviceType}</span>
+                  <span className="typo-caption text-ink-3 truncate">· {item.serviceType}</span>
                   {item.status.consecutive_failures > 0 && (
                     <StatusBadge
                       variant="error"
                       size="sm"
-                      className="font-mono flex-shrink-0"
+                      className="flex-shrink-0"
                       title={tx(t.overview.analytics_dashboard.fail_count, { count: item.status.consecutive_failures })}
                     >
                       {item.status.consecutive_failures}x
@@ -285,8 +288,8 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
 
                 {/* Countdown */}
                 {countdown && (
-                  <span className={`typo-caption font-mono flex-shrink-0 ${
-                    isDue ? 'text-status-warning' : 'text-foreground'
+                  <span className={`typo-data flex-shrink-0 ${
+                    isDue ? 'text-status-warning' : 'text-ink-3'
                   }`}>
                     {countdown}
                   </span>
@@ -294,27 +297,27 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-0.5 flex-shrink-0">
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => handleRotate(item)}
                     disabled={rotateDisabled || !item.status.has_policy}
-                    title={t.vault.rotation_section.rotate_now}
+                    tooltip={t.vault.rotation_section.rotate_now}
                     aria-label={t.vault.rotation_section.rotate_now}
-                    className="p-1 rounded-card text-role-agent hover:text-role-agent hover:bg-role-agent/15 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
                   >
                     {isRotating
                       ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       : <RotateCw className="w-3.5 h-3.5" />}
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={openConnections}
-                    title={t.overview.analytics_dashboard.rotation_open_in_connections}
+                    tooltip={t.overview.analytics_dashboard.rotation_open_in_connections}
                     aria-label={t.overview.analytics_dashboard.rotation_open_in_connections}
-                    className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-surface-2 transition-colors"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             );

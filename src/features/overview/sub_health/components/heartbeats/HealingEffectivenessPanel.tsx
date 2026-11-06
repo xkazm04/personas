@@ -77,7 +77,7 @@ export function HealingEffectivenessPanel() {
         <HeartPulse className="w-4 h-4 text-status-error" />
         <h3 className="typo-body text-ink-2">{te.title}</h3>
         {report && (
-          <span className="typo-caption text-foreground ml-auto">
+          <span className="typo-caption text-ink-2 ml-auto">
             {te.window_label} {report.window_days}d
           </span>
         )}
@@ -92,16 +92,16 @@ export function HealingEffectivenessPanel() {
           onRetry={() => setAttempt((n) => n + 1)}
         />
       ) : !report || report.attempted === 0 ? (
-        <p className="typo-caption text-foreground py-4 text-center">{te.no_data}</p>
+        <p className="typo-caption text-ink-2 py-4 text-center">{te.no_data}</p>
       ) : (
         <div className="space-y-4">
           {/* Overall */}
           <div className="flex items-center gap-4">
             <div className="flex flex-col">
-              <span className={`typo-heading-lg font-semibold ${rateColor(report.success_rate)}`}>
+              <span className={`typo-heading-lg ${rateColor(report.success_rate)}`}>
                 {pct(report.success_rate)}
               </span>
-              <span className="typo-caption text-foreground">{te.success_rate}</span>
+              <span className="typo-caption text-ink-2">{te.success_rate}</span>
             </div>
             <div className="flex items-center gap-3 typo-caption ml-auto">
               <Stat label={te.confirmed} value={report.confirmed} className="text-status-success" />
@@ -124,10 +124,10 @@ export function HealingEffectivenessPanel() {
                       style={{ width: `${Math.round(row.success_rate * 100)}%` }}
                     />
                   </span>
-                  <span className={`w-9 text-right tabular-nums ${rateColor(row.success_rate)}`}>
+                  <span className={`w-9 text-right num ${rateColor(row.success_rate)}`}>
                     {pct(row.success_rate)}
                   </span>
-                  <span className="w-16 text-right text-foreground tabular-nums">
+                  <span className="w-16 text-right text-foreground num">
                     <Numeric value={row.confirmed} />/<Numeric value={row.attempted} />
                   </span>
                 </li>
@@ -138,14 +138,14 @@ export function HealingEffectivenessPanel() {
           {/* Recent activity */}
           {activity.length > 0 && (
             <div>
-              <h4 className="typo-caption text-foreground mb-1.5">{te.recent_activity}</h4>
+              <h4 className="typo-caption text-ink-2 mb-1.5">{te.recent_activity}</h4>
               <ul className="space-y-1">
                 {activity.map((entry) => (
                   <li key={entry.id} className="flex items-center gap-2 typo-caption">
                     <span className="flex-1 truncate text-foreground">{entry.message}</span>
                     <RelativeTime
                       timestamp={entry.createdAt}
-                      className="shrink-0 text-foreground tabular-nums"
+                      className="shrink-0 text-foreground num"
                     />
                   </li>
                 ))}
@@ -161,7 +161,7 @@ export function HealingEffectivenessPanel() {
 function Stat({ label, value, className }: { label: string; value: number; className: string }) {
   return (
     <span className="flex items-center gap-1">
-      <span className={`font-medium tabular-nums ${className}`}>
+      <span className={`font-medium num ${className}`}>
         <Numeric value={value} />
       </span>
       <span className="text-foreground">{label}</span>

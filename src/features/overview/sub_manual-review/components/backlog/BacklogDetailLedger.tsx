@@ -73,7 +73,7 @@ export function BacklogDetailLedger({
       <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b border-hair">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <span className={`typo-label px-1.5 py-0.5 rounded border ${tw.bg} ${tw.text} ${tw.border}`}>
+            <span className={`typo-label px-1.5 py-0.5 rounded-interactive border ${tw.bg} ${tw.text} ${tw.border}`}>
               {categoryLabel(idea.category)}
             </span>
             {idea.origin && <FindingBadge origin={idea.origin} evidence={idea.evidence} />}
@@ -87,29 +87,15 @@ export function BacklogDetailLedger({
 
         {nav && nav.total > 1 && (
           <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={() => nav.onStep(-1)}
-              disabled={busy || nav.index === 0}
-              aria-label={r.backlog_detail_prev}
-              title={r.backlog_detail_prev}
-              className="p-1.5 rounded-interactive text-ink-3 hover:text-foreground hover:bg-surface-2 disabled:opacity-30 transition-colors"
-            >
+            <Button variant="ghost" size="icon-sm" onClick={() => nav.onStep(-1)} disabled={busy || nav.index === 0} aria-label={r.backlog_detail_prev} tooltip={r.backlog_detail_prev}>
               <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="typo-caption text-ink-3 tabular-nums whitespace-nowrap">
+            </Button>
+            <span className="typo-data text-ink-3 whitespace-nowrap">
               {tx(r.backlog_detail_position, { index: nav.index + 1, total: nav.total })}
             </span>
-            <button
-              type="button"
-              onClick={() => nav.onStep(1)}
-              disabled={busy || nav.index >= nav.total - 1}
-              aria-label={r.backlog_detail_next}
-              title={r.backlog_detail_next}
-              className="p-1.5 rounded-interactive text-ink-3 hover:text-foreground hover:bg-surface-2 disabled:opacity-30 transition-colors"
-            >
+            <Button variant="ghost" size="icon-sm" onClick={() => nav.onStep(1)} disabled={busy || nav.index >= nav.total - 1} aria-label={r.backlog_detail_next} tooltip={r.backlog_detail_next}>
               <ChevronRight className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         )}
       </header>
@@ -186,7 +172,7 @@ export function BacklogDetailLedger({
               </Row>
               {idea.impactWhy && <Row label={r.backlog_impact_why}>{idea.impactWhy}</Row>}
               <Row label={r.backlog_col_value}>
-                <span className="tabular-nums">{triageValueScore(idea)}</span>
+                <span className="num">{triageValueScore(idea)}</span>
               </Row>
               <Row label={r.backlog_col_created}>
                 <RelativeTime timestamp={idea.createdAt} />

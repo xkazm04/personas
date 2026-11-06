@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { Zap, RefreshCw, Plus, BookOpen, Loader2, BellOff } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -146,19 +147,13 @@ export default function EventLogList() {
               </Tooltip>
             )}
             {import.meta.env.DEV && (
-              <button type="button" onClick={handleSeedEvent} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-status-warning/10 text-status-warning border border-status-warning/25 hover:bg-status-warning/20 transition-colors" title={t.overview.events.seed_tooltip}>
-                <Plus className="w-3.5 h-3.5" /> {t.overview.events.mock_event}
-              </button>
+              <Button variant="accent" tone="warning" size="sm" onClick={handleSeedEvent} tooltip={t.overview.events.seed_tooltip} icon={<Plus className="w-3.5 h-3.5" />}>
+{t.overview.events.mock_event}
+</Button>
             )}
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-surface-2 disabled:opacity-60 transition-colors"
-              title={t.common.refresh}
-            >
+            <Button variant="ghost" size="icon-sm" onClick={handleRefresh} disabled={isRefreshing} tooltip={t.common.refresh}>
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
+            </Button>
           </div>
         }
       />
@@ -233,7 +228,7 @@ export default function EventLogList() {
                 container; this strip just reflects the in-flight fetch. */}
             {isLoadingOlder && displayedEvents.length > 0 && (
               <div className="flex items-center justify-center py-2 border-t border-hair">
-                <span className="flex items-center gap-2 typo-caption text-foreground">
+                <span className="flex items-center gap-2 typo-caption text-ink-2">
                   <Loader2 className="w-3 h-3 animate-spin" /> {t.overview.events.loading_older}
                 </span>
               </div>

@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { GitCompareArrows } from 'lucide-react';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
@@ -87,8 +88,8 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
     return (
       <div className="text-center py-6 px-3">
         <GitCompareArrows className="w-8 h-8 mx-auto mb-2 text-foreground" />
-        <p className="typo-caption text-foreground">{pt.need_two_runs}</p>
-        <button type="button" onClick={onClose} className="mt-2 typo-caption text-role-agent hover:text-role-agent">{t.common.back}</button>
+        <p className="typo-caption text-ink-2">{pt.need_two_runs}</p>
+        <Button variant="ghost" size="sm" className="mt-2" onClick={onClose}>{t.common.back}</Button>
       </div>
     );
   }
@@ -102,7 +103,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
           in-flight signal was the label beside it. */}
       {loading && (
         <div aria-busy="true" className="space-y-2 px-1 py-1">
-          <span className="typo-caption text-foreground">{pt.comparing_runs}</span>
+          <span className="typo-caption text-ink-2">{pt.comparing_runs}</span>
           <div className="h-7 rounded-card bg-surface-1" />
           <div className="h-16 rounded-card bg-surface-1" />
         </div>
@@ -113,13 +114,9 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
       {error && !loading && (
         <div className="typo-caption text-status-error px-2 py-1.5 rounded-card bg-status-error/10 flex items-center justify-between gap-2">
           <span>{resolveErrorTranslated(t, extractMessage(error.raw)).message}</span>
-          <button
-            type="button"
-            onClick={() => { void handleCompare(); }}
-            className="typo-caption text-role-agent hover:text-role-agent flex-shrink-0"
-          >
+          <Button variant="ghost" size="sm" className="flex-shrink-0" onClick={() => { void handleCompare(); }}>
             {t.common.retry}
-          </button>
+          </Button>
         </div>
       )}
 

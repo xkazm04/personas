@@ -76,7 +76,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
             </div>
             <div>
               <h2 id="auto-team-title" className="typo-heading text-foreground">{t.pipeline.auto_team}</h2>
-              <p className="typo-caption text-foreground">{t.pipeline.auto_team_subtitle}</p>
+              <p className="typo-caption text-ink-2">{t.pipeline.auto_team_subtitle}</p>
             </div>
           </div>
           {!isWorking && (
@@ -221,7 +221,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                     <CheckCircle2 className="w-4 h-4 text-status-success" />
                     <span className="typo-body text-status-success">{t.pipeline.team_created}</span>
                   </div>
-                  <div className="flex items-center gap-4 typo-caption text-foreground">
+                  <div className="flex items-center gap-4 typo-caption text-ink-2">
                     <span className="flex items-center gap-1">
                       <Users className="w-3 h-3" /> {tx(at.memberCount === 1 ? t.pipeline.auto_team_agents_one : t.pipeline.auto_team_agents_other, { count: at.memberCount })}
                     </span>

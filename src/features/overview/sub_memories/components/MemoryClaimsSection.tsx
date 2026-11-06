@@ -6,6 +6,9 @@
 // is deliberately absent from this surface: injections already carry the
 // access signal, and a thumbs-up button would just farm noise.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { StateMark, type StateMarkState } from '@/features/shared/components/display/StateMark';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { CheckCircle2, Flag, ShieldQuestion } from 'lucide-react';
 
@@ -23,10 +26,10 @@ import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 
-const VERDICT_TW: Record<string, string> = {
-  wrong: 'bg-status-error/10 text-status-error border-status-error/25',
-  outdated: 'bg-status-warning/10 text-status-warning border-status-warning/25',
-  helpful: 'bg-status-success/10 text-status-success border-status-success/25',
+const VERDICT_STATE: Record<string, StateMarkState> = {
+  wrong: 'error',
+  outdated: 'warning',
+  helpful: 'success',
 };
 
 export function MemoryClaimsSection({ memoryId, onResolved }: {
@@ -116,9 +119,7 @@ export function MemoryClaimsSection({ memoryId, onResolved }: {
       <div className="flex items-center gap-2 mb-1.5">
         <div className="typo-eyebrow">{md.claims_label}</div>
         {open.length > 0 && (
-          <span className="px-1.5 py-0.5 typo-label rounded border bg-status-error/10 text-status-error border-status-error/25">
-            {tx(md.claims_open_badge, { count: open.length })}
-          </span>
+          <StateMark state="error" label={tx(md.claims_open_badge, { count: open.length })} />
         )}
       </div>
 
@@ -132,13 +133,11 @@ export function MemoryClaimsSection({ memoryId, onResolved }: {
         <ul className="space-y-1 mb-2">
           {shown.map((c) => (
             <li key={c.id} className="flex items-start gap-2 typo-caption">
-              <span className={`px-1.5 py-0.5 typo-label rounded border flex-shrink-0 ${VERDICT_TW[c.verdict] ?? ''}`}>
-                {verdictLabel(c.verdict)}
-              </span>
+              <StateMark className="flex-shrink-0" state={VERDICT_STATE[c.verdict] ?? 'neutral'} label={verdictLabel(c.verdict)} />
               <span className="min-w-0 flex-1 text-foreground">
-                {c.note && <span className="block truncate" title={c.note}>{c.note}</span>}
-                <span className="typo-label text-foreground inline-flex items-center gap-1">
-                  <RelativeTime timestamp={c.created_at} className="tabular-nums" />
+                {c.note && <Tooltip content={c.note}><span className="block truncate">{c.note}</span></Tooltip>}
+                <span className="typo-label text-ink-2 inline-flex items-center gap-1">
+                  <RelativeTime timestamp={c.created_at} className="num" />
                   {c.resolution && (
                     <span className="inline-flex items-center gap-0.5 text-status-success">
                       <CheckCircle2 className="w-3 h-3" aria-hidden /> {resolutionLabel(c.resolution)}
@@ -160,52 +159,27 @@ export function MemoryClaimsSection({ memoryId, onResolved }: {
           placeholder={md.claim_note_placeholder}
           className="flex-1 min-w-[180px] px-2 py-1 typo-caption rounded-input bg-surface-1 border border-hair text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/40"
         />
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => file('wrong')}
-          className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded-card border border-status-error/20 bg-status-error/10 text-status-error hover:bg-status-error/20 transition-colors disabled:opacity-50"
-        >
-          <Flag className="w-3 h-3" aria-hidden /> {md.claim_wrong}
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => file('outdated')}
-          className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded-card border border-status-warning/20 bg-status-warning/10 text-status-warning hover:bg-status-warning/20 transition-colors disabled:opacity-50"
-        >
-          <Flag className="w-3 h-3" aria-hidden /> {md.claim_outdated}
-        </button>
+        <Button variant="danger" size="sm" disabled={busy} onClick={() => file('wrong')} icon={<Flag className="w-3 h-3" aria-hidden />}>
+{md.claim_wrong}
+</Button>
+        <Button variant="accent" tone="warning" size="sm" disabled={busy} onClick={() => file('outdated')} icon={<Flag className="w-3 h-3" aria-hidden />}>
+{md.claim_outdated}
+</Button>
       </div>
 
       {/* resolve everything open with one decision */}
       {open.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap mt-2">
           <ShieldQuestion className="w-3.5 h-3.5 text-foreground flex-shrink-0" aria-hidden />
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => resolve('reverified')}
-            className="px-2 py-1 typo-caption rounded-card border border-status-success/20 bg-status-success/10 text-status-success hover:bg-status-success/20 transition-colors disabled:opacity-50"
-          >
+          <Button variant="accent" tone="success" size="sm" disabled={busy} onClick={() => resolve('reverified')}>
             {md.claim_resolve_reverify}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => resolve('deprecated')}
-            className="px-2 py-1 typo-caption rounded-card border border-status-error/20 bg-status-error/10 text-status-error hover:bg-status-error/20 transition-colors disabled:opacity-50"
-          >
+          </Button>
+          <Button variant="danger" size="sm" disabled={busy} onClick={() => resolve('deprecated')}>
             {md.claim_resolve_deprecate}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => resolve('dismissed')}
-            className="px-2 py-1 typo-caption rounded-card border border-hair bg-surface-1 text-foreground hover:bg-surface-2 transition-colors disabled:opacity-50"
-          >
+          </Button>
+          <Button variant="secondary" size="sm" disabled={busy} onClick={() => resolve('dismissed')}>
             {md.claim_resolve_dismiss}
-          </button>
+          </Button>
         </div>
       )}
     </div>

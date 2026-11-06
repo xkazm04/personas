@@ -3,6 +3,7 @@
 // highlighted, and a one-line note on how to climb. Turns an opaque score into
 // "here's what this level means and what the next one takes".
 import { ordinalTint, type AppPassport } from '../passportModel';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { ladderFor } from './levels';
 
 export function LevelLadder({ rowKey, passport }: { rowKey: string; passport: AppPassport }) {
@@ -15,7 +16,7 @@ export function LevelLadder({ rowKey, passport }: { rowKey: string; passport: Ap
   return (
     <div className="rounded-interactive border border-hair bg-secondary/15 p-2">
       <div className="flex items-center justify-between gap-2 mb-1.5">
-        <span className="typo-caption text-foreground">{title} — current level</span>
+        <span className="typo-caption text-ink-2">{title} — current level</span>
         <span className={`typo-caption ${tint.text}`}>{steps[currentIndex]}</span>
       </div>
       <div className="flex items-stretch gap-0.5" aria-hidden>
@@ -25,12 +26,11 @@ export function LevelLadder({ rowKey, passport }: { rowKey: string; passport: Ap
               className="h-1.5 rounded-full"
               style={{ background: i <= currentIndex ? tint.hex : 'color-mix(in srgb, var(--foreground) 12%, transparent)' }}
             />
-            <span
+            <Tooltip content={label}><span
               className={`block mt-1 typo-label truncate text-center ${i === currentIndex ? `${tint.text}` : 'text-ink-3'}`}
-              title={label}
             >
               {label}
-            </span>
+            </span></Tooltip>
           </div>
         ))}
       </div>

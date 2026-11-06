@@ -88,24 +88,24 @@ export interface SeverityConfig {
 
 export const SEVERITY_CONFIG: Record<string, SeverityConfig> = {
   critical: {
-    gradient: 'from-red-500 via-red-400 to-red-500',
+    gradient: 'bg-status-error',
     icon: <AlertCircle className="w-4 h-4" />,
     label: 'Critical',
-    shadow: '0 0 40px -12px rgba(239,68,68,0.20)',
+    shadow: 'none',
     ring: 'ring-status-error/10',
   },
   warning: {
-    gradient: 'from-amber-500 via-amber-400 to-amber-500',
+    gradient: 'bg-status-warning',
     icon: <AlertTriangle className="w-4 h-4" />,
     label: 'Warning',
-    shadow: '0 0 40px -12px rgba(245,158,11,0.20)',
+    shadow: 'none',
     ring: 'ring-status-warning/10',
   },
   info: {
-    gradient: 'from-emerald-500 via-emerald-400 to-emerald-500',
+    gradient: 'bg-status-success',
     icon: <Info className="w-4 h-4" />,
     label: 'Info',
-    shadow: '0 0 40px -12px rgba(16,185,129,0.20)',
+    shadow: 'none',
     ring: 'ring-status-success/10',
   },
 };

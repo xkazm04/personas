@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, Bookmark, BookmarkX, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { SavedView } from '@/lib/bindings/SavedView';
 import { debtText } from '@/i18n/DebtText';
@@ -45,44 +46,49 @@ export function EventLogToolbar({
     <div className="px-4 pb-2 flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-3" />
           <input
             type="text"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             placeholder={t.overview.events.search_placeholder}
-            className="w-full pl-8 pr-8 py-1.5 typo-body rounded-card bg-surface-1 border border-hair text-foreground placeholder:text-foreground focus:outline-none focus:border-hair transition-colors"
+            className="w-full pl-8 pr-8 h-[var(--control-h)] typo-body rounded-interactive bg-surface-1 border border-hair text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-hair-2 transition-colors"
           />
           {searchText && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => setSearchText('')}
               aria-label={t.common.clear}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-ink-2"
+              className="absolute right-0.5 top-1/2 -translate-y-1/2"
             >
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           )}
         </div>
         {isSearching && <LoadingSpinner size="xs" />}
         {hasActiveFilters && (
           <>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setShowSaveDialog(true)}
-              className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-primary/10 text-primary border border-hair hover:bg-primary/20 transition-colors whitespace-nowrap"
-              title={debtText("auto_save_current_filters_as_a_view_1680b016")}
+              className="whitespace-nowrap"
+              tooltip={debtText("auto_save_current_filters_as_a_view_1680b016")}
+              icon={<Bookmark className="w-3 h-3" />}
             >
-              <Bookmark className="w-3 h-3" /> {t.overview.events.save_view}
-            </button>
-            <button
-              type="button"
+              {t.overview.events.save_view}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={clearFilters}
-              className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-surface-1 text-foreground border border-hair hover:bg-surface-2 transition-colors whitespace-nowrap"
-              title={debtText("auto_clear_all_filters_7dd6d199")}
+              className="whitespace-nowrap"
+              tooltip={debtText("auto_clear_all_filters_7dd6d199")}
+              icon={<X className="w-3 h-3" />}
             >
-              <X className="w-3 h-3" /> {t.common.clear}
-            </button>
+              {t.common.clear}
+            </Button>
           </>
         )}
       </div>
@@ -90,7 +96,7 @@ export function EventLogToolbar({
       {/* Saved views chips */}
       {savedViews.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="typo-caption text-foreground">{t.overview.events.views_label}</span>
+          <span className="typo-eyebrow text-ink-3">{t.overview.events.views_label}</span>
           {/* Each chip is a group of two SIBLING buttons. The delete control
               used to be a <button> nested inside the apply <button> (invalid
               HTML: browsers and screen readers flatten it) and was visible only
@@ -98,29 +104,27 @@ export function EventLogToolbar({
           {savedViews.map((view) => (
             <span
               key={view.id}
-              className={`group inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card border transition-colors ${activeViewId === view.id
-                  ? 'bg-primary/15 text-primary border-hair'
-                  : 'bg-surface-1 text-foreground border-hair hover:bg-surface-2'
-                }`}
+              className={`group inline-flex items-center gap-0.5 rounded-interactive border border-hair ${activeViewId === view.id ? 'bg-sel' : 'bg-surface-1'}`}
             >
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="xs"
                 onClick={() => applySavedView(view)}
                 aria-pressed={activeViewId === view.id}
-                className="inline-flex items-center gap-1 focus-ring rounded-card"
+                icon={<Bookmark className="w-2.5 h-2.5" />}
               >
-                <Bookmark className="w-2.5 h-2.5" />
                 {view.name}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => removeSavedView(view.id)}
-                className="ml-0.5 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-foreground hover:text-status-error transition-opacity focus-ring rounded-card"
-                title={t.overview.events.delete_view}
+                className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                tooltip={t.overview.events.delete_view}
                 aria-label={`${t.overview.events.delete_view}: ${view.name}`}
               >
                 <BookmarkX className="w-2.5 h-2.5" />
-              </button>
+              </Button>
             </span>
           ))}
         </div>
@@ -134,25 +138,16 @@ export function EventLogToolbar({
             value={viewName}
             onChange={(e) => setViewName(e.target.value)}
             placeholder={t.overview.events.view_name_placeholder}
-            className="flex-1 px-2 py-1 typo-body rounded bg-background/50 border border-hair text-foreground placeholder:text-foreground focus:outline-none focus:border-hair"
+            className="flex-1 px-2 h-[var(--control-h)] typo-body rounded-interactive bg-background/50 border border-hair text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-hair-2"
             onKeyDown={(e) => { if (e.key === 'Enter') handleSaveView(); if (e.key === 'Escape') setShowSaveDialog(false); }}
             autoFocus
           />
-          <button
-            type="button"
-            onClick={handleSaveView}
-            disabled={!viewName.trim()}
-            className="px-3 py-1 typo-caption rounded-card bg-primary/15 text-primary border border-hair hover:bg-primary/25 disabled:opacity-40 transition-colors"
-          >
+          <Button variant="primary" size="sm" onClick={handleSaveView} disabled={!viewName.trim()}>
             {t.common.save}
-          </button>
-          <button
-            type="button"
-            onClick={() => { setShowSaveDialog(false); setViewName(''); }}
-            className="px-2 py-1 typo-caption rounded-card text-foreground hover:text-foreground transition-colors"
-          >
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => { setShowSaveDialog(false); setViewName(''); }}>
             {t.common.cancel}
-          </button>
+          </Button>
         </div>
       )}
     </div>

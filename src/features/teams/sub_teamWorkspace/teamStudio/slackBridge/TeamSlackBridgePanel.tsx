@@ -69,7 +69,7 @@ export function TeamSlackBridgePanel({ teamId }: { teamId: string }) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Hash className="w-3.5 h-3.5 text-status-success" />
-          <span className="typo-label text-foreground">{ts.slack_bridge_heading}</span>
+          <span className="typo-label text-ink-2">{ts.slack_bridge_heading}</span>
         </div>
         <span data-testid="team-slack-bridge-status">
           <StateMark
@@ -80,7 +80,7 @@ export function TeamSlackBridgePanel({ teamId }: { teamId: string }) {
           />
         </span>
       </div>
-      <p className="typo-caption text-foreground">{ts.slack_bridge_hint}</p>
+      <p className="typo-caption text-ink-2">{ts.slack_bridge_hint}</p>
 
       {/* Ghost only while loading AND nothing to show yet. */}
       {bridge.loading && !linked && !bridge.form.credentialId ? (
@@ -91,10 +91,10 @@ export function TeamSlackBridgePanel({ teamId }: { teamId: string }) {
             <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
             {ts.slack_bridge_no_credential_title}
           </div>
-          <p className="typo-caption text-foreground">{ts.slack_bridge_no_credential_body}</p>
+          <p className="typo-caption text-ink-2">{ts.slack_bridge_no_credential_body}</p>
         </div>
       ) : noMembers ? (
-        <p className="typo-caption text-foreground">{ts.slack_bridge_no_members}</p>
+        <p className="typo-caption text-ink-2">{ts.slack_bridge_no_members}</p>
       ) : (
         <>
           <SlackBridgePickers

@@ -1,4 +1,5 @@
 import { ShieldCheck } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { detectAutoResolution } from '../libs/reviewHelpers';
 
@@ -22,12 +23,11 @@ export function AutoResolvedBadge({ review, className = '' }: AutoResolvedBadgeP
       ? t.overview.review.auto_resolved.tip_trust_llm
       : t.overview.review.auto_resolved.tip_auto_triage;
   return (
-    <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card typo-caption border border-status-warning/30 bg-status-warning/10 text-status-warning ${className}`}
-      title={tip}
+    <Tooltip content={tip}><span
+      className={`inline-flex items-center gap-1 typo-eyebrow text-status-warning ${className}`}
     >
       <ShieldCheck className="w-3 h-3" />
       {t.overview.review.auto_resolved.badge}
-    </span>
+    </span></Tooltip>
   );
 }

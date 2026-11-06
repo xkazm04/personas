@@ -1,4 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
 import { fmtCost, fmtDate } from '../libs/executionMetricsHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -48,16 +49,11 @@ export function AnomalyBadge({ anomaly, onClickExecution, onOpenDrilldown }: Ano
               // An id with no handler is NOT a button: a control that looks
               // clickable and does nothing is worse than plain text.
               onClickExecution ? (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => onClickExecution(id)}
-                  className="typo-code text-status-info hover:text-status-info underline decoration-blue-400/30 cursor-pointer"
-                >
+                <Button variant="link" size="sm" key={id} onClick={() => onClickExecution(id)}>
                   {id.slice(0, 8)}
-                </button>
+                </Button>
               ) : (
-                <span key={id} className="typo-code text-foreground">{id.slice(0, 8)}</span>
+                <span key={id} className="typo-code text-ink-2">{id.slice(0, 8)}</span>
               )
             ))}
           </div>

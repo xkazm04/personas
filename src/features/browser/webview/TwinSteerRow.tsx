@@ -9,6 +9,7 @@
  * twin steers the same way everywhere.
  */
 import { RefreshCw } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -48,20 +49,9 @@ export default function TwinSteerRow({ lane, onSteer, onDirections, onRegenerate
         {CHIPS.map(({ steer, key }) => {
           const active = lane.steer === steer;
           return (
-            <button
-              key={steer}
-              type="button"
-              aria-pressed={active}
-              disabled={busy}
-              onClick={() => onSteer(active ? null : steer)}
-              className={`px-2 py-1 rounded-interactive border typo-caption transition-colors focus-ring disabled:is-disabled ${
-                active
-                  ? 'border-role-agent/40 bg-role-agent/15 text-role-agent'
-                  : 'border-hair bg-surface-1 text-foreground hover:border-role-agent/30 hover:text-role-agent'
-              }`}
-            >
+            <Button variant="secondary" size="sm" key={steer} aria-pressed={active} disabled={busy} onClick={() => onSteer(active ? null : steer)}>
               {v[key]}
-            </button>
+            </Button>
           );
         })}
       </div>

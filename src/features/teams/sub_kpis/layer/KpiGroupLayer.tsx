@@ -4,6 +4,7 @@
 // re-reads the KPI rows — they arrive resolved in `overview`. Only the
 // measurements are fetched, lazily, for the KPIs this subject actually shows.
 import { useMemo, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAppKeyboard, ROUTE_DECISION_PRIORITY } from '@/lib/keyboard/AppKeyboardProvider';
@@ -55,15 +56,9 @@ export default function KpiGroupLayer({ focus, overview, onBack, onOpen }: KpiGr
     return (
       <div className="space-y-3" data-testid="kpi-group-layer">
         <p className="typo-caption">{t.kpis.overview.layer_no_series}</p>
-        <button
-          type="button"
-          data-testid="kpi-layer-back"
-          onClick={onBack}
-          aria-label={t.kpis.overview.layer_back}
-          className="rounded-interactive border border-hair bg-surface-1 px-2.5 py-1 typo-label text-foreground hover:bg-surface-2 focus-ring"
-        >
+        <Button variant="secondary" size="sm" data-testid="kpi-layer-back" onClick={onBack} aria-label={t.kpis.overview.layer_back}>
           {t.kpis.overview.layer_back}
-        </button>
+        </Button>
       </div>
     );
   }

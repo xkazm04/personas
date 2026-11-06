@@ -17,7 +17,7 @@ export function PaneHeader({
       <div className="flex items-baseline gap-2 min-w-0">
         <span className="typo-eyebrow whitespace-nowrap">{label}</span>
         {subtitle && (
-          <span className="typo-caption text-foreground truncate">{subtitle}</span>
+          <span className="typo-caption text-ink-2 truncate">{subtitle}</span>
         )}
       </div>
       {children && <div className="flex-shrink-0">{children}</div>}

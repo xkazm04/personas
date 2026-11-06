@@ -54,7 +54,7 @@ export const DashboardChartCard = memo(function DashboardChartCard({
       <div className={`absolute top-0 right-0 w-32 h-32 ${accentClass} blur-3xl rounded-full pointer-events-none`} />
 
       <div className="flex items-center justify-between gap-2 relative z-10">
-        <h3 className="typo-label text-foreground flex items-center gap-2 min-w-0">
+        <h3 className="typo-label text-ink-2 flex items-center gap-2 min-w-0">
           {Icon && (
             <div className={`p-1.5 rounded-card ${iconChipClass}`}>
               <Icon className="w-3.5 h-3.5" />

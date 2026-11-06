@@ -63,7 +63,7 @@ const ROW_HEIGHT = 44;
 function MeasureCell({ value, unit }: { value: number | null; unit: string }) {
   if (value == null) return <span className="typo-body text-foreground">—</span>;
   return (
-    <span className="typo-body text-foreground tabular-nums whitespace-nowrap">
+    <span className="typo-data text-foreground whitespace-nowrap">
       <Numeric value={value} /> {unit}
     </span>
   );
@@ -130,15 +130,9 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
               <span className="typo-body text-foreground truncate">{kpi.name}</span>
               {kpi.needed_connector && (
                 <Tooltip content={tx(t.kpis.connect_tooltip, { service: kpi.needed_connector })}>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setConnectId(kpi.id); }}
-                    className="inline-flex items-center gap-1 typo-caption text-primary flex-shrink-0 hover:underline"
-                    data-testid={`kpi-proposal-connect-${kpi.id}`}
-                  >
-                    <Cable className="w-3 h-3" />
-                    {kpi.needed_connector}
-                  </button>
+                  <Button variant="ghost" size="sm" className="flex-shrink-0" onClick={(e) => { e.stopPropagation(); setConnectId(kpi.id); }} data-testid={`kpi-proposal-connect-${kpi.id}`} icon={<Cable className="w-3 h-3" />}>
+{kpi.needed_connector}
+</Button>
                 </Tooltip>
               )}
             </div>

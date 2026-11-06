@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Check, Plus } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
@@ -28,14 +30,14 @@ export function TrustMeter({ score }: { score: number }) {
   // 0-100 trust score → 5 pips, mirrors the persona trust display language.
   const pips = Math.round((Math.max(0, Math.min(100, score)) / 100) * 5);
   return (
-    <span className="inline-flex items-center gap-0.5" title={`Trust ${score}`}>
+    <Tooltip content={`Trust ${score}`}><span className="inline-flex items-center gap-0.5">
       {Array.from({ length: 5 }).map((_, i) => (
         <span
           key={i}
           className={`w-1 h-1 rounded-full ${i < pips ? 'bg-status-success/80' : 'bg-foreground/15'}`}
         />
       ))}
-    </span>
+    </span></Tooltip>
   );
 }
 
@@ -54,7 +56,7 @@ export function UseCaseToggleRow({ useCase, busy, onToggle, compact }: UseCaseTo
       type="button"
       disabled={busy}
       onClick={() => onToggle(!enabled)}
-      className={`group/uc w-full flex items-start gap-2 px-2 py-1.5 rounded-interactive text-left transition-colors disabled:opacity-60 ${
+      className={`group/uc w-full flex items-start gap-2 px-2 py-1.5 rounded-interactive text-left transition-colors disabled:is-disabled ${
         enabled ? 'hover:bg-status-success/10' : 'hover:bg-surface-2'
       }`}
       aria-pressed={enabled}
@@ -135,25 +137,13 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
 
   const trigger =
     appearance === 'dashed' ? (
-      <button
-        type="button"
-        data-testid="team-add-member"
-        onClick={() => setOpen((p) => !p)}
-        className="w-full flex items-center gap-2 px-3 py-2 rounded-card border border-dashed border-hair text-foreground hover:bg-surface-2 hover:text-foreground transition-colors typo-body"
-      >
-        <Plus className="w-4 h-4" />
-        {ts.add_persona}
-      </button>
+      <Button variant="secondary" size="sm" className="w-full" data-testid="team-add-member" onClick={() => setOpen((p) => !p)} icon={<Plus className="w-4 h-4" />}>
+{ts.add_persona}
+</Button>
     ) : (
-      <button
-        type="button"
-        data-testid="team-add-member"
-        onClick={() => setOpen((p) => !p)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-hair bg-surface-1 typo-body text-foreground hover:bg-surface-2 transition-colors"
-      >
-        <Plus className="w-4 h-4" />
-        {ts.add_persona}
-      </button>
+      <Button variant="secondary" size="sm" data-testid="team-add-member" onClick={() => setOpen((p) => !p)} icon={<Plus className="w-4 h-4" />}>
+{ts.add_persona}
+</Button>
     );
 
   return (
@@ -170,7 +160,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
               className="absolute right-0 z-30 mt-1 w-64 max-h-80 overflow-y-auto rounded-card border border-hair bg-background shadow-elevation-3 p-1"
             >
               {available.length === 0 ? (
-                <p className="px-3 py-3 typo-caption text-foreground">
+                <p className="px-3 py-3 typo-caption text-ink-2">
                   {ts.add_persona_none}
                 </p>
               ) : (
@@ -181,7 +171,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
                     type="button"
                     disabled={adding}
                     onClick={() => void handleAdd(p.id)}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive text-left hover:bg-surface-2 disabled:opacity-50 transition-colors"
+                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive text-left hover:bg-surface-2 disabled:is-disabled transition-colors"
                   >
                     <PersonaIcon icon={p.icon} color={p.color} display="pop" frameSize="sm" />
                     <span className="typo-body text-foreground truncate">{p.name}</span>
@@ -189,7 +179,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
                 ))
               )}
               {excludedDrafts > 0 && (
-                <p data-testid="team-add-draft-hint" className="mt-1 border-t border-hair px-3 pt-2 pb-1 typo-caption text-foreground">
+                <p data-testid="team-add-draft-hint" className="mt-1 border-t border-hair px-3 pt-2 pb-1 typo-caption text-ink-2">
                   {ts.add_persona_draft_hint}
                 </p>
               )}

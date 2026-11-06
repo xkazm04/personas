@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { AlertTriangle, Info, XCircle, X } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
@@ -50,7 +51,7 @@ function AlertToast({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => 
         <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${iconColor}`} />
         <div className="flex-1 min-w-0">
           <p className="typo-heading text-foreground truncate">{alert.rule_name}</p>
-          <p className="typo-caption text-foreground mt-0.5">{alert.message}</p>
+          <p className="typo-caption text-ink-2 mt-0.5">{alert.message}</p>
         </div>
         {/* The icon is the entire button, so without a name this control is
             announced as "button" and is unusable by screen reader. Translated,
@@ -58,14 +59,9 @@ function AlertToast({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => 
             in this tree and 81% of them are structurally invisible to
             `custom/no-hardcoded-jsx-text`, so a literal here would not be
             caught by anything. */}
-        <button
-          type="button"
-          onClick={onDismiss}
-          aria-label={t.common.dismiss}
-          className="p-0.5 text-foreground hover:text-ink-3 transition-colors shrink-0"
-        >
+        <Button variant="ghost" size="icon-sm" className="shrink-0" onClick={onDismiss} aria-label={t.common.dismiss}>
           <X className="w-3.5 h-3.5" aria-hidden="true" />
-        </button>
+        </Button>
       </div>
     </div>
   );

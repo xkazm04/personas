@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useReducedMotion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { Activity, AlertCircle, Flame, Snowflake, TrendingDown, TrendingUp } from 'lucide-react';
@@ -240,7 +241,7 @@ export function ExecutionHeatmap({
           {/* A failed read has no total to report: without this guard the header
               read "0 executions" (or the previous persona's figure) above the error. */}
           {error == null && (
-            <div className="typo-caption text-foreground mt-0.5" title={subtitleTitle}>{subtitle}</div>
+            <Tooltip content={subtitleTitle}><div className="typo-caption text-ink-2 mt-0.5">{subtitle}</div></Tooltip>
           )}
         </div>
         {data?.insights && !isEmpty && !compact && (
@@ -297,7 +298,7 @@ export function ExecutionHeatmap({
 function Legend() {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-2 typo-caption text-foreground shrink-0">
+    <div className="flex items-center gap-2 typo-caption text-ink-2 shrink-0">
       <span>{t.overview.heatmap.less}</span>
       {INTENSITY_FILL.map((fill, i) => (
         <span
@@ -465,7 +466,7 @@ function HeatmapTooltip({
   return (
     <div
       role="tooltip"
-      className="animate-fade-slide-in fixed z-[9999] pointer-events-none whitespace-nowrap glass-sm rounded-card px-2.5 py-1.5 typo-caption text-foreground shadow-elevation-3"
+      className="animate-fade-slide-in fixed z-[9999] pointer-events-none whitespace-nowrap glass-sm rounded-card px-2.5 py-1.5 typo-caption text-ink-2 shadow-elevation-3"
       style={{ top, left, transform }}
     >
       <HoverLine day={day} t={t} tx={tx} />
@@ -560,7 +561,7 @@ function InsightCell({
 }) {
   return (
     <div className="min-w-0">
-      <div className="flex items-center gap-1.5 typo-caption text-foreground">
+      <div className="flex items-center gap-1.5 typo-caption text-ink-2">
         {icon}
         <span className="truncate">{label}</span>
       </div>

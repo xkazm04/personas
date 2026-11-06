@@ -19,6 +19,8 @@ import { seedMockMessage, deleteAllReports } from '@/api/overview/reports';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { toastCatch } from '@/lib/silentCatch';
 import { Trash2 } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
@@ -292,41 +294,42 @@ export default function ReportList() {
         actions={
           <>
             {reveal.isRevealing && (
-              <span aria-hidden="true" className="flex items-center gap-1 px-2 py-1 rounded-modal typo-caption text-foreground bg-surface-1 border border-hair">
+              <span aria-hidden="true" className="flex items-center gap-1 typo-data text-ink-2">
                 <AnimatedCounter value={reveal.count} mode="roll" />
                 <span>/</span>
                 <Numeric>{activeRevealTotal}</Numeric>
               </span>
             )}
             {import.meta.env.DEV && (
-              <button type="button" onClick={handleSeedMessage} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-status-warning/10 text-status-warning border border-status-warning/25 hover:bg-status-warning/20 transition-colors" title={t.overview.reports_view.seed_tooltip}>
-                <Plus className="w-3.5 h-3.5" /> {t.overview.reports_view.mock_report}
-              </button>
+              <Button variant="accent" tone="warning" size="sm" onClick={handleSeedMessage} tooltip={t.overview.reports_view.seed_tooltip} icon={<Plus className="w-3.5 h-3.5" />}>
+                {t.overview.reports_view.mock_report}
+              </Button>
             )}
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setReadFilter((prev) => (prev === 'unread' ? 'all' : 'unread'))}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-foreground hover:text-foreground bg-surface-1 border border-hair hover:bg-surface-2 transition-all"
-              title={readFilter === 'unread' ? t.overview.reports_view.show_read_reports : t.overview.reports_view.show_only_unread}
+              tooltip={readFilter === 'unread' ? t.overview.reports_view.show_read_reports : t.overview.reports_view.show_only_unread}
+              icon={readFilter === 'unread' ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
             >
-              {readFilter === 'unread' ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
               {readFilter === 'unread' ? t.overview.reports_view.show_read_reports : t.overview.reports_view.show_only_unread}
-            </button>
-            <button type="button" onClick={handleRefresh} disabled={isRefreshing} className="p-1.5 rounded-card text-foreground hover:text-ink-3 hover:bg-surface-2 disabled:opacity-60 transition-colors" title={t.common.refresh}>
+            </Button>
+            <Button variant="ghost" size="icon-sm" onClick={handleRefresh} disabled={isRefreshing} tooltip={t.common.refresh} aria-label={t.common.refresh}>
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
-            <button type="button" onClick={() => markAllReportsAsRead()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-status-info hover:text-status-info bg-status-info/10 border border-status-info/20 hover:bg-status-info/15 transition-all">
-              <CheckCheck className="w-3.5 h-3.5" /> {t.overview.reports_view.mark_all_read}
-            </button>
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => markAllReportsAsRead()} icon={<CheckCheck className="w-3.5 h-3.5" />}>
+              {t.overview.reports_view.mark_all_read}
+            </Button>
             {reports.length > 0 && (
-              <button
-                type="button"
+              <Button
+                variant="danger"
+                size="icon-sm"
                 onClick={() => setConfirmingDeleteAll(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading text-status-error bg-status-error/15 border border-status-error/30 hover:bg-status-error/25 transition-all"
-                title={t.overview.reports_view.delete_all}
+                tooltip={t.overview.reports_view.delete_all}
+                aria-label={t.overview.reports_view.delete_all}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             )}
           </>
         }
@@ -382,21 +385,23 @@ export default function ReportList() {
                       <RevealItem key={message.id} revealId={message.id} order={virtualRow.index - reveal.newSince} hasEntered={msgEnter.hasEntered} markEntered={msgEnter.markEntered} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={(event) => handleRowClick(message, event.currentTarget)}
                         onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleRowClick(message, event.currentTarget); } }}
                         style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: msgGridTemplate }}
-                        className={`grid items-center border-l-2 ${rowAccent} hover:bg-primary/[0.08] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-role-agent/40 ${virtualRow.index % 2 === 0 ? 'bg-surface-1' : ''}`}
+                        className={`grid items-center border-l-2 ${rowAccent} hover:bg-sel cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-role-agent/40 ${virtualRow.index % 2 === 0 ? 'bg-surface-1' : ''}`}
                       >
                         <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
                           <PersonaIcon icon={message.persona_icon ?? null} color={message.persona_color ?? null} name={message.persona_name} display="framed" frameSize="lg" />
-                          <span className="typo-body text-foreground truncate">{message.persona_name || t.overview.reports_view.unknown_persona}</span>
+                          <span className="typo-body text-ink-1 truncate">{message.persona_name || t.overview.reports_view.unknown_persona}</span>
                         </div>
-                        <div role="gridcell" className="px-4 min-w-0"><span className={`typo-body truncate block ${message.is_read ? 'text-foreground' : 'text-ink-2'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
+                        <div role="gridcell" className="px-4 min-w-0"><span className={`typo-body truncate block ${message.is_read ? 'text-ink-3' : 'text-ink-1'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
                         <div role="gridcell" className="px-4"><PriorityChip priority={priority} label={priorityLabels[message.priority]} /></div>
-                        <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <span className="inline-flex items-center gap-1" title={t.overview.reports_view.unread} aria-label={t.overview.reports_view.unread}><span className="w-2.5 h-2.5 rounded-full bg-status-info" aria-hidden="true" /><span className="text-[10px] font-semibold uppercase tracking-wide text-status-info">New</span></span> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title={t.overview.reports_view.read} aria-hidden="true" />}</div>
-                        <div role="gridcell" className="px-4 text-right"><RelativeTime timestamp={message.created_at} className="typo-body text-foreground" /></div>
+                        <div role="gridcell" className="px-4 flex justify-center">{!message.is_read
+                          ? <Tooltip content={t.overview.reports_view.unread}><span className="inline-flex items-center gap-1" aria-label={t.overview.reports_view.unread}><span className="w-2 h-2 rounded-full bg-status-info" aria-hidden="true" /><span className="typo-eyebrow text-status-info">New</span></span></Tooltip>
+                          : <Tooltip content={t.overview.reports_view.read}><span className="block w-2 h-2 rounded-full bg-ink-4" aria-hidden="true" /></Tooltip>}</div>
+                        <div role="gridcell" className="px-4 text-right"><RelativeTime timestamp={message.created_at} className="typo-data text-ink-3" /></div>
                       </RevealItem>
                     );
                   })}
                 </div>
-                {remaining > 0 && (<div className="p-4"><button type="button" onClick={() => fetchReports(false)} className="w-full py-2.5 typo-body text-foreground hover:text-ink-3 bg-surface-1 hover:bg-surface-2 rounded-modal border border-hair transition-all">{tx(t.overview.reports_view.load_more, { count: remaining })}</button></div>)}
+                {remaining > 0 && (<div className="p-4"><Button variant="secondary" size="md" block onClick={() => fetchReports(false)}>{tx(t.overview.reports_view.load_more, { count: remaining })}</Button></div>)}
               </div>
             )}
           </div>
@@ -456,7 +461,7 @@ export default function ReportList() {
 // No `animate-pulse` — the entrance stagger is the only motion.
 // ---------------------------------------------------------------------------
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-surface-2';
 /** Deterministic width variation so ghosts read as rows, not a barcode. */
 const GHOST_TITLE_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32'];
 

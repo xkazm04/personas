@@ -1,9 +1,18 @@
 import type { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { StateMark, type StateMarkState } from '@/features/shared/components/display/StateMark';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { channelIcon, channelTint } from '@/features/shared/glyph/channels';
 import { deliveryStatusConfig, channelLabels } from '../libs/reportHelpers';
 import type { PersonaReportDelivery } from '@/lib/bindings/PersonaReportDelivery';
+
+const DELIVERY_STATE: Record<string, StateMarkState> = {
+  delivered: 'success',
+  failed: 'error',
+  pending: 'warning',
+  queued: 'queued',
+};
 
 interface ChannelDeliveryPillProps {
   delivery: PersonaReportDelivery;
@@ -30,7 +39,7 @@ export function ChannelDeliveryPill({ delivery, t }: ChannelDeliveryPillProps) {
     <div
       data-testid={`channel-delivery-pill-${delivery.channel_type}`}
       data-status={delivery.status}
-      className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full bg-surface-1 border border-hair"
+      className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-card bg-surface-1 border border-hair"
     >
       {/* Channel brand icon inside a status-colored ring. */}
       <span
@@ -44,24 +53,21 @@ export function ChannelDeliveryPill({ delivery, t }: ChannelDeliveryPillProps) {
         {channelLabel}
       </span>
 
-      <span className={`typo-caption ${statusCfg.color}`}>
-        {statusLabel}
-      </span>
+      <StateMark state={DELIVERY_STATE[delivery.status] ?? 'warning'} label={statusLabel} />
 
       {delivery.delivered_at && (
         <RelativeTime
           timestamp={delivery.delivered_at}
-          className="typo-caption text-foreground tabular-nums"
+          className="typo-data text-ink-3"
         />
       )}
 
       {delivery.error_message && (
-        <span
-          className="typo-caption text-status-error truncate max-w-[200px]"
-          title={delivery.error_message}
-        >
-          {delivery.error_message}
-        </span>
+        <Tooltip content={delivery.error_message}>
+          <span className="typo-caption text-status-error truncate max-w-[200px]">
+            {delivery.error_message}
+          </span>
+        </Tooltip>
       )}
     </div>
   );

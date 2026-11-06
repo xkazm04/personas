@@ -85,11 +85,11 @@ export function MissionStatusMonitor() {
           <span className="typo-caption">{gradeLabel[globalGrade]}</span>
         </span>
         <div className="flex items-baseline gap-3">
-          <span className="typo-caption text-foreground">
+          <span className="typo-caption text-ink-2">
             {he.score_prefix} <span className="typo-data text-ink-2">{globalScore ?? '—'}</span>/100
           </span>
           <span className="h-3 w-px bg-primary/15" aria-hidden="true" />
-          <span className="typo-caption text-foreground">
+          <span className="typo-caption text-ink-2">
             {he.uptime_30d_prefix} <Numeric value={globalUptime} unit="ratio" precision={1} className="typo-data text-ink-2" />
           </span>
         </div>
@@ -141,9 +141,9 @@ function MonitorRow({ entry, onClick }: { entry: CompositeHealthEntry; onClick: 
           />
         ))}
       </span>
-      <Numeric value={entry.uptimePercent} unit="ratio" precision={1} align="right" className="typo-caption tabular-nums text-foreground w-12 shrink-0" />
+      <Numeric value={entry.uptimePercent} unit="ratio" precision={1} align="right" className="typo-data text-ink-2 w-12 shrink-0" />
       <span className={`inline-flex items-center px-1.5 py-0.5 rounded-input border shrink-0 ${th.chip}`}>
-        <span className="typo-caption tabular-nums">{entry.score}</span>
+        <span className="typo-data">{entry.score}</span>
       </span>
     </button>
   );

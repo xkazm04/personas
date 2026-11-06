@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { Loader2, Settings, Check, Trash2, Layers } from 'lucide-react';
 import { TeamColorPicker } from '../TeamColorPicker';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -184,15 +185,15 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
     <div className="h-full flex flex-col gap-4 overflow-y-auto pr-1">
       <div className="flex items-center gap-2 flex-shrink-0">
         <Settings className="w-4 h-4 text-foreground" />
-        <h3 className="typo-label text-foreground">{ts.workspace_settings}</h3>
+        <h3 className="typo-label text-ink-2">{ts.workspace_settings}</h3>
       </div>
-      <p className="typo-caption text-foreground -mt-2">{ts.workspace_hint}</p>
+      <p className="typo-caption text-ink-2 -mt-2">{ts.workspace_hint}</p>
 
       {/* Team identity — name / description / color, editable post-creation */}
       <div className="rounded-card border border-hair bg-surface-1 p-3 space-y-3">
         <div className="flex items-center gap-2">
           <Layers className="w-3.5 h-3.5 text-role-agent" />
-          <span className="typo-label text-foreground">{ts.identity_section}</span>
+          <span className="typo-label text-ink-2">{ts.identity_section}</span>
         </div>
         {/* The icon field is deliberately gone. It was a free-text input whose
             value was looked up in a named-icon map and, on a miss, rendered as
@@ -221,7 +222,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
           <span className="typo-label text-ink-2 mb-1.5 block">{t.pipeline.color}</span>
           <TeamColorPicker value={color} onChange={setColor} />
         </div>
-        <p className="typo-caption text-foreground">{ts.identity_hint}</p>
+        <p className="typo-caption text-ink-2">{ts.identity_hint}</p>
       </div>
 
       {/* Shared instructions */}
@@ -275,15 +276,9 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
       </div>
 
       <div className="flex items-center gap-2 flex-shrink-0">
-        <button
-          type="button"
-          disabled={saving || !dirty}
-          onClick={() => void handleSave()}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-hair bg-primary/15 typo-body text-primary hover:bg-primary/25 disabled:opacity-50 transition-colors"
-        >
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-          {ts.workspace_save}
-        </button>
+        <Button variant="secondary" size="sm" disabled={saving || !dirty} onClick={() => void handleSave()} icon={saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}>
+{ts.workspace_save}
+</Button>
         {savedAt > 0 && !dirty && (
           <span className="typo-caption text-status-success">{ts.workspace_saved}</span>
         )}
@@ -306,37 +301,21 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
           <Trash2 className="w-4 h-4 text-status-error" />
           <h3 className="typo-label text-status-error">{ts.disband_heading}</h3>
         </div>
-        <p className="typo-caption text-foreground">{ts.disband_hint}</p>
+        <p className="typo-caption text-ink-2">{ts.disband_hint}</p>
         <div className="flex items-center gap-2 mt-1">
           {confirmDisband ? (
             <>
-              <button
-                type="button"
-                disabled={disbanding}
-                onClick={() => void handleDisband()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-status-error/40 bg-status-error/15 typo-body text-status-error hover:bg-status-error/25 disabled:opacity-50 transition-colors"
-              >
-                {disbanding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                {ts.disband_confirm}
-              </button>
-              <button
-                type="button"
-                disabled={disbanding}
-                onClick={() => setConfirmDisband(false)}
-                className="inline-flex items-center px-3 py-1.5 rounded-interactive border border-hair typo-body text-foreground hover:bg-surface-2 disabled:opacity-50 transition-colors"
-              >
+              <Button variant="danger" size="sm" disabled={disbanding} onClick={() => void handleDisband()} icon={disbanding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}>
+{ts.disband_confirm}
+</Button>
+              <Button variant="secondary" size="sm" disabled={disbanding} onClick={() => setConfirmDisband(false)}>
                 {ts.cancel}
-              </button>
+              </Button>
             </>
           ) : (
-            <button
-              type="button"
-              onClick={() => setConfirmDisband(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-status-error/30 typo-body text-status-error hover:bg-status-error/15 transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              {ts.disband}
-            </button>
+            <Button variant="danger" size="sm" onClick={() => setConfirmDisband(true)} icon={<Trash2 className="w-3.5 h-3.5" />}>
+{ts.disband}
+</Button>
           )}
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { memo, useState, useRef, useEffect, useCallback } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { SlidersHorizontal } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from '@/stores/systemStore';
@@ -53,20 +54,12 @@ export const HomeCustomizePopover = memo(function HomeCustomizePopover() {
 
   return (
     <div className="relative">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => setOpen((p) => !p)}
-        aria-expanded={open}
-        aria-label={t.overview.dashboard.customize_label}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive border border-hair bg-surface-1 text-foreground typo-caption hover:bg-surface-2 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
-      >
-        <SlidersHorizontal className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">{t.overview.dashboard.customize_label}</span>
+      <Button variant="secondary" size="sm" ref={buttonRef} onClick={() => setOpen((p) => !p)} aria-expanded={open} aria-label={t.overview.dashboard.customize_label} icon={<SlidersHorizontal className="w-3.5 h-3.5" />}>
+<span className="hidden sm:inline">{t.overview.dashboard.customize_label}</span>
         {hiddenCount > 0 && (
-          <span className="typo-caption font-mono tabular-nums px-1 rounded-interactive bg-primary/10 text-primary">{hiddenCount}</span>
+          <span className="typo-data font-mono px-1 rounded-interactive bg-primary/10 text-primary">{hiddenCount}</span>
         )}
-      </button>
+</Button>
 
       {open && (
         <div
@@ -76,13 +69,9 @@ export const HomeCustomizePopover = memo(function HomeCustomizePopover() {
           <div className="flex items-center justify-between mb-2">
             <span className="typo-eyebrow">{t.overview.dashboard.customize_title}</span>
             {hiddenCount > 0 && (
-              <button
-                type="button"
-                onClick={onReset}
-                className="typo-caption text-primary/80 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 rounded-interactive px-1"
-              >
+              <Button variant="ghost" size="xs" onClick={onReset}>
                 {t.overview.dashboard.customize_reset}
-              </button>
+              </Button>
             )}
           </div>
           <div className="space-y-1">

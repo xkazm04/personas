@@ -44,7 +44,7 @@ export function ReportReader({ item, doc, reader }: { item: DecisionItem; doc: P
         <span className="min-w-0 flex-1 truncate typo-caption">
           {isHtml ? t.monitor.dc_deck_html_document : section ?? t.monitor.dc_deck_reader_start}
         </span>
-        <span className="typo-data tabular-nums text-foreground">{formatPercent(reader.progress, { fromRatio: true, precision: 0 })}</span>
+        <span className="typo-data text-foreground">{formatPercent(reader.progress, { fromRatio: true, precision: 0 })}</span>
         <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/10" aria-hidden>
           <motion.span
             className="au-progress block h-full origin-left"

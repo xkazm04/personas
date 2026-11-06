@@ -5,6 +5,7 @@
 // before applying. Apply → setStandardsConfig + re-derive. Portalled + anchored
 // so the matrix's overflow-x-auto never clips it.
 import { useMemo, useState, type ReactNode } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { createPortal } from 'react-dom';
 import { Sparkles, X, ArrowRight } from 'lucide-react';
 
@@ -84,10 +85,10 @@ export function ImprovePopover({
     >
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-hair bg-surface-1">
         <Sparkles className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
-        <span className="typo-caption text-foreground truncate">{tx(d.improve_pop_title, { name: raw.project.name })}</span>
-        <button type="button" onClick={onClose} aria-label={t.common.close} className="ml-auto p-0.5 rounded-interactive text-foreground hover:bg-surface-2 transition-colors">
+        <span className="typo-caption text-ink-2 truncate">{tx(d.improve_pop_title, { name: raw.project.name })}</span>
+        <Button variant="ghost" size="icon-sm" className="ml-auto" onClick={onClose} aria-label={t.common.close}>
           <X className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       {/* level ladder + provenance for the clicked ordinal row (e.g. CI) */}
@@ -128,7 +129,7 @@ export function ImprovePopover({
               style={{ accentColor: 'var(--primary)' }}
             />
             <span className="min-w-0">
-              <span className="typo-caption text-foreground block">{a.label}</span>
+              <span className="typo-caption text-ink-2 block">{a.label}</span>
               <span className="typo-caption text-ink-3 block" style={{ fontWeight: 400 }}>{a.hint}</span>
             </span>
           </label>
@@ -137,15 +138,9 @@ export function ImprovePopover({
 
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-hair bg-surface-1">
         <span className="typo-caption text-ink-3">{tx(d.improve_pop_selected, { count: picked.length })}</span>
-        <button
-          type="button"
-          onClick={onApply}
-          disabled={picked.length === 0 || saving}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-hair transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Sparkles className="w-3 h-3" />
-          {saving ? d.improve_pop_applying : d.improve_pop_apply}
-        </button>
+        <Button variant="secondary" size="sm" onClick={onApply} disabled={picked.length === 0 || saving} icon={<Sparkles className="w-3 h-3" />}>
+{saving ? d.improve_pop_applying : d.improve_pop_apply}
+</Button>
       </div>
     </div>,
     document.body,
@@ -164,7 +159,7 @@ function PreviewRow({ label, children }: { label: string; children: ReactNode })
 function Delta({ before, after }: { before: number; after: number }) {
   const d = after - before;
   if (d <= 0) return null;
-  return <span className="typo-caption text-status-success tabular-nums">+{d}</span>;
+  return <span className="typo-data text-status-success">+{d}</span>;
 }
 
 function LevelDelta({ label, before, after }: { label: string; before: string; after: string }) {

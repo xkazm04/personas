@@ -5,6 +5,7 @@
 // setup gear / live fleet-terminal icon, improvable rows wrap in ImproveCell,
 // `llmtracking` renders live wiring instead of the scan's generic "connected".
 import { Fragment, type RefObject } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle2, Settings2, TerminalSquare } from 'lucide-react';
 
@@ -127,29 +128,17 @@ export function WallCompareTable({
                             <span className="group/uni relative flex items-start w-full gap-1" data-testid={`unified-${row.key}-${p.identity.slug}`}>
                               <span className="min-w-0 flex-1">{cell}</span>
                               {fl ? (
-                                <button
-                                  type="button"
-                                  onClick={() => onOpenTerminal(dk)}
-                                  title={`Fleet is working this row: ${String(fl.state).replace('_', ' ')} (click to open the terminal)`}
-                                  className="shrink-0 p-0.5 rounded-interactive transition-colors hover:bg-primary/10 focus-ring"
-                                  data-testid={`unified-fleet-${row.key}-${p.identity.slug}`}
-                                >
+                                <Button variant="ghost" size="icon-sm" className="shrink-0" onClick={() => onOpenTerminal(dk)} tooltip={`Fleet is working this row: ${String(fl.state).replace('_', ' ')} (click to open the terminal)`} data-testid={`unified-fleet-${row.key}-${p.identity.slug}`}>
                                   <TerminalSquare
                                     className={`w-3.5 h-3.5 ${fl.state === 'running' || fl.state === 'spawning' ? 'animate-pulse' : ''}`}
                                     style={{ color: PASSPORT_FLEET_INK[String(fl.state)] ?? INK.violet }}
                                     aria-hidden
                                   />
-                                </button>
+                                </Button>
                               ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => onOpenSetup({ rowKey: row.key, rowLabel: row.label, passport: p, currentLabel })}
-                                  title={`Set up ${row.label}`}
-                                  className="shrink-0 p-0.5 rounded-interactive opacity-[0.10] group-hover/uni:opacity-100 transition-opacity hover:bg-primary/10 focus-ring"
-                                  data-testid={`unified-setup-${row.key}-${p.identity.slug}`}
-                                >
+                                <Button variant="ghost" size="icon-sm" className="shrink-0 transition-opacity" onClick={() => onOpenSetup({ rowKey: row.key, rowLabel: row.label, passport: p, currentLabel })} tooltip={`Set up ${row.label}`} data-testid={`unified-setup-${row.key}-${p.identity.slug}`}>
                                   <Settings2 className="w-3.5 h-3.5" style={{ color: INK.teal }} aria-hidden />
-                                </button>
+                                </Button>
                               )}
                             </span>
                           );

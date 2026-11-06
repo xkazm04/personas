@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { useState, useCallback, useMemo } from 'react';
 import { History, ChevronUp } from 'lucide-react';
@@ -122,15 +123,9 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
               ))}
             </div>
             {revisions.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowHistory(!showHistory)}
-                className="flex items-center gap-0.5 typo-body text-foreground hover:text-role-agent transition-colors"
-                aria-label={pt.version_history}
-                aria-expanded={showHistory}
-              >
-                <History className="w-3 h-3" /><span>{revisions.length}</span>
-              </button>
+              <Button variant="ghost" size="sm" onClick={() => setShowHistory(!showHistory)} aria-label={pt.version_history} aria-expanded={showHistory} icon={<History className="w-3 h-3" />}>
+<span>{revisions.length}</span>
+</Button>
             )}
           </div>
 
@@ -143,9 +138,9 @@ export default function TeamMemoryRow({ memory, onDelete, onImportanceChange, on
             <div className="mt-2 space-y-1.5 border-t border-hair pt-2">
               <div className="flex items-center justify-between">
                 <span className="typo-body text-foreground">{pt.version_history}</span>
-                <button type="button" onClick={() => setShowHistory(false)} aria-label={t.common.close} className="p-0.5 text-foreground hover:text-ink-2">
+                <Button variant="ghost" size="icon-sm" onClick={() => setShowHistory(false)} aria-label={t.common.close}>
                   <ChevronUp className="w-3 h-3" />
-                </button>
+                </Button>
               </div>
               {[...revisions].reverse().map((rev, i) => (
                 <div key={i} className="pl-2 border-l-2 border-hair space-y-0.5">

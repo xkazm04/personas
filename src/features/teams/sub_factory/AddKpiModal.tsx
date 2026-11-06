@@ -8,6 +8,7 @@
 // (the chat orb), not here — this is the structured authoring surface. State +
 // actions live in `useAddKpi`; this file is the presentational shell.
 import { Plus, Loader2, Sparkles, X, MessageSquare } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -59,7 +60,7 @@ export function AddKpiModal({
             <h2 id="factory-add-kpi-title" className="typo-heading text-foreground">{w.setup_add_title}</h2>
             <p className="typo-caption truncate">{scopeLabel ? tx(w.setup_scope, { scope: scopeLabel }) : w.setup_scope_project}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label={t.common.close} className="rounded-interactive p-1.5 text-ink-2 hover:bg-surface-2"><X className="w-4 h-4" /></button>
+          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t.common.close}><X className="w-4 h-4" /></Button>
         </div>
 
         {/* Body */}
@@ -118,7 +119,7 @@ export function AddKpiModal({
               <Label htmlFor="kpi-target-date">{w.target_date_label}{optional}</Label>
               <input id="kpi-target-date" type="date" value={k.targetDate} onChange={(e) => k.setTargetDate(e.target.value)} className={INPUT} />
             </div>
-            <p className="col-span-3 typo-caption text-foreground">
+            <p className="col-span-3 typo-caption text-ink-2">
               {w.setup_target_date_hint}
             </p>
           </div>
@@ -142,17 +143,15 @@ export function AddKpiModal({
         {/* Footer — the button depends on Measured */}
         <div className="flex items-center gap-2 px-5 py-3 border-t border-hair">
           <span className="flex-1" />
-          <button type="button" onClick={onClose} className="rounded-interactive border border-hair px-3 py-1.5 typo-body text-foreground hover:bg-surface-2">{t.common.cancel}</button>
+          <Button variant="secondary" size="sm" onClick={onClose}>{t.common.cancel}</Button>
           {isManual ? (
-            <button type="button" disabled={busy || !k.manualReady} onClick={() => void k.createManual()}
-              className="inline-flex items-center gap-1.5 rounded-interactive border border-hair bg-primary/15 px-3 py-1.5 typo-body text-foreground hover:bg-primary/25 disabled:opacity-50">
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} {w.setup_create}
-            </button>
+            <Button variant="secondary" size="sm" disabled={busy || !k.manualReady} onClick={() => void k.createManual()} icon={busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}>
+{w.setup_create}
+</Button>
           ) : (
-            <button type="button" disabled={busy || !k.name.trim()} onClick={() => void k.setupWithAi()}
-              className="inline-flex items-center gap-1.5 rounded-interactive border border-hair bg-primary/15 px-3 py-1.5 typo-body text-foreground hover:bg-primary/25 disabled:opacity-50">
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} {busy ? w.setup_setting_up : w.setup_with_ai}
-            </button>
+            <Button variant="secondary" size="sm" disabled={busy || !k.name.trim()} onClick={() => void k.setupWithAi()} icon={busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}>
+{busy ? w.setup_setting_up : w.setup_with_ai}
+</Button>
           )}
         </div>
       </div>

@@ -59,7 +59,7 @@ export function RunnerListPopover({ rows, x, y, onOpen, onClose }: {
                 aria-hidden
               />
               <span className="truncate flex-1">{task.title}</span>
-              <span className="typo-caption text-ink-3 tabular-nums shrink-0">
+              <span className="typo-data text-ink-3 shrink-0">
                 {running && task.progress > 0
                   ? `${Math.round(Math.min(task.progress, 100))}%`
                   : tokenLabel(t, 'execution', task.status)}

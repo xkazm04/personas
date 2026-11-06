@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { CheckSquare, Settings2, Square, Users, Workflow } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
@@ -35,16 +36,16 @@ export function PresetProcessBlueprint({ preset, a, customizing }: PresetVariant
       {/* Left — member sidebar (one uniform-width column) */}
       <aside className="flex-shrink-0 w-[300px] flex flex-col border-r border-hair bg-surface-1">
         <div className="flex-shrink-0 px-3 pt-3 pb-1.5 flex items-center justify-between gap-2">
-          <span className="px-1 typo-label text-foreground inline-flex items-center gap-1.5">
+          <span className="px-1 typo-label text-ink-2 inline-flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5" />
             {t.templates.presets.preview_members_heading}
           </span>
-          <span className="typo-caption text-foreground">
+          <span className="typo-caption text-ink-2">
             {preview ? `${a.selectedRoles.size}/${preset.members.length}` : preset.members.length}
           </span>
         </div>
         {preview && (
-          <p className="flex-shrink-0 px-4 pb-2 typo-caption text-foreground">
+          <p className="flex-shrink-0 px-4 pb-2 typo-caption text-ink-2">
             {t.templates.presets.preview_members_select_hint}
           </p>
         )}
@@ -82,22 +83,22 @@ export function PresetProcessBlueprint({ preset, a, customizing }: PresetVariant
                     )
                   )}
                   <span
-                    className="typo-body uppercase tracking-wider truncate"
+                    className="typo-eyebrow truncate"
                     style={{ color: selected || !preview ? teamColor : undefined }}
                   >
                     {row.role}
                   </span>
                   {!preview && <span className="ml-auto"><PresetStatusBadge row={row} /></span>}
                   {preview && qCount > 0 && (
-                    <span className="ml-auto inline-flex items-center gap-1 typo-caption text-foreground" title={tx(t.templates.presets.questionnaire_member_summary_default, { count: qCount })}>
+                    <Tooltip content={tx(t.templates.presets.questionnaire_member_summary_default, { count: qCount })}><span className="ml-auto inline-flex items-center gap-1 typo-caption text-ink-2">
                       <Settings2 className="w-3 h-3" />
                       {qCount}
-                    </span>
+                    </span></Tooltip>
                   )}
                 </div>
                 <div className="typo-body text-ink-2 mt-1">{meta?.name ?? row.templateId}</div>
                 {meta?.description && (
-                  <div className="typo-caption text-foreground mt-0.5 line-clamp-2">{meta.description}</div>
+                  <div className="typo-caption text-ink-2 mt-0.5 line-clamp-2">{meta.description}</div>
                 )}
               </CardTag>
             );
@@ -109,11 +110,11 @@ export function PresetProcessBlueprint({ preset, a, customizing }: PresetVariant
       <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5">
         <div className="flex items-center gap-2">
           <Workflow className="w-4 h-4" style={{ color: teamColor }} />
-          <h3 className="typo-label text-foreground">
+          <h3 className="typo-label text-ink-2">
             {t.pipeline.preset_blueprint_heading}
           </h3>
           {preview && (
-            <span className="typo-caption text-foreground ml-auto">{t.pipeline.preset_blueprint_hint}</span>
+            <span className="typo-caption text-ink-2 ml-auto">{t.pipeline.preset_blueprint_hint}</span>
           )}
         </div>
 

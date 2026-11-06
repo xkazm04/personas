@@ -60,24 +60,19 @@ export function KpiSourceSection({
           <span className="typo-body text-foreground">{active.service_type}</span>
           <ComposedByBadge composedBy={active.composed_by} />
           {active.verified_at && (
-            <span className="typo-caption text-foreground opacity-80">
+            <span className="typo-caption text-ink-2">
               {t.kpis.source_verified} <RelativeTime timestamp={active.verified_at} />
             </span>
           )}
-          <button
-            type="button"
-            onClick={onConnect}
-            className="typo-caption text-primary rounded-card px-1.5 py-1 hover:bg-surface-2 transition-colors focus-ring"
-            data-testid="kpi-change-source"
-          >
+          <Button variant="ghost" size="xs" onClick={onConnect} data-testid="kpi-change-source">
             {t.kpis.source_change}
-          </button>
+          </Button>
         </div>
       ) : (
         !degraded && (
           <div className="flex items-center gap-2 flex-wrap">
             {kpi.measure_kind === 'manual' && (
-              <p className="typo-caption text-foreground opacity-80">{t.kpis.source_none_hint}</p>
+              <p className="typo-caption text-ink-2">{t.kpis.source_none_hint}</p>
             )}
             <Button
               size="sm"
@@ -170,7 +165,7 @@ export function KpiStoryChart({
   }, [measurements, simMeasurements, linkedGoals, kpi.target_value, kpi.baseline_value]);
 
   if (!model) {
-    return <p className="typo-caption text-foreground opacity-80">{t.kpis.chart_no_data}</p>;
+    return <p className="typo-caption text-ink-2">{t.kpis.chart_no_data}</p>;
   }
 
   return (
@@ -229,14 +224,14 @@ export function KpiStoryChart({
         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
           {model.goalMarks.map((g, i) => (
             <Tooltip key={i} content={g.title}>
-              <span className="typo-caption text-foreground opacity-80 truncate max-w-[10rem]">
+              <span className="typo-caption text-ink-2 truncate max-w-[10rem]">
                 ▎{g.done ? t.kpis.goal_marker_done : t.kpis.goal_marker_open}: {g.title}
               </span>
             </Tooltip>
           ))}
         </div>
       )}
-      <p className="typo-caption text-foreground opacity-70 mt-0.5">
+      <p className="typo-caption text-ink-2 mt-0.5">
         {model.targetY != null ? tx(t.kpis.chart_legend, { target: kpi.target_value ?? 0, unit: kpi.unit || '' }) : ''}
       </p>
     </div>

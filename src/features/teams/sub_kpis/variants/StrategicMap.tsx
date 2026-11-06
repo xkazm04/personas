@@ -136,7 +136,7 @@ export default function StrategicMap({ overview, loading, onFocus, onOpen }: Kpi
                 className="flex w-full items-baseline gap-2 truncate rounded-t-card px-2 py-0.5 text-left hover:bg-surface-2 focus-ring"
               >
                 <span className={`truncate ${KT.name}`}>{frame.label}</span>
-                <span className="shrink-0 typo-caption tabular-nums">
+                <span className="shrink-0 typo-data">
                   {tx(o.map_lit_of, { measured: frame.tally.measured, total: frame.tally.total })}
                 </span>
                 {frame.groupsUnknown && (

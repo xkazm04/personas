@@ -109,7 +109,7 @@ export function KpiSteeringPanel({
 
       {linkedGoals.length === 0 && offTrack && (
         <div className="flex flex-wrap items-center gap-2">
-          <p className="typo-caption text-foreground opacity-80">{t.kpis.steering_none_offtrack}</p>
+          <p className="typo-caption text-ink-2">{t.kpis.steering_none_offtrack}</p>
           <Button
             size="sm"
             variant="secondary"
@@ -132,10 +132,10 @@ export function KpiSteeringPanel({
               <div className="flex items-center gap-2">
                 <GoalStatusBadge status={g.status} />
                 <span className="flex-1 typo-body text-foreground truncate">{g.title}</span>
-                <span className="typo-caption text-foreground tabular-nums">{g.progress}%</span>
+                <span className="typo-data text-ink-2">{g.progress}%</span>
               </div>
               {(team || g.target_date) && (
-                <div className="flex items-center gap-3 mt-1 typo-caption text-foreground opacity-80">
+                <div className="flex items-center gap-3 mt-1 typo-caption text-ink-2">
                   {team && (
                     <span className="inline-flex items-center gap-1">
                       <Users className="w-3 h-3" /> {team}
@@ -158,7 +158,7 @@ export function KpiSteeringPanel({
             <div key={g.id} className="px-3 py-2.5">
               <div className="flex items-center gap-2">
                 <span className="flex-1 typo-body text-foreground truncate">{g.title}</span>
-                <span className="typo-caption text-foreground opacity-70 inline-flex items-center gap-1">
+                <span className="typo-caption text-ink-2 inline-flex items-center gap-1">
                   {t.kpis.goal_marker_done} <RelativeTime timestamp={g.completed_at!} />
                 </span>
               </div>
@@ -186,7 +186,7 @@ function OutcomeLine({ o, kpi }: { o: Outcome; kpi: DevKpi }) {
   const { t, tx } = useTranslation();
   const unit = kpi.unit || '';
   if (o.verdict === 'pending') {
-    return <p className="typo-caption text-foreground opacity-70 mt-1">{t.kpis.steering_outcome_pending}</p>;
+    return <p className="typo-caption text-ink-2 mt-1">{t.kpis.steering_outcome_pending}</p>;
   }
   if (o.verdict === 'flat') {
     return (

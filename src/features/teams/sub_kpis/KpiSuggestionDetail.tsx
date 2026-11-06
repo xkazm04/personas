@@ -91,7 +91,7 @@ export function KpiSuggestionDetail({ s, title, detail, busy, onApply, onDismiss
               read and check, which a hover string does not allow. */}
           <ul className="space-y-1">
             {s.citations.map((c, i) => (
-              <li key={`${c}-${i}`} className="flex items-start gap-2 typo-caption text-foreground">
+              <li key={`${c}-${i}`} className="flex items-start gap-2 typo-caption text-ink-2">
                 <span className="w-1.5 h-1.5 mt-1.5 rounded-full bg-primary/60 shrink-0" />
                 <span className="min-w-0 break-words">{c}</span>
               </li>

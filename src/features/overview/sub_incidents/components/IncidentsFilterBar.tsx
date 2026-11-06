@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
@@ -96,14 +97,9 @@ export function IncidentsFilterBar({ filters, onChange }: Props) {
       />
 
       {isNarrowed && (
-        <button
-          type="button"
-          onClick={() => onChange(OPEN_ONLY_FILTERS)}
-          className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card border border-hair text-foreground hover:bg-surface-2 transition-colors focus-ring"
-        >
-          <X className="h-3 w-3" aria-hidden="true" />
-          {t.overview.incidents.filters_clear_all}
-        </button>
+        <Button variant="secondary" size="xs" className="ml-auto" onClick={() => onChange(OPEN_ONLY_FILTERS)} icon={<X className="h-3 w-3" aria-hidden="true" />}>
+{t.overview.incidents.filters_clear_all}
+</Button>
       )}
     </div>
   );

@@ -85,7 +85,7 @@ export const LlmSpendSection = memo(function LlmSpendSection() {
           <Layers className="w-3.5 h-3.5 text-status-success" />
         </div>
         <h3 className="typo-heading text-ink-2">{s.section_title}</h3>
-        <span className="typo-caption text-foreground">{s.section_hint}</span>
+        <span className="typo-caption text-ink-2">{s.section_hint}</span>
       </div>
 
       {showGhost ? (

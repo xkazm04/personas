@@ -8,6 +8,7 @@
 // the same mechanism Mastermind's FleetPreviewPanel ships (an embedded
 // managed FleetTerminalPane + a quick-reply row), lifted into a BaseModal.
 import { useEffect, useMemo, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { Send, X } from 'lucide-react';
 
 import { listSessions, renameSession, spawnSession, writeInput } from '@/api/fleet/fleet';
@@ -99,18 +100,13 @@ export function PassportTerminalModal({ sessionId, session, onClose }: {
     <BaseModal isOpen onClose={onClose} titleId="passport-terminal-title" portal maxWidthClass="max-w-3xl" staggerChildren={false}>
       <div data-testid="passport-terminal-modal">
         <div className="flex items-center gap-2 pb-2 border-b border-hair">
-          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: ink, boxShadow: `0 0 6px ${ink}88` }} aria-hidden />
+          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: ink }} aria-hidden />
           <h2 id="passport-terminal-title" className="typo-body text-foreground truncate">{label}</h2>
           <span className="typo-caption text-ink-3 shrink-0">{String(session?.state ?? 'exited').replace('_', ' ')}</span>
           {session?.stateReason && <span className="typo-caption text-ink-3 truncate">— {session.stateReason}</span>}
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="ml-auto shrink-0 p-1 rounded-interactive text-ink-3 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
-          >
+          <Button variant="ghost" size="icon-sm" className="ml-auto shrink-0" onClick={onClose} aria-label="Close">
             <X className="w-4 h-4" aria-hidden />
-          </button>
+          </Button>
         </div>
 
         <div className="h-[420px] bg-background/80 mt-2 rounded-card overflow-hidden">
@@ -130,18 +126,12 @@ export function PassportTerminalModal({ sessionId, session, onClose }: {
               onChange={(e) => setReply(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') send(); }}
               placeholder={COPY.placeholder}
-              className="flex-1 min-w-0 px-2.5 py-1.5 typo-caption rounded-input bg-background/70 border border-hair text-foreground outline-none focus:border-primary/40"
+              className="flex-1 min-w-0 px-2.5 py-1.5 typo-caption rounded-input bg-background/70 border border-hair text-ink-2 outline-none focus:border-primary/40"
               data-testid="passport-terminal-reply"
             />
-            <button
-              type="button"
-              onClick={send}
-              disabled={reply.trim().length === 0}
-              aria-label={COPY.send}
-              className="shrink-0 p-1.5 rounded-interactive text-primary hover:bg-primary/10 disabled:opacity-40 transition-colors focus-ring"
-            >
+            <Button variant="ghost" size="icon-sm" className="shrink-0" onClick={send} disabled={reply.trim().length === 0} aria-label={COPY.send}>
               <Send className="w-4 h-4" aria-hidden />
-            </button>
+            </Button>
           </div>
         )}
       </div>

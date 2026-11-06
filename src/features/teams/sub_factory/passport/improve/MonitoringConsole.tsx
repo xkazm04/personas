@@ -22,6 +22,7 @@
 // One implementation throughout: readings via ladderFor, actions via the same
 // `useImproveActions` the classic popover panel runs on.
 import { useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { ScanSearch } from 'lucide-react';
 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -90,15 +91,9 @@ export function MonitoringConsole({
             onDeploy={() => onDeploy(row)}
             footerExtra={(
               <Tooltip content={tx(d.monitoring_area_scan_hint, { area: d[`monitoring_item_${row.def.labelKey}`] })} placement="top">
-                <button
-                  type="button"
-                  disabled={areaScanning === row.def.key}
-                  onClick={() => onAreaScan(row)}
-                  aria-label={tx(d.monitoring_area_scan_hint, { area: d[`monitoring_item_${row.def.labelKey}`] })}
-                  className={`p-1 rounded-interactive text-primary/70 hover:text-primary hover:bg-primary/10 border border-hair transition-colors disabled:opacity-40 shrink-0 ${areaScanning === row.def.key ? 'animate-pulse' : ''}`}
-                >
+                <Button variant="secondary" size="icon-sm" className="shrink-0" disabled={areaScanning === row.def.key} onClick={() => onAreaScan(row)} aria-label={tx(d.monitoring_area_scan_hint, { area: d[`monitoring_item_${row.def.labelKey}`] })}>
                   <ScanSearch className="w-3.5 h-3.5" aria-hidden />
-                </button>
+                </Button>
               </Tooltip>
             )}
           />
@@ -209,12 +204,11 @@ function LevelStrip({ ladder }: { ladder: NonNullable<ReturnType<typeof ladderFo
       <span className="typo-caption text-ink-3 shrink-0" style={{ fontWeight: 400 }}>{d.monitoring_current_level}</span>
       <span className="flex items-center gap-0.5" aria-hidden>
         {ladder.steps.map((step, i) => (
-          <span
+          <Tooltip content={step}><span
             key={step}
-            title={step}
             className="h-1.5 w-4 rounded-full"
             style={{ background: i <= ladder.currentIndex ? tint.hex : 'color-mix(in srgb, var(--foreground) 12%, transparent)' }}
-          />
+          /></Tooltip>
         ))}
       </span>
       <span className={`typo-caption ${tint.text} shrink-0`}>{ladder.steps[ladder.currentIndex]}</span>
@@ -224,17 +218,8 @@ function LevelStrip({ ladder }: { ladder: NonNullable<ReturnType<typeof ladderFo
 
 function FooterButton({ label, onClick, busy, primary }: { label: string; onClick: () => void; busy: boolean; primary?: boolean }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={busy}
-      className={`px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0 ${
-        primary
-          ? 'text-primary bg-primary/15 hover:bg-primary/25 border border-hair'
-          : 'text-foreground hover:bg-surface-2 border border-hair'
-      }`}
-    >
+    <Button variant={primary ? "primary" : "secondary"} size="sm" className="shrink-0" onClick={onClick} disabled={busy}>
       {busy ? '…' : label}
-    </button>
+    </Button>
   );
 }

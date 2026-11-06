@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 import { SlidersHorizontal, ArrowLeft, Users, Settings, Brain } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
@@ -135,14 +137,9 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
             <TeamCreateActions />
             <TeamPublishButton teamId={teamId} teamName={teamName} />
             {onBack ? (
-              <button
-                type="button"
-                onClick={requestBack}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-hair bg-surface-1 typo-body text-foreground hover:bg-surface-2 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                {t.plugins.dev_tools.back_to_projects}
-              </button>
+              <Button variant="secondary" size="sm" onClick={requestBack} icon={<ArrowLeft className="w-4 h-4" />}>
+{t.plugins.dev_tools.back_to_projects}
+</Button>
             ) : null}
           </div>
         }
@@ -154,42 +151,20 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
         <div className="flex-shrink-0 w-[300px] flex flex-col border-r border-hair bg-surface-1">
           {/* WORKSPACE — the mode trio, tightened into one distinct group. */}
           <div className="flex-shrink-0 px-3 pt-3 pb-2">
-            <p className="px-1 mb-1.5 typo-label text-foreground">
+            <p className="px-1 mb-1.5 typo-label text-ink-2">
               {ts.section_workspace}
             </p>
             <div className="flex flex-col gap-0.5 rounded-card bg-surface-1 p-1">
 
               {/* Team memory — the shared ledger (decisions / constraints / learnings) */}
-              <button
-                type="button"
-                data-testid="team-mode-memory"
-                onClick={() => requestMode({ kind: 'memory' })}
-                aria-pressed={mode.kind === 'memory'}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
-                  mode.kind === 'memory'
-                    ? 'border-primary/40 bg-surface-1 text-ink-2'
-                    : 'border-transparent text-foreground hover:bg-surface-2'
-                }`}
-              >
-                <Brain className="w-4 h-4 flex-shrink-0" />
-                <span className="typo-body">{ts.memory_label}</span>
-              </button>
+              <Button variant={mode.kind === 'memory' ? "secondary" : "ghost"} size="sm" className="w-full" data-testid="team-mode-memory" onClick={() => requestMode({ kind: 'memory' })} aria-pressed={mode.kind === 'memory'} icon={<Brain className="w-4 h-4 flex-shrink-0" />}>
+<span className="typo-body">{ts.memory_label}</span>
+</Button>
 
               {/* Workspace settings */}
-              <button
-                type="button"
-                data-testid="team-mode-workspace"
-                onClick={() => requestMode({ kind: 'workspace' })}
-                aria-pressed={mode.kind === 'workspace'}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
-                  mode.kind === 'workspace'
-                    ? 'border-primary/40 bg-surface-1 text-ink-2'
-                    : 'border-transparent text-foreground hover:bg-surface-2'
-                }`}
-              >
-                <Settings className="w-4 h-4 flex-shrink-0" />
-                <span className="typo-body">{ts.workspace_settings}</span>
-              </button>
+              <Button variant={mode.kind === 'workspace' ? "secondary" : "ghost"} size="sm" className="w-full" data-testid="team-mode-workspace" onClick={() => requestMode({ kind: 'workspace' })} aria-pressed={mode.kind === 'workspace'} icon={<Settings className="w-4 h-4 flex-shrink-0" />}>
+<span className="typo-body">{ts.workspace_settings}</span>
+</Button>
             </div>
           </div>
 
@@ -198,10 +173,10 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
 
           {/* MEMBERS — the roster */}
           <div className="flex-shrink-0 px-3 pt-3 pb-1.5 flex items-center justify-between gap-2">
-            <p className="px-1 typo-label text-foreground">
+            <p className="px-1 typo-label text-ink-2">
               {ts.section_members}
             </p>
-            <span className="typo-caption text-foreground">{memberCountLabel}</span>
+            <span className="typo-caption text-ink-2">{memberCountLabel}</span>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-2 flex flex-col gap-1">
@@ -282,12 +257,11 @@ function RosterRow({
       <span className="relative flex-shrink-0">
         <PersonaIcon icon={member.icon} color={member.color} display="pop" frameSize="sm" />
         {status && (
-          <span
-            title={status === 'working' ? ts.presence_working : ts.presence_waiting}
+          <Tooltip content={status === 'working' ? ts.presence_working : ts.presence_waiting}><span
             className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-background ${
               status === 'working' ? 'bg-status-info animate-pulse' : 'bg-status-warning'
             }`}
-          />
+          /></Tooltip>
         )}
       </span>
       <div className="min-w-0 flex-1">
@@ -295,7 +269,7 @@ function RosterRow({
           <span className="typo-body text-foreground truncate">{member.name}</span>
           <TeamReadinessChip setupStatus={member.persona?.setup_status} />
         </div>
-        <div className="typo-caption text-foreground">
+        <div className="typo-caption text-ink-2">
           {status
             ? (status === 'working' ? ts.presence_working : ts.presence_waiting)
             : tx(ts.capabilities_active, {
@@ -343,8 +317,8 @@ function MemberAdjustPane({
       {/* Capabilities */}
       <div className="flex items-center gap-2 flex-shrink-0">
         <SlidersHorizontal className="w-4 h-4 text-foreground" />
-        <h4 className="typo-label text-foreground">{t.pipeline.team_studio.capabilities}</h4>
-        <span className="typo-caption text-foreground">
+        <h4 className="typo-label text-ink-2">{t.pipeline.team_studio.capabilities}</h4>
+        <span className="typo-caption text-ink-2">
           {tx(t.pipeline.team_studio.capabilities_active, {
             active: member.activeUseCaseCount,
             total: member.useCases.length,

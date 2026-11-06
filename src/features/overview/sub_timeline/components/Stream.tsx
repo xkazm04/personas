@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Radio, Search, X } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { ChannelDetailModal } from '@/features/teams/sub_collab/ChannelDetailModal';
@@ -58,7 +60,7 @@ const FAMILY_DOT: Record<string, string> = {
 
 /** One facet row: a value, a live count, on/off. */
 function FacetRow({
-  label, count, on, color, dot, dotColor, title, onClick,
+  label, count, on, color, dot, dotColor, hint, onClick,
 }: {
   label: string;
   /** null = not counted (the value isn't in the current fetch — see Deliberation). */
@@ -67,39 +69,40 @@ function FacetRow({
   color?: string;
   dot?: string;
   dotColor?: string;
-  title?: string;
+  hint?: string;
   onClick: () => void;
 }) {
   return (
+    <Tooltip content={hint}>
     <button
       type="button"
       onClick={onClick}
       aria-pressed={on}
-      title={title}
       disabled={count === 0 && !on}
-      className={`w-full flex items-center gap-2 px-2 py-1 rounded-interactive text-left transition-colors disabled:opacity-30 ${
-        on ? 'bg-primary/12 hover:bg-primary/18' : 'hover:bg-surface-2'
+      className={`w-full flex items-center gap-2 px-2 min-h-[var(--row-h)] rounded-interactive text-left transition-colors disabled:is-disabled ${
+        on ? 'bg-sel' : 'hover:bg-surface-2'
       }`}
     >
       {dot && <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />}
       {dotColor && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: dotColor }} />}
       <span
-        className={`typo-caption truncate ${on ? 'text-foreground' : 'text-foreground opacity-60'} ${color ? 'font-mono' : ''}`}
+        className={`typo-code truncate ${on ? 'text-ink-1' : 'text-ink-2'} ${color ? '' : ''}`}
         style={color ? { color } : undefined}
       >
         {label}
       </span>
-      <span className="ml-auto typo-caption tabular-nums text-foreground opacity-50 flex-shrink-0">
+      <span className="ml-auto typo-data text-ink-3 flex-shrink-0">
         {count === null ? '—' : count}
       </span>
     </button>
+    </Tooltip>
   );
 }
 
 function FacetGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="pb-2">
-      <p className="hud-title px-2 pb-1 typo-label text-foreground opacity-45">{title}</p>
+      <p className="px-2 pb-1 typo-eyebrow text-ink-3">{title}</p>
       <div className="space-y-0.5">{children}</div>
     </div>
   );
@@ -209,19 +212,19 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
   }, [selected, counts]);
 
   return (
-    <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden hud-corners hud-bloom">
+    <div className="h-full flex flex-col min-h-0 rounded-card border border-hair bg-surface-1 overflow-hidden">
       {/* Header — ONLY what's global. No lens chips here, by design. */}
-      <div className="flex-shrink-0 h-11 px-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2.5 border-b border-border bg-foreground/[0.015]">
+      <div className="flex-shrink-0 h-11 px-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2.5 border-b border-hair">
         <div className="flex items-center gap-2.5 min-w-0">
-        <div className="w-6 h-6 rounded-full bg-status-error/15 flex items-center justify-center flex-shrink-0">
+        <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
           <Radio className="w-3.5 h-3.5 text-status-error" />
         </div>
-        <span className="typo-body text-foreground">{t.monitor.stream_title}</span>
-        <span className="typo-data text-foreground">
+        <span className="typo-body text-ink-1">{t.monitor.stream_title}</span>
+        <span className="typo-data text-ink-1">
           {visible.length}
-          {visible.length !== rows.length && <span className="opacity-40"> / {rows.length}</span>}
+          {visible.length !== rows.length && <span className="text-ink-3"> / {rows.length}</span>}
         </span>
-        {loading && <span className="typo-caption text-foreground opacity-45">{t.monitor.stream_loading}</span>}
+        {loading && <span className="typo-caption text-ink-3">{t.monitor.stream_loading}</span>}
         </div>
 
         <WorkspaceProjectSelector
@@ -236,30 +239,25 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
         <div className="flex items-center justify-end gap-2 min-w-0">
           {layoutControl}
           <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground opacity-45 pointer-events-none" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-3 pointer-events-none" />
             <input
               value={lens.search}
               onChange={(e) => setLens((l) => ({ ...l, search: e.target.value }))}
               placeholder={t.monitor.stream_search}
-              className="w-56 pl-7 pr-2 py-1 rounded-input bg-surface-1 border border-border typo-caption text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/40"
+              className="w-56 pl-7 pr-2 h-[var(--control-h)] rounded-interactive bg-surface-1 border border-hair typo-caption text-ink-1 placeholder:text-ink-3 focus:outline-none focus:border-hair-2"
             />
           </div>
           {active > 0 && (
-            <button
-              type="button"
-              onClick={clearAll}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive border border-border bg-secondary/25 typo-caption text-foreground hover:bg-surface-2 transition-colors"
-            >
-              <X className="w-3 h-3" />{' '}
+            <Button variant="secondary" size="xs" onClick={clearAll} icon={<X className="w-3 h-3" />}>
               {tx(active === 1 ? t.monitor.stream_lens_one : t.monitor.stream_lens_other, { count: active })}
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
       <div className="flex-1 min-h-0 flex">
         {/* THE TUNER — every lens dimension, with live counts. */}
-        <div className="flex-shrink-0 w-[248px] border-r border-border bg-foreground/[0.012] overflow-y-auto p-2">
+        <div className="flex-shrink-0 w-[248px] border-r border-hair overflow-y-auto p-2">
           <FacetGroup title={t.monitor.stream_group_kind}>
             {STREAM_KINDS.map((k) => {
               const Icon = KIND_META[k].icon;
@@ -271,15 +269,15 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
                   type="button"
                   onClick={() => toggle('kinds', k)}
                   aria-pressed={on}
-                  className={`w-full flex items-center gap-2 px-2 py-1 rounded-interactive text-left transition-colors ${
-                    on ? 'bg-primary/12 hover:bg-primary/18' : 'hover:bg-surface-2'
+                  className={`w-full flex items-center gap-2 px-2 min-h-[var(--row-h)] rounded-interactive text-left transition-colors ${
+                    on ? 'bg-sel' : 'hover:bg-surface-2'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 flex-shrink-0 text-foreground ${on ? '' : 'opacity-50'}`} />
-                  <span className={`typo-caption text-foreground ${on ? '' : 'opacity-60'}`}>
+                  <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${on ? 'text-ink-1' : 'text-ink-3'}`} />
+                  <span className={`typo-caption ${on ? 'text-ink-1' : 'text-ink-2'}`}>
                     {t.monitor[KIND_META[k].labelKey]}
                   </span>
-                  <span className="ml-auto typo-caption tabular-nums text-foreground opacity-50">
+                  <span className="ml-auto typo-data text-ink-3">
                     {total ?? '·'}
                   </span>
                 </button>
@@ -296,8 +294,8 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
                   type="button"
                   onClick={() => setMemoryMode(m)}
                   aria-pressed={lens.memoryMode === m}
-                  className={`w-full px-2 py-1 rounded-interactive text-left typo-caption capitalize text-foreground transition-colors ${
-                    lens.memoryMode === m ? 'bg-primary/12' : 'opacity-60 hover:bg-surface-2'
+                  className={`w-full px-2 min-h-[var(--row-h)] rounded-interactive text-left typo-caption capitalize transition-colors ${
+                    lens.memoryMode === m ? 'bg-sel text-ink-1' : 'text-ink-2 hover:bg-surface-2'
                   }`}
                 >
                   {m === 'diff'
@@ -314,7 +312,7 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
               only the loaded window — they narrow rows already fetched. Different
               numbers meaning different things is exactly the kind of quiet lie
               this rail exists to avoid, so it says which is which. */}
-          <p className="px-2 pb-1.5 typo-caption text-foreground opacity-40">
+          <p className="px-2 pb-1.5 typo-caption text-ink-3">
             {t.monitor.stream_facet_scope_note}
           </p>
 
@@ -336,7 +334,7 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
 
           <FacetGroup title={t.monitor.stream_group_callsign}>
             {facets.callsigns.length === 0 && (
-              <p className="px-2 typo-caption text-foreground opacity-40">{t.monitor.stream_no_speakers}</p>
+              <p className="px-2 typo-caption text-ink-3">{t.monitor.stream_no_speakers}</p>
             )}
             {facets.callsigns.filter((f) => personaIndex.has(f.key)).slice(0, 12).map((f) => {
               const persona = personaIndex.get(f.key);
@@ -353,7 +351,7 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
                   on={lens.callsigns.has(f.key)}
                   color={memberColor(persona, f.key)}
                   dotColor={home?.teamColor}
-                  title={home ? `${persona?.name ?? f.key} — ${cleanName(home.teamName)}` : persona?.name}
+                  hint={home ? `${persona?.name ?? f.key} — ${cleanName(home.teamName)}` : persona?.name}
                   onClick={() => toggle('callsigns', f.key)}
                 />
               );
@@ -372,7 +370,7 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
                   label={named[0]!}
                   count={f.count}
                   on={lens.callsigns.has(f.key)}
-                  title={named[1]}
+                  hint={named[1]}
                   onClick={() => toggle('callsigns', f.key)}
                 />
               );

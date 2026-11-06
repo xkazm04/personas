@@ -83,7 +83,7 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
   return (
     <div className="shrink-0 space-y-1.5 border-b border-border px-2.5 py-2">
       <div className="flex items-center gap-2">
-        <label className="inline-flex cursor-pointer items-center gap-2 typo-label text-foreground">
+        <label className="inline-flex cursor-pointer items-center gap-2 typo-label text-ink-2">
           <input
             type="checkbox"
             checked={allSelected}
@@ -93,11 +93,11 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
             // without this ref.
             ref={(el) => { if (el) el.indeterminate = chosen > 0 && !allSelected; }}
             onChange={ctl.toggleAll}
-            className="h-3.5 w-3.5 cursor-pointer rounded border-hair bg-surface-1 accent-primary"
+            className="h-3.5 w-3.5 cursor-pointer rounded-interactive border-hair bg-surface-1 accent-primary"
           />
           {m.triage_accepted_select_all}
         </label>
-        <span className="ml-auto typo-label tabular-nums text-foreground">
+        <span className="ml-auto typo-data text-ink-2">
           {tx(m.triage_accepted_selected, { count: chosen })}
         </span>
         {/* Not an `AsyncButton`: pressing this opens a DIALOG, it does not start

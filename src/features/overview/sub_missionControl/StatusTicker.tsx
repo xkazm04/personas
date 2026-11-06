@@ -21,17 +21,17 @@ export const StatusTicker = memo(function StatusTicker({
   const fieldCls = 'flex items-center gap-1.5 typo-eyebrow';
   // errors / runs / synced are shortcuts into the tab that owns each metric;
   // "sources" stays inert — it has no single dedicated destination.
-  const linkCls = `${fieldCls} text-foreground rounded-interactive px-1 -mx-1 hover:text-primary transition-colors focus-ring`;
+  const linkCls = `${fieldCls} text-ink-2 rounded-interactive px-1 -mx-1 hover:text-ink-1 transition-colors focus-ring`;
   return (
     <div className="rounded-card border border-hair bg-surface-1 px-4 py-2 flex items-center gap-5 overflow-x-auto">
       <span className="typo-eyebrow flex-shrink-0">{t.overview.dashboard.status_label}</span>
-      <div className={`${fieldCls} text-foreground`}>
-        <span className="text-foreground">{t.overview.dashboard.status_sources}</span>
-        <span className="text-foreground tabular-nums">{pipelineSources}</span>
+      <div className={`${fieldCls} text-ink-2`}>
+        <span>{t.overview.dashboard.status_sources}</span>
+        <span className="num">{pipelineSources}</span>
       </div>
       <button type="button" onClick={() => onNavigate('incidents')} className={linkCls}>
         <span>{t.overview.dashboard.status_errors}</span>
-        <span className={`tabular-nums ${pipelineErrors > 0 ? 'text-status-error' : 'text-status-success'}`}>{pipelineErrors}</span>
+        <span className={`num ${pipelineErrors > 0 ? 'text-status-error' : 'text-status-success'}`}>{pipelineErrors}</span>
       </button>
       <button type="button" onClick={() => onNavigate('executions')} className={linkCls}>
         <span>{t.overview.dashboard.status_runs}</span>
@@ -39,7 +39,7 @@ export const StatusTicker = memo(function StatusTicker({
       </button>
       <button type="button" onClick={() => onNavigate('home')} className={`${linkCls} ml-auto flex-shrink-0`}>
         <span>{t.overview.dashboard.status_synced}</span>
-        <span className="tabular-nums">{lastSyncedLabel}</span>
+        <span className="num">{lastSyncedLabel}</span>
       </button>
     </div>
   );

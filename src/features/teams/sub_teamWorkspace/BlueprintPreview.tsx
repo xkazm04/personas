@@ -1,4 +1,5 @@
 import { Users, GitBranch, X } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TopologyBlueprint } from '@/lib/bindings/TopologyBlueprint';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -32,7 +33,7 @@ export function BlueprintPreview({ blueprint, onRoleChange, onRemoveMember }: {
   return (
     <div className="space-y-3">
       {cleanDescription && (
-        <p className="typo-caption text-foreground">{cleanDescription}</p>
+        <p className="typo-caption text-ink-2">{cleanDescription}</p>
       )}
 
       {pattern && (
@@ -64,30 +65,25 @@ export function BlueprintPreview({ blueprint, onRoleChange, onRemoveMember }: {
                 // field it should just commit the edit, not create the team.
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); e.currentTarget.blur(); } }}
                 aria-label={t.pipeline.blueprint_role_label}
-                className="w-28 typo-code text-foreground bg-surface-1 border border-transparent hover:border-hair focus:border-role-agent/40 px-1.5 py-0.5 rounded flex-shrink-0 text-right focus-visible:outline-none transition-colors"
+                className="w-28 typo-code text-ink-2 bg-surface-1 border border-transparent hover:border-hair focus:border-role-agent/40 px-1.5 py-0.5 rounded-interactive flex-shrink-0 text-right focus-visible:outline-none transition-colors"
               />
             ) : (
-              <span className="typo-code text-foreground bg-surface-1 px-1.5 py-0.5 rounded flex-shrink-0">
+              <span className="typo-code text-ink-2 bg-surface-1 px-1.5 py-0.5 rounded-interactive flex-shrink-0">
                 {member.role}
               </span>
             )}
             {canRemove && (
               <Tooltip content={t.pipeline.blueprint_remove_member}>
-                <button
-                  type="button"
-                  onClick={() => onRemoveMember(i)}
-                  aria-label={t.pipeline.blueprint_remove_member}
-                  className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-0.5 rounded text-foreground hover:text-status-error transition-all flex-shrink-0"
-                >
+                <Button variant="ghost" size="icon-sm" className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 flex-shrink-0" onClick={() => onRemoveMember(i)} aria-label={t.pipeline.blueprint_remove_member}>
                   <X className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               </Tooltip>
             )}
           </div>
         ))}
       </div>
 
-      <div className="flex items-center gap-3 typo-caption text-foreground pt-1">
+      <div className="flex items-center gap-3 typo-caption text-ink-2 pt-1">
         <span className="flex items-center gap-1">
           <Users className="w-3 h-3" />
           {tx(blueprint.members.length === 1 ? t.pipeline.auto_team_agents_one : t.pipeline.auto_team_agents_other, { count: blueprint.members.length })}

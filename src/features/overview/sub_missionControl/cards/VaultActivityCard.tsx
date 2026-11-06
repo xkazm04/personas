@@ -4,6 +4,8 @@
 // eight rows and the audit log is already limited.
 
 import { useEffect, useMemo, useState } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { KeyRound, RefreshCw, ShieldAlert, Unlock, Plus, Pencil, Trash2, HeartPulse, ArrowRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -101,13 +103,9 @@ export default function VaultActivityCard() {
     <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden">
       <PaneHeader label={va.title}>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={openVault}
-            className="typo-eyebrow text-primary/80 hover:text-primary transition-colors flex items-center gap-1 whitespace-nowrap focus-ring rounded-interactive"
-          >
-            {va.open_vault} <ArrowRight className="w-3 h-3" />
-          </button>
+          <Button variant="ghost" size="sm" className="whitespace-nowrap" onClick={openVault} iconRight={<ArrowRight className="w-3 h-3" />}>
+{va.open_vault}
+</Button>
         </div>
       </PaneHeader>
       {showGhost ? (
@@ -133,14 +131,14 @@ export default function VaultActivityCard() {
                 className="flex items-center gap-3 px-3 py-1.5"
               >
                 <Icon className={`w-3 h-3 flex-shrink-0 ${TONE_CLASS[row.tone]}`} />
-                <span className={`typo-caption font-mono uppercase tracking-wider flex-shrink-0 w-14 truncate ${TONE_CLASS[row.tone]}`}>
+                <span className={`typo-eyebrow flex-shrink-0 w-14 truncate ${TONE_CLASS[row.tone]}`}>
                   {label}
                 </span>
-                <span className="typo-body text-foreground truncate flex-1 min-w-0" title={row.detail ?? undefined}>
+                <Tooltip content={row.detail ?? undefined}><span className="typo-body text-foreground truncate flex-1 min-w-0">
                   {row.credentialName}
-                  {row.detail && <span className="typo-caption text-foreground"> · {row.detail}</span>}
-                </span>
-                <span className="typo-caption font-mono tabular-nums text-foreground flex-shrink-0">
+                  {row.detail && <span className="typo-caption text-ink-2"> · {row.detail}</span>}
+                </span></Tooltip>
+                <span className="typo-data font-mono text-ink-2 flex-shrink-0">
                   {formatRelativeShort(row.createdAt)?.label ?? '—'}
                 </span>
               </RevealItem>
@@ -165,10 +163,10 @@ function VaultGhostRows() {
           className="flex items-center gap-3 px-3 py-1.5 animate-fade-in"
           style={{ height: ROW_HEIGHT, animationDelay: `${120 + i * 35}ms` }}
         >
-          <span className="w-3 h-3 rounded bg-primary/[0.06] flex-shrink-0" />
-          <span className="h-2.5 w-14 flex-shrink-0 rounded bg-primary/[0.06]" />
-          <span className={`h-2.5 ${w} max-w-full flex-1 rounded bg-primary/[0.06]`} />
-          <span className="h-2.5 w-10 flex-shrink-0 rounded bg-primary/[0.06]" />
+          <span className="w-3 h-3 rounded-interactive bg-surface-2 flex-shrink-0" />
+          <span className="h-2.5 w-14 flex-shrink-0 rounded-interactive bg-surface-2" />
+          <span className={`h-2.5 ${w} max-w-full flex-1 rounded-interactive bg-surface-2`} />
+          <span className="h-2.5 w-10 flex-shrink-0 rounded-interactive bg-surface-2" />
         </div>
       ))}
     </div>

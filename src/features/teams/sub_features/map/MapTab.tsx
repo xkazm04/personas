@@ -68,7 +68,7 @@ export function MapTab({
           {t.map_legend_shared}
         </span>
         {hasSelection ? (
-          <span className="typo-caption text-foreground" data-testid="features-map-dimmed">
+          <span className="typo-caption text-ink-2" data-testid="features-map-dimmed">
             {tx(t.map_dimmed, { count: dimmed })}
           </span>
         ) : null}

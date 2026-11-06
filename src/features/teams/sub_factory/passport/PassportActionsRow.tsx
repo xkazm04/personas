@@ -163,16 +163,9 @@ export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, 
   return (
     <span className={labels ? 'atlas-actions' : 'inline-flex items-center gap-0.5'} data-testid={`passport-actions-${slug}`}>
       {onboardSession ? (
-        <button
-          type="button"
-          onClick={onOpenOnboardTerminal}
-          title="Onboarding session live, open terminal"
-          className="p-1 rounded-interactive transition-colors hover:bg-primary/10 focus-ring"
-          style={{ color: PASSPORT_FLEET_INK[String(onboardSession.state)] ?? INK.violet }}
-          data-testid={`passport-actions-onboard-live-${slug}`}
-        >
+        <Button variant="ghost" size="icon-sm" onClick={onOpenOnboardTerminal} tooltip="Onboarding session live, open terminal" style={{ color: PASSPORT_FLEET_INK[String(onboardSession.state)] ?? INK.violet }} data-testid={`passport-actions-onboard-live-${slug}`}>
           <TerminalSquare className={`w-5 h-5 ${onboardSession.state === 'running' || onboardSession.state === 'spawning' ? 'animate-pulse' : ''}`} aria-hidden />
-        </button>
+        </Button>
       ) : null}
       {ACTIONS.filter((a) => !(a.id === 'onboard' && onboardSession)).map((a) => {
         const Icon = a.icon;
@@ -190,23 +183,15 @@ export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, 
           );
         }
         return (
-          <button
-            key={a.id}
-            type="button"
-            disabled={a.disabled}
-            onClick={(e) => {
+          <Button variant="ghost" size="icon-sm" key={a.id} disabled={a.disabled} onClick={(e) => {
               // Read the rect NOW — e.currentTarget is detached by the time a
               // state-updater callback runs.
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
               if (a.id === 'populate') loadGates();
               setConfirm((c) => (c?.id === a.id ? null : { id: a.id, anchor: rect }));
-            }}
-            title={a.tooltip}
-            className={`p-1 rounded-interactive text-ink-3 hover:text-primary hover:bg-surface-2 disabled:opacity-40 transition-colors focus-ring ${a.id === 'rescan' && rescanning ? 'animate-spin' : ''}`}
-            data-testid={`passport-action-${a.id}-${slug}`}
-          >
+            }} tooltip={a.tooltip} data-testid={`passport-action-${a.id}-${slug}`}>
             <Icon className="w-5 h-5" aria-hidden />
-          </button>
+          </Button>
         );
       })}
       {confirm && (() => {

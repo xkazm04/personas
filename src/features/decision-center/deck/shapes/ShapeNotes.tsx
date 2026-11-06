@@ -12,7 +12,7 @@ export function ValveStep({ index, total }: { index: number; total: number }) {
   return (
     <p className="au-armed au-l-danger flex max-w-[68ch] items-center gap-3 rounded-input px-3 py-2" data-testid="valve-step">
       <Lock className="au-ink-lamp h-4 w-4 flex-shrink-0" aria-hidden />
-      <span className="au-ink-lamp typo-heading tabular-nums">{tx(m.ml_valve_step, { index, total })}</span>
+      <span className="au-ink-lamp typo-data">{tx(m.ml_valve_step, { index, total })}</span>
       <span className="typo-body text-foreground">{m.ml_valve_hint}</span>
     </p>
   );

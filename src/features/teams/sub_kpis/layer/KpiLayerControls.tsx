@@ -3,6 +3,7 @@
 // switch that decides WHICH measurements the charts below read. Production is
 // authoritative — pace, status and autopilot never read the simulated channels.
 import { AutopilotControl } from '../AutopilotControl';
+import Button from '@/features/shared/components/buttons/Button';
 import { KpiSimControl } from '../KpiSimControl';
 import { KpiSimSuggestions } from '../KpiSimSuggestions';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -33,19 +34,9 @@ export function KpiLayerControls({
         {/* muted-ok: structural micro-label naming the chip group, not prose */}
         <span className="typo-label text-ink-3">{t.kpis.env_filter_label}</span>
         {KPI_ENVS.map((e) => (
-          <button
-            key={e}
-            type="button"
-            aria-pressed={env === e}
-            onClick={() => onEnvChange(e)}
-            className={`rounded-pill px-2.5 py-1 typo-label focus-ring border ${
-              env === e
-                ? 'bg-primary/15 border-hair text-foreground'
-                : 'bg-surface-1 border-border/50 text-ink-3 hover:bg-surface-2'
-            }`}
-          >
+          <Button variant="secondary" size="sm" key={e} aria-pressed={env === e} onClick={() => onEnvChange(e)}>
             {t.kpis.env_labels[e]}
-          </button>
+          </Button>
         ))}
         {env !== 'production' && (
           <span className="typo-caption" data-testid="kpi-layer-env-caption">

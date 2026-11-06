@@ -57,18 +57,12 @@ export function ActionLists({
           <ul className="flex flex-col gap-2">
             {[...byGroup.entries()].map(([groupId, cells]) => (
               <li key={groupId}>
-                <p className="typo-caption text-foreground">{groupNameById.get(groupId) ?? groupId}</p>
+                <p className="typo-caption text-ink-2">{groupNameById.get(groupId) ?? groupId}</p>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {cells.map((cell) => (
-                    <button
-                      key={cell.context.id}
-                      type="button"
-                      data-testid="features-unclaimed-context"
-                      onClick={() => onOpenContext(cell.context.id)}
-                      className="rounded-pill border border-border px-2 py-0.5 typo-caption text-foreground hover:border-primary/60 hover:text-primary focus-ring"
-                    >
+                    <Button variant="ghost" size="xs" key={cell.context.id} data-testid="features-unclaimed-context" onClick={() => onOpenContext(cell.context.id)}>
                       {cell.context.name}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </li>
@@ -85,7 +79,7 @@ export function ActionLists({
             {untouched.map((g) => (
               <li
                 key={g.id}
-                className="rounded-pill border border-dashed border-status-warning/60 px-2 py-0.5 typo-caption text-status-warning"
+                className="typo-caption text-status-warning"
               >
                 {g.name}
               </li>

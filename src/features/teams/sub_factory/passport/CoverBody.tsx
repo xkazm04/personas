@@ -7,6 +7,7 @@
 // Exported (via ProjectsPassportWall) for reuse as the Mastermind project
 // sidebar's header.
 import { Activity, ArrowUpRight, Boxes, Database, KeyRound, Server } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { LucideIcon } from 'lucide-react';
 
 import { AUTOMATION_LABEL, PROD_BAND_LABEL, type AppPassport } from './passportModel';
@@ -54,24 +55,24 @@ function StackStrip({ p, size = 20 }: { p: AppPassport; size?: number }) {
         const Fallback = slot.fallback;
         if (match) {
           return (
-            <span key={slot.key} title={`${slot.category}: ${slot.label}`} className="inline-flex shrink-0">
+            <Tooltip content={`${slot.category}: ${slot.label}`}><span key={slot.key} className="inline-flex shrink-0">
               <svg width={size} height={size} viewBox="0 0 24 24" fill={match.icon.color ?? 'currentColor'} aria-hidden>
                 <path d={match.icon.path} />
               </svg>
-            </span>
+            </span></Tooltip>
           );
         }
         if (slot.label) {
           return (
-            <span key={slot.key} title={`${slot.category}: ${slot.label}`} className="inline-flex shrink-0 text-ink-2">
+            <Tooltip content={`${slot.category}: ${slot.label}`}><span key={slot.key} className="inline-flex shrink-0 text-ink-2">
               <Fallback style={{ width: size, height: size }} aria-hidden />
-            </span>
+            </span></Tooltip>
           );
         }
         return (
-          <span key={slot.key} title={`${slot.category}: not wired`} className="inline-flex shrink-0 text-ink-3" data-testid={`passport-unwired-${slot.key}`}>
+          <Tooltip content={`${slot.category}: not wired`}><span key={slot.key} className="inline-flex shrink-0 text-ink-3" data-testid={`passport-unwired-${slot.key}`}>
             <Fallback style={{ width: size, height: size }} aria-hidden />
-          </span>
+          </span></Tooltip>
         );
       })}
     </span>
@@ -94,10 +95,10 @@ export function CoverBody({
   // — the statband's micro-labels keep their hierarchy through weight, tracking
   // and opacity instead of size.
   const cell = (value: React.ReactNode, label: string, title: string) => (
-    <span className="flex flex-col items-center gap-1 min-w-0" title={title}>
-      <span className="typo-body-lg tabular-nums">{value}</span>
-      <span className="typo-body-lg uppercase tracking-[0.06em] text-ink-3">{label}</span>
-    </span>
+    <Tooltip content={title}><span className="flex flex-col items-center gap-1 min-w-0">
+      <span className="typo-data-lg">{value}</span>
+      <span className="typo-eyebrow text-ink-3">{label}</span>
+    </span></Tooltip>
   );
 
   return (
@@ -107,15 +108,15 @@ export function CoverBody({
         {favicon ? (
           <img src={favicon} alt="" className="w-6 h-6 rounded-[4px] shrink-0" data-testid="cover-favicon" aria-hidden />
         ) : (
-          <span className="w-3 h-3 rounded-full shrink-0" style={{ background: worst, boxShadow: `0 0 6px ${worst}88` }} aria-hidden />
+          <span className="w-3 h-3 rounded-full shrink-0" style={{ background: worst }} aria-hidden />
         )}
         {openable ? (
-          <button type="button" onClick={() => onOpen!(p.identity.slug)} title={p.identity.purpose} className="group/cov inline-flex items-center gap-1 min-w-0 text-left">
+          <Tooltip content={p.identity.purpose}><button type="button" onClick={() => onOpen!(p.identity.slug)} className="group/cov inline-flex items-center gap-1 min-w-0 text-left">
             <span className="typo-body-lg tracking-tight truncate group-hover/cov:text-primary transition-colors">{p.identity.name}</span>
             <ArrowUpRight className="w-5 h-5 flex-shrink-0 opacity-0 group-hover/cov:opacity-100 text-primary/70 transition-opacity" aria-hidden />
-          </button>
+          </button></Tooltip>
         ) : (
-          <span title={p.identity.purpose} className="typo-body-lg tracking-tight truncate block">{p.identity.name}</span>
+          <Tooltip content={p.identity.purpose}><span className="typo-body-lg tracking-tight truncate block">{p.identity.name}</span></Tooltip>
         )}
         <WarningBadge projectName={p.identity.name} items={attention} onJump={(g, k) => onJumpKpi?.(p.identity.slug, g, k)} />
         <BlockersBadge blockers={blockers} clearLabel={COPY.clear} />

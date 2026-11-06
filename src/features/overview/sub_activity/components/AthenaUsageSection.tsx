@@ -82,7 +82,7 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
           <Bot className="w-3.5 h-3.5 text-primary" />
         </div>
         <h3 className="typo-heading text-ink-2">{a.section_title}</h3>
-        <span className="typo-caption text-foreground">{a.section_hint}</span>
+        <span className="typo-caption text-ink-2">{a.section_hint}</span>
       </div>
 
       {showGhost ? (

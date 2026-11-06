@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { listTeamAssignmentSteps } from '@/api/pipeline/assignments';
 import { silentCatch } from '@/lib/silentCatch';
@@ -24,15 +25,14 @@ export function PersonaChip({ persona, dim }: { persona: Persona | undefined; di
   if (!persona) return null;
   const short = persona.name.replace(/^T: /, '');
   return (
-    <span
+    <Tooltip content={short}><span
       className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-interactive bg-surface-1 border border-hair max-w-[160px] ${
         dim ? 'opacity-60' : ''
       }`}
-      title={short}
     >
       <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" />
-      <span className="typo-caption text-foreground truncate">{short}</span>
-    </span>
+      <span className="typo-caption text-ink-2 truncate">{short}</span>
+    </span></Tooltip>
   );
 }
 
@@ -47,17 +47,16 @@ export function PersonaStack({ ids, index, max = 4 }: { ids: Array<string | null
         const p = index.get(id);
         if (!p) return null;
         return (
-          <span
+          <Tooltip content={p.name.replace(/^T: /, '')}><span
             key={id}
             className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-secondary/80 ring-2 ring-background"
-            title={p.name.replace(/^T: /, '')}
           >
             <PersonaIcon icon={p.icon} color={p.color} size="w-3 h-3" />
-          </span>
+          </span></Tooltip>
         );
       })}
       {unique.length > max && (
-        <span className="pl-2 typo-caption text-foreground">+{unique.length - max}</span>
+        <span className="pl-2 typo-caption text-ink-2">+{unique.length - max}</span>
       )}
     </div>
   );

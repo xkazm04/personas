@@ -125,7 +125,7 @@ export default function AttentionLoopCard() {
       <PaneHeader label={loop.title} subtitle={loop.subtitle}>
         {status && (
           <div className="flex items-center gap-2">
-            <span className={`typo-caption font-mono uppercase tracking-widest ${status.enabled ? 'text-status-success' : 'text-foreground'}`}>
+            <span className={`typo-eyebrow ${status.enabled ? 'text-status-success' : 'text-ink-2'}`}>
               {status.enabled ? loop.on : loop.off}
             </span>
             <AccessibleToggle
@@ -141,7 +141,7 @@ export default function AttentionLoopCard() {
       </PaneHeader>
       {status === null ? (
         failed ? (
-          <p className="typo-caption px-3 py-4 text-foreground">{loop.unavailable}</p>
+          <p className="typo-caption px-3 py-4 text-ink-2">{loop.unavailable}</p>
         ) : (
           <LoopGhost />
         )
@@ -163,7 +163,7 @@ export default function AttentionLoopCard() {
                 <RelativeTime timestamp={latest.startedAt} className="typo-caption ml-auto flex-shrink-0" />
               </>
             ) : (
-              <span className="typo-caption text-foreground">{loop.none_yet}</span>
+              <span className="typo-caption text-ink-2">{loop.none_yet}</span>
             )}
           </div>
           <div className="flex items-center gap-4 pt-2 border-t border-hair">
@@ -181,8 +181,8 @@ export default function AttentionLoopCard() {
 function TodayStat({ value, label, tone }: { value: number; label: string; tone: string }) {
   return (
     <span className="flex items-baseline gap-1.5">
-      <span className={`font-mono tabular-nums typo-body ${value > 0 ? tone : 'text-foreground'}`}>{value}</span>
-      <span className="typo-caption text-foreground">{label}</span>
+      <span className={`font-mono typo-data ${value > 0 ? tone : 'text-foreground'}`}>{value}</span>
+      <span className="typo-caption text-ink-2">{label}</span>
     </span>
   );
 }
@@ -195,7 +195,7 @@ function LoopGhost() {
       {[0, 1].map((i) => (
         <div
           key={i}
-          className="h-5 rounded bg-primary/[0.06] animate-fade-in"
+          className="h-5 rounded-interactive bg-surface-2 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         />
       ))}

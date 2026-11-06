@@ -55,7 +55,7 @@ function CardFrameSkeleton({ rows = 4, rowHeight = 40 }: { rows?: number; rowHei
       aria-hidden="true"
     >
       <div className="flex items-center justify-between px-3 py-2 border-b border-hair">
-        <span className="h-3 w-24 rounded bg-primary/[0.06]" />
+        <span className="h-3 w-24 rounded-interactive bg-surface-2" />
         <span className="h-3 w-3 rounded-full bg-primary/[0.06]" />
       </div>
       <ListSkeleton calm rows={rows} rowHeight={rowHeight} leading={false} />

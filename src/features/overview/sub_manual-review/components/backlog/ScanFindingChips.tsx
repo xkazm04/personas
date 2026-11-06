@@ -41,7 +41,7 @@ export function ScoreChip({ idea }: { idea: Pick<BacklogIdea, 'score' | 'scorePa
       {PART_KEYS.filter((k) => parts[k] !== undefined).map((k) => {
         const v = parts[k];
         return (
-          <span key={k} className="typo-caption tabular-nums">
+          <span key={k} className="typo-data">
             {labels[k]}: {typeof v === 'number' ? formatNumeric(v, 'plain', { language, precision: 3 }) : v}
           </span>
         );
@@ -50,7 +50,7 @@ export function ScoreChip({ idea }: { idea: Pick<BacklogIdea, 'score' | 'scorePa
   ) : r.backlog_col_score;
   return (
     <Tooltip content={breakdown} placement="top">
-      <span className={`${CHIP} text-status-info border-status-info/30 bg-status-info/10 tabular-nums`}>
+      <span className={`${CHIP} text-status-info border-status-info/30 bg-status-info/10 num`}>
         <Gauge className="w-3 h-3" aria-hidden />
         {formatNumeric(idea.score, 'plain', { language, precision: 1 })}
       </span>

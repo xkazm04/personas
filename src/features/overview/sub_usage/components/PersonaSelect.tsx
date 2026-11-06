@@ -1,4 +1,5 @@
 import type { Persona } from '@/lib/bindings/Persona';
+import Button from '@/features/shared/components/buttons/Button';
 import { PersonaSelectorModal } from '@/features/agents/components/PersonaSelectorModal';
 
 // ---------------------------------------------------------------------------
@@ -12,22 +13,13 @@ interface CompareToggleProps {
 
 export function CompareToggle({ enabled, onChange }: CompareToggleProps) {
   return (
-    <button
-      type="button"
-      onClick={() => onChange(!enabled)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body border transition-all ${
-        enabled
-          ? 'bg-role-agent/15 text-role-agent border-role-agent/25'
-          : 'bg-surface-1 text-foreground border-hair hover:text-ink-3 hover:bg-surface-2'
-      }`}
-      title={enabled ? 'Comparing to previous period' : 'Compare to previous period'}
-    >
+    <Button variant="secondary" size="sm" onClick={() => onChange(!enabled)} tooltip={enabled ? 'Comparing to previous period' : 'Compare to previous period'}>
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
         <path d="M1 10L4 6L7 8L13 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         <path d="M1 12L4 9L7 10.5L13 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 2" opacity="0.5" />
       </svg>
       Compare
-    </button>
+    </Button>
   );
 }
 

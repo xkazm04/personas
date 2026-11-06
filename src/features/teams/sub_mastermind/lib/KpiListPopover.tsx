@@ -69,7 +69,7 @@ export function KpiListPopover({ items, x, y, onOpen, onClose }: {
           <>
             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: mix(STATUS_INK[k.status], 85) }} aria-hidden />
             <span className="truncate flex-1">{k.name}</span>
-            <span className="typo-caption text-ink-3 tabular-nums shrink-0">
+            <span className="typo-data text-ink-3 shrink-0">
               {k.current == null ? t.mastermind.kpi_unmeasured : `${k.current} / ${k.target}${k.unit ? ` ${k.unit}` : ''}`}
             </span>
           </>

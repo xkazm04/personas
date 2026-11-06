@@ -79,7 +79,7 @@ export function FeatureRowItem({
             <Tooltip content={t.tier_major}>
               <span
                 aria-label={t.tier_major}
-                className="rounded-pill border border-primary/50 px-1.5 typo-caption text-primary"
+                className="typo-caption text-primary"
               >
                 {t.tier_major}
               </span>

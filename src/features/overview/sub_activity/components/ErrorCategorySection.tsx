@@ -153,7 +153,7 @@ export function ErrorCategorySection({ days }: Props) {
           {data.personaTopCategories.map((p) => (
             <span
               key={p.personaId}
-              className="inline-flex items-center gap-1 typo-caption text-foreground"
+              className="inline-flex items-center gap-1 typo-caption text-ink-2"
             >
               <span className="text-primary">{p.personaName}</span>
               {tokenLabel(t, 'error_category', p.category)}

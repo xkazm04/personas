@@ -24,7 +24,7 @@ function HeroTile({ icon: Icon, label, children }: { icon: LucideIcon; label: st
     <Tooltip content={label}>
       <div className="au-hero-tile flex min-w-0 items-center gap-2 rounded-input px-2.5 py-2" tabIndex={0} aria-label={label}>
         <Icon className="h-4 w-4 au-quiet flex-shrink-0" aria-hidden />
-        <span className="min-w-0 typo-heading tabular-nums text-foreground">{children}</span>
+        <span className="min-w-0 typo-data text-foreground">{children}</span>
       </div>
     </Tooltip>
   );

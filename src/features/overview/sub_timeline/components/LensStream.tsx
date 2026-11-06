@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import ScenarioEmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { ArrowUp } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -149,13 +150,9 @@ export function LensStream({
         </div>
       </div>
       {scrolled && (
-        <button
-          type="button"
-          onClick={() => { virtualizer.scrollToIndex(0); setScrolled(false); }}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-hair bg-background/90 shadow-elevation-2 typo-caption text-foreground hover:bg-surface-2 transition-colors"
-        >
-          <ArrowUp className="w-3.5 h-3.5" /> {t.monitor.channels_jump_newest}
-        </button>
+        <Button variant="secondary" size="sm" className="absolute bottom-3 left-1/2 -translate-x-1/2" onClick={() => { virtualizer.scrollToIndex(0); setScrolled(false); }} icon={<ArrowUp className="w-3.5 h-3.5" />}>
+{t.monitor.channels_jump_newest}
+</Button>
       )}
     </div>
   );

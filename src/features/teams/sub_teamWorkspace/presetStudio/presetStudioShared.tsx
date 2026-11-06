@@ -1,4 +1,5 @@
 import { AlertCircle, CheckCircle2, Loader2, RotateCcw, Settings2, Wrench } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
@@ -40,13 +41,12 @@ export function PresetStatusBadge({ row }: { row: PresetMemberRowState }) {
     );
   }
   return (
-    <span
+    <Tooltip content={row.error ?? t.templates.presets.status_failed}><span
       className="inline-flex items-center gap-1.5 typo-caption text-status-error max-w-[200px] truncate"
-      title={row.error ?? t.templates.presets.status_failed}
     >
       <AlertCircle className="w-3 h-3 flex-shrink-0" />
       {row.error ?? t.templates.presets.status_failed}
-    </span>
+    </span></Tooltip>
   );
 }
 
@@ -176,7 +176,7 @@ export function PresetCustomizePanel({ a, customizing }: { a: PresetAdoptionCont
 export function PresetFooterHint({ a }: { a: PresetAdoptionController }) {
   const { t, tx } = useTranslation();
   return (
-    <p className={`typo-caption ${a.handoffNeedsRepair ? 'text-status-warning' : 'text-foreground'}`}>
+    <p className={`typo-caption ${a.handoffNeedsRepair ? 'text-status-warning' : 'text-ink-2'}`}>
       {a.stage === 'preview' && t.templates.presets.footer_preview_hint}
       {a.stage === 'done' && a.result && (
         a.handoffNeedsRepair

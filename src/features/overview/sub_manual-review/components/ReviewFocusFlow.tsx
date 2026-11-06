@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, type CSSProperties } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
@@ -55,7 +56,7 @@ function SeverityBadge({ severity }: { severity: string }) {
 
 /**
  * Until 2026-10-04 the decision's title and the persona's name were the SAME
- * token (`typo-caption text-foreground`): same size, same 400 weight, same
+ * token (`typo-caption text-ink-2`): same size, same 400 weight, same
  * colour, so nothing separated whose decision this was from what it was about.
  *
  * This is the kit's emphasis recipe (`kit/kit.css`) applied: 600 on a TINTED
@@ -360,7 +361,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
       {/* ---- Queue Sidebar ---- */}
       <div className="w-[330px] flex-shrink-0 border-r border-hair bg-surface-1 flex flex-col">
         <div className="px-3 py-2.5 border-b border-hair flex items-center justify-between">
-          <span className="typo-label text-foreground">{t.overview.review_focus.queue} ({pending.length})</span>
+          <span className="typo-label text-ink-2">{t.overview.review_focus.queue} ({pending.length})</span>
           <div className="flex items-center gap-1.5">
             {sevCounts.critical > 0 && (
               <span className="flex items-center gap-1">
@@ -446,7 +447,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
             >
               <div className={`rounded-modal border border-hair ring-1 ${sevCfg.ring} overflow-hidden`} style={{ boxShadow: sevCfg.shadow }}>
                 {/* Severity gradient top bar */}
-                <div className={`h-0.5 bg-surface-1 ${sevCfg.gradient}`} />
+                <div className={`h-0.5 ${sevCfg.gradient}`} />
 
                 <div className="p-5 space-y-4">
                   {/* Header */}
@@ -461,7 +462,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                     <div className="ml-auto flex flex-col items-end gap-1">
                       {hasMultipleDecisions && (
                         <div className="flex items-center gap-2">
-                          <span className="typo-label text-foreground">
+                          <span className="typo-label text-ink-2">
                             Decision {decisionIdx + 1} of {decisions.length}
                           </span>
                           <Button variant="ghost" size="icon-sm" onClick={goPrevDecision} disabled={decisionIdx === 0}>
@@ -484,17 +485,13 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                             <ChevronRight className="w-3.5 h-3.5" />
                           </Button>
                           {(acceptCount > 0 || rejectCount > 0) && (
-                            <button
-                              onClick={() => setDecisionVerdicts({})}
-                              className="typo-caption text-foreground hover:text-ink-2 transition-colors"
-                              title={t.overview.review_focus.clear_all_verdicts}
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => setDecisionVerdicts({})} tooltip={t.overview.review_focus.clear_all_verdicts}>
                               Clear
-                            </button>
+                            </Button>
                           )}
                         </div>
                       )}
-                      <span className="flex items-center gap-1 typo-caption text-foreground">
+                      <span className="flex items-center gap-1 typo-caption text-ink-2">
                         <Clock className="w-3 h-3" />
                         {formatRelativeTime(current!.created_at)}
                       </span>
@@ -596,11 +593,10 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                           <span className="font-medium">{t.overview.review_focus.quick_actions}</span>
                         </div>
                         {suggestedActions.map((action, i) => (
-                          <button
+                          <Tooltip content={onDispatchAction ? t.overview.review_focus.carry_out_hint : undefined}><button
                             key={i}
                             type="button"
                             disabled={isProcessing}
-                            title={onDispatchAction ? t.overview.review_focus.carry_out_hint : undefined}
                             onClick={() => {
                               if (onDispatchAction) {
                                 onDispatchAction(current!.id, action);
@@ -609,11 +605,11 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                                 setActionNotes(action);
                               }
                             }}
-                            className="flex items-center gap-2 px-3 py-2 rounded-card typo-body text-foreground bg-surface-1 border border-hair hover:bg-primary/10 hover:border-hair disabled:opacity-50 transition-colors text-left"
+                            className="flex items-center gap-2 px-3 py-2 rounded-card typo-body text-foreground bg-surface-1 border border-hair hover:bg-primary/10 hover:border-hair disabled:is-disabled transition-colors text-left"
                           >
                             <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center typo-heading flex-shrink-0">{i + 1}</span>
                             {action}
-                          </button>
+                          </button></Tooltip>
                         ))}
                       </div>
                     </>
@@ -676,19 +672,19 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                   <div className="text-center py-1.5 typo-caption text-ink-2 border-t border-hair">
                     {hasMultipleDecisions ? (
                       <>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8592;</kbd> <DebtText k="auto_reject_this_0105a5cc" />
+                        <kbd className="px-1 py-0.5 rounded-interactive bg-foreground/5 text-foreground font-mono">&#8592;</kbd> <DebtText k="auto_reject_this_0105a5cc" />
                         <span className="mx-2 text-foreground">|</span>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8595;</kbd> Retry
+                        <kbd className="px-1 py-0.5 rounded-interactive bg-foreground/5 text-foreground font-mono">&#8595;</kbd> Retry
                         <span className="mx-2 text-foreground">|</span>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8594;</kbd> <DebtText k="auto_accept_this_d7066048" />
+                        <kbd className="px-1 py-0.5 rounded-interactive bg-foreground/5 text-foreground font-mono">&#8594;</kbd> <DebtText k="auto_accept_this_d7066048" />
                       </>
                     ) : (
                       <>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8592;</kbd> Reject
+                        <kbd className="px-1 py-0.5 rounded-interactive bg-foreground/5 text-foreground font-mono">&#8592;</kbd> Reject
                         <span className="mx-2 text-foreground">|</span>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8595;</kbd> Retry
+                        <kbd className="px-1 py-0.5 rounded-interactive bg-foreground/5 text-foreground font-mono">&#8595;</kbd> Retry
                         <span className="mx-2 text-foreground">|</span>
-                        <kbd className="px-1 py-0.5 rounded bg-foreground/5 text-foreground font-mono">&#8594;</kbd> Approve
+                        <kbd className="px-1 py-0.5 rounded-interactive bg-foreground/5 text-foreground font-mono">&#8594;</kbd> Approve
                       </>
                     )}
                   </div>

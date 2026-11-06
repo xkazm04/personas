@@ -42,7 +42,7 @@ export function EstateHeadline({
       <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b border-hair pb-3">
         <h2 className="flex items-baseline gap-2">
           {loading ? (
-            <span aria-hidden="true" className="inline-block h-9 w-24 rounded bg-primary/[0.06]" data-testid="kpi-headline-pending" />
+            <span aria-hidden="true" className="inline-block h-9 w-24 rounded-interactive bg-surface-2" data-testid="kpi-headline-pending" />
           ) : (
             <span className={KT.hero}>{`${coveragePct(tally)}%`}</span>
           )}
@@ -151,7 +151,7 @@ function Stat({
       <dt className={KT.meta}>{label}</dt>
       <dd className={`${KT.stat} leading-tight`} style={{ color: lit ? tone : 'var(--foreground)' }}>
         {pending ? (
-          <span aria-hidden="true" className="inline-block h-[1em] w-10 rounded bg-primary/[0.06] align-middle" />
+          <span aria-hidden="true" className="inline-block h-[1em] w-10 rounded-interactive bg-surface-2 align-middle" />
         ) : (
           value ?? t.kpis.overview.read_never
         )}

@@ -6,6 +6,7 @@
 // when it exits, the results are auto-ingested (P2) — with a manual import
 // fallback for runs finished while the app was closed.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { FlaskConical, FolderInput, Radar, TerminalSquare } from 'lucide-react';
 
 import { kpiSimIngest, kpiSimPrepare, type KpiSimIngestSummary } from '@/api/devTools/kpis';
@@ -121,14 +122,7 @@ export function KpiSimControl({ projectId, onIngested }: {
 
   return (
     <div className="flex items-center gap-2 flex-wrap" data-testid="kpi-sim-control">
-      <button
-        type="button"
-        onClick={session ? () => setTerminalOpen(true) : () => dispatch(mode)}
-        disabled={busy || !project}
-        className="inline-flex items-center gap-1.5 typo-caption rounded-interactive border border-hair bg-primary/10 text-primary px-2.5 py-1 hover:bg-primary/20 disabled:opacity-50 transition-colors focus-ring"
-        data-testid="kpi-sim-button"
-      >
-        {session && ink ? (
+      <Button variant="secondary" size="sm" onClick={session ? () => setTerminalOpen(true) : () => dispatch(mode)} disabled={busy || !project} data-testid="kpi-sim-button" icon={session && ink ? (
           <TerminalSquare
             className={`w-3.5 h-3.5 ${sessionActive ? 'animate-pulse' : ''}`}
             style={{ color: ink }}
@@ -136,9 +130,9 @@ export function KpiSimControl({ projectId, onIngested }: {
           />
         ) : (
           <FlaskConical className="w-3.5 h-3.5" aria-hidden />
-        )}
-        {session ? (sessionActive ? t.kpis.sim_running : t.kpis.sim_finished) : t.kpis.sim_button}
-      </button>
+        )}>
+{session ? (sessionActive ? t.kpis.sim_running : t.kpis.sim_finished) : t.kpis.sim_button}
+</Button>
 
       {(!session || !sessionActive) && (
         <span className="inline-flex items-center gap-1">
@@ -148,44 +142,22 @@ export function KpiSimControl({ projectId, onIngested }: {
       )}
 
       {session && !sessionActive && (
-        <button
-          type="button"
-          onClick={() => dispatch(mode)}
-          disabled={busy || !project}
-          className="inline-flex items-center gap-1 typo-caption rounded-interactive border border-hair text-primary px-2 py-1 hover:bg-primary/10 disabled:opacity-50 transition-colors focus-ring"
-          data-testid="kpi-sim-rerun"
-        >
-          <FlaskConical className="w-3.5 h-3.5" aria-hidden />
-          {t.kpis.sim_rerun}
-        </button>
+        <Button variant="secondary" size="sm" onClick={() => dispatch(mode)} disabled={busy || !project} data-testid="kpi-sim-rerun" icon={<FlaskConical className="w-3.5 h-3.5" aria-hidden />}>
+{t.kpis.sim_rerun}
+</Button>
       )}
 
       {/* Predict — the class-3-only benchmark refresh; re-aims targets without
           measuring. Disabled while any session holds the key. */}
       {!sessionActive && (
-        <button
-          type="button"
-          onClick={() => dispatch('predict')}
-          disabled={busy || !project || session !== null}
-          title={t.kpis.predict_hint}
-          className="inline-flex items-center gap-1 typo-caption rounded-interactive border border-hair text-ink-2 hover:text-foreground px-2 py-1 hover:bg-surface-2 disabled:opacity-50 transition-colors focus-ring"
-          data-testid="kpi-predict-button"
-        >
-          <Radar className="w-3.5 h-3.5" aria-hidden />
-          {t.kpis.predict_button}
-        </button>
+        <Button variant="secondary" size="sm" onClick={() => dispatch('predict')} disabled={busy || !project || session !== null} tooltip={t.kpis.predict_hint} data-testid="kpi-predict-button" icon={<Radar className="w-3.5 h-3.5" aria-hidden />}>
+{t.kpis.predict_button}
+</Button>
       )}
 
-      <button
-        type="button"
-        onClick={() => ingest(false)}
-        title={t.kpis.sim_import_hint}
-        className="inline-flex items-center gap-1 typo-caption text-ink-2 hover:text-foreground rounded-interactive px-1.5 py-1 hover:bg-surface-2 transition-colors focus-ring"
-        data-testid="kpi-sim-import"
-      >
-        <FolderInput className="w-3.5 h-3.5" aria-hidden />
-        {t.kpis.sim_import}
-      </button>
+      <Button variant="ghost" size="xs" onClick={() => ingest(false)} tooltip={t.kpis.sim_import_hint} data-testid="kpi-sim-import" icon={<FolderInput className="w-3.5 h-3.5" aria-hidden />}>
+{t.kpis.sim_import}
+</Button>
 
       {terminalOpen && session && (
         <PassportTerminalModal sessionId={session.id} session={session} onClose={() => setTerminalOpen(false)} />
@@ -196,18 +168,8 @@ export function KpiSimControl({ projectId, onIngested }: {
 
 function ModeChip({ active, onClick, label, title }: { active: boolean; onClick: () => void; label: string; title: string }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      title={title}
-      className={`typo-label rounded-interactive border px-2 py-0.5 transition-colors focus-ring ${
-        active
-          ? 'border-primary/50 bg-primary/15 text-foreground'
-          : 'border-hair bg-surface-1 text-ink-2 hover:bg-surface-2'
-      }`}
-    >
+    <Button variant="secondary" size="xs" onClick={onClick} aria-pressed={active} tooltip={title}>
       {label}
-    </button>
+    </Button>
   );
 }

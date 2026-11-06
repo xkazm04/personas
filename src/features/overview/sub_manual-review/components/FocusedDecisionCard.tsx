@@ -1,4 +1,5 @@
 import { CheckCircle2, XCircle, Image as ImageIcon, Video } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { type DecisionItem, type DecisionVerdict, catBorder, isVideoUrl } from './reviewFocusHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -53,7 +54,7 @@ function DecisionMeta({ category, mediaType }: { category?: string; mediaType?: 
   return (
     <div className="flex items-center gap-2 mb-1.5">
       {category && (
-        <span className="typo-caption text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">{category}</span>
+        <span className="typo-caption text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded-interactive">{category}</span>
       )}
       {mediaType === 'video' ? (
         <Video className="w-3 h-3 text-foreground" />
@@ -91,34 +92,12 @@ function VerdictButtons({ verdict, onDecide }: { verdict: DecisionVerdict; onDec
 
   return (
     <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
-      <button
-        onClick={() => onDecide('reject')}
-        title={t.overview.focused_decision.reject}
-        aria-label={t.overview.focused_decision.reject}
-        aria-pressed={verdict === 'reject'}
-        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-card typo-caption transition-all shadow-elevation-1 backdrop-blur-sm ${
-          verdict === 'reject'
-            ? 'bg-status-error/30 text-status-error ring-1 ring-status-error/40'
-            : 'bg-background/80 text-foreground hover:bg-status-error/15 hover:text-status-error ring-1 ring-primary/15'
-        }`}
-      >
-        <XCircle className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">{t.overview.focused_decision.reject}</span>
-      </button>
-      <button
-        onClick={() => onDecide('accept')}
-        title={t.overview.focused_decision.accept}
-        aria-label={t.overview.focused_decision.accept}
-        aria-pressed={verdict === 'accept'}
-        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-card typo-caption transition-all shadow-elevation-1 backdrop-blur-sm ${
-          verdict === 'accept'
-            ? 'bg-status-success/30 text-status-success ring-1 ring-status-success/40'
-            : 'bg-background/80 text-foreground hover:bg-status-success/15 hover:text-status-success ring-1 ring-primary/15'
-        }`}
-      >
-        <CheckCircle2 className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">{t.overview.focused_decision.accept}</span>
-      </button>
+      <Button variant={verdict === 'reject' ? "danger" : "ghost"} size="sm" onClick={() => onDecide('reject')} tooltip={t.overview.focused_decision.reject} aria-label={t.overview.focused_decision.reject} aria-pressed={verdict === 'reject'} icon={<XCircle className="w-3.5 h-3.5" />}>
+<span className="hidden sm:inline">{t.overview.focused_decision.reject}</span>
+</Button>
+      <Button variant={verdict === 'accept' ? "secondary" : "ghost"} size="sm" onClick={() => onDecide('accept')} tooltip={t.overview.focused_decision.accept} aria-label={t.overview.focused_decision.accept} aria-pressed={verdict === 'accept'} icon={<CheckCircle2 className="w-3.5 h-3.5" />}>
+<span className="hidden sm:inline">{t.overview.focused_decision.accept}</span>
+</Button>
     </div>
   );
 }

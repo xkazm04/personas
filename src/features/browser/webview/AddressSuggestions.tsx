@@ -56,7 +56,7 @@ export default function AddressSuggestions({
           role="option"
           aria-selected={false}
           aria-disabled
-          className="px-3 py-2 typo-caption text-foreground"
+          className="px-3 py-2 typo-caption text-ink-2"
           data-testid="webview-suggestion-none"
         >
           {emptyLabel ?? v.suggestions_none}
@@ -82,11 +82,11 @@ export default function AddressSuggestions({
               index === activeIndex ? 'bg-primary/10' : '',
             ].join(' ')}
           >
-            <span className="typo-caption font-mono text-foreground truncate">
+            <span className="typo-code text-ink-2 truncate">
               {suggestion.target}
             </span>
             {suggestion.site.label ? (
-              <span className="typo-caption text-foreground truncate">
+              <span className="typo-caption text-ink-2 truncate">
                 {suggestion.site.label}
               </span>
             ) : null}

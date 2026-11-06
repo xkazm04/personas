@@ -48,14 +48,9 @@ export function DemoNotice({ scanning, onScan, onNewProject, onDismiss }: {
             {t.mastermind.demo_cta_new}
           </Button>
         </div>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="mt-2.5 typo-caption text-ink-3 hover:text-ink-2 transition-colors focus-ring rounded-interactive px-1"
-          data-testid="mm-demo-dismiss"
-        >
+        <Button variant="ghost" size="xs" className="mt-2.5" onClick={onDismiss} data-testid="mm-demo-dismiss">
           {t.mastermind.demo_dismiss}
-        </button>
+        </Button>
       </div>
     </div>
   );

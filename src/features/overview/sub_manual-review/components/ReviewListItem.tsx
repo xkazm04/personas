@@ -1,6 +1,6 @@
 import { Cloud } from 'lucide-react';
-import { STATUS_COLORS } from '@/lib/utils/designTokens';
-import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { StateMark, type StateMarkState } from '@/features/shared/components/display/StateMark';
 import { DecisionRow } from '@/features/shared/components/decisions/DecisionRow';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { reviewStatusLabel, resolveReviewSeverity } from '../libs/reviewHelpers';
@@ -13,31 +13,31 @@ export function SeverityIndicator({ severity }: { severity: string }) {
   const label = defaulted ? `${resolved} (severity unreadable)` : resolved;
   if (severity === 'critical') {
     return (
-      <span className="flex-shrink-0" aria-label={`${label} severity`} title={label}>
+      <Tooltip content={label}><span className="flex-shrink-0" aria-label={`${label} severity`}>
         <svg width="12" height="12" viewBox="0 0 12 12" className="block">
           <polygon points="6,1 11,11 1,11" fill="rgba(239,68,68,0.15)" stroke="rgba(239,68,68,0.5)" strokeWidth="1" />
           <text x="6" y="9.5" textAnchor="middle" fontSize="6" fontWeight="bold" fill="rgba(239,68,68,0.9)">!</text>
         </svg>
-      </span>
+      </span></Tooltip>
     );
   }
   if (severity === 'warning') {
     return (
-      <span className="flex-shrink-0" aria-label={`${label} severity`} title={label}>
+      <Tooltip content={label}><span className="flex-shrink-0" aria-label={`${label} severity`}>
         <svg width="12" height="12" viewBox="0 0 12 12" className="block">
           <polygon points="6,1 11,6 6,11 1,6" fill="rgba(245,158,11,0.15)" stroke="rgba(245,158,11,0.5)" strokeWidth="1" />
           <text x="6" y="8.5" textAnchor="middle" fontSize="6" fontWeight="bold" fill="rgba(245,158,11,0.9)">!</text>
         </svg>
-      </span>
+      </span></Tooltip>
     );
   }
   return (
-    <span className="flex-shrink-0" aria-label={`${label} severity`} title={label}>
+    <Tooltip content={label}><span className="flex-shrink-0" aria-label={`${label} severity`}>
       <svg width="12" height="12" viewBox="0 0 12 12" className="block">
         <circle cx="6" cy="6" r="5" fill="rgba(59,130,246,0.15)" stroke="rgba(59,130,246,0.5)" strokeWidth="1" />
         <text x="6" y="8.5" textAnchor="middle" fontSize="6" fontWeight="bold" fill="rgba(59,130,246,0.9)">i</text>
       </svg>
-    </span>
+    </span></Tooltip>
   );
 }
 
@@ -55,12 +55,12 @@ function DecisionCards({ decisions }: { decisions: DecisionItem[] }) {
         <div key={d.id} className="rounded-card border border-hair bg-surface-1 px-3 py-2.5">
           <div className="flex items-center gap-2">
             {d.category && (
-              <span className="typo-caption text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded">{d.category}</span>
+              <span className="typo-eyebrow text-ink-3">{d.category}</span>
             )}
-            <span className="typo-body text-foreground">{d.label}</span>
+            <span className="typo-body text-ink-1">{d.label}</span>
           </div>
           {d.description && (
-            <p className="typo-body text-foreground mt-1">{d.description}</p>
+            <p className="typo-body text-ink-2 mt-1">{d.description}</p>
           )}
         </div>
       ))}
@@ -103,6 +103,15 @@ export function ContextDataPreview({ raw }: { raw: string | null | undefined }) 
   );
 }
 
+// A review's status is a decision state: pending is a proposal, approved/rejected are decided,
+// resolved is the stale-review sweep's verdict.
+const REVIEW_STATE: Record<string, StateMarkState> = {
+  pending: 'proposed',
+  approved: 'decided',
+  rejected: 'refused',
+  resolved: 'done',
+};
+
 interface InboxItemProps {
   review: ManualReviewItem;
   isActive: boolean;
@@ -122,9 +131,7 @@ export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
   const { t } = useTranslation();
   // `resolved` (the stale-review sweep's verdict) has no colour of its own in
   // the status palette; it reads as informational, never as pending.
-  const status = review.status === 'resolved'
-    ? STATUS_COLORS.info
-    : STATUS_COLORS[review.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.pending;
+  const statusState: StateMarkState = REVIEW_STATE[review.status] ?? 'proposed';
   const statusLabel = reviewStatusLabel(t, review.status);
 
   return (
@@ -149,13 +156,12 @@ export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
       meta={
         <>
           <SeverityIndicator severity={review.severity} />
-          <span className={`inline-block px-1.5 py-0.5 rounded typo-caption border ${status.bg} ${status.text} ${status.border}`}>
-            {statusLabel}
-          </span>
+          <StateMark state={statusState} label={statusLabel} />
           {review.source === 'cloud' && (
-            <StatusBadge accent="indigo" size="sm" className="rounded typo-caption" icon={<Cloud className="w-2.5 h-2.5" />}>
+            <span className="inline-flex items-center gap-1 typo-eyebrow text-role-external">
+              <Cloud className="w-3 h-3" />
               {t.overview.review.cloud_badge}
-            </StatusBadge>
+            </span>
           )}
           <AutoResolvedBadge review={review} />
         </>

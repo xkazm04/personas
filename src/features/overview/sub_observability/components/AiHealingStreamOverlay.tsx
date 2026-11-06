@@ -141,7 +141,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
             <DebtText k="auto_ai_healing_2ec57639" /> {isFailed ? o.status_failed : isDone ? o.status_complete : o.status_in_progress}
           </span>
           {isDone && elapsed > 0 && (
-            <span className="typo-caption text-foreground">{elapsed}s</span>
+            <span className="typo-caption text-ink-2">{elapsed}s</span>
           )}
         </div>
         <div className="flex items-center gap-1">
@@ -207,7 +207,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
                       </span>
                     </div>
                     {isCurrent && elapsed > 0 && (
-                      <span className="typo-caption text-foreground ml-[30px]">{elapsed}s</span>
+                      <span className="typo-caption text-ink-2 ml-[30px]">{elapsed}s</span>
                     )}
                   </div>
                 </div>
@@ -242,7 +242,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
               <div className="absolute top-0 left-0 right-0 h-6 bg-surface-1 backdrop-blur-sm z-10 rounded-t-card pointer-events-none" />
               <div
                 ref={logRef}
-                className="max-h-48 overflow-y-auto rounded-card bg-background/60 border border-hair p-3 typo-code text-foreground scroll-smooth"
+                className="max-h-48 overflow-y-auto rounded-card bg-background/60 border border-hair p-3 typo-code text-ink-2 scroll-smooth"
               >
                 {healing.lines.map((line, i) => (
                   <div key={i} className="whitespace-pre-wrap break-all">

@@ -18,6 +18,7 @@
 // (the consent-freshness window), which needs a re-run rather than a retry of
 // the apply.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { Bot, Check, RotateCcw, SkipForward, X } from 'lucide-react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -180,7 +181,7 @@ export function AthenaVerdictCard({
                   className="flex items-center gap-3 py-3 border-b border-hair animate-fade-in"
                   style={{ animationDelay: `${120 + i * 45}ms` }}
                 >
-                  <span className="h-3 w-56 max-w-full rounded bg-primary/[0.06]" />
+                  <span className="h-3 w-56 max-w-full rounded-interactive bg-surface-2" />
                   <span className="ml-auto h-3 w-16 rounded-full bg-primary/[0.06]" />
                 </li>
               ))}
@@ -291,13 +292,9 @@ export function AthenaVerdictCard({
         )}
 
         <footer className="flex items-center justify-end gap-2 px-5 py-3 border-t border-hair">
-          <button
-            type="button"
-            onClick={onClose}
-            className="typo-label rounded-interactive border border-hair px-3 py-1.5 text-ink-3 hover:bg-surface-2 transition-colors"
-          >
+          <Button variant="secondary" size="sm" onClick={onClose}>
             {phase === 'error' ? t.common.close : t.common.cancel}
-          </button>
+          </Button>
           {(phase === 'review' || phase === 'applying') && (
             <AsyncButton
               variant="primary"

@@ -24,9 +24,9 @@ export const priorityConfig: Record<string, PriorityStyle> = {
   // No English label: every render site passes the translated tier name
   // (`overview.reader_priority_critical`).
   critical: { color: 'text-status-error', bgColor: 'bg-status-error/15', borderColor: 'border-status-error/50', icon: AlertTriangle },
-  high: { color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', label: 'High' },
-  normal: { color: 'text-foreground/90', bgColor: 'bg-secondary/40', borderColor: 'border-primary/20', label: 'Normal' },
-  low: { color: 'text-muted-foreground/70', bgColor: 'bg-transparent', borderColor: 'border-muted-foreground/25', label: 'Low', icon: ChevronDown, chipClass: 'border-dashed' },
+  high: { color: 'text-status-warning', bgColor: 'bg-status-warning/10', borderColor: 'border-status-warning/30', label: 'High' },
+  normal: { color: 'text-ink-2', bgColor: 'bg-surface-1', borderColor: 'border-hair', label: 'Normal' },
+  low: { color: 'text-ink-3', bgColor: 'bg-transparent', borderColor: 'border-hair', label: 'Low', icon: ChevronDown, chipClass: 'border-dashed' },
 };
 
 /** A report's body format, from its `content_type`. Only `html` is a document
@@ -51,10 +51,10 @@ export interface DeliveryStatusStyle {
 }
 
 export const deliveryStatusConfig: Record<string, DeliveryStatusStyle> = {
-  delivered: { icon: CheckCircle2, color: 'text-emerald-400', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/30', ring: 'ring-emerald-400/45', label: 'Delivered' },
-  failed: { icon: AlertCircle, color: 'text-red-400', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/30', ring: 'ring-red-400/45', label: 'Failed' },
-  pending: { icon: Clock, color: 'text-amber-400', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30', ring: 'ring-amber-400/45', label: 'Pending' },
-  queued: { icon: Loader2, color: 'text-blue-400', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30', ring: 'ring-blue-400/45', label: 'Queued' },
+  delivered: { icon: CheckCircle2, color: 'text-status-success', bgColor: 'bg-status-success/10', borderColor: 'border-status-success/30', ring: 'ring-status-success/45', label: 'Delivered' },
+  failed: { icon: AlertCircle, color: 'text-status-error', bgColor: 'bg-status-error/10', borderColor: 'border-status-error/30', ring: 'ring-status-error/45', label: 'Failed' },
+  pending: { icon: Clock, color: 'text-status-warning', bgColor: 'bg-status-warning/10', borderColor: 'border-status-warning/30', ring: 'ring-status-warning/45', label: 'Pending' },
+  queued: { icon: Loader2, color: 'text-status-info', bgColor: 'bg-status-info/10', borderColor: 'border-status-info/30', ring: 'ring-status-info/45', label: 'Queued' },
 };
 
 export const channelLabels: Record<string, string> = {

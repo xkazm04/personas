@@ -74,7 +74,7 @@ export function IncidentDiagnosisCard({ incidentId }: { incidentId: string }) {
           />
         )}
         {diagnosis && (
-          <span className="ml-auto typo-caption text-foreground">
+          <span className="ml-auto typo-caption text-ink-2">
             {t.overview.incidents.noc_confidence}: {Math.round(diagnosis.confidence * 100)}%
           </span>
         )}
@@ -83,8 +83,8 @@ export function IncidentDiagnosisCard({ incidentId }: { incidentId: string }) {
       {loading ? (
         /* Ghost line — invisible for its first beat so a fast fetch never flashes. */
         <div aria-hidden="true" className="animate-fade-in" style={{ animationDelay: '120ms' }}>
-          <span className="block h-3.5 w-3/4 rounded bg-primary/[0.06]" />
-          <span className="mt-2 block h-3.5 w-1/2 rounded bg-primary/[0.06]" />
+          <span className="block h-3.5 w-3/4 rounded-interactive bg-surface-2" />
+          <span className="mt-2 block h-3.5 w-1/2 rounded-interactive bg-surface-2" />
         </div>
       ) : diagnosis ? (
         <div className="flex flex-col gap-3">
@@ -97,7 +97,7 @@ export function IncidentDiagnosisCard({ incidentId }: { incidentId: string }) {
               </h4>
               <ul className="flex flex-col gap-1">
                 {diagnosis.evidence.map((line, i) => (
-                  <li key={i} className="typo-caption text-foreground break-words">
+                  <li key={i} className="typo-caption text-ink-2 break-words">
                     · {line}
                   </li>
                 ))}
@@ -113,7 +113,7 @@ export function IncidentDiagnosisCard({ incidentId }: { incidentId: string }) {
                   {t.overview.incidents.noc_proposed_label}
                 </span>
                 {diagnosis.proposedRationale && (
-                  <p className="typo-caption text-foreground break-words">{diagnosis.proposedRationale}</p>
+                  <p className="typo-caption text-ink-2 break-words">{diagnosis.proposedRationale}</p>
                 )}
                 {diagnosis.approvalId && (
                   <StatusBadge variant="warning" size="sm">
@@ -126,7 +126,7 @@ export function IncidentDiagnosisCard({ incidentId }: { incidentId: string }) {
         </div>
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="typo-caption text-foreground">
+          <p className="typo-caption text-ink-2">
             {running ? t.overview.incidents.noc_diagnosing : t.overview.incidents.noc_no_diagnosis}
           </p>
           <Button variant="secondary" onClick={() => void runDiagnosis()} loading={running}>

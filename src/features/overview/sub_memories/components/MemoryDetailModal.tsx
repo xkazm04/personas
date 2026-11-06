@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 import { X, Tag, ExternalLink, Layers } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
@@ -60,16 +62,12 @@ export default function MemoryDetailModal({
               frameStyle={{ background: `linear-gradient(135deg, ${personaColor}20, ${personaColor}40)`, border: `1px solid ${personaColor}50` }} />
             <div className="min-w-0">
               <h3 id="memory-detail-title" className="typo-heading text-ink-2 truncate">{personaName}</h3>
-              <span className="typo-caption text-foreground">{formatRelativeTime(memory.created_at)}</span>
+              <span className="typo-caption text-ink-2">{formatRelativeTime(memory.created_at)}</span>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-foreground transition-colors"
-          >
+          <Button variant="ghost" size="icon-sm" onClick={onClose}>
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Body */}
@@ -99,13 +97,12 @@ export default function MemoryDetailModal({
             {memory.use_case_id && (
               <div>
                 <div className="typo-eyebrow mb-1">Scope</div>
-                <span
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-role-agent/15 border border-role-agent/30 text-role-agent typo-body"
-                  title={`Capability: ${memory.use_case_id}`}
+                <Tooltip content={`Capability: ${memory.use_case_id}`}><span
+                  className="inline-flex items-center gap-1.5 typo-code text-ink-2"
                 >
-                  <Layers className="w-3 h-3" />
+                  <Layers className="w-3 h-3 text-role-agent" />
                   <span className="max-w-[140px] truncate">{memory.use_case_id}</span>
-                </span>
+                </span></Tooltip>
               </div>
             )}
           </div>
@@ -115,9 +112,9 @@ export default function MemoryDetailModal({
             <div>
               <div className="typo-eyebrow mb-1.5">{t.overview.memory_detail.tags_label}</div>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <Tag className="w-3 h-3 text-foreground" />
+                <Tag className="w-3 h-3 text-ink-3" />
                 {tags.map((tag) => (
-                  <span key={tag} className="px-2 py-0.5 typo-code bg-surface-1 text-foreground rounded border border-hair">{tag}</span>
+                  <span key={tag} className="typo-code text-ink-2 border-b border-hair">{tag}</span>
                 ))}
               </div>
             </div>
@@ -130,13 +127,12 @@ export default function MemoryDetailModal({
               <div className="flex items-center gap-1.5 flex-wrap">
                 <Layers className="w-3 h-3 text-status-warning" />
                 {memory.derived_from.map((sourceId) => (
-                  <span
+                  <Tooltip content={sourceId}><span
                     key={sourceId}
-                    className="px-2 py-0.5 typo-code bg-status-warning/10 text-status-warning rounded border border-status-warning/20"
-                    title={sourceId}
+                    className="typo-code text-ink-2 border-b border-hair"
                   >
                     {sourceId.slice(0, 8)}
-                  </span>
+                  </span></Tooltip>
                 ))}
               </div>
             </div>
@@ -147,34 +143,20 @@ export default function MemoryDetailModal({
 
           {/* Source execution link */}
           {memory.source_execution_id && (
-            <button
-              type="button"
-              onClick={() => { useAgentStore.getState().selectPersona(memory.persona_id); useSystemStore.getState().setEditorTab('use-cases'); onClose(); }}
-              className="inline-flex items-center gap-1.5 typo-caption text-status-info hover:text-status-info transition-colors"
-              title={`Execution: ${memory.source_execution_id}`}
-            >
-              <ExternalLink className="w-3 h-3" />
-              {t.overview.memory_detail.view_source_execution}
-            </button>
+            <Button variant="ghost" size="sm" onClick={() => { useAgentStore.getState().selectPersona(memory.persona_id); useSystemStore.getState().setEditorTab('use-cases'); onClose(); }} tooltip={`Execution: ${memory.source_execution_id}`} icon={<ExternalLink className="w-3 h-3" />}>
+{t.overview.memory_detail.view_source_execution}
+</Button>
           )}
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-6 py-3 border-t border-hair bg-surface-1">
-          <button
-            type="button"
-            onClick={() => { onDelete(); onClose(); }}
-            className="px-3 py-1.5 typo-caption rounded-card border border-status-error/20 bg-status-error/10 text-status-error hover:bg-status-error/20 transition-colors"
-          >
+          <Button variant="danger" size="sm" onClick={() => { onDelete(); onClose(); }}>
             {t.overview.memory_detail.delete_memory}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-3 py-1.5 typo-caption rounded-card border border-hair bg-surface-1 text-foreground hover:bg-surface-2 transition-colors"
-          >
+          </Button>
+          <Button variant="secondary" size="sm" onClick={onClose}>
             Close
-          </button>
+          </Button>
         </div>
     </BaseModal>
   );

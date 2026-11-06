@@ -9,7 +9,6 @@ import { openExecutionFromLink } from '@/lib/deepLinks/navigationLinks';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
-import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { resolveReviewSeverity, parseSuggestedActions, detectAutoResolution, reviewStatusLabel } from '../libs/reviewHelpers';
 import { RichMarkdown } from '@/features/shared/components/editors/RichMarkdown';
 import { AutoResolvedBadge } from './AutoResolvedBadge';
@@ -150,38 +149,41 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <div className="min-w-0">
-              <h3 className="typo-heading text-foreground truncate">{review.persona_name || t.overview.review.unknown_persona}</h3>
+              <h3 className="typo-heading text-ink-1 truncate">{review.persona_name || t.overview.review.unknown_persona}</h3>
               <div className="flex items-center gap-2 mt-0.5">
                 <SeverityIndicator severity={review.severity} />
-                <span className="typo-body text-foreground">{resolveReviewSeverity(review.severity).label} {t.overview.review.severity_label}{resolveReviewSeverity(review.severity).defaulted ? ' — payload unreadable' : ''}</span>
-                <span className="typo-body text-foreground">·</span>
-                <RelativeTime timestamp={review.created_at} className="typo-body text-foreground" />
-                {isCloud && (<><span className="typo-body text-foreground">·</span><StatusBadge accent="indigo" size="sm" className="rounded typo-caption" icon={<Cloud className="w-2.5 h-2.5" />}>{t.overview.review.cloud_badge}</StatusBadge></>)}
-                {autoResolution && (<><span className="typo-body text-foreground">·</span><AutoResolvedBadge review={review} /></>)}
+                <span className="typo-body text-ink-2">{resolveReviewSeverity(review.severity).label} {t.overview.review.severity_label}{resolveReviewSeverity(review.severity).defaulted ? ' — payload unreadable' : ''}</span>
+                <span className="typo-body text-ink-3">·</span>
+                <RelativeTime timestamp={review.created_at} className="typo-data text-ink-3" />
+                {isCloud && (<><span className="typo-body text-ink-3">·</span><span className="inline-flex items-center gap-1 typo-eyebrow text-role-external"><Cloud className="w-3 h-3" />{t.overview.review.cloud_badge}</span></>)}
+                {autoResolution && (<><span className="typo-body text-ink-3">·</span><AutoResolvedBadge review={review} /></>)}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <ReviewReportLink contextData={review.context_data} />
-            <button
+            <Button
+              variant="ghost"
+              size="xs"
+              data-testid="review-execution-link"
               onClick={() => {
                 // With an execution id, hand it to the Activity list's focus
                 // door (opens that run's detail); without one, the section root.
                 if (review.execution_id && openExecutionFromLink(review.execution_id)) return;
                 useSystemStore.getState().setSidebarSection('overview');
               }}
-              className="inline-flex items-center gap-1 typo-caption text-status-info hover:text-status-info transition-colors"
-              title={review.execution_id ? `Execution ${review.execution_id.slice(0, 8)}` : 'View executions'}
+              tooltip={review.execution_id ? `Execution ${review.execution_id.slice(0, 8)}` : 'View executions'}
+              icon={<ExternalLink className="w-3 h-3" />}
             >
-              <ExternalLink className="w-3 h-3" /> {t.overview.review.execution_link}
-            </button>
+              {t.overview.review.execution_link}
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Auto-resolution notice: this review skipped the human queue by policy. */}
       {autoResolution && (
-        <div className="flex-shrink-0 px-4 py-2 border-b border-status-warning/15 bg-status-warning/[0.06]">
+        <div className="flex-shrink-0 px-4 py-2 border-b border-hair bg-surface-1">
           <p className="typo-caption text-status-warning">
             {autoResolution.kind === 'trust_llm'
               ? t.overview.review.auto_resolved.banner_trust_llm
@@ -189,7 +191,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           </p>
           {autoResolution.reasoning && (
             <p className="typo-caption text-status-warning mt-1">
-              <span className="font-medium">{t.overview.review.auto_resolved.reasoning_label}:</span>{' '}
+              <span className="typo-label">{t.overview.review.auto_resolved.reasoning_label}:</span>{' '}
               {autoResolution.reasoning}
             </p>
           )}
@@ -203,10 +205,10 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="typo-body text-role-agent">{review.persona_name || t.overview.review.agent}</span>
-              <RelativeTime timestamp={review.created_at} className="typo-body text-foreground" />
+              <RelativeTime timestamp={review.created_at} className="typo-data text-ink-3" />
             </div>
-            <div className="rounded-modal bg-role-agent/[0.06] border border-role-agent/15 px-3.5 py-2.5">
-              <RichMarkdown content={review.content} className="typo-body text-foreground" />
+            <div className="rounded-card bg-surface-1 border border-hair px-3.5 py-2.5">
+              <RichMarkdown content={review.content} className="typo-body text-ink-1" />
             </div>
             {contextData && (
               <div className="mt-2 rounded-card bg-surface-1 border border-hair px-3 py-2">
@@ -216,63 +218,66 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             )}
             {/* Multi-decision items */}
             {hasDecisions && isPending && (
-              <div className="mt-3 rounded-modal border border-hair bg-surface-1 overflow-hidden">
+              <div className="mt-3 rounded-card border border-hair bg-surface-1 overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-hair bg-surface-1">
-                  <span className="typo-label text-foreground">{t.overview.review.decisions_label} ({decisions.length})</span>
+                  <span className="typo-eyebrow text-ink-3">{t.overview.review.decisions_label} (<span className="num">{decisions.length}</span>)</span>
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="xs"
                       onClick={() => { const all: Record<string, 'accepted'> = {}; decisions.forEach((d) => { all[d.id] = 'accepted'; }); setDecisionStates(all); }}
-                      className="typo-caption text-status-success hover:text-status-success transition-colors"
                     >
                       {t.overview.review.accept_all}
-                    </button>
-                    <span className="text-foreground">|</span>
-                    <button
+                    </Button>
+                    <span className="text-ink-4">|</span>
+                    <Button
+                      variant="ghost"
+                      size="xs"
                       onClick={() => { const all: Record<string, 'rejected'> = {}; decisions.forEach((d) => { all[d.id] = 'rejected'; }); setDecisionStates(all); }}
-                      className="typo-caption text-status-error hover:text-status-error transition-colors"
                     >
                       {t.overview.review.reject_all_items}
-                    </button>
-                    <span className="text-foreground">|</span>
-                    <button
-                      onClick={() => setDecisionStates({})}
-                      className="typo-caption text-foreground hover:text-ink-2 transition-colors"
-                    >
+                    </Button>
+                    <span className="text-ink-4">|</span>
+                    <Button variant="ghost" size="xs" onClick={() => setDecisionStates({})}>
                       {t.common.clear}
-                    </button>
+                    </Button>
                   </div>
                 </div>
-                <div className="divide-y divide-primary/5">
+                <div className="divide-y divide-hair">
                   {decisions.map((d) => {
                     const state = decisionStates[d.id] ?? null;
                     return (
                       <div key={d.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-surface-2 transition-colors">
                         <div className="flex-1 min-w-0">
-                          <span className="typo-body text-foreground">{d.label}</span>
-                          {d.description && <p className="typo-caption text-foreground mt-0.5">{d.description}</p>}
+                          <span className="typo-body text-ink-1">{d.label}</span>
+                          {d.description && <p className="typo-caption text-ink-3 mt-0.5">{d.description}</p>}
                         </div>
                         {d.category && (
-                          <span className="typo-caption text-foreground px-1.5 py-0.5 rounded bg-surface-1 flex-shrink-0">{d.category}</span>
+                          <span className="typo-eyebrow text-ink-3 flex-shrink-0">{d.category}</span>
                         )}
                         <div className="flex items-center gap-1 flex-shrink-0">
-                          <button
+                          <Button
+                            variant={state === 'accepted' ? 'accent' : 'ghost'}
+                            tone={state === 'accepted' ? 'success' : undefined}
+                            size="icon-sm"
                             onClick={() => toggleDecision(d.id, 'accepted')}
-                            className={`p-1 rounded-card transition-colors ${state === 'accepted' ? 'bg-status-success/15 text-status-success' : 'text-foreground hover:text-status-success hover:bg-status-success/5'}`}
-                            title={t.overview.review.accept}
+                            tooltip={t.overview.review.accept}
                             aria-label={t.overview.review.accept}
                             aria-pressed={state === 'accepted'}
                           >
                             <CheckCircle2 className="w-4 h-4" />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant={state === 'rejected' ? 'accent' : 'ghost'}
+                            tone={state === 'rejected' ? 'error' : undefined}
+                            size="icon-sm"
                             onClick={() => toggleDecision(d.id, 'rejected')}
-                            className={`p-1 rounded-card transition-colors ${state === 'rejected' ? 'bg-status-error/15 text-status-error' : 'text-foreground hover:text-status-error hover:bg-status-error/5'}`}
-                            title={t.overview.review.reject}
+                            tooltip={t.overview.review.reject}
                             aria-label={t.overview.review.reject}
                             aria-pressed={state === 'rejected'}
                           >
                             <XCircle className="w-4 h-4" />
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     );
@@ -282,7 +287,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                   <div className="flex items-center gap-3 px-3 py-2 border-t border-hair bg-surface-1">
                     {acceptedCount > 0 && <span className="typo-caption text-status-success">{acceptedCount} {t.overview.review.accepted_label}</span>}
                     {rejectedCount > 0 && <span className="typo-caption text-status-error">{rejectedCount} {t.overview.review.rejected_label}</span>}
-                    {decisions.length - acceptedCount - rejectedCount > 0 && <span className="typo-caption text-foreground">{decisions.length - acceptedCount - rejectedCount} {t.overview.review.undecided_label}</span>}
+                    {decisions.length - acceptedCount - rejectedCount > 0 && <span className="typo-caption text-ink-3">{decisions.length - acceptedCount - rejectedCount} {t.overview.review.undecided_label}</span>}
                   </div>
                 )}
               </div>
@@ -291,10 +296,10 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
             {suggestedActions.length > 0 && isPending && !hasDecisions && (
               <div className="mt-2 flex flex-col gap-1">
                 {suggestedActions.map((action, i) => (
-                  <button key={i} onClick={() => setInput(action)} className="flex items-center gap-2 px-3 py-1.5 rounded-card typo-body bg-status-warning/[0.06] text-status-warning border border-status-warning/15 hover:bg-status-warning/[0.12] hover:border-status-warning/25 transition-colors text-left">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-status-warning/15 text-status-warning typo-code flex-shrink-0">{i + 1}</span>
+                  <Button key={i} variant="secondary" size="sm" className="justify-start text-left" onClick={() => setInput(action)}>
+                    <span className="typo-data text-ink-3 flex-shrink-0">{i + 1}</span>
                     {action}
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -306,19 +311,19 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           return (
             <div key={msg.id} className={`animate-fade-slide-in flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
               {isUser ? (
-                <div className="icon-frame flex-shrink-0 mt-0.5 border bg-status-info/15 border-status-info/25">
-                  <User className="w-3.5 h-3.5 text-status-info" />
+                <div className="icon-frame flex-shrink-0 mt-0.5 border bg-surface-1 border-hair">
+                  <User className="w-3.5 h-3.5 text-ink-2" />
                 </div>
               ) : (
                 <PersonaIcon icon={review.persona_icon} color={review.persona_color} display="framed" frameSize={"lg"} />
               )}
               <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
                 <div className={`flex items-center gap-2 mb-1 ${isUser ? 'flex-row-reverse' : ''}`}>
-                  <span className={`typo-body ${isUser ? 'text-status-info' : 'text-role-agent'}`}>{isUser ? t.overview.review.you : (review.persona_name || t.overview.review.agent)}</span>
-                  <RelativeTime timestamp={msg.created_at} className="typo-body text-foreground" />
+                  <span className={`typo-label ${isUser ? 'text-ink-1' : 'text-role-agent'}`}>{isUser ? t.overview.review.you : (review.persona_name || t.overview.review.agent)}</span>
+                  <RelativeTime timestamp={msg.created_at} className="typo-data text-ink-3" />
                 </div>
-                <div className={`rounded-modal px-3.5 py-2.5 max-w-[85%] ${isUser ? 'bg-status-info/[0.08] border border-status-info/15' : 'bg-role-agent/[0.06] border border-role-agent/15'}`}>
-                  <p className="typo-body text-foreground whitespace-pre-wrap">{msg.content}</p>
+                <div className={`rounded-card px-3.5 py-2.5 max-w-[85%] border border-hair ${isUser ? 'bg-surface-2' : 'bg-surface-1'}`}>
+                  <p className="typo-body text-ink-1 whitespace-pre-wrap">{msg.content}</p>
                 </div>
               </div>
             </div>
@@ -328,11 +333,11 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
         {!isPending && (
           <div className="flex items-center gap-2 px-3 py-2 rounded-card bg-surface-1 border border-hair">
             <Check className="w-3.5 h-3.5 text-status-success" />
-            <span className="typo-body text-foreground">
+            <span className="typo-body text-ink-2">
               {tx(t.overview.review.review_status, { status: reviewStatusLabel(t, review.status) })}
               {review.resolved_at ? <> · <AbsoluteTime timestamp={review.resolved_at} /></> : null}
             </span>
-            {review.reviewer_notes && <span className="typo-body text-foreground italic ml-1">-- {review.reviewer_notes}</span>}
+            {review.reviewer_notes && <span className="typo-body text-ink-2 ml-1">-- {review.reviewer_notes}</span>}
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -347,17 +352,17 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               onKeyDown={isCloud ? undefined : handleKeyDown}
               placeholder={isCloud ? t.overview.review.cloud_reply_placeholder : t.overview.review.reply_placeholder}
               rows={1}
-              className="flex-1 typo-body bg-background/50 border border-hair rounded-modal px-3 py-2 text-foreground placeholder:text-foreground resize-none focus-ring focus-visible:border-hair max-h-24"
+              className="flex-1 typo-body bg-background/50 border border-hair rounded-card px-3 py-2 text-ink-1 placeholder:text-ink-3 resize-none focus-ring focus-visible:border-hair-2 max-h-24"
               style={{ minHeight: '36px' }}
             />
             {!isCloud && (
-              <button onClick={handleSend} disabled={!input.trim() || isSending} className="p-2 rounded-modal bg-primary/10 text-primary border border-hair hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0" title={t.overview.review.send_message}>
+              <Button variant="primary" size="icon-md" onClick={handleSend} disabled={!input.trim() || isSending} className="flex-shrink-0" tooltip={t.overview.review.send_message} aria-label={t.overview.review.send_message}>
                 <Send className="w-4 h-4" />
-              </button>
+              </Button>
             )}
           </div>
           <div className="flex items-center justify-between">
-            <span className="typo-caption text-foreground">{isCloud ? t.overview.review.cloud_action_hint : t.overview.review.reply_hint}</span>
+            <span className="typo-caption text-ink-3">{isCloud ? t.overview.review.cloud_action_hint : t.overview.review.reply_hint}</span>
             <div className="flex items-center gap-2">
               <Button onClick={() => {
                 // Include per-item decisions in reviewer notes for multi-decision reviews

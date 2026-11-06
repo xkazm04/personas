@@ -150,7 +150,7 @@ export default function TeamMemoryPanel({
                 the list it sat beneath. Say whose numbers they are. */}
             <span className="flex items-center gap-1.5 min-w-0">
               <span className="truncate">{tx(pt.avg_importance, { value: stats.avg_importance.toFixed(1), count: stats.category_counts.length })}</span>
-              {activeRunFilter && <span className="typo-caption text-foreground flex-shrink-0">{pt.stats_team_wide}</span>}
+              {activeRunFilter && <span className="typo-caption text-ink-2 flex-shrink-0">{pt.stats_team_wide}</span>}
             </span>
             {statsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>

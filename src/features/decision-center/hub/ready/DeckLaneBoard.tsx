@@ -63,7 +63,7 @@ export const DeckLaneBoard = memo(function DeckLaneBoard({
   return (
     <div className="flex min-h-0 flex-col gap-2">
       <div className="flex items-center gap-2">
-        <span className="typo-label text-foreground">{m.triage_dispatch_lanes_heading}</span>
+        <span className="typo-label text-ink-2">{m.triage_dispatch_lanes_heading}</span>
         <NumberStepper
           value={lanes}
           onChange={(n) => setLanes(n ?? MIN_PARALLEL)}
@@ -90,10 +90,10 @@ export const DeckLaneBoard = memo(function DeckLaneBoard({
             className="flex min-h-[7rem] flex-col gap-1 rounded-card border border-border bg-surface-1 p-2"
           >
             <header className="flex items-center justify-between">
-              <span className="typo-label text-foreground">
+              <span className="typo-label text-ink-2">
                 {tx(m.triage_dispatch_lane_name, { n: lane + 1 })}
               </span>
-              <span className="typo-caption tabular-nums">{column.length}</span>
+              <span className="typo-data">{column.length}</span>
             </header>
             {column.length === 0 ? (
               <p className="typo-caption">{m.triage_dispatch_lane_empty}</p>
@@ -104,8 +104,8 @@ export const DeckLaneBoard = memo(function DeckLaneBoard({
                     key={row.id}
                     className="flex min-w-0 items-center gap-1 rounded-interactive bg-background/60 px-1.5 py-1"
                   >
-                    <span className="typo-caption tabular-nums text-primary">{index + 1}</span>
-                    <span className="typo-caption min-w-0 flex-1 truncate text-foreground">
+                    <span className="typo-data text-primary">{index + 1}</span>
+                    <span className="typo-caption min-w-0 flex-1 truncate text-ink-2">
                       {row.title}
                     </span>
                     <Button

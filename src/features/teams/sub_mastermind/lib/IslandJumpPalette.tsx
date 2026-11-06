@@ -67,7 +67,7 @@ export function IslandJumpPalette({
       data-testid="mm-jump-palette"
     >
       <div className="flex items-center gap-2 px-3 py-2 border-b border-hair">
-        <Search className="w-3.5 h-3.5 text-foreground opacity-70" aria-hidden />
+        <Search className="w-3.5 h-3.5 text-ink-2" aria-hidden />
         <input
           ref={inputRef}
           type="text"
@@ -82,7 +82,7 @@ export function IslandJumpPalette({
       </div>
 
       {results.length === 0 ? (
-        <p className="px-3 py-2 typo-caption text-foreground opacity-70" data-testid="mm-jump-empty">
+        <p className="px-3 py-2 typo-caption text-ink-2" data-testid="mm-jump-empty">
           {t.mastermind.jump_no_match}
         </p>
       ) : (

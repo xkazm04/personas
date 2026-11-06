@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Button from '@/features/shared/components/buttons/Button';
 import { ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { HighlightedJson } from '@/features/overview/sub_events/HighlightedJson';
@@ -79,18 +80,12 @@ export function IncidentDetailBreakdown({ detail }: { detail: string | null }) {
 
       {rawJson && (
         <div>
-          <button
-            type="button"
-            onClick={() => setShowRaw((v) => !v)}
-            aria-expanded={showRaw}
-            className="inline-flex items-center gap-1 typo-caption text-foreground rounded-card px-1.5 py-1 hover:bg-surface-2 transition-colors focus-ring"
-          >
-            <ChevronRight
+          <Button variant="ghost" size="xs" onClick={() => setShowRaw((v) => !v)} aria-expanded={showRaw} icon={<ChevronRight
               className={`h-3.5 w-3.5 transition-transform ${showRaw ? 'rotate-90' : ''}`}
               aria-hidden="true"
-            />
-            {t.overview.incidents.detail_raw_toggle}
-          </button>
+            />}>
+{t.overview.incidents.detail_raw_toggle}
+</Button>
           {showRaw && (
             <div className="mt-2 rounded-modal border border-hair bg-surface-1 p-2">
               <HighlightedJson raw={rawJson} />

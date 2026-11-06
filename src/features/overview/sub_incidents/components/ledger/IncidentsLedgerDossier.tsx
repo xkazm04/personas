@@ -32,11 +32,12 @@ import { Check, CheckCheck, X, RotateCcw, Clock } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
-import { TableActions, TableAction, TableTag } from '@/features/shared/components/display/TableCells';
+import { TableActions, TableAction } from '@/features/shared/components/display/TableCells';
+import { StateMark, type StateMarkState } from '@/features/shared/components/display/StateMark';
 import { personaInitials } from '@/lib/icons/personaInitials';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import {
-  incidentDaysOpen, isStaleIncident, severityBadgeClass,
+  incidentDaysOpen, isStaleIncident,
   severityUrgencyLabel, sourceTableIcon, sourceTableLabel,
 } from '../../libs/incidentTaxonomy';
 import { useIncidentLedger, type IncidentSortKey } from '../../libs/useIncidentLedger';
@@ -44,11 +45,18 @@ import { incidentRowActions, isClosedIncidentStatus } from '../../libs/incidentS
 import { LedgerPager } from './LedgerPager';
 import { LEDGER_COLUMNS, isNewSince, type IncidentLedgerViewProps } from './ledgerModel';
 
+// The source glyph wears the severity's signal ink; no tile, no tint.
 const SOURCE_TILE: Record<string, string> = {
-  critical: 'border-status-error/40 bg-status-error/15 text-status-error',
-  high: 'border-status-warning/40 bg-status-warning/15 text-status-warning',
-  medium: 'border-status-info/40 bg-status-info/15 text-status-info',
-  low: 'border-hair bg-surface-1 text-foreground',
+  critical: 'text-status-error',
+  high: 'text-status-warning',
+  medium: 'text-status-info',
+  low: 'text-ink-3',
+};
+const SEVERITY_STATE: Record<string, StateMarkState> = {
+  critical: 'error',
+  high: 'warning',
+  medium: 'warning',
+  low: 'info',
 };
 /**
  * Column widths persist per table id (`table-col-widths:<id>`), so the ledger
@@ -81,8 +89,8 @@ export function IncidentsLedgerDossier(props: IncidentLedgerViewProps) {
           const tile = isClosed(incident) ? SOURCE_TILE.low! : (SOURCE_TILE[incident.severity] ?? SOURCE_TILE.low!);
           const label = `${sourceTableLabel(t, incident.sourceTable)} · ${severityUrgencyLabel(t, incident.severity)}`;
           return (
-            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-card border ${tile}`} role="img" aria-label={label}>
-              <SourceIcon className="h-3.5 w-3.5" />
+            <span className={`flex h-7 w-7 shrink-0 items-center justify-center ${tile}`} role="img" aria-label={label}>
+              <SourceIcon className="h-4 w-4" />
             </span>
           );
         },
@@ -94,9 +102,9 @@ export function IncidentsLedgerDossier(props: IncidentLedgerViewProps) {
         // gets wider. NORMAL weight: the stamps beside it carry the emphasis.
         render: (incident) => (
           <span className="flex min-w-0 items-center gap-2">
-            <span className={`truncate typo-body ${isClosed(incident) ? 'text-ink-2' : 'text-foreground'}`}>{incident.title}</span>
+            <span className={`truncate typo-body ${isClosed(incident) ? 'text-ink-3' : 'text-ink-1'}`}>{incident.title}</span>
             {isNewSince(incident, lastSeenAt) && (
-              <span className="shrink-0 rounded-card bg-primary/15 px-1.5 py-0.5 typo-caption text-primary">
+              <span className="shrink-0 typo-eyebrow text-primary">
                 {t.overview.incidents.ledger.new_badge}
               </span>
             )}
@@ -106,14 +114,14 @@ export function IncidentsLedgerDossier(props: IncidentLedgerViewProps) {
       {
         ...head('severity'),
         render: (incident) => (
-          <TableTag className={severityBadgeClass(incident.severity)}>{tokenLabel(t, 'severity', incident.severity)}</TableTag>
+          <StateMark state={SEVERITY_STATE[incident.severity] ?? 'neutral'} label={tokenLabel(t, 'severity', incident.severity)} />
         ),
       },
       {
         ...head('persona'),
         render: (incident) => (
-          <span className="flex min-w-0 items-center gap-1.5 typo-caption text-foreground">
-            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/15 typo-data text-primary leading-none">
+          <span className="flex min-w-0 items-center gap-1.5 typo-caption text-ink-2">
+            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-surface-2 typo-data text-ink-2 leading-none">
               {incident.personaName ? personaInitials(incident.personaName) : '·'}
             </span>
             <span className="truncate">{incident.personaName ?? '—'}</span>
@@ -125,12 +133,10 @@ export function IncidentsLedgerDossier(props: IncidentLedgerViewProps) {
         render: (incident) => {
           const days = incidentDaysOpen(incident.createdAt);
           return (
-            <TableTag
-              icon={<Clock className="h-3 w-3" aria-hidden="true" />}
-              className={isStaleIncident(incident) ? 'border-status-warning/30 bg-status-warning/10 text-status-warning' : undefined}
-            >
+            <span className={`inline-flex items-center gap-1 typo-data ${isStaleIncident(incident) ? 'text-status-warning' : 'text-ink-3'}`}>
+              <Clock className="h-3 w-3" aria-hidden="true" />
               {days < 1 ? '<1d' : `${days}d`}
-            </TableTag>
+            </span>
           );
         },
       },

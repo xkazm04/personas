@@ -1,4 +1,5 @@
 import { Sparkles, X, CheckCircle2, Trash2, AlertCircle } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { MemoryReviewResult } from '@/api/overview/memories';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -30,9 +31,9 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
               </p>
             )}
           </div>
-          <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-ink-2 transition-colors">
+          <Button variant="ghost" size="icon-sm" onClick={onClose}>
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Body */}

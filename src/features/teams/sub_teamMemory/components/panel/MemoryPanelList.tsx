@@ -60,18 +60,9 @@ export default function MemoryPanelList({
       {/* Category chips */}
       <div className="flex gap-1 px-3 py-2 overflow-x-auto scrollbar-hide">
         {CATEGORY_FILTERS.map((cat) => (
-          <button
-            type="button"
-            key={cat}
-            className={`typo-body px-2 py-0.5 rounded-interactive whitespace-nowrap transition-colors ${
-              activeCategory === cat
-                ? 'bg-role-agent/20 text-role-agent'
-                : 'bg-surface-1 text-foreground hover:bg-primary/10'
-            }`}
-            onClick={() => onCategoryChange(cat)}
-          >
+          <Button variant="secondary" size="xs" className="whitespace-nowrap" key={cat} onClick={() => onCategoryChange(cat)}>
             {cat === 'all' ? t.common.all : tokenLabel(t, 'memory_category', cat)}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -95,24 +86,15 @@ export default function MemoryPanelList({
             <span className="typo-code text-role-agent truncate flex-1">
               {activeRunFilter.length > 8 ? activeRunFilter.slice(0, 8) : activeRunFilter}
             </span>
-            <button
-              type="button"
-              onClick={onClearRunFilter}
-              className="p-0.5 rounded-interactive text-role-agent hover:text-role-agent transition-colors flex-shrink-0"
-              aria-label={t.pipeline.clear_run_filter}
-            >
+            <Button variant="ghost" size="icon-sm" className="flex-shrink-0" onClick={onClearRunFilter} aria-label={t.pipeline.clear_run_filter}>
               <X className="w-3 h-3" />
-            </button>
+            </Button>
           </div>
         )}
         {hasActiveFilters && onClearAll && (
-          <button
-            type="button"
-            onClick={onClearAll}
-            className="flex items-center gap-1 typo-caption text-role-agent hover:text-role-agent transition-colors"
-          >
-            <FilterX className="w-3 h-3" /> {t.pipeline.clear_all_filters}
-          </button>
+          <Button variant="ghost" size="sm" onClick={onClearAll} icon={<FilterX className="w-3 h-3" />}>
+{t.pipeline.clear_all_filters}
+</Button>
         )}
       </div>
 

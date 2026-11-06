@@ -48,7 +48,7 @@ export default function ServerTiles({ servers, loading, hostPort, onMenu, onTogg
             <header className="lt-group__head">
               <span className="lt-group__swatch" aria-hidden="true" />
               <h3 className="lt-group__name typo-heading">{ws?.name ?? lt.no_workspace}</h3>
-              <span className="typo-caption text-foreground">{tx(group.servers.length === 1 ? lt.group_apps_one : lt.group_apps_other, { count: group.servers.length })}</span>
+              <span className="typo-caption text-ink-2">{tx(group.servers.length === 1 ? lt.group_apps_one : lt.group_apps_other, { count: group.servers.length })}</span>
               {live > 0 && <span className="typo-caption text-primary">{tx(lt.group_live, { count: live })}</span>}
               <span className="lt-group__rule" aria-hidden="true" />
             </header>
