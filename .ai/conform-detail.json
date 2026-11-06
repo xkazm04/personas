@@ -40247,13 +40247,13 @@
       "bundle": "software-engineering",
       "state": "unknown",
       "evaluatedAt": "2026-11-06",
-      "evaluatedTs": "2026-11-06T05:33:43.783Z",
+      "evaluatedTs": "2026-11-06T23:56:26.851Z",
       "techniques": [],
       "withdrawn": {
-        "worker": "3f8ac78c-8e8d-45e6-8f69-a6efb2e9aad7",
+        "worker": "a410dc75-d14c-46ef-8f67-11fe98797952",
         "state": "not-applicable",
-        "at": "2026-11-06T05:34:13.278184+00:00",
-        "reason": "reviewer (sonnet): The anchor ExposureManager.tsx:9 is only a type import, so it does not show that the context builds no LLM prompt. The grep for 'prompt' under sub_network found nothing, but an absence search does not make a line anchor that is incidental."
+        "at": "2026-11-06T23:56:55.734189+00:00",
+        "reason": "reviewer (sonnet): The anchor BundleExportDialog.tsx:22 is a comment about clearing the clipboard, so it does not show that no prompt is assembled; my grep of sub_network for prompt/llm/claude found nothing, but the evidence's sign_in_prompt hits come from outside this context."
       }
     },
     "aa2197a5-6b7c-46ff-a6cd-8172d2984f50/prompt-assembly": {
@@ -45020,13 +45020,13 @@
       "bundle": "software-engineering",
       "state": "unknown",
       "evaluatedAt": "2026-11-06",
-      "evaluatedTs": "2026-11-06T22:35:08.112Z",
+      "evaluatedTs": "2026-11-06T23:56:26.851Z",
       "techniques": [],
       "withdrawn": {
-        "worker": "ef8e15ad-d5cc-4be5-bdf5-6734188ab52e",
+        "worker": "a410dc75-d14c-46ef-8f67-11fe98797952",
         "state": "not-applicable",
-        "at": "2026-11-06T22:36:49.327872+00:00",
-        "reason": "reviewer (sonnet): The anchor BackgroundServices.tsx:47 is an incidental line (an Athena reconciliation hook) that does not show a prompt-assembly precondition is absent, and the listed context files are only sidebar files, so the absence rests on a keyword grep alone."
+        "at": "2026-11-06T23:56:55.944449+00:00",
+        "reason": "reviewer (sonnet): The claim that no prompt is composed here is contradicted by notifications/NotificationCenter.tsx:50-57, where useAskAthena builds prompt text from a template with title, body and status and auto-sends it to Athena; the cited CliReadinessBanner.tsx:8 line is only a CLI-readiness comment."
       }
     },
     "54236947-3775-4d0a-8e14-1a709dd4d8bc/prompt-assembly": {
