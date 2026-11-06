@@ -116,103 +116,60 @@ body {
 
   /* Hero -- main page greeting (e.g. "Good Morning, Alex") */
   .typo-hero {
-    font-size: calc(var(--type-6) * var(--type-f));
-    font-weight: 700;
+    font-size: calc(var(--type-28) * var(--type-f));
+    font-weight: 600;
     line-height: 1.15;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.025em;
     font-feature-settings: "kern" 1, "liga" 1;
+    color: var(--ink-1);
   }
 
   /* Heading -- section titles, card headers */
   .typo-heading {
-    font-size: calc(var(--type-1) * var(--type-f));
-    font-weight: 700;
+    font-size: calc(var(--type-15) * var(--type-f));
+    font-weight: 600;
     line-height: 1.4;
-    letter-spacing: 0.025em;
+    letter-spacing: -0.01em;
     font-feature-settings: "kern" 1, "liga" 1;
+    color: var(--ink-1);
   }
 
   /* Heading large -- page-level headings */
   .typo-heading-lg {
-    font-size: calc(var(--type-4) * var(--type-f));
-    font-weight: 700;
+    font-size: calc(var(--type-18) * var(--type-f));
+    font-weight: 600;
     line-height: 1.3;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
     font-feature-settings: "kern" 1, "liga" 1;
+    color: var(--ink-1);
   }
 
   /* -- Body -- paragraphs, descriptions ----------------------------------------
-     WEIGHT STAYS 400, AND THE REASON IS A MEASUREMENT, NOT A PREFERENCE.
+     Weight 400, Inter Variable (Console law, 2026-11-06).
 
-     Asked on 2026-10-03 to "step .typo-body up for reading prose — decide 450
-     vs 500 by looking". Measured first, in the same headless Chromium that
-     shoots the review screenshots, on this app's real `--font-sans`
-     (`system-ui, 'Segoe UI Variable Text', 'Segoe UI', …`):
-
-       requested   rendered advance of a 13.2px sample   ink
-         300         335.203px                            (distinct)
-         400         353.938px                            222
-         420         353.938px   <- identical to 400
-         450         353.938px   <- identical to 400
-         475         353.938px   <- identical to 400
-         500         360.938px                            273
-         600         360.938px   <- identical to 500
-         700         375.484px                            (distinct)
-
-     Two findings, both load-bearing:
-     1. `system-ui` resolves to **Segoe UI**, a STATIC family (its metrics
-        match `'Segoe UI'` exactly, 305.703px on a probe string, and NOT
-        `'Segoe UI Variable Text'`'s 305.703/351.813). Segoe UI ships Light
-        300, Regular 400, Semibold 600, Bold 700 — no Medium. CSS font
-        matching for a target in (400,500] searches up to 500 first, finds
-        nothing, then falls back below: so **420, 450 and 475 all render as
-        400**. A half-step is a no-op, not a subtle improvement.
-     2. `font-variation-settings: 'wght' N` does nothing either — probed at
-        400/430/450/470/500/600 against 'Segoe UI Variable Text', 'Segoe UI
-        Variable Display' and 'Segoe UI Variable': identical advance AND
-        identical ink coverage at every value. There is no continuous weight
-        axis available in this renderer.
-
-     So the rendered weight ladder in this app is exactly **300 / 400 / 600 /
-     700**, and "one step up from body" means SEMIBOLD, +23% ink. That would
-     put reading prose at the same rendered weight as .typo-title (600),
-     .typo-label (600) and the kit's .k-strong — collapsing three tiers into
-     one — and it contradicts the owner's own line from the same day: "White
-     text should have norm weight."
-
-     Corollary worth knowing before writing `font-weight: 500` anywhere: 500
-     and 600 are the SAME rendered weight here, so the kit's `.k-medium` (500)
-     and `.k-strong` (600) are indistinguishable. The grow-4 emphasis recipe
-     "600 belongs to the TINTED title; a white name reads 500" therefore
-     separated its two cases by tint alone and changed no pixels at all; it was
-     corrected at home-3 to "a white name reads 400", which is the one step
-     this font can draw between the two. `.k-medium` is kept (a step DOWN from
-     700 is real) but is never a step UP from 400 — the full decision table is
-     at `.k-strong`/`.k-medium`/`.k-regular` in
-     src/features/shared/components/kit/kit.css.
-
-     Still unreconciled, recorded rather than silently carried: `.typo-data`
-     below asks for 500 and therefore renders SEMIBOLD, so every figure in the
-     app sits at the tinted title's weight. Changing it re-weights every stat,
-     count and metric in the product, which is a decision of its own and not
-     one the emphasis recipe gets to make.
-
-     The lever for reading prose is therefore SIZE, not weight: .typo-body is
-     step 1 (13.2px at the default appearance setting) because doctrine
-     section 1 puts a whole row on one step, and prose that wants to read
-     bigger moves to .typo-body-lg (step 2, 14.9px) at the call site. */
+     SUPERSEDED 2026-11-06: the 2026-10-03 measurement below said the rendered
+     weight ladder was 300/400/600/700 because `system-ui` resolved to the static
+     Segoe UI. The app now bundles Inter Variable (a real wght axis), so 500
+     renders as 500 and 450 as 450. What survives of that note: weight, not
+     colour, separates the tiers (caption 400, label/data 500, titles 600), and
+     reading prose that wants to be bigger moves to .typo-body-lg at the call
+     site. `.typo-data` (500) and the kit's `.k-medium` (500) now differ from the
+     600 titles for real. The old table, for history: requested 420/450/475 all
+     rendered 400, 500 rendered as 600, on Segoe UI. */
   .typo-body {
-    font-size: calc(var(--type-1) * var(--type-f));
+    font-size: calc(var(--type-14) * var(--type-f));
     font-weight: 400;
-    line-height: 1.65;
+    line-height: 1.43;
+    letter-spacing: -0.006em;
     font-feature-settings: "kern" 1, "liga" 1;
   }
 
   /* Body large -- prominent descriptions, summaries */
   .typo-body-lg {
-    font-size: calc(var(--type-2) * var(--type-f));
+    font-size: calc(var(--type-15) * var(--type-f));
     font-weight: 400;
-    line-height: 1.7;
+    line-height: 1.47;
+    letter-spacing: -0.006em;
     font-feature-settings: "kern" 1, "liga" 1;
   }
 
@@ -234,9 +191,10 @@ body {
      below utilities), so `typo-caption font-semibold` renders 600: it is
      allowed, but it is a second voice where a token already exists. */
   .typo-caption {
-    font-size: calc(var(--type-1) * var(--type-f));
+    font-size: calc(var(--type-13) * var(--type-f));
     font-weight: 400;
-    line-height: 1.5;
+    line-height: 1.38;
+    letter-spacing: 0;
     font-feature-settings: "kern" 1, "liga" 1;
   }
 
@@ -263,38 +221,46 @@ body {
      that job. `uppercase` is available as an opt-in utility again now that this
      token no longer sets text-transform, but the house style is sentence case. */
   .typo-label {
-    font-size: calc(var(--type-0) * var(--type-f));
-    font-weight: 600;
+    font-size: calc(var(--type-13) * var(--type-f));
+    font-weight: 500;
     line-height: 1.4;
-    letter-spacing: 0.01em;
+    letter-spacing: 0;
     font-feature-settings: "kern" 1, "liga" 1;
+    color: var(--ink-2);
   }
 
   /* Data -- numbers, stats, metrics. Tabular nums for alignment. */
   .typo-data {
-    font-size: calc(var(--type-1) * var(--type-f));
+    font-family: var(--font-mono);
+    font-size: calc(var(--type-14) * var(--type-f));
     font-weight: 500;
     line-height: 1.4;
-    font-variant-numeric: tabular-nums lining-nums;
-    font-feature-settings: "kern" 1, "tnum" 1, "lnum" 1;
+    letter-spacing: 0;
+font-variant-numeric: tabular-nums slashed-zero;
+    font-variant-ligatures: none;
   }
 
   /* Data large -- hero metrics, big counters */
   .typo-data-lg {
-    font-size: calc(var(--type-5) * var(--type-f));
-    font-weight: 700;
+    font-family: var(--font-mono);
+    font-size: calc(var(--type-24) * var(--type-f));
+    font-weight: 500;
     line-height: 1.2;
-    font-variant-numeric: tabular-nums lining-nums;
-    font-feature-settings: "kern" 1, "tnum" 1, "lnum" 1;
+    letter-spacing: -0.03em;
+font-variant-numeric: tabular-nums slashed-zero;
+    font-variant-ligatures: none;
+    color: var(--ink-1);
   }
 
   /* Code -- monospace text, IDs, technical values */
   .typo-code {
     font-family: var(--font-mono);
-    font-size: calc(var(--type-0) * var(--type-f));
+    font-size: calc(var(--type-13) * var(--type-f));
     font-weight: 400;
     line-height: 1.5;
-    font-feature-settings: "kern" 1, "zero" 1, "liga" 0;
+    letter-spacing: 0;
+font-variant-numeric: tabular-nums slashed-zero;
+    font-variant-ligatures: none;
   }
 
   /* Eyebrow -- the tracked uppercase head of a section inside a surface.
@@ -303,12 +269,15 @@ body {
      module gate migrates its own). The phantom typo-overline maps here.
      Colourless: the surface decides its ink. */
   .typo-eyebrow {
-    font-size: calc(var(--type-0) * var(--type-f));
-    font-weight: 700;
+    font-family: var(--font-mono);
+    font-size: calc(var(--type-12) * var(--type-f));
+    font-weight: 500;
     line-height: 1.4;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    font-feature-settings: "kern" 1, "liga" 1;
+font-variant-numeric: tabular-nums slashed-zero;
+    font-variant-ligatures: none;
+    color: var(--ink-3);
   }
 
   [data-lang="ar"] .typo-eyebrow,
@@ -324,21 +293,14 @@ body {
      Tokenized for reuse across card grids, nav cards, language cards, etc. */
 
   .typo-card-label {
-    font-size: calc(var(--type-0) * var(--type-f));
+    font-size: calc(var(--type-14) * var(--type-f));
     font-weight: 600;
     line-height: 1.3;
-    letter-spacing: 0.02em;
+    letter-spacing: -0.011em;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: var(--foreground);
-    text-shadow: 0 0 20px color-mix(in srgb, var(--primary) 30%, transparent),
-                 0 0 4px color-mix(in srgb, var(--primary) 15%, transparent);
+    color: var(--ink-1);
   }
 
-  :root[class*="light"] .typo-card-label,
-  [data-theme*="light"] .typo-card-label {
-    text-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 15%, transparent);
-    color: color-mix(in srgb, var(--foreground) 85%, transparent);
-  }
 
   /* -- Title -------------------------------------------------------------------
      Universal title for form-element labels, toggle rows, and list-item
@@ -361,51 +323,39 @@ body {
      shine gradient still read `--primary`: those ARE tint. */
 
   .typo-title {
-    font-size: calc(var(--type-1) * var(--type-f));
+    font-size: calc(var(--type-14) * var(--type-f));
     font-weight: 600;
     line-height: 1.4;
-    letter-spacing: 0.015em;
+    letter-spacing: -0.011em;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: color-mix(in srgb, var(--primary-ink) 75%, var(--foreground));
+    color: var(--ink-1);
   }
 
-  :root[class*="light"] .typo-title,
-  [data-theme*="light"] .typo-title {
-    color: color-mix(in srgb, var(--primary-ink) 60%, var(--foreground));
-  }
 
   /* Title large -- content headlines (e.g. a logged decision's choice). */
   .typo-title-lg {
-    font-size: calc(var(--type-2) * var(--type-f));
+    font-size: calc(var(--type-15) * var(--type-f));
     font-weight: 600;
     line-height: 1.45;
-    letter-spacing: 0.005em;
+    letter-spacing: -0.011em;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: color-mix(in srgb, var(--primary-ink) 75%, var(--foreground));
+    color: var(--ink-1);
   }
 
-  :root[class*="light"] .typo-title-lg,
-  [data-theme*="light"] .typo-title-lg {
-    color: color-mix(in srgb, var(--primary-ink) 60%, var(--foreground));
-  }
 
   /* -- Section Title -----------------------------------------------------------
      Section divider labels tinted with the theme's primary color.
      Dark themes: colored with primary. Light themes: neutral foreground. */
 
   .typo-section-title {
-    font-size: calc(var(--type-3) * var(--type-f));
+    font-size: calc(var(--type-14) * var(--type-f));
     font-weight: 600;
     line-height: 1.3;
-    letter-spacing: 0.01em;
+    letter-spacing: -0.01em;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: color-mix(in srgb, var(--primary-ink) 85%, var(--foreground));
+    color: var(--ink-1);
   }
 
-  :root[class*="light"] .typo-section-title,
-  [data-theme*="light"] .typo-section-title {
-    color: color-mix(in srgb, var(--foreground) 80%, transparent);
-  }
 
   /* -- Submodule Header --------------------------------------------------------
      Prominent section headers used inside agent submodules (Connectors,
@@ -414,18 +364,14 @@ body {
      Theme-adaptive: red on red-theme, cyan on default, etc. */
 
   .typo-submodule-header {
-    font-size: calc(var(--type-3) * var(--type-f));
+    font-size: calc(var(--type-16) * var(--type-f));
     font-weight: 600;
     line-height: 1.3;
-    letter-spacing: -0.005em;
+    letter-spacing: -0.015em;
     font-feature-settings: "kern" 1, "liga" 1;
-    color: color-mix(in srgb, var(--primary-ink) 90%, var(--foreground));
+    color: var(--ink-1);
   }
 
-  :root[class*="light"] .typo-submodule-header,
-  [data-theme*="light"] .typo-submodule-header {
-    color: color-mix(in srgb, var(--primary-ink) 75%, var(--foreground));
-  }
 
   /* -- Text scale: one factor --------------------------------------------------
      Every token size is calc(step * --type-f). A text scale retunes ONE factor
@@ -444,6 +390,18 @@ body {
     --type-5: 1.75rem;   /* data-lg */
     --type-6: 2.75rem;   /* hero */
     --type-f: 0.875;     /* no data-text-scale: the retired 14px default */
+    /* Console ramp (2026-11-06). Named by the px they give at the 14px-root,
+       f=0.875 reference (rem = px / 14), so every size still scales with the text
+       scale and no recipe carries a literal px. --type-0..6 above stay for the
+       feature stylesheets that read them directly; the typo-* recipes read these. */
+    --type-12: 0.8571rem;
+    --type-13: 0.9286rem;
+    --type-14: 1rem;
+    --type-15: 1.0714rem;
+    --type-16: 1.1429rem;
+    --type-18: 1.2857rem;
+    --type-24: 1.7143rem;
+    --type-28: 2rem;
   }
   [data-text-scale="compact"] { --type-f: 0.8125; }
   [data-text-scale="default"] { --type-f: 0.875; }
@@ -484,16 +442,26 @@ body {
     /* Control labels (the shared Button) take the row step here; outside a
        tier --type-control is unset and a Button inherits, as it always has. */
     --type-control: calc(var(--type-1) * var(--type-f));
+    /* Console ramp, one step down; 24/28 are not row text and stay. */
+    --type-12: 0.7857rem;
+    --type-13: 0.8571rem;
+    --type-14: 0.9286rem;
+    --type-15: 1rem;
+    --type-16: 1.0714rem;
+    --type-18: 1.1429rem;
   }
   /* Body line-height tightens with the size so a compact row keeps its rhythm. */
-  [data-type-density="compact"] .typo-body { line-height: 1.5; }
+  [data-type-density="compact"] .typo-body { line-height: 1.4; }
   /* A card label in a compact row names the row's thing: it sits on the row
      step (one size in a row) and keeps its glow, which with its weight is
      what sets it apart (Gate 3b: the operator kept the glow on Fleet Activity). */
-  [data-type-density="compact"] .typo-card-label { font-size: calc(var(--type-1) * var(--type-f)); }
 }
 
-/* The app's ONE muting level for secondary prose: 80% foreground, i.e. 20%
+/* CONSOLE LAW (2026-11-06): secondary prose is --ink-2 (74% of foreground over
+   the background, oklab). The 80% single muting level below is SUPERSEDED by the
+   4-step ink ladder; the history stays for the record.
+
+   The app's former ONE muting level for secondary prose: 80% foreground.
    muting. It sits in @layer base so any explicit text-* utility still wins.
 
    RAISED FROM 70% TO 80% ON 2026-10-03, by the owner, app-wide. The Home
@@ -515,7 +483,7 @@ body {
    the defect is the weight on that pair, not this figure. */
 @layer base {
   .typo-caption {
-    color: color-mix(in srgb, var(--foreground) 80%, transparent);
+    color: var(--ink-2);
   }
 }
 
@@ -536,6 +504,14 @@ body {
 .font-data {
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* .num -- the Console figure treatment: JetBrains Mono, tabular, slashed zero,
+   no ligatures. Inherits size and weight; wrap any count, time, id or percent. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-variant-ligatures: none;
 }
 
 /* Slashed zero -- distinguish 0 from O in technical contexts */

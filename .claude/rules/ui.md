@@ -59,11 +59,26 @@ setting). Do not put a showcase, diagnostic or reading surface on `KitHost compa
 **Loading pattern v2:** `docs/design/overview-loading.md` (chrome always renders; a fetch never hides
 rendered rows; a lazy view keeps a module cache, `createModuleCache` when it holds several entries).
 
+## Console law (2026-11-06) - read first
+
+Doctrine: `docs/design/style-mastery/doctrine.md` "Console law". It overrides the tinted-token and
+muting lines further down.
+
+- Faces: Inter (prose) and JetBrains Mono (figures). Wrap every count, time, id, percent in `.num`
+  (or `typo-data`, or `display/Figs`); the one label tier is `typo-eyebrow`.
+- Ink, not opacity: `text-ink-1..4` (ink-4 is never text), rules `border-hair` / `border-hair-2`,
+  surfaces `bg-surface-1|2`, selection `bg-sel`. Titles are ink; primary is only selection, the
+  decided state, focus and the one solid action. No `typo-*` title is tinted any more.
+- Status = `display/StateMark` (glyph + word), a stroke or a thin bar. No pills.
+- Geometry comes from roles that the density axis rebinds: `--gutter-page`, `--row-h`,
+  `--control-h`, `--control-h-lg`, `--head-h`, `--group-h`. Density never changes type.
+- Sizes are `--type-N` steps x `--type-f` (typography.css); never a literal px.
+
 ## Type and colour gotchas
 
 - Tokens live in `@layer components` (2026-09-24): a utility beside one WINS (`typo-caption
   font-semibold` renders 600). Prefer the token that says it; a common pair is a missing token.
-- Tinted tokens keep their colour (Gate 0): `typo-title`, `typo-title-lg`, `typo-section-title`,
+- SUPERSEDED 2026-11-06 (Console law): the tinted tokens are ink now. Old text: tinted tokens keep their colour (Gate 0): `typo-title`, `typo-title-lg`, `typo-section-title`,
   `typo-submodule-header` (primary), `typo-card-label` (glow). A `text-*` beside one now REPLACES
   the tint, so write it only when you mean to lose the tint; otherwise use a colourless tier
   (`typo-body`, `typo-body-lg`, `typo-heading`) plus `text-*`. `typo-caption` mutes via `@layer base`.

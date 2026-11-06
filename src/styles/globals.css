@@ -394,13 +394,14 @@
   --blur-modal: 12px;
   --blur-popover: 8px;
   --blur-tooltip: 4px;
-  /* Fonts name what ships. 'Inter' and 'JetBrains Mono' stood first here and
-     were never loaded (no @font-face, no bundled file), so every machine without
-     them installed rendered system-ui (Segoe UI on Windows) and the browser's
-     monospace (Consolas). Sans keeps that face; mono moves to Cascadia Mono,
-     which ships with Windows 11 (Gate 0, 2026-09-24). */
-  --font-sans: system-ui, 'Segoe UI Variable Text', 'Segoe UI', -apple-system, sans-serif;
-  --font-mono: 'Cascadia Mono', Consolas, 'Fira Code', ui-monospace, monospace;
+  /* Fonts (Console law, 2026-11-06): Inter Variable (opsz) for prose and names,
+     JetBrains Mono Variable for every figure, key and the one label tier. Both are
+     bundled via @fontsource-variable and imported once in main.tsx; the system
+     faces behind them cover the first paint and unicode-range gaps. The
+     per-language Noto face still stands first via --font-lang (typography.css).
+     Supersedes the Gate 0 (2026-09-24) system-sans + Cascadia Mono choice. */
+  --font-sans: 'Inter Variable', system-ui, 'Segoe UI Variable Text', 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'Cascadia Mono', Consolas, ui-monospace, monospace;
   --spacing-1: 0.25rem;
   --spacing-2: 0.5rem;
   --spacing-3: 0.75rem;
@@ -417,16 +418,22 @@
      [data-density="cozy"] loosens and [data-density="compact"] tightens the
      same variables. CARD_PADDING / SECTION_GAP in designTokens.ts emit
      arbitrary-value classes (p-[var(--density-pad)], …) bound to these. */
-  --density-pad: 1rem;
-  /* 16px — standard card padding (CARD_PADDING.standard, was p-4) */
-  --density-pad-sm: 0.75rem;
-  /* 12px — compact card / dense padding (CARD_PADDING.compact|dense, was p-3) */
-  --density-gap: 1rem;
-  /* 16px — within-panel section gap (SECTION_GAP.within, was space-y-4) */
-  --density-gap-lg: 1.5rem;
-  /* 24px — between page-level sections (SECTION_GAP.between, was space-y-6) */
-  --density-row-py: 0.5rem;
-  /* 8px — table/list row vertical padding for density-aware rows */
+  /* Legacy --density-* vars are now DERIVED from the geometry roles below, so
+     CARD_PADDING / SECTION_GAP follow the density axis (Console default, 2026-11-06). */
+  --density-pad: calc(var(--gutter-page) - 0.5rem);
+  --density-pad-sm: calc(var(--gutter-page) - 0.625rem);
+  --density-gap: calc(var(--gutter-page) - 0.5rem);
+  --density-gap-lg: var(--gutter-page);
+  --density-row-py: calc((var(--row-h) - 1.25rem) / 2);
+
+  /* Geometry roles - the density axis owns exactly these (never type sizes).
+     Default = Console; [data-density="comfortable"] below adds air. */
+  --gutter-page: 1.25rem;
+  --row-h: 2.5rem;
+  --control-h: 1.875rem;
+  --control-h-lg: 2rem;
+  --head-h: 2.75rem;
+  --group-h: 2rem;
 
   /* Semantic spacing scale — t-shirt size aliases for the numeric scale */
   --space-xs: 0.25rem;
@@ -450,14 +457,14 @@
   --radius-pill: 9999px;
 
   /* Semantic radius tiers — use these in components */
-  --radius-interactive: 0.375rem;
-  /* 6px  — buttons, toggles, chips */
-  --radius-input: 0.5rem;
-  /* 8px  — inputs, selects, textareas */
-  --radius-card: 0.75rem;
-  /* 12px — cards, panels, tiles */
-  --radius-modal: 1rem;
-  /* 16px — modals, dialogs, sheets */
+  --radius-interactive: 4px;
+  /* 4px  - buttons, toggles, chips (Console, 2026-11-06) */
+  --radius-input: 4px;
+  /* 4px  - inputs, selects, textareas */
+  --radius-card: 6px;
+  /* 6px  - cards, panels, tiles */
+  --radius-modal: 10px;
+  /* 10px - modals, dialogs, sheets */
 
   /* Elevation shadow tiers — 4-level depth hierarchy */
   --shadow-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.15);
@@ -518,6 +525,17 @@
   --color-card: var(--card-bg);
 
   --color-primary: var(--primary);
+
+  /* Console roles (declared after the theme blocks; see "Console roles") */
+  --color-ink-1: var(--ink-1);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-hair: var(--hair);
+  --color-hair-2: var(--hair-2);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-sel: var(--sel);
   --color-secondary: var(--secondary);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -861,35 +879,54 @@ html {
   font-size: 18px;
 }
 
-/* -- Density --
-   Global spacing rhythm. `comfortable` is the :root default (unchanged from
-   the historical hardcodes); `cozy` loosens and `compact` tightens. The
-   variables feed CARD_PADDING / SECTION_GAP arbitrary-value classes and the
-   density-aware row padding. No global padding transition — animating
-   padding across the whole node tree triggers expensive layout recalcs
-   (same freeze class the brightness path avoids), so the reflow is instant. */
-[data-density="cozy"] {
-  --density-pad: 1.25rem;     /* 20px */
-  --density-pad-sm: 1rem;     /* 16px */
-  --density-gap: 1.25rem;     /* 20px */
-  --density-gap-lg: 1.75rem;  /* 28px */
-  --density-row-py: 0.75rem;  /* 12px */
+/* -- Console roles (2026-11-06) --
+   Ink ladder, hairlines and surfaces, derived per theme by oklab mix over that
+   theme's own --foreground / --background / --primary. Declared HERE, after
+   every theme block, on `:root, [data-theme]` so (a) the mix sees the theme's
+   final values and (b) a nested [data-theme] scope (the hover preview) recomputes
+   them instead of inheriting the page's. ink-4 is never text. */
+:root,
+[data-theme] {
+  --ink-1: var(--foreground);
+  --ink-2: color-mix(in oklab, var(--foreground) 74%, var(--background));
+  --ink-3: color-mix(in oklab, var(--foreground) 56%, var(--background));
+  --ink-4: color-mix(in oklab, var(--foreground) 34%, var(--background));
+  --hair: color-mix(in oklab, var(--foreground) 9%, var(--background));
+  --hair-2: color-mix(in oklab, var(--foreground) 16%, var(--background));
+  --grid: color-mix(in oklab, var(--foreground) 5.5%, var(--background));
+  --surface-1: color-mix(in oklab, var(--foreground) 2.5%, var(--background));
+  --surface-2: color-mix(in oklab, var(--foreground) 5%, var(--background));
+  --sel: color-mix(in oklab, var(--primary) 5%, var(--surface-2));
+  --acc-wash: color-mix(in oklab, var(--primary) 9%, var(--background));
 }
 
-[data-density="compact"] {
-  --density-pad: 0.625rem;    /* 10px */
-  --density-pad-sm: 0.5rem;   /* 8px  */
-  --density-gap: 0.625rem;    /* 10px */
-  --density-gap-lg: 1rem;     /* 16px */
-  --density-row-py: 0.25rem;  /* 4px  */
+/* Light themes: ink-3 carries the mono label tier (text), and 56% of a dark
+   foreground over a light canvas measures 3.9:1. Retuned to 66% (>= 4.5:1,
+   graded by check:themes). ink-4 stays 34%: it is never text. */
+[data-theme^="light"] {
+  --ink-3: color-mix(in oklab, var(--foreground) 66%, var(--background));
 }
 
-/* Line-height follows density: compact tightens body leading for more rows
-   per fold, cozy opens it up. Mirrors the data-text-scale typo overrides. */
-[data-density="compact"] .typo-body { line-height: 1.45; }
-[data-density="compact"] .typo-body-lg { line-height: 1.5; }
-[data-density="cozy"] .typo-body { line-height: 1.75; }
-[data-density="cozy"] .typo-body-lg { line-height: 1.8; }
+/* -- Density axis (Console law, 2026-11-06) --
+   The geometry roles in :root (--gutter-page, --row-h, --control-h,
+   --control-h-lg, --head-h, --group-h) ARE the default: Console. The axis
+   rebinds ONLY these (the legacy --density-* vars derive from them) and never a
+   type size. themeStore maps the stored setting onto the attribute:
+   cozy -> "comfortable" (this block), comfortable/compact -> "compact" (the
+   :root defaults, no block needed). No global padding transition: animating
+   padding across the node tree triggers expensive layout recalcs. */
+[data-density="comfortable"] {
+  --gutter-page: 1.5rem;
+  --row-h: 3rem;
+  --control-h: 2.25rem;
+  --control-h-lg: 2.5rem;
+  --head-h: 3.25rem;
+  --group-h: 2.25rem;
+}
+
+/* Line-height follows the axis: comfortable opens body leading. */
+[data-density="comfortable"] .typo-body { line-height: 1.55; }
+[data-density="comfortable"] .typo-body-lg { line-height: 1.6; }
 
 /* -- Brightness --
    Driven by --app-brightness CSS variable (set from JS).

@@ -223,7 +223,10 @@ function applyReduceMotion(reduceMotion: boolean) {
  *  globals.css. `comfortable` is the :root default, so the attribute is still
  *  set for it (inspectable + future-proof) but matches no override block. */
 function applyDensity(density: Density) {
-  document.documentElement.setAttribute('data-density', density);
+  // Console density axis (2026-11-06): the CSS has ONE air block, keyed
+  // "comfortable". Stored 'cozy' maps onto it; stored 'comfortable' (the old
+  // default) and 'compact' are the Console default geometry. Storage is untouched.
+  document.documentElement.setAttribute('data-density', density === 'cozy' ? 'comfortable' : 'compact');
 }
 
 function isLightTheme(id: ThemeId, customConfig?: CustomThemeConfig | null): boolean {

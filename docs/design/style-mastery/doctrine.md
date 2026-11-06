@@ -16,6 +16,63 @@ Shipped rules: `src/styles/typography.css`, the roles in `src/styles/globals.css
 The proposal files (`*.proposed.css`, scoped under `[data-style-proposal]`) stay
 for the specimen. Worklist: `migration-map.md`.
 
+## Console law (2026-11-06)
+
+**Supersedes** sections 3 (one muting level), 5 (font) and the "no row hairlines, no card
+backgrounds" part of 6b wherever they disagree. Decided by the operator in the
+`console-style` spark (two design waves, 2026-11-06); the reference implementation is the
+Athena Standup "Console" page. Each older decision stays below as a dated, superseded line.
+
+1. **Fonts.** Inter Variable (opsz, Latin default) for prose and names; JetBrains Mono
+   Variable for every figure, time, count, key, tag and the one label tier. Bundled via
+   `@fontsource-variable/*`, imported once in `main.tsx`. The per-language Noto face still
+   stands first (`--font-lang`). Weight 500 now renders (real wght axis).
+2. **Recipes** (names unchanged, bodies retuned; sizes are `--type-N` steps x `--type-f`,
+   so every text scale still scales them; px below are at the reference scale):
+
+   | recipe | face | size | weight | track | ink |
+   |---|---|---|---|---|---|
+   | typo-hero | Inter | 28 | 600 | -0.025em | ink-1 |
+   | typo-heading-lg (page title) | Inter | 18 | 600 | -0.02em | ink-1 |
+   | typo-submodule-header | Inter | 16 | 600 | -0.015em | ink-1 |
+   | typo-section-title / typo-title | Inter | 14 | 600 | -0.01em | ink-1 |
+   | typo-heading / typo-title-lg | Inter | 15 | 600 | -0.01em | ink-1 |
+   | typo-card-label | Inter | 14 | 600 | -0.011em | ink-1, no glow |
+   | typo-body / typo-body-lg | Inter | 14 / 15 | 400 | -0.006em | inherit |
+   | typo-caption | Inter | 13 | 400 | 0 | ink-2 |
+   | typo-label | Inter | 13 | 500 | 0 | ink-2 |
+   | typo-eyebrow (THE label tier) | Mono, uppercase | 12 | 500 | 0.04em | ink-3 |
+   | typo-data / typo-data-lg | Mono tabular, slashed zero | 14 / 24 | 500 | 0 / -0.03em | inherit / ink-1 |
+   | typo-code | Mono | 13 | 400 | 0 | inherit |
+
+   `.num` is the same mono figure treatment as a utility (inherits size). Wrap every count,
+   time, id and percent in prose with it (or `Figs`).
+3. **Ink ladder.** `--ink-1..4` = foreground at 100 / 74 / 56 / 34 % over the background
+   (oklab mix, derived per theme). Tailwind: `text-ink-1..4`. ink-2 = captions and labels,
+   ink-3 = the mono label tier, ink-4 = rules and disabled marks, **never text**. Light themes
+   retune ink-3 to 66 % (56 % measures 3.9:1 there); `check:themes` grades ink-2/ink-3.
+4. **Hairlines and surfaces.** `--hair` 9 %, `--hair-2` 16 %, `--grid` 5.5 %; `--surface-1`
+   2.5 %, `--surface-2` 5 %, `--sel` (primary 5 % over surface-2), `--acc-wash` (primary 9 %
+   over background). Tailwind: `border-hair`, `border-hair-2`, `bg-surface-1|2`, `bg-sel`.
+   Rows are separated by hairlines; sections by hairlines, not boxes.
+5. **Primary is a signal.** Titles, names and labels are ink. The theme primary marks
+   selection, the decided/chosen state, focus (2px ring) and the one solid action per
+   surface. No primary tint on `typo-title*`, `typo-section-title`, `typo-submodule-header`;
+   no glow on `typo-card-label`. This REVERSES the Gate 0/1 (2026-09) call to keep both.
+6. **Instrument header.** `ContentHeader` is one bar: icon, 18px semibold title, mono meta,
+   optional one-line summary (the old subtitle, caption/ink-2), actions; hairline under, no
+   tinted band; height `--head-h`.
+7. **Density axis.** Console geometry is the default: `--gutter-page` 20px, `--row-h` 40px,
+   `--control-h` 30px, `--control-h-lg` 32px, `--head-h` 44px, `--group-h` 32px.
+   `[data-density="comfortable"]` adds air (24 / 48 / 36 / 40 / 52 / 36). Density rebinds
+   these roles (and the derived legacy `--density-*`) and **never a type size**. The stored
+   setting maps at apply time: `cozy` -> comfortable, stored `comfortable` and `compact` -> the
+   default. Radii: interactive 4px, input 4px, card 6px, modal 10px.
+8. **Status is shown by StateMark**: a 12px glyph in the signal colour plus a mono word, a
+   1-2px stroke or a thin bar. No pills. Status colour comes from theme tokens, not raw hues.
+9. **Unchanged:** drawn figures stay free (6c; their furniture follows the recipes), non-Latin
+   languages keep their Noto face, light-theme parity is required at every gate.
+
 ## 0. Gate 0 verdict (2026-09-24)
 
 | # | item | verdict | landed |
@@ -134,7 +191,11 @@ fewer such pairs, not more: if a pair is common, it is a missing token.
 `typo-section-title` stepped up to 1.25rem AND kept its tint. A divider that needs
 a rule draws the Manifest hairline (`border-b border-primary/10`, `KT_RULE`).
 
-## 3. One muting level (APPLIED 2026-10-03, at 80%)
+## 3. One muting level (APPLIED 2026-10-03, at 80%) - SUPERSEDED 2026-11-06
+
+> **Superseded by the Console ink ladder (Console law, item 3): four steps, not one.**
+> `.typo-caption` is `--ink-2` (74 %), the label tier `--ink-3`, `--muted-foreground` stays a
+> compatibility name. The text below is the 2026-10-03 history, kept as decided then.
 
 > **Applied, by the owner's decision, and at a different number than proposed.**
 > "Both tokens to 80%, app-wide" took `.typo-caption` and the kit's `--quiet`
@@ -260,7 +321,11 @@ the dark (1.25-1.50) and light (0.82-0.91) page filters are always compensated.
 meaning, and does not follow the theme: globals.css keeps 232 light-theme repair
 selectors for them. New code writes a status or a role.
 
-## 5. Font (applied, `175bd169d`)
+## 5. Font (applied, `175bd169d`) - SUPERSEDED 2026-11-06
+
+> **Superseded: Inter Variable + JetBrains Mono Variable are bundled app-wide (Console law,
+> item 1).** The "considered, rejected: bundling Inter" line below was the Gate 0 decision
+> (2026-09-24); the operator reversed it on 2026-11-06 together with the language itself.
 
 Name what ships. `--font-sans` begins with Inter and `--font-mono` with JetBrains
 Mono, but neither is loaded (no `@font-face`, no bundled file; index.html only
@@ -292,6 +357,10 @@ entry's own stylesheet, token-only. Fleet Activity is the reference page.
 duplicates a kit part (a hand-built section head, stat tile, key-value grid, chip
 strip, filter bar or table row) is a finding**, fixed by composing the kit part,
 or by extending the kit when the need is real and shared.
+
+> **Superseded 2026-11-06 (Console law, items 4 and 7):** row hairlines and a 40px reading
+> line are now the rule; rows follow `--row-h` (40px default, 48px comfortable) and the faint
+> alternating band gives way to hairlines. The paragraph below is the 2026-09-25 decision.
 
 The idea in one paragraph: every part of a surface hangs from one vertical spine. A
 section head is a node on it, a row's status is a Mark on it, a selected row lights

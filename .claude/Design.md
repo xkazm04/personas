@@ -39,6 +39,16 @@ raw Tailwind text-size combos (`custom/no-raw-text-classes` warns). Gate 0
 (2026-09-24) decided the current system; doctrine and history:
 `docs/design/style-mastery/doctrine.md`.
 
+> **Console law (2026-11-06) supersedes the weights and tints below.** Faces: Inter Variable
+> (prose, names) and JetBrains Mono Variable (figures, `typo-eyebrow` = THE mono label tier,
+> `typo-data*`, `typo-code`, the `.num` utility). Titles are ink (`--ink-1`), never primary-tinted;
+> `typo-card-label` has no glow; `typo-caption` is `--ink-2`, the label tier `--ink-3`. Weights:
+> 400 body/caption, 500 label/data, 600 every title, hero and heading. Sizes (reference scale):
+> hero 28, heading-lg 18, submodule-header 16, heading/title-lg/body-lg 15, title/section-title/
+> body/data 14, caption/label/code 13, eyebrow 12, data-lg 24. Colour roles: `text-ink-1..4`
+> (ink-4 never text), `border-hair`, `border-hair-2`, `bg-surface-1|2`, `bg-sel`. Full table:
+> `doctrine.md` "Console law". The note that follows is the 2026-09-24 text, kept for history.
+>
 > **Weight is a signal, not decoration.** Body and secondary prose (`typo-body`,
 > `typo-caption`, `typo-code`) sit at **400**, because they are what most of the
 > app is made of. Weight climbs only when something earns it: 600 for titles and
@@ -203,7 +213,7 @@ by CSS variables in `globals.css`.
 
 | JS token | Emits | Resolves to (comfortable default) | Use for |
 |---|---|---|---|
-| `CARD_PADDING.standard` | `p-[var(--density-pad)]` | 16px | Normal card body |
+| `CARD_PADDING.standard` | `p-[var(--density-pad)]` | 12px (Console default; 16px comfortable) | Normal card body |
 | `CARD_PADDING.compact` | `p-[var(--density-pad-sm)]` | 12px | Dense cards |
 | `CARD_PADDING.dense` | `px-4 py-[var(--density-pad-sm)]` | 16/12px | Mobile-compact card body |
 | `CARD_PADDING.modalSection` | `px-6 py-4` | fixed | Modal header/tabs/footer bands (does NOT breathe with density) |
@@ -215,6 +225,12 @@ by CSS variables in `globals.css`.
 | `TOOLS_BTN_STANDARD` / `TOOLS_BTN_COMPACT` | `px-3 py-1.5` / `px-2 py-1` | — | Tool/connector action buttons |
 | `STATE_DISABLED_OPACITY` | `disabled:is-disabled` | opacity `--disabled-opacity` = 0.45 + cursor + pointer-events-none | Disabled controls |
 | `STATE_LOCKED` | overlay classes | — | Locked cards (overlay, not compounded opacity) |
+
+**Console density axis (2026-11-06):** the geometry roles `--gutter-page` (20px), `--row-h` (40px),
+`--control-h` (30px), `--control-h-lg` (32px), `--head-h` (44px), `--group-h` (32px) are the
+default; `[data-density="comfortable"]` rebinds them to 24 / 48 / 36 / 40 / 52 / 36. The legacy
+`--density-*` vars are derived from them. Density never changes a type size. A stored `cozy`
+maps to comfortable; stored `comfortable` and `compact` are the default.
 
 **When JS tokens vs raw Tailwind spacing:** use the JS tokens for the
 intent-bearing cases above (card padding, section gaps, inputs, disabled state)
@@ -238,10 +254,10 @@ Defined in **`src/styles/globals.css`** (`:root` + `@theme`).
 
 | Utility | Value | Use for |
 |---|---|---|
-| `rounded-interactive` | 0.375rem (6px) | Buttons, toggles, chips |
-| `rounded-input` | 0.5rem (8px) | Inputs, selects, textareas |
-| `rounded-card` | 0.75rem (12px) | Cards, panels, tiles |
-| `rounded-modal` | 1rem (16px) | Modals, dialogs, sheets |
+| `rounded-interactive` | 4px (Console, 2026-11-06; was 6px) | Buttons, toggles, chips |
+| `rounded-input` | 4px (was 8px) | Inputs, selects, textareas |
+| `rounded-card` | 6px (was 12px) | Cards, panels, tiles |
+| `rounded-modal` | 10px (was 16px) | Modals, dialogs, sheets |
 | `rounded-pill` | 9999px | Pills, badges (allowed alongside `rounded-full`/`rounded-none`) |
 
 Back-compat aliases: `rounded-container` (= card), `rounded-secondary` (= sm).
