@@ -6526,7 +6526,11 @@
           "revision": 34,
           "changedAt": "2026-10-15",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/settings/sub_byom/libs/useByomSettings.ts:13 The BYOM context only talks to the provider-policy API (policy get/set/delete, audit log, usage stats) to decide which model provider is allowed or routed. A search of src/features/settings/sub_byom found no hits for mcp, tool_use, jsonrpc, inputSchema or the word tool(s), so no tool server or client exists here for the subject to govern.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:cb2b1c9f6fef5eb9",
+          "evaluatedRevision": 35
         },
         {
           "subject": "quality-gates",

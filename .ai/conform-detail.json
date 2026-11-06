@@ -45094,6 +45094,16 @@
           "reason": "replaced by 4a54bb07-14fc-4d71-a2fa-e821e7a979ee"
         }
       ]
+    },
+    "94b0b4ea-9adb-44d7-8222-4e2345de455b/mcp-tools": {
+      "context": "byom-provider-settings",
+      "subject": "mcp-tools",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T23:45:04.672Z",
+      "worker": "817a77c4-34f4-439e-a7bf-9c07db091f3a",
+      "techniques": []
     }
   }
 }
