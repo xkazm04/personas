@@ -118,16 +118,16 @@ export function MonitorView({
             <motion.div
               key={openTerm.id}
               layoutId={`monitor-term-${openTerm.id}`}
-              className="absolute inset-0 z-30 flex flex-col rounded-modal border border-primary/25 bg-[#0a0a0c] overflow-hidden shadow-elevation-4"
+              className="absolute inset-0 z-30 flex flex-col rounded-modal border border-hair bg-[#0a0a0c] overflow-hidden shadow-elevation-4"
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
             >
-              <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 bg-secondary/20 shrink-0">
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-hair bg-surface-1 shrink-0">
                 <button
                   type="button"
                   data-testid="fleet-monitor-fullscreen-back"
                   onClick={() => setOpenId(null)}
                   aria-label={t.plugins.fleet.monitor_back}
-                  className="p-1 rounded-interactive text-foreground hover:bg-secondary/50 transition-colors"
+                  className="p-1 rounded-interactive text-foreground hover:bg-surface-1 transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>

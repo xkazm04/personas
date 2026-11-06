@@ -74,9 +74,9 @@ function LlmMatrix({ llmCreds }: { llmCreds: LlmPinpointsData['llmCreds'] }) {
 
   if (llmCreds.length === 0) {
     return (
-      <div className="mx-4 mt-3 rounded-card border border-primary/10 bg-secondary/40 px-4 py-3 flex items-center gap-2.5">
+      <div className="mx-4 mt-3 rounded-card border border-hair bg-surface-1 px-4 py-3 flex items-center gap-2.5">
         <Plug className="w-4 h-4 text-primary/50 shrink-0" />
-        <div className="text-[11px] text-foreground/60">{t.plugins.dev_tools.llm_no_cred}</div>
+        <div className="typo-caption text-ink-2">{t.plugins.dev_tools.llm_no_cred}</div>
       </div>
     );
   }
@@ -116,7 +116,7 @@ function StateMessage({ icon, title, subtitle, art }: { icon: ReactNode; title: 
     <div className="flex-1 flex flex-col items-center justify-center gap-2 py-16 text-center px-6">
       <div className="text-primary/40">{icon}</div>
       <p className="typo-caption text-foreground">{title}</p>
-      <p className="text-[11px] text-foreground/50 max-w-sm">{subtitle}</p>
+      <p className="typo-caption text-ink-3 max-w-sm">{subtitle}</p>
     </div>
   );
 }
@@ -129,11 +129,11 @@ const GHOST_ROW_WIDTHS = ['w-40', 'w-28', 'w-36', 'w-32', 'w-44', 'w-24'];
 function LlmPinpointsGhost() {
   return (
     <div className="flex-1 min-h-0 flex flex-col" aria-hidden="true">
-      <div className="h-8 border-b border-primary/10 bg-secondary/20 shrink-0" />
+      <div className="h-8 border-b border-hair bg-surface-1 shrink-0" />
       {Array.from({ length: 6 }).map((_, i) => (
         <div
           key={i}
-          className="flex items-center gap-3 px-3 border-b border-primary/5 animate-fade-in"
+          className="flex items-center gap-3 px-3 border-b border-hair animate-fade-in"
           style={{ height: 40, animationDelay: `${120 + i * 35}ms` }}
         >
           <span className={`h-2.5 rounded bg-primary/[0.06] ${GHOST_ROW_WIDTHS[i % GHOST_ROW_WIDTHS.length]}`} />
@@ -277,7 +277,7 @@ export default function LlmOverviewPage() {
         render: (r) => {
           const matched = matchUseCase(r.useCaseName);
           if (!r.useCaseName) {
-            return <span className="text-foreground/40 italic">{dt.llm_unnamed}</span>;
+            return <span className="text-ink-3 italic">{dt.llm_unnamed}</span>;
           }
           const name = r.useCaseName;
           const slug = slugifyUseCase(name);
@@ -290,7 +290,7 @@ export default function LlmOverviewPage() {
               <span className="text-foreground truncate">{name}</span>
               {matched && (
                 <Layers
-                  className="w-3 h-3 shrink-0 text-sky-400/80"
+                  className="w-3 h-3 shrink-0 text-status-info"
                   aria-label={tx(dt.llm_usecase_linked, { name: matched })}
                 />
               )}
@@ -301,7 +301,7 @@ export default function LlmOverviewPage() {
                     onClick={() => void proposeUseCase(name)}
                     disabled={busy}
                     aria-label={tx(dt.llm_propose_aria, { name })}
-                    className="shrink-0 grid place-items-center w-4 h-4 rounded-full border border-primary/20 text-foreground/40 hover:text-primary hover:border-primary/40 hover:bg-primary/10 transition disabled:opacity-40 focus-ring"
+                    className="shrink-0 grid place-items-center w-4 h-4 rounded-full border border-hair text-ink-3 hover:text-primary hover:border-primary/40 hover:bg-primary/10 transition disabled:opacity-40 focus-ring"
                   >
                     {busy ? <LoadingSpinner size="xs" /> : <Plus className="w-2.5 h-2.5" />}
                   </button>
@@ -316,14 +316,14 @@ export default function LlmOverviewPage() {
         label: dt.llm_col_provider,
         width: 'minmax(90px, 0.8fr)',
         sortable: true,
-        render: (r) => <span className="text-foreground/80">{r.provider}</span>,
+        render: (r) => <span className="text-ink-2">{r.provider}</span>,
       },
       {
         key: 'model',
         label: dt.llm_col_model,
         width: 'minmax(140px, 1.2fr)',
         sortable: true,
-        render: (r) => <span className="text-foreground/80 truncate">{r.model}</span>,
+        render: (r) => <span className="text-ink-2 truncate">{r.model}</span>,
       },
       {
         key: 'calls',
@@ -356,7 +356,7 @@ export default function LlmOverviewPage() {
           const over = isOverBudget(r);
           return (
             <span
-              className={over ? 'text-amber-300 font-medium' : 'text-foreground/80'}
+              className={over ? 'text-status-warning font-medium' : 'text-ink-2'}
               data-testid={over ? 'llm-cost-over-budget' : undefined}
               aria-label={
                 over ? tx(dt.llm_over_budget_aria, { threshold: LLM_COST_THRESHOLD_USD }) : undefined
@@ -402,7 +402,7 @@ export default function LlmOverviewPage() {
                 <button
                   type="button"
                   onClick={reload}
-                  className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/8 focus-ring"
+                  className="p-1.5 rounded-interactive text-ink-2 hover:text-foreground hover:bg-primary/8 focus-ring"
                   title={dt.llm_refresh}
                   aria-label={dt.llm_refresh}
                 >
@@ -425,10 +425,10 @@ export default function LlmOverviewPage() {
           not announce its filter is a table that lies about its totals. */}
       {contextFilter && (
         <div
-          className="mx-4 mt-2 px-3 py-1.5 rounded-interactive border border-sky-500/25 bg-sky-500/10 flex items-center gap-2 typo-caption"
+          className="mx-4 mt-2 px-3 py-1.5 rounded-interactive border border-hair bg-surface-1 flex items-center gap-2 typo-caption"
           data-testid="llm-context-filter-banner"
         >
-          <Layers className="w-3 h-3 text-sky-400/80 shrink-0" aria-hidden />
+          <Layers className="w-3 h-3 text-status-info shrink-0" aria-hidden />
           <span className="text-foreground min-w-0 truncate">
             {tx(dt.llm_context_filter_label, { context: contextFilter.contextName })}
           </span>
@@ -445,7 +445,7 @@ export default function LlmOverviewPage() {
       )}
 
       {/* Layer 2 — pinpoints for the active project */}
-      <div className="flex-1 min-h-0 mx-4 my-3 flex flex-col rounded-card border border-primary/10 overflow-hidden">
+      <div className="flex-1 min-h-0 mx-4 my-3 flex flex-col rounded-card border border-hair overflow-hidden">
         {!activeProject ? (
           <StateMessage
             icon={<AlertCircle className="w-8 h-8" />}
@@ -475,7 +475,7 @@ export default function LlmOverviewPage() {
           <LlmPinpointsGhost />
         ) : state === 'error' && pinpoints.length === 0 ? (
           <StateMessage
-            icon={<AlertCircle className="w-8 h-8 text-red-400/70" />}
+            icon={<AlertCircle className="w-8 h-8 text-status-error" />}
             title={dt.llm_error_title}
             subtitle={inlineErrorCopy(t, error, dt.llm_unknown_error)}
           />
@@ -517,7 +517,7 @@ export default function LlmOverviewPage() {
                  Without this the numbers above read as the window's bill when
                  they are only its first N calls. */
               <div
-                className="px-4 py-2 border-t border-amber-500/20 bg-amber-500/5 typo-caption text-amber-300 flex items-center gap-2"
+                className="px-4 py-2 border-t border-hair bg-surface-2 typo-caption text-status-warning flex items-center gap-2"
                 data-testid="llm-truncated-banner"
               >
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
@@ -526,18 +526,18 @@ export default function LlmOverviewPage() {
                   <button
                     type="button"
                     onClick={() => setTimeWindow('24h')}
-                    className="underline underline-offset-2 hover:text-amber-200 focus-ring rounded-interactive"
+                    className="underline underline-offset-2 hover:text-status-warning focus-ring rounded-interactive"
                   >
                     {dt.llm_truncated_cta}
                   </button>
                 )}
               </div>
             )}
-            <div className="px-4 py-1.5 border-t border-primary/10 text-[10px] text-foreground/40 flex items-center justify-between gap-3">
+            <div className="px-4 py-1.5 border-t border-hair typo-caption text-ink-3 flex items-center justify-between gap-3">
               <span>{tx(dt.llm_cost_note, { tool: cred?.serviceType ?? dt.llm_this_tool })}</span>
               {overBudget > 0 && (
                 <span
-                  className="flex items-center gap-1 shrink-0 text-amber-300"
+                  className="flex items-center gap-1 shrink-0 text-status-warning"
                   data-testid="llm-over-budget-count"
                 >
                   <AlertCircle className="w-3 h-3" />
@@ -549,7 +549,7 @@ export default function LlmOverviewPage() {
               )}
               {useCaseSlugs.size > 0 && (
                 <span className="flex items-center gap-1 shrink-0">
-                  <Layers className="w-3 h-3 text-sky-400/80" />
+                  <Layers className="w-3 h-3 text-status-info" />
                   {tx(dt.llm_usecase_coverage, { mapped: mappedCount, total: visiblePinpoints.length })}
                 </span>
               )}

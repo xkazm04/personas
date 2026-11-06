@@ -23,7 +23,7 @@ export const TOK_ICON = 'h-3 w-3 flex-shrink-0';
  * line reads bay name (heading, bold) > row name (body, regular) > tokens
  * (caption): the type scale carries the order, never an opacity utility.
  */
-export const TOK_TYPE = 'typo-caption tabular-nums';
+export const TOK_TYPE = 'typo-caption num';
 /** A row's name: the body weight every Monitor list row uses (queue rung, schedule, plan rows). */
 export const ROW_NAME = 'truncate typo-body text-foreground';
 

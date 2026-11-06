@@ -123,18 +123,18 @@ export function TeamColumn({
               data-project-off={projectOff || undefined}
               data-testid="fleet-grid-column-header"
               className={`focus-ring flex w-full items-baseline gap-1.5 rounded-interactive px-1 py-0.5 text-left transition-colors ${
-                scoped ? 'bg-primary/15 text-foreground' : 'text-foreground hover:bg-secondary/40'
+                scoped ? 'bg-primary/15 text-foreground' : 'text-foreground hover:bg-surface-1'
               }`}
             >
               <span className={`min-w-0 flex-1 truncate typo-label ${projectOff ? 'opacity-55' : ''}`}>{name}</span>
               {workspaceId !== null && <WorkspaceBadge label={t.monitor.grid_column_workspace_badge} />}
               {projectOff && (
-                <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-full border border-status-warning/30 bg-status-warning/10 px-1.5 typo-caption text-status-warning">
+                <span className="inline-flex flex-shrink-0 items-center gap-1 rounded-interactive border border-hair bg-surface-2 px-1.5 typo-caption text-status-warning">
                   <PowerOff className="h-2.5 w-2.5" aria-hidden />
                   {t.plugins.dev_projects.project_state_off}
                 </span>
               )}
-              <span className="flex-shrink-0 typo-caption tabular-nums opacity-50">
+              <span className="flex-shrink-0 typo-caption num opacity-50">
                 {column.cards.length}
               </span>
             </button>

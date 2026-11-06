@@ -260,19 +260,19 @@ export function TeamGraphPreview({
             <button
               type="button"
               onClick={resetView}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption text-foreground hover:text-foreground/90 hover:bg-secondary/40 rounded-card transition-colors"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption text-foreground hover:text-ink-2 hover:bg-surface-1 rounded-card transition-colors"
               title={t.plugins.dev_projects.team_preview_canvas_reset_title}
             >
               <Maximize2 className="w-3 h-3" />
               {t.plugins.dev_projects.team_preview_canvas_reset}
             </button>
           )}
-          <span className="typo-caption text-foreground font-mono tabular-nums">
+          <span className="typo-caption text-foreground font-mono num">
             {Math.round(scale * 100)}%
           </span>
         </span>
       </div>
-      <div className="rounded-card border border-primary/10 bg-secondary/15 overflow-hidden">
+      <div className="rounded-card border border-hair bg-surface-1 overflow-hidden">
         <svg
           ref={svgRef}
           viewBox={`0 0 ${PREVIEW_WIDTH} ${PREVIEW_HEIGHT}`}

@@ -84,7 +84,7 @@ export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo, b
 
   const ghost = model.loading && skills.length === 0;
   const empty = !model.loading && skills.length === 0;
-  const frame = bare ? '' : 'rounded-card border border-primary/10 bg-background';
+  const frame = bare ? '' : 'rounded-card border border-hair bg-background';
 
   return (
     <div className={`flex h-full min-h-0 flex-col overflow-hidden ${INK_VARS} ${frame}`} data-testid="registry-heatmap">
@@ -105,7 +105,7 @@ export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo, b
           <div aria-hidden className="invisible col-start-1 flex h-0 items-center gap-2 overflow-hidden px-3">
             <span className="w-5 flex-shrink-0" />
             <span className="typo-caption flex flex-col whitespace-nowrap">{skills.map((s) => <span key={s.name}>{s.name}</span>)}</span>
-            <span className="typo-label px-1.5 tabular-nums">{columns.length}/{columns.length}</span>
+            <span className="typo-label px-1.5 num">{columns.length}/{columns.length}</span>
           </div>
 
           {/* The selected column's band — behind the cells, gliding between
@@ -117,7 +117,7 @@ export function RegistryHeatmap({ model, adopting, onAdopt, onUse, onOpenInfo, b
               <motion.div
                 key="band" layout="position" aria-hidden
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={fold}
-                className="pointer-events-none absolute inset-0 -z-10 border-x border-primary/20 bg-primary/[0.06]"
+                className="pointer-events-none absolute inset-0 -z-10 border-x border-hair bg-primary/[0.06]"
                 style={{ gridColumn: `${filterIndex + 2} / span 1` }}
               />
             )}
@@ -183,13 +183,13 @@ function GhostRows({ columns, label }: { columns: number; label: string }) {
 
 function Legend({ d, projectMode }: { d: DevToolsT; projectMode: boolean }) {
   return (
-    <div className="flex flex-shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-primary/10 px-3 py-1.5 typo-label text-foreground">
+    <div className="flex flex-shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-hair px-3 py-1.5 typo-label text-foreground">
       <span className="flex items-center gap-1.5">
         {d.skills_col_coverage}
         <span className="flex items-center gap-px" aria-hidden>
           {LEGEND_STOPS.map((p) => <span key={p} className="h-2.5 w-3.5 first:rounded-l-pill last:rounded-r-pill" style={{ backgroundColor: tint('var(--primary)', cellAlpha(p)) }} />)}
         </span>
-        <span className="tabular-nums">{`${formatPercent(0, { precision: 0 })}–${formatPercent(100, { precision: 0 })}`}</span>
+        <span className="num">{`${formatPercent(0, { precision: 0 })}–${formatPercent(100, { precision: 0 })}`}</span>
       </span>
       <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-foreground" aria-hidden />{d.skills_registry_legend_recent}</span>
       <span className="flex items-center gap-1"><Play className="h-3 w-3 text-primary" aria-hidden />{d.skills_registry_legend_use}</span>

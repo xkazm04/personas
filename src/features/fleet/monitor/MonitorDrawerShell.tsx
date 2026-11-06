@@ -40,7 +40,7 @@ export function MonitorDrawerShell({ open, onClose, fill = false, children }: {
             exit={{ y: '-100%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 34 }}
             data-fill={fill || undefined}
-            className={`absolute inset-x-0 top-0 z-20 flex flex-col rounded-b-modal border-b border-x border-primary/15 bg-background shadow-elevation-4 ${fill ? 'bottom-0' : 'max-h-full'}`}
+            className={`absolute inset-x-0 top-0 z-20 flex flex-col rounded-b-modal border-b border-x border-hair bg-background shadow-elevation-4 ${fill ? 'bottom-0' : 'max-h-full'}`}
           >
             {children}
           </motion.div>

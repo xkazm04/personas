@@ -27,13 +27,13 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 export type StatColor = 'amber' | 'blue' | 'violet' | 'emerald' | 'red' | 'primary' | 'pink';
 
 const STAT_COLORS: Record<StatColor, { bg: string; border: string; icon: string }> = {
-  amber: { bg: 'bg-amber-500/15', border: 'border-amber-500/25', icon: 'text-amber-400' },
-  blue: { bg: 'bg-blue-500/15', border: 'border-blue-500/25', icon: 'text-blue-400' },
-  violet: { bg: 'bg-violet-500/15', border: 'border-violet-500/25', icon: 'text-violet-400' },
-  emerald: { bg: 'bg-emerald-500/15', border: 'border-emerald-500/25', icon: 'text-emerald-400' },
-  red: { bg: 'bg-red-500/15', border: 'border-red-500/25', icon: 'text-red-400' },
-  primary: { bg: 'bg-primary/15', border: 'border-primary/25', icon: 'text-primary' },
-  pink: { bg: 'bg-pink-500/15', border: 'border-pink-500/25', icon: 'text-pink-400' },
+  amber: { bg: 'bg-surface-1', border: 'border-hair', icon: 'text-status-warning' },
+  blue: { bg: 'bg-surface-1', border: 'border-hair', icon: 'text-status-info' },
+  violet: { bg: 'bg-surface-1', border: 'border-hair', icon: 'text-role-agent' },
+  emerald: { bg: 'bg-surface-1', border: 'border-hair', icon: 'text-status-success' },
+  red: { bg: 'bg-surface-1', border: 'border-hair', icon: 'text-status-error' },
+  primary: { bg: 'bg-primary/15', border: 'border-hair', icon: 'text-primary' },
+  pink: { bg: 'bg-surface-1', border: 'border-hair', icon: 'text-role-highlight' },
 };
 
 export function StatCard({
@@ -49,7 +49,7 @@ export function StatCard({
 }) {
   const tw = STAT_COLORS[color] ?? STAT_COLORS.primary;
   return (
-    <div className="rounded-modal border border-primary/10 bg-card/30 p-4 flex items-center gap-3">
+    <div className="rounded-modal border border-hair bg-surface-1 p-4 flex items-center gap-3">
       <div className={`w-9 h-9 rounded-interactive ${tw.bg} border ${tw.border} flex items-center justify-center shrink-0`}>
         <Icon className={`w-4.5 h-4.5 ${tw.icon}`} />
       </div>
@@ -86,8 +86,8 @@ export function ConnectorChain({
 }) {
   const activeCred = credentials.find((c) => c.id === activeCredId);
   return (
-    <div className="rounded-modal border border-primary/10 bg-card/30 px-3 py-2.5">
-      <p className="typo-caption uppercase tracking-[0.18em] text-foreground mb-2">
+    <div className="rounded-modal border border-hair bg-surface-1 px-3 py-2.5">
+      <p className="typo-eyebrow text-ink-3 mb-2">
         <DebtText k="auto_connection_chain_cb5a2bed" />
       </p>
       <div className="flex items-center gap-2 flex-wrap">
@@ -103,29 +103,29 @@ export function ConnectorChain({
           className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-primary transition-colors"
           title={debtText("auto_edit_project_to_change_the_repo_url_73afcda3")}
         >
-          <GitBranch className="w-3 h-3 text-blue-400" />
-          {url ? <span className="font-mono truncate max-w-[260px]">{url}</span> : <span className="text-amber-400"><DebtText k="auto_no_repo_url_599e20cc" /></span>}
+          <GitBranch className="w-3 h-3 text-status-info" />
+          {url ? <span className="font-mono truncate max-w-[260px]">{url}</span> : <span className="text-status-warning"><DebtText k="auto_no_repo_url_599e20cc" /></span>}
           <ExternalLink className="w-3 h-3 opacity-60" />
         </button>
         <ChevronArrow />
 
         {credentials.length === 0 ? (
-          <span className="inline-flex items-center gap-1 typo-caption text-amber-400">
+          <span className="inline-flex items-center gap-1 typo-caption text-status-warning">
             <Key className="w-3 h-3" /> <DebtText k="auto_no_credential_5d557567" />
           </span>
         ) : credentials.length === 1 ? (
           <span className="inline-flex items-center gap-1 typo-caption text-foreground">
-            <Key className="w-3 h-3 text-emerald-400" />
+            <Key className="w-3 h-3 text-status-success" />
             <span className="font-medium">{credentials[0]!.name}</span>
             <span className="text-foreground font-mono">({credentials[0]!.serviceType})</span>
           </span>
         ) : (
           <div className="inline-flex items-center gap-1">
-            <Key className="w-3 h-3 text-emerald-400" />
+            <Key className="w-3 h-3 text-status-success" />
             <select
               value={activeCredId ?? credentials[0]!.id}
               onChange={(e) => onPickCred(e.target.value)}
-              className="px-1.5 py-0.5 typo-caption bg-secondary/40 border border-primary/10 rounded-card text-foreground"
+              className="px-1.5 py-0.5 typo-caption bg-surface-1 border border-hair rounded-card text-foreground"
             >
               {credentials.map((c) => (
                 <option key={c.id} value={c.id}>{c.name} ({c.serviceType})</option>
@@ -154,8 +154,8 @@ export function MonitoringChain({
 }) {
   const [orgSlug, projectSlug] = splitSentrySlug(slug);
   return (
-    <div className="rounded-modal border border-primary/10 bg-card/30 px-3 py-2.5">
-      <p className="typo-caption uppercase tracking-[0.18em] text-foreground mb-2">
+    <div className="rounded-modal border border-hair bg-surface-1 px-3 py-2.5">
+      <p className="typo-eyebrow text-ink-3 mb-2">
         <DebtText k="auto_connection_chain_cb5a2bed" />
       </p>
       <div className="flex items-center gap-2 flex-wrap">
@@ -166,12 +166,12 @@ export function MonitoringChain({
         <ChevronArrow />
         {credential ? (
           <span className="inline-flex items-center gap-1 typo-caption text-foreground">
-            <Key className="w-3 h-3 text-emerald-400" />
+            <Key className="w-3 h-3 text-status-success" />
             <span className="font-medium">{credential.name}</span>
             <span className="text-foreground font-mono">({credential.serviceType})</span>
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 typo-caption text-amber-400">
+          <span className="inline-flex items-center gap-1 typo-caption text-status-warning">
             <Key className="w-3 h-3" /> <DebtText k="auto_no_credential_linked_4b88fb9a" />
           </span>
         )}
@@ -180,11 +180,11 @@ export function MonitoringChain({
             <ChevronArrow />
             {projectSlug ? (
               <span className="inline-flex items-center gap-1 typo-caption text-foreground">
-                <Shield className="w-3 h-3 text-red-400" />
+                <Shield className="w-3 h-3 text-status-error" />
                 <span className="font-mono">{orgSlug ? `${orgSlug}/${projectSlug}` : projectSlug}</span>
               </span>
             ) : (
-              <span className="typo-caption text-amber-400"><DebtText k="auto_no_project_slug_131aaa6d" /></span>
+              <span className="typo-caption text-status-warning"><DebtText k="auto_no_project_slug_131aaa6d" /></span>
             )}
           </>
         )}
@@ -291,7 +291,7 @@ export function SentryProjectPicker({
           <select
             value={selectedCredId}
             onChange={(e) => setSelectedCredId(e.target.value)}
-            className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground"
+            className="w-full px-3 py-2 typo-caption bg-surface-1 border border-hair rounded-modal text-foreground"
           >
             {credentials.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -308,7 +308,7 @@ export function SentryProjectPicker({
               value={orgSlug}
               onChange={(e) => setOrgSlug(e.target.value.trim())}
               placeholder="my-org"
-              className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground/40 focus-ring"
+              className="w-full px-3 py-2 typo-caption bg-surface-1 border border-hair rounded-modal text-foreground placeholder:text-ink-3 focus-ring"
             />
           </div>
           <div className="space-y-1">
@@ -317,7 +317,7 @@ export function SentryProjectPicker({
               value={projectSlug}
               onChange={(e) => setProjectSlug(e.target.value.trim())}
               placeholder="my-project"
-              className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground/40 focus-ring"
+              className="w-full px-3 py-2 typo-caption bg-surface-1 border border-hair rounded-modal text-foreground placeholder:text-ink-3 focus-ring"
             />
           </div>
         </>
@@ -329,7 +329,7 @@ export function SentryProjectPicker({
               value={orgSlug}
               onChange={(e) => setOrgSlug(e.target.value)}
               disabled={loadingOrgs || orgs.length === 0}
-              className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground disabled:opacity-60"
+              className="w-full px-3 py-2 typo-caption bg-surface-1 border border-hair rounded-modal text-foreground disabled:opacity-60"
             >
               <option value="" disabled>
                 {loadingOrgs ? po.discovering_orgs : orgs.length === 0 ? po.no_orgs_found : po.select_organization}
@@ -346,7 +346,7 @@ export function SentryProjectPicker({
               value={projectSlug}
               onChange={(e) => setProjectSlug(e.target.value)}
               disabled={loadingProjects || !orgSlug || projects.length === 0}
-              className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground disabled:opacity-60"
+              className="w-full px-3 py-2 typo-caption bg-surface-1 border border-hair rounded-modal text-foreground disabled:opacity-60"
             >
               <option value="" disabled>
                 {!orgSlug ? po.pick_org_first : loadingProjects ? po.loading_projects : projects.length === 0 ? po.no_projects_in_org : po.select_project_option}
@@ -360,8 +360,8 @@ export function SentryProjectPicker({
       )}
 
       {discoveryError && (
-        <div className="flex items-start gap-2 p-2 rounded-modal bg-red-500/5 border border-red-500/15">
-          <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2 p-2 rounded-modal bg-surface-1 border border-hair">
+          <AlertCircle className="w-3.5 h-3.5 text-status-error shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="typo-caption text-foreground break-words">
               {tx(po.sentry_discovery_failed, { error: discoveryError })}

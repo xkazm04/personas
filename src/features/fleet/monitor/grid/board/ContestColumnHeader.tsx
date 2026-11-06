@@ -59,11 +59,11 @@ export function ContestColumnHeader({ projectId, contestId, seats }: {
         data-testid="fleet-grid-column-header"
         data-contest-id={contestId}
         data-contest-project-id={projectId ?? undefined}
-        className="focus-ring flex w-full items-baseline gap-1.5 rounded-interactive px-1 py-0.5 text-left text-foreground transition-colors hover:bg-secondary/40 disabled:is-disabled"
+        className="focus-ring flex w-full items-baseline gap-1.5 rounded-interactive px-1 py-0.5 text-left text-foreground transition-colors hover:bg-surface-1 disabled:is-disabled"
       >
         <Trophy className="h-3 w-3 flex-shrink-0 self-center opacity-60" aria-hidden />
         <span className="min-w-0 flex-1 truncate typo-label">{name}</span>
-        <span className="flex-shrink-0 typo-caption tabular-nums opacity-50">{seats}</span>
+        <span className="flex-shrink-0 typo-caption num opacity-50">{seats}</span>
       </button>
     </Tooltip>
   );

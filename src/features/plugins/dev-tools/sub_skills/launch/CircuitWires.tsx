@@ -20,7 +20,7 @@ const TONE: Record<ProjectLaunchCell['status'], string> = {
   ready: 'text-status-success',
   running: 'text-status-info',
   adopting: 'text-status-warning',
-  needs_adopt: 'text-foreground/25',
+  needs_adopt: 'text-ink-3',
 };
 
 export default function CircuitWires({ cells, selectedSkill }: {

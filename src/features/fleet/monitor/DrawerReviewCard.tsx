@@ -93,18 +93,18 @@ export function DrawerReviewCard({
   );
 
   return (
-    <div className="rounded-card border border-primary/10 bg-secondary/20 overflow-hidden">
+    <div className="rounded-card border border-hair bg-surface-1 overflow-hidden">
       <div className="flex items-start gap-3 px-4 py-3">
         <div className={`w-8 h-8 rounded-modal border flex items-center justify-center flex-shrink-0 ${M.chip}`}>
           <Icon className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <span className={`typo-caption uppercase ${M.text}`}>{severityLabel(t, sev)}</span>
+            <span className={`typo-eyebrow ${M.text}`}>{severityLabel(t, sev)}</span>
             {review.source === 'cloud' && (
               <>
                 <span className="typo-caption text-foreground">·</span>
-                <span className="typo-caption text-cyan-400">{t.monitor.cloud}</span>
+                <span className="typo-caption text-status-info">{t.monitor.cloud}</span>
               </>
             )}
             <span className="typo-caption text-foreground">·</span>
@@ -115,11 +115,11 @@ export function DrawerReviewCard({
             {stripPersonaPrefix(review.title, personaName) || t.monitor.untitled}
           </h5>
           {review.content && (
-            <p className="typo-body text-foreground/85 whitespace-pre-wrap mt-1">{review.content}</p>
+            <p className="typo-body text-ink-2 whitespace-pre-wrap mt-1">{review.content}</p>
           )}
           {review.context_data && (
-            <div className="rounded-card border border-primary/10 bg-secondary/30 px-3 py-2 mt-2">
-              <div className="typo-caption font-mono uppercase text-foreground mb-1.5">{t.monitor.context}</div>
+            <div className="rounded-card border border-hair bg-surface-1 px-3 py-2 mt-2">
+              <div className="typo-eyebrow text-ink-3 mb-1.5">{t.monitor.context}</div>
               <ContextDataPreview raw={review.context_data} />
             </div>
           )}
@@ -130,14 +130,14 @@ export function DrawerReviewCard({
               placeholder={t.monitor.notes_placeholder}
               rows={3}
               autoFocus
-              className="w-full mt-2 px-3 py-2 rounded-card border border-primary/15 bg-secondary/25 typo-body text-foreground placeholder:text-foreground/40 resize-none outline-none focus-visible:border-primary/40"
+              className="w-full mt-2 px-3 py-2 rounded-card border border-hair bg-surface-1 typo-body text-foreground placeholder:text-ink-3 resize-none outline-none focus-visible:border-primary/40"
             />
           )}
         </div>
       </div>
 
       {actions.length > 0 && (
-        <div className="border-t border-primary/10 px-3 py-2.5 bg-secondary/10 flex flex-col gap-1.5">
+        <div className="border-t border-hair px-3 py-2.5 bg-surface-1 flex flex-col gap-1.5">
           <p className="typo-caption text-foreground">
             {onDispatchAction ? t.monitor.quick_choose_carry_out : t.monitor.quick_choose_action}
           </p>
@@ -160,7 +160,7 @@ export function DrawerReviewCard({
         </div>
       )}
 
-      <div className="border-t border-primary/10 px-3 py-2 grid grid-cols-3 gap-2 bg-secondary/10">
+      <div className="border-t border-hair px-3 py-2 grid grid-cols-3 gap-2 bg-surface-1">
         <Button
           variant="accent"
           tone="error"
@@ -179,7 +179,7 @@ export function DrawerReviewCard({
           aria-pressed={showNotes}
           aria-label={t.monitor.toggle_notes}
           className={`flex items-center justify-center gap-1.5 py-2 rounded-modal border transition-colors ${
-            showNotes ? 'border-primary/30 bg-primary/15 text-primary' : 'border-primary/15 bg-secondary/20 text-foreground hover:text-foreground'
+            showNotes ? 'border-primary/30 bg-primary/15 text-primary' : 'border-hair bg-surface-1 text-foreground hover:text-foreground'
           }`}
         >
           <MessageSquare className="w-4 h-4" />

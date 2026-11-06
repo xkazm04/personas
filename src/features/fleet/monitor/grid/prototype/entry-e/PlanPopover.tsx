@@ -52,7 +52,7 @@ function WindowLine({ w }: { w: WindowModel }) {
         <span className="typo-body text-foreground">{windowTitle(t, w)}{model ? ` · ${model}` : ''}</span>
         <span className="flex-1" />
         {Pace && <Pace className="h-3 w-3 self-center" aria-hidden />}
-        <span className={`typo-data tabular-nums ${
+        <span className={`typo-data num ${
           w.tone === 'error' ? 'text-status-error' : w.tone === 'warning' ? 'text-status-warning' : 'text-foreground'}`}>
           {formatPercent(w.usedPct, { precision: 0 })}
         </span>
@@ -164,7 +164,7 @@ export function PlanPopover({ plan, provider, usage, anchorRef, readOnly, onClos
               setDraft(null);
               if (pct !== rotate.thresholdPct) usage.saveAutoRotate(rotate.enabled, pct);
             }}
-            className="w-14 rounded-input border border-border bg-background px-1.5 py-0.5 text-right typo-data tabular-nums text-foreground"
+            className="w-14 rounded-input border border-border bg-background px-1.5 py-0.5 text-right typo-data num text-foreground"
             data-testid="fleet-usage-rotate-threshold"
           />
           <span className="typo-caption">%</span>

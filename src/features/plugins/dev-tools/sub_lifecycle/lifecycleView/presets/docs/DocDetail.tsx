@@ -60,8 +60,7 @@ export function DocDetail({ id, row, status, items }: DocDetailProps) {
       <div className="flex flex-wrap items-center gap-2">
         {prompt && (
           <Button
-            variant="accent"
-            tone="agent"
+            variant="secondary"
             size="sm"
             icon={<Sparkles className={GLYPH.sm} />}
             onClick={() => ask('lifecycle', prompt)}

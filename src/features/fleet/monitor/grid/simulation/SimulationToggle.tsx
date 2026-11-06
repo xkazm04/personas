@@ -37,7 +37,7 @@ export function SimulationToggle() {
         className={`focus-ring inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-interactive border typo-caption transition-colors ${
           enabled
             ? 'border-status-warning bg-status-warning text-background shadow-elevation-1'
-            : 'border-status-warning/40 bg-status-warning/10 text-status-warning hover:bg-status-warning/20'
+            : 'border-hair bg-surface-2 text-status-warning hover:bg-status-warning/20'
         }`}
       >
         <FlaskConical className="h-3 w-3 flex-shrink-0" aria-hidden />

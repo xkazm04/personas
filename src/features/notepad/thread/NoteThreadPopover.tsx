@@ -145,20 +145,20 @@ export function NoteThreadPopover({
         zIndex: NOTEPAD_POPOVER_Z,
         visibility: pos ? 'visible' : 'hidden',
       }}
-      className="flex flex-col rounded-card border border-primary/20 bg-background/95 backdrop-blur-md shadow-elevation-3"
+      className="flex flex-col rounded-card border border-hair bg-background/95 backdrop-blur-md shadow-elevation-3"
     >
-      <header className="flex items-center gap-2 px-3.5 py-2.5 border-b border-primary/10">
+      <header className="flex items-center gap-2 px-3.5 py-2.5 border-b border-hair">
         <MessagesSquare className="w-4 h-4 text-primary shrink-0" aria-hidden />
         <div className="min-w-0 flex-1">
           <p className="typo-label text-foreground">{t.notepad.thread_title}</p>
-          <p className="typo-caption text-foreground/85 truncate">{noteTitle}</p>
+          <p className="typo-caption text-ink-2 truncate">{noteTitle}</p>
         </div>
         <button
           type="button"
           onClick={onClose}
           aria-label={t.common.close}
           data-testid="notepad-thread-close"
-          className="w-7 h-7 rounded-input flex items-center justify-center text-foreground hover:bg-secondary/50 transition-colors focus-ring"
+          className="w-7 h-7 rounded-input flex items-center justify-center text-foreground hover:bg-surface-1 transition-colors focus-ring"
         >
           <X className="w-3.5 h-3.5" aria-hidden />
         </button>
@@ -167,11 +167,11 @@ export function NoteThreadPopover({
       <ol ref={listRef} onScroll={onListScroll} className="flex flex-col gap-2 px-3.5 py-3 max-h-96 overflow-y-auto" aria-busy={showGhost}>
         {showGhost &&
           [0, 1, 2].map((i) => (
-            <li key={`ghost-${i}`} aria-hidden className="h-14 rounded-card bg-secondary/25" data-testid="notepad-thread-ghost" />
+            <li key={`ghost-${i}`} aria-hidden className="h-14 rounded-card bg-surface-1" data-testid="notepad-thread-ghost" />
           ))}
         {showEmpty && (
-          <li className="flex items-center gap-2 py-3 typo-caption text-foreground/85" data-testid="notepad-thread-empty">
-            <MessagesSquare className="w-4 h-4 shrink-0 text-foreground/85" aria-hidden />
+          <li className="flex items-center gap-2 py-3 typo-caption text-ink-2" data-testid="notepad-thread-empty">
+            <MessagesSquare className="w-4 h-4 shrink-0 text-ink-2" aria-hidden />
             {t.notepad.thread_empty}
           </li>
         )}
@@ -191,7 +191,7 @@ export function NoteThreadPopover({
         </AnimatePresence>
       </ol>
 
-      <div className="px-3.5 pb-3 pt-2 border-t border-primary/10">
+      <div className="px-3.5 pb-3 pt-2 border-t border-hair">
         <ThreadComposer noteId={noteId} multiline autoFocus testIdPrefix="notepad-thread-composer" />
       </div>
     </motion.div>,
@@ -211,14 +211,14 @@ function ThreadEntry({ comment, authorLabel }: { comment: NoteComment; authorLab
       data-testid={`notepad-thread-entry-${comment.id}`}
       data-kind={comment.kind}
       className={`flex flex-col gap-1.5 px-3 py-2 rounded-card border ${
-        pending ? 'border-status-warning/35 bg-status-warning/5' : operator ? 'border-primary/15 bg-primary/5' : 'border-primary/10 bg-secondary/20'
+        pending ? 'border-hair bg-surface-2' : operator ? 'border-hair bg-surface-1' : 'border-hair bg-surface-1'
       }`}
     >
       <div className="flex items-center gap-1.5 min-w-0 typo-caption">
         <span className={`typo-label truncate ${threadAuthorTone(comment)}`}>{authorLabel}</span>
-        <span aria-hidden className="text-foreground/85">·</span>
-        <span className="text-foreground/85 truncate">{threadEntryLabel(comment, t.notepad)}</span>
-        <RelativeTime timestamp={comment.createdAt} format="elapsed" className="ml-auto shrink-0 text-foreground/85 tabular-nums" />
+        <span aria-hidden className="text-ink-2">·</span>
+        <span className="text-ink-2 truncate">{threadEntryLabel(comment, t.notepad)}</span>
+        <RelativeTime timestamp={comment.createdAt} format="elapsed" className="ml-auto shrink-0 text-ink-2 num" />
       </div>
       {comment.kind !== 'system' && (
         <p className="typo-body text-foreground whitespace-pre-wrap break-words">{body}</p>

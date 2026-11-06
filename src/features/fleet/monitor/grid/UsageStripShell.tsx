@@ -72,7 +72,7 @@ export function StripFrame({
         </span>
         {planCount !== undefined && planCount > 0 && (
           <span
-            className="inline-flex flex-shrink-0 items-center rounded-full border border-border bg-secondary/20 px-2 py-0.5 tabular-nums"
+            className="inline-flex flex-shrink-0 items-center rounded-interactive border border-border bg-surface-1 px-2 py-0.5 num"
             data-testid="fleet-usage-plan-count"
           >
             {tx(t.monitor.usage_plan_count, { count: planCount, max: Math.max(PLAN_SLOTS, planCount) })}

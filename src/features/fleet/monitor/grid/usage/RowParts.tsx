@@ -72,7 +72,7 @@ export function EmptyProviderRow({ provider }: { provider: ProviderModel }) {
 // capped window ever shows) and the pace slot (`PACE_BOX`, the glyph's own size,
 // held even when there is no pace so a paceless row does not shift).
 const CLUSTER_BOX = 'inline-flex flex-shrink-0 items-center gap-0.5 typo-caption';
-const FIGURE_BOX = 'inline-flex min-w-[3ch] items-baseline justify-end tabular-nums';
+const FIGURE_BOX = 'inline-flex min-w-[3ch] items-baseline justify-end num';
 const PACE_BOX = 'inline-flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center';
 /** The row's right-hand group: both clusters and the Forget act, packed tight against the row's right edge. */
 export const STATS_GROUP = 'ml-auto flex flex-shrink-0 items-center gap-1.5';

@@ -26,7 +26,7 @@ import type { StreamTeam } from './types';
 /** A right-aligned tabular figure: blank at zero, `null` (unread) never prints. */
 export function Figure({ n, warn = false }: { n: number | null; warn?: boolean }) {
   return (
-    <span className={`w-8 flex-shrink-0 text-right typo-data tabular-nums ${warn ? 'text-status-warning' : 'text-foreground'}`}>
+    <span className={`w-8 flex-shrink-0 text-right typo-data num ${warn ? 'text-status-warning' : 'text-foreground'}`}>
       {n !== null && n > 0 ? (n > 99 ? '99+' : n) : null}
     </span>
   );

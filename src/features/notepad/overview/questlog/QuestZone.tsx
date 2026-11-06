@@ -71,7 +71,7 @@ export const QuestZone = memo(function QuestZone({
     >
       <button type="button" className="ql-zone-head focus-ring" onClick={onFocusZone}>
         <h3>{zone.name}</h3>
-        <span className="typo-label text-foreground/85 tabular-nums whitespace-nowrap">{visible.length}</span>
+        <span className="typo-label text-ink-2 num whitespace-nowrap">{visible.length}</span>
         {waiting > 0 && (
           <span className="inline-flex items-center gap-1 px-1.5 rounded-interactive typo-label text-brand-rose bg-brand-rose/15 self-center">
             <PauseCircle className="w-3 h-3" aria-hidden />
@@ -85,7 +85,7 @@ export const QuestZone = memo(function QuestZone({
           </span>
         )}
         {current && (
-          <span className="ml-auto inline-flex items-center gap-1 typo-label text-foreground/85 self-center">
+          <span className="ml-auto inline-flex items-center gap-1 typo-label text-ink-2 self-center">
             <Keycap>{DESK_KEY.enterGlyph}</Keycap>
             {t.notepad.overview_open}
           </span>
@@ -93,7 +93,7 @@ export const QuestZone = memo(function QuestZone({
       </button>
 
       {visible.length === 0 ? (
-        <p className="ml-6 my-0 typo-caption italic text-foreground/85 leading-relaxed">
+        <p className="ml-6 my-0 typo-caption italic text-ink-2 leading-relaxed">
           {t.notepad.desk_zone_none_live}
         </p>
       ) : mode === 'runs' ? (

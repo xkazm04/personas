@@ -24,10 +24,10 @@ export function RemoteTerminalMirror({ jobId, device }: { jobId: string; device:
   return (
     <section
       aria-label={t.monitor.remote_terminal_title}
-      className="overflow-hidden rounded-card border border-primary/10 bg-secondary/15"
+      className="overflow-hidden rounded-card border border-hair bg-surface-1"
       data-testid="remote-terminal-mirror"
     >
-      <div className="flex h-8 items-center gap-1.5 border-b border-primary/10 px-3">
+      <div className="flex h-8 items-center gap-1.5 border-b border-hair px-3">
         <SquareTerminal className="h-3.5 w-3.5 text-foreground" aria-hidden />
         <span className="typo-label text-foreground">{t.monitor.remote_terminal_title}</span>
       </div>

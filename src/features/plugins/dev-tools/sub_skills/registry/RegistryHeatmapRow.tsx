@@ -89,7 +89,7 @@ function SkillLabel({ d, skill: s, r, total, tabIndex, onOpenInfo }: {
   const nav = { tabIndex, 'data-nav': navId(s.name, LABEL_COL), 'data-nav-r': r, 'data-nav-c': 0, 'data-testid': `registry-skill-${s.name}` };
 
   return (
-    <div role="rowheader" className={`sticky left-0 z-10 flex min-w-[11rem] items-center gap-2 border-r border-primary/10 px-3 py-1 transition-colors ${LABEL_BG}`}>
+    <div role="rowheader" className={`sticky left-0 z-10 flex min-w-[11rem] items-center gap-2 border-r border-hair px-3 py-1 transition-colors ${LABEL_BG}`}>
       <span
         className="inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-interactive border"
         style={hue
@@ -103,7 +103,7 @@ function SkillLabel({ d, skill: s, r, total, tabIndex, onOpenInfo }: {
         placement="right"
         content={(
           <span className="flex max-w-[22rem] flex-col gap-1">
-            <span className="typo-label text-primary">{s.visual?.label ?? s.category} · {s.name}</span>
+            <span className="typo-label text-ink-1">{s.visual?.label ?? s.category} · {s.name}</span>
             <span>{s.description || d.skills_confirm_no_desc}</span>
             {onOpenInfo && <span className="typo-label text-foreground">{d.skills_registry_name_details}</span>}
           </span>
@@ -114,7 +114,7 @@ function SkillLabel({ d, skill: s, r, total, tabIndex, onOpenInfo }: {
           : <span {...nav} className={`${nameClass} cursor-default`}>{s.name}</span>}
       </Tooltip>
       <span
-        className="typo-label ml-auto flex-shrink-0 rounded-pill px-1.5 tabular-nums text-foreground"
+        className="typo-label ml-auto flex-shrink-0 rounded-pill px-1.5 num text-foreground"
         style={{ backgroundColor: tint('var(--primary)', s.adoptedCount > 0 ? 0.12 : 0.04) }}
       >
         {s.adoptedCount}/{total}
@@ -127,10 +127,10 @@ function SkillLabel({ d, skill: s, r, total, tabIndex, onOpenInfo }: {
 export function RegistryCategoryRow({ label, count, transition }: { label: string; count: number; transition: Transition }) {
   return (
     <motion.div role="row" {...FOLD} transition={transition} className="col-span-full overflow-clip">
-      <div role="rowheader" className="border-b border-primary/10 pb-1 pt-3">
+      <div role="rowheader" className="border-b border-hair pb-1 pt-3">
         <span className="sticky left-0 inline-flex items-center gap-1.5 px-3">
           <span className="typo-label text-foreground">{label}</span>
-          <span className="typo-label tabular-nums text-primary">{count}</span>
+          <span className="typo-label num text-ink-1">{count}</span>
         </span>
       </div>
     </motion.div>

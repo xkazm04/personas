@@ -111,8 +111,8 @@ export function LaneChip({
       role="group"
       aria-label={lane.name}
       data-testid={`progress-lane-${lane.id}`}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 focus-ring transition-colors ${tone.border} ${
-        over ? `${tone.bg} ring-1 ring-inset ${tone.border}` : 'bg-card/40'
+      className={`inline-flex items-center gap-1.5 rounded-interactive border px-2 py-0.5 focus-ring transition-colors ${tone.border} ${
+        over ? `${tone.bg} ring-1 ring-inset ${tone.border}` : 'bg-surface-1'
       } ${dense ? '' : 'px-2.5 py-1'}`}
     >
       <LaneGlyph lane={lane} className={tone.text} />
@@ -120,7 +120,7 @@ export function LaneChip({
         {lane.name}
       </span>
       {lane.kind === 'deadline' && <DeadlineDate lane={lane} className={tone.text} />}
-      <span className="typo-caption text-foreground tabular-nums">{count}</span>
+      <span className="typo-caption text-foreground num">{count}</span>
     </span>
   );
 }
@@ -151,7 +151,7 @@ export function DeadlineDate({ lane, className = '' }: { lane: LaneLookInput; cl
   if (Number.isNaN(day.getTime())) return null;
   const date = day.toLocaleDateString(language, { month: 'short', day: 'numeric' });
   return (
-    <span className={`typo-caption tabular-nums shrink-0 ${className}`}>
+    <span className={`typo-caption num shrink-0 ${className}`}>
       {tx(t.athena.ship_milestone_deadline_due, { date })}
     </span>
   );
@@ -175,14 +175,14 @@ export function UnassignedLane({ projectId, count, children }: {
       {...canvas.drop.propsFor(key, null)}
       data-testid={`progress-lane-none-${projectId}`}
       className={`flex items-center gap-1.5 rounded-input border border-dashed px-2 py-1 transition-colors ${
-        over ? 'border-primary/40 bg-primary/[0.06]' : 'border-primary/15'
+        over ? 'border-primary/40 bg-primary/[0.06]' : 'border-hair'
       }`}
       style={{ minHeight: NODE_PX + 8 }}
     >
       <span className="typo-eyebrow text-foreground shrink-0">
         {t.ship.unassigned}
       </span>
-      <span className="typo-caption text-foreground tabular-nums shrink-0">{count}</span>
+      <span className="typo-caption text-foreground num shrink-0">{count}</span>
       {children}
     </div>
   );
@@ -201,7 +201,7 @@ export function AddLaneButton({ projectId }: { projectId: string }) {
         aria-label={t.athena.ship_milestone_confirm}
         data-testid={`progress-add-lane-${projectId}`}
         onClick={() => canvas.startCreateMilestone(projectId)}
-        className="border border-dashed border-primary/25 hover:border-primary/50"
+        className="border border-dashed border-hair hover:border-primary/50"
       >
         <Plus className="w-3 h-3" />
       </Button>

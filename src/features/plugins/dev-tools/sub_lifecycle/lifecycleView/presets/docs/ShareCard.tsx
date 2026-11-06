@@ -33,7 +33,7 @@ function Track({ share, line, fill }: { share: number; line: number; fill: strin
   const clamp = (v: number) => `${Math.max(0, Math.min(100, v))}%`;
   return (
     <span aria-hidden className="relative block py-1" data-testid="lcx7-share-track">
-      <span className="block h-2.5 w-full rounded-pill bg-primary/10" />
+      <span className="block h-2.5 w-full rounded-pill bg-surface-1" />
       <motion.span
         className={`absolute left-0 top-1 h-2.5 rounded-pill ${fill}`}
         initial={entering ? { width: '0%' } : false}

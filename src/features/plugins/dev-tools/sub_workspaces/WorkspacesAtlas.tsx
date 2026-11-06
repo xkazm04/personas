@@ -60,7 +60,7 @@ export default function WorkspacesAtlas() {
               }}
               aria-pressed={isOpen}
               className={`relative overflow-hidden rounded-card border p-4 text-left transition-colors ${
-                isOpen ? 'border-primary/40 bg-primary/5' : 'border-primary/10 hover:bg-secondary/40'
+                isOpen ? 'border-primary/40 bg-surface-1' : 'border-hair hover:bg-surface-1'
               }`}
             >
               <Landmark
@@ -72,7 +72,7 @@ export default function WorkspacesAtlas() {
                 <span className="typo-title truncate">{ws.name}</span>
                 {ws.adoptDefaultSkills && (
                   <span
-                    className="ml-auto inline-flex items-center gap-1 typo-label text-primary/80 border border-primary/25 bg-primary/10 rounded-interactive px-1.5 py-0.5 flex-shrink-0"
+                    className="ml-auto inline-flex items-center gap-1 typo-label text-primary/80 border border-hair bg-surface-1 rounded-interactive px-1.5 py-0.5 flex-shrink-0"
                     title={tw.adopt_skills_badge_tip}
                   >
                     <Wand2 className="w-3 h-3" aria-hidden />
@@ -87,16 +87,16 @@ export default function WorkspacesAtlas() {
                 {members.slice(0, 4).map((name) => (
                   <span
                     key={name}
-                    className="typo-caption rounded-interactive bg-secondary/50 border border-primary/10 px-1.5 py-0.5 text-foreground"
+                    className="typo-caption rounded-interactive bg-surface-1 border border-hair px-1.5 py-0.5 text-foreground"
                   >
                     {name}
                   </span>
                 ))}
                 {members.length > 4 && (
-                  <span className="typo-caption text-muted-foreground">+{members.length - 4}</span>
+                  <span className="typo-caption text-ink-3">+{members.length - 4}</span>
                 )}
                 {members.length === 0 && (
-                  <span className="typo-caption text-muted-foreground">{tw.no_projects_yet}</span>
+                  <span className="typo-caption text-ink-3">{tw.no_projects_yet}</span>
                 )}
               </div>
             </button>
@@ -104,14 +104,14 @@ export default function WorkspacesAtlas() {
         })}
 
         {creating ? (
-          <div className="rounded-card border border-dashed border-primary/25 p-4 flex items-center">
+          <div className="rounded-card border border-dashed border-hair p-4 flex items-center">
             <CreateWorkspaceInline autoFocus />
           </div>
         ) : (
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="rounded-card border border-dashed border-primary/25 p-4 flex flex-col items-center justify-center gap-2 text-foreground/80 hover:text-foreground hover:bg-secondary/30 transition-colors min-h-32"
+            className="rounded-card border border-dashed border-hair p-4 flex flex-col items-center justify-center gap-2 text-ink-2 hover:text-foreground hover:bg-surface-1 transition-colors min-h-32"
           >
             <Plus className="w-5 h-5" />
             <span className="typo-body">{tw.new_workspace}</span>
@@ -127,7 +127,7 @@ export default function WorkspacesAtlas() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.2 }}
-            className="mt-6 rounded-card border border-primary/15 p-5 flex flex-col gap-5"
+            className="mt-6 rounded-card border border-hair p-5 flex flex-col gap-5"
           >
             <header className="flex items-start justify-between gap-4">
               <div className="min-w-0">
@@ -159,7 +159,7 @@ export default function WorkspacesAtlas() {
                 type="button"
                 onClick={() => setConfirmDelete(open.id)}
                 aria-label={tw.delete_workspace}
-                className="shrink-0 rounded-interactive p-2 text-foreground/70 hover:text-status-error hover:bg-status-error/10 transition-colors"
+                className="shrink-0 rounded-interactive p-2 text-ink-2 hover:text-status-error hover:bg-status-error/10 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -200,7 +200,7 @@ function Tally({ value, label }: { value: number; label: string }) {
   return (
     <span className="flex items-baseline gap-1">
       <span className="typo-data text-foreground">{value}</span>
-      <span className="typo-caption text-muted-foreground">{label}</span>
+      <span className="typo-caption text-ink-3">{label}</span>
     </span>
   );
 }

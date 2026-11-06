@@ -49,25 +49,25 @@ export function ContextPickerModal({ skillName, projectId, initial, onConfirm, o
   return (
     <BaseModal isOpen onClose={onClose} titleId="ctx-picker-title" size="6xl" portal staggerChildren={false}>
       <div className="flex flex-col h-[80vh]" data-testid="context-picker-modal">
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10 bg-primary/[0.04] flex-shrink-0">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-hair bg-primary/[0.04] flex-shrink-0">
           <SlidersHorizontal className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="ctx-picker-title" className="typo-title truncate">
             {tx(d.ctx_picker_title, { name: skillName })}
           </span>
-          <span className="typo-caption text-foreground/50 tabular-nums flex-shrink-0">
+          <span className="typo-caption text-ink-3 num flex-shrink-0">
             {tx(d.ctx_picker_selected, { n: selected.size, total: totalContexts })}
           </span>
         </div>
 
         <div className="flex items-center gap-2 px-4 py-2.5 flex-shrink-0">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-3 pointer-events-none" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={d.context_search_placeholder}
               aria-label={d.context_search_placeholder}
-              className={`${INPUT_FIELD} !py-1 !pl-8 !text-sm`}
+              className={`${INPUT_FIELD} !py-1 !pl-8 !typo-body`}
               autoFocus
             />
           </div>
@@ -86,11 +86,10 @@ export function ContextPickerModal({ skillName, projectId, initial, onConfirm, o
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-primary/10 flex-shrink-0">
+        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-hair flex-shrink-0">
           <Button variant="ghost" size="sm" onClick={onClose}>{t.common.cancel}</Button>
           <Button
-            variant="accent"
-            tone="agent"
+            variant="secondary"
             size="sm"
             disabled={selected.size === 0}
             onClick={() => onConfirm([...selected])}

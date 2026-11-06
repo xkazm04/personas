@@ -28,7 +28,7 @@ export function DrawerHeader({
   const { t, tx } = useTranslation();
 
   return (
-    <header className="flex h-14 flex-shrink-0 items-center justify-between gap-4 border-b border-border/60 bg-secondary/20 px-5">
+    <header className="flex h-14 flex-shrink-0 items-center justify-between gap-4 border-b border-border/60 bg-surface-1 px-5">
       <div className="flex min-w-0 items-center gap-2.5">
         <PersonaIcon icon={card.personaIcon} color={card.personaColor} display="pop" frameSize="md" />
         <div className="min-w-0">

@@ -69,7 +69,7 @@ export function ProjectRowMenu({
         aria-expanded={open}
         aria-label={t.plugins.dev_projects.edit_project}
         onClick={(e) => { e.stopPropagation(); setOpen(!open); setConfirming(false); }}
-        className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
+        className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-surface-1 transition-colors"
       >
         <MoreHorizontal className="w-4 h-4" />
       </button>
@@ -79,7 +79,7 @@ export function ProjectRowMenu({
           <div
             role="menu"
             onClick={(e) => e.stopPropagation()}
-            className="rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden py-1"
+            className="rounded-modal border border-hair bg-background shadow-elevation-3 overflow-hidden py-1"
             style={{
               position: 'fixed',
               // Right-aligned to the trigger: the hook anchors left, and this
@@ -105,7 +105,7 @@ export function ProjectRowMenu({
               role="menuitem"
               onClick={handleDelete}
               className={`w-full flex items-center gap-2 px-3 py-2 typo-caption text-left transition-colors ${
-                confirming ? 'bg-red-500/10 text-red-400' : 'text-red-400/70 hover:bg-red-500/5'
+                confirming ? 'bg-status-error/10 text-status-error' : 'text-status-error hover:bg-status-error/5'
               }`}
             >
               <Trash2 className="w-3 h-3" />

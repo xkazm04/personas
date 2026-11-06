@@ -57,14 +57,14 @@ export function MaxParallelStepper({
   const hint = over
     ? tx(s.queue_cap_over_hint, { running, cap, over: overAdmitted })
     : tx(s.queue_cap_hint, { running, cap });
-  const btn = 'focus-ring flex h-5 w-5 items-center justify-center rounded-interactive text-foreground opacity-70 transition-colors hover:bg-secondary/40 hover:opacity-100 disabled:opacity-25 disabled:hover:bg-transparent';
+  const btn = 'focus-ring flex h-5 w-5 items-center justify-center rounded-interactive text-foreground opacity-70 transition-colors hover:bg-surface-1 hover:opacity-100 disabled:opacity-25 disabled:hover:bg-transparent';
   const canEdit = setting.loaded && !disabled;
 
   return (
     <Tooltip content={hint}>
       <div
         className={`inline-flex h-6 items-center gap-0.5 rounded-full border px-1 ${
-          over ? 'border-status-warning/50 bg-status-warning/10' : 'border-border bg-secondary/20'
+          over ? 'border-hair bg-surface-2' : 'border-border bg-surface-1'
         }`}
         role="group"
         aria-label={s.queue_cap_aria}
@@ -74,7 +74,7 @@ export function MaxParallelStepper({
         <button type="button" className={btn} onClick={() => write(cap - 1)} disabled={!canEdit || cap <= BOUND.min} aria-label={s.queue_cap_decrease}>
           <Minus className="h-3 w-3" aria-hidden />
         </button>
-        <span className={`px-0.5 typo-caption tabular-nums ${over ? 'text-status-warning' : 'text-foreground'}`} data-testid="fleet-max-parallel-readout">
+        <span className={`px-0.5 typo-caption num ${over ? 'text-status-warning' : 'text-foreground'}`} data-testid="fleet-max-parallel-readout">
           <Numeric value={running} /> / <Numeric value={cap} />
         </span>
         <button type="button" className={btn} onClick={() => write(cap + 1)} disabled={!canEdit || cap >= BOUND.max} aria-label={s.queue_cap_increase}>

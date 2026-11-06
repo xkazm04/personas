@@ -19,7 +19,7 @@ function Chip({ tone, word, count, label, testId }: { tone: Tone; word: string; 
     >
       <Lamp lamp={{ tone, lit: true }} />
       <span className="hidden typo-caption text-foreground @[40rem]/dock:inline">{word}</span>
-      <span className="typo-data tabular-nums text-foreground">{count}</span>
+      <span className="typo-data num text-foreground">{count}</span>
     </span>
   );
 }

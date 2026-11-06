@@ -28,9 +28,9 @@ export function MonitorHeader({ activeTab, onSelect, onClose }: {
 
   // z-20 so any floating child menu clears the body
   return (
-    <div className="relative z-20 flex-shrink-0 flex items-center justify-between gap-4 px-6 h-14 border-b border-primary/10 bg-secondary/15">
+    <div className="relative z-20 flex-shrink-0 flex items-center justify-between gap-4 px-6 h-14 border-b border-hair bg-surface-1">
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-8 h-8 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-modal bg-surface-1 border border-hair flex items-center justify-center">
           <Activity className="w-4 h-4 text-primary" />
         </div>
         <div className="min-w-0">
@@ -50,10 +50,10 @@ export function MonitorHeader({ activeTab, onSelect, onClose }: {
                 aria-pressed={on}
                 title={v.hint}
                 data-testid={`monitor-view-${v.id}`}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-body-lg transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive border typo-body-lg transition-colors ${
                   on
                     ? 'border-primary/45 bg-primary/15 text-primary'
-                    : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30'
+                    : 'border-hair bg-surface-1 text-foreground hover:bg-surface-1'
                 }`}
               >
                 <Icon className="w-3 h-3" />
@@ -71,8 +71,8 @@ export function MonitorHeader({ activeTab, onSelect, onClose }: {
           title={t.monitor.live_toggle_hint}
           className={`ml-1 inline-flex items-center justify-center p-1.5 rounded-full border transition-colors ${
             liveMode
-              ? 'border-status-success/40 bg-status-success/15 text-status-success'
-              : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30'
+              ? 'border-hair bg-surface-1 text-status-success'
+              : 'border-hair bg-surface-1 text-foreground hover:bg-surface-1'
           }`}
         >
           <Bell className="w-3.5 h-3.5" />
@@ -80,7 +80,7 @@ export function MonitorHeader({ activeTab, onSelect, onClose }: {
         <button
           type="button"
           onClick={onClose}
-          className="p-1.5 rounded-modal border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
+          className="p-1.5 rounded-modal border border-hair text-foreground hover:text-foreground hover:bg-surface-1 transition-colors"
           aria-label={t.monitor.close}
           title={t.monitor.close_hint}
         >

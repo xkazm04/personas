@@ -97,7 +97,7 @@ export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps)
               {b.invokes30d > 0 && (
                 <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 + i * 0.04 }}>
                   <rect x={mid.x - 14} y={mid.y - 9} width={28} height={16} rx={3} className="fill-background stroke-border" strokeWidth={0.75} />
-                  <text x={mid.x} y={mid.y + 3} textAnchor="middle" fontSize={10} className="fill-foreground tabular-nums">
+                  <text x={mid.x} y={mid.y + 3} textAnchor="middle" fontSize={10} className="fill-foreground num">
                     {b.invokes30d}×
                   </text>
                 </motion.g>
@@ -116,7 +116,7 @@ export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps)
                 <text x={g.node.x + 3} y={g.node.y - 3} textAnchor="middle" fontSize={11} className="fill-foreground">
                   {b.project.name.slice(0, 13)}
                 </text>
-                <text x={g.node.x + 3} y={g.node.y + 11} textAnchor="middle" fontSize={9.5} className="fill-foreground/80 tabular-nums">
+                <text x={g.node.x + 3} y={g.node.y + 11} textAnchor="middle" fontSize={9.5} className="fill-foreground/80 num">
                   v{b.installedVersion ?? '1.0'}{b.lessons.length > 0 ? ` · ${b.lessons.length}✎` : ''}
                 </text>
               </motion.g>
@@ -140,7 +140,7 @@ export function SkillTreeView({ model, onBack, onOpenInfo }: SkillTreeViewProps)
           <text x={CORE_X} y={CORE_Y - 8} textAnchor="middle" fontSize={11} className="fill-foreground">
             {t.plugins.dev_tools.trace_core_library}
           </text>
-          <text x={CORE_X} y={CORE_Y + 15} textAnchor="middle" fontSize={11} className="fill-foreground tabular-nums">
+          <text x={CORE_X} y={CORE_Y + 15} textAnchor="middle" fontSize={11} className="fill-foreground num">
             v{model.libraryVersion ?? '1.0'}
           </text>
         </motion.g>

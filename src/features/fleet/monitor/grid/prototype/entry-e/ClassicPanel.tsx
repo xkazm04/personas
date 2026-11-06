@@ -332,7 +332,7 @@ export function ClassicPanel({
           <span className="flex items-center gap-2 px-3 py-2">
             <Users className="h-3.5 w-3.5 text-foreground" aria-hidden />
             <Engraved>{m.grid_ungrouped}</Engraved>
-            <span className="ml-auto typo-caption tabular-nums">{trayCards.length} · {traySessions.length}</span>
+            <span className="ml-auto typo-caption num">{trayCards.length} · {traySessions.length}</span>
           </span>
           <ShareBar cards={trayCards} />
           <TrayGrid cells={trayCells} />

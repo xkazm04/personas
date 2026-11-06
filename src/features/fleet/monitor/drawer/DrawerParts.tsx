@@ -61,7 +61,7 @@ export function ReportCard({
   const { t } = useTranslation();
   const loud = LOUD.has(message.priority);
   return (
-    <article className="rounded-card border border-border/60 bg-secondary/20 px-4 py-3">
+    <article className="rounded-card border border-border/60 bg-surface-1 px-4 py-3">
       <div className="flex items-start gap-3">
         <Tooltip content={loud ? t.monitor.attention_warning : t.monitor.attention_info}>
           <span className="mt-1.5 inline-flex">
@@ -128,7 +128,7 @@ export function ActivityLine({
       : processStatusLabel(t, proc.status);
 
   return (
-    <div className="border-t border-border/50 transition-colors first:border-t-0 hover:bg-secondary/30">
+    <div className="border-t border-border/50 transition-colors first:border-t-0 hover:bg-surface-1">
       <Button
         variant="ghost"
         size="sm"
@@ -148,7 +148,7 @@ export function ActivityLine({
             <span className="block truncate typo-caption text-foreground">{proc.lastEvent}</span>
           )}
         </span>
-        <span className={`shrink-0 text-right typo-caption tabular-nums ${M.text}`}>{trailing}</span>
+        <span className={`shrink-0 text-right typo-caption num ${M.text}`}>{trailing}</span>
         {hasNav && <span aria-hidden className="ml-1 shrink-0 typo-caption text-primary">&rsaquo;</span>}
       </Button>
       {expanded && isExecution && (
@@ -172,7 +172,7 @@ export function PlateHead({
   return (
     <div className="mb-2 flex items-center gap-2 border-b border-border/50 px-3 pb-1.5 pt-2">
       <span className="ae-engrave typo-label">{title}</span>
-      {count != null && <span className="typo-caption tabular-nums text-foreground">{count}</span>}
+      {count != null && <span className="typo-caption num text-foreground">{count}</span>}
       {children && <span className="ml-auto flex items-center gap-1.5">{children}</span>}
     </div>
   );

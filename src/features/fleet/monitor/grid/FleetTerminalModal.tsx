@@ -166,7 +166,7 @@ export function FleetTerminalModal({
       title={label}
       status={
         <>
-          <span className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 typo-caption ${meta.chip} ${meta.text}`}>
+          <span className={`flex items-center gap-1.5 rounded-interactive px-2 py-0.5 typo-caption ${meta.chip} ${meta.text}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} aria-hidden />
             {stateText}
           </span>
@@ -189,7 +189,7 @@ export function FleetTerminalModal({
     >
       <div data-testid="fleet-terminal-modal" data-kind={live ? 'live' : sleeping ? 'sleeping' : 'none'}>
         {live ? (
-          <div className="h-[58vh] overflow-hidden rounded-card border border-primary/10 bg-background">
+          <div className="h-[58vh] overflow-hidden rounded-card border border-hair bg-background">
             <FleetTerminalPane key={row.id} sessionId={row.id} className="h-full" />
           </div>
         ) : sleeping ? (

@@ -167,7 +167,7 @@ export function PersonaIdentity({ row, dense = false }: { row: DispatchPreviewRo
       <span className={`truncate ${dense ? 'typo-caption' : 'typo-title'} text-foreground`}>{row.personaName}</span>
       {row.appMaster && (
         <Tooltip content={t.monitor.orch_app_master}>
-          <Crown className="h-3.5 w-3.5 flex-shrink-0 text-status-warning" aria-label={t.monitor.orch_app_master} />
+          <Crown className="h-3.5 w-3.5 flex-shrink-0 text-ink-2" aria-label={t.monitor.orch_app_master} />
         </Tooltip>
       )}
       {row.wakePending && (
@@ -204,13 +204,13 @@ export function BudgetBand({ view }: { view: DispatchPreviewView }) {
         </StatusBadge>
       )}
       <span>
-        <span className="typo-title tabular-nums">{view.preview.budget}</span> {s.orch_budget_starts}
+        <span className="typo-title num">{view.preview.budget}</span> {s.orch_budget_starts}
       </span>
       <span>
-        <span className="typo-title tabular-nums">{view.preview.wouldStart}</span> {s.orch_would_start}
+        <span className="typo-title num">{view.preview.wouldStart}</span> {s.orch_would_start}
       </span>
       <span>
-        <span className="typo-title tabular-nums">{view.preview.waiting}</span> {s.orch_waiting}
+        <span className="typo-title num">{view.preview.waiting}</span> {s.orch_waiting}
       </span>
       <span>{tx(s.orch_running, { running: view.headroom.running, cap: view.headroom.cap })}</span>
       {hold && (

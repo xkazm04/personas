@@ -60,8 +60,8 @@ export function DockPresetSelect({
                 onChange(p);
                 close();
               }}
-              className={`flex w-full items-center gap-2 whitespace-nowrap px-2.5 py-1 text-left font-mono text-xs text-foreground transition-colors hover:bg-secondary/60 ${
-                focusIndex === i ? 'bg-secondary/60' : ''
+              className={`flex w-full items-center gap-2 whitespace-nowrap px-2.5 py-1 text-left typo-caption text-foreground transition-colors hover:bg-surface-1 ${
+                focusIndex === i ? 'bg-surface-1' : ''
               }`}
             >
               <span className="w-3 flex-shrink-0">

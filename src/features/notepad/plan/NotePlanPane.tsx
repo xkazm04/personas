@@ -49,7 +49,7 @@ function ScopeGhost() {
   return (
     <div className="flex flex-col gap-2" aria-hidden data-testid="note-plan-ghost">
       {[0, 1, 2].map((i) => (
-        <div key={i} className="h-14 rounded-card bg-secondary/25" />
+        <div key={i} className="h-14 rounded-card bg-surface-1" />
       ))}
     </div>
   );
@@ -95,7 +95,7 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
       data-testid="note-plan-pane"
     >
       {/* THE BRIEF */}
-      <div className="min-w-0 flex flex-col gap-4 px-6 py-5 min-[1100px]:w-[38%] min-[1100px]:flex-shrink-0 min-[1100px]:overflow-y-auto min-[1100px]:border-r min-[1100px]:border-primary/10">
+      <div className="min-w-0 flex flex-col gap-4 px-6 py-5 min-[1100px]:w-[38%] min-[1100px]:flex-shrink-0 min-[1100px]:overflow-y-auto min-[1100px]:border-r min-[1100px]:border-hair">
         <NoteHeader note={note} onRename={(title) => onPatch({ title })} readOnly={readOnly} />
 
         {readOnly && (
@@ -116,8 +116,8 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
           placeholder={t.notepad.editor_placeholder}
           testId="notepad-body-plan"
           containerClassName="flex-1 min-h-0 flex flex-col gap-3"
-          className="flex-1 min-h-[32vh] w-full resize-none rounded-card border border-primary/12 bg-secondary/15 px-4 py-3 typo-body text-foreground/90 placeholder:text-foreground/60 outline-none focus:border-primary/25"
-          previewClassName="flex-1 min-h-0 overflow-y-auto rounded-card border border-primary/10 bg-secondary/10 px-4 py-3"
+          className="flex-1 min-h-[32vh] w-full resize-none rounded-card border border-hair bg-surface-1 px-4 py-3 typo-body text-ink-2 placeholder:text-ink-2 outline-none focus:border-hair"
+          previewClassName="flex-1 min-h-0 overflow-y-auto rounded-card border border-hair bg-surface-1 px-4 py-3"
         />
       </div>
 
@@ -150,7 +150,7 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
           </div>
 
           {vm?.targetLabel && (
-            <p className="typo-caption text-foreground/70" data-testid="note-plan-target">{vm.targetLabel}</p>
+            <p className="typo-caption text-ink-2" data-testid="note-plan-target">{vm.targetLabel}</p>
           )}
           {vm && plan && <ShipVelocityNote rows={plan.ship.roadmap.map((ms) => ms.row)} vm={vm} />}
           {vm && <ShipDualitySummary duality={vm.duality} />}
@@ -227,7 +227,7 @@ export function NotePlanPane({ note, onPatch, readOnly }: NoteBodyProps) {
           <button
             type="button"
             onClick={() => setComposing(true)}
-            className="self-start mt-4 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border border-primary/20 text-foreground/80 transition-colors hover:bg-secondary/40 focus-ring"
+            className="self-start mt-4 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border border-hair text-ink-2 transition-colors hover:bg-surface-1 focus-ring"
             data-testid="note-plan-compose"
           >
             {t.ship.compose_scope}

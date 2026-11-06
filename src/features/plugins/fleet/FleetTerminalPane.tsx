@@ -152,14 +152,14 @@ export function FleetTerminalPane({ sessionId, className, autoFocus = true, live
           className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/95 px-4 text-center"
           data-testid={`fleet-terminal-displaced-${sessionId}`}
         >
-          <p role="status" className="text-[13px] text-foreground">
+          <p role="status" className="typo-caption text-foreground">
             {t.plugins.fleet.terminal_displaced}
           </p>
           <button
             type="button"
             onClick={reclaim}
             data-testid={`fleet-terminal-reclaim-${sessionId}`}
-            className="flex items-center gap-1.5 rounded-interactive border border-primary/25 bg-primary/10 px-2.5 py-1 text-[13px] font-medium text-primary transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+            className="flex items-center gap-1.5 rounded-interactive border border-hair bg-surface-1 px-2.5 py-1 typo-caption text-primary transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
           >
             <MonitorUp className="w-3.5 h-3.5" aria-hidden="true" />
             {t.plugins.fleet.terminal_displaced_reclaim}

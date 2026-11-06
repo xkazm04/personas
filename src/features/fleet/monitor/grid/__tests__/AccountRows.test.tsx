@@ -259,7 +259,7 @@ describe('AccountRows', () => {
       expect(cluster.className).toContain('gap-0.5');
       expect(cluster.querySelector('.flex-1')).toBeNull();
     }
-    expect(within(live).getAllByTestId('fleet-usage-percent')[0]!.className).toContain('tabular-nums');
+    expect(within(live).getAllByTestId('fleet-usage-percent')[0]!.className).toContain('num');
     // The name is outside the group and still the flexible, truncating part.
     expect(group.contains(within(live).getByTestId('fleet-usage-name'))).toBe(false);
     // Forget lives at the END of the group and takes no width until revealed.

@@ -80,17 +80,17 @@ export function StaticScanConfigModal({
     // header band with icon + title, spaced body, secondary-tinted footer.
     <BaseModal isOpen={open} onClose={onClose} titleId="static-scan-config" size="md" portal staggerChildren={false}>
       <div className="flex flex-col" data-testid="static-scan-config-modal">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04]">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-primary/[0.04]">
           <Binary className="w-4 h-4 text-status-success flex-shrink-0" aria-hidden />
           <span id="static-scan-config" className="typo-title truncate">{ds.static_config_title}</span>
-          <span className="ml-auto typo-label text-foreground/40 flex-shrink-0">{d.skills_static_title}</span>
+          <span className="ml-auto typo-label text-ink-3 flex-shrink-0">{d.skills_static_title}</span>
         </div>
 
         <div className="px-5 py-4 space-y-4">
-          <p className="typo-caption text-foreground/70">{ds.static_config_intro}</p>
+          <p className="typo-caption text-ink-2">{ds.static_config_intro}</p>
 
           <div className="space-y-1.5">
-            <label className="typo-label text-foreground/55 block">{ds.static_config_tool_label}</label>
+            <label className="typo-label text-ink-3 block">{ds.static_config_tool_label}</label>
             <ThemedSelect value={tool} onValueChange={(v) => handleToolChange(v as StaticScanTool)}>
               {TOOLS.map((tl) => (
                 <option key={tl} value={tl}>{tl}{tl === 'fallow' ? ` (${ds.static_config_recommended})` : ''}</option>
@@ -99,17 +99,17 @@ export function StaticScanConfigModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className="typo-label text-foreground/55 block">{ds.static_config_command_label}</label>
+            <label className="typo-label text-ink-3 block">{ds.static_config_command_label}</label>
             <input
               value={command}
               onChange={(e) => setCommand(e.target.value)}
-              className="w-full px-3 py-2 typo-body font-mono bg-background/70 border border-primary/15 rounded-input text-foreground placeholder:text-foreground/40 outline-none focus:border-primary/40"
+              className="w-full px-3 py-2 typo-body font-mono bg-background/70 border border-hair rounded-input text-foreground placeholder:text-ink-3 outline-none focus:border-primary/40"
             />
             <p className="typo-caption">{ds.static_config_command_hint}</p>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-primary/10 bg-secondary/10">
+        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-hair bg-surface-1">
           <Button variant="ghost" size="sm" onClick={onClose}>{t.common.cancel}</Button>
           <AsyncButton variant="accent" tone="success" size="sm" onClick={handleSave}>
             {ds.static_config_save_run}

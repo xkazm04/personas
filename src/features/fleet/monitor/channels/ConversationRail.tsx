@@ -54,7 +54,7 @@ export function ConversationRail({
         <>
           <Lamp lamp={{ tone: 'warn', lit: waiting }} />
           {m.cv_needs_you}
-          {waiting && <span className="typo-data tabular-nums"><Numeric value={asks.length} /></span>}
+          {waiting && <span className="typo-data num"><Numeric value={asks.length} /></span>}
         </>
       ),
     },

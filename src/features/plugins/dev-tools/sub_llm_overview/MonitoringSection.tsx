@@ -48,9 +48,9 @@ function MonMatrix({ monCreds }: { monCreds: ReturnType<typeof useMonitoringPinp
   if (projects.length === 0) return null;
   if (monCreds.length === 0) {
     return (
-      <div className="mx-4 mt-3 rounded-card border border-primary/10 bg-secondary/40 px-4 py-3 flex items-center gap-2.5">
+      <div className="mx-4 mt-3 rounded-card border border-hair bg-surface-1 px-4 py-3 flex items-center gap-2.5">
         <Plug className="w-4 h-4 text-primary/50 shrink-0" />
-        <div className="text-[11px] text-foreground/60">{dt.mon_no_cred}</div>
+        <div className="typo-caption text-ink-2">{dt.mon_no_cred}</div>
       </div>
     );
   }
@@ -86,7 +86,7 @@ function StateMessage({ icon, title, subtitle, art }: { icon: ReactNode; title: 
     <div className="flex-1 flex flex-col items-center justify-center gap-2 py-16 text-center px-6">
       <div className="text-primary/40">{icon}</div>
       <p className="typo-caption text-foreground">{title}</p>
-      <p className="text-[11px] text-foreground/50 max-w-sm">{subtitle}</p>
+      <p className="typo-caption text-ink-3 max-w-sm">{subtitle}</p>
     </div>
   );
 }
@@ -99,7 +99,7 @@ function MonitoringStatsGhost() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="rounded-card border border-primary/10 bg-card/40 px-3 py-2.5 animate-fade-in"
+          className="rounded-card border border-hair bg-surface-1 px-3 py-2.5 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
           <span className="block h-3 w-20 rounded bg-primary/[0.06] mb-2" />
@@ -119,14 +119,14 @@ export default function MonitoringSection() {
   return (
     <>
       <MonMatrix monCreds={monCreds} />
-      <div className="flex-1 min-h-0 mx-4 my-3 flex flex-col rounded-card border border-primary/10 overflow-hidden">
-        <div className="px-4 py-2 border-b border-primary/10 flex items-center gap-2">
-          <Shield className="w-3.5 h-3.5 text-red-400" />
+      <div className="flex-1 min-h-0 mx-4 my-3 flex flex-col rounded-card border border-hair overflow-hidden">
+        <div className="px-4 py-2 border-b border-hair flex items-center gap-2">
+          <Shield className="w-3.5 h-3.5 text-status-error" />
           <span className="typo-caption text-foreground truncate">{activeProject?.name ?? '—'}</span>
           <button
             type="button"
             onClick={() => reload()}
-            className="ml-auto p-1 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/8 focus-ring"
+            className="ml-auto p-1 rounded-interactive text-ink-2 hover:text-foreground hover:bg-primary/8 focus-ring"
             title={dt.mon_refresh}
             aria-label={dt.mon_refresh}
           >
@@ -162,7 +162,7 @@ export default function MonitoringSection() {
         state === 'loading' && !stats ? (
           <MonitoringStatsGhost />
         ) : state === 'error' && !stats ? (
-          <StateMessage icon={<AlertCircle className="w-8 h-8 text-red-400/70" />} title={dt.mon_error_title} subtitle={inlineErrorCopy(t, error, dt.mon_unknown_error)} />
+          <StateMessage icon={<AlertCircle className="w-8 h-8 text-status-error" />} title={dt.mon_error_title} subtitle={inlineErrorCopy(t, error, dt.mon_unknown_error)} />
         ) : stats ? (
           <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
             <StatCard label={po.unresolved_issues} value={stats.unresolvedIssues ?? '—'} icon={Bug} tone={stats.unresolvedIssues === null ? 'warning' : stats.unresolvedIssues === 0 ? 'success' : stats.unresolvedIssues > 5 ? 'danger' : 'warning'} />

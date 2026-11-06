@@ -125,7 +125,7 @@ export function MilestoneNameModal({
 
       <div
         className={`rounded-card border px-4 py-3 space-y-3 transition-colors ${
-          isDeadline ? `${tone.border} ${tone.bg}` : 'border-primary/10 bg-background/60'
+          isDeadline ? `${tone.border} ${tone.bg}` : 'border-hair bg-background/60'
         }`}
       >
         <label htmlFor={deadlineId} className="flex items-start gap-3 cursor-pointer">

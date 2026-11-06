@@ -27,10 +27,10 @@ import { autopilotReadout, autopilotTone, type AutopilotReadout } from './autopi
 import { useAutopilotStatus } from './useAutopilotStatus';
 
 const TONE_CLASS: Record<ReturnType<typeof autopilotTone>, string> = {
-  off: 'border-border bg-secondary/20 text-foreground opacity-70 hover:opacity-100',
-  stopped: 'border-status-error/40 bg-status-error/10 text-status-error',
-  holding: 'border-status-warning/40 bg-status-warning/10 text-status-warning',
-  running: 'border-status-success/40 bg-status-success/10 text-status-success',
+  off: 'border-border bg-surface-1 text-foreground opacity-70 hover:opacity-100',
+  stopped: 'border-hair bg-surface-1 text-status-error',
+  holding: 'border-hair bg-surface-2 text-status-warning',
+  running: 'border-hair bg-surface-1 text-status-success',
 };
 
 const MAX_NAMES = 6;
@@ -136,7 +136,7 @@ export function AutopilotSwitch() {
         {m.autopilot} · {on ? t.common.active : t.common.off}
       </span>
       <span className="opacity-80">{m.autopilot_aria}</span>
-      {text && <span className="tabular-nums">{text}</span>}
+      {text && <span className="num">{text}</span>}
       {status && <AutopilotDetails status={status} />}
     </div>
   );

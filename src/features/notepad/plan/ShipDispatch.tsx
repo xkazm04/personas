@@ -145,14 +145,14 @@ export function ShipDispatchModal({ vm, criterion, project, onDispatched, onClos
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={10}
-          className="w-full rounded-input border border-foreground/[0.12] bg-background/70 px-3 py-2 typo-caption text-foreground/90 outline-none focus:border-primary/40 resize-y"
+          className="w-full rounded-input border border-foreground/[0.12] bg-background/70 px-3 py-2 typo-caption text-ink-2 outline-none focus:border-primary/40 resize-y"
           data-testid="ship-dispatch-prompt"
         />
         <div className="flex items-center justify-end gap-2 mt-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 rounded-interactive typo-caption text-foreground/60 hover:text-foreground transition-colors focus-ring"
+            className="px-3 py-1.5 rounded-interactive typo-caption text-ink-2 hover:text-foreground transition-colors focus-ring"
           >
             {t.common.cancel}
           </button>

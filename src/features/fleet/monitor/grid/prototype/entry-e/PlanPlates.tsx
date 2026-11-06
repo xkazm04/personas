@@ -120,7 +120,7 @@ export function PlanPlates({ usage }: { usage: UsageFeed; revealEnabled?: boolea
         <Tooltip content={usage.fetchedAt === null ? usage.refreshHint : (
           <span className="flex flex-col gap-0.5">
             <span>{usage.refreshHint}</span>
-            <span className="typo-caption tabular-nums" data-testid="entry-e-usage-asof">{m.usage_as_of} <RelativeTime timestamp={usage.fetchedAt} /></span>
+            <span className="typo-caption num" data-testid="entry-e-usage-asof">{m.usage_as_of} <RelativeTime timestamp={usage.fetchedAt} /></span>
           </span>
         )}>
           <AsyncButton

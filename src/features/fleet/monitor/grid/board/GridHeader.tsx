@@ -64,10 +64,10 @@ function StateTally({
           aria-pressed={active === s}
           aria-label={filterAria(labels[s])}
           data-testid={`fleet-grid-tally-${s}`}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 typo-caption text-foreground transition-colors ${
+          className={`inline-flex items-center gap-1.5 rounded-interactive border px-2 py-0.5 typo-caption text-foreground transition-colors ${
             active === s
               ? 'border-primary/60 bg-primary/15'
-              : 'border-border bg-secondary/20 hover:border-primary/30'
+              : 'border-border bg-surface-1 hover:border-primary/30'
           }`}
         >
           <span
@@ -76,7 +76,7 @@ function StateTally({
             }`}
           />
           <span className="opacity-70">{labels[s]}</span>
-          <span className="tabular-nums">{totals[s]}</span>
+          <span className="num">{totals[s]}</span>
         </button>
       ))}
     </div>
@@ -131,7 +131,7 @@ export function GridHeader({
             onClick={onOpenOrchestration}
             aria-label={s.queue_open_orchestration}
             data-testid="fleet-grid-orchestration"
-            className="focus-ring inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-interactive border border-border bg-secondary/20 text-foreground transition-colors hover:bg-secondary/40"
+            className="focus-ring inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-interactive border border-border bg-surface-1 text-foreground transition-colors hover:bg-surface-1"
           >
             <ListOrdered className="h-3.5 w-3.5" aria-hidden />
           </button>

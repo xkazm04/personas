@@ -66,7 +66,7 @@ export function CommandBar({
   return (
     <div className="flex min-h-[52px] flex-shrink-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-border px-3 py-2" data-testid="entry-e-command">
       <Tooltip content={m.activity_mode}>
-        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-primary/40 bg-primary/10" role="img" aria-label={m.activity_mode}>
+        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-primary/40 bg-surface-1" role="img" aria-label={m.activity_mode}>
           <Activity className="h-4 w-4 text-primary" aria-hidden />
         </span>
       </Tooltip>
@@ -86,7 +86,7 @@ export function CommandBar({
             >
               <Lamp lamp={{ tone: 'run', lit: active === null }} />
               <span className="hidden typo-caption text-foreground 2xl:inline">{t.common.all}</span>
-              <span className="typo-data tabular-nums text-foreground">{filter.agentTotal + filter.sessionTotal}</span>
+              <span className="typo-data num text-foreground">{filter.agentTotal + filter.sessionTotal}</span>
             </Button>
           </Tooltip>
           {SQUARE_STATE_ORDER.map((s) => {
@@ -108,7 +108,7 @@ export function CommandBar({
               >
                 <Lamp lamp={{ tone: lamp.tone, lit: lamp.lit && total > 0 }} />
                 <span className="hidden typo-caption text-foreground 2xl:inline">{labels[s]}</span>
-                <span className="typo-data tabular-nums text-foreground">{total}</span>
+                <span className="typo-data num text-foreground">{total}</span>
               </Button>
               </Tooltip>
             );

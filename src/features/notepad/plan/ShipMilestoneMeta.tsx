@@ -74,7 +74,7 @@ export function ShipGoalField({ name, goal, editable, onSave }: {
         // Hard cap, not a warning. A soft limit here would still let a paste
         // land a paragraph in the heading and only complain afterwards.
         maxLength={OBJECTIVE_MAX}
-        className="w-full min-w-0 rounded-input border border-foreground/[0.14] bg-transparent px-2 py-1 typo-title-lg placeholder:text-foreground/30 focus-ring"
+        className="w-full min-w-0 rounded-input border border-foreground/[0.14] bg-transparent px-2 py-1 typo-title-lg placeholder:text-ink-3 focus-ring"
         data-testid="ship-milestone-goal"
       />
     );
@@ -104,7 +104,7 @@ export function ShipGoalField({ name, goal, editable, onSave }: {
  *  own status colour and therefore stays a string). */
 function Count({ ink, children }: { ink: string; children: ReactNode }) {
   return (
-    <span className={`inline-flex items-center gap-1 typo-caption tabular-nums shrink-0 ${ink}`}>
+    <span className={`inline-flex items-center gap-1 typo-caption num shrink-0 ${ink}`}>
       {children}
     </span>
   );
@@ -128,7 +128,7 @@ export function ShipDualitySummary({ duality }: { duality: DualitySummary }) {
       </Tooltip>
       {duality.disagree > 0 ? (
         <Tooltip content={tx(t.ship.duality_conflict_names, { names: duality.conflicts.map((c) => c.name).join(', ') })} placement="top">
-          <span className={`inline-flex items-center gap-1 typo-caption tabular-nums shrink-0 cursor-help ${PLAN_INK.athena}`}>
+          <span className={`inline-flex items-center gap-1 typo-caption num shrink-0 cursor-help ${PLAN_INK.athena}`}>
             <TriangleAlert className="w-3 h-3" aria-hidden />
             {tx(t.ship.duality_disagree, { count: duality.disagree })}
           </span>
@@ -185,13 +185,13 @@ export function ShipDescriptionField({ name, description, editable, onSave }: {
           rows={4}
           placeholder={t.ship.description_placeholder}
           ariaLabel={tx(t.ship.description_edit_aria, { name })}
-          className="w-full min-w-0 rounded-input border border-foreground/[0.14] bg-transparent px-2 py-1.5 typo-caption text-foreground placeholder:text-foreground/30 focus-ring resize-y font-mono"
+          className="w-full min-w-0 rounded-input border border-foreground/[0.14] bg-transparent px-2 py-1.5 typo-caption text-foreground placeholder:text-ink-3 focus-ring resize-y font-mono"
           testId="ship-milestone-description"
         />
         {/* The two behaviours, named once at the moment they are usable, and
             never again. A permanent hint under a field the operator writes in
             weekly is the kind of prose this module just removed. */}
-        <p className="typo-caption text-foreground/40 mt-1">{t.ship.description_editor_hint}</p>
+        <p className="typo-caption text-ink-3 mt-1">{t.ship.description_editor_hint}</p>
       </div>
     );
   }
@@ -210,7 +210,7 @@ export function ShipDescriptionField({ name, description, editable, onSave }: {
         {written ? (
           <MarkdownMiniView content={description!} className="typo-caption text-foreground" />
         ) : (
-          <span className="typo-caption text-foreground/45">{t.ship.description_empty}</span>
+          <span className="typo-caption text-ink-3">{t.ship.description_empty}</span>
         )}
       </div>
       {editable && (

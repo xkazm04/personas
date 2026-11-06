@@ -33,10 +33,8 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(55% 60% at 8% 0%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 70%),
-    radial-gradient(45% 55% at 92% 18%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
-    radial-gradient(70% 55% at 55% 105%, color-mix(in srgb, var(--status-info) 11%, transparent), transparent 70%);
+  /* Console law: the field is the page ground, no colour pools. */
+  background: transparent;
 }
 .lens-surface::before {
   content: '';
@@ -65,7 +63,6 @@
   place-items: center;
   color: var(--accent);
   border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
-  box-shadow: 0 0 14px color-mix(in srgb, var(--primary) 25%, transparent);
 }
 .lens-depth { display: flex; align-items: center; gap: 0.35rem; flex: none; }
 .lens-depth i {
@@ -76,7 +73,7 @@
   background: var(--card-border);
   transition: width 0.4s var(--lens-ease), background 0.4s, box-shadow 0.4s;
 }
-.lens-depth i.is-on { width: 1.75rem; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.lens-depth i.is-on { width: 1.75rem; background: var(--accent); }
 .lens-top .k-crumbs { min-width: 0; flex: 0 1 auto; overflow: hidden; }
 .lens-top .k-crumbs ol { flex-wrap: nowrap; overflow: hidden; }
 .lens-top .k-crumbs li { white-space: nowrap; }
@@ -124,7 +121,7 @@
   height: 6rem;
   display: grid;
   place-items: center;
-  filter: drop-shadow(0 0 1.25rem color-mix(in srgb, var(--primary) 35%, transparent));
+  
 }
 .lens-head-mark > svg { width: 100%; height: 100%; }
 /* the project's actions: wrap inside the header's fixed height, right-aligned */
@@ -161,13 +158,12 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.lens-head-eyebrow { color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--font-mono); }
+.lens-head-eyebrow { color: var(--ink-3); letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--font-mono); }
 .lens-head-eyebrow .lens-dim { color: var(--muted-foreground); }
 /* Light themes: the accent is too pale for text on the field; a quarter toward the foreground
    clears AA and stays the same hue (the module's own rule, layer1.css). */
-[data-theme^="light"] .lens-head-eyebrow { color: color-mix(in srgb, var(--primary) 70%, var(--foreground)); }
 .lens-head-title { line-height: 1.1; letter-spacing: -0.025em; }
-.lens-head-title .lens-ink-red { color: var(--status-error); text-shadow: 0 0 26px color-mix(in srgb, var(--status-error) 50%, transparent); }
+.lens-head-title .lens-ink-red { color: var(--status-error); }
 .lens-head-title .lens-ink-amber { color: var(--status-warning); }
 .lens-head-title .lens-ink-stale { color: var(--status-info); }
 .lens-head-title .lens-ink-green { color: var(--status-success); }

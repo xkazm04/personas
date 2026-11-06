@@ -33,7 +33,7 @@ export function ChangeDrawer({ row, stepId, onClose }: { row: EvidenceRow | null
     <BaseModal isOpen={!!row} onClose={onClose} titleId={titleId} placement="right-drawer" portal>
       {row && item && Glyph && (
         <div className="flex h-full min-h-0 flex-col" data-testid="lc8-drawer">
-          <header className="flex shrink-0 items-start gap-3 border-b border-primary/10 bg-secondary/30 px-6 pb-4 pt-6">
+          <header className="flex shrink-0 items-start gap-3 border-b border-hair bg-surface-1 px-6 pb-4 pt-6">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-card border border-primary/30 bg-primary/15 text-primary">
               <Glyph className={GLYPH.md} aria-hidden />
             </span>

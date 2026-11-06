@@ -22,7 +22,7 @@ export function SweepHeroRow({ row, projectName, busy, onInfo, onAdopt }: {
   const visual = presetVisual(SWEEP_SKILL_NAME);
 
   return (
-    <div className="rounded-card border border-primary/15 bg-primary/[0.05] px-3 py-2.5 mt-2" data-testid="sweep-hero-row">
+    <div className="rounded-card border border-hair bg-primary/[0.05] px-3 py-2.5 mt-2" data-testid="sweep-hero-row">
       <div className="flex items-center gap-2.5">
         {visual && (
           <span
@@ -46,7 +46,7 @@ export function SweepHeroRow({ row, projectName, busy, onInfo, onAdopt }: {
         <LastUsed usage={row.usage} />
         {row.installed ? (
           <span title={tx(d.skills_installed_in, { name: projectName })} className="inline-flex p-1 flex-shrink-0">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/70" aria-label={tx(d.skills_installed_in, { name: projectName })} />
+            <CheckCircle2 className="w-3.5 h-3.5 text-status-success" aria-label={tx(d.skills_installed_in, { name: projectName })} />
           </span>
         ) : (
           <button
@@ -55,7 +55,7 @@ export function SweepHeroRow({ row, projectName, busy, onInfo, onAdopt }: {
             disabled={busy}
             title={tx(d.skills_adopt_hint, { name: projectName })}
             aria-label={tx(d.skills_adopt_hint, { name: projectName })}
-            className="p-1 rounded-interactive text-primary hover:bg-primary/10 border border-primary/20 transition-colors disabled:opacity-30 flex-shrink-0"
+            className="p-1 rounded-interactive text-primary hover:bg-primary/10 border border-hair transition-colors disabled:opacity-30 flex-shrink-0"
             data-testid="skills-manager-adopt-scan-sweep"
           >
             <ArrowDownToLine className="w-3.5 h-3.5" aria-hidden />

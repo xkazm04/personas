@@ -423,7 +423,7 @@ export function PrBridge({ task }: { task: DevTask }) {
   if (task.status !== 'completed') return null;
 
   return (
-    <div className="border-t border-primary/10 bg-primary/3">
+    <div className="border-t border-hair bg-surface-1">
       {pendingFiles && (
         <ConfirmDialog
           title={dt.pr_bridge_prepare}
@@ -444,21 +444,21 @@ export function PrBridge({ task }: { task: DevTask }) {
         className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 transition-colors text-left"
         aria-expanded={expanded}
       >
-        <div className="w-7 h-7 rounded-card bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center flex-shrink-0">
-          <GitPullRequest className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="w-7 h-7 rounded-card bg-surface-1 border border-hair flex items-center justify-center flex-shrink-0">
+          <GitPullRequest className="w-3.5 h-3.5 text-status-success" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="typo-card-label">{dt.pr_bridge_title}</span>
             {content.agentLabel && content.agentEmoji && (
-              <span className="inline-flex items-center gap-1 text-[10px] text-foreground bg-primary/5 border border-primary/10 rounded-full px-2 py-0.5">
-                <Sparkles className="w-2.5 h-2.5 text-violet-400" />
+              <span className="inline-flex items-center gap-1 typo-caption text-foreground bg-surface-1 border border-hair rounded-interactive px-2 py-0.5">
+                <Sparkles className="w-2.5 h-2.5 text-role-agent" />
                 <span>{content.agentEmoji}</span>
                 <span>{content.agentLabel}</span>
               </span>
             )}
           </div>
-          <p className="text-[10px] text-foreground truncate">
+          <p className="typo-caption text-foreground truncate">
             {expanded ? dt.pr_bridge_collapse : dt.pr_bridge_subtitle}
           </p>
         </div>
@@ -471,8 +471,8 @@ export function PrBridge({ task }: { task: DevTask }) {
         <div className="px-4 pb-4 space-y-3">
           {/* No GitHub URL — direct the user to fix the root cause rather than dead-end. */}
           {!hasGithubUrl && (
-            <div className="flex items-center gap-3 rounded-card border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-              <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <div className="flex items-center gap-3 rounded-card border border-hair bg-surface-2 px-3 py-2">
+              <AlertCircle className="w-4 h-4 text-status-warning flex-shrink-0" />
               <p className="typo-caption text-foreground flex-1">{dt.pr_bridge_no_github}</p>
               <Button
                 variant="secondary"
@@ -487,8 +487,8 @@ export function PrBridge({ task }: { task: DevTask }) {
 
           {/* GitHub URL but host not recognized (GitLab etc). Let the user copy the body. */}
           {hasGithubUrl && !hasRecognizedRepo && (
-            <div className="flex items-center gap-3 rounded-card border border-amber-500/20 bg-amber-500/5 px-3 py-2">
-              <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <div className="flex items-center gap-3 rounded-card border border-hair bg-surface-2 px-3 py-2">
+              <AlertCircle className="w-4 h-4 text-status-warning flex-shrink-0" />
               <p className="typo-caption text-foreground">{dt.pr_bridge_unsupported_host}</p>
             </div>
           )}
@@ -502,12 +502,12 @@ export function PrBridge({ task }: { task: DevTask }) {
               <span className="typo-caption text-foreground">{content.prTitle}</span>
             </PreviewField>
             <PreviewField label={dt.pr_bridge_commit_msg} mono fullRow>
-              <pre className="text-[11px] text-foreground whitespace-pre-wrap font-mono max-h-24 overflow-y-auto">
+              <pre className="typo-caption text-foreground whitespace-pre-wrap max-h-24 overflow-y-auto">
                 {content.commitMessage}
               </pre>
             </PreviewField>
             <PreviewField label={dt.pr_bridge_pr_body} mono fullRow>
-              <pre className="text-[11px] text-foreground whitespace-pre-wrap font-mono max-h-40 overflow-y-auto">
+              <pre className="typo-caption text-foreground whitespace-pre-wrap max-h-40 overflow-y-auto">
                 {content.prBody}
               </pre>
             </PreviewField>
@@ -589,7 +589,7 @@ export function PrBridge({ task }: { task: DevTask }) {
                 type="button"
                 onClick={resetSteps}
                 title={dt.pr_bridge_reset_steps_tooltip}
-                className="ml-auto inline-flex items-center gap-1 text-[10px] text-foreground hover:text-foreground transition-colors"
+                className="ml-auto inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground transition-colors"
               >
                 <RotateCcw className="w-3 h-3" />
                 {dt.pr_bridge_reset_steps}
@@ -600,7 +600,7 @@ export function PrBridge({ task }: { task: DevTask }) {
           {/* The draft toggle is a GitHub form control; glab/GitLab take the
               draft flag differently, so the hint is not shown there. */}
           {repoTarget?.provider === 'github' && (
-            <p className="text-[10px] text-foreground leading-relaxed">{dt.pr_bridge_draft_hint}</p>
+            <p className="typo-caption text-foreground">{dt.pr_bridge_draft_hint}</p>
           )}
         </div>
       )}
@@ -624,8 +624,8 @@ function PreviewField({
   fullRow?: boolean;
 }) {
   return (
-    <div className={`rounded-card border border-primary/10 bg-primary/3 px-3 py-2 ${fullRow ? 'lg:col-span-2' : ''}`}>
-      <span className="block text-[9px] uppercase tracking-wider font-medium text-primary mb-1">
+    <div className={`rounded-card border border-hair bg-surface-1 px-3 py-2 ${fullRow ? 'lg:col-span-2' : ''}`}>
+      <span className="block typo-eyebrow text-primary mb-1">
         {label}
       </span>
       <div className="min-w-0">{children}</div>
@@ -643,7 +643,7 @@ function ActionWithCheck({ done, children }: { done: boolean; children: React.Re
     <span className="relative inline-flex">
       {children}
       {done && (
-        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center pointer-events-none">
+        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-status-success border-2 border-background flex items-center justify-center pointer-events-none">
           <Check className="w-2 h-2 text-background" strokeWidth={3.5} />
         </span>
       )}

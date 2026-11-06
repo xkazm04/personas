@@ -55,7 +55,7 @@ export function PersonaComposer({ persona }: { persona: Persona }) {
           }}
           placeholder={placeholder}
           aria-label={placeholder}
-          className="min-w-0 flex-1 resize-none bg-transparent py-1.5 typo-body text-foreground placeholder:text-muted-foreground focus:outline-none"
+          className="min-w-0 flex-1 resize-none bg-transparent py-1.5 typo-body text-foreground placeholder:text-ink-3 focus:outline-none"
         />
         <Button
           variant="ghost"

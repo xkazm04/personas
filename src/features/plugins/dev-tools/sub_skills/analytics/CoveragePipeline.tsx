@@ -118,19 +118,18 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
   };
 
   return (
-    <section className="rounded-card border border-primary/12 bg-secondary/[0.12]" data-testid="coverage-pipeline">
-      <div className="flex items-center gap-2 px-3 py-2 bg-primary/[0.04] border-b border-primary/10 rounded-t-card">
+    <section className="rounded-card border border-hair bg-secondary/[0.12]" data-testid="coverage-pipeline">
+      <div className="flex items-center gap-2 px-3 py-2 bg-primary/[0.04] border-b border-hair rounded-t-card">
         <Workflow className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
         <Tooltip content={d.skills_pipeline_subtitle} placement="top">
           <span className="inline-flex items-center gap-1.5 typo-body text-foreground">
             {d.skills_pipeline_title}
-            <Info className="w-3 h-3 text-foreground/35" aria-hidden />
+            <Info className="w-3 h-3 text-ink-3" aria-hidden />
           </span>
         </Tooltip>
         <span className="ml-auto flex-shrink-0">
           <Button
-            variant="accent"
-            tone="agent"
+            variant="secondary"
             size="sm"
             icon={<PlayCircle className="w-3.5 h-3.5" />}
             disabled={busy || runnable.length === 0}
@@ -143,9 +142,9 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
       </div>
       <div className="max-h-64 overflow-y-auto px-3 py-1">
         {loading ? (
-          <p className="typo-caption text-foreground/45 py-6 text-center">{d.skills_pipeline_loading}</p>
+          <p className="typo-caption text-ink-3 py-6 text-center">{d.skills_pipeline_loading}</p>
         ) : rows.length === 0 ? (
-          <p className="typo-caption text-foreground/45 py-6 text-center">{d.skills_pipeline_no_contexts}</p>
+          <p className="typo-caption text-ink-3 py-6 text-center">{d.skills_pipeline_no_contexts}</p>
         ) : (
           <ul>
             {rows.slice(0, reveal.count).map((r) => {
@@ -161,17 +160,17 @@ export function CoveragePipeline({ projectId, busy, onDispatch }: {
                     aria-label={r.context.name}
                   />
                   <span className="typo-caption text-foreground truncate flex-1 min-w-0">{r.context.name}</span>
-                  <span className="typo-label text-foreground/45 tabular-nums flex-shrink-0">
+                  <span className="typo-label text-ink-3 num flex-shrink-0">
                     {tx(d.skills_pipeline_fresh_nodes, { n: r.freshNodes })}
                   </span>
                   {/* The lens BUNDLE the sweep will evaluate — one chip per lens. */}
                   <span className="flex items-center gap-1 flex-shrink-0">
                     {r.lenses.slice(0, MAX_BUNDLE_CHIPS).map((lens) => <LensChip key={lens} lensKey={lens} />)}
                     {r.lenses.length > MAX_BUNDLE_CHIPS && (
-                      <span className="typo-label text-foreground/45 tabular-nums">+{r.lenses.length - MAX_BUNDLE_CHIPS}</span>
+                      <span className="typo-label text-ink-3 num">+{r.lenses.length - MAX_BUNDLE_CHIPS}</span>
                     )}
                   </span>
-                  <span className={`typo-label flex-shrink-0 w-16 text-right ${done ? 'text-status-info' : 'text-foreground/35'}`}>
+                  <span className={`typo-label flex-shrink-0 w-16 text-right ${done ? 'text-status-info' : 'text-ink-3'}`}>
                     {done ? d.skills_pipeline_dispatched : ''}
                   </span>
                 </li>

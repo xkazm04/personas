@@ -39,7 +39,7 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
 
   return (
     <div data-testid="ship-milestone-composer">
-      <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 typo-caption text-foreground/60 hover:text-foreground transition-colors focus-ring rounded-interactive mb-3">
+      <button type="button" onClick={onBack} className="inline-flex items-center gap-1.5 typo-caption text-ink-2 hover:text-foreground transition-colors focus-ring rounded-interactive mb-3">
         <ArrowLeft className="w-3.5 h-3.5" aria-hidden />
         {t.ship.back_to_plan}
       </button>
@@ -65,7 +65,7 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
 
           <div className="flex items-center gap-2 flex-wrap mb-3">
             {vm.boundGoals.map((g) => (
-              <span key={g.id} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption ${PLAN_INK.accent} ${PLAN_BORDER.accent}`}>
+              <span key={g.id} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive border typo-caption ${PLAN_INK.accent} ${PLAN_BORDER.accent}`}>
                 <Target className="w-3 h-3" aria-hidden />
                 {g.name}
                 <Tooltip content={t.ship.goal_assist_tooltip}>
@@ -89,7 +89,7 @@ export function ShipMilestoneComposer({ vm, ship, onBack }: {
             <span className="flex items-center gap-1.5 flex-wrap">
               {vm.footprint.map((c) => (
                 <Tooltip key={c.id} content={tx(c.kpis === 1 ? t.ship.kpi_count_one : t.ship.kpi_count_other, { count: c.kpis })}>
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border typo-caption ${PLAN_INK[TONE_ROLE[c.tone]]} ${PLAN_BORDER[TONE_ROLE[c.tone]]}`}>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive border typo-caption ${PLAN_INK[TONE_ROLE[c.tone]]} ${PLAN_BORDER[TONE_ROLE[c.tone]]}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${PLAN_FILL[TONE_ROLE[c.tone]]}`} />
                     {c.name}{c.kpis === 0 ? ` · ${t.ship.no_kpi_short}` : ''}
                   </span>

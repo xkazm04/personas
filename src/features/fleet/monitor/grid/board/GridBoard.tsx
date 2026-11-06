@@ -131,7 +131,7 @@ export function GridBoard({
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
         <div className="relative">
-          <div className="absolute inset-0 -m-6 rounded-full bg-primary/10 blur-2xl" />
+          <div className="absolute inset-0 -m-6 rounded-full bg-surface-1 blur-2xl" />
           <Users className="relative h-8 w-8 text-foreground opacity-70" />
         </div>
         <p className="typo-body text-foreground">

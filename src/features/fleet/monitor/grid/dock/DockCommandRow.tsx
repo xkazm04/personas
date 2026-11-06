@@ -76,7 +76,7 @@ export function DockCommandRow({
         {/* The budget. The server bound is 1200 and the operator used to meet
             it only as an error after pressing send. */}
         <span
-          className={`typo-code flex-shrink-0 self-end tabular-nums ${
+          className={`typo-code flex-shrink-0 self-end num ${
             c.value.length > OBJECTIVE_MAX ? 'text-status-error' : 'text-muted'
           }`}
           data-testid="quick-dispatch-char-count"
@@ -96,7 +96,7 @@ export function DockCommandRow({
             firing ? 'dock-launch-firing' : ''
           } ${
             c.canSend
-              ? 'border-primary/60 bg-gradient-to-b from-accent to-btn-primary text-btn-primary-fg shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_25%,transparent),0_6px_18px_color-mix(in_srgb,var(--primary)_22%,transparent)] hover:brightness-110'
+              ? 'border-primary bg-primary text-btn-primary-fg hover:brightness-110'
               : 'border-card-border bg-card-bg text-muted'
           }`}
         >

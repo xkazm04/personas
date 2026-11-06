@@ -28,17 +28,17 @@ interface CrossProjectMetadataModalProps {
 // ---------------------------------------------------------------------------
 
 const TECH_COLORS: Record<string, string> = {
-  'frontend': 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25',
-  'rust-backend': 'bg-orange-500/15 text-orange-400 border-orange-500/25',
-  'node-backend': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  'python-backend': 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25',
-  'database': 'bg-violet-500/15 text-violet-400 border-violet-500/25',
-  'typescript': 'bg-blue-500/15 text-blue-400 border-blue-500/25',
-  'devops': 'bg-pink-500/15 text-pink-400 border-pink-500/25',
+  'frontend': 'bg-surface-1 text-status-info border-hair',
+  'rust-backend': 'bg-surface-1 text-status-warning border-hair',
+  'node-backend': 'bg-surface-1 text-status-success border-hair',
+  'python-backend': 'bg-surface-1 text-status-warning border-hair',
+  'database': 'bg-surface-1 text-role-agent border-hair',
+  'typescript': 'bg-surface-1 text-status-info border-hair',
+  'devops': 'bg-surface-1 text-role-highlight border-hair',
 };
 
 function techColor(layer: string): string {
-  return TECH_COLORS[layer] ?? 'bg-primary/10 text-primary border-primary/20';
+  return TECH_COLORS[layer] ?? 'bg-surface-1 text-primary border-hair';
 }
 
 // ---------------------------------------------------------------------------
@@ -53,37 +53,37 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
   return (
     <div className={`rounded-modal border p-4 transition-colors ${
       hasContexts
-        ? 'border-primary/15 bg-primary/5 hover:bg-primary/8'
-        : 'border-amber-500/20 bg-amber-500/5'
+        ? 'border-hair bg-surface-1 hover:bg-primary/8'
+        : 'border-hair bg-surface-2'
     }`}>
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
-        <div className="w-10 h-10 rounded-modal bg-amber-500/15 border border-amber-500/25 flex items-center justify-center flex-shrink-0">
-          <FolderTree className="w-5 h-5 text-amber-400" />
+        <div className="w-10 h-10 rounded-modal bg-surface-2 border border-hair flex items-center justify-center flex-shrink-0">
+          <FolderTree className="w-5 h-5 text-ink-2" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-md font-semibold text-primary">{project.name}</h3>
-            <span className={`rounded-full px-2 py-0.5 text-md font-medium border ${
+            <h3 className="typo-body text-primary">{project.name}</h3>
+            <span className={`rounded-interactive px-2 py-0.5 typo-body border ${
               project.status === 'active'
-                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
+                ? 'bg-surface-1 text-status-success border-hair'
                 : 'bg-muted/20 text-foreground border-muted/30'
             }`}>
               {project.status}
             </span>
             {project.active_goal_count > 0 && (
-              <span className="rounded-full px-2 py-0.5 text-md font-medium bg-violet-500/15 text-violet-400 border border-violet-500/25 flex items-center gap-1">
+              <span className="rounded-interactive px-2 py-0.5 typo-body bg-surface-1 text-role-agent border border-hair flex items-center gap-1">
                 <Target className="w-3 h-3" /> {project.active_goal_count} {t.plugins.dev_projects.active_goals}
               </span>
             )}
           </div>
-          <p className="text-md text-foreground mt-0.5 font-mono truncate">{project.root_path}</p>
+          <p className="typo-body text-foreground mt-0.5 truncate">{project.root_path}</p>
         </div>
         {hasContexts && (
           <button
             type="button"
             onClick={() => setExpanded((e) => !e)}
-            className="text-md text-primary/70 hover:text-primary px-2 py-1 rounded-card hover:bg-primary/10 flex-shrink-0"
+            className="typo-body text-primary/70 hover:text-primary px-2 py-1 rounded-card hover:bg-primary/10 flex-shrink-0"
           >
             {expanded ? t.plugins.dev_tools.collapse : t.plugins.dev_tools.details}
           </button>
@@ -91,10 +91,10 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
       </div>
 
       {/* Summary */}
-      <p className="text-md text-foreground leading-relaxed mb-3">{project.summary}</p>
+      <p className="typo-body text-foreground mb-3">{project.summary}</p>
 
       {!hasContexts && (
-        <div className="flex items-center gap-2 text-md text-amber-400 bg-amber-500/10 px-3 py-2 rounded-card">
+        <div className="flex items-center gap-2 typo-body text-status-warning bg-status-warning/10 px-3 py-2 rounded-card">
           <AlertCircle className="w-4 h-4" />
           {t.plugins.dev_projects.run_context_map_scan}
         </div>
@@ -107,7 +107,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               <Layers className="w-3.5 h-3.5 text-foreground" />
               {project.tech_layers.map((layer) => (
-                <span key={layer} className={`rounded-full px-2.5 py-0.5 text-md font-medium border ${techColor(layer)}`}>
+                <span key={layer} className={`rounded-interactive px-2.5 py-0.5 typo-body border ${techColor(layer)}`}>
                   {layer}
                 </span>
               ))}
@@ -117,7 +117,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
           {/* Capabilities */}
           {project.capabilities.length > 0 && (
             <div className="mb-3">
-              <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
+              <div className="flex items-center gap-1.5 typo-body text-foreground mb-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 {t.plugins.dev_tools.capabilities}
               </div>
@@ -125,7 +125,7 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
                 {project.capabilities.map((cap) => (
                   <span
                     key={cap.name}
-                    className="rounded-card px-2.5 py-1 text-md font-medium bg-primary/10 border border-primary/15 text-foreground"
+                    className="rounded-card px-2.5 py-1 typo-body bg-surface-1 border border-hair text-foreground"
                   >
                     {cap.name} <span className="text-foreground">· {cap.context_count}</span>
                   </span>
@@ -136,36 +136,36 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
 
           {/* Stats row */}
           <div className="grid grid-cols-4 gap-2 mb-3">
-            <div className="rounded-card bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
-              <div className="text-md font-semibold text-foreground">{project.context_count}</div>
-              <div className="text-md text-foreground">contexts</div>
+            <div className="rounded-card bg-background/40 border border-hair px-2.5 py-1.5 text-center">
+              <div className="typo-body text-foreground">{project.context_count}</div>
+              <div className="typo-body text-foreground">contexts</div>
             </div>
-            <div className="rounded-card bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
-              <div className="text-md font-semibold text-foreground">{project.keywords.length}</div>
-              <div className="text-md text-foreground">keywords</div>
+            <div className="rounded-card bg-background/40 border border-hair px-2.5 py-1.5 text-center">
+              <div className="typo-body text-foreground">{project.keywords.length}</div>
+              <div className="typo-body text-foreground">keywords</div>
             </div>
-            <div className="rounded-card bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
-              <div className="text-md font-semibold text-foreground">{project.entry_points.length}</div>
-              <div className="text-md text-foreground">{t.plugins.dev_projects.entry_points}</div>
+            <div className="rounded-card bg-background/40 border border-hair px-2.5 py-1.5 text-center">
+              <div className="typo-body text-foreground">{project.entry_points.length}</div>
+              <div className="typo-body text-foreground">{t.plugins.dev_projects.entry_points}</div>
             </div>
-            <div className="rounded-card bg-background/40 border border-primary/10 px-2.5 py-1.5 text-center">
-              <div className="text-md font-semibold text-foreground">{project.db_tables.length}</div>
-              <div className="text-md text-foreground">{t.plugins.dev_projects.db_tables}</div>
+            <div className="rounded-card bg-background/40 border border-hair px-2.5 py-1.5 text-center">
+              <div className="typo-body text-foreground">{project.db_tables.length}</div>
+              <div className="typo-body text-foreground">{t.plugins.dev_projects.db_tables}</div>
             </div>
           </div>
 
           {/* Expanded details */}
           {expanded && (
-            <div className="space-y-3 pt-3 border-t border-primary/10">
+            <div className="space-y-3 pt-3 border-t border-hair">
               {project.keywords.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
+                  <div className="flex items-center gap-1.5 typo-body text-foreground mb-1.5">
                     <Tag className="w-3.5 h-3.5" />
                     {t.plugins.dev_projects.top_keywords}
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
                     {project.keywords.map((kw) => (
-                      <span key={kw} className="rounded px-1.5 py-0.5 text-md bg-background/60 text-foreground border border-primary/10">
+                      <span key={kw} className="rounded px-1.5 py-0.5 typo-body bg-background/60 text-foreground border border-hair">
                         {kw}
                       </span>
                     ))}
@@ -174,26 +174,26 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
               )}
               {project.entry_points.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
+                  <div className="flex items-center gap-1.5 typo-body text-foreground mb-1.5">
                     <Zap className="w-3.5 h-3.5" />
                     {t.plugins.dev_projects.entry_points_header}
                   </div>
                   <div className="space-y-0.5">
                     {project.entry_points.slice(0, 8).map((ep) => (
-                      <div key={ep} className="text-md font-mono text-foreground truncate">{ep}</div>
+                      <div key={ep} className="typo-body text-foreground truncate">{ep}</div>
                     ))}
                   </div>
                 </div>
               )}
               {project.db_tables.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
+                  <div className="flex items-center gap-1.5 typo-body text-foreground mb-1.5">
                     <Database className="w-3.5 h-3.5" />
                     {t.plugins.dev_projects.db_tables_header}
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
                     {project.db_tables.map((tbl) => (
-                      <StatusBadge key={tbl} accent="violet" className="text-md font-mono">
+                      <StatusBadge key={tbl} accent="violet" className="typo-body">
                         {tbl}
                       </StatusBadge>
                     ))}
@@ -202,26 +202,26 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
               )}
               {project.api_surface.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
+                  <div className="flex items-center gap-1.5 typo-body text-foreground mb-1.5">
                     <Globe className="w-3.5 h-3.5" />
                     {t.plugins.dev_projects.api_surface}
                   </div>
                   <div className="space-y-0.5">
                     {project.api_surface.slice(0, 8).map((api) => (
-                      <div key={api} className="text-md font-mono text-foreground truncate">{api}</div>
+                      <div key={api} className="typo-body text-foreground truncate">{api}</div>
                     ))}
                   </div>
                 </div>
               )}
               {project.hot_directories.length > 0 && (
                 <div>
-                  <div className="flex items-center gap-1.5 text-md text-foreground mb-1.5">
+                  <div className="flex items-center gap-1.5 typo-body text-foreground mb-1.5">
                     <FolderTree className="w-3.5 h-3.5" />
                     {t.plugins.dev_projects.hot_directories}
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
                     {project.hot_directories.map((d) => (
-                      <span key={d} className="rounded px-1.5 py-0.5 text-md font-mono bg-background/60 text-foreground border border-primary/10">
+                      <span key={d} className="rounded px-1.5 py-0.5 typo-body bg-background/60 text-foreground border border-hair">
                         {d}
                       </span>
                     ))}
@@ -230,8 +230,8 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
               )}
               {project.description && (
                 <div>
-                  <div className="text-md text-foreground mb-1.5">{t.plugins.dev_tools.purpose}</div>
-                  <p className="text-md text-foreground leading-relaxed">{project.description}</p>
+                  <div className="typo-body text-foreground mb-1.5">{t.plugins.dev_tools.purpose}</div>
+                  <p className="typo-body text-foreground">{project.description}</p>
                 </div>
               )}
             </div>
@@ -305,26 +305,25 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
       onClick={onClose}
     >
       <div
-        className="w-full max-w-5xl max-h-[90vh] rounded-2xl bg-background border border-primary/15 shadow-elevation-4 flex flex-col overflow-hidden"
+        className="w-full max-w-5xl max-h-[90vh] rounded-card bg-background border border-hair shadow-elevation-4 flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-primary/5">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-hair bg-surface-1">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-              <Network className="w-5 h-5 text-violet-400" />
+            <div className="w-10 h-10 rounded-modal bg-surface-1 border border-hair flex items-center justify-center">
+              <Network className="w-5 h-5 text-role-agent" />
             </div>
             <div>
-              <h2 className="text-md font-semibold text-primary">{t.plugins.dev_projects.cross_project_map_title}</h2>
-              <p className="text-md text-foreground">
+              <h2 className="typo-body text-primary">{t.plugins.dev_projects.cross_project_map_title}</h2>
+              <p className="typo-body text-foreground">
                 {t.plugins.dev_projects.cross_project_map_subtitle}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="accent"
-              tone="agent"
+              variant="secondary"
               size="sm"
               icon={<RefreshCw className={`w-3.5 h-3.5 ${generating ? 'animate-spin' : ''}`} />}
               onClick={handleGenerate}
@@ -350,11 +349,11 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
             </div>
           ) : !map ? (
             <div className="text-center py-20 space-y-3">
-              <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto">
-                <Network className="w-8 h-8 text-violet-400/60" />
+              <div className="w-16 h-16 rounded-card bg-surface-1 border border-hair flex items-center justify-center mx-auto">
+                <Network className="w-8 h-8 text-role-agent" />
               </div>
-              <p className="text-md text-foreground">{t.plugins.dev_projects.no_metadata_yet}</p>
-              <p className="text-md text-foreground max-w-md mx-auto">
+              <p className="typo-body text-foreground">{t.plugins.dev_projects.no_metadata_yet}</p>
+              <p className="typo-body text-foreground max-w-md mx-auto">
                 Click <strong>Generate</strong> {t.plugins.dev_projects.generate_metadata_prompt}
               </p>
             </div>
@@ -372,21 +371,21 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
               )}
 
               {/* Generated timestamp */}
-              <div className="flex items-center gap-2 text-md text-foreground">
+              <div className="flex items-center gap-2 typo-body text-foreground">
                 <Clock className="w-3.5 h-3.5" />
                 Generated {<AbsoluteTime timestamp={map.generated_at} />}
               </div>
 
               {/* Tech distribution */}
               {map.cross_project.tech_distribution.length > 0 && (
-                <div className="rounded-modal border border-primary/10 p-4">
-                  <h3 className="text-md font-semibold text-primary mb-2 flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-blue-400" />
+                <div className="rounded-modal border border-hair p-4">
+                  <h3 className="typo-body text-primary mb-2 flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-status-info" />
                     {t.plugins.dev_projects.tech_distribution}
                   </h3>
                   <div className="flex items-center gap-2 flex-wrap">
                     {map.cross_project.tech_distribution.map((td) => (
-                      <span key={td.layer} className={`rounded-full px-3 py-1 text-md font-medium border ${techColor(td.layer)}`}>
+                      <span key={td.layer} className={`rounded-interactive px-3 py-1 typo-body border ${techColor(td.layer)}`}>
                         {td.layer} <span className="opacity-60">· {td.project_count} project{td.project_count !== 1 ? 's' : ''}</span>
                       </span>
                     ))}
@@ -396,12 +395,12 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
 
               {/* Shared keywords */}
               {map.cross_project.shared_keywords.length > 0 && (
-                <div className="rounded-modal border border-primary/10 p-4">
-                  <h3 className="text-md font-semibold text-primary mb-2 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-violet-400" />
+                <div className="rounded-modal border border-hair p-4">
+                  <h3 className="typo-body text-primary mb-2 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-role-agent" />
                     {t.plugins.dev_projects.shared_keywords}({map.cross_project.shared_keywords.length})
                   </h3>
-                  <p className="text-md text-foreground mb-2">
+                  <p className="typo-body text-foreground mb-2">
                     {t.plugins.dev_projects.shared_keywords_subtitle}
                   </p>
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -409,7 +408,7 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
                       <StatusBadge
                         key={sk.keyword}
                         accent="violet"
-                        className="rounded-card text-md"
+                        className="rounded-card typo-body"
                         title={`In: ${sk.projects.join(', ')}`}
                       >
                         {sk.keyword} <span className="opacity-60">× {sk.count}</span>
@@ -421,9 +420,9 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
 
               {/* Similarity matrix */}
               {map.cross_project.similarity_matrix.length > 0 && (
-                <div className="rounded-modal border border-primary/10 p-4">
-                  <h3 className="text-md font-semibold text-primary mb-2 flex items-center gap-2">
-                    <Link2 className="w-4 h-4 text-pink-400" />
+                <div className="rounded-modal border border-hair p-4">
+                  <h3 className="typo-body text-primary mb-2 flex items-center gap-2">
+                    <Link2 className="w-4 h-4 text-role-highlight" />
                     {t.plugins.dev_projects.project_similarity}
                   </h3>
                   <div className="space-y-1.5">
@@ -431,17 +430,17 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
                       .sort((a, b) => b.similarity - a.similarity)
                       .slice(0, 10)
                       .map((sim, i) => (
-                        <div key={i} className="flex items-center gap-3 text-md">
+                        <div key={i} className="flex items-center gap-3 typo-body">
                           <span className="text-foreground flex-1 min-w-0 truncate">{sim.source}</span>
                           <span className="text-foreground">↔</span>
                           <span className="text-foreground flex-1 min-w-0 truncate">{sim.target}</span>
-                          <div className="w-24 h-1.5 bg-primary/10 rounded-full overflow-hidden flex-shrink-0">
+                          <div className="w-24 h-1.5 bg-surface-1 rounded-full overflow-hidden flex-shrink-0">
                             <div
-                              className="h-full bg-gradient-to-r from-pink-400 to-violet-400 rounded-full"
+                              className="bg-primary h-full"
                               style={{ width: `${Math.max(5, sim.similarity * 100)}%` }}
                             />
                           </div>
-                          <span className="text-md font-medium text-pink-400 w-12 text-right">
+                          <span className="typo-body text-role-highlight w-12 text-right">
                             {Math.round(sim.similarity * 100)}%
                           </span>
                         </div>
@@ -452,8 +451,8 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
 
               {/* Projects */}
               <div className="space-y-3">
-                <h3 className="text-md font-semibold text-primary flex items-center gap-2">
-                  <FolderTree className="w-4 h-4 text-amber-400" />
+                <h3 className="typo-body text-primary flex items-center gap-2">
+                  <FolderTree className="w-4 h-4 text-ink-2" />
                   {t.plugins.dev_projects.projects_header}({map.projects.length})
                 </h3>
                 {map.projects.map((p) => (

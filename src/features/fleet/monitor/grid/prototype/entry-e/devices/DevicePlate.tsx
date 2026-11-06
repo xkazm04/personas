@@ -117,7 +117,7 @@ export const DevicePlate = memo(function DevicePlate({
       ) : (
         <span className="flex w-full min-w-0 items-center gap-2.5">
           <ResourceBars cpu={snap.host.cpuShare} ram={snap.host.ramShare} gpu={snap.host.gpuShare} className="flex-1" testId="mesh-plate-bars" />
-          <span className="flex flex-shrink-0 flex-col items-end typo-data tabular-nums text-foreground">
+          <span className="flex flex-shrink-0 flex-col items-end typo-data num text-foreground">
             <span className="inline-flex items-center gap-1" aria-label={tx(m.mesh_running, { count: snap.running })}>
               <Lamp lamp={{ tone: 'run', lit: snap.running > 0 }} />{snap.running}
             </span>

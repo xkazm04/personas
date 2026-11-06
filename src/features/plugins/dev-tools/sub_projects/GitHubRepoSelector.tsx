@@ -141,7 +141,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
     return (
       <div className="flex items-center gap-2 py-2 text-foreground typo-body">
         <LoadingSpinner size="sm" label="Loading repositories" />
-        <span className="text-md">{t.plugins.dev_projects.loading_repositories}</span>
+        <span className="typo-body">{t.plugins.dev_projects.loading_repositories}</span>
       </div>
     );
   }
@@ -154,7 +154,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
         <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
           <Github className="w-3 h-3" />
           {t.plugins.dev_projects.github_url_label}
-          <span className="text-[10px] text-foreground font-normal">{t.plugins.dev_projects.optional}</span>
+          <span className="typo-caption text-foreground">{t.plugins.dev_projects.optional}</span>
         </label>
         {credState === 'unhealthy' && (
           /* A stale token used to land here looking exactly like "no GitHub
@@ -172,8 +172,8 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={t.plugins.dev_projects.github_url_placeholder}
-            className={`w-full px-3 py-2 pr-8 text-md bg-secondary/40 border rounded-modal text-foreground placeholder:text-foreground/40 focus-ring ${
-              manualValid ? 'border-primary/10' : 'border-status-error/50'
+            className={`w-full px-3 py-2 pr-8 typo-body bg-surface-1 border rounded-modal text-foreground placeholder:text-ink-3 focus-ring ${
+              manualValid ? 'border-hair' : 'border-status-error/50'
             }`}
           />
           {value && manualValid && (
@@ -216,12 +216,12 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
       <label className="typo-caption text-foreground mb-1.5 flex items-center gap-1.5">
         <Github className="w-3 h-3" />
         {t.plugins.dev_projects.github_repository}
-        <span className="text-[10px] text-foreground font-normal">{t.plugins.dev_projects.optional}</span>
+        <span className="typo-caption text-foreground">{t.plugins.dev_projects.optional}</span>
       </label>
       <button
         type="button"
         onClick={() => { setOpen(!open); setTimeout(() => searchRef.current?.focus(), 50); }}
-        className="w-full flex items-center gap-2 px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal hover:bg-secondary/60 transition-colors text-left"
+        className="w-full flex items-center gap-2 px-3 py-2 typo-body bg-surface-1 border border-hair rounded-modal hover:bg-surface-1 transition-colors text-left"
       >
         <Github className="w-4 h-4 text-foreground flex-shrink-0" />
         {selectedRepoName ? (
@@ -235,9 +235,9 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setSearch(''); }} />
-          <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden max-h-64 flex flex-col">
+          <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-modal border border-hair bg-background shadow-elevation-3 overflow-hidden max-h-64 flex flex-col">
             {/* Search input */}
-            <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-hair">
               <Search className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
               <input
                 ref={searchRef}
@@ -251,7 +251,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
               /* The cap bit with GitHub still offering pages: this list is a
                  floor, so a missing repo is not proof it does not exist. */
               <p
-                className="px-3 py-1.5 typo-caption text-status-warning border-b border-primary/10"
+                className="px-3 py-1.5 typo-caption text-status-warning border-b border-hair"
                 data-testid="github-repos-truncated"
               >
                 {tx(t.plugins.dev_projects.github_repos_truncated, { count: repos.length })}
@@ -270,7 +270,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
                     type="button"
                     onClick={() => handleSelect(repo)}
                     className={`w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-primary/5 transition-colors ${
-                      value === repo.html_url ? 'bg-primary/10' : ''
+                      value === repo.html_url ? 'bg-surface-1' : ''
                     }`}
                   >
                     <div className="flex-1 min-w-0">
@@ -281,7 +281,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
                         )}
                       </div>
                       {repo.description && (
-                        <p className="text-[11px] text-foreground truncate mt-0.5">{repo.description}</p>
+                        <p className="typo-caption text-foreground truncate mt-0.5">{repo.description}</p>
                       )}
                     </div>
                   </button>
@@ -294,7 +294,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
 
       {/* Selected-repo preview — richer confirmation of the bound repository */}
       {previewName && !open && (
-        <div className="mt-2 rounded-input border border-primary/10 bg-secondary/30 px-3 py-2">
+        <div className="mt-2 rounded-input border border-hair bg-surface-1 px-3 py-2">
           <div className="flex items-center gap-2">
             <Github className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
             <span className="typo-caption text-foreground truncate flex-1">{previewName}</span>

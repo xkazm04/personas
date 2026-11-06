@@ -29,7 +29,7 @@ export function ChartLegend() {
         <Swatch className="h-1.5 w-2 rounded-t-interactive border border-status-warning" style={HATCH} label={dl.lcx6_legend_timeout} />
         <Swatch className="h-1.5 w-2 rounded-t-interactive border border-dashed border-foreground/60" label={dl.lcx6_legend_did_not_run} />
         <Swatch className="w-5 border-t-2 border-dashed border-foreground/70" label={dl.lcx6_legend_budget} />
-        <Swatch className="h-3 w-5 border-t border-primary/40 bg-primary/10" label={dl.lcx6_legend_band} />
+        <Swatch className="h-3 w-5 border-t border-primary/40 bg-surface-1" label={dl.lcx6_legend_band} />
       </div>
       <p className={LT.meta}>{dl.lc2_speed_caption}</p>
     </div>

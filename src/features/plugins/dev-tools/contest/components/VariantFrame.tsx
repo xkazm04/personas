@@ -103,7 +103,7 @@ export function VariantFrame({
   if (!variant.previewUrl) {
     return (
       <div
-        className={`flex flex-col items-center justify-center gap-2 rounded-card border border-dashed border-primary/15 bg-secondary/10 p-6 text-center ${className}`}
+        className={`flex flex-col items-center justify-center gap-2 rounded-card border border-dashed border-hair bg-surface-1 p-6 text-center ${className}`}
         data-testid={`contest-frame-unavailable-${variant.key}`}
       >
         <MonitorOff className="w-5 h-5 text-foreground" aria-hidden />
@@ -184,7 +184,7 @@ export function VariantFrame({
         </div>
       )}
 
-      <div ref={boxRef} className="relative w-full overflow-hidden rounded-card border border-primary/12 bg-background">
+      <div ref={boxRef} className="relative w-full overflow-hidden rounded-card border border-hair bg-background">
         <div style={{ height: height * scale }}>
           <div
             className="origin-top-left"
@@ -229,7 +229,7 @@ export function VariantFrame({
 
         {pending && pinMode && (
           <div
-            className="absolute left-0 top-0 w-56 space-y-1.5 rounded-card border border-primary/20 bg-background p-2 shadow-elevation-3"
+            className="absolute left-0 top-0 w-56 space-y-1.5 rounded-card border border-hair bg-background p-2 shadow-elevation-3"
             style={{
               transform: `translate(${Math.min(pending.x, Math.max(0, boxWidth - 232))}px, ${pending.y + 8}px)`,
             }}
@@ -243,7 +243,7 @@ export function VariantFrame({
               onChange={(e) => setNote(e.target.value)}
               placeholder={s.pin_note_placeholder}
               aria-label={s.pin_note_placeholder}
-              className="w-full rounded-input border border-primary/12 bg-background/50 px-2 py-1 typo-body text-foreground focus-ring"
+              className="w-full rounded-input border border-hair bg-background/50 px-2 py-1 typo-body text-foreground focus-ring"
             />
             <div className="flex justify-end gap-1.5">
               <Button size="xs" variant="ghost" onClick={() => setPending(null)}>

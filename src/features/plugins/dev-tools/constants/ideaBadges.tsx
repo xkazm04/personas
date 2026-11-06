@@ -14,7 +14,7 @@ import { levelColor, levelSeverity } from './ideaColors';
 
 export function LevelBadge({ label, value }: { label: string; value: number }) {
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption border ${levelColor(value)}`}>
+    <span className={`inline-flex items-center gap-1 rounded-interactive px-2 py-0.5 typo-caption border ${levelColor(value)}`}>
       {label}: {value}
       <span className="opacity-70">· {levelSeverity(value)}</span>
     </span>
@@ -37,14 +37,14 @@ export function ValueBadge({ idea }: { idea: { impact: number; effort: number; r
   const d = t.plugins.dev_tools;
   const tier = valueTier(ideaValueScore(idea));
   const cfg = {
-    high: { cls: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10', label: d.idea_value_high },
-    med: { cls: 'text-amber-400 border-amber-500/30 bg-amber-500/10', label: d.idea_value_med },
-    low: { cls: 'text-foreground border-primary/20 bg-primary/5', label: d.idea_value_low },
+    high: { cls: 'text-status-success border-hair bg-surface-1', label: d.idea_value_high },
+    med: { cls: 'text-status-warning border-hair bg-surface-2', label: d.idea_value_med },
+    low: { cls: 'text-foreground border-hair bg-surface-1', label: d.idea_value_low },
   }[tier];
   return (
     <Tooltip content={d.idea_value_tip} placement="top">
       <span
-        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption border ${cfg.cls}`}
+        className={`inline-flex items-center gap-1 rounded-interactive px-2 py-0.5 typo-caption border ${cfg.cls}`}
       >
         <TrendingUp className="w-3 h-3" />
         {cfg.label}

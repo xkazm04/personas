@@ -57,7 +57,7 @@ export function FleetLimitEtaChip({
     <Tooltip content={interpolate(t.plugins.fleet.limit_eta_tooltip, { time: clock })}>
       <span
         data-testid={testId}
-        className="inline-flex items-center gap-1 rounded-interactive border border-amber-400/25 bg-amber-400/10 px-1.5 py-0.5 typo-caption tabular-nums text-amber-300"
+        className="inline-flex items-center gap-1 rounded-interactive border border-hair bg-surface-2 px-1.5 py-0.5 typo-caption num text-status-warning"
       >
         <Hourglass className="h-3 w-3 flex-shrink-0" aria-hidden="true" />
         <span>{label}</span>

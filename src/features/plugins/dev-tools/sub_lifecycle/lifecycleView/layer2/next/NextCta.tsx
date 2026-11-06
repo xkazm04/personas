@@ -26,7 +26,7 @@ import type { NextAction } from './nextModel';
 function AskCta({ text, label, testId }: { text: string; label: string; testId: string }) {
   const ask = useAskAthena();
   return (
-    <Button variant="accent" tone="agent" size="sm" icon={<Sparkles className={GLYPH.sm} />} onClick={() => ask('lifecycle', text)} data-testid={testId}>
+    <Button variant="secondary" size="sm" icon={<Sparkles className={GLYPH.sm} />} onClick={() => ask('lifecycle', text)} data-testid={testId}>
       {label}
     </Button>
   );
@@ -63,7 +63,7 @@ export function NextCta({ action: a, node }: { action: NextAction; node: Journey
       );
     case 'add_coverage':
       return (
-        <Button variant="accent" tone="info" size="sm" icon={<Plus className={GLYPH.sm} />} onClick={() => openStep(stepId, 'coverage')} data-testid="lc2-next-coverage">
+        <Button variant="secondary" size="sm" icon={<Plus className={GLYPH.sm} />} onClick={() => openStep(stepId, 'coverage')} data-testid="lc2-next-coverage">
           {dl.lc2_coverage_add}
         </Button>
       );

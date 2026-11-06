@@ -41,37 +41,37 @@ export default function AssignmentMatrix({
 
   return (
     <div
-      className="mx-4 mt-3 rounded-card border border-primary/10 bg-secondary/40 overflow-hidden"
+      className="mx-4 mt-3 rounded-card border border-hair bg-surface-1 overflow-hidden"
       data-testid={testId}
     >
       {/* Coverage strip */}
-      <div className="px-4 py-3 border-b border-primary/10">
+      <div className="px-4 py-3 border-b border-hair">
         <div className="flex items-center gap-2.5">
           <Gauge className="w-4 h-4 text-status-success" />
           <span className="typo-heading text-foreground">
             {wired.length}
-            <span className="text-foreground/40">/{projects.length}</span>
+            <span className="text-ink-3">/{projects.length}</span>
           </span>
-          <span className="typo-caption text-foreground/60">{labels.coverage}</span>
+          <span className="typo-caption text-ink-2">{labels.coverage}</span>
           <div className="ml-auto flex items-center gap-1.5">
             {tallies.map(([svc, n]) => {
               const b = connectorBrand(svc);
               return (
                 <span
                   key={svc}
-                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-primary/10 bg-background/40 text-[11px]"
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive border border-hair bg-background/40 typo-caption"
                   title={`${b.label}: ${n}`}
                 >
                   {b.iconUrl ? (
                     <img src={b.iconUrl} alt="" className="w-3 h-3 rounded-[2px] object-contain" />
                   ) : null}
-                  <span className="text-foreground/70">{n}</span>
+                  <span className="text-ink-2">{n}</span>
                 </span>
               );
             })}
           </div>
         </div>
-        <div className="mt-2 h-1.5 rounded-full bg-primary/10 overflow-hidden">
+        <div className="mt-2 h-1.5 rounded-full bg-surface-1 overflow-hidden">
           <div
             className="h-full rounded-full bg-status-success/60 transition-[width] duration-300"
             style={{ width: `${pct}%` }}
@@ -87,7 +87,7 @@ export default function AssignmentMatrix({
           return (
             <div
               key={p.id}
-              className="rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 px-3 py-2 transition-[border-color,box-shadow] duration-200 hover:border-primary/25 hover:shadow-elevation-2"
+              className="bg-surface-1 rounded-modal border border-hair px-3 py-2 transition-[border-color,box-shadow] duration-200 hover:border-hair hover:shadow-elevation-2"
               style={brand ? { boxShadow: `inset 2px 0 0 ${brand.color}` } : undefined}
             >
               <div className="flex items-center gap-2 min-w-0">
@@ -95,10 +95,10 @@ export default function AssignmentMatrix({
                 {cred ? (
                   <ConnectorChip
                     serviceType={cred.serviceType}
-                    className="text-[11px] text-foreground/70 shrink-0 max-w-[120px]"
+                    className="typo-caption text-ink-2 shrink-0 max-w-[120px]"
                   />
                 ) : (
-                  <span className="text-[10px] uppercase tracking-wide text-status-warning shrink-0">{labels.gap}</span>
+                  <span className="typo-eyebrow text-status-warning shrink-0">{labels.gap}</span>
                 )}
               </div>
               <ConnectorSocket

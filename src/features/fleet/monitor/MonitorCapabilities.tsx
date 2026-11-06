@@ -127,8 +127,8 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
               isExecuting
                 ? 'border-primary/40 bg-primary/[0.07]'
                 : runnable
-                  ? 'border-primary/12 bg-secondary/20 hover:bg-secondary/40 cursor-pointer'
-                  : 'border-primary/8 bg-secondary/10 cursor-default'
+                  ? 'border-hair bg-surface-1 hover:bg-surface-1 cursor-pointer'
+                  : 'border-hair bg-surface-1 cursor-default'
             }`}
           >
             <div className="relative w-[68px] h-[68px] flex items-center justify-center">
@@ -164,10 +164,10 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
                 </span>
               ) : null}
             </div>
-            <span className="typo-caption text-foreground/90 text-center line-clamp-2">
+            <span className="typo-caption text-ink-2 text-center line-clamp-2">
               {uc.title}
             </span>
-            <span className={`typo-caption ${isExecuting ? 'text-primary' : runnable ? 'text-foreground/55' : 'text-foreground/35'}`}>
+            <span className={`typo-caption ${isExecuting ? 'text-primary' : runnable ? 'text-ink-3' : 'text-ink-3'}`}>
               {isExecuting ? t.monitor.executing : runnable ? t.monitor.run : uc.connector}
             </span>
           </button>

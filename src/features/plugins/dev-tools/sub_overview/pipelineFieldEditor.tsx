@@ -19,7 +19,7 @@ export type Draft =
   | { kind: 'select'; value: string; options: SelectOption[]; emptyLabel?: string };
 
 const INPUT_CLASS =
-  'w-full px-3 py-2 typo-body bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground/40 focus-ring';
+  'w-full px-3 py-2 typo-body bg-surface-1 border border-hair rounded-input text-foreground placeholder:text-ink-3 focus-ring';
 
 /** Save is blocked only where a value is mandatory (project name). */
 export function canSaveDraft(field: PipelineFieldId, draft: Draft): boolean {

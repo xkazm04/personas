@@ -73,7 +73,7 @@ function OutputText({ text, run }: { text: string; run: LifecycleRun }) {
       </div>
       <div
         ref={box}
-        className={`relative max-h-[calc(88vh-24rem)] min-h-40 overflow-auto border border-primary/15 bg-background ${lcShape('card')} shadow-inner`}
+        className={`relative max-h-[calc(88vh-24rem)] min-h-40 overflow-auto border border-hair bg-background ${lcShape('card')} shadow-inner`}
         tabIndex={0}
         aria-label={dl.lcx6_viewer_output}
         data-testid="lc6-output"

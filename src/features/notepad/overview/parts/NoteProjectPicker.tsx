@@ -78,7 +78,7 @@ export function NoteProjectPicker({ note, projects, onSelect }: NoteProjectPicke
       }}
       ariaLabel={t.notepad.overview_project_pick}
       className="min-w-0"
-      menuClassName="animate-fade-slide-in min-w-64 max-h-80 overflow-y-auto py-1 rounded-card border border-primary/20 bg-background/95 backdrop-blur-md shadow-elevation-3"
+      menuClassName="animate-fade-slide-in min-w-64 max-h-80 overflow-y-auto py-1 rounded-card border border-hair bg-background/95 backdrop-blur-md shadow-elevation-3"
       renderTrigger={({ isOpen, toggle }) => (
         <button
           type="button"
@@ -90,17 +90,17 @@ export function NoteProjectPicker({ note, projects, onSelect }: NoteProjectPicke
           aria-expanded={isOpen}
           aria-label={t.notepad.overview_project_pick}
           data-testid={`notepad-card-project-${note.id}`}
-          className="min-w-0 max-w-full flex items-center gap-1 -mx-1 px-1 rounded-input hover:bg-secondary/40 focus-ring transition-colors"
+          className="min-w-0 max-w-full flex items-center gap-1 -mx-1 px-1 rounded-input hover:bg-surface-1 focus-ring transition-colors"
         >
           <ProjectLabel projectId={note.projectId} projects={projects} className="typo-label" />
-          <ChevronDown className={`w-3 h-3 flex-shrink-0 text-foreground/60 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />
+          <ChevronDown className={`w-3 h-3 flex-shrink-0 text-ink-2 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />
         </button>
       )}
     >
       {({ close, focusIndex }) => (
         <>
           {workspace && !query && (
-            <div className="flex items-center gap-2 px-3 pt-1.5 pb-2 typo-caption text-foreground/70">
+            <div className="flex items-center gap-2 px-3 pt-1.5 pb-2 typo-caption text-ink-2">
               {/* Workspace colour is user data, not a design token. */}
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: workspace.color }} aria-hidden />
               <span className="truncate">{tx(t.notepad.overview_project_scope, { workspace: workspace.name })}</span>
@@ -119,20 +119,20 @@ export function NoteProjectPicker({ note, projects, onSelect }: NoteProjectPicke
                   close();
                 }}
                 className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-left transition-colors focus-ring ${
-                  index === focusIndex ? 'bg-primary/10' : 'hover:bg-secondary/50'
+                  index === focusIndex ? 'bg-surface-1' : 'hover:bg-surface-1'
                 }`}
               >
                 <FolderGit2 className={`w-3.5 h-3.5 flex-shrink-0 ${row.id ? 'text-foreground opacity-70' : 'text-foreground opacity-40'}`} aria-hidden />
                 <span className="flex-1 min-w-0 flex flex-col">
                   <span className="typo-body text-foreground truncate">{row.label}</span>
-                  {row.path && <span className="typo-caption text-foreground/60 truncate">{row.path}</span>}
+                  {row.path && <span className="typo-caption text-ink-2 truncate">{row.path}</span>}
                 </span>
                 {selected && <Check className="w-3.5 h-3.5 flex-shrink-0 text-primary" aria-hidden />}
               </button>
             );
           })}
           {scoped.length === 0 && (
-            <p className="px-3 py-2 typo-caption text-foreground/70">{t.chrome.workspace_empty_in_workspace}</p>
+            <p className="px-3 py-2 typo-caption text-ink-2">{t.chrome.workspace_empty_in_workspace}</p>
           )}
         </>
       )}

@@ -58,7 +58,7 @@ export function WorkspaceFrame() {
     <span
       aria-hidden
       data-testid="fleet-grid-workspace-frame"
-      className="pointer-events-none absolute -inset-x-1 -inset-y-1.5 z-0 rounded-card border border-primary/25 bg-primary/[0.06] shadow-elevation-1"
+      className="pointer-events-none absolute -inset-x-1 -inset-y-1.5 z-0 rounded-card border border-hair bg-primary/[0.06] shadow-elevation-1"
     />
   );
 }

@@ -53,7 +53,7 @@ export function ReasonRow({ cluster: c, missed, node, rank }: { cluster: ReasonC
         </Button>
       </div>
       <div
-        className="h-1.5 overflow-hidden rounded-pill bg-secondary/60"
+        className="h-1.5 overflow-hidden rounded-pill bg-surface-1"
         role="img"
         aria-label={tx(dl.lcx8_reason_share, { count: c.count, missed })}
       >

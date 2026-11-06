@@ -98,7 +98,7 @@ export default function GoalsPage() {
   return (
     <ContentBox data-testid="goals-page">
       <ContentHeader
-        icon={<Target className="w-5 h-5 text-violet-400" />}
+        icon={<Target className="w-5 h-5 text-ink-2" />}
         iconColor="violet"
         title={t.plugins.dev_lifecycle.tab_goals}
         fitWidth
@@ -109,8 +109,7 @@ export default function GoalsPage() {
               {t.plugins.dev_tools.sync_to_obsidian}
             </Button>
             <Button
-              variant="accent"
-              tone="agent"
+              variant="primary"
               size="sm"
               icon={<Plus className="w-3.5 h-3.5" />}
               disabled={!activeProjectId}
@@ -133,13 +132,9 @@ export default function GoalsPage() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            {/* Haloed animated-bullseye hero (mirrors the overview illustration look) */}
+            {/* Bullseye hero, no halo (Console law: no glow) */}
             <div className="relative flex items-center justify-center mb-5" style={{ width: 168, height: 168 }}>
-              <div
-                className="pointer-events-none absolute inset-0"
-                style={{ background: 'radial-gradient(circle at 50% 50%, rgba(139,92,246,0.18), transparent 70%)' }}
-              />
-              <div className="relative w-[120px] h-[120px] text-violet-400">
+              <div className="relative w-[120px] h-[120px] text-role-agent">
                 <IconGoals active className="w-full h-full" />
               </div>
             </div>
@@ -151,8 +146,7 @@ export default function GoalsPage() {
             </p>
             <div className="flex items-center gap-2">
               <Button
-                variant="accent"
-                tone="agent"
+                variant="primary"
                 size="sm"
                 icon={<Plus className="w-3.5 h-3.5" />}
                 disabled={!activeProjectId}
@@ -180,7 +174,7 @@ export default function GoalsPage() {
                       type="button"
                       disabled={starterBusy}
                       onClick={() => void addStarter(s.title, s.desc)}
-                      className="px-2.5 py-1 rounded-full border border-violet-500/25 bg-violet-500/5 typo-caption text-foreground hover:bg-violet-500/15 hover:text-violet-200 transition-colors disabled:opacity-50"
+                      className="px-2.5 py-1 rounded-interactive border border-hair bg-surface-1 typo-caption text-ink-2 hover:border-primary hover:text-ink-1 transition-colors disabled:opacity-50"
                     >
                       {s.title}
                     </button>

@@ -54,7 +54,7 @@ export function MemoryBindingButton({ binding, onSwitch }: {
  *  30-day window is stated once in the panel footer. */
 export function UsageCount({ usage }: { usage: { invokes_30d: number } | undefined }) {
   return (
-    <span className="typo-label text-foreground/45 tabular-nums text-right">
+    <span className="typo-label text-ink-3 num text-right">
       {usage ? `${usage.invokes_30d}×` : '—'}
     </span>
   );
@@ -64,9 +64,9 @@ export function UsageCount({ usage }: { usage: { invokes_30d: number } | undefin
 export function LastUsed({ usage }: { usage: { last_invoked_at: string | null } | undefined }) {
   const { t } = useTranslation();
   if (!usage?.last_invoked_at) {
-    return <span className="typo-label text-foreground/30 text-right">{t.plugins.dev_tools.skills_never_used}</span>;
+    return <span className="typo-label text-ink-3 text-right">{t.plugins.dev_tools.skills_never_used}</span>;
   }
-  return <RelativeTime timestamp={usage.last_invoked_at} className="typo-label text-foreground/45 tabular-nums text-right" />;
+  return <RelativeTime timestamp={usage.last_invoked_at} className="typo-label text-ink-3 num text-right" />;
 }
 
 /** Context-coverage bar + percentage for a context-tracked skill. Fixed widths
@@ -82,7 +82,7 @@ export function CoverageBar({ row, total }: { row: SkillCoverageRow | undefined;
       <span className="w-12 h-[4px] rounded-full bg-foreground/10 overflow-hidden flex-shrink-0">
         <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: hue }} />
       </span>
-      <span className="typo-label tabular-nums w-8 text-right flex-shrink-0" style={{ color: hue }}>{pct}%</span>
+      <span className="typo-label num w-8 text-right flex-shrink-0" style={{ color: hue }}>{pct}%</span>
     </span>
   );
 }

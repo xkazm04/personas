@@ -189,7 +189,7 @@ export function formatClock(ms: number, language: string): string {
 /** The drawers take the winner's width (BaseModal's own drawer is 480 px):
  *  700 px, 820 px on a wide window, never wider than the window. */
 export function drawerPanelClass(wide: boolean): string {
-  return `relative h-full ${wide ? 'w-[820px]' : 'w-[700px]'} max-w-[100vw] border-l border-primary/20 shadow-elevation-4 overflow-hidden flex flex-col`;
+  return `relative h-full ${wide ? 'w-[820px]' : 'w-[700px]'} max-w-[100vw] border-l border-hair shadow-elevation-4 overflow-hidden flex flex-col`;
 }
 
 export const prefersReducedMotion = (): boolean =>

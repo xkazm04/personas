@@ -100,14 +100,14 @@ export function GoalsTriage({ goals, kpis, busyIds, groupByProject, onAccept, on
                   <div className="flex items-center gap-3 pb-2">
                     <div className="max-w-[260px] flex-1"><KpiGauge kpi={b.kpi} /></div>
                     {b.kpi.offTrack && <span className="typo-label text-[var(--status-warning)] shrink-0">{dl.accept_off_track}</span>}
-                    <span className="h-px flex-1 bg-primary/10" />
-                    <span className="typo-caption text-foreground/70 tabular-nums">{b.rows.length}</span>
+                    <span className="h-px flex-1 bg-surface-1" />
+                    <span className="typo-caption text-ink-2 num">{b.rows.length}</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2.5 pb-2">
-                    <span className="typo-label text-foreground/40">{dl.accept_standalone}</span>
-                    <span className="h-px flex-1 bg-primary/10" />
-                    <span className="typo-caption text-foreground/70 tabular-nums">{b.rows.length}</span>
+                    <span className="typo-label text-ink-3">{dl.accept_standalone}</span>
+                    <span className="h-px flex-1 bg-surface-1" />
+                    <span className="typo-caption text-ink-2 num">{b.rows.length}</span>
                   </div>
                 )}
                 <ul className="space-y-1">
@@ -148,11 +148,11 @@ function TriageCard({ row, busy, onAccept, onReject }: {
   const dl = t.plugins.dev_lifecycle;
   const finished = relTime(row.goal.completedAt);
   return (
-    <li className="px-3 py-2.5 rounded-card bg-secondary/[0.15] hover:bg-secondary/25 transition-colors">
+    <li className="px-3 py-2.5 rounded-card bg-secondary/[0.15] hover:bg-surface-1 transition-colors">
       <div className="flex items-start gap-2">
         <h4 className="typo-title-lg break-words flex-1 min-w-0">{row.goal.title}</h4>
         {finished && (
-          <span className="typo-caption text-foreground/70 tabular-nums shrink-0">{tx(dl.triage_ago, { time: finished })}</span>
+          <span className="typo-caption text-ink-2 num shrink-0">{tx(dl.triage_ago, { time: finished })}</span>
         )}
       </div>
       {row.goal.description && (
@@ -178,11 +178,11 @@ function ContextStrip({ label, rows }: { label: string; rows: GoalRow[] }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive hover:bg-secondary/20 transition-colors focus-ring"
+        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive hover:bg-surface-1 transition-colors focus-ring"
       >
-        {open ? <ChevronDown className="w-3.5 h-3.5 text-foreground/70" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground/70" />}
-        <span className="typo-label text-foreground/40">{label}</span>
-        <span className="typo-caption text-foreground/70 tabular-nums">{rows.length}</span>
+        {open ? <ChevronDown className="w-3.5 h-3.5 text-ink-2" /> : <ChevronRight className="w-3.5 h-3.5 text-ink-2" />}
+        <span className="typo-label text-ink-3">{label}</span>
+        <span className="typo-caption text-ink-2 num">{rows.length}</span>
         <span className="h-px flex-1 bg-primary/[0.07]" />
       </button>
       {open && (

@@ -146,9 +146,9 @@ export function SelfHealingPanel({
   if (failedTasks.length === 0) {
     if (hidden === null || !onShowFailed) return null;
     return (
-      <div className="rounded-modal border border-red-500/15 bg-red-500/5 px-4 py-3 flex items-center gap-2">
-        <Heart className="w-4 h-4 text-red-400 shrink-0" />
-        <span className="text-md text-foreground">{tx(dr.heal_hidden_failed, { count: hidden })}</span>
+      <div className="rounded-card border border-hair bg-surface-1 px-4 py-3 flex items-center gap-2">
+        <Heart className="w-4 h-4 text-status-error shrink-0" />
+        <span className="typo-body">{tx(dr.heal_hidden_failed, { count: hidden })}</span>
         <Button variant="ghost" size="sm" onClick={onShowFailed} data-testid="self-healing-show-hidden">
           {dr.heal_show_failed}
         </Button>
@@ -157,23 +157,23 @@ export function SelfHealingPanel({
   }
 
   return (
-    <div className="rounded-modal border border-red-500/15 bg-red-500/5 overflow-hidden">
+    <div className="rounded-card border border-hair bg-surface-1 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-red-500/10">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-hair">
         <div className="flex items-center gap-2">
-          <Heart className="w-4 h-4 text-red-400" />
-          <h3 className="text-md font-medium text-primary">{t.plugins.dev_runner.self_healing}</h3>
-          <span className="rounded-full px-2 py-0.5 text-md font-medium bg-red-500/15 text-red-400 border border-red-500/25">
+          <Heart className="w-4 h-4 text-status-error" />
+          <h3 className="typo-section-title">{t.plugins.dev_runner.self_healing}</h3>
+          <span className="typo-caption text-status-error">
             {tx(dr.heal_chip_failed, { count: failedTasks.length })}
           </span>
           {autoFixable.length > 0 && (
-            <span className="rounded-full px-2 py-0.5 text-md font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
+            <span className="typo-caption text-status-warning">
               {tx(dr.heal_chip_auto_fixable, { count: autoFixable.length })}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1.5 text-md text-foreground cursor-pointer">
+          <label className="flex items-center gap-1.5 typo-caption text-ink-2 cursor-pointer">
             <input
               type="checkbox"
               checked={autoHealEnabled}
@@ -186,20 +186,19 @@ export function SelfHealingPanel({
           </label>
           {autoFixable.length > 0 && (
             <Button
-              variant="accent"
-              tone="warning"
+              variant="secondary"
               size="sm"
               icon={<RefreshCw className="w-3.5 h-3.5" />}
               onClick={handleHealAll}
             >
-              {t.plugins.dev_runner.heal_all}({autoFixable.length})
+              {t.plugins.dev_runner.heal_all}{autoFixable.length})
             </Button>
           )}
         </div>
       </div>
 
       {/* Failure list */}
-      <div className="divide-y divide-red-500/5">
+      <div className="divide-y divide-hair">
         {analyzedFailures.map(({ task, pattern }) => {
           const Icon = pattern.icon;
           const found = attempts.find((a) => a.taskId === task.id);
@@ -209,18 +208,18 @@ export function SelfHealingPanel({
             <div key={task.id} className="flex items-center gap-3 px-4 py-3">
               <Icon className={`w-4 h-4 ${PATTERN_ICON_CLASSES[pattern.color]} flex-shrink-0`} />
               <div className="flex-1 min-w-0">
-                <p className="text-md text-foreground truncate">{task.title}</p>
+                <p className="typo-body truncate">{task.title}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-md text-foreground">{dr[pattern.labelKey]}</span>
-                  <ArrowRight className="w-3 h-3 text-foreground" />
-                  <span className="text-md text-foreground">{dr[pattern.actionKey]}</span>
+                  <span className="typo-caption text-ink-2">{dr[pattern.labelKey]}</span>
+                  <ArrowRight className="w-3 h-3 text-ink-3" />
+                  <span className="typo-caption text-ink-2">{dr[pattern.actionKey]}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {attempt && (
-                  <span className={`text-md ${
-                    attempt.status === 'healed' ? 'text-emerald-400' :
-                    attempt.status === 'healing' ? 'text-amber-400' : 'text-red-400'
+                  <span className={`typo-caption ${
+                    attempt.status === 'healed' ? 'text-status-success' :
+                    attempt.status === 'healing' ? 'text-status-warning' : 'text-status-error'
                   }`}>
                     {attempt.status === 'healing' ? tx(dr.heal_status_retrying, { retry: attempt.retryCount, max: attempt.maxRetries }) :
                      attempt.status === 'healed' ? dr.heal_status_healed :

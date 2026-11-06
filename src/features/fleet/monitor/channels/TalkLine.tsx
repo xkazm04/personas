@@ -30,7 +30,7 @@ function Glyph({ item }: { item: TeamChannelItem }) {
   if (VOICE_KINDS.has(item.kind)) {
     const M = AUTHOR_KIND_META[item.kind as 'athena' | 'director' | 'slack'];
     return (
-      <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-card border border-border bg-secondary/40" aria-hidden>
+      <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-card border border-border bg-surface-1" aria-hidden>
         <M.Icon className={`h-3.5 w-3.5 ${M.iconColor}`} />
       </span>
     );
@@ -68,7 +68,7 @@ export const TalkLine = memo(function TalkLine({ item, onOpen }: { item: TeamCha
         onOpen(item);
       }}
       className={`focus-ring min-w-0 max-w-[78%] cursor-pointer rounded-card border px-3 py-2 text-left transition-colors ${
-        mine ? 'border-primary/20 bg-primary/12 hover:bg-primary/18' : 'border-border bg-secondary/30 hover:bg-secondary/45'
+        mine ? 'border-hair bg-primary/12 hover:bg-primary/18' : 'border-border bg-surface-1 hover:bg-surface-1'
       }`}
     >
       {!mine && (

@@ -29,7 +29,7 @@ export function ProjectLabel({
   const { t } = useTranslation();
   const project = projectId ? projects.find((p) => p.id === projectId) : undefined;
   return (
-    <span className={`flex items-center gap-1.5 min-w-0 typo-caption ${project ? 'text-foreground/75' : 'text-foreground/50'} ${className}`}>
+    <span className={`flex items-center gap-1.5 min-w-0 typo-caption ${project ? 'text-ink-2' : 'text-ink-3'} ${className}`}>
       <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
       <span className="truncate">{project?.name ?? t.notepad.project_none}</span>
     </span>
@@ -58,7 +58,7 @@ export function GoalsBar({ note, summary }: { note: DevNote; summary: NotePlanSu
       aria-valuenow={done}
       aria-label={tx(t.notepad.desk_goals_progress, { done, total: summary.goalsTotal })}
       data-testid={`notepad-card-goals-${note.id}`}
-      className="h-0.5 w-full rounded-full bg-secondary/50 overflow-hidden"
+      className="h-0.5 w-full rounded-full bg-surface-1 overflow-hidden"
     >
       {/* Width is the DATA, so it is the one thing that cannot be a token. */}
       <div className={`h-full ${noteStatusMeta(note.status).tone.fill}`} style={{ width: `${pct}%` }} />
@@ -161,11 +161,11 @@ export function NoteCardFooter({
     <footer className="flex flex-col gap-1">
       {forecast && (
         <p
-          className="flex items-center gap-1.5 min-w-0 typo-caption text-foreground/85"
+          className="flex items-center gap-1.5 min-w-0 typo-caption text-ink-2"
           data-testid={`notepad-card-forecast-${note.id}`}
         >
           <Gauge className="w-3 h-3 shrink-0 text-status-info" aria-hidden />
-          <span className="truncate tabular-nums">
+          <span className="truncate num">
             {tx(
               forecast.basis === 'cut' ? t.notepad.desk_forecast_cut : t.notepad.desk_forecast_today,
               { date: forecast.date },
@@ -173,7 +173,7 @@ export function NoteCardFooter({
           </span>
         </p>
       )}
-      <div className="flex items-center gap-2 typo-caption text-foreground/60">
+      <div className="flex items-center gap-2 typo-caption text-ink-2">
         <div
           className="relative flex-1 min-w-0 h-7 flex items-center"
           onFocus={() => onRailFocusChange?.(true)}
@@ -191,7 +191,7 @@ export function NoteCardFooter({
               <>
                 <span aria-hidden>·</span>
                 <span
-                  className={`tabular-nums ${length > CARD_TEXT_LIMIT ? 'text-status-warning' : ''}`}
+                  className={`num ${length > CARD_TEXT_LIMIT ? 'text-status-warning' : ''}`}
                   data-testid={`notepad-card-count-${note.id}`}
                 >
                   {length}/{CARD_TEXT_LIMIT}
@@ -218,7 +218,7 @@ export function NoteCardFooter({
             onClick={onOpen}
             aria-label={t.notepad.overview_open}
             data-testid={`notepad-card-open-${note.id}`}
-            className="shrink-0 w-7 h-7 rounded-input flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-secondary/50 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity focus-ring"
+            className="shrink-0 w-7 h-7 rounded-input flex items-center justify-center text-ink-2 hover:text-foreground hover:bg-surface-1 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity focus-ring"
           >
             <Maximize2 className="w-3.5 h-3.5" aria-hidden />
           </button>
@@ -233,7 +233,7 @@ export function OverviewGhost() {
   return (
     <div className="grid grid-cols-4 gap-4" aria-hidden>
       {Array.from({ length: 8 }, (_, i) => (
-        <div key={i} className="h-52 rounded-card bg-secondary/20" />
+        <div key={i} className="h-52 rounded-card bg-surface-1" />
       ))}
     </div>
   );

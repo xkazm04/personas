@@ -33,7 +33,7 @@ export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
   const versions = versionText && (
     <span
       // muted-ok: structural micro-label (version chip, chrome not body copy)
-      className="typo-caption text-foreground/40 truncate ml-auto"
+      className="typo-caption text-ink-3 truncate ml-auto"
     >
       {versionText}
     </span>
@@ -55,7 +55,7 @@ export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
         style={style}
         onClick={onLaunch}
         aria-label={`${d.launch_action_launch}: ${project.name}`}
-        className={`${frame} border-status-success/40 bg-secondary/25 hover:bg-secondary/40 cursor-pointer`}
+        className={`${frame} border-status-success/40 bg-surface-1 hover:bg-surface-1 cursor-pointer`}
       >
         {nameRow(<Play className="w-3 h-3 text-status-success" aria-hidden />)}
         <span className="flex items-center gap-2 min-w-0 w-full">
@@ -70,7 +70,7 @@ export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
 
   if (status === 'needs_adopt') {
     return (
-      <div style={style} className={`${frame} border-primary/10 bg-secondary/10 opacity-70`}>
+      <div style={style} className={`${frame} border-hair bg-surface-1 opacity-70`}>
         {nameRow(<CircleDashed className="w-3 h-3 text-foreground opacity-40" aria-hidden />)}
         <span className="flex items-center gap-2 min-w-0 w-full">
           <Tooltip content={d.launch_needs_adopt_hint}>
@@ -78,7 +78,7 @@ export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
               type="button"
               onClick={onAdopt}
               aria-label={`${d.launch_action_adopt}: ${project.name}`}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive typo-caption text-primary bg-surface-1 hover:bg-primary/20 border border-hair transition-colors"
             >
               <ArrowDownToLine className="w-3 h-3" aria-hidden />
               {d.launch_action_adopt}
@@ -104,7 +104,7 @@ export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
         style={style}
         aria-busy={!running}
         aria-label={`${d.launch_action_launch}: ${project.name}`}
-        className={`${frame} ${running ? 'border-status-info/40' : 'border-status-warning/40 animate-fade-in'} bg-secondary/15 cursor-not-allowed`}
+        className={`${frame} ${running ? 'border-status-info/40' : 'border-status-warning/40 animate-fade-in'} bg-surface-1 cursor-not-allowed`}
       >
         {nameRow(running
           ? (
@@ -115,7 +115,7 @@ export default function CircuitNode({ cell, onLaunch, onAdopt, justSent }: {
               <Radio className="relative w-3 h-3 text-status-info" aria-hidden />
             </span>
           )
-          : <Loader2 className="w-3 h-3 text-status-warning" aria-hidden />)}
+          : <Loader2 className="w-3 h-3 text-ink-2" aria-hidden />)}
         <span className="flex items-center gap-2 min-w-0 w-full">
           <span className={`typo-caption ${running ? 'text-status-info' : 'text-status-warning'}`}>
             {running ? d.launch_status_running : d.launch_status_adopting}

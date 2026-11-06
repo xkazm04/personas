@@ -11,7 +11,7 @@ import { splitElapsedTemplate } from '../../thread/threadLabels';
 
 const TONE = {
   athena: { text: 'text-brand-purple', wash: 'bg-brand-purple/10 border-brand-purple/30', fill: 'bg-brand-purple' },
-  fleet: { text: 'text-status-info', wash: 'bg-status-info/10 border-status-info/30', fill: 'bg-status-info' },
+  fleet: { text: 'text-status-info', wash: 'bg-surface-1 border-hair', fill: 'bg-status-info' },
 } as const;
 
 /**
@@ -36,7 +36,7 @@ export function NotePresenceChip({ noteId, working }: { noteId: string; working:
       <span className="truncate">
         {before}
         {working.since && working.elapsedTemplate && (
-          <RelativeTime timestamp={working.since} format="elapsed" showTooltip={false} className="tabular-nums" />
+          <RelativeTime timestamp={working.since} format="elapsed" showTooltip={false} className="num" />
         )}
         {after}
       </span>

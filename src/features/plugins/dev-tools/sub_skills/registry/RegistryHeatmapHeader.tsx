@@ -42,10 +42,10 @@ export function RegistryHeatmapHeader({ model, filterId, shownCount, onToggle, t
   const clearId = navId(HEAD_ROW, LABEL_COL);
 
   return (
-    <div role="row" className="sticky top-0 z-20 col-span-full grid grid-cols-subgrid border-b border-primary/10 bg-background" style={HEAD_TINT}>
+    <div role="row" className="sticky top-0 z-20 col-span-full grid grid-cols-subgrid border-b border-hair bg-background" style={HEAD_TINT}>
       {/* Corner — its content is absolutely placed so the chip can never
           widen the label track and shove the whole cell field sideways. */}
-      <div role="columnheader" className="sticky left-0 z-10 min-w-[11rem] border-r border-primary/10 bg-background" style={HEAD_TINT}>
+      <div role="columnheader" className="sticky left-0 z-10 min-w-[11rem] border-r border-hair bg-background" style={HEAD_TINT}>
         <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 px-3 pb-2">
           <AnimatePresence initial={false} mode="wait">
             {filtered ? (
@@ -53,11 +53,11 @@ export function RegistryHeatmapHeader({ model, filterId, shownCount, onToggle, t
                 key="chip"
                 initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
                 transition={chipTransition}
-                className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-pill border border-primary/25 bg-primary/10 py-0.5 pl-2.5 pr-0.5"
+                className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-pill border border-hair bg-surface-1 py-0.5 pl-2.5 pr-0.5"
                 data-testid="registry-filter-chip"
               >
-                <span className="typo-label truncate text-primary">{filtered.name}</span>
-                <span className="typo-label tabular-nums text-foreground">{shownCount}</span>
+                <span className="typo-label truncate text-ink-1">{filtered.name}</span>
+                <span className="typo-label num text-foreground">{shownCount}</span>
                 <button
                   type="button"
                   onClick={() => onToggle(null)}
@@ -78,7 +78,7 @@ export function RegistryHeatmapHeader({ model, filterId, shownCount, onToggle, t
                 className="flex items-baseline gap-1.5"
               >
                 <span className="typo-label text-foreground">{d.skills_sort_skill}</span>
-                <span className="typo-label tabular-nums text-primary">{skills.length}</span>
+                <span className="typo-label num text-ink-1">{skills.length}</span>
               </motion.span>
             )}
           </AnimatePresence>
@@ -135,7 +135,7 @@ function ColumnHeader({ column: c, dot, index, selected, hint, coverageHint, act
           <span className="flex flex-col gap-0.5">
             <span>{hint}</span>
             {coverageHint && <span>{coverageHint}</span>}
-            <span className="typo-label text-primary">{action}</span>
+            <span className="typo-label text-ink-1">{action}</span>
           </span>
         )}
         placement="top"
@@ -162,7 +162,7 @@ function ColumnHeader({ column: c, dot, index, selected, hint, coverageHint, act
           </span>
           <span className={`flex-shrink-0 rounded-full transition-all ${selected ? 'h-2 w-2' : 'h-1.5 w-1.5'}`} style={{ backgroundColor: dot }} aria-hidden />
           <span
-            className="typo-label flex-shrink-0 rounded-pill px-1 tabular-nums text-foreground"
+            className="typo-label flex-shrink-0 rounded-pill px-1 num text-foreground"
             style={{ backgroundColor: tint('var(--primary)', selected ? 0.22 : 0.08) }}
             aria-hidden
           >
@@ -175,7 +175,7 @@ function ColumnHeader({ column: c, dot, index, selected, hint, coverageHint, act
               where no union exists — see `columnCoveragePct`. */}
           {coverage != null && (
             <span
-              className="typo-label flex-shrink-0 tabular-nums text-muted"
+              className="typo-label flex-shrink-0 num text-muted"
               data-testid={`registry-column-coverage-${c.id}`}
               aria-hidden
             >

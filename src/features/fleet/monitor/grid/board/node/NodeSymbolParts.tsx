@@ -16,7 +16,7 @@ export const AFFORDANCE_BTN = 'focus-ring flex h-4 w-4 flex-shrink-0 items-cente
 
 const SYMBOL_BOX = 'inline-flex h-4 w-4 flex-shrink-0 items-center justify-center';
 export const GLYPH = 'h-2.5 w-2.5 flex-shrink-0';
-export const NUMERAL = 'text-[9px] font-bold leading-none tabular-nums';
+export const NUMERAL = 'typo-caption';
 
 /** One symbol: an inert labelled box with its tooltip. */
 export function Sym({

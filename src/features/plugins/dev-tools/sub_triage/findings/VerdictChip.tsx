@@ -35,7 +35,7 @@ export function VerdictChip({ verifyState }: { verifyState: string | null | unde
   if (!meta) return null;
   return (
     <Tooltip content={meta.title}>
-      <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 typo-data ${TONE_CHIP[meta.tone]}`}>
+      <span className={`inline-flex items-center rounded-interactive border px-2.5 py-0.5 typo-data ${TONE_CHIP[meta.tone]}`}>
         {meta.label}
       </span>
     </Tooltip>

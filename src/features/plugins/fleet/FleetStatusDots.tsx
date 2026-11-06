@@ -70,18 +70,18 @@ function Dot({ bg, pulse, title }: DotProps) {
 }
 
 export const CONSOLE_DOT: Record<ConsoleAxis, { bg: string; labelKey: FleetLabelKey; pulse?: boolean }> = {
-  spawning:   { bg: 'bg-cyan-400',    labelKey: 'dot_console_spawning', pulse: true },
-  alive:      { bg: 'bg-emerald-500', labelKey: 'dot_console_alive' },
-  hibernated: { bg: 'bg-indigo-400',  labelKey: 'dot_console_hibernated' },
-  exited:     { bg: 'bg-zinc-600',    labelKey: 'dot_console_exited' },
+  spawning:   { bg: 'bg-status-info',    labelKey: 'dot_console_spawning', pulse: true },
+  alive:      { bg: 'bg-status-success', labelKey: 'dot_console_alive' },
+  hibernated: { bg: 'bg-role-agent',  labelKey: 'dot_console_hibernated' },
+  exited:     { bg: 'bg-surface-2',    labelKey: 'dot_console_exited' },
 };
 
 export const BUSINESS_DOT: Record<BusinessAxis, { bg: string; labelKey: FleetLabelKey; pulse?: boolean } | null> = {
-  idle:           { bg: 'bg-emerald-400/70', labelKey: 'dot_biz_idle' },
-  working:        { bg: 'bg-blue-400',       labelKey: 'dot_biz_working', pulse: true },
-  awaiting_input: { bg: 'bg-violet-400',     labelKey: 'dot_biz_awaiting', pulse: true },
-  stale:          { bg: 'bg-orange-400',     labelKey: 'dot_biz_stale' },
-  finished:       { bg: 'bg-teal-400',       labelKey: 'state_finished' },
+  idle:           { bg: 'bg-status-success/70', labelKey: 'dot_biz_idle' },
+  working:        { bg: 'bg-status-info',       labelKey: 'dot_biz_working', pulse: true },
+  awaiting_input: { bg: 'bg-role-agent',     labelKey: 'dot_biz_awaiting', pulse: true },
+  stale:          { bg: 'bg-status-warning',     labelKey: 'dot_biz_stale' },
+  finished:       { bg: 'bg-status-success',       labelKey: 'state_finished' },
   none:           null,
 };
 

@@ -52,61 +52,61 @@ export const MonitorRow = memo(function MonitorRow({
   const rowProps = {
     onPointerDown: () => onArm(terminal.id),
     onClick: () => onOpen(terminal),
-    className: `cursor-pointer transition-colors hover:bg-secondary/30 ${needsYou ? 'bg-violet-500/[0.05]' : ''}`,
+    className: `cursor-pointer transition-colors hover:bg-surface-1 ${needsYou ? 'bg-role-agent/[0.05]' : ''}`,
   };
 
   const cells = (
     <>
-      <td className="px-2 py-1 border-b border-primary/5 w-10">
+      <td className="px-2 py-1 border-b border-hair w-10">
         <span
           className="inline-flex items-center gap-1"
           title={terminal.dozing ? tx(t.plugins.fleet.monitor_dozing_suffix, { state: stateLabel }) : stateLabel}
         >
           <Icon className={`w-3.5 h-3.5 ${meta.text}`} aria-hidden="true" />
-          {terminal.dozing && <MoonStar className="w-3 h-3 text-indigo-300" aria-hidden="true" />}
+          {terminal.dozing && <MoonStar className="w-3 h-3 text-role-agent" aria-hidden="true" />}
         </span>
       </td>
-      <td className="px-2 py-1 border-b border-primary/5 w-6">
+      <td className="px-2 py-1 border-b border-hair w-6">
         <ScreenHealthGlyph health={terminal.screenHealth} />
       </td>
-      <td className="px-2 py-1 border-b border-primary/5 max-w-0 w-[38%]">
+      <td className="px-2 py-1 border-b border-hair max-w-0 w-[38%]">
         <span className="block typo-caption text-foreground truncate">
           {terminal.label}
           {needsYou && terminal.ageMin > 0 && (
-            <span className="ml-1.5 text-violet-300 opacity-80">
+            <span className="ml-1.5 text-role-agent opacity-80">
               {tx(t.plugins.fleet.monitor_waiting_minutes, { count: terminal.ageMin })}
             </span>
           )}
         </span>
       </td>
-      <td className="px-2 py-1 border-b border-primary/5">
+      <td className="px-2 py-1 border-b border-hair">
         <span className="typo-caption text-foreground opacity-50">{terminal.project}</span>
       </td>
-      <td className="px-2 py-1 border-b border-primary/5 text-right" title={simHint}>
+      <td className="px-2 py-1 border-b border-hair text-right" title={simHint}>
         <Numeric align="right" className={`typo-caption ${terminal.subprocs ? 'text-foreground' : 'text-foreground opacity-30'}${simCls}`}>{terminal.subprocs}</Numeric>
       </td>
-      <td className="px-2 py-1 border-b border-primary/5 text-right" title={simHint}>
+      <td className="px-2 py-1 border-b border-hair text-right" title={simHint}>
         <Numeric align="right" className={`typo-caption ${terminal.subagentsActive ? 'text-status-info' : 'text-foreground opacity-60'}${simCls}`}>
           {terminal.subagentsActive > 0 ? `${terminal.subagentsActive}/${terminal.subagentsTotal}` : `${terminal.subagentsTotal}`}
         </Numeric>
       </td>
-      <td className="px-2 py-1 border-b border-primary/5 text-right" title={simHint}>
+      <td className="px-2 py-1 border-b border-hair text-right" title={simHint}>
         <Numeric align="right" className={`typo-caption text-foreground opacity-70${simCls}`}>{`${Math.round(terminal.contextTokens / 1000)}k`}</Numeric>
       </td>
-      <td className="px-2 py-1 border-b border-primary/5 text-right" title={simHint}>
+      <td className="px-2 py-1 border-b border-hair text-right" title={simHint}>
         <span className={`inline-flex items-center gap-1.5 justify-end${simCls}`}>
-          <span className="w-14 h-1 rounded-full bg-secondary/40 overflow-hidden" aria-hidden="true">
+          <span className="w-14 h-1 rounded-full bg-surface-1 overflow-hidden" aria-hidden="true">
             <span className={`block h-full ${costToneBg(ratio)} opacity-70`} style={{ width: `${(terminal.outputTokens / maxTokens) * 100}%` }} />
           </span>
           <Numeric align="right" className={`typo-caption ${costToneText(ratio)}`}>{`${tokensK}k`}</Numeric>
         </span>
       </td>
-      <td className="px-2 py-1 border-b border-primary/5 text-right" title={simHint}>
+      <td className="px-2 py-1 border-b border-hair text-right" title={simHint}>
         <Numeric align="right" className={`typo-caption ${terminal.memMb ? 'text-foreground opacity-70' : 'text-foreground opacity-30'}${simCls}`}>
           {terminal.memMb ? `${terminal.memMb}` : '-'}
         </Numeric>
       </td>
-      <td className="px-2 py-1 border-b border-primary/5 text-right">
+      <td className="px-2 py-1 border-b border-hair text-right">
         <Numeric align="right" className="typo-caption text-foreground opacity-50">
           {tx(t.plugins.fleet.monitor_age_minutes, { count: terminal.ageMin })}
         </Numeric>

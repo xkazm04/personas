@@ -52,7 +52,7 @@ export function FleetSpawnTaskModal({ open, onClose, projectPath, onSpawn }: Pro
       onClose={onClose}
       titleId="fleet-spawn-task-title"
       size="md"
-      panelClassName="bg-background border border-primary/10 rounded-2xl p-5 shadow-elevation-4"
+      panelClassName="bg-background border border-hair rounded-card p-5 shadow-elevation-4"
     >
       <div data-testid="fleet-spawn-task-modal">
         <div className="flex items-center justify-between mb-2">
@@ -64,7 +64,7 @@ export function FleetSpawnTaskModal({ open, onClose, projectPath, onSpawn }: Pro
             <X className="w-4 h-4" />
           </Button>
         </div>
-        <p className="mb-3 text-[13px] text-foreground">
+        <p className="mb-3 typo-caption text-foreground">
           {tx(t.plugins.fleet.spawn_task_desc, { path: projectPath })}
         </p>
         <textarea
@@ -77,7 +77,7 @@ export function FleetSpawnTaskModal({ open, onClose, projectPath, onSpawn }: Pro
           placeholder={t.plugins.fleet.spawn_task_placeholder}
           rows={4}
           autoFocus
-          className="w-full resize-y rounded-input border border-primary/10 bg-secondary/40 px-2.5 py-2 text-[14px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+          className="w-full resize-y rounded-input border border-hair bg-surface-1 px-2.5 py-2 typo-body text-foreground placeholder:text-ink-3 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
         />
         <div className="mt-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -88,7 +88,7 @@ export function FleetSpawnTaskModal({ open, onClose, projectPath, onSpawn }: Pro
               data-testid="fleet-spawn-task-headless"
             />
             {headless && (
-              <p className="mt-1 text-[12px] text-foreground opacity-70">
+              <p className="mt-1 typo-caption text-foreground opacity-70">
                 {t.plugins.fleet.spawn_headless_hint}
               </p>
             )}

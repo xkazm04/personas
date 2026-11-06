@@ -20,7 +20,7 @@ export function LinkedChannelChip({ bridge }: { bridge: TeamSlackBridge | undefi
   return (
     <span
       title={t.monitor.conv_bridge_title}
-      className="inline-flex items-center gap-1 flex-shrink-0 max-w-[180px] px-1.5 py-0.5 rounded-full border border-teal-500/25 bg-teal-500/10 typo-caption text-teal-300"
+      className="inline-flex items-center gap-1 flex-shrink-0 max-w-[180px] px-1.5 py-0.5 rounded-interactive border border-hair bg-surface-1 typo-caption text-status-success"
     >
       <Hash className="w-3 h-3 flex-shrink-0" />
       <span className="truncate">{label}</span>

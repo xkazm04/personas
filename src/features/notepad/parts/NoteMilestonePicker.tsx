@@ -99,7 +99,7 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
           disabled={disabled}
           aria-expanded={isOpen}
           onClick={() => { if (!isOpen) fetchRows(); toggle(); }}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border border-primary/20 text-foreground/80 transition-colors hover:bg-secondary/40 focus-ring disabled:is-disabled"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption border border-hair text-ink-2 transition-colors hover:bg-surface-1 focus-ring disabled:is-disabled"
           data-testid="notepad-milestone-picker"
         >
           <Target className="w-3.5 h-3.5" aria-hidden />
@@ -114,14 +114,14 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
             role="option"
             aria-selected={false}
             onClick={() => { onCreate(); close(); }}
-            className={`w-full text-left px-3 py-2 typo-caption flex items-center gap-2 transition-colors hover:bg-secondary/50 focus-ring ${focusIndex === 0 ? 'bg-secondary/50' : ''}`}
+            className={`w-full text-left px-3 py-2 typo-caption flex items-center gap-2 transition-colors hover:bg-surface-1 focus-ring ${focusIndex === 0 ? 'bg-surface-1' : ''}`}
             data-testid="notepad-milestone-new"
           >
-            <Plus className="w-3.5 h-3.5 text-foreground/60" aria-hidden />
-            <span className="text-foreground/90">{t.notepad.milestone_new}</span>
+            <Plus className="w-3.5 h-3.5 text-ink-2" aria-hidden />
+            <span className="text-ink-2">{t.notepad.milestone_new}</span>
           </button>
 
-          {open.length > 0 && <div className="my-1 h-px bg-primary/10" aria-hidden />}
+          {open.length > 0 && <div className="my-1 h-px bg-surface-1" aria-hidden />}
 
           {listFailed && (
             <p className="px-3 py-2 typo-caption text-status-warning">
@@ -140,12 +140,12 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
               role="option"
               aria-selected={false}
               onClick={() => { onPick(m.id); close(); }}
-              className={`w-full text-left px-3 py-2 typo-caption flex items-center gap-2 min-w-0 transition-colors hover:bg-secondary/50 focus-ring ${focusIndex === i + 1 ? 'bg-secondary/50' : ''}`}
+              className={`w-full text-left px-3 py-2 typo-caption flex items-center gap-2 min-w-0 transition-colors hover:bg-surface-1 focus-ring ${focusIndex === i + 1 ? 'bg-surface-1' : ''}`}
             >
-              <Check className="w-3.5 h-3.5 text-foreground/60 shrink-0" aria-hidden />
+              <Check className="w-3.5 h-3.5 text-ink-2 shrink-0" aria-hidden />
               <span className="min-w-0 flex flex-col">
-                <span className="text-foreground/90 truncate">{m.name}</span>
-                {m.goal && <span className="text-foreground/60 truncate">{m.goal}</span>}
+                <span className="text-ink-2 truncate">{m.name}</span>
+                {m.goal && <span className="text-ink-2 truncate">{m.goal}</span>}
               </span>
             </button>
           ))}
@@ -154,7 +154,7 @@ export function NoteMilestonePicker({ projectId, disabled, onPick, onCreate }: {
               brief, or the project has none — and it says so rather than
               leaving a menu with one row and no explanation. */}
           {rows !== null && !listFailed && !planSummariesStale && open.length === 0 && (
-            <p className="px-3 py-2 typo-caption text-foreground/60">{t.notepad.milestone_none_free}</p>
+            <p className="px-3 py-2 typo-caption text-ink-2">{t.notepad.milestone_none_free}</p>
           )}
         </div>
       )}

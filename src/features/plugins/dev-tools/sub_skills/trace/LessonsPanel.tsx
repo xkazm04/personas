@@ -20,7 +20,7 @@ export function LessonsPanel({ branches, workspaceLessons, loading }: {
   ].sort((a, b) => (b.row.date ?? '').localeCompare(a.row.date ?? ''));
 
   return (
-    <section className="rounded-card border border-border/50 bg-secondary/30 p-3">
+    <section className="rounded-card border border-border/50 bg-surface-1 p-3">
       <h3 className="typo-card-label pb-2">{t.plugins.dev_tools.trace_lessons_title}</h3>
       {loading && all.length === 0 ? (
         <div aria-hidden className="flex flex-col gap-1.5">

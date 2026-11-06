@@ -32,13 +32,13 @@ export function ContextPickerCrossTab({ groups, selected, onToggle }: {
   const gridTemplate = `minmax(260px, 1.4fr) repeat(${SCAN_AGENTS.length}, 26px)`;
 
   return (
-    <div className="rounded-card border border-primary/10 overflow-auto min-h-0 flex-1">
+    <div className="rounded-card border border-hair overflow-auto min-h-0 flex-1">
       {/* lens column headers — sticky, icon per lens */}
       <div
-        className="grid items-end gap-0 px-3 py-2 bg-secondary/20 border-b border-primary/10 sticky top-0 z-10 backdrop-blur"
+        className="grid items-end gap-0 px-3 py-2 bg-surface-1 border-b border-hair sticky top-0 z-10 backdrop-blur"
         style={{ gridTemplateColumns: gridTemplate }}
       >
-        <span className="typo-label text-foreground/60">{d.context_column_label}</span>
+        <span className="typo-label text-ink-2">{d.context_column_label}</span>
         {SCAN_AGENTS.map((a) => (
           <Tooltip key={a.key} content={a.label}>
             <span className="flex items-start justify-center pt-0.5">
@@ -52,12 +52,12 @@ export function ContextPickerCrossTab({ groups, selected, onToggle }: {
         const dot = colorDot(g.color);
         return (
           <div key={g.id} style={skipStyle(ledgerGroupHeight(g.rows.length))}>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/10 border-b border-primary/5">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-1 border-b border-hair">
               <span className={`w-2.5 h-2.5 rounded-full ${dot.bg}`} />
               <span className="typo-title">{g.name}</span>
-              <span className="typo-caption text-foreground/50 tabular-nums">{g.rows.length}</span>
+              <span className="typo-caption text-ink-3 num">{g.rows.length}</span>
             </div>
-            <div className="divide-y divide-primary/5">
+            <div className="divide-y divide-hair">
               {g.rows.map((r) => (
                 <CrossTabRow key={r.id} row={r} gridTemplate={gridTemplate} isSelected={selected.has(r.name)} onToggle={onToggle} />
               ))}
@@ -84,7 +84,7 @@ const CrossTabRow = memo(function CrossTabRow({ row, gridTemplate, isSelected, o
     <div
       role="row"
       className={`grid items-center gap-0 px-3 py-1 transition-colors cursor-pointer ${
-        isSelected ? 'bg-primary/10' : 'hover:bg-secondary/10'
+        isSelected ? 'bg-surface-1' : 'hover:bg-surface-1'
       }`}
       style={{ gridTemplateColumns: gridTemplate }}
       onClick={() => onToggle(row.name)}
@@ -102,11 +102,11 @@ const CrossTabRow = memo(function CrossTabRow({ row, gridTemplate, isSelected, o
         <span className="typo-body text-foreground truncate">{row.name}</span>
         <span className="ml-auto shrink-0 inline-flex items-center gap-2">
           <Tooltip content={`${row.freshNodes} ${d.ctx_picker_fresh_nodes}`}>
-            <span className={`typo-caption tabular-nums ${covered ? 'text-status-success' : 'text-foreground/25'}`}>
+            <span className={`typo-caption num ${covered ? 'text-status-success' : 'text-ink-3'}`}>
               {row.freshNodes}
             </span>
           </Tooltip>
-          <span className="typo-caption text-foreground/45 w-16 text-right">
+          <span className="typo-caption text-ink-3 w-16 text-right">
             {row.latestAt ? <RelativeTime timestamp={row.latestAt} /> : d.ctx_picker_never}
           </span>
         </span>

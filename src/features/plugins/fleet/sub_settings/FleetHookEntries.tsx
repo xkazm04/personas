@@ -23,8 +23,8 @@ export function FleetHookEntries({ status }: { status: FleetHookStatus }) {
               key={event}
               className={`inline-flex items-center gap-1.5 rounded-interactive border px-2 py-0.5 ${
                 present
-                  ? 'border-primary/10 bg-secondary/30 text-foreground'
-                  : 'border-status-warning/30 bg-status-warning/10 text-status-warning'
+                  ? 'border-hair bg-surface-1 text-foreground'
+                  : 'border-hair bg-surface-2 text-status-warning'
               }`}
             >
               {present

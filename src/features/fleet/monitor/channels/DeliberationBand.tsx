@@ -68,7 +68,7 @@ export const DeliberationBand = memo(function DeliberationBand({
               {m.conv_card_deliberation} · {deliberationStatusLabel(t, status)}
             </Engraved>
             <span className={`ae-bar ${share > 0.8 ? 'ae-t-warn' : 'ae-t-agent'} w-16 flex-shrink-0`} aria-hidden><i style={{ width: `${share * 100}%` }} /></span>
-            <span className="typo-data tabular-nums text-foreground">
+            <span className="typo-data num text-foreground">
               <Numeric value={spent} precision={2} /> / <Numeric value={budget} precision={2} />
             </span>
           </span>
@@ -76,7 +76,7 @@ export const DeliberationBand = memo(function DeliberationBand({
             {leaning ? <><span className="typo-label text-role-agent">{m.cv_leaning}: </span>{leaning}</> : topic}
           </span>
           <span className="flex min-w-0 items-baseline gap-1.5 typo-caption">
-            <span className="flex-shrink-0 tabular-nums">{tx(m.delib_round, { round })} · {tx(m.cv_turns, { count: items.length })}</span>
+            <span className="flex-shrink-0 num">{tx(m.delib_round, { round })} · {tx(m.cv_turns, { count: items.length })}</span>
             {leaning
               ? <span className="min-w-0 truncate">· {topic}</span>
               : said && <span className="min-w-0 truncate">· {speaker ? `${speaker}: ` : ''}{said}</span>}
@@ -86,7 +86,7 @@ export const DeliberationBand = memo(function DeliberationBand({
             </span>
           </span>
         </Button>
-        <Button variant="accent" tone="agent" size="xs" onClick={() => onFocus(deliberationId)} aria-pressed={driving} className="flex-shrink-0" data-testid="conv-drive">
+        <Button variant="secondary" size="xs" onClick={() => onFocus(deliberationId)} aria-pressed={driving} className="flex-shrink-0" data-testid="conv-drive">
           {m.conv_drive}
         </Button>
         <ChevronDown className={`mt-1 h-4 w-4 flex-shrink-0 text-foreground transition-transform ${expanded ? 'rotate-180' : ''}`} aria-hidden />

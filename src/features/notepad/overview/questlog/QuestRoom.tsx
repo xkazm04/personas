@@ -126,10 +126,10 @@ export function QuestRoom({
   );
   const renderLane = (lane: (typeof lanes)[number]) => (
     <section key={lane.key}>
-      <p className="flex items-center gap-1.5 typo-label text-foreground/85 mb-2">
+      <p className="flex items-center gap-1.5 typo-label text-ink-2 mb-2">
         <lane.Icon className="w-3.5 h-3.5" aria-hidden />
         {lane.label}
-        <span className="tabular-nums">· {lane.notes.length}</span>
+        <span className="num">· {lane.notes.length}</span>
       </p>
       <div className="grid grid-cols-3 gap-4">{lane.notes.map(renderCard)}</div>
     </section>
@@ -141,7 +141,7 @@ export function QuestRoom({
         <button
           type="button"
           onClick={onClose}
-          className="h-8 px-2.5 rounded-interactive inline-flex items-center gap-2 typo-caption text-foreground hover:bg-secondary/50 focus-ring"
+          className="h-8 px-2.5 rounded-interactive inline-flex items-center gap-2 typo-caption text-foreground hover:bg-surface-1 focus-ring"
         >
           <ArrowLeft className="w-4 h-4" aria-hidden />
           {t.notepad.desk_room_back}
@@ -162,7 +162,7 @@ export function QuestRoom({
             );
           })}
         </div>
-        <span className="ml-auto inline-flex items-center gap-1.5 typo-label text-foreground/85">
+        <span className="ml-auto inline-flex items-center gap-1.5 typo-label text-ink-2">
           <Keycap>{DESK_KEY.bracketOpen}</Keycap>
           <Keycap>{DESK_KEY.bracketClose}</Keycap>
           {t.notepad.desk_key_alphabetical}
@@ -174,7 +174,7 @@ export function QuestRoom({
         {milestoneGroups && <QuestRoomBands groups={milestoneGroups} renderCard={renderCard} />}
         {lanes.filter((l) => l.key !== 'waiting').map(renderLane)}
         {lanes.length === 0 && !milestoneGroups?.length && (
-          <p className="typo-caption text-foreground/85 italic">{t.notepad.desk_zone_none_live}</p>
+          <p className="typo-caption text-ink-2 italic">{t.notepad.desk_zone_none_live}</p>
         )}
       </div>
     </div>

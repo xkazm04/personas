@@ -28,18 +28,18 @@ export default function SkillListSidebar({ skills, selected, onSelect }: {
 
   return (
     <aside
-      className="w-72 flex-shrink-0 flex flex-col min-h-0 rounded-card border border-primary/10 bg-secondary/10"
+      className="w-72 flex-shrink-0 flex flex-col min-h-0 rounded-card border border-hair bg-surface-1"
       aria-label={d.launch_select_skill}
       data-testid="skill-launch-sidebar"
     >
-      <div className="p-2 border-b border-primary/10">
+      <div className="p-2 border-b border-hair">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t.common.search}
           aria-label={t.common.search}
-          className="w-full px-3 py-1.5 typo-caption rounded-input bg-background/50 text-foreground border border-primary/15 focus-ring focus-visible:border-primary/30 placeholder:text-foreground/50"
+          className="w-full px-3 py-1.5 typo-caption rounded-input bg-background/50 text-foreground border border-hair focus-ring focus-visible:border-primary/30 placeholder:text-ink-3"
         />
       </div>
       <ul className="flex-1 min-h-0 overflow-y-auto py-1" role="listbox" aria-label={d.launch_select_skill}>
@@ -54,8 +54,8 @@ export default function SkillListSidebar({ skills, selected, onSelect }: {
                 onClick={() => onSelect(active ? null : s.name)}
                 className={`w-full flex items-baseline gap-2 px-3 py-2 text-left transition-colors border-l-2 min-w-0 ${
                   active
-                    ? 'border-primary bg-primary/10'
-                    : 'border-transparent hover:bg-secondary/30'
+                    ? 'border-primary bg-surface-1'
+                    : 'border-transparent hover:bg-surface-1'
                 }`}
               >
                 <span className={`typo-body truncate ${active ? 'text-primary' : 'text-foreground'}`}>
@@ -63,7 +63,7 @@ export default function SkillListSidebar({ skills, selected, onSelect }: {
                 </span>
                 <span
                   // muted-ok: structural micro-label (version chip beside the name)
-                  className="typo-label text-foreground/45 ml-auto flex-shrink-0"
+                  className="typo-label text-ink-3 ml-auto flex-shrink-0"
                 >
                   v{s.version ?? '1.0'}
                 </span>

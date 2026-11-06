@@ -100,7 +100,7 @@ export function TechIconStrip({ techStack, max = 5 }: { techStack: string | null
         </Tooltip>
       ))}
       {matches.length > max && (
-        <span className="typo-caption text-muted-foreground">+{matches.length - max}</span>
+        <span className="typo-caption text-ink-3">+{matches.length - max}</span>
       )}
     </span>
   );
@@ -132,7 +132,7 @@ export function MembershipPanel({
   return (
     <div className="grid grid-cols-2 gap-3 min-w-0">
       <div className="min-w-0">
-        <div className="typo-label text-muted-foreground mb-2">
+        <div className="typo-label text-ink-3 mb-2">
           {tx(tw.members_count, { count: members.length })}
         </div>
         <div className="flex flex-col gap-1">
@@ -151,7 +151,7 @@ export function MembershipPanel({
         </div>
       </div>
       <div className="min-w-0">
-        <div className="typo-label text-muted-foreground mb-2">
+        <div className="typo-label text-ink-3 mb-2">
           {tx(tw.other_projects, { count: candidates.length })}
         </div>
         <div className="flex flex-col gap-1">
@@ -189,9 +189,9 @@ function ProjectRow({
 }) {
   return (
     <div
-      className={`group flex items-center gap-2 rounded-interactive border border-primary/10 px-2.5 py-1.5 min-w-0 ${
+      className={`group flex items-center gap-2 rounded-interactive border border-hair px-2.5 py-1.5 min-w-0 ${
         subdued ? 'opacity-70' : ''
-      } hover:bg-secondary/40 transition-colors`}
+      } hover:bg-surface-1 transition-colors`}
     >
       <span className="typo-body text-foreground truncate min-w-0 flex-1">{project.name}</span>
       <TechIconStrip techStack={project.tech_stack} />
@@ -199,7 +199,7 @@ function ProjectRow({
         type="button"
         aria-label={actionLabel}
         onClick={onAction}
-        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-foreground/80 hover:text-foreground rounded-interactive p-1 hover:bg-primary/10 transition-all"
+        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 text-ink-2 hover:text-foreground rounded-interactive p-1 hover:bg-primary/10 transition-all"
       >
         {actionIcon}
       </button>
@@ -238,7 +238,7 @@ export function CreateWorkspaceInline({ autoFocus }: { autoFocus?: boolean }) {
         <button
           type="submit"
           disabled={!name.trim()}
-          className="typo-body shrink-0 rounded-interactive border border-primary/20 bg-primary/10 px-3 py-2 text-foreground hover:bg-primary/15 disabled:opacity-40 transition-colors"
+          className="typo-body shrink-0 rounded-interactive border border-hair bg-surface-1 px-3 py-2 text-foreground hover:bg-primary/15 disabled:opacity-40 transition-colors"
         >
           {tw.create}
         </button>

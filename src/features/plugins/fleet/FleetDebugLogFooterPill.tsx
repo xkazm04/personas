@@ -41,15 +41,15 @@ export function FleetDebugLogFooterPill() {
       disabled={busy}
       title={t.plugins.fleet.debug_log_stop_title}
       aria-label={t.plugins.fleet.debug_log_stop_title}
-      className="flex items-center gap-1.5 h-7 px-2 rounded-input border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-500/50"
+      className="flex items-center gap-1.5 h-7 px-2 rounded-input border border-hair bg-surface-1 text-status-error hover:bg-status-error/20 transition-colors disabled:opacity-40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-status-error/50"
     >
       <span className="relative flex h-2 w-2" aria-hidden="true">
-        <span className="absolute inset-0 rounded-full bg-red-400 opacity-60 animate-ping motion-reduce:animate-none" />
-        <span className="relative h-2 w-2 rounded-full bg-red-400" />
+        <span className="absolute inset-0 rounded-full bg-status-error opacity-60 animate-ping motion-reduce:animate-none" />
+        <span className="relative h-2 w-2 rounded-full bg-status-error" />
       </span>
       <Square className="w-3 h-3" aria-hidden="true" />
-      <span className="text-[11px] font-medium">{t.plugins.fleet.debug_log_stop}</span>
-      <span className="text-[11px] tabular-nums opacity-70">{events}</span>
+      <span className="typo-caption">{t.plugins.fleet.debug_log_stop}</span>
+      <span className="typo-caption opacity-70">{events}</span>
     </button>
   );
 }

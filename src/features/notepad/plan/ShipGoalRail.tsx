@@ -72,7 +72,7 @@ export function ShipGoalRail({ ship, vm, onNewGoal, onAssistGoal }: {
     <>
       <div className="flex items-center gap-2 mb-2">
         <h3 className="typo-title min-w-0">{t.ship.goals_rail_title}</h3>
-        <span className="typo-data text-foreground/40">{ship.goals.length}</span>
+        <span className="typo-data text-ink-3">{ship.goals.length}</span>
         <button
           type="button"
           onClick={onNewGoal}
@@ -86,12 +86,12 @@ export function ShipGoalRail({ ship, vm, onNewGoal, onAssistGoal }: {
 
       {ship.goals.length >= FILTER_FROM && (
         <div className="relative mb-2">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" aria-hidden />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-3 pointer-events-none" aria-hidden />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t.ship.filter_placeholder}
-            className={`${INPUT_FIELD} !py-1 !pl-8 !text-sm`}
+            className={`${INPUT_FIELD} !py-1 !pl-8 !typo-body`}
             aria-label={t.ship.filter_aria}
             data-testid="ship-lib-search"
           />

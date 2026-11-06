@@ -19,7 +19,7 @@ import { useSessionMenu } from './SessionMenu';
 import { sessionStateIcon, useSessionSummary } from './sessionBits';
 
 const STANDING_MS = 6 * 60 * 60 * 1000;
-const ICON_BTN = 'ae-focus flex h-7 w-7 items-center justify-center rounded-interactive text-foreground transition-colors hover:bg-secondary/40';
+const ICON_BTN = 'ae-focus flex h-7 w-7 items-center justify-center rounded-interactive text-foreground transition-colors hover:bg-surface-1';
 
 export const SessionWindow = memo(function SessionWindow({
   session, item = null, onOpen, onRecap, flash = false, over = false, now,
@@ -77,7 +77,7 @@ export const SessionWindow = memo(function SessionWindow({
         )}
         <span className="flex items-center gap-2 pl-[18px]">
           <Segments count={AGE_RUNG_COUNT} lit={ageRungs(age)} tone={lamp.lit ? lamp.tone : 'off'} thin className="min-w-0 flex-1 opacity-80" />
-          <span className="flex-shrink-0 typo-caption tabular-nums text-foreground">{compactAge(age)}</span>
+          <span className="flex-shrink-0 typo-caption num text-foreground">{compactAge(age)}</span>
         </span>
       </div>
       <div className="flex flex-shrink-0 flex-col items-center gap-0.5 border-l border-border px-0.5 py-1" data-testid="entry-e-session-icons">

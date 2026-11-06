@@ -77,7 +77,7 @@ export function PracticeStep({ preset, onChange }: PracticeStepProps) {
               onKeyDown={(e) => onKeyDown(e, index)}
               data-testid={`practice-${p.preset}`}
               className={`cursor-pointer rounded-card border p-4 transition-colors focus-ring ${
-                checked ? 'bg-primary/8 border-primary/40' : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
+                checked ? 'bg-surface-1 border-primary/40' : 'bg-surface-1 border-hair hover:bg-surface-1'
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -107,8 +107,8 @@ export function PracticeStep({ preset, onChange }: PracticeStepProps) {
                     data-marked={p.marked.has(id) || undefined}
                     className={`typo-caption px-2 py-0.5 rounded-interactive border ${
                       p.marked.has(id)
-                        ? 'border-status-warning/50 bg-status-warning/10 text-foreground'
-                        : 'border-primary/15 text-foreground'
+                        ? 'border-hair bg-surface-2 text-foreground'
+                        : 'border-hair text-foreground'
                     }`}
                   >
                     {stepLabel(dl, id)}

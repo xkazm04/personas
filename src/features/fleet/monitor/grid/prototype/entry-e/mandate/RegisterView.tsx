@@ -58,7 +58,7 @@ export function RegisterView({ state, selected, onSelect, onOpen, onOpenLog, hel
           <header className="flex items-center gap-2 px-3">
             <Lamp lamp={{ tone: 'warn', lit: asking > 0 }} />
             <Engraved>{m.ml_drawer_aria}</Engraved>
-            <span className="typo-data tabular-nums text-foreground" data-testid="mandate-register-count">{state.mandates ? rows.length : null}</span>
+            <span className="typo-data num text-foreground" data-testid="mandate-register-count">{state.mandates ? rows.length : null}</span>
             <span className="ml-auto typo-caption text-status-error" role="status">{state.failed ? m.ml_stewards_failed : null}</span>
           </header>
           <Rows

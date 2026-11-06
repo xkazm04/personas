@@ -27,7 +27,7 @@ export const PersonaChatBubble = memo(function PersonaChatBubble({ item, persona
 
   const bubble = (
     <div className={`min-w-0 max-w-[78%] rounded-card border px-3 py-2 ${
-      mine ? (extra.failed === true ? 'border-status-error/35 bg-status-error/[0.07]' : 'border-primary/20 bg-primary/12') : 'border-border bg-secondary/30'
+      mine ? (extra.failed === true ? 'border-status-error/35 bg-status-error/[0.07]' : 'border-hair bg-primary/12') : 'border-border bg-surface-1'
     }`}>
       {!mine && (
         <span className="mb-0.5 flex items-baseline gap-2">
@@ -46,7 +46,7 @@ export const PersonaChatBubble = memo(function PersonaChatBubble({ item, persona
   return (
     <div className="flex items-start gap-2.5 py-1">
       {athena ? (
-        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-card border border-border bg-secondary/40" aria-hidden>
+        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-card border border-border bg-surface-1" aria-hidden>
           <Sparkles className="h-3.5 w-3.5 text-role-agent" />
         </span>
       ) : <PersonaIcon icon={persona.icon} color={persona.color} display="framed" frameSize="md" />}

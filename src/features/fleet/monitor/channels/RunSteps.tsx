@@ -33,14 +33,14 @@ export function RunSteps({ assignmentId, steps }: { assignmentId: string; steps:
         const rework = s.retryCount ?? 0;
         return (
           <div key={s.id} className="grid grid-cols-[1.25rem_1rem_1fr_auto] items-baseline gap-x-2">
-            <span className="typo-data tabular-nums text-foreground">{i + 1}</span>
+            <span className="typo-data num text-foreground">{i + 1}</span>
             <Lamp lamp={stepLamp(s.status)} className="self-center" />
             <span className="min-w-0">
               <span className="block typo-body text-foreground">{s.title}</span>
               {s.outputSummary && <MarkdownRenderer content={s.outputSummary} className={`typo-caption ${MD_CHAT_RHYTHM}`} />}
             </span>
             <span className="flex items-baseline gap-2">
-              {rework > 0 && <span className="typo-data tabular-nums text-status-warning">×{rework + 1}</span>}
+              {rework > 0 && <span className="typo-data num text-status-warning">×{rework + 1}</span>}
               {persona && (
                 <span className="typo-caption" style={{ color: memberColor(persona, s.assignedPersonaId) }}>
                   {persona.name.replace(/^T:\s*/, '')}

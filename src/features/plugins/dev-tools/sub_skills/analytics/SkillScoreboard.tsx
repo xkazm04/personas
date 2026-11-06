@@ -109,14 +109,14 @@ export function SkillScoreboard({ proj, totalContexts, runs, tasks, onOpenInfo }
 
   const pct = (v: number | null) => (v === null ? '—' : `${Math.round(v * 100)}%`);
   const rateTone = (v: number | null) =>
-    v === null ? 'text-foreground/50' : v >= 0.66 ? 'text-status-success' : v >= 0.33 ? 'text-status-warning' : 'text-status-error';
+    v === null ? 'text-ink-3' : v >= 0.66 ? 'text-status-success' : v >= 0.33 ? 'text-status-warning' : 'text-status-error';
 
   const GRID = 'grid grid-cols-[minmax(0,1.6fr)_4.5rem_5.5rem_4.5rem_4.5rem_4.5rem] items-center gap-3';
   const SortHead = ({ k, label }: { k: SortKey; label: string }) => (
     <button
       type="button"
       onClick={() => setSort(k)}
-      className={`inline-flex items-center justify-end gap-1 text-[10.5px] uppercase tracking-[0.12em] transition-colors ${sort === k ? 'text-foreground/80 font-semibold' : 'text-foreground/40 hover:text-foreground/70'}`}
+      className={`inline-flex items-center justify-end gap-1 typo-eyebrow transition-colors ${sort === k ? 'text-ink-2' : 'text-ink-3 hover:text-ink-2'}`}
     >
       {label}<ArrowUpDown className="w-3 h-3" aria-hidden />
     </button>
@@ -125,27 +125,27 @@ export function SkillScoreboard({ proj, totalContexts, runs, tasks, onOpenInfo }
   const top = sorted[0];
 
   return (
-    <section className="rounded-card border border-primary/12 bg-secondary/[0.12]" data-testid="skill-scoreboard">
-      <div className="flex items-baseline gap-2 px-3 py-2 bg-primary/[0.04] border-b border-primary/10 rounded-t-card">
+    <section className="rounded-card border border-hair bg-secondary/[0.12]" data-testid="skill-scoreboard">
+      <div className="flex items-baseline gap-2 px-3 py-2 bg-primary/[0.04] border-b border-hair rounded-t-card">
         <span className="typo-body text-foreground">{d.skills_scoreboard_title}</span>
         {top && top.invokes30d > 0 && (
-          <span className="ml-auto inline-flex items-center gap-1 typo-label text-foreground/50">
-            <Trophy className="w-3 h-3 text-status-warning" aria-hidden />
+          <span className="ml-auto inline-flex items-center gap-1 typo-label text-ink-3">
+            <Trophy className="w-3 h-3 text-ink-2" aria-hidden />
             {tx(d.skills_scoreboard_top, { name: top.name })}
           </span>
         )}
       </div>
-      <div className={`${GRID} px-3 py-1.5 border-b border-primary/10`}>
-        <span className="text-[10.5px] uppercase tracking-[0.12em] text-foreground/40">{d.skills_scoreboard_col_skill}</span>
+      <div className={`${GRID} px-3 py-1.5 border-b border-hair`}>
+        <span className="typo-eyebrow text-ink-3">{d.skills_scoreboard_col_skill}</span>
         <SortHead k="invokes" label={d.skills_scoreboard_col_invokes} />
         <SortHead k="coverage" label={d.skills_scoreboard_col_coverage} />
         <SortHead k="runs" label={d.skills_scoreboard_col_runs} />
         <SortHead k="accept" label={d.skills_scoreboard_col_accept} />
-        <span className="text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 text-right">{d.skills_scoreboard_col_impl}</span>
+        <span className="typo-eyebrow text-ink-3 text-right">{d.skills_scoreboard_col_impl}</span>
       </div>
       <div className="max-h-72 overflow-y-auto px-3">
         {sorted.length === 0 && (
-          <p className="typo-caption text-foreground/45 py-8 text-center">{d.skills_scoreboard_empty}</p>
+          <p className="typo-caption text-ink-3 py-8 text-center">{d.skills_scoreboard_empty}</p>
         )}
         <ul>
           {sorted.map((row) => {
@@ -163,15 +163,15 @@ export function SkillScoreboard({ proj, totalContexts, runs, tasks, onOpenInfo }
                   )}
                   <button type="button" onClick={() => onOpenInfo(row.name)} className="typo-caption text-foreground truncate text-left hover:text-primary transition-colors" data-testid={`skill-scoreboard-name-${row.name}`}>{row.name}</button>
                 </span>
-                <span className="typo-caption text-foreground/70 tabular-nums text-right">{row.invokes30d || '—'}</span>
-                <span className="typo-caption text-foreground/70 tabular-nums text-right">
+                <span className="typo-caption text-ink-2 num text-right">{row.invokes30d || '—'}</span>
+                <span className="typo-caption text-ink-2 num text-right">
                   {totalContexts > 0 ? `${row.coveredContexts}/${totalContexts}` : '—'}
                 </span>
-                <span className="typo-caption text-foreground/70 tabular-nums text-right">
+                <span className="typo-caption text-ink-2 num text-right">
                   {row.runsTotal > 0 ? `${row.runsFinished}/${row.runsTotal}` : '—'}
                 </span>
-                <span className={`typo-caption tabular-nums text-right ${rateTone(row.acceptRate)}`}>{pct(row.acceptRate)}</span>
-                <span className={`typo-caption tabular-nums text-right ${rateTone(row.implRate)}`}>{pct(row.implRate)}</span>
+                <span className={`typo-caption num text-right ${rateTone(row.acceptRate)}`}>{pct(row.acceptRate)}</span>
+                <span className={`typo-caption num text-right ${rateTone(row.implRate)}`}>{pct(row.implRate)}</span>
               </li>
             );
           })}

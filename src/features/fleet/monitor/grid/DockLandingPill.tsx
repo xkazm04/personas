@@ -64,7 +64,7 @@ export function DockLandingPill({ landing }: { landing: DockLanding }) {
       placement="top"
     >
       <span className={DOCK_READING} aria-label={m.grid_dock_landing_aria} data-testid="quick-dispatch-landing">
-        <span className="typo-data tabular-nums text-foreground">{label}</span>
+        <span className="typo-data num text-foreground">{label}</span>
       </span>
     </Tooltip>
   );

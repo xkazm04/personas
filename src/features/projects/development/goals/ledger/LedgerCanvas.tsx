@@ -120,7 +120,7 @@ export function LedgerCanvas() {
           <RelativeTime
             timestamp={r.node.goal.target_date}
             fallback={dl.progress_no_date}
-            className={`typo-caption tabular-nums ${r.node.overdue ? 'text-status-error' : 'text-foreground'}`}
+            className={`typo-caption num ${r.node.overdue ? 'text-status-error' : 'text-foreground'}`}
           />
         ),
       },
@@ -132,7 +132,7 @@ export function LedgerCanvas() {
         sortable: true,
         sortFn: (a, b) => pctOf(a) - pctOf(b),
         render: (r) => (
-          <span className="typo-caption text-foreground tabular-nums">{percent.format(pctOf(r) / 100)}</span>
+          <span className="typo-caption text-foreground num">{percent.format(pctOf(r) / 100)}</span>
         ),
       },
     ],

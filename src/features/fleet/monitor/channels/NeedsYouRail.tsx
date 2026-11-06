@@ -35,7 +35,7 @@ function HandHead({ ask, ny }: { ask: Ask; ny: NeedsYou }) {
     <AskHead
       aside={(
         <>
-          <span className="pr-1 typo-caption tabular-nums"><Numeric value={ny.index + 1} /> {tx(m.dc_deck_position, { total: ny.total })}</span>
+          <span className="pr-1 typo-caption num"><Numeric value={ny.index + 1} /> {tx(m.dc_deck_position, { total: ny.total })}</span>
           <Button variant="ghost" size="icon-sm" aria-label={m.quick_prev_decision} onClick={() => ny.walk(-1)} disabled={ny.total < 2}><ChevronLeft className="h-4 w-4" aria-hidden /></Button>
           <Button variant="ghost" size="icon-sm" aria-label={m.quick_next_decision} onClick={() => ny.walk(1)} disabled={ny.total < 2}><ChevronRight className="h-4 w-4" aria-hidden /></Button>
         </>

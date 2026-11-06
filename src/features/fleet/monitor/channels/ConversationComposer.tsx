@@ -95,7 +95,7 @@ Respond by posting a short reply INTO that team's channel via your post_team_mes
       {/* The composer TELLS you when it is about to spawn work rather than talk. */}
       {isGoal && (
         <div className="mb-1.5 flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-status-info/30 bg-status-info/10 px-2 py-0.5 typo-caption text-status-info">
+          <span className="inline-flex items-center gap-1.5 rounded-interactive border border-hair bg-surface-1 px-2 py-0.5 typo-caption text-status-info">
             <Wand2 className="h-3 w-3" aria-hidden /> {m.conv_composer_goal_hint}
           </span>
           <Tooltip content={m.conv_composer_plain}>
@@ -114,7 +114,7 @@ Respond by posting a short reply INTO that team's channel via your post_team_mes
           onKeyDown={onKeyDown}
           placeholder={tx(m.conv_composer_placeholder, { team: teamName })}
           aria-label={tx(m.conv_composer_placeholder, { team: teamName })}
-          className="min-w-0 flex-1 resize-none bg-transparent py-1.5 typo-body text-foreground placeholder:text-muted-foreground focus:outline-none"
+          className="min-w-0 flex-1 resize-none bg-transparent py-1.5 typo-body text-foreground placeholder:text-ink-3 focus:outline-none"
         />
         <Button
           variant="ghost"

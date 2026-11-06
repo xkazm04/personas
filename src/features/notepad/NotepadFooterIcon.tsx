@@ -50,8 +50,8 @@ export default function NotepadFooterIcon() {
         aria-pressed={open}
         className={`w-7 h-7 rounded-card flex items-center justify-center transition-colors ${
           open
-            ? 'text-primary bg-primary/10 hover:bg-primary/15 ring-1 ring-primary/30'
-            : 'text-foreground hover:bg-secondary/50'
+            ? 'text-primary bg-surface-1 hover:bg-primary/15 ring-1 ring-primary/30'
+            : 'text-foreground hover:bg-surface-1'
         }`}
       >
         <NotepadText className="w-5 h-5" aria-hidden />

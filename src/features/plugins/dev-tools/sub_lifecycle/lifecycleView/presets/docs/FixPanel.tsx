@@ -55,8 +55,7 @@ export function FixPanel({ view, related }: { view: DocsView; related: Lifecycle
   ];
   const action = docs.length > 0 && (
     <Button
-      variant="accent"
-      tone="agent"
+      variant="secondary"
       size="sm"
       icon={<Sparkles className={GLYPH.sm} />}
       onClick={() => ask('lifecycle', fixDocsPrompt({ dl, tx }, { name: projectName ?? '', id: projectId ?? '' }, docs))}

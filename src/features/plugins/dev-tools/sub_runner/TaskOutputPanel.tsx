@@ -27,19 +27,19 @@ export function TaskOutputPanel({ taskId: _taskId, lines, isRunning }: TaskOutpu
 
   return (
     <div className="mt-2 border border-border/20 rounded-card overflow-hidden bg-background/80">
-      <div className="flex items-center justify-between px-2.5 py-1 bg-secondary/30 border-b border-border/15">
-        <span className="text-[10px] font-mono text-foreground">{tx(lines.length === 1 ? t.plugins.dev_runner.output_lines_one : t.plugins.dev_runner.output_lines_other, { count: lines.length })}</span>
+      <div className="flex items-center justify-between px-2.5 py-1 bg-surface-1 border-b border-border/15">
+        <span className="typo-caption text-foreground">{tx(lines.length === 1 ? t.plugins.dev_runner.output_lines_one : t.plugins.dev_runner.output_lines_other, { count: lines.length })}</span>
         <div className="flex items-center gap-1.5">
           {isRunning && (
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400/70">
-              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="flex items-center gap-1 typo-caption text-status-success">
+              <span className="w-1 h-1 rounded-full bg-status-success animate-pulse" />
               {t.plugins.dev_runner.output_streaming}
             </span>
           )}
           <button
             type="button"
             onClick={() => setViewMode(viewMode === 'raw' ? 'rendered' : 'raw')}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded typo-caption text-foreground hover:text-foreground hover:bg-surface-1 transition-colors"
             title={viewMode === 'raw' ? t.plugins.dev_runner.output_show_rendered : t.plugins.dev_runner.output_show_raw}
           >
             {viewMode === 'raw' ? (
@@ -54,17 +54,17 @@ export function TaskOutputPanel({ taskId: _taskId, lines, isRunning }: TaskOutpu
       {viewMode === 'raw' ? (
         <div
           ref={scrollRef}
-          className="max-h-48 overflow-y-auto p-2 font-mono text-[11px] leading-relaxed text-foreground whitespace-pre-wrap"
+          className="max-h-48 overflow-y-auto p-2 typo-caption text-foreground whitespace-pre-wrap"
         >
           {lines.map((line, i) => (
-            <div key={i} className="hover:bg-secondary/20">{line}</div>
+            <div key={i} className="hover:bg-surface-1">{line}</div>
           ))}
           {isRunning && <span className="inline-block w-1.5 h-3 bg-primary/60 animate-pulse" />}
         </div>
       ) : (
         <div
           ref={scrollRef}
-          className="max-h-48 overflow-y-auto p-3 text-md"
+          className="max-h-48 overflow-y-auto p-3 typo-body"
         >
           {/* Plain while it streams: a block tag is only readable once its
               closing fence has arrived, and a half-written `:::stats` would

@@ -122,7 +122,7 @@ export function FleetProcessScanner() {
         <>
           {orphans > 0 && (
             <span
-              className="typo-caption px-1.5 py-0.5 rounded-interactive border border-status-warning/30 bg-status-warning/10 text-status-warning"
+              className="typo-caption px-1.5 py-0.5 rounded-interactive border border-hair bg-surface-2 text-status-warning"
               data-testid="fleet-orphan-count"
             >
               {orphans} orphaned
@@ -154,7 +154,7 @@ export function FleetProcessScanner() {
         // Ghost rows under the card's chrome while the first scan runs.
         <div className="space-y-1" aria-busy="true">
           {[0, 1].map((i) => (
-            <div key={i} aria-hidden className="h-9 rounded-interactive border border-primary/5 bg-background/40 animate-fade-in" />
+            <div key={i} aria-hidden className="h-9 rounded-interactive border border-hair bg-background/40 animate-fade-in" />
           ))}
         </div>
       ) : visible.length === 0 ? (

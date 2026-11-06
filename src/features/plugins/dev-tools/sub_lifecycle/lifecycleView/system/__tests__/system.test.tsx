@@ -55,7 +55,7 @@ describe('the one pill', () => {
     expect(document.querySelector('[data-health="stale"]')?.getAttribute('data-stroke')).toBe('dotted');
     expect(document.querySelector('[data-outcome="skipped"]')?.getAttribute('data-stroke')).toBe('hairline');
     expect(document.querySelector('[data-state="missing"]')?.getAttribute('data-stroke')).toBe('dotted');
-    for (const el of document.querySelectorAll('[data-stroke]')) expect(el.className).toContain('rounded-pill');
+    for (const el of document.querySelectorAll('[data-stroke]')) expect(el.className).toContain('inline-flex');
   });
 });
 

@@ -232,7 +232,7 @@ function VirtualConversationInner<R extends { key: string }>({
         <button
           type="button"
           onClick={toLatest}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary/25 bg-background/90 shadow-elevation-2 typo-caption text-foreground hover:bg-secondary/40 transition-colors"
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-hair bg-background/90 shadow-elevation-2 typo-caption text-foreground hover:bg-surface-1 transition-colors"
         >
           <ArrowDown className="w-3.5 h-3.5" />
           {tx(t.monitor.conv_new, { count: unseen })}

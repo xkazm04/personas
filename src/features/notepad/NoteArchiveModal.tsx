@@ -85,18 +85,18 @@ export function NoteArchiveModal({
               <section className="flex flex-col gap-1">
                 {shipped.length > 0 && (
                   // muted-ok: group band — chrome saying WHICH list, not content to read.
-                  <h3 className="typo-label text-foreground/70 px-3">{t.notepad.status_archived}</h3>
+                  <h3 className="typo-label text-ink-2 px-3">{t.notepad.status_archived}</h3>
                 )}
                 <ul className="flex flex-col gap-1">
                   {notes.map((note) => (
                     <li
                       key={note.id}
                       data-testid={`notepad-archived-${note.id}`}
-                      className="flex items-center gap-3 px-3 py-2 rounded-card hover:bg-secondary/30 transition-colors"
+                      className="flex items-center gap-3 px-3 py-2 rounded-card hover:bg-surface-1 transition-colors"
                     >
                       <div className="flex-1 min-w-0 flex flex-col">
-                        <span className="typo-body text-foreground/90 truncate">{note.title}</span>
-                        <RelativeTime timestamp={note.archivedAt} className="typo-caption text-foreground/60" />
+                        <span className="typo-body text-ink-2 truncate">{note.title}</span>
+                        <RelativeTime timestamp={note.archivedAt} className="typo-caption text-ink-2" />
                       </div>
                       {atCapGate(
                         <AsyncButton
@@ -126,7 +126,7 @@ export function NoteArchiveModal({
             {shipped.length > 0 && (
               <section className="flex flex-col gap-1" data-testid="notepad-shipped-group">
                 {/* muted-ok: group band — chrome saying WHICH list, not content to read. */}
-                <h3 className="typo-label text-foreground/70 px-3">{t.notepad.archived_shipped_title}</h3>
+                <h3 className="typo-label text-ink-2 px-3">{t.notepad.archived_shipped_title}</h3>
                 <ul className="flex flex-col gap-1">
                   {shipped.map((note) => {
                     const summary = summaries[note.id];
@@ -137,16 +137,16 @@ export function NoteArchiveModal({
                       <li
                         key={note.id}
                         data-testid={`notepad-shipped-${note.id}`}
-                        className="flex items-center gap-3 px-3 py-2 rounded-card hover:bg-secondary/30 transition-colors"
+                        className="flex items-center gap-3 px-3 py-2 rounded-card hover:bg-surface-1 transition-colors"
                       >
                         <div className="flex-1 min-w-0 flex flex-col">
-                          <span className="typo-body text-foreground/90 truncate">{note.title}</span>
-                          <span className="flex items-center gap-1.5 typo-caption text-foreground/85">
+                          <span className="typo-body text-ink-2 truncate">{note.title}</span>
+                          <span className="flex items-center gap-1.5 typo-caption text-ink-2">
                             {summary?.shippedAt && <RelativeTime timestamp={summary.shippedAt} />}
                             {cycle && (
                               <>
                                 {summary?.shippedAt && <span aria-hidden>·</span>}
-                                <span className="tabular-nums" data-testid={`notepad-shipped-cycle-${note.id}`}>
+                                <span className="num" data-testid={`notepad-shipped-cycle-${note.id}`}>
                                   {tx(t.notepad.archived_cycle_time, { span: cycle })}
                                 </span>
                               </>

@@ -51,7 +51,7 @@ function Gauge({
         thin
         mark={(Math.max(0, Math.min(100, line)) / 100) * GAUGE_SEGS}
       />
-      <span className="min-w-0 flex-1 tabular-nums">{children}</span>
+      <span className="min-w-0 flex-1 num">{children}</span>
     </div>
   );
 }
@@ -89,7 +89,7 @@ export function AutopilotTip({
         <Lamp lamp={{ tone, lit: on }} />
         <span className="typo-label text-foreground">{m.autopilot}</span>
         <span className="text-foreground">· {on ? t.common.active : t.common.off}</span>
-        {phrase && <span className="ml-auto tabular-nums text-foreground">{phrase}</span>}
+        {phrase && <span className="ml-auto num text-foreground">{phrase}</span>}
       </div>
       <p className="border-b border-foreground/10 pb-2">{m.autopilot_aria}</p>
 
@@ -129,7 +129,7 @@ export function AutopilotTip({
 
           <div className="flex flex-col gap-1.5 border-t border-foreground/10 pt-2">
             <Note icon={Zap}>
-              <span className="tabular-nums">
+              <span className="num">
                 {tx(m.autopilot_detail_running, { running: status.headroom.running, cap: status.headroom.cap })}
                 {' · '}
                 {tx(m.autopilot_detail_dispatched, { count: status.dispatchedToday })}

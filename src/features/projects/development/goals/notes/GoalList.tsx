@@ -50,14 +50,14 @@ export function GoalList({ goals, selectedId, onSelect }: GoalListProps) {
                   aria-pressed={selected}
                   onClick={() => onSelect(selected ? null : g.id)}
                   data-testid={`layers-detail-goal-${g.id}`}
-                  className={`${ROW_LAYOUT} ${selected ? 'bg-primary/10 ring-1 ring-primary/30' : ''}`}
+                  className={`${ROW_LAYOUT} ${selected ? 'bg-surface-1 ring-1 ring-primary/30' : ''}`}
                 >
                   <Icon className={`w-4 h-4 shrink-0 ${meta.tint}`} />
                   <span className="min-w-0 flex-1 flex flex-col gap-1.5">
                     <span className="typo-body-lg text-foreground truncate">{g.title}</span>
                     <span className="flex items-center gap-2.5">
                       <GoalBar goal={g} className="flex-1" />
-                      <span className="typo-caption tabular-nums shrink-0">{goalWeight(g)}%</span>
+                      <span className="typo-caption num shrink-0">{goalWeight(g)}%</span>
                     </span>
                   </span>
                   <span className="sr-only">{goalStatusLabel(dl, g.status)}</span>

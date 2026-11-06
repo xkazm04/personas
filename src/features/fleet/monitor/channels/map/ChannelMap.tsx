@@ -172,7 +172,7 @@ export function ChannelMap({
                 type="button"
                 onClick={() => setActiveId(tm.teamId)}
                 aria-pressed={on}
-                className={`flex-shrink-0 px-2 py-0.5 rounded-full border typo-caption transition-colors ${
+                className={`flex-shrink-0 px-2 py-0.5 rounded-interactive border typo-caption transition-colors ${
                   on ? 'border-transparent text-foreground' : 'border-border text-foreground opacity-55 hover:opacity-90'
                 }`}
                 style={on ? { backgroundColor: `${tm.teamColor}26`, boxShadow: `inset 0 0 0 1px ${tm.teamColor}66` } : undefined}
@@ -352,7 +352,7 @@ export function ChannelMap({
           <>
             <div className="absolute top-2 left-3 z-10 font-mono pointer-events-none">
               <p className="typo-label text-foreground opacity-45">{t.monitor.stream_group_channel}</p>
-              <p className="typo-caption font-mono uppercase tracking-wider text-foreground opacity-85">{cleanName(team.teamName)}</p>
+              <p className="typo-eyebrow text-ink-3 opacity-85">{cleanName(team.teamName)}</p>
             </div>
             <div className="absolute top-2 right-3 z-10 font-mono text-right pointer-events-none">
               <p className="typo-label text-foreground opacity-45">{t.monitor.map_members}</p>
@@ -378,7 +378,7 @@ export function ChannelMap({
 
         {/* Legend — presence states + the live-route mark. */}
         {nodes.length > 0 && (
-          <div className="absolute bottom-2 left-3 z-10 flex items-center gap-3 px-2.5 py-1 rounded-full border border-border bg-background/70 backdrop-blur-sm">
+          <div className="absolute bottom-2 left-3 z-10 flex items-center gap-3 px-2.5 py-1 rounded-interactive border border-border bg-background/70 backdrop-blur-sm">
             {legend.map((l) => (
               <span key={l.key} className="inline-flex items-center gap-1.5 typo-caption text-foreground opacity-75">
                 <span className={`w-2 h-2 rounded-full ${l.cls}`} />

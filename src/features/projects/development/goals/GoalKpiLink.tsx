@@ -62,21 +62,21 @@ export function GoalKpiLink({ kpiId }: { kpiId: string }) {
     >
       <div className="flex items-center gap-2 mb-1.5">
         <Gauge className="w-4 h-4 shrink-0" style={{ color }} />
-        <span className="typo-caption uppercase tracking-[0.18em] text-foreground">{t.kpis.goal_link_title}</span>
-        <span className="ml-auto inline-flex items-center gap-1 typo-caption text-foreground/70">
+        <span className="typo-eyebrow text-ink-3">{t.kpis.goal_link_title}</span>
+        <span className="ml-auto inline-flex items-center gap-1 typo-caption text-ink-2">
           <CatIcon className="w-3 h-3" /> {cat.label(t)}
         </span>
       </div>
       <div className="flex items-baseline gap-2 flex-wrap">
         <span className="typo-body text-foreground">{kpi.name}</span>
-        <span className="inline-flex items-center gap-1 typo-caption tabular-nums" style={{ color }}>
+        <span className="inline-flex items-center gap-1 typo-caption num" style={{ color }}>
           {fmt(kpi.current_value, unit)}
           <ArrowRight className="w-3 h-3 opacity-60" />
           {fmt(kpi.target_value, unit)}
         </span>
       </div>
-      <p className="typo-caption text-foreground/80 mt-1">{paceSentence(kpi, t, tx)}</p>
-      <p className="typo-caption text-foreground/55 mt-1.5">{t.kpis.goal_link_subtitle}</p>
+      <p className="typo-caption text-ink-2 mt-1">{paceSentence(kpi, t, tx)}</p>
+      <p className="typo-caption text-ink-3 mt-1.5">{t.kpis.goal_link_subtitle}</p>
     </div>
   );
 }

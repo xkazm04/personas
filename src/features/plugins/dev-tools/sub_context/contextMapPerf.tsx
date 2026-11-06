@@ -121,7 +121,7 @@ function ScanContextButton({
         }}
         disabled={scanBusy}
         aria-label={t.context_scan_ideas_tooltip}
-        className={`shrink-0 grid place-items-center rounded-full border border-primary/15 bg-primary/5 text-foreground hover:bg-primary/10 hover:border-primary/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+        className={`shrink-0 grid place-items-center rounded-full border border-hair bg-surface-1 text-foreground hover:bg-primary/10 hover:border-primary/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
           size === 'sm' ? 'ml-auto w-5 h-5' : 'w-6 h-6'
         }`}
       >
@@ -183,14 +183,14 @@ export const LedgerRow = memo(function LedgerRow({
   return (
     <div
       className={`grid items-center gap-0 px-3 py-1 transition-colors ${
-        selected ? 'bg-primary/10' : 'hover:bg-secondary/10'
+        selected ? 'bg-surface-1' : 'hover:bg-surface-1'
       }`}
       style={{ gridTemplateColumns: gridTemplate }}
     >
       {/* the context record */}
       <div className="flex items-center gap-2.5 min-w-0 pr-3">
         {ctx.pinned && (
-          <span className="w-1 h-3.5 rounded-full bg-amber-400/70 shrink-0" title={t.context_pinned} />
+          <span className="w-1 h-3.5 rounded-full bg-status-warning/70 shrink-0" title={t.context_pinned} />
         )}
         <button
           type="button"
@@ -273,8 +273,8 @@ function Indicator({
   return (
     <Tooltip content={`${n} ${label}`}>
       <span
-        className={`inline-flex items-center gap-0.5 typo-caption tabular-nums ${
-          n > 0 ? stem : 'text-foreground/25'
+        className={`inline-flex items-center gap-0.5 typo-caption num ${
+          n > 0 ? stem : 'text-ink-3'
         }`}
       >
         {icon}
@@ -352,18 +352,18 @@ export const RosterTile = memo(function RosterTile({
         {contextUseCases && chip?.project && (contextUseCases.length > 0 || chip.featuresUnlinked) ? (
           <FeatureChip contextName={ctx.name} useCases={contextUseCases} chip={chip} t={t} />
         ) : (
-          <Indicator icon={<Layers className="w-3 h-3" />} n={featureCount} stem="text-sky-300" label={t.uc_title} />
+          <Indicator icon={<Layers className="w-3 h-3" />} n={featureCount} stem="text-status-info" label={t.uc_title} />
         )}
         <Indicator
           icon={<Target className="w-3 h-3" />}
           n={goalCount}
-          stem="text-violet-300"
+          stem="text-role-agent"
           label={t.context_detail_goals_heading}
         />
         <Indicator
           icon={<Gauge className="w-3 h-3" />}
           n={kpiCount}
-          stem="text-rose-300"
+          stem="text-status-error"
           label={t.ctx_indicator_kpis}
         />
         <ScanContextButton

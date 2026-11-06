@@ -43,7 +43,7 @@ export const StepBand = forwardRef<HTMLHeadingElement, { node: JourneyNode; show
   const Glyph = stepGlyph(node.id);
   const keyId = useSharedKeyId(node.id);
   const reason = reasonLine(dl, step.health, step.reason);
-  const outline = step.health === 'instructed' ? 'border-2 border-solid border-primary/15' : v.outline;
+  const outline = step.health === 'instructed' ? 'border-2 border-solid border-hair' : v.outline;
   const tracked = HISTORY_STEPS.has(node.id);
   return (
     <header

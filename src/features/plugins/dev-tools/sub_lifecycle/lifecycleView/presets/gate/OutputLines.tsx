@@ -58,7 +58,7 @@ export const OutputLines = memo(function OutputLines({ parsed, errorAt, query, m
     <div className={LT.code} data-testid="lc6-output-lines">
       {SECTIONS.map((s) => (
         <section key={s} data-section={s} aria-label={s}>
-          <header className="sticky top-0 z-10 flex items-baseline gap-2 border-b border-primary/15 bg-secondary px-3 py-1">
+          <header className="sticky top-0 z-10 flex items-baseline gap-2 border-b border-hair bg-secondary px-3 py-1">
             <span className={LT.label}>{s}</span>
             <span className={LT.metaNum}>{parsed.counts[s] ? tx(dl.lcx6_section_lines, { count: parsed.counts[s] }) : dl.lcx6_section_empty}</span>
           </header>
@@ -67,7 +67,7 @@ export const OutputLines = memo(function OutputLines({ parsed, errorAt, query, m
             const isCurrent = i === current;
             const tone = isCurrent
               ? 'bg-primary/20 ring-2 ring-inset ring-primary/70'
-              : isError ? 'bg-status-error/10' : matches.has(i) ? 'bg-primary/8' : '';
+              : isError ? 'bg-status-error/10' : matches.has(i) ? 'bg-surface-1' : '';
             return (
               <div
                 key={i}

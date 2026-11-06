@@ -92,7 +92,7 @@ export function NoteLifecycleRail({
                 ? `${meta.tone.fill} border-transparent text-background`
                 : done
                   ? `${meta.tone.border} ${meta.tone.text}`
-                  : 'border-primary/15 text-foreground/85'
+                  : 'border-hair text-ink-2'
             }`}
           >
             <meta.Icon className="w-3 h-3" aria-hidden />

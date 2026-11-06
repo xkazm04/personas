@@ -41,11 +41,11 @@ export function KpiGauge({ kpi, width }: { kpi: GoalKpi; width?: number }) {
     <div style={width ? { width } : undefined} className={width ? undefined : 'w-full'}>
       <div className="flex items-baseline justify-between gap-2 mb-1">
         <span className="typo-caption truncate" style={{ color: tint }}>{kpi.name}</span>
-        <span className="typo-caption text-foreground/70 tabular-nums shrink-0">
+        <span className="typo-caption text-ink-2 num shrink-0">
           {kpi.current ?? '—'} → {kpi.target}{kpi.unit}
         </span>
       </div>
-      <div className="relative h-1.5 rounded-full overflow-hidden bg-primary/10">
+      <div className="relative h-1.5 rounded-full overflow-hidden bg-surface-1">
         {/* No current reading = genuinely unknown; an empty track beats a
             fabricated 0%-filled bar. */}
         {pct != null && <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: tint }} />}
@@ -66,12 +66,12 @@ export function TriageHeaderBand({ icon: Icon, title, subject, awaiting, childre
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   return (
-    <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04] flex-shrink-0">
+    <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-primary/[0.04] flex-shrink-0">
       <Icon className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
       <span className="typo-title truncate">{title}</span>
-      <span className="typo-caption text-foreground/70 truncate">· {subject}</span>
+      <span className="typo-caption text-ink-2 truncate">· {subject}</span>
       {awaiting > 0 && (
-        <span className="typo-label text-primary tabular-nums shrink-0 px-1.5 py-0.5 rounded-interactive bg-primary/12 border border-primary/25">
+        <span className="typo-label text-primary num shrink-0 px-1.5 py-0.5 rounded-interactive bg-primary/12 border border-hair">
           {tx(awaiting === 1 ? dl.triage_needs_you_one : dl.triage_needs_you_other, { count: awaiting })}
         </span>
       )}

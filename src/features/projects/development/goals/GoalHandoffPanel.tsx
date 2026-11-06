@@ -33,22 +33,22 @@ export function GoalHandoffPanel({ hasActiveAssignment, advancing, onAdvance, on
   const [stopConfirm, setStopConfirm] = useState(false);
 
   return (
-    <div className="pt-3 mt-3 border-t border-primary/10">
+    <div className="pt-3 mt-3 border-t border-hair">
       <div className="flex items-center gap-2 mb-2">
-        <Bot className="w-3.5 h-3.5 text-violet-400" />
-        <h3 className="typo-caption uppercase tracking-[0.18em] text-foreground">{dl.goal_handoff_label}</h3>
+        <Bot className="w-3.5 h-3.5 text-role-agent" />
+        <h3 className="typo-eyebrow text-ink-3">{dl.goal_handoff_label}</h3>
       </div>
 
       {hasActiveAssignment ? (
-        <div className="rounded-card border border-violet-500/25 bg-violet-500/5 px-3 py-2.5 space-y-2.5">
+        <div className="rounded-card border border-hair bg-surface-1 px-3 py-2.5 space-y-2.5">
           <div className="flex items-center gap-2.5">
             <span className="relative flex h-2 w-2 shrink-0">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400/60 motion-reduce:hidden" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-400" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-role-agent/60 motion-reduce:hidden" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-role-agent" />
             </span>
             <p className="typo-caption text-foreground flex-1">{dl.goal_handoff_active}</p>
             {onAbort && !stopConfirm && (
-              <Button variant="ghost" size="sm" icon={<Ban className="w-3.5 h-3.5 text-red-400" />} onClick={() => setStopConfirm(true)}>
+              <Button variant="ghost" size="sm" icon={<Ban className="w-3.5 h-3.5 text-status-error" />} onClick={() => setStopConfirm(true)}>
                 {dl.goal_handoff_stop}
               </Button>
             )}
@@ -56,7 +56,7 @@ export function GoalHandoffPanel({ hasActiveAssignment, advancing, onAdvance, on
           {/* Stop-the-team confirm — explains the gate-close semantics (in-flight
               step finishes, no new steps) so it's an understood, deliberate action. */}
           {onAbort && stopConfirm && (
-            <div className="space-y-2 border-t border-violet-500/20 pt-2.5">
+            <div className="space-y-2 border-t border-role-agent/20 pt-2.5">
               <p className="typo-body text-foreground">{dl.goal_handoff_stop_confirm_q}</p>
               <p className="typo-caption text-foreground">{dl.goal_handoff_stop_explain}</p>
               <div className="flex items-center gap-2">
@@ -71,13 +71,12 @@ export function GoalHandoffPanel({ hasActiveAssignment, advancing, onAdvance, on
           )}
         </div>
       ) : confirming ? (
-        <div className="rounded-card border border-violet-500/25 bg-violet-500/5 px-3 py-3 space-y-2.5">
+        <div className="rounded-card border border-hair bg-surface-1 px-3 py-3 space-y-2.5">
           <p className="typo-body text-foreground">{dl.goal_handoff_confirm_q}</p>
           <p className="typo-caption text-foreground">{dl.goal_handoff_explain}</p>
           <div className="flex items-center gap-2">
             <Button
-              variant="accent"
-              tone="agent"
+              variant="secondary"
               size="sm"
               icon={<ArrowRight className="w-3.5 h-3.5" />}
               disabled={advancing}
@@ -94,8 +93,7 @@ export function GoalHandoffPanel({ hasActiveAssignment, advancing, onAdvance, on
         <div className="space-y-2">
           <p className="typo-caption text-foreground">{dl.goal_handoff_explain}</p>
           <Button
-            variant="accent"
-            tone="agent"
+            variant="secondary"
             size="sm"
             icon={<Bot className="w-3.5 h-3.5" />}
             onClick={() => setConfirming(true)}

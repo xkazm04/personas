@@ -39,7 +39,7 @@ export interface UseSkillChoice {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-4">
-      <span className="typo-label text-foreground/55 w-20 flex-shrink-0 whitespace-nowrap">{label}</span>
+      <span className="typo-label text-ink-3 w-20 flex-shrink-0 whitespace-nowrap">{label}</span>
       {children}
     </div>
   );
@@ -106,10 +106,10 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
   return (
     <BaseModal isOpen onClose={onClose} titleId="use-skill-title" size="md" portal staggerChildren={false}>
       <div className="flex flex-col" data-testid="use-skill-dialog">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04]">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-primary/[0.04]">
           <Wand2 className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="use-skill-title" className="typo-title truncate">{skill.name}</span>
-          <span className="ml-auto typo-label text-foreground/40 flex-shrink-0">{d.skills_kind_use}</span>
+          <span className="ml-auto typo-label text-ink-3 flex-shrink-0">{d.skills_kind_use}</span>
         </div>
 
         <div className="px-5 py-4 space-y-4">
@@ -184,7 +184,7 @@ export function UseSkillDialog({ skill, projectId, tracked, busy, onConfirm, onC
                   <button
                     type="button"
                     onClick={() => setPickerOpen(true)}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-primary/20 bg-secondary/[0.12] hover:border-primary/40 transition-colors text-left"
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-hair bg-secondary/[0.12] hover:border-primary/40 transition-colors text-left"
                     data-testid="use-skill-open-picker"
                   >
                     <span className="typo-caption text-foreground truncate flex-1 min-w-0">

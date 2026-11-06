@@ -241,7 +241,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
       onClose={onClose}
       titleId="fleet-broadcast-title"
       size="md"
-      panelClassName="bg-background border border-primary/10 rounded-2xl p-5 shadow-elevation-4"
+      panelClassName="bg-background border border-hair rounded-card p-5 shadow-elevation-4"
     >
       <div data-testid="fleet-broadcast-modal">
         <div className="flex items-center justify-between mb-4">
@@ -263,7 +263,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
             onChange={(e) => setText(e.target.value)}
             placeholder={t.plugins.fleet.broadcast_placeholder}
             rows={5}
-            className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/30 resize-none font-mono"
+            className="w-full px-3 py-2 typo-body bg-surface-1 border border-hair rounded-modal text-foreground placeholder:text-ink-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/30 resize-none"
             autoFocus
           />
         </label>
@@ -276,7 +276,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
             className="rounded"
           />
           {t.plugins.fleet.broadcast_append}{' '}
-          <code className="font-mono px-1 py-0.5 bg-secondary/40 rounded">↵</code>{' '}
+          <code className="font-mono px-1 py-0.5 bg-surface-1 rounded">↵</code>{' '}
           {t.plugins.fleet.broadcast_append_suffix}
         </label>
 
@@ -285,15 +285,15 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
         {/* The live region is ALWAYS mounted and starts empty — a region that is
             born with its message is not announced (census:
             live-region-born-with-its-message). */}
-        <div role="status" data-testid={failedLabels.length > 0 ? 'fleet-broadcast-failed' : undefined} className={failedLabels.length > 0 ? 'mb-3 rounded-modal border border-amber-400/25 bg-amber-400/10 px-3 py-2' : ''}>
+        <div role="status" data-testid={failedLabels.length > 0 ? 'fleet-broadcast-failed' : undefined} className={failedLabels.length > 0 ? 'mb-3 rounded-modal border border-hair bg-surface-2 px-3 py-2' : ''}>
         {failedLabels.length > 0 ? (
           <>
-            <p className="typo-caption text-amber-200">{t.plugins.fleet.broadcast_retry_hint}</p>
+            <p className="typo-caption text-status-warning">{t.plugins.fleet.broadcast_retry_hint}</p>
             <ul className="mt-1 flex flex-wrap gap-1.5">
               {failedLabels.map((f) => (
                 <li
                   key={f.id}
-                  className="rounded-interactive border border-amber-400/25 px-1.5 py-0.5 text-[12px] text-amber-100"
+                  className="rounded-interactive border border-status-warning/25 px-1.5 py-0.5 typo-caption text-status-warning"
                 >
                   {f.label}
                 </li>
@@ -333,9 +333,9 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
               </Button>
             </div>
           </div>
-          <div className="max-h-[200px] overflow-y-auto border border-primary/10 rounded-modal p-1.5 bg-secondary/20 space-y-0.5">
+          <div className="max-h-[200px] overflow-y-auto border border-hair rounded-modal p-1.5 bg-surface-1 space-y-0.5">
             {targetable.length === 0 ? (
-              <p className="text-[13px] text-foreground text-center py-3">{t.plugins.fleet.broadcast_no_sessions}</p>
+              <p className="typo-caption text-foreground text-center py-3">{t.plugins.fleet.broadcast_no_sessions}</p>
             ) : (
               targetable.map((s) => {
                 const isSel = selected.has(s.id);
@@ -343,7 +343,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
                   <label
                     key={s.id}
                     className={`flex items-center gap-2 px-2 py-1 rounded-card cursor-pointer transition-colors ${
-                      isSel ? 'bg-primary/8 border border-primary/20' : 'hover:bg-secondary/40 border border-transparent'
+                      isSel ? 'bg-surface-1 border border-hair' : 'hover:bg-surface-1 border border-transparent'
                     }`}
                   >
                     <input type="checkbox" checked={isSel} onChange={() => toggle(s.id)} className="rounded" />

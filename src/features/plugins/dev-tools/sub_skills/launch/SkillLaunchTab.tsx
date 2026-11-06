@@ -32,7 +32,7 @@ export function SkillLaunchTab() {
       return (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4" aria-hidden>
           {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="h-24 rounded-card border border-primary/5 bg-secondary/20" />
+            <div key={i} className="h-24 rounded-card border border-hair bg-surface-1" />
           ))}
         </div>
       );

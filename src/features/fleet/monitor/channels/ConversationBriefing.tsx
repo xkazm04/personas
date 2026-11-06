@@ -101,7 +101,7 @@ export function ConversationBriefing({
   return (
     <div className="ae-root h-full flex flex-col min-h-0 overflow-hidden rounded-card border border-border">
       <div className="flex min-h-[52px] flex-shrink-0 items-center gap-3 border-b border-border px-3 py-2">
-        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-primary/40 bg-primary/10" aria-hidden>
+        <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-primary/40 bg-surface-1" aria-hidden>
           <MessagesSquare className="h-4 w-4 text-primary" />
         </span>
         <span className="typo-heading text-foreground">{t.monitor.conv_title}</span>

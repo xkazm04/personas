@@ -90,8 +90,7 @@ export function OverseerControls({ projectId, watched, goal, disabled = false }:
         </Tooltip>
         <Button
           ref={sendRef}
-          variant="accent"
-          tone="agent"
+          variant="secondary"
           size="sm"
           icon={<Send className={GLYPH.sm} />}
           disabled={inert}

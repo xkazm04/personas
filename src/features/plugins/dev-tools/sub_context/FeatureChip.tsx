@@ -100,7 +100,7 @@ export function FeatureChip({
             e.stopPropagation();
             setOpen((v) => !v);
           }}
-          className="inline-flex items-center gap-1 tabular-nums typo-caption text-sky-300 rounded-interactive hover:underline underline-offset-2 focus-ring"
+          className="inline-flex items-center gap-1 num typo-caption text-status-info rounded-interactive hover:underline underline-offset-2 focus-ring"
         >
           <Layers className="w-3 h-3" />
           {count}

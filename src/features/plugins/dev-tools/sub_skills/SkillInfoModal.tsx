@@ -36,7 +36,7 @@ async function loadSkillMd(name: string, projectId: string | null): Promise<stri
 }
 
 function Chip({ children }: { children: React.ReactNode }) {
-  return <span className="inline-flex items-center gap-1 typo-label text-foreground/55 border border-primary/15 bg-primary/[0.05] rounded-interactive px-1.5 py-0.5">{children}</span>;
+  return <span className="inline-flex items-center gap-1 typo-label text-ink-3 border border-hair bg-primary/[0.05] rounded-interactive px-1.5 py-0.5">{children}</span>;
 }
 
 export function SkillInfoModal({ skillName, projectId, onClose }: {
@@ -74,22 +74,22 @@ export function SkillInfoModal({ skillName, projectId, onClose }: {
   return (
     <BaseModal isOpen onClose={onClose} titleId="skill-info-title" size="md" portal staggerChildren={false}>
       <div className="flex flex-col" data-testid="skill-info-modal">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04]">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-primary/[0.04]">
           <Icon className="w-4 h-4 flex-shrink-0" style={hue ? { color: hue } : undefined} aria-hidden />
           <span id="skill-info-title" className="typo-title truncate">{skillName}</span>
-          {meta?.category && <span className="ml-auto typo-label text-foreground/40 flex-shrink-0">{meta.category}</span>}
+          {meta?.category && <span className="ml-auto typo-label text-ink-3 flex-shrink-0">{meta.category}</span>}
         </div>
 
         <div className="px-5 py-4 space-y-4">
           {loading ? (
-            <p className="typo-caption text-foreground/40">{d.skills_info_loading}</p>
+            <p className="typo-caption text-ink-3">{d.skills_info_loading}</p>
           ) : (
             <>
               {/* summary — the description (what + when) */}
-              <div className="rounded-input bg-background/40 border border-primary/10 px-3 py-2.5">
+              <div className="rounded-input bg-background/40 border border-hair px-3 py-2.5">
                 {meta?.description
-                  ? <p className="typo-caption text-foreground/75">{meta.description}</p>
-                  : <p className="typo-caption text-foreground/35 italic">{d.skills_confirm_no_desc}</p>}
+                  ? <p className="typo-caption text-ink-2">{meta.description}</p>
+                  : <p className="typo-caption text-ink-3 italic">{d.skills_confirm_no_desc}</p>}
                 {meta?.bodySummary && meta.bodySummary !== meta.description && (
                   <p className="typo-caption mt-2">{meta.bodySummary}</p>
                 )}
@@ -98,17 +98,17 @@ export function SkillInfoModal({ skillName, projectId, onClose }: {
               {/* how to invoke */}
               {meta && (
                 <div className="space-y-1.5">
-                  <div className="typo-label text-foreground/55">{d.skills_info_invoke}</div>
+                  <div className="typo-label text-ink-3">{d.skills_info_invoke}</div>
                   <ul className="space-y-1">
                     {commandVariations(meta).map((v) => (
                       <li key={v.command}>
                         <button type="button"
                           onClick={() => { copy(v.command); addToast(d.skills_info_copied, 'success'); }}
-                          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input bg-background/70 border border-primary/10 hover:border-primary/30 transition-colors group text-left"
+                          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-input bg-background/70 border border-hair hover:border-primary/30 transition-colors group text-left"
                           data-testid={`skill-info-cmd-${v.note}`}>
                           <span className="font-mono typo-caption text-primary truncate">{v.command}</span>
-                          <span className="typo-label text-foreground/35 flex-shrink-0">· {v.note}</span>
-                          <Copy className="w-3 h-3 ml-auto text-foreground/30 group-hover:text-foreground/60 flex-shrink-0" aria-hidden />
+                          <span className="typo-label text-ink-3 flex-shrink-0">· {v.note}</span>
+                          <Copy className="w-3 h-3 ml-auto text-ink-3 group-hover:text-ink-2 flex-shrink-0" aria-hidden />
                         </button>
                       </li>
                     ))}
@@ -128,9 +128,9 @@ export function SkillInfoModal({ skillName, projectId, onClose }: {
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-primary/10 bg-secondary/10">
+        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-hair bg-surface-1">
           <button type="button" onClick={onClose}
-            className="px-2.5 py-1 rounded-interactive typo-caption text-foreground/60 hover:text-foreground hover:bg-primary/10 transition-colors">
+            className="px-2.5 py-1 rounded-interactive typo-caption text-ink-2 hover:text-foreground hover:bg-primary/10 transition-colors">
             {t.common.close}
           </button>
         </div>

@@ -10,7 +10,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 export function VersionTimelinePanel({ timeline, loading }: { timeline: SkillRevisionRow[]; loading: boolean }) {
   const { t } = useTranslation();
   return (
-    <section className="rounded-card border border-border/50 bg-secondary/30 p-3">
+    <section className="rounded-card border border-border/50 bg-surface-1 p-3">
       <h3 className="typo-card-label pb-2">{t.plugins.dev_tools.trace_timeline_title}</h3>
       {loading && timeline.length === 0 ? (
         <div aria-hidden className="flex flex-col gap-1.5">
@@ -27,7 +27,7 @@ export function VersionTimelinePanel({ timeline, loading }: { timeline: SkillRev
               <GitCommitVertical size={13} className="text-foreground shrink-0" />
               <span className="text-foreground">#{r.rev}</span>
               {r.version != null ? (
-                <span className="px-1.5 rounded-interactive bg-primary/10 text-primary">v{r.version}</span>
+                <span className="px-1.5 rounded-interactive bg-surface-1 text-primary">v{r.version}</span>
               ) : (
                 <span className="text-foreground">{t.plugins.dev_tools.trace_timeline_method_change}</span>
               )}

@@ -165,7 +165,7 @@ export function WorkspaceProjectSelector({
   const wsColor = activeWorkspace?.color ?? 'var(--muted-foreground)';
   const header = variant === 'header';
   const row = 'w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors';
-  const idle = 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground';
+  const idle = 'text-ink-2 hover:bg-surface-1 hover:text-foreground';
 
   return (
     <div ref={ref} className="relative min-w-0">
@@ -176,13 +176,13 @@ export function WorkspaceProjectSelector({
           aria-expanded={open}
           data-testid={testId}
           className={header
-            ? 'flex items-center gap-2 h-9 px-3 rounded-interactive max-w-[320px] min-w-0 text-foreground bg-secondary/30 border border-primary/15 hover:bg-secondary/50 transition-colors'
-            : 'flex items-center gap-1.5 h-7 px-2 rounded-lg max-w-[260px] text-foreground hover:bg-secondary/50 transition-colors'}
+            ? 'flex items-center gap-2 h-9 px-3 rounded-interactive max-w-[320px] min-w-0 text-foreground bg-surface-1 border border-hair hover:bg-surface-1 transition-colors'
+            : 'flex items-center gap-1.5 h-7 px-2 rounded-lg max-w-[260px] text-foreground hover:bg-surface-1 transition-colors'}
         >
           <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: wsColor }} aria-hidden />
-          <span className={`${header ? 'typo-body max-w-[120px]' : 'text-[11px] font-medium max-w-[90px]'} truncate min-w-0`}>{wsLabel}</span>
-          <span className="text-foreground/40 flex-shrink-0" aria-hidden>/</span>
-          <span className={`${header ? 'typo-body' : 'text-[11px] font-medium'} truncate min-w-0 ${activeProject ? 'text-indigo-300/90' : 'text-foreground/60'}`}>
+          <span className={`${header ? 'typo-body max-w-[120px]' : ' font-medium max-w-[90px]'} truncate min-w-0`}>{wsLabel}</span>
+          <span className="text-ink-3 flex-shrink-0" aria-hidden>/</span>
+          <span className={`${header ? 'typo-body' : ' font-medium'} truncate min-w-0 ${activeProject ? 'text-role-agent' : 'text-ink-2'}`}>
             {activeProject?.name ?? noneLabel ?? c.workspace_pick_project}
           </span>
           <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${(placement === 'up') !== open ? 'rotate-180' : ''}`} />
@@ -192,15 +192,15 @@ export function WorkspaceProjectSelector({
       {open && createPortal(
         <div
           ref={panelRef}
-          className="animate-fade-slide-in fixed rounded-xl border border-primary/15 bg-background shadow-elevation-3 z-[9000] overflow-hidden"
+          className="animate-fade-slide-in fixed rounded-card border border-hair bg-background shadow-elevation-3 z-[9000] overflow-hidden"
           style={pos ? { top: pos.top, left: pos.left, width: pos.width } : { top: 0, left: 0, width: PANEL_W, visibility: 'hidden' }}
         >
           <div className="grid grid-cols-[196px_1fr]">
             {/* LEFT — workspaces */}
-            <div className="border-r border-primary/10 bg-secondary/20">
-              <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10">
-                <Layers className="w-3.5 h-3.5 text-foreground/60" aria-hidden />
-                <span className="typo-label text-foreground/90">{c.workspace_workspaces}</span>
+            <div className="border-r border-hair bg-surface-1">
+              <div className="flex items-center gap-1.5 px-3 py-2 border-b border-hair">
+                <Layers className="w-3.5 h-3.5 text-ink-2" aria-hidden />
+                <span className="typo-label text-ink-2">{c.workspace_workspaces}</span>
               </div>
               <div className="max-h-[300px] overflow-y-auto py-1">
                 {[{ id: null, name: c.workspace_all_projects, color: null, count: null }, ...sortedWorkspaces.map((w) => ({ id: w.id, name: w.name, color: w.color, count: w.projectIds.length }))].map((w) => (
@@ -212,11 +212,11 @@ export function WorkspaceProjectSelector({
                     <button
                       type="button"
                       onClick={() => switchWorkspace(w.id)}
-                      className={`${row} typo-caption min-w-0 flex-1 ${activeId === w.id ? 'bg-primary/10 text-foreground' : idle}`}
+                      className={`${row} typo-caption min-w-0 flex-1 ${activeId === w.id ? 'bg-surface-1 text-foreground' : idle}`}
                     >
                       <span className={`w-2 h-2 rounded-sm flex-shrink-0 ${w.color ? '' : 'bg-muted-foreground/50'}`} style={w.color ? { background: w.color } : undefined} aria-hidden />
                       <span className="flex-1 truncate">{w.name}</span>
-                      {w.count !== null && <span className="text-foreground/40 tabular-nums text-[10px]">{w.count}</span>}
+                      {w.count !== null && <span className="text-ink-3 typo-caption">{w.count}</span>}
                       {activeId === w.id && <Check className="w-3 h-3 flex-shrink-0" />}
                     </button>
                     {w.id !== null && (
@@ -237,7 +237,7 @@ export function WorkspaceProjectSelector({
               <button
                 type="button"
                 onClick={() => createWorkspace(c.workspace_new)}
-                className="w-full flex items-center gap-1.5 px-3 py-2 border-t border-primary/10 typo-caption text-primary hover:bg-primary/5 transition-colors"
+                className="w-full flex items-center gap-1.5 px-3 py-2 border-t border-hair typo-caption text-primary hover:bg-primary/5 transition-colors"
                 data-testid={newWorkspaceTestId}
               >
                 <Plus className="w-3.5 h-3.5" aria-hidden />
@@ -247,24 +247,24 @@ export function WorkspaceProjectSelector({
 
             {/* RIGHT — projects in the active workspace */}
             <div>
-              <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10">
-                <FolderGit2 className="w-3.5 h-3.5 text-foreground/60" aria-hidden />
-                <span className="typo-label text-foreground/90">{c.workspace_projects}</span>
-                <span className="ml-auto typo-caption text-foreground/45 tabular-nums">{sortedProjects.length}</span>
+              <div className="flex items-center gap-1.5 px-3 py-2 border-b border-hair">
+                <FolderGit2 className="w-3.5 h-3.5 text-ink-2" aria-hidden />
+                <span className="typo-label text-ink-2">{c.workspace_projects}</span>
+                <span className="ml-auto typo-caption text-ink-3 num">{sortedProjects.length}</span>
               </div>
               <div className="max-h-[300px] overflow-y-auto py-1">
                 {allowNone && (
                   <button
                     type="button"
                     onClick={() => { void setActiveProject(null); setOpen(false); }}
-                    className={`${row} typo-caption ${activeProjectId === null ? 'bg-indigo-500/10 text-indigo-300' : idle}`}
+                    className={`${row} typo-caption ${activeProjectId === null ? 'bg-role-agent/10 text-role-agent' : idle}`}
                   >
                     <X className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
                     <span className="flex-1 truncate">{noneLabel ?? c.workspace_no_active_project}</span>
                   </button>
                 )}
                 {sortedProjects.length === 0 ? (
-                  <p className="px-3 py-4 typo-caption text-foreground/45">{c.workspace_empty_in_workspace}</p>
+                  <p className="px-3 py-4 typo-caption text-ink-3">{c.workspace_empty_in_workspace}</p>
                 ) : sortedProjects.map((p) => {
                   const isActive = p.id === activeProjectId;
                   return (
@@ -272,12 +272,12 @@ export function WorkspaceProjectSelector({
                       type="button"
                       key={p.id}
                       onClick={() => { void setActiveProject(p.id); setOpen(false); }}
-                      className={`${row} ${isActive ? 'bg-indigo-500/10 text-indigo-300' : idle}`}
+                      className={`${row} ${isActive ? 'bg-role-agent/10 text-role-agent' : idle}`}
                     >
                       <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />
                       <span className="flex-1 min-w-0">
                         <span className="block typo-caption truncate">{p.name}</span>
-                        {p.root_path && <span className="block text-[10px] text-foreground/45 truncate">{p.root_path}</span>}
+                        {p.root_path && <span className="block typo-caption text-ink-3 truncate">{p.root_path}</span>}
                       </span>
                       {isActive && <Check className="w-3 h-3 flex-shrink-0" />}
                     </button>
@@ -287,7 +287,7 @@ export function WorkspaceProjectSelector({
               <button
                 type="button"
                 onClick={() => { setSidebarSection('teams'); setOpen(false); }}
-                className="w-full px-3 py-2 border-t border-primary/10 typo-caption text-foreground/60 hover:bg-secondary/40 hover:text-foreground transition-colors"
+                className="w-full px-3 py-2 border-t border-hair typo-caption text-ink-2 hover:bg-surface-1 hover:text-foreground transition-colors"
               >
                 {c.workspace_manage_projects}
               </button>

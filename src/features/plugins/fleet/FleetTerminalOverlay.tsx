@@ -298,12 +298,12 @@ export function FleetTerminalOverlay({
       aria-label={t.plugins.fleet.grid_overlay_aria}
     >
       {/* Header — back button (minimize) + count. */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 bg-secondary/20 shrink-0">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-hair bg-surface-1 shrink-0">
         <button
           type="button"
           data-testid="fleet-overlay-back"
           onClick={onClose}
-          className="flex items-center gap-1 rounded-interactive border border-primary/15 px-2 py-1 text-foreground transition-colors hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+          className="flex items-center gap-1 rounded-interactive border border-hair px-2 py-1 text-foreground transition-colors hover:bg-surface-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
         >
           <ChevronLeft className="w-4 h-4" />
           {t.plugins.fleet.grid_back}
@@ -330,7 +330,7 @@ export function FleetTerminalOverlay({
           onClick={onSpawn}
           disabled={!canSpawn}
           title={t.plugins.fleet.new_session}
-          className="ml-auto flex items-center gap-1.5 rounded-interactive border border-primary/25 bg-primary/10 px-2 py-1 text-primary transition-colors hover:bg-primary/20 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+          className="ml-auto flex items-center gap-1.5 rounded-interactive border border-hair bg-surface-1 px-2 py-1 text-primary transition-colors hover:bg-primary/20 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
         >
           <Play className="w-3.5 h-3.5" />
           {t.plugins.fleet.new_session}
@@ -343,7 +343,7 @@ export function FleetTerminalOverlay({
           data-testid="fleet-overlay-skills"
           onClick={onOpenSkills}
           title={t.plugins.fleet.skills_drawer_title}
-          className="flex items-center gap-1.5 rounded-interactive border border-primary/15 px-2 py-1 text-foreground transition-colors hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+          className="flex items-center gap-1.5 rounded-interactive border border-hair px-2 py-1 text-foreground transition-colors hover:bg-surface-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
         >
           <BookOpen className="w-3.5 h-3.5" />
           {t.plugins.fleet.skills_button}

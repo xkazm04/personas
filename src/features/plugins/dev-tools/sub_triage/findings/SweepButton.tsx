@@ -38,7 +38,7 @@ import { recordSweep } from './lastSweep';
 import { describeSweep, sweepTone } from './healthIngest';
 import { collectProjectKpiAttention, planForProject } from './sweepInputs';
 
-const SWEEP_TILE = 'border-primary/10 bg-primary/5 hover:bg-primary/10';
+const SWEEP_TILE = 'border-hair bg-surface-1 hover:bg-primary/10';
 
 export function SweepButton({
   projectId,

@@ -136,7 +136,7 @@ export function RailReviewModal({
       staggerChildren={false}
       panelClassName="flex h-[82vh] flex-col overflow-hidden rounded-modal border border-border bg-background shadow-elevation-4"
     >
-      <div className="flex h-11 flex-shrink-0 items-center gap-2.5 border-b border-border bg-secondary/30 px-4">
+      <div className="flex h-11 flex-shrink-0 items-center gap-2.5 border-b border-border bg-surface-1 px-4">
         <PersonaIcon icon={item.personaIcon ?? null} color={item.source.color ?? null} size="w-4 h-4" />
         <h2 id={TITLE_ID} className="min-w-0 truncate typo-title">
           {t.monitor.grid_rail_triage_modal_aria}

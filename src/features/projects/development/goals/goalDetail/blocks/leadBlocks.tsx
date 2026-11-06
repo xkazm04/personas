@@ -23,7 +23,7 @@ export function Description() {
   const { goal } = useGoalDetailModel();
   if (!goal?.description) return null;
   return (
-    <div className="rounded-card border border-primary/10 bg-card/30 px-3.5 py-3">
+    <div className="rounded-card border border-hair bg-surface-1 px-3.5 py-3">
       <RichMarkdown content={goal.description} className="typo-body max-w-[68ch]" />
     </div>
   );
@@ -40,9 +40,9 @@ export function Outcome() {
   if (!goal) return null;
   if (goal.kpi_id) return <GoalKpiLink kpiId={goal.kpi_id} />;
   return (
-    <div className="rounded-card border border-status-warning/25 bg-status-warning/5 px-3.5 py-3">
+    <div className="rounded-card border border-hair bg-surface-2 px-3.5 py-3">
       <div className="flex items-center gap-2 mb-1">
-        <Activity className="w-4 h-4 text-status-warning shrink-0" />
+        <Activity className="w-4 h-4 text-ink-2 shrink-0" />
         <span className={MODAL_SECTION_HEAD}>{t.kpis.goal_ungrounded_title}</span>
       </div>
       <p className="typo-caption text-foreground">{t.kpis.goal_ungrounded_body}</p>
@@ -75,19 +75,19 @@ export function ProgressNudge() {
   const { showNudge, progress, goal, acceptProgress, dl } = useGoalDetailModel();
   if (!showNudge || !progress || !goal) return null;
   return (
-    <div className="rounded-card border border-primary/25 bg-primary/5 px-4 py-3 flex items-center gap-3">
+    <div className="rounded-card border border-hair bg-surface-1 px-4 py-3 flex items-center gap-3">
       <Activity className="w-4 h-4 text-primary shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="typo-body text-foreground">
           {dl.goal_progress_suggested_label}{' '}
-          <span className="font-semibold text-primary tabular-nums">{progress.suggested}%</span>
+          <span className="font-semibold text-primary num">{progress.suggested}%</span>
           {/* The original glyph, restored: " to " is hardcoded English, an
               arrow is not language at all. */}
           <span className="text-foreground"> ({goal.progress}% → {progress.suggested}%)</span>
         </p>
         <p className="typo-caption text-foreground">{progress.reason}</p>
       </div>
-      <Button variant="accent" tone="agent" size="sm" icon={<Check className="w-3.5 h-3.5" />} onClick={acceptProgress}>
+      <Button variant="secondary" size="sm" icon={<Check className="w-3.5 h-3.5" />} onClick={acceptProgress}>
         {dl.goal_progress_accept}
       </Button>
     </div>

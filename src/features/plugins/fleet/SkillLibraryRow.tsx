@@ -18,7 +18,7 @@ export function SkillLibraryRow({ skill, canApply, onLoad, onInstall }: Props) {
   const { t } = useTranslation();
   const f = t.plugins.fleet;
   return (
-    <div className="group flex items-center gap-1 rounded-card border border-transparent hover:border-primary/15 hover:bg-secondary/30 transition-colors">
+    <div className="group flex items-center gap-1 rounded-card border border-transparent hover:border-hair hover:bg-surface-1 transition-colors">
       <button
         type="button"
         data-testid={`fleet-drawer-apply-${skill.name}`}
@@ -33,7 +33,7 @@ export function SkillLibraryRow({ skill, canApply, onLoad, onInstall }: Props) {
           {skill.syncState === 'diverged' && (
             <span
               data-testid={`fleet-drawer-drift-${skill.name}`}
-              className="shrink-0 rounded-full bg-status-warning/15 px-1.5 py-px text-[10px] font-medium text-status-warning"
+              className="shrink-0 rounded-interactive bg-status-warning/15 px-1.5 py-px typo-caption text-status-warning"
               title={f.skill_sync_diverged_hint}
             >
               {f.skill_sync_diverged}
@@ -41,7 +41,7 @@ export function SkillLibraryRow({ skill, canApply, onLoad, onInstall }: Props) {
           )}
           {skill.syncState === 'in_sync' && (
             <span
-              className="shrink-0 rounded-full bg-status-success/15 px-1.5 py-px text-[10px] font-medium text-status-success"
+              className="shrink-0 rounded-interactive bg-status-success/15 px-1.5 py-px typo-caption text-status-success"
               title={f.skill_sync_in_sync_hint}
             >
               {f.skill_sync_in_sync}
@@ -49,7 +49,7 @@ export function SkillLibraryRow({ skill, canApply, onLoad, onInstall }: Props) {
           )}
         </div>
         {skill.description && (
-          <p className="text-[12px] text-foreground opacity-60 truncate mt-0.5 pl-4.5">{skill.description}</p>
+          <p className="typo-caption text-foreground opacity-60 truncate mt-0.5 pl-4.5">{skill.description}</p>
         )}
       </button>
       <button

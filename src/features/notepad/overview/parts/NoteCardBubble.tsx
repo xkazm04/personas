@@ -130,27 +130,27 @@ export function NoteCardBubble({
     >
       <div
         className={`relative flex flex-col gap-1.5 px-3 py-2.5 rounded-card border bg-background/95 backdrop-blur-md shadow-elevation-3 ${
-          pending ? 'border-status-warning/40' : 'border-primary/20'
+          pending ? 'border-status-warning/40' : 'border-hair'
         }`}
       >
         {/* Tail toward the card. */}
         <span
           aria-hidden
           className={`absolute left-6 -bottom-1.5 w-3 h-3 rotate-45 border-b border-r bg-background ${
-            pending ? 'border-status-warning/40' : 'border-primary/20'
+            pending ? 'border-status-warning/40' : 'border-hair'
           }`}
         />
         <div className="flex items-center gap-1.5 min-w-0 typo-caption pr-6">
           <span className={`typo-label truncate ${threadAuthorTone(entry)}`}>{threadAuthorLabel(entry, t.notepad, tx)}</span>
-          <span aria-hidden className="text-foreground/85">·</span>
-          <span className="truncate text-foreground/85">{threadEntryLabel(entry, t.notepad)}</span>
+          <span aria-hidden className="text-ink-2">·</span>
+          <span className="truncate text-ink-2">{threadEntryLabel(entry, t.notepad)}</span>
         </div>
         <button
           type="button"
           onClick={onDismiss}
           aria-label={t.notepad.bubble_dismiss}
           data-testid="notepad-card-bubble-dismiss"
-          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-input flex items-center justify-center text-foreground hover:bg-secondary/50 focus-ring"
+          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-input flex items-center justify-center text-foreground hover:bg-surface-1 focus-ring"
         >
           <X className="w-3 h-3" aria-hidden />
         </button>

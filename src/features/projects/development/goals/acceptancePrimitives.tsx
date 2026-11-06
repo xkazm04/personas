@@ -44,7 +44,7 @@ export function AcceptRejectControls({
           onChange={(e) => setComment(e.target.value)}
           placeholder={dl.accept_send_back_placeholder}
           rows={2}
-          className="w-full px-2 py-1.5 typo-caption bg-secondary/50 rounded-input text-foreground placeholder:text-muted-foreground focus-ring resize-none"
+          className="w-full px-2 py-1.5 typo-caption bg-surface-1 rounded-input text-foreground placeholder:text-ink-3 focus-ring resize-none"
         />
         <div className="flex items-center gap-1.5">
           <button
@@ -58,7 +58,7 @@ export function AcceptRejectControls({
           <button
             type="button"
             onClick={() => { setRejecting(false); setComment(''); }}
-            className="typo-caption rounded-interactive px-2 py-1 text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
+            className="typo-caption rounded-interactive px-2 py-1 text-ink-3 hover:text-foreground hover:bg-primary/10 transition-colors"
           >
             {dl.accept_cancel}
           </button>
@@ -81,7 +81,7 @@ export function AcceptRejectControls({
         onClick={() => (onSendBackIntent ? onSendBackIntent() : setRejecting(true))}
         aria-label={dl.accept_send_back}
         title={dl.accept_send_back}
-        className={`inline-flex items-center gap-1 typo-caption rounded-interactive ${pad} text-muted-foreground bg-primary/10 hover:text-[var(--destructive)] hover:bg-[var(--destructive)]/15 transition-colors`}
+        className={`inline-flex items-center gap-1 typo-caption rounded-interactive ${pad} text-ink-3 bg-surface-1 hover:text-[var(--destructive)] hover:bg-[var(--destructive)]/15 transition-colors`}
       >
         <RotateCcw className="w-3.5 h-3.5" /> {dl.accept_send_back}
       </button>

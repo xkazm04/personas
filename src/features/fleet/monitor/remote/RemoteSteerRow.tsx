@@ -46,7 +46,7 @@ export function RemoteSteerRow({ view, state, device }: {
 
   return (
     <section aria-label={m.remote_steer_title} data-testid="remote-steer">
-      <h4 className="typo-label text-primary">{m.remote_steer_title}</h4>
+      <h4 className="typo-label text-ink-1">{m.remote_steer_title}</h4>
       {disabled && (
         <p className="mt-1 typo-caption text-foreground" data-testid="remote-steer-disabled">
           {ended ? m.remote_steer_ended : tx(m.remote_steer_queued, { device })}

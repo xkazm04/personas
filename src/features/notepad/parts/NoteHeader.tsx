@@ -39,14 +39,14 @@ export function NoteHeader({ note, onRename, readOnly, className }: NoteHeaderPr
           className="typo-title"
           renameLabel={t.notepad.rename}
         />
-        <span className="typo-caption text-foreground/60 flex items-center gap-1.5">
+        <span className="typo-caption text-ink-2 flex items-center gap-1.5">
           <RelativeTime timestamp={note.updatedAt} />
         </span>
       </div>
 
       <div className="flex items-center gap-2 flex-shrink-0">
         {readOnly && (
-          <span className="flex items-center gap-1 typo-caption text-foreground/50">
+          <span className="flex items-center gap-1 typo-caption text-ink-3">
             <Lock className="w-3 h-3" aria-hidden />
           </span>
         )}

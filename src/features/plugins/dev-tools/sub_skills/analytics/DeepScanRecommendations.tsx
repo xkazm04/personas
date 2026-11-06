@@ -59,13 +59,13 @@ export function DeepScanRecommendations({ projectId, busy, onDispatch }: {
   if (rows.length === 0) return null;
 
   return (
-    <section className="rounded-card border border-primary/12 bg-secondary/[0.12]" data-testid="deep-scan-recommendations">
-      <div className="flex items-center gap-2 px-3 py-2 bg-primary/[0.04] border-b border-primary/10 rounded-t-card">
+    <section className="rounded-card border border-hair bg-secondary/[0.12]" data-testid="deep-scan-recommendations">
+      <div className="flex items-center gap-2 px-3 py-2 bg-primary/[0.04] border-b border-hair rounded-t-card">
         <Crosshair className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
         <span className="typo-body text-foreground">{d.skills_deep_reco_title}</span>
         <span className="ml-auto flex items-center gap-2 flex-shrink-0">
           <Tooltip content={d.skills_auto_deep_hint} placement="top">
-            <span className="typo-label text-foreground/55">{d.skills_auto_deep_label}</span>
+            <span className="typo-label text-ink-3">{d.skills_auto_deep_label}</span>
           </Tooltip>
           <AccessibleToggle
             checked={autoOn}
@@ -91,7 +91,7 @@ export function DeepScanRecommendations({ projectId, busy, onDispatch }: {
                 </span>
               )}
               <span className="typo-caption text-foreground flex-shrink-0">{visual?.label ?? lens}</span>
-              <span className="typo-label text-foreground/45 truncate flex-1 min-w-0">
+              <span className="typo-label text-ink-3 truncate flex-1 min-w-0">
                 {contextName ?? '—'}{idea.description ? ` · ${idea.description}` : ''}
               </span>
               <button
@@ -104,7 +104,7 @@ export function DeepScanRecommendations({ projectId, busy, onDispatch }: {
                 disabled={busy || done}
                 title={d.skills_deep_reco_run}
                 aria-label={d.skills_deep_reco_run}
-                className="p-1 rounded-interactive text-primary hover:bg-primary/10 border border-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+                className="p-1 rounded-interactive text-primary hover:bg-primary/10 border border-hair transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
                 data-testid={`deep-scan-run-${idea.id}`}
               >
                 {done

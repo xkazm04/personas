@@ -35,7 +35,7 @@ export const QueuedPromptRow = memo(function QueuedPromptRow({
         className={`max-w-[78%] px-3 py-2 rounded-card border border-dashed ${
           failed
             ? 'border-status-error/40 bg-status-error/[0.06]'
-            : 'border-primary/25 bg-primary/[0.07]'
+            : 'border-hair bg-primary/[0.07]'
         }`}
       >
         <p className="typo-body text-foreground opacity-75 whitespace-pre-wrap break-words">

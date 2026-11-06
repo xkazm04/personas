@@ -106,8 +106,8 @@ export function DevToolsProjectDropdown({
         <button
           type="button"
           onClick={toggle}
-          className={`w-full flex items-center justify-between px-4 py-3 typo-body rounded-xl border border-primary/15 bg-background/80 text-foreground transition-all hover:border-primary/25 focus:outline-none ${
-            isOpen ? 'border-primary/25' : ''
+          className={`w-full flex items-center justify-between px-4 py-3 typo-body rounded-card border border-hair bg-background/80 text-foreground transition-all hover:border-hair focus:outline-none ${
+            isOpen ? 'border-hair' : ''
           }`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
@@ -118,7 +118,7 @@ export function DevToolsProjectDropdown({
                 {t.shared.devtools_loading_projects}
               </span>
             ) : error ? (
-              <span className="text-rose-400/80 typo-caption">{t.shared.devtools_load_failed}</span>
+              <span className="text-status-error typo-caption">{t.shared.devtools_load_failed}</span>
             ) : selected ? (
               <div className="min-w-0 flex items-baseline gap-2">
                 <span className="font-medium truncate">{selected.name}</span>
@@ -141,7 +141,7 @@ export function DevToolsProjectDropdown({
       )}
     >
       {({ close, focusIndex }) => (
-        <div className="w-full bg-background border border-primary/15 rounded-xl shadow-elevation-3 overflow-hidden">
+        <div className="w-full bg-background border border-hair rounded-card shadow-elevation-3 overflow-hidden">
           {loading ? (
             <div className="px-4 py-6 flex items-center justify-center gap-2 typo-body text-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -149,7 +149,7 @@ export function DevToolsProjectDropdown({
             </div>
           ) : error ? (
             <div className="px-4 py-6 text-center">
-              <p className="typo-body text-rose-400/80 mb-1">{t.shared.devtools_load_failed}</p>
+              <p className="typo-body text-status-error mb-1">{t.shared.devtools_load_failed}</p>
               <p className="typo-caption text-foreground">{resolveErrorTranslated(t, extractMessage(error.raw)).message}</p>
             </div>
           ) : projects.length === 0 ? (
@@ -185,15 +185,15 @@ export function DevToolsProjectDropdown({
                     }}
                     className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
                       isFocused
-                        ? 'bg-primary/10'
+                        ? 'bg-surface-1'
                         : isSelected
                           ? 'bg-primary/[0.06]'
-                          : 'hover:bg-secondary/40'
+                          : 'hover:bg-surface-1'
                     }`}
                   >
                     <FolderGit2 className="w-4 h-4 text-foreground flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="typo-body text-foreground/90 truncate">
+                      <div className="typo-body text-ink-2 truncate">
                         {project.name}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -203,7 +203,7 @@ export function DevToolsProjectDropdown({
                           </span>
                         )}
                         {project.tech_stack && (
-                          <span className="typo-caption text-foreground bg-secondary/50 px-1.5 py-0.5 rounded-interactive">
+                          <span className="typo-caption text-foreground bg-surface-1 px-1.5 py-0.5 rounded-interactive">
                             {project.tech_stack}
                           </span>
                         )}

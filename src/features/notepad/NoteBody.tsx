@@ -62,45 +62,45 @@ export default function NoteBodyWorkbench(props: NoteBodyProps) {
           placeholder={t.notepad.editor_placeholder}
           testId="notepad-body-workbench"
           containerClassName="flex-1 min-h-0 flex flex-col gap-3"
-          className="flex-1 min-h-[40vh] w-full resize-none rounded-card border border-primary/12 bg-secondary/15 px-4 py-3 typo-body text-foreground/90 placeholder:text-foreground/60 outline-none focus:border-primary/25"
-          previewClassName="flex-1 min-h-0 overflow-y-auto rounded-card border border-primary/10 bg-secondary/10 px-4 py-3"
+          className="flex-1 min-h-[40vh] w-full resize-none rounded-card border border-hair bg-surface-1 px-4 py-3 typo-body text-ink-2 placeholder:text-ink-2 outline-none focus:border-hair"
+          previewClassName="flex-1 min-h-0 overflow-y-auto rounded-card border border-hair bg-surface-1 px-4 py-3"
         />
       </div>
 
-      <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-secondary/10 px-5 py-6 flex flex-col gap-6 overflow-y-auto">
+      <aside className="w-72 flex-shrink-0 border-l border-hair bg-surface-1 px-5 py-6 flex flex-col gap-6 overflow-y-auto">
         <section className="flex flex-col gap-2">
-          <h3 className="typo-caption uppercase tracking-wide text-foreground/60">
+          <h3 className="typo-eyebrow text-ink-3">
             {t.notepad.project_card_title}
           </h3>
           <div className="flex items-center gap-2 min-w-0">
-            <FolderGit2 className="w-4 h-4 text-foreground/60 flex-shrink-0" aria-hidden />
-            <span className="typo-body text-foreground/85 truncate">
+            <FolderGit2 className="w-4 h-4 text-ink-2 flex-shrink-0" aria-hidden />
+            <span className="typo-body text-ink-2 truncate">
               {project?.name ?? t.notepad.project_none}
             </span>
           </div>
           {project?.root_path && (
-            <span className="typo-caption text-foreground/60 truncate">{project.root_path}</span>
+            <span className="typo-caption text-ink-2 truncate">{project.root_path}</span>
           )}
         </section>
 
         <section className="flex flex-col gap-2">
-          <h3 className="typo-caption uppercase tracking-wide text-foreground/60">
+          <h3 className="typo-eyebrow text-ink-3">
             {t.notepad.timeline_title}
           </h3>
           <NoteStatusTimeline note={note} plan={plan} />
         </section>
 
         <section className="flex flex-col gap-2">
-          <h3 className="typo-caption uppercase tracking-wide text-foreground/60">
+          <h3 className="typo-eyebrow text-ink-3">
             {t.notepad.result_title}
           </h3>
-          <p className="typo-caption text-foreground/70 whitespace-pre-wrap">
+          <p className="typo-caption text-ink-2 whitespace-pre-wrap">
             {summary ?? t.notepad.result_empty}
           </p>
         </section>
 
         <section className="flex flex-col gap-2">
-          <h3 className="typo-caption uppercase tracking-wide text-foreground/60">
+          <h3 className="typo-eyebrow text-ink-3">
             {t.notepad.suggestions_title}
           </h3>
           <SuggestionSlot suggestions={suggestions} readOnly={readOnly} />

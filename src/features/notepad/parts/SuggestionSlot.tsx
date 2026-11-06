@@ -95,17 +95,17 @@ function SuggestionBlock({ row, readOnly }: { row: NoteSuggestion; readOnly: boo
       // vanishing — and the blocks below it slide up instead of jumping.
       exit={{ opacity: 0, y: -4 }}
       transition={{ duration: reduceMotion ? 0 : 0.16, ease: 'easeOut' }}
-      className="rounded-card border border-primary/15 bg-secondary/20 px-3 py-2.5 space-y-2"
+      className="rounded-card border border-hair bg-surface-1 px-3 py-2.5 space-y-2"
       data-testid={`notepad-suggestion-${row.rowId}`}
     >
-      <div className="flex items-center gap-1.5 typo-caption text-foreground/85">
+      <div className="flex items-center gap-1.5 typo-caption text-ink-2">
         <Icon className="w-3 h-3 shrink-0" aria-hidden />
         <span>{label}</span>
-        {row.title && <span className="text-foreground/85 truncate">· {row.title}</span>}
+        {row.title && <span className="text-ink-2 truncate">· {row.title}</span>}
       </div>
 
       {editing === null ? (
-        <DeferredMarkdown content={row.bodyMd} className="typo-caption text-foreground/85" />
+        <DeferredMarkdown content={row.bodyMd} className="typo-caption text-ink-2" />
       ) : (
         <MarkdownMiniEditor
           value={editing}
@@ -114,7 +114,7 @@ function SuggestionBlock({ row, readOnly }: { row: NoteSuggestion; readOnly: boo
           rows={5}
           ariaLabel={t.notepad.suggestion_edit_label}
           testId={`notepad-suggestion-edit-${row.rowId}`}
-          className="w-full resize-y rounded-input border border-primary/15 bg-background/60 px-2 py-1.5 typo-caption text-foreground/90 outline-none focus:border-primary/30"
+          className="w-full resize-y rounded-input border border-hair bg-background/60 px-2 py-1.5 typo-caption text-ink-2 outline-none focus:border-primary/30"
         />
       )}
 
@@ -127,7 +127,7 @@ function SuggestionBlock({ row, readOnly }: { row: NoteSuggestion; readOnly: boo
             placeholder={t.notepad.suggestion_answer_placeholder}
             aria-label={t.notepad.suggestion_answer_placeholder}
             data-testid={`notepad-suggestion-answer-${row.rowId}`}
-            className="flex-1 min-w-0 rounded-input border border-primary/15 bg-background/60 px-2 py-1 typo-caption text-foreground placeholder:text-foreground/60 outline-none focus:border-primary/30"
+            className="flex-1 min-w-0 rounded-input border border-hair bg-background/60 px-2 py-1 typo-caption text-foreground placeholder:text-ink-2 outline-none focus:border-primary/30"
           />
           <AsyncButton size="sm" variant="secondary" disabled={!answer.trim()} onClick={answerHer}>
             {t.notepad.suggestion_answer_send}
@@ -193,7 +193,7 @@ export function SuggestionSlot({
   if (suggestions.length === 0) {
     if (quietWhenEmpty) return null;
     return (
-      <div className={`typo-caption text-foreground/85 ${className ?? ''}`}>
+      <div className={`typo-caption text-ink-2 ${className ?? ''}`}>
         {t.notepad.suggestions_empty}
       </div>
     );
@@ -201,7 +201,7 @@ export function SuggestionSlot({
 
   return (
     <div className={`flex flex-col gap-2 ${className ?? ''}`}>
-      <div className="flex items-center gap-1.5 typo-caption text-foreground/85">
+      <div className="flex items-center gap-1.5 typo-caption text-ink-2">
         <Sparkles className="w-3 h-3" aria-hidden />
         {t.notepad.suggestions_title}
       </div>

@@ -52,7 +52,7 @@ export function conditionValue(c: Condition): number | string | string[] {
   return c.value;
 }
 // The same geometry as ThemedSelect beside it (px-3 py-2, typo-body, primary/15 rule), on the input radius.
-const FIELD_CLASS = 'px-3 py-2 typo-body bg-background/50 border border-primary/15 rounded-input text-foreground focus-ring';
+const FIELD_CLASS = 'px-3 py-2 typo-body bg-background/50 border border-hair rounded-input text-foreground focus-ring';
 
 export function TriageRuleForm({ projectId, onClose }: { projectId: string; onClose: () => void }) {
   const { t } = useTranslation();
@@ -86,7 +86,7 @@ export function TriageRuleForm({ projectId, onClose }: { projectId: string; onCl
   };
 
   return (
-    <div className="space-y-2 p-2 rounded-card bg-secondary/40 border border-border/20">
+    <div className="space-y-2 p-2 rounded-card bg-surface-1 border border-border/20">
       <input
         type="text"
         value={ruleName}

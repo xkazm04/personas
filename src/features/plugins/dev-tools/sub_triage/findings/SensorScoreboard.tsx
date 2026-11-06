@@ -58,8 +58,8 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
   if (stats.length === 0 && skipped.length === 0) return null;
 
   return (
-    <div className="rounded-card border border-primary/10 bg-card/30 overflow-hidden" data-testid="sensor-scoreboard">
-      <div className="px-4 py-2.5 border-b border-primary/10 flex items-center gap-2">
+    <div className="rounded-card border border-hair bg-surface-1 overflow-hidden" data-testid="sensor-scoreboard">
+      <div className="px-4 py-2.5 border-b border-hair flex items-center gap-2">
         <Radar className="w-3.5 h-3.5 text-primary/70" />
         <span className="typo-caption text-foreground">{dt.sensors_heading}</span>
         <Tooltip content={tx(dt.sensors_verify_rate_tip, { count: MIN_VERDICTS_FOR_CREDIBILITY })}>
@@ -76,13 +76,13 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
           <tr className="text-left">
             {[dt.sensors_col_sensor, dt.sensors_col_raised, dt.sensors_col_shipped, dt.sensors_col_cleared, dt.sensors_col_moved, dt.sensors_col_unchanged, dt.sensors_col_regressed, dt.sensors_col_verify].map((h) => (
               // style-deviation: the operator asked the heads dimmed again at Gate 2. 70% is the doctrine's one muting level (typo-caption's ink) at label size; the old 45% sat on the light-theme legibility floor (census illegible-foreground-alpha). No token pairs label size with the muting.
-              <th key={h} className="px-3 py-1.5 typo-caption font-mono uppercase tracking-widest text-foreground">
+              <th key={h} className="px-3 py-1.5 typo-eyebrow text-ink-3">
                 {h}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-primary/5">
+        <tbody className="divide-y divide-hair">
           {stats.map((s) => {
             const meta = originMeta(s.origin);
             const Icon = meta?.icon;
@@ -103,13 +103,13 @@ export function SensorScoreboard({ projectId = null }: { projectId?: string | nu
                     )}
                   </span>
                 </td>
-                <td className="px-3 py-1.5 typo-caption tabular-nums">{s.raised}</td>
-                <td className="px-3 py-1.5 typo-caption tabular-nums">{s.verdicted}</td>
-                <td className={`px-3 py-1.5 typo-caption tabular-nums ${TONE_TEXT.success}`}>{s.cleared || '·'}</td>
-                <td className={`px-3 py-1.5 typo-caption tabular-nums ${TONE_TEXT.info}`}>{s.moved || '·'}</td>
-                <td className={`px-3 py-1.5 typo-caption tabular-nums ${TONE_TEXT.warning}`}>{s.unchanged || '·'}</td>
-                <td className={`px-3 py-1.5 typo-caption tabular-nums ${TONE_TEXT.error}`}>{s.regressed || '·'}</td>
-                <td className={`px-3 py-1.5 tabular-nums ${rateClass(s)}`}>
+                <td className="px-3 py-1.5 typo-caption num">{s.raised}</td>
+                <td className="px-3 py-1.5 typo-caption num">{s.verdicted}</td>
+                <td className={`px-3 py-1.5 typo-caption num ${TONE_TEXT.success}`}>{s.cleared || '·'}</td>
+                <td className={`px-3 py-1.5 typo-caption num ${TONE_TEXT.info}`}>{s.moved || '·'}</td>
+                <td className={`px-3 py-1.5 typo-caption num ${TONE_TEXT.warning}`}>{s.unchanged || '·'}</td>
+                <td className={`px-3 py-1.5 typo-caption num ${TONE_TEXT.error}`}>{s.regressed || '·'}</td>
+                <td className={`px-3 py-1.5 num ${rateClass(s)}`}>
                   {ratePct(s)}
                   {!s.hasEnoughSignal && s.verifyRate !== null && (
                     <span className="ml-1 typo-caption">{dt.sensors_low_n}</span>

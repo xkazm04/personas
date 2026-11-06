@@ -26,7 +26,7 @@ export function resolveCompact(item: TeamChannelItem, labels: CompactLabels): { 
   if (item.kind === 'step') {
     return {
       event: labels.stepVerb[item.label] ?? item.label,
-      tone: STEP_TONE[item.label] ?? 'text-foreground/55',
+      tone: STEP_TONE[item.label] ?? 'text-ink-3',
       message: item.body,
       artifact: null,
       isError: item.label === 'step_failed',
@@ -38,7 +38,7 @@ export function resolveCompact(item: TeamChannelItem, labels: CompactLabels): { 
     return { event: item.label, tone: FAMILY_TEXT[eventFamily(item.label)] ?? FAMILY_TEXT.other!, message: summary, artifact, isError: false, alert: false };
   }
   if (item.kind === 'memory') {
-    return { event: labels.memory.replace('{label}', item.label), tone: 'text-amber-300/80', message: item.body, artifact: null, isError: false, alert: false };
+    return { event: labels.memory.replace('{label}', item.label), tone: 'text-status-warning', message: item.body, artifact: null, isError: false, alert: false };
   }
   if (item.kind === 'directive') {
     return { event: labels.directive, tone: 'text-status-success', message: item.body, artifact: null, isError: false, alert: false };

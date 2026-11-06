@@ -52,11 +52,11 @@ export function FleetFooterPopover({
     <div
       data-testid="footer-fleet-popover"
       role="tooltip"
-      className="animate-fade-slide-in absolute bottom-full right-0 mb-2 w-56 rounded-card border border-primary/15 bg-background shadow-elevation-3 p-2 z-50"
+      className="animate-fade-slide-in absolute bottom-full right-0 mb-2 w-56 rounded-card border border-hair bg-background shadow-elevation-3 p-2 z-50"
     >
-      <div className="flex items-baseline justify-between gap-2 px-1 pb-1.5 mb-1 border-b border-primary/10">
+      <div className="flex items-baseline justify-between gap-2 px-1 pb-1.5 mb-1 border-b border-hair">
         <p className="typo-label text-foreground">{t.plugins.fleet.footer_title}</p>
-        <p className="text-[10px] text-foreground tabular-nums">
+        <p className="typo-caption text-foreground">
           {total === 1
             ? tx(t.plugins.fleet.sessions_one, { count: total })
             : tx(t.plugins.fleet.sessions_other, { count: total })}
@@ -73,10 +73,10 @@ export function FleetFooterPopover({
                 data-testid={`footer-fleet-lane-${lane}`}
                 className="flex items-baseline justify-between gap-2 px-1"
               >
-                <span className={`typo-label text-[10px] ${FLEET_LANE_TONE[lane]}`}>
+                <span className={`typo-label  ${FLEET_LANE_TONE[lane]}`}>
                   {t.plugins.fleet[FLEET_LANE_LABEL_KEY[lane]]}
                 </span>
-                <span className={`text-[11px] font-semibold tabular-nums ${FLEET_LANE_TONE[lane]}`}>{total}</span>
+                <span className={`typo-caption ${FLEET_LANE_TONE[lane]}`}>{total}</span>
               </div>
               <ul className="space-y-0.5">
                 {states.map((m) => (
@@ -86,10 +86,10 @@ export function FleetFooterPopover({
                     className="flex items-center gap-2 pl-3 pr-1 py-0.5 rounded-input"
                   >
                     <span className={`h-2 w-2 rounded-full flex-shrink-0 ${m.dot}`} aria-hidden="true" />
-                    <span className="flex-1 min-w-0 truncate text-[11px] text-foreground">
+                    <span className="flex-1 min-w-0 truncate typo-caption text-foreground">
                       {t.plugins.fleet[m.labelKey]}
                     </span>
-                    <span className={`text-[11px] font-semibold tabular-nums ${m.text}`}>{counts[m.id]}</span>
+                    <span className={`typo-caption ${m.text}`}>{counts[m.id]}</span>
                   </li>
                 ))}
               </ul>
@@ -99,22 +99,22 @@ export function FleetFooterPopover({
       )}
 
       {limitResetAtMs != null && (
-        <div className="mt-1 flex justify-center border-t border-primary/10 pt-1.5">
+        <div className="mt-1 flex justify-center border-t border-hair pt-1.5">
           <FleetLimitEtaChip limitResetAtMs={limitResetAtMs} testId="footer-fleet-limit-eta" />
         </div>
       )}
 
-      <div className="mt-1 pt-1 border-t border-primary/10">
+      <div className="mt-1 pt-1 border-t border-hair">
         <button
           type="button"
           data-testid="footer-fleet-open-page"
           onClick={onOpenPage}
-          className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-input text-[11px] text-foreground hover:bg-secondary/40 transition-colors"
+          className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-input typo-caption text-foreground hover:bg-surface-1 transition-colors"
         >
           <ExternalLink className="w-3 h-3" />
           {t.plugins.fleet.footer_open_page}
         </button>
-        <p className="px-2 pb-0.5 text-center text-[10px] text-foreground">{hint}</p>
+        <p className="px-2 pb-0.5 text-center typo-caption text-foreground">{hint}</p>
       </div>
     </div>
   );

@@ -62,7 +62,7 @@ export function LaneHead({ title, count, sessions }: { title: string; count: num
     <>
       <header className="flex flex-shrink-0 items-center gap-2 py-2 pl-3.5 pr-2.5">
         <Engraved className="min-w-0 flex-1 truncate">{title}</Engraved>
-        {count !== null && <span className="flex-shrink-0 typo-data tabular-nums text-foreground"><Numeric value={count} /></span>}
+        {count !== null && <span className="flex-shrink-0 typo-data num text-foreground"><Numeric value={count} /></span>}
         <Lamp lamp={laneLamp(sessions)} />
       </header>
       <LaneShare sessions={sessions} />

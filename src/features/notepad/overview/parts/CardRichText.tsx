@@ -88,9 +88,9 @@ export function CardRichText({
   };
 
   return (
-    <div className="relative flex-1 min-h-0 overflow-y-auto -mx-1.5 px-1.5 rounded-input focus-within:bg-secondary/15 transition-colors">
+    <div className="relative flex-1 min-h-0 overflow-y-auto -mx-1.5 px-1.5 rounded-input focus-within:bg-surface-1 transition-colors">
       {value.trim() === '' && (
-        <span aria-hidden className="pointer-events-none absolute left-1.5 top-0 typo-body text-foreground/50">
+        <span aria-hidden className="pointer-events-none absolute left-1.5 top-0 typo-body text-ink-3">
           {placeholder}
         </span>
       )}

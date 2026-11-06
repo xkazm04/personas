@@ -347,7 +347,7 @@ export function NoteDeskCard({
         {result ? (
           <button type="button" onClick={onOpen} className="flex-1 min-h-0 text-left rounded-input focus-ring">
             <span className={`block typo-label mb-1 ${meta.tone.text}`}>{t.notepad.result_title}</span>
-            <span className="typo-body text-foreground/85 line-clamp-4">{result}</span>
+            <span className="typo-body text-ink-2 line-clamp-4">{result}</span>
           </button>
         ) : (
           <NoteQuickWrite note={note} onPatch={onPatch} onOpen={onOpen} autoFocus={autoFocus} />

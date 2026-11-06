@@ -90,7 +90,7 @@ export default function FleetPage() {
       {/* Internal tab strip — lightweight band above the active sub-page;
           each sub-page renders its own ContentBox/Header underneath. Skills
           now live in the left drawer (opened from the grid), not a tab. */}
-      <div className="flex items-center gap-1 px-6 pt-5 pb-3 border-b border-primary/10">
+      <div className="flex items-center gap-1 px-6 pt-5 pb-3 border-b border-hair">
         <Terminal className="w-5 h-5 text-primary mr-1" />
         <h1 className="typo-heading text-foreground mr-3">{f.footer_title}</h1>
         {TABS.map((tabDef) => {
@@ -102,10 +102,10 @@ export default function FleetPage() {
               type="button"
               data-testid={`fleet-tab-${tabDef.id}`}
               onClick={() => setTab(tabDef.id)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-card text-[14px] transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-card typo-body transition-colors ${
                 active
-                  ? 'bg-primary/10 text-primary border border-primary/25'
-                  : 'text-foreground hover:text-foreground hover:bg-secondary/40 border border-transparent'
+                  ? 'bg-surface-1 text-primary border border-hair'
+                  : 'text-foreground hover:text-foreground hover:bg-surface-1 border border-transparent'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -119,7 +119,7 @@ export default function FleetPage() {
             data-testid="fleet-orphan-badge"
             onClick={() => setConfirmResume(true)}
             title={f.orphans_resume_title}
-            className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-500/20 text-orange-300 text-[12px] leading-none hover:bg-orange-500/30 transition-colors"
+            className="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded-interactive bg-status-warning/20 text-status-warning typo-caption hover:bg-status-warning/30 transition-colors"
           >
             <Unplug className="w-3 h-3" />
             {tx(orphanCount === 1 ? f.orphans_badge_one : f.orphans_badge_other, { count: orphanCount })}

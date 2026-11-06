@@ -58,14 +58,14 @@ export function MonitorTotals({ fleet }: { fleet: MonitorTerminal[] }) {
 
   return (
     <div
-      className="flex items-center gap-4 px-4 py-1.5 border-b border-primary/10 shrink-0"
+      className="flex items-center gap-4 px-4 py-1.5 border-b border-hair shrink-0"
       role="group"
       aria-label={f.monitor_totals_aria}
       title={f.monitor_totals_hint}
     >
       <Total label={f.monitor_totals_sessions}>{totals.sessions}</Total>
-      <Total label={f.monitor_totals_working} tone="text-blue-300">{totals.working}</Total>
-      <Total label={f.monitor_totals_needs_you} tone={totals.needsYou > 0 ? 'text-violet-300' : undefined}>
+      <Total label={f.monitor_totals_working} tone="text-status-info">{totals.working}</Total>
+      <Total label={f.monitor_totals_needs_you} tone={totals.needsYou > 0 ? 'text-role-agent' : undefined}>
         {totals.needsYou}
       </Total>
       <span className="w-px h-3 bg-primary/15" aria-hidden="true" />

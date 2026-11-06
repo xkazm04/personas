@@ -36,7 +36,7 @@ export function ProjectRail({
     <nav
       aria-label={dl.layers_projects}
       data-testid="layers-cards-rail"
-      className="shrink-0 border-r border-primary/10 bg-secondary/10 flex flex-col"
+      className="shrink-0 border-r border-hair bg-surface-1 flex flex-col"
       style={{ width: RAIL_W }}
     >
       <div className="px-2 pt-2 pb-1">
@@ -63,19 +63,19 @@ function RailEntry({ row, open, onOpen }: { row: ProgressRow; open: boolean; onO
         <motion.span
           layoutId={reduced ? undefined : 'layers-cards-rail-lamp'}
           aria-hidden
-          className="absolute inset-0 rounded-interactive bg-primary/10 ring-1 ring-primary/35"
+          className="absolute inset-0 rounded-interactive bg-surface-1 ring-1 ring-primary/35"
           transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 34 }}
         />
       )}
       <CardShell
         onPress={onOpen}
         testId={`layers-cards-rail-${row.projectId}`}
-        className={`flex flex-col gap-1.5 px-2.5 py-2 rounded-interactive ${open ? '' : 'hover:bg-secondary/30'}`}
+        className={`flex flex-col gap-1.5 px-2.5 py-2 rounded-interactive ${open ? '' : 'hover:bg-surface-1'}`}
       >
         <span className={`truncate ${open ? 'typo-label text-primary' : 'typo-body text-foreground'}`}>{row.name}</span>
         <span className="flex gap-px h-1.5 rounded-full overflow-hidden" aria-hidden>
           {goals.length === 0 ? (
-            <span className="flex-1 bg-secondary/40" />
+            <span className="flex-1 bg-surface-1" />
           ) : (
             goals.map((g) => (
               <span key={g.id} className="flex-1" style={{ backgroundColor: goalStatusMeta(g.status).map.fill }} />

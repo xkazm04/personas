@@ -34,7 +34,7 @@ export const FleetSearchField = forwardRef<HTMLInputElement, FleetSearchFieldPro
         onChange={(e) => onChange(e.target.value)}
         aria-label={placeholder}
         placeholder={placeholder}
-        className="w-full h-8 rounded-input border border-primary/10 bg-secondary/40 pl-8 pr-3 typo-body text-foreground placeholder:text-foreground/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+        className="w-full h-8 rounded-input border border-hair bg-surface-1 pl-8 pr-3 typo-body text-foreground placeholder:text-ink-2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
       />
     </div>
   );

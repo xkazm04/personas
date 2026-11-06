@@ -33,7 +33,7 @@ function DayHead({ label, count, pinned, start, index, measure }: { label: strin
     <div
       ref={measure}
       data-index={index}
-      className="z-10 flex w-full items-center gap-3 border-b border-primary/10 bg-background px-3"
+      className="z-10 flex w-full items-center gap-3 border-b border-hair bg-background px-3"
       style={{ ...place, left: 0, height: DAY_HEAD_PX }}
       data-testid={`${TIMELINE_TEST_ID}-day`}
     >
@@ -74,7 +74,7 @@ export function TimelineList({ rows, onOpen }: { rows: EvidenceRow[]; onOpen: (r
   return (
     <div
       ref={scrollRef}
-      className="max-h-[34rem] overflow-y-auto rounded-card border border-primary/10"
+      className="max-h-[34rem] overflow-y-auto rounded-card border border-hair"
       role="region"
       aria-label={dl.lcx8_timeline_label}
       data-testid={TIMELINE_TEST_ID}

@@ -229,7 +229,7 @@ export function NoteAskQuickInput({
         placeholder={t.notepad.menu_ask_placeholder}
         aria-label={t.notepad.menu_ask_placeholder}
         data-testid={`notepad-card-ask-input-${note.id}`}
-        className="flex-1 min-w-0 bg-transparent typo-body text-foreground placeholder:text-foreground/60 outline-none"
+        className="flex-1 min-w-0 bg-transparent typo-body text-foreground placeholder:text-ink-2 outline-none"
       />
     </motion.form>,
     document.body,

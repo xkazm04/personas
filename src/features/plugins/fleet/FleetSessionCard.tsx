@@ -178,8 +178,8 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
       data-active={isActive || undefined}
       className={`group w-full flex items-center gap-2 px-2 py-1.5 rounded-card border transition-colors text-left ${
         isActive
-          ? 'border-primary/30 bg-primary/8'
-          : 'border-transparent hover:border-primary/15 hover:bg-secondary/30'
+          ? 'border-primary/30 bg-surface-1'
+          : 'border-transparent hover:border-hair hover:bg-surface-1'
       }`}
       title={session.cwd}
     >
@@ -191,7 +191,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
           title={t.plugins.fleet.doze_tooltip}
           aria-label={t.plugins.fleet.doze_tooltip}
         >
-          <MoonStar className="w-3 h-3 text-indigo-300" aria-hidden="true" />
+          <MoonStar className="w-3 h-3 text-role-agent" aria-hidden="true" />
         </span>
       )}
 
@@ -273,7 +273,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
                   handleHibernate(e as unknown as React.MouseEvent);
                 }
               }}
-              className="opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-indigo-300 transition-opacity p-0.5 rounded flex-shrink-0"
+              className="opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-role-agent transition-opacity p-0.5 rounded flex-shrink-0"
               data-testid={`fleet-session-hibernate-${session.id}`}
             >
               <MoonStar className="w-3 h-3" />
@@ -292,7 +292,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
                 handleClose(e as unknown as React.MouseEvent);
               }
             }}
-            className="opacity-40 group-hover:opacity-100 hover:text-red-400 transition-opacity p-0.5 rounded -mr-0.5 flex-shrink-0"
+            className="opacity-40 group-hover:opacity-100 hover:text-status-error transition-opacity p-0.5 rounded -mr-0.5 flex-shrink-0"
           >
             <X className="w-3 h-3" />
           </span>

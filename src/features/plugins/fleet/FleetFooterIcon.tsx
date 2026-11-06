@@ -102,17 +102,17 @@ export default function FleetFooterIcon() {
         title={label}
         className={`h-7 pl-1.5 pr-1 rounded-input flex items-center gap-1.5 transition-colors ${
           needsYou > 0
-            ? 'text-violet-300 bg-violet-500/15 hover:bg-violet-500/25'
+            ? 'text-role-agent bg-role-agent/15 hover:bg-role-agent/25'
             : gridOpen
-              ? 'text-primary bg-primary/10 hover:bg-primary/15'
-              : 'text-foreground hover:text-foreground hover:bg-secondary/50'
+              ? 'text-primary bg-surface-1 hover:bg-primary/15'
+              : 'text-foreground hover:text-foreground hover:bg-surface-1'
         } ${gridOpen ? 'ring-1 ring-primary/30' : ''}`}
       >
         <span className="relative flex items-center">
           <FleetShipIcon className="w-5 h-5" />
           {needsYou > 0 && (
             <span
-              className="absolute inset-0 rounded-full bg-violet-400/25 animate-ping motion-reduce:animate-none"
+              className="absolute inset-0 rounded-full bg-role-agent/25 animate-ping motion-reduce:animate-none"
               aria-hidden="true"
             />
           )}
@@ -123,7 +123,7 @@ export default function FleetFooterIcon() {
               <span
                 key={m.id}
                 data-testid={`footer-fleet-chip-${m.id}`}
-                className={`min-w-[15px] px-1 py-0.5 rounded-full text-[10px] font-semibold leading-none tabular-nums text-center ${m.chip} ${m.text}`}
+                className={`min-w-[15px] px-1 py-0.5 rounded-interactive typo-caption text-center ${m.chip} ${m.text}`}
               >
                 {counts[m.id]}
               </span>

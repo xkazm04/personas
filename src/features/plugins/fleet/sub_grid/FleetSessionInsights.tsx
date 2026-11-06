@@ -114,7 +114,7 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
             <div
               key={i}
               aria-hidden
-              className="rounded-card border border-primary/10 bg-secondary/20 h-14 animate-fade-in"
+              className="rounded-card border border-hair bg-surface-1 h-14 animate-fade-in"
               style={{ animationDelay: '150ms' }}
             />
           ))}
@@ -154,7 +154,7 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
             {summary.tools.map((tool) => (
               <span
                 key={tool.name}
-                className="inline-flex items-center gap-1 rounded-card border border-primary/15 bg-secondary/30 px-2 py-0.5 typo-body text-foreground"
+                className="inline-flex items-center gap-1 rounded-card border border-hair bg-surface-1 px-2 py-0.5 typo-body text-foreground"
               >
                 <span>{tool.name}</span>
                 <span className="typo-caption">×{tool.count}</span>
@@ -180,7 +180,7 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
       </Section>
 
       {/* Footer: models + span. */}
-      <div className="mt-3 pt-2 border-t border-primary/10 typo-caption flex flex-wrap gap-x-3 gap-y-1">
+      <div className="mt-3 pt-2 border-t border-hair typo-caption flex flex-wrap gap-x-3 gap-y-1">
         {summary.models.length > 0 && <span>{summary.models.join(', ')}</span>}
         {spanMin !== null && <span>{tx(f.insights_span, { minutes: spanMin })}</span>}
         {summary.parseErrors > 0 && (

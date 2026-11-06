@@ -79,15 +79,15 @@ function Panel({ title, count, header, footer, children }: {
   title: string; count: number; header: React.ReactNode; footer: string; children: React.ReactNode;
 }) {
   return (
-    <section className="min-h-0 flex flex-col rounded-card border border-primary/12 bg-secondary/[0.12]">
-      <div className="flex items-baseline gap-2 px-3 py-2 bg-primary/[0.04] border-b border-primary/10 rounded-t-card flex-shrink-0">
+    <section className="min-h-0 flex flex-col rounded-card border border-hair bg-secondary/[0.12]">
+      <div className="flex items-baseline gap-2 px-3 py-2 bg-primary/[0.04] border-b border-hair rounded-t-card flex-shrink-0">
         <span className="typo-body text-foreground truncate">{title}</span>
-        <span className="typo-label text-foreground/40 tabular-nums flex-shrink-0">{count}</span>
+        <span className="typo-label text-ink-3 num flex-shrink-0">{count}</span>
       </div>
       {header}
       <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-1">{children}</div>
-      <div className="px-3 py-1.5 border-t border-primary/10 flex-shrink-0">
-        <span className="typo-label text-foreground/35">{footer}</span>
+      <div className="px-3 py-1.5 border-t border-hair flex-shrink-0">
+        <span className="typo-label text-ink-3">{footer}</span>
       </div>
     </section>
   );
@@ -108,7 +108,7 @@ function HeaderRow({ sort, coverage = false }: { sort: ReturnType<typeof useSort
       <button
         type="button"
         onClick={() => sort.toggle(k)}
-        className={`inline-flex items-center gap-1 w-full text-[10.5px] uppercase tracking-[0.12em] transition-colors focus-ring rounded-interactive whitespace-nowrap ${align === 'right' ? 'justify-end' : 'justify-start'} ${on ? 'text-foreground/80 font-semibold' : 'text-foreground/40 hover:text-foreground/70'}`}
+        className={`inline-flex items-center gap-1 w-full typo-eyebrow transition-colors focus-ring rounded-interactive whitespace-nowrap ${align === 'right' ? 'justify-end' : 'justify-start'} ${on ? 'text-ink-2' : 'text-ink-3 hover:text-ink-2'}`}
         data-testid={`skills-manager-sort-${k}`}
       >
         {align === 'right' && arrow}
@@ -118,12 +118,12 @@ function HeaderRow({ sort, coverage = false }: { sort: ReturnType<typeof useSort
     );
   };
   return (
-    <div className={`${coverage ? PROJ_COLS : COLS} px-3 py-1.5 border-b border-primary/10 flex-shrink-0`}>
+    <div className={`${coverage ? PROJ_COLS : COLS} px-3 py-1.5 border-b border-hair flex-shrink-0`}>
       <SortHead k="name" label={d.skills_sort_skill} align="left" />
       {coverage && <SortHead k="coverage" label={d.skills_col_coverage} />}
       <SortHead k="usage" label={d.skills_sort_usage} />
       <SortHead k="lastused" label={d.skills_col_lastused} />
-      <span className="text-[10.5px] uppercase tracking-[0.12em] text-foreground/40 text-right whitespace-nowrap overflow-hidden">{d.skills_col_action}</span>
+      <span className="typo-eyebrow text-ink-3 text-right whitespace-nowrap overflow-hidden">{d.skills_col_action}</span>
     </div>
   );
 }
@@ -132,7 +132,7 @@ function HeaderRow({ sort, coverage = false }: { sort: ReturnType<typeof useSort
 function GroupDivider({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 pt-3 pb-1">
-      <span className="text-[10px] uppercase tracking-[0.12em] text-foreground/40 flex-shrink-0">{children}</span>
+      <span className="typo-eyebrow text-ink-3 flex-shrink-0">{children}</span>
       <span className="flex-1 h-px bg-foreground/10" />
     </div>
   );
@@ -149,7 +149,7 @@ function ActionIcon({ icon: Icon, title, onClick, disabled, testid }: {
       disabled={disabled}
       title={title}
       aria-label={title}
-      className="p-1 rounded-interactive text-primary hover:bg-primary/10 border border-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+      className="p-1 rounded-interactive text-primary hover:bg-primary/10 border border-hair transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
       data-testid={testid}
     >
       <Icon className="w-3.5 h-3.5" aria-hidden />
@@ -281,7 +281,7 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
               <CoverageBar row={r.coverage} total={totalContexts} />
             </button>
           )
-          : <span className="typo-label text-foreground/25">—</span>}
+          : <span className="typo-label text-ink-3">—</span>}
       </span>
       <UsageCount usage={r.usage} />
       <LastUsed usage={r.usage} />
@@ -348,7 +348,7 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
                       </span>
                     )}
                     <button type="button" onClick={() => onOpenInfo(entry.name)}
-                      className={`typo-caption truncate text-left hover:text-primary transition-colors ${installed ? 'text-foreground/45' : 'text-foreground'}`}
+                      className={`typo-caption truncate text-left hover:text-primary transition-colors ${installed ? 'text-ink-3' : 'text-foreground'}`}
                       data-testid={`skills-manager-ws-${entry.name}`}>
                       {entry.name}
                     </button>
@@ -358,7 +358,7 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
                   <span className="flex items-center justify-end">
                     {installed ? (
                       <span title={tx(d.skills_installed_in, { name: projectName })} className="inline-flex p-1">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/70" aria-label={tx(d.skills_installed_in, { name: projectName })} />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-status-success" aria-label={tx(d.skills_installed_in, { name: projectName })} />
                       </span>
                     ) : (
                       <ActionIcon icon={ArrowDownToLine} title={tx(d.skills_adopt_hint, { name: projectName })} onClick={() => setPending({ kind: 'adopt', skill: entry })} disabled={busy} testid={`skills-manager-adopt-${entry.name}`} />
@@ -381,12 +381,12 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
         {libTab === 'custom' && !library.registry ? (
           <div className="py-8 px-4 text-center flex flex-col items-center gap-2">
             <p className="typo-body text-foreground">{d.skills_library_unwired_title}</p>
-            <p className="typo-caption text-foreground/70 max-w-sm">
+            <p className="typo-caption text-ink-2 max-w-sm">
               {library.workspaceId ? d.skills_library_unwired_body : d.skills_library_unwired_unassigned}
             </p>
           </div>
         ) : libRows.length === 0 ? (
-          <p className="typo-caption text-foreground/45 py-8 text-center">
+          <p className="typo-caption text-ink-3 py-8 text-center">
             {libTab === 'preset' ? d.skills_preset_empty : d.skills_ws_empty}
           </p>
         ) : null}
@@ -405,7 +405,7 @@ export function SkillsManagerBoard({ ws, proj, library, totalContexts, busy, pro
             <ul>{plain.map(renderProjRow)}</ul>
           </>
         )}
-        {proj.length === 0 && <p className="typo-caption text-foreground/45 py-8 text-center">{d.skills_proj_empty}</p>}
+        {proj.length === 0 && <p className="typo-caption text-ink-3 py-8 text-center">{d.skills_proj_empty}</p>}
       </Panel>
 
       {pending && pending.kind !== 'use' && (

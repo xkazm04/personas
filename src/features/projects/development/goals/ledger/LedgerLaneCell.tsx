@@ -40,7 +40,7 @@ export function LedgerLaneCell({ row }: { row: LedgerRow }) {
       aria-label={lane ? lane.name : t.ship.unassigned}
       data-testid={`ledger-lane-${row.node.goal.id}`}
       className={`inline-flex items-center gap-1.5 min-w-0 max-w-full rounded-input border px-1.5 py-0.5 focus-ring transition-colors ${
-        lane ? tone.border : 'border-dashed border-primary/20'
+        lane ? tone.border : 'border-dashed border-hair'
       } ${over ? `${tone.bg} ring-1 ring-inset ${tone.border}` : ''}`}
     >
       {lane ? (

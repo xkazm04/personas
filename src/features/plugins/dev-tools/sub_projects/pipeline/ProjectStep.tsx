@@ -36,11 +36,11 @@ export function ProjectStep({
         <div className="flex gap-2">
           <div
             onClick={isEdit ? undefined : onSelectFolder}
-            className={`flex-1 flex items-center gap-2 px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input min-w-0 ${
-              isEdit ? 'opacity-60' : 'cursor-pointer hover:bg-secondary/60 hover:border-primary/20 transition-colors'
+            className={`flex-1 flex items-center gap-2 px-3 py-2.5 typo-body bg-surface-1 border border-hair rounded-input min-w-0 ${
+              isEdit ? 'opacity-60' : 'cursor-pointer hover:bg-surface-1 hover:border-hair transition-colors'
             }`}
           >
-            <FolderOpen className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <FolderOpen className="w-4 h-4 text-ink-2 flex-shrink-0" />
             {path ? (
               <span className="text-foreground truncate">{path}</span>
             ) : (
@@ -68,7 +68,7 @@ export function ProjectStep({
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
             placeholder={dp.project_name_placeholder}
-            className="w-full px-3 py-2.5 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
+            className="w-full px-3 py-2.5 pr-8 typo-body bg-surface-1 border border-hair rounded-input text-foreground placeholder:text-foreground focus-ring"
           />
           <Pencil className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
         </div>
@@ -89,7 +89,7 @@ export function ProjectStep({
               className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card border transition-all ${
                 projectType === pt.id
                   ? `${pt.color} ring-1 ring-current/20`
-                  : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
+                  : 'bg-surface-1 border-hair text-foreground hover:bg-surface-1'
               }`}
             >
               <span>{pt.icon}</span>

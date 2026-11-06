@@ -13,18 +13,12 @@ import type { LifecycleRunOutcome } from '@/lib/bindings/LifecycleRunOutcome';
 import { bindingStateLabel, outcomeLabel } from '../../journey/journeyLabels';
 import { useLifecycleViewModel } from '../context';
 import { healthLabel } from '../layer1/layer1Labels';
-import { LT } from './lcType';
 import {
-  BINDING_LOOK, ITEM_LOOK, OUTCOME_LOOK, PILL_STROKE, PILL_TONE, RUN_LOOK, VERDICT_LOOK, itemStatusOf, pillFilled, type PillLook,
+  BINDING_LOOK, ITEM_LOOK, OUTCOME_LOOK, RUN_LOOK, VERDICT_LOOK, itemStatusOf, pillFilled, type PillLook, type PillTone,
 } from './pillLooks';
-import { GLYPH } from './scales';
+import { StateMark, type StateMarkState } from '@/features/shared/components/display/StateMark';
 
 export type PillSize = 'md' | 'lg';
-
-const BOX: Record<PillSize, string> = {
-  md: `gap-1.5 px-2.5 py-0.5 ${LT.label}`,
-  lg: `gap-2 px-3 py-1 ${LT.title}`,
-};
 
 interface PillProps {
   look: PillLook;
@@ -35,20 +29,23 @@ interface PillProps {
   testId?: string;
 }
 
+const STATE_OF: Record<PillTone, StateMarkState> = {
+  success: 'success', warning: 'warning', error: 'error', info: 'info', neutral: 'neutral', quiet: 'neutral',
+};
+
+/** Console status: a glyph and a mono word (StateMark), never a filled pill. The stroke/filled attributes stay for tests. */
 export function Pill({ look, label, size = 'md', data, testId }: PillProps) {
-  const tone = PILL_TONE[look.tone];
   const filled = pillFilled(look.stroke);
-  const Glyph = look.glyph;
+  const state: StateMarkState = look.tone === 'neutral' && look.stroke !== 'hairline' ? 'blank' : STATE_OF[look.tone];
   return (
     <span
       {...data}
       data-stroke={look.stroke}
       data-filled={filled ? 'true' : 'false'}
       data-testid={testId}
-      className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-pill ${BOX[size]} ${PILL_STROKE[look.stroke]} ${tone.ink} ${tone.line} ${filled ? tone.wash : 'bg-transparent'}`}
+      className="inline-flex shrink-0 items-center whitespace-nowrap"
     >
-      <Glyph className={`${size === 'lg' ? GLYPH.md : GLYPH.sm} shrink-0`} aria-hidden />
-      {label}
+      <StateMark state={state} label={label} size={size === 'lg' ? 'md' : 'sm'} />
     </span>
   );
 }

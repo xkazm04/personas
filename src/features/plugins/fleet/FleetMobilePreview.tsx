@@ -87,18 +87,18 @@ export function FleetMobilePreview() {
 
   return (
     <div
-      className="border border-primary/10 rounded-modal px-4 py-4 bg-secondary/20"
+      className="border border-hair rounded-modal px-4 py-4 bg-surface-1"
       data-testid="fleet-mobile-preview"
     >
       <div className="flex items-center gap-2 mb-1">
         <Smartphone className="w-4 h-4 text-primary" aria-hidden="true" />
         <p className="typo-caption text-foreground">{t.plugins.fleet.preview_title}</p>
       </div>
-      <p className="text-[14px] text-foreground leading-relaxed mb-3">{t.plugins.fleet.preview_desc}</p>
+      <p className="typo-body text-foreground mb-3">{t.plugins.fleet.preview_desc}</p>
 
       <div className="flex justify-center">
         {/* Phone frame */}
-        <div className="relative w-[260px] rounded-[2.25rem] border-4 border-primary/20 bg-[#0a0a0c] p-2 shadow-elevation-2">
+        <div className="relative w-[260px] rounded-[2.25rem] border-4 border-hair bg-[#0a0a0c] p-2 shadow-elevation-2">
           <div className="absolute left-1/2 top-2 h-1.5 w-16 -translate-x-1/2 rounded-full bg-primary/25" aria-hidden="true" />
           {/* Screen. NOT aria-hidden: the phone FRAME is decorative, but what
               is on the screen is the operator's real, live fleet — session
@@ -111,28 +111,28 @@ export function FleetMobilePreview() {
             data-testid="fleet-mobile-preview-screen"
           >
             <p className="typo-label text-foreground mb-0.5">Personas</p>
-            <p className="text-[17px] font-semibold text-foreground">Fleet</p>
-            <p className="text-[13px] text-foreground mb-3">{sessionCount}</p>
+            <p className="typo-body text-foreground">Fleet</p>
+            <p className="typo-caption text-foreground mb-3">{sessionCount}</p>
 
             {total === 0 ? (
-              <p className="text-[14px] text-foreground py-8 text-center">{t.plugins.fleet.preview_no_sessions}</p>
+              <p className="typo-body text-foreground py-8 text-center">{t.plugins.fleet.preview_no_sessions}</p>
             ) : (
               <>
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   {FLEET_STATE_META.filter((m) => counts[m.id] > 0).map((m) => (
                     <span
                       key={m.id}
-                      className="flex items-center gap-1.5 rounded-interactive border border-primary/10 bg-secondary/40 px-2 py-0.5 text-[13px] text-foreground"
+                      className="flex items-center gap-1.5 rounded-interactive border border-hair bg-surface-1 px-2 py-0.5 typo-caption text-foreground"
                     >
                       <span className={`h-2 w-2 rounded-full ${m.dot}`} aria-hidden="true" />
                       <span>{t.plugins.fleet[m.labelKey]}</span>
-                      <span className="font-semibold tabular-nums">{counts[m.id]}</span>
+                      <span className="font-semibold num">{counts[m.id]}</span>
                     </span>
                   ))}
                 </div>
 
                 <div className="flex items-center gap-1.5 mb-1.5">
-                  <Hourglass className="w-3 h-3 text-violet-400" aria-hidden="true" />
+                  <Hourglass className="w-3 h-3 text-role-agent" aria-hidden="true" />
                   <span className="typo-label text-foreground">
                     {waitingItems.length === 1
                       ? tx(t.plugins.fleet.needs_input_one, { count: waitingItems.length })
@@ -140,13 +140,13 @@ export function FleetMobilePreview() {
                   </span>
                 </div>
                 {waitingItems.length === 0 ? (
-                  <p className="text-[14px] text-emerald-300">{t.plugins.fleet.preview_all_clear}</p>
+                  <p className="typo-body text-status-success">{t.plugins.fleet.preview_all_clear}</p>
                 ) : (
                   <ul className="space-y-1">
                     {waitingItems.map((item) => (
                       <li
                         key={item.id}
-                        className="rounded-interactive border border-violet-400/25 bg-violet-400/10 px-2 py-1 text-[14px] text-violet-100"
+                        className="rounded-interactive border border-hair bg-surface-1 px-2 py-1 typo-body text-role-agent"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <button
@@ -154,11 +154,11 @@ export function FleetMobilePreview() {
                             data-testid={`fleet-preview-reply-${item.id}`}
                             onClick={() => { setReplyTo(item.id); setReplyText(''); }}
                             aria-label={tx(t.plugins.fleet.reply_to, { name: item.name })}
-                            className="truncate text-left transition-colors hover:text-violet-50"
+                            className="truncate text-left transition-colors hover:text-role-agent"
                           >
                             {item.name}
                           </button>
-                          <span className="shrink-0 text-violet-300/80">{formatAgo(t, item.lastActivityMs, now)}</span>
+                          <span className="shrink-0 text-role-agent">{formatAgo(t, item.lastActivityMs, now)}</span>
                         </div>
                         {replyTo === item.id && (
                           <div className="mt-1 flex items-center gap-1">
@@ -173,7 +173,7 @@ export function FleetMobilePreview() {
                                 if (e.key === 'Escape') { setReplyTo(null); setReplyText(''); }
                               }}
                               placeholder={tx(t.plugins.fleet.reply_placeholder, { name: item.name })}
-                              className="min-w-0 flex-1 rounded-interactive border border-violet-400/30 bg-background/60 px-1.5 py-0.5 text-[13px] text-violet-50 placeholder:text-violet-300/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
+                              className="min-w-0 flex-1 rounded-interactive border border-role-agent/30 bg-background/60 px-1.5 py-0.5 typo-caption text-role-agent placeholder:text-role-agent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-role-agent/60"
                             />
                             <Button
                               variant="ghost"
@@ -182,7 +182,7 @@ export function FleetMobilePreview() {
                               disabled={!replyText.trim() || sending}
                               onClick={() => void submitReply()}
                               aria-label={sending ? t.plugins.fleet.reply_sending : t.plugins.fleet.reply_send}
-                              className="shrink-0 border border-violet-400/30 bg-violet-400/15 text-violet-100 hover:bg-violet-400/25"
+                              className="shrink-0 border border-hair bg-surface-1 text-role-agent hover:bg-role-agent/25"
                             >
                               <Send className="w-3 h-3" aria-hidden="true" />
                             </Button>

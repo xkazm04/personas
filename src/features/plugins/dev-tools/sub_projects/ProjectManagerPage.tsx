@@ -84,9 +84,9 @@ export default function ProjectManagerPage() {
   const showRichEmpty = !projectsLoading && projects.length === 0;
 
   // Left-accent bar marks the active project (primary) or a bulk-selected row
-  // (amber) - replaces the old full-row background tint.
+  // (status) - replaces the old full-row background tint.
   const rowAccent = (project: Project): string | undefined => {
-    if (selection.selectedIds.has(project.id)) return 'border-l-amber-400';
+    if (selection.selectedIds.has(project.id)) return 'border-l-status-warning';
     if (actions.activeProjectId === project.id) return 'border-l-primary';
     return undefined;
   };
@@ -94,16 +94,14 @@ export default function ProjectManagerPage() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<FolderKanban className="w-5 h-5 text-amber-400" />}
-        iconColor="amber"
+        icon={<FolderKanban className="w-5 h-5 text-ink-2" />}
         title={t.plugins.dev_tools.projects_title}
         fitWidth
         actions={
           <>
             <LifecycleProjectPicker />
             <Button
-              variant="accent"
-              tone="agent"
+              variant="secondary"
               size="sm"
               icon={<Network className="w-3.5 h-3.5" />}
               onClick={() => setShowCrossProjectMap(true)}
@@ -113,8 +111,7 @@ export default function ProjectManagerPage() {
               {dp.cross_project_map_btn}
             </Button>
             <Button
-              variant="accent"
-              tone="warning"
+              variant="primary"
               size="sm"
               icon={<Plus className="w-3.5 h-3.5" />}
               onClick={actions.openNewProject}
@@ -129,7 +126,7 @@ export default function ProjectManagerPage() {
       <ContentBody>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <h3 className="typo-label text-primary">{dp.all_projects}({projects.length})</h3>
+            <h3 className="typo-eyebrow text-ink-3">{dp.all_projects}<span className="num">{projects.length}</span>)</h3>
             {selection.selectedIds.size > 0 && (
               <ProjectsBulkBar
                 count={selection.selectedIds.size}

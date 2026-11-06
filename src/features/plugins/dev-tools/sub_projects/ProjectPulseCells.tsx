@@ -47,7 +47,7 @@ export function AttentionCell({ pulse }: { pulse: ProjectPulse | undefined }) {
           aria-label={k.attention_clear}
         >
           <CheckCircle2 className="w-3.5 h-3.5" />
-          <span className="tabular-nums">0</span>
+          <span className="num">0</span>
         </span>
       </Tooltip>
     );
@@ -60,12 +60,12 @@ export function AttentionCell({ pulse }: { pulse: ProjectPulse | undefined }) {
   return (
     <Tooltip content={label} placement="top">
       <span
-        className="inline-flex items-center gap-1.5 typo-caption text-amber-400"
+        className="inline-flex items-center gap-1.5 typo-caption text-status-warning"
         data-testid="project-attention-count"
         aria-label={label}
       >
         <AlertCircle className="w-3.5 h-3.5" />
-        <span className="tabular-nums">
+        <span className="num">
           {pulse.truncated ? `${pulse.attention}+` : pulse.attention}
         </span>
       </span>

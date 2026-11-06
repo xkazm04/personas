@@ -112,13 +112,13 @@ export default function ContextDetail({
       animate={{ opacity: 1, x: 0 }}
       exit={reduced ? { opacity: 0 } : { opacity: 0, x: 20 }}
       transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 34, mass: 0.7 }}
-      className="w-80 flex-shrink-0 self-start sticky top-0 max-h-[calc(100dvh-12rem)] flex flex-col border-l border-primary/10 pl-5"
+      className="w-80 flex-shrink-0 self-start sticky top-0 max-h-[calc(100dvh-12rem)] flex flex-col border-l border-hair pl-5"
       aria-label={ctx.name}
     >
       {/* Header — outside the scroll area, so it never leaves. */}
       <div className="flex items-center justify-between pb-3 shrink-0">
         <h3 className="typo-section-title flex items-center gap-1.5 min-w-0">
-          {ctx.pinned && <Pin className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30 shrink-0" />}
+          {ctx.pinned && <Pin className="w-3.5 h-3.5 text-ink-2 fill-status-warning shrink-0" />}
           <span className="truncate">{ctx.name}</span>
         </h3>
         <div className="flex items-center gap-0.5 shrink-0">
@@ -151,13 +151,13 @@ export default function ContextDetail({
         transition={reduced ? { duration: 0 } : { duration: 0.18, ease: 'easeOut' }}
         className="flex-1 min-h-0 overflow-y-auto pr-1"
       >
-      <p className="text-md text-foreground mb-4">{ctx.description}</p>
+      <p className="typo-body text-foreground mb-4">{ctx.description}</p>
 
       {/* Use cases slicing through this context — the behavioral layer above the
           code-ownership partition. A context with none is code nobody has named
           an outcome for yet. */}
       <div className="mb-4">
-        <h4 className="text-[10px] uppercase tracking-wider text-primary font-medium mb-2 flex items-center gap-1.5">
+        <h4 className="typo-eyebrow text-primary mb-2 flex items-center gap-1.5">
           <Layers className="w-3 h-3" />
           {t.plugins.dev_tools.uc_title} ({useCases.length})
         </h4>
@@ -168,10 +168,10 @@ export default function ContextDetail({
             {useCases.map((uc) => (
               <li
                 key={uc.id}
-                className="rounded-modal border border-primary/10 bg-card/30 px-2.5 py-1.5 flex items-center gap-2"
+                className="rounded-modal border border-hair bg-surface-1 px-2.5 py-1.5 flex items-center gap-2"
               >
                 <span className="typo-caption text-foreground truncate flex-1">{uc.name}</span>
-                <span className="typo-caption text-foreground tabular-nums shrink-0">
+                <span className="typo-caption text-foreground num shrink-0">
                   {tx(t.plugins.dev_tools.uc_span_count, { count: uc.context_ids.length })}
                 </span>
               </li>
@@ -182,7 +182,7 @@ export default function ContextDetail({
 
       {/* Goals linked to this context (cycle 8 surfaced the count; here the items) */}
       <div className="mb-4">
-        <h4 className="text-[10px] uppercase tracking-wider text-primary font-medium mb-2 flex items-center gap-1.5">
+        <h4 className="typo-eyebrow text-primary mb-2 flex items-center gap-1.5">
           <Target className="w-3 h-3" />
           {t.plugins.dev_tools.context_detail_goals_heading} ({linkedGoals.length})
         </h4>
@@ -196,11 +196,11 @@ export default function ContextDetail({
                   type="button"
                   onClick={() => handleGoalJump(goal.id)}
                   title={t.plugins.dev_tools.context_detail_goal_jump_tooltip}
-                  className="w-full text-left rounded-modal border border-primary/10 bg-card/30 px-2.5 py-2 hover:border-primary/25 hover:bg-primary/5 transition-colors"
+                  className="w-full text-left rounded-modal border border-hair bg-surface-1 px-2.5 py-2 hover:border-hair hover:bg-primary/5 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <span className="typo-caption text-foreground truncate flex-1">{goal.title}</span>
-                    <span className="typo-caption text-foreground tabular-nums shrink-0">{goal.progress}%</span>
+                    <span className="typo-caption text-foreground num shrink-0">{goal.progress}%</span>
                   </div>
                   {tasksTotal > 0 && (
                     <p className="typo-caption text-foreground mt-0.5 flex items-center gap-1">
@@ -218,7 +218,7 @@ export default function ContextDetail({
       {/* KPIs scoped to this context (Part 3 context-level KPIs) */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-[10px] uppercase tracking-wider text-primary font-medium flex items-center gap-1.5">
+          <h4 className="typo-eyebrow text-primary flex items-center gap-1.5">
             <Gauge className="w-3 h-3" />
             {t.kpis.context_kpis_title} ({linkedKpis.length})
           </h4>
@@ -233,20 +233,20 @@ export default function ContextDetail({
         </div>
 
         {adding && (
-          <form onSubmit={handleCreateKpi} className="mb-2 rounded-modal border border-primary/10 bg-card/30 p-2 space-y-2">
+          <form onSubmit={handleCreateKpi} className="mb-2 rounded-modal border border-hair bg-surface-1 p-2 space-y-2">
             <input
               value={kpiName}
               onChange={(e) => setKpiName(e.target.value)}
               placeholder={t.kpis.create_kpi_name_ph}
               autoFocus
-              className="w-full px-2 py-1 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
+              className="w-full px-2 py-1 typo-body bg-surface-1 border border-hair rounded-modal text-foreground placeholder:text-foreground focus-ring"
             />
 
             {/* Scope. An outcome that spans contexts belongs to a use case, not
                 to whichever context you happened to have open. */}
             {activeUseCases.length > 0 && (
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-primary font-medium mb-1">
+                <p className="typo-eyebrow text-primary mb-1">
                   {t.kpis.kpi_scope_label}
                 </p>
                 <div className="flex flex-wrap gap-1">
@@ -254,10 +254,10 @@ export default function ContextDetail({
                     type="button"
                     onClick={() => setKpiScopeUseCaseId(null)}
                     aria-pressed={kpiScopeUseCaseId === null}
-                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                    className={`typo-caption px-2 py-0.5 rounded-interactive border transition-colors ${
                       kpiScopeUseCaseId === null
                         ? 'border-primary/50 bg-primary/15 text-foreground'
-                        : 'border-primary/10 bg-card/30 text-foreground hover:border-primary/30'
+                        : 'border-hair bg-surface-1 text-foreground hover:border-primary/30'
                     }`}
                   >
                     {t.kpis.kpi_scope_this_context}
@@ -269,10 +269,10 @@ export default function ContextDetail({
                       onClick={() => setKpiScopeUseCaseId(uc.id)}
                       aria-pressed={kpiScopeUseCaseId === uc.id}
                       title={tx(t.plugins.dev_tools.uc_span_count, { count: uc.context_ids.length })}
-                      className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                      className={`typo-caption px-2 py-0.5 rounded-interactive border transition-colors ${
                         kpiScopeUseCaseId === uc.id
-                          ? 'border-sky-500/50 bg-sky-500/15 text-sky-200'
-                          : 'border-primary/10 bg-card/30 text-foreground hover:border-primary/30'
+                          ? 'border-hair bg-surface-1 text-status-info'
+                          : 'border-hair bg-surface-1 text-foreground hover:border-primary/30'
                       }`}
                     >
                       {uc.name}
@@ -287,15 +287,15 @@ export default function ContextDetail({
                 value={kpiTarget}
                 onChange={(e) => setKpiTarget(e.target.value)}
                 placeholder={t.kpis.create_kpi_target_ph}
-                className="w-20 px-2 py-1 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring tabular-nums"
+                className="w-20 px-2 py-1 typo-body bg-surface-1 border border-hair rounded-modal text-foreground placeholder:text-foreground focus-ring"
               />
               <input
                 value={kpiUnit}
                 onChange={(e) => setKpiUnit(e.target.value)}
                 placeholder={t.kpis.create_kpi_unit_ph}
-                className="w-16 px-2 py-1 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
+                className="w-16 px-2 py-1 typo-body bg-surface-1 border border-hair rounded-modal text-foreground placeholder:text-foreground focus-ring"
               />
-              <Button type="submit" variant="accent" tone="warning" size="sm" disabled={!kpiName.trim()}>
+              <Button type="submit" variant="secondary" size="sm" disabled={!kpiName.trim()}>
                 {t.kpis.create_kpi_submit}
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>
@@ -312,14 +312,14 @@ export default function ContextDetail({
             {linkedKpis.map((k) => (
               <li
                 key={k.id}
-                className="rounded-modal border border-primary/10 bg-card/30 px-2.5 py-1.5 flex items-center gap-2"
+                className="rounded-modal border border-hair bg-surface-1 px-2.5 py-1.5 flex items-center gap-2"
               >
                 <span
                   className="w-2 h-2 rounded-full flex-shrink-0"
                   style={{ background: TRACK_COLOR[kpiTrack(k)] }}
                 />
                 <span className="typo-caption text-foreground truncate flex-1">{k.name}</span>
-                <span className="typo-caption text-foreground tabular-nums shrink-0">
+                <span className="typo-caption text-foreground num shrink-0">
                   {k.current_value ?? '—'} / {k.target_value ?? '—'} {k.unit}
                 </span>
               </li>
@@ -329,7 +329,7 @@ export default function ContextDetail({
       </div>
 
       <div className="mb-4">
-        <h4 className="text-[10px] uppercase tracking-wider text-primary font-medium mb-2">
+        <h4 className="typo-eyebrow text-primary mb-2">
           {t.plugins.dev_tools.files} ({ctx.filePaths.length})
         </h4>
         <div className="space-y-1 max-h-40 overflow-y-auto">
@@ -344,10 +344,10 @@ export default function ContextDetail({
 
       {ctx.keywords.length > 0 && (
         <div className="mb-4">
-          <h4 className="text-[10px] uppercase tracking-wider text-primary font-medium mb-2">{t.plugins.dev_tools.keywords}</h4>
+          <h4 className="typo-eyebrow text-primary mb-2">{t.plugins.dev_tools.keywords}</h4>
           <div className="flex flex-wrap gap-1.5">
             {ctx.keywords.map((kw) => (
-              <span key={kw} className="px-2 py-0.5 text-[10px] bg-primary/5 border border-primary/10 rounded-full text-foreground">
+              <span key={kw} className="px-2 py-0.5 typo-caption bg-surface-1 border border-hair rounded-interactive text-foreground">
                 {kw}
               </span>
             ))}
@@ -357,11 +357,11 @@ export default function ContextDetail({
 
       {ctx.entryPoints.length > 0 && (
         <div>
-          <h4 className="text-[10px] uppercase tracking-wider text-primary font-medium mb-2">{t.plugins.dev_tools.entry_points}</h4>
+          <h4 className="typo-eyebrow text-primary mb-2">{t.plugins.dev_tools.entry_points}</h4>
           <div className="space-y-1">
             {ctx.entryPoints.map((ep) => (
               <div key={ep} className="flex items-center gap-1.5 typo-caption text-foreground py-0.5">
-                <ArrowUpRight className="w-3 h-3 flex-shrink-0 text-amber-400/60" />
+                <ArrowUpRight className="w-3 h-3 flex-shrink-0 text-ink-2" />
                 <span className="truncate">{ep}</span>
               </div>
             ))}

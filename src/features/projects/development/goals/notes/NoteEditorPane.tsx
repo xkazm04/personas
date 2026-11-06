@@ -73,7 +73,7 @@ export function NoteEditorPane({ note, project, backLabel, onBack, certifyOnOpen
           testId="layers-notes-thread"
         />
       </div>
-      <div className="flex-1 min-h-0 flex flex-col rounded-card border border-primary/10 bg-background/40 overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col rounded-card border border-hair bg-background/40 overflow-hidden">
         {withPlan(
           <>
             <NoteBody

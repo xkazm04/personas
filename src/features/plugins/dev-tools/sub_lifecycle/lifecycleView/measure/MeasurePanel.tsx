@@ -37,9 +37,9 @@ const LANE_CLASS = 'grid gap-x-5';
 const GHOST_COLUMNS = 4;
 
 function outline(phase: MeasurePhase, outcome: MeasureOutcome | null): string {
-  if (phase === 'cancelling' || outcome?.cancelled) return 'border border-status-warning/50 bg-status-warning/5';
-  if (outcome) return outcome.failures.length > 0 ? 'border border-status-error/50 bg-status-error/5' : 'border border-status-success/50 bg-status-success/5';
-  return 'border border-primary/40 bg-primary/5';
+  if (phase === 'cancelling' || outcome?.cancelled) return 'border border-hair bg-surface-2';
+  if (outcome) return outcome.failures.length > 0 ? 'border border-hair bg-surface-1' : 'border border-hair bg-surface-1';
+  return 'border border-primary/40 bg-surface-1';
 }
 
 function Rows() {

@@ -63,7 +63,7 @@ export function RegistryHeatmapCell({ d, skill, column, cell, r, c, projectMode,
         }`}
         style={{ backgroundColor: tint(skill.visual?.color ?? 'var(--primary)', cellAlpha(pct)) }}
       >
-        <span className="typo-label tabular-nums text-foreground group-hover/cell:hidden group-focus-visible/cell:hidden">
+        <span className="typo-label num text-foreground group-hover/cell:hidden group-focus-visible/cell:hidden">
           {formatPercent(pct, { precision: 0 })}
         </span>
         <Play className="hidden h-3.5 w-3.5 text-foreground group-hover/cell:block group-focus-visible/cell:block" aria-hidden />
@@ -82,7 +82,7 @@ export function RegistryHeatmapCell({ d, skill, column, cell, r, c, projectMode,
         className={`group/cell flex h-7 w-full items-center justify-center rounded-interactive border border-dashed text-primary transition-colors ${FOCUS} ${
           blocked
             ? 'cursor-not-allowed border-status-info/40'
-            : "border-primary/15 [[data-theme^='light']_&]:border-primary/30 hover:border-primary/45 hover:bg-primary/[0.07] focus-visible:bg-primary/[0.07]"
+            : "border-hair [[data-theme^='light']_&]:border-primary/30 hover:border-primary/45 hover:bg-primary/[0.07] focus-visible:bg-primary/[0.07]"
         }`}
       >
         {blocked
@@ -98,7 +98,7 @@ export function RegistryHeatmapCell({ d, skill, column, cell, r, c, projectMode,
         content={(
           <span className="flex flex-col gap-0.5">
             <span>{readout.action}</span>
-            {readout.facts && <span className="typo-label text-primary">{readout.facts}</span>}
+            {readout.facts && <span className="typo-label text-ink-1">{readout.facts}</span>}
           </span>
         )}
       >

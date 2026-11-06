@@ -26,7 +26,7 @@ export function StewardTip({ mandate, mode, modeKnown, held }: {
       <span>{mandate.stewardName ?? m.ml_steward_unknown} · {statusLabel(m, mandate.status)}</span>
       <span>{tx(m.ml_steward_rung, { rung: mandate.scopeRung })} · {modeKnown ? modeLabel(m, mode) : m.ml_steward_mode_unknown}</span>
       <span>{held !== null && held > 0 ? `${asks} · ${tx(m.ml_steward_held, { count: held })}` : asks}</span>
-      <span className="tabular-nums">
+      <span className="num">
         {cap === null ? m.ml_steward_no_cap : used === null ? m.ml_steward_spend_unknown : (
           <><Numeric value={used} unit="usd" /> / <Numeric value={cap} unit="usd" /></>
         )}

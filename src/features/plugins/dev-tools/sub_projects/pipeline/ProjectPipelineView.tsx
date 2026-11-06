@@ -122,10 +122,10 @@ export function ProjectPipelineView({
 
 function StageCard({ icon: Icon, label, children }: { icon: typeof FolderKanban; label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-card border border-primary/10 bg-card/30 p-3">
+    <div className="rounded-card border border-hair bg-surface-1 p-3">
       <div className="flex items-center gap-2 mb-2.5">
-        <span className="w-6 h-6 rounded-interactive bg-amber-500/12 border border-amber-500/25 flex items-center justify-center flex-shrink-0">
-          <Icon className="w-3.5 h-3.5 text-amber-400" />
+        <span className="w-6 h-6 rounded-interactive bg-surface-2 border border-hair flex items-center justify-center flex-shrink-0">
+          <Icon className="w-3.5 h-3.5 text-ink-2" />
         </span>
         <span className="typo-card-label">{label}</span>
       </div>
@@ -153,7 +153,7 @@ function KvRow({
       <Icon className="w-3 h-3 text-foreground flex-shrink-0" />
       <span className="typo-caption text-foreground flex-shrink-0">{label}</span>
       <span
-        className={`typo-caption truncate ml-auto text-right min-w-0 ${value ? 'text-foreground' : 'text-foreground/35 italic'} ${mono && value ? 'font-mono' : ''}`}
+        className={`typo-caption truncate ml-auto text-right min-w-0 ${value ? 'text-foreground' : 'text-ink-3 italic'} ${mono && value ? 'font-mono' : ''}`}
         title={value ?? undefined}
       >
         {value ?? dp.pipeline_not_set}

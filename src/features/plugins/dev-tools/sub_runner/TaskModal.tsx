@@ -10,9 +10,9 @@ type DepthColor = 'emerald' | 'amber' | 'violet';
 // `ring-${color}-500/40` style template strings are invisible to the JIT and
 // silently produce no styles, so the depth-selector highlight stayed blank.
 const DEPTH_COLOR_CLASSES: Record<DepthColor, { selectedRing: string; selectedIcon: string }> = {
-  emerald: { selectedRing: 'ring-2 ring-emerald-500/40 border-emerald-500/40', selectedIcon: 'text-emerald-400' },
-  amber:   { selectedRing: 'ring-2 ring-amber-500/40 border-amber-500/40',     selectedIcon: 'text-amber-400'   },
-  violet:  { selectedRing: 'ring-2 ring-violet-500/40 border-violet-500/40',   selectedIcon: 'text-violet-400'  },
+  emerald: { selectedRing: 'ring-2 ring-status-success/40 border-status-success/40', selectedIcon: 'text-status-success' },
+  amber:   { selectedRing: 'ring-2 ring-status-warning/40 border-status-warning/40',     selectedIcon: 'text-status-warning'   },
+  violet:  { selectedRing: 'ring-2 ring-role-agent/40 border-role-agent/40',   selectedIcon: 'text-role-agent'  },
 };
 
 /**
@@ -86,7 +86,7 @@ export function TaskModal({
       onClose={onClose}
       titleId="dev-tools-new-task-title"
       size="sm"
-      panelClassName="bg-background border border-primary/10 rounded-2xl p-6 shadow-elevation-4"
+      panelClassName="bg-background border border-hair rounded-card p-6 shadow-elevation-4"
     >
       <div>
         <div className="flex items-center justify-between mb-5">
@@ -103,7 +103,7 @@ export function TaskModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={dr.task_title_placeholder}
-              className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
+              className="w-full px-3 py-2 typo-body bg-surface-1 border border-hair rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-warning/30 focus-visible:border-status-warning/30"
             />
           </div>
           <div>
@@ -113,7 +113,7 @@ export function TaskModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder={dr.task_details_placeholder}
               rows={3}
-              className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30 resize-none"
+              className="w-full px-3 py-2 typo-body bg-surface-1 border border-hair rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-warning/30 focus-visible:border-status-warning/30 resize-none"
             />
           </div>
 
@@ -125,13 +125,13 @@ export function TaskModal({
                 const Icon = opt.icon;
                 const selected = depth === opt.value;
                 const tw = DEPTH_COLOR_CLASSES[opt.color];
-                const ring = selected ? tw.selectedRing : 'border-primary/10 hover:border-primary/20';
+                const ring = selected ? tw.selectedRing : 'border-hair hover:border-hair';
                 return (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => setDepth(opt.value)}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-modal border bg-secondary/30 transition-all ${ring}`}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-modal border bg-surface-1 transition-all ${ring}`}
                   >
                     <Icon className={`w-4 h-4 ${selected ? tw.selectedIcon : 'text-foreground'}`} />
                     <span className="typo-caption text-foreground">{dr[opt.labelKey]}</span>
@@ -139,7 +139,7 @@ export function TaskModal({
                 );
               })}
             </div>
-            <p className="text-[10px] text-foreground mt-1.5">
+            <p className="typo-caption text-foreground mt-1.5">
               {selectedDescriptionKey ? dr[selectedDescriptionKey] : null}
             </p>
           </div>
@@ -154,7 +154,7 @@ export function TaskModal({
                 value={goalId}
                 onChange={(e) => setGoalId(e.target.value)}
                 placeholder={dr.goal_link_placeholder}
-                className="w-full pl-9 pr-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 focus-visible:border-amber-500/30"
+                className="w-full pl-9 pr-3 py-2 typo-body bg-surface-1 border border-hair rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-warning/30 focus-visible:border-status-warning/30"
               />
             </div>
           </div>
@@ -163,8 +163,7 @@ export function TaskModal({
         <div className="flex justify-end gap-2 mt-6">
           <Button variant="ghost" size="sm" onClick={onClose}>{t.common.cancel}</Button>
           <Button
-            variant="accent"
-            tone="warning"
+            variant="secondary"
             size="sm"
             icon={<Plus className="w-3.5 h-3.5" />}
             disabled={!title.trim()}

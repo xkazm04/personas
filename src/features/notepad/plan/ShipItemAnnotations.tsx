@@ -56,7 +56,7 @@ function StarRating({ name, testid, rating, onRate, disabled }: {
         })}
       </span>
       {/* Unrated is a state, not a zero: it says so in words. */}
-      <span className={`typo-caption tabular-nums ${rating === null ? PLAN_INK.neutral : PLAN_INK.warning}`}>
+      <span className={`typo-caption num ${rating === null ? PLAN_INK.neutral : PLAN_INK.warning}`}>
         {rating === null ? t.ship.rating_unrated : tx(t.ship.rating_value, { value: rating })}
       </span>
     </span>
@@ -87,7 +87,7 @@ function NoteEditor({ name, testid, description, onSave, disabled }: {
         type="button"
         disabled={disabled}
         onClick={() => setEditing(true)}
-        className={`min-w-0 flex-1 text-left typo-caption truncate rounded-interactive px-1 py-0.5 transition-colors hover:bg-foreground/[0.05] focus-ring disabled:pointer-events-none ${description ? 'text-foreground/70' : 'text-foreground/35'}`}
+        className={`min-w-0 flex-1 text-left typo-caption truncate rounded-interactive px-1 py-0.5 transition-colors hover:bg-foreground/[0.05] focus-ring disabled:pointer-events-none ${description ? 'text-ink-2' : 'text-ink-3'}`}
         aria-label={tx(t.ship.note_aria, { name })}
         data-testid={testid}
       >
@@ -107,7 +107,7 @@ function NoteEditor({ name, testid, description, onSave, disabled }: {
       }}
       placeholder={t.ship.note_placeholder}
       aria-label={tx(t.ship.note_aria, { name })}
-      className="min-w-0 flex-1 rounded-input border border-foreground/[0.12] bg-transparent px-2 py-0.5 typo-caption text-foreground/90 placeholder:text-foreground/35 focus-ring"
+      className="min-w-0 flex-1 rounded-input border border-foreground/[0.12] bg-transparent px-2 py-0.5 typo-caption text-ink-2 placeholder:text-ink-3 focus-ring"
       data-testid={testid}
     />
   );

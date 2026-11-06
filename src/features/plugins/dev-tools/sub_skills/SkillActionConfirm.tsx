@@ -47,19 +47,19 @@ export function SkillActionConfirm({ kind, skill, projectName, busy, preset = fa
   return (
     <BaseModal isOpen onClose={onClose} titleId="skill-action-confirm-title" size="md" portal staggerChildren={false}>
       <div className="flex flex-col" data-testid={`skill-action-confirm-${kind}`}>
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04]">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-primary/[0.04]">
           <Icon className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="skill-action-confirm-title" className="typo-title truncate">{skill.name}</span>
-          <span className="ml-auto typo-label text-foreground/40 flex-shrink-0">{kindLabel}</span>
+          <span className="ml-auto typo-label text-ink-3 flex-shrink-0">{kindLabel}</span>
         </div>
 
         <div className="px-5 py-4 space-y-3.5">
           {/* Description — contained + relaxed so a dense one-paragraph skill
               blurb stays readable; scrolls if it runs long. */}
-          <div className="rounded-input bg-background/40 border border-primary/10 px-3 py-2.5 max-h-40 overflow-y-auto">
+          <div className="rounded-input bg-background/40 border border-hair px-3 py-2.5 max-h-40 overflow-y-auto">
             {skill.description
-              ? <p className="typo-caption text-foreground/75" style={{ fontWeight: 400 }}>{skill.description}</p>
-              : <p className="typo-caption text-foreground/35 italic">{d.skills_confirm_no_desc}</p>}
+              ? <p className="typo-caption text-ink-2" style={{ fontWeight: 400 }}>{skill.description}</p>
+              : <p className="typo-caption text-ink-3 italic">{d.skills_confirm_no_desc}</p>}
           </div>
 
           {/* What confirming does — moved out of the (truncated) footer. */}
@@ -68,13 +68,13 @@ export function SkillActionConfirm({ kind, skill, projectName, busy, preset = fa
           {kind === 'use' && (
             <div className="space-y-2">
               {hint && (
-                <div className="px-2.5 py-2 rounded-input bg-background/50 border border-primary/10">
-                  <div className="typo-label text-foreground/40 mb-1">{d.skills_args_label}</div>
-                  <code className="typo-caption font-mono text-foreground/75 break-words">{hint}</code>
+                <div className="px-2.5 py-2 rounded-input bg-background/50 border border-hair">
+                  <div className="typo-label text-ink-3 mb-1">{d.skills_args_label}</div>
+                  <code className="typo-caption font-mono text-ink-2 break-words">{hint}</code>
                 </div>
               )}
-              <label className="typo-label text-foreground/45 block">
-                {d.skills_args_label} <span className="text-foreground/30">({d.skills_args_optional})</span>
+              <label className="typo-label text-ink-3 block">
+                {d.skills_args_label} <span className="text-ink-3">({d.skills_args_optional})</span>
               </label>
               <textarea
                 value={args}
@@ -82,22 +82,22 @@ export function SkillActionConfirm({ kind, skill, projectName, busy, preset = fa
                 rows={2}
                 placeholder={d.skills_args_placeholder}
                 onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') onConfirm(args); }}
-                className="w-full resize-y px-2.5 py-1.5 typo-caption font-mono rounded-input bg-background/70 border border-primary/15 text-foreground outline-none focus:border-primary/40 placeholder:text-foreground/35"
+                className="w-full resize-y px-2.5 py-1.5 typo-caption font-mono rounded-input bg-background/70 border border-hair text-foreground outline-none focus:border-primary/40 placeholder:text-ink-3"
                 data-testid="skill-action-confirm-args"
               />
-              <div className="px-2.5 py-1.5 rounded-input bg-background/80 border border-primary/10 font-mono typo-caption text-foreground/70 overflow-x-auto">
-                <span className="text-foreground/30 select-none">❯ </span>
+              <div className="px-2.5 py-1.5 rounded-input bg-background/80 border border-hair font-mono typo-caption text-ink-2 overflow-x-auto">
+                <span className="text-ink-3 select-none">❯ </span>
                 <span className="text-primary">claude</span> "{skillCommand(skill.name, args)}"
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-primary/10 bg-secondary/10">
+        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-hair bg-surface-1">
           <button
             type="button"
             onClick={onClose}
-            className="px-2.5 py-1 rounded-interactive typo-caption text-foreground/60 hover:text-foreground hover:bg-primary/10 transition-colors"
+            className="px-2.5 py-1 rounded-interactive typo-caption text-ink-2 hover:text-foreground hover:bg-primary/10 transition-colors"
           >
             {t.common.cancel}
           </button>
@@ -105,7 +105,7 @@ export function SkillActionConfirm({ kind, skill, projectName, busy, preset = fa
             type="button"
             onClick={() => onConfirm(args)}
             disabled={busy}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-hair transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             data-testid="skill-action-confirm-cta"
           >
             <Icon className="w-3 h-3" aria-hidden />

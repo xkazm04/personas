@@ -33,17 +33,17 @@ export function DormantSkillsStrip({ findings, installedNames, onUse }: Props) {
 
   return (
     <section
-      className="mb-3 rounded-card border border-primary/15 bg-card/40 overflow-hidden"
+      className="mb-3 rounded-card border border-hair bg-surface-1 overflow-hidden"
       data-testid="dormant-skills-strip"
     >
-      <header className="px-3 py-2 border-b border-primary/10 flex items-center gap-2">
-        <Moon className="w-3.5 h-3.5 text-amber-300" aria-hidden />
+      <header className="px-3 py-2 border-b border-hair flex items-center gap-2">
+        <Moon className="w-3.5 h-3.5 text-ink-2" aria-hidden />
         <span className="typo-card-label">{dt.skills_dormant_heading}</span>
         <span className="typo-caption ml-auto" data-testid="dormant-skills-count">
           {live.length}
         </span>
       </header>
-      <ul className="divide-y divide-primary/5">
+      <ul className="divide-y divide-hair">
         {live.map((f) => (
           <li
             key={f.ideaId}
@@ -66,7 +66,7 @@ export function DormantSkillsStrip({ findings, installedNames, onUse }: Props) {
               type="button"
               onClick={() => onUse(f.skillName)}
               data-testid={`dormant-skill-use-${f.skillName}`}
-              className="shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive border border-primary/20 typo-caption text-foreground hover:bg-primary/10 focus-ring"
+              className="shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive border border-hair typo-caption text-foreground hover:bg-primary/10 focus-ring"
             >
               <Play className="w-3 h-3" aria-hidden />
               {dt.skills_dormant_use}

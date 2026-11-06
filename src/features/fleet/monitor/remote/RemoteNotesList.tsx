@@ -33,13 +33,13 @@ export function RemoteNotesList({ jobId, refreshKey }: { jobId: string; refreshK
 
   return (
     <section aria-label={t.monitor.remote_notes_title} data-testid="remote-notes">
-      <h4 className="flex items-center gap-1.5 typo-label text-primary">
+      <h4 className="flex items-center gap-1.5 typo-label text-ink-1">
         <ScrollText className="h-3.5 w-3.5" aria-hidden />
         {t.monitor.remote_notes_title}
       </h4>
       {loading && notes.length === 0 ? (
         <div className="mt-2 space-y-1.5" aria-hidden>
-          {[0, 1, 2].map((i) => <div key={i} className="h-5 rounded-interactive bg-secondary/20 animate-fade-in" />)}
+          {[0, 1, 2].map((i) => <div key={i} className="h-5 rounded-interactive bg-surface-1 animate-fade-in" />)}
         </div>
       ) : notes.length === 0 ? (
         <p className="mt-2 typo-caption text-foreground">{t.monitor.remote_notes_empty}</p>
@@ -47,7 +47,7 @@ export function RemoteNotesList({ jobId, refreshKey }: { jobId: string; refreshK
         <ol className="mt-2 space-y-1.5">
           {notes.map((note) => (
             <li key={`${note.jobId}-${note.seq}`} className="flex items-start gap-2.5" data-testid={`remote-note-${note.seq}`}>
-              <span className="mt-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-interactive bg-primary/10 px-1 typo-label tabular-nums text-primary">
+              <span className="mt-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-interactive bg-surface-1 px-1 typo-label num text-primary">
                 {note.seq}
               </span>
               <span className="min-w-0 flex-1">

@@ -103,7 +103,7 @@ export function MembersCell({ project, rosters, personaIndex, teamCounts, onEnte
           ? <PersonaStack ids={[...roster]} index={personaIndex} max={3} />
           : <Users className={`w-3.5 h-3.5 ${count === 0 ? 'opacity-40' : ''}`} />}
       >
-        <span className={`typo-caption tabular-nums ${count === 0 ? 'opacity-40' : ''}`}>{count}</span>
+        <span className={`typo-caption num ${count === 0 ? 'opacity-40' : ''}`}>{count}</span>
       </Button>
     </Tooltip>
   );
@@ -160,13 +160,12 @@ export function ProjectsBulkBar({ count, workspaces, selectedIds, archiving, onA
           moving the raw token would have entered a second file for the same
           match count. (A JSX comment is not a comment line to that rule's
           matcher, so naming the class in prose here would re-add the match.) */}
-      <span className="typo-caption text-status-warning tabular-nums">
+      <span className="typo-caption text-status-warning num">
         {count} {count === 1 ? dp.bulk_selected_one : dp.bulk_selected_many}
       </span>
       <MoveToWorkspaceButton workspaces={workspaces} selectedIds={selectedIds} onMoved={onClear} />
       <Button
-        variant="accent"
-        tone="warning"
+        variant="secondary"
         size="xs"
         icon={<Archive className="w-3 h-3" />}
         loading={archiving}

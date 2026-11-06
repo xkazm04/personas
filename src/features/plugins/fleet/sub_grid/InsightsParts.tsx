@@ -8,11 +8,11 @@ import type { ReactNode } from 'react';
  */
 export function Stat({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
-    <div className="rounded-card border border-primary/10 bg-secondary/20 px-2.5 py-2">
+    <div className="rounded-card border border-hair bg-surface-1 px-2.5 py-2">
       <div className="flex items-center gap-1 typo-caption mb-0.5">
         {icon}{label}
       </div>
-      <div className="typo-title-lg tabular-nums">{children}</div>
+      <div className="typo-title-lg num">{children}</div>
     </div>
   );
 }
@@ -22,7 +22,7 @@ export function TokenCell({ label, children }: { label: string; children: ReactN
   return (
     <div>
       <div className="typo-caption">{label}</div>
-      <div className="typo-body tabular-nums text-foreground">{children}</div>
+      <div className="typo-body num text-foreground">{children}</div>
     </div>
   );
 }

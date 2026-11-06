@@ -94,7 +94,7 @@ export function SessionRecapModal({
         </div>
         <h2 id={TITLE_ID} className="min-w-0 truncate typo-title">{label}</h2>
         <span
-          className={`ml-auto flex flex-shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 typo-caption ${meta.chip} ${meta.text}`}
+          className={`ml-auto flex flex-shrink-0 items-center gap-1.5 rounded-interactive px-2 py-0.5 typo-caption ${meta.chip} ${meta.text}`}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} aria-hidden />
           {t.plugins.fleet[meta.labelKey]}
@@ -113,7 +113,7 @@ export function SessionRecapModal({
             flight — never a spinner, and never in place of the fields below,
             which come from the session row and are already known. */}
         {loading && !summary && !fallback && (
-          <div aria-hidden className="h-16 w-full animate-pulse rounded-card bg-secondary/30" />
+          <div aria-hidden className="h-16 w-full rounded-card bg-surface-1" />
         )}
 
         {settledEmpty && (

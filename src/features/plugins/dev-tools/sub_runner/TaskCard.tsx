@@ -1,9 +1,10 @@
 import { memo, useState } from 'react';
 import {
-  ChevronDown, ChevronRight, Loader2, CheckCircle2, AlertCircle, Clock, Ban,
+  ChevronDown, ChevronRight,
   AlertTriangle, Target, RotateCcw, GitBranch, XCircle,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { StateMark, type StateMarkState } from '@/features/shared/components/display/StateMark';
 import { useSystemStore } from '@/stores/systemStore';
 import { openGoalsBoard } from '@/features/companions/athena/guidance/appActions';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -19,24 +20,17 @@ import type { DevTask } from '@/lib/bindings/DevTask';
 // Status styling
 // ---------------------------------------------------------------------------
 
-const STATUS_CONFIG: Record<TaskStatus, { icon: typeof Clock; className: string; pulse?: boolean }> = {
-  queued: { icon: Clock, className: 'bg-primary/10 text-foreground border-primary/15' },
-  running: { icon: Loader2, className: 'bg-blue-500/15 text-blue-400 border-blue-500/25', pulse: true },
-  completed: { icon: CheckCircle2, className: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' },
-  failed: { icon: AlertCircle, className: 'bg-red-500/15 text-red-400 border-red-500/25' },
-  cancelled: { icon: Ban, className: 'bg-primary/10 text-foreground border-primary/10' },
+const STATE_OF: Record<TaskStatus, StateMarkState> = {
+  queued: 'blank',
+  running: 'running',
+  completed: 'done',
+  failed: 'error',
+  cancelled: 'refused',
 };
 
 export function StatusBadge({ status }: { status: TaskStatus }) {
   const { t } = useTranslation();
-  const cfg = STATUS_CONFIG[status];
-  const Icon = cfg.icon;
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 typo-caption border ${cfg.className}`}>
-      <Icon className={`w-3 h-3 ${cfg.pulse ? 'animate-spin' : ''}`} />
-      {tokenLabel(t, 'execution', status)}
-    </span>
-  );
+  return <StateMark state={STATE_OF[status]} label={tokenLabel(t, 'execution', status)} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -53,7 +47,7 @@ function RetryLineageChip({ attempt, parentTitle }: { attempt: number; parentTit
   const { t, tx } = useTranslation();
   return (
     <span
-      className="inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full border text-sky-400 border-sky-500/25 bg-sky-500/10"
+      className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-interactive border border-hair-2 text-ink-2"
       title={parentTitle ? tx(t.plugins.dev_runner.retry_of, { title: parentTitle }) : undefined}
     >
       <GitBranch className="w-2.5 h-2.5" />
@@ -119,8 +113,8 @@ export const TaskCard = memo(function TaskCard({
   return (
     <div
       data-task-id={task.id}
-      className={`animate-fade-slide-in border rounded-modal overflow-hidden transition-colors ${
-        hasWarnings ? 'border-amber-500/25 hover:border-amber-500/35' : 'border-primary/10 hover:border-primary/20'
+      className={`animate-fade-slide-in border rounded-card overflow-hidden transition-colors ${
+        hasWarnings ? 'border-status-warning/40' : 'border-hair hover:border-hair-2'
       }`}
     >
       <div className="flex items-center gap-3 px-4 py-3">
@@ -134,7 +128,7 @@ export const TaskCard = memo(function TaskCard({
             )}
             {hasWarnings && (
               <span
-                className="inline-flex items-center gap-1 text-[9px] font-medium px-1.5 py-0.5 rounded-full border text-amber-400 border-amber-500/25 bg-amber-500/10"
+                className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-interactive border border-status-warning/40 text-status-warning"
                 title={contextWarnings.join('\n')}
               >
                 <AlertTriangle className="w-2.5 h-2.5" />
@@ -142,11 +136,7 @@ export const TaskCard = memo(function TaskCard({
               </span>
             )}
             {task.depth && task.depth !== 'quick' && (
-              <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border ${
-                task.depth === 'campaign'
-                  ? 'text-amber-400 border-amber-500/25 bg-amber-500/10'
-                  : 'text-violet-400 border-violet-500/25 bg-violet-500/10'
-              }`}>
+              <span className="typo-eyebrow text-ink-3">
                 {task.depth === 'campaign'
                   ? t.plugins.dev_runner.depth_campaign_label
                   : t.plugins.dev_runner.depth_deep_build_label}
@@ -158,10 +148,10 @@ export const TaskCard = memo(function TaskCard({
               {task.source_idea_id && (
                 sourceIdea ? (
                   <span className="inline-flex items-center gap-1.5 min-w-0">
-                    <span className="text-[10px] text-foreground shrink-0">{t.plugins.dev_runner.source_label}</span>
-                    {sourceAgentEmoji && <span className="text-[10px] shrink-0">{sourceAgentEmoji}</span>}
+                    <span className="typo-caption text-ink-3 shrink-0">{t.plugins.dev_runner.source_label}</span>
+                    {sourceAgentEmoji && <span className="typo-caption shrink-0">{sourceAgentEmoji}</span>}
                     <span
-                      className="text-[10px] text-foreground font-medium truncate max-w-[220px]"
+                      className="typo-caption text-ink-2 truncate max-w-[220px]"
                       title={sourceIdea.description ?? sourceIdea.title}
                     >
                       {sourceIdea.title}
@@ -169,7 +159,7 @@ export const TaskCard = memo(function TaskCard({
                     <ValueBadge idea={{ impact: sourceIdea.impact ?? 5, effort: sourceIdea.effort ?? 5, risk: sourceIdea.risk ?? 5 }} />
                   </span>
                 ) : (
-                  <p className="text-[10px] text-foreground">{t.plugins.dev_runner.source_label} {task.source_idea_id}</p>
+                  <p className="typo-caption text-ink-3">{t.plugins.dev_runner.source_label} {task.source_idea_id}</p>
                 )
               )}
               {goal && (
@@ -177,7 +167,7 @@ export const TaskCard = memo(function TaskCard({
                   type="button"
                   onClick={openGoalsBoard}
                   title={t.plugins.dev_runner.goal_pill_tooltip}
-                  className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border border-violet-500/25 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 hover:border-violet-500/40 transition-colors max-w-[200px]"
+                  className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-interactive border border-hair-2 text-ink-2 hover:border-primary hover:text-ink-1 transition-colors max-w-[200px]"
                 >
                   <Target className="w-2.5 h-2.5 shrink-0" />
                   <span className="truncate">{goal.title}</span>
@@ -190,13 +180,13 @@ export const TaskCard = memo(function TaskCard({
         {/* Real progress — no invented phase names */}
         {(status === 'running' || status === 'completed') && (
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-24 h-1.5 bg-primary/10 rounded-full overflow-hidden">
+            <div className="w-24 h-1.5 bg-surface-2 overflow-hidden">
               <div
-                className={`animate-fade-in h-full rounded-full ${status === 'completed' ? 'bg-emerald-400' : 'bg-blue-400'}`}
+                className={`animate-fade-in h-full ${status === 'completed' ? 'bg-status-success' : 'bg-primary'}`}
                 style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
               />
             </div>
-            <span className="text-[10px] text-foreground w-8 text-right tabular-nums">
+            <span className="typo-data text-ink-2 w-8 text-right">
               {Math.round(progress)}%
             </span>
           </div>
@@ -234,7 +224,7 @@ export const TaskCard = memo(function TaskCard({
       {/* Last streamed line (collapsed) */}
       {!expanded && hasOutput && (
         <div className="px-4 pb-2 -mt-1">
-          <p className="text-[10px] text-foreground truncate leading-relaxed font-mono">
+          <p className="typo-code text-ink-3 truncate">
             {outputLines[outputLines.length - 1]}
           </p>
         </div>
@@ -242,21 +232,21 @@ export const TaskCard = memo(function TaskCard({
 
       {/* Terminal error */}
       {task.error && status === 'failed' && (
-        <div className="mx-4 mb-2 rounded-card border border-red-500/20 bg-red-500/5 px-3 py-2">
-          <p className="text-[10px] text-red-300/80 font-mono line-clamp-3">{task.error}</p>
+        <div className="mx-4 mb-2 rounded-card border border-status-error/40 px-3 py-2">
+          <p className="typo-code text-status-error line-clamp-3">{task.error}</p>
         </div>
       )}
 
       {/* Context warnings banner */}
       {hasWarnings && expanded && (
-        <div className="mx-4 mb-2 rounded-card border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+        <div className="mx-4 mb-2 rounded-card border border-status-warning/40 px-3 py-2">
           <div className="flex items-center gap-1.5 mb-1">
-            <AlertTriangle className="w-3 h-3 text-amber-400" />
-            <span className="text-[10px] font-medium text-amber-400">{t.plugins.dev_tools.context_warnings_title}</span>
+            <AlertTriangle className="w-3 h-3 text-status-warning" />
+            <span className="typo-caption text-status-warning">{t.plugins.dev_tools.context_warnings_title}</span>
           </div>
           <ul className="space-y-0.5">
             {contextWarnings.map((w, i) => (
-              <li key={i} className="text-[10px] text-amber-300/70 font-mono">{w}</li>
+              <li key={i} className="typo-code text-ink-2">{w}</li>
             ))}
           </ul>
         </div>

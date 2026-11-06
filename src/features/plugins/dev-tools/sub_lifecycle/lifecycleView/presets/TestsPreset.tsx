@@ -45,7 +45,7 @@ function NotMeasured({ editor }: { editor: CommandsEditorState }) {
       <div className={`min-w-0 flex-1 ${RHYTHM.tight}`}>
         <p className={LT.title}>{dl.lc2_coverage_na_title}</p>
         <p className={LT.row}>{dl.lc2_coverage_na_body}</p>
-        <Button variant="accent" tone="info" size="sm" icon={<Plus className={GLYPH.sm} />} onClick={() => editor.open('coverage')} data-testid="lc2-coverage-add">
+        <Button variant="secondary" size="sm" icon={<Plus className={GLYPH.sm} />} onClick={() => editor.open('coverage')} data-testid="lc2-coverage-add">
           {dl.lc2_coverage_add}
         </Button>
       </div>

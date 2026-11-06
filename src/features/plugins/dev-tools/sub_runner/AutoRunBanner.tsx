@@ -110,20 +110,20 @@ export function AutoRunBanner({ projectId, refreshToken = 0 }: AutoRunBannerProp
   const interrupted = outcome === 'interrupted';
 
   return (
-    <div className="border border-violet-500/25 rounded-card px-3 py-2 bg-violet-500/5 flex items-center gap-3 typo-caption">
+    <div className="border border-hair rounded-card px-3 py-2 bg-surface-1 flex items-center gap-3 typo-caption">
       {running ? (
         <LoadingSpinner size="xs" />
       ) : cancelled ? (
-        <Ban className="w-3.5 h-3.5 text-foreground" />
+        <Ban className="w-3.5 h-3.5 text-ink-3" />
       ) : failed ? (
-        <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+        <AlertCircle className="w-3.5 h-3.5 text-status-error" />
       ) : interrupted ? (
         <AlertTriangle className="w-3.5 h-3.5 text-status-warning" />
       ) : (
-        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+        <CheckCircle2 className="w-3.5 h-3.5 text-status-success" />
       )}
 
-      <span className="text-violet-400 font-medium">
+      <span className="typo-eyebrow text-ink-2">
         {running ? dr.auto_run_progress : dr.auto_run_last_run}
       </span>
 

@@ -52,7 +52,7 @@ export function NoteThreadButton({
           data-testid={testId}
           data-unread={unread}
           className={`relative h-6 min-w-6 px-1 rounded-input flex items-center justify-center gap-1 transition-[opacity,color,background-color] focus-ring ${
-            unread > 0 ? 'text-primary bg-primary/10 hover:bg-primary/15' : 'text-foreground hover:bg-secondary/50'
+            unread > 0 ? 'text-primary bg-surface-1 hover:bg-primary/15' : 'text-foreground hover:bg-surface-1'
           } ${quiet ? 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100' : ''}`}
         >
           <MessagesSquare className="w-3.5 h-3.5" aria-hidden />

@@ -140,14 +140,14 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
       onClose={handleClose}
       titleId="goal-editor-title"
       maxWidthClass="max-w-xl"
-      panelClassName="bg-background border border-primary/10 rounded-2xl p-6 shadow-elevation-4 max-h-[88vh] overflow-y-auto"
+      panelClassName="bg-background border border-hair rounded-card p-6 shadow-elevation-4 max-h-[88vh] overflow-y-auto"
     >
       {/* Header — mirrors GoalDetailDrawer's treatment (w-10 violet chip +
           typo-section-title) so the edit modal reads as the same surface. */}
       <div className="flex items-start justify-between gap-3 mb-5">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-interactive bg-violet-500/10 border border-violet-500/25 flex items-center justify-center shrink-0">
-            <Target className="w-5 h-5 text-violet-400" />
+          <div className="w-10 h-10 rounded-interactive bg-surface-1 border border-hair flex items-center justify-center shrink-0">
+            <Target className="w-5 h-5 text-role-agent" />
           </div>
           <h2 id="goal-editor-title" className="typo-section-title">
             {isEdit ? dl.goal_edit_title : dl.goal_new_title}
@@ -172,7 +172,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             autoFocus
-            className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground focus-ring"
+            className="w-full px-3 py-2.5 typo-body bg-surface-1 border border-hair rounded-input text-foreground focus-ring"
           />
         </div>
 
@@ -186,7 +186,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground focus-ring resize-none"
+            className="w-full px-3 py-2.5 typo-body bg-surface-1 border border-hair rounded-input text-foreground focus-ring resize-none"
           />
         </div>
 
@@ -220,8 +220,8 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
                     onClick={() => setTargetChoice(selected ? null : c)}
                     className={`flex-1 px-2 py-2 typo-caption rounded-input border transition-colors focus-ring ${
                       selected
-                        ? 'border-violet-500/40 bg-violet-500/15 text-violet-300'
-                        : 'border-primary/10 bg-secondary/40 text-foreground hover:bg-secondary/60'
+                        ? 'border-hair bg-surface-1 text-role-agent'
+                        : 'border-hair bg-surface-1 text-foreground hover:bg-surface-1'
                     }`}
                   >
                     {label}
@@ -253,7 +253,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-primary/10">
+      <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-hair">
         {/* Delete (edit mode only) with inline confirm */}
         <div>
           {isEdit && (
@@ -275,8 +275,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal, onSaved,
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={handleClose}>{t.common.cancel}</Button>
           <Button
-            variant="accent"
-            tone="agent"
+            variant="secondary"
             size="sm"
             icon={isEdit ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
             disabled={!title.trim() || saving}

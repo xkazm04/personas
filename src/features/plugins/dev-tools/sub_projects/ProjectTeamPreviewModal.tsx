@@ -137,10 +137,10 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
       onClose={onClose}
       titleId="project-team-preview-title"
       size="md"
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col max-h-[80vh]"
+      panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden flex flex-col max-h-[80vh]"
     >
       <div
-        className="px-5 pt-5 pb-3 border-b border-primary/10 flex items-center justify-between"
+        className="px-5 pt-5 pb-3 border-b border-hair flex items-center justify-between"
         style={{ borderLeft: `3px solid ${colorWithAlpha(teamColor, 0.8)}` }}
       >
         <div className="flex items-center gap-2.5 min-w-0">
@@ -148,7 +148,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
           <div className="min-w-0">
             <h2
               id="project-team-preview-title"
-              className="typo-heading text-foreground/90 truncate"
+              className="typo-heading text-ink-2 truncate"
             >
               {team.name}
             </h2>
@@ -205,13 +205,13 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                 const lastRun = persona ? personaLastRun[persona.id] : null;
                 const personaGroup = persona?.home_team_id ? groupMetaById.get(persona.home_team_id) : null;
                 return (
-                  <li key={m.id} className="rounded-card bg-secondary/30 border border-primary/10">
+                  <li key={m.id} className="rounded-card bg-surface-1 border border-hair">
                     <button
                       type="button"
                       onClick={() => setExpandedMemberId(isExpanded ? null : m.id)}
                       aria-expanded={isExpanded}
                       disabled={!persona}
-                      className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-secondary/50 disabled:hover:bg-transparent transition-colors text-left rounded-card"
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-surface-1 disabled:hover:bg-transparent transition-colors text-left rounded-card"
                     >
                       <PersonaIcon
                         icon={persona?.icon ?? null}
@@ -220,7 +220,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                         frameSize="sm"
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="typo-body text-foreground/90 truncate">
+                        <div className="typo-body text-ink-2 truncate">
                           {persona?.name ?? (
                             <span className="text-foreground">
                               {t.plugins.dev_projects.team_preview_unknown_persona}
@@ -238,7 +238,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                       )}
                     </button>
                     {isExpanded && persona && (
-                      <div className="px-3 pb-3 pt-1 space-y-2 border-t border-primary/10">
+                      <div className="px-3 pb-3 pt-1 space-y-2 border-t border-hair">
                         {persona.description && (
                           <p className="typo-caption text-foreground">
                             {persona.description}
@@ -247,15 +247,15 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 typo-caption">
                           {/* Status pill — enabled vs disabled */}
                           <span
-                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border ${
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive border ${
                               persona.enabled
-                                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-                                : 'border-foreground/20 bg-secondary/40 text-foreground/60'
+                                ? 'border-hair bg-surface-1 text-status-success'
+                                : 'border-foreground/20 bg-surface-1 text-ink-2'
                             }`}
                           >
                             <span
                               className={`w-1.5 h-1.5 rounded-full ${
-                                persona.enabled ? 'bg-emerald-400' : 'bg-foreground/30'
+                                persona.enabled ? 'bg-status-success' : 'bg-foreground/30'
                               }`}
                             />
                             {persona.enabled
@@ -265,7 +265,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                           {/* Group binding */}
                           {personaGroup && (
                             <span
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border"
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive border"
                               style={{
                                 backgroundColor: colorWithAlpha(personaGroup.color || '#6366f1', 0.1),
                                 borderColor: colorWithAlpha(personaGroup.color || '#6366f1', 0.4),
@@ -279,10 +279,10 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                           {/* Health badge — only when degraded/failing matters */}
                           {health && health.status !== 'healthy' && (
                             <span
-                              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border ${
+                              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive border ${
                                 health.status === 'failing'
-                                  ? 'border-red-500/40 bg-red-500/10 text-red-300'
-                                  : 'border-amber-500/40 bg-amber-500/10 text-amber-300'
+                                  ? 'border-hair bg-surface-1 text-status-error'
+                                  : 'border-hair bg-surface-2 text-status-warning'
                               }`}
                             >
                               <span className="capitalize">{health.status}</span>
@@ -313,7 +313,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                           <button
                             type="button"
                             onClick={() => handleOpenInEditor(persona.id)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20 typo-caption transition-colors"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card border border-hair bg-surface-1 text-role-agent hover:bg-role-agent/20 typo-caption transition-colors"
                           >
                             <ExternalLink className="w-3 h-3" />
                             {t.plugins.dev_projects.team_preview_member_open}
@@ -342,12 +342,12 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
             )}
             {isPulsing && (
               <span
-                className="ml-auto inline-flex items-center gap-1.5 typo-caption text-emerald-400/80"
+                className="ml-auto inline-flex items-center gap-1.5 typo-caption text-status-success"
                 title={t.plugins.dev_projects.team_preview_live_label}
               >
                 <span className="relative flex w-2 h-2">
-                  <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400/70 opacity-70 animate-ping" />
-                  <span className="relative inline-flex w-2 h-2 rounded-full bg-emerald-400" />
+                  <span className="absolute inline-flex w-full h-full rounded-full bg-status-success/70 opacity-70 animate-ping" />
+                  <span className="relative inline-flex w-2 h-2 rounded-full bg-status-success" />
                 </span>
                 {t.plugins.dev_projects.team_preview_live_label}
               </span>
@@ -370,16 +370,16 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                 return (
                   <li
                     key={r.id}
-                    className="flex items-center gap-3 px-2.5 py-1.5 rounded-card bg-secondary/30 border border-primary/10"
+                    className="flex items-center gap-3 px-2.5 py-1.5 rounded-card bg-surface-1 border border-hair"
                   >
                     <span
                       className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                         r.status === 'running'
-                          ? 'bg-blue-400 animate-pulse'
+                          ? 'bg-status-info animate-pulse'
                           : r.status === 'failed'
-                            ? 'bg-red-400'
+                            ? 'bg-status-error'
                             : r.status === 'completed'
-                              ? 'bg-emerald-400'
+                              ? 'bg-status-success'
                               : 'bg-foreground/30'
                       }`}
                     />
@@ -391,7 +391,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                     </span>
                     {isFinished && r.error_message && (
                       <span
-                        className="typo-caption text-red-400/80 truncate max-w-[40%]"
+                        className="typo-caption text-status-error truncate max-w-[40%]"
                         title={r.error_message}
                       >
                         {r.error_message}
@@ -405,7 +405,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
         </section>
       </div>
 
-      <div className="px-5 py-3 border-t border-primary/10 flex items-center justify-end">
+      <div className="px-5 py-3 border-t border-hair flex items-center justify-end">
         <Button variant="ghost" size="sm" onClick={onClose}>
           {t.common.close}
         </Button>

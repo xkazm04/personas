@@ -30,8 +30,7 @@ export function LifecycleProjectPicker({ allowNone = true }: LifecycleProjectPic
   if (projects.length === 0) {
     return (
       <Button
-        variant="accent"
-        tone="warning"
+        variant="secondary"
         size="sm"
         icon={<AlertCircle className="w-4 h-4" />}
         onClick={() => openProjectManager()}
@@ -50,7 +49,7 @@ export function LifecycleProjectPicker({ allowNone = true }: LifecycleProjectPic
         <Tooltip content={activeProject.github_url ?? t.plugins.dev_tools.no_repo}>
           <div
             className={`flex items-center gap-1.5 px-2 py-1 rounded-interactive border shrink-0 ${
-              hasGithub ? 'bg-status-success/10 border-status-success/25' : 'bg-status-warning/5 border-status-warning/20'
+              hasGithub ? 'bg-surface-1 border-hair' : 'bg-surface-1 border-hair'
             }`}
           >
             {hasGithub ? (
@@ -60,7 +59,7 @@ export function LifecycleProjectPicker({ allowNone = true }: LifecycleProjectPic
               </>
             ) : (
               <>
-                <FolderKanban className="w-3.5 h-3.5 text-status-warning shrink-0" />
+                <FolderKanban className="w-3.5 h-3.5 text-ink-2 shrink-0" />
                 <span className={LT.meta}>{t.plugins.dev_tools.no_repo}</span>
               </>
             )}

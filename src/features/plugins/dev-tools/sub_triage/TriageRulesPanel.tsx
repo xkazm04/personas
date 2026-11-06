@@ -67,7 +67,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
   };
 
   return (
-    <div className="border border-border/20 rounded-modal bg-secondary/20 overflow-hidden">
+    <div className="border border-border/20 rounded-modal bg-surface-1 overflow-hidden">
       {/* A disclosure header, not a Button: a full-width row that opens the panel body. */}
       <button
         type="button"

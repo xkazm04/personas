@@ -72,7 +72,7 @@ function TraceEmberCellImpl({ cell, accent, onClick }: TraceEmberCellProps) {
         type="button"
         onClick={onClick}
         aria-label={tierLabel}
-        className="flex items-center justify-center rounded-interactive hover:bg-secondary/60 transition-colors"
+        className="flex items-center justify-center rounded-interactive hover:bg-surface-1 transition-colors"
       >
         {body}
       </button>

@@ -15,15 +15,15 @@ import { formatAgo } from './relativeAgo';
  */
 
 const STATE_BAR: Record<FleetSessionState, { bg: string; labelKey: FleetLabelKey }> = {
-  queued: { bg: 'bg-slate-400', labelKey: 'state_queued' },
-  spawning: { bg: 'bg-cyan-400', labelKey: 'state_spawning' },
-  running: { bg: 'bg-blue-400', labelKey: 'state_working' },
-  awaiting_input: { bg: 'bg-violet-400', labelKey: 'state_awaiting_input' },
-  idle: { bg: 'bg-emerald-400', labelKey: 'state_idle' },
-  stale: { bg: 'bg-orange-400', labelKey: 'state_stale' },
-  finished: { bg: 'bg-teal-400', labelKey: 'state_finished' },
-  hibernated: { bg: 'bg-indigo-400', labelKey: 'state_hibernated' },
-  exited: { bg: 'bg-zinc-500', labelKey: 'state_exited' },
+  queued: { bg: 'bg-surface-2', labelKey: 'state_queued' },
+  spawning: { bg: 'bg-status-info', labelKey: 'state_spawning' },
+  running: { bg: 'bg-status-info', labelKey: 'state_working' },
+  awaiting_input: { bg: 'bg-role-agent', labelKey: 'state_awaiting_input' },
+  idle: { bg: 'bg-status-success', labelKey: 'state_idle' },
+  stale: { bg: 'bg-status-warning', labelKey: 'state_stale' },
+  finished: { bg: 'bg-status-success', labelKey: 'state_finished' },
+  hibernated: { bg: 'bg-role-agent', labelKey: 'state_hibernated' },
+  exited: { bg: 'bg-surface-2', labelKey: 'state_exited' },
   expired: { bg: 'bg-stone-500', labelKey: 'state_expired' },
 };
 

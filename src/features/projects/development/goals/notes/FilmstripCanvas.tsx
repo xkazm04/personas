@@ -76,13 +76,13 @@ function FilmstripRow({
   return (
     <div
       data-testid={`progress-row-${row.projectId}`}
-      className="flex items-stretch border-b border-primary/5 last:border-b-0 transition-colors hover:bg-primary/[0.03]"
+      className="flex items-stretch border-b border-hair last:border-b-0 transition-colors hover:bg-primary/[0.03]"
       onContextMenu={onContextMenu}
       onKeyDown={onKeyDown}
       tabIndex={-1}
     >
       <div
-        className="shrink-0 px-3 py-2.5 flex flex-col justify-center min-w-0 border-r border-primary/5"
+        className="shrink-0 px-3 py-2.5 flex flex-col justify-center min-w-0 border-r border-hair"
         style={{ width: leftWidth }}
       >
         <Tooltip content={row.name}>
@@ -106,7 +106,7 @@ function FilmstripRow({
         <div className="flex flex-wrap items-center content-center gap-1.5" style={{ minHeight: NODE_PX + 4 }}>
           {frames(row.past)}
           <Tooltip content={dl.progress_today}>
-            <span aria-hidden="true" className="w-0.5 rounded-full bg-violet-400/70 mx-0.5" style={{ height: NODE_PX }} />
+            <span aria-hidden="true" className="w-0.5 rounded-full bg-role-agent/70 mx-0.5" style={{ height: NODE_PX }} />
           </Tooltip>
           {frames(row.future)}
           {row.undated.some((n) => !model.hiddenIds.has(n.goal.id)) && (

@@ -97,7 +97,7 @@ export function DrawerAutonomy({ personaId, onNavigate }: { personaId: string; o
         </Tooltip>
       )}
 
-      <span className="typo-caption tabular-nums text-foreground">
+      <span className="typo-caption num text-foreground">
         {row.attentionCharters} {m.orch_col_charters}
       </span>
 

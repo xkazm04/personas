@@ -152,7 +152,7 @@ export function ActLog({ log, filter, onFilter, rows, selected, onSelect, mandat
                     ...(fleet ? [<ProjectName key="p" projectId={projectOf?.(a.charterId) ?? null} mirror={mirrorOf?.(a.charterId)}>{mandateName!(a.charterId)}</ProjectName>] : []),
                     <Actor key="b" actor={a.actor} device={a.originDevice} />,
                     <Undo key="u" act={a} />,
-                    <RelativeTime key="t" timestamp={a.createdAt} className="typo-data k-regular k-quiet tabular-nums" />,
+                    <RelativeTime key="t" timestamp={a.createdAt} className="typo-data k-regular k-quiet num" />,
                   ]}
                   state={i === selected ? 'selected' : undefined}
                   onPress={() => onSelect(i)}

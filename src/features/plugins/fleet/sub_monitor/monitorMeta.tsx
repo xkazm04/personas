@@ -130,7 +130,7 @@ export function MicroStat({
       title={title}
     >
       <Icon className="w-3 h-3" aria-hidden="true" />
-      <span className="font-data" style={{ fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+      <span className="font-data" style={{ fontVariantNumeric: 'num' }}>{value}</span>
     </span>
   );
 }
@@ -176,7 +176,7 @@ export function TerminalStats({ terminal, className }: { terminal: MonitorTermin
 export function CostMeter({ t, className }: { t: MonitorTerminal; className?: string }) {
   const ratio = costRatio(t);
   return (
-    <div className={`h-0.5 w-full bg-secondary/40 overflow-hidden ${className ?? ''}`} aria-hidden="true">
+    <div className={`h-0.5 w-full bg-surface-1 overflow-hidden ${className ?? ''}`} aria-hidden="true">
       <div
         className={`h-full ${costToneBg(ratio)} opacity-70 transition-[width] duration-300`}
         style={{ width: `${Math.max(ratio * 100, 4)}%` }}

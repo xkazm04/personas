@@ -70,7 +70,7 @@ function SignalIsland({
             aria-hidden
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="absolute left-1/2 h-[38px] -translate-x-1/2 rounded-full border border-primary/10 bg-secondary/70 shadow-elevation-1"
+            className="absolute left-1/2 h-[38px] -translate-x-1/2 rounded-full border border-hair bg-surface-1 shadow-elevation-1"
             style={{ top: 5 * (i + 1), width: `${92 - i * 6}%`, zIndex: -1 - i, borderBottomColor: mix(authorAccent(m), 70) }}
           />
         ))}
@@ -97,7 +97,7 @@ function SignalIsland({
 
         {/* The head's inline verbs (a Notepad verdict) — always in reach. */}
         {headActions && (
-          <div className="mx-6 -mt-px rounded-b-card border border-t-0 border-primary/15 bg-background/95 px-3 py-2 shadow-elevation-2">
+          <div className="mx-6 -mt-px rounded-b-card border border-t-0 border-hair bg-background/95 px-3 py-2 shadow-elevation-2">
             {headActions}
           </div>
         )}
@@ -122,7 +122,7 @@ function SignalIsland({
                   <button
                     type="button"
                     onClick={onDismissAll}
-                    className="typo-caption rounded-full border border-primary/15 bg-background/90 px-2.5 py-1 text-primary transition-colors hover:text-primary/80"
+                    className="typo-caption rounded-interactive border border-hair bg-background/90 px-2.5 py-1 text-primary transition-colors hover:text-primary/80"
                   >
                     {t.monitor.live_clear_all}
                   </button>

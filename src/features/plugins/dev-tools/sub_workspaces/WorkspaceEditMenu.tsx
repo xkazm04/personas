@@ -47,7 +47,7 @@ export function WorkspaceEditMenu({ ws, onClose, className = '' }: {
   return (
     <div
       ref={ref}
-      className={`z-40 w-[236px] p-2.5 rounded-card border border-primary/20 bg-secondary/95 backdrop-blur-sm shadow-elevation-4 space-y-2 ${className}`}
+      className={`z-40 w-[236px] p-2.5 rounded-card border border-hair bg-surface-1 backdrop-blur-sm shadow-elevation-4 space-y-2 ${className}`}
       onClick={(e) => e.stopPropagation()}
       data-testid={`workspace-edit-${ws.id}`}
     >
@@ -60,7 +60,7 @@ export function WorkspaceEditMenu({ ws, onClose, className = '' }: {
           if (e.key === 'Enter') { commitName(); onClose(); }
         }}
         placeholder={COPY.namePlaceholder}
-        className="w-full px-2.5 py-1.5 typo-caption rounded-input bg-background/70 border border-primary/15 text-foreground outline-none focus:border-primary/40"
+        className="w-full px-2.5 py-1.5 typo-caption rounded-input bg-background/70 border border-hair text-foreground outline-none focus:border-primary/40"
       />
       <div className="flex items-center gap-1.5 flex-wrap">
         {WORKSPACE_COLORS.map((c) => (

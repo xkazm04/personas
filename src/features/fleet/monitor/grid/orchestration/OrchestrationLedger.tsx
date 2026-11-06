@@ -36,12 +36,12 @@ import type { DispatchPreviewView } from '@/lib/bindings/DispatchPreviewView';
 import { countHeld, type DispatchPreviewState } from './useDispatchPreview';
 import { LaneChip, PersonaIdentity, VerdictChip } from './parts';
 
-const TH = 'px-3 py-2 text-left typo-caption font-mono uppercase tracking-widest text-foreground';
+const TH = 'px-3 py-2 text-left typo-eyebrow text-ink-3';
 const TD = 'px-3 py-2 align-middle typo-caption text-foreground';
 
 function Counter({ value, label, tone }: { value: number; label: string; tone: string }) {
   return (
-    <div className="flex flex-col rounded-card border border-border bg-secondary/10 px-4 py-3">
+    <div className="flex flex-col rounded-card border border-border bg-surface-1 px-4 py-3">
       <span className={`typo-data-lg ${tone}`}>{value}</span>
       <span className="typo-label text-foreground">{label}</span>
     </div>
@@ -67,7 +67,7 @@ function OrchestrationRow({
   const cell = `${TD} ${enabled ? '' : 'opacity-50'}`;
   return (
     <tr
-      className="group border-t border-border/60 bg-background hover:bg-secondary/20"
+      className="group border-t border-border/60 bg-background hover:bg-surface-1"
       data-testid={`ledger-row-${row.personaId}`}
       data-enabled={enabled}
     >
@@ -99,8 +99,8 @@ function OrchestrationRow({
       <td className={`${cell} min-w-[12rem]`}>
         <PersonaIdentity row={row} dense />
       </td>
-      <td className={`${cell} tabular-nums`}>{row.charters}</td>
-      <td className={`${cell} tabular-nums`}>
+      <td className={`${cell} num`}>{row.charters}</td>
+      <td className={`${cell} num`}>
         {tx(s.orch_interval, { minutes: row.intervalMinutes })}
         {row.selfPaced && <span className="ml-1 opacity-60">{s.orch_self_paced}</span>}
       </td>
@@ -175,7 +175,7 @@ export function OrchestrationLedger({ state, view }: { state: DispatchPreviewSta
       </div>
       <div className="overflow-x-auto rounded-card border border-border">
         <table className="w-full border-collapse">
-          <thead className="bg-secondary/20">
+          <thead className="bg-surface-1">
             <tr>
               <th className={TH}>{s.orch_col_active}</th>
               <th className={TH}>{s.orch_col_persona}</th>

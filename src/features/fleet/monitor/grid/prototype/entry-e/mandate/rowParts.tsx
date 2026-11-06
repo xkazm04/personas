@@ -108,7 +108,7 @@ export function SpendFigure({ used, cap }: { used: number | null; cap: number | 
   if (cap === null) return <span className="typo-caption">{m.ml_steward_no_cap}</span>;
   if (used === null) return <span className="typo-caption">{m.ml_steward_spend_unknown}</span>;
   return (
-    <span className="typo-data tabular-nums text-foreground">
+    <span className="typo-data num text-foreground">
       <Numeric value={used} unit="usd" /><span className="typo-caption"> / <Numeric value={cap} unit="usd" /></span>
     </span>
   );
@@ -127,5 +127,5 @@ export function SpendCell({ used, cap }: { used: number | null; cap: number | nu
 /** A count in figures, amber while it asks something of the operator. */
 export function Figure({ n, warn = false, none }: { n: number | null; warn?: boolean; none: string }) {
   if (n === null) return <span className="typo-caption">{none}</span>;
-  return <span className={`typo-data tabular-nums ${warn && n > 0 ? 'text-status-warning' : 'text-foreground'}`}><Numeric value={n} /></span>;
+  return <span className={`typo-data num ${warn && n > 0 ? 'text-status-warning' : 'text-foreground'}`}><Numeric value={n} /></span>;
 }

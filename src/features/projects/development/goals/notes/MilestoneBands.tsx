@@ -88,11 +88,11 @@ function BandHeader({ card }: { card: MilestoneCard }) {
           </span>
         )}
         <GoalSegments goals={goals} />
-        <span className="typo-body text-foreground tabular-nums">
+        <span className="typo-body text-foreground num">
           {progress === null ? dl.layers_no_goals : tx(dl.layers_goals_done, { done: doneCount, total: goals.length })}
         </span>
         {progress !== null && (
-          <span className={`typo-heading tabular-nums ${meta.tone.text}`}>{formatPct(progress, language)}</span>
+          <span className={`typo-heading num ${meta.tone.text}`}>{formatPct(progress, language)}</span>
         )}
       </div>
     </header>
@@ -106,7 +106,7 @@ function UnassignedHeader({ count }: { count: number }) {
     <header className="flex items-center gap-3" data-testid="layers-notes-band-head-unassigned">
       <h3 className="typo-section-title m-0">{dl.layers_unassigned}</h3>
       <span className="typo-body text-foreground">{dl.layers_unassigned_hint}</span>
-      <span className="ml-auto typo-body text-foreground tabular-nums">{tx(dl.layers_goal_count, { count })}</span>
+      <span className="ml-auto typo-body text-foreground num">{tx(dl.layers_goal_count, { count })}</span>
     </header>
   );
 }

@@ -40,7 +40,7 @@ function RingedAvatar({ m, size }: { m: LiveMessage; size: 'sm' | 'md' }) {
 
 function EventChip({ m }: { m: LiveMessage }) {
   return (
-    <span className={`typo-label flex-shrink-0 rounded-full border border-primary/10 bg-secondary/50 px-2 ${m.tone}`}>
+    <span className={`typo-label flex-shrink-0 rounded-interactive border border-hair bg-surface-1 px-2 ${m.tone}`}>
       {m.event}
     </span>
   );
@@ -63,7 +63,7 @@ function ActCluster({ m, onDismiss }: { m: LiveMessage; onDismiss: (id: string) 
           type="button"
           onClick={() => onDismiss(m.id)}
           aria-label={t.monitor.live_dismiss}
-          className="flex h-6 w-6 items-center justify-center rounded-full border border-primary/15 bg-background/80 text-foreground transition-colors hover:border-status-success/40 hover:text-status-success focus-visible:text-status-success"
+          className="flex h-6 w-6 items-center justify-center rounded-full border border-hair bg-background/80 text-foreground transition-colors hover:border-status-success/40 hover:text-status-success focus-visible:text-status-success"
         >
           <Check className="h-3.5 w-3.5" />
         </button>
@@ -105,7 +105,7 @@ export function IslandCapsule({ m, waiting, remainingMs, lifetimeMs, paused, onD
       data-testid={m.source === 'notepad' ? `live-stack-notepad-${m.noteId}` : undefined}
       data-source={m.source ?? 'channel'}
       className={`relative flex h-[38px] w-full items-center gap-2 overflow-hidden rounded-full border bg-background/95 pl-1.5 pr-1.5 shadow-elevation-3 backdrop-blur-md ${
-        m.alert ? 'border-status-warning/45' : 'border-primary/15'
+        m.alert ? 'border-status-warning/45' : 'border-hair'
       }`}
       style={{ backgroundImage: `linear-gradient(90deg, ${mix(accent, 22)}, transparent 55%)` }}
     >
@@ -123,7 +123,7 @@ export function IslandCapsule({ m, waiting, remainingMs, lifetimeMs, paused, onD
         {m.message && <span className="typo-body min-w-0 flex-1 truncate text-foreground">{m.message}</span>}
       </button>
       {waiting > 0 && (
-        <span className="typo-label flex-shrink-0 rounded-full bg-primary/15 px-1.5 text-primary">+{waiting}</span>
+        <span className="typo-label flex-shrink-0 rounded-interactive bg-primary/15 px-1.5 text-primary">+{waiting}</span>
       )}
       <ActCluster m={m} onDismiss={onDismiss} />
       <Lifeline accent={accent} remainingMs={remainingMs} lifetimeMs={lifetimeMs} paused={paused} />
@@ -147,7 +147,7 @@ export function IslandCard({ m, index, withActions, reducedMotion, onDismiss, on
       animate={{ opacity: 1, y: 0, transition: { delay: reducedMotion ? 0 : index * 0.04 } }}
       exit={{ opacity: 0 }}
       className={`relative flex flex-wrap items-start gap-3 overflow-hidden rounded-card border bg-background/95 p-3 shadow-elevation-2 ${
-        m.alert ? 'border-status-warning/40' : 'border-primary/12'
+        m.alert ? 'border-status-warning/40' : 'border-hair'
       }`}
       style={{ backgroundImage: `linear-gradient(135deg, ${mix(accent, 14)}, transparent 45%)` }}
     >

@@ -17,7 +17,7 @@ export function FleetRunSessionRow({ session }: { session: FleetRunSession }) {
   return (
     <li
       data-testid={`fleet-run-session-${session.sessionId}`}
-      className="flex flex-col gap-1 rounded-card border border-primary/10 bg-secondary/25 px-3 py-2"
+      className="flex flex-col gap-1 rounded-card border border-hair bg-surface-1 px-3 py-2"
     >
       <div className="flex items-center gap-2">
         <span
@@ -31,12 +31,12 @@ export function FleetRunSessionRow({ session }: { session: FleetRunSession }) {
       </div>
 
       {session.summary ? (
-        <p className="typo-caption text-foreground/90">{session.summary}</p>
+        <p className="typo-caption text-ink-2">{session.summary}</p>
       ) : (
         <p className="typo-caption opacity-60">{t.plugins.fleet.harvest_no_summary}</p>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 typo-caption tabular-nums opacity-70">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 typo-caption num opacity-70">
         <span>{session.projectLabel}</span>
         <Tooltip content={t.plugins.fleet.harvest_files_tooltip}>
           <span>{`${session.filesTouched} ${t.plugins.fleet.harvest_files}`}</span>
