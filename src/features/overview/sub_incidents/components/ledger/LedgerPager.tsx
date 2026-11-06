@@ -39,7 +39,7 @@ export function LedgerPager({
 
   return (
     <div
-      className={`flex flex-wrap items-center justify-between gap-3 border-t border-primary/10 bg-secondary/10 ${
+      className={`flex flex-wrap items-center justify-between gap-3 border-t border-hair bg-surface-1 ${
         dense ? 'px-3 py-1.5' : 'px-4 py-2.5'
       }`}
     >

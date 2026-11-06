@@ -66,7 +66,7 @@ export function TeamPublishButton({ teamId }: { teamId: string; teamName?: strin
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full right-0 mt-2 w-80 bg-background border border-primary/15 rounded-card shadow-elevation-3 p-3 z-50"
+            className="absolute top-full right-0 mt-2 w-80 bg-background border border-hair rounded-card shadow-elevation-3 p-3 z-50"
           >
             <div className="flex items-start justify-between gap-2">
               <p className="typo-heading text-foreground">{s.team_publish_title}</p>
@@ -85,7 +85,7 @@ export function TeamPublishButton({ teamId }: { teamId: string; teamName?: strin
                 readOnly
                 value={shareUrl}
                 onFocus={(e) => e.currentTarget.select()}
-                className="flex-1 min-w-0 bg-secondary/40 border border-primary/10 rounded-input px-2 py-1.5 typo-body text-foreground"
+                className="flex-1 min-w-0 bg-surface-1 border border-hair rounded-input px-2 py-1.5 typo-body text-foreground"
                 data-testid="team-publish-url"
               />
               <CopyButton text={shareUrl} label={t.common.copy} />

@@ -288,8 +288,8 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
               aria-pressed={active}
               className={`typo-label rounded-card px-2 py-1 border transition-colors ${
                 active
-                  ? 'bg-primary/10 text-foreground border-primary/25'
-                  : 'text-muted-foreground border-transparent hover:bg-primary/5'
+                  ? 'bg-primary/10 text-foreground border-hair'
+                  : 'text-ink-3 border-transparent hover:bg-surface-2'
               }`}
             >
               {label}
@@ -306,15 +306,15 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
           aria-label={r.backlog_levels_filter}
           className={`flex items-center gap-1 typo-label rounded-card px-2 py-1 border transition-colors ${
             levelFilterActive
-              ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-              : 'text-muted-foreground border-primary/15 hover:bg-primary/5'
+              ? 'bg-status-warning/15 text-status-warning border-status-warning/30'
+              : 'text-ink-3 border-hair hover:bg-surface-2'
           }`}
         >
           <SlidersHorizontal className="w-3.5 h-3.5" aria-hidden />
           {r.backlog_levels_filter}
         </button>
         {levelsOpen && (
-          <div className="absolute right-0 top-full mt-1 z-30 w-64 p-3 rounded-card border border-primary/15 bg-background shadow-elevation-3">
+          <div className="absolute right-0 top-full mt-1 z-30 w-64 p-3 rounded-card border border-hair bg-background shadow-elevation-3">
             <EffortRiskFilter
               effortRange={effortRange}
               riskRange={riskRange}
@@ -345,10 +345,10 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
               type="button"
               onClick={() => setStatus(s)}
               aria-pressed={active}
-              className={`typo-label rounded-full px-2.5 py-1 border transition-colors ${
+              className={`typo-label rounded-interactive px-2.5 py-1 border transition-colors ${
                 active
-                  ? 'bg-primary/15 text-foreground border-primary/30'
-                  : 'bg-primary/5 text-muted-foreground border-primary/10 hover:bg-primary/10'
+                  ? 'bg-primary/15 text-foreground border-hair'
+                  : 'bg-surface-1 text-ink-3 border-hair hover:bg-primary/10'
               }`}
             >
               {statusLabel[s]}
@@ -360,7 +360,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
           <button
             type="button"
             onClick={sendToAthena}
-            className="flex items-center gap-1.5 typo-label rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/15 transition-colors"
+            className="flex items-center gap-1.5 typo-label rounded-interactive border border-hair bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/15 transition-colors"
           >
             <Bot className="w-3.5 h-3.5" aria-hidden />
             {r.backlog_athena_send}
@@ -369,7 +369,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
             type="button"
             onClick={() => void executeAccepted()}
             disabled={dispatching}
-            className="flex items-center gap-1.5 typo-label rounded-interactive border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-emerald-300 hover:bg-emerald-500/15 disabled:opacity-40 transition-colors"
+            className="flex items-center gap-1.5 typo-label rounded-interactive border border-status-success/25 bg-status-success/10 px-2.5 py-1 text-status-success hover:bg-status-success/15 disabled:opacity-40 transition-colors"
           >
             <Play className="w-3.5 h-3.5" aria-hidden />
             {r.backlog_execute_accepted}
@@ -400,7 +400,7 @@ export function BacklogPanel({ queue }: { queue: BacklogQueue }) {
               type="button"
               onClick={queue.loadMore}
               disabled={queue.loadingMore}
-              className="typo-label rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/15 disabled:opacity-40 transition-colors"
+              className="typo-label rounded-interactive border border-hair bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/15 disabled:opacity-40 transition-colors"
             >
               {tx(r.backlog_load_more, { count: queue.rows.length })}
             </button>
@@ -510,7 +510,7 @@ const BACKLOG_GHOST_TITLE_WIDTHS = ['w-48', 'w-36', 'w-44', 'w-40'];
 function BacklogGhostRows() {
   return (
     <div className="flex h-full min-h-0 gap-4" aria-hidden="true">
-      <div className="w-60 shrink-0 rounded-card border border-primary/10 p-2 space-y-2">
+      <div className="w-60 shrink-0 rounded-card border border-hair p-2 space-y-2">
         {Array.from({ length: 5 }).map((_, i) => (
           <span
             key={i}
@@ -519,13 +519,13 @@ function BacklogGhostRows() {
           />
         ))}
       </div>
-      <ul className="flex-1 min-w-0 overflow-hidden rounded-card border border-primary/10">
+      <ul className="flex-1 min-w-0 overflow-hidden rounded-card border border-hair">
         {Array.from({ length: 8 }).map((_, i) => {
           const titleW = BACKLOG_GHOST_TITLE_WIDTHS[i % BACKLOG_GHOST_TITLE_WIDTHS.length];
           return (
             <li
               key={i}
-              className="flex items-center gap-3 px-4 border-b border-primary/[0.06] animate-fade-in"
+              className="flex items-center gap-3 px-4 border-b border-hair animate-fade-in"
               style={{ height: 44, animationDelay: `${120 + i * 35}ms` }}
             >
               <span className="h-2.5 w-16 rounded-full bg-primary/[0.06] shrink-0" />

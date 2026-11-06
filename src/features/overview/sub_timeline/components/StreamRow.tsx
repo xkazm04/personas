@@ -32,9 +32,9 @@ import { KIND_META, type StreamRowLabels } from '../libs/streamKinds';
 export const ROW_HEIGHT = 30;
 
 const KIND_TEXT: Record<string, string> = {
-  step: 'text-sky-300',
-  memory: 'text-amber-200/90',
-  deliberation: 'text-violet-300',
+  step: 'text-role-external',
+  memory: 'text-status-warning',
+  deliberation: 'text-role-agent',
 };
 
 /*
@@ -59,7 +59,7 @@ function ImportanceDots({ value }: { value: number }) {
       {[0, 1, 2, 3, 4].map((i) => (
         <span
           key={i}
-          className={`w-1 h-1 rounded-full ${i < filled ? 'bg-amber-300/90' : 'bg-foreground/20'}`}
+          className={`w-1 h-1 rounded-full ${i < filled ? 'bg-status-warning/90' : 'bg-foreground/20'}`}
         />
       ))}
     </span>
@@ -96,7 +96,7 @@ export const StreamRow = memo(function StreamRow({
       ? (FAMILY_TEXT[fam ?? 'other'] ?? '')
       : item.kind === 'step'
         ? (STEP_TONE[item.label] ?? KIND_TEXT.step ?? '')
-        : (KIND_TEXT[kind] ?? 'text-foreground/60');
+        : (KIND_TEXT[kind] ?? 'text-ink-3');
   const KindIcon = KIND_META[kind].icon;
   const verb = head.verb ? labels.verb[head.verb] : null;
 
@@ -162,7 +162,7 @@ export const StreamRow = memo(function StreamRow({
             e.stopPropagation();
             onAssignment(item.assignmentId!);
           }}
-          className={`${heard > 0 || parsed?.artifact ? '' : 'ml-auto '}flex-shrink-0 px-1.5 rounded-full border border-border bg-secondary/20 typo-code tabular-nums text-foreground opacity-55 hover:opacity-90 transition-opacity`}
+          className={`${heard > 0 || parsed?.artifact ? '' : 'ml-auto '}flex-shrink-0 px-1.5 rounded-interactive border border-border bg-surface-1 typo-code tabular-nums text-foreground opacity-55 hover:opacity-90 transition-opacity`}
         >
           #{item.assignmentId.slice(0, 4)}
         </span>

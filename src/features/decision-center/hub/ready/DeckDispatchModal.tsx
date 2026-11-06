@@ -160,7 +160,7 @@ function WorkRow({
         e.dataTransfer.setData(DRAG_TYPE, row.id);
         e.dataTransfer.effectAllowed = 'move';
       }}
-      className="flex items-center gap-2 rounded-card border border-border bg-secondary/20 px-2 py-1.5"
+      className="flex items-center gap-2 rounded-card border border-border bg-surface-1 px-2 py-1.5"
     >
       <div className="min-w-0 flex-1">
         <p className="typo-body truncate text-foreground">{row.title}</p>

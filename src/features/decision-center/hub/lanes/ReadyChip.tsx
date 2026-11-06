@@ -92,7 +92,7 @@ export const ReadyChip = forwardRef<HTMLButtonElement, ReadyChipProps>(function 
         data-zero={zero ? '' : undefined}
         data-failed={count.failed ? '' : undefined}
         data-open={open ? '' : undefined}
-        className={`au-chip au-l-${count.lamp} rounded-input hover:bg-transparent ${count.failed ? 'text-status-error' : zero ? 'text-muted-foreground' : 'text-foreground'} ${compact ? 'px-1.5! [&>span]:gap-1' : 'px-2! [&>span]:gap-1.5'} [&>span]:inline-flex [&>span]:items-center`}
+        className={`au-chip au-l-${count.lamp} rounded-input hover:bg-transparent ${count.failed ? 'text-status-error' : zero ? 'text-ink-3' : 'text-foreground'} ${compact ? 'px-1.5! [&>span]:gap-1' : 'px-2! [&>span]:gap-1.5'} [&>span]:inline-flex [&>span]:items-center`}
       >
         <span className="relative inline-flex">
           <Icon className="h-4 w-4" aria-hidden />

@@ -98,16 +98,16 @@ export function PassportTerminalModal({ sessionId, session, onClose }: {
   return (
     <BaseModal isOpen onClose={onClose} titleId="passport-terminal-title" portal maxWidthClass="max-w-3xl" staggerChildren={false}>
       <div data-testid="passport-terminal-modal">
-        <div className="flex items-center gap-2 pb-2 border-b border-primary/10">
+        <div className="flex items-center gap-2 pb-2 border-b border-hair">
           <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: ink, boxShadow: `0 0 6px ${ink}88` }} aria-hidden />
           <h2 id="passport-terminal-title" className="typo-body text-foreground truncate">{label}</h2>
-          <span className="typo-caption text-foreground/55 shrink-0">{String(session?.state ?? 'exited').replace('_', ' ')}</span>
-          {session?.stateReason && <span className="typo-caption text-foreground/45 truncate">— {session.stateReason}</span>}
+          <span className="typo-caption text-ink-3 shrink-0">{String(session?.state ?? 'exited').replace('_', ' ')}</span>
+          {session?.stateReason && <span className="typo-caption text-ink-3 truncate">— {session.stateReason}</span>}
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="ml-auto shrink-0 p-1 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
+            className="ml-auto shrink-0 p-1 rounded-interactive text-ink-3 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
           >
             <X className="w-4 h-4" aria-hidden />
           </button>
@@ -117,7 +117,7 @@ export function PassportTerminalModal({ sessionId, session, onClose }: {
           {live ? (
             <FleetTerminalPane sessionId={sessionId} className="h-full" autoFocus live={session?.state !== 'hibernated'} />
           ) : (
-            <p className="typo-caption text-foreground/50 px-3 py-4">
+            <p className="typo-caption text-ink-3 px-3 py-4">
               {session ? (session.mode === 'headless' ? COPY.headless : COPY.gone) : COPY.gone}
             </p>
           )}
@@ -130,7 +130,7 @@ export function PassportTerminalModal({ sessionId, session, onClose }: {
               onChange={(e) => setReply(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') send(); }}
               placeholder={COPY.placeholder}
-              className="flex-1 min-w-0 px-2.5 py-1.5 typo-caption rounded-input bg-background/70 border border-primary/15 text-foreground outline-none focus:border-primary/40"
+              className="flex-1 min-w-0 px-2.5 py-1.5 typo-caption rounded-input bg-background/70 border border-hair text-foreground outline-none focus:border-primary/40"
               data-testid="passport-terminal-reply"
             />
             <button

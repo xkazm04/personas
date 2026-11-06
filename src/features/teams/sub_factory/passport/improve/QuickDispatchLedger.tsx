@@ -20,17 +20,17 @@ export function QuickDispatchLedger({ model, busySkill, onDispatch }: QuickDispa
     return (
       <div className="flex flex-col gap-1.5">
         {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="h-10 rounded-interactive border border-primary/8 bg-secondary/[0.12] animate-pulse" />
+          <div key={i} className="h-10 rounded-interactive border border-hair bg-surface-1 animate-pulse" />
         ))}
       </div>
     );
   }
   if (model.skills.length === 0) {
-    return <p className="typo-caption text-foreground/45 py-8 text-center">{t.plugins.dev_tools.skills_workbench_quick_empty}</p>;
+    return <p className="typo-caption text-ink-3 py-8 text-center">{t.plugins.dev_tools.skills_workbench_quick_empty}</p>;
   }
 
   return (
-    <div className="flex flex-col rounded-card border border-primary/10 bg-secondary/[0.12] overflow-hidden">
+    <div className="flex flex-col rounded-card border border-hair bg-surface-1 overflow-hidden">
       {model.skills.map((s, i) => (
         <Row key={s.name} skill={s} index={i} busy={busySkill === s.name} onDispatch={onDispatch} />
       ))}
@@ -55,7 +55,7 @@ function Row({ skill, index, busy, onDispatch }: {
       transition={{ duration: 0.2, delay: Math.min(index * 0.025, 0.35) }}
       onClick={() => onDispatch(skill.name)}
       disabled={busy || skill.running}
-      className="group grid grid-cols-[minmax(9rem,14rem)_1fr_3.5rem_2.5rem] items-center gap-3 px-3 h-10 border-b border-primary/[0.06] last:border-b-0 hover:bg-primary/[0.04] transition-colors text-left disabled:cursor-not-allowed"
+      className="group grid grid-cols-[minmax(9rem,14rem)_1fr_3.5rem_2.5rem] items-center gap-3 px-3 h-10 border-b border-hair last:border-b-0 hover:bg-surface-2 transition-colors text-left disabled:cursor-not-allowed"
       data-testid={`quick-dispatch-row-${skill.name}`}
       aria-label={tx(d.skills_workbench_quick_dispatch_aria, { skill: skill.name })}
     >
@@ -91,7 +91,7 @@ function Row({ skill, index, busy, onDispatch }: {
 
       {/* activity / action */}
       <span className="flex items-center justify-end">
-        <span className="typo-label text-foreground/35 tabular-nums group-hover:hidden">{skill.invokes30d > 0 ? `${skill.invokes30d}×` : ''}</span>
+        <span className="typo-label text-ink-3 tabular-nums group-hover:hidden">{skill.invokes30d > 0 ? `${skill.invokes30d}×` : ''}</span>
         <Play className="w-3.5 h-3.5 text-primary hidden group-hover:block" aria-hidden />
       </span>
     </motion.button>

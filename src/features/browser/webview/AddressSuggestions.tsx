@@ -49,7 +49,7 @@ export default function AddressSuggestions({
       role="listbox"
       aria-label={v.suggestions_aria}
       data-testid="webview-suggestions"
-      className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-card border border-primary/15 bg-background shadow-elevation-3 py-1"
+      className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-card border border-hair bg-background shadow-elevation-3 py-1"
     >
       {suggestions.length === 0 ? (
         <li

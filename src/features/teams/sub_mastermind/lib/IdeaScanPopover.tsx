@@ -152,30 +152,30 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
     `inline-flex items-center gap-1 px-2 py-1 typo-caption rounded-interactive border transition-colors focus-ring disabled:opacity-40 ${
       active
         ? 'border-primary/40 bg-primary/15 text-foreground'
-        : 'border-primary/12 text-foreground/85 hover:bg-primary/10 hover:text-foreground'
+        : 'border-hair text-ink-2 hover:bg-primary/10 hover:text-foreground'
     }`;
 
   return (
     <div
       ref={panelRef}
-      className="fixed z-50 rounded-card border border-primary/20 bg-secondary/95 shadow-elevation-3 overflow-hidden flex flex-col"
+      className="fixed z-50 rounded-card border border-hair bg-secondary/95 shadow-elevation-3 overflow-hidden flex flex-col"
       style={{ width: WIDTH, top: pos?.top ?? -9999, left: pos?.left ?? -9999, maxHeight: '78vh' }}
       data-testid="mm-idea-scan-popover"
     >
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-foreground/10">
-        <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" aria-hidden />
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-hair">
+        <Lightbulb className="w-4 h-4 text-status-warning shrink-0" aria-hidden />
         <span className="typo-caption text-foreground truncate">{t.mastermind.scan_title} — {name}</span>
         <button
           type="button"
           onClick={onClose}
           aria-label={t.common.close}
-          className="ml-auto shrink-0 p-1 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
+          className="ml-auto shrink-0 p-1 rounded-interactive text-ink-3 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
         >
           <X className="w-3.5 h-3.5" aria-hidden />
         </button>
       </div>
 
-      <div className="px-3 py-1.5 border-b border-foreground/[0.07] typo-caption text-foreground/55">
+      <div className="px-3 py-1.5 border-b border-foreground/[0.07] typo-caption text-ink-3">
         {busy ? t.mastermind.scan_running : last ? (
           <span className="inline-flex items-center gap-1">
             {t.mastermind.scan_last} <RelativeTime timestamp={last.created_at} className="tabular-nums" /> · {last.scan_type.split(',')[0]}{last.scan_type.includes(',') ? '…' : ''}
@@ -187,7 +187,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
         {/* ── Context scope ─────────────────────────────────────────────── */}
         <section>
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="typo-label text-foreground/50">{ds.scan_config_scope_label}</span>
+            <span className="typo-label text-ink-3">{ds.scan_config_scope_label}</span>
             {contextIds.size > 0 && (
               <button
                 type="button"
@@ -213,7 +213,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
                 {Array.from({ length: 4 }).map((_, i) => (
                   <span
                     key={i}
-                    className="inline-block h-6 w-16 rounded-interactive bg-primary/5 animate-fade-in"
+                    className="inline-block h-6 w-16 rounded-interactive bg-surface-1 animate-fade-in"
                     style={{ animationDelay: `${120 + i * 35}ms` }}
                   />
                 ))}
@@ -234,15 +234,15 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
             ))}
           </div>
           {!contextsLoading && contexts.length === 0 ? (
-            <p className="typo-caption text-foreground/45 mt-1">{ds.scan_config_scope_empty}</p>
+            <p className="typo-caption text-ink-3 mt-1">{ds.scan_config_scope_empty}</p>
           ) : (
-            <p className="typo-caption text-foreground/45 mt-1">{ds.scan_config_scope_hint}</p>
+            <p className="typo-caption text-ink-3 mt-1">{ds.scan_config_scope_hint}</p>
           )}
         </section>
 
         {/* ── Target findings (granularity) ─────────────────────────────── */}
         <section>
-          <span className="block typo-label text-foreground/50 mb-1">{ds.scan_config_granularity_label}</span>
+          <span className="block typo-label text-ink-3 mb-1">{ds.scan_config_granularity_label}</span>
           <div className="flex flex-wrap gap-1">
             {TARGETS.map((n) => (
               <button
@@ -257,14 +257,14 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
               </button>
             ))}
           </div>
-          <p className="typo-caption text-foreground/45 mt-1">{ds.scan_config_granularity_hint}</p>
+          <p className="typo-caption text-ink-3 mt-1">{ds.scan_config_granularity_hint}</p>
         </section>
 
         {/* ── Agent combination ─────────────────────────────────────────── */}
         <section>
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="typo-label text-foreground/50">{ds.history_col_agents}</span>
-            <span className="typo-caption text-foreground/45 tabular-nums">
+            <span className="typo-label text-ink-3">{ds.history_col_agents}</span>
+            <span className="typo-caption text-ink-3 tabular-nums">
               {tx(ds.scan_config_selected_count, { count: agentKeys.size })}
             </span>
             {agentKeys.size > 0 && (
@@ -283,7 +283,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
               if (agents.length === 0) return null;
               return (
                 <div key={cat.key}>
-                  <span className="block typo-caption text-foreground/40 mb-1">{cat.label}</span>
+                  <span className="block typo-caption text-ink-3 mb-1">{cat.label}</span>
                   <div className="flex flex-wrap gap-1">
                     {agents.map((a) => (
                       <button
@@ -309,7 +309,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
       </div>
 
       {/* ── Dispatch ───────────────────────────────────────────────────── */}
-      <div className="px-3 py-2 border-t border-foreground/10">
+      <div className="px-3 py-2 border-t border-hair">
         <button
           type="button"
           disabled={busy || agentKeys.size === 0}
@@ -318,7 +318,7 @@ export function IdeaScanPopover({ projectId, name, scans, anchor, busy, onRun, o
             contextIds: [...contextIds],
             targetCount,
           })}
-          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 typo-caption rounded-interactive bg-primary/15 text-foreground border border-primary/30 hover:bg-primary/25 disabled:opacity-40 disabled:hover:bg-primary/15 transition-colors focus-ring"
+          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 typo-caption rounded-interactive bg-primary/15 text-foreground border border-hair hover:bg-primary/25 disabled:opacity-40 disabled:hover:bg-primary/15 transition-colors focus-ring"
           data-testid="mm-scan-run"
         >
           <Play className="w-3.5 h-3.5" aria-hidden />

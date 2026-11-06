@@ -165,7 +165,7 @@ export function AssessmentEditor({ rating, pros, cons, onRate, onPros, onCons, l
   labels: { pros: string; cons: string; prosHint: string; consHint: string; rated: (n: number) => string; unrated: string };
   size?: number;
 }) {
-  const ta = 'w-full px-2.5 py-1.5 typo-body bg-secondary/40 border border-primary/10 rounded-interactive text-foreground placeholder:text-foreground/40 focus-ring resize-none';
+  const ta = 'w-full px-2.5 py-1.5 typo-body bg-surface-1 border border-hair rounded-interactive text-foreground placeholder:text-ink-3 focus-ring resize-none';
   return (
     <div className="k-in space-y-3">
       <div className="flex items-center gap-3">

@@ -53,7 +53,7 @@ export function FeatureRowItem({
       className={`flex w-full items-start gap-2.5 border-l-2 px-3 py-2 text-left focus-ring ${
         selected
           ? 'border-l-primary bg-primary/10'
-          : 'border-l-transparent hover:bg-secondary/50'
+          : 'border-l-transparent hover:bg-surface-2'
       }`}
     >
       <RowGlyph

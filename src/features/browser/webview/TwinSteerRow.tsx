@@ -54,10 +54,10 @@ export default function TwinSteerRow({ lane, onSteer, onDirections, onRegenerate
               aria-pressed={active}
               disabled={busy}
               onClick={() => onSteer(active ? null : steer)}
-              className={`px-2 py-1 rounded-full border typo-caption transition-colors focus-ring disabled:is-disabled ${
+              className={`px-2 py-1 rounded-interactive border typo-caption transition-colors focus-ring disabled:is-disabled ${
                 active
-                  ? 'border-violet-500/40 bg-violet-500/15 text-violet-300'
-                  : 'border-primary/15 bg-secondary/30 text-foreground hover:border-violet-500/30 hover:text-violet-300'
+                  ? 'border-role-agent/40 bg-role-agent/15 text-role-agent'
+                  : 'border-hair bg-surface-1 text-foreground hover:border-role-agent/30 hover:text-role-agent'
               }`}
             >
               {v[key]}

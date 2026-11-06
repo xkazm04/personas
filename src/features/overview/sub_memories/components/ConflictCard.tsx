@@ -22,12 +22,12 @@ function MemoryPreview({
   agentName: string;
   accent: 'blue' | 'amber';
 }) {
-  const borderCls = accent === 'blue' ? 'border-blue-500/20' : 'border-amber-500/20';
-  const headerCls = accent === 'blue' ? 'text-blue-400/80' : 'text-amber-400/80';
+  const borderCls = accent === 'blue' ? 'border-status-info/20' : 'border-status-warning/20';
+  const headerCls = accent === 'blue' ? 'text-status-info' : 'text-status-warning';
 
   return (
     <div className={`rounded-card border ${borderCls} overflow-hidden`}>
-      <div className={`px-2.5 py-1.5 typo-caption ${headerCls} bg-secondary/30 border-b ${borderCls} flex items-center justify-between`}>
+      <div className={`px-2.5 py-1.5 typo-caption ${headerCls} bg-surface-1 border-b ${borderCls} flex items-center justify-between`}>
         <span>{label}</span>
         <span className="flex items-center gap-1 text-foreground">
           <PersonaIcon icon={null} color={null} display="pop" frameSize="lg" />
@@ -38,7 +38,7 @@ function MemoryPreview({
         <p className="typo-caption text-foreground line-clamp-2">{stripHtml(memory.title)}</p>
         <p className="typo-caption text-foreground line-clamp-3 whitespace-pre-wrap">{stripHtml(memory.content)}</p>
         <div className="flex items-center gap-2 typo-caption text-foreground pt-0.5">
-          <span className="px-1.5 py-0.5 rounded bg-secondary/40 border border-primary/10 typo-caption">{memory.category}</span>
+          <span className="px-1.5 py-0.5 rounded bg-surface-1 border border-hair typo-caption">{memory.category}</span>
           <span>{new Date(memory.created_at).toLocaleDateString()}</span>
         </div>
       </div>
@@ -78,7 +78,7 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
     : mc.merge_blocked_cross_persona;
 
   return (
-    <div className={`rounded-modal border transition-colors ${isActive ? 'border-primary/25 bg-secondary/30' : 'border-primary/10 bg-background/30'}`}>
+    <div className={`rounded-modal border transition-colors ${isActive ? 'border-hair bg-surface-1' : 'border-hair bg-background/30'}`}>
       <button type="button" onClick={onToggle} disabled={isProcessing} title={isProcessing ? mc.processing : undefined} className="w-full flex items-center gap-3 px-3 py-2.5 text-left cursor-pointer disabled:opacity-50">
         {kindBadge(conflict.kind, mc[`kind_${conflict.kind}`])}
         <span className="typo-body text-foreground flex-1 truncate">
@@ -92,7 +92,7 @@ export default function ConflictCard({ conflict, personaMap, isActive, isProcess
 
       {isActive && (
         <div className="animate-fade-slide-in overflow-hidden">
-          <div className="px-3 pb-3 space-y-3 border-t border-primary/10 pt-3">
+          <div className="px-3 pb-3 space-y-3 border-t border-hair pt-3">
             <p className="typo-caption text-foreground">{tx(mc[`reason_${conflict.reasonKey}`], { pct: conflict.reasonPct })}</p>
             <div className="grid grid-cols-2 gap-2">
               <MemoryPreview label={t.overview.memory_conflict.memory_a} memory={conflict.memoryA} agentName={nameA} accent="blue" />

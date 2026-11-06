@@ -13,9 +13,9 @@ export function PaneHeader({
   return (
     // One row, always: the label never wraps, the subtitle truncates before it
     // would, and the trailing slot keeps its intrinsic width (shrink-0).
-    <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
+    <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-hair bg-surface-1">
       <div className="flex items-baseline gap-2 min-w-0">
-        <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground whitespace-nowrap">{label}</span>
+        <span className="typo-eyebrow whitespace-nowrap">{label}</span>
         {subtitle && (
           <span className="typo-caption text-foreground truncate">{subtitle}</span>
         )}

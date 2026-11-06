@@ -30,7 +30,7 @@ export function CostAnomalySection({ anomalies, onOpenExecution }: CostAnomalySe
 
   return (
     <div className="space-y-2">
-      <h4 className="typo-heading text-amber-400/80 flex items-center gap-1.5">
+      <h4 className="typo-heading text-status-warning flex items-center gap-1.5">
         <AlertTriangle className="w-3 h-3" /> {t.overview.activity.cost_anomalies}
       </h4>
       {anomalies.map((a, i) => (

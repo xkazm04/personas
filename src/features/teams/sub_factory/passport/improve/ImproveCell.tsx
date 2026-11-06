@@ -89,7 +89,7 @@ export function ImproveCell({ slug, rowKey, passport, children }: { slug: string
           type="button"
           onClick={trigger}
           title="Improve: golden-standard upgrades"
-          className="group/imp inline-flex items-center gap-1 text-left rounded-interactive -mx-1 px-1 py-0.5 hover:bg-primary/[0.06] transition-colors cursor-pointer"
+          className="group/imp inline-flex items-center gap-1 text-left rounded-interactive -mx-1 px-1 py-0.5 hover:bg-surface-2 transition-colors cursor-pointer"
         >
           {children}
           <Sparkles className="w-3 h-3 flex-shrink-0 text-primary opacity-0 group-hover/imp:opacity-70 transition-opacity" aria-hidden />

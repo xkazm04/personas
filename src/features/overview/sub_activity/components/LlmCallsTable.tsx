@@ -250,7 +250,7 @@ export default function LlmCallsTable() {
               {e.thinkingLevel && (
                 <span
                   title={t.agents.executions.thinking_tooltip}
-                  className="shrink-0 px-1.5 py-0.5 rounded-card typo-caption bg-secondary/40 border border-primary/10 text-foreground"
+                  className="shrink-0 px-1.5 py-0.5 rounded-card typo-caption bg-surface-1 border border-hair text-foreground"
                 >
                   {tokenLabel(t, 'thinking', e.thinkingLevel)}
                 </span>
@@ -310,7 +310,7 @@ export default function LlmCallsTable() {
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* This lens's control band, on the geometry Activity's FilterBar uses. */}
-      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
+      <div className="px-4 md:px-6 py-3 border-b border-hair flex items-center gap-2 flex-shrink-0">
         <SegmentedTabs<TimeWindow>
           tabs={windowTabs}
           activeTab={timeWindow}
@@ -324,7 +324,7 @@ export default function LlmCallsTable() {
           type="button"
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors border text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border-primary/15 disabled:opacity-60"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors border text-foreground hover:text-ink-3 bg-surface-1 hover:bg-surface-2 border-hair disabled:opacity-60"
           title={t.common.refresh}
         >
           <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />

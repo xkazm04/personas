@@ -65,14 +65,14 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
       onClose={onClose}
       titleId="auto-team-title"
       size="md"
-      panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden"
+      panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden"
     >
       <div onKeyDown={handleKeyDown}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-card bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/25 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-indigo-400" />
+            <div className="w-8 h-8 rounded-card bg-surface-1 border border-role-agent/25 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-role-agent" />
             </div>
             <div>
               <h2 id="auto-team-title" className="typo-heading text-foreground">{t.pipeline.auto_team}</h2>
@@ -102,21 +102,21 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 onChange={(e) => at.setQuery(e.target.value)}
                 disabled={isWorking || at.phase === 'done'}
                 placeholder={t.pipeline.auto_team_placeholder}
-                className="w-full px-4 py-3 rounded-modal bg-secondary/30 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500/25 disabled:is-disabled pr-10"
+                className="w-full px-4 py-3 rounded-modal bg-surface-1 border border-hair typo-body text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-role-agent/30 focus-visible:border-role-agent/25 disabled:is-disabled pr-10"
               />
               {at.phase === 'idle' && at.query.trim() && (
                 <Button
                   variant="ghost"
                   size="icon-sm"
                   onClick={() => at.suggest()}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-role-agent/15 text-role-agent hover:bg-role-agent/25"
                   title={t.pipeline.generate_team}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                 </Button>
               )}
               {at.phase === 'suggesting' && (
-                <LoadingSpinner className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-400" />
+                <LoadingSpinner className="absolute right-3 top-1/2 -translate-y-1/2 text-role-agent" />
               )}
             </div>
 
@@ -131,7 +131,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                     variant="ghost"
                     size="xs"
                     onClick={() => { at.setQuery(prompt); }}
-                    className="typo-caption px-2.5 py-1 bg-secondary/40 border border-primary/10 text-foreground hover:text-foreground/80 hover:bg-secondary/60"
+                    className="typo-caption px-2.5 py-1 bg-surface-1 border border-hair text-foreground hover:text-ink-2 hover:bg-surface-2"
                   >
                     {prompt}
                   </Button>
@@ -147,7 +147,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 key="suggesting"
                 className="animate-fade-slide-in flex items-center gap-3 py-6 justify-center"
               >
-                <LoadingSpinner size="lg" className="text-indigo-400" />
+                <LoadingSpinner size="lg" className="text-role-agent" />
                 <span className="typo-body text-foreground">{t.pipeline.assembling_team}</span>
               </div>
             )}
@@ -174,7 +174,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                     size="sm"
                     onClick={at.apply}
                     iconRight={<ArrowRight className="w-3.5 h-3.5" />}
-                    className="flex-1 bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30"
+                    className="flex-1 bg-role-agent/20 border border-role-agent/30 text-role-agent hover:bg-role-agent/30"
                   >
                     {t.pipeline.create_team}
                   </Button>
@@ -190,9 +190,9 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
               >
                 <div className="flex items-center gap-3">
                   {at.phase === 'applying' ? (
-                    <LoadingSpinner className="text-indigo-400 flex-shrink-0" />
+                    <LoadingSpinner className="text-role-agent flex-shrink-0" />
                   ) : (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-status-success flex-shrink-0" />
                   )}
                   <span className="typo-body text-foreground">
                     {tx(t.pipeline.creating_team, { count: at.blueprint?.members.length ?? 0 })}
@@ -200,9 +200,9 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 </div>
                 {at.phase === 'seeding' && (
                   <div className="flex items-center gap-3">
-                    <LoadingSpinner className="text-violet-400 flex-shrink-0" />
+                    <LoadingSpinner className="text-role-agent flex-shrink-0" />
                     <span className="typo-body text-foreground flex items-center gap-1.5">
-                      <Brain className="w-3.5 h-3.5 text-violet-400" />
+                      <Brain className="w-3.5 h-3.5 text-role-agent" />
                       {t.pipeline.seeding_memories}
                     </span>
                   </div>
@@ -216,10 +216,10 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 key="done"
                 className="animate-fade-slide-in space-y-3"
               >
-                <div className="p-4 rounded-modal border border-emerald-500/20 bg-emerald-500/5 space-y-2">
+                <div className="p-4 rounded-modal border border-status-success/20 bg-status-success/5 space-y-2">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span className="typo-body text-emerald-400">{t.pipeline.team_created}</span>
+                    <CheckCircle2 className="w-4 h-4 text-status-success" />
+                    <span className="typo-body text-status-success">{t.pipeline.team_created}</span>
                   </div>
                   <div className="flex items-center gap-4 typo-caption text-foreground">
                     <span className="flex items-center gap-1">
@@ -241,7 +241,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                   size="sm"
                   block
                   onClick={handleDone}
-                  className="bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30"
+                  className="bg-role-agent/20 border border-role-agent/30 text-role-agent hover:bg-role-agent/30"
                 >
                   {t.pipeline.open_team_canvas}
                 </Button>
@@ -254,9 +254,9 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 key="error"
                 className="animate-fade-slide-in space-y-3"
               >
-                <div className="flex items-center gap-2 p-3 rounded-modal border border-red-500/20 bg-red-500/5">
-                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                  <p className="typo-body text-red-400">{at.error}</p>
+                <div className="flex items-center gap-2 p-3 rounded-modal border border-status-error/20 bg-status-error/5">
+                  <AlertCircle className="w-4 h-4 text-status-error flex-shrink-0" />
+                  <p className="typo-body text-status-error">{at.error}</p>
                 </div>
                 <Button
                   variant="secondary"

@@ -165,7 +165,7 @@ function Tile({ label, value, Icon, tone, sublabel, active, onClick, ghost = fal
       className={`flex items-center gap-3 rounded-card border p-3 text-left transition-colors focus-ring ${
         active
           ? 'border-primary/40 bg-primary/10'
-          : 'border-primary/10 bg-secondary/20 hover:bg-secondary/40'
+          : 'border-hair bg-surface-1 hover:bg-surface-2'
       }`}
     >
       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-card ${accent}`}>
@@ -193,9 +193,9 @@ function Tile({ label, value, Icon, tone, sublabel, active, onClick, ghost = fal
 
 function toneClass(tone: 'warning' | 'danger' | 'info' | 'success'): string {
   switch (tone) {
-    case 'warning': return 'bg-amber-500/15 text-amber-400';
-    case 'danger': return 'bg-red-500/15 text-red-400';
-    case 'info': return 'bg-blue-500/15 text-blue-400';
-    case 'success': return 'bg-emerald-500/15 text-emerald-400';
+    case 'warning': return 'bg-status-warning/15 text-status-warning';
+    case 'danger': return 'bg-status-error/15 text-status-error';
+    case 'info': return 'bg-status-info/15 text-status-info';
+    case 'success': return 'bg-status-success/15 text-status-success';
   }
 }

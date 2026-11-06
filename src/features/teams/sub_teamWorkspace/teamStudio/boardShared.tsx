@@ -25,7 +25,7 @@ export function PersonaChip({ persona, dim }: { persona: Persona | undefined; di
   const short = persona.name.replace(/^T: /, '');
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-interactive bg-secondary/40 border border-primary/10 max-w-[160px] ${
+      className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-interactive bg-surface-1 border border-hair max-w-[160px] ${
         dim ? 'opacity-60' : ''
       }`}
       title={short}

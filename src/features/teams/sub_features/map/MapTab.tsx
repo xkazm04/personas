@@ -64,7 +64,7 @@ export function MapTab({
           </span>
         ))}
         <span className="inline-flex items-center gap-1.5 typo-caption">
-          <i aria-hidden="true" className="h-[6px] w-[6px] rounded-full bg-violet-400" />
+          <i aria-hidden="true" className="h-[6px] w-[6px] rounded-full bg-role-agent" />
           {t.map_legend_shared}
         </span>
         {hasSelection ? (

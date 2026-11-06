@@ -16,11 +16,11 @@ import type { DevToolsKey } from './improveCopy';
 import { buildImprovePlan, fleetGoldenAvg, projectedFleetGolden, type PlanItem, type PlanKind } from './improvePlan';
 
 const KIND_META: Record<PlanKind, { icon: typeof Rocket; labelKey: DevToolsKey; tone: string }> = {
-  scan: { icon: ScanSearch, labelKey: 'improve_kind_scan', tone: 'text-blue-300 border-blue-500/30 bg-blue-500/10' },
-  task: { icon: Rocket, labelKey: 'improve_kind_task', tone: 'text-violet-300 border-violet-500/30 bg-violet-500/10' },
-  connector: { icon: Plug, labelKey: 'improve_kind_connector', tone: 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10' },
-  skills: { icon: Sparkles, labelKey: 'improve_kind_skills', tone: 'text-amber-300 border-amber-500/30 bg-amber-500/10' },
-  standards: { icon: Wrench, labelKey: 'improve_kind_standards', tone: 'text-foreground/70 border-primary/20 bg-primary/10' },
+  scan: { icon: ScanSearch, labelKey: 'improve_kind_scan', tone: 'text-status-info border-status-info/30 bg-status-info/10' },
+  task: { icon: Rocket, labelKey: 'improve_kind_task', tone: 'text-role-agent border-role-agent/30 bg-role-agent/10' },
+  connector: { icon: Plug, labelKey: 'improve_kind_connector', tone: 'text-status-success border-status-success/30 bg-status-success/10' },
+  skills: { icon: Sparkles, labelKey: 'improve_kind_skills', tone: 'text-status-warning border-status-warning/30 bg-status-warning/10' },
+  standards: { icon: Wrench, labelKey: 'improve_kind_standards', tone: 'text-ink-2 border-hair bg-primary/10' },
 };
 
 const MAX_VISIBLE = 40;
@@ -109,26 +109,26 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
   const selectableTasks = selectedItems.filter((i) => i.kind === 'task');
 
   return (
-    <BaseModal isOpen={open} onClose={onClose} titleId="improve-plan-title" size="lg" panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4">
+    <BaseModal isOpen={open} onClose={onClose} titleId="improve-plan-title" size="lg" panelClassName="bg-background border border-hair rounded-card shadow-elevation-4">
       <div className="flex flex-col max-h-[78vh]">
         {/* header — fleet summary */}
-        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-primary/10">
+        <div className="flex items-center gap-3 px-5 py-3.5 border-b border-hair">
           <Target className="w-5 h-5 text-primary flex-shrink-0" aria-hidden />
           <div className="min-w-0">
             <h2 id="improve-plan-title" className="typo-section-title">{d.improve_plan_title}</h2>
-            <p className="typo-caption text-foreground/55">{tx(d.improve_plan_summary, { count: plan.length, projects: raws.length })}</p>
+            <p className="typo-caption text-ink-3">{tx(d.improve_plan_summary, { count: plan.length, projects: raws.length })}</p>
           </div>
           <div className="ml-auto flex items-center gap-2 flex-shrink-0">
-            <span className="typo-caption text-foreground/55">{d.improve_plan_fleet_golden}</span>
+            <span className="typo-caption text-ink-3">{d.improve_plan_fleet_golden}</span>
             <span className="typo-data-lg text-foreground">{avgNow}%</span>
             {projected > avgNow && (
               <>
-                <span className="text-foreground/40">→</span>
-                <span className="typo-data-lg text-emerald-300">{projected}%</span>
+                <span className="text-ink-3">→</span>
+                <span className="typo-data-lg text-status-success">{projected}%</span>
               </>
             )}
           </div>
-          <button type="button" onClick={onClose} aria-label={t.common.close} className="p-1 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors">
+          <button type="button" onClick={onClose} aria-label={t.common.close} className="p-1 rounded-interactive text-foreground hover:bg-surface-2 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -136,7 +136,7 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
         {/* ranked list */}
         <div className="overflow-y-auto px-2 py-2 flex-1">
           {plan.length === 0 ? (
-            <p className="text-center py-12 typo-caption text-foreground/55">{d.improve_plan_all_met}</p>
+            <p className="text-center py-12 typo-caption text-ink-3">{d.improve_plan_all_met}</p>
           ) : (
             <ol className="space-y-1">
               {plan.slice(0, MAX_VISIBLE).map((it, i) => {
@@ -144,28 +144,28 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
                 const Icon = meta.icon;
                 const selectable = it.kind === 'task';
                 return (
-                  <li key={key(it)} className="flex items-center gap-2.5 px-3 py-2 rounded-interactive border border-primary/[0.08] bg-secondary/15 hover:bg-secondary/25 transition-colors">
-                    <span className="typo-caption tabular-nums text-foreground/40 w-5 flex-shrink-0 text-right">{i + 1}</span>
+                  <li key={key(it)} className="flex items-center gap-2.5 px-3 py-2 rounded-interactive border border-hair bg-secondary/15 hover:bg-secondary/25 transition-colors">
+                    <span className="typo-caption tabular-nums text-ink-3 w-5 flex-shrink-0 text-right">{i + 1}</span>
                     {selectable ? (
                       <input type="checkbox" checked={selected.has(key(it))} onChange={() => toggle(it)} className="w-3.5 h-3.5 flex-shrink-0 cursor-pointer" style={{ accentColor: 'var(--primary)' }} />
                     ) : (
                       <span className="w-3.5 flex-shrink-0" />
                     )}
-                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border typo-label flex-shrink-0 ${meta.tone}`}>
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive border typo-label flex-shrink-0 ${meta.tone}`}>
                       <Icon className="w-3 h-3" aria-hidden /> {d[meta.labelKey]}
                     </span>
                     <div className="min-w-0 flex-1">
                       <span className="typo-caption text-foreground block truncate">
                         <span className="font-medium">{it.projectName}</span>
-                        <span className="text-foreground/45"> · {it.dimLabel}</span>
+                        <span className="text-ink-3"> · {it.dimLabel}</span>
                       </span>
-                      {it.action && <span className="typo-label text-foreground/45 block truncate">{it.action.label}</span>}
+                      {it.action && <span className="typo-label text-ink-3 block truncate">{it.action.label}</span>}
                     </div>
-                    <span className="typo-caption tabular-nums text-emerald-300 flex-shrink-0">+{it.estGoldenLift}%</span>
+                    <span className="typo-caption tabular-nums text-status-success flex-shrink-0">+{it.estGoldenLift}%</span>
                     {it.kind === 'scan' ? (
-                      <button type="button" onClick={() => runScan(it)} className="px-2 py-0.5 rounded-interactive typo-label text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors flex-shrink-0">{d.improve_plan_run}</button>
+                      <button type="button" onClick={() => runScan(it)} className="px-2 py-0.5 rounded-interactive typo-label text-primary bg-primary/15 hover:bg-primary/25 border border-hair transition-colors flex-shrink-0">{d.improve_plan_run}</button>
                     ) : it.kind !== 'task' ? (
-                      <span className="typo-label text-foreground/35 flex-shrink-0 whitespace-nowrap">{d.improve_plan_in_matrix}</span>
+                      <span className="typo-label text-ink-3 flex-shrink-0 whitespace-nowrap">{d.improve_plan_in_matrix}</span>
                     ) : (
                       <span className="w-8 flex-shrink-0" />
                     )}
@@ -173,22 +173,22 @@ export function ImprovePlanPanel({ open, onClose, slug }: {
                 );
               })}
               {plan.length > MAX_VISIBLE && (
-                <li className="text-center pt-1 typo-label text-foreground/35">{tx(d.improve_plan_more, { count: plan.length - MAX_VISIBLE })}</li>
+                <li className="text-center pt-1 typo-label text-ink-3">{tx(d.improve_plan_more, { count: plan.length - MAX_VISIBLE })}</li>
               )}
             </ol>
           )}
         </div>
 
         {/* footer — batch */}
-        <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-primary/10 bg-secondary/10">
-          <span className="typo-caption text-foreground/55">
+        <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-hair bg-surface-1">
+          <span className="typo-caption text-ink-3">
             {selectableTasks.length > 0 ? tx(selectableTasks.length === 1 ? d.improve_plan_selected_one : d.improve_plan_selected_other, { count: selectableTasks.length }) : d.improve_plan_select_hint}
           </span>
           <button
             type="button"
             onClick={queueSelected}
             disabled={selectableTasks.length === 0 || busy}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption text-primary bg-primary/15 hover:bg-primary/25 border border-hair transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Rocket className="w-3.5 h-3.5" />
             {busy ? d.improve_plan_queuing : selectableTasks.length > 0 ? tx(d.improve_plan_queue, { count: selectableTasks.length }) : d.improve_plan_queue_none}

@@ -67,16 +67,16 @@ export function PersonaListPopover({ rows, x, y, onOpen, onClose }: {
             {/* the Monitor's own status dot — same vocabulary, same colours */}
             <span className={`w-2 h-2 rounded-full shrink-0 ${meta.dot} ${meta.pulse ? 'animate-pulse' : ''}`} aria-hidden />
             <span className="truncate flex-1">{row.name}</span>
-            <span className="typo-caption text-foreground/50 tabular-nums shrink-0">{trailing}</span>
+            <span className="typo-caption text-ink-3 tabular-nums shrink-0">{trailing}</span>
           </>
         );
-        const layout = 'w-full flex items-center gap-2 px-3 py-2 text-left typo-body text-foreground/70';
+        const layout = 'w-full flex items-center gap-2 px-3 py-2 text-left typo-body text-ink-2';
         return (
           <li key={row.personaId}>
             {row.navigable ? (
               <button
                 type="button"
-                className={`${layout} rounded-md transition-colors hover:bg-secondary/40 hover:text-foreground focus-ring`}
+                className={`${layout} rounded-md transition-colors hover:bg-surface-2 hover:text-foreground focus-ring`}
                 onClick={() => { onOpen(row.personaId); onClose(); }}
                 title={t.mastermind.persona_open}
                 data-testid={`mm-persona-row-${row.personaId}`}

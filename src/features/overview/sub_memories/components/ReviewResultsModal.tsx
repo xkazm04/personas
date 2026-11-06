@@ -16,12 +16,12 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
   if (!reviewResult && !reviewError) return null;
 
   return (
-    <BaseModal isOpen onClose={onClose} titleId="review-results-title" size="lg" panelClassName="bg-background border border-primary/20 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col max-h-[80vh]">
+    <BaseModal isOpen onClose={onClose} titleId="review-results-title" size="lg" panelClassName="bg-background border border-hair rounded-card shadow-elevation-4 overflow-hidden flex flex-col max-h-[80vh]">
         {/* Header */}
-        <div className="flex items-start justify-between p-4 border-b border-primary/10 flex-shrink-0">
+        <div className="flex items-start justify-between p-4 border-b border-hair flex-shrink-0">
           <div className="flex-1 min-w-0 pr-4">
-            <h3 id="review-results-title" className="typo-heading text-foreground/90 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
+            <h3 id="review-results-title" className="typo-heading text-ink-2 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-role-highlight" />
               {rr.title}
             </h3>
             {reviewResult && (
@@ -30,7 +30,7 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
               </p>
             )}
           </div>
-          <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors">
+          <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-ink-2 transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -38,23 +38,23 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-4">
           {reviewError ? (
-            <div className="flex items-start gap-3 p-4 rounded-modal bg-red-500/10 border border-red-500/20">
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-4 rounded-modal bg-status-error/10 border border-status-error/20">
+              <AlertCircle className="w-5 h-5 text-status-error flex-shrink-0 mt-0.5" />
               <div>
-                <p className="typo-heading text-red-300">{rr.review_failed}</p>
-                <p className="typo-body text-red-400/70 mt-1">{reviewError}</p>
+                <p className="typo-heading text-status-error">{rr.review_failed}</p>
+                <p className="typo-body text-status-error mt-1">{reviewError}</p>
               </div>
             </div>
           ) : reviewResult ? (
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-emerald-500/10 border border-emerald-500/20">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="typo-heading text-emerald-300">{tx(rr.kept_count, { count: reviewResult.updated })}</span>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-status-success/10 border border-status-success/20">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-status-success" />
+                  <span className="typo-heading text-status-success">{tx(rr.kept_count, { count: reviewResult.updated })}</span>
                 </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-red-500/10 border border-red-500/20">
-                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                  <span className="typo-heading text-red-300">{tx(rr.pruned_count, { count: reviewResult.deleted })}</span>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal bg-status-error/10 border border-status-error/20">
+                  <Trash2 className="w-3.5 h-3.5 text-status-error" />
+                  <span className="typo-heading text-status-error">{tx(rr.pruned_count, { count: reviewResult.deleted })}</span>
                 </div>
               </div>
 
@@ -64,22 +64,22 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
                     const isError = d.action === 'error';
                     const isDeleted = d.action === 'deleted';
                     const rowCls = isError
-                      ? 'bg-amber-500/5 border-amber-500/20'
+                      ? 'bg-status-warning/5 border-status-warning/20'
                       : isDeleted
-                        ? 'bg-red-500/5 border-red-500/15'
-                        : 'bg-emerald-500/5 border-emerald-500/15';
+                        ? 'bg-status-error/5 border-status-error/15'
+                        : 'bg-status-success/5 border-status-success/15';
                     const actionCls = isError
-                      ? 'text-amber-400'
+                      ? 'text-status-warning'
                       : isDeleted
-                        ? 'text-red-400/70'
-                        : 'text-emerald-400/70';
+                        ? 'text-status-error'
+                        : 'text-status-success';
                     return (
                       <div
                         key={d.id}
                         className={`flex items-start gap-3 px-3 py-2 rounded-modal border ${rowCls}`}
                       >
                         <span className={`typo-heading px-1.5 py-0.5 rounded-card flex-shrink-0 mt-0.5 ${
-                          d.score >= 7 ? 'bg-emerald-500/15 text-emerald-400' : d.score >= 4 ? 'bg-amber-500/15 text-amber-400' : 'bg-red-500/15 text-red-400'
+                          d.score >= 7 ? 'bg-status-success/15 text-status-success' : d.score >= 4 ? 'bg-status-warning/15 text-status-warning' : 'bg-status-error/15 text-status-error'
                         }`}>
                           {d.score}/10
                         </span>
@@ -89,7 +89,7 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
                           </p>
                           <p className="typo-body text-foreground mt-0.5">{d.reason}</p>
                           {isError && d.error && (
-                            <p className="typo-body text-amber-400/80 mt-1 flex items-start gap-1.5">
+                            <p className="typo-body text-status-warning mt-1 flex items-start gap-1.5">
                               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                               <span className="break-words">{d.error}</span>
                             </p>

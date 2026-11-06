@@ -59,13 +59,13 @@ export const LlmSpendSection = memo(function LlmSpendSection() {
     return (
       <div className="space-y-1.5">
         {rows.map((row, i) => (
-          <div key={row.key} className="flex items-center gap-3 px-3 py-2 rounded-modal border border-primary/10 bg-secondary/20">
+          <div key={row.key} className="flex items-center gap-3 px-3 py-2 rounded-modal border border-hair bg-surface-1">
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
                 <span className="typo-heading text-foreground truncate">{label(row.key)}</span>
-                <span className="typo-code text-emerald-400">{fmtCost(row.cost_usd)}</span>
+                <span className="typo-code text-status-success">{fmtCost(row.cost_usd)}</span>
               </div>
-              <div className="h-1.5 bg-secondary/40 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-surface-1 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all"
                   style={{ width: `${(row.cost_usd / maxCost) * 100}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length], opacity: 0.7 }}
@@ -81,10 +81,10 @@ export const LlmSpendSection = memo(function LlmSpendSection() {
   return (
     <section className="space-y-3" data-testid="llm-spend-section">
       <div className="flex items-center gap-2">
-        <div className="w-6 h-6 rounded-card bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-          <Layers className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="w-6 h-6 rounded-card bg-status-success/10 border border-status-success/20 flex items-center justify-center">
+          <Layers className="w-3.5 h-3.5 text-status-success" />
         </div>
-        <h3 className="typo-heading text-foreground/90">{s.section_title}</h3>
+        <h3 className="typo-heading text-ink-2">{s.section_title}</h3>
         <span className="typo-caption text-foreground">{s.section_hint}</span>
       </div>
 
@@ -102,7 +102,7 @@ export const LlmSpendSection = memo(function LlmSpendSection() {
         // A failed read is not "no headless calls": say it failed.
         <InlineErrorBanner compact message={t.overview.observability.error_recovery.panel_failed} onRetry={reload} />
       ) : !hasActivity ? (
-        <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-6 text-center">
+        <div className="rounded-modal border border-hair bg-surface-1 px-4 py-6 text-center">
           <Layers className="w-5 h-5 text-foreground mx-auto mb-1.5" />
           <p className="typo-body text-foreground">{s.no_activity}</p>
         </div>
@@ -132,7 +132,7 @@ export const LlmSpendSection = memo(function LlmSpendSection() {
           {dailyChart.length > 1 && (
             <div className="space-y-2">
               <h4 className="typo-heading text-foreground">{s.cost_per_day}</h4>
-              <div className="h-40 2xl:h-48 bg-secondary/20 rounded-modal border border-primary/10 p-3">
+              <div className="h-40 2xl:h-48 bg-surface-1 rounded-modal border border-hair p-3">
                 <ChartErrorBoundary>
                   <LazyChart render={(R) => (
                     <R.ResponsiveContainer width="100%" height="100%">

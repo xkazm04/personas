@@ -13,7 +13,7 @@ export function LevelLadder({ rowKey, passport }: { rowKey: string; passport: Ap
   const tint = ordinalTint(pos);
 
   return (
-    <div className="rounded-interactive border border-primary/10 bg-secondary/15 p-2">
+    <div className="rounded-interactive border border-hair bg-secondary/15 p-2">
       <div className="flex items-center justify-between gap-2 mb-1.5">
         <span className="typo-caption text-foreground">{title} — current level</span>
         <span className={`typo-caption ${tint.text}`}>{steps[currentIndex]}</span>
@@ -26,7 +26,7 @@ export function LevelLadder({ rowKey, passport }: { rowKey: string; passport: Ap
               style={{ background: i <= currentIndex ? tint.hex : 'color-mix(in srgb, var(--foreground) 12%, transparent)' }}
             />
             <span
-              className={`block mt-1 typo-label truncate text-center ${i === currentIndex ? `${tint.text}` : 'text-foreground/40'}`}
+              className={`block mt-1 typo-label truncate text-center ${i === currentIndex ? `${tint.text}` : 'text-ink-3'}`}
               title={label}
             >
               {label}
@@ -34,7 +34,7 @@ export function LevelLadder({ rowKey, passport }: { rowKey: string; passport: Ap
           </div>
         ))}
       </div>
-      <p className="typo-caption text-foreground/55 mt-1.5" style={{ fontWeight: 400 }}>{note}</p>
+      <p className="typo-caption text-ink-3 mt-1.5" style={{ fontWeight: 400 }}>{note}</p>
     </div>
   );
 }

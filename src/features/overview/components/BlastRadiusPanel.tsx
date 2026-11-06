@@ -41,8 +41,8 @@ export function BlastRadiusPanel({ items, loading, failed }: BlastRadiusPanelPro
 
   if (failed) {
     return (
-      <div className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-amber-500/5 border border-amber-500/10">
-        <AlertTriangle className="w-3.5 h-3.5 text-amber-400/70 mt-0.5 shrink-0" />
+      <div className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-status-warning/5 border border-status-warning/10">
+        <AlertTriangle className="w-3.5 h-3.5 text-status-warning mt-0.5 shrink-0" />
         <span className="typo-body text-foreground">{t.shared.blast_check_failed}</span>
       </div>
     );
@@ -59,15 +59,15 @@ export function BlastRadiusPanel({ items, loading, failed }: BlastRadiusPanelPro
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-1.5 px-1">
-        <AlertTriangle className="w-3.5 h-3.5 text-amber-400/80" />
-        <span className="typo-heading text-amber-400/80">{t.shared.blast_impact}</span>
+        <AlertTriangle className="w-3.5 h-3.5 text-status-warning" />
+        <span className="typo-heading text-status-warning">{t.shared.blast_impact}</span>
       </div>
       <ul className="space-y-1">
         {items.map((item, i) => {
           const Icon = CATEGORY_ICONS[item.category] ?? AlertTriangle;
           return (
-            <li key={i} className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-amber-500/5 border border-amber-500/10">
-              <Icon className="w-3.5 h-3.5 text-amber-400/70 mt-0.5 shrink-0" />
+            <li key={i} className="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-status-warning/5 border border-status-warning/10">
+              <Icon className="w-3.5 h-3.5 text-status-warning mt-0.5 shrink-0" />
               <span className="typo-body text-foreground">{item.description}</span>
             </li>
           );

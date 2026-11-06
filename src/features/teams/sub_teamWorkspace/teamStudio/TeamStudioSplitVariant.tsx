@@ -138,7 +138,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
               <button
                 type="button"
                 onClick={requestBack}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body text-foreground hover:bg-secondary/50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-hair bg-surface-1 typo-body text-foreground hover:bg-surface-2 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 {t.plugins.dev_tools.back_to_projects}
@@ -151,13 +151,13 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
       <div className="flex-1 min-h-0 flex overflow-hidden">
         {/* Left — navigation + roster, sectioned so the eye separates
             WORKSPACE (navigation) from MEMBERS (data) like an IDE sidebar. */}
-        <div className="flex-shrink-0 w-[300px] flex flex-col border-r border-primary/10 bg-secondary/10">
+        <div className="flex-shrink-0 w-[300px] flex flex-col border-r border-hair bg-surface-1">
           {/* WORKSPACE — the mode trio, tightened into one distinct group. */}
           <div className="flex-shrink-0 px-3 pt-3 pb-2">
             <p className="px-1 mb-1.5 typo-label text-foreground">
               {ts.section_workspace}
             </p>
-            <div className="flex flex-col gap-0.5 rounded-card bg-secondary/20 p-1">
+            <div className="flex flex-col gap-0.5 rounded-card bg-surface-1 p-1">
 
               {/* Team memory — the shared ledger (decisions / constraints / learnings) */}
               <button
@@ -167,8 +167,8 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
                 aria-pressed={mode.kind === 'memory'}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
                   mode.kind === 'memory'
-                    ? 'border-primary/40 bg-secondary/40 text-foreground/90'
-                    : 'border-transparent text-foreground hover:bg-secondary/40'
+                    ? 'border-primary/40 bg-surface-1 text-ink-2'
+                    : 'border-transparent text-foreground hover:bg-surface-2'
                 }`}
               >
                 <Brain className="w-4 h-4 flex-shrink-0" />
@@ -183,8 +183,8 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
                 aria-pressed={mode.kind === 'workspace'}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
                   mode.kind === 'workspace'
-                    ? 'border-primary/40 bg-secondary/40 text-foreground/90'
-                    : 'border-transparent text-foreground hover:bg-secondary/40'
+                    ? 'border-primary/40 bg-surface-1 text-ink-2'
+                    : 'border-transparent text-foreground hover:bg-surface-2'
                 }`}
               >
                 <Settings className="w-4 h-4 flex-shrink-0" />
@@ -194,7 +194,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
           </div>
 
           {/* Hairline divider — navigation above, member data below. */}
-          <div className="flex-shrink-0 border-t border-primary/10" />
+          <div className="flex-shrink-0 border-t border-hair" />
 
           {/* MEMBERS — the roster */}
           <div className="flex-shrink-0 px-3 pt-3 pb-1.5 flex items-center justify-between gap-2">
@@ -275,7 +275,7 @@ function RosterRow({
       aria-pressed={selected}
       className={`flex items-center gap-2.5 px-2.5 py-2 rounded-card border text-left transition-colors ${
         selected
-          ? 'border-primary/40 bg-secondary/40'
+          ? 'border-primary/40 bg-surface-1'
           : 'border-transparent hover:bg-secondary/25'
       }`}
     >
@@ -331,7 +331,7 @@ function MemberAdjustPane({
           </div>
           <div className="flex items-center gap-2 mt-1">
             {member.presetRole && (
-              <span className="typo-caption text-foreground uppercase tracking-wider">
+              <span className="typo-eyebrow">
                 {member.presetRole}
               </span>
             )}
@@ -357,7 +357,7 @@ function MemberAdjustPane({
           <p className="typo-body text-foreground px-2">{t.pipeline.team_studio.no_capabilities_persona}</p>
         ) : (
           member.useCases.map((uc) => (
-            <div key={uc.id} className="rounded-card border border-primary/8 bg-secondary/15">
+            <div key={uc.id} className="rounded-card border border-hair bg-secondary/15">
               <UseCaseToggleRow
                 useCase={uc}
                 busy={busyUseCases.has(`${member.personaId}:${uc.id}`)}

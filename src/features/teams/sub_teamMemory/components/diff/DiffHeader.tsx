@@ -42,7 +42,7 @@ function RunPicker({ roleLabel, runs, value, excluded, onChange }: RunPickerProp
         <button
           type="button"
           onClick={toggle}
-          className="w-full inline-flex items-center justify-between gap-1 typo-caption bg-primary/5 border border-primary/10 rounded-card px-1.5 py-1 text-foreground hover:border-primary/20 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+          className="w-full inline-flex items-center justify-between gap-1 typo-caption bg-surface-1 border border-hair rounded-card px-1.5 py-1 text-foreground hover:border-hair focus-visible:outline-none focus-visible:border-role-agent/30 transition-colors"
         >
           <span className="truncate">
             <span className="text-foreground">{roleLabel}</span>{' '}
@@ -67,7 +67,7 @@ function RunPicker({ roleLabel, runs, value, excluded, onChange }: RunPickerProp
               className={`w-full text-left px-2 py-1 typo-caption transition-colors ${
                 i === focusIndex || id === value
                   ? 'bg-primary/10 text-foreground'
-                  : 'text-foreground/80 hover:bg-primary/5'
+                  : 'text-ink-2 hover:bg-surface-2'
               }`}
             >
               {shortId(id)} ({count})

@@ -51,7 +51,7 @@ export function FactoryProjectSwitcher({ current, siblings, label, onSelect }: {
               size="sm"
               role="option"
               aria-selected={s.id === current}
-              className={`w-full justify-start gap-2 ${i === focusIndex || s.id === current ? 'bg-secondary/40' : ''}`}
+              className={`w-full justify-start gap-2 ${i === focusIndex || s.id === current ? 'bg-surface-1' : ''}`}
               onClick={() => { close(); pick(i); }}
             >
               <span className="flex w-full items-center gap-2">

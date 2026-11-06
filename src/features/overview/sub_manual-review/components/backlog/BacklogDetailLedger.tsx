@@ -32,7 +32,7 @@ export interface BacklogNav {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 py-2 min-w-0">
-      <span className="typo-label text-muted-foreground">{label}</span>
+      <span className="typo-label text-ink-3">{label}</span>
       <span className="typo-body text-foreground break-words">{children}</span>
     </div>
   );
@@ -70,7 +70,7 @@ export function BacklogDetailLedger({
 
   return (
     <div className="flex flex-col max-h-[80vh]">
-      <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b border-primary/10">
+      <header className="flex items-start gap-3 px-6 pt-5 pb-4 border-b border-hair">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span className={`typo-label px-1.5 py-0.5 rounded border ${tw.bg} ${tw.text} ${tw.border}`}>
@@ -93,11 +93,11 @@ export function BacklogDetailLedger({
               disabled={busy || nav.index === 0}
               aria-label={r.backlog_detail_prev}
               title={r.backlog_detail_prev}
-              className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-secondary/40 disabled:opacity-30 transition-colors"
+              className="p-1.5 rounded-interactive text-ink-3 hover:text-foreground hover:bg-surface-2 disabled:opacity-30 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="typo-caption text-muted-foreground tabular-nums whitespace-nowrap">
+            <span className="typo-caption text-ink-3 tabular-nums whitespace-nowrap">
               {tx(r.backlog_detail_position, { index: nav.index + 1, total: nav.total })}
             </span>
             <button
@@ -106,7 +106,7 @@ export function BacklogDetailLedger({
               disabled={busy || nav.index >= nav.total - 1}
               aria-label={r.backlog_detail_next}
               title={r.backlog_detail_next}
-              className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-secondary/40 disabled:opacity-30 transition-colors"
+              className="p-1.5 rounded-interactive text-ink-3 hover:text-foreground hover:bg-surface-2 disabled:opacity-30 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -130,7 +130,7 @@ export function BacklogDetailLedger({
                 below it — lists, backticks, bold — and this was the one place
                 that printed those symbols verbatim and asked the reviewer to
                 parse them in their head. */}
-            <div className="max-w-[68ch] border-l-2 border-primary/30 pl-4">
+            <div className="max-w-[68ch] border-l-2 border-hair pl-4">
               {idea.description ? (
                 <MarkdownRenderer
                   content={idea.description}
@@ -144,21 +144,21 @@ export function BacklogDetailLedger({
             </div>
             {idea.reasoning.trim() && (
               <div className="flex flex-col gap-1.5 max-w-[68ch]">
-                <span className="typo-label text-muted-foreground">
+                <span className="typo-label text-ink-3">
                   {r.backlog_detail_reasoning}
                 </span>
                 <MarkdownRenderer
                   content={idea.reasoning}
-                  className="typo-body text-foreground/90"
+                  className="typo-body text-ink-2"
                 />
               </div>
             )}
             {evidence && (
               <div className="flex flex-col gap-1.5 max-w-[68ch]">
-                <span className="typo-label text-muted-foreground">
+                <span className="typo-label text-ink-3">
                   {r.backlog_detail_evidence}
                 </span>
-                <pre className="typo-caption text-foreground/70 bg-secondary/30 rounded-card p-3 whitespace-pre-wrap break-words">
+                <pre className="typo-caption text-ink-2 bg-surface-1 rounded-card p-3 whitespace-pre-wrap break-words">
                   {evidence}
                 </pre>
               </div>
@@ -166,7 +166,7 @@ export function BacklogDetailLedger({
           </div>
 
           {/* MARGIN RAIL — the only card. Facts, then the decision that uses them. */}
-          <aside className="md:w-[260px] shrink-0 px-5 py-3 bg-secondary/20 flex flex-col">
+          <aside className="md:w-[260px] shrink-0 px-5 py-3 bg-surface-1 flex flex-col">
             <div className="divide-y divide-primary/10">
               <Row label={r.backlog_detail_project}>
                 {idea.projectName || r.backlog_project_none}
@@ -194,7 +194,7 @@ export function BacklogDetailLedger({
             </div>
 
             {pending && (
-              <div className="mt-4 pt-3 border-t border-primary/10 flex flex-col gap-2">
+              <div className="mt-4 pt-3 border-t border-hair flex flex-col gap-2">
                 <DecisionActions
                   layout="stacked"
                   size="md"
@@ -210,8 +210,8 @@ export function BacklogDetailLedger({
         </div>
       </div>
 
-      <footer className="flex items-center gap-2 px-6 py-3 border-t border-primary/10">
-        <span className="typo-caption text-muted-foreground hidden md:inline whitespace-nowrap">
+      <footer className="flex items-center gap-2 px-6 py-3 border-t border-hair">
+        <span className="typo-caption text-ink-3 hidden md:inline whitespace-nowrap">
           {r.backlog_detail_nav_hint}
         </span>
         <Button variant="ghost" onClick={onClose} className="ml-auto whitespace-nowrap">

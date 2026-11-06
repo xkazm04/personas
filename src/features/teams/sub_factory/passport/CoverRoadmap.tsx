@@ -97,10 +97,10 @@ export function CoverRoadmap({ roadmap, projectName, onOpenShip }: {
                 <span key={s.id} className="w-2.5 h-2.5 rounded-full" style={PIP_STYLE[s.status]} title={s.name} />
               ))}
               {overflow > 0 && (
-                <span className="typo-body-lg text-foreground/70">+{overflow}</span>
+                <span className="typo-body-lg text-ink-2">+{overflow}</span>
               )}
             </span>
-            <span className="ml-auto shrink-0 typo-body-lg tabular-nums text-foreground/70">
+            <span className="ml-auto shrink-0 typo-body-lg tabular-nums text-ink-2">
               {tx(t.ship.cover_shipped_count, { shipped: roadmap.shipped, total: roadmap.steps.length })}
             </span>
           </>
@@ -110,12 +110,12 @@ export function CoverRoadmap({ roadmap, projectName, onOpenShip }: {
         )}
       </span>
       <span className="mt-1 flex items-baseline gap-1.5 min-w-0">
-        <span className="typo-body-lg text-foreground/70 shrink-0">{t.ship.cover_next}</span>
+        <span className="typo-body-lg text-ink-2 shrink-0">{t.ship.cover_next}</span>
         <span className="typo-body-lg truncate text-foreground">
           {roadmap.next ? roadmap.next.name : t.ship.cover_all_shipped}
         </span>
         {roadmap.next?.targetDate && (
-          <span className="typo-body-lg tabular-nums text-foreground/70 shrink-0">{roadmap.next.targetDate}</span>
+          <span className="typo-body-lg tabular-nums text-ink-2 shrink-0">{roadmap.next.targetDate}</span>
         )}
         {roadmap.next && roadmap.forecast && (
           <span
@@ -130,7 +130,7 @@ export function CoverRoadmap({ roadmap, projectName, onOpenShip }: {
     </>
   );
 
-  const shared = 'mt-3 pt-2.5 border-t border-dashed border-foreground/10 min-w-0 flex flex-col text-left';
+  const shared = 'mt-3 pt-2.5 border-t border-dashed border-hair min-w-0 flex flex-col text-left';
 
   if (!onOpenShip) {
     return <div className={shared} data-testid="cover-roadmap">{body}</div>;

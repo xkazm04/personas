@@ -50,7 +50,7 @@ export function IncidentDetailBreakdown({ detail }: { detail: string | null }) {
   // payload directly rather than an empty grid.
   if (facts.length === 0) {
     return rawJson ? (
-      <div className="rounded-modal border border-primary/10 bg-secondary/20 p-2">
+      <div className="rounded-modal border border-hair bg-surface-1 p-2">
         <HighlightedJson raw={rawJson} />
       </div>
     ) : (
@@ -64,7 +64,7 @@ export function IncidentDetailBreakdown({ detail }: { detail: string | null }) {
         {facts.map((fact) => (
           <div
             key={fact.label}
-            className="group/fact relative min-w-0 rounded-card border border-primary/10 bg-secondary/20 px-3 py-2"
+            className="group/fact relative min-w-0 rounded-card border border-hair bg-surface-1 px-3 py-2"
           >
             <div className="absolute right-1.5 top-1.5 opacity-0 transition-opacity group-hover/fact:opacity-100">
               <CopyButton text={fact.value} iconSize="w-3 h-3" />
@@ -83,7 +83,7 @@ export function IncidentDetailBreakdown({ detail }: { detail: string | null }) {
             type="button"
             onClick={() => setShowRaw((v) => !v)}
             aria-expanded={showRaw}
-            className="inline-flex items-center gap-1 typo-caption text-foreground rounded-card px-1.5 py-1 hover:bg-secondary/40 transition-colors focus-ring"
+            className="inline-flex items-center gap-1 typo-caption text-foreground rounded-card px-1.5 py-1 hover:bg-surface-2 transition-colors focus-ring"
           >
             <ChevronRight
               className={`h-3.5 w-3.5 transition-transform ${showRaw ? 'rotate-90' : ''}`}
@@ -92,7 +92,7 @@ export function IncidentDetailBreakdown({ detail }: { detail: string | null }) {
             {t.overview.incidents.detail_raw_toggle}
           </button>
           {showRaw && (
-            <div className="mt-2 rounded-modal border border-primary/10 bg-secondary/20 p-2">
+            <div className="mt-2 rounded-modal border border-hair bg-surface-1 p-2">
               <HighlightedJson raw={rawJson} />
             </div>
           )}

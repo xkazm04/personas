@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { Hash, Link2, Link2Off, AlertTriangle } from 'lucide-react';
+import { Hash, AlertTriangle } from 'lucide-react';
+import { StateMark } from '@/features/shared/components/display/StateMark';
 import Button from '@/features/shared/components/buttons/Button';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useToastStore } from '@/stores/toastStore';
@@ -61,35 +62,32 @@ export function TeamSlackBridgePanel({ teamId }: { teamId: string }) {
 
   return (
     <div
-      className="rounded-card border border-primary/10 bg-secondary/10 p-3 space-y-3"
+      className="rounded-card border border-hair bg-surface-1 p-3 space-y-3"
       data-testid="team-slack-bridge-panel"
     >
       {/* Static chrome always renders — a fetch never hides it (loading v2). */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Hash className="w-3.5 h-3.5 text-teal-300/80" />
+          <Hash className="w-3.5 h-3.5 text-status-success" />
           <span className="typo-label text-foreground">{ts.slack_bridge_heading}</span>
         </div>
-        <span
-          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption ${
-            linked ? 'border border-teal-500/25 bg-teal-500/10 text-teal-300' : 'text-foreground/60'
-          }`}
-          data-testid="team-slack-bridge-status"
-        >
-          {linked ? <Link2 className="w-3 h-3" /> : <Link2Off className="w-3 h-3" />}
-          {linked
-            ? tx(ts.slack_bridge_connected, { channel: bridge.form.channelName || bridge.form.channel })
-            : ts.slack_bridge_not_connected}
+        <span data-testid="team-slack-bridge-status">
+          <StateMark
+            state={linked ? 'success' : 'neutral'}
+            label={linked
+              ? tx(ts.slack_bridge_connected, { channel: bridge.form.channelName || bridge.form.channel })
+              : ts.slack_bridge_not_connected}
+          />
         </span>
       </div>
       <p className="typo-caption text-foreground">{ts.slack_bridge_hint}</p>
 
       {/* Ghost only while loading AND nothing to show yet. */}
       {bridge.loading && !linked && !bridge.form.credentialId ? (
-        <div className="h-24 rounded-input bg-secondary/20 animate-pulse" aria-hidden />
+        <div className="h-24 rounded-input bg-surface-1 animate-pulse" aria-hidden />
       ) : noCredential ? (
-        <div className="rounded-input border border-amber-500/20 bg-amber-500/5 p-3 space-y-1">
-          <div className="flex items-center gap-1.5 typo-body text-amber-300">
+        <div className="rounded-input border border-status-warning/20 bg-status-warning/5 p-3 space-y-1">
+          <div className="flex items-center gap-1.5 typo-body text-status-warning">
             <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
             {ts.slack_bridge_no_credential_title}
           </div>
@@ -111,7 +109,7 @@ export function TeamSlackBridgePanel({ teamId }: { teamId: string }) {
           />
           <SlackBridgeDirections form={bridge.form} onChange={patch} />
           {bridge.legacyBlob && (
-            <p className="flex items-start gap-1.5 typo-caption text-amber-300">
+            <p className="flex items-start gap-1.5 typo-caption text-status-warning">
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
               {ts.slack_bridge_legacy_warning}
             </p>

@@ -26,16 +26,16 @@ export default function DetailModal({ title, subtitle, onClose, actions, maxWidt
       portal
       staggerChildren={false}
       containerClassName="fixed inset-0 z-[200] flex items-start justify-center px-6 pt-14 pb-6"
-      panelClassName="relative bg-gradient-to-b from-background via-background to-[color-mix(in_srgb,var(--color-background),var(--color-primary)_3%)] border border-primary/15 rounded-2xl shadow-elevation-4 shadow-black/30 overflow-hidden flex flex-col w-full max-h-[calc(100vh-5rem)]"
+      panelClassName="relative bg-surface-1(in_srgb,var(--color-background),var(--color-primary)_3%)] border border-hair rounded-card shadow-elevation-4 shadow-black/30 overflow-hidden flex flex-col w-full max-h-[calc(100vh-5rem)]"
     >
       {/* Ambient glow effects */}
-      <div className="absolute top-0 left-1/4 w-1/2 h-32 bg-primary/[0.04] blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/4 w-1/2 h-32 bg-surface-1 blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-1/3 h-24 bg-accent/[0.03] blur-3xl pointer-events-none" />
 
       {/* Header */}
-      <div className="relative flex items-start justify-between px-6 py-4 border-b border-primary/[0.08] flex-shrink-0 bg-secondary/10">
+      <div className="relative flex items-start justify-between px-6 py-4 border-b border-hair flex-shrink-0 bg-surface-1">
         <div className="flex-1 min-w-0 pr-4">
-          <h3 id="detail-modal-title" className="typo-body-lg text-foreground/95 tracking-tight">{title}</h3>
+          <h3 id="detail-modal-title" className="typo-body-lg text-ink-2 tracking-tight">{title}</h3>
           {subtitle && (
             <p className="typo-body text-foreground mt-1">{subtitle}</p>
           )}
@@ -43,7 +43,7 @@ export default function DetailModal({ title, subtitle, onClose, actions, maxWidt
         <button
           type="button"
           onClick={onClose}
-          className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/90 transition-colors focus-ring"
+          className="p-1.5 rounded-card hover:bg-surface-2 text-foreground hover:text-ink-2 transition-colors focus-ring"
           aria-label={t.overview.detail_modal.close}
         >
           <X className="w-4 h-4" />
@@ -57,7 +57,7 @@ export default function DetailModal({ title, subtitle, onClose, actions, maxWidt
 
       {/* Footer actions */}
       {actions && (
-        <div className="relative flex items-center justify-end gap-2 px-6 py-3 border-t border-primary/[0.08] bg-secondary/15 flex-shrink-0">
+        <div className="relative flex items-center justify-end gap-2 px-6 py-3 border-t border-hair bg-secondary/15 flex-shrink-0">
           {actions}
         </div>
       )}

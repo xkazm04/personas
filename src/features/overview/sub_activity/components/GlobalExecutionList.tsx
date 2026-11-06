@@ -20,7 +20,7 @@ import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 const EXEC_ROW_HEIGHT = 56;
 
 const HEADER_BTN = 'flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors border';
-const HEADER_BTN_IDLE = 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border-primary/15';
+const HEADER_BTN_IDLE = 'text-foreground hover:text-ink-3 bg-surface-1 hover:bg-surface-2 border-hair';
 
 /**
  * Overview › Executions › Activity: every persona's runs as one ledger.
@@ -96,7 +96,7 @@ export default function GlobalExecutionList() {
       />
 
       {feed.warning && (
-        <div className="mx-4 md:mx-6 mt-3 rounded-modal border border-amber-500/25 bg-amber-500/10 px-3 py-2 typo-body text-amber-300/90" role="status" aria-live="polite">
+        <div className="mx-4 md:mx-6 mt-3 rounded-modal border border-status-warning/25 bg-status-warning/10 px-3 py-2 typo-body text-status-warning" role="status" aria-live="polite">
           {feed.warning}
         </div>
       )}
@@ -143,7 +143,7 @@ export default function GlobalExecutionList() {
               className="flex-1"
             />
             {feed.hasMore && (
-              <div className="flex-shrink-0 pt-3 pb-2 text-center border-t border-primary/5">
+              <div className="flex-shrink-0 pt-3 pb-2 text-center border-t border-hair">
                 <button type="button" onClick={feed.loadMore} className={`px-4 py-2 typo-heading ${HEADER_BTN} ${HEADER_BTN_IDLE} mx-auto`}>
                   {act.load_more}
                 </button>

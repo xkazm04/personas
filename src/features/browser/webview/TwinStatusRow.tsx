@@ -43,7 +43,7 @@ interface TwinStatusRowProps extends TwinLearnRowActions {
   onDismissSubmit: () => void;
 }
 
-const BAR = 'flex items-center gap-2 px-3 py-1.5 rounded-card border border-primary/15 bg-secondary/30 min-w-0';
+const BAR = 'flex items-center gap-2 px-3 py-1.5 rounded-card border border-hair bg-surface-1 min-w-0';
 
 export default function TwinStatusRow({ lane, onConfirmSubmit, onDismissSubmit, ...learnProps }: TwinStatusRowProps) {
   const { t, tx } = useTranslation();
@@ -70,7 +70,7 @@ export default function TwinStatusRow({ lane, onConfirmSubmit, onDismissSubmit, 
 
   const failed = lane.phase === 'failed';
   const Icon = failed ? AlertCircle : lane.phase === 'inserted' ? Check : MousePointerClick;
-  const tone = failed ? 'text-status-warning' : lane.phase === 'inserted' ? 'text-status-success' : 'text-foreground/70';
+  const tone = failed ? 'text-status-warning' : lane.phase === 'inserted' ? 'text-status-success' : 'text-ink-2';
   const text =
     lane.phase === 'armed'
       ? v.armed_hint

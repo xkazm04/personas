@@ -103,7 +103,7 @@ export function LaneStrip({ counts, settled, ready, open, refs, onLane, onReady 
         data-testid="decision-lanes"
       >
         {OPERATOR_LANES.map(lane)}
-        <span className={`h-6 w-px bg-gradient-to-b from-transparent via-primary/25 to-transparent ${compact ? 'mx-0.5' : 'mx-1'}`} aria-hidden />
+        <span className={`h-6 w-px bg-surface-1 ${compact ? 'mx-0.5' : 'mx-1'}`} aria-hidden />
         {lane('orphan')}
         <ReadyChip
           ref={(el) => { refs.current.ready = el; }}

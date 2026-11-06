@@ -123,7 +123,7 @@ export function KpiSteeringPanel({
       )}
 
       {open.length + done.length > 0 && (
-      <div className="divide-y divide-primary/10 rounded-card border border-primary/10">
+      <div className="divide-y divide-primary/10 rounded-card border border-hair">
         {open.map((g) => {
           const team = teams.get(g.id);
           const overdue = g.target_date != null && ts(g.target_date) < Date.now();

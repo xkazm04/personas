@@ -343,7 +343,7 @@ export default function ManualReviewList() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<ClipboardCheck className="w-5 h-5 text-amber-400" />}
+        icon={<ClipboardCheck className="w-5 h-5 text-status-warning" />}
         iconColor="amber"
         title={t.overview.review.title}
         subtitle={subtitle}
@@ -358,7 +358,7 @@ export default function ManualReviewList() {
               <button
                 onClick={() => void handleGcStale()}
                 disabled={isGcing}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-foreground/5 text-foreground border border-border/30 hover:bg-foreground/10 hover:text-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-foreground/5 text-foreground border border-border/30 hover:bg-foreground/10 hover:text-ink-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 title={t.overview.review.gc_tooltip}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -368,7 +368,7 @@ export default function ManualReviewList() {
             {(reviewQueue.counts?.total ?? 0) > 0 && (
               <button
                 onClick={() => setConfirmingDeleteAll(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-status-error/15 text-status-error border border-status-error/30 hover:bg-status-error/25 transition-colors"
                 title={t.overview.review.delete_all}
                 aria-label={t.overview.review.delete_all}
               >
@@ -376,7 +376,7 @@ export default function ManualReviewList() {
               </button>
             )}
             {import.meta.env.DEV && (
-              <button onClick={handleSeedReview} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.review.seed_tooltip}>
+              <button onClick={handleSeedReview} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-status-warning/10 text-status-warning border border-status-warning/25 hover:bg-status-warning/20 transition-colors" title={t.overview.review.seed_tooltip}>
                 <Plus className="w-3.5 h-3.5" /> {t.overview.review.mock_review}
               </button>
             )}
@@ -566,7 +566,7 @@ function ReviewGhostRows() {
         return (
           <div
             key={i}
-            className="flex items-center gap-3 px-4 border-b border-primary/[0.06] animate-fade-in"
+            className="flex items-center gap-3 px-4 border-b border-hair animate-fade-in"
             style={{ height: 84, animationDelay: delay }}
           >
             {/* persona icon */}

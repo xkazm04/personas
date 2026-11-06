@@ -39,7 +39,7 @@ export const DashboardRangeSwitch = memo(function DashboardRangeSwitch() {
     <div
       role="group"
       aria-label={t.overview.usage_filters.time_range_label}
-      className="flex items-center gap-0.5 rounded-interactive border border-primary/10 bg-primary/[0.03] p-0.5"
+      className="flex items-center gap-0.5 rounded-interactive border border-hair bg-surface-1 p-0.5"
     >
       {RANGE_OPTIONS.map((opt) => {
         const isActive = active === opt.value;
@@ -51,7 +51,7 @@ export const DashboardRangeSwitch = memo(function DashboardRangeSwitch() {
             disabled={loading}
             aria-pressed={isActive}
             className={`typo-caption font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-interactive transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 ${
-              isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-primary/[0.06]'
+              isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-surface-2'
             }`}
           >
             {opt.label}

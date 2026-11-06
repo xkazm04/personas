@@ -196,13 +196,13 @@ export function BacklogFocusDeck({
     <div className="h-full min-h-0 flex flex-col items-center justify-center gap-6 py-4 overflow-y-auto">
       {total > 0 && (
         <div className="w-full max-w-lg">
-          <div className="flex items-center justify-between typo-caption text-muted-foreground mb-1.5">
+          <div className="flex items-center justify-between typo-caption text-ink-3 mb-1.5">
             <span>{tx(r.backlog_deck_remaining, { count: rows.length })}</span>
             <span>{tx(r.backlog_deck_reviewed, { done: decided, total })}</span>
           </div>
           <div className="w-full h-1.5 bg-primary/10 rounded-full overflow-hidden">
             <div
-              className="h-full bg-amber-400 rounded-full transition-all duration-300"
+              className="h-full bg-status-warning rounded-full transition-all duration-300"
               style={{ width: `${total > 0 ? (decided / total) * 100 : 0}%` }}
             />
           </div>
@@ -237,11 +237,11 @@ export function BacklogFocusDeck({
               whileTap={{ scale: 0.9 }}
               disabled={busy}
               onClick={() => swipe('left')}
-              className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 disabled:opacity-40 transition-colors"
+              className="w-14 h-14 rounded-full bg-status-error/10 border border-status-error/20 flex items-center justify-center hover:bg-status-error/20 disabled:opacity-40 transition-colors"
               title={r.backlog_deck_reject_title}
               aria-label={r.backlog_deck_reject_title}
             >
-              <ThumbsDown className="w-5 h-5 text-red-400" />
+              <ThumbsDown className="w-5 h-5 text-status-error" />
             </motion.button>
 
             <motion.button
@@ -250,7 +250,7 @@ export function BacklogFocusDeck({
               whileTap={{ scale: 0.9 }}
               disabled={busy}
               onClick={removeTop}
-              className="w-10 h-10 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center hover:bg-primary/15 disabled:opacity-40 transition-colors"
+              className="w-10 h-10 rounded-full bg-primary/10 border border-hair flex items-center justify-center hover:bg-primary/15 disabled:opacity-40 transition-colors"
               title={r.backlog_deck_delete_title}
               aria-label={r.backlog_deck_delete_title}
             >
@@ -263,11 +263,11 @@ export function BacklogFocusDeck({
               whileTap={{ scale: 0.9 }}
               disabled={busy}
               onClick={() => void buildNow()}
-              className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center hover:bg-amber-500/20 disabled:opacity-40 transition-colors"
+              className="w-10 h-10 rounded-full bg-status-warning/10 border border-status-warning/20 flex items-center justify-center hover:bg-status-warning/20 disabled:opacity-40 transition-colors"
               title={r.backlog_build_now_title}
               aria-label={r.backlog_build_now_title}
             >
-              <Hammer className="w-4 h-4 text-amber-400" />
+              <Hammer className="w-4 h-4 text-status-warning" />
             </motion.button>
 
             {onOpenDeck && (
@@ -277,7 +277,7 @@ export function BacklogFocusDeck({
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={openTop}
-                  className="w-10 h-10 rounded-full bg-primary/10 border border-primary/15 flex items-center justify-center hover:bg-primary/15 transition-colors"
+                  className="w-10 h-10 rounded-full bg-primary/10 border border-hair flex items-center justify-center hover:bg-primary/15 transition-colors"
                   aria-label={t.overview.dc_open_in_deck}
                   data-testid="backlog-focus-open-deck"
                 >
@@ -292,15 +292,15 @@ export function BacklogFocusDeck({
               whileTap={{ scale: 0.9 }}
               disabled={busy}
               onClick={() => swipe('right')}
-              className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center hover:bg-emerald-500/20 disabled:opacity-40 transition-colors"
+              className="w-14 h-14 rounded-full bg-status-success/10 border border-status-success/20 flex items-center justify-center hover:bg-status-success/20 disabled:opacity-40 transition-colors"
               title={r.backlog_deck_accept_title}
               aria-label={r.backlog_deck_accept_title}
             >
-              <ThumbsUp className="w-5 h-5 text-emerald-400" />
+              <ThumbsUp className="w-5 h-5 text-status-success" />
             </motion.button>
           </div>
 
-          <p className="typo-caption text-muted-foreground flex items-center gap-3">
+          <p className="typo-caption text-ink-3 flex items-center gap-3">
             <span className="flex items-center gap-1">
               <ChevronLeft className="w-3 h-3" aria-hidden /> / A = {r.backlog_deck_hint_reject}
             </span>

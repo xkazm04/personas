@@ -37,7 +37,7 @@ function ShowcaseCard({ preset, onPick }: { preset: import('@/lib/bindings/TeamP
       type="button"
       onClick={onPick}
       data-testid={`preset-showcase-${preset.id}`}
-      className="group text-left rounded-modal border border-primary/15 bg-secondary/20 overflow-hidden flex flex-col transition-all hover:border-primary/30 hover:shadow-elevation-2"
+      className="group text-left rounded-modal border border-hair bg-surface-1 overflow-hidden flex flex-col transition-all hover:border-hair hover:shadow-elevation-2"
     >
       {/* Illustration header */}
       <div
@@ -54,7 +54,7 @@ function ShowcaseCard({ preset, onPick }: { preset: import('@/lib/bindings/TeamP
 
       {/* Solid content panel */}
       <div className="flex-1 p-4 flex flex-col gap-2">
-        <h3 className="typo-heading text-foreground/90">{preset.name}</h3>
+        <h3 className="typo-heading text-ink-2">{preset.name}</h3>
         <p className="typo-body text-foreground line-clamp-2">{preset.description}</p>
         <div className="mt-auto pt-2 flex items-center justify-between">
           <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">

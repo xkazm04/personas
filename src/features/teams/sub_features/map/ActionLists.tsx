@@ -21,7 +21,7 @@ export interface ActionListsProps {
 
 function Panel({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-card border border-primary/15 bg-primary/5 shadow-elevation-1 p-3">
+    <section className="rounded-card border border-hair bg-surface-1 shadow-elevation-1 p-3">
       <h3 className="typo-body-lg text-foreground">{title}</h3>
       <p className="mt-0.5 typo-caption">{subtitle}</p>
       <div className="mt-2">{children}</div>
@@ -102,7 +102,7 @@ export function ActionLists({
             {loadBearing.map((cell) => (
               <li key={cell.context.id} className="flex items-center justify-between gap-2">
                 <span className="min-w-0 truncate typo-body text-foreground">{cell.context.name}</span>
-                <span className="flex-none typo-data text-violet-400">
+                <span className="flex-none typo-data text-role-agent">
                   {tx(t.list_feature_count, { count: cell.claimants.length })}
                 </span>
               </li>

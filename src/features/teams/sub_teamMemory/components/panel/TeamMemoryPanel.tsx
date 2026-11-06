@@ -90,7 +90,7 @@ export default function TeamMemoryPanel({
   // (resize handle, stored width, window drag listeners) went with the DAG
   // canvas; `TeamMemoryPane` is the only host and always passed `pane`.
   return (
-    <div className="h-full w-full max-w-xl flex flex-col rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden">
+    <div className="h-full w-full max-w-xl flex flex-col rounded-modal border border-hair bg-surface-1 overflow-hidden">
       <MemoryPanelHeader
         total={total}
         viewMode={viewMode}
@@ -136,10 +136,10 @@ export default function TeamMemoryPanel({
       </div>
 
       {stats && stats.total > 0 && (
-        <div className="border-t border-primary/10 px-3 py-2">
+        <div className="border-t border-hair px-3 py-2">
           <button
             type="button"
-            className="flex items-center justify-between w-full typo-body text-foreground hover:text-muted-foreground/70"
+            className="flex items-center justify-between w-full typo-body text-foreground hover:text-ink-2"
             onClick={() => setStatsExpanded(!statsExpanded)}
           >
             {/* `getTeamMemoryStats(teamId, category, search)` takes no runId --

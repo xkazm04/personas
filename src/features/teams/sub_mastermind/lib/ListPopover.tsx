@@ -58,18 +58,18 @@ export function ListPopover({
   return (
     <div
       ref={panelRef}
-      className={`${selfDismiss ? 'fixed z-50' : 'absolute z-30'} rounded-card border border-primary/15 bg-secondary/95 backdrop-blur-sm shadow-elevation-4 overflow-hidden`}
+      className={`${selfDismiss ? 'fixed z-50' : 'absolute z-30'} rounded-card border border-hair bg-secondary/95 backdrop-blur-sm shadow-elevation-4 overflow-hidden`}
       style={{ left: x, top: y, width }}
       onPointerDown={(e) => e.stopPropagation()}
       data-testid={testId}
     >
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 bg-primary/5">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-hair bg-surface-1">
         {dot || !Icon
           ? <span className="w-2 h-2 rounded-full shrink-0" style={{ background: ink }} aria-hidden />
           : <Icon className="w-4 h-4 shrink-0" style={{ color: ink }} aria-hidden />}
-        <span className="typo-label text-foreground/90 truncate">{title}</span>
+        <span className="typo-label text-ink-2 truncate">{title}</span>
         {trailing != null && (
-          <span className="ml-auto typo-caption text-foreground/50 tabular-nums shrink-0">{trailing}</span>
+          <span className="ml-auto typo-caption text-ink-3 tabular-nums shrink-0">{trailing}</span>
         )}
       </div>
       <ul className="overflow-y-auto py-1" style={{ maxHeight: maxListHeight }}>

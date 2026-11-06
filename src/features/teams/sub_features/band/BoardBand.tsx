@@ -61,7 +61,7 @@ export function BoardBand({
   const chips: ChipSpec[] = [
     { id: 'waiting', count: totals.waitingOnYou, label: t.chip_waiting, tone: 'text-status-pending border-status-pending/40 bg-status-pending/10' },
     { id: 'trouble', count: totals.inTrouble, label: t.chip_trouble, tone: 'text-status-error border-status-error/40 bg-status-error/10' },
-    { id: 'unclaimed', count: unclaimedContexts, label: t.chip_unclaimed, tone: 'text-foreground border-border bg-secondary/40' },
+    { id: 'unclaimed', count: unclaimedContexts, label: t.chip_unclaimed, tone: 'text-foreground border-border bg-surface-1' },
     { id: 'untouched', count: untouchedGroups, label: t.chip_untouched, tone: 'text-status-warning border-status-warning/40 bg-status-warning/10' },
   ];
 

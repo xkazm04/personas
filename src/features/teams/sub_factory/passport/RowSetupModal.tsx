@@ -142,16 +142,16 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
   return (
     <BaseModal isOpen onClose={onClose} titleId="row-setup-title" portal maxWidthClass="max-w-2xl" staggerChildren={false}>
       <div data-testid="row-setup-modal">
-        <div className="flex items-start gap-2.5 pb-2 border-b border-primary/10">
+        <div className="flex items-start gap-2.5 pb-2 border-b border-hair">
           <Icon className="w-5 h-5 mt-0.5 shrink-0" style={{ color: INK.teal }} aria-hidden />
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-foreground/40">{passport.identity.name}</div>
+            <div className="typo-eyebrow">{passport.identity.name}</div>
             <h2 id="row-setup-title" className="typo-body text-foreground">{rowLabel}</h2>
-            <p className="typo-caption text-foreground/55 mt-0.5">
+            <p className="typo-caption text-ink-3 mt-0.5">
               {tx(w.setup_row_state, { level: currentLabel })}
             </p>
           </div>
-          <button type="button" onClick={onClose} aria-label={t.common.close} className="ml-auto shrink-0 p-1 rounded-interactive text-foreground/50 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring">
+          <button type="button" onClick={onClose} aria-label={t.common.close} className="ml-auto shrink-0 p-1 rounded-interactive text-ink-3 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring">
             <X className="w-4 h-4" aria-hidden />
           </button>
         </div>
@@ -173,11 +173,11 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
                 <span className="flex items-center gap-2 min-w-0">
                   <MessagesSquare className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden />
                   <span className="typo-caption text-foreground truncate">{w.setup_row_guided}</span>
-                  <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-medium tracking-wide" style={{ color: INK.violet, border: `1px solid ${INK.violet}55`, background: `${INK.violet}14` }}>
+                  <span className="shrink-0 rounded-interactive px-1.5 py-0.5 typo-caption" style={{ color: INK.violet, border: `1px solid ${INK.violet}55`, background: `${INK.violet}14` }}>
                     {w.setup_row_interactive}
                   </span>
                 </span>
-                <span className="block typo-caption text-foreground/55 mt-0.5 pl-[22px]">
+                <span className="block typo-caption text-ink-3 mt-0.5 pl-[22px]">
                   {w.setup_row_guided_hint}
                 </span>
               </button>
@@ -201,12 +201,12 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
                   <span className="w-2 h-2 rounded-full shrink-0" style={on ? { background: INK.teal, boxShadow: `0 0 5px ${INK.teal}88` } : { border: '1px solid rgba(148,163,184,.45)' }} />
                   <span className="typo-caption text-foreground truncate">{d.label}</span>
                   {d.fromScan && (
-                    <span className="shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-medium tracking-wide" style={{ color: INK.violet, border: `1px solid ${INK.violet}55`, background: `${INK.violet}14` }}>
+                    <span className="shrink-0 rounded-interactive px-1.5 py-0.5 typo-caption" style={{ color: INK.violet, border: `1px solid ${INK.violet}55`, background: `${INK.violet}14` }}>
                       {w.setup_row_from_scan}
                     </span>
                   )}
                 </span>
-                <span className="block typo-caption text-foreground/55 mt-0.5 pl-4">{d.hint}</span>
+                <span className="block typo-caption text-ink-3 mt-0.5 pl-4">{d.hint}</span>
               </button>
             );
           })}
@@ -233,7 +233,7 @@ export function RowSetupModal({ rowKey, rowLabel, passport, currentLabel, onDisp
           <Rocket className="w-3.5 h-3.5" aria-hidden />
           {busy ? w.setup_row_dispatching : w.setup_row_deploy}
         </button>
-        <p className="text-[10px] text-foreground/35 text-center mt-1.5">
+        <p className="typo-caption text-ink-3 text-center mt-1.5">
           {w.setup_row_note}
         </p>
       </div>

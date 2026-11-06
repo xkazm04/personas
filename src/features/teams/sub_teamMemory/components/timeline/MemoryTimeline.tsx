@@ -104,7 +104,7 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
     <div className="space-y-1">
       {totalRuns > 0 && (
         <div className="flex items-center gap-2 px-2 py-1">
-          <GitCommitVertical className="w-3 h-3 text-violet-400/60" />
+          <GitCommitVertical className="w-3 h-3 text-role-agent" />
           <span className="typo-body text-foreground">
             {tx(totalRuns === 1 ? pt.timeline_runs_one : pt.timeline_runs_other, { count: totalRuns })}
           </span>
@@ -118,7 +118,7 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
             </span>
           )}
           {activeRunFilter && (
-            <button type="button" onClick={() => onFilterRun(null)} className="typo-body text-violet-400 hover:text-violet-300 transition-colors ml-auto">
+            <button type="button" onClick={() => onFilterRun(null)} className="typo-body text-role-agent hover:text-role-agent transition-colors ml-auto">
               {pt.clear_filter}
             </button>
           )}

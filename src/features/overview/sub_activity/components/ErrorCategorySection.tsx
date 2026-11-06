@@ -24,7 +24,7 @@ function DeltaBadge({ delta }: { delta: number }) {
   if (delta === 0) return null;
   const up = delta > 0;
   const Icon = up ? ArrowUp : ArrowDown;
-  const color = up ? 'text-red-400' : 'text-emerald-400';
+  const color = up ? 'text-status-error' : 'text-status-success';
   return (
     <span className={`inline-flex items-center gap-0.5 typo-caption ${color}`}>
       <Icon className="w-3 h-3" />
@@ -73,7 +73,7 @@ export function ErrorCategorySection({ days }: Props) {
   if (!loaded) {
     return (
       <div className="space-y-2">
-        <h4 className="typo-heading text-red-400/80 flex items-center gap-1.5">
+        <h4 className="typo-heading text-status-error flex items-center gap-1.5">
           <AlertTriangle className="w-3 h-3" /> {t.overview.activity.error_category_section_title}
         </h4>
         <div className={SUMMARY_GRID} aria-hidden="true">
@@ -92,7 +92,7 @@ export function ErrorCategorySection({ days }: Props) {
   if (failed) {
     return (
       <div className="space-y-2">
-        <h4 className="typo-heading text-red-400/80 flex items-center gap-1.5">
+        <h4 className="typo-heading text-status-error flex items-center gap-1.5">
           <AlertTriangle className="w-3 h-3" /> {t.overview.activity.error_category_section_title}
         </h4>
         <InlineErrorBanner
@@ -112,7 +112,7 @@ export function ErrorCategorySection({ days }: Props) {
 
   return (
     <div className="space-y-2">
-      <h4 className="typo-heading text-red-400/80 flex items-center gap-1.5">
+      <h4 className="typo-heading text-status-error flex items-center gap-1.5">
         <AlertTriangle className="w-3 h-3" /> {t.overview.activity.error_category_section_title}
       </h4>
       <div className={SUMMARY_GRID}>
@@ -136,7 +136,7 @@ export function ErrorCategorySection({ days }: Props) {
             key={c.category}
             className="inline-flex items-center gap-1.5 typo-body text-foreground"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-red-400/60" aria-hidden="true" />
+            <span className="w-1.5 h-1.5 rounded-full bg-status-error/60" aria-hidden="true" />
             {tokenLabel(t, 'error_category', c.category)}
             <Numeric>{c.count}</Numeric>
             <DeltaBadge delta={c.delta} />
@@ -147,7 +147,7 @@ export function ErrorCategorySection({ days }: Props) {
       {/* Per-agent dominant failure category */}
       {data.personaTopCategories.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1">
-          <span className="typo-caption uppercase tracking-wider text-foreground">
+          <span className="typo-eyebrow">
             {t.overview.activity.error_category_by_persona}
           </span>
           {data.personaTopCategories.map((p) => (

@@ -17,8 +17,8 @@ export function CompareToggle({ enabled, onChange }: CompareToggleProps) {
       onClick={() => onChange(!enabled)}
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body border transition-all ${
         enabled
-          ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/25'
-          : 'bg-secondary/40 text-foreground border-primary/10 hover:text-muted-foreground hover:bg-secondary/60'
+          ? 'bg-role-agent/15 text-role-agent border-role-agent/25'
+          : 'bg-surface-1 text-foreground border-hair hover:text-ink-3 hover:bg-surface-2'
       }`}
       title={enabled ? 'Comparing to previous period' : 'Compare to previous period'}
     >

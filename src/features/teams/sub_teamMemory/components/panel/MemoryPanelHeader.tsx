@@ -24,26 +24,26 @@ export default function MemoryPanelHeader({
 }: MemoryPanelHeaderProps) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center justify-between px-3 py-2.5 border-b border-primary/10">
+    <div className="flex items-center justify-between px-3 py-2.5 border-b border-hair">
       <div className="flex items-center gap-2">
-        <Brain className="w-4 h-4 text-violet-400" />
-        <span className="typo-heading text-foreground/90">{t.pipeline.team_memory}</span>
-        <span className="typo-body px-1.5 py-0.5 rounded-full bg-violet-500/15 text-violet-400">
+        <Brain className="w-4 h-4 text-role-agent" />
+        <span className="typo-heading text-ink-2">{t.pipeline.team_memory}</span>
+        <span className="typo-body px-1.5 py-0.5 rounded-interactive bg-role-agent/15 text-role-agent">
           {total}
         </span>
       </div>
       <div className="flex items-center gap-1">
         {/* View mode toggle */}
         {hasRunData && (
-          <div className="flex items-center rounded-card border border-primary/10 overflow-hidden mr-1">
+          <div className="flex items-center rounded-card border border-hair overflow-hidden mr-1">
             <Tooltip content={t.pipeline.list_view}>
               <button
                 type="button"
                 onClick={() => { onViewModeChange('list'); onClearRunFilter(); }}
                 className={`p-1 transition-colors ${
                   viewMode === 'list'
-                    ? 'bg-violet-500/20 text-violet-400'
-                    : 'text-foreground hover:text-muted-foreground/60'
+                    ? 'bg-role-agent/20 text-role-agent'
+                    : 'text-foreground hover:text-ink-3'
                 }`}
                 aria-pressed={viewMode === 'list'}
                 aria-label={t.pipeline.list_view}
@@ -57,8 +57,8 @@ export default function MemoryPanelHeader({
                 onClick={() => onViewModeChange('timeline')}
                 className={`p-1 transition-colors ${
                   viewMode === 'timeline'
-                    ? 'bg-violet-500/20 text-violet-400'
-                    : 'text-foreground hover:text-muted-foreground/60'
+                    ? 'bg-role-agent/20 text-role-agent'
+                    : 'text-foreground hover:text-ink-3'
                 }`}
                 aria-pressed={viewMode === 'timeline'}
                 aria-label={t.pipeline.timeline_view}
@@ -73,8 +73,8 @@ export default function MemoryPanelHeader({
                   onClick={() => onViewModeChange('diff')}
                   className={`p-1 transition-colors ${
                     viewMode === 'diff'
-                      ? 'bg-violet-500/20 text-violet-400'
-                      : 'text-foreground hover:text-muted-foreground/60'
+                      ? 'bg-role-agent/20 text-role-agent'
+                      : 'text-foreground hover:text-ink-3'
                   }`}
                   aria-pressed={viewMode === 'diff'}
                   aria-label={t.pipeline.compare_runs}

@@ -19,7 +19,7 @@ import { formatNumeric } from '@/lib/utils/formatters';
 import { errMsg } from '@/stores/storeTypes';
 
 const LEVEL_TONE = [
-  'text-foreground border-primary/20 bg-primary/5',
+  'text-foreground border-hair bg-surface-1',
   'text-status-info border-status-info/30 bg-status-info/10',
   'text-status-success border-status-success/30 bg-status-success/10',
   'text-role-agent border-role-agent/30 bg-role-agent/10',
@@ -67,7 +67,7 @@ export function ScanTrustPopover({ projectId }: { projectId: string }) {
         {r.backlog_trust_button}
       </Button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-30 w-96 max-h-96 overflow-y-auto p-3 rounded-card border border-primary/15 bg-background shadow-elevation-3 flex flex-col gap-2">
+        <div className="absolute right-0 top-full mt-1 z-30 w-96 max-h-96 overflow-y-auto p-3 rounded-card border border-hair bg-background shadow-elevation-3 flex flex-col gap-2">
           <h3 className="typo-heading text-foreground">{r.backlog_trust_title}</h3>
           {error ? (
             <InlineErrorBanner message={resolveErrorTranslated(t, errMsg(error, '')).message} onRetry={() => void load()} />
@@ -91,7 +91,7 @@ function SliceRow({ slice }: { slice: ScanTrustSlice }) {
   return (
     <li className="flex flex-col gap-1 py-2 min-w-0">
       <span className="flex items-center gap-2 min-w-0">
-        <span className={`typo-caption rounded-full border px-2 py-0.5 tabular-nums ${LEVEL_TONE[slice.level] ?? LEVEL_TONE[0]}`}>
+        <span className={`typo-caption rounded-interactive border px-2 py-0.5 tabular-nums ${LEVEL_TONE[slice.level] ?? LEVEL_TONE[0]}`}>
           {tx(r.backlog_trust_level, { level: slice.level })}
         </span>
         <span className="typo-caption text-foreground truncate min-w-0 flex-1">{slice.slice}</span>

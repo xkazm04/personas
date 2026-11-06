@@ -17,7 +17,7 @@ export default function MemoryRowActions({ canEdit, onEdit, onDelete }: MemoryRo
         <Tooltip content={pt.edit_memory}>
           <button
             type="button"
-            className="p-1 rounded-card bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors"
+            className="p-1 rounded-card bg-role-agent/10 text-role-agent hover:bg-role-agent/20 transition-colors"
             onClick={onEdit}
             aria-label={pt.edit_memory}
           >
@@ -28,7 +28,7 @@ export default function MemoryRowActions({ canEdit, onEdit, onDelete }: MemoryRo
       <Tooltip content={pt.delete_memory}>
         <button
           type="button"
-          className="p-1 rounded-card bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+          className="p-1 rounded-card bg-status-error/10 text-status-error hover:bg-status-error/20 transition-colors"
           onClick={onDelete}
           aria-label={pt.delete_memory}
         >

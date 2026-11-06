@@ -49,7 +49,7 @@ export default function SitePolicyFields({
             {tools.map((tool) => (
               <li
                 key={tool}
-                className="flex items-center gap-2 px-3 py-2 rounded-card border border-primary/10 bg-background/40 min-w-0"
+                className="flex items-center gap-2 px-3 py-2 rounded-card border border-hair bg-background/40 min-w-0"
               >
                 <span className="typo-body text-foreground font-mono truncate flex-1">{tool}</span>
                 <AccessibleToggle

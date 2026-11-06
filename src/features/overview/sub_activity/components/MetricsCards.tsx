@@ -20,26 +20,26 @@ export function AnomalyBadge({ anomaly, onClickExecution, onOpenDrilldown }: Ano
   const headline = (
     <>
       {fmtDate(anomaly.date)} <DebtText k="auto_cost_spike_a1385f95" /> {fmtCost(anomaly.cost)}
-      <span className="text-amber-400/70 ml-1">
+      <span className="text-status-warning ml-1">
 (<Numeric value={anomaly.deviation_sigma} unit="plain" precision={1} /> <DebtText k="auto_above_avg_e49f3ce5" /> {fmtCost(anomaly.moving_avg)})
       </span>
     </>
   );
   return (
-    <div className="flex items-start gap-2 px-3 py-2 rounded-modal border border-amber-500/25 bg-amber-500/10">
-      <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
+    <div className="flex items-start gap-2 px-3 py-2 rounded-modal border border-status-warning/25 bg-status-warning/10">
+      <AlertTriangle className="w-3.5 h-3.5 text-status-warning mt-0.5 flex-shrink-0" />
       <div className="min-w-0">
         {onOpenDrilldown ? (
           <button
             type="button"
             onClick={onOpenDrilldown}
             aria-label={t.overview.metrics_cards.open_anomaly_drilldown}
-            className="typo-heading text-amber-300 text-left hover:text-amber-200 underline decoration-amber-400/30 cursor-pointer"
+            className="typo-heading text-status-warning text-left hover:text-status-warning underline decoration-amber-400/30 cursor-pointer"
           >
             {headline}
           </button>
         ) : (
-          <p className="typo-heading text-amber-300">{headline}</p>
+          <p className="typo-heading text-status-warning">{headline}</p>
         )}
         {anomaly.execution_ids.length > 0 && (
           <div className="flex items-center gap-1 mt-1 flex-wrap">
@@ -52,7 +52,7 @@ export function AnomalyBadge({ anomaly, onClickExecution, onOpenDrilldown }: Ano
                   key={id}
                   type="button"
                   onClick={() => onClickExecution(id)}
-                  className="typo-code text-blue-400 hover:text-blue-300 underline decoration-blue-400/30 cursor-pointer"
+                  className="typo-code text-status-info hover:text-status-info underline decoration-blue-400/30 cursor-pointer"
                 >
                   {id.slice(0, 8)}
                 </button>
@@ -76,13 +76,13 @@ export function ChartTooltipContent({ active, payload, label }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-background/95 border border-primary/20 rounded-modal px-3 py-2 shadow-elevation-3 backdrop-blur-sm">
+    <div className="bg-background/95 border border-hair rounded-modal px-3 py-2 shadow-elevation-3 backdrop-blur-sm">
       <p className="typo-body text-foreground mb-1">{label}</p>
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2 typo-body">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
           <span className="text-foreground">{entry.name}:</span>
-          <span className="font-mono text-foreground/90">{typeof entry.value === 'number' ? <Numeric value={entry.value} unit="plain" precision={2} /> : entry.value}</span>
+          <span className="font-mono text-ink-2">{typeof entry.value === 'number' ? <Numeric value={entry.value} unit="plain" precision={2} /> : entry.value}</span>
         </div>
       ))}
     </div>

@@ -30,7 +30,7 @@ export function ChannelDeliveryPill({ delivery, t }: ChannelDeliveryPillProps) {
     <div
       data-testid={`channel-delivery-pill-${delivery.channel_type}`}
       data-status={delivery.status}
-      className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full bg-secondary/[0.06] border border-primary/10"
+      className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full bg-surface-1 border border-hair"
     >
       {/* Channel brand icon inside a status-colored ring. */}
       <span
@@ -40,7 +40,7 @@ export function ChannelDeliveryPill({ delivery, t }: ChannelDeliveryPillProps) {
         <Icon className="w-3.5 h-3.5" style={{ color: tint }} />
       </span>
 
-      <span className="typo-caption text-foreground/90">
+      <span className="typo-caption text-ink-2">
         {channelLabel}
       </span>
 
@@ -57,7 +57,7 @@ export function ChannelDeliveryPill({ delivery, t }: ChannelDeliveryPillProps) {
 
       {delivery.error_message && (
         <span
-          className="typo-caption text-red-400/80 truncate max-w-[200px]"
+          className="typo-caption text-status-error truncate max-w-[200px]"
           title={delivery.error_message}
         >
           {delivery.error_message}

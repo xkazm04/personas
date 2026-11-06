@@ -121,11 +121,11 @@ export default function AttentionLoopCard() {
   const latest = status?.summary.latest ?? null;
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden" data-testid="attention-loop-card">
+    <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden" data-testid="attention-loop-card">
       <PaneHeader label={loop.title} subtitle={loop.subtitle}>
         {status && (
           <div className="flex items-center gap-2">
-            <span className={`typo-caption font-mono uppercase tracking-widest ${status.enabled ? 'text-emerald-400' : 'text-foreground'}`}>
+            <span className={`typo-caption font-mono uppercase tracking-widest ${status.enabled ? 'text-status-success' : 'text-foreground'}`}>
               {status.enabled ? loop.on : loop.off}
             </span>
             <AccessibleToggle
@@ -148,7 +148,7 @@ export default function AttentionLoopCard() {
       ) : (
         <div className="px-3 py-3 space-y-3">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="typo-caption font-mono uppercase tracking-widest text-foreground flex-shrink-0">
+            <span className="typo-eyebrow flex-shrink-0">
               {loop.last_activity}
             </span>
             {latest ? (
@@ -156,7 +156,7 @@ export default function AttentionLoopCard() {
                 <StatusBadge size="sm" accent={latest.kind === 'consolidation' ? 'violet' : 'cyan'}>
                   {kindLabels[latest.kind] ?? latest.kind}
                 </StatusBadge>
-                {latest.lane && <span className="typo-code text-foreground/85 truncate">{latest.lane}</span>}
+                {latest.lane && <span className="typo-code text-ink-2 truncate">{latest.lane}</span>}
                 <StatusBadge size="sm" variant={VERDICT_VARIANT[latest.verdict] ?? 'neutral'}>
                   {verdictLabels[latest.verdict] ?? latest.verdict}
                 </StatusBadge>
@@ -166,11 +166,11 @@ export default function AttentionLoopCard() {
               <span className="typo-caption text-foreground">{loop.none_yet}</span>
             )}
           </div>
-          <div className="flex items-center gap-4 pt-2 border-t border-primary/5">
-            <span className="typo-caption font-mono uppercase tracking-widest text-foreground">{loop.today_label}</span>
-            <TodayStat value={Number(status.summary.dispatchedToday)} label={loop.today_dispatched} tone="text-emerald-400" />
-            <TodayStat value={Number(status.summary.refusedToday)} label={loop.today_refused} tone="text-amber-400" />
-            <TodayStat value={Number(status.summary.consolidationsToday)} label={loop.today_consolidations} tone="text-violet-400" />
+          <div className="flex items-center gap-4 pt-2 border-t border-hair">
+            <span className="typo-eyebrow">{loop.today_label}</span>
+            <TodayStat value={Number(status.summary.dispatchedToday)} label={loop.today_dispatched} tone="text-status-success" />
+            <TodayStat value={Number(status.summary.refusedToday)} label={loop.today_refused} tone="text-status-warning" />
+            <TodayStat value={Number(status.summary.consolidationsToday)} label={loop.today_consolidations} tone="text-role-agent" />
           </div>
         </div>
       )}

@@ -205,7 +205,7 @@ export function MemoryConflictReview({ onConflictsResolved, loading }: MemoryCon
     return (
       <div className="mx-4 md:mx-6" aria-hidden="true">
         <div
-          className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-modal border border-primary/[0.06] animate-fade-in"
+          className="w-full flex items-center gap-2.5 px-4 py-2.5 rounded-modal border border-hair animate-fade-in"
           style={{ animationDelay: '120ms' }}
         >
           <span className="w-4 h-4 rounded-card bg-primary/[0.06] flex-shrink-0" />
@@ -232,7 +232,7 @@ export function MemoryConflictReview({ onConflictsResolved, loading }: MemoryCon
   if (conflicts.length === 0) {
     return (
       <div className="mx-4 md:mx-6 text-center py-6 typo-body text-foreground">
-        <Check className="w-5 h-5 mx-auto mb-2 text-emerald-400" />
+        <Check className="w-5 h-5 mx-auto mb-2 text-status-success" />
         {isPartialAudit
           ? tx(mc.none_in_scanned, { count: auditedCount })
           : <DebtText k="auto_all_conflicts_resolved_b848395b" />}
@@ -252,11 +252,11 @@ export function MemoryConflictReview({ onConflictsResolved, loading }: MemoryCon
         type="button"
         onClick={() => setExpanded((p) => !p)}
         className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-modal border transition-all text-left cursor-pointer ${
-          expanded ? 'bg-amber-500/8 border-amber-500/25' : 'bg-amber-500/5 border-amber-500/15 hover:border-amber-500/25 hover:bg-amber-500/10'
+          expanded ? 'bg-status-warning/8 border-status-warning/25' : 'bg-status-warning/5 border-status-warning/15 hover:border-status-warning/25 hover:bg-status-warning/10'
         }`}
       >
-        <Shield className="w-4 h-4 text-amber-400 flex-shrink-0" />
-        <span className="typo-heading text-foreground/85 flex-1">
+        <Shield className="w-4 h-4 text-status-warning flex-shrink-0" />
+        <span className="typo-heading text-ink-2 flex-1">
           {tx(unresolvedConflicts.length === 1 ? mc.detected_one : mc.detected, { count: unresolvedConflicts.length })}
           {isPartialAudit && (
             <span className="ml-1.5 typo-caption text-foreground">
@@ -266,17 +266,17 @@ export function MemoryConflictReview({ onConflictsResolved, loading }: MemoryCon
         </span>
         <div className="flex items-center gap-1.5">
           {countByKind.contradiction > 0 && (
-            <span className="px-1.5 py-0.5 typo-caption rounded-card bg-red-500/15 text-red-400 border border-red-500/20">
+            <span className="px-1.5 py-0.5 typo-caption rounded-card bg-status-error/15 text-status-error border border-status-error/20">
               {tx(countByKind.contradiction === 1 ? mc.count_contradiction_one : mc.count_contradiction, { count: countByKind.contradiction })}
             </span>
           )}
           {countByKind.duplicate > 0 && (
-            <span className="px-1.5 py-0.5 typo-caption rounded-card bg-amber-500/15 text-amber-400 border border-amber-500/20">
+            <span className="px-1.5 py-0.5 typo-caption rounded-card bg-status-warning/15 text-status-warning border border-status-warning/20">
               {tx(countByKind.duplicate === 1 ? mc.count_duplicate_one : mc.count_duplicate, { count: countByKind.duplicate })}
             </span>
           )}
           {countByKind.superseded > 0 && (
-            <span className="px-1.5 py-0.5 typo-caption rounded-card bg-blue-500/15 text-blue-400 border border-blue-500/20">
+            <span className="px-1.5 py-0.5 typo-caption rounded-card bg-status-info/15 text-status-info border border-status-info/20">
               {tx(mc.count_superseded, { count: countByKind.superseded })}
             </span>
           )}

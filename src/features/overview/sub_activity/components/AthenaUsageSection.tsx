@@ -78,10 +78,10 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
   return (
     <section className="space-y-3" data-testid="athena-usage-section">
       <div className="flex items-center gap-2">
-        <div className="w-6 h-6 rounded-card bg-primary/10 border border-primary/20 flex items-center justify-center">
+        <div className="w-6 h-6 rounded-card bg-primary/10 border border-hair flex items-center justify-center">
           <Bot className="w-3.5 h-3.5 text-primary" />
         </div>
-        <h3 className="typo-heading text-foreground/90">{a.section_title}</h3>
+        <h3 className="typo-heading text-ink-2">{a.section_title}</h3>
         <span className="typo-caption text-foreground">{a.section_hint}</span>
       </div>
 
@@ -99,7 +99,7 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
         // A failed read is not "Athena did nothing": say it failed.
         <InlineErrorBanner compact message={t.overview.observability.error_recovery.panel_failed} onRetry={reload} />
       ) : !hasActivity ? (
-        <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-6 text-center">
+        <div className="rounded-modal border border-hair bg-surface-1 px-4 py-6 text-center">
           <Bot className="w-5 h-5 text-foreground mx-auto mb-1.5" />
           <p className="typo-body text-foreground">{a.no_activity}</p>
         </div>
@@ -127,16 +127,16 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
 
           {/* Athena vs fleet headline */}
           {fleetCost !== null && (
-          <div className="rounded-modal border border-primary/10 bg-secondary/20 px-4 py-3 space-y-1.5">
+          <div className="rounded-modal border border-hair bg-surface-1 px-4 py-3 space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="typo-body text-foreground">{a.vs_fleet}</span>
               <span className="typo-body text-foreground">
                 {tx(a.vs_fleet_hint, { athena: fmtCost(totals!.costUsd), total: fmtCost(fleetCost) })}
               </span>
             </div>
-            <div className="h-2 bg-secondary/40 rounded-full overflow-hidden">
+            <div className="h-2 bg-surface-1 rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full bg-violet-500/70 transition-all"
+                className="h-full rounded-full bg-role-agent/70 transition-all"
                 style={{ width: `${Math.min(100, fleetCost > 0 ? (totals!.costUsd / fleetCost) * 100 : 0)}%` }}
               />
             </div>
@@ -152,13 +152,13 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
                   const maxCost = topActions[0]?.costUsd || 1;
                   const pct = (row.costUsd / maxCost) * 100;
                   return (
-                    <div key={`${row.origin}:${row.triggerKind ?? ''}`} className="flex items-center gap-3 px-3 py-2 rounded-modal border border-primary/10 bg-secondary/20">
+                    <div key={`${row.origin}:${row.triggerKind ?? ''}`} className="flex items-center gap-3 px-3 py-2 rounded-modal border border-hair bg-surface-1">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <span className="typo-heading text-foreground truncate">{actionLabel(row.origin, row.triggerKind)}</span>
-                          <span className="typo-code text-violet-400">{fmtCost(row.costUsd)}</span>
+                          <span className="typo-code text-role-agent">{fmtCost(row.costUsd)}</span>
                         </div>
-                        <div className="h-1.5 bg-secondary/40 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-surface-1 rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length], opacity: 0.7 }} />
                         </div>
                         <div className="mt-1 typo-body text-foreground">
@@ -176,7 +176,7 @@ export const AthenaUsageSection = memo(function AthenaUsageSection({ fleetCost }
           {dailyChart.length > 1 && (
             <div className="space-y-2">
               <h4 className="typo-heading text-foreground">{a.cost_per_day}</h4>
-              <div className="h-40 2xl:h-48 bg-secondary/20 rounded-modal border border-primary/10 p-3">
+              <div className="h-40 2xl:h-48 bg-surface-1 rounded-modal border border-hair p-3">
                 <ChartErrorBoundary>
                   <LazyChart render={(R) => (
                     <R.ResponsiveContainer width="100%" height="100%">

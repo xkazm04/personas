@@ -44,7 +44,7 @@ function RailGroupHeader({ label, count, first }: { label: string; count: number
     <div
       data-rail-group
       style={{ height: railItemHeight({ kind: 'header', key: '', label, count, first }) }}
-      className={`flex items-end gap-1.5 border-b border-primary/10 bg-secondary/25 px-3 pb-1 ${
+      className={`flex items-end gap-1.5 border-b border-hair bg-secondary/25 px-3 pb-1 ${
         first ? '' : 'pt-2'
       }`}
     >

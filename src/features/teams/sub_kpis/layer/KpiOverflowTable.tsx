@@ -42,7 +42,7 @@ export function KpiOverflowTable({
   return (
     <div className="space-y-1.5" data-testid="kpi-layer-overflow">
       {/* muted-ok: section micro-label over the overflow rows, not body text */}
-      <h4 className="typo-label text-muted-foreground">{title}</h4>
+      <h4 className="typo-label text-ink-3">{title}</h4>
       <ul className="divide-y divide-border/40">
         {series.map((s) => (
           <li key={s.kpi.id} className="flex items-center gap-2 py-1.5">

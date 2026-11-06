@@ -19,13 +19,13 @@ export function DemoNotice({ scanning, onScan, onNewProject, onDismiss }: {
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
       <div
-        className="pointer-events-auto max-w-sm mx-4 px-5 py-4 rounded-card border border-primary/20 bg-secondary/95 shadow-elevation-4 backdrop-blur-sm text-center"
+        className="pointer-events-auto max-w-sm mx-4 px-5 py-4 rounded-card border border-hair bg-secondary/95 shadow-elevation-4 backdrop-blur-sm text-center"
         role="dialog"
         aria-label={t.mastermind.demo_title}
         data-testid="mm-demo-notice"
       >
         <h2 className="typo-body text-foreground mb-1.5">{t.mastermind.demo_title}</h2>
-        <p className="typo-caption text-foreground/65 mb-3.5">{t.mastermind.demo_body}</p>
+        <p className="typo-caption text-ink-3 mb-3.5">{t.mastermind.demo_body}</p>
         <div className="flex items-center justify-center gap-2">
           <Button
             size="sm"
@@ -51,7 +51,7 @@ export function DemoNotice({ scanning, onScan, onNewProject, onDismiss }: {
         <button
           type="button"
           onClick={onDismiss}
-          className="mt-2.5 typo-caption text-foreground/50 hover:text-foreground/80 transition-colors focus-ring rounded-interactive px-1"
+          className="mt-2.5 typo-caption text-ink-3 hover:text-ink-2 transition-colors focus-ring rounded-interactive px-1"
           data-testid="mm-demo-dismiss"
         >
           {t.mastermind.demo_dismiss}

@@ -92,7 +92,7 @@ export default function AttentionLedger({ overview, loading, onFocus, onOpen }: 
         <table className="w-full min-w-[46rem] border-collapse" data-testid="kpi-books-table">
           <caption className="sr-only">{o.books_caption}</caption>
           <thead>
-            <tr className="border-b border-primary/10">
+            <tr className="border-b border-hair">
               <Th className="w-8 text-left">{o.books_rank}</Th>
               <Th className="w-[34%] text-left">{altitude.project ? o.books_group : o.books_project}</Th>
               <Th className="text-right">{o.books_declared}</Th>

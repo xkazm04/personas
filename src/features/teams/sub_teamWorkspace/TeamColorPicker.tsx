@@ -53,7 +53,7 @@ export function TeamColorPicker({ value, onChange }: TeamColorPickerProps) {
               style={{ backgroundColor: hex }}
             >
               {isSelected && (
-                <Check className="w-3.5 h-3.5 text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
+                <Check className="w-3.5 h-3.5 text-foreground " />
               )}
             </span>
           </button>

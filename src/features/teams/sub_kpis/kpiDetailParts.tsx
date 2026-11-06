@@ -67,7 +67,7 @@ export function KpiSourceSection({
           <button
             type="button"
             onClick={onConnect}
-            className="typo-caption text-primary rounded-card px-1.5 py-1 hover:bg-secondary/40 transition-colors focus-ring"
+            className="typo-caption text-primary rounded-card px-1.5 py-1 hover:bg-surface-2 transition-colors focus-ring"
             data-testid="kpi-change-source"
           >
             {t.kpis.source_change}

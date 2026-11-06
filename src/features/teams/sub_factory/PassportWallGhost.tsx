@@ -38,18 +38,18 @@ export function PassportWallGhost() {
   const cols = Array.from({ length: GHOST_COL_COUNT });
   return (
     <div
-      className="overflow-hidden rounded-modal border border-primary/[0.08] bg-secondary/[0.03] shadow-elevation-1"
+      className="overflow-hidden rounded-modal border border-hair bg-surface-1 shadow-elevation-1"
       aria-hidden="true"
     >
       {/* cover header band — one silhouette per project column */}
-      <div className="flex border-b-2 border-primary/15">
+      <div className="flex border-b-2 border-hair">
         <div className={`${GHOST_RAIL} px-3 py-3`}>
           <span className={`block h-2.5 w-16 ${GHOST_BAR}`} />
         </div>
         {cols.map((_, i) => (
           <div
             key={i}
-            className={`${GHOST_COL} animate-fade-in border-l border-primary/[0.08] px-3 py-3`}
+            className={`${GHOST_COL} animate-fade-in border-l border-hair px-3 py-3`}
             style={{ borderTop: '2px solid rgba(148,163,184,.14)', animationDelay: `${120 + i * 35}ms` }}
           >
             {/* identity row: status dot + name + stack strip */}
@@ -70,7 +70,7 @@ export function PassportWallGhost() {
               {Array.from({ length: 5 }).map((__, j) => (
                 <span key={j} className="flex min-w-0 flex-col items-center gap-1">
                   <span className={`h-2.5 w-5 ${GHOST_BAR}`} />
-                  <span className="h-1.5 w-4 rounded-interactive bg-primary/[0.04]" />
+                  <span className="h-1.5 w-4 rounded-interactive bg-surface-1" />
                 </span>
               ))}
             </div>
@@ -80,17 +80,17 @@ export function PassportWallGhost() {
 
       {/* dimension rows — a section band, then labelled rows across the columns */}
       <div className="animate-fade-in" style={{ animationDelay: '260ms' }}>
-        <div className="border-t border-primary/10 bg-primary/[0.03] px-3 py-1.5">
+        <div className="border-t border-hair bg-surface-1 px-3 py-1.5">
           <span className={`block h-2.5 w-24 ${GHOST_BAR}`} />
         </div>
         {Array.from({ length: GHOST_ROW_COUNT }).map((_, r) => (
-          <div key={r} className="flex border-t border-primary/[0.06]">
+          <div key={r} className="flex border-t border-hair">
             <div className={`${GHOST_RAIL} px-3 py-2`}>
               <span className={`block h-2.5 w-28 ${GHOST_BAR}`} />
             </div>
             {cols.map((__, i) => (
-              <div key={i} className={`${GHOST_COL} border-l border-primary/[0.08] px-3 py-2`}>
-                <span className="block h-2.5 w-16 rounded-interactive bg-primary/[0.04]" />
+              <div key={i} className={`${GHOST_COL} border-l border-hair px-3 py-2`}>
+                <span className="block h-2.5 w-16 rounded-interactive bg-surface-1" />
               </div>
             ))}
           </div>

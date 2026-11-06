@@ -63,10 +63,10 @@ export default function MemoryPanelList({
           <button
             type="button"
             key={cat}
-            className={`typo-body px-2 py-0.5 rounded-full whitespace-nowrap transition-colors ${
+            className={`typo-body px-2 py-0.5 rounded-interactive whitespace-nowrap transition-colors ${
               activeCategory === cat
-                ? 'bg-violet-500/20 text-violet-400'
-                : 'bg-primary/5 text-foreground hover:bg-primary/10'
+                ? 'bg-role-agent/20 text-role-agent'
+                : 'bg-surface-1 text-foreground hover:bg-primary/10'
             }`}
             onClick={() => onCategoryChange(cat)}
           >
@@ -80,25 +80,25 @@ export default function MemoryPanelList({
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground" />
           <input
-            className="w-full typo-body bg-primary/5 border border-primary/10 rounded-modal pl-6 pr-2 py-1.5 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/20"
+            className="w-full typo-body bg-surface-1 border border-hair rounded-modal pl-6 pr-2 py-1.5 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-hair"
             placeholder={t.pipeline.search_memories}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
           />
         </div>
         {activeRunFilter && (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-violet-500/10 border border-violet-500/20">
-            <GitCommitVertical className="w-3 h-3 text-violet-400 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-card bg-role-agent/10 border border-role-agent/20">
+            <GitCommitVertical className="w-3 h-3 text-role-agent flex-shrink-0" />
             {/* The run id carries its own meaning next to the commit glyph; the
                 bare English word "Run" that sat here rendered untranslated in
                 all 14 locales. */}
-            <span className="typo-code text-violet-400 truncate flex-1">
+            <span className="typo-code text-role-agent truncate flex-1">
               {activeRunFilter.length > 8 ? activeRunFilter.slice(0, 8) : activeRunFilter}
             </span>
             <button
               type="button"
               onClick={onClearRunFilter}
-              className="p-0.5 rounded-interactive text-violet-400/60 hover:text-violet-400 transition-colors flex-shrink-0"
+              className="p-0.5 rounded-interactive text-role-agent hover:text-role-agent transition-colors flex-shrink-0"
               aria-label={t.pipeline.clear_run_filter}
             >
               <X className="w-3 h-3" />
@@ -109,7 +109,7 @@ export default function MemoryPanelList({
           <button
             type="button"
             onClick={onClearAll}
-            className="flex items-center gap-1 typo-caption text-violet-400 hover:text-violet-300 transition-colors"
+            className="flex items-center gap-1 typo-caption text-role-agent hover:text-role-agent transition-colors"
           >
             <FilterX className="w-3 h-3" /> {t.pipeline.clear_all_filters}
           </button>
@@ -133,7 +133,7 @@ export default function MemoryPanelList({
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="h-12 rounded-card bg-primary/5 animate-fade-in"
+                className="h-12 rounded-card bg-surface-1 animate-fade-in"
                 style={{ animationDelay: `${120 + i * 35}ms` }}
               />
             ))}
@@ -169,7 +169,7 @@ export default function MemoryPanelList({
                 loading={loadingMore}
                 loadingLabel={t.common.loading}
                 onClick={onLoadMore}
-                className="py-1.5 gap-1.5 typo-body text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 rounded-card"
+                className="py-1.5 gap-1.5 typo-body text-role-agent hover:text-role-agent hover:bg-role-agent/10 rounded-card"
               >
                 {t.pipeline.load_more}
               </Button>

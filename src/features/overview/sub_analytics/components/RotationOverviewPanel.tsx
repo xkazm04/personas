@@ -21,35 +21,35 @@ function rotationBadge(item: RotationOverviewItem, t: Translations) {
 
   if (!status.has_policy) {
     if (status.anomaly_detected) {
-      return { label: tokenLabel(t, 'rotation', 'anomaly'), classes: 'bg-red-500/15 border-red-500/25 text-red-400', Icon: AlertTriangle };
+      return { label: tokenLabel(t, 'rotation', 'anomaly'), classes: 'bg-status-error/15 border-status-error/25 text-status-error', Icon: AlertTriangle };
     }
     return null;
   }
 
   if (!status.policy_enabled) {
-    return { label: tokenLabel(t, 'rotation', 'paused'), classes: 'bg-zinc-500/15 border-zinc-500/25 text-zinc-400', Icon: ShieldOff };
+    return { label: tokenLabel(t, 'rotation', 'paused'), classes: 'bg-zinc-500/15 border-zinc-500/25 text-ink-3', Icon: ShieldOff };
   }
 
   const rem = status.anomaly_score?.remediation;
   if (rem === 'Disable') {
-    return { label: tokenLabel(t, 'rotation', 'disabled'), classes: 'bg-red-500/15 border-red-500/25 text-red-400', Icon: ShieldOff };
+    return { label: tokenLabel(t, 'rotation', 'disabled'), classes: 'bg-status-error/15 border-status-error/25 text-status-error', Icon: ShieldOff };
   }
   if (rem === 'RotateThenAlert') {
-    return { label: tokenLabel(t, 'rotation', 'perm_errors'), classes: 'bg-red-500/10 border-red-500/20 text-red-400', Icon: AlertTriangle };
+    return { label: tokenLabel(t, 'rotation', 'perm_errors'), classes: 'bg-status-error/10 border-status-error/20 text-status-error', Icon: AlertTriangle };
   }
   if (rem === 'PreemptiveRotation') {
-    return { label: tokenLabel(t, 'rotation', 'degrading'), classes: 'bg-orange-500/10 border-orange-500/20 text-orange-400', Icon: TrendingDown };
+    return { label: tokenLabel(t, 'rotation', 'degrading'), classes: 'bg-status-warning/10 border-status-warning/20 text-status-warning', Icon: TrendingDown };
   }
   if (rem === 'BackoffRetry') {
-    return { label: tokenLabel(t, 'rotation', 'backoff'), classes: 'bg-amber-500/10 border-amber-500/20 text-amber-400', Icon: Timer };
+    return { label: tokenLabel(t, 'rotation', 'backoff'), classes: 'bg-status-warning/10 border-status-warning/20 text-status-warning', Icon: Timer };
   }
 
   // Fresh / healthy
   if (status.last_status === 'success') {
-    return { label: tokenLabel(t, 'rotation', 'fresh'), classes: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400', Icon: CheckCircle2 };
+    return { label: tokenLabel(t, 'rotation', 'fresh'), classes: 'bg-status-success/10 border-status-success/20 text-status-success', Icon: CheckCircle2 };
   }
 
-  return { label: tokenLabel(t, 'rotation', 'active'), classes: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400', Icon: Shield };
+  return { label: tokenLabel(t, 'rotation', 'active'), classes: 'bg-role-highlight/10 border-role-highlight/20 text-role-highlight', Icon: Shield };
 }
 
 /**
@@ -173,13 +173,13 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
   }
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/20 shadow-elevation-1 overflow-hidden flex flex-col">
+    <div className="rounded-modal border border-hair bg-surface-1 shadow-elevation-1 overflow-hidden flex flex-col">
       {/* Header — compact: icon, title, total badge, summary pills, manage link */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/5 bg-gradient-to-r from-secondary/40 to-transparent">
-        <div className="w-6 h-6 rounded-card bg-violet-500/10 border border-violet-500/20 flex items-center justify-center flex-shrink-0">
-          <RotateCw className="w-3 h-3 text-violet-400" />
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-hair bg-surface-1">
+        <div className="w-6 h-6 rounded-card bg-role-agent/10 border border-role-agent/20 flex items-center justify-center flex-shrink-0">
+          <RotateCw className="w-3 h-3 text-role-agent" />
         </div>
-        <h3 className="typo-heading text-foreground/90 uppercase truncate">{t.overview.analytics_dashboard.credential_rotation}</h3>
+        <h3 className="typo-heading text-ink-2 uppercase truncate">{t.overview.analytics_dashboard.credential_rotation}</h3>
         {stats.total > 0 && (
           <StatusBadge accent="violet" size="sm" className="font-bold flex-shrink-0">
             {stats.total}
@@ -206,7 +206,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
           <button
             type="button"
             onClick={openConnections}
-            className="inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 transition-colors flex-shrink-0"
+            className="inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card text-role-agent hover:text-role-agent hover:bg-role-agent/10 transition-colors flex-shrink-0"
             title={t.overview.analytics_dashboard.rotation_manage_all}
           >
             {t.overview.analytics_dashboard.rotation_manage_all}
@@ -269,7 +269,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
 
                 {/* Credential info — single line: name · service */}
                 <div className="flex-1 min-w-0 flex items-baseline gap-1.5">
-                  <span className="typo-body text-foreground/90 truncate">{item.credentialName}</span>
+                  <span className="typo-body text-ink-2 truncate">{item.credentialName}</span>
                   <span className="typo-caption text-foreground truncate">· {item.serviceType}</span>
                   {item.status.consecutive_failures > 0 && (
                     <StatusBadge
@@ -286,7 +286,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
                 {/* Countdown */}
                 {countdown && (
                   <span className={`typo-caption font-mono flex-shrink-0 ${
-                    isDue ? 'text-amber-400' : 'text-foreground'
+                    isDue ? 'text-status-warning' : 'text-foreground'
                   }`}>
                     {countdown}
                   </span>
@@ -300,7 +300,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
                     disabled={rotateDisabled || !item.status.has_policy}
                     title={t.vault.rotation_section.rotate_now}
                     aria-label={t.vault.rotation_section.rotate_now}
-                    className="p-1 rounded-card text-violet-400/70 hover:text-violet-300 hover:bg-violet-500/15 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+                    className="p-1 rounded-card text-role-agent hover:text-role-agent hover:bg-role-agent/15 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
                   >
                     {isRotating
                       ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -311,7 +311,7 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
                     onClick={openConnections}
                     title={t.overview.analytics_dashboard.rotation_open_in_connections}
                     aria-label={t.overview.analytics_dashboard.rotation_open_in_connections}
-                    className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                    className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-surface-2 transition-colors"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                   </button>

@@ -32,12 +32,12 @@ export function AutonomousLogRegister(props: AutonomousLogProps) {
       rowHeight={40}
       header={
         <>
-          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/10">
+          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-hair">
             <ShieldCheck className="h-4 w-4 text-status-success" aria-hidden="true" />
             <h3 className="typo-heading text-foreground">{t.overview.incidents.noc_handled_title}</h3>
             <AthenaComposedBadge variant="handled" label={t.overview.incidents.noc_handled_by} />
           </div>
-          <div className="sticky top-0 z-10 grid items-center gap-3 border-b border-primary/10 bg-background/95 px-4 py-1.5" style={{ gridTemplateColumns: GRID }} role="row">
+          <div className="sticky top-0 z-10 grid items-center gap-3 border-b border-hair bg-background/95 px-4 py-1.5" style={{ gridTemplateColumns: GRID }} role="row">
             <H right>{l.col_resumed}</H><span /><H>{t.overview.incidents.col_incident}</H><H>{t.overview.incidents.filter_persona_label}</H><span />
           </div>
         </>
@@ -54,7 +54,7 @@ export function AutonomousLogRegister(props: AutonomousLogProps) {
             </span>
             <span className="truncate typo-body text-foreground" title={inc.title}>{inc.title}</span>
             <span className="truncate typo-body text-foreground">{inc.personaName ?? '—'}</span>
-            <ArrowUpRight className="h-3.5 w-3.5 justify-self-end text-foreground/40 transition-colors group-hover:text-primary" aria-label={l.open_incident} />
+            <ArrowUpRight className="h-3.5 w-3.5 justify-self-end text-ink-3 transition-colors group-hover:text-primary" aria-label={l.open_incident} />
           </button>
         );
       }}

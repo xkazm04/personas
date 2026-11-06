@@ -26,15 +26,15 @@ import type { HealingAuditEntry } from '@/lib/bindings/HealingAuditEntry';
 const ACTIVITY_LIMIT = 6;
 
 function rateColor(rate: number): string {
-  if (rate >= 0.7) return 'text-emerald-400';
-  if (rate >= 0.4) return 'text-amber-400';
-  return 'text-red-400';
+  if (rate >= 0.7) return 'text-status-success';
+  if (rate >= 0.4) return 'text-status-warning';
+  return 'text-status-error';
 }
 
 function rateBarColor(rate: number): string {
-  if (rate >= 0.7) return 'bg-emerald-500/70';
-  if (rate >= 0.4) return 'bg-amber-500/70';
-  return 'bg-red-500/70';
+  if (rate >= 0.7) return 'bg-status-success/70';
+  if (rate >= 0.4) return 'bg-status-warning/70';
+  return 'bg-status-error/70';
 }
 
 export function HealingEffectivenessPanel() {
@@ -72,10 +72,10 @@ export function HealingEffectivenessPanel() {
   const pct = (rate: number) => `${Math.round(rate * 100)}%`;
 
   return (
-    <section className="rounded-card border border-primary/10 bg-secondary/20 p-4">
+    <section className="rounded-card border border-hair bg-surface-1 p-4">
       <header className="flex items-center gap-2 mb-3">
-        <HeartPulse className="w-4 h-4 text-rose-400" />
-        <h3 className="typo-body text-foreground/90">{te.title}</h3>
+        <HeartPulse className="w-4 h-4 text-status-error" />
+        <h3 className="typo-body text-ink-2">{te.title}</h3>
         {report && (
           <span className="typo-caption text-foreground ml-auto">
             {te.window_label} {report.window_days}d
@@ -104,9 +104,9 @@ export function HealingEffectivenessPanel() {
               <span className="typo-caption text-foreground">{te.success_rate}</span>
             </div>
             <div className="flex items-center gap-3 typo-caption ml-auto">
-              <Stat label={te.confirmed} value={report.confirmed} className="text-emerald-400" />
-              <Stat label={te.reverted} value={report.reverted} className="text-red-400" />
-              <Stat label={te.attempted} value={report.attempted} className="text-foreground/90" />
+              <Stat label={te.confirmed} value={report.confirmed} className="text-status-success" />
+              <Stat label={te.reverted} value={report.reverted} className="text-status-error" />
+              <Stat label={te.attempted} value={report.attempted} className="text-ink-2" />
             </div>
           </div>
 
@@ -115,7 +115,7 @@ export function HealingEffectivenessPanel() {
             <ul className="space-y-1.5">
               {report.by_category.slice(0, 4).map((row) => (
                 <li key={row.category} className="flex items-center gap-2 typo-caption">
-                  <span className="w-24 shrink-0 truncate text-foreground/90">
+                  <span className="w-24 shrink-0 truncate text-ink-2">
                     {tokenLabel(t, 'healing_category', row.category)}
                   </span>
                   <span className="flex-1 h-1.5 rounded-full bg-primary/10 overflow-hidden">

@@ -37,13 +37,13 @@ function TextControl({ field, value, onAnswer }: ControlProps) {
         value={value}
         onChange={(e) => onAnswer(e.target.value)}
         placeholder={field.placeholder ?? t.monitor.dc_deck_answer_placeholder}
-        className="w-full max-w-sm rounded-input border border-primary/20 bg-background px-3 py-1.5 typo-body text-foreground focus:border-primary/50 focus:outline-none"
+        className="w-full max-w-sm rounded-input border border-hair bg-background px-3 py-1.5 typo-body text-foreground focus:border-primary/50 focus:outline-none"
       />
       {field.suggestions && field.suggestions.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="typo-caption">{t.monitor.dc_deck_suggested}</span>
           {field.suggestions.map((s) => (
-            <Button key={s} variant="ghost" size="xs" onClick={() => onAnswer(s)} className="border border-primary/15">
+            <Button key={s} variant="ghost" size="xs" onClick={() => onAnswer(s)} className="border border-hair">
               {s}
             </Button>
           ))}

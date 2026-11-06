@@ -80,7 +80,7 @@ export function MapTerritory({
           onClick={onOpen}
           aria-label={summary}
           data-testid={`kpi-map-territory-${territory.key}`}
-          className="absolute inset-0 rounded-interactive border border-card-border bg-secondary/10 text-left hover:border-primary/50 focus-ring"
+          className="absolute inset-0 rounded-interactive border border-card-border bg-surface-1 text-left hover:border-primary/50 focus-ring"
           style={territory.color ? { borderLeftColor: territory.color, borderLeftWidth: 2 } : undefined}
         />
       </Tooltip>

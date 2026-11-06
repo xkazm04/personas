@@ -86,7 +86,7 @@ function SquareButton({
           {shared ? (
             <span
               aria-hidden="true"
-              className="absolute -right-0.5 -top-0.5 h-[6px] w-[6px] rounded-full bg-violet-400"
+              className="absolute -right-0.5 -top-0.5 h-[6px] w-[6px] rounded-full bg-role-agent"
             />
           ) : null}
         </button>
@@ -117,8 +117,8 @@ export function GroupPlotCard({
   return (
     <section
       data-testid="features-map-plot"
-      className={`rounded-card border bg-primary/5 p-2.5 ${
-        plot.group.untouched ? 'border-dashed border-status-warning/50' : 'border-primary/15'
+      className={`rounded-card border bg-surface-1 p-2.5 ${
+        plot.group.untouched ? 'border-dashed border-status-warning/50' : 'border-hair'
       }`}
     >
       <header className="mb-2 flex items-start justify-between gap-2">

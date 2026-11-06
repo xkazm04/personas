@@ -49,28 +49,28 @@ export function EnvConnectorSlot({
   const [picking, setPicking] = useState(false);
 
   return (
-    <section className="flex flex-col rounded-card border border-primary/12 bg-secondary/[0.14] overflow-hidden">
-      <div className="px-3 py-1.5 border-b border-primary/10 bg-primary/[0.04]">
-        <span className="typo-label text-foreground/50">{envLabel}</span>
+    <section className="flex flex-col rounded-card border border-hair bg-surface-1 overflow-hidden">
+      <div className="px-3 py-1.5 border-b border-hair bg-surface-1">
+        <span className="typo-label text-ink-3">{envLabel}</span>
       </div>
 
       <div className="px-3 py-2.5 space-y-3 flex-1 min-h-0">
         {/* DETECTED — read-only; a fact about the codebase. */}
         <div>
-          <p className="typo-caption text-foreground/45 mb-1" style={{ fontWeight: 400 }}>{d.envslot_detected}</p>
+          <p className="typo-caption text-ink-3 mb-1" style={{ fontWeight: 400 }}>{d.envslot_detected}</p>
           {detected
             ? (
               <>
                 <TechInk label={detected} />
-                {detectedSub && <p className="typo-caption text-foreground/70 mt-1">{detectedSub}</p>}
+                {detectedSub && <p className="typo-caption text-ink-2 mt-1">{detectedSub}</p>}
               </>
             )
-            : <p className="typo-caption text-foreground/40 italic">{d.envslot_detected_none}</p>}
+            : <p className="typo-caption text-ink-3 italic">{d.envslot_detected_none}</p>}
         </div>
 
         {/* BOUND — the operator's declaration; the only writable half. */}
         <div>
-          <p className="typo-caption text-foreground/45 mb-1" style={{ fontWeight: 400 }}>{d.envslot_connector}</p>
+          <p className="typo-caption text-ink-3 mb-1" style={{ fontWeight: 400 }}>{d.envslot_connector}</p>
           {bound ? (
             <div className="flex items-center gap-2 min-w-0">
               <ConnectorGlyph serviceType={bound.serviceType} size="w-4 h-4" />
@@ -90,22 +90,22 @@ export function EnvConnectorSlot({
                 onClick={() => onAssign(null)}
                 aria-label={d.envslot_unassign}
                 title={d.envslot_unassign}
-                className="p-0.5 rounded-interactive text-foreground/40 hover:text-[var(--status-error)] hover:bg-[var(--status-error)]/10 transition-colors disabled:opacity-40"
+                className="p-0.5 rounded-interactive text-ink-3 hover:text-[var(--status-error)] hover:bg-[var(--status-error)]/10 transition-colors disabled:opacity-40"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
           ) : (
-            <p className="typo-caption text-foreground/40 italic">{d.envslot_connector_none}</p>
+            <p className="typo-caption text-ink-3 italic">{d.envslot_connector_none}</p>
           )}
         </div>
       </div>
 
-      <div className="px-3 py-2 border-t border-primary/10 bg-secondary/10">
+      <div className="px-3 py-2 border-t border-hair bg-surface-1">
         {picking ? (
           <ul className="space-y-0.5 max-h-32 overflow-y-auto">
             {candidates.length === 0 && (
-              <li className="typo-caption text-foreground/40 italic px-1 py-1">{d.envslot_no_candidates}</li>
+              <li className="typo-caption text-ink-3 italic px-1 py-1">{d.envslot_no_candidates}</li>
             )}
             {candidates.map((c) => (
               <li key={c.id}>
@@ -130,7 +130,7 @@ export function EnvConnectorSlot({
             type="button"
             disabled={busy}
             onClick={() => setPicking(true)}
-            className="w-full inline-flex items-center justify-center gap-1.5 px-2 py-1 rounded-interactive typo-caption text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 transition-colors disabled:opacity-40"
+            className="w-full inline-flex items-center justify-center gap-1.5 px-2 py-1 rounded-interactive typo-caption text-primary bg-primary/10 hover:bg-primary/20 border border-hair transition-colors disabled:opacity-40"
           >
             <Plug className="w-3 h-3" aria-hidden />
             {bound ? d.envslot_reassign : d.envslot_assign}

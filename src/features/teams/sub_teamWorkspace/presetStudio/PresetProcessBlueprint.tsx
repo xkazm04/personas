@@ -33,7 +33,7 @@ export function PresetProcessBlueprint({ preset, a, customizing }: PresetVariant
   return (
     <div className="flex-1 min-h-0 flex overflow-hidden">
       {/* Left — member sidebar (one uniform-width column) */}
-      <aside className="flex-shrink-0 w-[300px] flex flex-col border-r border-primary/10 bg-secondary/10">
+      <aside className="flex-shrink-0 w-[300px] flex flex-col border-r border-hair bg-surface-1">
         <div className="flex-shrink-0 px-3 pt-3 pb-1.5 flex items-center justify-between gap-2">
           <span className="px-1 typo-label text-foreground inline-flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5" />
@@ -68,9 +68,9 @@ export function PresetProcessBlueprint({ preset, a, customizing }: PresetVariant
                 className={`w-full text-left rounded-card border px-3 py-2.5 transition-colors ${
                   preview
                     ? selected
-                      ? 'border-primary/25 bg-secondary/35 hover:border-primary/40'
-                      : 'border-primary/8 bg-secondary/10 hover:bg-secondary/20'
-                    : 'border-primary/10 bg-secondary/25'
+                      ? 'border-hair bg-secondary/35 hover:border-primary/40'
+                      : 'border-hair bg-surface-1 hover:bg-surface-2'
+                    : 'border-hair bg-secondary/25'
                 } ${focusRole === row.role ? 'ring-1 ring-primary/30' : ''}`}
               >
                 <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export function PresetProcessBlueprint({ preset, a, customizing }: PresetVariant
                     </span>
                   )}
                 </div>
-                <div className="typo-body text-foreground/90 mt-1">{meta?.name ?? row.templateId}</div>
+                <div className="typo-body text-ink-2 mt-1">{meta?.name ?? row.templateId}</div>
                 {meta?.description && (
                   <div className="typo-caption text-foreground mt-0.5 line-clamp-2">{meta.description}</div>
                 )}

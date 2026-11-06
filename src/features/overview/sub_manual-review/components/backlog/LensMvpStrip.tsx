@@ -47,7 +47,7 @@ function MvpCard({ idea, onOpen }: { idea: BacklogIdea; onOpen: (row: BacklogIde
     <button
       type="button"
       onClick={(e) => { e.stopPropagation(); onOpen(idea); }}
-      className="w-full text-left flex flex-col gap-1.5 rounded-card border border-primary/15 bg-secondary/20 p-2.5 hover:bg-primary/5 transition-colors"
+      className="w-full text-left flex flex-col gap-1.5 rounded-card border border-hair bg-surface-1 p-2.5 hover:bg-surface-2 transition-colors"
     >
       <span className="flex items-center justify-between gap-2 min-w-0">
         <span className="typo-caption text-primary truncate">{idea.lens}</span>

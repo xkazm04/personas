@@ -65,7 +65,7 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
                 className="rounded-card px-2.5 py-1.5 min-w-0"
                 style={{ background: 'rgba(148,163,184,.05)', border: '1px solid rgba(148,163,184,.12)' }}
               >
-                <dt className="typo-caption uppercase tracking-[0.08em] text-foreground/45 truncate">{f.label}</dt>
+                <dt className="typo-eyebrow truncate">{f.label}</dt>
                 <dd className="typo-body-lg text-foreground truncate" title={f.value}>{f.value}</dd>
               </div>
             ))}
@@ -79,7 +79,7 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
           <div className="mt-4 grid md:grid-cols-2 gap-4">
             {/* what happens, in order */}
             <section className="min-w-0">
-              <h3 className="typo-caption uppercase tracking-[0.08em] text-foreground/45 mb-2">{t.kpis.setup_confirm_what_happens}</h3>
+              <h3 className="typo-eyebrow mb-2">{t.kpis.setup_confirm_what_happens}</h3>
               <ol className="space-y-2">
                 {spec.steps.map((step, i) => (
                   <li key={step} className="flex items-start gap-2.5 min-w-0">
@@ -98,7 +98,7 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
 
             {/* what holds regardless */}
             <section className="min-w-0">
-              <h3 className="typo-caption uppercase tracking-[0.08em] text-foreground/45 mb-2">{t.kpis.setup_confirm_will_not}</h3>
+              <h3 className="typo-eyebrow mb-2">{t.kpis.setup_confirm_will_not}</h3>
               <ul className="space-y-2">
                 {spec.boundaries.map((b) => (
                   <li key={b} className="flex items-start gap-2.5 min-w-0">
@@ -111,11 +111,11 @@ export function ActionConfirmModal({ spec, onConfirm, onClose, extra, confirmDis
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-primary/10 shrink-0">
+        <div className="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-hair shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 rounded-interactive typo-body-lg text-foreground hover:bg-secondary/40 border border-primary/10 transition-colors focus-ring"
+            className="px-3.5 py-1.5 rounded-interactive typo-body-lg text-foreground hover:bg-surface-2 border border-hair transition-colors focus-ring"
             data-testid="passport-action-confirm-cancel"
           >
             {t.common.cancel}

@@ -52,13 +52,13 @@ import { DebtText, debtText } from '@/i18n/DebtText';
  */
 
 const CONTENT_TYPE_ICONS: Record<string, { icon: LucideIcon; tone: string }> = {
-  text:     { icon: FileText,     tone: 'text-indigo-400' },
-  markdown: { icon: FileText,     tone: 'text-indigo-400' },
-  code:     { icon: Code2,        tone: 'text-violet-400' },
-  alert:    { icon: AlertCircle,  tone: 'text-red-400' },
-  error:    { icon: AlertCircle,  tone: 'text-red-400' },
-  question: { icon: HelpCircle,   tone: 'text-amber-400' },
-  image:    { icon: ImageIcon,    tone: 'text-emerald-400' },
+  text:     { icon: FileText,     tone: 'text-role-agent' },
+  markdown: { icon: FileText,     tone: 'text-role-agent' },
+  code:     { icon: Code2,        tone: 'text-role-agent' },
+  alert:    { icon: AlertCircle,  tone: 'text-status-error' },
+  error:    { icon: AlertCircle,  tone: 'text-status-error' },
+  question: { icon: HelpCircle,   tone: 'text-status-warning' },
+  image:    { icon: ImageIcon,    tone: 'text-status-success' },
 };
 
 type T = ReturnType<typeof useTranslation>['t'];
@@ -86,13 +86,13 @@ const REPORT_CONTENT_MD_CLASS = [
   '[&_p:first-of-type:first-letter]:float-left',
   '[&_p:first-of-type:first-letter]:leading-[0.9]',
   '[&_p:first-of-type:first-letter]:font-semibold',
-  '[&_p:first-of-type:first-letter]:text-foreground/45',
+  '[&_p:first-of-type:first-letter]:text-ink-3',
   '[&_p:first-of-type:first-letter]:pr-2',
   '[&_p:first-of-type:first-letter]:pt-1',
   '[&_p:first-of-type:first-letter]:font-serif',
   '[&_h1]:mt-0 [&_h1]:text-foreground',
   '[&_h2]:mt-7 [&_h2]:text-foreground',
-  '[&_pre]:my-5 [&_pre]:rounded-2xl',
+  '[&_pre]:my-5 [&_pre]:rounded-card',
 ].join(' ');
 
 // ---------------------------------------------------------------------------
@@ -140,14 +140,14 @@ export function ReportTitle({
 }) {
   const typeMeta = useMemo(() => {
     const key = (message.content_type || 'text').toLowerCase();
-    return CONTENT_TYPE_ICONS[key] ?? { icon: MessageSquare, tone: 'text-indigo-400' };
+    return CONTENT_TYPE_ICONS[key] ?? { icon: MessageSquare, tone: 'text-role-agent' };
   }, [message.content_type]);
   const TypeIcon = typeMeta.icon;
 
   return (
     <span className="inline-flex items-center gap-2">
       <span
-        className={`inline-flex items-center justify-center w-7 h-7 rounded-card bg-secondary/30 border border-primary/10 ${typeMeta.tone}`}
+        className={`inline-flex items-center justify-center w-7 h-7 rounded-card bg-surface-1 border border-hair ${typeMeta.tone}`}
         title={message.content_type || 'text'}
         aria-label={message.content_type || 'text'}
       >
@@ -160,7 +160,7 @@ export function ReportTitle({
             type="button"
             onClick={() => go(-1)}
             disabled={!hasPrev}
-            className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             title={debtText("auto_previous_message_a5f5266d")}
             aria-label={debtText("auto_previous_message_93261bd8")}
           >
@@ -170,7 +170,7 @@ export function ReportTitle({
             type="button"
             onClick={() => go(1)}
             disabled={!hasNext}
-            className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             title={debtText("auto_next_message_5121d887")}
             aria-label={debtText("auto_next_message_e3960a5d")}
           >
@@ -243,17 +243,17 @@ export function ReportModalActions({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onCopyId(); }}
-          className="inline-flex items-center gap-1 hover:text-muted-foreground transition-colors"
+          className="inline-flex items-center gap-1 hover:text-ink-3 transition-colors"
           title={msgId}
         >
           <DebtText k="auto_id_d789a1e9" /> <span className="font-mono">{msgId.slice(0, 8)}</span>
-          {copiedId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+          {copiedId ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
         </button>
         {message.execution_id && (
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onOpenExecution(); }}
-            className="inline-flex items-center gap-1 text-blue-400/70 hover:text-blue-400 transition-colors"
+            className="inline-flex items-center gap-1 text-status-info hover:text-status-info transition-colors"
             title={message.execution_id}
           >
             {t.overview.reports_view.view_execution} <ExternalLink className="w-3 h-3" />
@@ -263,7 +263,7 @@ export function ReportModalActions({
 
       {confirmingDelete ? (
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={onConfirmDelete} title={debtText("auto_confirm_delete_c9f2829e")} className="text-red-400 bg-red-500/15 hover:bg-red-500/25">
+          <Button variant="ghost" size="icon-sm" onClick={onConfirmDelete} title={debtText("auto_confirm_delete_c9f2829e")} className="text-status-error bg-status-error/15 hover:bg-status-error/25">
             <Check className="w-4 h-4" />
           </Button>
           <Button variant="ghost" size="icon-sm" onClick={onCancelDelete} title="Cancel">
@@ -274,7 +274,7 @@ export function ReportModalActions({
         <button
           type="button"
           onClick={onArmDelete}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading bg-status-error/10 text-status-error border border-status-error/30 hover:bg-status-error/20 transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" /> {t.common.delete}
         </button>
@@ -299,8 +299,8 @@ function ContentActionButton({
   const baseCls =
     'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption transition-colors';
   const toneCls = highlight
-    ? 'text-primary bg-primary/[0.08] hover:bg-primary/[0.14] border border-primary/15'
-    : 'text-foreground bg-secondary/[0.05] hover:bg-secondary/[0.1] border border-primary/10';
+    ? 'text-primary bg-primary/[0.08] hover:bg-primary/[0.14] border border-hair'
+    : 'text-foreground bg-surface-1 hover:bg-surface-2 border border-hair';
   return (
     <button
       type="button"
@@ -334,7 +334,7 @@ export function ReportContentSection({
   return (
     <section className="mb-10">
       <SectionMark index="I" label={t.overview.reports_view.content_label} />
-      <article className="rounded-3xl bg-[color-mix(in_srgb,var(--color-background),var(--color-foreground)_3.5%)] px-8 py-7 shadow-elevation-1">
+      <article className="rounded-card bg-[color-mix(in_srgb,var(--color-background),var(--color-foreground)_3.5%)] px-8 py-7 shadow-elevation-1">
         <ReportBody
           document={{ format, content }}
           title={title}
@@ -386,7 +386,7 @@ function StarRatingRow({
   return (
     <div
       data-testid="msg-detail-rating"
-      className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/[0.05] border border-primary/10"
+      className="flex items-center gap-3 px-4 py-3 rounded-card bg-surface-1 border border-hair"
     >
       <span className="typo-label text-foreground flex-shrink-0">
         {t.overview.reports_view.rating_label}
@@ -416,7 +416,7 @@ function StarRatingRow({
               <Star
                 className={`w-5 h-5 transition-colors ${
                   filled
-                    ? 'fill-amber-400 text-amber-400'
+                    ? 'fill-status-warning text-status-warning'
                     : 'text-foreground'
                 }`}
               />
@@ -476,9 +476,9 @@ export function ReportFeedbackSection({ t, tx, state }: { t: T; tx: Tx; state: R
       />
 
       {improving === 'sent' ? (
-        <div className="flex items-center gap-3 px-5 py-4 mt-3 rounded-2xl bg-emerald-500/[0.08] border-l-[3px] border-emerald-400/70">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-          <span className="typo-body-lg text-emerald-300">
+        <div className="flex items-center gap-3 px-5 py-4 mt-3 rounded-card bg-status-success/[0.08] border-l-[3px] border-status-success/70">
+          <CheckCircle2 className="w-5 h-5 text-status-success flex-shrink-0" />
+          <span className="typo-body-lg text-status-success">
             {t.overview.reports_view.improvement_started}
           </span>
         </div>
@@ -486,19 +486,19 @@ export function ReportFeedbackSection({ t, tx, state }: { t: T; tx: Tx; state: R
         <button
           type="button"
           onClick={() => setShowFeedback(true)}
-          className="group inline-flex items-center gap-3 px-5 py-4 mt-3 w-full text-left rounded-2xl border-l-[3px] border-amber-400/60 bg-amber-500/[0.05] hover:bg-amber-500/[0.08] transition-colors"
+          className="group inline-flex items-center gap-3 px-5 py-4 mt-3 w-full text-left rounded-card border-l-[3px] border-status-warning/60 bg-status-warning/[0.05] hover:bg-status-warning/[0.08] transition-colors"
         >
-          <Wand2 className="w-4 h-4 text-amber-400/85 flex-shrink-0 group-hover:text-amber-300 transition-colors" />
-          <span className="typo-body-lg text-foreground/85 italic">
+          <Wand2 className="w-4 h-4 text-status-warning flex-shrink-0 group-hover:text-status-warning transition-colors" />
+          <span className="typo-body-lg text-ink-2 italic">
             {t.overview.reports_view.what_could_be_better}
           </span>
-          <span className="ml-auto typo-label text-amber-400/75">
+          <span className="ml-auto typo-label text-status-warning">
             {t.overview.reports_view.improve_agent}
           </span>
         </button>
       ) : (
-        <div className="rounded-2xl border-l-[3px] border-amber-400/60 bg-amber-500/[0.05] px-5 py-4 mt-3">
-          <p className="typo-label text-amber-300/85 mb-3">
+        <div className="rounded-card border-l-[3px] border-status-warning/60 bg-status-warning/[0.05] px-5 py-4 mt-3">
+          <p className="typo-label text-status-warning mb-3">
             {t.overview.reports_view.what_could_be_better}
           </p>
           <textarea
@@ -507,14 +507,14 @@ export function ReportFeedbackSection({ t, tx, state }: { t: T; tx: Tx; state: R
             placeholder={t.overview.reports_view.improve_placeholder}
             rows={3}
             autoFocus
-            className="w-full px-4 py-3 rounded-modal border border-amber-400/15 bg-background/30 typo-body-lg text-foreground placeholder-foreground/35 resize-none outline-none focus-visible:border-amber-400/40 focus-visible:bg-background/55 transition-colors"
+            className="w-full px-4 py-3 rounded-modal border border-status-warning/15 bg-background/30 typo-body-lg text-foreground placeholder-foreground/35 resize-none outline-none focus-visible:border-status-warning/40 focus-visible:bg-background/55 transition-colors"
           />
           <div className="flex items-center gap-2 mt-3">
             <button
               type="button"
               onClick={onImprove}
               disabled={!feedbackText.trim() || improving === 'loading'}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-card typo-caption bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 disabled:opacity-40 transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-card typo-caption bg-status-warning/15 text-status-warning hover:bg-status-warning/25 disabled:opacity-40 transition-colors"
             >
               {improving === 'loading' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
               {improving === 'loading' ? t.overview.reports_view.starting : t.overview.reports_view.submit_improvement}
@@ -522,7 +522,7 @@ export function ReportFeedbackSection({ t, tx, state }: { t: T; tx: Tx; state: R
             <button
               type="button"
               onClick={() => { setShowFeedback(false); setFeedbackText(''); }}
-              className="px-3 py-2 typo-caption text-foreground hover:text-foreground/85 transition-colors"
+              className="px-3 py-2 typo-caption text-foreground hover:text-ink-2 transition-colors"
             >
               {t.common.cancel}
             </button>
@@ -656,7 +656,7 @@ function PendingDecisionCard({
   return (
     <div
       data-testid={`pending-review-row-${review.id}`}
-      className="rounded-2xl border border-primary/10 bg-secondary/[0.04] px-5 py-4"
+      className="rounded-card border border-hair bg-surface-1 px-5 py-4"
     >
       <div className="flex items-start gap-3">
         <SeverityIndicator severity={review.severity} />
@@ -667,7 +667,7 @@ function PendingDecisionCard({
             </p>
             {hasChildren && (
               <span
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input typo-caption text-primary/85 bg-primary/10 border border-primary/15"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input typo-caption text-primary/85 bg-primary/10 border border-hair"
                 data-testid={`pending-review-decisions-count-${review.id}`}
               >
                 {decisions.length} decisions
@@ -681,7 +681,7 @@ function PendingDecisionCard({
             <RichMarkdown content={contextText} variant="card" className="mb-2" />
           )}
           {!hasChildren && review.context_data && (
-            <div className="mt-2 px-3 py-2 rounded-card bg-background/30 border border-primary/[0.06]">
+            <div className="mt-2 px-3 py-2 rounded-card bg-background/30 border border-hair">
               <ContextDataPreview raw={review.context_data} />
             </div>
           )}
@@ -693,7 +693,7 @@ function PendingDecisionCard({
 
       {hasChildren && (
         <div
-          className="mt-3 space-y-2 pl-3 border-l border-primary/10"
+          className="mt-3 space-y-2 pl-3 border-l border-hair"
           data-testid={`pending-review-decisions-${review.id}`}
         >
           {decisions.map((decision) => (
@@ -714,7 +714,7 @@ function PendingDecisionCard({
           data-testid={`pending-review-approve-${review.id}`}
           onClick={onApprove}
           disabled={resolving || (hasChildren && anyRejected)}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-card typo-caption bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-40 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-card typo-caption bg-status-success/15 text-status-success hover:bg-status-success/25 disabled:opacity-40 transition-colors"
           title={hasChildren && anyRejected ? 'Clear rejections before approving the whole review' : undefined}
         >
           {resolving ? <Loader2 className="w-3 h-3 animate-spin" /> : <ThumbsUp className="w-3 h-3" />}
@@ -729,7 +729,7 @@ function PendingDecisionCard({
           data-testid={`pending-review-reject-${review.id}`}
           onClick={onReject}
           disabled={resolving}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-card typo-caption bg-red-500/15 text-red-300 hover:bg-red-500/25 disabled:opacity-40 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-card typo-caption bg-status-error/15 text-status-error hover:bg-status-error/25 disabled:opacity-40 transition-colors"
         >
           {resolving ? <Loader2 className="w-3 h-3 animate-spin" /> : <ThumbsDown className="w-3 h-3" />}
           {hasChildren && anyRejected
@@ -739,7 +739,7 @@ function PendingDecisionCard({
         <button
           type="button"
           onClick={onOpenInApprovals}
-          className="ml-auto inline-flex items-center gap-1 px-2.5 py-2 typo-caption text-foreground hover:text-foreground/85 transition-colors"
+          className="ml-auto inline-flex items-center gap-1 px-2.5 py-2 typo-caption text-foreground hover:text-ink-2 transition-colors"
         >
           <ShieldAlert className="w-3 h-3" />
           {t.overview.reports_view.pending_decisions_view_all}

@@ -662,7 +662,7 @@ function MastermindInner() {
 
   return (
     <ImproveProvider value={improve}>
-    <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-primary/[0.08]" data-testid="mastermind-page">
+    <div className="relative h-[calc(100dvh-120px)] min-h-[480px] overflow-hidden rounded-card border border-hair" data-testid="mastermind-page">
       {/* No skeleton: a ghost of stations that do not exist yet has a different
           geometry from the chart that replaces it, and the swap read as a
           blink. Until the scene settles (useSceneSettle) the chart shows its
@@ -837,7 +837,7 @@ function MastermindInner() {
           type="button"
           onClick={() => setDemoDismissed(false)}
           title={t.mastermind.demo_badge_reopen}
-          className="absolute bottom-16 left-3 z-10 typo-caption text-foreground/60 px-2 py-1 rounded-interactive bg-secondary border border-primary/15 shadow-elevation-2 hover:text-foreground transition-colors focus-ring"
+          className="absolute bottom-16 left-3 z-10 typo-caption text-ink-3 px-2 py-1 rounded-interactive bg-secondary border border-hair shadow-elevation-2 hover:text-foreground transition-colors focus-ring"
           data-testid="mm-demo-badge"
         >
           {t.mastermind.demo_badge}

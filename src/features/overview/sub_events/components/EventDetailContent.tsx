@@ -37,7 +37,7 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
           </div>
         )}
         {event.processed_at && (
-          <div className="rounded-modal border border-primary/10 bg-background/30 px-2.5 py-2">
+          <div className="rounded-modal border border-hair bg-background/30 px-2.5 py-2">
             <span className="typo-code text-foreground">{t.overview.event_log_item.processed}</span>
             <span className="ml-2 typo-body text-foreground">
               <AbsoluteTime timestamp={event.processed_at} />
@@ -49,7 +49,7 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
       {event.payload && (
         <div className="flex-1 min-h-0 flex flex-col">
           <span className="typo-body text-foreground mb-1 flex-shrink-0">{t.overview.event_log_item.event_data}</span>
-          <div className="flex-1 min-h-0 flex flex-col rounded-modal border border-primary/10 bg-secondary/20 p-3">
+          <div className="flex-1 min-h-0 flex flex-col rounded-modal border border-hair bg-surface-1 p-3">
             <HighlightedJson raw={event.payload} />
           </div>
         </div>
@@ -57,8 +57,8 @@ export function EventDetailContent({ event }: EventDetailContentProps) {
 
       {event.error_message && (
         <div>
-          <span className="typo-body text-red-400 block mb-1">{t.overview.event_log_item.error}</span>
-          <pre className="bg-red-500/5 p-2 rounded-card text-red-400 typo-body whitespace-pre-wrap">
+          <span className="typo-body text-status-error block mb-1">{t.overview.event_log_item.error}</span>
+          <pre className="bg-status-error/5 p-2 rounded-card text-status-error typo-body whitespace-pre-wrap">
             {event.error_message}
           </pre>
         </div>

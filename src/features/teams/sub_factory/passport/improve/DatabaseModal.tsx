@@ -47,10 +47,10 @@ export function DatabaseModal({ slug, projectName, passport, onClose }: {
   return (
     <BaseModal isOpen onClose={onClose} titleId="database-modal-title" size="lg" portal staggerChildren={false}>
       <div className="flex flex-col h-[420px]" data-testid="database-modal">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04] flex-shrink-0">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-surface-1 flex-shrink-0">
           <Database className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
           <span id="database-modal-title" className="typo-title truncate">{d.database_modal_title}</span>
-          <span className="typo-caption text-foreground/70 truncate">· {projectName}</span>
+          <span className="typo-caption text-ink-2 truncate">· {projectName}</span>
         </div>
 
         <div className="flex-1 min-h-0 grid grid-cols-3 gap-3 p-4">
@@ -77,8 +77,8 @@ export function DatabaseModal({ slug, projectName, passport, onClose }: {
           })}
         </div>
 
-        <div className="px-4 py-2 border-t border-primary/10 bg-secondary/10 flex-shrink-0">
-          <span className="typo-caption text-foreground/45" style={{ fontWeight: 400 }}>{d.database_modal_footer}</span>
+        <div className="px-4 py-2 border-t border-hair bg-surface-1 flex-shrink-0">
+          <span className="typo-caption text-ink-3" style={{ fontWeight: 400 }}>{d.database_modal_footer}</span>
         </div>
       </div>
     </BaseModal>

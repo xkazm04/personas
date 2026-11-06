@@ -138,13 +138,13 @@ export function ProjectsPassportWall({
           matrix is the only view now. */}
       <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
         <div className="inline-flex items-center gap-1.5">
-          <button type="button" onClick={() => nudge(-1)} aria-label="Scroll columns left" className="inline-flex items-center justify-center w-7 h-7 rounded-interactive border border-primary/12 text-foreground/70 hover:text-foreground hover:bg-primary/5 transition-colors focus-ring">
+          <button type="button" onClick={() => nudge(-1)} aria-label="Scroll columns left" className="inline-flex items-center justify-center w-7 h-7 rounded-interactive border border-hair text-ink-2 hover:text-foreground hover:bg-surface-2 transition-colors focus-ring">
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <button type="button" onClick={() => nudge(1)} aria-label="Scroll columns right" className="inline-flex items-center justify-center w-7 h-7 rounded-interactive border border-primary/12 text-foreground/70 hover:text-foreground hover:bg-primary/5 transition-colors focus-ring">
+          <button type="button" onClick={() => nudge(1)} aria-label="Scroll columns right" className="inline-flex items-center justify-center w-7 h-7 rounded-interactive border border-hair text-ink-2 hover:text-foreground hover:bg-surface-2 transition-colors focus-ring">
             <ChevronRight className="w-4 h-4" />
           </button>
-          <span className="typo-body-lg text-foreground/45 ml-1">{COPY.scrollHint}</span>
+          <span className="typo-body-lg text-ink-3 ml-1">{COPY.scrollHint}</span>
         </div>
         <InkTabs tabs={SORT_TABS} active={sort} onChange={setSort} label={COPY.sort} icon={ArrowUpDown} />
       </div>

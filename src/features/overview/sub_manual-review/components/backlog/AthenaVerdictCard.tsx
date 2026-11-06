@@ -47,9 +47,9 @@ type Phase = 'requesting' | 'review' | 'applying' | 'error';
 type EffectiveVerdict = 'accept' | 'reject' | 'skip';
 
 const CHIP: Record<EffectiveVerdict, string> = {
-  accept: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  reject: 'bg-red-500/15 text-red-300 border-red-500/30',
-  skip: 'bg-primary/10 text-muted-foreground border-primary/20',
+  accept: 'bg-status-success/15 text-status-success border-status-success/30',
+  reject: 'bg-status-error/15 text-status-error border-status-error/30',
+  skip: 'bg-primary/10 text-ink-3 border-hair',
 };
 
 export function AthenaVerdictCard({
@@ -149,15 +149,15 @@ export function AthenaVerdictCard({
   return (
     <BaseModal isOpen onClose={onClose} titleId="athena-verdict" size="xl" staggerChildren={false}>
       <div className="flex flex-col min-h-0 max-h-[80vh]">
-        <header className="flex items-start gap-3 px-5 py-4 border-b border-primary/10">
-          <span className="mt-0.5 shrink-0 rounded-full border border-primary/25 bg-primary/10 p-1.5">
+        <header className="flex items-start gap-3 px-5 py-4 border-b border-hair">
+          <span className="mt-0.5 shrink-0 rounded-full border border-hair bg-primary/10 p-1.5">
             <Bot className="w-4 h-4 text-primary" aria-hidden />
           </span>
           <div className="min-w-0 flex-1">
             <h2 id="athena-verdict" className="typo-heading text-foreground">
               {r.backlog_athena_title}
             </h2>
-            <p className="typo-caption text-muted-foreground mt-0.5">
+            <p className="typo-caption text-ink-3 mt-0.5">
               {phase === 'requesting'
                 ? tx(r.backlog_athena_requesting, { count: ideaIds.length })
                 : batch?.summary || tx(r.backlog_athena_requesting, { count: ideaIds.length })}
@@ -170,14 +170,14 @@ export function AthenaVerdictCard({
             verdict list that's coming, not a frozen panel. */}
         {phase === 'requesting' && (
           <div className="px-5 py-6" aria-busy="true">
-            <p role="status" className="typo-caption text-muted-foreground mb-3">
+            <p role="status" className="typo-caption text-ink-3 mb-3">
               {tx(r.backlog_athena_requesting, { count: ideaIds.length })}
             </p>
             <ul aria-hidden="true">
               {Array.from({ length: Math.min(ideaIds.length, 6) }).map((_, i) => (
                 <li
                   key={i}
-                  className="flex items-center gap-3 py-3 border-b border-primary/[0.06] animate-fade-in"
+                  className="flex items-center gap-3 py-3 border-b border-hair animate-fade-in"
                   style={{ animationDelay: `${120 + i * 45}ms` }}
                 >
                   <span className="h-3 w-56 max-w-full rounded bg-primary/[0.06]" />
@@ -194,7 +194,7 @@ export function AthenaVerdictCard({
               {expired ? r.backlog_athena_expired : r.backlog_athena_failed}
             </p>
             {error != null && !expired && (
-              <p className="typo-caption text-muted-foreground mt-2 break-words">
+              <p className="typo-caption text-ink-3 mt-2 break-words">
                 {resolveErrorTranslated(t, extractMessage(error)).message}
               </p>
             )}
@@ -226,7 +226,7 @@ export function AthenaVerdictCard({
                     }}
                     meta={
                       <span
-                        className={`typo-label rounded-full px-2 py-0.5 border ${CHIP[verdict]}`}
+                        className={`typo-label rounded-interactive px-2 py-0.5 border ${CHIP[verdict]}`}
                       >
                         {verdict === 'accept'
                           ? r.backlog_athena_verdict_accept
@@ -283,18 +283,18 @@ export function AthenaVerdictCard({
             </ul>
 
             {batch && batch.skipped.length > 0 && (
-              <p className="px-5 py-2 typo-caption text-muted-foreground border-t border-primary/[0.06]">
+              <p className="px-5 py-2 typo-caption text-ink-3 border-t border-hair">
                 {tx(r.backlog_athena_not_judged, { count: batch.skipped.length })}
               </p>
             )}
           </>
         )}
 
-        <footer className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/10">
+        <footer className="flex items-center justify-end gap-2 px-5 py-3 border-t border-hair">
           <button
             type="button"
             onClick={onClose}
-            className="typo-label rounded-interactive border border-primary/15 px-3 py-1.5 text-muted-foreground hover:bg-primary/5 transition-colors"
+            className="typo-label rounded-interactive border border-hair px-3 py-1.5 text-ink-3 hover:bg-surface-2 transition-colors"
           >
             {phase === 'error' ? t.common.close : t.common.cancel}
           </button>

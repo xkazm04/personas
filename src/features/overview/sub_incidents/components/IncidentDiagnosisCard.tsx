@@ -62,7 +62,7 @@ export function IncidentDiagnosisCard({ incidentId }: { incidentId: string }) {
   };
 
   return (
-    <div className="rounded-card border border-primary/15 bg-secondary/20 p-4">
+    <div className="rounded-card border border-hair bg-surface-1 p-4">
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <Stethoscope className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
         <h3 className="typo-eyebrow text-foreground">{t.overview.incidents.noc_diagnosis_title}</h3>
@@ -106,7 +106,7 @@ export function IncidentDiagnosisCard({ incidentId }: { incidentId: string }) {
           )}
 
           {diagnosis.proposedAction && (
-            <div className="flex items-start gap-2 rounded-card border border-primary/10 bg-primary/5 px-3 py-2">
+            <div className="flex items-start gap-2 rounded-card border border-hair bg-surface-1 px-3 py-2">
               <Wrench className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
               <div className="min-w-0 flex flex-col gap-1">
                 <span className="typo-eyebrow text-foreground">

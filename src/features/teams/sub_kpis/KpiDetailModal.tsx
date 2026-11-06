@@ -59,7 +59,7 @@ export function KpiDetailModal({
       // column inside grows by the same fifth (42rem -> 50rem) - widening only
       // the shell would have added margin, not room.
       maxWidthClass="max-w-[67rem]"
-      panelClassName="relative w-full h-[85vh] glass-md rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col"
+      panelClassName="relative w-full h-[85vh] glass-md rounded-card shadow-elevation-4 overflow-hidden flex flex-col"
     >
       <ModalHeader kpi={kpi} projectName={projectName} onClose={onClose} />
 
@@ -137,7 +137,7 @@ function ModalHeader({ kpi, projectName, onClose }: { kpi: DevKpi; projectName: 
             : t.kpis.track_on;
 
   return (
-    <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-primary/10 bg-secondary/10">
+    <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-hair bg-surface-1">
       <div className="min-w-0 flex items-start gap-3">
         <span
           className="mt-0.5 flex-shrink-0 w-9 h-9 rounded-card flex items-center justify-center"
@@ -148,7 +148,7 @@ function ModalHeader({ kpi, projectName, onClose }: { kpi: DevKpi; projectName: 
         <div className="min-w-0">
           <p className="typo-caption text-foreground truncate">{projectName}</p>
           <h2 id={TITLE_ID} className="typo-title truncate">{kpi.name}</h2>
-          <p className="typo-caption text-foreground/70">
+          <p className="typo-caption text-ink-2">
             {cat.label(t)} · {kind.label(t)} · {cad.label(t)}
           </p>
         </div>
@@ -177,7 +177,7 @@ function HeroBlock({ kpi }: { kpi: DevKpi }) {
   const { t, tx } = useTranslation();
   const d = paceDescriptor(kpi);
   return (
-    <div className="rounded-card border border-primary/15 bg-secondary/20 p-4 space-y-2.5">
+    <div className="rounded-card border border-hair bg-surface-1 p-4 space-y-2.5">
       <div className="flex items-baseline gap-2">
         <span className="typo-hero text-foreground tabular-nums">
           {kpi.current_value != null ? <Numeric value={kpi.current_value} /> : '—'}
@@ -228,10 +228,10 @@ function StoryWithConvergence({
     insufficient: t.kpis.conv_verdict_insufficient,
   };
   const verdictTone: Record<Convergence['verdict'], string> = {
-    converging: 'border-emerald-400/30 bg-emerald-500/10 text-emerald-300',
-    diverging: 'border-red-400/30 bg-red-500/10 text-red-300',
-    stable: 'border-border/25 bg-secondary/40 text-foreground',
-    insufficient: 'border-border/25 bg-secondary/40 text-foreground opacity-70',
+    converging: 'border-status-success/30 bg-status-success/10 text-status-success',
+    diverging: 'border-status-error/30 bg-status-error/10 text-status-error',
+    stable: 'border-hair bg-surface-1 text-foreground',
+    insufficient: 'border-hair bg-surface-1 text-foreground opacity-70',
   };
 
   return (
@@ -273,7 +273,7 @@ function StoryWithConvergence({
                 </span>
               </p>
               {conv.latest.prodStaleDays >= 2 && (
-                <p className="typo-caption text-amber-300/90" data-testid="kpi-convergence-stale">
+                <p className="typo-caption text-status-warning" data-testid="kpi-convergence-stale">
                   {tx(t.kpis.conv_stale_hint, { days: conv.latest.prodStaleDays })}
                 </p>
               )}
@@ -297,7 +297,7 @@ function HowMeasured({ kpi }: { kpi: DevKpi }) {
       <p className="typo-body">{describeMeasurement(kpi, t, tx)}</p>
       <details className="typo-caption">
         <summary className="cursor-pointer select-none">{t.kpis.show_procedure}</summary>
-        <code className="mt-1 block rounded-card bg-secondary/30 px-2.5 py-2 typo-code break-all">
+        <code className="mt-1 block rounded-card bg-surface-1 px-2.5 py-2 typo-code break-all">
           {kpi.measure_config}
         </code>
       </details>
@@ -317,7 +317,7 @@ function HistoryBlock({ kpi, measurements }: { kpi: DevKpi; measurements: Return
       {measurements.length === 0 ? (
         <p className="typo-caption">{t.kpis.history_empty}</p>
       ) : (
-        <ul className="divide-y divide-primary/10 rounded-card border border-primary/10">
+        <ul className="divide-y divide-primary/10 rounded-card border border-hair">
           {measurements.map((m) => {
             const prov = summarizeEvidence(m.evidence);
             const sourceLabels = t.kpis.measurement_source as Record<string, string>;
@@ -332,11 +332,11 @@ function HistoryBlock({ kpi, measurements }: { kpi: DevKpi; measurements: Return
                   </span>
                   <span className="ml-auto inline-flex items-center gap-1">
                     {(m.env ?? 'production') !== 'production' && (
-                      <span className="typo-caption px-1.5 py-0.5 rounded border border-violet-400/30 bg-violet-500/10 text-violet-300" data-testid="kpi-measurement-env-chip">
+                      <span className="typo-caption px-1.5 py-0.5 rounded border border-role-agent/30 bg-role-agent/10 text-role-agent" data-testid="kpi-measurement-env-chip">
                         {(t.kpis.env_labels as Record<string, string>)[m.env] ?? m.env}
                       </span>
                     )}
-                    <span className="typo-caption px-1.5 py-0.5 rounded border border-border/20 bg-secondary/40 text-foreground">
+                    <span className="typo-caption px-1.5 py-0.5 rounded border border-border/20 bg-surface-1 text-foreground">
                       {sourceLabels[m.source] ?? m.source}
                     </span>
                   </span>
@@ -377,7 +377,7 @@ function ActionBar({
   const [manualValue, setManualValue] = useState('');
 
   return (
-    <div className="flex items-center gap-2 flex-wrap px-5 py-3 border-t border-primary/10 bg-secondary/10">
+    <div className="flex items-center gap-2 flex-wrap px-5 py-3 border-t border-hair bg-surface-1">
       {kpi.status === 'paused' ? (
         <AsyncButton size="sm" variant="secondary" icon={<Play className="w-3.5 h-3.5" />} onClick={() => onSetStatus('active')}>
           {t.kpis.resume_button}
@@ -402,7 +402,7 @@ function ActionBar({
               type="number"
               value={manualValue}
               onChange={(e) => setManualValue(e.target.value)}
-              className="rounded-input border border-primary/15 bg-background px-2 py-1 typo-body text-foreground tabular-nums w-28"
+              className="rounded-input border border-hair bg-background px-2 py-1 typo-body text-foreground tabular-nums w-28"
             />
           </label>
           <AsyncButton

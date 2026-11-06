@@ -62,7 +62,7 @@ function AlertToast({ alert, onDismiss }: { alert: FiredAlert; onDismiss: () => 
           type="button"
           onClick={onDismiss}
           aria-label={t.common.dismiss}
-          className="p-0.5 text-foreground hover:text-muted-foreground transition-colors shrink-0"
+          className="p-0.5 text-foreground hover:text-ink-3 transition-colors shrink-0"
         >
           <X className="w-3.5 h-3.5" aria-hidden="true" />
         </button>

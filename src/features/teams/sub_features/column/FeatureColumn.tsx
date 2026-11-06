@@ -141,7 +141,7 @@ export function FeatureColumn({
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="features-column">
       <div className="flex flex-col gap-2 border-b border-border px-3 py-2">
-        <label className="flex items-center gap-2 rounded-input border border-border bg-secondary/40 px-2 py-1.5">
+        <label className="flex items-center gap-2 rounded-input border border-border bg-surface-1 px-2 py-1.5">
           <Search className="h-4 w-4 flex-none text-foreground" aria-hidden="true" />
           <input
             ref={filterRef}
@@ -150,7 +150,7 @@ export function FeatureColumn({
             placeholder={t.filter_placeholder}
             aria-label={t.filter_label}
             data-testid="features-filter"
-            className="min-w-0 flex-1 bg-transparent typo-body text-foreground outline-none placeholder:text-foreground/50"
+            className="min-w-0 flex-1 bg-transparent typo-body text-foreground outline-none placeholder:text-ink-3"
           />
         </label>
         {/* A sort selector, NOT a tab strip: it reorders ONE region rather
@@ -167,7 +167,7 @@ export function FeatureColumn({
               className={`whitespace-nowrap rounded-interactive border px-2 py-1 typo-caption focus-ring ${
                 sort === option.id
                   ? 'border-primary/60 bg-primary/15 text-primary'
-                  : 'border-border text-foreground hover:bg-secondary/50'
+                  : 'border-border text-foreground hover:bg-surface-2'
               }`}
             >
               {option.label}

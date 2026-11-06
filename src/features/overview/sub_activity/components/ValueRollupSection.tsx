@@ -64,7 +64,7 @@ export function ValueRollupSection({ days }: Props) {
   if (!loaded) {
     return (
       <div className="space-y-2">
-        <h4 className="typo-heading text-emerald-400/80 flex items-center gap-1.5">
+        <h4 className="typo-heading text-status-success flex items-center gap-1.5">
           <Target className="w-3 h-3" /> {t.overview.activity.value_section_title}
         </h4>
         <div className={SUMMARY_GRID} aria-hidden="true">
@@ -83,7 +83,7 @@ export function ValueRollupSection({ days }: Props) {
   if (failed) {
     return (
       <div className="space-y-2">
-        <h4 className="typo-heading text-emerald-400/80 flex items-center gap-1.5">
+        <h4 className="typo-heading text-status-success flex items-center gap-1.5">
           <Target className="w-3 h-3" /> {t.overview.activity.value_section_title}
         </h4>
         <InlineErrorBanner
@@ -102,7 +102,7 @@ export function ValueRollupSection({ days }: Props) {
 
   return (
     <div className="space-y-2">
-      <h4 className="typo-heading text-emerald-400/80 flex items-center gap-1.5">
+      <h4 className="typo-heading text-status-success flex items-center gap-1.5">
         <Target className="w-3 h-3" /> {t.overview.activity.value_section_title}
       </h4>
       <div className={SUMMARY_GRID}>

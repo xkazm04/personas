@@ -10,7 +10,7 @@ import { isCredentialVerified } from '@/lib/credentials/healthState';
 function Field({ label, testId, children }: { label: string; testId: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5" data-testid={testId}>
-      <span className="typo-label text-foreground/85">{label}</span>
+      <span className="typo-label text-ink-2">{label}</span>
       {children}
     </label>
   );
@@ -84,7 +84,7 @@ export function SlackBridgePickers({
         />
         <p className="typo-caption text-foreground">{ts.slack_bridge_persona_hint}</p>
         {selectedPersona && !selectedPersona.enabled && (
-          <p className="flex items-start gap-1.5 typo-caption text-amber-300">
+          <p className="flex items-start gap-1.5 typo-caption text-status-warning">
             <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
             {ts.slack_bridge_persona_disabled_warning}
           </p>
@@ -109,7 +109,7 @@ export function SlackBridgePickers({
             disabled={!form.credentialId}
             onChange={(e) => onChange({ channel: e.target.value, channelName: null })}
             placeholder={ts.slack_bridge_channel_id_placeholder}
-            className="w-full rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60 disabled:opacity-50"
+            className="w-full rounded-input bg-surface-1 border border-hair text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60 disabled:opacity-50"
           />
         )}
         {form.credentialId && !useChannelList && (

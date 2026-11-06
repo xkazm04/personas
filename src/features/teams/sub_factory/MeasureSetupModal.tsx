@@ -113,7 +113,7 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
     <BaseModal isOpen onClose={onClose} titleId="factory-measure-setup-title" size="lg" portal>
       <div className="flex flex-col max-h-[82vh]" data-testid="factory-measure-setup">
         {/* Header */}
-        <div className="flex items-start gap-3 px-5 py-4 border-b border-primary/10">
+        <div className="flex items-start gap-3 px-5 py-4 border-b border-hair">
           <span className="rounded-interactive bg-primary/10 p-2 flex-shrink-0">
             <Sparkles className="w-5 h-5 text-primary" aria-hidden />
           </span>
@@ -121,7 +121,7 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
             <h2 id="factory-measure-setup-title" className="typo-heading text-foreground">{w.setup_measure_title}</h2>
             <p className="typo-caption truncate">{kpi.name} · {words.category[kpi.category]}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label={t.common.close} className="rounded-interactive p-1.5 text-foreground/70 hover:bg-secondary/40">
+          <button type="button" onClick={onClose} aria-label={t.common.close} className="rounded-interactive p-1.5 text-ink-2 hover:bg-surface-2">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -136,7 +136,7 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
                 key={m.kind}
                 type="button"
                 onClick={() => { setMech(m.kind); setMsg(null); compose.reset(); }}
-                className={`rounded-card border px-2.5 py-2 text-left transition-colors ${on ? 'border-primary/40 bg-primary/10' : 'border-primary/10 bg-secondary/10 hover:bg-secondary/30'}`}
+                className={`rounded-card border px-2.5 py-2 text-left transition-colors ${on ? 'border-primary/40 bg-primary/10' : 'border-hair bg-surface-1 hover:bg-surface-2'}`}
                 data-testid={`measure-mech-${m.kind}`}
               >
                 <Icon className="w-4 h-4 mb-1 text-foreground" />
@@ -152,13 +152,13 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
           {/* ---- CODEBASE ---- */}
           {mech === 'codebase' && (
             <div className="space-y-3">
-              <p className="typo-body text-foreground/90">{w.setup_codebase_intro}</p>
+              <p className="typo-body text-ink-2">{w.setup_codebase_intro}</p>
 
               <button
                 type="button"
                 onClick={() => void compose.run(() => kpiApi.composeKpiMeasure(kpi.id))}
                 disabled={compose.phase === 'running'}
-                className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/25 bg-primary/10 px-3 py-1.5 typo-body text-foreground hover:bg-primary/20 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-interactive border border-hair bg-primary/10 px-3 py-1.5 typo-body text-foreground hover:bg-primary/20 disabled:opacity-50"
               >
                 {compose.phase === 'running' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                 {compose.phase === 'running' ? w.setup_composing : w.setup_compose_run}
@@ -170,13 +170,13 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
               )}
 
               {(compose.phase === 'running' || tailLines.length > 0) && (
-                <pre className="typo-code max-h-40 overflow-y-auto rounded-interactive border border-primary/10 bg-background/50 p-2 whitespace-pre-wrap break-words">{tailLines.join('\n') || w.setup_starting}</pre>
+                <pre className="typo-code max-h-40 overflow-y-auto rounded-interactive border border-hair bg-background/50 p-2 whitespace-pre-wrap break-words">{tailLines.join('\n') || w.setup_starting}</pre>
               )}
 
               {compose.phase === 'error' && <p className="typo-caption text-status-error break-words">{compose.error}</p>}
 
               {compose.phase === 'done' && composed === null && (
-                <p className="typo-body text-foreground/90 rounded-interactive border border-warning/30 bg-warning/10 p-2.5">{w.setup_not_codebase_lead} <strong>{words.kind.connector}</strong> {w.setup_not_codebase_mid} <strong>{words.kind.manual}</strong>.</p>
+                <p className="typo-body text-ink-2 rounded-interactive border border-warning/30 bg-warning/10 p-2.5">{w.setup_not_codebase_lead} <strong>{words.kind.connector}</strong> {w.setup_not_codebase_mid} <strong>{words.kind.manual}</strong>.</p>
               )}
 
               {compose.phase === 'done' && composed && (
@@ -202,14 +202,14 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
                 {showAdv ? w.setup_hide_manual : w.setup_enter_manual}
               </button>
               {showAdv && (
-                <div className="space-y-2 rounded-interactive border border-primary/10 bg-secondary/10 p-3">
+                <div className="space-y-2 rounded-interactive border border-hair bg-surface-1 p-3">
                   <label className="typo-label text-foreground block">{w.setup_command}</label>
-                  <input value={cmd} onChange={(e) => setCmd(e.target.value)} placeholder="npx tsc --noEmit 2>&1 | grep -c error" className="w-full px-2 py-1.5 typo-code bg-background/50 border border-primary/10 rounded-interactive text-foreground focus-ring" />
+                  <input value={cmd} onChange={(e) => setCmd(e.target.value)} placeholder="npx tsc --noEmit 2>&1 | grep -c error" className="w-full px-2 py-1.5 typo-code bg-background/50 border border-hair rounded-interactive text-foreground focus-ring" />
                   <label className="typo-label text-foreground block">{w.setup_parse_label}</label>
-                  <select value={parse} onChange={(e) => setParse(e.target.value)} className="w-full px-2 py-1.5 typo-body bg-background/50 border border-primary/10 rounded-interactive text-foreground focus-ring">
+                  <select value={parse} onChange={(e) => setParse(e.target.value)} className="w-full px-2 py-1.5 typo-body bg-background/50 border border-hair rounded-interactive text-foreground focus-ring">
                     {PARSE_OPTS.map((p) => <option key={p} value={p}>{p}</option>)}
                   </select>
-                  <button type="button" disabled={busy || !cmd.trim()} onClick={() => void applyConfig('codebase', JSON.stringify({ cmd: cmd.trim(), parse }))} className="rounded-interactive border border-primary/20 bg-primary/10 px-3 py-1.5 typo-body text-foreground hover:bg-primary/20 disabled:opacity-50">{w.setup_save_command}</button>
+                  <button type="button" disabled={busy || !cmd.trim()} onClick={() => void applyConfig('codebase', JSON.stringify({ cmd: cmd.trim(), parse }))} className="rounded-interactive border border-hair bg-primary/10 px-3 py-1.5 typo-body text-foreground hover:bg-primary/20 disabled:opacity-50">{w.setup_save_command}</button>
                 </div>
               )}
             </div>
@@ -218,8 +218,8 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
           {/* ---- CONNECTOR ---- */}
           {mech === 'connector' && (
             <div className="space-y-3">
-              <p className="typo-body text-foreground/90">{w.setup_connector_intro}</p>
-              <button type="button" disabled={busy} onClick={() => void openConnector()} className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/25 bg-primary/10 px-3 py-1.5 typo-body text-foreground hover:bg-primary/20 disabled:opacity-50">
+              <p className="typo-body text-ink-2">{w.setup_connector_intro}</p>
+              <button type="button" disabled={busy} onClick={() => void openConnector()} className="inline-flex items-center gap-1.5 rounded-interactive border border-hair bg-primary/10 px-3 py-1.5 typo-body text-foreground hover:bg-primary/20 disabled:opacity-50">
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Cable className="w-4 h-4" />} {w.setup_connector_open}
               </button>
               <p className="typo-caption">{w.setup_connector_note}</p>
@@ -229,25 +229,25 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
           {/* ---- DERIVED ---- */}
           {mech === 'derived' && (
             <div className="space-y-3">
-              <p className="typo-body text-foreground/90">{w.setup_derived_intro}</p>
+              <p className="typo-body text-ink-2">{w.setup_derived_intro}</p>
               <div className="space-y-1.5" role="radiogroup" aria-label={w.setup_derived_aria}>
                 {DERIVED_METRICS.map((d) => (
-                  <button key={d.id} type="button" role="radio" aria-checked={derived === d.id} onClick={() => setDerived(d.id)} className={`w-full text-left rounded-card border px-3 py-2 transition-colors ${derived === d.id ? 'border-primary/40 bg-primary/10' : 'border-primary/10 bg-secondary/10 hover:bg-secondary/30'}`}>
+                  <button key={d.id} type="button" role="radio" aria-checked={derived === d.id} onClick={() => setDerived(d.id)} className={`w-full text-left rounded-card border px-3 py-2 transition-colors ${derived === d.id ? 'border-primary/40 bg-primary/10' : 'border-hair bg-surface-1 hover:bg-surface-2'}`}>
                     <span className="typo-title block">{words.derived[d.id]?.label ?? d.label}</span>
                     <span className="typo-caption block">{words.derived[d.id]?.hint ?? d.hint}</span>
                   </button>
                 ))}
               </div>
-              <button type="button" disabled={busy} onClick={() => void applyConfig('derived', JSON.stringify({ metric: derived }))} className="rounded-interactive border border-primary/20 bg-primary/10 px-3 py-1.5 typo-body text-foreground hover:bg-primary/20 disabled:opacity-50">{w.setup_use_metric}</button>
+              <button type="button" disabled={busy} onClick={() => void applyConfig('derived', JSON.stringify({ metric: derived }))} className="rounded-interactive border border-hair bg-primary/10 px-3 py-1.5 typo-body text-foreground hover:bg-primary/20 disabled:opacity-50">{w.setup_use_metric}</button>
             </div>
           )}
 
           {/* ---- MANUAL ---- */}
           {mech === 'manual' && (
             <div className="space-y-3">
-              <p className="typo-body text-foreground/90">{w.setup_manual_lead} <strong>{w.setup_manual_emph}</strong>. {w.setup_manual_tail}</p>
+              <p className="typo-body text-ink-2">{w.setup_manual_lead} <strong>{w.setup_manual_emph}</strong>. {w.setup_manual_tail}</p>
               {kpi.measureKind !== 'manual' && (
-                <button type="button" disabled={busy} onClick={() => void applyConfig('manual', '{}')} className="rounded-interactive border border-primary/20 bg-primary/10 px-3 py-1.5 typo-body text-foreground hover:bg-primary/20 disabled:opacity-50">{w.setup_switch_manual}</button>
+                <button type="button" disabled={busy} onClick={() => void applyConfig('manual', '{}')} className="rounded-interactive border border-hair bg-primary/10 px-3 py-1.5 typo-body text-foreground hover:bg-primary/20 disabled:opacity-50">{w.setup_switch_manual}</button>
               )}
             </div>
           )}
@@ -256,10 +256,10 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
         </div>
 
         {/* Footer */}
-        <div className="flex items-center px-5 py-3 border-t border-primary/10">
+        <div className="flex items-center px-5 py-3 border-t border-hair">
           <span className="typo-caption">{tx(w.setup_current, { kind: words.kind[kpi.measureKind] })}</span>
           <span className="flex-1" />
-          <button type="button" onClick={onClose} className="rounded-interactive border border-primary/15 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/40">{t.common.done}</button>
+          <button type="button" onClick={onClose} className="rounded-interactive border border-hair px-3 py-1.5 typo-body text-foreground hover:bg-surface-2">{t.common.done}</button>
         </div>
       </div>
 

@@ -33,7 +33,7 @@ export function AddKpiModal({
   const { t, tx } = useTranslation();
   const w = t.kpis;
   const o = useKpiSetupOptions();
-  const optional = !isManual && <span className="text-foreground/40"> · {w.setup_optional}</span>;
+  const optional = !isManual && <span className="text-ink-3"> · {w.setup_optional}</span>;
 
   // Hand off to Athena for a guided, conversational setup (she gathers the
   // shape, proposes the KPI, and the user verifies it in Teams › KPIs).
@@ -53,13 +53,13 @@ export function AddKpiModal({
     <BaseModal isOpen onClose={onClose} titleId="factory-add-kpi-title" size="6xl" portal>
       <div className="flex flex-col max-h-[88vh]" data-testid="factory-add-kpi">
         {/* Header */}
-        <div className="flex items-start gap-3 px-5 py-4 border-b border-primary/10">
+        <div className="flex items-start gap-3 px-5 py-4 border-b border-hair">
           <span className="rounded-interactive bg-primary/10 p-2 flex-shrink-0"><Plus className="w-5 h-5 text-primary" /></span>
           <div className="min-w-0 flex-1">
             <h2 id="factory-add-kpi-title" className="typo-heading text-foreground">{w.setup_add_title}</h2>
             <p className="typo-caption truncate">{scopeLabel ? tx(w.setup_scope, { scope: scopeLabel }) : w.setup_scope_project}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label={t.common.close} className="rounded-interactive p-1.5 text-foreground/70 hover:bg-secondary/40"><X className="w-4 h-4" /></button>
+          <button type="button" onClick={onClose} aria-label={t.common.close} className="rounded-interactive p-1.5 text-ink-2 hover:bg-surface-2"><X className="w-4 h-4" /></button>
         </div>
 
         {/* Body */}
@@ -127,11 +127,11 @@ export function AddKpiModal({
           <button
             type="button"
             onClick={askAthena}
-            className="w-full flex items-center gap-2 rounded-card border border-primary/15 bg-primary/[0.06] hover:bg-primary/[0.12] transition-colors px-3 py-2 text-left"
+            className="w-full flex items-center gap-2 rounded-card border border-hair bg-primary/[0.06] hover:bg-primary/[0.12] transition-colors px-3 py-2 text-left"
             data-testid="factory-ask-athena-kpi"
           >
             <MessageSquare className="w-4 h-4 text-primary flex-shrink-0" />
-            <span className="typo-caption text-foreground/80">
+            <span className="typo-caption text-ink-2">
               {w.setup_ask_athena_lead} <span className="text-foreground font-medium">{w.setup_ask_athena_link}</span> {w.setup_ask_athena_tail}
             </span>
           </button>
@@ -140,17 +140,17 @@ export function AddKpiModal({
         </div>
 
         {/* Footer — the button depends on Measured */}
-        <div className="flex items-center gap-2 px-5 py-3 border-t border-primary/10">
+        <div className="flex items-center gap-2 px-5 py-3 border-t border-hair">
           <span className="flex-1" />
-          <button type="button" onClick={onClose} className="rounded-interactive border border-primary/15 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/40">{t.common.cancel}</button>
+          <button type="button" onClick={onClose} className="rounded-interactive border border-hair px-3 py-1.5 typo-body text-foreground hover:bg-surface-2">{t.common.cancel}</button>
           {isManual ? (
             <button type="button" disabled={busy || !k.manualReady} onClick={() => void k.createManual()}
-              className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/30 bg-primary/15 px-3 py-1.5 typo-body text-foreground hover:bg-primary/25 disabled:opacity-50">
+              className="inline-flex items-center gap-1.5 rounded-interactive border border-hair bg-primary/15 px-3 py-1.5 typo-body text-foreground hover:bg-primary/25 disabled:opacity-50">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} {w.setup_create}
             </button>
           ) : (
             <button type="button" disabled={busy || !k.name.trim()} onClick={() => void k.setupWithAi()}
-              className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/30 bg-primary/15 px-3 py-1.5 typo-body text-foreground hover:bg-primary/25 disabled:opacity-50">
+              className="inline-flex items-center gap-1.5 rounded-interactive border border-hair bg-primary/15 px-3 py-1.5 typo-body text-foreground hover:bg-primary/25 disabled:opacity-50">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} {busy ? w.setup_setting_up : w.setup_with_ai}
             </button>
           )}

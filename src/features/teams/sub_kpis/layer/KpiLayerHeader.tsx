@@ -33,7 +33,7 @@ export function KpiLayerHeader({
         data-testid="kpi-layer-back"
         onClick={onBack}
         aria-label={o.layer_back}
-        className="inline-flex items-center gap-1.5 rounded-interactive px-2 py-1 typo-label text-foreground hover:bg-secondary/40 focus-ring"
+        className="inline-flex items-center gap-1.5 rounded-interactive px-2 py-1 typo-label text-foreground hover:bg-surface-2 focus-ring"
       >
         <ArrowLeft className="w-3.5 h-3.5" aria-hidden />
         {o.layer_back}
@@ -42,7 +42,7 @@ export function KpiLayerHeader({
       <p className="typo-title flex items-center gap-1.5 min-w-0">
         <span className="truncate">{projectLabel}</span>
         {/* muted-ok: breadcrumb separator glyph — chrome between two labels */}
-        <span className="text-muted-foreground" aria-hidden>
+        <span className="text-ink-3" aria-hidden>
           ›
         </span>
         <span className="truncate">{groupLabel ?? o.layer_project_all}</span>

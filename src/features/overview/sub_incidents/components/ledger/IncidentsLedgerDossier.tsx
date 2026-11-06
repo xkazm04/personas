@@ -48,7 +48,7 @@ const SOURCE_TILE: Record<string, string> = {
   critical: 'border-status-error/40 bg-status-error/15 text-status-error',
   high: 'border-status-warning/40 bg-status-warning/15 text-status-warning',
   medium: 'border-status-info/40 bg-status-info/15 text-status-info',
-  low: 'border-primary/20 bg-secondary/50 text-foreground',
+  low: 'border-hair bg-surface-1 text-foreground',
 };
 /**
  * Column widths persist per table id (`table-col-widths:<id>`), so the ledger
@@ -94,7 +94,7 @@ export function IncidentsLedgerDossier(props: IncidentLedgerViewProps) {
         // gets wider. NORMAL weight: the stamps beside it carry the emphasis.
         render: (incident) => (
           <span className="flex min-w-0 items-center gap-2">
-            <span className={`truncate typo-body ${isClosed(incident) ? 'text-foreground/70' : 'text-foreground'}`}>{incident.title}</span>
+            <span className={`truncate typo-body ${isClosed(incident) ? 'text-ink-2' : 'text-foreground'}`}>{incident.title}</span>
             {isNewSince(incident, lastSeenAt) && (
               <span className="shrink-0 rounded-card bg-primary/15 px-1.5 py-0.5 typo-caption text-primary">
                 {t.overview.incidents.ledger.new_badge}
@@ -113,7 +113,7 @@ export function IncidentsLedgerDossier(props: IncidentLedgerViewProps) {
         ...head('persona'),
         render: (incident) => (
           <span className="flex min-w-0 items-center gap-1.5 typo-caption text-foreground">
-            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[9px] font-semibold text-primary leading-none">
+            <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/15 typo-data text-primary leading-none">
               {incident.personaName ? personaInitials(incident.personaName) : '·'}
             </span>
             <span className="truncate">{incident.personaName ?? '—'}</span>

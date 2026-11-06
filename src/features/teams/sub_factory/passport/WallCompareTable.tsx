@@ -26,7 +26,7 @@ export interface WallSetupTarget { rowKey: string; rowLabel: string; passport: A
 const BODY_SECTIONS = SECTIONS.map((s) => ({ ...s, rows: s.rows.filter((r) => !r.headline) }));
 
 const RAIL = 'sticky left-0 z-20 bg-background';
-const COL_CHROME = 'border-l border-primary/[0.08]';
+const COL_CHROME = 'border-l border-hair';
 
 export function WallCompareTable({
   columns, reduce, coverProps, scrollRef, fleetSessions, onOpenSetup, onOpenTerminal, renderActions,
@@ -44,19 +44,19 @@ export function WallCompareTable({
   renderActions?: (p: AppPassport) => React.ReactNode;
 }) {
   return (
-    <div ref={scrollRef} className="overflow-x-auto rounded-modal border border-primary/[0.08] bg-secondary/[0.03] shadow-elevation-1">
+    <div ref={scrollRef} className="overflow-x-auto rounded-modal border border-hair bg-surface-1 shadow-elevation-1">
       <table className="border-separate border-spacing-0">
         {/* passport covers */}
         <thead>
           <tr>
-            <th className={`${RAIL} w-[190px] min-w-[190px] px-3 py-3 text-left align-bottom border-b-2 border-primary/15`}>
-              <span className="typo-label text-foreground/50">{COPY.compare}</span>
+            <th className={`${RAIL} w-[190px] min-w-[190px] px-3 py-3 text-left align-bottom border-b-2 border-hair`}>
+              <span className="typo-label text-ink-3">{COPY.compare}</span>
             </th>
             {columns.map((p) => (
               <motion.th
                 key={p.identity.slug}
                 {...coverMotion(p.identity.slug, reduce)}
-                className={`min-w-[236px] w-[236px] px-3 py-3 text-left align-top border-b-2 border-primary/15 ${COL_CHROME}`}
+                className={`min-w-[236px] w-[236px] px-3 py-3 text-left align-top border-b-2 border-hair ${COL_CHROME}`}
                 style={{ borderTop: `2px solid ${scoreInk(Math.min(p.automationReadiness.score, p.productionReadiness.score))}55` }}
               >
                 <CoverBody {...coverProps(p)} />
@@ -77,14 +77,14 @@ export function WallCompareTable({
                   {/* the FIRST group header doubles as the ACTIONS row — the
                       section label keeps the rail, each project column gets its
                       consent-gated action buttons, well visible up top */}
-                  <td className={`${RAIL} px-3 py-1.5 border-t border-primary/10 bg-primary/[0.03] align-middle`}>
-                    <span className="inline-flex items-center gap-1.5 typo-label text-foreground/70 whitespace-nowrap">
+                  <td className={`${RAIL} px-3 py-1.5 border-t border-hair bg-surface-1 align-middle`}>
+                    <span className="inline-flex items-center gap-1.5 typo-label text-ink-2 whitespace-nowrap">
                       <SectionIcon name={section.icon} className="w-3.5 h-3.5 text-primary/70" />
                       {section.label}
                     </span>
                   </td>
                   {columns.map((p) => (
-                    <td key={p.identity.slug} className={`px-3 py-1 border-t border-primary/10 bg-primary/[0.03] align-middle ${COL_CHROME}`}>
+                    <td key={p.identity.slug} className={`px-3 py-1 border-t border-hair bg-surface-1 align-middle ${COL_CHROME}`}>
                       {renderActions(p)}
                     </td>
                   ))}
@@ -92,8 +92,8 @@ export function WallCompareTable({
               ) : (
                 <tr>
                   {/* full-width band so the section name spreads across the row instead of wrapping in the narrow rail */}
-                  <td colSpan={columns.length + 1} className="border-t border-primary/10 bg-primary/[0.03] p-0">
-                    <span className="sticky left-0 z-10 inline-flex items-center gap-1.5 typo-label text-foreground/70 whitespace-nowrap px-3 py-1.5">
+                  <td colSpan={columns.length + 1} className="border-t border-hair bg-surface-1 p-0">
+                    <span className="sticky left-0 z-10 inline-flex items-center gap-1.5 typo-label text-ink-2 whitespace-nowrap px-3 py-1.5">
                       <SectionIcon name={section.icon} className="w-3.5 h-3.5 text-primary/70" />
                       {section.label}
                     </span>
@@ -102,7 +102,7 @@ export function WallCompareTable({
               )}
               {section.rows.map((row) => (
                 <tr key={row.key} className="hover:bg-primary/[0.02] transition-colors">
-                  <td className={`${RAIL} px-3 py-2 border-t border-primary/[0.06] align-top`}>
+                  <td className={`${RAIL} px-3 py-2 border-t border-hair align-top`}>
                     <RowInfoLabel label={row.label} info={row.info} />
                   </td>
                   {columns.map((p) => {
@@ -118,7 +118,7 @@ export function WallCompareTable({
                         <InkWallCell value={value} />
                       );
                     return (
-                      <td key={p.identity.slug} className={`px-3 py-2 align-top border-t border-primary/[0.06] ${COL_CHROME} ${recede ? 'opacity-45' : ''}`}>
+                      <td key={p.identity.slug} className={`px-3 py-2 align-top border-t border-hair ${COL_CHROME} ${recede ? 'opacity-45' : ''}`}>
                         {UNIFIED_ROWS.has(row.key) ? (() => {
                           const dk = passportDispatchKey(row.key, p.identity.slug);
                           const fl = fleetSessions.get(dk);
@@ -168,8 +168,8 @@ export function WallCompareTable({
 
           {/* the deficiency band — the Wall's signature payload */}
           <tr>
-            <td className={`${RAIL} px-3 py-2 border-t-2 border-dashed border-primary/15 align-top`}>
-              <span className="inline-flex items-center gap-1.5 typo-label text-red-300/80">
+            <td className={`${RAIL} px-3 py-2 border-t-2 border-dashed border-hair align-top`}>
+              <span className="inline-flex items-center gap-1.5 typo-label text-status-error">
                 <AlertTriangle className="w-3.5 h-3.5" aria-hidden />
                 {COPY.blockersTitle}
               </span>
@@ -177,16 +177,16 @@ export function WallCompareTable({
             {columns.map((p) => {
               const blockers = [...p.productionReadiness.blockers, ...p.automationReadiness.blockers];
               return (
-                <td key={p.identity.slug} className={`px-3 py-2 align-top border-t-2 border-dashed border-primary/15 ${COL_CHROME}`}>
+                <td key={p.identity.slug} className={`px-3 py-2 align-top border-t-2 border-dashed border-hair ${COL_CHROME}`}>
                   {blockers.length === 0 ? (
-                    <span className="inline-flex items-center gap-1.5 typo-caption text-emerald-300">
+                    <span className="inline-flex items-center gap-1.5 typo-caption text-status-success">
                       <CheckCircle2 className="w-3.5 h-3.5" aria-hidden /> {COPY.clear}
                     </span>
                   ) : (
                     <ul className="space-y-1">
                       {blockers.map((b, i) => (
-                        <li key={i} className="flex gap-1.5 typo-caption text-foreground/80">
-                          <span className="mt-1.5 w-1 h-1 rounded-full bg-red-400 flex-shrink-0" aria-hidden />
+                        <li key={i} className="flex gap-1.5 typo-caption text-ink-2">
+                          <span className="mt-1.5 w-1 h-1 rounded-full bg-status-error flex-shrink-0" aria-hidden />
                           <span style={{ fontWeight: 400 }}>{b}</span>
                         </li>
                       ))}

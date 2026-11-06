@@ -22,9 +22,9 @@ interface DashboardChartCardProps {
   title: string;
   /** Optional leading icon rendered in a tinted chip. */
   icon?: LucideIcon;
-  /** Tailwind classes for the icon chip (bg + text), e.g. 'bg-cyan-500/10 text-cyan-400'. */
+  /** Tailwind classes for the icon chip (bg + text), e.g. 'bg-role-highlight/10 text-role-highlight'. */
   iconChipClass?: string;
-  /** Decorative blur color class for the top-right glow, e.g. 'bg-cyan-500/5'. */
+  /** Decorative blur color class for the top-right glow, e.g. 'bg-role-highlight/5'. */
   accentClass?: string;
   /** Right-aligned header content: legend totals, a range switch, etc. */
   actions?: ReactNode;
@@ -42,8 +42,8 @@ interface DashboardChartCardProps {
 }
 
 export const DashboardChartCard = memo(function DashboardChartCard({
-  title, icon: Icon, iconChipClass = 'bg-cyan-500/10 text-cyan-400',
-  accentClass = 'bg-cyan-500/5', actions, footer, bodyHeightClass = 'h-32',
+  title, icon: Icon, iconChipClass = 'bg-role-highlight/10 text-role-highlight',
+  accentClass = 'bg-role-highlight/5', actions, footer, bodyHeightClass = 'h-32',
   isEmpty = false, emptyVariant = 'chart', ariaLabel, children,
 }: DashboardChartCardProps) {
   return (
@@ -79,7 +79,7 @@ export const DashboardChartCard = memo(function DashboardChartCard({
         )}
       </div>
 
-      {footer && <div className="pt-3 border-t border-primary/5 relative z-10">{footer}</div>}
+      {footer && <div className="pt-3 border-t border-hair relative z-10">{footer}</div>}
     </div>
   );
 });

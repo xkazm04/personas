@@ -164,7 +164,7 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
         render: (row) => {
           const errPct = errorRatePercent(row);
           const errClass =
-            errPct >= 10 ? 'text-rose-400' : errPct >= 1 ? 'text-amber-400' : 'text-foreground';
+            errPct >= 10 ? 'text-status-error' : errPct >= 1 ? 'text-status-warning' : 'text-foreground';
           return (
             <span className={`tabular-nums ${errClass}`}>
               {Number(row.error_runs) === 0 ? (
@@ -189,7 +189,7 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
     >
       <div className="flex items-center justify-between relative z-10">
         <h3 className="typo-label text-foreground flex items-center gap-2">
-          <div className="p-1.5 rounded-card bg-violet-500/10 text-violet-400">
+          <div className="p-1.5 rounded-card bg-role-agent/10 text-role-agent">
             <Activity className="w-3.5 h-3.5" />
           </div>
           {t.overview.widgets.tool_performance}

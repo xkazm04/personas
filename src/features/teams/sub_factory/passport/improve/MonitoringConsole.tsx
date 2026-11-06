@@ -60,11 +60,11 @@ export function MonitoringConsole({
   return (
     <>
       {(ladder || available.length > 0) && (
-        <div className="flex items-center gap-5 px-4 py-2 border-b border-primary/10 flex-shrink-0 min-w-0">
+        <div className="flex items-center gap-5 px-4 py-2 border-b border-hair flex-shrink-0 min-w-0">
           {ladder && <LevelStrip ladder={ladder} />}
           {available.length > 0 && (
             <div className="flex items-center gap-2 min-w-0 ml-auto">
-              <span className="typo-caption text-foreground/45 shrink-0" style={{ fontWeight: 400 }}>{d.monitoring_vault_available}</span>
+              <span className="typo-caption text-ink-3 shrink-0" style={{ fontWeight: 400 }}>{d.monitoring_vault_available}</span>
               <span className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                 {available.map((c) => (
                   <Tooltip key={c.id} content={`${c.name}${health[c.id] === false ? ` · ${d.envslot_unhealthy}` : ''}`} placement="bottom">
@@ -95,7 +95,7 @@ export function MonitoringConsole({
                   disabled={areaScanning === row.def.key}
                   onClick={() => onAreaScan(row)}
                   aria-label={tx(d.monitoring_area_scan_hint, { area: d[`monitoring_item_${row.def.labelKey}`] })}
-                  className={`p-1 rounded-interactive text-primary/70 hover:text-primary hover:bg-primary/10 border border-primary/15 transition-colors disabled:opacity-40 shrink-0 ${areaScanning === row.def.key ? 'animate-pulse' : ''}`}
+                  className={`p-1 rounded-interactive text-primary/70 hover:text-primary hover:bg-primary/10 border border-hair transition-colors disabled:opacity-40 shrink-0 ${areaScanning === row.def.key ? 'animate-pulse' : ''}`}
                 >
                   <ScanSearch className="w-3.5 h-3.5" aria-hidden />
                 </button>
@@ -108,11 +108,11 @@ export function MonitoringConsole({
       {/* Commit row — right-aligned like every dialog's action edge. Only THIS
           project's runs; the fleet-wide batch lives in the wall popover. */}
       {ops && ops.actions.length > 0 && (
-        <div className="flex items-center justify-end gap-3 px-4 py-2 border-t border-primary/10 bg-secondary/10 flex-shrink-0 min-w-0 overflow-x-auto">
+        <div className="flex items-center justify-end gap-3 px-4 py-2 border-t border-hair bg-surface-1 flex-shrink-0 min-w-0 overflow-x-auto">
           {ops.actions.map((a) => (
             <div key={a.id} className="flex items-center gap-1.5 min-w-0 shrink-0">
               <Tooltip content={a.hint} placement="top">
-                <span className="typo-caption text-foreground/60 truncate max-w-[220px]" style={{ fontWeight: 400 }}>{a.label}</span>
+                <span className="typo-caption text-ink-3 truncate max-w-[220px]" style={{ fontWeight: 400 }}>{a.label}</span>
               </Tooltip>
               {a.kind === 'scan' ? (
                 ops.hasContextMap ? (
@@ -185,7 +185,7 @@ function ConsoleCard({ row, busy, deploying, onAssign, onDeploy, footerExtra }: 
           {row.state === 'not_implemented' && (
             <div className="relative px-3 pb-2"><DeployNote /></div>
           )}
-          <div className="relative px-3 py-2 border-t border-primary/10 flex items-center gap-1.5">
+          <div className="relative px-3 py-2 border-t border-hair flex items-center gap-1.5">
             <span className="flex-1 min-w-0">
               <CardAction row={row} busy={busy} deploying={deploying} onPick={() => setPicking(true)} onDeploy={onDeploy} />
             </span>
@@ -206,7 +206,7 @@ function LevelStrip({ ladder }: { ladder: NonNullable<ReturnType<typeof ladderFo
   const tint = ordinalTint(pos);
   return (
     <div className="flex items-center gap-2 min-w-0 shrink-0">
-      <span className="typo-caption text-foreground/45 shrink-0" style={{ fontWeight: 400 }}>{d.monitoring_current_level}</span>
+      <span className="typo-caption text-ink-3 shrink-0" style={{ fontWeight: 400 }}>{d.monitoring_current_level}</span>
       <span className="flex items-center gap-0.5" aria-hidden>
         {ladder.steps.map((step, i) => (
           <span
@@ -230,8 +230,8 @@ function FooterButton({ label, onClick, busy, primary }: { label: string; onClic
       disabled={busy}
       className={`px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0 ${
         primary
-          ? 'text-primary bg-primary/15 hover:bg-primary/25 border border-primary/25'
-          : 'text-foreground hover:bg-secondary/40 border border-primary/10'
+          ? 'text-primary bg-primary/15 hover:bg-primary/25 border border-hair'
+          : 'text-foreground hover:bg-surface-2 border border-hair'
       }`}
     >
       {busy ? '…' : label}

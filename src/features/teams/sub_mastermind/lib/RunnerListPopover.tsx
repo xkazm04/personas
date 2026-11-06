@@ -45,7 +45,7 @@ export function RunnerListPopover({ rows, x, y, onOpen, onClose }: {
           <li key={task.id}>
             <button
               type="button"
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-input typo-body transition-colors text-foreground/70 hover:bg-secondary/40 hover:text-foreground focus-ring"
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-input typo-body transition-colors text-ink-2 hover:bg-surface-2 hover:text-foreground focus-ring"
               onClick={() => { onOpen(); onClose(); }}
               data-testid={`mm-runner-row-${task.id}`}
             >
@@ -59,7 +59,7 @@ export function RunnerListPopover({ rows, x, y, onOpen, onClose }: {
                 aria-hidden
               />
               <span className="truncate flex-1">{task.title}</span>
-              <span className="typo-caption text-foreground/50 tabular-nums shrink-0">
+              <span className="typo-caption text-ink-3 tabular-nums shrink-0">
                 {running && task.progress > 0
                   ? `${Math.round(Math.min(task.progress, 100))}%`
                   : tokenLabel(t, 'execution', task.status)}

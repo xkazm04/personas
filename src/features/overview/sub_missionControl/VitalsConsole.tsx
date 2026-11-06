@@ -75,7 +75,7 @@ export const VitalsConsole = memo(function VitalsConsole({
   }, [points]);
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
+    <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden flex flex-col">
       <PaneHeader label={t.overview.dashboard.pane_vitals} subtitle={personaName ?? t.overview.dashboard.vitals_subtitle_fleet} />
       <div className="flex-1 flex flex-col items-center gap-5 px-4 py-6">
         <SuccessRing rate={successRate} />
@@ -86,15 +86,15 @@ export const VitalsConsole = memo(function VitalsConsole({
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
-            <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label={t.overview.dashboard.tile_runs} numericValue={totalExecutions} compact language={language} color="text-emerald-400" trend={runsTrend} />
-            <KpiTile density="console" icon={<Cpu className="w-3.5 h-3.5" />} label={t.overview.dashboard.tile_agents} numericValue={activeAgents} color="text-violet-400" />
-            <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label={t.overview.dashboard.tile_alerts} numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground'} />
-            <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label={t.overview.dashboard.tile_reviews} numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground'} />
+            <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label={t.overview.dashboard.tile_runs} numericValue={totalExecutions} compact language={language} color="text-status-success" trend={runsTrend} />
+            <KpiTile density="console" icon={<Cpu className="w-3.5 h-3.5" />} label={t.overview.dashboard.tile_agents} numericValue={activeAgents} color="text-role-agent" />
+            <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label={t.overview.dashboard.tile_alerts} numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-status-error' : 'text-foreground'} />
+            <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label={t.overview.dashboard.tile_reviews} numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-status-warning' : 'text-foreground'} />
           </div>
         </div>
         {sparkline && (
-          <div className="w-full pt-3 border-t border-primary/10">
-            <div className="flex items-center justify-between typo-caption uppercase tracking-widest text-foreground mb-1.5 font-mono">
+          <div className="w-full pt-3 border-t border-hair">
+            <div className="flex items-center justify-between typo-eyebrow mb-1.5">
               <span>{t.overview.dashboard.spark_traffic_errors}</span>
               <span>{points.length}d</span>
             </div>
@@ -162,7 +162,7 @@ function SuccessRing({ rate }: { rate: number | null }) {
             <span className="text-foreground">—</span>
           )}
         </div>
-        <div className="typo-caption uppercase tracking-[0.25em] text-foreground mt-1 font-mono">
+        <div className="typo-eyebrow mt-1">
           {t.overview.dashboard.success_label}
         </div>
       </div>
@@ -178,7 +178,7 @@ export function FleetTag() {
   return (
     <span
       title={t.overview.dashboard.scope_fleet_hint}
-      className="typo-caption font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-interactive border border-primary/15 bg-primary/[0.04] text-foreground flex-shrink-0"
+      className="typo-eyebrow px-1.5 py-0.5 rounded-interactive border border-hair bg-surface-1 flex-shrink-0"
     >
       {t.overview.dashboard.scope_fleet}
     </span>

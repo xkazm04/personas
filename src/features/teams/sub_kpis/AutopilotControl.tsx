@@ -80,8 +80,8 @@ export function AutopilotControl({ projectId, className }: { projectId: string; 
 
   return (
     <div className={className}>
-      <span className="block typo-label text-foreground/60 mb-1.5">{t.kpis.autopilot_label}</span>
-      <div role="radiogroup" aria-label={t.kpis.autopilot_label} className="inline-flex rounded-interactive border border-primary/15 bg-secondary/20 p-0.5">
+      <span className="block typo-label text-ink-3 mb-1.5">{t.kpis.autopilot_label}</span>
+      <div role="radiogroup" aria-label={t.kpis.autopilot_label} className="inline-flex rounded-interactive border border-hair bg-surface-1 p-0.5">
         {MODES.map((m) => {
           const Icon = m.icon;
           const isActive = m.mode === mode;
@@ -95,7 +95,7 @@ export function AutopilotControl({ projectId, className }: { projectId: string; 
               onClick={() => select(m.mode)}
               title={m.desc(t)}
               className={`inline-flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 typo-caption transition-colors disabled:opacity-60 ${
-                isActive ? 'bg-background shadow-elevation-1' : 'text-foreground/55 hover:text-foreground/80'
+                isActive ? 'bg-background shadow-elevation-1' : 'text-ink-3 hover:text-ink-2'
               }`}
               style={isActive ? { color: m.accent } : undefined}
             >
@@ -111,7 +111,7 @@ export function AutopilotControl({ projectId, className }: { projectId: string; 
           onRetry={() => setReload((n) => n + 1)}
         />
       ) : active && (
-        <p className="typo-caption text-foreground/60 mt-1.5 max-w-md">{active.desc(t)}</p>
+        <p className="typo-caption text-ink-3 mt-1.5 max-w-md">{active.desc(t)}</p>
       )}
     </div>
   );

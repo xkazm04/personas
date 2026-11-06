@@ -52,8 +52,8 @@ import { cleanName } from '@/features/fleet/monitor/grid/fleetGridModel';
  * -------------------------------------------------------------------------- */
 
 const FAMILY_DOT: Record<string, string> = {
-  handoff: 'bg-violet-400', pr: 'bg-blue-400', qa: 'bg-amber-400', release: 'bg-emerald-400',
-  failure: 'bg-red-400', build: 'bg-sky-400', note: 'bg-amber-300', other: 'bg-foreground/30',
+  handoff: 'bg-role-agent', pr: 'bg-status-info', qa: 'bg-status-warning', release: 'bg-status-success',
+  failure: 'bg-status-error', build: 'bg-role-external', note: 'bg-status-warning', other: 'bg-foreground/30',
 };
 
 /** One facet row: a value, a live count, on/off. */
@@ -78,7 +78,7 @@ function FacetRow({
       title={title}
       disabled={count === 0 && !on}
       className={`w-full flex items-center gap-2 px-2 py-1 rounded-interactive text-left transition-colors disabled:opacity-30 ${
-        on ? 'bg-primary/12 hover:bg-primary/18' : 'hover:bg-secondary/30'
+        on ? 'bg-primary/12 hover:bg-primary/18' : 'hover:bg-surface-2'
       }`}
     >
       {dot && <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot}`} />}
@@ -241,14 +241,14 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
               value={lens.search}
               onChange={(e) => setLens((l) => ({ ...l, search: e.target.value }))}
               placeholder={t.monitor.stream_search}
-              className="w-56 pl-7 pr-2 py-1 rounded-input bg-secondary/30 border border-border typo-caption text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
+              className="w-56 pl-7 pr-2 py-1 rounded-input bg-surface-1 border border-border typo-caption text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary/40"
             />
           </div>
           {active > 0 && (
             <button
               type="button"
               onClick={clearAll}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border bg-secondary/25 typo-caption text-foreground hover:bg-secondary/40 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive border border-border bg-secondary/25 typo-caption text-foreground hover:bg-surface-2 transition-colors"
             >
               <X className="w-3 h-3" />{' '}
               {tx(active === 1 ? t.monitor.stream_lens_one : t.monitor.stream_lens_other, { count: active })}
@@ -272,7 +272,7 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
                   onClick={() => toggle('kinds', k)}
                   aria-pressed={on}
                   className={`w-full flex items-center gap-2 px-2 py-1 rounded-interactive text-left transition-colors ${
-                    on ? 'bg-primary/12 hover:bg-primary/18' : 'hover:bg-secondary/30'
+                    on ? 'bg-primary/12 hover:bg-primary/18' : 'hover:bg-surface-2'
                   }`}
                 >
                   <Icon className={`w-3.5 h-3.5 flex-shrink-0 text-foreground ${on ? '' : 'opacity-50'}`} />
@@ -297,7 +297,7 @@ export function Stream({ teams, onSelectTeam, allOn, onSetAll, initialCallsign, 
                   onClick={() => setMemoryMode(m)}
                   aria-pressed={lens.memoryMode === m}
                   className={`w-full px-2 py-1 rounded-interactive text-left typo-caption capitalize text-foreground transition-colors ${
-                    lens.memoryMode === m ? 'bg-primary/12' : 'opacity-60 hover:bg-secondary/30'
+                    lens.memoryMode === m ? 'bg-primary/12' : 'opacity-60 hover:bg-surface-2'
                   }`}
                 >
                   {m === 'diff'

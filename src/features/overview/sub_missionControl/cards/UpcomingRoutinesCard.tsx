@@ -143,7 +143,7 @@ export default function UpcomingRoutinesCard() {
   // ghost (fetch in flight, nothing yet) / empty (settled, none scheduled) /
   // rows (real data, instant paint + one-shot cascade).
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
+    <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden">
       <PaneHeader
         label={t.overview.upcoming_routines.title}
         subtitle={t.overview.upcoming_routines.subtitle}
@@ -167,16 +167,16 @@ export default function UpcomingRoutinesCard() {
               markEntered={enter.markEntered}
               className="flex items-center gap-3 px-3 py-2"
             >
-              <CalendarClock className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+              <CalendarClock className="w-3.5 h-3.5 text-role-highlight flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="typo-body text-foreground truncate">{row.personaName}</div>
-                <div className="typo-caption text-foreground truncate font-mono uppercase tracking-wider">
+                <div className="typo-eyebrow truncate">
                   {row.trigger.trigger_type}
                 </div>
               </div>
               <div className="typo-caption font-mono tabular-nums flex-shrink-0">
                 {row.rel ? (
-                  <span className={row.rel.overdue ? 'text-rose-400' : 'text-foreground'}>
+                  <span className={row.rel.overdue ? 'text-status-error' : 'text-foreground'}>
                     {row.rel.label}
                   </span>
                 ) : (

@@ -116,7 +116,7 @@ export default function StateRiver({ overview, loading, onFocus }: KpiVariantPro
 
       <section aria-label={o.river_tributaries}>
         <h3 className={`mb-1 ${KT.eyebrow}`}>{tx(o.river_tributaries_count, { count: tributaries.length })}</h3>
-        <ol className="divide-y divide-primary/10 border-t border-primary/10">
+        <ol className="divide-y divide-primary/10 border-t border-hair">
           {tributaries.map((place, i) => (
             <li key={place.id}>
               <RiverTributary

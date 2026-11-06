@@ -36,9 +36,9 @@ export function BlueprintPreview({ blueprint, onRoleChange, onRemoveMember }: {
       )}
 
       {pattern && (
-        <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-card bg-indigo-500/10 border border-indigo-500/20">
-          <GitBranch className="w-3 h-3 text-indigo-400" />
-          <span className="typo-caption text-indigo-400 capitalize">{pattern}</span>
+        <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-card bg-role-agent/10 border border-role-agent/20">
+          <GitBranch className="w-3 h-3 text-role-agent" />
+          <span className="typo-caption text-role-agent capitalize">{pattern}</span>
         </div>
       )}
 
@@ -46,13 +46,13 @@ export function BlueprintPreview({ blueprint, onRoleChange, onRemoveMember }: {
         {blueprint.members.map((member, i) => (
           <div
             key={`${member.persona_id}-${i}`}
-            className="group flex items-center gap-2.5 p-2 rounded-card bg-secondary/30 border border-primary/10"
+            className="group flex items-center gap-2.5 p-2 rounded-card bg-surface-1 border border-hair"
           >
-            <div className="w-6 h-6 rounded-input bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center flex-shrink-0">
-              <Users className="w-3 h-3 text-indigo-400" />
+            <div className="w-6 h-6 rounded-input bg-role-agent/15 border border-role-agent/20 flex items-center justify-center flex-shrink-0">
+              <Users className="w-3 h-3 text-role-agent" />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="typo-caption text-foreground/90 truncate block">
+              <span className="typo-caption text-ink-2 truncate block">
                 {member.persona_name}
               </span>
             </div>
@@ -64,10 +64,10 @@ export function BlueprintPreview({ blueprint, onRoleChange, onRemoveMember }: {
                 // field it should just commit the edit, not create the team.
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); e.currentTarget.blur(); } }}
                 aria-label={t.pipeline.blueprint_role_label}
-                className="w-28 typo-code text-foreground bg-secondary/50 border border-transparent hover:border-primary/20 focus:border-indigo-500/40 px-1.5 py-0.5 rounded flex-shrink-0 text-right focus-visible:outline-none transition-colors"
+                className="w-28 typo-code text-foreground bg-surface-1 border border-transparent hover:border-hair focus:border-role-agent/40 px-1.5 py-0.5 rounded flex-shrink-0 text-right focus-visible:outline-none transition-colors"
               />
             ) : (
-              <span className="typo-code text-foreground bg-secondary/50 px-1.5 py-0.5 rounded flex-shrink-0">
+              <span className="typo-code text-foreground bg-surface-1 px-1.5 py-0.5 rounded flex-shrink-0">
                 {member.role}
               </span>
             )}
@@ -77,7 +77,7 @@ export function BlueprintPreview({ blueprint, onRoleChange, onRemoveMember }: {
                   type="button"
                   onClick={() => onRemoveMember(i)}
                   aria-label={t.pipeline.blueprint_remove_member}
-                  className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-0.5 rounded text-foreground hover:text-red-400 transition-all flex-shrink-0"
+                  className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-0.5 rounded text-foreground hover:text-status-error transition-all flex-shrink-0"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>

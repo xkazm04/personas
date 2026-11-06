@@ -17,7 +17,7 @@ export function AutonomousLogPanel({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-1.5 rounded-card border border-primary/15 px-2.5 py-1 typo-caption text-foreground transition-colors hover:bg-secondary/40 focus-ring"
+          className="inline-flex items-center gap-1.5 rounded-card border border-hair px-2.5 py-1 typo-caption text-foreground transition-colors hover:bg-surface-2 focus-ring"
         >
           <Inbox className="h-3.5 w-3.5" aria-hidden="true" />
           {t.overview.incidents.ledger.back_to_inbox}

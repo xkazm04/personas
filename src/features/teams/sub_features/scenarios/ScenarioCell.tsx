@@ -17,8 +17,8 @@ import type { ScenarioProof } from '@/api/devTools/features';
 const SCOPE_TONE: Record<string, string> = {
   must_hold: 'border-primary/50 text-primary',
   tracked: 'border-status-info/50 text-status-info',
-  out_of_scope: 'border-border text-foreground/70',
-  proposed: 'border-violet-400/50 text-violet-300',
+  out_of_scope: 'border-border text-ink-2',
+  proposed: 'border-role-agent/50 text-role-agent',
 };
 
 export interface ScenarioCellProps {
@@ -46,12 +46,12 @@ export function ScenarioCell({ scenario, onEdit, onDelete, t, tx, language }: Sc
     <article
       data-testid="features-scenario-cell"
       data-scenario-scope={scenario.scope}
-      className="flex flex-col gap-2 rounded-card border border-primary/15 bg-primary/5 shadow-elevation-1 p-3"
+      className="flex flex-col gap-2 rounded-card border border-hair bg-surface-1 shadow-elevation-1 p-3"
     >
       <div className="flex items-start justify-between gap-2">
         <h4 className="min-w-0 typo-body text-foreground">{scenario.title}</h4>
         <span
-          className={`flex-none rounded-pill border px-1.5 typo-caption ${SCOPE_TONE[scenario.scope] ?? 'border-border text-foreground/70'}`}
+          className={`flex-none rounded-pill border px-1.5 typo-caption ${SCOPE_TONE[scenario.scope] ?? 'border-border text-ink-2'}`}
         >
           {scopeLabel(scenario.scope, t)}
         </span>
@@ -62,7 +62,7 @@ export function ScenarioCell({ scenario, onEdit, onDelete, t, tx, language }: Sc
           {Object.entries(scenario.axes).map(([key, value]) => (
             <li
               key={key}
-              className="rounded-pill border border-border bg-secondary/40 px-1.5 typo-caption text-foreground"
+              className="rounded-pill border border-border bg-surface-1 px-1.5 typo-caption text-foreground"
             >
               {key}: {value}
             </li>

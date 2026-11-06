@@ -60,7 +60,7 @@ export default function KpiGroupLayer({ focus, overview, onBack, onOpen }: KpiGr
           data-testid="kpi-layer-back"
           onClick={onBack}
           aria-label={t.kpis.overview.layer_back}
-          className="rounded-interactive border border-primary/25 bg-secondary/30 px-2.5 py-1 typo-label text-foreground hover:bg-secondary/50 focus-ring"
+          className="rounded-interactive border border-hair bg-surface-1 px-2.5 py-1 typo-label text-foreground hover:bg-surface-2 focus-ring"
         >
           {t.kpis.overview.layer_back}
         </button>

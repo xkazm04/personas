@@ -99,7 +99,7 @@ export function ReviewInboxPanel({
         {/* Left: Inbox list */}
         <div
           data-inbox-list
-          className={`animate-fade-in flex-shrink-0 border-r border-primary/10 flex flex-col overflow-hidden`}
+          className={`animate-fade-in flex-shrink-0 border-r border-hair flex flex-col overflow-hidden`}
           style={
             !IS_MOBILE
               ? { width: sidebarWidth != null ? `${sidebarWidth}px` : 'clamp(340px, 30%, 420px)' }
@@ -107,7 +107,7 @@ export function ReviewInboxPanel({
           }
         >
           {reveal.isRevealing && (
-            <div aria-hidden="true" className="flex items-center justify-end gap-1 px-3 py-1 typo-caption text-foreground border-b border-primary/[0.06] flex-shrink-0">
+            <div aria-hidden="true" className="flex items-center justify-end gap-1 px-3 py-1 typo-caption text-foreground border-b border-hair flex-shrink-0">
               <AnimatedCounter value={reveal.count} mode="roll" /><span>/</span><Numeric>{filteredReviews.length}</Numeric>
             </div>
           )}
@@ -123,7 +123,7 @@ export function ReviewInboxPanel({
                     role="checkbox"
                     aria-checked={selectedIds.has(review.id)}
                     aria-label={t.overview.dc_select_review}
-                    className="flex-shrink-0 w-8 flex items-center justify-center pt-3.5 text-foreground hover:text-muted-foreground transition-colors"
+                    className="flex-shrink-0 w-8 flex items-center justify-center pt-3.5 text-foreground hover:text-ink-3 transition-colors"
                   >
                     {selectedIds.has(review.id) ? (
                       <CheckSquare className="w-3.5 h-3.5 text-primary" />
@@ -192,10 +192,10 @@ export function ReviewInboxPanel({
         {/* Mobile: Full-screen overlay */}
         {IS_MOBILE && activeReview && (
           <div className="fixed inset-0 z-50 bg-background flex flex-col">
-            <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10 flex-shrink-0">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-hair flex-shrink-0">
               <button
                 onClick={() => onSelectReview(null)}
-                className="p-2 rounded-card hover:bg-secondary/50 text-foreground"
+                className="p-2 rounded-card hover:bg-surface-2 text-foreground"
               >
                 <X className="w-4 h-4" />
               </button>

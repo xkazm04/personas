@@ -202,7 +202,7 @@ export function PassportActionsCell({ p, onboardSession, onOpenOnboardTerminal, 
               setConfirm((c) => (c?.id === a.id ? null : { id: a.id, anchor: rect }));
             }}
             title={a.tooltip}
-            className={`p-1 rounded-interactive text-foreground/45 hover:text-primary hover:bg-primary/[0.06] disabled:opacity-40 transition-colors focus-ring ${a.id === 'rescan' && rescanning ? 'animate-spin' : ''}`}
+            className={`p-1 rounded-interactive text-ink-3 hover:text-primary hover:bg-surface-2 disabled:opacity-40 transition-colors focus-ring ${a.id === 'rescan' && rescanning ? 'animate-spin' : ''}`}
             data-testid={`passport-action-${a.id}-${slug}`}
           >
             <Icon className="w-5 h-5" aria-hidden />

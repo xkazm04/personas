@@ -16,20 +16,9 @@ import type { StudioUseCase } from './useTeamStudioData';
  * them.
  */
 
-const TIER_TONE: Record<string, string> = {
-  Opus: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
-  Sonnet: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
-  Haiku: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
-  Inherit: 'bg-secondary/40 text-foreground/60 border-primary/15',
-};
-
 export function MemberTierChip({ tier }: { tier: string }) {
   return (
-    <span
-      className={`inline-flex items-center px-1.5 py-0.5 rounded-full border typo-caption ${
-        TIER_TONE[tier] ?? TIER_TONE.Inherit
-      }`}
-    >
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-interactive border border-hair typo-code text-ink-2">
       {tier}
     </span>
   );
@@ -43,7 +32,7 @@ export function TrustMeter({ score }: { score: number }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <span
           key={i}
-          className={`w-1 h-1 rounded-full ${i < pips ? 'bg-emerald-400/80' : 'bg-foreground/15'}`}
+          className={`w-1 h-1 rounded-full ${i < pips ? 'bg-status-success/80' : 'bg-foreground/15'}`}
         />
       ))}
     </span>
@@ -66,14 +55,14 @@ export function UseCaseToggleRow({ useCase, busy, onToggle, compact }: UseCaseTo
       disabled={busy}
       onClick={() => onToggle(!enabled)}
       className={`group/uc w-full flex items-start gap-2 px-2 py-1.5 rounded-interactive text-left transition-colors disabled:opacity-60 ${
-        enabled ? 'hover:bg-emerald-500/10' : 'hover:bg-secondary/30'
+        enabled ? 'hover:bg-status-success/10' : 'hover:bg-surface-2'
       }`}
       aria-pressed={enabled}
     >
       <span
         className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
           enabled
-            ? 'bg-emerald-500/25 border-emerald-400/50 text-emerald-300'
+            ? 'bg-status-success/25 border-status-success/50 text-status-success'
             : 'border-foreground/25 text-transparent'
         }`}
       >
@@ -82,13 +71,13 @@ export function UseCaseToggleRow({ useCase, busy, onToggle, compact }: UseCaseTo
       <span className="min-w-0 flex-1">
         <span
           className={`block truncate typo-body ${
-            enabled ? 'text-foreground' : 'text-foreground/45'
+            enabled ? 'text-foreground' : 'text-ink-3'
           }`}
         >
           {useCase.title}
         </span>
         {!compact && (useCase.capabilitySummary || useCase.description) && (
-          <span className="block typo-caption text-foreground/85">
+          <span className="block typo-caption text-ink-2">
             {useCase.capabilitySummary || useCase.description}
           </span>
         )}
@@ -150,7 +139,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
         type="button"
         data-testid="team-add-member"
         onClick={() => setOpen((p) => !p)}
-        className="w-full flex items-center gap-2 px-3 py-2 rounded-card border border-dashed border-primary/20 text-foreground hover:bg-secondary/30 hover:text-foreground transition-colors typo-body"
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-card border border-dashed border-hair text-foreground hover:bg-surface-2 hover:text-foreground transition-colors typo-body"
       >
         <Plus className="w-4 h-4" />
         {ts.add_persona}
@@ -160,7 +149,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
         type="button"
         data-testid="team-add-member"
         onClick={() => setOpen((p) => !p)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body text-foreground hover:bg-secondary/50 transition-colors"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-hair bg-surface-1 typo-body text-foreground hover:bg-surface-2 transition-colors"
       >
         <Plus className="w-4 h-4" />
         {ts.add_persona}
@@ -178,7 +167,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              className="absolute right-0 z-30 mt-1 w-64 max-h-80 overflow-y-auto rounded-card border border-primary/20 bg-background shadow-elevation-3 p-1"
+              className="absolute right-0 z-30 mt-1 w-64 max-h-80 overflow-y-auto rounded-card border border-hair bg-background shadow-elevation-3 p-1"
             >
               {available.length === 0 ? (
                 <p className="px-3 py-3 typo-caption text-foreground">
@@ -192,7 +181,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
                     type="button"
                     disabled={adding}
                     onClick={() => void handleAdd(p.id)}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive text-left hover:bg-secondary/40 disabled:opacity-50 transition-colors"
+                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-interactive text-left hover:bg-surface-2 disabled:opacity-50 transition-colors"
                   >
                     <PersonaIcon icon={p.icon} color={p.color} display="pop" frameSize="sm" />
                     <span className="typo-body text-foreground truncate">{p.name}</span>
@@ -200,7 +189,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
                 ))
               )}
               {excludedDrafts > 0 && (
-                <p data-testid="team-add-draft-hint" className="mt-1 border-t border-primary/10 px-3 pt-2 pb-1 typo-caption text-foreground">
+                <p data-testid="team-add-draft-hint" className="mt-1 border-t border-hair px-3 pt-2 pb-1 typo-caption text-foreground">
                   {ts.add_persona_draft_hint}
                 </p>
               )}

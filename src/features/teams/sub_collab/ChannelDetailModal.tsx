@@ -74,7 +74,7 @@ function ImportanceDots({ value, ariaLabel }: { value: number; ariaLabel: string
   return (
     <span className="inline-flex items-center gap-1" role="img" aria-label={ariaLabel}>
       {[0, 1, 2, 3, 4].map((i) => (
-        <span key={i} className={`w-1.5 h-1.5 rounded-full ${i < filled ? 'bg-amber-300/90' : 'bg-foreground/20'}`} />
+        <span key={i} className={`w-1.5 h-1.5 rounded-full ${i < filled ? 'bg-status-warning/90' : 'bg-foreground/20'}`} />
       ))}
     </span>
   );
@@ -118,7 +118,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
       onClose={onClose}
       titleId="channel-detail-title"
       maxWidthClass="max-w-2xl"
-      panelClassName="bg-background border border-primary/15 shadow-elevation-4 rounded-modal max-h-[85vh] flex flex-col overflow-hidden"
+      panelClassName="bg-background border border-hair shadow-elevation-4 rounded-modal max-h-[85vh] flex flex-col overflow-hidden"
       staggerChildren={false}
     >
       {item && (
@@ -126,7 +126,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
           {/* The author's accent as a real design element: a hairline band
               bleeding into a faint header tint, not just a colored ring. */}
           <div aria-hidden className="h-[3px] flex-shrink-0" style={{ background: `linear-gradient(90deg, ${accent} 0%, color-mix(in srgb, ${accent} 30%, transparent) 60%, transparent 100%)` }} />
-          <div className="flex items-start gap-3.5 px-6 py-4 border-b border-primary/10 flex-shrink-0" style={{ background: `linear-gradient(180deg, color-mix(in srgb, ${accent} 7%, transparent), transparent)` }}>
+          <div className="flex items-start gap-3.5 px-6 py-4 border-b border-hair flex-shrink-0" style={{ background: `linear-gradient(180deg, color-mix(in srgb, ${accent} 7%, transparent), transparent)` }}>
             <span
               className="flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 mt-0.5"
               style={{ backgroundColor: `color-mix(in srgb, ${accent} 14%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 35%, transparent)` }}
@@ -151,7 +151,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
               </h2>
               <p className="flex items-center gap-2 flex-wrap mt-0.5 min-w-0">
                 {eventLabel && (
-                  <span className="typo-code px-1.5 py-0.5 rounded-interactive bg-secondary/50 border border-primary/10 text-foreground truncate max-w-[16rem]">
+                  <span className="typo-code px-1.5 py-0.5 rounded-interactive bg-surface-1 border border-hair text-foreground truncate max-w-[16rem]">
                     {eventLabel}
                   </span>
                 )}
@@ -179,7 +179,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
               <p className="typo-body text-foreground">{t.monitor.channel_no_body}</p>
             ) : null}
             {detail.fields.length > 0 && (
-              <dl className="grid grid-cols-[minmax(6rem,9rem)_1fr] gap-x-4 gap-y-2.5 rounded-card border border-primary/10 bg-secondary/20 px-4 py-3.5">
+              <dl className="grid grid-cols-[minmax(6rem,9rem)_1fr] gap-x-4 gap-y-2.5 rounded-card border border-hair bg-surface-1 px-4 py-3.5">
                 {detail.fields.map(([k, v]) => (
                   <div key={k} className="contents">
                     <dt className="typo-label text-foreground pt-px truncate">{k}</dt>
@@ -189,7 +189,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
               </dl>
             )}
             {detail.artifact && (
-              <a href={detail.artifact.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-secondary/40 border border-primary/15 typo-body text-status-info hover:bg-secondary/60 transition-colors focus-ring">
+              <a href={detail.artifact.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-surface-1 border border-hair typo-body text-status-info hover:bg-surface-2 transition-colors focus-ring">
                 <ExternalLink className="w-4 h-4" /> {detail.artifact.label}
               </a>
             )}
@@ -216,8 +216,8 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
               </div>
             )}
             {raw && (
-              <details className="group rounded-card border border-primary/10 overflow-hidden">
-                <summary className="flex items-center gap-2 px-3.5 py-2.5 cursor-pointer list-none select-none bg-secondary/25 hover:bg-secondary/40 transition-colors focus-ring">
+              <details className="group rounded-card border border-hair overflow-hidden">
+                <summary className="flex items-center gap-2 px-3.5 py-2.5 cursor-pointer list-none select-none bg-secondary/25 hover:bg-surface-2 transition-colors focus-ring">
                   <ChevronRight className="w-3.5 h-3.5 text-muted transition-transform group-open:rotate-90" />
                   <span className="typo-label text-foreground flex-1">{t.monitor.channel_raw_payload}</span>
                   {/* preventDefault keeps the copy click from toggling <details> */}
@@ -225,7 +225,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
                     <CopyButton text={raw} />
                   </span>
                 </summary>
-                <pre className="border-t border-primary/10 bg-secondary/15 px-4 py-3 typo-code text-foreground overflow-x-auto max-h-72 overflow-y-auto whitespace-pre-wrap break-words">
+                <pre className="border-t border-hair bg-secondary/15 px-4 py-3 typo-code text-foreground overflow-x-auto max-h-72 overflow-y-auto whitespace-pre-wrap break-words">
                   {raw}
                 </pre>
               </details>
@@ -238,14 +238,14 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
               as a CHILD it lands inside Button's plain label <span>, where
               preflight's `svg { display:block }` forces the label onto a
               second line, which is the two-row band that was reported). */}
-          <div className="flex flex-wrap items-center gap-2 px-6 py-3 border-t border-primary/10 bg-secondary/15 flex-shrink-0">
+          <div className="flex flex-wrap items-center gap-2 px-6 py-3 border-t border-hair bg-secondary/15 flex-shrink-0">
             {/* Source reference: the assignment this row belongs to, when it
                 carries one — a quiet copyable handle, not a hyperlink (the
                 channel surfaces own navigation). */}
             {item.assignmentId && (
               <span className="inline-flex items-center gap-1.5 min-w-0 whitespace-nowrap">
                 <span className="typo-label text-foreground">{t.monitor.conv_card_assignment}</span>
-                <span className="typo-code px-1.5 py-0.5 rounded-interactive bg-secondary/50 border border-primary/10 text-foreground">
+                <span className="typo-code px-1.5 py-0.5 rounded-interactive bg-surface-1 border border-hair text-foreground">
                   {item.assignmentId.slice(0, 8)}
                 </span>
                 <CopyButton text={item.assignmentId} tooltip={t.shared.copy_full_id} />
@@ -266,7 +266,7 @@ export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
                   disabled={pinned}
                   onClick={() => onPin(item)}
                   icon={<Pin className="w-3.5 h-3.5" />}
-                  className={`whitespace-nowrap${pinned ? ' text-amber-300/90' : ''}`}
+                  className={`whitespace-nowrap${pinned ? ' text-status-warning' : ''}`}
                 >
                   {pinned ? t.monitor.channel_pinned_memory : t.monitor.channel_pin_memory}
                 </Button>

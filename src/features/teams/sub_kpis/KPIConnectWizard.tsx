@@ -50,7 +50,7 @@ export function ComposedByBadge({ composedBy }: { composedBy: string }) {
       className={`inline-flex items-center gap-1 typo-caption tabular-nums rounded-interactive border px-1.5 py-0.5 ${
         recipe
           ? 'border-status-success/30 bg-status-success/10 text-foreground'
-          : 'border-primary/30 bg-primary/10 text-foreground'
+          : 'border-hair bg-primary/10 text-foreground'
       }`}
     >
       {recipe ? <Zap className="w-3 h-3" aria-hidden /> : <Sparkles className="w-3 h-3" aria-hidden />}
@@ -171,7 +171,7 @@ export function KPIConnectWizard({
     <BaseModal isOpen onClose={onClose} titleId="kpi-connect-wizard-title" size="md" portal>
       <div className="flex flex-col max-h-[80vh]" data-testid="kpi-connect-wizard">
         {/* Header band */}
-        <div className="flex items-start gap-3 px-5 py-4 border-b border-primary/10">
+        <div className="flex items-start gap-3 px-5 py-4 border-b border-hair">
           <span className="rounded-interactive bg-primary/10 p-2 flex-shrink-0">
             <Cable className="w-5 h-5 text-primary" aria-hidden />
           </span>
@@ -215,7 +215,7 @@ export function KPIConnectWizard({
                     role="radio"
                     aria-checked={metricTypeId === mt.id}
                     onClick={() => void pickType(mt)}
-                    className="w-full text-left rounded-card border border-primary/15 bg-secondary/20 hover:bg-secondary/40 px-3 py-2 transition-colors focus-ring"
+                    className="w-full text-left rounded-card border border-hair bg-surface-1 hover:bg-surface-2 px-3 py-2 transition-colors focus-ring"
                     data-testid={`kpi-metric-type-${mt.id}`}
                   >
                     <span className="typo-body text-foreground">{mt.label}</span>
@@ -240,7 +240,7 @@ export function KPIConnectWizard({
                       key={c.credential_id}
                       type="button"
                       onClick={() => void compose(c)}
-                      className="w-full flex items-center gap-2.5 text-left rounded-card border border-primary/15 bg-secondary/20 hover:bg-secondary/40 px-3 py-2 transition-colors focus-ring"
+                      className="w-full flex items-center gap-2.5 text-left rounded-card border border-hair bg-surface-1 hover:bg-surface-2 px-3 py-2 transition-colors focus-ring"
                       data-testid={`kpi-wizard-cred-${c.credential_id}`}
                     >
                       <span className="min-w-0 flex-1">
@@ -312,7 +312,7 @@ export function KPIConnectWizard({
               </Section>
 
               <Section title={t.kpis.wizard_request_section}>
-                <code className="typo-code block break-all rounded-input bg-secondary/30 p-2">
+                <code className="typo-code block break-all rounded-input bg-surface-1 p-2">
                   {result.procedure.http.method} {result.procedure.http.url}
                 </code>
                 {result.evidence && (
@@ -320,7 +320,7 @@ export function KPIConnectWizard({
                     <summary className="cursor-pointer select-none">
                       {t.kpis.wizard_evidence_toggle}
                     </summary>
-                    <code className="typo-code block mt-1 break-all rounded-input bg-secondary/30 p-2 max-h-40 overflow-y-auto">
+                    <code className="typo-code block mt-1 break-all rounded-input bg-surface-1 p-2 max-h-40 overflow-y-auto">
                       {result.evidence}
                     </code>
                   </details>
@@ -331,7 +331,7 @@ export function KPIConnectWizard({
         </div>
 
         {/* Footer action band */}
-        <div className="flex items-center gap-2 px-5 py-3 border-t border-primary/10">
+        <div className="flex items-center gap-2 px-5 py-3 border-t border-hair">
           {step === 'verify' && (
             <Button
               size="sm"

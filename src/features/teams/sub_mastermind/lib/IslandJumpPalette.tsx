@@ -63,10 +63,10 @@ export function IslandJumpPalette({
 
   return (
     <div
-      className="absolute left-1/2 top-16 -translate-x-1/2 z-20 w-80 rounded-modal border border-primary/20 bg-background/95 shadow-elevation-3 overflow-hidden"
+      className="absolute left-1/2 top-16 -translate-x-1/2 z-20 w-80 rounded-modal border border-hair bg-background/95 shadow-elevation-3 overflow-hidden"
       data-testid="mm-jump-palette"
     >
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-hair">
         <Search className="w-3.5 h-3.5 text-foreground opacity-70" aria-hidden />
         <input
           ref={inputRef}
@@ -77,7 +77,7 @@ export function IslandJumpPalette({
           placeholder={t.mastermind.jump_placeholder}
           aria-label={t.mastermind.jump_label}
           data-testid="mm-jump-input"
-          className="flex-1 bg-transparent typo-body text-foreground placeholder:text-foreground/50 focus:outline-none"
+          className="flex-1 bg-transparent typo-body text-foreground placeholder:text-ink-3 focus:outline-none"
         />
       </div>
 
@@ -97,7 +97,7 @@ export function IslandJumpPalette({
                 onMouseEnter={() => setCursor(i)}
                 data-testid={`mm-jump-option-${island.slug}`}
                 className={`w-full text-left px-3 py-1.5 typo-body truncate transition-colors ${
-                  i === cursor ? 'bg-primary/15 text-foreground' : 'text-foreground hover:bg-secondary/40'
+                  i === cursor ? 'bg-primary/15 text-foreground' : 'text-foreground hover:bg-surface-2'
                 }`}
               >
                 {island.name}

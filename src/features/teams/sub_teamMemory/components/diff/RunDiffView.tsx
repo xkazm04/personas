@@ -88,7 +88,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
       <div className="text-center py-6 px-3">
         <GitCompareArrows className="w-8 h-8 mx-auto mb-2 text-foreground" />
         <p className="typo-caption text-foreground">{pt.need_two_runs}</p>
-        <button type="button" onClick={onClose} className="mt-2 typo-caption text-violet-400 hover:text-violet-300">{t.common.back}</button>
+        <button type="button" onClick={onClose} className="mt-2 typo-caption text-role-agent hover:text-role-agent">{t.common.back}</button>
       </div>
     );
   }
@@ -103,20 +103,20 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
       {loading && (
         <div aria-busy="true" className="space-y-2 px-1 py-1">
           <span className="typo-caption text-foreground">{pt.comparing_runs}</span>
-          <div className="h-7 rounded-card bg-primary/5" />
-          <div className="h-16 rounded-card bg-primary/5" />
+          <div className="h-7 rounded-card bg-surface-1" />
+          <div className="h-16 rounded-card bg-surface-1" />
         </div>
       )}
 
       {/* A failed comparison renders as a failure with a retry — never as an
           empty diff, which reads as "nothing changed" and gets acted on. */}
       {error && !loading && (
-        <div className="typo-caption text-red-400/80 px-2 py-1.5 rounded-card bg-red-500/10 flex items-center justify-between gap-2">
+        <div className="typo-caption text-status-error px-2 py-1.5 rounded-card bg-status-error/10 flex items-center justify-between gap-2">
           <span>{resolveErrorTranslated(t, extractMessage(error.raw)).message}</span>
           <button
             type="button"
             onClick={() => { void handleCompare(); }}
-            className="typo-caption text-violet-400 hover:text-violet-300 flex-shrink-0"
+            className="typo-caption text-role-agent hover:text-role-agent flex-shrink-0"
           >
             {t.common.retry}
           </button>

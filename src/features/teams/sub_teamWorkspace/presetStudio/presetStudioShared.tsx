@@ -18,14 +18,14 @@ export function PresetStatusBadge({ row }: { row: PresetMemberRowState }) {
   const { t } = useTranslation();
   if (row.status === 'queued') {
     return (
-      <span className="typo-caption text-foreground uppercase tracking-wider">
+      <span className="typo-eyebrow">
         {t.templates.presets.status_queued}
       </span>
     );
   }
   if (row.status === 'adopting') {
     return (
-      <span className="inline-flex items-center gap-1.5 typo-caption text-indigo-300">
+      <span className="inline-flex items-center gap-1.5 typo-caption text-role-agent">
         <Loader2 className="w-3 h-3 animate-spin" />
         {t.templates.presets.status_adopting}
       </span>
@@ -70,7 +70,7 @@ export function PresetPrimaryActions({
   if (a.stage === 'adopting') {
     return (
       <span className="inline-flex items-center gap-2 typo-body text-foreground">
-        <Loader2 className="w-4 h-4 animate-spin text-indigo-300" />
+        <Loader2 className="w-4 h-4 animate-spin text-role-agent" />
         {t.templates.presets.footer_adopting_hint}
       </span>
     );
@@ -176,7 +176,7 @@ export function PresetCustomizePanel({ a, customizing }: { a: PresetAdoptionCont
 export function PresetFooterHint({ a }: { a: PresetAdoptionController }) {
   const { t, tx } = useTranslation();
   return (
-    <p className={`typo-caption ${a.handoffNeedsRepair ? 'text-amber-400' : 'text-foreground'}`}>
+    <p className={`typo-caption ${a.handoffNeedsRepair ? 'text-status-warning' : 'text-foreground'}`}>
       {a.stage === 'preview' && t.templates.presets.footer_preview_hint}
       {a.stage === 'done' && a.result && (
         a.handoffNeedsRepair

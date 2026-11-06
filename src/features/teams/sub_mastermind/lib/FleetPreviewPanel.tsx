@@ -24,21 +24,21 @@ export function FleetPreviewPanel({ sessionId, session, onClose }: {
 
   return (
     <div
-      className="absolute bottom-16 right-3 z-20 w-[440px] rounded-card border border-primary/15 bg-secondary/95 shadow-elevation-3 overflow-hidden"
+      className="absolute bottom-16 right-3 z-20 w-[440px] rounded-card border border-hair bg-secondary/95 shadow-elevation-3 overflow-hidden"
       data-testid="mm-fleet-preview"
     >
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/10">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-hair">
         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: ink, boxShadow: `0 0 6px ${mix(ink, 60)}` }} aria-hidden />
         <span className="typo-body text-foreground truncate">{label}</span>
-        <span className="typo-caption text-foreground/55 shrink-0" style={{ fontFamily: MONO }}>
+        <span className="typo-caption text-ink-3 shrink-0" style={{ fontFamily: MONO }}>
           {stateLabel(t, session?.state ?? 'exited')}
         </span>
-        {session?.stateReason && <span className="typo-caption text-foreground/45 truncate">— {session.stateReason}</span>}
+        {session?.stateReason && <span className="typo-caption text-ink-3 truncate">— {session.stateReason}</span>}
         <button
           type="button"
           onClick={onClose}
           aria-label={t.mastermind.fleet_close_preview}
-          className="ml-auto shrink-0 p-1 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
+          className="ml-auto shrink-0 p-1 rounded-interactive text-ink-3 hover:text-foreground hover:bg-primary/10 transition-colors focus-ring"
           data-testid="mm-fleet-preview-close"
         >
           <X className="w-4 h-4" aria-hidden />
@@ -49,7 +49,7 @@ export function FleetPreviewPanel({ sessionId, session, onClose }: {
         {live ? (
           <FleetTerminalPane sessionId={sessionId} className="h-full" autoFocus={false} live={session?.state !== 'hibernated'} />
         ) : (
-          <p className="typo-caption text-foreground/50 px-3 py-4">
+          <p className="typo-caption text-ink-3 px-3 py-4">
             {session ? (session.mode === 'headless' ? t.mastermind.fleet_headless : t.mastermind.fleet_gone) : t.mastermind.fleet_demo}
           </p>
         )}

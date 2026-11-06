@@ -28,7 +28,7 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
       <button
         type="button"
         onClick={() => onDismiss(action.id)}
-        className="absolute top-2 right-2 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-secondary/60 text-foreground hover:text-foreground/80 transition-all"
+        className="absolute top-2 right-2 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-surface-2 text-foreground hover:text-ink-2 transition-all"
         title={t.overview.memory_actions.dismiss_suggestion}
       >
         <X className="w-3 h-3" />
@@ -45,7 +45,7 @@ function MemoryActionCardItem({ action, onDismiss }: MemoryActionCardProps) {
             </span>
             <span className="typo-code text-foreground">{action.score}/10</span>
           </div>
-          <p className="typo-heading text-foreground/85 line-clamp-2">{action.memoryTitle}</p>
+          <p className="typo-heading text-ink-2 line-clamp-2">{action.memoryTitle}</p>
           <p className="typo-body text-foreground line-clamp-2">{action.rule}</p>
         </div>
       </div>
@@ -64,9 +64,9 @@ export function MemoryActionsPanel({ actions, onDismiss }: MemoryActionsPanelPro
   if (visible.length === 0) return null;
 
   return (
-    <div className="rounded-modal border border-amber-500/15 bg-amber-500/[0.03] p-4 space-y-3">
+    <div className="rounded-modal border border-status-warning/15 bg-status-warning/[0.03] p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <div className="p-1.5 rounded-card bg-amber-500/10 text-amber-400">
+        <div className="p-1.5 rounded-card bg-status-warning/10 text-status-warning">
           <Lightbulb className="w-3.5 h-3.5" />
         </div>
         <h3 className="typo-label text-foreground">

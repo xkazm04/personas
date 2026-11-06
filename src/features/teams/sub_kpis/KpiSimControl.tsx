@@ -125,7 +125,7 @@ export function KpiSimControl({ projectId, onIngested }: {
         type="button"
         onClick={session ? () => setTerminalOpen(true) : () => dispatch(mode)}
         disabled={busy || !project}
-        className="inline-flex items-center gap-1.5 typo-caption rounded-interactive border border-primary/25 bg-primary/10 text-primary px-2.5 py-1 hover:bg-primary/20 disabled:opacity-50 transition-colors focus-ring"
+        className="inline-flex items-center gap-1.5 typo-caption rounded-interactive border border-hair bg-primary/10 text-primary px-2.5 py-1 hover:bg-primary/20 disabled:opacity-50 transition-colors focus-ring"
         data-testid="kpi-sim-button"
       >
         {session && ink ? (
@@ -152,7 +152,7 @@ export function KpiSimControl({ projectId, onIngested }: {
           type="button"
           onClick={() => dispatch(mode)}
           disabled={busy || !project}
-          className="inline-flex items-center gap-1 typo-caption rounded-interactive border border-primary/25 text-primary px-2 py-1 hover:bg-primary/10 disabled:opacity-50 transition-colors focus-ring"
+          className="inline-flex items-center gap-1 typo-caption rounded-interactive border border-hair text-primary px-2 py-1 hover:bg-primary/10 disabled:opacity-50 transition-colors focus-ring"
           data-testid="kpi-sim-rerun"
         >
           <FlaskConical className="w-3.5 h-3.5" aria-hidden />
@@ -168,7 +168,7 @@ export function KpiSimControl({ projectId, onIngested }: {
           onClick={() => dispatch('predict')}
           disabled={busy || !project || session !== null}
           title={t.kpis.predict_hint}
-          className="inline-flex items-center gap-1 typo-caption rounded-interactive border border-primary/20 text-foreground/80 hover:text-foreground px-2 py-1 hover:bg-primary/5 disabled:opacity-50 transition-colors focus-ring"
+          className="inline-flex items-center gap-1 typo-caption rounded-interactive border border-hair text-ink-2 hover:text-foreground px-2 py-1 hover:bg-surface-2 disabled:opacity-50 transition-colors focus-ring"
           data-testid="kpi-predict-button"
         >
           <Radar className="w-3.5 h-3.5" aria-hidden />
@@ -180,7 +180,7 @@ export function KpiSimControl({ projectId, onIngested }: {
         type="button"
         onClick={() => ingest(false)}
         title={t.kpis.sim_import_hint}
-        className="inline-flex items-center gap-1 typo-caption text-foreground/70 hover:text-foreground rounded-interactive px-1.5 py-1 hover:bg-primary/5 transition-colors focus-ring"
+        className="inline-flex items-center gap-1 typo-caption text-ink-2 hover:text-foreground rounded-interactive px-1.5 py-1 hover:bg-surface-2 transition-colors focus-ring"
         data-testid="kpi-sim-import"
       >
         <FolderInput className="w-3.5 h-3.5" aria-hidden />
@@ -204,7 +204,7 @@ function ModeChip({ active, onClick, label, title }: { active: boolean; onClick:
       className={`typo-label rounded-interactive border px-2 py-0.5 transition-colors focus-ring ${
         active
           ? 'border-primary/50 bg-primary/15 text-foreground'
-          : 'border-primary/15 bg-secondary/20 text-foreground/70 hover:bg-secondary/40'
+          : 'border-hair bg-surface-1 text-ink-2 hover:bg-surface-2'
       }`}
     >
       {label}

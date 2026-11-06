@@ -66,7 +66,7 @@ export function ClaimantPopover({ triggerRef, features, title, onPick, onClose }
             <button
               type="button"
               onClick={() => onPick(f.id)}
-              className="w-full truncate rounded-interactive px-2 py-1.5 text-left typo-body text-foreground hover:bg-secondary/60 focus-ring"
+              className="w-full truncate rounded-interactive px-2 py-1.5 text-left typo-body text-foreground hover:bg-surface-2 focus-ring"
             >
               {f.name}
             </button>

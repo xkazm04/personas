@@ -14,7 +14,7 @@ export function DashboardEmptyState() {
   return (
     <div className="py-2">
       <div className={`${CARD_CONTAINER} p-8 relative overflow-hidden`}>
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-violet-500/5 pointer-events-none" />
+        <div className="absolute inset-0 bg-surface-1 pointer-events-none" />
         <div className="relative z-10">
           <EmptyState
             art="launch"

@@ -62,17 +62,17 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
           The title and the close button that used to sit here are gone: the
           header above names the surface and the tab switcher is the way out,
           so both repeated what position already says (doctrine 0b.3). */}
-      <div className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0">
-        <TrendingUp className="w-4 h-4 text-blue-400 flex-shrink-0" aria-hidden="true" />
+      <div className="px-4 md:px-6 py-3 border-b border-hair flex items-center gap-2 flex-shrink-0">
+        <TrendingUp className="w-4 h-4 text-status-info flex-shrink-0" aria-hidden="true" />
         <DayRangePicker value={m.days} onChange={m.setDayRange} customDateRange={m.customDateRange} onCustomDateRangeChange={m.setCustomDateRange} />
         <CompareToggle enabled={m.compareEnabled} onChange={m.setCompareEnabled} />
-        <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-card bg-blue-500/8 border border-blue-500/15 text-[11px] text-blue-400/70">
+        <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-card bg-status-info/8 border border-status-info/15 text-[11px] text-status-info">
           <Timer className="w-3 h-3" />
           {m.activeRangeLabel}
         </span>
         {m.isRefreshing && (
           <span
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] text-blue-400/70"
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] text-status-info"
             aria-live="polite"
             aria-label={t.common.refresh}
             title={t.common.refresh}
@@ -86,9 +86,9 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
 
       {m.error && !m.data ? (
         <div className="text-center py-8">
-          <AlertTriangle className="w-6 h-6 text-red-400 mx-auto mb-2" />
-          <p className="typo-body text-red-400">{m.error}</p>
-          <button type="button" onClick={m.load} className="mt-2 typo-body text-blue-400 hover:text-blue-300 underline">{t.common.retry}</button>
+          <AlertTriangle className="w-6 h-6 text-status-error mx-auto mb-2" />
+          <p className="typo-body text-status-error">{m.error}</p>
+          <button type="button" onClick={m.load} className="mt-2 typo-body text-status-info hover:text-status-info underline">{t.common.retry}</button>
         </div>
       ) : m.isInitialLoading || !m.data ? (
         <KpiGhosts />

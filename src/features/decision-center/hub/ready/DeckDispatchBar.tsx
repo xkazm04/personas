@@ -93,7 +93,7 @@ export function DeckDispatchBar({ ctl }: { ctl: AcceptedDispatch }) {
             // without this ref.
             ref={(el) => { if (el) el.indeterminate = chosen > 0 && !allSelected; }}
             onChange={ctl.toggleAll}
-            className="h-3.5 w-3.5 cursor-pointer rounded border-primary/30 bg-secondary/30 accent-primary"
+            className="h-3.5 w-3.5 cursor-pointer rounded border-hair bg-surface-1 accent-primary"
           />
           {m.triage_accepted_select_all}
         </label>

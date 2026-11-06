@@ -22,7 +22,7 @@ export default function PatternHint() {
   const a = t.browser.add_site;
 
   return (
-    <div className="rounded-input border border-primary/10 bg-secondary/30 px-3 py-2 space-y-1">
+    <div className="rounded-input border border-hair bg-surface-1 px-3 py-2 space-y-1">
       <p className="typo-caption text-foreground">{a.pattern_hint_title}</p>
       <ul className="space-y-0.5">
         <li className="typo-caption text-foreground">

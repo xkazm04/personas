@@ -98,13 +98,13 @@ export default function VaultActivityCard() {
   const openVault = () => useSystemStore.getState().setSidebarSection('credentials');
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
+    <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden">
       <PaneHeader label={va.title}>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={openVault}
-            className="typo-caption text-primary/80 hover:text-primary transition-colors flex items-center gap-1 font-mono uppercase tracking-widest whitespace-nowrap focus-ring rounded-interactive"
+            className="typo-eyebrow text-primary/80 hover:text-primary transition-colors flex items-center gap-1 whitespace-nowrap focus-ring rounded-interactive"
           >
             {va.open_vault} <ArrowRight className="w-3 h-3" />
           </button>

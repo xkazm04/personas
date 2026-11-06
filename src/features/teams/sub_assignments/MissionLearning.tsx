@@ -63,9 +63,9 @@ export function MissionLearning({ assignmentId, teamId }: {
   );
 
   return (
-    <div className="mt-4 rounded-card border border-primary/10 bg-secondary/10 px-4 py-3 space-y-3" data-testid="mission-learning">
+    <div className="mt-4 rounded-card border border-hair bg-surface-1 px-4 py-3 space-y-3" data-testid="mission-learning">
       <div className="flex items-center gap-2">
-        <GraduationCap className="w-3.5 h-3.5 text-violet-300/80" />
+        <GraduationCap className="w-3.5 h-3.5 text-role-agent" />
         <h4 className="typo-label text-foreground">{ts.learning_heading}</h4>
       </div>
 
@@ -83,7 +83,7 @@ export function MissionLearning({ assignmentId, teamId }: {
               })}
             </span>
             {outcome.reviewInterventions > 0 && (
-              <span className="typo-caption text-amber-300 tabular-nums">
+              <span className="typo-caption text-status-warning tabular-nums">
                 {tx(ts.learning_interventions, { count: outcome.reviewInterventions })}
               </span>
             )}
@@ -111,7 +111,7 @@ export function MissionLearning({ assignmentId, teamId }: {
           <p className="typo-caption text-foreground italic">{ts.learning_no_lessons}</p>
         ) : (
           lessons.map((l) => (
-            <p key={l.id} className="typo-caption text-foreground/85 line-clamp-2">
+            <p key={l.id} className="typo-caption text-ink-2 line-clamp-2">
               <span className="font-medium text-foreground">{l.title.replace(/^Lesson: /, '')}</span>
               {' — '}
               {lessonGist(l.content)}
@@ -135,7 +135,7 @@ function TrustDeltaRow({ step, personaIndex }: {
     <div className="flex items-center gap-2 flex-wrap">
       <PersonaChip persona={persona} />
       <span className="typo-caption text-foreground truncate max-w-52">{step.title}</span>
-      <span className={`inline-flex items-center gap-1 typo-caption tabular-nums ${up ? 'text-emerald-300' : 'text-amber-300'}`}>
+      <span className={`inline-flex items-center gap-1 typo-caption tabular-nums ${up ? 'text-status-success' : 'text-status-warning'}`}>
         {up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
         {before.toFixed(2)}
         <ArrowRight className="w-2.5 h-2.5" />

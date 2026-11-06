@@ -63,13 +63,13 @@ function StackStrip({ p, size = 20 }: { p: AppPassport; size?: number }) {
         }
         if (slot.label) {
           return (
-            <span key={slot.key} title={`${slot.category}: ${slot.label}`} className="inline-flex shrink-0 text-foreground/75">
+            <span key={slot.key} title={`${slot.category}: ${slot.label}`} className="inline-flex shrink-0 text-ink-2">
               <Fallback style={{ width: size, height: size }} aria-hidden />
             </span>
           );
         }
         return (
-          <span key={slot.key} title={`${slot.category}: not wired`} className="inline-flex shrink-0 text-foreground/20" data-testid={`passport-unwired-${slot.key}`}>
+          <span key={slot.key} title={`${slot.category}: not wired`} className="inline-flex shrink-0 text-ink-3" data-testid={`passport-unwired-${slot.key}`}>
             <Fallback style={{ width: size, height: size }} aria-hidden />
           </span>
         );
@@ -96,7 +96,7 @@ export function CoverBody({
   const cell = (value: React.ReactNode, label: string, title: string) => (
     <span className="flex flex-col items-center gap-1 min-w-0" title={title}>
       <span className="typo-body-lg tabular-nums">{value}</span>
-      <span className="typo-body-lg uppercase tracking-[0.06em] text-foreground/40">{label}</span>
+      <span className="typo-body-lg uppercase tracking-[0.06em] text-ink-3">{label}</span>
     </span>
   );
 
@@ -140,7 +140,7 @@ export function CoverBody({
         )}
         {cell(
           trend === 0
-            ? <span className="text-foreground/30">—</span>
+            ? <span className="text-ink-3">—</span>
             : <span style={{ color: trend > 0 ? INK.emerald : INK.red }}>{trend > 0 ? '▲' : '▼'}{Math.abs(trend)}</span>,
           'Trend',
           'Golden-standard trend since last recorded change',

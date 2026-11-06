@@ -113,15 +113,15 @@ export function KpiSimSuggestions({ projectId, onApplied }: {
   if (suggestions.length === 0) return null;
 
   return (
-    <div className="rounded-card border border-violet-400/25 bg-violet-500/[0.06] px-4 py-3" data-testid="kpi-sim-suggestions">
+    <div className="rounded-card border border-role-agent/25 bg-role-agent/[0.06] px-4 py-3" data-testid="kpi-sim-suggestions">
       <h3 className="flex items-center gap-1.5 typo-eyebrow text-foreground mb-2">
-        <Sparkles className="w-3.5 h-3.5 text-violet-300" aria-hidden />
+        <Sparkles className="w-3.5 h-3.5 text-role-agent" aria-hidden />
         {tx(t.kpis.suggest_title, { count: suggestions.length })}
       </h3>
       {/* Divided rows rather than spaced cards: each suggestion is one line of
           a ledger - what, why, and the two decisions - so a column of five
           reads as a table, not a pile. */}
-      <ul className="divide-y divide-violet-400/15 border-t border-violet-400/15">
+      <ul className="divide-y divide-violet-400/15 border-t border-role-agent/15">
         {suggestions.map((s) => (
           <SuggestionRow
             key={s.ideaId}

@@ -48,10 +48,10 @@ export function WarningBadge({
           setOpen((o) => !o);
         }}
         aria-label={`${items.length} off-track signals need attention`}
-        className="inline-flex items-center gap-1 rounded-input border border-red-500/40 bg-red-500/12 hover:bg-red-500/20 px-1.5 py-0.5 transition-colors flex-shrink-0"
+        className="inline-flex items-center gap-1 rounded-input border border-status-error/40 bg-status-error/12 hover:bg-status-error/20 px-1.5 py-0.5 transition-colors flex-shrink-0"
       >
-        <AlertTriangle className="w-5 h-5 text-red-400" aria-hidden />
-        <span className="typo-body-lg tabular-nums text-red-400">{items.length}</span>
+        <AlertTriangle className="w-5 h-5 text-status-error" aria-hidden />
+        <span className="typo-body-lg tabular-nums text-status-error">{items.length}</span>
       </button>
       <WarningPopover
         open={open}
@@ -104,12 +104,12 @@ function WarningPopover({
       role="dialog"
       aria-label={`${projectName} needs attention`}
       style={{ top: pos?.top ?? anchor.bottom + 6, left: pos?.left ?? anchor.left, width: WIDTH, visibility: pos ? 'visible' : 'hidden' }}
-      className="fixed z-[9995] rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
+      className="fixed z-[9995] rounded-modal border border-hair bg-background shadow-elevation-4 overflow-hidden"
     >
-      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-red-500/[0.06]">
-        <AlertTriangle className="w-5 h-5 flex-shrink-0 text-red-400" aria-hidden />
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-hair bg-status-error/[0.06]">
+        <AlertTriangle className="w-5 h-5 flex-shrink-0 text-status-error" aria-hidden />
         <span className="typo-body-lg text-foreground truncate">{projectName}</span>
-        <span className="typo-body-lg text-foreground/55 ml-auto whitespace-nowrap">{items.length} off track</span>
+        <span className="typo-body-lg text-ink-3 ml-auto whitespace-nowrap">{items.length} off track</span>
       </div>
       <ul className="max-h-64 overflow-y-auto p-1.5 space-y-0.5">
         {items.map((it) => (
@@ -117,11 +117,11 @@ function WarningPopover({
             <button
               type="button"
               onClick={() => onJump(it.groupId, it.kpiId)}
-              className="group/w w-full text-left rounded-interactive px-2 py-1.5 flex items-center gap-2 transition-colors hover:bg-red-500/10"
+              className="group/w w-full text-left rounded-interactive px-2 py-1.5 flex items-center gap-2 transition-colors hover:bg-status-error/10"
             >
-              <span className="w-2 h-2 rounded-full flex-shrink-0 bg-red-400" aria-hidden />
+              <span className="w-2 h-2 rounded-full flex-shrink-0 bg-status-error" aria-hidden />
               <span className="typo-body-lg text-foreground min-w-0 flex-1 truncate">{it.name}</span>
-              <span className="typo-body-lg tabular-nums text-foreground/60 flex-shrink-0">{it.current ?? '—'}/{it.target}{it.unit}</span>
+              <span className="typo-body-lg tabular-nums text-ink-3 flex-shrink-0">{it.current ?? '—'}/{it.target}{it.unit}</span>
               <ArrowUpRight className="w-4 h-4 flex-shrink-0 opacity-0 group-hover/w:opacity-100 text-primary/70 transition-opacity" aria-hidden />
             </button>
           </li>

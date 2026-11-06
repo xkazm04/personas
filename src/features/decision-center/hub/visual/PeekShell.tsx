@@ -137,7 +137,7 @@ export function PeekShell({
         <span className="ml-auto flex items-center gap-1.5">{actions}</span>
       </header>
       {children}
-      <footer className="flex flex-shrink-0 items-center gap-1.5 border-t border-primary/10 px-4 py-2 typo-caption" aria-hidden>
+      <footer className="flex flex-shrink-0 items-center gap-1.5 border-t border-hair px-4 py-2 typo-caption" aria-hidden>
         <Keycap>↑</Keycap><Keycap>↓</Keycap> {m.dc_hub_key_move}
         {/* One walk hint: the arrows, then the lane keys the lane peek adds,
             then the word they all share ("chips" until the WP10 cutover). */}

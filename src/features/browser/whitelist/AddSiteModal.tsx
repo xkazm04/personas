@@ -92,7 +92,7 @@ export default function AddSiteModal({ isOpen, editing, onClose, onSubmit }: Add
               onChange={(e) => setOrigin(e.target.value)}
               onBlur={() => setTouched(true)}
               placeholder={t.browser.webview.address_placeholder}
-              className={`${INPUT_FIELD} font-mono ${editing ? 'bg-secondary/40 cursor-default' : ''}`}
+              className={`${INPUT_FIELD} font-mono ${editing ? 'bg-surface-1 cursor-default' : ''}`}
               data-testid="whitelist-add-origin"
             />
           )}

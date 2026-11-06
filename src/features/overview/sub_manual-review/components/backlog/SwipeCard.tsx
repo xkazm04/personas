@@ -90,20 +90,20 @@ export function SwipeCard({
         if (info.offset.x > SWIPE_THRESHOLD) onSwipe('right');
         else if (info.offset.x < -SWIPE_THRESHOLD) onSwipe('left');
       }}
-      className={`absolute inset-0 border-2 rounded-2xl bg-background shadow-elevation-3 ${isTop ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}
+      className={`absolute inset-0 border-2 rounded-card bg-background shadow-elevation-3 ${isTop ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}
     >
       {/* Swipe stamps */}
       {isTop && (
         <>
           <motion.div
             style={{ opacity: rejectOpacity }}
-            className="absolute top-6 left-6 z-20 px-4 py-2 rounded-modal border-2 border-red-500 text-red-500 typo-heading-lg uppercase -rotate-12"
+            className="absolute top-6 left-6 z-20 px-4 py-2 rounded-modal border-2 border-status-error text-status-error typo-heading-lg uppercase -rotate-12"
           >
             {r.backlog_swipe_reject}
           </motion.div>
           <motion.div
             style={{ opacity: acceptOpacity }}
-            className="absolute top-6 right-6 z-20 px-4 py-2 rounded-modal border-2 border-emerald-500 text-emerald-500 typo-heading-lg uppercase rotate-12"
+            className="absolute top-6 right-6 z-20 px-4 py-2 rounded-modal border-2 border-status-success text-status-success typo-heading-lg uppercase rotate-12"
           >
             {r.backlog_swipe_accept}
           </motion.div>
@@ -120,7 +120,7 @@ export function SwipeCard({
               <VerdictChip verifyState={idea.verifyState} />
             </>
           )}
-          <span className={`rounded-full px-2.5 py-0.5 typo-caption ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
+          <span className={`rounded-interactive px-2.5 py-0.5 typo-caption ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
             {categoryLabel(idea.category)}
           </span>
           <ScanFindingChips idea={idea} />
@@ -137,15 +137,15 @@ export function SwipeCard({
 
         <h3 className="typo-heading-lg text-primary mb-2">{idea.title}</h3>
         {idea.projectName && (
-          <p className="typo-caption text-muted-foreground mb-2">{idea.projectName}</p>
+          <p className="typo-caption text-ink-3 mb-2">{idea.projectName}</p>
         )}
         <p className="typo-body text-foreground mb-4 flex-1 min-h-0 overflow-y-auto">
           {idea.description || r.backlog_no_description}
         </p>
 
         {idea.reasoning && (
-          <div className="bg-primary/5 rounded-modal p-3">
-            <p className="typo-caption uppercase tracking-wider text-primary mb-1">
+          <div className="bg-surface-1 rounded-modal p-3">
+            <p className="typo-eyebrow mb-1">
               {r.backlog_detail_reasoning}
             </p>
             <p className="typo-body text-foreground">{idea.reasoning}</p>

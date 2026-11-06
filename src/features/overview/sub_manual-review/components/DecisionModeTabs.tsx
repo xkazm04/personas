@@ -24,7 +24,7 @@ function TabLabel({ icon: Icon, label, count }: { icon: LucideIcon; label: strin
       <Icon className="w-3.5 h-3.5" aria-hidden />
       {label}
       {count > 0 && (
-        <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-primary/15 text-foreground typo-caption tabular-nums">
+        <span className="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-interactive bg-primary/15 text-foreground typo-caption tabular-nums">
           {count}
         </span>
       )}
@@ -47,7 +47,7 @@ export function DecisionModeTabs({
   const r = t.overview.review;
 
   return (
-    <div className="px-4 pt-3 pb-1 border-b border-primary/10">
+    <div className="px-4 pt-3 pb-1 border-b border-hair">
       <SegmentedTabs<DecisionMode>
         tabs={[
           { id: 'reviews', ariaLabel: r.mode_reviews, label: <TabLabel icon={ClipboardCheck} label={r.mode_reviews} count={counts.reviews} /> },

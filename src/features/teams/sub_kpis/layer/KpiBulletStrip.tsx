@@ -39,7 +39,7 @@ export function KpiBulletStrip({ rows, onOpen }: { rows: BulletRow[]; onOpen: (k
           return (
             <span className="flex min-w-0 items-center gap-1.5">
               {/* muted-ok: decorative category glyph beside the name, not body text */}
-              <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+              <Icon className="h-3.5 w-3.5 shrink-0 text-ink-3" aria-hidden />
               <span className="truncate typo-body text-foreground">{row.kpi.name}</span>
             </span>
           );
@@ -120,7 +120,7 @@ function BulletBar({ row }: { row: BulletRow }) {
   const unmeasured = row.track === 'unmeasured';
   return (
     <div
-      className="relative h-2 w-full overflow-hidden rounded-pill bg-secondary/40"
+      className="relative h-2 w-full overflow-hidden rounded-pill bg-surface-1"
       style={unmeasured ? { backgroundImage: HATCH_BG } : undefined}
       data-testid="kpi-layer-bullet-bar"
       aria-hidden

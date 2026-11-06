@@ -13,7 +13,7 @@
 // place you finish reading the argument is the place you want to act on it.
 //
 // 2026-10-06, same day: migrated onto `ModalShell`. This shipped hand-writing its
-// own `panelClassName` and its own `typo-caption uppercase tracking-[0.18em]`
+// own `panelClassName` and its own `typo-eyebrow`
 // heading - one of the forty panel strings and one of the five heading
 // treatments the shell was built to end. It is a first adopter now: the shell
 // owns the surface, the header, the scroll region and the footer bar, and
@@ -77,13 +77,13 @@ export function KpiSuggestionDetail({ s, title, detail, busy, onApply, onDismiss
       {s.rationale && (
         // Capped measure on purpose: this is the one place on the surface that
         // is genuinely reading matter, and a 700px line beats a 1000px one.
-        <div className="rounded-card border border-primary/10 bg-background/60 px-4 py-3">
+        <div className="rounded-card border border-hair bg-background/60 px-4 py-3">
           <RichMarkdown content={s.rationale} className="typo-body max-w-[70ch]" />
         </div>
       )}
 
       {s.citations.length > 0 && (
-        <div className="rounded-card border border-primary/10 bg-background/60 px-4 py-3">
+        <div className="rounded-card border border-hair bg-background/60 px-4 py-3">
           <h3 className={`${MODAL_SECTION_HEAD} mb-1.5`}>
             {tx(t.kpis.suggest_sources, { count: s.citations.length })}
           </h3>

@@ -73,17 +73,17 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
   const loading = candidates === null;
 
   return (
-    <div className="rounded-interactive border border-primary/10 bg-secondary/15 p-2">
+    <div className="rounded-interactive border border-hair bg-secondary/15 p-2">
       <div className="flex items-start gap-2">
         <Plug className="w-3.5 h-3.5 mt-0.5 text-primary/70 flex-shrink-0" aria-hidden />
         <div className="min-w-0">
           <span className="typo-caption text-foreground block">{tx(d.improve_conn_title, { category: d[spec.categoryKey] })}</span>
-          <span className="typo-caption text-foreground/55 block" style={{ fontWeight: 400 }}>{d.improve_conn_hint}</span>
+          <span className="typo-caption text-ink-3 block" style={{ fontWeight: 400 }}>{d.improve_conn_hint}</span>
         </div>
       </div>
 
       {loading ? (
-        <p className="typo-caption text-foreground/55 mt-2">{d.improve_conn_checking}</p>
+        <p className="typo-caption text-ink-3 mt-2">{d.improve_conn_checking}</p>
       ) : tools.length === 0 ? (
         <button type="button" onClick={openVault} className="mt-2 inline-flex items-center gap-1 typo-caption text-primary hover:underline">
           <ExternalLink className="w-3 h-3" /> {d.improve_conn_add_first}
@@ -112,8 +112,8 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
                     aria-label={toolStatus}
                     className={`group/tool relative flex flex-col items-center gap-1 w-[4.25rem] px-1.5 py-2 rounded-interactive border transition-colors disabled:opacity-50 ${
                       enabled
-                        ? 'border-primary/25 bg-primary/[0.07] hover:bg-primary/[0.14]'
-                        : 'border-primary/10 bg-secondary/10 opacity-55 hover:opacity-100 hover:bg-secondary/25'
+                        ? 'border-hair bg-primary/[0.07] hover:bg-primary/[0.14]'
+                        : 'border-hair bg-surface-1 opacity-55 hover:opacity-100 hover:bg-secondary/25'
                     }`}
                   >
                     {enabled && (
@@ -125,13 +125,13 @@ export function ConnectorSection({ slug, rowKey, onClose }: { slug: string; rowK
                     {iconUrl
                       ? <ThemedConnectorIcon url={iconUrl} label={tool.label} color={color} size="w-5 h-5" />
                       : <Fallback className="w-5 h-5" style={{ color }} />}
-                    <span className="typo-label text-foreground/70 w-full truncate text-center">{tool.label}</span>
+                    <span className="typo-label text-ink-2 w-full truncate text-center">{tool.label}</span>
                   </button>
                 </Tooltip>
               );
             })}
           </div>
-          <button type="button" onClick={openVault} className="inline-flex items-center gap-1 typo-caption text-foreground/55 hover:text-foreground mt-2">
+          <button type="button" onClick={openVault} className="inline-flex items-center gap-1 typo-caption text-ink-3 hover:text-foreground mt-2">
             <ExternalLink className="w-3 h-3" /> {d.improve_conn_manage}
           </button>
         </>

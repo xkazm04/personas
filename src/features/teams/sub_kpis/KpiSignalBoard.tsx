@@ -54,14 +54,14 @@ export function KpiSignalBoard({
         return (
           <section
             key={g.key}
-            className="rounded-card border border-primary/15 bg-secondary/10 p-4 [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none [&_svg]:outline-none"
+            className="rounded-card border border-hair bg-surface-1 p-4 [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none [&_svg]:outline-none"
           >
             <div className="flex items-center gap-1.5 mb-3">
               <FolderKanban className="w-3.5 h-3.5 text-primary" aria-hidden />
               <h3 className="typo-eyebrow text-foreground flex-1 truncate">{g.label}</h3>
               <HeadlineCount n={g.rows.filter(isHeadline).length} />
               <OffCount n={off.length} />
-              <span className="typo-caption text-foreground/70 tabular-nums">{g.rows.length}</span>
+              <span className="typo-caption text-ink-2 tabular-nums">{g.rows.length}</span>
             </div>
 
             {renderAutopilot && (
@@ -139,7 +139,7 @@ function IncidentChip({ row, onOpen }: { row: DistanceRow; onOpen: (id: string) 
         <Star className="w-3 h-3 text-status-error flex-shrink-0" aria-hidden />
       )}
       <span className="typo-caption text-foreground">{row.name}</span>
-      <span className="typo-caption text-foreground/80 tabular-nums">
+      <span className="typo-caption text-ink-2 tabular-nums">
         {row.current ?? '—'}/{row.target ?? '—'} {row.unit}
       </span>
       {reason && (

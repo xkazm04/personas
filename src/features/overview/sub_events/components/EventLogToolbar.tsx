@@ -51,14 +51,14 @@ export function EventLogToolbar({
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             placeholder={t.overview.events.search_placeholder}
-            className="w-full pl-8 pr-8 py-1.5 typo-body rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 transition-colors"
+            className="w-full pl-8 pr-8 py-1.5 typo-body rounded-card bg-surface-1 border border-hair text-foreground placeholder:text-foreground focus:outline-none focus:border-hair transition-colors"
           />
           {searchText && (
             <button
               type="button"
               onClick={() => setSearchText('')}
               aria-label={t.common.clear}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/70"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-ink-2"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -70,7 +70,7 @@ export function EventLogToolbar({
             <button
               type="button"
               onClick={() => setShowSaveDialog(true)}
-              className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors whitespace-nowrap"
+              className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-primary/10 text-primary border border-hair hover:bg-primary/20 transition-colors whitespace-nowrap"
               title={debtText("auto_save_current_filters_as_a_view_1680b016")}
             >
               <Bookmark className="w-3 h-3" /> {t.overview.events.save_view}
@@ -78,7 +78,7 @@ export function EventLogToolbar({
             <button
               type="button"
               onClick={clearFilters}
-              className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-secondary/40 text-foreground border border-primary/10 hover:bg-secondary/60 transition-colors whitespace-nowrap"
+              className="flex items-center gap-1 px-2 py-1.5 typo-caption rounded-card bg-surface-1 text-foreground border border-hair hover:bg-surface-2 transition-colors whitespace-nowrap"
               title={debtText("auto_clear_all_filters_7dd6d199")}
             >
               <X className="w-3 h-3" /> {t.common.clear}
@@ -99,8 +99,8 @@ export function EventLogToolbar({
             <span
               key={view.id}
               className={`group inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card border transition-colors ${activeViewId === view.id
-                  ? 'bg-primary/15 text-primary border-primary/30'
-                  : 'bg-secondary/30 text-foreground border-primary/10 hover:bg-secondary/50'
+                  ? 'bg-primary/15 text-primary border-hair'
+                  : 'bg-surface-1 text-foreground border-hair hover:bg-surface-2'
                 }`}
             >
               <button
@@ -128,13 +128,13 @@ export function EventLogToolbar({
 
       {/* Save view dialog */}
       {showSaveDialog && (
-        <div className="flex items-center gap-2 p-2 rounded-card bg-secondary/40 border border-primary/10">
+        <div className="flex items-center gap-2 p-2 rounded-card bg-surface-1 border border-hair">
           <input
             type="text"
             value={viewName}
             onChange={(e) => setViewName(e.target.value)}
             placeholder={t.overview.events.view_name_placeholder}
-            className="flex-1 px-2 py-1 typo-body rounded bg-background/50 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30"
+            className="flex-1 px-2 py-1 typo-body rounded bg-background/50 border border-hair text-foreground placeholder:text-foreground focus:outline-none focus:border-hair"
             onKeyDown={(e) => { if (e.key === 'Enter') handleSaveView(); if (e.key === 'Escape') setShowSaveDialog(false); }}
             autoFocus
           />
@@ -142,7 +142,7 @@ export function EventLogToolbar({
             type="button"
             onClick={handleSaveView}
             disabled={!viewName.trim()}
-            className="px-3 py-1 typo-caption rounded-card bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 disabled:opacity-40 transition-colors"
+            className="px-3 py-1 typo-caption rounded-card bg-primary/15 text-primary border border-hair hover:bg-primary/25 disabled:opacity-40 transition-colors"
           >
             {t.common.save}
           </button>

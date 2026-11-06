@@ -10,7 +10,7 @@ import { formatNumeric } from '@/lib/utils/formatters';
 
 import type { BacklogIdea } from './backlogModel';
 
-const CHIP = 'inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption border';
+const CHIP = 'inline-flex items-center gap-1 rounded-interactive px-2 py-0.5 typo-caption border';
 
 /** The breakdown keys the contract names, in the order the formula reads them. */
 const PART_KEYS = ['impact', 'confidence_w', 'effort_div', 'risk_factor', 'formula'] as const;
@@ -21,7 +21,7 @@ export function ScoreChip({ idea }: { idea: Pick<BacklogIdea, 'score' | 'scorePa
   if (idea.score === null) {
     return (
       <Tooltip content={r.backlog_unscored_tip} placement="top">
-        <span className={`${CHIP} text-foreground border-primary/15 bg-primary/5`}>
+        <span className={`${CHIP} text-foreground border-hair bg-surface-1`}>
           {r.backlog_unscored}
         </span>
       </Tooltip>
@@ -67,7 +67,7 @@ export function ConfidenceChip({ confidence }: { confidence: string | null }) {
     high: r.backlog_confidence_high,
   }[confidence ?? ''];
   if (!label) return null;
-  return <span className={`${CHIP} text-foreground border-primary/20 bg-primary/5`}>{label}</span>;
+  return <span className={`${CHIP} text-foreground border-hair bg-surface-1`}>{label}</span>;
 }
 
 export function PredictedChip({ verdict, why }: { verdict: string | null; why: string | null }) {

@@ -40,7 +40,7 @@ export function PublishPresetButton({ teamId }: { teamId: string }) {
   };
 
   return (
-    <div className="mt-2 pt-4 border-t border-primary/10 flex flex-col gap-2 flex-shrink-0">
+    <div className="mt-2 pt-4 border-t border-hair flex flex-col gap-2 flex-shrink-0">
       <div className="flex items-center gap-2">
         <Users className="w-4 h-4 text-primary/80" />
         <h3 className="typo-label text-foreground">{p.heading}</h3>

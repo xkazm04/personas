@@ -74,23 +74,23 @@ export function MissionStatusMonitor() {
   const gth = GRADE_THEME[globalGrade];
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
+    <div className="rounded-modal border border-hair bg-surface-1 overflow-hidden flex flex-col">
       <div className={`h-0.5 ${gth.bar} opacity-60`} />
       <PaneHeader label={t.overview.dashboard.status_label} subtitle={he.uptime_30d} />
 
       {/* Global readout */}
-      <div className="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-primary/5">
+      <div className="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-hair">
         <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-card border ${gth.chip}`}>
           <GlobalIcon className="w-3.5 h-3.5" />
           <span className="typo-caption">{gradeLabel[globalGrade]}</span>
         </span>
         <div className="flex items-baseline gap-3">
           <span className="typo-caption text-foreground">
-            {he.score_prefix} <span className="typo-data text-foreground/90">{globalScore ?? '—'}</span>/100
+            {he.score_prefix} <span className="typo-data text-ink-2">{globalScore ?? '—'}</span>/100
           </span>
           <span className="h-3 w-px bg-primary/15" aria-hidden="true" />
           <span className="typo-caption text-foreground">
-            {he.uptime_30d_prefix} <Numeric value={globalUptime} unit="ratio" precision={1} className="typo-data text-foreground/90" />
+            {he.uptime_30d_prefix} <Numeric value={globalUptime} unit="ratio" precision={1} className="typo-data text-ink-2" />
           </span>
         </div>
       </div>
@@ -127,12 +127,12 @@ function MonitorRow({ entry, onClick }: { entry: CompositeHealthEntry; onClick: 
     <button
       type="button"
       onClick={onClick}
-      className="relative w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-primary/[0.04] transition-colors focus-ring"
+      className="relative w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-2 transition-colors focus-ring"
     >
       <span className={`absolute left-0 inset-y-0 w-0.5 ${th.bar} ${entry.grade === 'healthy' ? 'opacity-30' : 'opacity-70'}`} aria-hidden="true" />
       <GradeDot grade={entry.grade} />
       <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} name={entry.personaName} display="framed" frameSize="xs" />
-      <span className="typo-body text-foreground/90 truncate w-28 sm:w-36 shrink-0">{entry.personaName}</span>
+      <span className="typo-body text-ink-2 truncate w-28 sm:w-36 shrink-0">{entry.personaName}</span>
       <span className="flex-1 flex items-center gap-px min-w-0">
         {entry.dailyStatuses.map((status, i) => (
           <span

@@ -28,7 +28,7 @@ export function BookRowLine({
   const coveragePct = Math.round(row.tally.coverage * 100);
 
   return (
-    <tr className="border-b border-primary/10 transition-colors hover:bg-secondary/15" data-testid={`kpi-books-row-${row.id}`}>
+    <tr className="border-b border-hair transition-colors hover:bg-secondary/15" data-testid={`kpi-books-row-${row.id}`}>
       <td className={`py-2.5 pl-2 pr-1 align-middle ${KT.metaFigure}`}>{row.rank}</td>
 
       <td className="w-[34%] max-w-0 py-2.5 pr-3 align-middle">

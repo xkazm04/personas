@@ -11,9 +11,9 @@ export const KIND_CONFIG: Record<
   ConflictKind,
   { color: string; bg: string; border: string; icon: typeof Copy }
 > = {
-  duplicate: { color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Copy },
-  contradiction: { color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', icon: AlertTriangle },
-  superseded: { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: ArrowRight },
+  duplicate: { color: 'text-status-warning', bg: 'bg-status-warning/10', border: 'border-status-warning/20', icon: Copy },
+  contradiction: { color: 'text-status-error', bg: 'bg-status-error/10', border: 'border-status-error/20', icon: AlertTriangle },
+  superseded: { color: 'text-status-info', bg: 'bg-status-info/10', border: 'border-status-info/20', icon: ArrowRight },
 };
 
 export function kindBadge(kind: ConflictKind, label: string) {
@@ -29,7 +29,7 @@ export function kindBadge(kind: ConflictKind, label: string) {
 
 export function similarityBadge(sim: number) {
   const pct = Math.round(sim * 100);
-  const color = pct >= 80 ? 'text-red-400' : pct >= 50 ? 'text-amber-400' : 'text-blue-400';
+  const color = pct >= 80 ? 'text-status-error' : pct >= 50 ? 'text-status-warning' : 'text-status-info';
   return (
     <span className={`typo-code ${color}`}>{pct}%</span>
   );

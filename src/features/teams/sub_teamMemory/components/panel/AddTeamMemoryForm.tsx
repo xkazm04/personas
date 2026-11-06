@@ -54,7 +54,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
     return (
       <button
         type="button"
-        className="w-full flex items-center justify-center gap-1.5 py-1.5 typo-body text-foreground hover:text-foreground/80 border border-dashed border-primary/10 hover:border-primary/20 rounded-card transition-colors"
+        className="w-full flex items-center justify-center gap-1.5 py-1.5 typo-body text-foreground hover:text-ink-2 border border-dashed border-hair hover:border-hair rounded-card transition-colors"
         onClick={() => setExpanded(true)}
       >
         <Plus className="w-3 h-3" />
@@ -64,7 +64,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
   }
 
   return (
-    <div className="border border-primary/15 rounded-card p-2.5 space-y-2">
+    <div className="border border-hair rounded-card p-2.5 space-y-2">
       <div className="flex items-center justify-between">
         <span className="typo-body text-foreground">{t.pipeline.new_memory}</span>
         <button
@@ -78,14 +78,14 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
       </div>
 
       <input
-        className="w-full typo-body bg-secondary/60 border border-primary/10 rounded-card px-2 py-1.5 text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30"
+        className="w-full typo-body bg-secondary/60 border border-hair rounded-card px-2 py-1.5 text-ink-2 placeholder:text-foreground focus-visible:outline-none focus-visible:border-hair"
         placeholder={t.pipeline.title_placeholder}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
 
       <textarea
-        className="w-full typo-body bg-secondary/60 border border-primary/10 rounded-card px-2 py-1.5 text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 resize-none"
+        className="w-full typo-body bg-secondary/60 border border-hair rounded-card px-2 py-1.5 text-ink-2 placeholder:text-foreground focus-visible:outline-none focus-visible:border-hair resize-none"
         placeholder={t.pipeline.content_placeholder}
         rows={3}
         value={content}
@@ -106,7 +106,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
               type="button"
               onClick={toggle}
               aria-label={t.pipeline.category_label}
-              className="inline-flex items-center gap-1 typo-body bg-secondary/60 border border-primary/10 rounded-card px-1.5 py-1 text-foreground hover:border-primary/20 focus-visible:outline-none focus-visible:border-violet-500/30 transition-colors"
+              className="inline-flex items-center gap-1 typo-body bg-secondary/60 border border-hair rounded-card px-1.5 py-1 text-foreground hover:border-hair focus-visible:outline-none focus-visible:border-role-agent/30 transition-colors"
             >
               {tokenLabel(t, 'memory_category', category)}
               <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -125,7 +125,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
                   className={`w-full text-left px-2 py-1 typo-body transition-colors ${
                     idx === focusIndex || category === c
                       ? 'bg-primary/10 text-foreground'
-                      : 'text-foreground/80 hover:bg-primary/5'
+                      : 'text-ink-2 hover:bg-surface-2'
                   }`}
                 >
                   {tokenLabel(t, 'memory_category', c)}
@@ -152,7 +152,7 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
 
       <button
         type="button"
-        className="w-full typo-body py-1.5 rounded-card bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 transition-colors disabled:opacity-40"
+        className="w-full typo-body py-1.5 rounded-card bg-role-agent/15 text-role-agent hover:bg-role-agent/25 transition-colors disabled:opacity-40"
         disabled={!title.trim() || !content.trim()}
         onClick={() => { void handleSubmit(); }}
       >

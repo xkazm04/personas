@@ -78,7 +78,7 @@ export function ScoreBar({
   return (
     <div className="w-full">
       <div className="flex items-baseline justify-between gap-2 mb-1">
-        <span className="typo-label text-foreground/45">{label}</span>
+        <span className="typo-label text-ink-3">{label}</span>
         <Tooltip content={`${name}: ${score}/100`}>
           <span className="inline-flex items-baseline gap-1 cursor-default">
             <span className={`typo-caption tabular-nums ${tint.text}`}>{code}</span>
@@ -109,7 +109,7 @@ export function Pips({ items, size = 7 }: { items: Array<{ label: string; on: bo
               background: it.on ? '#10b981' : 'color-mix(in srgb, var(--foreground) 14%, transparent)',
             }}
           />
-          <span className={`typo-caption tabular-nums ${it.on ? 'text-foreground/80' : 'text-foreground/35'}`}>{it.label}</span>
+          <span className={`typo-caption tabular-nums ${it.on ? 'text-ink-2' : 'text-ink-3'}`}>{it.label}</span>
         </span>
       ))}
     </span>
@@ -119,7 +119,7 @@ export function Pips({ items, size = 7 }: { items: Array<{ label: string; on: bo
 /** A single yes/no capability — check or muted dash. */
 export function BoolMark({ on, label }: { on: boolean; label?: string }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 typo-caption ${on ? 'text-emerald-300' : 'text-foreground/35'}`}>
+    <span className={`inline-flex items-center gap-1.5 typo-caption ${on ? 'text-status-success' : 'text-ink-3'}`}>
       {on ? <Check className="w-3.5 h-3.5" aria-hidden /> : <Minus className="w-3.5 h-3.5" aria-hidden />}
       {label && <span>{label}</span>}
     </span>
@@ -160,7 +160,7 @@ export function RowInfoLabel({ label, info }: { label: string; info: string }) {
         title={`What "${label}" means`}
         className="group/rl inline-flex items-center gap-1 text-left rounded-interactive -mx-1 px-1 py-0.5 hover:bg-primary/[0.05] transition-colors cursor-help focus-ring"
       >
-        <span className="typo-caption text-foreground/65 group-hover/rl:text-foreground/90 transition-colors">{label}</span>
+        <span className="typo-caption text-ink-3 group-hover/rl:text-ink-2 transition-colors">{label}</span>
         <Info className="w-3 h-3 flex-shrink-0 text-primary/70 opacity-0 group-hover/rl:opacity-100 transition-opacity" aria-hidden />
       </button>
       {anchor && pos && createPortal(
@@ -169,13 +169,13 @@ export function RowInfoLabel({ label, info }: { label: string; info: string }) {
           role="dialog"
           aria-label={`${label}: meaning`}
           style={{ top: pos.top, left: pos.left, width: INFO_TIP_WIDTH }}
-          className="fixed z-[9996] rounded-modal border border-primary/15 bg-background shadow-elevation-4 px-3 py-2.5"
+          className="fixed z-[9996] rounded-modal border border-hair bg-background shadow-elevation-4 px-3 py-2.5"
         >
           <span className="flex items-center gap-1.5 typo-caption text-foreground mb-1">
             <Info className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" aria-hidden />
             {label}
           </span>
-          <p className="typo-caption text-foreground/65" style={{ fontWeight: 400 }}>{info}</p>
+          <p className="typo-caption text-ink-3" style={{ fontWeight: 400 }}>{info}</p>
         </div>,
         document.body,
       )}
@@ -189,8 +189,8 @@ export function Chip({ label, tone = 'neutral' }: { label: string; tone?: 'neutr
     <span
       className={`inline-flex items-center rounded-input px-1.5 py-0.5 typo-caption whitespace-nowrap ${
         tone === 'accent'
-          ? 'bg-primary/10 text-primary border border-primary/15'
-          : 'bg-secondary/40 text-foreground border border-primary/8'
+          ? 'bg-primary/10 text-primary border border-hair'
+          : 'bg-surface-1 text-foreground border border-hair'
       }`}
     >
       {label}

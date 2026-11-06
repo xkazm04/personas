@@ -53,8 +53,8 @@ export default function TabStrip({ tabs, activeTabId, onSelect, onClose, error =
               className={[
                 'group flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-interactive border transition-colors max-w-56 min-w-0',
                 active
-                  ? 'border-primary/30 bg-primary/10'
-                  : 'border-primary/10 bg-secondary/30 hover:border-primary/20',
+                  ? 'border-hair bg-primary/10'
+                  : 'border-hair bg-surface-1 hover:border-hair',
               ].join(' ')}
             >
               <button

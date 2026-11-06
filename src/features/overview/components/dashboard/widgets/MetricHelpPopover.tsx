@@ -103,7 +103,7 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
       </span>
 
       {open && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-64 rounded-modal border border-primary/10 bg-card p-3 shadow-elevation-3 text-left">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-64 rounded-modal border border-hair bg-card p-3 shadow-elevation-3 text-left">
           <div className="flex items-start justify-between gap-2 mb-2">
             <h4 className="typo-heading text-foreground">{info.label}</h4>
             <button
@@ -117,17 +117,17 @@ export function MetricHelpPopover({ metricKey }: { metricKey: string }) {
           </div>
           <p className="typo-caption text-foreground mb-2">{info.description}</p>
           <div className="typo-caption space-y-1.5">
-            <p className="text-emerald-400">
+            <p className="text-status-success">
               <span className="font-medium">{t.overview.metric_help_popover.healthy}</span> {info.healthyRange}
             </p>
-            <p className="text-blue-400">
+            <p className="text-status-info">
               <span className="font-medium">{t.overview.metric_help_popover.click}</span> {info.navigatesTo}
             </p>
           </div>
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
-            className="mt-2.5 w-full typo-caption text-center py-1 rounded-card bg-primary/5 hover:bg-primary/10 text-foreground hover:text-foreground transition-colors"
+            className="mt-2.5 w-full typo-caption text-center py-1 rounded-card bg-surface-1 hover:bg-primary/10 text-foreground hover:text-foreground transition-colors"
           >
             {t.overview.metric_help_popover.got_it}
           </button>

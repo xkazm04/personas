@@ -58,7 +58,7 @@ export function PresetStudio() {
             <button
               type="button"
               onClick={() => setChosen(null)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body text-foreground hover:bg-secondary/50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-hair bg-surface-1 typo-body text-foreground hover:bg-surface-2 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               {t.pipeline.preset_back_to_gallery}
@@ -68,7 +68,7 @@ export function PresetStudio() {
         {/* Description bar — full preset summary, lifted out of the header so
             it has room to read as the flow's intro. */}
         <div
-          className="flex-shrink-0 px-6 py-3 border-b border-primary/10 bg-secondary/15 flex items-start gap-3"
+          className="flex-shrink-0 px-6 py-3 border-b border-hair bg-secondary/15 flex items-start gap-3"
           style={{ borderLeft: `3px solid ${colorWithAlpha(teamColor, 0.7)}` }}
         >
           <p className="typo-body text-foreground max-w-3xl">{chosen.description}</p>
@@ -88,7 +88,7 @@ export function PresetStudio() {
   return (
     <ContentBox minWidth={0} data-testid="preset-studio-gallery">
       <ContentHeader
-        icon={<Layers className="w-5 h-5 text-indigo-300" />}
+        icon={<Layers className="w-5 h-5 text-role-agent" />}
         iconColor="indigo"
         title={t.pipeline.preset_team_picker_title}
         subtitle={t.pipeline.preset_team_picker_subtitle}
@@ -96,7 +96,7 @@ export function PresetStudio() {
           <button
             type="button"
             onClick={() => setPresetFlowOpen(false)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body text-foreground hover:bg-secondary/50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-hair bg-surface-1 typo-body text-foreground hover:bg-surface-2 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             {t.pipeline.team_studio.teams_header_label}
@@ -137,7 +137,7 @@ function PresetGalleryGhost() {
       {Array.from({ length: 6 }).map((_, i) => (
         <div
           key={i}
-          className="rounded-modal border border-primary/15 bg-secondary/20 overflow-hidden flex flex-col animate-fade-in"
+          className="rounded-modal border border-hair bg-surface-1 overflow-hidden flex flex-col animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
           <div className="h-40 flex-shrink-0 bg-primary/[0.06]" />

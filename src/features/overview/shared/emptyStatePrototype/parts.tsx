@@ -18,7 +18,7 @@ export function EmptyStateActions({
         <button
           type="button"
           onClick={action.onClick}
-          className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors focus-ring"
+          className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal bg-primary/10 border border-hair text-primary hover:bg-primary/15 transition-colors focus-ring"
         >
           {action.icon && <action.icon className="w-3.5 h-3.5" />}
           {action.label}
@@ -28,7 +28,7 @@ export function EmptyStateActions({
         <button
           type="button"
           onClick={secondaryAction.onClick}
-          className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal text-foreground hover:text-foreground hover:bg-primary/8 border border-primary/10 transition-colors focus-ring"
+          className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal text-foreground hover:text-foreground hover:bg-primary/8 border border-hair transition-colors focus-ring"
         >
           {secondaryAction.icon && <secondaryAction.icon className="w-3.5 h-3.5" />}
           {secondaryAction.label}
@@ -51,7 +51,7 @@ export function EmptyStateCopy({ title, subtitle }: { title: string; subtitle: s
         {title}
       </motion.h3>
       <motion.p
-        className="typo-body-lg text-foreground/90 max-w-[42ch]"
+        className="typo-body-lg text-ink-2 max-w-[42ch]"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.24, duration: 0.4 }}

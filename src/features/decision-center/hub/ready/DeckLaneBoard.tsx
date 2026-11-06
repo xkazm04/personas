@@ -87,7 +87,7 @@ export const DeckLaneBoard = memo(function DeckLaneBoard({
             onDragOver={(e) => e.preventDefault()}
             onDrop={drop(lane)}
             aria-label={tx(m.triage_dispatch_lane_name, { n: lane + 1 })}
-            className="flex min-h-[7rem] flex-col gap-1 rounded-card border border-border bg-secondary/20 p-2"
+            className="flex min-h-[7rem] flex-col gap-1 rounded-card border border-border bg-surface-1 p-2"
           >
             <header className="flex items-center justify-between">
               <span className="typo-label text-foreground">

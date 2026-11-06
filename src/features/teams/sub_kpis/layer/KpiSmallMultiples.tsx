@@ -14,7 +14,7 @@ import { MAX_PANELS, type PanelSeries } from './KpiGroupLayer.model';
 import { KpiOverflowTable } from './KpiOverflowTable';
 
 const GHOST = 'h-24 rounded-card bg-primary/[0.06] animate-fade-in';
-const PANEL = 'rounded-card border border-primary/15 bg-secondary/10 p-2 [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none [&_svg]:outline-none';
+const PANEL = 'rounded-card border border-hair bg-surface-1 p-2 [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none [&_svg]:outline-none';
 const GRID = 'grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3';
 
 export function KpiSmallMultiples({
@@ -36,7 +36,7 @@ export function KpiSmallMultiples({
   const overflow = series.slice(MAX_PANELS);
 
   return (
-    <section className="rounded-card border border-primary/15 bg-secondary/10 p-4 space-y-3" data-testid="kpi-layer-multiples">
+    <section className="rounded-card border border-hair bg-surface-1 p-4 space-y-3" data-testid="kpi-layer-multiples">
       <div>
         <h3 className="typo-eyebrow text-foreground">{o.layer_multiples_title}</h3>
         <p className="typo-caption">{o.layer_multiples_caption}</p>
@@ -48,7 +48,7 @@ export function KpiSmallMultiples({
           <button
             type="button"
             onClick={onRetry}
-            className="rounded-interactive border border-primary/25 bg-secondary/30 px-2.5 py-1 typo-label text-foreground hover:bg-secondary/50 focus-ring"
+            className="rounded-interactive border border-hair bg-surface-1 px-2.5 py-1 typo-label text-foreground hover:bg-surface-2 focus-ring"
           >
             {o.retry}
           </button>

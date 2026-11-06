@@ -84,7 +84,7 @@ export function AttentionRail({
                           type="button"
                           onClick={() => onOpen(pick)}
                           data-testid={`kpi-rail-${pick.id}`}
-                          className="flex w-full items-center gap-2 rounded-interactive px-1.5 py-1.5 text-left transition-colors hover:bg-secondary/30 focus-ring"
+                          className="flex w-full items-center gap-2 rounded-interactive px-1.5 py-1.5 text-left transition-colors hover:bg-surface-2 focus-ring"
                         >
                           <span
                             aria-hidden="true"

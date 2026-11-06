@@ -189,9 +189,9 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
       <p className="typo-caption text-foreground -mt-2">{ts.workspace_hint}</p>
 
       {/* Team identity — name / description / color, editable post-creation */}
-      <div className="rounded-card border border-primary/10 bg-secondary/10 p-3 space-y-3">
+      <div className="rounded-card border border-hair bg-surface-1 p-3 space-y-3">
         <div className="flex items-center gap-2">
-          <Layers className="w-3.5 h-3.5 text-indigo-300/80" />
+          <Layers className="w-3.5 h-3.5 text-role-agent" />
           <span className="typo-label text-foreground">{ts.identity_section}</span>
         </div>
         {/* The icon field is deliberately gone. It was a free-text input whose
@@ -200,25 +200,25 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
             should be, with no way to discover the valid names. Teams use the
             default glyph until there's a real picker. */}
         <label className="flex flex-col gap-1.5">
-          <span className="typo-label text-foreground/85">{t.pipeline.team_name}</span>
+          <span className="typo-label text-ink-2">{t.pipeline.team_name}</span>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
+            className="w-full rounded-input bg-surface-1 border border-hair text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
           />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="typo-label text-foreground/85">{t.common.description}</span>
+          <span className="typo-label text-ink-2">{t.common.description}</span>
           <input
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
+            className="w-full rounded-input bg-surface-1 border border-hair text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
           />
         </label>
         <div>
-          <span className="typo-label text-foreground/85 mb-1.5 block">{t.pipeline.color}</span>
+          <span className="typo-label text-ink-2 mb-1.5 block">{t.pipeline.color}</span>
           <TeamColorPicker value={color} onChange={setColor} />
         </div>
         <p className="typo-caption text-foreground">{ts.identity_hint}</p>
@@ -226,20 +226,20 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
 
       {/* Shared instructions */}
       <label className="flex flex-col gap-1.5">
-        <span className="typo-label text-foreground/85">{ts.shared_instructions_label}</span>
+        <span className="typo-label text-ink-2">{ts.shared_instructions_label}</span>
         <textarea
           value={instructions}
           onChange={(e) => setInstructions(e.target.value)}
           rows={5}
           placeholder={ts.shared_instructions_placeholder}
-          className="w-full resize-none rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
+          className="w-full resize-none rounded-input bg-surface-1 border border-hair text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
         />
       </label>
 
       {/* Defaults */}
       <div className="grid grid-cols-3 gap-3">
         <label className="flex flex-col gap-1.5">
-          <span className="typo-label text-foreground/85">{ts.default_model_label}</span>
+          <span className="typo-label text-ink-2">{ts.default_model_label}</span>
           <ThemedSelect value={modelKey} onValueChange={setModelKey}>
             {MODEL_OPTIONS.map((m) => (
               <option key={m.key} value={m.key}>
@@ -249,7 +249,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
           </ThemedSelect>
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="typo-label text-foreground/85">{ts.default_budget_label}</span>
+          <span className="typo-label text-ink-2">{ts.default_budget_label}</span>
           <NumberStepper
             value={budget.trim() === '' ? null : Number(budget)}
             onChange={(v) => setBudget(v == null ? '' : String(v))}
@@ -262,7 +262,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
           />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="typo-label text-foreground/85">{ts.default_turns_label}</span>
+          <span className="typo-label text-ink-2">{ts.default_turns_label}</span>
           <NumberStepper
             value={turns.trim() === '' ? null : Number(turns)}
             onChange={(v) => setTurns(v == null ? '' : String(v))}
@@ -279,13 +279,13 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
           type="button"
           disabled={saving || !dirty}
           onClick={() => void handleSave()}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/30 bg-primary/15 typo-body text-primary hover:bg-primary/25 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-hair bg-primary/15 typo-body text-primary hover:bg-primary/25 disabled:opacity-50 transition-colors"
         >
           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
           {ts.workspace_save}
         </button>
         {savedAt > 0 && !dirty && (
-          <span className="typo-caption text-emerald-300">{ts.workspace_saved}</span>
+          <span className="typo-caption text-status-success">{ts.workspace_saved}</span>
         )}
       </div>
 
@@ -301,10 +301,10 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
       <ForkTeamButton teamId={team.id} />
 
       {/* Danger zone — disband the team (keeps personas). */}
-      <div className="mt-2 pt-4 border-t border-red-500/15 flex flex-col gap-2 flex-shrink-0">
+      <div className="mt-2 pt-4 border-t border-status-error/15 flex flex-col gap-2 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <Trash2 className="w-4 h-4 text-red-400/80" />
-          <h3 className="typo-label text-red-300">{ts.disband_heading}</h3>
+          <Trash2 className="w-4 h-4 text-status-error" />
+          <h3 className="typo-label text-status-error">{ts.disband_heading}</h3>
         </div>
         <p className="typo-caption text-foreground">{ts.disband_hint}</p>
         <div className="flex items-center gap-2 mt-1">
@@ -314,7 +314,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
                 type="button"
                 disabled={disbanding}
                 onClick={() => void handleDisband()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-red-500/40 bg-red-500/15 typo-body text-red-300 hover:bg-red-500/25 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-status-error/40 bg-status-error/15 typo-body text-status-error hover:bg-status-error/25 disabled:opacity-50 transition-colors"
               >
                 {disbanding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 {ts.disband_confirm}
@@ -323,7 +323,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
                 type="button"
                 disabled={disbanding}
                 onClick={() => setConfirmDisband(false)}
-                className="inline-flex items-center px-3 py-1.5 rounded-interactive border border-primary/15 typo-body text-foreground hover:bg-secondary/40 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center px-3 py-1.5 rounded-interactive border border-hair typo-body text-foreground hover:bg-surface-2 disabled:opacity-50 transition-colors"
               >
                 {ts.cancel}
               </button>
@@ -332,7 +332,7 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
             <button
               type="button"
               onClick={() => setConfirmDisband(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-red-500/30 typo-body text-red-300 hover:bg-red-500/15 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-status-error/30 typo-body text-status-error hover:bg-status-error/15 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
               {ts.disband}

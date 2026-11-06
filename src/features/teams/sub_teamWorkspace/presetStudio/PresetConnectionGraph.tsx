@@ -192,7 +192,7 @@ export function PresetConnectionGraph({
           return (
             <foreignObject key={`lbl-${e.id}`} x={lx - LW / 2} y={ly - 26} width={LW} height={70} style={{ overflow: 'visible', pointerEvents: 'none' }}>
               <div className="flex justify-center">
-                <span className="inline-block rounded-input border border-primary/15 bg-background/95 px-2 py-1 typo-body-lg text-foreground text-center shadow-elevation-1">
+                <span className="inline-block rounded-input border border-hair bg-background/95 px-2 py-1 typo-body-lg text-foreground text-center shadow-elevation-1">
                   {e.label}
                 </span>
               </div>

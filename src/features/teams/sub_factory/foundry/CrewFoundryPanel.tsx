@@ -136,7 +136,7 @@ export function CrewFoundryPanel({ data }: { data: FactoryL2Data }) {
       <div className="rounded-card px-3 py-2 mb-3" style={frame} data-testid="crew-foundry-panel">
         <span className="flex items-center gap-2 flex-wrap min-w-0">
           <Users className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden />
-          <span className="typo-caption text-foreground/90 truncate">
+          <span className="typo-caption text-ink-2 truncate">
             {fitness ? `Crew: ${fitness.teamName}` : 'Crew'}
           </span>
           {forged && (
@@ -146,17 +146,17 @@ export function CrewFoundryPanel({ data }: { data: FactoryL2Data }) {
               title={`Forged from this project's pulse, incident heat, passport gaps and off-track KPIs${fitness?.forgedAt ? ` on ${fitness.forgedAt.slice(0, 10)}` : ''}`}
             />
           )}
-          {fitnessLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-foreground/40" aria-hidden />}
+          {fitnessLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-ink-3" aria-hidden />}
         </span>
         {fitness && fitness.personas.length === 0 && (
-          <p className="typo-caption text-foreground/45 mt-1">Team has no members yet.</p>
+          <p className="typo-caption text-ink-3 mt-1">Team has no members yet.</p>
         )}
         {fitness && fitness.personas.length > 0 && (
           <span className="flex items-center gap-x-4 gap-y-1 flex-wrap mt-1.5">
             {fitness.personas.map((p) => (
               <span key={p.personaId} className="inline-flex items-center gap-1.5 typo-caption min-w-0" data-testid={`crew-fitness-${p.personaId}`}>
-                <span className="text-foreground/80 truncate">{p.personaName}</span>
-                <span className="text-foreground/35">{p.role}</span>
+                <span className="text-ink-2 truncate">{p.personaName}</span>
+                <span className="text-ink-3">{p.role}</span>
                 {p.stepsTotal > 0 ? (
                   <span
                     className="tabular-nums font-medium"
@@ -166,14 +166,14 @@ export function CrewFoundryPanel({ data }: { data: FactoryL2Data }) {
                     {Math.round((p.successRate ?? 0) * 100)}% of {p.stepsTotal}
                   </span>
                 ) : (
-                  <span className="text-foreground/30 italic">no runs yet</span>
+                  <span className="text-ink-3 italic">no runs yet</span>
                 )}
               </span>
             ))}
           </span>
         )}
         {fitness && fitness.personas.length > 0 && !hasSignal && (
-          <p className="typo-caption text-foreground/40 mt-1">
+          <p className="typo-caption text-ink-3 mt-1">
             No assignment signal yet — success rates appear once this crew works a goal.
           </p>
         )}
@@ -188,8 +188,8 @@ export function CrewFoundryPanel({ data }: { data: FactoryL2Data }) {
     <div className="rounded-card px-3 py-2 mb-3" style={frame} data-testid="crew-foundry-panel">
       <span className="flex items-center gap-2 flex-wrap">
         <Hammer className="w-3.5 h-3.5 shrink-0" style={{ color: INK.violet }} aria-hidden />
-        <span className="typo-caption text-foreground/90">Crew Foundry</span>
-        <span className="typo-caption text-foreground/45 min-w-0">
+        <span className="typo-caption text-ink-2">Crew Foundry</span>
+        <span className="typo-caption text-ink-3 min-w-0">
           {noContexts
             ? 'Scan contexts first — I forge the crew from the project map.'
             : compiled && compiled.deficits.length > 0
@@ -211,7 +211,7 @@ export function CrewFoundryPanel({ data }: { data: FactoryL2Data }) {
         </button>
       </span>
       {composing && (
-        <p className="typo-caption text-foreground/45 mt-1">
+        <p className="typo-caption text-ink-3 mt-1">
           I&apos;m composing a crew from this project&apos;s pulse, incident heat, passport gaps and off-track KPIs — about a minute.
         </p>
       )}

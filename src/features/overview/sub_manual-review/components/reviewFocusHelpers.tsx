@@ -92,21 +92,21 @@ export const SEVERITY_CONFIG: Record<string, SeverityConfig> = {
     icon: <AlertCircle className="w-4 h-4" />,
     label: 'Critical',
     shadow: '0 0 40px -12px rgba(239,68,68,0.20)',
-    ring: 'ring-red-500/10',
+    ring: 'ring-status-error/10',
   },
   warning: {
     gradient: 'from-amber-500 via-amber-400 to-amber-500',
     icon: <AlertTriangle className="w-4 h-4" />,
     label: 'Warning',
     shadow: '0 0 40px -12px rgba(245,158,11,0.20)',
-    ring: 'ring-amber-500/10',
+    ring: 'ring-status-warning/10',
   },
   info: {
     gradient: 'from-emerald-500 via-emerald-400 to-emerald-500',
     icon: <Info className="w-4 h-4" />,
     label: 'Info',
     shadow: '0 0 40px -12px rgba(16,185,129,0.20)',
-    ring: 'ring-emerald-500/10',
+    ring: 'ring-status-success/10',
   },
 };
 
@@ -139,10 +139,10 @@ export function catBorder(cat?: string): string {
 // ---------------------------------------------------------------------------
 
 const SEV_DOT: Record<string, string> = {
-  critical: 'bg-red-400',
-  warning: 'bg-amber-400',
-  high: 'bg-amber-400',
-  info: 'bg-blue-400',
+  critical: 'bg-status-error',
+  warning: 'bg-status-warning',
+  high: 'bg-status-warning',
+  info: 'bg-status-info',
   low: 'bg-foreground/40',
 };
 
@@ -151,9 +151,9 @@ export function sevDot(severity: string): string {
 }
 
 export const SEV_BADGE_COLORS: Record<string, string> = {
-  critical: 'bg-red-500/15 text-red-400 border-red-500/20',
-  warning: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
-  info: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
+  critical: 'bg-status-error/15 text-status-error border-status-error/20',
+  warning: 'bg-status-warning/15 text-status-warning border-status-warning/20',
+  info: 'bg-status-success/15 text-status-success border-status-success/20',
 };
 
 // ---------------------------------------------------------------------------

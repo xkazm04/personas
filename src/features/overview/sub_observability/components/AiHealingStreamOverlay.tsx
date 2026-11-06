@@ -72,22 +72,22 @@ function useReachedStep(phase: AiHealingPhase): number {
 const HEADER_STYLES: Record<string, { border: string; bg: string; iconBox: string }> = {
   red: {
     border: 'border-status-error/20',
-    bg: 'bg-gradient-to-r from-status-error/10 to-transparent',
+    bg: 'bg-surface-1',
     iconBox: 'bg-status-error/15 border-status-error/25',
   },
   emerald: {
     border: 'border-status-success/20',
-    bg: 'bg-gradient-to-r from-status-success/10 to-transparent',
+    bg: 'bg-surface-1',
     iconBox: 'bg-status-success/15 border-status-success/25',
   },
   amber: {
     border: 'border-status-warning/20',
-    bg: 'bg-gradient-to-r from-status-warning/10 to-transparent',
+    bg: 'bg-surface-1',
     iconBox: 'bg-status-warning/15 border-status-warning/25',
   },
   cyan: {
     border: 'border-role-highlight/20',
-    bg: 'bg-gradient-to-r from-role-highlight/10 to-transparent',
+    bg: 'bg-surface-1',
     iconBox: 'bg-role-highlight/15 border-role-highlight/25',
   },
 };
@@ -124,7 +124,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
   }, [healing.lines.length]);
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/20 shadow-elevation-2 overflow-hidden animate-fade-slide-in">
+    <div className="rounded-modal border border-hair bg-surface-1 shadow-elevation-2 overflow-hidden animate-fade-slide-in">
       {/* Header bar */}
       <div className={`flex items-center justify-between px-4 py-3 border-b ${styles.border} ${styles.bg}`}>
         <div className="flex items-center gap-3">
@@ -137,7 +137,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
               <Stethoscope className="w-3.5 h-3.5 text-role-highlight animate-pulse" />
             )}
           </div>
-          <span className="typo-heading text-foreground/90 uppercase typo-body">
+          <span className="typo-heading text-ink-2 uppercase typo-body">
             <DebtText k="auto_ai_healing_2ec57639" /> {isFailed ? o.status_failed : isDone ? o.status_complete : o.status_in_progress}
           </span>
           {isDone && elapsed > 0 && (
@@ -188,7 +188,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
                 dotClass = 'bg-role-highlight/20 border-role-highlight/40 text-role-highlight';
                 labelClass = 'text-role-highlight';
               } else {
-                dotClass = 'bg-secondary/40 border-primary/15 text-foreground';
+                dotClass = 'bg-surface-1 border-hair text-foreground';
                 labelClass = 'text-foreground';
               }
 
@@ -225,7 +225,7 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
           {/* Fixes applied */}
           {healing.fixesApplied.length > 0 && (
             <div className="px-3 py-2 rounded-card bg-status-success/5 border border-status-success/15 typo-body space-y-1">
-              <span className="text-status-success typo-caption uppercase tracking-wider"><DebtText k="auto_fixes_applied_239ec9a7" /></span>
+              <span className="text-status-success typo-eyebrow"><DebtText k="auto_fixes_applied_239ec9a7" /></span>
               {healing.fixesApplied.map((fix, i) => (
                 <div key={i} className="flex items-start gap-2 text-status-success">
                   <CheckCircle2 className="w-3 h-3 mt-0.5 flex-shrink-0" />
@@ -239,10 +239,10 @@ export function AiHealingStreamOverlay({ healing, onDismiss }: AiHealingStreamOv
           {healing.lines.length > 0 && (
             <div className="relative">
               {/* Frosted fade at top */}
-              <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-secondary/80 to-transparent backdrop-blur-sm z-10 rounded-t-card pointer-events-none" />
+              <div className="absolute top-0 left-0 right-0 h-6 bg-surface-1 backdrop-blur-sm z-10 rounded-t-card pointer-events-none" />
               <div
                 ref={logRef}
-                className="max-h-48 overflow-y-auto rounded-card bg-background/60 border border-primary/10 p-3 typo-code text-foreground scroll-smooth"
+                className="max-h-48 overflow-y-auto rounded-card bg-background/60 border border-hair p-3 typo-code text-foreground scroll-smooth"
               >
                 {healing.lines.map((line, i) => (
                   <div key={i} className="whitespace-pre-wrap break-all">

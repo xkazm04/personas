@@ -39,12 +39,12 @@ export function DeployPopover({
       tabIndex={-1}
       aria-label={`Deploy upgrade for ${raw.project.name}`}
       style={popStyle(anchor)}
-      className="fixed z-[9995] outline-none rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
+      className="fixed z-[9995] outline-none rounded-modal border border-hair bg-background shadow-elevation-4 overflow-hidden"
     >
-      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/10 bg-primary/[0.04]">
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-hair bg-surface-1">
         <Rocket className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
         <span className="typo-caption text-foreground truncate">Upgrade {raw.project.name}</span>
-        <button type="button" onClick={onClose} aria-label="Close" className="ml-auto p-0.5 rounded-interactive text-foreground hover:bg-secondary/40 transition-colors">
+        <button type="button" onClick={onClose} aria-label="Close" className="ml-auto p-0.5 rounded-interactive text-foreground hover:bg-surface-2 transition-colors">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>

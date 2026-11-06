@@ -66,7 +66,7 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
       <div className="flex flex-col h-[calc(100dvh-160px)] min-h-[520px] max-h-[760px]">
         {mode === null ? (
           <>
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/10 bg-primary/[0.04] flex-shrink-0">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-hair bg-surface-1 flex-shrink-0">
               <Wand2 className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
               <span className="typo-title truncate">{tx(d.skills_workbench_title, { name: wb.projectName })}</span>
               <span className="ml-auto flex-shrink-0"><WorkbenchCounts counts={wb.counts} /></span>
@@ -83,21 +83,21 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
               />
 
               {/* ── Dispatch half — live quick-dispatch ledger in place ─── */}
-              <div className="relative flex flex-col gap-2 p-5 min-h-0 rounded-card border border-primary/12 bg-secondary/[0.15]">
+              <div className="relative flex flex-col gap-2 p-5 min-h-0 rounded-card border border-hair bg-surface-1">
                 <div className="flex items-start gap-2">
                   <CardTitle icon={Rocket} title={d.skills_workbench_dispatch_title} />
                   {/* the aimed path: skill × context-group registry */}
                   <button
                     type="button"
                     onClick={() => setMode('dispatch')}
-                    className="ml-auto flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive border border-primary/15 typo-caption text-foreground/70 hover:text-foreground hover:border-primary/35 hover:bg-primary/[0.06] transition-colors focus-ring"
+                    className="ml-auto flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive border border-hair typo-caption text-ink-2 hover:text-foreground hover:border-primary/35 hover:bg-surface-2 transition-colors focus-ring"
                     data-testid="skills-workbench-choose-dispatch"
                   >
                     {d.skills_workbench_open_registry}
                     <ArrowRight className="w-3 h-3" aria-hidden />
                   </button>
                 </div>
-                <p className="typo-caption text-foreground/60" style={{ fontWeight: 400 }}>
+                <p className="typo-caption text-ink-3" style={{ fontWeight: 400 }}>
                   {d.skills_workbench_dispatch_body}
                 </p>
                 <div className="flex-1 min-h-0 overflow-y-auto mt-1">
@@ -108,21 +108,21 @@ export function SkillsWorkbench({ slug, initialMode, onClose }: {
           </>
         ) : (
           <>
-            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-primary/10 bg-primary/[0.04] flex-shrink-0">
+            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-hair bg-surface-1 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setMode(null)}
-                className="inline-flex items-center gap-1 pl-1 pr-2 py-1 rounded-interactive typo-caption text-foreground/60 hover:text-foreground hover:bg-primary/10 transition-colors"
+                className="inline-flex items-center gap-1 pl-1 pr-2 py-1 rounded-interactive typo-caption text-ink-3 hover:text-foreground hover:bg-primary/10 transition-colors"
                 data-testid="skills-workbench-back"
               >
                 <ChevronLeft className="w-3.5 h-3.5" aria-hidden />
                 {d.skills_title}
               </button>
-              <span className="typo-caption text-foreground/30">/</span>
+              <span className="typo-caption text-ink-3">/</span>
               <span className="typo-caption text-foreground">
                 {mode === 'dispatch' ? d.skills_workbench_crumb_registry : d.skills_workbench_crumb_manage}
               </span>
-              <span className="typo-label text-foreground/40 truncate">· {wb.projectName}</span>
+              <span className="typo-label text-ink-3 truncate">· {wb.projectName}</span>
               <span className="ml-auto flex-shrink-0"><WorkbenchCounts counts={wb.counts} /></span>
             </div>
 
@@ -168,7 +168,7 @@ function ChoiceCard({ icon: Icon, title, body, meta, onClick, testid }: {
     <button
       type="button"
       onClick={onClick}
-      className="group relative overflow-hidden flex flex-col items-start text-left gap-2 p-5 rounded-card border border-primary/12 bg-secondary/[0.15] hover:bg-primary/[0.06] hover:border-primary/30 transition-colors focus-ring"
+      className="group relative overflow-hidden flex flex-col items-start text-left gap-2 p-5 rounded-card border border-hair bg-surface-1 hover:bg-surface-2 hover:border-hair transition-colors focus-ring"
       data-testid={testid}
     >
       {/* illustrative background watermark — the lane's icon, oversized + faint */}
@@ -178,8 +178,8 @@ function ChoiceCard({ icon: Icon, title, body, meta, onClick, testid }: {
         aria-hidden
       />
       <CardTitle icon={Icon} title={title} />
-      <span className="relative typo-caption text-foreground/60" style={{ fontWeight: 400 }}>{body}</span>
-      <span className="relative typo-label text-foreground/40 mt-auto pt-1">{meta}</span>
+      <span className="relative typo-caption text-ink-3" style={{ fontWeight: 400 }}>{body}</span>
+      <span className="relative typo-label text-ink-3 mt-auto pt-1">{meta}</span>
     </button>
   );
 }

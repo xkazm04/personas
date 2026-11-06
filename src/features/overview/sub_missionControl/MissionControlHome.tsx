@@ -19,7 +19,6 @@ import { useAttention } from '@/hooks/useAttention';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { ContentBox, ContentBody, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
-import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/libs/metricIdentity';
@@ -51,11 +50,11 @@ const AttentionLoopCard = lazyRetry(() => import('./cards/AttentionLoopCard'));
 function CardFrameSkeleton({ rows = 4, rowHeight = 40 }: { rows?: number; rowHeight?: number }) {
   return (
     <div
-      className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden animate-fade-in"
+      className="rounded-modal border border-hair bg-surface-1 overflow-hidden animate-fade-in"
       style={{ animationDelay: '150ms' }}
       aria-hidden="true"
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-hair">
         <span className="h-3 w-24 rounded bg-primary/[0.06]" />
         <span className="h-3 w-3 rounded-full bg-primary/[0.06]" />
       </div>
@@ -191,7 +190,6 @@ export default function MissionControlHome() {
 
   return (
     <ContentBox>
-      <HeroMesh preset="dashboard" />
 
       <ContentHeader
         title={t.overview.dashboard.mission_control_eyebrow}
@@ -255,8 +253,8 @@ export default function MissionControlHome() {
                     points={vitals.points}
                     personaName={personaName}
                     trend={successTrendPoints.length > 0 && (
-                      <div className="w-full pt-3 border-t border-primary/10">
-                        <div className="flex items-center justify-between typo-caption uppercase tracking-widest text-foreground mb-1.5 font-mono">
+                      <div className="w-full pt-3 border-t border-hair">
+                        <div className="flex items-center justify-between typo-eyebrow mb-1.5">
                           <span>{t.overview.sla.success_rate}</span>
                           <span>{successTrendPoints.length}d</span>
                         </div>
@@ -306,7 +304,7 @@ export default function MissionControlHome() {
               )}
 
               {memoryActions.length > 0 && !hiddenSections.includes('memory') && (
-                <motion.div variants={fadeUp} className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
+                <motion.div variants={fadeUp} className="rounded-modal border border-hair bg-surface-1 overflow-hidden">
                   <PaneHeader label={t.overview.dashboard.pane_memory} subtitle={tx(t.overview.dashboard.memory_suggestions_count, { count: memoryActions.length })} />
                   <div className="p-3">
                     <MemoryActionsPanel actions={memoryActions} onDismiss={dismissMemoryAction} />

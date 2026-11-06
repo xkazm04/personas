@@ -16,7 +16,7 @@ export function FocusedDecisionCard({ decision, verdict, onDecide, imageUrl }: F
   const hasImage = !!imageUrl;
 
   return (
-    <div className={`relative rounded-card border border-primary/10 overflow-hidden border-l-2 ${catBorder(decision.category)}`}>
+    <div className={`relative rounded-card border border-hair overflow-hidden border-l-2 ${catBorder(decision.category)}`}>
       {/* Absolute-positioned verdict buttons — overlay so they don't eat content width. */}
       <VerdictButtons verdict={verdict} onDecide={onDecide} />
 
@@ -98,8 +98,8 @@ function VerdictButtons({ verdict, onDecide }: { verdict: DecisionVerdict; onDec
         aria-pressed={verdict === 'reject'}
         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-card typo-caption transition-all shadow-elevation-1 backdrop-blur-sm ${
           verdict === 'reject'
-            ? 'bg-red-500/30 text-red-400 ring-1 ring-red-500/40'
-            : 'bg-background/80 text-foreground hover:bg-red-500/15 hover:text-red-400 ring-1 ring-primary/15'
+            ? 'bg-status-error/30 text-status-error ring-1 ring-status-error/40'
+            : 'bg-background/80 text-foreground hover:bg-status-error/15 hover:text-status-error ring-1 ring-primary/15'
         }`}
       >
         <XCircle className="w-3.5 h-3.5" />
@@ -112,8 +112,8 @@ function VerdictButtons({ verdict, onDecide }: { verdict: DecisionVerdict; onDec
         aria-pressed={verdict === 'accept'}
         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-card typo-caption transition-all shadow-elevation-1 backdrop-blur-sm ${
           verdict === 'accept'
-            ? 'bg-emerald-500/30 text-emerald-400 ring-1 ring-emerald-500/40'
-            : 'bg-background/80 text-foreground hover:bg-emerald-500/15 hover:text-emerald-400 ring-1 ring-primary/15'
+            ? 'bg-status-success/30 text-status-success ring-1 ring-status-success/40'
+            : 'bg-background/80 text-foreground hover:bg-status-success/15 hover:text-status-success ring-1 ring-primary/15'
         }`}
       >
         <CheckCircle2 className="w-3.5 h-3.5" />

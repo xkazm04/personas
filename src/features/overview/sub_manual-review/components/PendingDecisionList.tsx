@@ -16,6 +16,7 @@ import { Cloud, CheckSquare, Layers, Square } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { StateMark, type StateMarkState } from '@/features/shared/components/display/StateMark';
 import { TableTag } from '@/features/shared/components/display/TableCells';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
@@ -25,7 +26,7 @@ import type { ManualReviewItem } from '@/lib/types/types';
 import { openChipDeck, reviewDecisionId } from '../libs/decisionDeckDoors';
 import { resolveReviewSeverity } from '../libs/reviewHelpers';
 import { AutoResolvedBadge } from './AutoResolvedBadge';
-import { SeverityIndicator } from './ReviewListItem';
+
 
 interface PendingDecisionListProps {
   reviews: ManualReviewItem[];
@@ -40,6 +41,10 @@ interface PendingDecisionListProps {
 
 /** Most urgent first when sorted descending. */
 const SEVERITY_RANK: Record<string, number> = { critical: 5, error: 4, high: 3, warning: 2, info: 1 };
+const severityState = (sev: string | null | undefined): StateMarkState => {
+  const k = (sev ?? '').trim().toLowerCase();
+  return k === 'critical' || k === 'error' ? 'error' : k === 'warning' ? 'warning' : 'info';
+};
 const severityRank = (r: ManualReviewItem) => SEVERITY_RANK[(r.severity ?? '').trim().toLowerCase()] ?? 0;
 const ALL = 'all';
 
@@ -139,7 +144,7 @@ export function PendingDecisionList({
       filterValue: severityFilter,
       onFilterChange: setSeverityFilter,
       render: (review) => (
-        <TableTag icon={<SeverityIndicator severity={review.severity} />}>{resolveReviewSeverity(review.severity).label}</TableTag>
+        <StateMark state={severityState(review.severity)} label={resolveReviewSeverity(review.severity).label} />
       ),
     },
     {
@@ -155,7 +160,7 @@ export function PendingDecisionList({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col" data-testid="pending-decision-list">
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10 flex-shrink-0">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-hair flex-shrink-0">
         <p className="flex-1 min-w-0 typo-body text-foreground">{t.overview.dc_pending_lead}</p>
         <Tooltip content={t.overview.dc_decide_tip} placement="bottom">
           <Button
