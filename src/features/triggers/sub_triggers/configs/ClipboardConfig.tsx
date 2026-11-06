@@ -1,6 +1,7 @@
 import { TriggerFieldGroup } from './TriggerFieldGroup';
 import { useTranslation } from '@/i18n/useTranslation';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface ClipboardConfigProps {
   clipboardContentType: string;
@@ -22,18 +23,13 @@ export function ClipboardConfig({
       <TriggerFieldGroup label={t.triggers.clipboard.content_type}>
         <div className="flex gap-1.5">
           {(['text', 'image', 'any'] as const).map((ct) => (
-            <button
+            <Button
               key={ct}
               type="button"
               onClick={() => setClipboardContentType(ct)}
-              className={`px-3 py-1.5 rounded-modal typo-body transition-all border capitalize ${
-                clipboardContentType === ct
-                  ? 'bg-role-highlight/15 text-role-highlight border-role-highlight/30'
-                  : 'bg-surface-1 text-ink-1 border-hair hover:bg-surface-2'
-              }`}
-            >
-              {ct}
-            </button>
+              variant={clipboardContentType === ct ? 'secondary' : 'ghost'}
+              size="sm"
+            >{ct}</Button>
           ))}
         </div>
       </TriggerFieldGroup>

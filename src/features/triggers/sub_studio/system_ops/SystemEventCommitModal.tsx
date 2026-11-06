@@ -168,9 +168,14 @@ export function SystemEventCommitModal({
         <div className="flex items-center gap-2 px-5 py-3.5 border-b border-hair">
           <Cog className="w-4 h-4 text-role-agent" />
           <h2 id="system-event-commit" className="typo-heading text-ink-1 flex-1">{st.system_event_commit_title}</h2>
-          <button type="button" onClick={onClose} aria-label={t.common.cancel} className="p-1 rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <Button
+            type="button"
+            onClick={onClose}
+            aria-label={t.common.cancel}
+            variant="ghost"
+            size="icon-sm"
+            icon={<X className="w-4 h-4" />}
+          />
         </div>
 
         <div className="px-5 py-4 space-y-4">

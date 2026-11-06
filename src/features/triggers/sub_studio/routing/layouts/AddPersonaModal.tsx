@@ -130,14 +130,14 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-hair">
           {capabilityStep ? (
-            <button
+            <Button
               type="button"
               onClick={() => setCapabilityStep(null)}
-              className="p-1 rounded-card hover:bg-surface-2 text-ink-1"
               aria-label={debtText("auto_back_to_personas_10208a8d")}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
+              variant="ghost"
+              size="icon-sm"
+              icon={<ChevronLeft className="w-4 h-4" />}
+            />
           ) : (
             <Users className="w-4 h-4 text-status-success" />
           )}
@@ -222,23 +222,23 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
 
           {groupsWithPersonas.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              <button
+              <Button
                 type="button"
                 onClick={() => setSelectedGroupId(null)}
-                className={`px-2 py-0.5 rounded-input typo-caption transition-colors ${!selectedGroupId ? 'bg-role-external/15 text-role-external' : 'text-ink-1 hover:text-ink-1 hover:bg-surface-2'}`}
-              >
-                {t.common.all}
-              </button>
+                variant={!selectedGroupId ? 'secondary' : 'ghost'}
+                size="xs"
+              >{t.common.all}</Button>
               {groupsWithPersonas.map(g => (
-                <button
+                <Button
                   type="button"
                   key={g.id}
                   onClick={() => setSelectedGroupId(selectedGroupId === g.id ? null : g.id)}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded-input typo-caption transition-colors ${selectedGroupId === g.id ? 'bg-role-external/15 text-role-external' : 'text-ink-1 hover:text-ink-1 hover:bg-surface-2'}`}
+                  variant={selectedGroupId === g.id ? 'secondary' : 'ghost'}
+                  size="xs"
                 >
                   <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: g.color }} />
                   {g.name}
-                </button>
+                </Button>
               ))}
             </div>
           )}

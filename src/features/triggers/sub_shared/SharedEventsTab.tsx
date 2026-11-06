@@ -13,6 +13,7 @@ import { WatchToggle, HistoryButton, WireButton } from './SubscribeControls';
 import { EventHistoryModal } from './EventHistoryModal';
 import { FeedRoutingPopover } from './FeedRoutingPopover';
 import { WireFeedToPersonaModal } from './WireFeedToPersonaModal';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * Marketplace — the Watchtower table: a change-activity monitor over the shared
@@ -198,15 +199,14 @@ export function SharedEventsTab() {
           />
           <span className="typo-caption text-ink-2">{m.watching_only}</span>
         </div>
-        <button
+        <Button
           type="button"
           onClick={refresh}
           disabled={loading}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-ink-1 hover:bg-surface-2 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-          {t.common.refresh}
-        </button>
+          variant="ghost"
+          size="sm"
+          icon={<RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />}
+        >{t.common.refresh}</Button>
       </div>
       <div className="flex-1 min-h-0 px-4 pb-4">
         <UnifiedTable

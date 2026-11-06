@@ -42,6 +42,8 @@ import { SystemEventCommitModal } from './system_ops/SystemEventCommitModal';
 import { AddPersonaModal } from './routing/layouts/AddPersonaModal';
 import { DisconnectDialog } from './routing/layouts/DisconnectDialog';
 import { RenameEventDialog } from './routing/layouts/RenameEventDialog';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const CABLE_CASCADE_ROWS = 14;
 
@@ -141,23 +143,32 @@ export function StudioPatchbay() {
           {sug.proposed.length > 0 && <span className="typo-data text-primary">{sug.proposed.length} {st.ghost_suggested}</span>}
           <div className="ml-auto flex items-center gap-2">
             {unconnected.length > 0 && (
-              <button type="button" onClick={() => setShowUnconnected((v) => !v)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors">
-                {showUnconnected ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                {showUnconnected ? st.proto_hide_unconnected : tx(st.proto_show_unconnected, { count: unconnected.length })}
-              </button>
+              <Button
+                type="button"
+                onClick={() => setShowUnconnected((v) => !v)}
+                variant="ghost"
+                size="sm"
+                icon={showUnconnected ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              >{showUnconnected ? st.proto_hide_unconnected : tx(st.proto_show_unconnected, { count: unconnected.length })}</Button>
             )}
             {c.committableLinks.length > 0 && (
-              <button type="button" onClick={() => void c.commitAll()} disabled={c.committing.size > 0}
-                className="disabled:is-disabled flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-interactive text-status-success hover:bg-status-success/10 transition-colors">
-                <Check className="w-3.5 h-3.5" /> {st.commit_all}
-              </button>
+              <Button
+                type="button"
+                onClick={() => void c.commitAll()}
+                disabled={c.committing.size > 0}
+                variant="ghost"
+                size="sm"
+                icon={<Check className="w-3.5 h-3.5" />}
+              >{st.commit_all}</Button>
             )}
             {c.draft.links.length > 0 && (
-              <button type="button" onClick={c.clearAll}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body opacity-80 rounded-interactive text-ink-1 hover:text-status-error hover:bg-status-error/10 transition-colors">
-                <Trash2 className="w-3.5 h-3.5" /> {st.clear_all}
-              </button>
+              <Button
+                type="button"
+                onClick={c.clearAll}
+                variant="ghost"
+                size="sm"
+                icon={<Trash2 className="w-3.5 h-3.5" />}
+              >{st.clear_all}</Button>
             )}
           </div>
         </div>
@@ -170,10 +181,15 @@ export function StudioPatchbay() {
               <PatchEndChip source={c.armedSource} personas={personas} kinds={c.systemOpKinds} placeholder={st.pick_a_source} />
               <ArrowRight className="w-4 h-4 text-primary shrink-0" />
               <PatchEndChip targetId={c.armedTarget} systemOpKind={c.armedSystemOp} personas={personas} kinds={c.systemOpKinds} placeholder={st.pick_a_target} />
-              <button type="button" onClick={() => { c.setArmedSource(null); c.setArmedTarget(null); c.setArmedSystemOp(null); }}
-                className="ml-auto p-1 rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors" aria-label={st.cancel_pending_route}>
-                <X className="w-3.5 h-3.5" />
-              </button>
+              <Button
+                type="button"
+                onClick={() => { c.setArmedSource(null); c.setArmedTarget(null); c.setArmedSystemOp(null); }}
+                aria-label={st.cancel_pending_route}
+                variant="ghost"
+                size="icon-sm"
+                className="ml-auto"
+                icon={<X className="w-3.5 h-3.5" />}
+              />
             </motion.div>
           )}
         </AnimatePresence>
@@ -199,10 +215,12 @@ export function StudioPatchbay() {
                 <SourceChip source={link.source} personas={personas} completesLabel={st.persona_completes} />
                 <div className="flex items-center gap-1.5 shrink-0">
                   <div className="h-px w-4 bg-border" />
-                  <button type="button" onClick={() => c.cycleCondition(link.id)} title={st.cycle_condition_hint}
-                    className={`typo-body opacity-80 px-2 py-0.5 rounded-input border transition-colors ${link.condition ? 'border-status-warning/40 text-status-warning bg-status-warning/10' : 'border-hair text-ink-1 hover:border-hair-2'}`}>
-                    {conditionLabel(t, link.condition)}
-                  </button>
+                  <Tooltip content={st.cycle_condition_hint}><Button
+  type="button"
+  onClick={() => c.cycleCondition(link.id)}
+  variant={link.condition ? 'secondary' : 'ghost'}
+  size="xs"
+>{conditionLabel(t, link.condition)}</Button></Tooltip>
                   {showOutputMatch && (
                     <span className="flex items-center gap-1">
                       <input value={link.outputMatch?.path ?? ''}
@@ -221,16 +239,24 @@ export function StudioPatchbay() {
                 </div>
                 <TargetChip targetId={link.targetPersonaId} personas={personas} />
                 <div className="ml-auto flex items-center gap-1">
-                  <button type="button" onClick={() => { if (!blocker) void c.commitLink(link); }} disabled={!!blocker || busy}
-                    title={blocker === 'signal_source' ? st.commit_blocked_source_type : blocker === 'output_match' ? st.commit_needs_output_match : viaForm ? st.configure_commit_route : st.commit_route}
-                    aria-label={viaForm ? st.configure_commit_route : st.commit_route}
-                    className={`p-1.5 rounded-interactive transition-colors disabled:is-disabled ${blocker ? 'text-ink-1 opacity-40' : 'text-status-success/80 hover:text-status-success hover:bg-status-success/10'}`}>
-                    {busy ? <LoadingSpinner size="sm" /> : <Check className="w-3.5 h-3.5" />}
-                  </button>
-                  <button type="button" onClick={() => c.removeLink(link.id)} aria-label={st.remove_route}
-                    className="p-1.5 rounded-interactive text-ink-1 opacity-0 group-hover:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <Tooltip content={blocker === 'signal_source' ? st.commit_blocked_source_type : blocker === 'output_match' ? st.commit_needs_output_match : viaForm ? st.configure_commit_route : st.commit_route}><Button
+  type="button"
+  onClick={() => { if (!blocker) void c.commitLink(link); }}
+  disabled={!!blocker || busy}
+  aria-label={viaForm ? st.configure_commit_route : st.commit_route}
+  variant={blocker ? 'secondary' : 'ghost'}
+  size="icon-sm"
+  icon={busy ? <LoadingSpinner size="sm" /> : <Check className="w-3.5 h-3.5" />}
+/></Tooltip>
+                  <Button
+                    type="button"
+                    onClick={() => c.removeLink(link.id)}
+                    aria-label={st.remove_route}
+                    variant="ghost"
+                    size="icon-sm"
+                    className="opacity-0 group-hover:opacity-100"
+                    icon={<Trash2 className="w-3.5 h-3.5" />}
+                  />
                 </div>
               </div>
             );

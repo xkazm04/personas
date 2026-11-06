@@ -19,6 +19,7 @@ import {
 } from './templateRecommendation';
 import type { TemplateLoadState } from './useOnboardingState';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function TemplatePickerStep({
   templates,
@@ -68,14 +69,15 @@ export function TemplatePickerStep({
             {resolveErrorTranslated(t, extractMessage(loadState.error.raw)).message}
           </p>
         )}
-        <button
+        <Button
           type="button"
           onClick={onRetry}
-          className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 typo-heading rounded-card bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 transition-colors"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          {t.onboarding.retry}
-        </button>
+          variant="accent"
+          tone="agent"
+          size="sm"
+          className="mt-4"
+          icon={<RefreshCw className="w-3.5 h-3.5" />}
+        >{t.onboarding.retry}</Button>
       </div>
     );
   }

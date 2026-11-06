@@ -13,6 +13,7 @@ import { deriveExecutionOrigin, type ExecutionOrigin } from '../../libs/executio
 import { OriginBadge, originLabel } from './OriginBadge';
 import { OriginFilterDropdown } from './OriginFilterDropdown';
 import { ExecutionValueBadges } from './ExecutionValueBadges';
+import Button from '@/features/shared/components/buttons/Button';
 
 // `running` means in flight (queued + running). `incomplete` is the status the
 // zombie sweep writes for an abandoned run - the class most worth re-running.
@@ -166,14 +167,14 @@ export function useExecutionColumns(a: ExecutionColumnsArgs): TableColumn<Execut
         align: 'right',
         render: (row) => row.retry_count > 0 ? (
           <Tooltip content={e.compare_with_original}>
-            <button
+            <Button
               type="button"
               aria-label={e.compare_with_original}
               onClick={(ev) => { ev.stopPropagation(); onCompareRetry(row.id); }}
-              className="p-1 rounded-interactive text-ink-1 hover:text-accent hover:bg-accent/10 transition-colors"
-            >
-              <ArrowLeftRight className="w-3.5 h-3.5" />
-            </button>
+              variant="ghost"
+              size="icon-sm"
+              icon={<ArrowLeftRight className="w-3.5 h-3.5" />}
+            />
           </Tooltip>
         ) : null,
       });

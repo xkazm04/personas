@@ -8,6 +8,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 interface ChatMessageContentProps {
@@ -85,26 +87,24 @@ function CodeBlock({
           </span>
           <div className="flex items-center gap-1">
             {showSendToLab && (
-              <button
+              <Button
                 type="button"
                 onClick={() => onSendToLab?.(rawText, language)}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-interactive text-ink-1 hover:text-primary hover:bg-primary/8 typo-label transition-colors"
-                title={t.agents.chat_thread.send_to_lab}
-              >
-                <FlaskConical className="w-3 h-3" />
-                <span>{t.agents.chat_thread.send_to_lab}</span>
-              </button>
+                tooltip={t.agents.chat_thread.send_to_lab}
+                variant="ghost"
+                size="xs"
+                icon={<FlaskConical className="w-3 h-3" />}
+              ><span>{t.agents.chat_thread.send_to_lab}</span></Button>
             )}
-            <button
+            <Button
               type="button"
               onClick={handleCopy}
-              className="flex items-center gap-1 px-2 py-0.5 rounded-interactive text-ink-1 hover:text-ink-1 hover:bg-surface-1 typo-label transition-colors"
-              title={t.agents.chat_thread.copy_code}
+              tooltip={t.agents.chat_thread.copy_code}
               aria-label={t.agents.chat_thread.copy_code}
-            >
-              {copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
-              <span>{copied ? t.common.copied : t.common.copy}</span>
-            </button>
+              variant="ghost"
+              size="xs"
+              icon={copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
+            ><span>{copied ? t.common.copied : t.common.copy}</span></Button>
           </div>
         </div>
       )}
@@ -114,15 +114,13 @@ function CodeBlock({
         {children}
       </pre>
       {!language && (
-        <button
+        <Tooltip content={t.agents.chat_thread.copy_code}><button
           type="button"
           onClick={handleCopy}
           className="absolute top-1.5 right-1.5 p-1 rounded-interactive text-ink-1 opacity-0 group-hover/code:opacity-100 hover:text-ink-1 hover:bg-surface-1 transition-all"
-          title={t.agents.chat_thread.copy_code}
-          aria-label={t.agents.chat_thread.copy_code}
-        >
+          aria-label={t.agents.chat_thread.copy_code}>
           {copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
-        </button>
+        </button></Tooltip>
       )}
     </div>
   );

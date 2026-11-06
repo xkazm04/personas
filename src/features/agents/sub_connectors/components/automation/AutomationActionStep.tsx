@@ -2,6 +2,7 @@ import { Clock, Check, Circle, CircleDot } from 'lucide-react';
 import { STAGE_DEFS } from '../../libs/useAutomationSetup';
 import type { RefObject } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AutomationActionStepProps {
   elapsed: number;
@@ -78,9 +79,7 @@ export function AutomationActionStep({
       )}
 
       <div className="flex justify-end">
-        <button type="button" onClick={onCancel} className="px-4 py-2 bg-surface-2 hover:bg-secondary text-ink-1 rounded-modal typo-body transition-colors">
-          {t.common.cancel}
-        </button>
+        <Button type="button" onClick={onCancel} variant="secondary" size="md">{t.common.cancel}</Button>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { ShieldAlert } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePendingTriggerFires } from '@/features/triggers/hooks/usePendingTriggerFires';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface PendingApprovalsBadgeProps {
   /** Scope to one agent's triggers. Omit for the workspace-wide count. */
@@ -38,15 +39,13 @@ export function PendingApprovalsBadge({ personaId, onClick }: PendingApprovalsBa
   }
 
   return (
-    <button
+    <Tooltip content={t.triggers.pending_approval.badge_title}><button
       type="button"
       data-testid="pending-approvals-badge"
       onClick={onClick}
-      title={t.triggers.pending_approval.badge_title}
-      className={`${className} hover:bg-status-warning/20 transition-colors`}
-    >
+      className={`${className} hover:bg-status-warning/20 transition-colors`}>
       <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
       {label}
-    </button>
+    </button></Tooltip>
   );
 }

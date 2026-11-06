@@ -26,6 +26,8 @@ import { DebtText } from '@/i18n/DebtText';
 import { useToastStore } from '@/stores/toastStore';
 import { isValidSmeeChannelUrl, SMEE_CHANNEL_PREFIX } from './smeeChannelUrl';
 import { inlineErrorCopy } from '../lib/inlineErrorCopy';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 /** Minimum gap between per-relay stat refreshes while webhooks stream in. */
@@ -191,23 +193,16 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
               onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNew"))}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
-              title={t.triggers.smee_open_new_title}
-            >
-              <ExternalLink className="w-3 h-3" />
-              <DebtText k="auto_smee_io_new_7ce5f637" />
-            </button>
+              tooltip={t.triggers.smee_open_new_title}
+              variant="ghost"
+              size="sm"
+              icon={<ExternalLink className="w-3 h-3" />}
+            ><DebtText k="auto_smee_io_new_7ce5f637" /></Button>
             {onSwitchToLiveStream && activeCount > 0 && (
-              <button
-                type="button"
-                onClick={onSwitchToLiveStream}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-role-external hover:text-role-external hover:bg-role-external/10 transition-colors"
-              >
-                {t.triggers.live_stream}
-              </button>
+              <Button type="button" onClick={onSwitchToLiveStream} variant="ghost" size="sm">{t.triggers.live_stream}</Button>
             )}
           </div>
         </div>
@@ -217,14 +212,14 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
           <h3 className="typo-eyebrow text-ink-1">
             {t.triggers.smee_relays}
           </h3>
-          <button
+          <Button
             type="button"
             onClick={() => { setShowAdd(!showAdd); if (showAdd) setTouchedFields(new Set()); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-role-agent/10 text-role-agent border border-role-agent/20 hover:bg-role-agent/15 transition-colors"
-          >
-            {showAdd ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-            {showAdd ? t.common.cancel : t.triggers.add_relay}
-          </button>
+            variant="accent"
+            tone="agent"
+            size="sm"
+            icon={showAdd ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+          >{showAdd ? t.common.cancel : t.triggers.add_relay}</Button>
         </div>
 
         {/* Add relay form */}
@@ -327,15 +322,15 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             )}
 
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 type="button"
                 onClick={handleCreate}
                 disabled={isCreating || !addLabel.trim() || !urlValid}
-                className="flex items-center gap-2 px-4 py-2 typo-body rounded-card bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 disabled:opacity-50 transition-colors"
-              >
-                {isCreating ? <LoadingSpinner size="sm" /> : <Plug className="w-3.5 h-3.5" />}
-                {t.triggers.create_relay}
-              </button>
+                variant="accent"
+                tone="agent"
+                size="md"
+                icon={isCreating ? <LoadingSpinner size="sm" /> : <Plug className="w-3.5 h-3.5" />}
+              >{t.triggers.create_relay}</Button>
               <p className="typo-caption text-ink-2">
                 {t.triggers.get_channel_url_prompt} <button type="button" onClick={() => openExternalUrl('https://smee.io/new').catch(silentCatch("SmeeRelayTab:openSmeeNewInline"))} className="text-role-agent hover:text-role-agent underline"><DebtText k="auto_smee_io_new_7ce5f637" /></button>
               </p>
@@ -451,44 +446,40 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                     {/* Right side: actions */}
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <CopyButton text={relay.channelUrl} tooltip={t.triggers.copy_channel_url_title} />
-                      <button
+                      <Tooltip content={isActive ? t.triggers.pause_relay : t.triggers.resume_relay}><button
                         type="button"
                         onClick={() => handleToggleStatus(relay)}
                         className={`p-1.5 rounded-card transition-colors ${
                           isActive
                             ? 'text-status-warning hover:text-status-warning hover:bg-status-warning/10'
                             : 'text-status-success hover:text-status-success hover:bg-status-success/10'
-                        }`}
-                        title={isActive ? t.triggers.pause_relay : t.triggers.resume_relay}
-                      >
+                        }`}>
                         {isActive ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                      </button>
+                      </button></Tooltip>
                       {confirmDeleteId === relay.id ? (
                         <div className="flex items-center gap-1">
-                          <button
+                          <Button
                             type="button"
                             onClick={() => handleDelete(relay.id)}
-                            className="px-2 py-1 rounded-card typo-caption text-status-error bg-status-error/10 border border-status-error/20 hover:bg-status-error/20 transition-colors"
-                          >
-                            {t.common.confirm}
-                          </button>
-                          <button
+                            variant="danger"
+                            size="xs"
+                          >{t.common.confirm}</Button>
+                          <Button
                             type="button"
                             onClick={() => setConfirmDeleteId(null)}
-                            className="px-2 py-1 rounded-card typo-caption text-ink-1 hover:text-ink-1 transition-colors"
-                          >
-                            {t.common.cancel}
-                          </button>
+                            variant="ghost"
+                            size="xs"
+                          >{t.common.cancel}</Button>
                         </div>
                       ) : (
-                        <button
+                        <Button aria-label={t.triggers.relay_delete_title}
                           type="button"
                           onClick={() => setConfirmDeleteId(relay.id)}
-                          className="p-1.5 rounded-card text-status-error hover:text-status-error hover:bg-status-error/10 transition-colors"
-                          title={t.triggers.relay_delete_title}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                          tooltip={t.triggers.relay_delete_title}
+                          variant="danger"
+                          size="icon-sm"
+                          icon={<Trash2 className="w-3.5 h-3.5" />}
+                        />
                       )}
                     </div>
                   </div>

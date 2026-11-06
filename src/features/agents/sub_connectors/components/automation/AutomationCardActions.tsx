@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pencil, Pause, Play, Trash2, MoreHorizontal } from 'lucide-react';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AutomationCardActionsProps {
   automation: PersonaAutomation;
@@ -46,64 +47,67 @@ export function AutomationCardActions({
 
   return (
     <div ref={rootRef} className="relative">
-      <button
+      <Button
         type="button"
         onClick={() => setMenuOpen(!menuOpen)}
         aria-haspopup="menu"
         aria-expanded={menuOpen}
         aria-label={t.common.actions}
-        className="flex items-center justify-center w-7 h-7 rounded-card text-ink-1 hover:bg-surface-2 hover:text-ink-1 transition-colors"
-      >
-        <MoreHorizontal className="w-3.5 h-3.5" />
-      </button>
+        variant="ghost"
+        size="icon-sm"
+        icon={<MoreHorizontal className="w-3.5 h-3.5" />}
+      />
 
       {menuOpen && (
           <div
             role="menu"
             className="animate-fade-slide-in absolute right-0 top-full mt-1 z-[100] w-40 rounded-card border border-hair bg-background shadow-elevation-3 py-1"
           >
-            <button
+            <Button
               type="button"
               role="menuitem"
               onClick={() => { onEdit(automation.id); setMenuOpen(false); }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-ink-1 hover:bg-surface-2"
-            >
-              <Pencil className="w-3 h-3" /> {t.common.edit}
-            </button>
+              variant="ghost"
+              size="sm"
+              className="w-full"
+              icon={<Pencil className="w-3 h-3" />}
+            >{t.common.edit}</Button>
 
             {automation.deploymentStatus === 'active' && (
-              <button
+              <Button
                 type="button"
                 role="menuitem"
                 onClick={() => { onToggleStatus(automation.id, 'paused'); setMenuOpen(false); }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-ink-1 hover:bg-surface-2"
-              >
-                <Pause className="w-3 h-3" /> {t.agents.connectors.auto_pause}
-              </button>
+                variant="ghost"
+                size="sm"
+                className="w-full"
+                icon={<Pause className="w-3 h-3" />}
+              >{t.agents.connectors.auto_pause}</Button>
             )}
 
             {(automation.deploymentStatus === 'paused' || automation.deploymentStatus === 'draft') && (
-              <button
+              <Button
                 type="button"
                 role="menuitem"
                 onClick={() => { onToggleStatus(automation.id, 'active'); setMenuOpen(false); }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-ink-1 hover:bg-surface-2"
-              >
-                <Play className="w-3 h-3" /> {t.agents.connectors.auto_activate}
-              </button>
+                variant="ghost"
+                size="sm"
+                className="w-full"
+                icon={<Play className="w-3 h-3" />}
+              >{t.agents.connectors.auto_activate}</Button>
             )}
 
             <div className="border-t border-hair my-1" />
 
-            <button
+            <Button
               type="button"
               role="menuitem"
               onClick={handleDelete}
-              className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-brand-rose hover:bg-brand-rose/10"
-            >
-              <Trash2 className="w-3 h-3" />
-              {t.common.delete}
-            </button>
+              variant="ghost"
+              size="sm"
+              className="w-full"
+              icon={<Trash2 className="w-3 h-3" />}
+            >{t.common.delete}</Button>
           </div>
         )}
     </div>

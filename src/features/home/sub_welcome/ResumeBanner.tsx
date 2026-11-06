@@ -1,6 +1,7 @@
 import { AlertCircle, Compass, PenLine, ChevronRight, X } from 'lucide-react';
 import { debtText } from '@/i18n/DebtText';
 import { useResumeAction, type ResumeAction } from './useResumeAction';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * Resume-where-you-left-off banner on the production Cockpit landing. Surfaces a single
@@ -32,14 +33,15 @@ export default function ResumeBanner() {
         <span className="flex-1 text-left typo-body text-ink-1 truncate">{action.label}</span>
         <ChevronRight className="w-4 h-4 text-ink-1 opacity-60 group-hover:translate-x-0.5 transition-transform" />
       </button>
-      <button
+      <Button
         type="button"
         onClick={action.dismiss}
-        className="flex-shrink-0 p-1 rounded-input text-ink-1 opacity-50 outline-none hover:opacity-100 hover:bg-surface-2 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-current transition-opacity"
         aria-label={debtText("auto_dismiss_resume_banner_ccff3f60")}
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
+        variant="ghost"
+        size="icon-sm"
+        className="flex-shrink-0 focus-visible:opacity-100"
+        icon={<X className="w-3.5 h-3.5" />}
+      />
     </div>
   );
 }

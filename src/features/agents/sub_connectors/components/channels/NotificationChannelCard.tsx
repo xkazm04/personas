@@ -9,6 +9,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import type { Translations } from '@/i18n/generated/types';
 import { TOOLS_BORDER, TOOLS_INNER_SPACE } from '@/lib/utils/designTokens';
 import { errMsg } from '@/stores/storeTypes';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ConfigField {
   key: string;
@@ -92,14 +93,14 @@ export function NotificationChannelCard({
           label={tx(t.agents.connectors.ch_enable, { type })}
           size="sm"
         />
-        <button
+        <Button
           type="button"
           onClick={onRemove}
           aria-label={t.common.delete}
-          className="p-1 text-ink-1 hover:text-status-error transition-colors"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="w-3.5 h-3.5" />}
+        />
       </div>
 
       {/* Config fields */}
@@ -164,7 +165,7 @@ export function NotificationChannelCard({
               : t.agents.connectors.ch_test}
         </Button>
         {testStatus === 'error' && testError && (
-          <p className="typo-caption text-status-error mt-1 truncate" title={testError}>{testError}</p>
+          <Tooltip content={testError}><p className="typo-caption text-status-error mt-1 truncate">{testError}</p></Tooltip>
         )}
       </div>
     </div>

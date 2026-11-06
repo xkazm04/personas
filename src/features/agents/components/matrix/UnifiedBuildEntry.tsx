@@ -48,6 +48,8 @@ import { getDesignReview } from "@/api/overview/reviews";
 import { cancelBuildSession } from "@/api/agents/buildSession";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { CompanionTemplateMatch } from "@/api/companion";
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 const logger = createLogger("unified-matrix-entry");
@@ -767,30 +769,27 @@ export function UnifiedBuildEntry() {
             : t.agents.matrix_entry.header_subtitle_new
         }
         actions={adoptionReview ? undefined : (
-          <button
-            type="button"
-            onClick={() => setOneShotEnabled((v) => !v)}
-            disabled={isActivelyBuilding}
-            className={`inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-full border px-3 py-1 typo-caption transition disabled:opacity-50 disabled:cursor-not-allowed ${
-              oneShotEnabled
-                ? "border-primary/40 bg-primary/15 text-primary"
-                : "border-hair bg-surface-1 text-ink-1 hover:text-ink-1"
-            }`}
-            title={
+          <Tooltip content={
               oneShotEnabled
                 ? "One-shot is on. Launching will let the AI decide every gate; you'll get a notification when it's ready."
                 : "Turn on one-shot to skip the questionnaire — the AI will pick safe defaults and notify you when the build lands."
-            }
-            data-testid="build-oneshot-toggle"
-          >
-            <span
+            }><Button
+  type="button"
+  onClick={() => setOneShotEnabled((v) => !v)}
+  disabled={isActivelyBuilding}
+  data-testid="build-oneshot-toggle"
+  variant={oneShotEnabled ? 'secondary' : 'ghost'}
+  size="sm"
+  className="shrink-0"
+>
+  <span
               className={`inline-block h-1.5 w-1.5 rounded-full ${
                 oneShotEnabled ? "bg-primary" : "bg-surface-2"
               }`}
               aria-hidden
             />
             {oneShotEnabled ? "One-shot: on" : "Let AI decide everything"}
-          </button>
+</Button></Tooltip>
         )}
       />
 

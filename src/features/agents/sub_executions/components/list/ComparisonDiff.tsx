@@ -98,20 +98,21 @@ export function OutputDiffSection({
 
   return (
     <div>
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
-        className="flex items-center gap-2 typo-body text-ink-1 hover:text-ink-1 transition-colors"
+        variant="ghost"
+        size="sm"
+        icon={expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
       >
-        {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         {e.terminal_output_diff}
         {diff.length > 0 && (
-          <span className="typo-body text-ink-1">
-            {tx(e.differences_count, { count: diff.filter(d => d.type !== 'same').length })}
-          </span>
+        <span className="typo-body text-ink-1">
+        {tx(e.differences_count, { count: diff.filter(d => d.type !== 'same').length })}
+        </span>
         )}
-      </button>
+      </Button>
 
       {expanded && (
           <div
@@ -218,24 +219,25 @@ export function JsonDiffSection({
 
   return (
     <div>
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
-        className="flex items-center gap-2 typo-body text-ink-1 hover:text-ink-1 transition-colors"
+        variant="ghost"
+        size="sm"
+        icon={expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
       >
-        {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         {label}
         {diffState === 'failed' ? (
-          <span className="typo-body text-status-error">{e.diff_failed}</span>
+        <span className="typo-body text-status-error">{e.diff_failed}</span>
         ) : diffState === 'pending' ? null : diffs.length > 0 ? (
-          <span className="typo-body text-status-warning/70">
-            {tx(diffs.length === 1 ? e.diff_count_one : e.diff_count_other, { count: diffs.length })}
-          </span>
+        <span className="typo-body text-status-warning/70">
+        {tx(diffs.length === 1 ? e.diff_count_one : e.diff_count_other, { count: diffs.length })}
+        </span>
         ) : (
-          <span className="typo-body text-ink-1">{e.identical}</span>
+        <span className="typo-body text-ink-1">{e.identical}</span>
         )}
-      </button>
+      </Button>
 
       {expanded && (
           <div

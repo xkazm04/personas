@@ -6,6 +6,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { statusIcon, classifyExecutionStatus, formatDuration, formatCost, timeAgo } from './CloudHistoryHelpers';
 import type { CloudExecution } from '@/api/system/cloud';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface CloudExecutionRowProps {
   exec: CloudExecution;
@@ -86,14 +87,14 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
           {(() => {
             if (!output) {
               return (
-                <button
+                <Button
                   type="button"
                   onClick={onFetchOutput}
-                  className="flex items-center gap-1.5 px-2.5 py-1 typo-caption rounded-card bg-role-agent/10 border border-role-agent/20 text-role-agent hover:bg-role-agent/20 hover:border-role-agent/30 transition-colors cursor-pointer"
-                >
-                  <Terminal className="w-3 h-3" />
-                  {dt.view_output}
-                </button>
+                  variant="accent"
+                  tone="agent"
+                  size="sm"
+                  icon={<Terminal className="w-3 h-3" />}
+                >{dt.view_output}</Button>
               );
             }
             if (output.loading) {
@@ -121,15 +122,15 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
                   <span className="typo-caption text-ink-2 flex items-center gap-1">
                     <Terminal className="w-3 h-3" /> {dt.output_prefix}{output.lines.length} {dt.output_lines_suffix}
                   </span>
-                  <button
+                  <Button
                     type="button"
                     onClick={onRefreshOutput ?? onFetchOutput}
                     aria-label={t.common.refresh}
                     data-testid={`cloud-exec-output-refresh-${exec.id}`}
-                    className="typo-caption text-ink-1 hover:text-ink-2 transition-colors cursor-pointer"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                  </button>
+                    variant="ghost"
+                    size="icon-sm"
+                    icon={<RefreshCw className="w-3 h-3" />}
+                  />
                 </div>
                 <pre className="typo-code text-status-success bg-surface-2 p-3 rounded-card overflow-auto max-h-64 border border-hair">
                   {output.lines.join('\n')}

@@ -50,13 +50,13 @@ export function ComposerEventTemplateList({
     <div className="p-5 flex flex-col gap-4">
       <div className="flex items-center gap-3 pb-3 border-b border-hair">
         <div
-          className="shrink-0 w-12 h-12 rounded-interactive flex items-center justify-center typo-heading font-semibold"
+          className="shrink-0 w-12 h-12 rounded-interactive flex items-center justify-center typo-heading"
           style={{ background: `${activePersona.color}30`, color: activePersona.color }}
         >
           {activePersona.name.charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="typo-heading text-ink-1 font-semibold truncate">
+          <h3 className="typo-heading text-ink-1 truncate">
             {activePersona.name}
           </h3>
           <p className="typo-caption text-ink-2">

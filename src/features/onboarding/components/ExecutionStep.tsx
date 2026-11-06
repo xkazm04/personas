@@ -144,14 +144,14 @@ export function ExecutionStep({
           <p className="typo-body text-ink-1 text-center max-w-sm">
             {t.onboarding.agent_ready_hint}
           </p>
-          <button
+          <Button
             type="button"
             onClick={handleRun}
-            className="px-6 py-2.5 typo-heading rounded-modal bg-status-success/15 text-status-success border border-status-success/25 hover:bg-status-success/25 transition-colors flex items-center gap-2"
-          >
-            <Play className="w-4 h-4" />
-            {t.onboarding.run_agent}
-          </button>
+            variant="accent"
+            tone="success"
+            size="md"
+            icon={<Play className="w-4 h-4" />}
+          >{t.onboarding.run_agent}</Button>
         </div>
       ) : (
         <div className="space-y-3">

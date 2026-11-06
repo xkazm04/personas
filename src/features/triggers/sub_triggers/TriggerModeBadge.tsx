@@ -1,5 +1,6 @@
 import type { PersonaTrigger } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface TriggerModeBadgeProps {
   trigger: Pick<PersonaTrigger, 'unattended_mode'>;
@@ -19,15 +20,13 @@ export function TriggerModeBadge({ trigger, className = '' }: TriggerModeBadgePr
   if (!mode || mode === 'auto') return null;
   const isApproval = mode === 'approval';
   return (
-    <span
+    <Tooltip content={isApproval ? t.triggers.unattended.approval_desc : t.triggers.unattended.dry_run_desc}><span
       className={`typo-code px-1.5 py-0.5 rounded-card border ${
         isApproval
           ? 'bg-status-success/15 text-status-success border-status-success/20'
           : 'bg-status-warning/15 text-status-warning border-status-warning/20'
-      } ${className}`}
-      title={isApproval ? t.triggers.unattended.approval_desc : t.triggers.unattended.dry_run_desc}
-    >
+      } ${className}`}>
       {isApproval ? t.triggers.unattended.badge_approval : t.triggers.unattended.badge_dry_run}
-    </span>
+    </span></Tooltip>
   );
 }

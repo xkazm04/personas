@@ -17,6 +17,7 @@ import { Pencil, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/features/shared/components/modals';
 import { inlineErrorCopy } from '@/features/triggers/lib/inlineErrorCopy';
+import Button from '@/features/shared/components/buttons/Button';
 
 const TITLE_ID = 'rename-event-dialog-title';
 
@@ -154,13 +155,14 @@ export function RenameEventDialog({
               {t.triggers.builder.rename_event_desc}
             </p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onCancel}
-            className="p-1 rounded-card hover:bg-surface-2 text-ink-1 flex-shrink-0"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
+            variant="ghost"
+            size="icon-sm"
+            className="flex-shrink-0"
+            icon={<X className="w-3.5 h-3.5" />}
+          />
         </div>
 
         {/* Body */}
@@ -240,22 +242,15 @@ export function RenameEventDialog({
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-hair bg-surface-1">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={busy}
-            className="px-3 py-1.5 rounded-card typo-caption text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors disabled:opacity-50"
-          >
-            {t.triggers.builder.cancel}
-          </button>
-          <button
+          <Button type="button" onClick={onCancel} disabled={busy} variant="ghost" size="sm">{t.triggers.builder.cancel}</Button>
+          <Button
             type="button"
             onClick={() => void handleConfirm()}
             disabled={disabled}
-            className="px-3 py-1.5 rounded-card typo-caption bg-role-external/15 text-role-external hover:bg-role-external/25 border border-role-external/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {busy ? t.triggers.builder.renaming : t.triggers.builder.rename}
-          </button>
+            variant="accent"
+            tone="external"
+            size="sm"
+          >{busy ? t.triggers.builder.renaming : t.triggers.builder.rename}</Button>
         </div>
       </div>
     </BaseModal>

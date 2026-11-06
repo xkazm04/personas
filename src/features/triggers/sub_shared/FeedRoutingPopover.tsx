@@ -15,6 +15,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
+import Button from '@/features/shared/components/buttons/Button';
 
 const WIDTH = 300;
 
@@ -112,14 +113,15 @@ export function FeedRoutingPopover({ entry, anchor, routedProjectIds, onClose, o
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-hair bg-primary/[0.04]">
         <Route className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden />
         <span className="typo-caption text-ink-2 truncate">{m.routing_title} — {entry.name}</span>
-        <button
+        <Button
           type="button"
           onClick={onClose}
           aria-label={t.common.close}
-          className="ml-auto p-0.5 rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          className="ml-auto"
+          icon={<X className="w-3.5 h-3.5" />}
+        />
       </div>
 
       <p className="px-3 pt-2 typo-caption text-ink-2">{m.routing_hint}</p>

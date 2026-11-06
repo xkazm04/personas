@@ -4,6 +4,8 @@ import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 import type { RuleField, RuleType } from './useScrapeForm';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * Structured per-field rule editor (Phase 1b-2) — one row per extracted field,
@@ -49,14 +51,14 @@ export function FieldRuleRows({ fields, updateField, removeField, addField, empt
               <option value="json">JSON</option>
             </ThemedSelect>
             <div className="flex-1" />
-            <button
+            <Button
               type="button"
               onClick={() => removeField(f.id)}
-              className="rounded-interactive p-1 text-ink-3 hover:bg-status-error/10 hover:text-status-error transition-colors"
               aria-label="Remove field"
-            >
-              <X className="size-4" />
-            </button>
+              variant="ghost"
+              size="icon-sm"
+              icon={<X className="size-4" />}
+            />
           </div>
 
           {/* type-specific controls */}
@@ -69,13 +71,11 @@ export function FieldRuleRows({ fields, updateField, removeField, addField, empt
                   onChange={(e) => updateField(f.id, { selector: e.target.value })}
                   placeholder=".price, h1, a.title"
                 />
-                <input
+                <Tooltip content={"Attribute to read (e.g. href); blank = text"}><input aria-label="Attribute to read (e.g. href); blank = text"
                   className={`${SMALL_INPUT} w-24 font-mono`}
                   value={f.attr}
                   onChange={(e) => updateField(f.id, { attr: e.target.value })}
-                  placeholder="attr"
-                  title="Attribute to read (e.g. href); blank = text"
-                />
+                  placeholder="attr" /></Tooltip>
                 <label className="flex shrink-0 items-center gap-1.5 typo-caption text-ink-3">
                   <input
                     type="checkbox"
@@ -94,13 +94,11 @@ export function FieldRuleRows({ fields, updateField, removeField, addField, empt
                   onChange={(e) => updateField(f.id, { pattern: e.target.value })}
                   placeholder="\\$([0-9.]+)"
                 />
-                <input
+                <Tooltip content={"Capture group"}><input aria-label="Capture group"
                   type="number"
                   className={`${SMALL_INPUT} w-20`}
                   value={f.group}
-                  onChange={(e) => updateField(f.id, { group: Number(e.target.value) || 0 })}
-                  title="Capture group"
-                />
+                  onChange={(e) => updateField(f.id, { group: Number(e.target.value) || 0 })} /></Tooltip>
               </>
             )}
             {f.type === 'json' && (

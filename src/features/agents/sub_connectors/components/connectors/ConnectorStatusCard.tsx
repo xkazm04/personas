@@ -54,7 +54,7 @@ export function ConnectorStatusCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="typo-body text-ink-1 truncate" title={status.name}>{status.name}</p>
+            <Tooltip content={status.name}><p className="typo-body text-ink-1 truncate">{status.name}</p></Tooltip>
             {roleLabel && (
               <span className="inline-flex items-center typo-caption text-status-info whitespace-nowrap">{roleLabel}</span>
             )}
@@ -70,9 +70,13 @@ export function ConnectorStatusCard({
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {alternatives && alternatives.length > 0 && onSwap && (
-            <button type="button" onClick={() => setSwapOpen((o) => !o)}
-              className={`flex items-center gap-1 px-2 py-1.5 typo-body rounded-modal border transition-colors ${swapOpen ? 'border-status-info/30 text-status-info bg-status-info/15' : 'border-hair text-ink-1 hover:bg-surface-2 hover:text-ink-1'}`}
-              title={t.agents.connectors.ct_swap_alt_tooltip}><ArrowLeftRight className="w-3 h-3" /></button>
+            <Tooltip content={t.agents.connectors.ct_swap_alt_tooltip}><Button
+  type="button"
+  onClick={() => setSwapOpen((o) => !o)}
+  variant={swapOpen ? 'secondary' : 'ghost'}
+  size="icon-sm"
+  icon={<ArrowLeftRight className="w-3 h-3" />}
+/></Tooltip>
           )}
           {/* A linked (often auto-matched) slot can be re-pointed in place:
               the picker already lists every row, only its trigger was gated on
@@ -94,15 +98,22 @@ export function ConnectorStatusCard({
           ) : (
             <>
               {credentials.length > 0 && (
-                <button type="button" onClick={() => onToggleLinking(isLinking ? null : status.name)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border transition-colors ${isLinking ? 'border-role-agent/30 text-role-agent bg-role-agent/15' : 'border-hair text-ink-1 hover:bg-surface-2 hover:text-ink-1'}`}>
-                  <ChevronDown className={`w-3 h-3 transition-transform ${isLinking ? 'rotate-180' : ''}`} /> {t.agents.connectors.st_link_existing}
-                </button>
+                <Button
+                  type="button"
+                  onClick={() => onToggleLinking(isLinking ? null : status.name)}
+                  variant={isLinking ? 'secondary' : 'ghost'}
+                  size="sm"
+                  icon={<ChevronDown className={`w-3 h-3 transition-transform ${isLinking ? 'rotate-180' : ''}`} />}
+                >{t.agents.connectors.st_link_existing}</Button>
               )}
-              <button type="button" onClick={() => onAddCredential(status.name)}
-                className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border border-role-agent/25 text-role-agent bg-role-agent/10 hover:bg-role-agent/20 transition-colors">
-                <Plus className="w-3 h-3" /> {t.agents.connectors.st_add_new}
-              </button>
+              <Button
+                type="button"
+                onClick={() => onAddCredential(status.name)}
+                variant="accent"
+                tone="agent"
+                size="sm"
+                icon={<Plus className="w-3 h-3" />}
+              >{t.agents.connectors.st_add_new}</Button>
             </>
           )}
         </div>

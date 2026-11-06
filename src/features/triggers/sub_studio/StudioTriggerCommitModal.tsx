@@ -13,6 +13,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { TriggerAddForm } from '@/features/triggers/sub_triggers/TriggerAddForm';
 import type { DraftLink } from './libs/studioDraftModel';
 import { personaName } from './libs/studioDraftModel';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function StudioTriggerCommitModal({ open, link, personas, onCreate, onClose }: {
   open: boolean;
@@ -38,10 +39,14 @@ export function StudioTriggerCommitModal({ open, link, personas, onCreate, onClo
               {tx(st.form_commit_subtitle, { persona: personaName(link.targetPersonaId, personas, st.unknown_persona) })}
             </p>
           </div>
-          <button type="button" onClick={onClose} aria-label={t.common.cancel}
-            className="p-1 rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
+          <Button
+            type="button"
+            onClick={onClose}
+            aria-label={t.common.cancel}
+            variant="ghost"
+            size="icon-sm"
+            icon={<X className="w-4 h-4" />}
+          />
         </div>
         <div className="p-4 max-h-[70vh] overflow-y-auto scrollbar-thin">
           <TriggerAddForm

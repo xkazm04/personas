@@ -20,6 +20,7 @@ import { PendingTriggerApprovals } from './sub_triggers/PendingTriggerApprovals'
 import { PendingApprovalsBadge } from './sub_triggers/PendingApprovalsBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 const TriggerStudioCanvas = lazy(() => import('./sub_studio/TriggerStudioCanvas').then(m => ({ default: m.TriggerStudioCanvas })));
@@ -57,7 +58,7 @@ export function TriggersPage() {
       title: t.triggers.tab_live_stream,
       subtitle: t.triggers.tab_live_stream_subtitle,
       renderActions: () => (
-        <button
+        <Button
           type="button"
           onClick={() => {
             useSystemStore.getState().setSidebarSection('overview');
@@ -65,12 +66,11 @@ export function TriggersPage() {
               useOverviewStore.getState().setOverviewTab('events')
             );
           }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
-          title={t.triggers.full_event_log}
-        >
-          <ExternalLink className="w-3 h-3" />
-          {t.triggers.full_event_log}
-        </button>
+          tooltip={t.triggers.full_event_log}
+          variant="ghost"
+          size="sm"
+          icon={<ExternalLink className="w-3 h-3" />}
+        >{t.triggers.full_event_log}</Button>
       ),
     },
     'rate-limits': { icon: Gauge, iconColor: 'amber', title: t.triggers.tab_rate_limits, subtitle: t.triggers.tab_rate_limits_subtitle },

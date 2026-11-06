@@ -12,6 +12,7 @@ import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import { useTranslation } from '@/i18n/useTranslation';
 import { debtText } from '@/i18n/DebtText';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 /** Stable empty reference so memo deps don't churn on runs with no results yet. */
@@ -73,9 +74,9 @@ function buildColumns(t: ReturnType<typeof useTranslation>['t'], resultsMap: Rec
           <div className="flex items-center gap-2.5 typo-caption">
             <span className={`font-bold ${scoreColor(scores.comp)}`}>{scores.comp}</span>
             <span className="text-ink-1">|</span>
-            <span className="flex items-center gap-0.5" title={debtText("auto_tool_accuracy_aeba854a")}><Target className="w-2.5 h-2.5 text-ink-1" /><span className={scoreColor(scores.ta)}>{scores.ta ?? '--'}</span></span>
-            <span className="flex items-center gap-0.5" title={debtText("auto_output_quality_9ae643ed")}><FileText className="w-2.5 h-2.5 text-ink-1" /><span className={scoreColor(scores.oq)}>{scores.oq ?? '--'}</span></span>
-            <span className="flex items-center gap-0.5" title="Protocol"><Shield className="w-2.5 h-2.5 text-ink-1" /><span className={scoreColor(scores.pc)}>{scores.pc ?? '--'}</span></span>
+            <Tooltip content={debtText("auto_tool_accuracy_aeba854a")}><span className="flex items-center gap-0.5"><Target className="w-2.5 h-2.5 text-ink-1" /><span className={scoreColor(scores.ta)}>{scores.ta ?? '--'}</span></span></Tooltip>
+            <Tooltip content={debtText("auto_output_quality_9ae643ed")}><span className="flex items-center gap-0.5"><FileText className="w-2.5 h-2.5 text-ink-1" /><span className={scoreColor(scores.oq)}>{scores.oq ?? '--'}</span></span></Tooltip>
+            <Tooltip content={"Protocol"}><span className="flex items-center gap-0.5"><Shield className="w-2.5 h-2.5 text-ink-1" /><span className={scoreColor(scores.pc)}>{scores.pc ?? '--'}</span></span></Tooltip>
           </div>
         );
       },

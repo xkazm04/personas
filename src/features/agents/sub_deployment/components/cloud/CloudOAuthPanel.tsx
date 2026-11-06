@@ -5,6 +5,7 @@ import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime'
 import { formatTimestamp } from '@/lib/utils/formatters';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface CloudOAuthPanelProps {
   oauthStatus: { connected: boolean; scopes: string[] | null; expiresAt: string | null; isExpired: boolean | null } | null;
@@ -68,21 +69,14 @@ export function CloudOAuthPanel({
         </div>
 
         <div className="flex items-center gap-3">
-          <button
+          <Button
             type="button"
             onClick={onCompleteOAuth}
             disabled={!oauthCode.trim()}
-            className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal bg-role-agent text-ink-1 hover:bg-role-agent disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-          >
-            {dt.complete_authorization}
-          </button>
-          <button
-            type="button"
-            onClick={onCancelOAuth}
-            className="px-4 py-2 typo-body rounded-modal bg-surface-2 border border-hair text-ink-1 hover:text-ink-1 hover:border-primary/25 transition-colors cursor-pointer"
-          >
-            {t.common.cancel}
-          </button>
+            variant="secondary"
+            size="md"
+          >{dt.complete_authorization}</Button>
+          <Button type="button" onClick={onCancelOAuth} variant="secondary" size="md">{t.common.cancel}</Button>
         </div>
       </div>
     );
@@ -164,22 +158,20 @@ export function CloudOAuthPanel({
 
         {/* Actions */}
         <div className="flex gap-3">
-          <button
+          <Button
             type="button"
             onClick={onRefreshOAuth}
-            className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal bg-surface-2 border border-hair text-ink-1 hover:text-ink-1 hover:border-primary/25 transition-colors cursor-pointer"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            {dt.refresh_token}
-          </button>
-          <button
+            variant="secondary"
+            size="md"
+            icon={<RefreshCw className="w-3.5 h-3.5" />}
+          >{dt.refresh_token}</Button>
+          <Button
             type="button"
             onClick={onDisconnectOAuth}
-            className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal bg-status-error/10 border border-status-error/20 text-status-error hover:bg-status-error/20 transition-colors cursor-pointer"
-          >
-            <ShieldX className="w-3.5 h-3.5" />
-            {t.deployment.connection.disconnect}
-          </button>
+            variant="danger"
+            size="md"
+            icon={<ShieldX className="w-3.5 h-3.5" />}
+          >{t.deployment.connection.disconnect}</Button>
         </div>
       </div>
     );
@@ -195,14 +187,14 @@ export function CloudOAuthPanel({
         </p>
       </div>
 
-      <button
+      <Button
         type="button"
         onClick={onStartOAuth}
-        className="flex items-center justify-center gap-2 w-full px-4 py-2.5 typo-body rounded-modal bg-role-agent text-ink-1 hover:bg-role-agent transition-colors cursor-pointer"
-      >
-        <ExternalLink className="w-4 h-4" />
-        {oauthStartUrl ? dt.refresh_auth_link : dt.connect_anthropic}
-      </button>
+        variant="secondary"
+        size="md"
+        className="w-full"
+        icon={<ExternalLink className="w-4 h-4" />}
+      >{oauthStartUrl ? dt.refresh_auth_link : dt.connect_anthropic}</Button>
       {sanitizeExternalUrl(oauthStartUrl) && (
         <a
           href={sanitizeExternalUrl(oauthStartUrl)!}

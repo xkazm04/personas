@@ -16,6 +16,7 @@ import { SystemOpOptionCard } from './system_ops/SystemOpOptionCard';
 import { useSubscribedFeeds } from '@/features/triggers/sub_shared/useSubscribedFeeds';
 import { FeedIcon } from '@/features/triggers/sub_shared/sharedEventsUi';
 import type { StudioComposer } from './useStudioComposer';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** A subscribed Marketplace feed as a source card — arms an event_listener on `shared:<slug>`. */
 function MarketplaceSourceCard({ feed, hint, active, onPick }: {
@@ -88,10 +89,14 @@ export function StudioSourceRail({ c, onClose }: { c: StudioComposer; onClose?: 
         <div className="flex items-center justify-between px-1">
           <span className="typo-label text-ink-1">{st.sources_title}</span>
           {onClose && (
-            <button type="button" onClick={onClose} aria-label={st.close_sources_rail}
-              className="p-1 rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors">
-              <X className="w-3.5 h-3.5" />
-            </button>
+            <Button
+              type="button"
+              onClick={onClose}
+              aria-label={st.close_sources_rail}
+              variant="ghost"
+              size="icon-sm"
+              icon={<X className="w-3.5 h-3.5" />}
+            />
           )}
         </div>
         <SegmentedTabs<'signals' | 'personas'>
@@ -193,10 +198,14 @@ export function StudioTargetRail({ c, onClose }: { c: StudioComposer; onClose?: 
         <div className="flex items-center justify-between px-1">
           <span className="typo-label text-ink-1">{st.targets_title}</span>
           {onClose && (
-            <button type="button" onClick={onClose} aria-label={st.close_targets_rail}
-              className="p-1 rounded-interactive text-ink-1 hover:bg-surface-2 transition-colors">
-              <X className="w-3.5 h-3.5" />
-            </button>
+            <Button
+              type="button"
+              onClick={onClose}
+              aria-label={st.close_targets_rail}
+              variant="ghost"
+              size="icon-sm"
+              icon={<X className="w-3.5 h-3.5" />}
+            />
           )}
         </div>
         <SegmentedTabs<'personas' | 'system'>

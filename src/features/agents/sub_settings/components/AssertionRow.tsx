@@ -7,6 +7,7 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { AssertionFailureAction } from '@/lib/bindings/AssertionFailureAction';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** One saved quality gate in the settings list. */
 export type AssertionPatch = { enabled?: boolean; onFailure?: AssertionFailureAction };
@@ -68,14 +69,14 @@ export function AssertionRow({
           onChange={() => onUpdate(row.id, { enabled: !row.enabled })}
           label={a.enabled_label}
         />
-        <button
+        <Button
           type="button"
           onClick={() => onDelete(row)}
           aria-label={a.delete}
-          className="p-1 rounded-input text-ink-1 hover:text-status-error hover:bg-status-error/10 transition-colors"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          icon={<Trash2 className="w-3.5 h-3.5" />}
+        />
       </div>
       {/* The hit rate lives where the gate is managed, not only in executions. */}
       <p className="typo-caption text-ink-2" data-testid="assertion-stats">

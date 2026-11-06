@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Wrench, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaToolDefinition } from '@/lib/bindings/PersonaToolDefinition';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ToolsSectionProps {
   tools: PersonaToolDefinition[];
@@ -43,11 +44,9 @@ export function ToolsSection({ tools }: ToolsSectionProps) {
               {tools.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
                   {tools.map((tool) => (
-                    <span
+                    <Tooltip content={tool.description ?? undefined}><span
                       key={tool.id}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-hair bg-surface-1 text-ink-1"
-                      title={tool.description ?? undefined}
-                    >
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border border-hair bg-surface-1 text-ink-1">
                       <Wrench className="w-3 h-3 text-ink-1" />
                       {tool.name}
                       {tool.requires_credential_type && (
@@ -55,7 +54,7 @@ export function ToolsSection({ tools }: ToolsSectionProps) {
                           ({tool.requires_credential_type})
                         </span>
                       )}
-                    </span>
+                    </span></Tooltip>
                   ))}
                 </div>
               ) : (

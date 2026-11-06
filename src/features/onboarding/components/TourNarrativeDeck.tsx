@@ -12,6 +12,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { getStepColors, getStepIcon, TOUR_DECK_MAX_WIDTH, TOUR_RAIL_WIDTH } from './tourConstants';
 import { TourIntroCard } from './TourIntroCard';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 const TourAppearanceContent = lazy(() => import('./steps/TourAppearanceContent'));
 const CredentialsTourContent = lazy(() => import('./steps/CredentialsTourContent'));
@@ -133,16 +134,17 @@ export function TourNarrativeDeck({
             </Tooltip>
           )}
           <Tooltip content={collapsed ? t.onboarding.tour_deck_expand : t.onboarding.tour_deck_collapse}>
-            <button
+            <Button
               type="button"
               onClick={() => setCollapsed((c) => !c)}
               data-testid="tour-deck-toggle"
               aria-label={collapsed ? t.onboarding.tour_deck_expand : t.onboarding.tour_deck_collapse}
               aria-expanded={!collapsed}
-              className="flex-shrink-0 p-1 rounded-card text-ink-1 hover:bg-surface-2 transition-colors"
-            >
-              {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
-            </button>
+              variant="ghost"
+              size="icon-sm"
+              className="flex-shrink-0"
+              icon={collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+            />
           </Tooltip>
         </div>
 

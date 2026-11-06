@@ -12,6 +12,7 @@ import { partitionDemands } from '../../libs/fulfillDemands';
 import { useTranslation } from '@/i18n/useTranslation';
 
 import { isCredentialVerified } from '@/lib/credentials/healthState';
+import Button from '@/features/shared/components/buttons/Button';
 export function AgentCredentialDemands() {
   const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
@@ -232,28 +233,23 @@ function DemandCard({
         {/* Actions */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {hasReusable && (
-            <button
+            <Button
               type="button"
               onClick={onToggleLinking}
               aria-expanded={isLinking}
-              className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card border transition-colors cursor-pointer ${
-                isLinking
-                  ? 'bg-status-info/15 text-status-info border-status-info/25'
-                  : 'border-hair text-ink-1 hover:bg-surface-2 hover:text-ink-1'
-              }`}
-            >
-              <ArrowRight className="w-3 h-3" />
-              {tx(t.agents.connectors.dm_reuse, { count: demand.matchingCredentials.length })}
-            </button>
+              variant={isLinking ? 'secondary' : 'ghost'}
+              size="sm"
+              icon={<ArrowRight className="w-3 h-3" />}
+            >{tx(t.agents.connectors.dm_reuse, { count: demand.matchingCredentials.length })}</Button>
           )}
-          <button
+          <Button
             type="button"
             onClick={onProvision}
-            className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card border border-role-agent/20 bg-role-agent/10 text-role-agent hover:bg-role-agent/20 transition-colors cursor-pointer"
-          >
-            <Sparkles className="w-3 h-3" />
-            {t.agents.connectors.dm_create}
-          </button>
+            variant="accent"
+            tone="agent"
+            size="sm"
+            icon={<Sparkles className="w-3 h-3" />}
+          >{t.agents.connectors.dm_create}</Button>
         </div>
       </div>
 

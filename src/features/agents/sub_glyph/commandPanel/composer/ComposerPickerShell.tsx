@@ -14,6 +14,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ComposerPickerShellProps {
   open: boolean;
@@ -126,19 +127,20 @@ export function ComposerPickerShell({
                     {eyebrow}
                   </span>
                 )}
-                <h2 className="typo-heading text-ink-1 font-semibold truncate">{title}</h2>
+                <h2 className="typo-heading text-ink-1 truncate">{title}</h2>
                 {subtitle && (
                   <p className="typo-caption text-ink-2 mt-0.5 truncate">{subtitle}</p>
                 )}
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={onClose}
-                className="shrink-0 text-ink-1 hover:text-ink-1 hover:bg-surface-1 p-1.5 rounded-interactive transition-colors"
                 aria-label={t.common.close}
-              >
-                <X className="w-5 h-5" />
-              </button>
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0"
+                icon={<X className="w-5 h-5" />}
+              />
             </header>
             <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
             {footer && (

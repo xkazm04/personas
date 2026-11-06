@@ -7,6 +7,7 @@ import { AutomationTriggerStep } from './AutomationTriggerStep';
 import { AutomationActionStep } from './AutomationActionStep';
 import { AutomationConditionStep } from './AutomationConditionStep';
 import { AutomationReviewStep } from './AutomationReviewStep';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AutomationSetupModalProps {
   open: boolean;
@@ -45,9 +46,14 @@ export function AutomationSetupModal({
             {s.phase === 'error' && t.agents.connectors.auto_modal_failed}
           </h2>
         </div>
-        <button type="button" onClick={handleClose} aria-label={t.common.close} className="text-ink-1 hover:text-ink-1 transition-colors">
-          <X className="w-4 h-4" />
-        </button>
+        <Button
+          type="button"
+          onClick={handleClose}
+          aria-label={t.common.close}
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="w-4 h-4" />}
+        />
       </div>
 
       <div className="px-6 py-6 max-h-[75vh] overflow-y-auto">
@@ -107,11 +113,12 @@ export function AutomationSetupModal({
       {/* Footer -- only in preview phase */}
       {s.phase === 'preview' && (
         <div className="flex items-center justify-between gap-2 px-6 py-4 border-t border-hair">
-          <button
+          <Button
             type="button"
             onClick={() => { s.design.reset(); s.setDescription(''); s.setLocalPhase(null); s.setDeployError(null); }}
-            className="typo-body text-ink-1 hover:text-ink-1 transition-colors"
-          >{t.agents.connectors.auto_start_over}</button>
+            variant="ghost"
+            size="sm"
+          >{t.agents.connectors.auto_start_over}</Button>
           <div className="flex items-center gap-2">
             <button type="button" onClick={handleClose} className="btn-md border border-hair text-ink-1 hover:bg-surface-2 transition-colors">{t.common.cancel}</button>
             <Tooltip

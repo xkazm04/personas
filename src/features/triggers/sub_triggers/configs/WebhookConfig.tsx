@@ -3,6 +3,8 @@ import { Eye, EyeOff, Copy, CheckCircle2, RefreshCw } from 'lucide-react';
 import { TriggerFieldGroup } from './TriggerFieldGroup';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 export interface WebhookConfigProps {
   hmacSecret: string;
@@ -41,44 +43,39 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
               placeholder={t.triggers.auto_generated_hint}
               className={`w-full px-3 py-2 pr-10 bg-background/50 border border-hair rounded-modal text-ink-1 placeholder-ink-3 focus-ring focus-visible:border-primary/40 transition-all ${showHmacSecret ? 'typo-code' : ''}`}
             />
-            <button
+            <Tooltip content={showHmacSecret ? t.triggers.hide_secret : t.triggers.show_secret}><button
               type="button"
               onClick={() => setShowHmacSecret(!showHmacSecret)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-ink-1 hover:text-ink-1 transition-colors"
-              title={showHmacSecret ? t.triggers.hide_secret : t.triggers.show_secret}
-            >
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-ink-1 hover:text-ink-1 transition-colors">
               {showHmacSecret ? (
                 <EyeOff className="w-4 h-4" />
               ) : (
                 <Eye className="w-4 h-4" />
               )}
-            </button>
+            </button></Tooltip>
           </div>
-          <button
+          <Button aria-label={t.triggers.generate_secret}
             type="button"
             onClick={generateSecret}
-            className="flex-shrink-0 p-2 rounded-modal border transition-all bg-background/50 border-hair text-ink-1 hover:text-ink-1 hover:border-primary/30"
-            title={t.triggers.generate_secret}
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
+            tooltip={t.triggers.generate_secret}
+            variant="secondary"
+            size="icon-sm"
+            className="flex-shrink-0"
+            icon={<RefreshCw className="w-4 h-4" />}
+          />
           {hmacSecret && (
-            <button
-              type="button"
-              onClick={copyHmacSecret}
-              className={`flex-shrink-0 p-2 rounded-modal border transition-all ${
-                copiedHmac
-                  ? 'bg-status-success/15 text-status-success border-status-success/20'
-                  : 'bg-background/50 border-hair text-ink-1 hover:text-ink-1 hover:border-primary/30'
-              }`}
-              title={copiedHmac ? t.common.copied : t.common.copy}
-            >
-              {copiedHmac ? (
+            <Tooltip content={copiedHmac ? t.common.copied : t.common.copy}><Button
+  type="button"
+  onClick={copyHmacSecret}
+  variant={copiedHmac ? 'secondary' : 'ghost'}
+  size="icon-sm"
+  className="flex-shrink-0"
+  icon={copiedHmac ? (
                 <CheckCircle2 className="w-4 h-4" />
               ) : (
                 <Copy className="w-4 h-4" />
               )}
-            </button>
+/></Tooltip>
           )}
         </div>
       </TriggerFieldGroup>

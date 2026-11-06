@@ -2,6 +2,7 @@ import { useId } from "react";
 import { useTranslation } from "@/i18n/useTranslation";
 import type { Rhythm } from "./ComposerScheduleRhythmCard";
 import { DebtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 export interface DayOption {
@@ -57,19 +58,14 @@ export function ComposerScheduleDetailForm({
             {dayOptions.map((d) => {
               const active = days.includes(d.id);
               return (
-                <button
+                <Button
                   key={d.id}
                   type="button"
                   aria-pressed={active}
                   onClick={() => onToggleDay(d.id)}
-                  className={`px-3 py-2 rounded-interactive typo-body transition-colors ${
-                    active
-                      ? "bg-primary/30 text-ink-1 border border-primary/50"
-                      : "bg-surface-1 text-ink-1 border border-hair hover:border-primary/30 hover:text-ink-1"
-                  }`}
-                >
-                  {d.short}
-                </button>
+                  variant={active ? 'secondary' : 'ghost'}
+                  size="sm"
+                >{d.short}</Button>
               );
             })}
           </div>
@@ -83,19 +79,14 @@ export function ComposerScheduleDetailForm({
             {Array.from({ length: 28 }, (_, i) => i + 1).map((n) => {
               const active = monthDay === n;
               return (
-                <button
+                <Button
                   key={n}
                   type="button"
                   aria-pressed={active}
                   onClick={() => onMonthDayChange(n)}
-                  className={`h-10 rounded-interactive typo-body transition-colors tabular-nums ${
-                    active
-                      ? "bg-primary/30 text-ink-1 border border-primary/50"
-                      : "bg-surface-1 text-ink-1 border border-hair hover:border-primary/30 hover:text-ink-1"
-                  }`}
-                >
-                  {n}
-                </button>
+                  variant={active ? 'secondary' : 'ghost'}
+                  size="sm"
+                >{n}</Button>
               );
             })}
           </div>

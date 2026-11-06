@@ -11,6 +11,7 @@ import type { LabToolCall } from '@/lib/bindings/LabToolCall';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText, debtText } from '@/i18n/DebtText';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface ScenarioResult {
@@ -147,9 +148,14 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
           <span className="typo-body text-ink-1 truncate">{result.scenarioName}</span>
           {result.modelId && <span className="inline-flex items-center typo-caption text-primary/70">{result.modelId}</span>}
         </div>
-        <button type="button" onClick={onClose} aria-label={debtText("auto_close_details_433da6d1")} className="p-1 rounded-interactive hover:bg-surface-2 text-ink-1 hover:text-ink-1 transition-colors">
-          <X className="w-3.5 h-3.5" />
-        </button>
+        <Button
+          type="button"
+          onClick={onClose}
+          aria-label={debtText("auto_close_details_433da6d1")}
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="w-3.5 h-3.5" />}
+        />
       </div>
 
       <div className="p-4 space-y-4">

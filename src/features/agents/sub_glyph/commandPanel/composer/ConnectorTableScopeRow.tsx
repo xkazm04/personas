@@ -18,6 +18,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useTableIntrospection } from '@/hooks/database/useTableIntrospection';
 import type { HealthyConnector } from '@/features/agents/shared/quickConfig/useHealthyConnectors';
 import { ComposerBrandIcon } from './ComposerBrandIcon';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ConnectorTableScopeRowProps {
   connector: HealthyConnector;
@@ -88,22 +90,23 @@ export function ConnectorTableScopeRow({ connector, selected, onChange }: Connec
         </div>
         <span className="flex-1 min-w-0 truncate typo-body text-ink-1">{meta.label}</span>
         {/* All-tables toggle */}
-        <button
+        <Button
           type="button"
           onClick={() => setAll(!isAll)}
           role="checkbox"
           aria-checked={isAll}
-          className="inline-flex items-center gap-1.5 typo-caption text-ink-1 cursor-pointer"
+          variant="ghost"
+          size="sm"
         >
           <span
-            className={`w-4 h-4 rounded-[5px] border flex items-center justify-center transition-colors ${
-              isAll ? 'bg-primary border-primary' : 'border-card-border'
-            }`}
+          className={`w-4 h-4 rounded-[5px] border flex items-center justify-center transition-colors ${
+          isAll ? 'bg-primary border-primary' : 'border-card-border'
+          }`}
           >
-            {isAll && <Check className="w-3 h-3 text-ink-1" strokeWidth={3} />}
+          {isAll && <Check className="w-3 h-3 text-ink-1" strokeWidth={3} />}
           </span>
           {t.agents.glyph_db_scope_all}
-        </button>
+        </Button>
       </div>
 
       {!isAll && (
@@ -130,20 +133,16 @@ export function ConnectorTableScopeRow({ connector, selected, onChange }: Connec
                 {tables.map((tb) => {
                   const on = isTableOn(tb.table_name);
                   return (
-                    <button
-                      key={tb.table_name}
-                      type="button"
-                      onClick={() => toggleTable(tb.table_name)}
-                      role="checkbox"
-                      aria-checked={on}
-                      title={tb.display_label ?? tb.table_name}
-                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full border typo-caption transition-colors cursor-pointer ${
-                        on
-                          ? 'border-primary/50 bg-primary/15 text-ink-1'
-                          : 'border-card-border/50 text-ink-1 hover:bg-surface-1'
-                      }`}
-                    >
-                      <span
+                    <Tooltip content={tb.display_label ?? tb.table_name}><Button
+  key={tb.table_name}
+  type="button"
+  onClick={() => toggleTable(tb.table_name)}
+  role="checkbox"
+  aria-checked={on}
+  variant={on ? 'secondary' : 'ghost'}
+  size="xs"
+>
+  <span
                         className={`w-3.5 h-3.5 rounded-[4px] border flex items-center justify-center ${
                           on ? 'bg-primary border-primary' : 'border-card-border'
                         }`}
@@ -151,7 +150,7 @@ export function ConnectorTableScopeRow({ connector, selected, onChange }: Connec
                         {on && <Check className="w-2.5 h-2.5 text-ink-1" strokeWidth={3} />}
                       </span>
                       {tb.display_label ?? tb.table_name}
-                    </button>
+</Button></Tooltip>
                   );
                 })}
               </div>

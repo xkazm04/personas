@@ -3,6 +3,7 @@ import { AlertTriangle, Clock, ChevronDown, ChevronRight, HelpCircle, RotateCw, 
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { SilenceLevel } from '../../libs/useRunnerState';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface StuckExecutionGuidanceProps {
   silenceLevel: SilenceLevel;
@@ -90,14 +91,13 @@ export function StuckExecutionGuidance({
             </p>
             <div className="flex flex-wrap gap-2">
               {isStuck && (
-                <button
+                <Button
                   type="button"
                   onClick={onCancel}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-status-error/15 hover:bg-status-error/25 text-status-error border border-status-error/20 transition-colors"
-                >
-                  <XCircle className="w-3 h-3" />
-                  {e.cancel_retry}
-                </button>
+                  variant="danger"
+                  size="sm"
+                  icon={<XCircle className="w-3 h-3" />}
+                >{e.cancel_retry}</Button>
               )}
               {executionId && onViewLog && (
                 <button

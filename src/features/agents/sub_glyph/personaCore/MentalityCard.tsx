@@ -12,6 +12,7 @@ import { MotionizedGlyph } from "@/features/shared/components/display/Motionized
 import { ACCENT, coreIcon, ARCHETYPE_TRAITS, traitById, TRAIT_AXES } from "./catalog";
 import { ARCHETYPE_GLYPHS } from "./archetypeGlyphData";
 import type { Archetype } from "./types";
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const axisColorOf = (axisId: string) => TRAIT_AXES.find((a) => a.id === axisId)?.color ?? ACCENT;
 
@@ -91,9 +92,9 @@ export function MentalityCard({ archetype: a, active, onSelect }: { archetype: A
               const TI = trait.icon;
               const c = axisColorOf(trait.axis);
               return (
-                <span key={trait.id} title={t.agents[trait.labelKey]} className="w-5 h-5 rounded-input flex items-center justify-center shrink-0" style={{ background: colorWithAlpha(c, 0.16) }}>
+                <Tooltip content={t.agents[trait.labelKey]}><span key={trait.id} className="w-5 h-5 rounded-input flex items-center justify-center shrink-0" style={{ background: colorWithAlpha(c, 0.16) }}>
                   <TI className="w-3 h-3" style={{ color: c }} />
-                </span>
+                </span></Tooltip>
               );
             })}
           </span>

@@ -26,6 +26,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { DeepFanoutToggle } from '@/features/agents/sub_editor/components/DeepFanoutToggle';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface PersonaSettingsTabProps {
   draft: PersonaDraft;
@@ -128,20 +129,20 @@ export function PersonaSettingsTab({
           <div className="relative flex items-center gap-4">
             <div>
               <label htmlFor="persona-icon-btn" className="block typo-body text-ink-1 mb-2">{t.agents.settings_status.label_icon}</label>
-              <button
+              <Button
                 id="persona-icon-btn"
                 type="button"
                 onClick={() => setIconPickerOpen(true)}
-                title={t.shared.forms_extra.choose_icon}
+                tooltip={t.shared.forms_extra.choose_icon}
                 aria-label={t.shared.forms_extra.choose_icon}
-                className="w-10 h-10 rounded-card border border-hair bg-background/50 hover:border-primary/30 hover:bg-surface-2 flex items-center justify-center transition-all cursor-pointer"
-              >
-                {hasIcon ? (
+                variant="secondary"
+                size="icon-sm"
+                icon={hasIcon ? (
                   <PersonaIcon icon={draft.icon} color={draft.color} size="w-7 h-7" />
                 ) : (
                   <ImagePlus className="w-4 h-4 text-ink-1" />
                 )}
-              </button>
+              />
             </div>
             <div>
               <label className="block typo-body text-ink-1 mb-2">{t.agents.settings_status.label_color}</label>

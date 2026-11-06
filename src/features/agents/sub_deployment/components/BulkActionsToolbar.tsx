@@ -136,39 +136,37 @@ export function BulkActionsToolbar({
             >
               {t.common.confirm}
             </Button>
-            <button
+            <Button
               type="button"
               onClick={() => setConfirmingDelete(false)}
               disabled={isBusy}
-              className="px-2.5 py-1.5 bg-surface-2 text-ink-1 rounded-modal typo-caption transition-colors hover:bg-surface-2 disabled:opacity-40 cursor-pointer"
-            >
-              {t.common.cancel}
-            </button>
+              variant="secondary"
+              size="sm"
+            >{t.common.cancel}</Button>
           </div>
         ) : (
-          <button
+          <Button
             type="button"
             onClick={() => setConfirmingDelete(true)}
             disabled={isBusy}
-            className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-modal bg-status-error/10 border border-status-error/20 text-status-error hover:bg-status-error/20 disabled:opacity-40 transition-colors cursor-pointer"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            {tx(dt.bulk_delete, { count: removableIds.length })}
-          </button>
+            variant="danger"
+            size="sm"
+            icon={<Trash2 className="w-3.5 h-3.5" />}
+          >{tx(dt.bulk_delete, { count: removableIds.length })}</Button>
         )
       )}
 
       <div className="w-px h-5 bg-primary/15" />
 
-      <button
+      <Button aria-label={dt.clear_selection}
         type="button"
         onClick={onClearSelection}
         disabled={isBusy}
-        className="p-1.5 rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 disabled:opacity-40 transition-colors cursor-pointer"
-        title={dt.clear_selection}
-      >
-        <X className="w-4 h-4" />
-      </button>
+        tooltip={dt.clear_selection}
+        variant="ghost"
+        size="icon-sm"
+        icon={<X className="w-4 h-4" />}
+      />
     </div>
   );
 }

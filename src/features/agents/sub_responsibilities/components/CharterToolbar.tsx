@@ -40,35 +40,27 @@ export function CharterToolbar({
 
   return (
     <div className="flex flex-wrap items-center gap-2" data-testid="resp-toolbar">
-      <button
+      <Button
         type="button"
         onClick={() => onStatusFilter(null)}
         aria-pressed={statusFilter === null}
-        className={`px-2 py-1 rounded-pill border typo-code transition-colors ${
-          statusFilter === null
-            ? 'bg-primary/15 border-primary/40 text-primary'
-            : 'bg-surface-1 border-hair text-ink-1 hover:border-primary/25'
-        }`}
         data-testid="resp-filter-all"
-      >
-        {c.filter_all}
-      </button>
+        variant={statusFilter === null ? 'secondary' : 'ghost'}
+        size="xs"
+      >{c.filter_all}</Button>
       {CHARTER_STATUSES.map((s) => (
-        <button
+        <Button
           key={s}
           type="button"
           onClick={() => onStatusFilter(statusFilter === s ? null : s)}
           aria-pressed={statusFilter === s}
-          className={`px-2 py-1 rounded-pill border typo-code transition-colors ${
-            statusFilter === s
-              ? 'bg-primary/15 border-primary/40 text-primary'
-              : 'bg-surface-1 border-hair text-ink-1 hover:border-primary/25'
-          }`}
           data-testid={`resp-filter-${s}`}
+          variant={statusFilter === s ? 'secondary' : 'ghost'}
+          size="xs"
         >
           {labels[s] ?? s}
           <span className="ml-1.5 tabular-nums opacity-70">{counts[s]}</span>
-        </button>
+        </Button>
       ))}
 
       <div className="flex-1" />

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ThumbsUp, ThumbsDown, Minus, Send } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * Thumb positions are a display vocabulary; `lab_user_ratings` stores a 1..5
@@ -75,33 +77,31 @@ export function UserRating({ currentRating, currentFeedback, onRate, compact }: 
           const Icon = opt.icon;
           const isActive = selected === opt.value;
           return (
-            <button
+            <Tooltip content={opt.label}><button
               type="button"
               key={opt.value}
               onClick={() => handleSelect(opt.value)}
-              title={opt.label}
               aria-label={opt.label}
               aria-pressed={isActive}
               className={`${btnPad} rounded-card border transition-colors ${
                 isActive
                   ? `${opt.activeBg} ${opt.activeColor}`
                   : 'border-transparent text-ink-1 hover:text-ink-3 hover:bg-surface-1'
-              }`}
-            >
+              }`}>
               <Icon className={iconSize} />
-            </button>
+            </button></Tooltip>
           );
         })}
 
         {selected !== undefined && !saved && (
-          <button
+          <Button
             type="button"
             onClick={() => { void handleSave(); }}
-            className="ml-1 flex items-center gap-1 px-2 py-1 rounded-card typo-caption bg-primary/15 text-primary border border-hair hover:bg-primary/25 transition-colors"
-          >
-            <Send className="w-3 h-3" />
-            Save
-          </button>
+            variant="secondary"
+            size="xs"
+            className="ml-1"
+            icon={<Send className="w-3 h-3" />}
+          >Save</Button>
         )}
 
         {saved && (

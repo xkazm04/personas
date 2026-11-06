@@ -5,6 +5,7 @@ import { statusBadge } from '@/lib/eval/evalFramework';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { debtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface LabResultModalProps {
@@ -43,9 +44,15 @@ export function LabResultModal({
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <span className="typo-caption text-ink-2">{<AbsoluteTime timestamp={run.createdAt} />}</span>
-            <button type="button" data-testid="lab-result-modal-close" onClick={onClose} aria-label={debtText("auto_close_results_b9a0e746")} className="p-1.5 rounded-card hover:bg-surface-2 text-ink-1 hover:text-ink-1 transition-colors">
-              <X className="w-4 h-4" />
-            </button>
+            <Button
+              type="button"
+              data-testid="lab-result-modal-close"
+              onClick={onClose}
+              aria-label={debtText("auto_close_results_b9a0e746")}
+              variant="ghost"
+              size="icon-sm"
+              icon={<X className="w-4 h-4" />}
+            />
           </div>
         </div>
 

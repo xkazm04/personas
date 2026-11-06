@@ -11,6 +11,8 @@ import type { PersonaEvent } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 import { EventReasonNote } from '../lib/EventReasonView';
 import { classifyEventReason } from '../lib/eventReason';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface EventDetailModalProps {
   event: PersonaEvent;
@@ -66,14 +68,14 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
               <span className="font-mono">{<AbsoluteTime timestamp={event.created_at} />}</span>
             </div>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-card hover:bg-surface-2 text-ink-1 hover:text-ink-1 transition-colors focus-ring"
             aria-label={t.common.close}
-          >
-            <X className="w-4 h-4" />
-          </button>
+            variant="ghost"
+            size="icon-sm"
+            icon={<X className="w-4 h-4" />}
+          />
         </div>
 
         {/* ── Body — flex-1 so {t.triggers.event_data} fills remaining space ── */}
@@ -117,17 +119,8 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                   {t.triggers.event_data_section_label}
                 </span>
                 {/* Improvement #10: Copy button with improved hover/animation */}
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption transition-all duration-200 ${
-                    copiedPayload
-                      ? 'bg-status-success/10 text-status-success border border-status-success/20'
-                      : 'text-ink-1 hover:text-ink-1 hover:bg-surface-2 border border-transparent hover:border-hair'
-                  }`}
-                  title={t.triggers.copy_event_data_title}
-                >
-                  {copiedPayload ? (
+                <Tooltip content={t.triggers.copy_event_data_title}><Button type="button" onClick={handleCopy} variant={copiedPayload ? 'secondary' : 'ghost'} size="sm">
+  {copiedPayload ? (
                     <>
                       <Check className="w-3 h-3" />
                       {t.triggers.copied_label}
@@ -138,7 +131,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
                       {t.triggers.copy_json}
                     </>
                   )}
-                </button>
+</Button></Tooltip>
               </div>
               {/* Improvement #2: JSON syntax highlighting + fills height */}
               <div className="flex-1 overflow-y-auto px-5 py-3 bg-background/60">

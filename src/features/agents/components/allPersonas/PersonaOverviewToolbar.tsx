@@ -4,6 +4,8 @@ import { HEALTH_STYLES } from './PersonaOverviewBadges';
 import type { AgentListViewConfig } from './viewConfig';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Kbd } from '@/features/shared/components/display/Kbd';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface PersonaOverviewToolbarProps {
   search: string;
@@ -132,53 +134,41 @@ export function PersonaOverviewToolbar({
           className="pl-7 pr-7 py-1.5 w-48 sm:w-56 rounded-card typo-caption bg-surface-1 border border-hair text-ink-1 placeholder:text-ink-3 focus:outline-none focus:bg-surface-2 focus:border-primary/30 transition-all"
         />
         {search ? (
-          <button
+          <Tooltip content={t.agents.persona_list.clear_search}><button
             type="button"
             onClick={() => onSearchChange('')}
-            title={t.agents.persona_list.clear_search}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded-interactive text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
-          >
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded-interactive text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors">
             <X className="w-3 h-3" />
-          </button>
+          </button></Tooltip>
         ) : (
           <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"><Kbd>/</Kbd></span>
         )}
       </div>
 
       {/* Favorites quick-toggle (icon-only) */}
-      <button
-        type="button"
-        onClick={() => onViewChange({ ...view, favoriteOnly: !view.favoriteOnly })}
-        title={view.favoriteOnly ? t.agents.persona_list.show_all_personas : t.agents.persona_list.show_only_favorites}
-        aria-label={view.favoriteOnly ? t.agents.persona_list.show_all_personas : t.agents.persona_list.show_only_favorites}
-        aria-pressed={view.favoriteOnly}
-        className={`flex items-center justify-center p-1.5 rounded-card border transition-all ${
-          view.favoriteOnly
-            ? 'border-status-warning/30 bg-status-warning/10 text-status-warning'
-            : 'border-hair bg-surface-1 text-ink-1 hover:bg-surface-2 hover:text-status-warning'
-        }`}
-      >
-        <Star className={`w-3.5 h-3.5 ${view.favoriteOnly ? 'fill-amber-400' : ''}`} />
-      </button>
+      <Tooltip content={view.favoriteOnly ? t.agents.persona_list.show_all_personas : t.agents.persona_list.show_only_favorites}><Button
+  type="button"
+  onClick={() => onViewChange({ ...view, favoriteOnly: !view.favoriteOnly })}
+  aria-label={view.favoriteOnly ? t.agents.persona_list.show_all_personas : t.agents.persona_list.show_only_favorites}
+  aria-pressed={view.favoriteOnly}
+  variant={view.favoriteOnly ? 'secondary' : 'ghost'}
+  size="icon-sm"
+  icon={<Star className={`w-3.5 h-3.5 ${view.favoriteOnly ? 'fill-amber-400' : ''}`} />}
+/></Tooltip>
 
       {/* Archived quick-toggle (icon-only) — flips between the default roster
           and the Archived view. */}
-      <button
-        type="button"
-        onClick={() =>
+      <Tooltip content={view.statusFilter === 'archived' ? t.agents.persona_list.show_active_personas : t.agents.persona_list.show_archived_personas}><Button
+  type="button"
+  onClick={() =>
           onViewChange({ ...view, statusFilter: view.statusFilter === 'archived' ? 'all' : 'archived' })
         }
-        title={view.statusFilter === 'archived' ? t.agents.persona_list.show_active_personas : t.agents.persona_list.show_archived_personas}
-        aria-label={view.statusFilter === 'archived' ? t.agents.persona_list.show_active_personas : t.agents.persona_list.show_archived_personas}
-        aria-pressed={view.statusFilter === 'archived'}
-        className={`flex items-center justify-center p-1.5 rounded-card border transition-all ${
-          view.statusFilter === 'archived'
-            ? 'border-hair bg-surface-2 text-ink-3'
-            : 'border-hair bg-surface-1 text-ink-1 hover:bg-surface-2'
-        }`}
-      >
-        <Archive className="w-3.5 h-3.5" />
-      </button>
+  aria-label={view.statusFilter === 'archived' ? t.agents.persona_list.show_active_personas : t.agents.persona_list.show_archived_personas}
+  aria-pressed={view.statusFilter === 'archived'}
+  variant={view.statusFilter === 'archived' ? 'secondary' : 'ghost'}
+  size="icon-sm"
+  icon={<Archive className="w-3.5 h-3.5" />}
+/></Tooltip>
 
       {/* Active filter chips */}
       {chips.length > 0 && (
@@ -193,14 +183,14 @@ export function PersonaOverviewToolbar({
               }`}
             >
               <span className="truncate max-w-[140px]">{chip.label}</span>
-              <button
+              <Button aria-label={t.agents.tools.clear_filter}
                 type="button"
                 onClick={chip.onClear}
-                title={t.agents.tools.clear_filter}
-                className="p-0.5 rounded-full hover:bg-current/10 transition-colors"
-              >
-                <X className="w-2.5 h-2.5" />
-              </button>
+                tooltip={t.agents.tools.clear_filter}
+                variant="ghost"
+                size="icon-sm"
+                icon={<X className="w-2.5 h-2.5" />}
+              />
             </span>
           ))}
         </div>

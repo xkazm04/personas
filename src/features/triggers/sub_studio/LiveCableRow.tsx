@@ -20,6 +20,7 @@ import { conditionLabel } from './libs/studioLabels';
 import type { CableVitals } from './libs/cableVitals';
 import { resolveIcon, type EventRow, type Connection, type SourceClass } from './routing/layouts/routingHelpers';
 import { StateMark } from '@/features/shared/components/display/StateMark';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface LiveCable { row: EventRow; connection: Connection | null }
 
@@ -116,17 +117,26 @@ export function LiveCableRow({ cb, t, st, personas, dim, vitals, toggling, onRen
           />
         )}
         <Tooltip content={st.proto_add_listener}>
-          <button type="button" onClick={() => onAdd(row)} aria-label={st.proto_add_listener}
-            className="p-1.5 rounded-interactive text-ink-1 opacity-60 hover:opacity-100 hover:text-primary hover:bg-surface-2 transition-all">
-            <Plus className="w-3.5 h-3.5" />
-          </button>
+          <Button
+            type="button"
+            onClick={() => onAdd(row)}
+            aria-label={st.proto_add_listener}
+            variant="ghost"
+            size="icon-sm"
+            icon={<Plus className="w-3.5 h-3.5" />}
+          />
         </Tooltip>
         {connection && (
           <Tooltip content={st.proto_disconnect}>
-            <button type="button" onClick={() => onDisconnect(connection, row)} aria-label={st.proto_disconnect}
-              className="p-1.5 rounded-interactive text-ink-1 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all">
-              <Unplug className="w-3.5 h-3.5" />
-            </button>
+            <Button
+              type="button"
+              onClick={() => onDisconnect(connection, row)}
+              aria-label={st.proto_disconnect}
+              variant="ghost"
+              size="icon-sm"
+              className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+              icon={<Unplug className="w-3.5 h-3.5" />}
+            />
           </Tooltip>
         )}
       </div>

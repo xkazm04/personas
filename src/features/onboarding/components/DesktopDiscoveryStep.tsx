@@ -12,6 +12,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { extractMessage } from '@/lib/silentCatch';
 import type { DiscoveryScanState } from './useOnboardingState';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const APP_ICONS: Record<string, string> = {
   desktop_docker: 'Docker',
@@ -22,17 +24,17 @@ const APP_ICONS: Record<string, string> = {
 function riskBadge(hasHighRisk: boolean, labels: { review: string; reviewTooltip: string; safe: string; safeTooltip: string }) {
   if (hasHighRisk) {
     return (
-      <span className="flex items-center gap-1 typo-caption text-status-warning" title={labels.reviewTooltip}>
+      <Tooltip content={labels.reviewTooltip}><span className="flex items-center gap-1 typo-caption text-status-warning">
         <AlertTriangle className="w-3 h-3" />
         {labels.review}
-      </span>
+      </span></Tooltip>
     );
   }
   return (
-    <span className="flex items-center gap-1 typo-caption text-status-success" title={labels.safeTooltip}>
+    <Tooltip content={labels.safeTooltip}><span className="flex items-center gap-1 typo-caption text-status-success">
       <ShieldCheck className="w-3 h-3" />
       {labels.safe}
-    </span>
+    </span></Tooltip>
   );
 }
 
@@ -91,14 +93,15 @@ export function DesktopDiscoveryStep({
             ? resolveErrorTranslated(t, extractMessage(scanState.error.raw)).message
             : t.onboarding.desktop_scan_error_hint}
         </p>
-        <button
+        <Button
           type="button"
           onClick={onRetry}
-          className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 typo-heading rounded-card bg-role-agent/15 text-role-agent border border-role-agent/25 hover:bg-role-agent/25 transition-colors"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          {t.onboarding.desktop_scan_retry}
-        </button>
+          variant="accent"
+          tone="agent"
+          size="sm"
+          className="mt-4"
+          icon={<RefreshCw className="w-3.5 h-3.5" />}
+        >{t.onboarding.desktop_scan_retry}</Button>
       </div>
     );
   }
@@ -152,7 +155,7 @@ export function DesktopDiscoveryStep({
                     {app.label || APP_ICONS[app.connector_name] || app.connector_name}
                   </span>
                   {app.running && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-status-success flex-shrink-0" title={t.onboarding.app_running_tooltip} />
+                    <Tooltip content={t.onboarding.app_running_tooltip}><span className="w-1.5 h-1.5 rounded-full bg-status-success flex-shrink-0"/></Tooltip>
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">

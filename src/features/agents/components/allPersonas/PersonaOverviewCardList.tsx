@@ -16,6 +16,7 @@ import { isPersonaBuilding } from './personaBuildStatus';
 import { PersonaRowMenu } from './PersonaRowMenu';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DENSITY_TOKENS, type DensityTokens } from '@/lib/density';
+import Button from '@/features/shared/components/buttons/Button';
 
 async function copyDescription(text: string, t: { description_copied: string; copy_failed: string }) {
   const addToast = useToastStore.getState().addToast;
@@ -200,27 +201,26 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
             {p.name}
           </button>
           {p.description && (
-            <button
+            <Tooltip content={t.agents.persona_list.click_to_copy}><button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 void copyDescription(p.description!, t.agents.persona_list);
               }}
-              title={t.agents.persona_list.click_to_copy}
-              className="typo-caption text-ink-1 mt-0.5 leading-snug text-left block w-full cursor-copy hover:text-ink-3 transition-colors"
-            >
+              className="typo-caption text-ink-1 mt-0.5 leading-snug text-left block w-full cursor-copy hover:text-ink-3 transition-colors">
               {p.description}
-            </button>
+            </button></Tooltip>
           )}
         </div>
-        <button
+        <Button
           type="button"
           onClick={(e) => { e.stopPropagation(); toggleFavorite(id); }}
           aria-label={favorite ? t.agents.filters.remove_from_favorites : t.agents.filters.add_to_favorites}
-          className="p-1 rounded-interactive hover:bg-status-warning/10 flex-shrink-0"
-        >
-          <Star className={`w-3.5 h-3.5 ${favorite ? 'text-status-warning fill-amber-400' : 'text-ink-1'}`} />
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          className="flex-shrink-0"
+          icon={<Star className={`w-3.5 h-3.5 ${favorite ? 'text-status-warning fill-amber-400' : 'text-ink-1'}`} />}
+        />
         {/* The same Duplicate / Export overflow the grid row carries. */}
         <div className="flex-shrink-0">
           <PersonaRowMenu persona={p} onDuplicate={onDuplicate} onExport={onExport} />
@@ -248,13 +248,11 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
           {connectors.slice(0, 6).map((name, i) => {
             const meta = getConnectorMeta(name);
             return (
-              <div
+              <Tooltip content={meta.label}><div
                 key={`${name}-${i}`}
-                title={meta.label}
-                className="w-6 h-6 rounded-input bg-surface-1 border border-hair flex items-center justify-center"
-              >
+                className="w-6 h-6 rounded-input bg-surface-1 border border-hair flex items-center justify-center">
                 <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
-              </div>
+              </div></Tooltip>
             );
           })}
           {connectors.length > 6 && (

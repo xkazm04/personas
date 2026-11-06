@@ -10,6 +10,7 @@ import {
   dayKey,
 } from '../libs/calendarHelpers';
 import { EventBlock } from './EventBlock';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 export function WeekView({
   anchor,
@@ -102,13 +103,11 @@ export function WeekView({
                     <div className="absolute top-0 left-0 right-0 h-px bg-status-info/40" />
                   )}
                   {cellConflictCount > 0 && (
-                    <div
-                      className="absolute top-0.5 right-0.5 flex items-center gap-0.5 px-1 py-px rounded-full bg-status-warning/20 border border-status-warning/30 z-10"
-                      title={`${cellConflictCount} agents overlap within 5 minutes`}
-                    >
+                    <Tooltip content={`${cellConflictCount} agents overlap within 5 minutes`}><div
+                      className="absolute top-0.5 right-0.5 flex items-center gap-0.5 px-1 py-px rounded-full bg-status-warning/20 border border-status-warning/30 z-10">
                       <AlertTriangle className="w-2.5 h-2.5 text-status-warning" />
                       <span className="typo-caption text-status-warning">{cellConflictCount}</span>
-                    </div>
+                    </div></Tooltip>
                   )}
                   <div className="flex flex-col gap-0.5 overflow-hidden">
                     {slot?.events.slice(0, 3).map((ev) => (

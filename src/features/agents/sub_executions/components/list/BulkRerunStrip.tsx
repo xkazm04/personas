@@ -1,6 +1,8 @@
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BulkRunItem, BulkRunCohort, BulkRunPhase } from '../../libs/useBulkRerun';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface BulkRerunStripProps {
   phase: BulkRunPhase;
@@ -44,28 +46,21 @@ export function BulkRerunStrip({ phase, items, cohort, onCancel, onOpenReport }:
         </div>
         <span className="typo-code text-ink-1">{pct}%</span>
         {isDone ? (
-          <button
-            type="button"
-            onClick={onOpenReport}
-            className="px-2.5 py-1 typo-heading rounded-modal bg-primary/15 text-primary/90 border border-primary/25 hover:bg-primary/25 transition-colors"
-          >
-            {e.bulk_rerun_open_report}
-          </button>
+          <Button type="button" onClick={onOpenReport} variant="secondary" size="sm">{e.bulk_rerun_open_report}</Button>
         ) : (
-          <button
+          <Button
             type="button"
             onClick={onCancel}
-            className="flex items-center gap-1 px-2 py-1 typo-body rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
-            title={e.bulk_rerun_cancel}
-          >
-            <X className="w-3 h-3" />
-            {e.bulk_rerun_cancel}
-          </button>
+            tooltip={e.bulk_rerun_cancel}
+            variant="ghost"
+            size="xs"
+            icon={<X className="w-3 h-3" />}
+          >{e.bulk_rerun_cancel}</Button>
         )}
       </div>
       <div className="flex flex-wrap gap-1" aria-hidden>
         {items.map((it) => (
-          <span
+          <Tooltip content={`${it.originalId.slice(0, 8)} — ${it.status}`}><span
             key={it.originalId}
             className={`w-2 h-2 rounded-interactive transition-colors ${
               it.status === 'success'
@@ -77,9 +72,7 @@ export function BulkRerunStrip({ phase, items, cohort, onCancel, onOpenReport }:
                     : it.status === 'running'
                     ? 'bg-primary/60 animate-pulse'
                     : 'bg-primary/15'
-            }`}
-            title={`${it.originalId.slice(0, 8)} — ${it.status}`}
-          />
+            }`} /></Tooltip>
         ))}
       </div>
     </div>

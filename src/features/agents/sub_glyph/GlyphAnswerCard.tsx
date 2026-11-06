@@ -7,6 +7,7 @@ import { VaultConnectorPicker } from "@/features/vault/components/VaultConnector
 import { useGlyphDimText } from "@/features/shared/glyph/persona-sigil";
 import { CELL_KEY_TO_DIM } from "./glyphLayoutHelpers";
 import { useTranslation } from "@/i18n/useTranslation";
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface GlyphAnswerCardProps {
@@ -78,14 +79,14 @@ export function GlyphAnswerCard({ question, onAnswer, onClose, variant = "sigil"
         <span className="typo-label text-ink-1 flex-1">
           {dim ? dimText.label[dim] : question.cellKey.replace(/-/g, " ")}
         </span>
-        <button
+        <Button
           type="button"
           onClick={onClose}
-          className="text-ink-1 hover:text-ink-1"
           aria-label={t.common.close}
-        >
-          <X className="w-4 h-4" />
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="w-4 h-4" />}
+        />
       </div>
       <p className={dlg ? "typo-title text-ink-1 text-left leading-relaxed" : "typo-body-lg text-ink-1"}>{question.question}</p>
       {category ? (

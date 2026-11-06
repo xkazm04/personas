@@ -9,6 +9,7 @@ import {
 import type { TriggerRateLimitState } from '@/stores/slices/pipeline/triggerSlice';
 import { useTranslation } from '@/i18n/useTranslation';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface RateLimitControlsProps {
   rateLimit: TriggerRateLimitConfig;
@@ -30,30 +31,32 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
 
   return (
     <div className="space-y-2">
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 w-full typo-body text-ink-1 hover:text-ink-3 transition-colors"
+        variant="ghost"
+        size="sm"
+        className="w-full"
+        icon={expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
       >
-        {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Shield className="w-3 h-3" />
         {t.triggers.rate_limiting}
         {active && (
-          <span className="inline-flex items-center ml-1 typo-body text-status-warning">
-            Active
-          </span>
+        <span className="inline-flex items-center ml-1 typo-body text-status-warning">
+        Active
+        </span>
         )}
         {runtimeState?.isThrottled && (
-          <span className="inline-flex items-center ml-1 typo-body text-status-error">
-            Throttled
-          </span>
+        <span className="inline-flex items-center ml-1 typo-body text-status-error">
+        Throttled
+        </span>
         )}
         {runtimeState && runtimeState.queueDepth > 0 && (
-          <span className="ml-auto typo-body text-status-warning">
-            {runtimeState.queueDepth} queued
-          </span>
+        <span className="ml-auto typo-body text-status-warning">
+        {runtimeState.queueDepth} queued
+        </span>
         )}
-      </button>
+      </Button>
 
       {expanded && (
           <div
@@ -158,13 +161,12 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
 
               {/* Reset button */}
               {active && (
-                <button
+                <Button
                   type="button"
                   onClick={() => onChange({ ...DEFAULT_RATE_LIMIT })}
-                  className="typo-body text-ink-1 hover:text-ink-3 transition-colors"
-                >
-                  {t.triggers.clear_all_limits}
-                </button>
+                  variant="ghost"
+                  size="sm"
+                >{t.triggers.clear_all_limits}</Button>
               )}
             </div>
           </div>

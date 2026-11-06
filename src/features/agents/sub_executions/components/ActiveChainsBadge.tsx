@@ -6,6 +6,7 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const logger = createLogger('active-chains-badge');
 const POLL_INTERVAL_MS = 5_000;
@@ -105,9 +106,9 @@ export function ActiveChainsBadge() {
                 className="flex items-center flex-wrap gap-x-3 gap-y-0.5 typo-code"
                 data-testid="active-chain-row"
               >
-                <span className="font-mono text-ink-1" title={c.chainTraceId}>
+                <Tooltip content={c.chainTraceId}><span className="font-mono text-ink-1">
                   {c.chainTraceId.slice(0, 8)}
-                </span>
+                </span></Tooltip>
                 <span className="tabular-nums text-ink-1">
                   {tx(c.inFlightCount === 1 ? e.active_chains_hops_one : e.active_chains_hops_other, { count: c.inFlightCount })}
                 </span>

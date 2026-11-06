@@ -59,9 +59,9 @@ function CellValue({ field, mask }: { field: ConfigField; mask?: boolean }) {
   if (field.value == null) return <span className="text-ink-2 italic typo-caption">--</span>;
   const display = mask ? '••••••' : String(field.value);
   return (
-    <span className="typo-code text-ink-1 truncate max-w-[120px]" title={mask ? undefined : display}>
+    <Tooltip content={mask ? undefined : display}><span className="typo-code text-ink-1 truncate max-w-[120px]">
       {display}
-    </span>
+    </span></Tooltip>
   );
 }
 
@@ -138,7 +138,7 @@ function CapabilityModelsCell({ models }: { models: string[] }) {
   const shown = models.slice(0, 2).map(shortModel);
   const extra = models.length - shown.length;
   return (
-    <div className="flex items-center gap-1.5 min-w-0" title={`${s.per_capability}\n${models.join('\n')}`}>
+    <Tooltip content={`${s.per_capability}\n${models.join('\n')}`}><div className="flex items-center gap-1.5 min-w-0">
       <span className="typo-code text-role-agent truncate max-w-[120px]">
         {shown.join(' · ')}
         {extra > 0 ? ` +${extra}` : ''}
@@ -147,7 +147,7 @@ function CapabilityModelsCell({ models }: { models: string[] }) {
         <Layers className="w-2.5 h-2.5" />
         {s.per_capability}
       </span>
-    </div>
+    </div></Tooltip>
   );
 }
 
@@ -159,19 +159,19 @@ function CapabilityProvidersCell({ providerKeys }: { providerKeys: string[] }) {
   if (metas.length === 1) {
     const m = metas[0]!;
     return (
-      <span className="inline-flex items-center gap-1.5 min-w-0" title={m.label}>
+      <Tooltip content={m.label}><span className="inline-flex items-center gap-1.5 min-w-0">
         <ConnectorIcon meta={m} size="w-3.5 h-3.5" />
         <span className="typo-caption text-ink-2 truncate" style={{ fontWeight: 400 }}>{m.label}</span>
-      </span>
+      </span></Tooltip>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 min-w-0" title={metas.map((m) => m.label).join(', ')}>
+    <Tooltip content={metas.map((m) => m.label).join(', ')}><span className="inline-flex items-center gap-1 min-w-0">
       {providerKeys.slice(0, 3).map((k) => (
         <ConnectorIcon key={k} meta={getConnectorMeta(k)} size="w-3.5 h-3.5" />
       ))}
       {metas.length > 3 && <span className="typo-caption" style={{ fontWeight: 400 }}>+{metas.length - 3}</span>}
-    </span>
+    </span></Tooltip>
   );
 }
 
@@ -189,25 +189,25 @@ function CapabilitySubRow({ cap }: { cap: CapabilityConfig }) {
       <td className="pl-8 pr-3 py-1.5 whitespace-nowrap">
         <span className="inline-flex items-center gap-1.5 min-w-0">
           <CornerDownRight className="w-3 h-3 text-ink-1 opacity-50 flex-shrink-0" />
-          <span className="typo-caption text-ink-2 truncate max-w-[200px]" style={{ fontWeight: 400 }} title={cap.title}>
+          <Tooltip content={cap.title}><span className="typo-caption text-ink-2 truncate max-w-[200px]" style={{ fontWeight: 400 }}>
             {cap.title}
-          </span>
+          </span></Tooltip>
         </span>
       </td>
       <td className="px-3 py-1.5">{muted}</td>
       <td className="px-3 py-1.5">
         {cap.model ? (
-          <span className="typo-code text-role-agent truncate max-w-[120px]" title={cap.model}>
+          <Tooltip content={cap.model}><span className="typo-code text-role-agent truncate max-w-[120px]">
             {shortModel(cap.model)}
-          </span>
+          </span></Tooltip>
         ) : muted}
       </td>
       <td className="px-3 py-1.5">
         {providerMeta ? (
-          <span className="inline-flex items-center gap-1.5 min-w-0" title={providerMeta.label}>
+          <Tooltip content={providerMeta.label}><span className="inline-flex items-center gap-1.5 min-w-0">
             <ConnectorIcon meta={providerMeta} size="w-3.5 h-3.5" />
             <span className="typo-caption text-ink-2 truncate" style={{ fontWeight: 400 }}>{providerMeta.label}</span>
-          </span>
+          </span></Tooltip>
         ) : muted}
       </td>
       <td className="px-3 py-1.5">{muted}</td>
@@ -440,10 +440,8 @@ export function PersonaConfigPanel() {
             </button>
           )}
         </div>
-        <label
-          className="flex items-center gap-1.5 typo-caption text-ink-1 cursor-pointer select-none"
-          title={s.overrides_only_tooltip}
-        >
+        <Tooltip content={s.overrides_only_tooltip}><label
+          className="flex items-center gap-1.5 typo-caption text-ink-1 cursor-pointer select-none">
           <input
             type="checkbox"
             checked={overridesOnly}
@@ -451,7 +449,7 @@ export function PersonaConfigPanel() {
             className="w-3 h-3 rounded-interactive border-hair bg-surface-1 text-primary focus:ring-1 focus:ring-primary/40"
           />
           {s.overrides_only_label}
-        </label>
+        </label></Tooltip>
         {filtersActive && rows.length > 0 && (
           <span className="typo-caption text-ink-2 ml-auto">
             {tx(s.showing_count, { shown: visibleRows.length, total: rows.length })}
@@ -511,15 +509,16 @@ export function PersonaConfigPanel() {
                     <td className="px-3 py-2 font-medium text-ink-1 whitespace-nowrap">
                       <span className="inline-flex items-center gap-1.5">
                         {configs.length > 0 ? (
-                          <button
+                          <Button
                             type="button"
                             onClick={() => toggleExpanded(row.persona.id)}
                             aria-expanded={isExpanded}
                             aria-label={s.per_capability}
-                            className="p-0.5 -ml-1 rounded-interactive text-ink-1 hover:text-primary hover:bg-surface-2 transition-colors"
-                          >
-                            <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                          </button>
+                            variant="ghost"
+                            size="icon-sm"
+                            className="-ml-1"
+                            icon={<ChevronRight className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />}
+                          />
                         ) : (
                           <span className="w-3.5 inline-block" />
                         )}

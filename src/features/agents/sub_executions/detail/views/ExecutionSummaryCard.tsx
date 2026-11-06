@@ -13,6 +13,7 @@ const SUCCESS_TEXT = STATUS_PALETTE.success.text; // tool-call invoked
 const INFO_TEXT = STATUS_PALETTE.info.text;       // file read
 const CAUTION_TEXT = STATUS_PALETTE_EXTENDED.caution.text; // file modified
 import type { ExecutionSummary, ToolCallSummary, FileChangeSummary } from '@/hooks/execution/useExecutionSummary';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ExecutionSummaryCardProps {
   summary: ExecutionSummary;
@@ -28,19 +29,20 @@ function ToolCallList({ toolCalls, uniqueTools }: { toolCalls: ToolCallSummary[]
 
   return (
     <div className="mt-2">
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="flex items-center gap-1.5 typo-caption text-ink-1 hover:text-ink-1 transition-colors"
+        variant="ghost"
+        size="sm"
+        icon={expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
       >
-        {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Wrench className="w-3 h-3" />
         <span>{tx(toolCalls.length === 1 ? e.tool_calls_count : e.tool_calls_count_other, { count: toolCalls.length })}</span>
         <span className="text-ink-1">
-          {tx(e.unique_tools_count, { count: uniqueTools.length })}
+        {tx(e.unique_tools_count, { count: uniqueTools.length })}
         </span>
-      </button>
+      </Button>
       {expanded && (
         <div className="mt-1.5 ml-4 space-y-1 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/15">
           {toolCalls.map((tc, i) => (
@@ -65,24 +67,25 @@ function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: F
 
   return (
     <div className="mt-2">
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="flex items-center gap-1.5 typo-caption text-ink-1 hover:text-ink-1 transition-colors"
+        variant="ghost"
+        size="sm"
+        icon={expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
       >
-        {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <FileText className="w-3 h-3" />
         <span>
-          {tx(fileChanges.length === 1 ? e.file_changes_count : e.file_changes_count_other, { count: fileChanges.length })}
+        {tx(fileChanges.length === 1 ? e.file_changes_count : e.file_changes_count_other, { count: fileChanges.length })}
         </span>
         {writeCount > 0 && (
-          <span className={CAUTION_TEXT}>{tx(e.files_modified_count, { count: writeCount })}</span>
+        <span className={CAUTION_TEXT}>{tx(e.files_modified_count, { count: writeCount })}</span>
         )}
         {readCount > 0 && (
-          <span className={INFO_TEXT}>{tx(e.files_read_count, { count: readCount })}</span>
+        <span className={INFO_TEXT}>{tx(e.files_read_count, { count: readCount })}</span>
         )}
-      </button>
+      </Button>
       {expanded && (
         <div className="mt-1.5 ml-4 space-y-0.5 max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/15">
           {fileChanges.map((fc, i) => (

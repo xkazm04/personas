@@ -192,8 +192,8 @@ function StatChip({
     );
   }
   return (
-    <div className={className} data-testid={testId} title={`${label}: ${value}`}>
+    <Tooltip content={`${label}: ${value}`}><div className={className} data-testid={testId}>
       {body}
-    </div>
+    </div></Tooltip>
   );
 }

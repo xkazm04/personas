@@ -11,6 +11,7 @@ import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import type { Candidate } from "../cinemaMotion";
 import { useTimedReveal } from "../cinemaMotion";
 import { COPY } from "../copy";
+import Button from '@/features/shared/components/buttons/Button';
 
 interface TitleCardProps {
   winner: Candidate;
@@ -43,9 +44,13 @@ export function NameField({ name, onChange }: { name: string; onChange: (v: stri
     );
   }
   return (
-    <button type="button" onClick={() => { setDraft(name); setEditing(true); }} className="typo-title-lg text-ink-1 rounded-interactive px-1.5 hover:bg-surface-1 truncate max-w-[420px]">
-      {name || COPY.yourAgent}
-    </button>
+    <Button
+      type="button"
+      onClick={() => { setDraft(name); setEditing(true); }}
+      variant="ghost"
+      size="xs"
+      className="truncate max-w-[420px]"
+    >{name || COPY.yourAgent}</Button>
   );
 }
 

@@ -6,6 +6,7 @@ import { getAllModels } from '@/lib/models/modelCatalog';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Kbd } from '@/features/shared/components/display/Kbd';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface QuickEditPanelProps {
   persona: Persona;
@@ -195,22 +196,20 @@ export function QuickEditPanel({ persona, onSave, onCancel }: QuickEditPanelProp
           {' '}{t.common.cancel}
         </span>
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
             onClick={onCancel}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption text-ink-1 hover:bg-surface-2 transition-colors"
-          >
-            <X className="w-3.5 h-3.5" />
-            {t.common.cancel}
-          </button>
-          <button
+            variant="ghost"
+            size="sm"
+            icon={<X className="w-3.5 h-3.5" />}
+          >{t.common.cancel}</Button>
+          <Button
             type="button"
             onClick={handleSave}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption text-ink-1 bg-role-agent/20 hover:bg-role-agent/30 border border-role-agent/30 transition-colors"
-          >
-            <Save className="w-3.5 h-3.5" />
-            {t.common.save}
-          </button>
+            variant="secondary"
+            size="sm"
+            icon={<Save className="w-3.5 h-3.5" />}
+          >{t.common.save}</Button>
         </div>
       </div>
     </div>

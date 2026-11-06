@@ -3,6 +3,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { formatElapsed } from '@/lib/utils/formatters';
 import { PHASE_META, dotColor, type PhaseEntry } from '../../runnerTypes';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface RunnerPhaseTimelineProps {
   phases: PhaseEntry[];
@@ -25,14 +26,14 @@ export function RunnerPhaseTimeline({
 
   return (
     <div className="border-b border-hair">
-      <button
+      <Button
         type="button"
         onClick={() => setShowPhases(!showPhases)}
-        className="w-full flex items-center gap-1.5 px-3 py-1.5 typo-eyebrow text-ink-1 hover:text-ink-3 transition-colors"
-      >
-        {showPhases ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-        {e.phases}
-      </button>
+        variant="ghost"
+        size="sm"
+        className="w-full"
+        icon={showPhases ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+      >{e.phases}</Button>
       {showPhases && (
           <div
             className="animate-fade-slide-in overflow-hidden"

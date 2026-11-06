@@ -4,31 +4,33 @@ import type { ResponsibilityObjective } from '@/lib/bindings/ResponsibilityObjec
 import type { ResponsibilityOutcome } from '@/lib/bindings/ResponsibilityOutcome';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import Button from '@/features/shared/components/buttons/Button';
 
 function AddRowButton({ onClick, testId }: { onClick: () => void; testId: string }) {
   const { t } = useTranslation();
   return (
-    <button
+    <Button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-1 typo-caption hover:text-primary transition-colors"
       data-testid={testId}
-    >
-      <Plus className="w-3.5 h-3.5" /> {t.common.add}
-    </button>
+      variant="ghost"
+      size="sm"
+      icon={<Plus className="w-3.5 h-3.5" />}
+    >{t.common.add}</Button>
   );
 }
 
 function RemoveRowButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (
-    <button
+    <Button
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="shrink-0 mt-2 text-ink-1 hover:text-status-error transition-colors"
-    >
-      <X className="w-3.5 h-3.5" />
-    </button>
+      variant="ghost"
+      size="icon-sm"
+      className="shrink-0 mt-2"
+      icon={<X className="w-3.5 h-3.5" />}
+    />
   );
 }
 

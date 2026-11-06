@@ -63,6 +63,14 @@ export function fanoutATapes({ RECORDED_AT, PERSONAS }) {
       'agents/editor-settings': mk('agents/editor-settings', 'Synthetic: Inbox Triage, Settings tab.'),
       'triggers/live-stream': mk('triggers/live-stream', 'Synthetic: Events live stream, 10 events.'),
       'triggers/studio': mk('triggers/studio', 'Synthetic: Events studio, 5 triggers.'),
+      'agents/editor-lab': mk('agents/editor-lab', 'Synthetic: agents/editor-lab.'),
+      'agents/editor-matrix': mk('agents/editor-matrix', 'Synthetic: agents/editor-matrix.'),
+      'agents/editor-chat': mk('agents/editor-chat', 'Synthetic: agents/editor-chat.'),
+      'triggers/rate-limits': mk('triggers/rate-limits', 'Synthetic: triggers/rate-limits.'),
+      'triggers/test': mk('triggers/test', 'Synthetic: triggers/test.'),
+      'triggers/smee-relay': mk('triggers/smee-relay', 'Synthetic: triggers/smee-relay.'),
+      'triggers/dead-letter': mk('triggers/dead-letter', 'Synthetic: triggers/dead-letter.'),
+      'triggers/shared': mk('triggers/shared', 'Synthetic: triggers/shared.'),
     },
   };
 }

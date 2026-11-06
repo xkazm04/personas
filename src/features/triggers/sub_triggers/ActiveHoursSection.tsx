@@ -1,6 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Clock, ChevronDown, ChevronRight, Globe } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 const DAYS = [
   { key: 0, label: 'Sun', short: 'S' },
   { key: 1, label: 'Mon', short: 'M' },
@@ -117,20 +119,22 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
 
   return (
     <div className="space-y-2">
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-1.5 w-full typo-body text-ink-1 hover:text-ink-3 transition-colors"
+        variant="ghost"
+        size="sm"
+        className="w-full"
+        icon={expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
       >
-        {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
         <Clock className="w-3 h-3" />
         {t.triggers.active_hours}
         {aw.enabled && (
-          <span className="inline-flex items-center ml-1 typo-body text-status-info">
-            {summaryLabel}
-          </span>
+        <span className="inline-flex items-center ml-1 typo-body text-status-info">
+        {summaryLabel}
+        </span>
         )}
-      </button>
+      </Button>
 
       {expanded && (
           <div
@@ -156,44 +160,28 @@ export function ActiveHoursSection({ config, onChange }: ActiveHoursSectionProps
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1">
                       {DAYS.map((d) => (
-                        <button
-                          type="button"
-                          key={d.key}
-                          onClick={() => toggleDay(d.key)}
-                          title={d.label}
-                          className={`w-7 h-7 rounded-card typo-caption transition-colors ${
-                            aw.days.includes(d.key)
-                              ? 'bg-status-info/20 text-status-info border border-status-info/30'
-                              : 'bg-surface-1 text-ink-1 border border-hair hover:border-hair'
-                          }`}
-                        >
-                          {d.short}
-                        </button>
+                        <Tooltip content={d.label}><Button
+  type="button"
+  key={d.key}
+  onClick={() => toggleDay(d.key)}
+  variant={aw.days.includes(d.key) ? 'secondary' : 'ghost'}
+  size="sm"
+>{d.short}</Button></Tooltip>
                       ))}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <button
+                      <Button
                         type="button"
                         onClick={() => applyPreset(WEEKDAY_PRESET)}
-                        className={`px-2 py-0.5 typo-caption rounded-input transition-colors ${
-                          isWeekdays
-                            ? 'bg-status-info/15 text-status-info'
-                            : 'text-ink-1 hover:text-ink-3 bg-surface-1'
-                        }`}
-                      >
-                        Weekdays
-                      </button>
-                      <button
+                        variant={isWeekdays ? 'secondary' : 'ghost'}
+                        size="xs"
+                      >Weekdays</Button>
+                      <Button
                         type="button"
                         onClick={() => applyPreset(EVERYDAY_PRESET)}
-                        className={`px-2 py-0.5 typo-caption rounded-input transition-colors ${
-                          isEveryday
-                            ? 'bg-status-info/15 text-status-info'
-                            : 'text-ink-1 hover:text-ink-3 bg-surface-1'
-                        }`}
-                      >
-                        {t.triggers.active_hours_every_day}
-                      </button>
+                        variant={isEveryday ? 'secondary' : 'ghost'}
+                        size="xs"
+                      >{t.triggers.active_hours_every_day}</Button>
                     </div>
                   </div>
 

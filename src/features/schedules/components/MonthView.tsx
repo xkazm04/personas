@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import type { CalendarEvent, ConflictGroup } from '../libs/calendarHelpers';
 import { buildMonthGrid, weekdayShort, dayKey } from '../libs/calendarHelpers';
 import { EventBlock } from './EventBlock';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 export function MonthView({
   anchor,
@@ -78,13 +79,11 @@ export function MonthView({
                     )}
                   </span>
                   {dayConflictCount > 0 && (
-                    <span
-                      className="flex items-center gap-0.5 px-1 py-px rounded-full bg-status-warning/20 border border-status-warning/30"
-                      title={`${dayConflictCount} overlapping executions`}
-                    >
+                    <Tooltip content={`${dayConflictCount} overlapping executions`}><span
+                      className="flex items-center gap-0.5 px-1 py-px rounded-full bg-status-warning/20 border border-status-warning/30">
                       <AlertTriangle className="w-2.5 h-2.5 text-status-warning" />
                       <span className="typo-caption text-status-warning">{dayConflictCount}</span>
-                    </span>
+                    </span></Tooltip>
                   )}
                 </div>
 

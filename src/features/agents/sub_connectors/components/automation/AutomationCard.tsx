@@ -16,6 +16,7 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSelectedPersonaCapabilities } from '@/hooks/personas/usePersonaCapabilities';
 import { debtText } from '@/i18n/DebtText';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 interface AutomationCardProps {
@@ -62,7 +63,7 @@ export function AutomationCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="typo-body text-ink-1 truncate" title={automation.name}>{automation.name}</p>
+            <Tooltip content={automation.name}><p className="typo-body text-ink-1 truncate">{automation.name}</p></Tooltip>
             <AutomationStatusBadge automationId={automation.id} status={automation.deploymentStatus} />
           </div>
           <div className="flex items-center gap-2 mt-0.5">
@@ -81,9 +82,9 @@ export function AutomationCard({
             {!automation.lastTriggeredAt && automation.deploymentStatus !== 'draft' && <span className="typo-body text-ink-1">{t.agents.connectors.auto_never_triggered}</span>}
             {automation.deploymentStatus === 'draft' && <span className="typo-body text-ink-1">{t.agents.connectors.auto_not_deployed}</span>}
             {automation.fallbackMode === 'connector' && (
-              <span className="inline-flex items-center gap-0.5 typo-body text-ink-1" title={debtText("auto_falls_back_to_direct_connector_on_failure_ba68aca9")}>
+              <Tooltip content={debtText("auto_falls_back_to_direct_connector_on_failure_ba68aca9")}><span className="inline-flex items-center gap-0.5 typo-body text-ink-1">
                 <ShieldCheck className="w-3 h-3" /> {t.agents.connectors.auto_fallback}
-              </span>
+              </span></Tooltip>
             )}
           </div>
         </div>
@@ -99,9 +100,8 @@ export function AutomationCard({
               className={`flex items-center gap-1.5 ${TOOLS_BTN_STANDARD} typo-body rounded-modal border border-accent/25 text-ink-1 bg-accent/10 hover:bg-accent/20 transition-colors`}>{t.common.configure}</button>
           )}
           {sanitizeExternalUrl(automation.platformUrl) && (
-            <a href={sanitizeExternalUrl(automation.platformUrl)!} target="_blank" rel="noopener noreferrer"
-              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body rounded-card border border-hair text-ink-1 hover:bg-surface-2 hover:text-ink-1 transition-colors`}
-              title={tx(t.agents.connectors.auto_open_in_platform, { platform: t.agents.connectors[platformConfig.labelKey] })}><ExternalLink className="w-3 h-3" /></a>
+            <Tooltip content={tx(t.agents.connectors.auto_open_in_platform, { platform: t.agents.connectors[platformConfig.labelKey] })}><a href={sanitizeExternalUrl(automation.platformUrl)!} target="_blank" rel="noopener noreferrer"
+              className={`flex items-center gap-1 ${TOOLS_BTN_COMPACT} typo-body rounded-card border border-hair text-ink-1 hover:bg-surface-2 hover:text-ink-1 transition-colors`}><ExternalLink className="w-3 h-3" /></a></Tooltip>
           )}
           <AutomationCardActions automation={automation} onEdit={onEdit} onToggleStatus={onToggleStatus} onDelete={onDelete} />
         </div>

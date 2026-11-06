@@ -10,6 +10,7 @@ import { AnimatedList } from '@/features/shared/components/display/AnimatedList'
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { BlastRadiusPanel, useBlastRadius } from '@/features/overview/components/BlastRadiusPanel';
 import { getAutomationBlastRadius } from '@/api/agents/automations';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AutomationsSectionProps {
   automations: PersonaAutomation[];
@@ -229,20 +230,8 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
             <BlastRadiusPanel items={blastItems} loading={blastLoading} failed={blastFailed} />
 
             <div className="flex items-center justify-end gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 typo-body text-ink-1 hover:text-ink-1 rounded-modal hover:bg-surface-2 transition-colors"
-              >
-                {t.common.cancel}
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                className="px-4 py-2 typo-body rounded-modal bg-status-error/20 text-status-error border border-status-error/30 hover:bg-status-error/30 transition-colors"
-              >
-                {t.common.delete}
-              </button>
+              <Button type="button" onClick={() => setDeleteTarget(null)} variant="ghost" size="md">{t.common.cancel}</Button>
+              <Button type="button" onClick={handleConfirmDelete} variant="danger" size="md">{t.common.delete}</Button>
             </div>
           </div>
         )}

@@ -85,14 +85,14 @@ export function DatasetInspector({
           onChange={() => setChangedOnly((v) => !v)}
           label="Changed only"
         />
-        <button
+        <Button
           type="button"
           onClick={onClose}
           aria-label={`Close ${name} inspector`}
-          className="rounded-interactive p-1 text-ink-1 hover:bg-surface-2 transition-colors"
-        >
-          <X className="size-3.5" />
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="size-3.5" />}
+        />
       </header>
 
       {failed ? (

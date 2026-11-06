@@ -19,6 +19,7 @@ import { useCloudHealthMonitor } from '@/features/agents/sub_deployment/hooks/us
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { DEPLOYMENT_ACCENTS } from '@/features/agents/sub_deployment/components/deploymentTokens';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 // ---------------------------------------------------------------------------
@@ -305,12 +306,10 @@ function LatencyBadge({ ms }: { ms: number }) {
         : { color: 'text-status-error', bg: 'bg-status-error/10', border: 'border-status-error/20' };
 
   return (
-    <span
-      className={`flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-card border ${bg} ${border} ${color}`}
-      title={tx(t.deployment.status.latency_title, { ms })}
-    >
+    <Tooltip content={tx(t.deployment.status.latency_title, { ms })}><span
+      className={`flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-card border ${bg} ${border} ${color}`}>
       <Activity className="w-3 h-3" />
       {ms}ms
-    </span>
+    </span></Tooltip>
   );
 }

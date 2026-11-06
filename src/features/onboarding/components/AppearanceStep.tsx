@@ -10,6 +10,7 @@ import {
   SimpleThemePicker,
 } from '@/features/settings/components/AppearancePickers';
 import { DensityToggle } from '@/features/shared/components/display/DensityToggle';
+import Button from '@/features/shared/components/buttons/Button';
 
 const ONBOARDING_LANGUAGES: { code: Language; label: string; flag: string }[] = [
   { code: 'en', label: 'English', flag: '🇺🇸' },
@@ -67,7 +68,7 @@ export function AppearanceStep() {
           {ONBOARDING_LANGUAGES.map((lang) => {
             const isActive = language === lang.code;
             return (
-              <button
+              <Button
                 type="button"
                 key={lang.code}
                 onFocus={() => prefetchWithIntent(lang.code)}
@@ -77,16 +78,13 @@ export function AppearanceStep() {
                 onPointerDown={() => prefetchNow(lang.code)}
                 onClick={() => setLanguage(lang.code)}
                 aria-pressed={isActive}
-                className={`flex items-center gap-2 px-3 py-2 rounded-modal border transition-colors typo-body ${
-                  isActive
-                    ? 'border-primary/30 bg-surface-1 text-ink-1'
-                    : 'border-hair hover:border-hair hover:bg-surface-2 text-ink-1'
-                }`}
+                variant={isActive ? 'secondary' : 'ghost'}
+                size="sm"
               >
                 <span>{lang.flag}</span>
                 <span className="truncate">{lang.label}</span>
                 {isActive && <Check className="w-3 h-3 text-primary ml-auto shrink-0" />}
-              </button>
+              </Button>
             );
           })}
         </div>

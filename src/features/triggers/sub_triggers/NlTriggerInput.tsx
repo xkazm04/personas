@@ -3,6 +3,7 @@ import { Sparkles, ArrowRight, RotateCcw, Check, AlertCircle } from 'lucide-reac
 import { TRIGGER_TYPE_META, DEFAULT_TRIGGER_META } from '@/lib/utils/platform/triggerConstants';
 import { parseNaturalLanguageTrigger, type NlParseResult } from './nlTriggerParser';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface NlTriggerInputProps {
   onApplyResult: (result: NlParseResult) => void;
@@ -149,15 +150,18 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
                 )}
               </p>
             </div>
-            <button
+            <Button
               type="button"
               onClick={handleApply}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-role-agent/20 hover:bg-role-agent/30 text-role-agent rounded-card typo-caption transition-colors shrink-0 border border-role-agent/20"
+              variant="accent"
+              tone="agent"
+              size="sm"
+              className="shrink-0"
+              icon={<Check className="w-3 h-3" />}
             >
-              <Check className="w-3 h-3" />
               Apply
               <ArrowRight className="w-3 h-3" />
-            </button>
+            </Button>
           </div>
         )}
 

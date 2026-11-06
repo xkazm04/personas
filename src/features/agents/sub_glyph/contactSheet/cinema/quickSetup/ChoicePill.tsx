@@ -2,6 +2,7 @@
  *  event kind). Pressed pills take the dimension's colour. */
 import type { ReactNode } from "react";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ChoicePillProps {
   on: boolean;
@@ -13,17 +14,14 @@ interface ChoicePillProps {
 
 export function ChoicePill({ on, color, onClick, children, ariaLabel }: ChoicePillProps) {
   return (
-    <button
+    <Button
       type="button"
       onClick={onClick}
       aria-pressed={on}
       aria-label={ariaLabel}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border typo-body text-ink-1 transition-colors ${
-        on ? "" : "border-card-border hover:bg-surface-2"
-      }`}
       style={on ? { borderColor: colorWithAlpha(color, 0.6), background: colorWithAlpha(color, 0.14) } : undefined}
-    >
-      {children}
-    </button>
+      variant={on ? 'secondary' : 'ghost'}
+      size="sm"
+    >{children}</Button>
   );
 }

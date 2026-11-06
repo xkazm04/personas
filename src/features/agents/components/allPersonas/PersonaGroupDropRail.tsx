@@ -6,6 +6,7 @@ import { usePipelineStore } from '@/stores/pipelineStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { inLifecyclePopulation } from './rosterCount';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Sentinel filter id for "personas with no home team". */
 const NO_TEAM = '__ungrouped__';
@@ -115,26 +116,28 @@ export function PersonaGroupDropRail({
           if (opt) onSelectFilter?.(opt.id);
         }}
         renderTrigger={({ isOpen, toggle }) => (
-          <button
+          <Button
             type="button"
             onClick={toggle}
             aria-haspopup="listbox"
             aria-expanded={isOpen}
-            className="inline-flex items-center justify-between gap-2 w-full px-3 py-1.5 rounded-input border border-hair bg-surface-1 typo-body text-ink-1 hover:bg-surface-2 transition-colors"
+            variant="secondary"
+            size="sm"
+            className="w-full"
           >
             <span className="inline-flex items-center gap-1.5 min-w-0">
-              {triggerColor && (
-                <span
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: triggerColor }}
-                />
-              )}
-              <span className="truncate">{triggerLabel}</span>
+            {triggerColor && (
+            <span
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{ backgroundColor: triggerColor }}
+            />
+            )}
+            <span className="truncate">{triggerLabel}</span>
             </span>
             <ChevronDown
-              className={`w-3.5 h-3.5 flex-shrink-0 text-ink-1 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            className={`w-3.5 h-3.5 flex-shrink-0 text-ink-1 transition-transform ${isOpen ? 'rotate-180' : ''}`}
             />
-          </button>
+          </Button>
         )}
       >
         {({ close, focusIndex }) => (

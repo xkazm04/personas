@@ -5,6 +5,7 @@ import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useMenuKeyboard } from '@/hooks/utility/interaction/useMenuKeyboard';
 import type { Persona } from '@/lib/bindings/Persona';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface PersonaRowMenuProps {
   persona: Persona;
@@ -36,7 +37,7 @@ export function PersonaRowMenu({ persona, onDuplicate, onExport }: PersonaRowMen
 
   return (
     <div ref={ref} className="relative flex items-center justify-center w-full h-full">
-      <button
+      <Button
         ref={triggerRef}
         type="button"
         data-testid={`persona-row-menu-${persona.id}`}
@@ -47,10 +48,10 @@ export function PersonaRowMenu({ persona, onDuplicate, onExport }: PersonaRowMen
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="p-1 rounded-interactive text-ink-1 hover:bg-primary/[0.06] transition-colors focus-ring cursor-pointer"
-      >
-        <MoreHorizontal className="w-4 h-4" />
-      </button>
+        variant="ghost"
+        size="icon-sm"
+        icon={<MoreHorizontal className="w-4 h-4" />}
+      />
       {open && (
         <div
           ref={menuRef}

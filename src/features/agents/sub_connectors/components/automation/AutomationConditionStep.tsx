@@ -10,6 +10,7 @@ import { PLATFORM_CONFIG } from '../../libs/automationTypes';
 import { FALLBACK_OPTIONS, TIMEOUT_SECS_DEFAULT, TIMEOUT_SECS_MAX, TIMEOUT_SECS_MIN } from '../../libs/useAutomationSetup';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface DesignResult {
   platform_reasoning?: string;
@@ -135,12 +136,16 @@ export function AutomationConditionStep({
         </div>
       </div>
 
-      <button type="button" onClick={() => setShowAdvanced(!showAdvanced)}
-        className="flex items-center gap-1.5 typo-body text-ink-1 hover:text-ink-1 transition-colors">
-        <Pencil className="w-3.5 h-3.5" />
+      <Button
+        type="button"
+        onClick={() => setShowAdvanced(!showAdvanced)}
+        variant="ghost"
+        size="sm"
+        icon={<Pencil className="w-3.5 h-3.5" />}
+      >
         {showAdvanced ? t.agents.connectors.auto_hide_advanced : t.agents.connectors.auto_show_advanced}
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
-      </button>
+      </Button>
 
       {showAdvanced && (
           <div className="animate-fade-slide-in overflow-hidden space-y-4">

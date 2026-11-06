@@ -23,6 +23,7 @@ import { VersionRatingCell } from './VersionRatingCell';
 import { VersionRowActions, type RowActionHandlers } from './VersionRowActions';
 import { PostActivationReconcileDialog, type OverrideConflict } from './PostActivationReconcileDialog';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Regression flag threshold — a drop of this many composite points vs baseline. */
 const REGRESSION_DROP = 5;
@@ -291,7 +292,7 @@ export function LabVersionsTable() {
             Built from data already in the table; no fresh run needed. */}
         {versionRatings.some((r) => r.compositeScore != null) && (
           <div className="ml-auto flex items-center gap-1.5">
-            <button
+            <Button
               type="button"
               data-testid="vr-export-comparison-html"
               onClick={() => {
@@ -300,12 +301,11 @@ export function LabVersionsTable() {
                 const safe = name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
                 downloadHtmlReport(html, `${safe}-version-comparison.html`);
               }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption text-ink-1 bg-surface-2 hover:bg-surface-2 border border-hair transition-colors"
-            >
-              <FileDown className="w-3.5 h-3.5" />
-              {t.agent_lab.export_download_html}
-            </button>
-            <button
+              variant="secondary"
+              size="sm"
+              icon={<FileDown className="w-3.5 h-3.5" />}
+            >{t.agent_lab.export_download_html}</Button>
+            <Button
               type="button"
               data-testid="vr-export-comparison-md"
               onClick={async () => {
@@ -314,11 +314,10 @@ export function LabVersionsTable() {
                 setReportCopied(true);
                 setTimeout(() => setReportCopied(false), 2000);
               }}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption text-ink-1 bg-surface-2 hover:bg-surface-2 border border-hair transition-colors"
-            >
-              {reportCopied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <ClipboardCopy className="w-3.5 h-3.5" />}
-              {reportCopied ? t.agent_lab.export_copied : t.agent_lab.export_copy_markdown}
-            </button>
+              variant="secondary"
+              size="sm"
+              icon={reportCopied ? <Check className="w-3.5 h-3.5 text-status-success" /> : <ClipboardCopy className="w-3.5 h-3.5" />}
+            >{reportCopied ? t.agent_lab.export_copied : t.agent_lab.export_copy_markdown}</Button>
           </div>
         )}
       </div>

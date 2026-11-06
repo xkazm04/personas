@@ -13,6 +13,7 @@ import { AxisTraitGrid } from "./TraitGrid";
 import { ConflictTiles, ModelTiles, EffortMeter } from "./ConfigTiles";
 import { ACCENT } from "./catalog";
 import type { PersonaCore } from "./types";
+import Button from '@/features/shared/components/buttons/Button';
 
 /** `fill`: the host (a stage-sized layer) owns the height, so the grid takes
  *  all of it instead of capping at 64vh. */
@@ -49,14 +50,14 @@ export function PersonaCoreCodex({ core, fill = false }: { core: PersonaCore; fi
                 appears only when something was actually discarded, and
                 withdraws itself the moment the user edits the new set. */}
             {core.discardedTraits && (
-              <button
+              <Button
                 type="button"
                 onClick={core.restoreTraits}
                 data-testid="core-restore-traits"
-                className="inline-flex items-center gap-1 typo-caption text-ink-1 hover:text-ink-1 cursor-pointer"
-              >
-                <Undo2 className="w-3 h-3" /> {t.agents.core_traits_restore}
-              </button>
+                variant="ghost"
+                size="sm"
+                icon={<Undo2 className="w-3 h-3" />}
+              >{t.agents.core_traits_restore}</Button>
             )}
             {state.traits.length > 0 && (
               <span className="typo-caption" style={{ color: ACCENT }}>

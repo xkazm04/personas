@@ -8,6 +8,7 @@ import { PLATFORM_CONFIG } from '../../libs/automationTypes';
 import type { PersonaCapability } from '@/lib/personas/capabilities';
 import { DebtText } from '@/i18n/DebtText';
 import { GithubRepoPicker } from './AutomationPlatformListings';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface AutomationTriggerStepProps {
@@ -120,15 +121,17 @@ export function AutomationTriggerStep({
             <p className="typo-body text-ink-1">{tx(t.agents.connectors.auto_creds_required, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</p>
             <p className="typo-body text-ink-2 mt-0.5">{tx(t.agents.connectors.auto_add_key_hint, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}</p>
             {platformConnector && (
-              <button
+              <Button
                 type="button"
                 onClick={() => { window.dispatchEvent(new CustomEvent('open-vault-connector', { detail: { connectorId: platformConnector.id } })); }}
-                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 typo-body rounded-modal bg-brand-amber/15 border border-brand-amber/25 text-ink-1 hover:bg-brand-amber/25 transition-colors"
+                variant="secondary"
+                size="sm"
+                className="mt-2"
+                icon={<KeyRound className="w-3 h-3" />}
               >
-                <KeyRound className="w-3 h-3" />
                 {tx(t.agents.connectors.auto_add_creds, { label: PLATFORM_CONFIG[platform] ? t.agents.connectors[PLATFORM_CONFIG[platform].labelKey] : '' })}
                 <ExternalLink className="w-3 h-3" />
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -170,16 +173,15 @@ export function AutomationTriggerStep({
 
       <div className="flex items-center justify-between">
         <span className="typo-body text-ink-1">{canDesign ? t.agents.connectors.auto_ctrl_enter : ''}</span>
-        <button
+        <Button
           type="button"
           onClick={onDesign}
           disabled={!canDesign}
-          title={!canDesign ? t.agents.connectors.auto_complete_fields : undefined}
-          className="flex items-center gap-2 px-4 py-2.5 typo-body rounded-modal bg-accent/20 border border-accent/30 text-ink-1 hover:bg-accent/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          {t.agents.connectors.auto_design_ai}
-        </button>
+          tooltip={!canDesign ? t.agents.connectors.auto_complete_fields : undefined}
+          variant="secondary"
+          size="md"
+          icon={<Sparkles className="w-3.5 h-3.5" />}
+        >{t.agents.connectors.auto_design_ai}</Button>
       </div>
     </div>
   );

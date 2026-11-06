@@ -3,6 +3,7 @@ import { Search, Filter, ChevronDown } from 'lucide-react';
 import type { DeployTarget, DeployStatus } from './deploymentTypes';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface DeploymentFiltersProps {
   search: string;
@@ -41,20 +42,17 @@ export function DeploymentFilters({
       </div>
 
       <div className="relative">
-        <button
+        <Button
           type="button"
           aria-expanded={filterOpen}
           onClick={() => setFilterOpen(!filterOpen)}
-          className={`flex items-center gap-1.5 px-3 py-2 typo-body rounded-modal border transition-colors cursor-pointer ${
-            targetFilter !== 'all' || statusFilter !== 'all'
-              ? 'bg-primary/10 border-primary/25 text-primary'
-              : 'bg-surface-2 border-hair text-ink-1 hover:border-primary/25'
-          }`}
+          variant={targetFilter !== 'all' || statusFilter !== 'all' ? 'secondary' : 'ghost'}
+          size="sm"
+          icon={<Filter className="w-3.5 h-3.5" />}
         >
-          <Filter className="w-3.5 h-3.5" />
           {dt.filter}
           <ChevronDown className={`w-3 h-3 transition-transform ${filterOpen ? 'rotate-180' : ''}`} />
-        </button>
+        </Button>
 
         {filterOpen && (
           <div className="absolute top-full right-0 mt-1 z-30 bg-background border border-hair rounded-modal shadow-elevation-3 p-3 min-w-[200px] space-y-3">
@@ -62,18 +60,13 @@ export function DeploymentFilters({
               <label className="typo-label text-ink-1">{dt.filter_target}</label>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {(['all', 'cloud', 'gitlab'] as const).map((v) => (
-                  <button
+                  <Button
                     type="button"
                     key={v}
                     onClick={() => onTargetFilterChange(v)}
-                    className={`px-2.5 py-1 typo-caption rounded-card border transition-colors cursor-pointer ${
-                      targetFilter === v
-                        ? 'bg-primary/15 border-primary/25 text-primary'
-                        : 'bg-surface-1 border-hair text-ink-1 hover:bg-surface-2'
-                    }`}
-                  >
-                    {v === 'all' ? dt.filter_all : v === 'cloud' ? dt.cloud : 'GitLab'}
-                  </button>
+                    variant={targetFilter === v ? 'secondary' : 'ghost'}
+                    size="sm"
+                  >{v === 'all' ? dt.filter_all : v === 'cloud' ? dt.cloud : 'GitLab'}</Button>
                 ))}
               </div>
             </div>
@@ -81,18 +74,13 @@ export function DeploymentFilters({
               <label className="typo-label text-ink-1">{dt.filter_status}</label>
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {(['all', 'active', 'paused', 'failed', 'file-based', 'unknown'] as const).map((v) => (
-                  <button
+                  <Button
                     type="button"
                     key={v}
                     onClick={() => onStatusFilterChange(v)}
-                    className={`px-2.5 py-1 typo-caption rounded-card border transition-colors cursor-pointer ${
-                      statusFilter === v
-                        ? 'bg-primary/15 border-primary/25 text-primary'
-                        : 'bg-surface-1 border-hair text-ink-1 hover:bg-surface-2'
-                    }`}
-                  >
-                    {v === 'all' ? dt.filter_all : tokenLabel(t, 'deployment', v)}
-                  </button>
+                    variant={statusFilter === v ? 'secondary' : 'ghost'}
+                    size="sm"
+                  >{v === 'all' ? dt.filter_all : tokenLabel(t, 'deployment', v)}</Button>
                 ))}
               </div>
             </div>

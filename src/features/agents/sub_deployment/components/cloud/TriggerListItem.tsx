@@ -22,6 +22,7 @@ import {
   formatCost,
   parseConfig,
 } from './cloudSchedulesHelpers';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface TriggerListItemProps {
   trigger: CloudTrigger;
@@ -76,7 +77,7 @@ export function TriggerListItem({
           </span>
         )}
         {healthBadge(t, trigger.healthStatus)}
-        <span className={`w-2 h-2 rounded-full ${trigger.enabled ? 'bg-status-success' : 'bg-muted-foreground/30'}`} title={trigger.enabled ? t.common.enabled : t.common.disabled} />
+        <Tooltip content={trigger.enabled ? t.common.enabled : t.common.disabled}><span className={`w-2 h-2 rounded-full ${trigger.enabled ? 'bg-status-success' : 'bg-muted-foreground/30'}`}/></Tooltip>
       </button>
 
       {/* Expanded detail */}

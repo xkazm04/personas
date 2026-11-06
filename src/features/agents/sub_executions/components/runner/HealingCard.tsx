@@ -4,6 +4,7 @@ import { Clock, RotateCw, ShieldAlert, ExternalLink } from 'lucide-react';
 import type { HealingEventPayload } from '../../runnerTypes';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** Inline Healing Notification Card */
 export function HealingCard({
@@ -47,9 +48,7 @@ export function HealingCard({
               <span className="inline-flex items-center typo-code text-ink-1">{tokenLabel(t, 'severity', notification.severity)}</span>
             </div>
           </div>
-          <button type="button" onClick={onDismiss} className="text-ink-1 hover:text-ink-1 transition-colors flex-shrink-0 p-0.5">
-            <span className="typo-body">{e.dismiss}</span>
-          </button>
+          <Button type="button" onClick={onDismiss} variant="ghost" size="sm" className="flex-shrink-0"><span className="typo-body">{e.dismiss}</span></Button>
         </div>
 
         {notification.strategy && (
@@ -86,9 +85,13 @@ export function HealingCard({
         )}
 
         {isIssue && (
-          <button type="button" onClick={() => setSidebarSection('overview')} className="flex items-center gap-1.5 typo-body text-status-error hover:text-status-error transition-colors">
-            <ExternalLink className="w-3 h-3" />{e.view_healing_issues}
-          </button>
+          <Button
+            type="button"
+            onClick={() => setSidebarSection('overview')}
+            variant="danger"
+            size="sm"
+            icon={<ExternalLink className="w-3 h-3" />}
+          >{e.view_healing_issues}</Button>
         )}
 
         {notification.suggested_fix && (

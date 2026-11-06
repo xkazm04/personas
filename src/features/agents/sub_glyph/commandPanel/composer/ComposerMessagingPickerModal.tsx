@@ -37,6 +37,7 @@ import {
   DESTINATION_FIELDS,
   isFullyConfigured,
 } from "../messagingChannelDefaults";
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface ComposerMessagingPickerModalProps {
@@ -257,19 +258,20 @@ export function ComposerMessagingPickerModal({
       footer={
         <>
           <Kbd><DebtText k="auto_enter_b0d98854" /></Kbd>
-          <button
+          <Button
             type="button"
             onClick={applyNow}
-            className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-ink-1 typo-body transition-colors"
             style={{ boxShadow: "0 0 20px rgba(96,165,250,0.25)" }}
+            variant="secondary"
+            size="sm"
           >
             {externalCount === 0
-              ? t.agents.messaging_picker.apply_inbox_only
-              : t.agents.messaging_picker.apply_with_count.replace(
-                  "{count}",
-                  String(externalCount),
-                )}
-          </button>
+            ? t.agents.messaging_picker.apply_inbox_only
+            : t.agents.messaging_picker.apply_with_count.replace(
+            "{count}",
+            String(externalCount),
+            )}
+          </Button>
         </>
       }
     >
@@ -387,17 +389,18 @@ export function ComposerMessagingPickerModal({
                           {spec.type}
                         </div>
                       </div>
-                      <button
+                      <Button
                         type="button"
                         onClick={() => toggle(pick)}
                         aria-label={t.agents.messaging_picker.remove_chip.replace(
                           "{name}",
                           meta.label,
                         )}
-                        className="shrink-0 text-ink-1 hover:text-ink-1 p-1.5 rounded-interactive hover:bg-surface-2"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                        variant="ghost"
+                        size="icon-sm"
+                        className="shrink-0"
+                        icon={<X className="w-4 h-4" />}
+                      />
                     </div>
                     {fields.length > 0 && (
                       <div

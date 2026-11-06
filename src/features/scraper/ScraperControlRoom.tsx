@@ -21,6 +21,7 @@ import {
   type ScrapeStatusTone,
   type ScraperVariantProps,
 } from './useScraperData';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * Rows in the first viewport that play the one-shot entrance cascade when a
@@ -121,20 +122,17 @@ export function ScraperControlRoom({ data, onNew, onEdit }: ScraperVariantProps)
           {data.datasets.map((d) => {
             const open = openDataset === d.name;
             return (
-              <button
+              <Button
                 key={d.name}
                 type="button"
                 aria-expanded={open}
                 onClick={() => setOpenDataset(open ? null : d.name)}
-                className={`rounded-interactive border px-2.5 py-1 typo-caption transition-colors ${
-                  open
-                    ? 'border-primary/40 bg-surface-1 text-ink-1'
-                    : 'border-primary/12 bg-surface-2 text-ink-1 hover:bg-surface-2'
-                }`}
+                variant={open ? 'secondary' : 'ghost'}
+                size="sm"
               >
                 {d.name}
                 <span className="text-ink-3"> · {d.count}</span>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -219,14 +217,14 @@ function Row({
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           {!config.enabled && (
-            <span className="size-1.5 rounded-full bg-muted-foreground/40" title={t.common.disabled} />
+            <Tooltip content={t.common.disabled}><span className="size-1.5 rounded-full bg-muted-foreground/40"/></Tooltip>
           )}
           <span className="text-ink-1">{config.name}</span>
         </div>
         {config.description ? (
-          <span className="block max-w-[280px] truncate typo-caption text-ink-3" title={config.description}>
+          <Tooltip content={config.description}><span className="block max-w-[280px] truncate typo-caption text-ink-3">
             {config.description}
-          </span>
+          </span></Tooltip>
         ) : (
           <span className="typo-caption text-ink-3">→ {config.dataset}</span>
         )}
@@ -334,13 +332,11 @@ function StatusPill({
   collapsedLabel: string;
 }) {
   return (
-    <span
+    <Tooltip content={status.collapsed ? collapsedLabel : status.text}><span
       className="inline-flex items-center"
-      data-testid={status.collapsed ? 'scrape-status-collapsed' : 'scrape-status'}
-      title={status.collapsed ? collapsedLabel : status.text}
-    >
+      data-testid={status.collapsed ? 'scrape-status-collapsed' : 'scrape-status'}>
       <StateMark state={STATUS_STATE[status.tone]} label={status.text} className="max-w-[180px]" />
-    </span>
+    </span></Tooltip>
   );
 }
 

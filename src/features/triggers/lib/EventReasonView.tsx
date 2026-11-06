@@ -2,6 +2,7 @@ import { HelpCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { classifyEventReason } from './eventReason';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ReasonEvent {
   status: string;
@@ -34,21 +35,19 @@ export function EventReasonChip({ event }: { event: ReasonEvent }) {
 
   if (reason.kind === 'unknown') {
     return (
-      <span
-        className="inline-flex items-center gap-1 typo-caption text-ink-1"
-        title={t.triggers.event_reason_unknown_hint}
-      >
+      <Tooltip content={t.triggers.event_reason_unknown_hint}><span
+        className="inline-flex items-center gap-1 typo-caption text-ink-1">
         <HelpCircle className="w-3 h-3 shrink-0" />
         {t.triggers.event_reason_unknown}
-      </span>
+      </span></Tooltip>
     );
   }
 
   if (reason.kind === 'text') {
     return (
-      <span className="typo-caption text-status-error truncate" title={reason.text}>
+      <Tooltip content={reason.text}><span className="typo-caption text-status-error truncate">
         {reason.text}
-      </span>
+      </span></Tooltip>
     );
   }
 
@@ -88,13 +87,11 @@ export function EventReasonNote({ event }: { event: ReasonEvent }) {
     <div className="flex flex-wrap items-center gap-1.5">
       <span className="typo-caption text-ink-2">{t.triggers.event_reason_label}</span>
       {reason.kind === 'unknown' ? (
-        <span
-          className="inline-flex items-center gap-1 typo-caption text-ink-1"
-          title={t.triggers.event_reason_unknown_hint}
-        >
+        <Tooltip content={t.triggers.event_reason_unknown_hint}><span
+          className="inline-flex items-center gap-1 typo-caption text-ink-1">
           <HelpCircle className="w-3 h-3 shrink-0" />
           {t.triggers.event_reason_unknown}
-        </span>
+        </span></Tooltip>
       ) : (
         reason.tokens.map((token) => (
           <span

@@ -39,6 +39,8 @@ import { resolveEffectiveModel } from '@/lib/personas/modelResolution';
 import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';
 import { silentCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 
@@ -367,15 +369,14 @@ export function ArenaPanelColosseum({
           />
           <div className="ml-auto flex items-center gap-3">
             {isLabRunning ? (
-              <button
+              <Button
                 type="button"
                 onClick={() => void handleCancel()}
                 data-testid="arena-cancel-btn"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-status-error/15 hover:bg-status-error/25 border border-status-error/30 text-status-error typo-body-lg transition-colors"
-              >
-                <Flame className="w-4 h-4" />
-                {t.agents.lab.cancel_test}
-              </button>
+                variant="danger"
+                size="md"
+                icon={<Flame className="w-4 h-4" />}
+              >{t.agents.lab.cancel_test}</Button>
             ) : (
               <WaxSealButton
                 canLaunch={canLaunch}
@@ -619,19 +620,16 @@ function UseCasePopover({
       }}
       ariaLabel={t.agents.lab.arena_select_use_case}
       renderTrigger={({ isOpen, toggle }) => (
-        <button
+        <Button
           type="button"
           onClick={toggle}
           data-testid="arena-usecase-popover-trigger"
-          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive italic transition-colors border focus-ring ${
-            isOpen
-              ? 'bg-primary/15 border-primary/35 text-primary'
-              : 'bg-primary/5 border-hair text-primary/85 hover:bg-primary/10 hover:text-primary'
-          }`}
+          variant={isOpen ? 'secondary' : 'ghost'}
+          size="xs"
         >
           <span className="truncate max-w-[220px]">{label}</span>
           <ChevronDown className={`w-3.5 h-3.5 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+        </Button>
       )}
     >
       {({ close, focusIndex }) => (
@@ -678,25 +676,21 @@ function OverrideChip({
     ? <span className="flex items-center gap-1 text-status-success"><Check className="w-3 h-3" strokeWidth={3} />{inRosterLabel}</span>
     : <span className="flex items-center gap-1 text-primary"><Plus className="w-3 h-3" strokeWidth={2.5} />{addLabel}</span>;
   return (
-    <button
-      type="button"
-      onClick={inRoster ? undefined : onAdd}
-      disabled={inRoster}
-      data-testid="arena-override-chip"
-      data-in-roster={inRoster ? 'true' : 'false'}
-      title={`${prefersLabel} ${modelLabel}`}
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-interactive border typo-body transition-colors focus-ring ${
-        inRoster
-          ? 'bg-status-success/10 border-status-success/25 text-ink-1 cursor-default'
-          : 'bg-status-warning/10 border-status-warning/30 text-ink-1 hover:bg-status-warning/15 hover:border-status-warning/50'
-      }`}
-    >
-      <Pin className="w-3 h-3 text-status-warning" strokeWidth={2} />
-      <span className="text-ink-1">{prefersLabel}</span>
+    <Tooltip content={`${prefersLabel} ${modelLabel}`}><Button
+  type="button"
+  onClick={inRoster ? undefined : onAdd}
+  disabled={inRoster}
+  data-testid="arena-override-chip"
+  data-in-roster={inRoster ? 'true' : 'false'}
+  variant={inRoster ? 'secondary' : 'ghost'}
+  size="xs"
+  icon={<Pin className="w-3 h-3 text-status-warning" strokeWidth={2} />}
+>
+  <span className="text-ink-1">{prefersLabel}</span>
       <span className="font-medium text-ink-1">{modelLabel}</span>
       <span className="mx-0.5 text-ink-1" aria-hidden>·</span>
       {trailing}
-    </button>
+</Button></Tooltip>
   );
 }
 
@@ -849,7 +843,7 @@ function IconLevel({
   level, icon: Icon, active, title,
 }: { level: number; icon: LucideIcon; active: boolean; title: string }) {
   return (
-    <span className="flex items-center gap-0.5" title={`${title}: ${level}/3`} aria-label={`${title}: ${level} of 3`}>
+    <Tooltip content={`${title}: ${level}/3`}><span className="flex items-center gap-0.5" aria-label={`${title}: ${level} of 3`}>
       {Array.from({ length: level }).map((_, i) => (
         <Icon
           key={i}
@@ -857,7 +851,7 @@ function IconLevel({
           strokeWidth={2}
         />
       ))}
-    </span>
+    </span></Tooltip>
   );
 }
 
@@ -907,9 +901,9 @@ function ConditionRow({ tone, label }: { tone: 'ok' | 'warn' | 'neutral'; label:
   return (
     <li className="flex items-center gap-2 px-2.5 py-1.5 rounded-interactive">
       <span className={`h-2 w-2 flex-shrink-0 rounded-full ring-2 ${toneClasses.dot}`} />
-      <span className={`typo-body truncate ${toneClasses.label}`} title={label}>
+      <Tooltip content={label}><span className={`typo-body truncate ${toneClasses.label}`}>
         {label}
-      </span>
+      </span></Tooltip>
     </li>
   );
 }
@@ -1035,7 +1029,7 @@ function ParchmentCard({
           <Icon className="w-4 h-4 text-primary" strokeWidth={1.75} />
           <span className="typo-label text-primary/80">{title}</span>
         </div>
-        <span className="typo-body text-ink-1 truncate max-w-[140px]" title={meta}>{meta}</span>
+        <Tooltip content={meta}><span className="typo-body text-ink-1 truncate max-w-[140px]">{meta}</span></Tooltip>
       </div>
       <div className="p-4">{children}</div>
     </div>
@@ -1050,11 +1044,11 @@ function EmptyLine({ children }: { children: React.ReactNode }) {
 
 function StatPips({ label, level, icon: Icon }: { label: string; level: number; icon: LucideIcon }) {
   return (
-    <span className="flex items-center gap-0.5" title={`${label}: ${level}/3`}>
+    <Tooltip content={`${label}: ${level}/3`}><span className="flex items-center gap-0.5">
       {[1, 2, 3].map((i) => (
         <Icon key={i} className={`w-3 h-3 ${i <= level ? 'text-primary' : 'text-ink-1'}`} strokeWidth={2} fill={i <= level ? 'currentColor' : 'none'} />
       ))}
-    </span>
+    </span></Tooltip>
   );
 }
 

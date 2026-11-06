@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { getExecutionLogLines } from '@/api/agents/executions';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** First stdout page — same size session recovery and replay use. */
 const LOG_PAGE_SIZE = 500;
@@ -88,16 +89,17 @@ export function ExecutionLogViewer({ executionId, personaId, logTruncated = fals
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
-        <button
+        <Button
           type="button"
           onClick={handleToggleLog}
           aria-expanded={showLog}
-          className="flex items-center gap-2 typo-body text-ink-1 hover:text-ink-1 transition-colors"
+          variant="ghost"
+          size="sm"
+          icon={showLog ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         >
-          {showLog ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           <FileText className="w-4 h-4" />
           {t.agents.executions.execution_log}
-        </button>
+        </Button>
         <CopyButton copied={copied} onCopy={handleCopyLog} tooltip={t.agents.executions.copy_log_tooltip} />
       </div>
       {/* Outside the disclosure: a Copy that fails while the log is COLLAPSED

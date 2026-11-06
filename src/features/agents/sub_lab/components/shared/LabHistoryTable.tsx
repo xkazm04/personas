@@ -6,6 +6,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { statusBadge } from '@/lib/eval/evalFramework';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { LabEmptyState } from './LabEmptyState';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface LabHistoryColumn<TRun> {
   key: string;
@@ -109,15 +110,15 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
                   <RelativeTime timestamp={run.createdAt} />
                 </td>
                 <td className="px-2 py-2.5">
-                  <button
+                  <Button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); setPendingDeleteId(run.id); }}
-                    className="p-1 rounded-card hover:bg-status-error/15 text-ink-1 hover:text-status-error transition-colors"
-                    title={t.agents.lab.delete_run}
+                    tooltip={t.agents.lab.delete_run}
                     aria-label={t.agents.lab.delete_run}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
+                    variant="ghost"
+                    size="icon-sm"
+                    icon={<Trash2 className="w-3 h-3" />}
+                  />
                 </td>
               </tr>
             ))}

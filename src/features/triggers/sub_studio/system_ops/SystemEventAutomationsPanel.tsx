@@ -9,6 +9,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import type { SystemOpAutomation } from '@/api/systemOps';
+import Button from '@/features/shared/components/buttons/Button';
 
 function projectIdOf(a: SystemOpAutomation): string | null {
   try { return (JSON.parse(a.paramsJson) as { projectId?: string }).projectId ?? null; }
@@ -79,25 +80,25 @@ export function SystemEventAutomationsPanel({
                 ) : st.automation_idle}
               </div>
             </div>
-            <button
+            <Button
               type="button"
               onClick={() => onRun(a.id)}
-              title={st.automation_run_now}
+              tooltip={st.automation_run_now}
               aria-label={st.automation_run_now}
-              className="p-1.5 rounded-interactive text-ink-1 hover:text-role-agent hover:bg-role-agent/10 transition-colors"
-            >
-              <Play className="w-3.5 h-3.5" />
-            </button>
+              variant="ghost"
+              size="icon-sm"
+              icon={<Play className="w-3.5 h-3.5" />}
+            />
             <AccessibleToggle checked={a.enabled} onChange={() => onToggle(a.id, !a.enabled)} label={st.automation_enabled} size="sm" />
-            <button
+            <Button
               type="button"
               onClick={() => onDelete(a.id)}
-              title={st.automation_delete}
+              tooltip={st.automation_delete}
               aria-label={st.automation_delete}
-              className="p-1.5 rounded-interactive text-ink-1 hover:text-status-error hover:bg-status-error/10 transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+              variant="ghost"
+              size="icon-sm"
+              icon={<Trash2 className="w-3.5 h-3.5" />}
+            />
           </li>
         ))}
       </ul>

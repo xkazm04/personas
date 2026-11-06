@@ -1,6 +1,7 @@
 import { X, CheckCircle2, Zap, ArrowRight, Radio, FlaskConical } from 'lucide-react';
 import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface DryRunResultViewProps {
   detail: ReturnType<typeof useTriggerDetail>;
@@ -21,9 +22,13 @@ export function DryRunResultView({ detail }: DryRunResultViewProps) {
               <FlaskConical className="w-3.5 h-3.5" />
               {t.triggers.dry_run_result_title}
             </div>
-            <button type="button" onClick={clearDryRunResult} className="p-0.5 hover:bg-status-warning/15 rounded-interactive transition-colors">
-              <X className="w-3 h-3 text-status-warning" />
-            </button>
+            <Button
+              type="button"
+              onClick={clearDryRunResult}
+              variant="ghost"
+              size="icon-sm"
+              icon={<X className="w-3 h-3 text-status-warning" />}
+            />
           </div>
 
           {/* Validation status */}

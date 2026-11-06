@@ -3,6 +3,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { PersonaBudgetState, BudgetStatus } from '@/stores/slices/agents/budgetEnforcementSlice';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface BudgetRecoveryCardProps {
   budgetStatus: BudgetStatus;
@@ -66,23 +67,21 @@ export function BudgetRecoveryCard({
         </div>
         {isBudgetBlocked && (
           <div className="flex flex-wrap items-center gap-2 px-3.5 pb-3 pt-1">
-            <button
+            <Button
               type="button"
               data-testid="runner-budget-override"
               onClick={onOverrideBudget}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-card border border-status-error/20 text-status-error hover:text-status-error hover:bg-status-error/10 transition-colors"
-            >
-              <PlayCircle className="w-3.5 h-3.5" />
-              {e.run_anyway_session}
-            </button>
-            <button
+              variant="danger"
+              size="sm"
+              icon={<PlayCircle className="w-3.5 h-3.5" />}
+            >{e.run_anyway_session}</Button>
+            <Button
               type="button"
               onClick={() => setEditorTab('settings')}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-card border border-hair text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
-            >
-              <Settings className="w-3.5 h-3.5" />
-              {e.raise_budget}
-            </button>
+              variant="secondary"
+              size="sm"
+              icon={<Settings className="w-3.5 h-3.5" />}
+            >{e.raise_budget}</Button>
             <span className="flex items-center gap-1.5 typo-body text-ink-1">
               <CalendarClock className="w-3.5 h-3.5" />
               {tx(e.resets_in, { days: getResetLabel(t, tx) })}
@@ -107,14 +106,13 @@ export function BudgetRecoveryCard({
         </div>
         {isBudgetBlocked && (
           <div className="flex flex-wrap items-center gap-2 px-3.5 pb-3 pt-1">
-            <button
+            <Button
               type="button"
               onClick={onOverrideStale}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-card border border-status-warning/20 text-status-warning hover:text-status-warning hover:bg-status-warning/10 transition-colors"
-            >
-              <PlayCircle className="w-3.5 h-3.5" />
-              {e.run_anyway}
-            </button>
+              variant="secondary"
+              size="sm"
+              icon={<PlayCircle className="w-3.5 h-3.5" />}
+            >{e.run_anyway}</Button>
             <span className="flex items-center gap-1.5 typo-body text-ink-1">
               <RefreshCw className="w-3.5 h-3.5" />
               {e.retrying_automatically}

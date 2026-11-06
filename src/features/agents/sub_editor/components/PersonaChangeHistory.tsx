@@ -7,6 +7,7 @@ import { storeBus } from '@/lib/storeBus';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaChangeEntry } from '@/lib/bindings/PersonaChangeEntry';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface PersonaChangeHistoryProps {
   personaId: string;
@@ -131,13 +132,13 @@ export function PersonaChangeHistory({ personaId, revision }: PersonaChangeHisto
                   {fieldLabel(e.field)}
                 </span>
                 <span className="flex items-center gap-1.5 min-w-0 flex-1 typo-caption text-ink-2">
-                  <span className="truncate max-w-[8rem]" title={displayValue(e.beforeValue)}>
+                  <Tooltip content={displayValue(e.beforeValue)}><span className="truncate max-w-[8rem]">
                     {displayValue(e.beforeValue)}
-                  </span>
+                  </span></Tooltip>
                   <ArrowRight className="w-3 h-3 shrink-0 opacity-60" />
-                  <span className="truncate max-w-[8rem] text-ink-1" title={displayValue(e.afterValue)}>
+                  <Tooltip content={displayValue(e.afterValue)}><span className="truncate max-w-[8rem] text-ink-1">
                     {displayValue(e.afterValue)}
-                  </span>
+                  </span></Tooltip>
                 </span>
                 <span className={`shrink-0 px-1.5 py-0.5 rounded-card border typo-caption ${SOURCE_TONE[e.source ?? 'other'] ?? SOURCE_TONE.other}`}>
                   {sourceLabel(e.source)}

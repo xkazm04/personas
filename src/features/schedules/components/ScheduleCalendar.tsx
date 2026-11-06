@@ -16,6 +16,8 @@ import { useCalendarEvents } from '../libs/useCronPreview';
 import { useTranslation } from '@/i18n/useTranslation';
 import { WeekView } from './WeekView';
 import { MonthView } from './MonthView';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 // Calendar legend filters — each kind toggles independently. "Overlap" is a
 // fourth toggle that, when off, hides events that participate in a conflict
@@ -122,27 +124,21 @@ export default function ScheduleCalendar({
       {/* Calendar toolbar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
             onClick={() => navigate(-1)}
-            className="p-1.5 rounded-card border border-hair hover:bg-surface-2 text-ink-1 transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
+            variant="secondary"
+            size="icon-sm"
+            icon={<ChevronLeft className="w-4 h-4" />}
+          />
+          <Button
             type="button"
             onClick={() => navigate(1)}
-            className="p-1.5 rounded-card border border-hair hover:bg-surface-2 text-ink-1 transition-colors"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={goToday}
-            className="px-2.5 py-1 typo-caption rounded-card border border-hair hover:bg-surface-2 text-ink-1 transition-colors"
-          >
-            {t.schedules.today}
-          </button>
+            variant="secondary"
+            size="icon-sm"
+            icon={<ChevronRight className="w-4 h-4" />}
+          />
+          <Button type="button" onClick={goToday} variant="secondary" size="sm">{t.schedules.today}</Button>
           <span className="typo-heading text-ink-1 ml-1">
             {headerLabel}
           </span>
@@ -150,10 +146,8 @@ export default function ScheduleCalendar({
 
         <div className="flex items-center gap-1">
           {/* Legend (now: toggle filters) */}
-          <div
-            className="flex items-center gap-1 mr-3 typo-caption"
-            title={t.schedules.filter_toggle_tooltip}
-          >
+          <Tooltip content={t.schedules.filter_toggle_tooltip}><div
+            className="flex items-center gap-1 mr-3 typo-caption">
             <LegendToggle
               active={activeKinds.has('projected')}
               onClick={() => toggleKind('projected')}
@@ -192,44 +186,34 @@ export default function ScheduleCalendar({
               </LegendToggle>
             )}
             {!allActive && (
-              <button
+              <Button
                 type="button"
                 onClick={resetFilters}
                 aria-label={t.schedules.filter_reset_aria}
-                className="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-card border border-hair text-ink-1 hover:text-ink-1 hover:bg-surface-2 hover:border-primary/30 transition-colors"
-              >
-                <RotateCcw className="w-2.5 h-2.5" />
-                {t.schedules.filter_reset}
-              </button>
+                variant="secondary"
+                size="xs"
+                className="ml-1"
+                icon={<RotateCcw className="w-2.5 h-2.5" />}
+              >{t.schedules.filter_reset}</Button>
             )}
-          </div>
+          </div></Tooltip>
 
           {/* View toggle */}
           <div className="flex rounded-card border border-hair overflow-hidden">
-            <button
+            <Button
               type="button"
               aria-pressed={view === 'week'}
               onClick={() => setView('week')}
-              className={`px-2.5 py-1 typo-caption transition-colors ${
-                view === 'week'
-                  ? 'bg-surface-1 text-ink-1'
-                  : 'text-ink-1 hover:text-ink-2'
-              }`}
-            >
-              {t.schedules.week}
-            </button>
-            <button
+              variant={view === 'week' ? 'secondary' : 'ghost'}
+              size="sm"
+            >{t.schedules.week}</Button>
+            <Button
               type="button"
               aria-pressed={view === 'month'}
               onClick={() => setView('month')}
-              className={`px-2.5 py-1 typo-caption transition-colors ${
-                view === 'month'
-                  ? 'bg-surface-1 text-ink-1'
-                  : 'text-ink-1 hover:text-ink-2'
-              }`}
-            >
-              {t.schedules.month}
-            </button>
+              variant={view === 'month' ? 'secondary' : 'ghost'}
+              size="sm"
+            >{t.schedules.month}</Button>
           </div>
         </div>
       </div>

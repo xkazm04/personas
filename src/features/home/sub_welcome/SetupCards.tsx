@@ -7,6 +7,7 @@ import { useIsDarkTheme } from '@/stores/themeStore';
 import { CONNECTOR_META, ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 /* ------------------------------------------------------------------ */
 /*  Role definitions                                                    */
@@ -358,9 +359,13 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <StepIndicator current={step} completed={completed} />
-          <button type="button" onClick={onClose} className="p-1.5 rounded-card hover:bg-surface-2 transition-colors">
-            <X className="w-4 h-4 text-ink-1" />
-          </button>
+          <Button
+            type="button"
+            onClick={onClose}
+            variant="ghost"
+            size="icon-sm"
+            icon={<X className="w-4 h-4 text-ink-1" />}
+          />
         </div>
 
         {/* Step content */}
@@ -385,24 +390,18 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
 
         {/* Footer nav */}
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-primary/8">
-          <button
+          <Button
             type="button"
             onClick={goBack}
             disabled={step === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-modal typo-heading text-ink-1 hover:text-ink-1 hover:bg-primary/8 transition-all disabled:opacity-0 disabled:pointer-events-none"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            {ss.back}
-          </button>
-          <button
-            type="button"
-            onClick={goNext}
-            disabled={!canNext}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-modal typo-heading bg-primary/15 border border-hair text-ink-1 hover:bg-primary/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-          >
+            variant="ghost"
+            size="md"
+            icon={<ChevronLeft className="w-4 h-4" />}
+          >{ss.back}</Button>
+          <Button type="button" onClick={goNext} disabled={!canNext} variant="secondary" size="md">
             {step === 2 ? ss.finish : ss.next}
             {step < 2 && <ChevronRight className="w-4 h-4" />}
-          </button>
+          </Button>
         </div>
       </div>
     </BaseModal>

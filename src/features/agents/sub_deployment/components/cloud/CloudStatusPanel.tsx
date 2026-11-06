@@ -6,6 +6,7 @@ import { motion, useMotionValueEvent, useSpring, useTransform } from 'framer-mot
 import { useEffect, useMemo, useState } from 'react';
 import type { CloudOAuthStatusResponse } from '@/api/system/cloud';
 import { CloudTokenIndicator } from './CloudTokenIndicator';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface CloudStatusPanelProps {
   status: {
@@ -77,15 +78,14 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, oauthStatus, la
             {stale ? t.agents.health_check.stale : t.agents.executions.live}
           </div>
         ) : <div />}
-        <button
+        <Button
           type="button"
           onClick={onRefresh}
           disabled={isLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal bg-surface-2 border border-hair text-ink-1 hover:text-ink-1 hover:border-primary/25 disabled:opacity-40 transition-colors cursor-pointer"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          {t.common.refresh}
-        </button>
+          variant="secondary"
+          size="sm"
+          icon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
+        >{t.common.refresh}</Button>
       </div>
 
       {/* Worker counts */}

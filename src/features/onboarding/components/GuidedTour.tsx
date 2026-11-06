@@ -435,7 +435,7 @@ export default function GuidedTour() {
       total: visibleSteps.length,
     });
     return (
-      <button
+      <Tooltip content={minimizedHint}><button
         type="button"
         // Just expand — don't re-run navigateToStep. Minimizing only collapses
         // the panel (the user stays on the step's screen), so re-navigating on
@@ -443,15 +443,13 @@ export default function GuidedTour() {
         // modal opens, appearance-baseline capture, etc.).
         onClick={() => setIsMinimized(false)}
         data-testid="tour-panel-minimized"
-        title={minimizedHint}
         aria-label={minimizedHint}
-        className={`animate-fade-slide-in fixed left-0 top-[50%] -translate-y-1/2 z-[9999] flex flex-col items-center gap-1.5 px-1.5 py-3 rounded-r-full bg-background border border-l-0 ${colors.accent} shadow-elevation-3 ${colors.glow} hover:shadow-elevation-3 transition-shadow cursor-pointer group`}
-      >
+        className={`animate-fade-slide-in fixed left-0 top-[50%] -translate-y-1/2 z-[9999] flex flex-col items-center gap-1.5 px-1.5 py-3 rounded-r-full bg-background border border-l-0 ${colors.accent} shadow-elevation-3 ${colors.glow} hover:shadow-elevation-3 transition-shadow cursor-pointer group`}>
         <span className={colors.text}>
           <TourProgressArc completed={completedCount} total={visibleSteps.length} />
         </span>
         <span className="typo-caption text-ink-2 [writing-mode:vertical-lr]">{completedCount}/{visibleSteps.length}</span>
-      </button>
+      </button></Tooltip>
     );
   }
 

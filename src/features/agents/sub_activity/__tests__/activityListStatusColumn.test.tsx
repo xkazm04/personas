@@ -5,7 +5,7 @@
  * prefixed it a second time, so the tooltip read "Importance: importance: 5".
  */
 import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
 import type { ActivityItem } from '../activityTypes';
 
 vi.mock('@/lib/utils/formatters', () => ({
@@ -40,11 +40,12 @@ const row = (type: ActivityItem['type'], status: string): ActivityItem => ({
 });
 
 describe('ActivityList status column', () => {
-  it('shows a memory importance tooltip once', () => {
+  it('shows a memory importance tooltip once', async () => {
     const { container } = renderItems([row('memory', 'importance: 7')]);
-    const titles = Array.from(container.querySelectorAll('[title]')).map((e) => e.getAttribute('title'));
-    expect(titles).toContain('Importance: 7');
-    expect(titles.some((x) => /importance:.*importance:/i.test(x ?? ''))).toBe(false);
+    fireEvent.mouseEnter(container.querySelector('.text-status-warning')!);
+    const tips = (await screen.findAllByRole('tooltip')).map((e) => e.textContent);
+    expect(tips).toContain('Importance: 7');
+    expect(tips.some((x) => /importance:.*importance:/i.test(x ?? ''))).toBe(false);
   });
 
   it('renders review statuses as translated StatusBadge pills, not ad-hoc colours', () => {

@@ -79,16 +79,18 @@ export function ComposeCentre({ intentText, onIntentChange, onLaunch, launchDisa
         <div className="flex items-center gap-2 flex-nowrap min-w-0">
           <PersonaCoreEntry core={core} locked={launching} onOpen={onOpenCore} />
           <Tooltip content={COPY.contextHint}>
-            <button
+            <Button
               type="button"
               onClick={(e) => onOpenContext(e.currentTarget)}
               aria-label={contextLabel}
-              className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 h-8 px-2.5 rounded-interactive border border-card-border typo-body text-ink-1 hover:text-ink-1 hover:bg-surface-1"
+              variant="secondary"
+              size="sm"
+              className="shrink-0"
+              icon={<FileText className="w-3.5 h-3.5 shrink-0" aria-hidden />}
             >
-              <FileText className="w-3.5 h-3.5 shrink-0" aria-hidden />
               <span className="hidden @[30rem]:inline">{contextLabel}</span>
               {hasContext && <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-primary @[30rem]:hidden" />}
-            </button>
+            </Button>
           </Tooltip>
           <Button
             className="ml-auto shrink-0"

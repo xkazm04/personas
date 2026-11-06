@@ -2,6 +2,7 @@ import { Plus, X } from 'lucide-react';
 import { TriggerFieldGroup } from './TriggerFieldGroup';
 import { ENGINE_WATCH_EVENTS } from './buildTriggerConfig';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface FileWatcherConfigProps {
   watchPaths: string[];
@@ -49,31 +50,34 @@ export function FileWatcherConfig({
               }`}
             />
             {watchPaths.length > 1 && (
-              <button type="button" onClick={() => setWatchPaths(watchPaths.filter((_, j) => j !== i))} className="p-1.5 text-ink-1 hover:text-status-error transition-colors">
-                <X className="w-3.5 h-3.5" />
-              </button>
+              <Button
+                type="button"
+                onClick={() => setWatchPaths(watchPaths.filter((_, j) => j !== i))}
+                variant="ghost"
+                size="icon-sm"
+                icon={<X className="w-3.5 h-3.5" />}
+              />
             )}
           </div>
         ))}
-        <button type="button" onClick={() => setWatchPaths([...watchPaths, ''])} className="flex items-center gap-1 typo-body text-status-warning hover:text-status-warning transition-colors">
-          <Plus className="w-3.5 h-3.5" /> {t.triggers.file_watcher.add_path}
-        </button>
+        <Button
+          type="button"
+          onClick={() => setWatchPaths([...watchPaths, ''])}
+          variant="ghost"
+          size="sm"
+          icon={<Plus className="w-3.5 h-3.5" />}
+        >{t.triggers.file_watcher.add_path}</Button>
       </TriggerFieldGroup>
       <TriggerFieldGroup label={t.triggers.file_watcher.events_label}>
         <div className="flex flex-wrap gap-1.5">
           {ENGINE_WATCH_EVENTS.map((evt) => (
-            <button
+            <Button
               key={evt}
               type="button"
               onClick={() => setWatchEvents(prev => prev.includes(evt) ? prev.filter(e => e !== evt) : [...prev, evt])}
-              className={`px-2.5 py-1 rounded-modal typo-body transition-all border ${
-                watchEvents.includes(evt)
-                  ? 'bg-status-warning/15 text-status-warning border-status-warning/30'
-                  : 'bg-surface-1 text-ink-1 border-hair hover:bg-surface-2'
-              }`}
-            >
-              {eventLabels[evt]}
-            </button>
+              variant={watchEvents.includes(evt) ? 'secondary' : 'ghost'}
+              size="sm"
+            >{eventLabels[evt]}</Button>
           ))}
         </div>
       </TriggerFieldGroup>

@@ -3,6 +3,8 @@ import { Play, Clock, Info, Settings2, Cpu, Bell, FlaskConical, Power, PowerOff 
 import type { UseCaseItem } from './UseCasesList';
 import { useTranslation } from '@/i18n/useTranslation';
 import { debtText } from '@/i18n/DebtText';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 const CATEGORY_STYLES: Record<string, { bg: string; text: string }> = {
@@ -131,7 +133,11 @@ export function UseCaseRow({
           <div className="flex items-center gap-1.5 flex-shrink-0">
             {/* Enable/disable toggle (Phase C3) */}
             {onToggleEnabled && (
-              <button
+              <Tooltip content={
+                  isEnabled
+                    ? 'Pause this capability (stops triggers + subscriptions)'
+                    : 'Activate this capability'
+                }><button
                 type="button"
                 onClick={() => onToggleEnabled(useCase.id, !isEnabled)}
                 disabled={toggling}
@@ -141,19 +147,21 @@ export function UseCaseRow({
                     ? 'bg-status-success/10 border-status-success/20 text-status-success hover:bg-status-success/20'
                     : 'bg-surface-2 border-hair text-ink-1 hover:text-ink-1 hover:border-primary/25'
                 } ${toggling ? 'opacity-50 cursor-wait' : ''}`}
-                title={
-                  isEnabled
-                    ? 'Pause this capability (stops triggers + subscriptions)'
-                    : 'Activate this capability'
-                }
-                aria-label={isEnabled ? 'Pause capability' : 'Activate capability'}
-              >
+                aria-label={isEnabled ? 'Pause capability' : 'Activate capability'}>
                 {isEnabled ? <Power className="w-3.5 h-3.5" /> : <PowerOff className="w-3.5 h-3.5" />}
-              </button>
+              </button></Tooltip>
             )}
 
             {/* Play button */}
-            <button
+            <Tooltip content={
+                mode === 'non_executable'
+                  ? 'This use case is informational only'
+                  : !isEnabled
+                    ? 'Capability is paused — activate it to run'
+                    : isExecuting && !isActive
+                      ? 'Another use case is executing'
+                      : `Run ${useCase.title}`
+              }><button
               type="button"
               onClick={() => onExecute(useCase.id, useCase.sample_input ?? undefined)}
               disabled={playDisabled}
@@ -164,17 +172,7 @@ export function UseCaseRow({
                   : playDisabled
                     ? 'bg-surface-1 border-hair text-ink-1 cursor-not-allowed'
                     : 'bg-surface-2 border-hair text-ink-1 hover:bg-surface-2 hover:text-primary hover:border-primary/25'
-              }`}
-              title={
-                mode === 'non_executable'
-                  ? 'This use case is informational only'
-                  : !isEnabled
-                    ? 'Capability is paused — activate it to run'
-                    : isExecuting && !isActive
-                      ? 'Another use case is executing'
-                      : `Run ${useCase.title}`
-              }
-            >
+              }`}>
               {isActive ? (
                 <span className="relative flex h-3.5 w-3.5 items-center justify-center">
                   <span className="animate-ping absolute h-full w-full rounded-full bg-primary opacity-40" />
@@ -185,48 +183,38 @@ export function UseCaseRow({
               ) : (
                 <Play className="w-3.5 h-3.5" />
               )}
-            </button>
+            </button></Tooltip>
 
             {/* Simulate button (Phase C3) — bypasses enable gate, suppresses notifications */}
             {onSimulate && (
-              <button
-                type="button"
-                onClick={() => onSimulate(useCase.id)}
-                disabled={simulateDisabled}
-                data-testid={`use-case-simulate-${useCase.id}`}
-                className={`p-1.5 rounded-card border transition-colors ${
-                  simulateDisabled
-                    ? 'bg-surface-1 border-hair text-ink-1 cursor-not-allowed'
-                    : 'bg-status-warning/10 border-status-warning/20 text-status-warning hover:bg-status-warning/20 hover:text-status-warning'
-                }`}
-                title={
+              <Tooltip content={
                   simulateDisabled
                     ? 'Simulation unavailable while another execution is running'
                     : 'Simulate — real API calls, no notifications delivered'
-                }
-                aria-label={debtText("auto_simulate_capability_3ddcb2d1")}
-              >
-                <FlaskConical className="w-3.5 h-3.5" />
-              </button>
+                }><Button
+  type="button"
+  onClick={() => onSimulate(useCase.id)}
+  disabled={simulateDisabled}
+  data-testid={`use-case-simulate-${useCase.id}`}
+  aria-label={debtText("auto_simulate_capability_3ddcb2d1")}
+  variant={simulateDisabled ? 'secondary' : 'ghost'}
+  size="icon-sm"
+  icon={<FlaskConical className="w-3.5 h-3.5" />}
+/></Tooltip>
             )}
 
             {/* History toggle */}
-            <button
-              type="button"
-              onClick={() => onToggleHistory(useCase.id)}
-              className={`p-1.5 rounded-card border transition-colors ${
-                historyExpanded
-                  ? 'bg-primary/10 border-hair text-primary/80'
-                  : 'bg-surface-2 border-hair text-ink-1 hover:text-ink-2 hover:border-primary/25'
-              }`}
-              title={t.shared.use_cases_extra.toggle_history}
-            >
-              <Clock className="w-3.5 h-3.5" />
-            </button>
+            <Tooltip content={t.shared.use_cases_extra.toggle_history}><Button
+  type="button"
+  onClick={() => onToggleHistory(useCase.id)}
+  variant={historyExpanded ? 'secondary' : 'ghost'}
+  size="icon-sm"
+  icon={<Clock className="w-3.5 h-3.5" />}
+/></Tooltip>
 
             {/* Config toggle */}
             {onToggleConfig && (
-              <button
+              <Tooltip content={t.shared.use_cases_extra.configure_model}><button
                 type="button"
                 onClick={() => onToggleConfig(useCase.id)}
                 className={`p-1.5 rounded-card border transition-colors ${
@@ -235,11 +223,9 @@ export function UseCaseRow({
                     : hasAnyConfig
                       ? 'bg-surface-2 border-hair text-role-agent hover:text-role-agent hover:border-role-agent/25'
                       : 'bg-surface-2 border-hair text-ink-1 hover:text-ink-2 hover:border-primary/25'
-                }`}
-                title={t.shared.use_cases_extra.configure_model}
-              >
+                }`}>
                 <Settings2 className="w-3.5 h-3.5" />
-              </button>
+              </button></Tooltip>
             )}
           </div>
         </div>

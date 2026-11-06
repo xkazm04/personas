@@ -6,6 +6,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import type { DryRunReport } from '@/lib/bindings/DryRunReport';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface DryRunModalProps {
   open: boolean;
@@ -56,14 +57,14 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
               </p>
             </div>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-card hover:bg-surface-2 text-ink-1 hover:text-ink-1 transition-colors"
             aria-label={t.common.close}
-          >
-            <X className="w-4 h-4" />
-          </button>
+            variant="ghost"
+            size="icon-sm"
+            icon={<X className="w-4 h-4" />}
+          />
         </div>
 
         {/* Body */}
@@ -198,14 +199,13 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
               <section className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h4 className="typo-heading text-ink-1">{d.section_prompt}</h4>
-                  <button
+                  <Button
                     type="button"
                     onClick={handleCopyPrompt}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-card typo-caption text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
-                  >
-                    <Copy className="w-3 h-3" />
-                    {copied ? d.copied : d.copy_prompt}
-                  </button>
+                    variant="ghost"
+                    size="xs"
+                    icon={<Copy className="w-3 h-3" />}
+                  >{copied ? d.copied : d.copy_prompt}</Button>
                 </div>
                 <pre
                   data-testid="dry-run-prompt"
@@ -227,13 +227,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-hair bg-surface-1">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-1.5 typo-heading rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
-          >
-            {t.common.close}
-          </button>
+          <Button type="button" onClick={onClose} variant="ghost" size="sm">{t.common.close}</Button>
         </div>
       </div>
     </BaseModal>

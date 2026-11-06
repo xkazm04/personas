@@ -22,6 +22,8 @@ import { getSchedulerStatus, startScheduler, stopScheduler } from '@/api/pipelin
 import type { SchedulerStats } from '@/api/pipeline/scheduler';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const ScheduleCalendar = lazy(() => import('./ScheduleCalendar'));
 
@@ -177,16 +179,14 @@ export default function SchedulesOverlay() {
           <div className="flex items-center gap-3">
             {/* Scheduler engine status */}
             {schedulerStats && (
-              <button
+              <Tooltip content={schedulerStats.running ? t.schedules.engine_running_title : t.schedules.engine_stopped_title}><button
                 type="button"
                 onClick={handleToggleScheduler}
                 className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption rounded-card border transition-colors ${
                   schedulerStats.running
                     ? 'bg-status-success/10 border-status-success/20 text-status-success hover:bg-status-success/20'
                     : 'bg-status-error/10 border-status-error/20 text-status-error hover:bg-status-error/20'
-                }`}
-                title={schedulerStats.running ? t.schedules.engine_running_title : t.schedules.engine_stopped_title}
-              >
+                }`}>
                 {schedulerStats.running ? (
                   <>
                     <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse" />
@@ -198,7 +198,7 @@ export default function SchedulesOverlay() {
                     {t.schedules.engine_off}
                   </>
                 )}
-              </button>
+              </button></Tooltip>
             )}
 
             {/* Stats badges */}
@@ -219,15 +219,15 @@ export default function SchedulesOverlay() {
             </div>
 
             {/* Refresh */}
-            <button
+            <Button aria-label={t.schedules.refresh_schedules}
               type="button"
               onClick={() => fetchCronAgents()}
               disabled={loading}
-              className="p-2 rounded-card border border-hair hover:bg-surface-2 hover:border-hair text-ink-1 transition-all disabled:opacity-40"
-              title={t.schedules.refresh_schedules}
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
+              tooltip={t.schedules.refresh_schedules}
+              variant="secondary"
+              size="icon-sm"
+              icon={<RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />}
+            />
           </div>
         }
       >
@@ -241,16 +241,16 @@ export default function SchedulesOverlay() {
             <span>
               {t.schedules.showing_for} <span className="font-semibold">{filter.label}</span>
             </span>
-            <button
+            <Button
               type="button"
               onClick={() => {
                 setFilter(null);
                 window.dispatchEvent(new CustomEvent('schedules:filter', { detail: { personaIds: null } }));
               }}
-              className="ml-auto px-1.5 py-0.5 rounded-interactive typo-label hover:bg-status-info/15 transition-colors"
-            >
-              {t.common.clear}
-            </button>
+              variant="ghost"
+              size="xs"
+              className="ml-auto"
+            >{t.common.clear}</Button>
           </div>
         )}
 

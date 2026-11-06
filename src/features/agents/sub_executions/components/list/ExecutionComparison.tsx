@@ -7,6 +7,7 @@ import { MetricDeltaCard } from './ComparisonMetrics';
 import { ToolTimelineComparison } from './ComparisonTable';
 import { OutputDiffSection, JsonDiffSection } from './ComparisonDiff';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ExecutionComparisonProps {
   left: PersonaExecution;
@@ -41,14 +42,14 @@ export function ExecutionComparison({ left, right, onClose }: ExecutionCompariso
           <ArrowLeftRight className="w-4 h-4 text-primary/70" />
           <h3 className="typo-heading text-ink-1">{e.execution_comparison}</h3>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onClose}
           aria-label={t.common.close}
-          className="p-1 text-ink-1 hover:text-ink-3 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="w-4 h-4" />}
+        />
       </div>
 
       {/* What Changed summary */}

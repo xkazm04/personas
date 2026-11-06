@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import type { UseCaseItem } from './UseCasesList';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface MockModePanelProps {
   useCase: UseCaseItem;
@@ -20,13 +21,13 @@ export function MockModePanel({ useCase, modeBadge, onClose }: MockModePanelProp
           </span>
           <span className="typo-body text-status-warning">{t.shared.use_cases_extra.example_output}</span>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onClose}
-          className="p-1 rounded-interactive hover:bg-surface-2 text-ink-1 hover:text-ink-1 transition-colors"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="w-3.5 h-3.5" />}
+        />
       </div>
 
       {/* Mock output */}

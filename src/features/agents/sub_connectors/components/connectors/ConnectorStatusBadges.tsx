@@ -5,6 +5,8 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import type { ConnectorStatus, ConnectorTestResult } from '../../libs/connectorTypes';
 import { isStaleResult, isUnreachable, STATUS_CONFIG, credentialMatchesConnector } from '../../libs/connectorTypes';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface LinkPickerProps {
   isLinking: boolean;
@@ -36,7 +38,7 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-2 transition-colors border-b border-hair last:border-0">
                     <Star className="w-3 h-3 text-status-warning flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="typo-body text-ink-1 truncate" title={cred.name}>{cred.name}</p>
+                      <Tooltip content={cred.name}><p className="typo-body text-ink-1 truncate">{cred.name}</p></Tooltip>
                       <p className="typo-body text-ink-1">{cred.service_type}</p>
                     </div>
                   </button>
@@ -53,7 +55,7 @@ export function LinkPicker({ isLinking, status, credentials, onLinkCredential }:
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-2 transition-colors border-b border-hair last:border-0">
                     <div className="w-3 h-3 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="typo-body text-ink-1 truncate" title={cred.name}>{cred.name}</p>
+                      <Tooltip content={cred.name}><p className="typo-body text-ink-1 truncate">{cred.name}</p></Tooltip>
                       <p className="typo-body text-ink-1">{cred.service_type}</p>
                     </div>
                   </button>
@@ -176,9 +178,15 @@ export function StatusResult({ status, onClearLinkError, onRetest }: StatusResul
               <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
               <span className="flex-1">{status.linkError}</span>
               {onClearLinkError && (
-                <button type="button" aria-label={t.common.dismiss} onClick={() => onClearLinkError(status.name)} className="p-0.5 rounded-interactive hover:bg-status-warning/15 transition-colors flex-shrink-0">
-                  <X className="w-3 h-3" />
-                </button>
+                <Button
+                  type="button"
+                  aria-label={t.common.dismiss}
+                  onClick={() => onClearLinkError(status.name)}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="flex-shrink-0"
+                  icon={<X className="w-3 h-3" />}
+                />
               )}
             </div>
           </div>

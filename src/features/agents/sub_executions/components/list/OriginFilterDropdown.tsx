@@ -3,6 +3,7 @@ import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useTranslation } from '@/i18n/useTranslation';
 import { EXECUTION_ORIGINS, type ExecutionOrigin } from '../../libs/executionOrigin';
 import { ORIGIN_META, originLabel } from './OriginBadge';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface OriginFilterDropdownProps {
   value: ExecutionOrigin | null;
@@ -28,20 +29,17 @@ export function OriginFilterDropdown({ value, onChange }: OriginFilterDropdownPr
         onChange(next === value ? null : next);
       }}
       renderTrigger={({ isOpen, toggle }) => (
-        <button
+        <Button
           type="button"
           onClick={toggle}
           aria-expanded={isOpen}
-          className={`flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors border ${
-            value !== null
-              ? 'bg-primary/10 text-primary/80 border-hair'
-              : 'text-ink-1 hover:text-ink-3 border-transparent'
-          }`}
+          variant={value !== null ? 'secondary' : 'ghost'}
+          size="xs"
+          icon={<Route className="w-3 h-3" />}
         >
-          <Route className="w-3 h-3" />
           {value === null ? e.origin_filter_all : originLabel(t, value)}
           <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+        </Button>
       )}
     >
       {({ close }) => (

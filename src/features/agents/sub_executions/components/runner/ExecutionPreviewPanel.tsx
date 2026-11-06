@@ -4,6 +4,7 @@ import { previewExecution, type ExecutionPreview } from '@/api/agents/executions
 import { useTranslation } from '@/i18n/useTranslation';
 import { fmtCost as fmtCostBase, fmtTokens as fmtTokensBase } from '../../libs/comparisonHelpers';
 import { extractMessage } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ExecutionPreviewPanelProps {
   personaId: string;
@@ -38,15 +39,14 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
   // Show button to load preview
   if (!preview && !loading) {
     return (
-      <button
+      <Button
         type="button"
         onClick={loadPreview}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card bg-surface-2 text-ink-1 hover:text-ink-1 hover:bg-surface-2 border border-hair transition-colors"
-        title={e.preview}
-      >
-        <Eye className="w-3 h-3" />
-        {e.preview}
-      </button>
+        tooltip={e.preview}
+        variant="secondary"
+        size="sm"
+        icon={<Eye className="w-3 h-3" />}
+      >{e.preview}</Button>
     );
   }
 

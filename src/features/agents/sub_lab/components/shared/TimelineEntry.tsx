@@ -6,6 +6,7 @@ import { InlineDiffPreview } from './InlineDiffPreview';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
 import { Collapse } from '@/features/shared/components/display/Collapse';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface TimelineEntryProps {
@@ -119,31 +120,33 @@ export function TimelineEntry({
             {/* Actions */}
             <div className="flex items-center gap-1.5 pt-1 border-t border-primary/[0.06]">
               {version.tag !== 'production' && (
-                <button
+                <Button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onTag(version.id, 'production'); }}
-                  className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-status-success/10 text-status-success hover:bg-status-success/20 transition-colors"
-                >
-                  <Shield className="w-3 h-3" /> {t.agents.lab.promote_action}
-                </button>
+                  variant="accent"
+                  tone="success"
+                  size="xs"
+                  icon={<Shield className="w-3 h-3" />}
+                >{t.agents.lab.promote_action}</Button>
               )}
               {version.tag !== 'archived' && (
-                <button
+                <Button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onTag(version.id, 'archived'); }}
-                  className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-surface-2 text-ink-3 hover:bg-surface-2 transition-colors"
-                >
-                  <Archive className="w-3 h-3" /> {t.agents.lab.archive_action}
-                </button>
+                  variant="secondary"
+                  size="xs"
+                  icon={<Archive className="w-3 h-3" />}
+                >{t.agents.lab.archive_action}</Button>
               )}
               {!isFirst && (
-                <button
+                <Button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onRollback(version.id); }}
-                  className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-status-info/10 text-status-info hover:bg-status-info/20 transition-colors"
-                >
-                  <RotateCcw className="w-3 h-3" /> {t.agents.lab.rollback_action}
-                </button>
+                  variant="accent"
+                  tone="info"
+                  size="xs"
+                  icon={<RotateCcw className="w-3 h-3" />}
+                >{t.agents.lab.rollback_action}</Button>
               )}
             </div>
           </div>

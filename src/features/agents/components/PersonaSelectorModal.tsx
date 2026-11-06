@@ -3,6 +3,7 @@ import { Search, Check, X, ChevronDown } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface PersonaSelectorModalProps {
   value: string;
@@ -62,16 +63,18 @@ export function PersonaSelectorModal({
     <>
       {/* Trigger button — hidden when defaultOpen (externally controlled) */}
       {!defaultOpen && (
-        <button
+        <Button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex items-center gap-2 px-3 py-2 rounded-card border border-hair bg-surface-1 hover:border-primary/25 hover:bg-surface-1 transition-all min-w-[180px]"
+          variant="secondary"
+          size="sm"
+          className="min-w-[180px]"
         >
           <span className="typo-body text-ink-1 truncate flex-1 text-left">
-            {selected ? selected.name : showAll ? t.shared.persona_all : placeholder}
+          {selected ? selected.name : showAll ? t.shared.persona_all : placeholder}
           </span>
           <ChevronDown className="w-3.5 h-3.5 text-ink-1 flex-shrink-0" />
-        </button>
+        </Button>
       )}
 
       {/* Modal */}
@@ -87,9 +90,14 @@ export function PersonaSelectorModal({
         <div className="px-5 pt-5 pb-3 border-b border-hair space-y-3">
           <div className="flex items-center justify-between">
             <h3 id="persona-selector-modal" className="typo-heading text-ink-1 uppercase">{t.shared.persona_modal_title}</h3>
-            <button type="button" onClick={handleClose} aria-label={t.common.close} className="p-1.5 rounded-card hover:bg-surface-2 text-ink-1 hover:text-ink-1 transition-colors">
-              <X className="w-4 h-4" />
-            </button>
+            <Button
+              type="button"
+              onClick={handleClose}
+              aria-label={t.common.close}
+              variant="ghost"
+              size="icon-sm"
+              icon={<X className="w-4 h-4" />}
+            />
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-card border border-hair bg-surface-1">
             <Search className="w-3.5 h-3.5 text-ink-1" />
@@ -102,9 +110,14 @@ export function PersonaSelectorModal({
               autoFocus
             />
             {search && (
-              <button type="button" onClick={() => setSearch('')} aria-label={t.common.clear} className="text-ink-1 hover:text-ink-1">
-                <X className="w-3.5 h-3.5" />
-              </button>
+              <Button
+                type="button"
+                onClick={() => setSearch('')}
+                aria-label={t.common.clear}
+                variant="ghost"
+                size="icon-sm"
+                icon={<X className="w-3.5 h-3.5" />}
+              />
             )}
           </div>
         </div>

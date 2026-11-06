@@ -6,6 +6,7 @@ import { getConnectorMeta, ConnectorIcon } from "@/lib/connectors/connectorMeta"
 import { Tooltip } from "@/features/shared/components/display/Tooltip";
 import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface GlyphCapabilityPreviewProps {
@@ -229,40 +230,37 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                 </div>
                 <div className="flex flex-col gap-1 shrink-0">
                   {isExcluded ? (
-                    <button
+                    <Button
                       type="button"
                       onClick={() => toggleCapabilityExcluded(id)}
-                      className="px-2 py-1 rounded-input hover:bg-surface-2 text-ink-1 hover:text-ink-1 typo-caption inline-flex items-center gap-1 cursor-pointer"
                       aria-label={debtText("auto_restore_capability_91a3b415")}
-                      title={debtText("auto_restore_include_this_capability_when_promo_e8f43ec9")}
-                    >
-                      <Undo2 className="w-3 h-3" />
-                      {t.agents.glyph_cap_restore}
-                    </button>
+                      tooltip={debtText("auto_restore_include_this_capability_when_promo_e8f43ec9")}
+                      variant="ghost"
+                      size="xs"
+                      icon={<Undo2 className="w-3 h-3" />}
+                    >{t.agents.glyph_cap_restore}</Button>
                   ) : (
                     <>
                       {onRequestSplit && (
-                        <button
+                        <Button
                           type="button"
                           onClick={() => onRequestSplit(cap.title || id, buildSplitPrompt(cap.title || id, connectorList))}
-                          className="px-1.5 py-1 rounded-input hover:bg-surface-2 text-ink-1 hover:text-primary typo-caption inline-flex items-center gap-1 cursor-pointer"
                           aria-label={debtText("auto_split_this_capability_via_refine_99e725c3")}
-                          title={debtText("auto_open_refine_with_a_prompt_that_asks_the_ag_c0e3037e")}
-                        >
-                          <Split className="w-3 h-3" />
-                          {t.agents.glyph_cap_split}
-                        </button>
+                          tooltip={debtText("auto_open_refine_with_a_prompt_that_asks_the_ag_c0e3037e")}
+                          variant="ghost"
+                          size="xs"
+                          icon={<Split className="w-3 h-3" />}
+                        >{t.agents.glyph_cap_split}</Button>
                       )}
-                      <button
+                      <Button
                         type="button"
                         onClick={() => toggleCapabilityExcluded(id)}
-                        className="px-1.5 py-1 rounded-input hover:bg-status-error/10 text-ink-1 hover:text-status-error typo-caption inline-flex items-center gap-1 cursor-pointer"
                         aria-label={debtText("auto_remove_capability_from_the_promoted_person_a4d121d1")}
-                        title={debtText("auto_remove_exclude_this_capability_when_promot_dbf501b9")}
-                      >
-                        <X className="w-3 h-3" />
-                        {t.agents.glyph_cap_remove}
-                      </button>
+                        tooltip={debtText("auto_remove_exclude_this_capability_when_promot_dbf501b9")}
+                        variant="ghost"
+                        size="xs"
+                        icon={<X className="w-3 h-3" />}
+                      >{t.agents.glyph_cap_remove}</Button>
                     </>
                   )}
                 </div>

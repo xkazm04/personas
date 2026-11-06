@@ -131,14 +131,13 @@ export function SimpleExecutionView({
         </div>
       )}
       {executionOutput.length > 0 && (
-        <button
+        <Button
           type="button"
           onClick={handleCopy}
-          className="flex items-center gap-1.5 typo-caption text-ink-1 hover:text-ink-1 transition-colors"
-        >
-          {copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
-          {copied ? t.common.copied : t.execution.copy_full_output}
-        </button>
+          variant="ghost"
+          size="sm"
+          icon={copied ? <Check className="w-3 h-3 text-status-success" /> : <Copy className="w-3 h-3" />}
+        >{copied ? t.common.copied : t.execution.copy_full_output}</Button>
       )}
     </div>
   );

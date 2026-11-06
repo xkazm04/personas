@@ -65,43 +65,38 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
 
         {/* Curl command for webhooks */}
         {trigger.trigger_type === 'webhook' && (
-          <button
+          <Button
             type="button"
             onClick={detail.copyCurlCommand}
-            className={`inline-flex items-center gap-1.5 typo-body transition-colors ${
-              detail.copiedCurl ? 'text-status-success' : 'text-ink-1 hover:text-ink-3'
-            }`}
-          >
-            <Terminal className="w-3 h-3" />
-            {detail.copiedCurl ? t.common.copied : t.triggers.copy_sample_curl}
-          </button>
+            variant={detail.copiedCurl ? 'secondary' : 'ghost'}
+            size="sm"
+            icon={<Terminal className="w-3 h-3" />}
+          >{detail.copiedCurl ? t.common.copied : t.triggers.copy_sample_curl}</Button>
         )}
 
         {/* Actions row */}
         <div className="flex items-center gap-2 pt-1">
           {/* Testing actions group */}
           <div className="flex items-center gap-0.5 rounded-modal bg-surface-1 p-1">
-            <button
+            <Button
               type="button"
               onClick={detail.handleTestFire}
               disabled={detail.testing}
-              className="flex items-center gap-1.5 px-3 py-2 typo-body text-primary/70 hover:text-primary hover:bg-primary/10 rounded-card transition-colors disabled:opacity-50"
-              title={t.triggers.validate_and_fire_title}
-            >
-              {detail.testing ? <LoadingSpinner size="sm" /> : <Play className="w-4 h-4" />}
-              {detail.testing ? t.triggers.detail.validating : t.triggers.test_fire_label}
-            </button>
+              tooltip={t.triggers.validate_and_fire_title}
+              variant="ghost"
+              size="sm"
+              icon={detail.testing ? <LoadingSpinner size="sm" /> : <Play className="w-4 h-4" />}
+            >{detail.testing ? t.triggers.detail.validating : t.triggers.test_fire_label}</Button>
 
-            <button
+            <Button
               type="button"
               onClick={detail.handleDryRun}
               disabled={detail.dryRunning || detail.testing}
-              className="flex items-center gap-1.5 px-3 py-2 typo-body text-status-warning hover:text-status-warning hover:bg-status-warning/10 rounded-card transition-colors disabled:opacity-50"
-              title={t.triggers.simulate_trigger_title}
-            >
-              {detail.dryRunning ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-4 h-4" />}
-              {detail.dryRunning ? t.triggers.detail.simulating : t.triggers.dry_run_label}
-            </button>
+              tooltip={t.triggers.simulate_trigger_title}
+              variant="ghost"
+              size="sm"
+              icon={detail.dryRunning ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-4 h-4" />}
+            >{detail.dryRunning ? t.triggers.detail.simulating : t.triggers.dry_run_label}</Button>
           </div>
 
           <div className="flex-1" />
@@ -121,9 +116,14 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
                 </Button>
               </div>
             ) : (
-              <button type="button" onClick={detail.startDeleteConfirm} className="flex items-center gap-1.5 px-3 py-2 typo-body text-status-error hover:text-status-error hover:bg-status-error/10 rounded-card transition-colors" title={t.triggers.detail.delete_trigger}>
-                <Trash2 className="w-4 h-4" />{t.common.delete}
-              </button>
+              <Button
+                type="button"
+                onClick={detail.startDeleteConfirm}
+                tooltip={t.triggers.detail.delete_trigger}
+                variant="danger"
+                size="sm"
+                icon={<Trash2 className="w-4 h-4" />}
+              >{t.common.delete}</Button>
             )}
           </div>
         </div>

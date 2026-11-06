@@ -32,6 +32,8 @@ import EmptyState, { NoResults } from '@/features/shared/components/feedback/Sce
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { EventReasonNote } from '../lib/EventReasonView';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * First-paint default while `getDeadLetterConfig` is in flight. Matches the
@@ -475,47 +477,35 @@ export function DeadLetterTab() {
           </div>
           <div className="flex items-center gap-1.5">
             <div className="flex items-center rounded-card border border-hair overflow-hidden">
-              <button
+              <Button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption transition-colors ${
-                  viewMode === 'list' ? 'bg-secondary text-ink-1' : 'text-ink-2 hover:bg-surface-2'
-                }`}
-              >
-                <ListChecks className="w-3 h-3" />
-                {t.triggers.dead_letter_view_list}
-              </button>
-              <button
+                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                size="sm"
+                icon={<ListChecks className="w-3 h-3" />}
+              >{t.triggers.dead_letter_view_list}</Button>
+              <Button
                 type="button"
                 onClick={() => setViewMode('grouped')}
-                className={`flex items-center gap-1 px-2.5 py-1.5 typo-caption transition-colors ${
-                  viewMode === 'grouped' ? 'bg-secondary text-ink-1' : 'text-ink-2 hover:bg-surface-2'
-                }`}
-              >
-                <Layers className="w-3 h-3" />
-                {t.triggers.dead_letter_view_grouped}
-              </button>
+                variant={viewMode === 'grouped' ? 'secondary' : 'ghost'}
+                size="sm"
+                icon={<Layers className="w-3 h-3" />}
+              >{t.triggers.dead_letter_view_grouped}</Button>
             </div>
-            <button
+            <Button
               type="button"
               onClick={() => setFiltersOpen((v) => !v)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card transition-colors ${
-                filtersOpen || filtersDirty
-                  ? 'bg-secondary text-ink-1'
-                  : 'text-ink-1 hover:bg-surface-2'
-              }`}
-            >
-              <Filter className="w-3 h-3" />
-              {t.triggers.dead_letter_filters_title}
-            </button>
-            <button
+              variant={filtersOpen || filtersDirty ? 'secondary' : 'ghost'}
+              size="sm"
+              icon={<Filter className="w-3 h-3" />}
+            >{t.triggers.dead_letter_filters_title}</Button>
+            <Button
               type="button"
               onClick={() => void loadEvents()}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-card text-ink-1 hover:bg-surface-2 transition-colors"
-            >
-              <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-              {t.triggers.dead_letter_refresh}
-            </button>
+              variant="ghost"
+              size="sm"
+              icon={<RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />}
+            >{t.triggers.dead_letter_refresh}</Button>
           </div>
         </div>
 
@@ -552,29 +542,23 @@ export function DeadLetterTab() {
                   {t.triggers.dead_letter_filter_age}:
                 </span>
                 {(['any', '15m', '1h', '24h', 'old'] as const).map((age) => (
-                  <button
+                  <Button
                     type="button"
                     key={age}
                     onClick={() => setFilters((f) => ({ ...f, age }))}
-                    className={`px-2 py-0.5 typo-caption rounded-input transition-colors ${
-                      filters.age === age
-                        ? 'bg-primary/20 text-primary'
-                        : 'bg-surface-2 text-ink-2 hover:bg-secondary'
-                    }`}
-                  >
-                    {t.triggers[`dead_letter_filter_age_${age}` as const]}
-                  </button>
+                    variant={filters.age === age ? 'secondary' : 'ghost'}
+                    size="xs"
+                  >{t.triggers[`dead_letter_filter_age_${age}` as const]}</Button>
                 ))}
               </div>
               {filtersDirty && (
-                <button
+                <Button
                   type="button"
                   onClick={() => setFilters(EMPTY_FILTERS)}
-                  className="flex items-center gap-1 px-2 py-0.5 typo-caption text-ink-1 hover:text-ink-1"
-                >
-                  <X className="w-3 h-3" />
-                  {t.triggers.dead_letter_filters_clear}
-                </button>
+                  variant="ghost"
+                  size="xs"
+                  icon={<X className="w-3 h-3" />}
+                >{t.triggers.dead_letter_filters_clear}</Button>
               )}
             </div>
           </div>
@@ -586,34 +570,32 @@ export function DeadLetterTab() {
               {tx(t.triggers.dead_letter_selected_count, { count: visibleSelectedCount })}
             </span>
             <div className="flex items-center gap-1.5">
-              <button
+              <Button
                 type="button"
                 onClick={() => void runBulkRetry(Array.from(selected).filter((id) => filteredIds.has(id)))}
                 disabled={bulkInFlight}
-                title={t.triggers.dead_letter_bulk_retry_title}
-                className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-status-info/20 text-status-info hover:bg-status-info/30 disabled:opacity-50 transition-colors"
-              >
-                <RefreshCw className={`w-3 h-3 ${bulkInFlight ? 'animate-spin' : ''}`} />
-                {tx(t.triggers.dead_letter_bulk_retry, { count: visibleSelectedCount })}
-              </button>
-              <button
+                tooltip={t.triggers.dead_letter_bulk_retry_title}
+                variant="accent"
+                tone="info"
+                size="xs"
+                icon={<RefreshCw className={`w-3 h-3 ${bulkInFlight ? 'animate-spin' : ''}`} />}
+              >{tx(t.triggers.dead_letter_bulk_retry, { count: visibleSelectedCount })}</Button>
+              <Button
                 type="button"
                 onClick={() => runBulkDiscard(Array.from(selected).filter((id) => filteredIds.has(id)))}
                 disabled={bulkInFlight}
-                title={t.triggers.dead_letter_bulk_discard_title}
-                className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-surface-2 text-ink-1 hover:bg-secondary disabled:opacity-50 transition-colors"
-              >
-                <Trash2 className="w-3 h-3" />
-                {tx(t.triggers.dead_letter_bulk_discard, { count: visibleSelectedCount })}
-              </button>
-              <button
+                tooltip={t.triggers.dead_letter_bulk_discard_title}
+                variant="secondary"
+                size="xs"
+                icon={<Trash2 className="w-3 h-3" />}
+              >{tx(t.triggers.dead_letter_bulk_discard, { count: visibleSelectedCount })}</Button>
+              <Button
                 type="button"
                 onClick={clearSelection}
-                className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input text-ink-1 hover:bg-surface-2 transition-colors"
-              >
-                <X className="w-3 h-3" />
-                {t.triggers.dead_letter_clear_selection}
-              </button>
+                variant="ghost"
+                size="xs"
+                icon={<X className="w-3 h-3" />}
+              >{t.triggers.dead_letter_clear_selection}</Button>
             </div>
           </div>
         )}
@@ -715,35 +697,32 @@ export function DeadLetterTab() {
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         {exhausted ? (
-                          <span
-                            className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-status-warning/10 text-status-warning cursor-not-allowed"
-                            title={t.triggers.dead_letter_retry_exhausted_title}
-                          >
+                          <Tooltip content={t.triggers.dead_letter_retry_exhausted_title}><span
+                            className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-status-warning/10 text-status-warning cursor-not-allowed">
                             <Ban className="w-3 h-3" />
                             {t.triggers.exhausted_label}
-                          </span>
+                          </span></Tooltip>
                         ) : (
-                          <button
+                          <Button
                             type="button"
                             onClick={() => void handleRetry(evt.id)}
                             disabled={actionsInProgress.has(evt.id) || bulkInFlight}
-                            className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-status-info/20 text-status-info hover:bg-status-info/30 disabled:opacity-50 transition-colors"
-                            title={t.triggers.dead_letter_retry_title}
-                          >
-                            <RefreshCw className={`w-3 h-3 ${actionsInProgress.has(evt.id) ? 'animate-spin' : ''}`} />
-                            {t.triggers.dead_letter_retry}
-                          </button>
+                            tooltip={t.triggers.dead_letter_retry_title}
+                            variant="accent"
+                            tone="info"
+                            size="xs"
+                            icon={<RefreshCw className={`w-3 h-3 ${actionsInProgress.has(evt.id) ? 'animate-spin' : ''}`} />}
+                          >{t.triggers.dead_letter_retry}</Button>
                         )}
-                        <button
+                        <Button
                           type="button"
                           onClick={() => handleDiscard(evt)}
                           disabled={actionsInProgress.has(evt.id) || bulkInFlight}
-                          className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-surface-2 text-ink-1 hover:bg-secondary disabled:opacity-50 transition-colors"
-                          title={t.triggers.dead_letter_discard_title}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          {t.triggers.dead_letter_discard}
-                        </button>
+                          tooltip={t.triggers.dead_letter_discard_title}
+                          variant="secondary"
+                          size="xs"
+                          icon={<Trash2 className="w-3 h-3" />}
+                        >{t.triggers.dead_letter_discard}</Button>
                       </div>
                     </div>
 
@@ -772,12 +751,10 @@ export function DeadLetterTab() {
               return (
                 <div key={group.key} className="rounded-card border border-status-error/20 bg-status-error/5">
                   <div className="flex items-center justify-between gap-3 p-3">
-                    <button
+                    <Tooltip content={expanded ? t.triggers.dead_letter_group_collapse : t.triggers.dead_letter_group_expand}><button
                       type="button"
                       onClick={() => toggleGroup(group.key)}
-                      className="flex items-start gap-2 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity"
-                      title={expanded ? t.triggers.dead_letter_group_collapse : t.triggers.dead_letter_group_expand}
-                    >
+                      className="flex items-start gap-2 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity">
                       {expanded ? (
                         <ChevronDown className="w-4 h-4 text-ink-1 shrink-0 mt-0.5" />
                       ) : (
@@ -799,34 +776,32 @@ export function DeadLetterTab() {
                           event={{ status: 'dead_letter', error_message: group.representative || null }}
                         />
                       </div>
-                    </button>
+                    </button></Tooltip>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <button
+                      <Button
                         type="button"
                         onClick={() => selectGroup(group)}
-                        className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-surface-2 text-ink-1 hover:bg-secondary transition-colors"
-                      >
-                        <ListChecks className="w-3 h-3" />
-                        {t.triggers.dead_letter_select_all}
-                      </button>
-                      <button
+                        variant="secondary"
+                        size="xs"
+                        icon={<ListChecks className="w-3 h-3" />}
+                      >{t.triggers.dead_letter_select_all}</Button>
+                      <Button
                         type="button"
                         onClick={() => void runBulkRetry(eligibleIds)}
                         disabled={eligibleIds.length === 0 || bulkInFlight}
-                        className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-status-info/20 text-status-info hover:bg-status-info/30 disabled:opacity-50 transition-colors"
-                      >
-                        <RefreshCw className={`w-3 h-3 ${bulkInFlight ? 'animate-spin' : ''}`} />
-                        {t.triggers.dead_letter_group_retry}
-                      </button>
-                      <button
+                        variant="accent"
+                        tone="info"
+                        size="xs"
+                        icon={<RefreshCw className={`w-3 h-3 ${bulkInFlight ? 'animate-spin' : ''}`} />}
+                      >{t.triggers.dead_letter_group_retry}</Button>
+                      <Button
                         type="button"
                         onClick={() => runBulkDiscard(allEventIds)}
                         disabled={bulkInFlight}
-                        className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-surface-2 text-ink-1 hover:bg-secondary disabled:opacity-50 transition-colors"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        {t.triggers.dead_letter_group_discard}
-                      </button>
+                        variant="secondary"
+                        size="xs"
+                        icon={<Trash2 className="w-3 h-3" />}
+                      >{t.triggers.dead_letter_group_discard}</Button>
                     </div>
                   </div>
                   {expanded && (
@@ -861,23 +836,21 @@ export function DeadLetterTab() {
                                 {t.triggers.exhausted_label}
                               </span>
                             ) : (
-                              <button
+                              <Button
                                 type="button"
                                 onClick={() => void handleRetry(evt.id)}
                                 disabled={actionsInProgress.has(evt.id) || bulkInFlight}
-                                className="px-1.5 py-0.5 typo-caption rounded-input text-status-info hover:bg-status-info/20 disabled:opacity-50 transition-colors"
-                              >
-                                {t.triggers.dead_letter_retry}
-                              </button>
+                                variant="ghost"
+                                size="xs"
+                              >{t.triggers.dead_letter_retry}</Button>
                             )}
-                            <button
+                            <Button
                               type="button"
                               onClick={() => handleDiscard(evt)}
                               disabled={actionsInProgress.has(evt.id) || bulkInFlight}
-                              className="px-1.5 py-0.5 typo-caption rounded-input text-ink-1 hover:bg-secondary disabled:opacity-50 transition-colors"
-                            >
-                              {t.triggers.dead_letter_discard}
-                            </button>
+                              variant="ghost"
+                              size="xs"
+                            >{t.triggers.dead_letter_discard}</Button>
                           </div>
                         );
                       })}

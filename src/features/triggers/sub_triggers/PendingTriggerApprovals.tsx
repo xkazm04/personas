@@ -10,6 +10,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { usePendingTriggerFires } from '@/features/triggers/hooks/usePendingTriggerFires';
 import { getTriggerTypeLabel } from '@/lib/utils/platform/triggerConstants';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface PendingTriggerApprovalsProps {
   /** Scope to one agent's triggers. Omit for the workspace-wide queue. */
@@ -113,16 +114,16 @@ function PendingFireRow({ fire, trigger, personaName, busy, onResolve }: Pending
       >
         {p.run_now}
       </AsyncButton>
-      <button
+      <Button
         type="button"
         disabled={busy}
         onClick={() => onResolve(fire.id, false)}
-        className="px-2 py-1 rounded-card text-ink-1 hover:bg-surface-2 disabled:opacity-50"
-        title={p.discard}
+        tooltip={p.discard}
         aria-label={p.discard}
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
+        variant="ghost"
+        size="icon-sm"
+        icon={<X className="w-3.5 h-3.5" />}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import type { PersonaResponsibility } from '@/lib/bindings/PersonaResponsibility
 import type { ResponsibilityCadence } from '@/lib/bindings/ResponsibilityCadence';
 import type { ResponsibilityOutcome } from '@/lib/bindings/ResponsibilityOutcome';
 import type { ResponsibilitySpec } from '@/lib/bindings/ResponsibilitySpec';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** The charter fields a sigil-dimension editor is allowed to write. */
 export interface CharterPatch {
@@ -84,20 +85,15 @@ export function ChipToggleList({
       {options.map((opt) => {
         const active = selected.includes(opt.value);
         return (
-          <button
+          <Button
             key={opt.value}
             type="button"
             onClick={() => onToggle(opt.value)}
             aria-pressed={active}
-            className={`px-2 py-1 rounded-pill border typo-code transition-colors ${
-              active
-                ? 'bg-primary/15 border-primary/40 text-primary'
-                : 'bg-surface-1 border-hair text-ink-1 hover:border-primary/25'
-            }`}
             data-testid={`${testId}-${opt.value}`}
-          >
-            {opt.label}
-          </button>
+            variant={active ? 'secondary' : 'ghost'}
+            size="xs"
+          >{opt.label}</Button>
         );
       })}
     </div>

@@ -45,21 +45,23 @@ export function UnifiedDeploymentHistory() {
 
   return (
     <div className="border-t border-hair flex-shrink-0" data-testid="unified-deploy-history">
-      <button
+      <Button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="w-full flex items-center gap-2 px-6 py-2.5 typo-caption text-ink-1 hover:text-ink-1 transition-colors cursor-pointer"
+        variant="ghost"
+        size="md"
+        className="w-full"
+        icon={open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
       >
-        {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         <History className="w-3.5 h-3.5 text-ink-1" />
         <span className="font-medium">{dt.history_title}</span>
         {history.length > 0 && (
-          <span className="ml-1 text-ink-1">
-            <Numeric value={history.length} className="typo-caption" />
-          </span>
+        <span className="ml-1 text-ink-1">
+        <Numeric value={history.length} className="typo-caption" />
+        </span>
         )}
-      </button>
+      </Button>
 
       {open && (
         <div className="max-h-64 overflow-auto px-6 pb-3">

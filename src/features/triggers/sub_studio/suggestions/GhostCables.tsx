@@ -25,6 +25,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { findTemplateByEventType } from '@/features/triggers/lib/eventSourceTemplates';
 import { resolveIcon } from '../routing/layouts/routingHelpers';
 import type { AutomationSuggestionsState } from './useAutomationSuggestions';
+import Button from '@/features/shared/components/buttons/Button';
 
 export function GhostCables({ sug, personas }: {
   sug: AutomationSuggestionsState;
@@ -85,16 +86,17 @@ function GhostCableRow({ s, sug, personas }: {
         </span>
         <div className="flex items-center gap-1.5 shrink-0">
           <div className="h-px w-4 border-t border-dashed border-primary/50" />
-          <button
+          <Button
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
-            title={st.ghost_evidence_hint}
-            className="flex items-center gap-1 px-2 py-0.5 typo-body rounded-input border border-primary/30 text-primary hover:bg-primary/10 transition-colors"
+            tooltip={st.ghost_evidence_hint}
+            variant="secondary"
+            size="xs"
           >
             {tx(st.ghost_observed_count, { count: s.occurrenceCount })}
             {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </button>
+          </Button>
           <div className="h-px w-4 border-t border-dashed border-primary/50" />
           <ArrowRight className="w-3.5 h-3.5 text-primary" />
         </div>
@@ -105,27 +107,26 @@ function GhostCableRow({ s, sug, personas }: {
           </span>
         </span>
         <div className="ml-auto flex items-center gap-1">
-          <button
+          <Button
             type="button"
             onClick={() => { if (!busy) void sug.accept(s); }}
             disabled={busy}
-            title={st.ghost_accept_hint}
+            tooltip={st.ghost_accept_hint}
             aria-label={st.ghost_accept}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-interactive text-status-success/80 hover:text-status-success hover:bg-status-success/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {busy ? <LoadingSpinner size="sm" /> : <Plug className="w-3.5 h-3.5" />}
-            {st.ghost_accept}
-          </button>
-          <button
+            variant="ghost"
+            size="sm"
+            icon={busy ? <LoadingSpinner size="sm" /> : <Plug className="w-3.5 h-3.5" />}
+          >{st.ghost_accept}</Button>
+          <Button
             type="button"
             onClick={() => { if (!busy) void sug.reject(s); }}
             disabled={busy}
-            title={st.ghost_reject_hint}
+            tooltip={st.ghost_reject_hint}
             aria-label={st.ghost_reject}
-            className="p-1.5 rounded-interactive text-ink-1 opacity-60 hover:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
+            variant="ghost"
+            size="icon-sm"
+            icon={<X className="w-3.5 h-3.5" />}
+          />
         </div>
       </div>
 

@@ -24,6 +24,7 @@ import { useOnOpen } from "./useOnOpen";
 import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';
 import { Kbd } from '@/features/shared/components/display/Kbd';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface ComposerConnectorsPickerModalProps {
@@ -137,15 +138,14 @@ export function ComposerConnectorsPickerModal({
       footer={
         <>
           <Kbd><DebtText k="auto_enter_b0d98854" /></Kbd>
-          <button
+          <Button
             type="button"
             onClick={applyNow}
             disabled={draft.length === 0 && selected.length === 0}
-            className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-ink-1 typo-body transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ boxShadow: "0 0 20px rgba(96,165,250,0.25)" }}
-          >
-            {draft.length === 0 ? t.agents.glyph_apps_clear : tx(draft.length === 1 ? t.agents.glyph_apps_attach_one : t.agents.glyph_apps_attach_other, { count: draft.length })}
-          </button>
+            variant="secondary"
+            size="sm"
+          >{draft.length === 0 ? t.agents.glyph_apps_clear : tx(draft.length === 1 ? t.agents.glyph_apps_attach_one : t.agents.glyph_apps_attach_other, { count: draft.length })}</Button>
         </>
       }
     >
@@ -229,14 +229,14 @@ export function ComposerConnectorsPickerModal({
                   style={{ background: c.color }}
                 />
                 {c.label}
-                <button
+                <Button
                   type="button"
                   onClick={() => toggleDraft(c.name)}
-                  className="text-ink-1 hover:text-ink-1 -mr-0.5"
                   aria-label={tx(t.agents.glyph_apps_remove, { label: c.label })}
-                >
-                  ×
-                </button>
+                  variant="ghost"
+                  size="sm"
+                  className="-mr-0.5"
+                >×</Button>
               </span>
             ))}
           </div>

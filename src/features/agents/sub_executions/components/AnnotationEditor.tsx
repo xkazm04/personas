@@ -3,6 +3,7 @@ import { Star, Trash2, Plus, X } from 'lucide-react';
 import type { ExecutionAnnotation } from '@/lib/bindings/ExecutionAnnotation';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AnnotationEditorProps {
   executionId: string;
@@ -143,14 +144,14 @@ export function AnnotationEditor({
               className="inline-flex items-center gap-1 typo-body text-primary/90"
             >
               {tag}
-              <button
+              <Button
                 type="button"
                 onClick={() => setTags((prev) => prev.filter((tt) => tt !== tag))}
-                className="text-primary/60 hover:text-primary"
                 aria-label={`Remove ${tag}`}
-              >
-                <X className="w-3 h-3" />
-              </button>
+                variant="ghost"
+                size="icon-sm"
+                icon={<X className="w-3 h-3" />}
+              />
             </span>
           ))}
           <input
@@ -169,27 +170,20 @@ export function AnnotationEditor({
             aria-label={a.annotation_tags_label}
             className="flex-1 min-w-[100px] px-2 py-0.5 typo-body bg-surface-1 border border-hair rounded-card text-ink-1 outline-none focus:border-primary/30"
           />
-          <button
+          <Button
             type="button"
             onClick={() => commitTag(draftTag)}
             disabled={!draftTag.trim()}
             aria-label={t.common.add}
-            className="p-1 rounded-interactive text-ink-1 hover:text-ink-1 disabled:opacity-30"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
+            variant="ghost"
+            size="icon-sm"
+            icon={<Plus className="w-3.5 h-3.5" />}
+          />
         </div>
         {tagSuggestions.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {tagSuggestions.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => commitTag(s)}
-                className="px-2 py-0.5 typo-code rounded-card bg-surface-2 text-ink-1 hover:text-ink-1 hover:bg-surface-2 border border-hair"
-              >
-                + {s}
-              </button>
+              <Button key={s} type="button" onClick={() => commitTag(s)} variant="secondary" size="xs">+ {s}</Button>
             ))}
           </div>
         )}
@@ -210,24 +204,17 @@ export function AnnotationEditor({
       </div>
 
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving || !dirty}
-          className="px-3 py-1 typo-body rounded-interactive bg-primary/15 text-primary/90 border border-primary/30 hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          {saving ? a.annotation_saving : a.annotation_save}
-        </button>
+        <Button type="button" onClick={handleSave} disabled={saving || !dirty} variant="secondary" size="sm">{saving ? a.annotation_saving : a.annotation_save}</Button>
         {annotation && onDelete && (
-          <button
+          <Button
             type="button"
             onClick={handleDelete}
             disabled={saving}
             aria-label={a.annotation_delete}
-            className="p-1 text-ink-1 hover:text-status-error transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+            variant="ghost"
+            size="icon-sm"
+            icon={<Trash2 className="w-3.5 h-3.5" />}
+          />
         )}
       </div>
     </div>

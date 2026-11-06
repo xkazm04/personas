@@ -23,6 +23,7 @@ import { extractMessage, silentCatch } from "@/lib/silentCatch";
 import { resolveErrorTranslated } from "@/i18n/useTranslatedError";
 import { awaitExecutionResult } from "@/features/agents/sub_deployment/hooks/awaitExecutionResult";
 import { createLatestWins } from "@/stores/util/latestWins";
+import Button from '@/features/shared/components/buttons/Button';
 
 /** How long the panel waits for a dry-run to finish before showing the row as
  *  it stands. Matches the IPC ceiling `simulateBuildDraft` itself allows. */
@@ -210,14 +211,14 @@ export function BuildSimulatePanel({
               {t.agents.build_simulate.subtitle}
             </p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
             aria-label={t.agents.build_simulate.close}
-            className="text-ink-1 hover:text-ink-1 p-1 rounded-interactive"
-          >
-            <X className="w-4 h-4" />
-          </button>
+            variant="ghost"
+            size="icon-sm"
+            icon={<X className="w-4 h-4" />}
+          />
         </header>
 
         <div className="p-5 space-y-4">
@@ -268,25 +269,26 @@ export function BuildSimulatePanel({
               </label>
 
               <div className="flex justify-end">
-                <button
+                <Button
                   type="button"
                   data-testid="build-simulate-run"
                   onClick={() => void handleRun()}
                   disabled={isRunning || !selectedId || !sessionId}
-                  className="px-4 py-2 rounded-interactive bg-primary/30 hover:bg-primary/45 disabled:opacity-50 disabled:cursor-not-allowed border border-primary/50 typo-body text-ink-1 flex items-center gap-2"
+                  variant="secondary"
+                  size="md"
                 >
                   {isRunning ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {t.agents.build_simulate.running}
-                    </>
+                  <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t.agents.build_simulate.running}
+                  </>
                   ) : (
-                    <>
-                      <Play className="w-4 h-4" />
-                      {t.agents.build_simulate.run_button}
-                    </>
+                  <>
+                  <Play className="w-4 h-4" />
+                  {t.agents.build_simulate.run_button}
+                  </>
                   )}
-                </button>
+                </Button>
               </div>
 
               {error && (
@@ -398,7 +400,7 @@ function ArtefactsPreview({
                     className="p-2 rounded-input bg-surface-2 border border-hair"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="typo-body font-medium text-ink-1">
+                      <span className="typo-label text-ink-1">
                         {r.title}
                       </span>
                       <code className="typo-caption text-ink-1">
@@ -435,7 +437,7 @@ function ArtefactsPreview({
                     className="p-2 rounded-input bg-surface-2 border border-hair"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="typo-body font-medium text-ink-1">
+                      <span className="typo-label text-ink-1">
                         {m.title}
                       </span>
                       {m.category && (

@@ -1,6 +1,7 @@
 import { ArrowLeftRight, X, FlaskConical } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ExecutionListFiltersProps {
   showSimulations: boolean;
@@ -35,33 +36,24 @@ export function ExecutionListFilters({
     <>
       {hasSimulations && (
         <Tooltip content={e.simulations_filter_tooltip}>
-          <button
+          <Button
             type="button"
             onClick={() => setShowSimulations(!showSimulations)}
-            className={`ml-auto flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
-              showSimulations
-                ? 'bg-brand-purple/10 text-brand-purple border border-brand-purple/20'
-                : 'text-ink-1 hover:text-ink-3 border border-transparent'
-            }`}
-          >
-            <FlaskConical className="w-3 h-3" />
-            {showSimulations ? e.hide_simulations : e.show_simulations}
-          </button>
+            variant={showSimulations ? 'secondary' : 'ghost'}
+            size="xs"
+            className="ml-auto"
+            icon={<FlaskConical className="w-3 h-3" />}
+          >{showSimulations ? e.hide_simulations : e.show_simulations}</Button>
         </Tooltip>
       )}
       {hasEnoughToCompare && (
-        <button
+        <Button
           type="button"
           onClick={() => compareMode ? exitCompareMode() : setCompareMode(true)}
-          className={`flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
-            compareMode
-              ? 'bg-primary/15 text-primary/80 border border-hair'
-              : 'text-ink-1 hover:text-ink-3 border border-transparent'
-          }`}
-        >
-          {compareMode ? <X className="w-3 h-3" /> : <ArrowLeftRight className="w-3 h-3" />}
-          {compareMode ? e.cancel : e.compare}
-        </button>
+          variant={compareMode ? 'secondary' : 'ghost'}
+          size="xs"
+          icon={compareMode ? <X className="w-3 h-3" /> : <ArrowLeftRight className="w-3 h-3" />}
+        >{compareMode ? e.cancel : e.compare}</Button>
       )}
 
       {/* Compare mode toolbar */}
@@ -87,13 +79,7 @@ export function ExecutionListFilters({
             </span>
           )}
           {canCompare && (
-            <button
-              type="button"
-              onClick={onShowComparison}
-              className="ml-2 px-2.5 py-1 typo-heading rounded-modal bg-primary/15 text-primary/80 border border-hair hover:bg-primary/25 transition-colors"
-            >
-              {e.compare}
-            </button>
+            <Button type="button" onClick={onShowComparison} variant="secondary" size="sm" className="ml-2">{e.compare}</Button>
           )}
         </div>
       )}

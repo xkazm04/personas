@@ -5,6 +5,7 @@ import { AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { STAGE_COLORS } from './stageColors';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 // ---------------------------------------------------------------------------
 // Waterfall Bar
@@ -53,19 +54,20 @@ export function StageBar({
         {/* Left: stage label */}
         <div className="flex items-center gap-1.5 min-w-0">
           {hasSubSpans ? (
-            <button
+            <Button
               type="button"
               onClick={onToggle}
               aria-label={meta.label}
               aria-expanded={isExpanded}
-              className="p-0.5 rounded-interactive hover:bg-surface-2 flex-shrink-0"
-            >
-              {isExpanded ? (
+              variant="ghost"
+              size="icon-sm"
+              className="flex-shrink-0"
+              icon={isExpanded ? (
                 <ChevronDown className="w-3 h-3 text-ink-1" />
               ) : (
                 <ChevronRight className="w-3 h-3 text-ink-1" />
               )}
-            </button>
+            />
           ) : (
             <span className="w-4 flex-shrink-0" />
           )}

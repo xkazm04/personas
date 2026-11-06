@@ -23,6 +23,7 @@ import { ComposerEventTemplateList, EVENT_TEMPLATES } from "./ComposerEventTempl
 import { DebtText, debtText } from '@/i18n/DebtText';
 import { useTranslation } from "@/i18n/useTranslation";
 import { Kbd } from '@/features/shared/components/display/Kbd';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface ComposerEventPickerModalProps {
@@ -102,14 +103,14 @@ export function ComposerEventPickerModal({
       footer={
         <>
           <Kbd><DebtText k="auto_enter_b0d98854" /></Kbd>
-          <button
+          <Button
             type="button"
             onClick={() => onApply(draft)}
-            className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-ink-1 typo-body transition-colors"
             style={{ boxShadow: "0 0 20px rgba(96,165,250,0.25)" }}
-          >
-            {draft.length === 0 ? ga.glyph_event_picker_done : tx(ga.glyph_event_picker_subscribe, { count: draft.length })}
-          </button>
+            variant="secondary"
+            size="icon-sm"
+            icon={draft.length === 0 ? ga.glyph_event_picker_done : tx(ga.glyph_event_picker_subscribe, { count: draft.length })}
+          />
         </>
       }
     >
@@ -155,14 +156,14 @@ export function ComposerEventPickerModal({
                     style={{ background: persona?.color ?? "#60a5fa" }}
                   />
                   {sub.personaName} · {tpl?.label ?? sub.triggerId}
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setDraft((prev) => prev.filter((e) => !(e.personaId === sub.personaId && e.triggerId === sub.triggerId)))}
-                    className="text-ink-1 hover:text-ink-1 -mr-0.5"
                     aria-label={debtText("auto_remove_subscription_5ab5e9bc")}
-                  >
-                    ×
-                  </button>
+                    variant="ghost"
+                    size="sm"
+                    className="-mr-0.5"
+                  >×</Button>
                 </span>
               );
             })}

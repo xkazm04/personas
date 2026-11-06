@@ -23,6 +23,7 @@ import { EventListenerConfig } from './configs/EventListenerConfig';
 import { PollingConfig } from './configs/PollingConfig';
 import { buildTriggerConfig } from './configs/buildTriggerConfig';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 export interface TriggerAddFormProps {
   credentialEventsList: { id: string; name: string }[];
@@ -211,14 +212,20 @@ export function TriggerAddForm({
           <div>
             <label className="block typo-body text-ink-1 mb-1.5">{t.triggers.schedule_mode_label}</label>
             <div className="flex gap-1.5">
-              <button type="button" onClick={() => { setScheduleMode('interval'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body transition-all border ${scheduleMode === 'interval' ? 'bg-primary/15 text-primary border-primary/30' : 'bg-surface-1 text-ink-1 border-hair hover:text-ink-3 hover:bg-surface-2'}`}>
-                <Clock className="w-3.5 h-3.5" /> {t.triggers.schedule.mode_interval}
-              </button>
-              <button type="button" onClick={() => { setScheduleMode('cron'); setValidationError(null); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body transition-all border ${scheduleMode === 'cron' ? 'bg-status-warning/15 text-status-warning border-status-warning/30' : 'bg-surface-1 text-ink-1 border-hair hover:text-ink-3 hover:bg-surface-2'}`}>
-                <CalendarClock className="w-3.5 h-3.5" /> {t.triggers.schedule.mode_cron}
-              </button>
+              <Button
+                type="button"
+                onClick={() => { setScheduleMode('interval'); setValidationError(null); }}
+                variant={scheduleMode === 'interval' ? 'secondary' : 'ghost'}
+                size="sm"
+                icon={<Clock className="w-3.5 h-3.5" />}
+              >{t.triggers.schedule.mode_interval}</Button>
+              <Button
+                type="button"
+                onClick={() => { setScheduleMode('cron'); setValidationError(null); }}
+                variant={scheduleMode === 'cron' ? 'secondary' : 'ghost'}
+                size="sm"
+                icon={<CalendarClock className="w-3.5 h-3.5" />}
+              >{t.triggers.schedule.mode_cron}</Button>
             </div>
           </div>
           {scheduleMode === 'interval' && <IntervalConfig interval={interval} setInterval={setInterval} customInterval={customInterval} setCustomInterval={setCustomInterval} validationError={validationError} setValidationError={setValidationError} triggerType={triggerType} />}
@@ -242,15 +249,14 @@ export function TriggerAddForm({
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={onCancel} className="px-3 py-1.5 bg-surface-2 hover:bg-secondary text-ink-1 rounded-modal typo-body transition-colors">{t.common.cancel}</button>
-        <button
+        <Button type="button" onClick={onCancel} variant="secondary" size="sm">{t.common.cancel}</Button>
+        <Button
           type="button"
           onClick={handleAddTrigger}
           disabled={isScheduleInvalid || isCreating}
-          className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-ink-1 rounded-modal typo-body transition-all shadow-elevation-3 shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
-        >
-          {t.triggers.add.create_trigger}
-        </button>
+          variant="primary"
+          size="sm"
+        >{t.triggers.add.create_trigger}</Button>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import { ExecutionListFilters } from './ExecutionListFilters';
 import { BulkRerunToolbar } from './BulkRerunToolbar';
 import type { useExecutionCompare } from './useExecutionCompare';
 import type { useExecutionBulk } from './useExecutionBulk';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ExecutionListToolbarProps {
   rows: ExecutionListItem[];
@@ -66,14 +67,13 @@ export function ExecutionListToolbar({
       />
       {compare.starredPair && (
         <Tooltip content={e.compare_starred_pair_tooltip}>
-          <button
+          <Button
             type="button"
             onClick={() => { const [l, r] = compare.starredPair!; void compare.openPair(l, r); }}
-            className="flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors text-status-warning hover:bg-status-warning/10 border border-status-warning/20"
-          >
-            <Star className="w-3 h-3" fill="currentColor" />
-            {e.compare_starred_pair}
-          </button>
+            variant="secondary"
+            size="xs"
+            icon={<Star className="w-3 h-3" fill="currentColor" />}
+          >{e.compare_starred_pair}</Button>
         </Tooltip>
       )}
       <div className="ml-auto">

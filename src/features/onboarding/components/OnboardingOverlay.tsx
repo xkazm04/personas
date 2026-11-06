@@ -114,15 +114,15 @@ export default function OnboardingOverlay() {
             <p className="typo-body text-ink-1">{t.onboarding.subtitle}</p>
           </div>
         </div>
-        <button
+        <Button
           type="button"
           onClick={dismissOnboarding}
-          className="p-1.5 rounded-card hover:bg-surface-2 transition-colors text-ink-1 hover:text-ink-1"
           aria-label={t.onboarding.skip_tooltip}
-          title={t.onboarding.skip_tooltip}
-        >
-          <X className="w-4 h-4" />
-        </button>
+          tooltip={t.onboarding.skip_tooltip}
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="w-4 h-4" />}
+        />
       </div>
 
       {/* Step indicator */}
@@ -184,13 +184,7 @@ export default function OnboardingOverlay() {
 
       {/* Footer */}
       <div className="flex items-center justify-between px-6 py-3.5 border-t border-hair bg-surface-1 flex-shrink-0">
-        <button
-          type="button"
-          onClick={dismissOnboarding}
-          className="px-4 py-2 typo-heading rounded-modal border border-hair text-ink-1 hover:bg-surface-2 transition-colors"
-        >
-          {t.onboarding.skip_button}
-        </button>
+        <Button type="button" onClick={dismissOnboarding} variant="secondary" size="md">{t.onboarding.skip_button}</Button>
 
         <div className="flex items-center gap-2">
           {onboardingStep === 'appearance' && (

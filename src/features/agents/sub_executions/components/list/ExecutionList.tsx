@@ -28,6 +28,7 @@ import { useExecutionCompare } from './useExecutionCompare';
 import { useExecutionBulk } from './useExecutionBulk';
 import { useExecutionColumns, type StatusFilter } from './useExecutionColumns';
 import { useExecutionDetail } from './useExecutionDetail';
+import Button from '@/features/shared/components/buttons/Button';
 
 type BulkState = ReturnType<typeof useExecutionBulk>;
 type CompareState = ReturnType<typeof useExecutionCompare>;
@@ -256,16 +257,18 @@ export function ExecutionList({ showActiveChains = true }: ExecutionListProps = 
             className="max-h-[70vh]"
           />
           {paging.hasMore && (
-            <button
+            <Button
               type="button"
               onClick={() => { void paging.loadMore(); }}
               disabled={paging.loadingMore}
               aria-busy={paging.loadingMore}
-              className="mt-3 w-full flex items-center justify-center gap-2 py-2 typo-heading rounded-modal bg-surface-1 text-ink-1 border border-hair hover:bg-surface-2 disabled:opacity-60 transition-colors"
+              variant="secondary"
+              size="sm"
+              className="mt-3 w-full"
             >
               {paging.loadingMore && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {tx(e.load_more, { count: EXECUTION_PAGE_SIZE })}
-            </button>
+            </Button>
           )}
         </div>
       )}

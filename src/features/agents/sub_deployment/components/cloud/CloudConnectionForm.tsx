@@ -68,13 +68,7 @@ export function CloudConnectionForm({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onDisconnect}
-          className="px-4 py-2 typo-body rounded-modal bg-status-error/10 border border-status-error/20 text-status-error hover:bg-status-error/20 transition-colors cursor-pointer"
-        >
-          {dt.disconnect}
-        </button>
+        <Button type="button" onClick={onDisconnect} variant="danger" size="md">{dt.disconnect}</Button>
       </div>
     );
   }

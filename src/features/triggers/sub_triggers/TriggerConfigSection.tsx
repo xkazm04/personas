@@ -5,6 +5,8 @@ import { formatInterval } from '@/lib/utils/formatters';
 import { CheckCircle2, Copy } from 'lucide-react';
 import type { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ConfigSectionProps {
   trigger: PersonaTrigger;
@@ -47,14 +49,14 @@ export function ConfigSection({ trigger, credentialEventsList, detail }: ConfigS
             <div className="flex-1 min-w-0 px-2.5 py-1.5 bg-background/50 border border-hair rounded-modal cursor-text select-all" onClick={(e) => e.stopPropagation()}>
               <span className="typo-code text-ink-1 break-all">{getWebhookUrl(trigger.id)}</span>
             </div>
-            <button
-              type="button"
-              onClick={detail.copyWebhookUrl}
-              className={`flex-shrink-0 p-1.5 rounded-card transition-all ${detail.copiedUrl ? 'bg-status-success/15 text-status-success' : 'hover:bg-surface-2 text-ink-1 hover:text-ink-3'}`}
-              title={t.triggers.detail.webhook_url}
-            >
-              {detail.copiedUrl ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
+            <Tooltip content={t.triggers.detail.webhook_url}><Button
+  type="button"
+  onClick={detail.copyWebhookUrl}
+  variant={detail.copiedUrl ? 'secondary' : 'ghost'}
+  size="icon-sm"
+  className="flex-shrink-0"
+  icon={detail.copiedUrl ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+/></Tooltip>
           </div>
           {config.webhook_secret && (
             <div className="typo-body text-ink-1">{t.triggers.hmac_colon} {'--------'}{config.webhook_secret.slice(-4)}</div>

@@ -23,6 +23,7 @@ import { useOnOpen } from "./useOnOpen";
 import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';
 import { Kbd } from '@/features/shared/components/display/Kbd';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 interface ComposerSchedulePickerModalProps {
@@ -107,25 +108,24 @@ export function ComposerSchedulePickerModal({
       footer={
         <>
           {step === "detail" && (
-            <button
+            <Button
               type="button"
               onClick={() => setStep("rhythm")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive text-ink-1 hover:text-ink-1 hover:bg-surface-1 typo-body transition-colors"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-              <DebtText k="auto_change_rhythm_2697a991" />
-            </button>
+              variant="ghost"
+              size="sm"
+              icon={<ChevronLeft className="w-3.5 h-3.5" />}
+            ><DebtText k="auto_change_rhythm_2697a991" /></Button>
           )}
           <div className="flex items-center gap-2 ml-auto">
             <Kbd><DebtText k="auto_enter_b0d98854" /></Kbd>
-            <button
+            <Button
               type="button"
               onClick={applyCurrent}
-              className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-ink-1 typo-body transition-colors"
               style={{ boxShadow: "0 0 20px rgba(96,165,250,0.25)" }}
-            >
-              <DebtText k="auto_apply_schedule_c8f50c45" />
-            </button>
+              variant="secondary"
+              size="icon-sm"
+              icon={<DebtText k="auto_apply_schedule_c8f50c45" />}
+            />
           </div>
         </>
       }

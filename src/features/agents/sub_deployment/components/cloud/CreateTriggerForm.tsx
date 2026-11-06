@@ -65,32 +65,22 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
       <div className="space-y-1">
         <span id="cloud-trigger-type-label" className="typo-caption text-ink-2">{dt.trigger_type}</span>
         <div role="group" aria-labelledby="cloud-trigger-type-label" className="flex gap-2">
-          <button
+          <Button
             type="button"
             aria-pressed={createType === 'schedule'}
             onClick={() => setCreateType('schedule')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border transition-colors ${
-              createType === 'schedule'
-                ? 'bg-role-agent/15 text-role-agent border-role-agent/30'
-                : 'bg-surface-2 text-ink-1 border-hair hover:border-primary/25'
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            {dt.schedule_cron}
-          </button>
-          <button
+            variant={createType === 'schedule' ? 'secondary' : 'ghost'}
+            size="sm"
+            icon={<Clock className="w-3.5 h-3.5" />}
+          >{dt.schedule_cron}</Button>
+          <Button
             type="button"
             aria-pressed={createType === 'webhook'}
             onClick={() => setCreateType('webhook')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 typo-body rounded-modal border transition-colors ${
-              createType === 'webhook'
-                ? 'bg-role-agent/15 text-role-agent border-role-agent/30'
-                : 'bg-surface-2 text-ink-1 border-hair hover:border-primary/25'
-            }`}
-          >
-            <Webhook className="w-3.5 h-3.5" />
-            {t.deployment.cloud_trigger_webhook}
-          </button>
+            variant={createType === 'webhook' ? 'secondary' : 'ghost'}
+            size="sm"
+            icon={<Webhook className="w-3.5 h-3.5" />}
+          >{t.deployment.cloud_trigger_webhook}</Button>
         </div>
       </div>
 
@@ -112,19 +102,14 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
           )}
           <div className="flex flex-wrap gap-1.5">
             {CLOUD_CRON_PRESETS.map((preset) => (
-              <button
+              <Button
                 key={preset.id}
                 type="button"
                 aria-pressed={createCron === preset.cron}
                 onClick={() => setCreateCron(preset.cron)}
-                className={`px-2 py-1 typo-caption rounded-card border transition-colors ${
-                  createCron === preset.cron
-                    ? 'bg-role-agent/15 text-role-agent border-role-agent/25'
-                    : 'bg-surface-1 text-ink-1 border-hair hover:border-hair'
-                }`}
-              >
-                {cloudCronPresetLabel(t, preset)}
-              </button>
+                variant={createCron === preset.cron ? 'secondary' : 'ghost'}
+                size="xs"
+              >{cloudCronPresetLabel(t, preset)}</Button>
             ))}
           </div>
         </div>
@@ -151,13 +136,7 @@ export function CreateTriggerForm({ deployedPersonas, onCreated, onCancel }: Cre
         >
           {dt.create_trigger}
         </Button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-3 py-1.5 typo-body rounded-modal border border-hair text-ink-1 hover:bg-surface-2 transition-colors"
-        >
-          {t.common.cancel}
-        </button>
+        <Button type="button" onClick={onCancel} variant="secondary" size="sm">{t.common.cancel}</Button>
       </div>
     </div>
   );

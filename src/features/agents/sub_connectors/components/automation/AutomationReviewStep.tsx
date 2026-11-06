@@ -4,6 +4,7 @@ import type { DeployAutomationResult } from '@/api/agents/automations';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface AutomationReviewStepProps {
   platform: AutomationPlatform;
@@ -73,13 +74,7 @@ export function AutomationReviewStep({
             <ExternalLink className="w-3 h-3" />
           </a>
         )}
-        <button
-          type="button"
-          onClick={() => { onComplete(); onClose(); }}
-          className="px-4 py-2 typo-body rounded-modal bg-accent/20 border border-accent/30 text-ink-1 hover:bg-accent/30 transition-colors"
-        >
-          {t.agents.connectors.auto_done}
-        </button>
+        <Button type="button" onClick={() => { onComplete(); onClose(); }} variant="secondary" size="md">{t.agents.connectors.auto_done}</Button>
       </div>
     );
   }
@@ -95,12 +90,8 @@ export function AutomationReviewStep({
         </div>
       </div>
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="px-4 py-2 typo-body rounded-modal border border-hair text-ink-1 hover:bg-surface-2 transition-colors">
-          {t.common.close}
-        </button>
-        <button type="button" onClick={onReset} className="px-4 py-2 typo-body rounded-modal bg-accent/20 border border-accent/30 text-ink-1 hover:bg-accent/30 transition-colors">
-          {t.agents.connectors.auto_try_again}
-        </button>
+        <Button type="button" onClick={onClose} variant="secondary" size="md">{t.common.close}</Button>
+        <Button type="button" onClick={onReset} variant="secondary" size="md">{t.agents.connectors.auto_try_again}</Button>
       </div>
     </div>
   );

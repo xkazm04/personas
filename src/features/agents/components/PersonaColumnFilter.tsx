@@ -4,6 +4,7 @@ import { TABLE_HEAD_LABEL } from '@/features/shared/components/display/tableToke
 import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaSelectorModal } from '@/features/agents/components/PersonaSelectorModal';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface PersonaColumnFilterProps {
   value: string;
@@ -35,14 +36,14 @@ export function PersonaColumnFilter({ value, onChange, personas, label = 'Person
         {!selected && <Filter className="w-3 h-3 text-ink-1" />}
       </button>
       {selected && (
-        <button
+        <Button
           type="button"
           onClick={(e) => { e.stopPropagation(); onChange(''); }}
           aria-label={t.common.clear}
-          className="p-0.5 rounded-interactive hover:bg-surface-2 text-ink-1 hover:text-ink-1"
-        >
-          <X className="w-3 h-3" />
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="w-3 h-3" />}
+        />
       )}
 
       {open && (

@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import type { NotificationChannelType } from '@/lib/types/frontendTypes';
 import { channelTypeLabel, type channelTypes as ChannelTypes } from './ChannelList';
+import Button from '@/features/shared/components/buttons/Button';
 
 type ChannelTypeDef = Pick<(typeof ChannelTypes)[number], 'type' | 'label' | 'labelKey'>;
 
@@ -36,17 +37,17 @@ export function AddChannelButton({ channelTypes, existingTypes, onAdd }: AddChan
       {({ close }) => (
         <>
           {available.map((ct) => (
-            <button
+            <Button
               type="button"
               key={ct.type}
               onClick={() => { onAdd(ct.type); close(); }}
               role="option"
               aria-selected={false}
-              className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-surface-2 typo-body text-ink-1 transition-colors"
-            >
-              <Bell className="w-4 h-4 text-ink-1" />
-              {channelTypeLabel(t, ct)}
-            </button>
+              variant="ghost"
+              size="md"
+              className="w-full"
+              icon={<Bell className="w-4 h-4 text-ink-1" />}
+            >{channelTypeLabel(t, ct)}</Button>
           ))}
           {available.length === 0 && (
             <div className="px-4 py-2.5 typo-body text-ink-1">{t.agents.connectors.ch_all_added}</div>

@@ -1,5 +1,6 @@
 import { Wrench, RotateCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface CancelledResumeFooterProps {
   /** Name of the tool that was in-flight when the execution was cancelled, if known. */
@@ -26,14 +27,14 @@ export function CancelledResumeFooter({ lastTool, onResume }: CancelledResumeFoo
           </code>
         </div>
       )}
-      <button
+      <Button
         type="button"
         onClick={onResume}
-        className="flex items-center gap-2 px-3.5 py-2 typo-heading rounded-modal bg-status-warning/10 text-status-warning border border-status-warning/20 hover:bg-status-warning/20 hover:text-status-warning transition-colors"
-      >
-        <RotateCw className="w-3.5 h-3.5" />
-        {t.agents.executions.resume_from_here}
-      </button>
+        variant="accent"
+        tone="warning"
+        size="sm"
+        icon={<RotateCw className="w-3.5 h-3.5" />}
+      >{t.agents.executions.resume_from_here}</Button>
     </div>
   );
 }

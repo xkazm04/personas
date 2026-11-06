@@ -4,6 +4,7 @@ import { fmtCost } from '../../libs/comparisonHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BulkRunItem, BulkRunCohort } from '../../libs/useBulkRerun';
 import { isFailedExecutionStatus } from '../../libs/executionStatus';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface BulkRerunReportProps {
   cohort: BulkRunCohort;
@@ -53,14 +54,14 @@ export function BulkRerunReport({ cohort, items, onClose, onCompareItem }: BulkR
           <Layers className="w-4 h-4 text-primary/70" />
           <h3 className="typo-heading text-ink-1">{e.bulk_rerun_report_title}</h3>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onClose}
-          className="p-1 text-ink-1 hover:text-ink-3 transition-colors"
           aria-label={e.bulk_rerun_close}
-        >
-          <X className="w-4 h-4" />
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          icon={<X className="w-4 h-4" />}
+        />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -251,15 +252,16 @@ function CohortRowList({ rows, onCompareItem }: CohortRowListProps) {
             </div>
             <div className="col-span-2 flex items-center justify-end">
               {canDrill && (
-                <button
+                <Button
                   type="button"
                   onClick={() => onCompareItem(it.originalId, it.newExecutionId!)}
-                  className="flex items-center gap-1 px-2 py-0.5 typo-body rounded-card text-primary/90 hover:bg-primary/10 transition-colors"
-                  title={e.bulk_rerun_open_diff}
+                  tooltip={e.bulk_rerun_open_diff}
+                  variant="ghost"
+                  size="xs"
                 >
                   {e.bulk_rerun_diff}
                   <ChevronRight className="w-3 h-3" />
-                </button>
+                </Button>
               )}
             </div>
           </div>

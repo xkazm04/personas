@@ -5,6 +5,7 @@ import { RefreshCw } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { MentalityCard } from "./MentalityCard";
 import type { PersonaCore } from "./types";
+import Button from '@/features/shared/components/buttons/Button';
 
 export function SnapshotColumn({ core }: { core: PersonaCore }) {
   const { t } = useTranslation();
@@ -20,14 +21,14 @@ export function SnapshotColumn({ core }: { core: PersonaCore }) {
         data-testid="core-snapshot-load-failed"
       >
         <span className="typo-body text-ink-1">{t.errors.internal}</span>
-        <button
+        <Button
           type="button"
           onClick={core.retryLoad}
-          className="inline-flex items-center gap-1.5 typo-caption text-ink-1 hover:text-ink-1 cursor-pointer"
           data-testid="core-snapshot-retry"
-        >
-          <RefreshCw className="w-3.5 h-3.5" /> {t.common.retry}
-        </button>
+          variant="ghost"
+          size="sm"
+          icon={<RefreshCw className="w-3.5 h-3.5" />}
+        >{t.common.retry}</Button>
       </div>
     );
   }

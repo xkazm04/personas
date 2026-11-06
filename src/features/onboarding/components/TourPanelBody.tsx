@@ -7,6 +7,7 @@ import { getStepColors } from './tourConstants';
 import { focusTourHighlight } from './tourHighlight';
 import { StepProgress } from './StepProgress';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface TourPanelBodyProps {
   currentIndex: number;
@@ -82,28 +83,28 @@ export function TourPanelBody({
               {currentStep.subSteps.length > 1 && (
                 <div className="flex items-center gap-0.5">
                   <Tooltip content={t.onboarding.tour_substep_prev}>
-                    <button
+                    <Button
                       type="button"
                       onClick={() => useTourStore.getState().goToSubStep(subStepIndex - 1)}
                       disabled={subStepIndex <= 0}
                       data-testid="tour-substep-prev"
                       aria-label={t.onboarding.tour_substep_prev}
-                      className="p-1 rounded-card text-ink-1 hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <ChevronLeft className="w-3 h-3" />
-                    </button>
+                      variant="ghost"
+                      size="icon-sm"
+                      icon={<ChevronLeft className="w-3 h-3" />}
+                    />
                   </Tooltip>
                   <Tooltip content={t.onboarding.tour_substep_next}>
-                    <button
+                    <Button
                       type="button"
                       onClick={() => useTourStore.getState().goToSubStep(subStepIndex + 1)}
                       disabled={subStepIndex >= currentStep.subSteps.length - 1}
                       data-testid="tour-substep-next"
                       aria-label={t.onboarding.tour_substep_next}
-                      className="p-1 rounded-card text-ink-1 hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <ChevronRight className="w-3 h-3" />
-                    </button>
+                      variant="ghost"
+                      size="icon-sm"
+                      icon={<ChevronRight className="w-3 h-3" />}
+                    />
                   </Tooltip>
                 </div>
               )}
@@ -168,26 +169,26 @@ export function TourPanelBody({
 
       {/* Footer navigation */}
       <div className="flex items-center justify-between gap-2 px-3 py-3 border-t border-primary/8 bg-surface-1">
-        <button
+        <Button
           type="button"
           onClick={onPrev}
           disabled={currentIndex === 0}
           data-testid="tour-btn-prev"
-          className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card border border-hair text-ink-1 hover:bg-surface-2 hover:text-ink-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-        >
-          <ChevronLeft className="w-3.5 h-3.5" />
-          {t.onboarding.back}
-        </button>
+          variant="secondary"
+          size="sm"
+          icon={<ChevronLeft className="w-3.5 h-3.5" />}
+        >{t.onboarding.back}</Button>
         {allCompleted ? (
-          <button
+          <Button
             type="button"
             onClick={onComplete}
             data-testid="tour-btn-finish"
-            className="flex items-center gap-1 px-3 py-1.5 typo-caption rounded-modal bg-status-success/15 text-status-success border border-status-success/25 hover:bg-status-success/25 transition-colors min-w-0"
-          >
-            <Check className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="truncate">{t.onboarding.complete_tour}</span>
-          </button>
+            variant="accent"
+            tone="success"
+            size="sm"
+            className="min-w-0"
+            icon={<Check className="w-3.5 h-3.5 flex-shrink-0" />}
+          ><span className="truncate">{t.onboarding.complete_tour}</span></Button>
         ) : isStepCompleted ? (
           <button
             type="button"
@@ -207,24 +208,26 @@ export function TourPanelBody({
           // until the step's `completeOn` fires; Skip is a separate, secondary
           // control that still works for anyone who wants out.
           <div className="flex items-center gap-2 min-w-0">
-            <button
+            <Button
               type="button"
               onClick={onNext}
               data-testid="tour-btn-skip"
-              className="flex items-center gap-1 px-2.5 py-1.5 typo-caption rounded-card text-ink-1 opacity-70 hover:opacity-100 hover:bg-surface-2 transition-all min-w-0"
-            >
-              <span className="truncate">{t.onboarding.tour_skip_step}</span>
-            </button>
-            <button
+              variant="ghost"
+              size="sm"
+              className="min-w-0"
+            ><span className="truncate">{t.onboarding.tour_skip_step}</span></Button>
+            <Button
               type="button"
               disabled
               aria-disabled="true"
               data-testid="tour-btn-next"
-              className="flex items-center gap-1 px-3 py-1.5 typo-caption rounded-modal border border-hair text-ink-1 opacity-40 cursor-not-allowed min-w-0"
+              variant="secondary"
+              size="sm"
+              className="min-w-0"
             >
               <span className="truncate">{t.onboarding.continue_button}</span>
               <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />
-            </button>
+            </Button>
           </div>
         )}
       </div>

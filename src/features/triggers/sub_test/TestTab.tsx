@@ -14,6 +14,7 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { TestFireListeners } from './TestFireListeners';
 import { listenersForEventType } from './testFireRouting';
+import Button from '@/features/shared/components/buttons/Button';
 
 const FALLBACK_PAYLOAD = '{}';
 const CUSTOM_EVENT_VALUE = '__custom__';
@@ -280,15 +281,14 @@ export function TestTab() {
               <div className="flex items-center justify-between mb-1.5">
                 <label className="typo-caption text-ink-2">{t.triggers.payload_json_label}</label>
                 {payloadSource === 'history' && historyEvent && (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => refreshPrefill(selectedPersonaId, activeEventType)}
-                    className="flex items-center gap-1 typo-caption text-ink-1 transition-colors"
-                    title={t.triggers.test_payload_reset}
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    {t.triggers.test_payload_reset}
-                  </button>
+                    tooltip={t.triggers.test_payload_reset}
+                    variant="ghost"
+                    size="sm"
+                    icon={<RotateCcw className="w-3 h-3" />}
+                  >{t.triggers.test_payload_reset}</Button>
                 )}
               </div>
               <textarea
@@ -315,15 +315,15 @@ export function TestTab() {
               )}
             </div>
 
-            <button
+            <Button
               type="button"
               onClick={handleTestFire}
               disabled={!canFire}
-              className="flex items-center gap-2 px-4 py-2 typo-body rounded-card bg-status-success/15 text-status-success border border-status-success/25 hover:bg-status-success/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Zap className={`w-3.5 h-3.5 ${isTesting ? 'animate-pulse' : ''}`} />
-              {isTesting ? t.triggers.publishing_label : t.triggers.publish_event}
-            </button>
+              variant="accent"
+              tone="success"
+              size="md"
+              icon={<Zap className={`w-3.5 h-3.5 ${isTesting ? 'animate-pulse' : ''}`} />}
+            >{isTesting ? t.triggers.publishing_label : t.triggers.publish_event}</Button>
           </section>
         </div>
 

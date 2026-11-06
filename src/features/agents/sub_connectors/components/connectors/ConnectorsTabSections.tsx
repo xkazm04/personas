@@ -8,6 +8,7 @@ import { ConnectorStatusCard } from './ConnectorStatusCard';
 import type { ConnectorStatus, ConnectorHealthFilter } from '../../libs/connectorTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { getAlternatives } from '@/lib/credentials/connectorRoles';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface ReadinessWarningsProps {
   unlinked: number;
@@ -72,15 +73,13 @@ function FilterPill({
   );
   if (!onToggle) return badge;
   return (
-    <button
-      type="button"
-      aria-pressed={isActive}
-      title={isActive ? t.agents.connectors.st_filter_clear : t.agents.connectors.st_filter_toggle}
-      onClick={() => onToggle(isActive ? null : value)}
-      className={`rounded-full transition-opacity cursor-pointer ${isActive ? '' : 'opacity-80 hover:opacity-100'}`}
-    >
-      {badge}
-    </button>
+    <Tooltip content={isActive ? t.agents.connectors.st_filter_clear : t.agents.connectors.st_filter_toggle}><Button
+  type="button"
+  aria-pressed={isActive}
+  onClick={() => onToggle(isActive ? null : value)}
+  variant={isActive ? 'secondary' : 'ghost'}
+  size="sm"
+>{badge}</Button></Tooltip>
   );
 }
 

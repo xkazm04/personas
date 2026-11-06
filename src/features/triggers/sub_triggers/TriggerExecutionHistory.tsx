@@ -12,6 +12,7 @@ import { TriggerHealthSparkline } from './TriggerHealthSparkline';
 import { JsonPayloadBlock } from './JsonPayloadBlock';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import Button from '@/features/shared/components/buttons/Button';
 
 // --- Execution Row --------------------------------------------------
 
@@ -90,18 +91,17 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
 
               {/* Replay + result */}
               <div className="flex items-center gap-2 pt-1">
-                <button
+                <Button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onReplay(); }}
                   disabled={isReplaying}
-                  className="flex items-center gap-1.5 px-2.5 py-1 typo-body text-role-external hover:text-role-external hover:bg-role-external/10 rounded-card border border-role-external/15 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  title={t.triggers.replay_button_title}
-                >
-                  {isReplaying
+                  tooltip={t.triggers.replay_button_title}
+                  variant="secondary"
+                  size="sm"
+                  icon={isReplaying
                     ? <LoadingSpinner size="xs" />
                     : <RotateCcw className="w-3 h-3" />}
-                  {isReplaying ? t.triggers.replaying_label : t.triggers.replay_label}
-                </button>
+                >{isReplaying ? t.triggers.replaying_label : t.triggers.replay_label}</Button>
                 {replayResult && (
                   <span className={`flex items-center gap-1 typo-body ${replayResult.success ? 'text-status-success' : 'text-status-error'}`}>
                     {replayResult.success ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
@@ -174,14 +174,14 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
                 <div className="flex items-center gap-2 py-2 typo-body text-status-warning">
                   <AlertTriangle className="w-3 h-3 shrink-0" />
                   {t.triggers.could_not_load_history}
-                  <button
+                  <Button
                     type="button"
                     onClick={() => void history.fetch()}
-                    className="ml-auto flex items-center gap-1 typo-body text-ink-1 hover:text-ink-1 transition-colors"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    Retry
-                  </button>
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto"
+                    icon={<RefreshCw className="w-3 h-3" />}
+                  >Retry</Button>
                 </div>
               ) : history.executions.length === 0 ? (
                 <EmptyState art="runs" size="sm" title={t.triggers.no_executions_recorded} />
@@ -200,15 +200,15 @@ export function TriggerExecutionHistory({ triggerId, personaId, defaultOpen = fa
                     />
                   ))}
                   {/* Refresh button */}
-                  <button
+                  <Button
                     type="button"
                     onClick={() => void history.fetch()}
                     disabled={history.loading}
-                    className="flex items-center gap-1.5 w-full justify-center py-1.5 typo-body text-ink-1 hover:text-ink-3 transition-colors"
-                  >
-                    <RefreshCw className={`w-3 h-3 ${history.loading ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </button>
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    icon={<RefreshCw className={`w-3 h-3 ${history.loading ? 'animate-spin' : ''}`} />}
+                  >Refresh</Button>
                 </>
               )}
             </div>

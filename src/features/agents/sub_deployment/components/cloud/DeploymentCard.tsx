@@ -11,6 +11,8 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import type { TestResult } from '../../hooks/useDeploymentTest';
 import { ApiPlayground } from './ApiPlayground';
 import { tokenLabel } from '@/i18n/tokenMaps';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface DeploymentCardProps {
   deployment: CloudDeployment;
@@ -115,16 +117,15 @@ export function DeploymentCard({
               className="hover:!text-status-success hover:!bg-status-success/10"
             />
           )}
-          <button
+          <Button aria-label={dt.remove_deployment}
             type="button"
-            title={dt.remove_deployment}
+            tooltip={dt.remove_deployment}
             onClick={() => handleAction(d.id, () => onRemove(d.id))}
             disabled={isBusy}
-            className="p-1.5 rounded-card text-ink-1 hover:text-status-error
-                       hover:bg-status-error/10 disabled:opacity-40 transition-colors cursor-pointer focus-ring"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+            variant="ghost"
+            size="icon-sm"
+            icon={<Trash2 className="w-3.5 h-3.5" />}
+          />
         </div>
       </div>
 
@@ -133,26 +134,23 @@ export function DeploymentCard({
         <code className="flex-1 typo-caption text-ink-1 bg-surface-2 px-2 py-1 rounded-card truncate border border-hair">
           {endpointUrl}
         </code>
-        <button
+        <Button aria-label={dt.copy_endpoint}
           type="button"
-          title={dt.copy_endpoint}
+          tooltip={dt.copy_endpoint}
           onClick={() => copyEndpoint(d.slug)}
-          className="p-1.5 rounded-card text-ink-1 hover:text-ink-1
-                     hover:bg-surface-2 transition-colors cursor-pointer focus-ring"
-        >
-          {copiedId === d.slug ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
-        </button>
+          variant="ghost"
+          size="icon-sm"
+          icon={copiedId === d.slug ? <Check className="w-3.5 h-3.5 text-status-success" /> : <Copy className="w-3.5 h-3.5" />}
+        />
         {sanitizeExternalUrl(endpointUrl) && (
-          <a
+          <Tooltip content={dt.open_endpoint}><a
             href={sanitizeExternalUrl(endpointUrl)!}
             target="_blank"
             rel="noopener noreferrer"
-            title={dt.open_endpoint}
             className="p-1.5 rounded-card text-ink-1 hover:text-ink-1
-                       hover:bg-surface-2 transition-colors focus-ring"
-          >
+                       hover:bg-surface-2 transition-colors focus-ring">
             <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          </a></Tooltip>
         )}
       </div>
 
@@ -204,20 +202,21 @@ export function DeploymentCard({
               <Numeric value={testResult.costUsd} unit="usd" className="text-ink-1" />
             )}
             {testResult.error && (
-              <span className="truncate text-status-error" title={testResult.error}>
+              <Tooltip content={testResult.error}><span className="truncate text-status-error">
                 {testResult.error}
-              </span>
+              </span></Tooltip>
             )}
           </div>
           {onDismissTest && (
-            <button
+            <Button
               type="button"
               aria-label={t.common.dismiss}
               onClick={() => onDismissTest(d.id)}
-              className="p-0.5 rounded-interactive hover:bg-surface-2 transition-colors shrink-0 cursor-pointer"
-            >
-              <X className="w-3 h-3" />
-            </button>
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0"
+              icon={<X className="w-3 h-3" />}
+            />
           )}
         </div>
       )}

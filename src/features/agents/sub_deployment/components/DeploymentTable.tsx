@@ -15,6 +15,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface TestStateMap {
   [deploymentId: string]: { running: boolean; result: TestResult | null };
@@ -216,32 +218,31 @@ export function DeploymentTable({
                     />
                   )}
                   {testResult && (
-                    <span
+                    <Tooltip content={testResult.error ?? testResultTitle(
+                        testResult.status === 'pass' ? t.deployment.deploy_card.test_title_pass : t.deployment.deploy_card.test_title_fail,
+                        testResult, language,
+                      )}><span
                       className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption rounded-card border ${
                         testResult.status === 'pass'
                           ? 'bg-status-success/10 border-status-success/20 text-status-success'
                           : 'bg-status-error/10 border-status-error/20 text-status-error'
-                      }`}
-                      title={testResult.error ?? testResultTitle(
-                        testResult.status === 'pass' ? t.deployment.deploy_card.test_title_pass : t.deployment.deploy_card.test_title_fail,
-                        testResult, language,
-                      )}
-                    >
+                      }`}>
                       {testResult.status === 'pass' ? t.deployment.deploy_card.test_pass : t.deployment.deploy_card.test_fail}
                       {testResult.durationMs != null && (
                         <Numeric value={testResult.durationMs} unit="ms" className="text-ink-1" />
                       )}
                       {onDismissTest && (
-                        <button
+                        <Button
                           type="button"
                           aria-label={t.common.dismiss}
                           onClick={() => onDismissTest(row.id)}
-                          className="p-0 ml-0.5 hover:text-ink-1 transition-colors cursor-pointer"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
+                          variant="ghost"
+                          size="icon-sm"
+                          className="ml-0.5"
+                          icon={<X className="w-2.5 h-2.5" />}
+                        />
                       )}
-                    </span>
+                    </span></Tooltip>
                   )}
                   {row._cloud && row.status === 'active' && (
                     <ActionButton
@@ -280,15 +281,13 @@ export function DeploymentTable({
                     />
                   )}
                   {sanitizeExternalUrl(row.webUrl) && (
-                    <a
+                    <Tooltip content={row.target === 'gitlab' ? dt.open_gitlab : dt.open_endpoint}><a
                       href={sanitizeExternalUrl(row.webUrl)!}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title={row.target === 'gitlab' ? dt.open_gitlab : dt.open_endpoint}
-                      className="p-1.5 rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
-                    >
+                      className="p-1.5 rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors">
                       <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
+                    </a></Tooltip>
                   )}
                 </div>
               </td>

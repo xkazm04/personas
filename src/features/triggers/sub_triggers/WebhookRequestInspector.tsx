@@ -19,6 +19,8 @@ import {
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
+import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 
 // --- Helpers ---------------------------------------------------------------
@@ -66,33 +68,35 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
   const { t } = useTranslation();
   return (
     <div className="rounded-modal bg-background/30 border border-hair overflow-hidden">
-      <button
+      <Button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center gap-2 px-2.5 py-1.5 typo-body hover:bg-surface-1 transition-colors"
-      >
-        {isExpanded
+        variant="ghost"
+        size="sm"
+        className="w-full"
+        icon={isExpanded
           ? <ChevronDown className="w-3 h-3 text-ink-1 flex-shrink-0" />
           : <ChevronRight className="w-3 h-3 text-ink-1 flex-shrink-0" />}
+      >
         <span className={`px-1.5 py-0.5 rounded-interactive typo-caption border ${statusBg(entry.statusCode)} ${statusColor(entry.statusCode)}`}>
-          {entry.statusCode}
+        {entry.statusCode}
         </span>
         <span className="typo-code text-ink-1">{entry.method}</span>
         {entry.eventId && (
-          <span className="typo-code text-status-success truncate max-w-[120px]" title={entry.eventId}>
-            {entry.eventId.slice(0, 8)}...
-          </span>
+        <Tooltip content={entry.eventId}><span className="typo-code text-status-success truncate max-w-[120px]">
+        {entry.eventId.slice(0, 8)}...
+        </span></Tooltip>
         )}
         {entry.errorMessage && (
-          <span className="typo-caption text-status-error truncate max-w-[180px]" title={entry.errorMessage}>
-            {entry.errorMessage}
-          </span>
+        <Tooltip content={entry.errorMessage}><span className="typo-caption text-status-error truncate max-w-[180px]">
+        {entry.errorMessage}
+        </span></Tooltip>
         )}
         <span className="text-ink-2 ml-auto typo-caption flex items-center gap-1">
-          <Clock className="w-3 h-3" />
-          {formatTime(entry.receivedAt)}
+        <Clock className="w-3 h-3" />
+        {formatTime(entry.receivedAt)}
         </span>
-      </button>
+      </Button>
 
       {isExpanded && (
           <div
@@ -117,16 +121,15 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
               )}
 
               <div className="flex items-center gap-2 pt-1 flex-wrap">
-                <button
+                <Button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onReplay(); }}
                   disabled={isReplaying}
-                  className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-role-external hover:text-role-external hover:bg-role-external/10 rounded-card border border-role-external/15 transition-colors disabled:opacity-40"
-                  title={t.triggers.replay_label}
-                >
-                  {isReplaying ? <LoadingSpinner size="xs" /> : <RotateCcw className="w-3 h-3" />}
-                  {isReplaying ? t.triggers.replaying_label : t.triggers.replay_label}
-                </button>
+                  tooltip={t.triggers.replay_label}
+                  variant="secondary"
+                  size="sm"
+                  icon={isReplaying ? <LoadingSpinner size="xs" /> : <RotateCcw className="w-3 h-3" />}
+                >{isReplaying ? t.triggers.replaying_label : t.triggers.replay_label}</Button>
                 <CopyButton
                   copied={copiedCurl}
                   onCopy={() => { onCopyCurl(); }}
@@ -257,13 +260,14 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                 <div className="flex items-center gap-2 py-2 typo-body text-status-warning">
                   <AlertTriangle className="w-3 h-3 shrink-0" />
                   {t.triggers.could_not_load_log}
-                  <button
+                  <Button
                     type="button"
                     onClick={() => void fetch()}
-                    className="ml-auto flex items-center gap-1 typo-body text-ink-1 hover:text-ink-1 transition-colors"
-                  >
-                    <RefreshCw className="w-3 h-3" />Retry
-                  </button>
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto"
+                    icon={<RefreshCw className="w-3 h-3" />}
+                  >Retry</Button>
                 </div>
               ) : logs.length === 0 ? (
                 <EmptyState art="link" size="sm" title={t.triggers.no_webhook_requests} />
@@ -283,25 +287,23 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
                     />
                   ))}
                   <div className="flex items-center gap-2 pt-0.5">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => void fetch()}
                       disabled={loading}
-                      className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-ink-1 hover:text-ink-3 transition-colors"
-                    >
-                      <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                      Refresh
-                    </button>
+                      variant="ghost"
+                      size="sm"
+                      icon={<RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />}
+                    >Refresh</Button>
                     <div className="flex-1" />
-                    <button
+                    <Button
                       type="button"
                       onClick={() => void handleClear()}
                       disabled={clearing}
-                      className="flex items-center gap-1.5 px-2.5 py-1 typo-caption text-status-error hover:text-status-error transition-colors"
-                    >
-                      {clearing ? <LoadingSpinner size="xs" /> : <Trash2 className="w-3 h-3" />}
-                      {t.triggers.clear_all}
-                    </button>
+                      variant="danger"
+                      size="sm"
+                      icon={clearing ? <LoadingSpinner size="xs" /> : <Trash2 className="w-3 h-3" />}
+                    >{t.triggers.clear_all}</Button>
                   </div>
                 </>
               )}

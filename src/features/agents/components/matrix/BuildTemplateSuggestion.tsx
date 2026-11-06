@@ -120,18 +120,19 @@ export function BuildTemplateSuggestion({
                   <div className="flex flex-wrap items-center gap-1.5" data-testid="build-template-suggestion-more">
                     <span className="typo-caption text-ink-2">{t.agents.build_template_match_more}</span>
                     {secondary.map((m) => (
-                      <button
+                      <Button
                         key={m.id}
                         type="button"
                         onClick={() => { void accept(m); }}
                         disabled={acceptingId !== null}
                         aria-busy={acceptingId === m.id || undefined}
-                        className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/[0.06] px-2 py-0.5 typo-caption text-ink-1 transition hover:bg-primary/15 disabled:opacity-40 disabled:cursor-not-allowed"
                         data-testid={`build-template-suggestion-alt-${m.id}`}
+                        variant="secondary"
+                        size="xs"
                       >
                         {acceptingId === m.id && <Loader2 className="h-3 w-3 animate-spin" aria-hidden />}
                         {m.name}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}

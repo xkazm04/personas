@@ -2,6 +2,7 @@ import { Check, MessageSquare, Sparkles, FlaskConical, Rocket, PenLine } from 'l
 import { useAgentStore } from '@/stores/agentStore';
 import { useTourStore } from '@/stores/tourStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 const SUB_STEPS = [
   { id: 'enter-intent', labelKey: 'coach_substep_describe', icon: PenLine },
@@ -219,16 +220,16 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
 
       {/* Skip option */}
       {effectiveSubStep < 3 && buildPhase !== 'promoted' && (
-        <button
+        <Button
           type="button"
           onClick={() => {
             useTourStore.getState().emitTourEvent('tour:persona-promoted');
           }}
-          className="w-full text-center typo-caption text-ink-1 hover:text-ink-3 transition-colors py-1"
           data-testid="tour-coach-skip"
-        >
-          {t.onboarding.skip_build}
-        </button>
+          variant="ghost"
+          size="sm"
+          className="w-full"
+        >{t.onboarding.skip_build}</Button>
       )}
     </div>
   );

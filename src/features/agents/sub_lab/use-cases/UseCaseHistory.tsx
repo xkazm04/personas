@@ -7,6 +7,7 @@ import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 const logger = createLogger("use-case-history");
 
@@ -93,14 +94,14 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
         <p className="typo-body text-ink-1 text-center max-w-xs">
           {t.shared.use_cases_extra.run_to_see_history}
         </p>
-        <button
+        <Button
           type="button"
           onClick={() => onRerun('')}
-          className="mt-1 inline-flex items-center gap-2 px-4 py-2 typo-heading rounded-card bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
-        >
-          <Play className="w-3.5 h-3.5" />
-          {t.shared.use_cases_extra.run_use_case}
-        </button>
+          variant="ghost"
+          size="md"
+          className="mt-1"
+          icon={<Play className="w-3.5 h-3.5" />}
+        >{t.shared.use_cases_extra.run_use_case}</Button>
       </div>
     );
   }
@@ -135,17 +136,18 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
                 </span>
               )}
               {exec.input_data && (
-                <button
+                <Button aria-label={t.shared.use_cases_extra.rerun_input}
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onRerun(exec.input_data!);
                   }}
-                  className="p-1 rounded-interactive hover:bg-surface-2 text-ink-1 hover:text-primary/70 transition-colors flex-shrink-0"
-                  title={t.shared.use_cases_extra.rerun_input}
-                >
-                  <RotateCw className="w-3 h-3" />
-                </button>
+                  tooltip={t.shared.use_cases_extra.rerun_input}
+                  variant="ghost"
+                  size="icon-sm"
+                  className="flex-shrink-0"
+                  icon={<RotateCw className="w-3 h-3" />}
+                />
               )}
             </button>
 

@@ -207,17 +207,17 @@ export function CloudWebhooksTab() {
                 {t.triggers.last_poll_label} <RelativeTime timestamp={relay.lastPollAt} />
               </span>
             )}
-            <button
+            <Button aria-label={t.triggers.refresh_label}
               type="button"
               onClick={() => {
                 setRefreshing(true);
                 void fetchWebhookTriggers().finally(() => setRefreshing(false));
               }}
-              className="p-1.5 rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
-              title={t.triggers.refresh_label}
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            </button>
+              tooltip={t.triggers.refresh_label}
+              variant="ghost"
+              size="icon-sm"
+              icon={<RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />}
+            />
           </div>
         </div>
 
@@ -351,14 +351,14 @@ export function CloudWebhooksTab() {
                         />
                       </span>
                     )}
-                    <button
+                    <Button aria-label={t.triggers.delete_webhook_title}
                       type="button"
                       onClick={(e) => { e.stopPropagation(); handleDelete(row.trigger.id); }}
-                      className="p-1.5 rounded-card text-status-error hover:text-status-error hover:bg-status-error/10 transition-colors"
-                      title={t.triggers.delete_webhook_title}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                      tooltip={t.triggers.delete_webhook_title}
+                      variant="danger"
+                      size="icon-sm"
+                      icon={<Trash2 className="w-3.5 h-3.5" />}
+                    />
                   </div>
                 </div>
               </div>

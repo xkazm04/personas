@@ -8,6 +8,7 @@ import {
   CUSTOM_CLASS_PREFIX,
   DOMAIN_SOFTWARE_ENGINEERING,
 } from '../../libs/charterMeta';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface RespPolicyFieldsProps {
   domain: string;
@@ -72,32 +73,26 @@ export function RespPolicyFields({
           {library.map((cls) => {
             const active = refusalClasses.includes(cls);
             return (
-              <button
+              <Button
                 key={cls}
                 type="button"
                 onClick={() => toggle(cls)}
                 aria-pressed={active}
-                className={`px-2 py-1 rounded-pill border typo-code transition-colors ${
-                  active
-                    ? 'bg-primary/15 border-primary/40 text-primary'
-                    : 'bg-surface-1 border-hair text-ink-1 hover:border-primary/25'
-                }`}
                 data-testid={`resp-refusal-${cls}`}
-              >
-                {cls}
-              </button>
+                variant={active ? 'secondary' : 'ghost'}
+                size="xs"
+              >{cls}</Button>
             );
           })}
           {customClasses.map((cls) => (
-            <button
+            <Button
               key={cls}
               type="button"
               onClick={() => toggle(cls)}
               aria-pressed
-              className="px-2 py-1 rounded-pill border typo-code bg-primary/15 border-primary/40 text-primary"
-            >
-              {cls}
-            </button>
+              variant="secondary"
+              size="xs"
+            >{cls}</Button>
           ))}
         </div>
         <input

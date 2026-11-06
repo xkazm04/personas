@@ -50,15 +50,15 @@ export function CloudReconcileBanner() {
   // renders nothing at all.
   if (dismissed) {
     return (
-      <button
+      <Button
         type="button"
         onClick={show}
         data-testid="cloud-reconcile-badge"
-        className="flex items-center gap-2 rounded-card border border-status-warning/30 bg-status-warning/10 px-3 py-2 typo-body text-status-warning hover:bg-status-warning/15 transition-colors cursor-pointer"
-      >
-        <AlertTriangle className="w-4 h-4 shrink-0" />
-        <span>{tx(summary, { count: orphans.length })}</span>
-      </button>
+        variant="accent"
+        tone="warning"
+        size="sm"
+        icon={<AlertTriangle className="w-4 h-4 shrink-0" />}
+      ><span>{tx(summary, { count: orphans.length })}</span></Button>
     );
   }
 

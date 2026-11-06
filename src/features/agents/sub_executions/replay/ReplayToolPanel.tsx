@@ -3,6 +3,7 @@ import { Wrench, GitFork } from 'lucide-react';
 import type { ToolCallStep } from '@/hooks/execution/useReplayTimeline';
 import { formatDuration } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /** Tool inspector panel -- tool cards with active/completed/pending states. */
 export function ReplayToolPanel({
@@ -90,12 +91,11 @@ export function ReplayToolPanel({
 
               {/* Fork toggle on click */}
               {(isCompleted || isActive) && (
-                <button
+                <Tooltip content={isFork ? e.clear_fork_point : tx(e.fork_after_step, { step: step.step_index })}><button
                   type="button"
+                  aria-label={isFork ? e.clear_fork_point : tx(e.fork_after_step, { step: step.step_index })}
                   onClick={() => onFork(isFork ? null : step.step_index)}
-                  className="absolute inset-0 rounded-card"
-                  title={isFork ? e.clear_fork_point : tx(e.fork_after_step, { step: step.step_index })}
-                />
+                  className="absolute inset-0 rounded-card" /></Tooltip>
               )}
             </div>
           );

@@ -23,6 +23,7 @@ import { DryRunModal } from '../components/runner/DryRunModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useExecutionScope } from '@/hooks/execution/useExecutionScope';
 import { trackInteraction } from '@/lib/analytics';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ExecutionDetailProps {
   execution: PersonaExecution;
@@ -93,17 +94,16 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
           idScope={execution.id}
         />
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
             data-testid="dry-run-from-execution-btn"
             onClick={dryRun.run}
             disabled={dryRun.loading}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption border border-hair bg-surface-1 text-ink-1 hover:bg-surface-2 hover:text-ink-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title={t.agents.executions.dry_run.button_hint}
-          >
-            <FlaskConical className="w-3 h-3" />
-            {dryRun.loading ? t.agents.executions.dry_run.button_running : t.agents.executions.dry_run.button_label}
-          </button>
+            tooltip={t.agents.executions.dry_run.button_hint}
+            variant="secondary"
+            size="sm"
+            icon={<FlaskConical className="w-3 h-3" />}
+          >{dryRun.loading ? t.agents.executions.dry_run.button_running : t.agents.executions.dry_run.button_label}</Button>
         </div>
       </div>
       <DryRunModal open={dryRun.open} loading={dryRun.loading} report={dryRun.report} errorMessage={dryRun.errorMessage} onClose={dryRun.close} />
@@ -181,14 +181,14 @@ export function ExecutionDetail({ execution, nested = false }: ExecutionDetailPr
               <h3 id="chain-execution-detail-title" className="typo-heading text-ink-1 truncate">
                 {t.agents.executions.chain_open} #{chainOpen.id.slice(0, 8)}
               </h3>
-              <button
+              <Button
                 type="button"
                 onClick={() => setChainOpen(null)}
                 aria-label={t.common.close}
-                className="p-1.5 rounded-card text-ink-1 hover:text-ink-1 hover:bg-surface-2 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+                variant="ghost"
+                size="icon-sm"
+                icon={<X className="w-4 h-4" />}
+              />
             </div>
             <div className="p-5 overflow-y-auto">
               <ExecutionDetail execution={chainOpen} nested />

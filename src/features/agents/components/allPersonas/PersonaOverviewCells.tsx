@@ -9,6 +9,7 @@ import { extractConnectorNames } from '@/lib/personas/utils';
 import { useAgentStore } from '@/stores/agentStore';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 
 /* -- Select checkbox cell -------------------------------------------- */
 
@@ -82,7 +83,7 @@ export const FavoriteCell = memo(function FavoriteCell({
     // give this icon-only button a name, so assistive tech announced a bare
     // "button" on the roster's star control. The same string is the name.
     <Tooltip content={label}>
-      <button
+      <Button
         type="button"
         aria-label={label}
         aria-pressed={isFavorite}
@@ -90,14 +91,14 @@ export const FavoriteCell = memo(function FavoriteCell({
           e.stopPropagation();
           onToggle(persona.id);
         }}
-        className="flex items-center justify-center p-0.5 rounded-interactive transition-colors hover:bg-status-warning/10"
-      >
-        <Star
+        variant="ghost"
+        size="icon-sm"
+        icon={<Star
           className={`w-3.5 h-3.5 transition-colors ${
             isFavorite ? 'text-status-warning fill-amber-400' : 'text-ink-1 hover:text-status-warning'
           }`}
-        />
-      </button>
+        />}
+      />
     </Tooltip>
   );
 });

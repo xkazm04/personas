@@ -23,6 +23,7 @@ import { CancelledResumeFooter } from '../CancelledResumeFooter';
 import { silentCatch } from '@/lib/silentCatch';
 import { debtText } from '@/i18n/DebtText';
 import { Kbd } from '@/features/shared/components/display/Kbd';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 
@@ -84,10 +85,14 @@ export function PersonaRunner() {
       {/* Input & Execute Card */}
       <div className="bg-surface-2 backdrop-blur-sm border border-hair rounded-modal p-4 space-y-4">
         <div className="space-y-2">
-          <button type="button" data-testid="runner-toggle-input" onClick={() => state.setShowInputEditor(!state.showInputEditor)} className="flex items-center gap-2 typo-body text-ink-1 hover:text-ink-1 transition-colors">
-            {state.showInputEditor ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            {t.agents.executions.input_data_optional}
-          </button>
+          <Button
+            type="button"
+            data-testid="runner-toggle-input"
+            onClick={() => state.setShowInputEditor(!state.showInputEditor)}
+            variant="ghost"
+            size="sm"
+            icon={state.showInputEditor ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          >{t.agents.executions.input_data_optional}</Button>
           {state.showInputEditor && (
               <div className="animate-fade-slide-in">
                 <KeyValueEditor value={state.inputData} onChange={(v) => { state.setInputData(v); if (state.jsonError) state.setJsonError(null); }} placeholder={debtText("auto_key_value_e735dd8e")} />
@@ -106,14 +111,14 @@ export function PersonaRunner() {
           />
         )}
         {IS_MOBILE ? (
-          <button
+          <Button
             type="button"
             onClick={() => { try { window.open('https://claude.ai/code', '_blank'); } catch (err) { silentCatch("features/agents/sub_executions/components/runner/PersonaRunner:catch1")(err); } }}
-            className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-modal typo-heading transition-all bg-surface-1 hover:from-cyan-500 hover:to-blue-500 text-ink-1 shadow-elevation-3 shadow-cyan-500/20"
-          >
-            <Monitor className="w-5 h-5" />
-            {t.agents.executions.connect_remote}
-          </button>
+            variant="secondary"
+            size="md"
+            className="w-full"
+            icon={<Monitor className="w-5 h-5" />}
+          >{t.agents.executions.connect_remote}</Button>
         ) : (
           <button type="button" data-testid="execute-persona-btn" onClick={isExecuting ? exec.handleStop : exec.handleExecute}
             disabled={isBudgetBlocked}
@@ -122,17 +127,17 @@ export function PersonaRunner() {
           </button>
         )}
         {!IS_MOBILE && (
-          <button
+          <Button
             type="button"
             data-testid="dry-run-persona-btn"
             onClick={dryRun.run}
             disabled={isExecuting || dryRun.loading}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-modal typo-body transition-colors border border-hair bg-surface-1 text-ink-1 hover:bg-surface-2 hover:text-ink-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            title={t.agents.executions.dry_run.button_hint}
-          >
-            <FlaskConical className="w-3.5 h-3.5" />
-            {dryRun.loading ? t.agents.executions.dry_run.button_running : t.agents.executions.dry_run.button_label}
-          </button>
+            tooltip={t.agents.executions.dry_run.button_hint}
+            variant="secondary"
+            size="md"
+            className="w-full"
+            icon={<FlaskConical className="w-3.5 h-3.5" />}
+          >{dryRun.loading ? t.agents.executions.dry_run.button_running : t.agents.executions.dry_run.button_label}</Button>
         )}
       </div>
       <DryRunModal open={dryRun.open} loading={dryRun.loading} report={dryRun.report} errorMessage={dryRun.errorMessage} onClose={dryRun.close} />
@@ -144,12 +149,22 @@ export function PersonaRunner() {
           <span className="typo-body text-status-warning flex-1">
             {t.agents.executions.verification_failed}
           </span>
-          <button type="button" onClick={() => void retryExecutionVerification()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-status-warning/20 hover:bg-status-warning/30 text-status-warning transition-colors">
-            <RefreshCw className="w-3 h-3" /> Retry
-          </button>
-          <button type="button" onClick={dismissVerificationFailure} className="p-1 rounded-interactive hover:bg-status-warning/20 text-status-warning hover:text-status-warning transition-colors" title={t.agents.executions.dismiss_abandon}>
-            <X className="w-3.5 h-3.5" />
-          </button>
+          <Button
+            type="button"
+            onClick={() => void retryExecutionVerification()}
+            variant="accent"
+            tone="warning"
+            size="sm"
+            icon={<RefreshCw className="w-3 h-3" />}
+          >Retry</Button>
+          <Button aria-label={t.agents.executions.dismiss_abandon}
+            type="button"
+            onClick={dismissVerificationFailure}
+            tooltip={t.agents.executions.dismiss_abandon}
+            variant="ghost"
+            size="icon-sm"
+            icon={<X className="w-3.5 h-3.5" />}
+          />
         </div>
       )}
 

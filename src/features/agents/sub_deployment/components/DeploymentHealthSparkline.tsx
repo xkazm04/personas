@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -37,9 +38,9 @@ function MiniSparkline({
 
   if (values.length < 2) {
     return (
-      <div className="flex items-center gap-1" title={label}>
+      <Tooltip content={label}><div className="flex items-center gap-1">
         <span className="typo-caption text-ink-2">-</span>
-      </div>
+      </div></Tooltip>
     );
   }
 
@@ -56,7 +57,7 @@ function MiniSparkline({
   const lastVal = values[values.length - 1]!;
 
   return (
-    <div className="flex items-center gap-1" title={`${label}: ${formatValue(lastVal)}`}>
+    <Tooltip content={`${label}: ${formatValue(lastVal)}`}><div className="flex items-center gap-1">
       <svg
         width={W}
         height={H}
@@ -72,7 +73,7 @@ function MiniSparkline({
           strokeLinecap="round"
         />
       </svg>
-    </div>
+    </div></Tooltip>
   );
 }
 

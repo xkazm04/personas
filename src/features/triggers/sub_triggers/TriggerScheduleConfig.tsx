@@ -6,6 +6,7 @@ import { TimezoneSelect } from './TimezoneSelect';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CRON_PRESETS, cronPresetLabel } from '@/lib/utils/cronPresets';
 import { DebtText } from '@/i18n/DebtText';
+import Button from '@/features/shared/components/buttons/Button';
 
 
 export function IntervalConfig({
@@ -40,30 +41,20 @@ export function IntervalConfig({
           { label: '6 hours', value: '21600' },
           { label: '24 hours', value: '86400' },
         ] as const).map((preset) => (
-          <button
+          <Button
             key={preset.value}
             type="button"
             onClick={() => { setIntervalValue(preset.value); setCustomInterval(false); }}
-            className={`px-3 py-1.5 rounded-modal typo-body transition-all border ${
-              !customInterval && interval === preset.value
-                ? 'bg-primary/15 text-primary border-primary/30'
-                : 'bg-surface-1 text-ink-1 border-hair hover:text-ink-3 hover:bg-surface-2'
-            }`}
-          >
-            {preset.label}
-          </button>
+            variant={!customInterval && interval === preset.value ? 'secondary' : 'ghost'}
+            size="sm"
+          >{preset.label}</Button>
         ))}
-        <button
+        <Button
           type="button"
           onClick={() => setCustomInterval(true)}
-          className={`px-3 py-1.5 rounded-modal typo-body transition-all border ${
-            customInterval
-              ? 'bg-primary/15 text-primary border-primary/30'
-              : 'bg-surface-1 text-ink-1 border-hair hover:text-ink-3 hover:bg-surface-2'
-          }`}
-        >
-          Custom
-        </button>
+          variant={customInterval ? 'secondary' : 'ghost'}
+          size="sm"
+        >Custom</Button>
       </div>
       {customInterval && (
         <>
@@ -157,18 +148,13 @@ export function CronConfig({
         </label>
         <div className="flex flex-wrap gap-1.5">
           {CRON_PRESETS.map((p) => (
-            <button
+            <Button
               key={p.cron}
               type="button"
               onClick={() => onPresetSelect(p.cron)}
-              className={`px-2.5 py-1 rounded-modal typo-body transition-all border ${
-                cronExpression === p.cron
-                  ? 'bg-status-warning/15 text-status-warning border-status-warning/30'
-                  : 'bg-surface-1 text-ink-1 border-hair hover:text-ink-3 hover:bg-surface-2'
-              }`}
-            >
-              {cronPresetLabel(t, p)}
-            </button>
+              variant={cronExpression === p.cron ? 'secondary' : 'ghost'}
+              size="sm"
+            >{cronPresetLabel(t, p)}</Button>
           ))}
         </div>
       </div>

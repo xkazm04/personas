@@ -17,6 +17,7 @@ import {
   type EpisodeDayRow,
   type EpisodeRoleKey,
 } from './brainMath';
+import Button from '@/features/shared/components/buttons/Button';
 
 /** The stack's series keys — every one is a numeric field of `EpisodeDayRow`. */
 type RoleSeries = EpisodeRoleKey | typeof OTHER_ROLE;
@@ -106,20 +107,20 @@ export function EpisodeVolumeTile({
           />
         )}
 
-        <button
+        <Button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           data-testid="brain-volume-drilldown"
-          className="mt-3 inline-flex items-center gap-1.5 typo-caption text-ink-1 hover:text-ink-1 transition-colors"
-        >
-          {open ? (
+          variant="ghost"
+          size="sm"
+          className="mt-3"
+          icon={open ? (
             <ChevronDown className="w-3.5 h-3.5" aria-hidden />
           ) : (
             <ChevronRight className="w-3.5 h-3.5" aria-hidden />
           )}
-          {open ? b.volume_hide_timeline : b.volume_show_timeline}
-        </button>
+        >{open ? b.volume_hide_timeline : b.volume_show_timeline}</Button>
         {open && (
           <div className="mt-2">
             <EpisodesTimeline personaId={personaId} framed={false} />

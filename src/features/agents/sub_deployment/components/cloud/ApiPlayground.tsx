@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { awaitExecutionResult } from '../../hooks/awaitExecutionResult';
 import { extractMessage, silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -140,32 +141,34 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
 
   if (!expanded) {
     return (
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded(true)}
         aria-expanded={false}
-        className="flex items-center gap-1.5 typo-caption text-ink-1 hover:text-role-agent transition-colors cursor-pointer py-0.5"
+        variant="ghost"
+        size="xs"
+        icon={<Terminal className="w-3 h-3" />}
       >
-        <Terminal className="w-3 h-3" />
         <span>{dt.title}</span>
         <ChevronRight className="w-3 h-3" />
-      </button>
+      </Button>
     );
   }
 
   return (
     <div className="space-y-2 border border-role-agent/20 rounded-card bg-role-agent/5 p-2.5">
       {/* Header */}
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded(false)}
         aria-expanded
-        className="flex items-center gap-1.5 typo-caption text-role-agent hover:text-role-agent transition-colors cursor-pointer"
+        variant="ghost"
+        size="sm"
+        icon={<Terminal className="w-3 h-3" />}
       >
-        <Terminal className="w-3 h-3" />
         <span>{dt.title}</span>
         <ChevronDown className="w-3 h-3" />
-      </button>
+      </Button>
 
       {/* Request body editor */}
       <div className="space-y-1">
@@ -189,26 +192,25 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
 
       {/* Send button */}
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={handleSend}
           disabled={sending || !body.trim()}
-          className="flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card bg-role-agent/15 border border-role-agent/25 text-role-agent hover:bg-role-agent/25 hover:text-role-agent disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-        >
-          {sending
+          variant="accent"
+          tone="agent"
+          size="sm"
+          icon={sending
             ? <Loader2 className="w-3 h-3 animate-spin" />
             : <Send className="w-3 h-3" />}
-          {sending ? dt.sending : dt.send_request}
-        </button>
+        >{sending ? dt.sending : dt.send_request}</Button>
 
-        <button
+        <Button
           type="button"
           onClick={() => setShowSnippets((p) => !p)}
-          className="flex items-center gap-1 px-2 py-1.5 typo-caption text-ink-1 hover:text-ink-1 rounded-card hover:bg-surface-2 transition-colors cursor-pointer"
-        >
-          <Code2 className="w-3 h-3" />
-          {dt.snippets}
-        </button>
+          variant="ghost"
+          size="sm"
+          icon={<Code2 className="w-3 h-3" />}
+        >{dt.snippets}</Button>
       </div>
 
       {/* Snippet panel */}
@@ -217,30 +219,19 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
           <p className="typo-caption text-ink-2">{dt.snippets_target_endpoint}</p>
           <div className="flex items-center gap-1">
             {(['curl', 'fetch'] as const).map((lang) => (
-              <button
+              <Button
                 key={lang}
                 type="button"
                 onClick={() => setSnippetLang(lang)}
-                className={`px-2 py-0.5 typo-caption rounded-input transition-colors cursor-pointer ${
-                  snippetLang === lang
-                    ? 'bg-role-agent/20 text-role-agent border border-role-agent/30'
-                    : 'text-ink-1 hover:text-ink-3 border border-transparent'
-                }`}
-              >
-                {lang}
-              </button>
+                variant={snippetLang === lang ? 'secondary' : 'ghost'}
+                size="xs"
+              >{lang}</Button>
             ))}
-            <button
-              type="button"
-              onClick={copySnippet}
-              className="ml-auto flex items-center gap-1 px-1.5 py-0.5 typo-caption rounded-input
-                         text-ink-1 hover:text-ink-1
-                         hover:bg-surface-2 transition-colors cursor-pointer"
-            >
+            <Button type="button" onClick={copySnippet} variant="ghost" size="xs" className="ml-auto">
               {copiedSnippet
-                ? <><Check className="w-3 h-3 text-status-success" /> {t.common.copied}</>
-                : <><Copy className="w-3 h-3" /> {t.common.copy}</>}
-            </button>
+              ? <><Check className="w-3 h-3 text-status-success" /> {t.common.copied}</>
+              : <><Copy className="w-3 h-3" /> {t.common.copy}</>}
+            </Button>
           </div>
           <pre className="typo-caption font-mono bg-surface-2 border border-hair rounded-card
                          p-2.5 overflow-x-auto text-ink-1 whitespace-pre-wrap break-all">

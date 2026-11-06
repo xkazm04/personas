@@ -11,6 +11,7 @@ import type { Tier } from '@/lib/constants/uiModes';
 import { TIERS } from '@/lib/constants/uiModes';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useHealthCheck } from '@/features/agents/sub_health';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 type TabDefBase = { id: EditorTab; labelKey: string; icon: typeof FileText; minTier?: Tier };
 const tabDefs: TabDefBase[] = [
@@ -75,17 +76,15 @@ function HealthBadge() {
         ? `${labels[`design_health_${score.grade}` as const] ?? score.grade} · ${score.value}`
         : labels.design_health_never_checked;
   return (
-    <button
+    <Tooltip content={labels.design_health_run}><button
       type="button"
       onClick={() => selectedPersona && health.runHealthCheck(selectedPersona)}
       disabled={running || !selectedPersona}
-      title={labels.design_health_run}
       data-testid="editor-health-badge"
-      className={`flex items-center gap-1.5 h-[var(--control-h)] px-2.5 rounded-interactive border border-hair typo-code transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap hover:bg-surface-2 ${badgeTone}`}
-    >
+      className={`flex items-center gap-1.5 h-[var(--control-h)] px-2.5 rounded-interactive border border-hair typo-code transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap hover:bg-surface-2 ${badgeTone}`}>
       <HeartPulse className="w-3.5 h-3.5" />
       <span>{badgeLabel}</span>
-    </button>
+    </button></Tooltip>
   );
 }
 
@@ -110,15 +109,14 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
             const tabDirty = isTabDirty(tab.id, dirtyTabs);
             const label = (editorLabels as Record<string, string>)[tab.labelKey] ?? tab.labelKey;
             return (
+              <Tooltip key={tab.id} content={label}>
               <button
                 type="button"
-                key={tab.id}
                 onClick={() => setEditorTab(tab.id)}
                 data-testid={`editor-tab-${tab.id}`}
                 // On mobile the visible label is hidden, and a title is not a
                 // reliable accessible name on touch devices.
                 aria-label={IS_MOBILE ? label : undefined}
-                title={label}
                 className={`relative flex items-center gap-1.5 ${IS_MOBILE ? 'px-2.5 py-3' : 'px-3 py-2.5'} typo-heading transition-colors whitespace-nowrap ${
                   isActive ? 'text-primary' : 'text-ink-1 hover:text-ink-1'
                 }`}
@@ -146,6 +144,7 @@ export function EditorTabBar({ dirtyTabs, connectorsMissing, failedTabs = [] }: 
                   />
                 )}
               </button>
+              </Tooltip>
             );
           })}
         </div>

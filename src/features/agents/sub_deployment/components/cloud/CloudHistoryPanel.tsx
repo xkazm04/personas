@@ -355,14 +355,15 @@ export function CloudHistoryPanel() {
         >
           <AlertTriangle className="w-3 h-3 text-status-error shrink-0" />
           <span className="text-ink-1 truncate flex-1">{errorCluster}</span>
-          <button
+          <Button
             type="button"
             onClick={() => setErrorCluster(null)}
             aria-label={dt.history.clear_filters}
-            className="shrink-0 rounded-interactive p-0.5 text-ink-1 hover:bg-surface-2 transition-colors focus-ring cursor-pointer"
-          >
-            <X className="w-3 h-3" />
-          </button>
+            variant="ghost"
+            size="icon-sm"
+            className="shrink-0"
+            icon={<X className="w-3 h-3" />}
+          />
         </div>
       )}
 

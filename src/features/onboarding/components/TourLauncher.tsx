@@ -5,6 +5,7 @@ import { getActiveTourSteps, type TourId } from "@/stores/slices/system/tourSlic
 import { useTier } from "@/hooks/utility/interaction/useTier";
 import { useTranslation } from '@/i18n/useTranslation';
 import { TourProgressArc } from './TourProgressArc';
+import Button from '@/features/shared/components/buttons/Button';
 
 export default function TourLauncher() {
   const { t, tx } = useTranslation();
@@ -61,26 +62,26 @@ export default function TourLauncher() {
   };
 
   return (
-    <button
+    <Button
       type="button"
       onClick={handleClick}
       data-testid="tour-launcher"
-      className="animate-fade-slide-in flex-shrink-0 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal
-        bg-role-agent/10 text-role-agent border border-role-agent/25
-        hover:bg-role-agent/20 hover:border-role-agent/40
-        transition-all duration-300 cursor-pointer"
+      variant="accent"
+      tone="agent"
+      size="md"
+      className="flex-shrink-0"
     >
       {hasProgress ? (
-        <>
-          <TourProgressArc completed={completedCount} total={totalSteps} />
-          {tx(t.chrome.footer_resume_tour, { completed: completedCount, total: totalSteps })}
-        </>
+      <>
+      <TourProgressArc completed={completedCount} total={totalSteps} />
+      {tx(t.chrome.footer_resume_tour, { completed: completedCount, total: totalSteps })}
+      </>
       ) : (
-        <>
-          <Map className="w-3.5 h-3.5" />
-          {t.onboarding.start_tour}
-        </>
+      <>
+      <Map className="w-3.5 h-3.5" />
+      {t.onboarding.start_tour}
+      </>
       )}
-    </button>
+    </Button>
   );
 }

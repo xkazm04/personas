@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react';
 import type { TourStepDef, TourStepId } from '@/stores/slices/system/tourSlice';
 import { getStepColors } from './tourConstants';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface StepProgressProps {
   steps: TourStepDef[];
@@ -38,7 +39,7 @@ export function StepProgress({
           isCurrent && !isCompleted && subStepIndex != null && step.subSteps.length > 0;
 
         return (
-          <button
+          <Tooltip content={step.title}><button
             type="button"
             key={step.id}
             onClick={() => onJump(i)}
@@ -46,9 +47,7 @@ export function StepProgress({
             className={`group flex items-center gap-2.5 px-1 py-1.5 text-left rounded-card transition-colors ${
               i > 0 ? 'border-t border-hair' : ''
             } ${isCurrent ? '' : 'hover:bg-surface-1'}`}
-            aria-current={isCurrent ? 'step' : undefined}
-            title={step.title}
-          >
+            aria-current={isCurrent ? 'step' : undefined}>
             <span
               className={`flex items-center justify-center w-5 h-5 rounded-full typo-caption flex-shrink-0 border ${
                 isCompleted
@@ -76,7 +75,7 @@ export function StepProgress({
                 {subStepIndex}/{step.subSteps.length}
               </span>
             )}
-          </button>
+          </button></Tooltip>
         );
       })}
     </div>

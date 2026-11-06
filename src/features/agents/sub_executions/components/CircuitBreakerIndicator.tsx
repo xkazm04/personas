@@ -8,6 +8,7 @@ import type { CircuitBreakerStatus } from '@/lib/bindings/CircuitBreakerStatus';
 import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEvent';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
+import Button from '@/features/shared/components/buttons/Button';
 
 const logger = createLogger('circuit-breaker-indicator');
 
@@ -315,15 +316,14 @@ export function CircuitBreakerIndicator() {
                 <h4 className="typo-eyebrow text-ink-1">
                   {e.cb_section_transitions}
                 </h4>
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowHistory((v) => !v)}
                   aria-expanded={showHistory}
-                  className="flex items-center gap-1.5 typo-caption text-ink-1 hover:text-ink-1"
-                >
-                  <History className="w-3 h-3" />
-                  {showHistory ? tx(e.cb_hide_activity, { count: status.recentTransitions.length }) : tx(e.cb_show_activity, { count: status.recentTransitions.length })}
-                </button>
+                  variant="ghost"
+                  size="sm"
+                  icon={<History className="w-3 h-3" />}
+                >{showHistory ? tx(e.cb_hide_activity, { count: status.recentTransitions.length }) : tx(e.cb_show_activity, { count: status.recentTransitions.length })}</Button>
               </div>
               {showHistory && (
                 <div className="grid grid-cols-[auto_auto_1fr_auto] gap-x-3 gap-y-0.5 typo-code max-h-40 overflow-y-auto">

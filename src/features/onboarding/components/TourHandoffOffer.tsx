@@ -4,6 +4,7 @@ import type { TourId } from '@/stores/slices/system/tourSlice';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 /**
  * One-time handoff card shown after the first-run onboarding modal completes
@@ -39,15 +40,13 @@ export default function TourHandoffOffer() {
       className="animate-fade-slide-in fixed bottom-6 left-1/2 z-50 w-[min(92vw,420px)] -translate-x-1/2
         rounded-modal border border-role-agent/25 bg-background p-5 shadow-elevation-4"
     >
-      <button
+      <Tooltip content={t.onboarding.tour_handoff_dismiss}><button
         type="button"
         onClick={dismissTourHandoff}
         aria-label={t.onboarding.tour_handoff_dismiss}
-        title={t.onboarding.tour_handoff_dismiss}
-        className="absolute right-3 top-3 rounded-card p-1.5 text-ink-1 transition-colors hover:bg-surface-2 hover:text-ink-1"
-      >
+        className="absolute right-3 top-3 rounded-card p-1.5 text-ink-1 transition-colors hover:bg-surface-2 hover:text-ink-1">
         <X className="h-4 w-4" />
-      </button>
+      </button></Tooltip>
 
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-modal border border-role-agent/25 bg-role-agent/15">

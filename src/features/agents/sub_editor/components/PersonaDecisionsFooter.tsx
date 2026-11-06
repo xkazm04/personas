@@ -13,6 +13,7 @@ import {
   type CompanionDesignDecision,
 } from '@/api/companion';
 import { navigateToCompanions } from '@/features/companions/navigation';
+import Button from '@/features/shared/components/buttons/Button';
 
 /**
  * Footer chip on the persona editor showing Athena's design decisions
@@ -71,32 +72,33 @@ export function PersonaDecisionsFooter({ personaId }: { personaId: string }) {
       data-testid="persona-decisions-footer"
     >
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-1.5 typo-caption text-ink-1 hover:text-ink-1 rounded-interactive"
           aria-expanded={open}
+          variant="ghost"
+          size="sm"
+          icon={<Chevron className="w-3 h-3" />}
         >
-          <Chevron className="w-3 h-3" />
           <ScrollText className="w-3 h-3 text-role-highlight" />
           <span>
-            {decisions.length === 1
-              ? t.agents.persona_decisions_footer_one
-              : t.agents.persona_decisions_footer_many.replace(
-                  '{count}',
-                  String(decisions.length),
-                )}
+          {decisions.length === 1
+          ? t.agents.persona_decisions_footer_one
+          : t.agents.persona_decisions_footer_many.replace(
+          '{count}',
+          String(decisions.length),
+          )}
           </span>
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={handleOpenFullAudit}
-          className="ml-auto inline-flex items-center gap-1 typo-caption text-ink-1 hover:text-ink-1 rounded-interactive"
-          title={t.agents.persona_decisions_footer_open_audit}
-        >
-          <ExternalLink className="w-3 h-3" />
-          <span>{t.agents.persona_decisions_footer_open_audit}</span>
-        </button>
+          tooltip={t.agents.persona_decisions_footer_open_audit}
+          variant="ghost"
+          size="sm"
+          className="ml-auto"
+          icon={<ExternalLink className="w-3 h-3" />}
+        ><span>{t.agents.persona_decisions_footer_open_audit}</span></Button>
       </div>
       {open && (
         <ol className="mt-2 space-y-1.5 pl-5 border-l border-role-highlight/20">

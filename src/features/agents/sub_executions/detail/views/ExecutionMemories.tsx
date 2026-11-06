@@ -7,6 +7,7 @@ import { isTerminalState } from '@/lib/execution/executionState';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 import { silentCatch } from '@/lib/silentCatch';
+import Button from '@/features/shared/components/buttons/Button';
 
 interface ExecutionMemoriesProps {
   executionId: string;
@@ -41,16 +42,18 @@ export function ExecutionMemories({ executionId, executionStatus }: ExecutionMem
 
   return (
     <div>
-      <button
+      <Button
         type="button"
         onClick={() => setShowMemories(!showMemories)}
         aria-expanded={showMemories}
-        className="flex items-center gap-2 typo-body text-ink-1 hover:text-ink-1 transition-colors mb-2"
+        variant="ghost"
+        size="sm"
+        className="mb-2"
+        icon={showMemories ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
       >
-        {showMemories ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         <Brain className="w-4 h-4 text-role-agent" />
         {tx(t.agents.executions.memories_created, { count: executionMemories.length })}
-      </button>
+      </Button>
       {showMemories && (
           <div className="animate-fade-slide-in space-y-1.5">
             {executionMemories.map((mem) => {

@@ -6,6 +6,7 @@ import { TriggerStatusSummary } from './TriggerStatusSummary';
 import { TriggerModeBadge } from './TriggerModeBadge';
 import { getTriggerArmState } from './triggerArmState';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 interface TriggerRowProps {
   trigger: PersonaTrigger;
@@ -38,51 +39,45 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
               `next_trigger_at IS NOT NULL`, so this row can never become due —
               it used to render as "armed" and simply never run. */}
           {armState === 'unschedulable' && (
-            <span
-              className="flex items-center gap-1 typo-body text-status-warning"
-              title={t.triggers.arm_state.unschedulable_title}
-            >
+            <Tooltip content={t.triggers.arm_state.unschedulable_title}><span
+              className="flex items-center gap-1 typo-body text-status-warning">
               <CalendarX className="w-3 h-3" />
               {t.triggers.arm_state.unschedulable}
-            </span>
+            </span></Tooltip>
           )}
           {armState === 'sleeping' && (
-            <span
-              className="flex items-center gap-1 typo-body text-role-agent"
-              title={t.triggers.arm_state.sleeping_title}
-            >
+            <Tooltip content={t.triggers.arm_state.sleeping_title}><span
+              className="flex items-center gap-1 typo-body text-role-agent">
               <Moon className="w-3 h-3" />
               {t.triggers.arm_state.sleeping}
-            </span>
+            </span></Tooltip>
           )}
           {/* Budget badges */}
           {budgetStatus === 'stale' && trigger.enabled && (
-            <span className="flex items-center gap-1 typo-body border-muted-foreground/20 text-ink-1" title={t.triggers.list.budget_unavailable}>
+            <Tooltip content={t.triggers.list.budget_unavailable}><span className="flex items-center gap-1 typo-body border-muted-foreground/20 text-ink-1">
               <ShieldAlert className="w-3 h-3" />
               {t.triggers.unknown_budget_label}
-            </span>
+            </span></Tooltip>
           )}
           {budgetStatus === 'exceeded' && trigger.enabled && (
-            <span className="flex items-center gap-1 typo-body text-status-error" title={t.triggers.list.budget_exceeded}>
+            <Tooltip content={t.triggers.list.budget_exceeded}><span className="flex items-center gap-1 typo-body text-status-error">
               <ShieldAlert className="w-3 h-3" />
               Budget
-            </span>
+            </span></Tooltip>
           )}
           {/* Enabled toggle (stop propagation so it doesn't toggle expand) */}
-          <span
+          <Tooltip content={trigger.enabled ? tx(t.common.disable_item, { name: '' }) : tx(t.common.enable_item, { name: '' })}><span
             role="button"
             tabIndex={0}
             onClick={(e) => { e.stopPropagation(); onToggleEnabled(trigger.id, trigger.enabled); }}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onToggleEnabled(trigger.id, trigger.enabled); } }}
-            className="p-0.5 hover:bg-surface-2 rounded-card transition-colors"
-            title={trigger.enabled ? tx(t.common.disable_item, { name: '' }) : tx(t.common.enable_item, { name: '' })}
-          >
+            className="p-0.5 hover:bg-surface-2 rounded-card transition-colors">
             {trigger.enabled ? (
               <ToggleRight className="w-5 h-5 text-status-success" />
             ) : (
               <ToggleLeft className="w-5 h-5 text-ink-1" />
             )}
-          </span>
+          </span></Tooltip>
 
           <ChevronDown className={`w-3.5 h-3.5 text-ink-1 transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} />
         </span>

@@ -63,9 +63,9 @@ function SpanRowImpl({ node, totalMs, expanded, onToggle, hasChildren }: SpanRow
           {spanTypeLabel(t, span.span_type)}
         </span>
 
-        <span className="typo-code text-ink-1 truncate" title={span.name}>
+        <Tooltip content={span.name}><span className="typo-code text-ink-1 truncate">
           {span.name}
-        </span>
+        </span></Tooltip>
 
         {failed && (
           <AlertCircle className="w-3 h-3 text-status-error flex-shrink-0" />
