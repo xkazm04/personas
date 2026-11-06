@@ -21676,7 +21676,246 @@ export type Translations = {
     page_title: string;
     page_subtitle: string;
     standup: {
+      page_subtitle: string;
       placeholder: string;
+      title: string;
+      empty_title: string;
+      nothing_title: string;
+      nothing_subtitle: string;
+      loading: string;
+      table_label: string;
+      dismiss: string;
+      amends: string;
+      fixture_no_backend: string;
+      rev: {
+        number: string;
+        draft: string;
+        armed: string;
+        ended: string;
+      };
+      tally: {
+        waits: string;
+        proposed: string;
+        decided: string;
+        running: string;
+        refused: string;
+        running_none_draft: string;
+        running_none_armed: string;
+      };
+      voice: {
+        none: string;
+        none_sub: string;
+        proposing: string;
+        proposing_sub: string;
+        decide: string;
+        decide_sub: string;
+        nothing: string;
+        nothing_sub: string;
+        all_decided: string;
+        all_decided_sub: string;
+        return: string;
+        return_sub: string;
+        ended: string;
+        ended_sub: string;
+        armed: string;
+        armed_sub: string;
+      };
+      since: {
+        label: string;
+        moved: string;
+        parked: string;
+        running: string;
+        created: string;
+        from: string;
+      };
+      machine: {
+        label: string;
+        zoom_today: string;
+        zoom_long: string;
+        past_caption: string;
+        long_caption: string;
+        now_armed: string;
+        now_draft: string;
+        night_caption: string;
+        night_empty: string;
+      };
+      state: {
+        proposed: string;
+        decided: string;
+        running: string;
+        done: string;
+        skipped: string;
+        waits: string;
+        blank: string;
+        filler: string;
+        refused: string;
+        agent_question: string;
+        verb_create: string;
+        verb_retune: string;
+      };
+      row: {
+        history_label: string;
+        moved: string;
+        no_movement: string;
+        acts_label: string;
+        refused: string;
+        waits: string;
+        blank: string;
+        proposing: string;
+        filler: string;
+        skipped: string;
+        directions: string;
+        hold_night: string;
+      };
+      cards: {
+        label: string;
+        recommended: string;
+        type_placeholder: string;
+        act_pick: string;
+        act_accept: string;
+        act_edit: string;
+        act_type: string;
+        act_skip: string;
+        act_answer: string;
+        act_talk: string;
+        act_dossier: string;
+        act_undo: string;
+      };
+      groups: {
+        decide: {
+          title: string;
+          past: string;
+          now: string;
+          night: string;
+        };
+        agents: {
+          title: string;
+          past: string;
+          now: string;
+          night: string;
+        };
+        waits: {
+          title: string;
+          past: string;
+          now: string;
+          night: string;
+        };
+        blank: {
+          title: string;
+          past: string;
+          now: string;
+          night: string;
+        };
+        filler: {
+          title: string;
+          past: string;
+          now: string;
+          night: string;
+        };
+        refused: {
+          title: string;
+          past: string;
+          now: string;
+          night: string;
+        };
+      };
+      footer: {
+        away_rules: string;
+        delegates: string;
+        push_targets: string;
+        legend: string;
+        keys: string;
+        planned: string;
+        still_proposed: string;
+        all_resolved: string;
+        arm: string;
+        end: string;
+        amend: string;
+        always_wait: string;
+      };
+      legend: {
+        proposed: string;
+        decided: string;
+        running: string;
+        waits: string;
+      };
+      rules: {
+        title: string;
+        subtitle: string;
+        subtitle_locked: string;
+        decides_alone: string;
+        always_waits: string;
+        pushes: string;
+        no_pushes: string;
+        pushes_note: string;
+        classes: {
+          scope: string;
+          goals: string;
+          dependency_bump: string;
+          retune: string;
+          create_agent: string;
+          money: string;
+          data: string;
+          schema: string;
+          secrets: string;
+          push: string;
+        };
+        notes: {
+          scope: string;
+          goals: string;
+          dependency_bump: string;
+          retune: string;
+          create_agent: string;
+          money: string;
+          data: string;
+          schema: string;
+          secrets: string;
+          push: string;
+        };
+      };
+      dossier: {
+        close: string;
+        label: string;
+        read: string;
+        decided: string;
+        directions: string;
+        history: string;
+        history_armed: string;
+        history_unrecorded: string;
+        acts: string;
+        no_acts: string;
+        moved: string;
+        moved_n: string;
+      };
+      keys: {
+        title: string;
+        subtitle: string;
+        move: string;
+        pick: string;
+        edit: string;
+        skip: string;
+        talk: string;
+        undo: string;
+        dossier: string;
+        close: string;
+        zoom: string;
+        rules: string;
+        arm: string;
+        amend: string;
+        keys: string;
+      };
+      fixture: {
+        badge: string;
+        label: string;
+        off: string;
+        decide: string;
+        armed: string;
+        return: string;
+      };
+      actions: {
+        propose: string;
+        open: string;
+      };
     };
     tab_setup: string;
     tab_memory: string;

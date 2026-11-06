@@ -46,11 +46,20 @@ export default function AthenaPage() {
         icon={<IconCompanion active className="w-5 h-5 text-cyan-400" />}
         iconColor="cyan"
         title={t.athena.page_title}
-        subtitle={t.athena.page_subtitle}
+        subtitle={tab === 'standup' ? t.athena.standup.page_subtitle : t.athena.page_subtitle}
       />
 
-      <ContentBody centered={tab !== 'memory'}>
-        <div key={tab} className="animate-fade-slide-in h-full">
+      {/* Standup is full-bleed (a timetable across the whole body): `flex` + a
+          `flex-1 min-h-0` child instead of the centred, padded scroller. */}
+      <ContentBody centered={tab !== 'memory' && tab !== 'standup'} flex={tab === 'standup'}>
+        <div
+          key={tab}
+          className={
+            tab === 'standup'
+              ? 'animate-fade-slide-in flex-1 min-h-0 flex flex-col'
+              : 'animate-fade-slide-in h-full'
+          }
+        >
           <ErrorBoundary name="Companion">
             <Suspense fallback={<RouteChunkSkeleton variant="body" />}>
               {tab === 'create-athena' && <CreateAthenaPanel />}

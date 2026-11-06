@@ -664,7 +664,246 @@
   "page_title": "Athena",
   "page_subtitle": "Setup, memory inspector, and voice configuration for your thinking partner.",
   "standup": {
-    "placeholder": "No standup yet. Open one to reconcile what moved, pick tomorrow's directions and arm the plan."
+    "page_subtitle": "Reconcile what moved, decide the day and night, and arm the plan Athena runs.",
+    "placeholder": "No standup yet. Open one to reconcile what moved, pick tomorrow's directions and arm the plan.",
+    "title": "Standup",
+    "empty_title": "No standup open",
+    "nothing_title": "Nothing to decide",
+    "nothing_subtitle": "No project needs a direction this time. Arm to keep the away rules, or open the next standup later.",
+    "loading": "Loading the standup",
+    "table_label": "Projects, agent changes and asks, one line each through today, now and tonight",
+    "dismiss": "Dismiss",
+    "amends": "amends rev {n}",
+    "fixture_no_backend": "Fixture: this action needs the live standup backend.",
+    "rev": {
+      "number": "rev {n}",
+      "draft": "draft",
+      "armed": "armed {time}",
+      "ended": "ended"
+    },
+    "tally": {
+      "waits": "wait for you",
+      "proposed": "proposed",
+      "decided": "decided",
+      "running": "running",
+      "refused": "refused",
+      "running_none_draft": "nothing until armed",
+      "running_none_armed": "none this minute"
+    },
+    "voice": {
+      "none": "No standup open.",
+      "none_sub": "Open one and I will read what moved since the last standup.",
+      "proposing": "Reading what moved and writing directions.",
+      "proposing_sub": "Each project fills in as its directions arrive.",
+      "decide": "{n} to decide, {w} only you can answer.",
+      "decide_sub": "Nothing runs until you arm the plan.",
+      "nothing": "Nothing to decide this time.",
+      "nothing_sub": "No project needs a direction right now.",
+      "all_decided": "Everything decided. Arm when ready.",
+      "all_decided_sub": "Arm the plan with",
+      "return": "Welcome back. Commits moved: {m}, on {p} of your projects.",
+      "return_sub": "{w} wait for you. N opens the next standup.",
+      "ended": "This standup has ended.",
+      "ended_sub": "Open the next one to plan again.",
+      "armed": "Armed. {r} running, {d} decided.",
+      "armed_sub": "Holding {w} for you. N amends the plan as a new revision."
+    },
+    "since": {
+      "label": "Since the last standup",
+      "moved": "Commits moved: {n}, on {p} of your projects",
+      "parked": "Asks parked for you: {n}",
+      "running": "Sessions still running: {n}",
+      "created": "created {names}",
+      "from": "from"
+    },
+    "machine": {
+      "label": "Machine",
+      "zoom_today": "today",
+      "zoom_long": "12 days",
+      "past_caption": "Host CPU · green: an agent ran · hatched: not recorded",
+      "long_caption": "12 days of host CPU · hatched: not recorded",
+      "now_armed": "the plan is running",
+      "now_draft": "now · the standup",
+      "night_caption": "Lanes: {lanes} · primary: your directions · slate: fill · amber: dead spot ({dead}%) · peak {units} units",
+      "night_empty": "No forecast yet. Decided directions are laid on the night once forecast."
+    },
+    "state": {
+      "proposed": "proposed",
+      "decided": "decided",
+      "running": "running",
+      "done": "done",
+      "skipped": "skipped",
+      "waits": "waits for you",
+      "blank": "no proposal",
+      "filler": "fill",
+      "refused": "refused",
+      "agent_question": "{verb}?",
+      "verb_create": "create",
+      "verb_retune": "retune"
+    },
+    "row": {
+      "history_label": "The last standups: armed, off, or not named",
+      "moved": "Commits landed since the last standup: {n}",
+      "no_movement": "No movement since the last standup",
+      "acts_label": "Away acts today: {n}",
+      "refused": "held elsewhere",
+      "waits": "only you can answer",
+      "blank": "press E to type the direction",
+      "proposing": "Athena is writing directions",
+      "filler": "fills dead spots, report only",
+      "skipped": "off tonight",
+      "directions": "{n} directions",
+      "hold_night": "Stays parked; nothing that needs it runs"
+    },
+    "cards": {
+      "label": "Athena's directions",
+      "recommended": "Athena's pick",
+      "type_placeholder": "Type the direction for {name} and press Enter",
+      "act_pick": "pick",
+      "act_accept": "accept",
+      "act_edit": "edit / type your own",
+      "act_type": "type a direction",
+      "act_skip": "skip tonight",
+      "act_answer": "answer it with Athena",
+      "act_talk": "talk it through",
+      "act_dossier": "dossier",
+      "act_undo": "undo"
+    },
+    "groups": {
+      "decide": {
+        "title": "To decide",
+        "past": "Today, from the away log",
+        "now": "Decision",
+        "night": "Tonight (forecast)"
+      },
+      "agents": {
+        "title": "Agent changes",
+        "past": "Why",
+        "now": "Decision",
+        "night": "Effect"
+      },
+      "waits": {
+        "title": "Waits for you",
+        "past": "The ask",
+        "now": "Your call",
+        "night": "Tonight without it"
+      },
+      "blank": {
+        "title": "No proposal",
+        "past": "Today",
+        "now": "State",
+        "night": "Tonight"
+      },
+      "filler": {
+        "title": "Fills dead spots",
+        "past": "Today",
+        "now": "State",
+        "night": "Tonight"
+      },
+      "refused": {
+        "title": "Held elsewhere",
+        "past": "Today",
+        "now": "State",
+        "night": "Tonight"
+      }
+    },
+    "footer": {
+      "away_rules": "Away rules",
+      "delegates": "she decides {n} kinds alone",
+      "push_targets": "push targets: {n}",
+      "legend": "Legend",
+      "keys": "Keyboard keys",
+      "planned": "Directions {d} · runs {r}",
+      "still_proposed": "{n} still proposed (they stay off)",
+      "all_resolved": "all resolved",
+      "arm": "Arm rev {n}",
+      "end": "End standup",
+      "amend": "Amend: rev {n}",
+      "always_wait": "{n} always wait for you"
+    },
+    "legend": {
+      "proposed": "proposed",
+      "decided": "decided",
+      "running": "running",
+      "waits": "waits for you"
+    },
+    "rules": {
+      "title": "While you are away",
+      "subtitle": "What Athena decides alone, and what always waits for you.",
+      "subtitle_locked": "The plan is armed: amend it (N) to change the away rules.",
+      "decides_alone": "She decides alone",
+      "always_waits": "Always waits for you",
+      "pushes": "Pushes allowed",
+      "no_pushes": "No push target named: every push parks for you.",
+      "pushes_note": "Only these targets, after the gate and the secret scan. Any other push parks.",
+      "classes": {
+        "scope": "Scope",
+        "goals": "Goals",
+        "dependency_bump": "Dependency bumps",
+        "retune": "Agent retunes",
+        "create_agent": "New agents",
+        "money": "Money",
+        "data": "Data",
+        "schema": "Schema",
+        "secrets": "Secrets",
+        "push": "Pushes not named"
+      },
+      "notes": {
+        "scope": "Narrow or widen a run inside the agreed direction.",
+        "goals": "Reorder or close goals the direction already names.",
+        "dependency_bump": "Patch and minor bumps that pass the gate.",
+        "retune": "Pacing and notes on an existing agent.",
+        "create_agent": "A new agent when a goal needs one; tagged and reported.",
+        "money": "Any spend beyond the caps.",
+        "data": "Canonical data, infra apply, history rewrites.",
+        "schema": "Schema changes beyond the standing rulings.",
+        "secrets": "Credentials, keychain entries, provider keys.",
+        "push": "Any push to a target the plan does not name."
+      }
+    },
+    "dossier": {
+      "close": "Close",
+      "label": "Dossier",
+      "read": "Athena's read",
+      "decided": "Decided direction",
+      "directions": "Directions",
+      "history": "Last standups",
+      "history_armed": "Armed in {n} of the last {of} standups.",
+      "history_unrecorded": "Not recorded yet for this project.",
+      "acts": "Away acts ({n})",
+      "no_acts": "No away acts recorded for this line.",
+      "moved": "What moved",
+      "moved_n": "Commits landed since the last standup: {n}"
+    },
+    "keys": {
+      "title": "Keys",
+      "subtitle": "The standup is keyboard first. Keys never act while you type.",
+      "move": "move between rows",
+      "pick": "pick a direction",
+      "edit": "edit or type your own",
+      "skip": "skip tonight",
+      "talk": "talk it through with Athena",
+      "undo": "undo the decision",
+      "dossier": "open the dossier",
+      "close": "close",
+      "zoom": "zoom the machine row: today / 12 days",
+      "rules": "away rules",
+      "arm": "arm the plan",
+      "amend": "amend: a new revision",
+      "keys": "this card"
+    },
+    "fixture": {
+      "badge": "fixture",
+      "label": "Data source (DEV)",
+      "off": "Live",
+      "decide": "Decide",
+      "armed": "Armed",
+      "return": "Return"
+    },
+    "actions": {
+      "propose": "Propose directions",
+      "open": "Open a standup"
+    }
   },
   "tab_setup": "Setup",
   "tab_memory": "Memory",
