@@ -13257,13 +13257,12 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3402 asserts which producer answered (plan LLM never prompted, mock API hit exactly once at :3410) against a loopback mock (:3037) seeded through the product doors (:3081 connectors::create, :3113 credentials::create_with_fields); lane-level techniques are properties of the runner config, not this context",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:2926 The scripted summary is markdown that the TypeScript modal parses (TestReportModal.tsx:208), but the Rust test checks it through a hand-written Rust copy of that parser with nothing tying the two together. If the real reader's heading rules change, every Rust assertion that the summary is readable by the modal stays green.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-instruction-files",
@@ -22666,12 +22665,11 @@
           "changedAt": "2026-10-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/notepad/plan/shipReadinessPublish.ts:27 declares a cross-language JSON contract with ship_ops::SnapDoc (src-tauri/src/companion/ship_ops.rs:131, every field serde-default), but the TS test asserts TS literals (src/features/notepad/plan/__tests__/shipAthena.test.ts:169) and the Rust test parses its own hand-written literal (ship_ops.rs:795); a renamed field on either side defaults silently to empty and both suites stay green",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/notepad/plan/shipReadinessPublish.ts:27 The published readiness document is read by Rust ship_ops::SnapDoc, where every field is serde-default. The TS tests parse the TS output with their own TS-side shape (shipReadinessPublish.test.ts:45), and the Rust tests deserialize hand-written literals, so a field renamed on either side silently becomes empty while both suites stay green.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "fleet-orchestration",
@@ -30004,12 +30002,11 @@
           "changedAt": "2026-10-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_projects/githubRepoPaging.ts:1 says the module exists so the three credential outcomes can be gated without rendering, but the none/unhealthy/ready decision stays inline in GitHubRepoSelector.tsx:100 and no test drives it; githubRepoPaging.test.ts:12 names the stale-PAT collapse as the bug and pins only the Link-header walk, so the original defect can return green",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/plugins/dev-tools/sub_projects/GitHubRepoSelector.tsx:103 githubRepoPaging.ts says it exists so the three credential outcomes can be tested without rendering, but the none/unhealthy/ready decision is still inline in the component (:100), and no test anywhere drives it or the github-pat-unhealthy test id. The stale-PAT collapse the test file names as its defect could come back green.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "multi-project",
@@ -36413,13 +36410,12 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "conformant",
-          "evidence": "src/stores/slices/agents/__tests__/runLifecycle.test.ts:21 carries its own negative control (the bug path asserted beside the fix), cancel tests cover each of the four lab modes (src/stores/__tests__/labSlice.cancel.test.ts:66) after a per-test flag reset (:52), and the stale-fetch pin drives the one shared factory (src/stores/slices/agents/labSlice.ts:402).",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/stores/slices/agents/executionSlice.ts:298 runLifecycle.test.ts says it covers the page-refresh recovery fix, but it only drives the lifecycle unit. No test seeds 'personas:active-execution' (executionSlice.ts:272), so the recovery branch and this markRecovered call never run, and deleting the call (which also drops the re-armed 30-minute safety timeout) stays green.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "prompt-assembly",

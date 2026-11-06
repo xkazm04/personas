@@ -18798,130 +18798,164 @@
       "context": "stores-slices-agents",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T14:30:20.000Z",
-      "worker": "251266ad-2249-4365-a14c-7393f839cea7",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:45:49.053Z",
+      "worker": "dd87508f-e9ea-49a9-9b1b-f9f012683c39",
       "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/agents/__tests__/runLifecycle.test.ts:6 behavior of the shared method is pinned, its adoption at the call site is not; a grep for the storage key finds no test"
+        },
         {
           "technique": "negative-control-tests",
           "verdict": "conformant",
-          "evidence": "src/stores/slices/agents/__tests__/runLifecycle.test.ts:21 an in-suite control asserts the defect path (finish from idle rejected) beside the fixed path, so the instrument is shown able to fail"
+          "evidence": "src/stores/slices/agents/__tests__/runLifecycle.test.ts:21 the bug path is asserted beside the fix, as a built-in control"
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/agents/__tests__/labSlice.fetchRuns.test.ts:42 the stale-response order is forced with deferred promises (resolved at :81), never with timers; the safety timeout uses fake timers (runLifecycle.test.ts:66)"
         },
         {
           "technique": "isolation-lanes",
           "verdict": "conformant",
-          "evidence": "src/stores/__tests__/labSlice.cancel.test.ts:52 resets every per-mode flag on the shared real store per test; src/stores/__tests__/matrixBuildSlice.test.ts:12 resets the build session per test"
-        },
-        {
-          "technique": "unreached-decisions-pin-nothing",
-          "verdict": "conformant",
-          "evidence": "src/stores/slices/agents/labSlice.ts:402 all four fetchRuns siblings are built by one createLabCrud factory, so src/stores/slices/agents/__tests__/labSlice.fetchRuns.test.ts:68 reaches the single producer of the latest-wins decision"
-        },
-        {
-          "technique": "gate-scope-is-not-report-scope",
-          "verdict": "conformant",
-          "evidence": "src/stores/__tests__/labSlice.cancel.test.ts:113 the concurrency claim names its sub-population (ab/matrix/eval) rather than claiming every mode; per-mode cancel tests cover all four (:66)"
+          "evidence": "src/stores/__tests__/labSlice.cancel.test.ts:52 shared singleton store flags are reset per test, so test order cannot leak state"
         },
         {
           "technique": "fixture-economics",
           "verdict": "conformant",
-          "evidence": "src/stores/slices/agents/__tests__/labSlice.fetchRuns.test.ts:49 minimal in-memory slice harness"
+          "evidence": "src/stores/__tests__/labSlice.cancel.test.ts:7 one cheap IPC mock, built once per file and listing what each start/cancel resolves"
+        },
+        {
+          "technique": "gate-scope-is-not-report-scope",
+          "verdict": "conformant",
+          "evidence": "src/stores/__tests__/labSlice.cancel.test.ts:113 the concurrency claim names its sub-population (ab/matrix/eval) rather than claiming every mode; per-mode cancel tests cover all four (:66)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "approval-snapshots-with-guarded-update",
           "verdict": "not-applicable",
-          "evidence": "src/stores/__tests__/matrixBuildSlice.test.ts:12 field-level assertions throughout; no snapshots"
+          "evidence": "src/stores/__tests__/matrixBuildSlice.test.ts:12 field-level assertions throughout; no snapshots",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "assert-through-the-reader",
           "verdict": "not-applicable",
-          "evidence": "src/stores/__tests__/labSlice.cancel.test.ts:66 slices emit no artifact for a foreign interpreter"
+          "evidence": "src/stores/__tests__/labSlice.cancel.test.ts:66 slices emit no artifact for a foreign interpreter",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "pin-the-call-not-the-name",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/agents/__tests__/runLifecycle.test.ts:21 every assertion executes the code; no source-text pin"
+          "evidence": "src/stores/slices/agents/__tests__/runLifecycle.test.ts:21 every assertion executes the code; no source-text pin",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "suite-partitioning",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "derived-selection-must-be-measured",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "history-driven-partitioning",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "platform-quirk-absorption",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "flake-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "long-lane-certification",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "out-of-graph-artifacts",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "configuration-axes-cross-the-ladder",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "dynamic-verifier-classes",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "verification-inherits-driver-reach",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "mutation-lane-with-a-triaged-baseline",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "context-starved-executor",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "far-side-oracle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "constraint-injection-for-unreachable-tiers",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "recorded-interaction-fixtures",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "live-app-harness",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit-lane tests only (in-process jsdom, no live product, no remote service, no build matrix)",
+          "carriedFrom": "2026-10-10"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src/stores/slices/agents/__tests__/runLifecycle.test.ts:21 carries its own negative control (the bug path asserted beside the fix), cancel tests cover each of the four lab modes (src/stores/__tests__/labSlice.cancel.test.ts:66) after a per-test flag reset (:52), and the stale-fetch pin drives the one shared factory (src/stores/slices/agents/labSlice.ts:402).",
+          "evaluatedAt": "2026-10-10T14:30:20.000Z",
+          "worker": "251266ad-2249-4365-a14c-7393f839cea7",
+          "reason": "replaced by dd87508f-e9ea-49a9-9b1b-f9f012683c39"
         }
       ]
     },
@@ -20306,24 +20340,35 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:08:00.000Z",
-      "worker": "1a5f8c88-83b9-404e-92bd-a7a6d0c4e176",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:45:49.053Z",
+      "worker": "dd87508f-e9ea-49a9-9b1b-f9f012683c39",
       "techniques": [
+        {
+          "technique": "assert-through-the-reader",
+          "verdict": "deviation",
+          "evidence": "src/features/notepad/plan/__tests__/shipReadinessPublish.test.ts:45 the emitted document is read back by the test's own type, never by the Rust reader it is written for"
+        },
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/ship_ops.rs:795 the reader is driven by a literal, not by buildReadinessPayload output; the crossing is a string-marshalled setting, not a typed call, so the technique's typed-crossing exemption does not hold"
+          "evidence": "src/features/notepad/plan/shipReadinessPublish.ts:25 a mutation that changes a field name only at the crossing survives, because each side's suite reads its own literals"
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/notepad/plan/__tests__/shipReadinessPublish.test.ts:51 debounce and dedupe are proven on a fake clock (advanced at :64), not with wall time"
         },
         {
           "technique": "fixture-economics",
-          "verdict": "realized",
-          "evidence": "src/features/notepad/__tests__/ShipCertifyModal.test.tsx:8 builds view models from the shared @/lib/milestone/__tests__/shipFixtures builders rather than hand-rolling rows per file (also useProjectPlanLoad.test.tsx:6)"
+          "verdict": "conformant",
+          "evidence": "src/features/notepad/plan/__tests__/shipReadinessPublish.test.ts:82 a persisted prior state, including a pre-projectId legacy entry, is seeded so the restart path is exercised"
         },
         {
           "technique": "negative-control-tests",
           "verdict": "realized",
-          "evidence": "src/features/notepad/__tests__/useProjectPlanLoad.test.tsx:73 failure tests carry their success control in the same file (:94 clears the failure, NotePlanRuns.test.tsx:44 checks the previous note does not linger)"
+          "evidence": "src/features/notepad/__tests__/useProjectPlanLoad.test.tsx:73 failure tests carry their success control in the same file (:94 clears the failure, NotePlanRuns.test.tsx:44 checks the previous note does not linger)",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "isolation-lanes",
@@ -20335,12 +20380,6 @@
           "technique": "approval-snapshots-with-guarded-update",
           "verdict": "not-applicable",
           "evidence": "src/features/notepad/plan/__tests__/shipAthena.test.ts:169 Assertions evaluate explicit payload fields and structured objects rather than unverified file snapshots.",
-          "carriedFrom": "2026-10-12"
-        },
-        {
-          "technique": "assert-through-the-reader",
-          "verdict": "not-applicable",
-          "evidence": "src/features/notepad/plan/__tests__/shipAthena.test.ts:61 Prompts and payloads are fed into internal application dialogs and state rather than a foreign tool CLI.",
           "carriedFrom": "2026-10-12"
         },
         {
@@ -20380,7 +20419,15 @@
           "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "assert-through-the-reader exempts 'the reader is the product itself', yet a same-repo reader in another language (TS writer, serde reader with default) fails exactly like a foreign one; unreached-decisions-pin-nothing covers it only via its typed-crossing clause. Name the cross-language in-repo case explicitly in one of them."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/notepad/plan/shipReadinessPublish.ts:27 declares a cross-language JSON contract with ship_ops::SnapDoc (src-tauri/src/companion/ship_ops.rs:131, every field serde-default), but the TS test asserts TS literals (src/features/notepad/plan/__tests__/shipAthena.test.ts:169) and the Rust test parses its own hand-written literal (ship_ops.rs:795); a renamed field on either side defaults silently to empty and both suites stay green",
+          "evaluatedAt": "2026-10-16T18:08:00.000Z",
+          "worker": "1a5f8c88-83b9-404e-92bd-a7a6d0c4e176",
+          "reason": "replaced by dd87508f-e9ea-49a9-9b1b-f9f012683c39"
+        }
+      ]
     },
     "6da794b4-7a5f-4087-a4d4-fb8a416456e5/test-harness": {
       "context": "commands-execution",
@@ -20459,19 +20506,30 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:08:00.000Z",
-      "worker": "1a5f8c88-83b9-404e-92bd-a7a6d0c4e176",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:45:49.053Z",
+      "worker": "dd87508f-e9ea-49a9-9b1b-f9f012683c39",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_projects/GitHubRepoSelector.tsx:100 the credential-state decision was not lifted into the reachable unit its header claims; only the RepoCredState type moved"
+          "evidence": "src/features/plugins/dev-tools/sub_projects/githubRepoPaging.ts:2 the module claims to pin both decisions; only the Link walk is lifted out and tested. The test header (githubRepoPaging.test.ts:13) names the stale-PAT case"
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/githubRepoPaging.test.ts:64 the cap is proven by counting calls, not by elapsed time"
+        },
+        {
+          "technique": "recorded-interaction-fixtures",
+          "verdict": "not-applicable",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/githubRepoPaging.test.ts:24 hand-built Link headers, not recorded GitHub traffic"
         },
         {
           "technique": "negative-control-tests",
           "verdict": "realized",
-          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/projectPulse.test.tsx:15 the null-vs-zero gate carries all three fixtures (never-scanned, clean :34, busy :22) and the never-scanned render (:63) asserts both absence of a number and absence of the clean cell"
+          "evidence": "src/features/plugins/dev-tools/sub_projects/__tests__/projectPulse.test.tsx:15 the null-vs-zero gate carries all three fixtures (never-scanned, clean :34, busy :22) and the never-scanned render (:63) asserts both absence of a number and absence of the clean cell",
+          "carriedFrom": "2026-10-16"
         },
         {
           "technique": "fixture-economics",
@@ -20532,6 +20590,15 @@
           "verdict": "not-applicable",
           "evidence": "vitest.config.ts:17 Mocks GitHub API responses in-memory rather than driving real remote GitHub servers.",
           "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_projects/githubRepoPaging.ts:1 says the module exists so the three credential outcomes can be gated without rendering, but the none/unhealthy/ready decision stays inline in GitHubRepoSelector.tsx:100 and no test drives it; githubRepoPaging.test.ts:12 names the stale-PAT collapse as the bug and pins only the Link-header walk, so the original defect can return green",
+          "evaluatedAt": "2026-10-16T18:08:00.000Z",
+          "worker": "1a5f8c88-83b9-404e-92bd-a7a6d0c4e176",
+          "reason": "replaced by dd87508f-e9ea-49a9-9b1b-f9f012683c39"
         }
       ]
     },
@@ -37138,43 +37205,73 @@
       "context": "engine-build-session",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:44:00.000Z",
-      "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:45:49.053Z",
+      "worker": "dd87508f-e9ea-49a9-9b1b-f9f012683c39",
       "techniques": [
         {
+          "technique": "assert-through-the-reader",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:2926 the oracle is a copy of the reader, not the reader; no TS test feeds a Rust-produced summary to parseReportSections"
+        },
+        {
           "technique": "unreached-decisions-pin-nothing",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3402 the scripted path is proven by asserting the LLM recorder stayed empty and the mock's authorised-hit counter is 1 (:3410), so the value names its producer"
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3394 the plan leg is poisoned, and the test asserts which producer answered: the plan LLM was never prompted (:3402)"
+        },
+        {
+          "technique": "far-side-oracle",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3061 the loopback API counts authorized hits, proving on the far side that the decrypted vault key actually arrived"
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3290 the cutoff is proven from the hanging row's own verdict; the 15s wall bound (:3268) is a loose one-sided hang guard against a 2s per-test timeout"
         },
         {
           "technique": "fixture-economics",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3081 connectors seeded via connectors::create and keys via credentials::create_with_fields (:3113) on the init_test_db template copy - no write-path bypass"
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3113 seed data is written through the production path (encrypted vault fields), so the fixture carries the real invariants"
         },
         {
           "technique": "recorded-interaction-fixtures",
-          "verdict": "realized",
-          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3037 the API is locally hosted (200/401/hang) instead of recorded, the technique's own preferred alternative for a cheap deterministic service"
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3539 recorded LLM drafts carry their capture date, the stated proxy when the remote side offers no identity"
+        },
+        {
+          "technique": "approval-snapshots-with-guarded-update",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3514 whole-structure equality against a code-derived expectation; there is no recorded snapshot suite with a record switch"
+        },
+        {
+          "technique": "live-app-harness",
+          "verdict": "not-applicable",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3037 integration rung against a loopback mock; this context does not own a live-app lane"
         },
         {
           "technique": "negative-control-tests",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/http_engine/mod.rs:262 records that the pre-fix call also failed (dns error) and pins the refusal phrase precisely so the assertion fails against the bug"
+          "evidence": "src-tauri/src/engine/http_engine/mod.rs:262 records that the pre-fix call also failed (dns error) and pins the refusal phrase precisely so the assertion fails against the bug",
+          "carriedFrom": "2026-10-22"
         },
         {
           "technique": "derived-selection-must-be-measured",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3670 the catalog-wide mapping walk declares floors (>100 connectors here, >50 declared tools at :3701) so an empty seed cannot pass"
-        },
-        {
-          "technique": "far-side-oracle",
-          "verdict": "realized",
-          "evidence": "src-tauri/engine/src/cli_session_awareness/transcript.rs:282 the tail-window reader is checked against a full-scan oracle across window sizes rather than hand-written expectations"
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3670 the catalog-wide mapping walk declares floors (>100 connectors here, >50 declared tools at :3701) so an empty seed cannot pass",
+          "carriedFrom": "2026-10-22"
         }
       ],
-      "registryProposal": "upward lesson for unreached-decisions-pin-nothing (rust application candidate): a split 'script what you can, hand the rest to an LLM' path is pinned by a Recorder counting prompts/summaries plus an authorised-hit counter on a loopback mock (src-tauri/src/engine/build_session/tool_tests.rs:3376), which names the producer without a live model"
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/tool_tests.rs:3402 asserts which producer answered (plan LLM never prompted, mock API hit exactly once at :3410) against a loopback mock (:3037) seeded through the product doors (:3081 connectors::create, :3113 credentials::create_with_fields); lane-level techniques are properties of the runner config, not this context",
+          "evaluatedAt": "2026-10-22T02:44:00.000Z",
+          "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+          "reason": "replaced by dd87508f-e9ea-49a9-9b1b-f9f012683c39"
+        }
+      ]
     },
     "767b2bb5-4662-4be1-ad24-c881ac334016/test-harness": {
       "context": "webhook-ingestion",
