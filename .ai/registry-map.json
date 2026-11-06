@@ -4380,7 +4380,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/agents/quick-answer/triage/triageAdapters.ts:488 This context produces data (triage verdicts and canonical English reject reasons that are persisted as memories) and composes no model prompt. Searching quick-answer/ and shared/quickConfig/ for system_prompt, systemPrompt, buildPrompt, contextWindow and maxTokens found nothing; every 'prompt' hit is the UI concept TriageReasonPrompt or a proposal's newPrompt shown for review.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "conversation-orchestration",
@@ -20756,7 +20760,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/lib/utils/sanitizers/workflowSanitizer.ts:58 Untrusted n8n workflow text that the file header says is 'embedded into AI prompts' is cut at a fixed character count, mid-sentence, with no notice; array and object entries past 100 are also dropped silently (lines 87 and 93), so the model reads a partial view that looks complete.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "test-harness",

@@ -40211,13 +40211,13 @@
       "bundle": "software-engineering",
       "state": "unknown",
       "evaluatedAt": "2026-11-06",
-      "evaluatedTs": "2026-11-06T05:21:28.035Z",
+      "evaluatedTs": "2026-11-06T05:33:43.783Z",
       "techniques": [],
       "withdrawn": {
-        "worker": "03d898d1-8c32-4648-965a-2f2d17c8f06d",
+        "worker": "3f8ac78c-8e8d-45e6-8f69-a6efb2e9aad7",
         "state": "not-applicable",
-        "at": "2026-11-06T05:21:58.961889+00:00",
-        "reason": "reviewer (sonnet): The anchor ExposureManager.tsx:9 is only an import line, so it does not show that no prompt is assembled; the grep also covered all of src/features/settings, not this context."
+        "at": "2026-11-06T05:34:13.278184+00:00",
+        "reason": "reviewer (sonnet): The anchor ExposureManager.tsx:9 is only a type import, so it does not show that the context builds no LLM prompt. The grep for 'prompt' under sub_network found nothing, but an absence search does not make a line anchor that is incidental."
       }
     },
     "aa2197a5-6b7c-46ff-a6cd-8172d2984f50/prompt-assembly": {
@@ -44906,32 +44906,46 @@
       "context": "agents-quick-answer",
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
-      "state": "unknown",
+      "state": "not-applicable",
       "evaluatedAt": "2026-11-06",
-      "evaluatedTs": "2026-11-06T05:21:28.035Z",
+      "evaluatedTs": "2026-11-06T05:33:43.783Z",
+      "worker": "3f8ac78c-8e8d-45e6-8f69-a6efb2e9aad7",
       "techniques": [
         {
           "technique": "layered-composition",
           "verdict": "deviation",
-          "evidence": "src/features/agents/shared/quickConfig/quickConfigTypes.ts:99 The output is a string suffix with its own delimiter, made to be concatenated onto the build prompt. This is the 'late layers become suffixes' failure."
+          "evidence": "src/features/agents/shared/quickConfig/quickConfigTypes.ts:99 The output is a string suffix with its own delimiter, made to be concatenated onto the build prompt. This is the 'late layers become suffixes' failure.",
+          "carriedFrom": "2026-11-06"
         },
         {
           "technique": "variable-interpolation",
           "verdict": "deviation",
-          "evidence": "src/features/agents/shared/quickConfig/quickConfigTypes.ts:79 Trigger descriptions and persona names written by other personas or users are interpolated raw. They carry no declared trust class or delimiting."
+          "evidence": "src/features/agents/shared/quickConfig/quickConfigTypes.ts:79 Trigger descriptions and persona names written by other personas or users are interpolated raw. They carry no declared trust class or delimiting.",
+          "carriedFrom": "2026-11-06"
         },
         {
           "technique": "context-budgeting",
           "verdict": "conformant",
-          "evidence": "src/features/agents/shared/quickConfig/quickConfigTypes.ts:88 An empty channel selection renders as a stated absence rather than silence, so the model is not misled by a missing section."
+          "evidence": "src/features/agents/shared/quickConfig/quickConfigTypes.ts:88 An empty channel selection renders as a stated absence rather than silence, so the model is not misled by a missing section.",
+          "carriedFrom": "2026-11-06"
         }
-      ],
-      "withdrawn": {
-        "worker": "03d898d1-8c32-4648-965a-2f2d17c8f06d",
-        "state": "deviation",
-        "at": "2026-11-06T05:21:59.117739+00:00",
-        "reason": "reviewer (sonnet): serializeQuickConfig lives in agents/shared/quickConfig and is called from agents/components/matrix/UnifiedBuildEntry.tsx:738, not the cited shared/UnifiedBuildEntry.tsx:739, and neither file belongs to the quick-answer/triage context, so the verdict is about a different context."
-      }
+      ]
+    },
+    "fb6e9de5-a01b-4434-8ed7-313c142947a1/prompt-assembly": {
+      "context": "lib-utils-sanitizers",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T05:33:43.783Z",
+      "worker": "3f8ac78c-8e8d-45e6-8f69-a6efb2e9aad7",
+      "techniques": [
+        {
+          "technique": "context-budgeting",
+          "verdict": "deviation",
+          "evidence": "src/lib/utils/sanitizers/workflowSanitizer.ts:58 The technique says truncation inside a rung cuts at semantic boundaries and names what is left out; here the cut is mid-text by character count and nothing reaches the prompt to say so. The same silent drop happens to array items past 100 at line 87."
+        }
+      ]
     }
   }
 }
