@@ -50,12 +50,12 @@ export function AccessibleToggle({
       onKeyDown={handleKeyDown}
       data-testid={dataTestId}
       style={style}
-      className={`${size === 'sm' ? 'w-8 h-5' : 'w-10 h-6'} rounded-full relative transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-        checked ? 'bg-emerald-500/80' : 'bg-muted-foreground/20'
+      className={`${size === 'sm' ? 'w-8 h-5' : 'w-10 h-6'} rounded-full relative transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background border ${
+        checked ? 'bg-primary border-transparent' : 'bg-surface-2 border-hair-2'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className}`}
     >
       <span
-        className={`absolute top-0.5 left-0.5 ${size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} rounded-full bg-white shadow-elevation-1 transition-transform duration-200 ${
+        className={`absolute top-px left-px ${size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} rounded-full transition-transform duration-200 ${checked ? 'bg-[var(--background)]' : 'bg-ink-3'} ${
           checked ? (size === 'sm' ? 'translate-x-3' : 'translate-x-4') : 'translate-x-0'
         }`}
       />

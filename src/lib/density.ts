@@ -1,8 +1,8 @@
 /**
  * Density token system for list views.
  *
- * Three modes covering the spectrum from new-user-friendly (cozy) to
- * power-user-dense (compact). Tokens are Tailwind class fragments; consumers
+ * Console (compact, the default) and Comfortable are the two offered modes; `cozy` is a
+ * retired spelling kept so persisted values parse. Tokens are Tailwind class fragments; consumers
  * pick the slot they need (`rowPaddingY` for table rows, `cardPadding` for
  * card layouts) and concatenate into their `className`.
  */
@@ -30,7 +30,17 @@ export interface DensityTokens {
   gap: string;
 }
 
-export const DENSITY_VALUES: readonly Density[] = ['cozy', 'comfortable', 'compact'];
+/**
+ * The choices a picker OFFERS, in order: Console (stored 'compact', the default geometry) and
+ * Comfortable (more air). 'cozy' stays in {@link Density} so a persisted value still parses, but
+ * it is never offered; {@link densityChoiceOf} folds it onto 'comfortable'.
+ */
+export const DENSITY_VALUES: readonly Density[] = ['compact', 'comfortable'];
+
+/** Fold any stored density onto the two offered choices ('cozy' is the retired spelling of the air choice). */
+export function densityChoiceOf(density: unknown): Density {
+  return density === 'comfortable' || density === 'cozy' ? 'comfortable' : 'compact';
+}
 
 export const DENSITY_TOKENS: Record<Density, DensityTokens> = {
   cozy: {

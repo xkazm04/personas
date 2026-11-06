@@ -140,7 +140,7 @@ function CablePulse({ vitals, st }: { vitals: CableVitals; st: StudioStrings }) 
   if (!paused && !vitals.firesTracked) return null;
   return (
     <span className="flex flex-col items-start gap-0.5 typo-caption text-ink-2">
-      {paused && <StateMark state="proposed" label={st.route_paused} />}
+      {paused && <StateMark state="paused" label={st.route_paused} />}
       {vitals.firesTracked && (vitals.lastFiredAt
         ? <span>{st.last_fired} <span className="num"><RelativeTime timestamp={vitals.lastFiredAt} /></span></span>
         : <span className="italic">{st.never_fired}</span>)}

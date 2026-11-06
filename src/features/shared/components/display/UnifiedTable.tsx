@@ -347,12 +347,12 @@ function TableGhostRows<T>({ columns, gridTemplate, rowHeight, rowPadY, loadingL
         {Array.from({ length: 8 }).map((_, r) => (
           <div
             key={r}
-            className={`grid items-center animate-fade-in ${rowHeight > 0 ? '' : rowPadY} ${r > 0 ? 'border-t border-t-primary/10' : ''} ${r % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+            className={`grid items-center animate-fade-in ${rowHeight > 0 ? '' : rowPadY} ${r > 0 ? 'border-t border-t-hair' : ''}`}
             style={{ gridTemplateColumns: gridTemplate, height: rowHeight > 0 ? rowHeight : undefined, animationDelay: `${120 + r * 35}ms` }}
           >
             {columns.map((col, ci) => (
               <div key={col.key} className={`px-4 min-w-0 flex ${col.align === 'right' ? 'justify-end' : ''}`}>
-                <span className={`inline-block h-3.5 rounded bg-primary/[0.06] ${GHOST_BAR_WIDTHS[(r + ci) % GHOST_BAR_WIDTHS.length]}`} />
+                <span className={`inline-block h-3.5 rounded bg-surface-2 ${GHOST_BAR_WIDTHS[(r + ci) % GHOST_BAR_WIDTHS.length]}`} />
               </div>
             ))}
           </div>
@@ -666,13 +666,13 @@ export function UnifiedTable<T>({
       role={ariaLabel ? 'table' : undefined}
       aria-label={ariaLabel}
       aria-rowcount={ariaLabel && (useVirtual || grouped) ? sortedData.length + 1 : undefined}
-      className={`${borderless ? '' : 'border border-primary/10 rounded-xl'} overflow-hidden flex flex-col min-h-0 ${resize.isResizing ? 'select-none cursor-col-resize' : ''} ${className ?? ''}`}
+      className={`${borderless ? '' : 'border border-hair rounded-card'} overflow-hidden flex flex-col min-h-0 ${resize.isResizing ? 'select-none cursor-col-resize' : ''} ${className ?? ''}`}
     >
       {/* Header */}
       <div
         role={ariaLabel ? 'row' : undefined}
         aria-rowindex={ariaLabel && (useVirtual || grouped) ? 1 : undefined}
-        className={`grid border-b border-primary/10 ${stickyHeader ? 'sticky top-0 z-20 bg-background/95 backdrop-blur-sm' : 'bg-primary/5'}`}
+        className={`grid border-b border-hair ${stickyHeader ? 'sticky top-0 z-20 bg-background' : 'bg-surface-1'}`}
         style={{ gridTemplateColumns: gridTemplate }}
       >
         {columns.map((col, i) => (

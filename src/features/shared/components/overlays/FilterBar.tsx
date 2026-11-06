@@ -21,9 +21,8 @@ export interface FilterBarProps<T extends string = string> {
   /** Called when the user clicks a filter button. */
   onChange: (value: T) => void;
   /**
-   * How to render the badge count:
-   * - `'badge'`  -- rounded pill to the right (default)
-   * - `'paren'`  -- parenthetical suffix, e.g. "Pending (3)"
+   * Kept for call-site compatibility. Console renders both the same: a mono `.num`
+   * count after the label (ink-3, ink-1 when selected); no pill, no parentheses.
    */
   badgeStyle?: 'badge' | 'paren';
   /** Optional summary text rendered at the far right, e.g. "Showing 5 of 20". */
@@ -51,56 +50,56 @@ export function FilterBar<T extends string = string>({
   trailing,
   layoutIdPrefix = 'filter-bar',
 }: FilterBarProps<T>) {
+  const FOOT = 'shadow-[inset_0_-2px_0_var(--primary)]';
   return (
     <div
-      className="px-4 md:px-6 py-3 border-b border-primary/10 flex items-center gap-2 flex-shrink-0"
+      className="px-[var(--gutter-page)] min-h-[var(--head-h)] border-b border-hair flex items-center gap-3 flex-shrink-0"
       data-testid="filter-bar"
     >
-      {options.map((opt) => {
-        const isActive = value === opt.id;
-        const showBadge = opt.badge != null && opt.badge > 0;
+      {/* Console segmented look: hairline track, selected cell on surface-2 in ink-1 with a 2px primary foot. */}
+      <div className="flex h-[var(--control-h)] rounded-input border border-hair-2 overflow-hidden">
+        {options.map((opt, index) => {
+          const isActive = value === opt.id;
+          const showBadge = opt.badge != null && opt.badge > 0;
 
-        return (
-          <button
-            type="button"
-            key={opt.id}
-            onClick={() => onChange(opt.id)}
-            data-testid={`filter-btn-${opt.id}`}
-            className={`relative px-3 py-1.5 rounded-xl typo-heading transition-all border flex items-center gap-1.5 ${
-              isActive
-                ? 'bg-primary/15 text-primary border-primary/30'
-                : 'bg-secondary/30 text-foreground border-primary/15 hover:text-muted-foreground hover:bg-secondary/50'
-            }`}
-          >
-            {/* layoutId animated active indicator */}
-            {isActive && (
-              <motion.div
-                layoutId={`${layoutIdPrefix}-active`}
-                className="absolute inset-0 rounded-xl bg-primary/15 border border-primary/30"
-                transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
-              />
-            )}
-
-            <span className="relative">
-              {opt.label}
-              {showBadge && badgeStyle === 'paren' && (
-                <span className="opacity-60 ml-1">({opt.badge})</span>
+          return (
+            <button
+              type="button"
+              key={opt.id}
+              onClick={() => onChange(opt.id)}
+              data-testid={`filter-btn-${opt.id}`}
+              className={`relative px-3 typo-label transition-colors focus-ring flex items-center gap-1.5 ${
+                index > 0 ? 'border-l border-hair-2' : ''
+              } ${isActive ? 'text-ink-1' : 'text-ink-2 hover:text-ink-1 hover:bg-surface-1'}`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId={`${layoutIdPrefix}-active`}
+                  className={`absolute inset-0 bg-surface-2 ${FOOT}`}
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                />
               )}
-            </span>
 
-            {showBadge && badgeStyle === 'badge' && (
-              <span className="relative typo-heading bg-primary/20 text-primary rounded-full min-w-[18px] px-1 inline-flex items-center justify-center">
-                {opt.badge}
-              </span>
-            )}
-          </button>
-        );
-      })}
+              <span className="relative">{opt.label}</span>
+
+              {/* Both badge styles read the same: a mono figure, ink-3 (ink-1 when selected). */}
+              {showBadge && (
+                <span
+                  className={`relative num typo-data ${isActive ? 'text-ink-1' : 'text-ink-3'}`}
+                  data-badge-style={badgeStyle}
+                >
+                  {opt.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
       {trailing}
 
       {summary && (
-        <span className="ml-auto typo-code text-foreground">
+        <span className="ml-auto typo-code text-ink-2">
           {summary}
         </span>
       )}

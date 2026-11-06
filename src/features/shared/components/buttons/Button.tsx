@@ -108,6 +108,12 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loadingLabel?: ReactNode;
   /** Tooltip shown when the button is disabled, explaining why */
   disabledReason?: string;
+  /**
+   * What the button says on hover and keyboard focus, through the shared Tooltip. The home for
+   * what a native `title=` used to carry on an icon button. A disabled button's `disabledReason`
+   * wins over it (a disabled button cannot be hovered, so the reason owns the wrapper).
+   */
+  tooltip?: ReactNode;
 }
 
 // -- Component -------------------------------------------------
@@ -125,6 +131,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       loadingLabel,
       disabled,
       disabledReason,
+      tooltip,
       className = '',
       children,
       type = 'button',
@@ -286,6 +293,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           {btn}
         </Tooltip>
       );
+    }
+
+    if (tooltip != null && tooltip !== false && tooltip !== '') {
+      return <Tooltip content={tooltip}>{btn}</Tooltip>;
     }
 
     return btn;

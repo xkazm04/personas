@@ -4899,33 +4899,14 @@ html[data-motion="reduce"] .animate-map-spin {
   transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease !important;
 }
 
-/* -- Row hover lift -- shared list-row affordance.
-   Used by UnifiedTable, DataGrid, and any custom list that opts in.
-   Per-row accent color may override via inline style: --row-accent. */
+/* -- Row hover (Console, WP0c) -- shared list-row marker.
+   Used by UnifiedTable, DataGrid, and any custom list that opts in. It used to lift the
+   row on a shadow with a travelling 2px primary bar; Console rows are hairline-separated
+   and hover only on the row's own background (set by the row's classes), so the class is
+   now a marker plus `position: relative`. */
 .row-hover-lift {
   position: relative;
-  transition: background-color 150ms ease-out, box-shadow 150ms ease-out;
-}
-.row-hover-lift::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 2px;
-  background: var(--row-accent, var(--primary));
-  opacity: 0;
-  transform: translateX(-2px);
-  transition: transform 150ms ease-out, opacity 150ms ease-out;
-  pointer-events: none;
-}
-@media (hover: hover) {
-  .row-hover-lift:hover {
-    box-shadow: var(--shadow-elevation-2);
-    z-index: 10;
-  }
-  .row-hover-lift:hover::before {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  transition: background-color 150ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {

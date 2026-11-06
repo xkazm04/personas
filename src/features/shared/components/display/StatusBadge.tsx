@@ -35,7 +35,7 @@ const ACCENT_STATE: Record<BadgeAccent, StateMarkState> = {
 
 interface StatusBadgeBaseProps {
   children: ReactNode;
-  /** Optional leading icon. */
+  /** @deprecated Ignored: the StateMark glyph is the badge's only mark. Kept in the type for API stability. */
   icon?: ReactNode;
   /** Badge size. Default: 'md'. */
   size?: BadgeSize;
@@ -67,7 +67,6 @@ export function StatusBadge({
   variant,
   accent,
   children,
-  icon,
   size = 'md',
   className = '',
   title,
@@ -75,7 +74,6 @@ export function StatusBadge({
   const state: StateMarkState = variant ?? ACCENT_STATE[accent!];
   const mark = (
     <span className={['inline-flex items-center gap-1.5', className].filter(Boolean).join(' ')}>
-      {icon && <span className="flex-shrink-0">{icon}</span>}
       <StateMark state={state} size={size} label={children} />
     </span>
   );

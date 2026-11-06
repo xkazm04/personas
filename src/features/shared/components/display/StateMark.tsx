@@ -2,11 +2,12 @@ import type { ReactNode } from 'react';
 
 export type StateMarkState =
   | 'proposed' | 'decided' | 'running' | 'done' | 'waits' | 'skipped' | 'blank' | 'filler' | 'refused'
+  | 'paused' | 'building' | 'queued'
   | 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'processing';
 
 type GlyphKind =
   | 'dashed-ring' | 'square' | 'hatch' | 'check' | 'diamond' | 'diamond-outline' | 'dash'
-  | 'struck-ring' | 'dotted-square' | 'dotted-ring' | 'ring';
+  | 'struck-ring' | 'dotted-square' | 'dotted-ring' | 'ring' | 'pause-bars' | 'hatch-bar' | 'dotted-loop';
 
 interface StateSpec {
   glyph: GlyphKind;
@@ -22,7 +23,7 @@ const SOFT_WORD = 'text-ink-3';
 
 /**
  * One glyph per state, drawn on a 12px grid in the signal colour; the word stays on the ink
- * ladder (decided alone takes the accent). The first nine are the Console decision states, the
+ * ladder (decided alone takes the accent). The first twelve are the Console decision and lifecycle states, the
  * last six are the generic StatusBadge vocabulary mapped onto the same glyph set.
  */
 const SPEC: Record<StateMarkState, StateSpec> = {
@@ -35,6 +36,9 @@ const SPEC: Record<StateMarkState, StateSpec> = {
   blank:      { glyph: 'dotted-ring',     ink: 'text-ink-3',             word: SOFT_WORD },
   filler:     { glyph: 'dotted-square',   ink: 'text-ink-4',             word: SOFT_WORD },
   refused:    { glyph: 'struck-ring',     ink: 'text-ink-3',             word: SOFT_WORD },
+  paused:     { glyph: 'pause-bars',     ink: 'text-ink-3',             word: SOFT_WORD },
+  building:   { glyph: 'hatch-bar',      ink: 'text-primary',           word: STRONG_WORD },
+  queued:     { glyph: 'dotted-loop',    ink: 'text-ink-3',             word: SOFT_WORD },
   success:    { glyph: 'check',           ink: 'text-status-success',    word: QUIET_WORD },
   warning:    { glyph: 'diamond-outline', ink: 'text-status-warning',    word: QUIET_WORD },
   error:      { glyph: 'diamond',         ink: 'text-status-error',      word: QUIET_WORD },
@@ -71,6 +75,14 @@ function Shapes({ glyph }: { glyph: GlyphKind }) {
         <line x1="3" y1="9" x2="9" y2="3" {...LINE} />
       </>
     );
+    case 'pause-bars': return <path d="M4 2.75 V9.25 M8 2.75 V9.25" {...LINE} />;
+    case 'hatch-bar': return (
+      <>
+        <rect x="0.75" y="4.25" width="10.5" height="3.5" fill="none" stroke="currentColor" strokeWidth={1} />
+        <path d="M2 7.75 L4.5 4.25 M5 7.75 L7.5 4.25 M8 7.75 L10.5 4.25" fill="none" stroke="currentColor" strokeWidth={1} />
+      </>
+    );
+    case 'dotted-loop': return <circle cx="6" cy="6" r="4.25" {...RING} strokeLinecap="round" strokeDasharray="0.1 1.9" strokeWidth={1.8} />;
     case 'dotted-square': return (
       <>
         <rect x="2" y="2" width="8" height="8" fill="none" stroke="currentColor" strokeWidth={1} strokeDasharray="1.5 1.5" />
@@ -91,7 +103,7 @@ export interface StateMarkProps {
 
 /**
  * StateMark: a state as a glyph in the signal colour and a word in mono ink. No pill, no fill, no motion.
- * @catalog StateMark - a state as glyph + mono word (15 states: proposed/decided/running/done/waits/skipped/blank/filler/refused plus success/warning/error/info/neutral/processing); replaces status pills.
+ * @catalog StateMark - a state as glyph + mono word (18 states: proposed/decided/running/done/waits/skipped/blank/filler/refused/paused/building/queued plus success/warning/error/info/neutral/processing); replaces status pills.
  */
 export function StateMark({ state, label, size = 'sm', className }: StateMarkProps) {
   const spec = SPEC[state];

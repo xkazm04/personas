@@ -107,7 +107,7 @@ export function AppearanceStep() {
           <Rows2 className="w-4 h-4 text-ink-1" />
           <span className="typo-body text-ink-1">{t.onboarding.density_label}</span>
         </div>
-        <DensityToggle density={density} onChange={setDensity} scopeId="onboarding" />
+        <DensityToggle density={density} onChange={setDensity} scopeId="onboarding" showLabels />
       </div>
 
       {/* Dark themes */}

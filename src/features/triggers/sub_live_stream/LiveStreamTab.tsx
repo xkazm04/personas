@@ -381,7 +381,7 @@ export function LiveStreamTab() {
           aria-live="polite"
         >
           <StateMark
-            state={isPaused ? 'proposed' : attached ? 'running' : 'blank'}
+            state={isPaused ? 'paused' : attached ? 'running' : 'blank'}
             label={isPaused ? t.triggers.paused_label : attached ? t.triggers.live_label : t.triggers.connecting_label}
           />
           {(isPaused || attached) && (

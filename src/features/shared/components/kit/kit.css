@@ -501,7 +501,7 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
   padding: 4px 12px 8px var(--gutter);
 }
 .k-card {
-  --rail: var(--spine-c); --card-band: var(--band-alt);
+  --rail: transparent; --card-band: var(--surface-1); --band-hover: var(--surface-2);
   /* The card's rail is its spine, and it is drawn over the band, so parts nested in a card band
    * from beside the rail (grow-4, part 1). */
   --band-x: 4px;
@@ -511,23 +511,23 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
    * to the tallest, which is what carried the alignment all along. */
   --card-h: 80px;
   position: relative; display: flex; flex-direction: column; min-width: 0; min-height: var(--card-h);
-  padding: 12px 14px 12px 20px; border-radius: 0 var(--radius-card) var(--radius-card) 0;
-  background: linear-gradient(to right, color-mix(in srgb, var(--primary) 7%, var(--card-band)), var(--card-band) 55%);
+  padding: 12px 14px 12px 20px; border: 1px solid var(--hair); border-radius: var(--radius-card);
+  background: var(--card-band);
   transition: background-color var(--duration-fast);
 }
 .k-card::before {
   content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--rail);
   transition: background-color var(--duration-fast), box-shadow var(--duration-fast);
 }
-.k-card:hover, .k-card.is-hover { --card-band: var(--band-hover); --rail: color-mix(in srgb, var(--primary) 60%, transparent); }
+.k-card:hover, .k-card.is-hover { --card-band: var(--band-hover); }
 .k-card.is-selected { --card-band: var(--band-sel); --rail: var(--primary); }
-.k-card.is-selected::before { width: 3px; }
+.k-card.is-selected::before { width: 2px; }
 .k-card.is-live::before { background: var(--primary); animation: k-breathe 2.8s ease-in-out infinite; }
 .k-card.is-muted > :not(.k-mark) { opacity: .56; }
 .k-card.is-empty { background: transparent; }
 .k-card.is-empty::after { content: ""; position: absolute; inset: 0; border: 1px dashed var(--line); border-left: 0; border-radius: inherit; pointer-events: none; }
 .k-card.is-loading { cursor: default; }
-.k-card > .k-mark { left: -4px; top: 21px; margin-top: -4.5px; outline-color: var(--background); }
+.k-card > .k-mark { left: 6px; top: 21px; margin-top: -4.5px; outline-color: transparent; }
 .k-card.is-loading > .k-mark { background: var(--ghost); animation: k-ghost-in var(--duration-fast) ease-out var(--ghost-delay, 150ms) both; }
 /* One layout for every card: head at the top (actions at its top-right), foot pinned to the bottom edge. */
 .k-card__head { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
@@ -561,7 +561,7 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
   --fill-c: color-mix(in srgb, var(--tone) 16%, transparent);
   background:
     linear-gradient(to right, var(--fill-c) var(--fill, 0%), transparent var(--fill, 0%)),
-    linear-gradient(to right, color-mix(in srgb, var(--primary) 7%, var(--card-band)), var(--card-band) 55%);
+    var(--card-band);
 }
 :is([data-theme^="light"], [data-brightness^="light"]) .k-card--fill { --fill-c: color-mix(in srgb, var(--tone) 22%, transparent); }
 
@@ -613,22 +613,22 @@ button.k-crumb:hover, button.k-crumb.is-hover { color: var(--primary); backgroun
 .k-dtile__body { flex: 1 0 auto; display: flex; flex-direction: column; min-width: 0; }
 .k-dtile__foot { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 12px 0 var(--gutter); }
 
-/* The look (owner, grow-3 gate: "B Band"; a grid of mixed tiles keeps card feel): ContextCard's
- * band, the stepped background with a faint primary wash from a 2px rail on its left edge and a
- * right-only radius. No spine runs through a band, so a mark needs no background ring cutting it. */
+/* The look (Console, WP0c; was grow-3 "B Band" with a primary wash and a 2px rail): ContextCard's
+ * surface-1 tile inside a 1px hairline. No spine runs through a band, so a mark needs no background ring cutting it. */
 .k-dtile {
-  --card-band: var(--band-alt);
-  /* No spine line runs through a band, so a row inside one has nothing to clear: the band starts
-   * beside the rail and the Mark sits ON it (grow-4, part 1). */
+  --card-band: var(--surface-1);
+  /* Rows inside a tile hover onto surface-2 (surface-1 is the tile's own floor). */
+  --band-hover: var(--surface-2);
+  /* No spine line runs through a tile, so a row inside one has nothing to clear (grow-4, part 1). */
   --band-x: 4px;
-  padding: 12px 0; border-radius: 0 var(--radius-card) var(--radius-card) 0;
-  background: linear-gradient(to right, color-mix(in srgb, var(--primary) 7%, var(--card-band)), var(--card-band) 55%);
+  padding: 12px 0; border: 1px solid var(--hair); border-radius: var(--radius-card);
+  background: var(--card-band);
 }
-.k-dtile::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--spine-c); }
+/* Console (WP0c): a tile is surface-1 inside a hairline; the 2px spine and the primary wash are gone. */
 .k-dtile .k-mark { outline-color: transparent; }
 /* The tile's OWN status (grow-4, part 7) sits on its rail at the title's height, exactly as a
  * ContextCard's does: the band's left edge is the tile's spine, so meaning is carried there. */
-.k-dtile > .k-mark { left: -4px; top: 26px; margin-top: -4.5px; }
+.k-dtile > .k-mark { left: 6px; top: 26px; margin-top: -4.5px; }
 /* A short list beside a long one: the body fills the stretched tile and its pager ("Show all")
  * sits on the tile's foot, so the height reads as the tile's own, not a gap under the rows. */
 .k-dtile__body > .k-pager { margin-top: auto; }

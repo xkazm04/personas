@@ -92,5 +92,5 @@ export function StatusBadge({
 
 export function BuildingBadge() {
   const { t } = useTranslation();
-  return <StateMark state="running" label={t.agents.persona_list.badge_building} />;
+  return <StateMark state="building" label={t.agents.persona_list.badge_building} />;
 }

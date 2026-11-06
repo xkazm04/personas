@@ -103,6 +103,25 @@ describe('Button disabledReason', () => {
   });
 });
 
+describe('Button tooltip', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('shows the tooltip content on hover and adds no wrapper box to the layout', () => {
+    vi.useFakeTimers();
+    render(<Button tooltip="Copy link">Copy</Button>);
+    const button = screen.getByRole('button', { name: 'Copy' });
+    expect(screen.queryByText('Copy link')).toBeNull();
+    fireEvent.mouseEnter(button);
+    act(() => {
+      vi.advanceTimersByTime(800);
+    });
+    expect(screen.getByText('Copy link')).toBeTruthy();
+    expect(button.getAttribute('title')).toBeNull();
+  });
+});
+
 /**
  * The accent variant's colour comes from ONE closed `tone` map: a status or a role
  * token, never a raw palette step, and never beside a second text colour.

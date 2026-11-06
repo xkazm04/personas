@@ -21,7 +21,7 @@ import type { DevTask } from '@/lib/bindings/DevTask';
 // ---------------------------------------------------------------------------
 
 const STATE_OF: Record<TaskStatus, StateMarkState> = {
-  queued: 'blank',
+  queued: 'queued',
   running: 'running',
   completed: 'done',
   failed: 'error',

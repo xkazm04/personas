@@ -40,9 +40,13 @@ describe('Tiles grid', () => {
 });
 
 describe('Tile', () => {
-  it('has one look: no look switch survives the gate, and the band sits on a rail', () => {
+  it('has one look (Console): surface-1 inside a hairline, no rail and no primary wash', () => {
     expect(KIT_CSS).not.toMatch(/data-kit-tile-look/);
-    expect(rule('.k-dtile::before')).toMatch(/left: 0/);
+    expect(rule('.k-dtile::before')).toBe('');
+    const look = KIT_CSS.replace(/\/\*[\s\S]*?\*\//g, '').match(/\.k-dtile \{\s*--card-band[^}]*\}/)?.[0] ?? '';
+    expect(look).toMatch(/border: 1px solid var\(--hair\)/);
+    expect(look).toMatch(/--card-band: var\(--surface-1\)/);
+    expect(look).not.toMatch(/gradient/);
   });
 
   it('a stretched tile puts its pager on its foot', () => {

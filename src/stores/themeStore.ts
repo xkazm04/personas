@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { CustomThemeConfig } from '@/lib/theme/deriveCustomTheme';
 import { customThemeAttr, deriveCustomThemeVars, injectCustomThemeStyle, removeCustomThemeStyle } from '@/lib/theme/deriveCustomTheme';
 import { storeBus } from '@/lib/storeBus';
-import { isDensity, type Density } from '@/lib/density';
+import { isDensity, densityChoiceOf, type Density } from '@/lib/density';
 import { createDedupedJSONStorage } from './util/dedupedStorage';
 
 export type { Density } from '@/lib/density';
@@ -233,7 +233,7 @@ function applyDensity(density: Density) {
 
 /** Collapse the three-valued list `Density` onto the app's two-valued setting. */
 export function normalizeAppDensity(density: unknown): Density {
-  return density === 'comfortable' || density === 'cozy' ? 'comfortable' : 'compact';
+  return densityChoiceOf(density);
 }
 
 /** v1 -> v2 persisted density. The old 3-way setting put cozy on the air block and
