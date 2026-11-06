@@ -223,7 +223,7 @@ Design: [`docs/plans/pumper-inbuilt-feasibility.md`](../../plans/pumper-inbuilt-
   dispatch predicates (`get_due`, `get_enabled_by_type`) read — rather than
   `enabled`, which neither reads.
 - `NlTriggerInput` and `nlTriggerParser.ts` translate natural-language schedule text into structured trigger config.
-- `TriggerSchedulePreview`, `RadialCountdownRing`, and `TriggerCountdown` make schedule timing visible before and after save.
+- `TriggerSchedulePreview` makes schedule timing visible before save.
 - `TriggerExecutionHistory` links a trigger back to executions it caused.
 - `DryRunResultView` displays backend dry-run feedback.
 
