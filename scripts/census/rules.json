@@ -384,8 +384,8 @@
         }
       ],
       "baseline": {
-        "files": 33,
-        "matches": 69
+        "files": 32,
+        "matches": 68
       },
       "floor": 900
     },
@@ -915,7 +915,7 @@
       ],
       "baseline": {
         "files": 38,
-        "matches": 95
+        "matches": 94
       },
       "floor": 900
     },
@@ -1010,8 +1010,8 @@
         "description": "a UUIDv4 truncated to a fixed number of hex characters and used as an identifier, in either spelling this repo uses: the inline `.simple().to_string().chars().take(N)` chain, and a call to one of the two `short_id(N)` helpers. PROXY FOR the stack-free condition \"an identifier is minted with less entropy than its collision domain requires\". A full v4 UUID carries 122 random bits; take(8) keeps 32, take(10) keeps 40, take(12) keeps 48. Measured against the operator's live personas_data.db: the `ep_` (episode) namespace already holds 1,067 rows at 32 bits, where the birthday bound puts P(collision) at 1% by 9,291 rows and 50% by ~77,000 - and companion episodes are the one table this product is explicitly designed to grow without bound (docs/plans/athena-longevity.md). The same database shows the width has ALREADY drifted inside one namespace: `appr_` ids exist at both 10 hex (55 rows, minted by the pre-2026-07-17 `short_random()`) and 12 hex (65 rows, minted by today's `short_id(12)`), so one primary-key column holds two different entropy classes and nothing can tell them apart. The failure mode is a PRIMARY KEY constraint violation on INSERT - the write fails loudly rather than corrupting, which is the honest severity - but the write that fails is a memory the companion has already formed. Widths in the tree today: 8 hex x13, 10 hex x9, 12 hex x12. PRECISION measured by reading all 34 matches: 31 true positives (mint sites plus the eleven `fn short_uuid()` / `fn short_random()` wrappers that exist only to mint), 3 false positives - two are length assertions in the helper's own unit test (src-tauri/src/companion/brain/util.rs:104,105) and one names a scratch file rather than a row (src-tauri/src/companion/session/interrupts.rs:2684). An independent enumeration by prefix over the live database agrees: 15 distinct truncated-id namespaces, all of them primary keys. PRECONDITION (must be re-derived per repo): this repo mints ids in Rust with the `uuid` crate and shortens them with a `.chars().take(N)` chain or a local `short_id(N)` helper. A repo using nanoid's length argument, a base62 encoder, or a database sequence has the same condition wearing markup this pattern cannot see. LEGAL FIX: store the full identifier and truncate only at DISPLAY time. `Uuid::new_v4().to_string()` is already what 302 other sites in this tree do; a short form for a log line or a UI chip is `&id[..8]` at the point of rendering, which costs nothing and keeps the stored key at 122 bits. If a short stored id is genuinely required (a QR payload, a user-typed code), say so in a comment and size it against the table's growth curve rather than by habit."
       },
       "baseline": {
-        "files": 29,
-        "matches": 32
+        "files": 28,
+        "matches": 30
       },
       "floor": 900,
       "exclude": [
@@ -1135,8 +1135,8 @@
         "description": "a tracing macro whose FIRST argument is the message string (so no structured field precedes it) and whose message contains a format placeholder, meaning the record's variable content is interpolated into the message text rather than attached as a field. PROXY FOR the stack-free condition: a log record's whole identifying content is baked into a per-occurrence string, so N occurrences of one event become N distinct messages that can be neither grouped by event nor filtered by value. Measured 2026-08-14 at HEAD: 288 matches across 67 of 963 .rs files. TWO INDEPENDENT IMPLEMENTATIONS RECONCILE EXACTLY - this regex and a paren-matching argument splitter that tokenizes strings/comments and classifies each call's arguments both report 288 matches in the same 67 files with ZERO disagreeing files, so precision on the condition is 288/288. The compliant sibling form is used 2,118 times in the same tree (1,724 with a constant message plus fields, 394 with fields but a still-interpolated message), so this is a minority deviation from an established in-repo convention, not a migration. The optional (target|name|parent): prefix is load-bearing: without it the pattern misses exactly 5 sites, all of them tracing's pseudo-arguments (src/lib.rs:514-516 is the WebView console bridge re-emitting every frontend console line as a fully opaque \"{}\" passthrough; src/engine/mcp_tools.rs:2108 does the same for MCP server stderr). The fill class excludes the double-quote and the newline so a match can never run past the end of its own string literal into surrounding code - the cost is a false NEGATIVE for a placeholder sitting on a backslash-continued second line, which makes the count a floor rather than an estimate. {{ is excluded by the negative lookahead because an escaped literal brace is not interpolation. Zero matches sit in a test or build.rs file, so no exclude entry exists and no stale exemption can accumulate. PRECONDITION (must be re-derived per repo): this repo logs through the tracing crate, whose macros take structured key-value fields BEFORE the message, so 'field or no field' is a positional property a regex can see. A repo using a logger whose call is log.warn({persona_id}, 'msg') or logger.warn('msg', {ctx}) has the SAME condition wearing markup where position carries no meaning, and this pattern scores ZERO against it while the condition is present - personas-cloud is exactly that repo (194 pino-style logger.<level>( calls, zero tracing macros). A repo whose logger accepts only a formatted string has the condition designed in and needs a different instrument entirely. LEGAL FIX: move each interpolated value out of the message and into a field, leaving the message a constant - tracing::warn!(\"Failed to store master key: {}\", e) becomes tracing::warn!(error = %e, \"Failed to store master key\"). Use % for Display and ? for Debug. src-tauri/db/src/backup.rs:107 is the shape to copy. Do NOT silence a match by deleting the log call, and do NOT silence it by moving the interpolation into a format! argument - both trade this condition for a worse one."
       },
       "baseline": {
-        "files": 79,
-        "matches": 255
+        "files": 78,
+        "matches": 254
       },
       "floor": 700
     },
@@ -2915,6 +2915,10 @@
           "reason": "2026-10-14 (spark device-mesh WP2b): covered by local_http's router-level admission layer (Host allowlist + X-Personas-Local-Token), like dev_tools_http.rs; route test without_the_token_nothing_reaches_a_handler drives the real build_app"
         },
         {
+          "path": "src-tauri/src/local_http/standup.rs",
+          "reason": "2026-11-06 (spark app-standup WP1): the /companion/standup doors (current, open, item, arm, end) for the terminal /athena --standup client are covered by local_http's router-level admission layer (Host allowlist + X-Personas-Local-Token), like fleet_door.rs; `companion` is not on SELF_AUTHENTICATED_PREFIXES, and route test without_the_token_no_standup_door_reaches_a_handler drives the real build_app"
+        },
+        {
           "path": "src-tauri/src/local_http/fleet_door.rs",
           "reason": "2026-10-15 (spark one-control WP1): the /fleet door (enqueue, session status, output, cancel) is covered by local_http's router-level admission layer (Host allowlist + X-Personas-Local-Token), like mesh.rs; `fleet` is not on SELF_AUTHENTICATED_PREFIXES, and route test without_the_token_no_door_route_reaches_a_handler drives the real build_app over all four routes"
         },
@@ -3337,6 +3341,14 @@
           "reason": "AttentionSubscription::tick (:128) is the trait-required () adapter — ReactiveSubscription (subscription/traits.rs:37) fixes the signature for all 41 baselined impls, so this rule's LEGAL FIX (a return type) is unimplementable per-impl until the trait itself changes (the rule's designed end state). The cycle's outcome is NOT discarded: every pass lands durably in persona_attention_ledger (a 'started' row opened BEFORE the spawn, closed dispatched/enqueued/failed/panicked, typed refusal rows, per-tick aggregate narration) — the durable per-cycle producer record this rule's own consequence measurement found the app had exactly ONE of across 244 tables, and which no baselined production impl writes. Cost of the exemption: a regression stripping the ledger writes from this tick goes uncounted here - hand-verified 2026-09-01"
         },
         {
+          "path": "src-tauri/src/engine/resources/host_sampler.rs",
+          "reason": "2026-11-06 (spark app-standup WP2): HostSamplerSubscription::tick is the trait-required () adapter, same as the attention.rs exclusion. The outcome is NOT discarded: every finished minute lands durably as one host_utilization row (upsert by minute_ms), read by host_utilization_series and the dead-spot backfill; read failures log at warn and leave the minute NULL, never 0."
+        },
+        {
+          "path": "src-tauri/src/companion/standup/supervisor.rs",
+          "reason": "2026-11-06 (spark app-standup WP3): StandupSupervisor::tick is the trait-required () adapter, same as the attention.rs exclusion. The outcome is NOT discarded: every sweep, drift correction, away create and retune lands durably as a companion_standup_event row, which the standup report is composed from; with no armed standup the tick is one indexed query and out, the designed no-work outcome."
+        },
+        {
           "path": "src-tauri/src/commands/fleet/claude_accounts/rotate.rs",
           "reason": "ClaudeAccountRotateSubscription::tick (:192) is the trait-required () adapter — ReactiveSubscription fixes the signature, same as the attention.rs exclusion. The cycle's outcome is NOT discarded: a rotation lands durably in app settings (claude_accounts.last_rotation, read back by the strip and toasted on change) and every failure is logged at warn with the target; a disabled policy returns before any HTTP, which is the designed no-work outcome."
         },
@@ -3515,7 +3527,7 @@
       },
       "baseline": {
         "files": 92,
-        "matches": 171
+        "matches": 170
       },
       "floor": 900,
       "exclude": [
@@ -4136,7 +4148,7 @@
       "exclude": [],
       "baseline": {
         "files": 78,
-        "matches": 140
+        "matches": 139
       },
       "floor": 900
     },
@@ -4603,8 +4615,8 @@
         }
       ],
       "baseline": {
-        "files": 20,
-        "matches": 125
+        "files": 18,
+        "matches": 121
       },
       "floor": 900
     },
@@ -4893,8 +4905,8 @@
         "note": "COMPLEMENTARY TO untyped-lifecycle-transition (multi-step-orchestration), not overlapping: measured at SITE level against the FINAL pattern over all 87 registered src-tauri/.rs rules, overlap with that rule is 0 lines. It counts the 152 places the convention is exercised; this counts the 15 places it can be abolished. THIS RULE CAN REACH ZERO - every site is a mechanical signature change. Delete it at 1 rather than baselining at 0 (the census cannot express must-be-zero)."
       },
       "baseline": {
-        "files": 10,
-        "matches": 11
+        "files": 9,
+        "matches": 10
       },
       "floor": 900
     },
@@ -4917,7 +4929,7 @@
       },
       "baseline": {
         "files": 45,
-        "matches": 48
+        "matches": 47
       },
       "floor": 900
     },
@@ -5211,8 +5223,8 @@
         "description": "A collection is truncated to an integer literal. PROXY FOR the stack-free condition: a bound on how much work or data flows on is written as an unnamed number, so nothing can relate it to the ceiling it must respect and nothing reports what was dropped. The iter()-family receiver is what buys precision — it excludes .chars().take(N) display truncations (id-generation.md's leaf, 0 site overlap with truncated-uuid-id) at the cost of missing .filter(..).take(N) chains: it finds 53 of the 65 literal collection ceilings two independent scanners agree exist. Precision hand-verified 10/10. LEGAL FIX: name the bound as a const with a doc comment stating what it must be smaller than, and apply it through personas_core::limits::cap_with_log(label, requested, cap) so the clip is attributable — that helper exists, is unit-tested, and has ONE caller in 963 files (background.rs:2607). PRECONDITION (re-derive per repo): this repo bounds work with Rust iterator .take(); a repo using slicing, a paginator or a query builder has the same condition wearing markup this pattern cannot see."
       },
       "baseline": {
-        "files": 31,
-        "matches": 46
+        "files": 30,
+        "matches": 45
       },
       "floor": 700
     },
@@ -5277,8 +5289,8 @@
         "description": "A string truncation whose ONLY record of the cut is an ellipsis spliced into the payload. The caller gets a String and cannot ask whether anything was removed, so a downstream redactor, parser or size check sees a value that looks whole. Prefer (String, bool) — personas_engine::tool_outcome::cap_output is the shape."
       },
       "baseline": {
-        "files": 36,
-        "matches": 42
+        "files": 35,
+        "matches": 41
       },
       "floor": 900
     },
@@ -5493,8 +5505,8 @@
         "description": "serde_json::from_str(...) immediately followed by .unwrap_or_default() or .unwrap_or(<expr>) — the SILENT substitutions only. .unwrap_or_else is deliberately NOT matched, because 17 of this repo's 29 unwrap_or_else arms emit tracing::warn! in the closure and are a legitimate announced degradation; the 12 that do not are a KNOWN, DELIBERATE recall miss, traded to keep precision on the stated condition at 55/55. PROXY FOR the stack-free condition: 'the document is corrupt' and 'the document is empty' reach every downstream reader as the same value. MEASURED 2026-08-17 at master: 55 matches / 42 files, against 640 serde_json::from_str call sites in 963 .rs files (8.6%) and 147 matches / 94 files for the compliant control (propagate with ? or .map_err). 0 of the 55 are inside #[cfg(test)] — verified with a brace-matched stripCfgTest pass, so no exclude is needed and none is declared. WHAT THE MATCH COSTS, hand-opened: mcp_server/install.rs:86 replaces an unparseable claude_desktop_config.json with {} and then WRITES THE RESULT BACK over the user's file (install.rs:109), destroying every other registered MCP server, with no error and no backup; companion/jobs/mod.rs:468 turns a job's params_json into {} and dispatches the handler with no parameters; design/template_adopt.rs:1980 turns the base IR into Value::Null so base_system_prompt becomes \"\" and the model is asked to refine an empty prompt; resources/automation_suggestions.rs:114 silently empties the evidence list a reviewer reads. PRECISION on the stated condition is 55/55 (every match hand-read). PRECISION on 'this is a defect' is lower and is stated honestly: 4 of 6 in the hand-opened sample. The 2 defensible ones are LISTED ON PURPOSE — core/src/models/persona.rs:676 (the column is documented advisory at :672-674) and engine/webhook_notifier.rs:388 (falls back to the ORIGINAL string, losing nothing) — because separating them needs knowledge of what the column means, which no matcher has. THE PAREN WINDOW MUST NEST TWO DEEP: from_str(&r.get::<_, String>(2)?) is a real argument shape in this tree (bench/athena_validate.rs:56) and a flat [^()]{0,240} misses it. CONVERGENCE, measured the same day: brainiac has 46 serde_json::from_str sites across 7 crates and ZERO matches for this pattern — the same author's other Rust codebase propagates every one; vibeman has exactly 1. That is an INVERSION, not agreement, and it is the strongest evidence in this document that the practice is wrong rather than merely untidy. LEGAL DESTINATIONS the pattern leaves unmatched by construction: (1) propagate — `?` or `.map_err(AppError::from)?`; (2) degrade OUT LOUD — .unwrap_or_else(|e| { tracing::warn!(error = %e, \"...\"); default }), which db/src/repos/resources/triggers.rs:658,866 and engine/src/optimizer.rs:159 already do; (3) .ok() into an Option, which keeps 'we did not get it' representable. CORRECT END STATE is not zero — some columns are genuinely advisory — so this rule RATCHETS; it must not be deleted at 0."
       },
       "baseline": {
-        "files": 38,
-        "matches": 49
+        "files": 37,
+        "matches": 47
       },
       "floor": 500
     },
@@ -5598,7 +5610,7 @@
       },
       "baseline": {
         "files": 110,
-        "matches": 369
+        "matches": 368
       },
       "floor": 900
     },

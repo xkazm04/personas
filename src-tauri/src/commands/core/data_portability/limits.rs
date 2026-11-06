@@ -116,7 +116,7 @@ pub(crate) const ATHENA_PORTABLE_PREF_KEYS: [&str; 3] = [
 /// Table and column names that must never appear as a field name anywhere in
 /// the Athena section.
 #[cfg(test)]
-pub(crate) const ATHENA_FORBIDDEN_NAMES: [&str; 22] = [
+pub(crate) const ATHENA_FORBIDDEN_NAMES: [&str; 24] = [
     // 2 — machine-local
     "claude_session_id",
     "companion_known_project",
@@ -138,6 +138,10 @@ pub(crate) const ATHENA_FORBIDDEN_NAMES: [&str; 22] = [
     "companion_background_job",
     "companion_night_plan",
     "companion_night_event",
+    // The standup (spark app-standup): a plan revision drives THIS machine's
+    // charters and fleet queue, and its event ledger is that run's audit.
+    "companion_standup",
+    "companion_standup_event",
     "companion_active_connector",
     "companion_plugin_toggle",
     "companion_fts",

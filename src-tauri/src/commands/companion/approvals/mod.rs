@@ -16,7 +16,7 @@
 //!      and an episode is logged with the rejection reason.
 //!
 //! Pending rows are also inserted by non-Athena producers (backlog_triage,
-//! incident_diagnosis, night_plan, and the management API's KP bridge —
+//! incident_diagnosis, and the management API's KP bridge —
 //! `POST /api/kp/persona-requests` → action `kp_hire_request`); they reuse
 //! the same `{action, params, rationale}` payload shape and flow above.
 
@@ -175,7 +175,6 @@ mod approval_exec_devices;
 mod approval_exec_fleet;
 mod approval_exec_knowledge;
 mod approval_exec_lifecycle;
-mod approval_exec_night;
 mod approval_exec_ship;
 mod approval_headless;
 mod approval_lifecycle;
@@ -198,7 +197,6 @@ pub(crate) use approval_exec_devices::*;
 pub use approval_exec_fleet::*;
 pub(crate) use approval_exec_knowledge::*;
 pub use approval_exec_lifecycle::*;
-pub(crate) use approval_exec_night::*;
 pub use approval_exec_ship::*;
 pub(crate) use approval_headless::*;
 pub use approval_lifecycle::*;

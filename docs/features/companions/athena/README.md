@@ -25,8 +25,95 @@ TTS) are unavailable and say so; identity and constitution are never written fro
 | Setup | Global toggles such as footer icon visibility, chime, and beta self-improve exposure | `sub_setup/SetupPanel.tsx`, `companionPluginSlice.ts` |
 | Memory | Full-page brain viewer over episodes, doctrine, identity, and constitution, with sibling Sleep cycles and Health lanes | `sub_memory/MemoryPanel.tsx`, `BrainViewer.tsx`, `BrainCycleReports.tsx`, `BrainHealthPanel.tsx` |
 | Voice | Engine picker (Kokoro / Pocket TTS) + per-engine voice setup | `sub_voice/VoicePanel.tsx`, `commands/companion/voice.rs` |
+| Standup | Plan the day and night per project, arm it through a go-gate, read what moved since — see **Standup** below | `sub_standup/`, `companion/standup/`, `commands/companion/standup.rs` |
 | Panel | Chat, streaming, quick replies, approvals, playback | `chat/` (see **Panel structure** below), `CompanionToolbar.tsx`, `ApprovalCard.tsx` |
 | Avatar/footer | Athena's live video avatar **is** the footer button (left cluster, immediately right of the Network Settings icon) — tap opens/collapses the panel (or summons/hides the orb), **press-and-hold dictates a voice turn without opening the panel**. Avatar reflects state (idle/thinking/speaking); chime, pending playback, thread-attention badge. No text surface — see "Two dimensions" below | `AthenaAvatar.tsx`, `CompanionFooterIcon.tsx`, `chime.ts`, `voicePlayback.ts`, `useDictation.ts`, `companionStore.ts` (`voiceTurnRequest`) |
+
+## Standup (Companions > Athena > Standup)
+
+One time of day, or as many as the operator wants, to reconcile decisions and direction for the
+next day and night. Athena recalls what moved since the last standup, proposes 2-4 directions per
+registered project plus any agent changes, the operator resolves them on cards and arms the plan
+through a go-gate. The armed plan drives the in-app machinery (App Master charters, the attention
+loop, the fleet queue) on a day/night timeline, while a supervisor watches it and the machine's
+idle capacity is backfilled. Standup absorbed Night Shift's planning (see below). Spark
+`app-standup`; backend `src-tauri/src/companion/standup/`, commands
+`src-tauri/src/commands/companion/standup.rs`, IPC `src/api/companion/standup.ts`.
+
+**The page decides; chat is optional.** One card per registered, switched-on project (status
+`active`, project switch on). Each card carries an evidence line, Athena's proposals (her pick
+marked) and the operator's resolution: pick a proposal, edit it, write one, or skip; plus the
+window (`day` / `night` / `any`), an optional earliest start and a priority. "Talk it through"
+opens Athena in her own conversation bound to that project (seeded with the evidence and the
+proposals; a second click reuses the thread), and the agreed direction lands back on the card.
+Agent changes are cards too: `create_agent` (name, role, charter) and `retune_agent` (a steward's
+pacing). The away rules sit beside the cards: which decisions Athena may take herself while the
+operator is away (default: scope, goals, dependency bumps, retunes, creating an agent) and which
+she parks for them (default: money, data, schema, secrets, and every push), plus the only push
+targets allowed (default: none).
+
+**Revisions, not overwrites.** Each standup is a row per revision (`companion_standup`). Opening
+with nothing live starts revision 1 as a draft; opening while a draft is live returns that draft;
+opening while a plan is ARMED writes revision n+1 as a draft with every card copied (their
+decisions kept) plus a card for any project registered since. Arming n+1 marks n `superseded`;
+sessions n started keep running, and cards carried over unchanged are not dispatched again. Only
+a draft can be edited. Ending a standup closes it (and the armed revision a draft amends) and
+stores the final report.
+
+**Proposals.** Asking for proposals returns at once; a background job asks the Athena engine, three
+projects at a time, and cards fill in as each answer lands (`standup://updated` per card). The
+evidence line is built from real state, never by the model: the project's last three commits, its
+ahead/behind against the upstream as of the last fetch (no fetch is run), its App Master charter
+and open asks, and a live headless App Master if one holds it. A project whose call fails keeps
+its evidence and no proposals; the operator types the direction.
+
+**The go-gate.** Arming is idempotent per revision (a second arm changes nothing). For each
+accepted or edited direction:
+- the project has an active App Master charter: the direction becomes the charter's first outcome
+  and its attention loop is switched on for that charter (the global attention-loop autonomy
+  switch still applies);
+- otherwise: one fleet session is queued through the fleet's single admission door with the
+  direction as its task, starting now for `day`/`any` and at tonight's start for `night` (the
+  `from` time of Athena's quiet-hours ritual, else 22:00). Night work carries the Night Shift
+  origin on the fleet board.
+
+A project whose headless App Master (`/appmaster` in a terminal) is live is refused: the card
+stays decided, the refusal is recorded as an event with the reason, and the next revision retries
+it. Agent creates go through the existing one-shot build approval, filed and approved by the
+go-gate itself (stamped `standup-go-gate`, so nobody mistakes it for a click); retunes set the
+persona's charter pacing. Each act writes one event to the standup's ledger, and the decision round
+is banked as one Athena memory episode.
+
+**While away.** A supervisor sweeps every 20 minutes and checks drift hourly against each armed
+direction (a corrective note when a project wandered). Every ask Athena meets is classified
+against the away rules with a real check: a delegated class she may decide, a parked class waits
+for the operator, and a push to a target the rules do not name always parks. She may create an
+agent while away when a goal needs one; such a persona is tagged `origin = standup-away` and listed
+in the report. Every away act is a `companion_standup_event` row.
+
+**Resources.** The machine's CPU, RAM and GPU are sampled into one-minute rollups (14 days kept),
+which feed a forecast that lays each card on the day/night timeline from the agents' measured
+profiles. When the machine idles (CPU under 35% and GPU under 20% for 3 minutes, settings
+`standup.dead_spot_cpu_pct` / `_gpu_pct` / `_minutes`), queued filler or not-yet-started accepted
+work is started early, within the fleet's cap, RAM gate and GPU token.
+
+**The report.** "Since last standup" leads the page: per project, the commits that landed, what is
+still running, the asks parked for the operator with their options, the next decision they own,
+and the agents created. It replaces Night Shift's morning report.
+
+**Night Shift absorbed.** The evening night-plan job, its plan approval card and the morning report
+are retired: the night is planned on this page. A plan card filed before the update resolves with
+a message saying so and starts nothing; the plan-hour, wake-hour, max-sessions and plan-last
+settings are gone. Night Shift's unattended-guidance and review halves remain for a window that
+was open at the update.
+
+**The terminal standup is a client.** `/athena --standup` reads and arms this plan while the app
+runs, through local HTTP doors behind the bridge token (`GET /companion/standup/current`,
+`POST .../open`, `PATCH .../item`, `POST .../arm`, `POST .../end`). Only while the app is closed
+does it keep file mode (`~/.personas/standup/<date>/PLAN.json`); the next time the app reads its
+standup it imports the newest such file, if it is younger than every revision the app holds, as a
+DRAFT revision (never armed: the operator arms it on the page). A draft already open is never
+imported over.
 
 ## Create Athena (guided onboarding)
 

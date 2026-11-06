@@ -13,6 +13,7 @@ pub mod deployment_history;
 #[cfg(feature = "p2p")]
 pub mod exposure;
 pub mod external_api_keys;
+pub mod host_utilization;
 #[cfg(feature = "p2p")]
 pub mod identity;
 pub mod mcp_gateways;
