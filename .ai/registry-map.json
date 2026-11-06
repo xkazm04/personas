@@ -30245,12 +30245,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:70 coverage is counted client-side from listMemoryNodes(...,500), which the backend orders by updated_at DESC LIMIT 500 (src-tauri/src/commands/infrastructure/memory_ledger.rs:556) and never filters to the 30d the :30 comment claims, so a context beyond the cap reads as uncovered and a context with only stale nodes reads as covered",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:70 Coverage per context is counted client-side from one capped list. The backend clamps the requested 500 to MAX_LIST=50 and orders by updated_at DESC, with no 30-day filter. Any context outside the 50 most recently updated nodes reads as 0 (uncovered) and gets dispatched again, a context with only old nodes reads as covered, and the cut is never reported.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "mcp-tools",
@@ -33504,12 +33503,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:213 a team-bound project with zero memories records no snapshot and memory_health_overview reads only the latest snapshot (:266), so a never-covered project is absent from the list and one whose memories all retired keeps serving its last healthy score",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:213 A team-bound project with zero live memories writes no snapshot (only a scan-summary counter), and memory_health_overview returns only each project's latest snapshot. A never-populated project is missing from the list, and a project whose memories all decayed out keeps serving its last healthy score indefinitely.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "cost-metering",
@@ -33986,11 +33984,7 @@
           "confidence": "strong",
           "state": "not-applicable",
           "evidence": "src/features/schedules/libs/calendarHelpers.ts:300 The code projects cron fire times and matches past slots to execution records within a 90s tolerance for an operator calendar, with no agent store, capture, distillation or recall. A case-insensitive search of src/features/schedules found 0 hits for memory, recall, episode, belief and distill.",
-          "evaluatedAt": "2026-10-24",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-24"
         },
         {
           "subject": "analytics-time-windows",
@@ -36617,12 +36611,11 @@
           "changedAt": "2026-10-25",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/stores/slices/overview/memorySlice.ts:190 mergeMemories drives merge with deleteIdA/deleteIdB, which hard-DELETEs both originals (src-tauri/db/src/repos/core/memories.rs:1662, :1666) with no tombstone or archive tier; persona_memory_sources cascade away (src-tauri/db/src/migrations/incremental/e16_living_agent.rs) so the merged belief's episode grounding is lost",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/stores/slices/overview/memorySlice.ts:192 The merge door writes one new row and the backend hard-DELETEs both originals in the same transaction (memories.rs:1662/1666). Nothing is marked superseded or archived, and no tombstone or lineage link is written, so the merged belief cannot enumerate what it replaced and a bad merge cannot be audited or undone.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",

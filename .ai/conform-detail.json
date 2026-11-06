@@ -13608,14 +13608,34 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T17:22:13.000Z",
-      "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T01:10:01.769Z",
+      "worker": "c92d0d2f-3225-43ab-8ee2-6850991bedd9",
       "techniques": [
         {
           "technique": "coverage-instrumentation",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:213 'Honest zeros': a subject with no memory must report never, not be dropped; the denominator is the snapshot rows, not the tracked population"
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:213 The empty-corpus case is counted only in the transient scan summary. The persisted overview never names the hole."
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:268 The latest-snapshot read gives no notice that a project was skipped or has gone empty since that snapshot."
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:100 Staleness is measured against a per-item half-life applied to last access, not a fixed age."
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:114 Unconfirmed proposals live in their own table, separate from persona_memories."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:151 The governance pillar penalises the backlog and age of the human-review queue."
         }
       ],
       "superseded": [
@@ -13632,6 +13652,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by 64299ba0-27fd-40c1-8af0-ddc7df52b12c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_health.rs:213 a team-bound project with zero memories records no snapshot and memory_health_overview reads only the latest snapshot (:266), so a never-covered project is absent from the list and one whose memories all retired keeps serving its last healthy score",
+          "evaluatedAt": "2026-10-21T17:22:13.000Z",
+          "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+          "reason": "replaced by c92d0d2f-3225-43ab-8ee2-6850991bedd9"
         }
       ]
     },
@@ -16477,9 +16504,8 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T00:21:27.533Z",
-      "worker": "37ccc5a0-b8db-413c-8d04-902e24c0a06b",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T01:10:01.769Z",
       "techniques": [],
       "superseded": [
         {
@@ -16495,8 +16521,21 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
           "reason": "replaced by 37ccc5a0-b8db-413c-8d04-902e24c0a06b"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/schedules/libs/calendarHelpers.ts:300 The code projects cron fire times and matches past slots to execution records within a 90s tolerance for an operator calendar, with no agent store, capture, distillation or recall. A case-insensitive search of src/features/schedules found 0 hits for memory, recall, episode, belief and distill.",
+          "evaluatedAt": "2026-10-24T00:21:27.533Z",
+          "worker": "37ccc5a0-b8db-413c-8d04-902e24c0a06b",
+          "reason": "replaced by c92d0d2f-3225-43ab-8ee2-6850991bedd9"
         }
-      ]
+      ],
+      "withdrawn": {
+        "worker": "c92d0d2f-3225-43ab-8ee2-6850991bedd9",
+        "state": "not-applicable",
+        "at": "2026-11-06T01:10:33.603136+00:00",
+        "reason": "reviewer (sonnet): The anchor calendarHelpers.ts:300 is only the SLOT_RUN_TOLERANCE_MS constant, so it is incidental and does not show that agent memory is absent; the claim rests only on a keyword grep, which returned zero hits when I re-ran it."
+      }
     },
     "89eddf81-0c57-441d-a07d-de36bf022cb5/agent-memory": {
       "context": "display-data-formatters",
@@ -20993,17 +21032,21 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T19:48:16.584Z",
-      "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T01:10:01.769Z",
+      "worker": "c92d0d2f-3225-43ab-8ee2-6850991bedd9",
       "techniques": [
         {
           "technique": "coverage-instrumentation",
           "verdict": "deviation",
-          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:72 denominator is every project context (right), but the numerator is a truncated, unwindowed row list: a false zero and a false non-zero, neither marked as a failure"
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:30 The instrument claims a 30-day freshness count but actually measures membership in a global newest-50 window, so a zero does not mean the context is uncovered."
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/commands/infrastructure/memory_ledger.rs:652 The cap silently cuts 500 down to 50. No notice reaches the reader saying content was truncated."
         }
       ],
-      "registryProposal": "Prior not-applicable verdict was wrong for this context: the skills page hosts a coverage instrument over the memory ledger. Technique-shaped match the lexical matcher missed; coverage-instrumentation could name truncated-numerator as an honest-zero failure case.",
       "superseded": [
         {
           "state": "not-applicable",
@@ -21018,6 +21061,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
           "reason": "replaced by ffe8a68a-826a-4845-ab8e-4e952c701b13"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_skills/analytics/CoveragePipeline.tsx:70 coverage is counted client-side from listMemoryNodes(...,500), which the backend orders by updated_at DESC LIMIT 500 (src-tauri/src/commands/infrastructure/memory_ledger.rs:556) and never filters to the 30d the :30 comment claims, so a context beyond the cap reads as uncovered and a context with only stale nodes reads as covered",
+          "evaluatedAt": "2026-10-22T19:48:16.584Z",
+          "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
+          "reason": "replaced by c92d0d2f-3225-43ab-8ee2-6850991bedd9"
         }
       ]
     },
@@ -26190,25 +26240,34 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:42:36.000Z",
-      "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T01:10:01.769Z",
+      "worker": "c92d0d2f-3225-43ab-8ee2-6850991bedd9",
       "techniques": [
-        {
-          "technique": "decay-and-forgetting",
-          "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge deletes instead of demoting; forgetting orphans provenance"
-        },
         {
           "technique": "rollup-compaction",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 the superseded originals become unreachable rather than out of default reads"
+          "evidence": "src/stores/slices/overview/memorySlice.ts:192 The technique requires that the members remain, linked, auditable and out of default reads. Here the members are destroyed even though a non-default archive tier exists (:121)."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 Deletion is supposed to be reserved for redaction. The merge goes straight to DELETE with no archive and no tombstone, although the single-delete path does write a fact tombstone (memories.rs:1430-1436)."
         },
         {
           "technique": "consolidation",
-          "verdict": "not realized: originals deleted not superseded",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1661",
-          "carriedFrom": "2026-10-14"
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1666 The technique says supersede, don't replace. The second original is removed instead of being marked superseded-by the merged id, so the lineage is lost."
+        },
+        {
+          "technique": "scope-before-similarity",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1581 The write door re-checks that both members share one persona scope. The merged row takes its persona from its members (:1604), not from the caller's input."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/overview/memorySlice.ts:263 The LLM reflection pass only proposes. Live rows change only when the user applies a proposal."
         }
       ],
       "superseded": [
@@ -26225,6 +26284,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by d424e3fc-5423-4b76-b2b8-c767a78d3d1a"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/overview/memorySlice.ts:190 mergeMemories drives merge with deleteIdA/deleteIdB, which hard-DELETEs both originals (src-tauri/db/src/repos/core/memories.rs:1662, :1666) with no tombstone or archive tier; persona_memory_sources cascade away (src-tauri/db/src/migrations/incremental/e16_living_agent.rs) so the merged belief's episode grounding is lost",
+          "evaluatedAt": "2026-10-22T02:42:36.000Z",
+          "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
+          "reason": "replaced by c92d0d2f-3225-43ab-8ee2-6850991bedd9"
         }
       ]
     },
