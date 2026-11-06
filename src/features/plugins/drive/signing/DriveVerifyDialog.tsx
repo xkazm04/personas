@@ -16,6 +16,8 @@ import { BaseModal } from "@/features/shared/components/modals";
 
 import type { useSigning } from "./useSigning";
 
+import Button from '@/features/shared/components/buttons/Button';
+
 const TITLE_ID = "drive-verify-dialog-title";
 
 interface Props {
@@ -86,14 +88,15 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
           <div id={TITLE_ID} className="typo-section-title flex-1 truncate">
             {t.plugins.doc_signing.verify_heading}
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-input text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors focus-ring"
             aria-label={t.plugins.drive.cancel}
+            variant="ghost"
+            size="icon-sm"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-3">
@@ -146,33 +149,36 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
 
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-primary/15">
           {phase === "done" ? (
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-input bg-status-info/20 text-status-info border border-status-info/40 typo-body hover:bg-status-info/20 transition-colors focus-ring"
+              variant="secondary"
+              size="sm"
             >
               {t.plugins.drive.confirm}
-            </button>
+            </Button>
           ) : (
             <>
-              <button
+              <Button
                 type="button"
                 onClick={onClose}
                 disabled={phase === "verifying"}
-                className="px-3 py-1.5 rounded-input typo-body text-foreground hover:bg-secondary/60 disabled:opacity-50 transition-colors focus-ring"
+                variant="ghost"
+                size="sm"
               >
                 {t.plugins.drive.cancel}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleVerify}
                 disabled={phase === "verifying" || !sidecarJson.trim()}
-                className="px-3 py-1.5 rounded-input bg-status-info/20 text-status-info border border-status-info/40 typo-body hover:bg-status-info/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-ring"
+                variant="secondary"
+                size="sm"
               >
                 {phase === "verifying"
                   ? t.plugins.doc_signing.verifying
                   : t.plugins.doc_signing.verify_signature}
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -250,7 +256,7 @@ function VerifyResultCard({ result }: { result: VerifyDocumentResult }) {
       </dl>
 
       {result.error && (
-        <div className="mt-3 px-2 py-1.5 rounded bg-status-error/20 typo-body text-status-error font-mono">
+        <div className="mt-3 px-2 py-1.5 rounded-interactive bg-status-error/20 typo-body text-status-error font-mono">
           {result.error}
         </div>
       )}

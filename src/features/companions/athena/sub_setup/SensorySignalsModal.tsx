@@ -13,6 +13,8 @@ import {
 } from '@/api/companion';
 import { silentCatch, extractMessage } from '@/lib/silentCatch';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * "What did Athena see?" view. Lists ambient signals captured by the
  * companion's desktop-awareness watchers (clipboard / file changes /
@@ -136,14 +138,15 @@ export function SensorySignalsModal({
               {t.athena.sensory_signals_subtitle}
             </p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
             aria-label={t.common.close}
+            variant="ghost"
+            size="icon-sm"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </header>
 
         <div className="flex flex-wrap gap-1.5 px-5 py-2.5 border-b border-foreground/10 shrink-0">
@@ -253,15 +256,17 @@ function SignalRow({
           </div>
         ) : null}
       </div>
-      <button
+      <Button
         type="button"
         onClick={onDelete}
-        className="shrink-0 p-1.5 rounded-interactive text-foreground hover:text-status-error hover:bg-status-error/10 transition-colors focus-ring"
         aria-label={t.athena.sensory_signals_delete_aria}
-        title={t.athena.sensory_signals_delete_aria}
+        tooltip={t.athena.sensory_signals_delete_aria}
+        variant="ghost"
+        size="icon-sm"
+        className="shrink-0"
       >
         <Trash2 className="w-3.5 h-3.5" />
-      </button>
+      </Button>
     </li>
   );
 }

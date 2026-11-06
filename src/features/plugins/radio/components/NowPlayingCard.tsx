@@ -9,6 +9,9 @@ import { openExternalUrl } from '@/api/system/system';
 import { silentCatch } from '@/lib/silentCatch';
 import EqualizerBars from './EqualizerBars';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 interface NowPlayingCardProps {
   nowPlaying: NowPlaying;
   status: PlayStatus;
@@ -97,15 +100,17 @@ export default function NowPlayingCard({
             {nowPlaying.station.name}
           </p>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onClose}
-          className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 transition-colors shrink-0"
           aria-label={t.radio.collapse}
-          title={t.radio.collapse}
+          tooltip={t.radio.collapse}
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0"
         >
           <X className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       <div className="px-4 py-3 space-y-3 border-t border-primary/8">
@@ -167,44 +172,47 @@ export default function NowPlayingCard({
         {!isYoutube && <EqualizerBars accentColor={accent} isPlaying={isPlaying} />}
 
         <div className="flex items-center justify-center gap-1.5">
-          <button
+          <Button
             type="button"
             onClick={onPrev}
             disabled={!isYoutube}
-            className="w-8 h-8 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
             aria-label={t.radio.prev_track}
-            title={isYoutube ? t.radio.prev_track : t.radio.prev_track_disabled}
+            tooltip={isYoutube ? t.radio.prev_track : t.radio.prev_track_disabled}
+            variant="ghost"
+            size="icon-sm"
           >
             <SkipBack className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={onTogglePlay}
-            className={`w-10 h-10 rounded-full flex items-center justify-center text-foreground transition-transform hover:scale-105 ${
-              isBuffering ? 'animate-pulse' : ''
-            }`}
-            style={{ background: accent }}
-            aria-label={isPlaying ? t.radio.pause : t.radio.play}
-            title={isBuffering ? t.radio.buffering : isPlaying ? t.radio.pause : t.radio.play}
-          >
-            {isBuffering ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : isPlaying ? (
-              <Pause className="w-4 h-4" />
-            ) : (
-              <Play className="w-4 h-4 translate-x-0.5" />
-            )}
-          </button>
-          <button
+          </Button>
+          <Tooltip content={isBuffering ? t.radio.buffering : isPlaying ? t.radio.pause : t.radio.play}>
+            <button
+              type="button"
+              onClick={onTogglePlay}
+              className={`w-10 h-10 rounded-full flex items-center justify-center text-foreground transition-transform hover:scale-105 ${
+                isBuffering ? 'animate-pulse' : ''
+              }`}
+              style={{ background: accent }}
+              aria-label={isPlaying ? t.radio.pause : t.radio.play}
+            >
+              {isBuffering ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : isPlaying ? (
+                <Pause className="w-4 h-4" />
+              ) : (
+                <Play className="w-4 h-4 translate-x-0.5" />
+              )}
+            </button>
+          </Tooltip>
+          <Button
             type="button"
             onClick={onNext}
             disabled={!isYoutube}
-            className="w-8 h-8 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
             aria-label={t.radio.next_track}
-            title={isYoutube ? t.radio.next_track : t.radio.next_track_disabled}
+            tooltip={isYoutube ? t.radio.next_track : t.radio.next_track_disabled}
+            variant="ghost"
+            size="icon-sm"
           >
             <SkipForward className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -242,17 +250,18 @@ export default function NowPlayingCard({
 
       {nowPlaying.station.sourceUrl && (
         <div className="border-t border-primary/8 px-4 py-2">
-          <button
+          <Button
             type="button"
             onClick={() => {
               const url = nowPlaying.station.sourceUrl;
               if (url) openExternalUrl(url).catch(silentCatch('radio:open-source'));
             }}
-            className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-ink-2 transition-colors focus-ring"
+            variant="ghost"
+            size="sm"
           >
             <ExternalLink className="w-3 h-3" />
             {nowPlaying.station.sourceLabel ?? t.radio.open_source}
-          </button>
+          </Button>
         </div>
       )}
     </div>

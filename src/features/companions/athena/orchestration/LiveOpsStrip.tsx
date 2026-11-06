@@ -13,6 +13,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useOperativeMemoryStore } from './operativeMemoryStore';
 import { parseDigest, type ParsedOp, type ParsedSession } from './parseDigest';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * D7 — Live ops view in the chat panel. Renders the operative-memory
  * digest (the same text Athena sees in her prompt every turn) as a
@@ -52,10 +55,12 @@ export function LiveOpsStrip() {
 
   return (
     <div className="border-b border-border/40 bg-secondary/10">
-      <button
+      <Button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-foreground hover:bg-secondary/30 transition-colors"
+        variant="ghost"
+        size="sm"
+        block
       >
         {expanded ? (
           <ChevronDown className="size-3.5 shrink-0" />
@@ -74,7 +79,7 @@ export function LiveOpsStrip() {
                 String(opCount),
               )}
         </span>
-      </button>
+      </Button>
       {expanded && (
         <div className="max-h-[40vh] overflow-y-auto px-3 py-2 space-y-1.5">
           {parsed.length > 0 ? (
@@ -120,12 +125,13 @@ function OpCard({
         data-op-id={op.id8}
       >
         <Chevron className="size-3 shrink-0 mt-0.5" />
-        <span
-          className={`shrink-0 rounded-interactive px-1.5 py-0 typo-caption ${statusTone}`}
-          title={op.status}
-        >
-          {op.status}
-        </span>
+        <Tooltip content={op.status}>
+          <span
+            className={`shrink-0 rounded-interactive px-1.5 py-0 typo-caption ${statusTone}`}
+          >
+            {op.status}
+          </span>
+        </Tooltip>
         <div className="flex-1 min-w-0">
           <div className="truncate text-ink-2">{op.intent}</div>
           <div className="flex items-baseline gap-1.5 text-foreground typo-caption">

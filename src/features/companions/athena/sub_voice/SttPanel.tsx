@@ -135,7 +135,7 @@ function EngineButton({ active, onClick, icon, label, caption, disabled = false 
       onClick={onClick}
       disabled={disabled}
       aria-pressed={active}
-      className={`text-left rounded-card border p-3 transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${
+      className={`text-left rounded-card border p-3 transition-colors focus-ring disabled:is-disabled ${
         active
           ? 'border-hair-2 bg-surface-2'
           : 'border-foreground/10 bg-secondary/20 hover:bg-secondary/40'
@@ -263,15 +263,16 @@ function WhisperConfig() {
         }
         status={statusLoading ? 'neutral' : status?.installed ? 'success' : 'warning'}
         action={
-          <button
+          <Button
             type="button"
             onClick={() => void refreshStatus()}
-            className="p-1.5 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground transition-colors focus-ring"
-            title={t.athena.stt_refresh}
+            tooltip={t.athena.stt_refresh}
             aria-label={t.athena.stt_refresh}
+            variant="ghost"
+            size="icon-sm"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         }
       >
         <div className="px-1 py-2 space-y-2">
@@ -405,23 +406,25 @@ function WhisperConfig() {
                     <div className="shrink-0 flex items-center gap-1.5">
                       {m.isDownloaded ? (
                         <>
-                          <button
+                          <Button
                             type="button"
                             onClick={() => setModelId(m.modelId)}
                             disabled={selected}
-                            className="px-2.5 py-1.5 rounded-interactive typo-caption bg-surface-2 hover:bg-surface-2 text-ink-2 transition-colors focus-ring disabled:opacity-40"
+                            variant="ghost"
+                            size="sm"
                           >
                             {t.athena.stt_model_select}
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
                             onClick={() => void onDelete(m.modelId)}
-                            className="p-1.5 rounded-interactive text-foreground hover:text-status-error hover:bg-status-error/10 transition-colors focus-ring"
-                            title={t.athena.stt_model_delete}
+                            tooltip={t.athena.stt_model_delete}
                             aria-label={t.athena.stt_model_delete}
+                            variant="ghost"
+                            size="icon-sm"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          </Button>
                         </>
                       ) : downloading ? (
                         <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
@@ -429,16 +432,17 @@ function WhisperConfig() {
                           {pct != null ? `${pct}%` : t.athena.stt_model_downloading}
                         </span>
                       ) : (
-                        <button
+                        <Button
                           type="button"
                           onClick={() => void onDownload(m.modelId)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption bg-secondary/50 hover:bg-secondary/70 border border-foreground/10 text-foreground transition-colors focus-ring"
+                          variant="secondary"
+                          size="sm"
                         >
                           {failed ? <XCircle className="w-3.5 h-3.5 text-status-error" /> : <Download className="w-3.5 h-3.5" />}
                           {failed
                             ? t.athena.stt_model_failed
                             : t.athena.stt_model_download}
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>

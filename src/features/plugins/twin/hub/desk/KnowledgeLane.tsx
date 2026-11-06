@@ -100,10 +100,10 @@ function KnowledgeGhost() {
       {[0, 1, 2, 3].map((i) => (
         <li key={i} className="flex items-start gap-2 rounded-card border border-border bg-card/40 px-3 py-2 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}>
-          <span className="w-5 h-5 rounded-full bg-primary/[0.06] flex-shrink-0" />
+          <span className="w-5 h-5 rounded-full bg-surface-2 flex-shrink-0" />
           <span className="flex-1 space-y-1.5">
-            <span className="block h-3 w-2/5 rounded bg-primary/[0.06]" />
-            <span className="block h-3 w-4/5 rounded bg-primary/[0.06]" />
+            <span className="block h-3 w-2/5 rounded-interactive bg-surface-2" />
+            <span className="block h-3 w-4/5 rounded-interactive bg-surface-2" />
           </span>
         </li>
       ))}

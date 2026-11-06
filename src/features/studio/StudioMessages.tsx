@@ -9,6 +9,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useStudioStore } from './studioStore';
 import StudioDecision from './StudioDecision';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 // Smooth reveal of a growing stream (1b). `count` chases target.length; the step
 // scales with the backlog so a big CLI chunk catches up without lagging, while a
 // trickle types at a readable pace. Resets when the stream clears at the start of
@@ -189,12 +191,14 @@ export default function StudioMessages({ expanded = false }: { expanded?: boolea
   return (
     <div className="pointer-events-none flex flex-col items-start gap-1.5">
       {canExpand && (
-        <button
+        <Button
           type="button"
           data-testid="studio-messages-toggle"
           onClick={() => setShowAll((v) => !v)}
           aria-expanded={showAll}
-          className="pointer-events-auto inline-flex items-center gap-1 self-start rounded-interactive border border-border bg-background/85 px-2 py-0.5 typo-caption text-ink-2 shadow-elevation-2 backdrop-blur transition-colors hover:text-foreground"
+          variant="secondary"
+          size="sm"
+          className="self-start"
         >
           <History className="h-3 w-3" />
           {/* The count/plural pair is selected at the CALL SITE, per the repo's
@@ -209,7 +213,7 @@ export default function StudioMessages({ expanded = false }: { expanded?: boolea
                   : t.studio.earlier_messages_other,
                 { count: history.length },
               )}
-        </button>
+        </Button>
       )}
 
       <Collapse

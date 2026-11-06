@@ -30,6 +30,8 @@ import { extractMessage, silentCatch, toastCatch } from '@/lib/silentCatch';
 import { DebtText } from '@/i18n/DebtText';
 
 
+import Button from '@/features/shared/components/buttons/Button';
+
 export default function SetupPanel() {
   const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
@@ -219,30 +221,32 @@ export default function SetupPanel() {
                 <p className="typo-heading text-status-success">
                   {tx(t.plugins.obsidian_brain.connected_to_vault, { name: `“${activeVaultName ?? activeVaultPath}”` })}
                 </p>
-                <p className="typo-caption text-foreground truncate">{activeVaultPath}</p>
+                <p className="typo-caption text-ink-2 truncate">{activeVaultPath}</p>
               </div>
             </div>
           )}
 
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={detectVaults}
               disabled={detecting}
               data-testid="obsidian-detect-vaults"
-              className="flex items-center gap-2 px-4 py-2 rounded-card bg-surface-2 text-ink-2 border border-hair-2 hover:bg-surface-2 transition-colors disabled:opacity-50 focus-ring"
+              variant="secondary"
+              size="sm"
             >
               {detecting ? <LoadingSpinner size="sm" /> : <Search className="w-4 h-4" />}
               {detecting ? t.plugins.obsidian_brain.detecting : t.plugins.obsidian_brain.auto_detect}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={browseFolder}
-              className="flex items-center gap-2 px-4 py-2 rounded-card bg-secondary/40 text-foreground hover:bg-secondary/60 transition-colors focus-ring"
+              variant="ghost"
+              size="sm"
             >
               <FolderOpen className="w-4 h-4" />
               {t.plugins.obsidian_brain.browse_button}
-            </button>
+            </Button>
           </div>
 
           {/* Detected vaults */}
@@ -257,14 +261,14 @@ export default function SetupPanel() {
                   className={`w-full text-left px-3 py-2.5 rounded-modal border transition-colors focus-ring ${
                     vaultPath === v.path
                       ? 'border-hair-2 bg-surface-2'
-                      : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/20'
+                      : 'border-hair hover:border-hair hover:bg-surface-1'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <ActivityDot tone={vaultPath === v.path ? 'active' : 'off'} />
                     <div className="min-w-0">
                       <p className="typo-heading typo-card-label truncate">{v.name}</p>
-                      <p className="typo-caption text-foreground truncate">{v.path}</p>
+                      <p className="typo-caption text-ink-2 truncate">{v.path}</p>
                     </div>
                   </div>
                 </button>
@@ -281,18 +285,19 @@ export default function SetupPanel() {
               placeholder={t.plugins.obsidian_brain.vault_path_placeholder}
               aria-label={t.plugins.obsidian_brain.vault_path_placeholder}
               data-testid="obsidian-vault-path-input"
-              className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-ink-3 focus-ring transition-all"
+              className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-hair text-ink-1 typo-body placeholder:text-ink-3 focus-ring transition-all"
             />
-            <button
+            <Button
               type="button"
               onClick={testConnection}
               disabled={!vaultPath || testing}
               data-testid="obsidian-test-connection"
-              className="flex items-center gap-2 px-4 py-2 rounded-card bg-status-success/10 text-status-success border border-status-success/20 hover:bg-status-success/20 transition-colors disabled:opacity-50 focus-ring"
+              variant="secondary"
+              size="sm"
             >
               {testing ? <LoadingSpinner size="sm" /> : <CheckCircle2 className="w-4 h-4" />}
               {t.plugins.obsidian_brain.test}
-            </button>
+            </Button>
           </div>
 
           {/* Connection result */}
@@ -311,7 +316,7 @@ export default function SetupPanel() {
                 {connectionResult.valid ? (
                   <>
                     <p className="typo-heading text-status-success">{tx(t.plugins.obsidian_brain.connected_to_vault, { name: `“${connectionResult.vaultName}”` })}</p>
-                    <p className="typo-caption text-foreground">{tx(t.plugins.obsidian_brain.notes_found_count, { count: connectionResult.noteCount })}</p>
+                    <p className="typo-caption text-ink-2">{tx(t.plugins.obsidian_brain.notes_found_count, { count: connectionResult.noteCount })}</p>
                   </>
                 ) : (
                   <p className="typo-heading text-status-error">{connectionResult.error}</p>
@@ -346,7 +351,7 @@ export default function SetupPanel() {
           {/* Knowledge mirror — opt-in, only when Obsidian is available. Saves
               immediately (independent of the Save Configuration button). */}
           {availability?.available && mirrorConfig && (
-            <div className="pt-3 mt-1 border-t border-primary/10 space-y-3" data-testid="obsidian-knowledge-mirror">
+            <div className="pt-3 mt-1 border-t border-hair space-y-3" data-testid="obsidian-knowledge-mirror">
               <p className="typo-label text-ink-2">{t.plugins.obsidian_brain.knowledge_mirror}</p>
               {[
                 { key: 'executionKnowledge' as const, icon: <Network className="w-4 h-4 text-ink-2" />, label: t.plugins.obsidian_brain.mirror_execution_knowledge, desc: t.plugins.obsidian_brain.mirror_execution_knowledge_desc },
@@ -385,12 +390,12 @@ export default function SetupPanel() {
                   type="text"
                   value={field.value}
                   onChange={(e) => field.onChange(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body focus-ring transition-all"
+                  className="w-full px-3 py-1.5 rounded-modal bg-background/50 border border-hair text-ink-1 typo-body focus-ring transition-all"
                 />
               </div>
             ))}
           </div>
-          <div className="space-y-1.5 typo-caption text-foreground">
+          <div className="space-y-1.5 typo-caption text-ink-2">
             <p><DebtText k="auto_preview_4bf30626" /></p>
             <code className="block text-ink-2">{personasFolder}<DebtText k="auto_agentname_941ccfe3" />{memoriesFolder}<DebtText k="auto_fact_memory_title_md_d0042e52" /></code>
             {syncConnectors && (
@@ -401,16 +406,17 @@ export default function SetupPanel() {
       </SectionCard>
 
       {/* Save */}
-      <button
+      <Button
         type="button"
         onClick={saveConfig}
         disabled={saving || !connectionResult?.valid}
         data-testid="obsidian-save-config"
-        className="flex items-center gap-2 px-6 py-2.5 rounded-modal bg-surface-2 text-ink-2 border border-hair-2 hover:bg-surface-2 transition-colors disabled:opacity-40 focus-ring"
+        variant="secondary"
+        size="sm"
       >
         {saving ? <LoadingSpinner size="sm" /> : <Save className="w-4 h-4" />}
         {saving ? t.plugins.obsidian_brain.saving : t.plugins.obsidian_brain.save_configuration}
-      </button>
+      </Button>
       </div>
 
       <SavedConfigsSidebar

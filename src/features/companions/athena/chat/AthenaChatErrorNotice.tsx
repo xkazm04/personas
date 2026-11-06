@@ -11,6 +11,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { useAthenaStore } from '../athenaStore';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 export function AthenaChatErrorNotice({ onSend }: { onSend: (text: string) => void }) {
   const { t } = useTranslation();
   const sendError = useAthenaStore((s) => s.sendError);
@@ -22,7 +24,7 @@ export function AthenaChatErrorNotice({ onSend }: { onSend: (text: string) => vo
       <span className="min-w-0 break-words">
         {resolveErrorTranslated(t, sendError).message}
       </span>
-      <button
+      <Button
         type="button"
         onClick={() => {
           // On a failed turn the optimistic user bubble is still in `messages`,
@@ -35,12 +37,14 @@ export function AthenaChatErrorNotice({ onSend }: { onSend: (text: string) => vo
           onSend(lastUser.content);
         }}
         disabled={streaming}
-        className="shrink-0 inline-flex items-center gap-1 rounded-interactive border border-status-error/40 bg-status-error/10 hover:bg-status-error/20 px-2 py-0.5 text-status-error font-medium transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
         data-testid="companion-retry-send"
+        variant="danger"
+        size="sm"
+        className="shrink-0"
       >
         <RotateCcw className="w-3 h-3" />
         {t.common.retry}
-      </button>
+      </Button>
     </div>
   );
 }

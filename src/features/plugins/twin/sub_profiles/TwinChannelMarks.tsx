@@ -5,6 +5,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { getDeploymentChannelMeta, paletteOf } from '../shared/channels';
 import type { ProfileChannelMark } from '../useProfileDashboards';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * The dominant element of a twin card: where this twin can speak, drawn as
  * marks rather than a list of names.
@@ -44,14 +46,15 @@ export function TwinChannelMarks({ marks, onActivate, onAddChannel }: TwinChanne
     return (
       <div className="flex items-center gap-2 pointer-events-auto">
         <Tooltip content={t.twin.channels.noChannelsHint} placement="top">
-          <button
+          <Button
             type="button"
             onClick={onAddChannel}
             aria-label={t.twin.channels.addChannel}
-            className="w-11 h-11 rounded-card border border-dashed border-primary/15 text-muted flex items-center justify-center transition-colors hover:border-primary/30 hover:text-foreground hover:bg-secondary/30"
+            variant="ghost"
+            size="icon-sm"
           >
             <Plus className="w-4 h-4" />
-          </button>
+          </Button>
         </Tooltip>
       </div>
     );

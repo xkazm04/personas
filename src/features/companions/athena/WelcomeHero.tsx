@@ -14,6 +14,8 @@
 import { Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 interface Starter {
   key: string;
   label: string;
@@ -69,16 +71,17 @@ export function WelcomeHero({
 
       <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
         {starters.map((s) => (
-          <button
+          <Button
             key={s.key}
             type="button"
             disabled={disabled}
             onClick={() => onPick(s.message)}
             data-testid={`companion-welcome-starter-${s.key}`}
-            className="rounded-interactive bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:border-primary/35 text-primary px-3 py-1.5 typo-caption transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="secondary"
+            size="sm"
           >
             {s.label}
-          </button>
+          </Button>
         ))}
       </div>
     </div>

@@ -14,6 +14,8 @@ import { setPendingIncidentDeepLink } from '@/features/overview/sub_incidents/li
 import { triggerKindLabel } from './athenaLabels';
 import { applyClientAction } from './applyClientAction';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * "Athena reached out" card. Rendered inline in the chat transcript at
  * the top of the message list when there are unresolved proactive
@@ -121,12 +123,13 @@ export function ProactiveCard({
       <div className="flex items-center gap-2">
         {/* Tinted primary, not solid: solid bg-primary + its white foreground
             is unreadable under light-primary themes. */}
-        <button
+        <Button
           type="button"
           onClick={() => handle('engage')}
           disabled={busy !== null}
           data-testid="companion-proactive-engage"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/25 bg-primary/15 text-primary hover:bg-primary/25 typo-caption disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
+          variant="secondary"
+          size="sm"
         >
           {busy === 'engage' ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -134,13 +137,14 @@ export function ProactiveCard({
             <Reply className="w-3.5 h-3.5" />
           )}
           {t.athena.proactive_engage}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={() => handle('dismiss')}
           disabled={busy !== null}
           data-testid="companion-proactive-dismiss"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-foreground typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
+          variant="ghost"
+          size="sm"
         >
           {busy === 'dismiss' ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -148,7 +152,7 @@ export function ProactiveCard({
             <X className="w-3.5 h-3.5" />
           )}
           {t.athena.proactive_dismiss}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -184,6 +188,6 @@ function accentForTrigger(kind: string): string {
     case 'message_digest':
       return 'border-status-info/30 bg-status-info/10/[0.06]';
     default:
-      return 'border-primary/30 bg-primary/[0.06]';
+      return 'border-primary/30 bg-surface-2';
   }
 }

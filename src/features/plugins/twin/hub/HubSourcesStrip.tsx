@@ -13,6 +13,8 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { useTranslation } from '@/i18n/useTranslation';
 import { HUB_BUSY, type HubFeed } from './useHubFeed';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 export function HubSourcesStrip({ feed }: { feed: HubFeed }) {
   const { t: tRoot, tx } = useTranslation();
   const t = tRoot.twin.hub.sources;
@@ -62,11 +64,15 @@ export function HubSourcesStrip({ feed }: { feed: HubFeed }) {
             {feed.knowledgeBases.length === 0 ? (
               <span className="typo-caption text-foreground">{t.kbNone}</span>
             ) : feed.knowledgeBases.map((kb) => (
-              <button key={kb.id} type="button"
+              <Button
+                key={kb.id}
+                type="button"
                 onClick={() => { setPicking(false); void feed.bindKnowledgeBase(kb.id); }}
-                className="px-2 py-0.5 rounded-interactive border border-primary/30 bg-primary/10 typo-caption text-foreground transition-colors hover:bg-primary/20 focus-ring">
+                variant="secondary"
+                size="sm"
+              >
                 {kb.name}
-              </button>
+              </Button>
             ))}
           </div>
         </Collapse>

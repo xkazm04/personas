@@ -12,6 +12,9 @@ import { BrainViewer } from '../BrainViewer';
 import { useAthenaStore } from '../athenaStore';
 import { lazyRetry } from '@/lib/lazyRetry';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 // The consolidation review is the secondary view, opened from the toolbar; it
 // loads as its own chunk on that click rather than with the tab.
 const ConsolidationReview = lazyRetry(() =>
@@ -119,27 +122,29 @@ export default function MemoryPanel() {
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => setView('consolidation')}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption focus-ring transition-colors ${
-              view === 'consolidation'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-foreground/5 hover:bg-foreground/10 text-ink-2'
-            }`}
-            title={t.athena.memory_run_consolidation}
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">
-              {t.athena.memory_run_consolidation}
-            </span>
-          </button>
-          <button
+          <Tooltip content={t.athena.memory_run_consolidation}>
+            <button
+              type="button"
+              onClick={() => setView('consolidation')}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption focus-ring transition-colors ${
+                view === 'consolidation'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-foreground/5 hover:bg-foreground/10 text-ink-2'
+              }`}
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">
+                {t.athena.memory_run_consolidation}
+              </span>
+            </button>
+          </Tooltip>
+          <Button
             type="button"
             onClick={generateReflection}
             disabled={reflecting}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-ink-2 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
-            title={t.athena.memory_generate_reflection}
+            tooltip={t.athena.memory_generate_reflection}
+            variant="ghost"
+            size="sm"
           >
             {reflecting ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -151,13 +156,14 @@ export default function MemoryPanel() {
                 ? t.athena.reflection_running
                 : t.athena.memory_generate_reflection}
             </span>
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={decayFacts}
             disabled={decaying}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-ink-2 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
-            title={t.athena.memory_decay_unused}
+            tooltip={t.athena.memory_decay_unused}
+            variant="ghost"
+            size="sm"
           >
             {decaying ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -167,13 +173,14 @@ export default function MemoryPanel() {
             <span className="hidden sm:inline">
               {t.athena.memory_decay_unused}
             </span>
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={rebuildSearchIndex}
             disabled={reembedding}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-foreground/5 hover:bg-foreground/10 text-ink-2 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
-            title={t.athena.memory_rebuild_search}
+            tooltip={t.athena.memory_rebuild_search}
+            variant="ghost"
+            size="sm"
           >
             {reembedding ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -185,7 +192,7 @@ export default function MemoryPanel() {
                 ? t.athena.memory_rebuild_search_running
                 : t.athena.memory_rebuild_search}
             </span>
-          </button>
+          </Button>
         </div>
       </div>
       <div className="flex-1 min-h-0">

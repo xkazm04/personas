@@ -39,6 +39,8 @@ import {
 } from './audioToReferenceWav';
 import { SetupRow, VoiceEngineInstallBlock, PreviewButton, useVoicePreview } from './voiceEngineShared';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * Pocket TTS voice picker — the only local engine with zero-shot voice
  * cloning. Two interchangeable backends:
@@ -294,20 +296,21 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
           </span>
         </div>
         <p className="typo-caption">{t.athena.voice_pocket_hf_gate_desc}</p>
-        <button
+        <Button
           type="button"
           onClick={() => setSidebarSection('credentials')}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-status-warning/15 hover:bg-status-warning/20 text-status-warning typo-caption transition-colors focus-ring"
+          variant="ghost"
+          size="sm"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           {t.athena.voice_empty_cta}
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="rounded-card border border-primary/25 bg-primary/[0.06] p-3 space-y-2">
+    <div className="rounded-card border border-primary/25 bg-surface-2 p-3 space-y-2">
       <div className="flex items-center gap-2">
         <Upload className="w-4 h-4 text-primary" />
         <span className="typo-title">
@@ -323,11 +326,12 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
         onChange={(e) => void onPick(e.target.files?.[0])}
       />
       <div className="flex items-center gap-2 flex-wrap">
-        <button
+        <Button
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={busy !== 'idle'}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground typo-caption transition-colors focus-ring disabled:opacity-50"
+          variant="secondary"
+          size="sm"
         >
           {busy === 'converting' ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -335,7 +339,7 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
             <Upload className="w-3.5 h-3.5" />
           )}
           {t.athena.voice_pocket_upload_button}
-        </button>
+        </Button>
         {pendingWav && (
           <>
             <input
@@ -346,11 +350,12 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
               aria-label={t.athena.voice_pocket_upload_name_label}
               className="flex-1 min-w-[140px] px-2.5 py-1.5 rounded-input bg-secondary/40 border border-foreground/10 typo-caption text-foreground focus-ring"
             />
-            <button
+            <Button
               type="button"
               onClick={() => void onSave()}
               disabled={busy !== 'idle' || !name.trim()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-caption transition-colors focus-ring disabled:opacity-50"
+              variant="ghost"
+              size="sm"
             >
               {busy === 'saving' ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -358,7 +363,7 @@ function UploadVoiceBlock({ onAdded }: { onAdded: (v: PocketVoiceEntry) => void 
                 <CheckCircle2 className="w-3.5 h-3.5" />
               )}
               {t.athena.voice_pocket_upload_save}
-            </button>
+            </Button>
           </>
         )}
       </div>
@@ -427,15 +432,16 @@ function SetupCard({ status, loading, onRecheck }: SetupCardProps) {
             <ServiceRow status={status} />
           </>
         )}
-        <button
+        <Button
           type="button"
           onClick={onRecheck}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground typo-caption transition-colors focus-ring disabled:opacity-50"
+          variant="secondary"
+          size="sm"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           {t.athena.voice_kokoro_recheck}
-        </button>
+        </Button>
       </div>
     </SectionCard>
   );
@@ -513,32 +519,34 @@ function PocketVoiceRow({ voice, selected, onSelect, onDelete }: PocketVoiceRowP
           </div>
         </div>
         <div className="flex gap-1.5 shrink-0">
-          <button
+          <Button
             type="button"
             onClick={onSelect}
             disabled={selected}
-            className="inline-flex items-center gap-1 px-3 py-1 rounded-interactive bg-surface-2 hover:bg-surface-2 text-ink-2 typo-caption transition-colors focus-ring disabled:opacity-40"
+            variant="ghost"
+            size="sm"
           >
             <CheckCircle2 className="w-3 h-3" />
             {selected
               ? t.athena.voice_piper_voice_selected
               : t.athena.voice_piper_voice_select}
-          </button>
+          </Button>
           <PreviewButton
             previewState={previewState}
             onPreview={onPreview}
             title={t.athena.voice_kokoro_preview}
           />
           {onDelete && (
-            <button
+            <Button
               type="button"
               onClick={onDelete}
-              title={t.athena.voice_pocket_delete_title}
+              tooltip={t.athena.voice_pocket_delete_title}
               aria-label={t.athena.voice_pocket_delete_title}
-              className="inline-flex items-center px-2 py-1 rounded-interactive bg-secondary/40 hover:bg-status-error/15 border border-foreground/10 hover:border-status-error/30 text-foreground hover:text-status-error typo-caption transition-colors focus-ring"
+              variant="ghost"
+              size="icon-sm"
             >
               <Trash2 className="w-3 h-3" />
-            </button>
+            </Button>
           )}
         </div>
       </div>

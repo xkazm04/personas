@@ -343,7 +343,7 @@ function HealthCounters({ counters }: { counters: BrainCounters }) {
 // cache or a fast read never paints one. No spinner.
 // ---------------------------------------------------------------------------
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-surface-2';
 
 function HealthGhost() {
   return (

@@ -22,6 +22,9 @@ import { createLatestWins } from '@/stores/util/latestWins';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * Rows in the first viewport that play the one-shot entrance ripple when the
  * vault tree first loads (35ms stagger via RevealItem, id-guarded per vault
@@ -69,12 +72,12 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter, onExpandFolder,
         type="button"
         onClick={() => onSelect(node.path)}
         className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card transition-colors group focus-ring ${
-          isSelected ? 'bg-surface-2 border border-hair-2' : 'hover:bg-secondary/30 border border-transparent'
+          isSelected ? 'bg-surface-2 border border-hair-2' : 'hover:bg-surface-1 border border-transparent'
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
         <FileText className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-ink-2' : 'text-ink-2'}`} />
-        <span className={`typo-caption truncate ${isSelected ? 'text-ink-2' : 'text-foreground group-hover:text-foreground'}`}>
+        <span className={`typo-caption truncate ${isSelected ? 'text-ink-2' : 'text-ink-1 group-hover:text-ink-1'}`}>
           {node.name}
         </span>
       </button>
@@ -92,18 +95,18 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter, onExpandFolder,
           setExpanded(next);
           if (next) onExpandFolder(node.path);
         }}
-        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card hover:bg-secondary/30 transition-colors focus-ring"
+        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-card hover:bg-surface-1 transition-colors focus-ring"
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
         {expanded ? (
-          <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+          <ChevronDown className="w-3.5 h-3.5 text-ink-1 flex-shrink-0" />
         ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+          <ChevronRight className="w-3.5 h-3.5 text-ink-1 flex-shrink-0" />
         )}
         <Folder className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
-        <span className="typo-caption text-foreground truncate">{node.name}</span>
+        <span className="typo-caption text-ink-2 truncate">{node.name}</span>
         {node.noteCount > 0 && (
-          <span className="typo-caption text-foreground ml-auto">{node.noteCount}</span>
+          <span className="typo-caption text-ink-2 ml-auto">{node.noteCount}</span>
         )}
       </button>
       {expanded && loadingChildren && node.children.length === 0 && (
@@ -112,8 +115,8 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter, onExpandFolder,
           style={{ paddingLeft: `${(depth + 1) * 16 + 8}px`, animationDelay: '120ms' }}
           aria-hidden="true"
         >
-          <span className="w-3.5 h-3.5 flex-shrink-0 rounded bg-primary/[0.06]" />
-          <span className="h-3 w-24 rounded bg-primary/[0.06]" />
+          <span className="w-3.5 h-3.5 flex-shrink-0 rounded-interactive bg-surface-2" />
+          <span className="h-3 w-24 rounded-interactive bg-surface-2" />
         </div>
       )}
       {expanded && node.children.map((child) => (
@@ -258,24 +261,26 @@ export default function BrowsePanel() {
   return (
     <div className="flex gap-4 h-[calc(100vh-220px)] min-h-[400px] py-2">
       {/* Tree view */}
-      <div className="w-72 flex-shrink-0 flex flex-col border-r border-primary/10 pr-2">
+      <div className="w-72 flex-shrink-0 flex flex-col border-r border-hair pr-2">
         {/* Selected vault header */}
         {vaultName && (
-          <div className="px-2 pb-2 mb-2 border-b border-primary/10">
+          <div className="px-2 pb-2 mb-2 border-b border-hair">
             <p className="typo-label text-ink-2">{t.plugins.obsidian_brain.vault_label}</p>
-            <p className="typo-heading text-ink-2 truncate" title={vaultPath ?? undefined}>{vaultName}</p>
+            <Tooltip content={vaultPath ?? undefined}>
+              <p className="typo-heading text-ink-2 truncate" >{vaultName}</p>
+            </Tooltip>
           </div>
         )}
         {/* Search */}
         <div className="relative mb-2">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-1" />
           <input
             type="text"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder={t.plugins.obsidian_brain.filter_notes}
             aria-label={t.plugins.obsidian_brain.filter_notes}
-            className="w-full pl-8 pr-3 py-1.5 rounded-card bg-background/50 border border-primary/12 text-foreground typo-caption placeholder:text-ink-3 focus-ring transition-all"
+            className="w-full pl-8 pr-3 py-1.5 rounded-card bg-background/50 border border-hair text-ink-1 typo-caption placeholder:text-ink-3 focus-ring transition-all"
           />
         </div>
 
@@ -313,7 +318,7 @@ export default function BrowsePanel() {
               )}
             </div>
           ) : (
-            <p className="typo-caption text-foreground p-4">{t.plugins.obsidian_brain.failed_to_load}</p>
+            <p className="typo-caption text-ink-2 p-4">{t.plugins.obsidian_brain.failed_to_load}</p>
           )}
         </div>
       </div>
@@ -332,19 +337,22 @@ export default function BrowsePanel() {
                     </span>
                   )}
                   <span className="flex items-center gap-1 min-w-0">
-                    <span className="typo-caption text-foreground truncate" title={selectedPath}>{selectedPath}</span>
+                    <Tooltip content={selectedPath}>
+                      <span className="typo-caption text-ink-2 truncate" >{selectedPath}</span>
+                    </Tooltip>
                     <CopyButton text={selectedPath} iconSize="w-3 h-3" />
                   </span>
                 </div>
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={openInObsidian}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-surface-2 text-ink-2 border border-hair-2 hover:bg-surface-2 transition-colors focus-ring flex-shrink-0"
+                variant="secondary"
+                size="sm"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 {t.plugins.obsidian_brain.open_in_obsidian}
-              </button>
+              </Button>
             </div>
             {showNoteGhost ? (
               /* The note pane is a content region, not a spinner target: a
@@ -361,19 +369,19 @@ export default function BrowsePanel() {
             ) : noteContent ? (
               <>
                 {parsed && parsed.properties.length > 0 && (
-                  <div className="rounded-modal bg-secondary/20 border border-primary/8 p-3">
+                  <div className="rounded-modal bg-surface-1 border border-hair p-3">
                     <p className="typo-label text-ink-2 mb-2">{t.plugins.obsidian_brain.note_properties}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {parsed.properties.map((prop) => (
-                        <span key={prop.key} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/10 typo-caption">
+                        <span key={prop.key} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card bg-surface-2 border border-hair typo-caption">
                           <span className="text-ink-2">{prop.key}</span>
-                          {prop.value && <span className="text-foreground">{prop.value}</span>}
+                          {prop.value && <span className="text-ink-1">{prop.value}</span>}
                         </span>
                       ))}
                     </div>
                   </div>
                 )}
-                <div className="prose prose-invert prose-sm max-w-none rounded-modal bg-secondary/20 border border-primary/5 p-5 [&_p]:text-foreground [&_li]:text-foreground [&_a]:text-ink-2 [&_code]:text-ink-2 [&_code]:bg-surface-2 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-secondary/40 [&_pre]:border [&_pre]:border-primary/10 [&_blockquote]:border-hair-2 [&_blockquote]:text-foreground">
+                <div className="prose prose-invert prose-sm max-w-none rounded-modal bg-surface-1 border border-hair p-5 [&_p]:text-ink-1 [&_li]:text-ink-1 [&_a]:text-ink-2 [&_code]:text-ink-2 [&_code]:bg-surface-2 [&_code]:px-1 [&_code]:rounded-interactive [&_pre]:bg-surface-2 [&_pre]:border [&_pre]:border-hair [&_blockquote]:border-hair-2 [&_blockquote]:text-ink-1">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{parsed ? parsed.body : noteContent}</ReactMarkdown>
                 </div>
               </>
@@ -406,7 +414,7 @@ export default function BrowsePanel() {
 // content.
 // ---------------------------------------------------------------------------
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-surface-2';
 
 /** Deterministic depth/width mix so the tree ghost reads as folder/file
  * nesting rather than a flat barcode of rows. */
@@ -446,7 +454,7 @@ function NoteGhostBlock() {
         <span className={`block h-4 w-48 ${GHOST_BAR}`} />
         <span className={`block h-3 w-32 ${GHOST_BAR}`} />
       </div>
-      <div className="rounded-modal bg-secondary/20 border border-primary/5 p-5 space-y-2.5">
+      <div className="rounded-modal bg-surface-1 border border-hair p-5 space-y-2.5">
         <span className={`block h-3 w-full ${GHOST_BAR}`} />
         <span className={`block h-3 w-11/12 ${GHOST_BAR}`} />
         <span className={`block h-3 w-4/5 ${GHOST_BAR}`} />

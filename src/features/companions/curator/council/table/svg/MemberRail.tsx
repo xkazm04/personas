@@ -89,13 +89,13 @@ export function RailLegend({ labels }: { labels: RailLabels }) {
       />
       <LegendKey
         swatch={
-          <i className="inline-block h-2.5 w-[18px] rounded border-[1.5px] border-primary bg-[repeating-linear-gradient(135deg,var(--primary)_0_3px,transparent_3px_6px)]" />
+          <i className="inline-block h-2.5 w-[18px] rounded-interactive border-[1.5px] border-primary bg-[repeating-linear-gradient(135deg,var(--primary)_0_3px,transparent_3px_6px)]" />
         }
         text={labels.carried}
       />
       <LegendKey
         swatch={
-          <i className="inline-block h-2.5 w-[18px] rounded border border-foreground/20 bg-[repeating-linear-gradient(135deg,color-mix(in_srgb,var(--foreground)_28%,transparent)_0_3px,transparent_3px_6px)]" />
+          <i className="inline-block h-2.5 w-[18px] rounded-interactive border border-foreground/20 bg-[repeating-linear-gradient(135deg,color-mix(in_srgb,var(--foreground)_28%,transparent)_0_3px,transparent_3px_6px)]" />
         }
         text={labels.notMeasured}
       />

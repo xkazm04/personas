@@ -60,6 +60,8 @@ import type { ReplyRegisterRow } from '@/lib/bindings/ReplyRegisterRow';
 import { BASE_REPLY_SENTENCES } from './chat/refs/replyFold';
 import { parseIdentityClaims } from './identityClaims';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 type KindLabelKey =
   | 'episodes'
   | 'doctrine'
@@ -185,15 +187,16 @@ export function BrainViewer({ onClose }: { onClose?: () => void }) {
       <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-foreground/10 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           {(brainView.kind || brainView.id) ? (
-            <button
+            <Button
               type="button"
               onClick={goBack}
-              className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
               aria-label={t.common.back}
-              title={t.common.back}
+              tooltip={t.common.back}
+              variant="ghost"
+              size="icon-sm"
             >
               <ArrowLeft className="w-4 h-4" />
-            </button>
+            </Button>
           ) : null}
           <div className="typo-body truncate">
             {brainView.kind
@@ -202,14 +205,15 @@ export function BrainViewer({ onClose }: { onClose?: () => void }) {
           </div>
         </div>
         {onClose && (
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
             aria-label={t.common.close}
+            variant="ghost"
+            size="icon-sm"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         )}
       </header>
 
@@ -518,7 +522,7 @@ function ListView({ kind }: { kind: BrainKind }) {
 // line, two-line preview, trailing chevron slot). No `animate-pulse`.
 // ---------------------------------------------------------------------------
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-surface-2';
 const GHOST_TITLE_WIDTHS = ['w-40', 'w-32', 'w-48', 'w-36'];
 
 function BrainListGhostRows() {
@@ -792,51 +796,55 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
         <div className="border-t border-foreground/10 px-3 py-3 shrink-0 flex items-center gap-2">
           {editing ? (
             <>
-              <button
+              <Button
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground hover:opacity-90 typo-caption disabled:opacity-50 transition-opacity focus-ring"
+                variant="primary"
+                size="sm"
               >
                 <Save className="w-3.5 h-3.5" />
                 {saving ? t.athena.identity_saving : t.athena.identity_save}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => setEditing(false)}
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 text-foreground hover:bg-secondary/50 typo-caption disabled:opacity-50 transition-colors focus-ring"
+                variant="secondary"
+                size="sm"
               >
                 <X className="w-3.5 h-3.5" />
                 {t.common.cancel}
-              </button>
+              </Button>
               <span className="typo-caption text-foreground ml-1">{t.athena.identity_edit_hint}</span>
             </>
           ) : (
-            <button
+            <Button
               type="button"
               onClick={startEdit}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 text-foreground hover:bg-secondary/50 typo-caption transition-colors focus-ring"
+              variant="secondary"
+              size="sm"
             >
               <Pencil className="w-3.5 h-3.5" />
               {t.athena.identity_edit}
-            </button>
+            </Button>
           )}
         </div>
       )}
       {!isIdentity && detail.deletable && (
         <div className="border-t border-foreground/10 px-3 py-3 shrink-0">
-          <button
+          <Button
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-status-error/10 text-status-error hover:bg-status-error/20 typo-caption disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
+            variant="danger"
+            size="sm"
           >
             <Trash2 className="w-3.5 h-3.5" />
             {deleting
               ? t.athena.brain_deleting
               : t.athena.brain_delete}
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -939,15 +947,17 @@ function IdentityClaimCorrections({ content }: { content: string }) {
             <span className={`typo-caption text-foreground ${done ? 'line-through opacity-60' : ''}`}>
               {claim.bullet}
             </span>
-            <button
+            <Button
               type="button"
               disabled={done}
               onClick={() => onWrong(claim.section, claim.bullet)}
-              className="shrink-0 inline-flex items-center gap-1 rounded-interactive border border-status-error/20 text-status-error hover:bg-status-error/10 px-2 py-0.5 typo-caption disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-ring"
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0"
             >
               <X className="w-3 h-3" />
               {done ? c.identity_wrong_proposed : c.identity_wrong}
-            </button>
+            </Button>
           </div>
         );
       })}

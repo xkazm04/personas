@@ -269,8 +269,8 @@
   margin: 4px 0 var(--space-sm);
   cursor: pointer;
   /* a mask, not a fill: the two stops are "cut" and "keep", not colours */
-  -webkit-mask: radial-gradient(circle 5px at 50% 0, transparent 98%, #000) top/14px 100% repeat-x;
-  mask: radial-gradient(circle 5px at 50% 0, transparent 98%, #000) top/14px 100% repeat-x;
+  -webkit-mask: radial-gradient(circle 5px at 50% 0, transparent 98%, black) top/14px 100% repeat-x;
+  mask: radial-gradient(circle 5px at 50% 0, transparent 98%, black) top/14px 100% repeat-x;
 }
 .cb-root .cb-receipt.cb-sel {
   outline: 2px solid color-mix(in srgb, var(--status-success) 62%, transparent);

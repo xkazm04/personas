@@ -45,7 +45,15 @@ export const FANOUT_C_MODULES: Record<string, HarnessModule> = {
   'athena/setup': athenaTab('setup'),
   'athena/memory': athenaTab('memory'),
   'athena/decisions': athenaTab('decisions'),
-  'curator/council': { load: () => import('@/features/companions/curator/council/CouncilPage'), prepare: companions('curator:council') },
+  'curator/council': {
+    load: () => import('@/features/companions/curator/council/CouncilPage'),
+    prepare: async () => {
+      companions('curator:council')?.();
+      // The checked-in reference galaxy, so the shot is populated without a paired registry (round 1 shot the empty state).
+      const { useCouncilStore } = await import('@/features/companions/curator/council/councilStore');
+      await useCouncilStore.getState().loadFixture();
+    },
+  },
   'curator/blueprint': { load: () => import('@/features/companions/curator/blueprint/BlueprintPage'), prepare: companions('curator:blueprint') },
   'curator/process': { load: () => import('@/features/companions/curator/process/ProcessPage'), prepare: companions('curator:process') },
   'plugins/drive': {

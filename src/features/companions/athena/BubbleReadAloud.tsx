@@ -6,6 +6,9 @@ import type { TtsSettings } from '@/api/companion';
 import { synthesize, play } from './voicePlayback';
 import type { ResolvedTtsVoice } from './useTtsVoiceSelection';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * On-demand read-aloud affordance below the latest completed assistant
  * bubble. Renders only when voice is configured for the user's chosen
@@ -106,58 +109,65 @@ export function BubbleReadAloud({
 
   if (state === 'synthesizing') {
     return (
-      <button
+      <Button
         type="button"
         disabled
-        className="inline-flex items-center gap-1 rounded-interactive border border-foreground/15 bg-foreground/[0.04] px-2 py-0.5 typo-caption text-foreground opacity-70"
+        key="synth"
         data-testid="companion-read-aloud-synthesizing"
+        variant="secondary"
+        size="sm"
       >
         <Loader2 className="w-3 h-3 animate-spin" />
         <span>{t.athena.read_aloud_synthesizing}</span>
-      </button>
+      </Button>
     );
   }
 
   if (state === 'playing') {
     return (
-      <button
+      <Button
         type="button"
         onClick={handleStop}
-        className="inline-flex items-center gap-1 rounded-interactive border border-primary/30 bg-primary/[0.08] hover:bg-primary/[0.12] px-2 py-0.5 typo-caption text-primary transition-colors focus-ring"
+        key="playing"
         data-testid="companion-read-aloud-playing"
-        title={t.athena.read_aloud_stop}
+        tooltip={t.athena.read_aloud_stop}
         aria-label={t.athena.read_aloud_stop}
+        variant="secondary"
+        size="sm"
       >
         <VolumeX className="w-3 h-3" />
         <span>{t.athena.read_aloud_stop}</span>
-      </button>
+      </Button>
     );
   }
 
   if (typeof state === 'object' && state.kind === 'error') {
     return (
-      <span
-        className="inline-flex items-center gap-1 rounded-interactive border border-status-error/30 bg-status-error/10 px-2 py-0.5 typo-caption text-status-error"
-        data-testid="companion-read-aloud-error"
-        title={state.message}
-      >
-        <AlertCircle className="w-3 h-3" />
-        <span>{t.athena.read_aloud_failed}</span>
-      </span>
+      <Tooltip content={state.message}>
+        <span
+          className="inline-flex items-center gap-1 rounded-interactive border border-status-error/30 bg-status-error/10 px-2 py-0.5 typo-caption text-status-error"
+          data-testid="companion-read-aloud-error"
+        >
+          <AlertCircle className="w-3 h-3" />
+          <span>{t.athena.read_aloud_failed}</span>
+        </span>
+      </Tooltip>
     );
   }
 
   return (
-    <button
+    <Button
       type="button"
       onClick={handlePlay}
-      className="inline-flex items-center gap-1 rounded-interactive border border-foreground/15 bg-foreground/[0.04] hover:bg-foreground/[0.08] px-2 py-0.5 typo-caption text-foreground transition-colors focus-ring"
+      key="idle"
       data-testid="companion-read-aloud"
-      title={t.athena.read_aloud}
+      tooltip={t.athena.read_aloud}
       aria-label={t.athena.read_aloud}
+      variant="secondary"
+      size="sm"
     >
       <Volume2 className="w-3 h-3" />
       <span>{t.athena.read_aloud}</span>
-    </button>
+    </Button>
   );
 }

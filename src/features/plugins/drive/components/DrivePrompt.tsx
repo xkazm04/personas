@@ -2,6 +2,8 @@ import { useId } from "react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { BaseModal } from "@/features/shared/components/modals";
 
+import Button from '@/features/shared/components/buttons/Button';
+
 // DriveTextPrompt was retired in cycle 34 — every name-edit op (create,
 // rename) is inline-everywhere now. DriveConfirm is the only remaining
 // real-modal need (delete confirmation can't be inline; the user needs
@@ -40,13 +42,14 @@ export function DriveConfirm({
           <div className="typo-body text-foreground mb-4">{body}</div>
         )}
         <div className="flex items-center justify-end gap-2">
-          <button
+          <Button
             type="button"
             onClick={onCancel}
-            className="px-3 py-1.5 rounded-input typo-body text-foreground hover:bg-secondary/60 transition-colors focus-ring"
+            variant="ghost"
+            size="sm"
           >
             {t.plugins.drive.cancel}
-          </button>
+          </Button>
           <button
             type="button"
             onClick={onConfirm}

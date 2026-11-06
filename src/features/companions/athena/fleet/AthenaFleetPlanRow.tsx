@@ -3,6 +3,9 @@ import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { FleetPlanRow } from '@/api/companion';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 interface Props {
   row: FleetPlanRow;
   index: number;
@@ -36,23 +39,26 @@ export function AthenaFleetPlanRow({ row, index, disabled, onChange, onRemove }:
       data-testid={`athena-plan-row-${index}`}
     >
       <div className="flex items-start justify-between gap-2">
-        <span
-          className="typo-caption text-foreground font-mono break-all min-w-0"
-          title={row.cwd}
-        >
-          {row.cwd}
-        </span>
-        <button
+        <Tooltip content={row.cwd}>
+          <span
+            className="typo-caption text-foreground font-mono break-all min-w-0"
+          >
+            {row.cwd}
+          </span>
+        </Tooltip>
+        <Button
           type="button"
           onClick={onRemove}
           disabled={disabled}
           aria-label={c.fleet_plan_remove_row}
-          title={c.fleet_plan_remove_row}
-          className="shrink-0 p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/70 disabled:opacity-40"
+          tooltip={c.fleet_plan_remove_row}
           data-testid={`athena-plan-remove-${index}`}
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0"
         >
           <X className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       <textarea
@@ -63,7 +69,7 @@ export function AthenaFleetPlanRow({ row, index, disabled, onChange, onRemove }:
         rows={2}
         aria-label={c.fleet_plan_objective_label}
         placeholder={c.fleet_plan_objective_placeholder}
-        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body text-foreground resize-none overflow-hidden disabled:opacity-60"
+        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body text-foreground resize-none overflow-hidden disabled:is-disabled"
         data-testid={`athena-plan-objective-${index}`}
       />
 
@@ -75,7 +81,7 @@ export function AthenaFleetPlanRow({ row, index, disabled, onChange, onRemove }:
           onChange={(e) => onChange({ skill: e.target.value })}
           disabled={disabled}
           placeholder={c.fleet_plan_skill_placeholder}
-          className="min-w-0 flex-1 rounded-input bg-background/60 border border-border px-2 py-1 typo-caption text-foreground font-mono disabled:opacity-60"
+          className="min-w-0 flex-1 rounded-input bg-background/60 border border-border px-2 py-1 typo-caption text-foreground font-mono disabled:is-disabled"
           data-testid={`athena-plan-skill-${index}`}
         />
       </label>

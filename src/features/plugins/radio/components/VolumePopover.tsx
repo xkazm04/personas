@@ -3,6 +3,8 @@ import { Volume1, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 interface VolumePopoverProps {
   volume: number;
   accentColor: string;
@@ -40,15 +42,17 @@ export default function VolumePopover({
       className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 rounded-card border border-primary/10 bg-background shadow-elevation-3 px-3 py-2"
     >
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={onMuteToggle}
-          className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 transition-colors shrink-0"
           aria-label={muted ? t.radio.unmute : t.radio.mute}
-          title={muted ? t.radio.unmute : t.radio.mute}
+          tooltip={muted ? t.radio.unmute : t.radio.mute}
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0"
         >
           <Icon className="w-3.5 h-3.5" />
-        </button>
+        </Button>
         <input
           type="range"
           min={0}

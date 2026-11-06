@@ -8,6 +8,8 @@ import { toastCatch } from '@/lib/silentCatch';
 import type { BuildVersion } from '@/lib/bindings/BuildVersion';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 // C7 — version history: each build turn commits a snapshot; this lists them and
 // restores the project's files to a chosen one. After a restore the preview reloads.
 //
@@ -61,17 +63,18 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
 
   return (
     <div ref={wrapRef} className="relative">
-      <button
+      <Button
         type="button"
         data-testid="studio-versions"
         onClick={() => void toggle()}
         aria-label={t.studio.version_history}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-secondary/60 hover:text-foreground"
+        variant="ghost"
+        size="icon-sm"
       >
         <History className="h-4 w-4" />
-      </button>
+      </Button>
       {/* Click-away dismissal, matching the tab-strip picker. Without it the
           panel could only be closed by finding the history button again — and it
           sits over the live preview, so it blocked the thing the user came to

@@ -14,6 +14,10 @@
 .hl-page {
   --hl-ink: #e2e8f0;
   --hl-ink-strong: #f1f5f9;
+  --hl-ink-1: color-mix(in srgb, var(--hl-ink) 86%, transparent);
+  --hl-ink-2: color-mix(in srgb, var(--hl-ink) 78%, transparent);
+  --hl-ink-3: color-mix(in srgb, var(--hl-ink) 70%, transparent);
+  --hl-shade: #000;
   --hl-grey: rgba(203, 213, 225, 0.42);
   --hl-tick-dim: rgba(203, 213, 225, 0.22);
   --hl-cold-ink: #9fb3cf;

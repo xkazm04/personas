@@ -22,6 +22,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { classifySystemNote, type SystemNote } from './athenaChatSystemKind';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /** Bodies longer than this collapse behind a "show more". */
 const CLAMP_CHARS = 260;
 
@@ -84,7 +86,7 @@ export function AthenaChatSystemNote({
           <Icon className={`w-3 h-3 shrink-0 ${tone.label}`} aria-hidden />
           <span className={`typo-caption ${tone.label}`}>{note.label}</span>
           {note.meta && (
-            <span className="typo-caption text-foreground opacity-60 truncate tabular-nums">
+            <span className="typo-data text-ink-3 truncate">
               {note.meta}
             </span>
           )}
@@ -107,19 +109,21 @@ export function AthenaChatSystemNote({
           )}
         </div>
         {longBody && (
-          <button
+          <Button
             type="button"
             onClick={() => setExpanded((v) => !v)}
             aria-expanded={expanded}
             data-testid="companion-system-note-toggle"
-            className="mt-0.5 inline-flex items-center gap-1 rounded-interactive px-1 py-0.5 typo-caption text-foreground opacity-70 hover:opacity-100 hover:bg-foreground/[0.06] transition focus-ring"
+            variant="ghost"
+            size="icon-sm"
+            className="mt-0.5"
           >
             <ChevronDown
               className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`}
               aria-hidden
             />
             {expanded ? c.system_note_less : c.system_note_more}
-          </button>
+          </Button>
         )}
       </div>
     </div>

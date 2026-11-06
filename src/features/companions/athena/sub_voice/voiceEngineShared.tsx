@@ -16,6 +16,9 @@ import type { SidecarInstallProgress, TtsEngineId } from '@/api/companion';
 import { synthesize, play } from '../voicePlayback';
 import { useTtsSettings } from '../useTtsSettings';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * Shared voice-engine setup/install/preview scaffold, extracted out of
  * KokoroVoicePanel and PocketVoicePanel (they were byte-for-byte identical
@@ -56,9 +59,11 @@ export function SetupRow({ icon, label, installed, installedText, hint, pathLabe
         </span>
       </div>
       {installed ? (
-        <div className="typo-code text-foreground mt-1.5 break-all" title={installedText}>
-          {installedText}
-        </div>
+        <Tooltip content={installedText}>
+          <div className="typo-code text-foreground mt-1.5 break-all" >
+            {installedText}
+          </div>
+        </Tooltip>
       ) : (
         <div className="mt-2 space-y-2">
           <p className="typo-caption">{hint}</p>
@@ -227,7 +232,7 @@ export function VoiceEngineInstallBlock({
       className={
         embedded
           ? 'space-y-2'
-          : 'rounded-card border border-primary/25 bg-primary/[0.06] p-3 space-y-2'
+          : 'rounded-card border border-primary/25 bg-surface-2 p-3 space-y-2'
       }
     >
       {/*
@@ -269,14 +274,15 @@ export function VoiceEngineInstallBlock({
           </div>
         </div>
       ) : (
-        <button
+        <Button
           type="button"
           onClick={onInstall}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-caption transition-colors focus-ring"
+          variant="ghost"
+          size="icon-sm"
         >
           <Download className="w-3.5 h-3.5" />
           {installButtonLabel}
-        </button>
+        </Button>
       )}
       {failed && progress?.error && (
         <p className="typo-caption text-status-warning break-words">{progress.error}</p>
@@ -354,12 +360,13 @@ interface PreviewButtonProps {
 export function PreviewButton({ previewState, onPreview, disabled, title }: PreviewButtonProps) {
   const { t } = useTranslation();
   return (
-    <button
+    <Button
       type="button"
       onClick={onPreview}
       disabled={disabled}
-      title={title}
-      className="inline-flex items-center gap-1 px-3 py-1 rounded-interactive bg-secondary/40 hover:bg-secondary/60 border border-foreground/10 text-foreground typo-caption transition-colors focus-ring disabled:opacity-40"
+      tooltip={title}
+      variant="secondary"
+      size="sm"
     >
       {previewState === 'synth' ? (
         <Loader2 className="w-3 h-3 animate-spin" />
@@ -371,6 +378,6 @@ export function PreviewButton({ previewState, onPreview, disabled, title }: Prev
       {previewState === 'playing'
         ? t.athena.voice_kokoro_preview_stop
         : t.athena.voice_kokoro_preview}
-    </button>
+    </Button>
   );
 }

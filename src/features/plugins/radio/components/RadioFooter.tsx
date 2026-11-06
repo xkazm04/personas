@@ -25,6 +25,9 @@ import StationPicker from './StationPicker';
 import TitleCrossfade from './TitleCrossfade';
 import VolumePopover from './VolumePopover';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * Time we give either engine to reach `playing` state after a play/load.
  * Past this, treat the source as unavailable: surface a toast and (for
@@ -619,22 +622,24 @@ export default function RadioFooter() {
       <div ref={ytHostRef} style={ytHostStyle} aria-hidden tabIndex={-1} />
 
       {/* Visible controls */}
-      <button
+      <Button
         type="button"
         onClick={onPrev}
         disabled={!isYoutube}
-        className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
         aria-label={t.radio.prev_track}
-        title={isYoutube ? t.radio.prev_track : t.radio.prev_track_disabled}
+        tooltip={isYoutube ? t.radio.prev_track : t.radio.prev_track_disabled}
+        variant="ghost"
+        size="icon-sm"
       >
         <SkipBack className="w-3.5 h-3.5" />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         onClick={togglePlay}
-        className="w-7 h-7 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/50 transition-colors"
         aria-label={isPlayingNow ? t.radio.pause : t.radio.play}
-        title={isBuffering ? t.radio.buffering : isPlayingNow ? t.radio.pause : t.radio.play}
+        tooltip={isBuffering ? t.radio.buffering : isPlayingNow ? t.radio.pause : t.radio.play}
+        variant="ghost"
+        size="icon-sm"
       >
         {isBuffering ? (
           <Loader2 className="w-4 h-4 animate-spin" style={{ color: accent }} />
@@ -643,29 +648,31 @@ export default function RadioFooter() {
         ) : (
           <Play className="w-4 h-4" />
         )}
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         onClick={onNext}
         disabled={!isYoutube}
-        className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
         aria-label={t.radio.next_track}
-        title={isYoutube ? t.radio.next_track : t.radio.next_track_disabled}
+        tooltip={isYoutube ? t.radio.next_track : t.radio.next_track_disabled}
+        variant="ghost"
+        size="icon-sm"
       >
         <SkipForward className="w-3.5 h-3.5" />
-      </button>
+      </Button>
 
       <div ref={volumeAnchorRef} className="relative">
-        <button
+        <Button
           type="button"
           onClick={() => setVolumeOpen((v) => !v)}
-          className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 transition-colors"
           aria-label={t.radio.volume_button}
-          title={t.radio.volume_button}
+          tooltip={t.radio.volume_button}
           aria-expanded={volumeOpen}
+          variant="ghost"
+          size="icon-sm"
         >
           <VolumeIcon className="w-3.5 h-3.5" />
-        </button>
+        </Button>
         {volumeOpen && (
           <VolumePopover
             volume={currentVolume}
@@ -679,46 +686,48 @@ export default function RadioFooter() {
       </div>
 
       <div ref={detailsAnchorRef} className="relative flex items-center gap-1.5 max-w-[260px] min-w-0 ml-1">
-        <button
-          type="button"
-          onClick={() => setDetailsOpen((v) => !v)}
-          className={`w-1.5 h-1.5 rounded-full shrink-0 cursor-pointer hover:scale-150 transition-transform ${
-            isBuffering ? 'animate-pulse' : ''
-          }`}
-          style={{
-            background: accent,
-            boxShadow: status === 'playing' ? `0 0 6px ${accent}` : 'none',
-          }}
-          aria-label={t.radio.expand_button}
-          title={t.radio.expand_button}
-        />
-        <button
-          type="button"
-          onClick={() => setDetailsOpen((v) => !v)}
-          className="relative typo-caption text-ink-2 hover:text-foreground text-left transition-colors min-w-0 flex-1"
-          title={t.radio.expand_button}
-          aria-label={t.radio.expand_button}
-          aria-expanded={detailsOpen}
-        >
-          <TitleCrossfade text={titleLine} />
-        </button>
+        <Tooltip content={t.radio.expand_button}>
+          <button
+            type="button"
+            onClick={() => setDetailsOpen((v) => !v)}
+            className={`w-1.5 h-1.5 rounded-full shrink-0 cursor-pointer hover:scale-150 transition-transform ${
+              isBuffering ? 'animate-pulse' : ''
+            }`}
+            style={{
+              background: accent,
+              boxShadow: status === 'playing' ? `0 0 6px ${accent}` : 'none',
+            }}
+            aria-label={t.radio.expand_button} />
+        </Tooltip>
+        <Tooltip content={t.radio.expand_button}>
+          <button
+            type="button"
+            onClick={() => setDetailsOpen((v) => !v)}
+            className="relative typo-caption text-ink-2 hover:text-foreground text-left transition-colors min-w-0 flex-1"
+            aria-label={t.radio.expand_button}
+            aria-expanded={detailsOpen}
+          >
+            <TitleCrossfade text={titleLine} />
+          </button>
+        </Tooltip>
         {isYoutube && progress && progress.durationSec > 0 && (
-          <div
-            aria-hidden
-            className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-foreground/10 overflow-hidden"
-            title={tx(t.radio.progress_label, {
+          <Tooltip content={tx(t.radio.progress_label, {
               current: formatTime(progress.currentSec),
               total: formatTime(progress.durationSec),
-            })}
-          >
+            })}>
             <div
-              className="h-full transition-[width] duration-1000 ease-linear"
-              style={{
-                width: `${Math.min(100, (progress.currentSec / progress.durationSec) * 100)}%`,
-                background: accent,
-              }}
-            />
-          </div>
+              aria-hidden
+              className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-foreground/10 overflow-hidden"
+            >
+              <div
+                className="h-full transition-[width] duration-1000 ease-linear"
+                style={{
+                  width: `${Math.min(100, (progress.currentSec / progress.durationSec) * 100)}%`,
+                  background: accent,
+                }}
+              />
+            </div>
+          </Tooltip>
         )}
         {detailsOpen && nowPlaying && (
           <NowPlayingCard
@@ -738,16 +747,18 @@ export default function RadioFooter() {
       </div>
 
       <div ref={pickerAnchorRef} className="relative">
-        <button
+        <Button
           type="button"
           onClick={() => setPickerOpen((v) => !v)}
-          className="w-6 h-6 rounded-interactive flex items-center justify-center text-foreground hover:bg-secondary/40 transition-colors ml-1"
           aria-label={t.radio.switch_station}
-          title={t.radio.switch_station}
+          tooltip={t.radio.switch_station}
           aria-expanded={pickerOpen}
+          variant="ghost"
+          size="icon-sm"
+          className="ml-1"
         >
           <Radio className="w-3.5 h-3.5" />
-        </button>
+        </Button>
         {pickerOpen && (
           <StationPicker
             stations={stations}

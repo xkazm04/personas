@@ -16,6 +16,7 @@ import {
 } from '@/api/director';
 import { DirectorSection } from '../DirectorSection';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * Director's Lab — minimal campaign report (batch-3 v1). Three stacked bands:
  *
@@ -90,22 +91,23 @@ export function CampaignReportPanel({
       style={playEntrance ? { animationDelay: '140ms' } : undefined}
       action={
         ledger && (
-          <span
-            className="inline-flex items-center gap-1.5 typo-caption text-foreground tabular-nums"
-            title={t.director.lab_ledger_title}
-          >
-            <Coins className="w-3.5 h-3.5 text-ink-2" />
-            {tx(t.director.lab_ledger_summary, {
-              spent: ledger.spentUsd.toFixed(2),
-              budget: ledger.budgetUsd.toFixed(2),
-            })}
-          </span>
+          <Tooltip content={t.director.lab_ledger_title}>
+            <span
+              className="inline-flex items-center gap-1.5 typo-caption text-foreground tabular-nums"
+            >
+              <Coins className="w-3.5 h-3.5 text-ink-2" />
+              {tx(t.director.lab_ledger_summary, {
+                spent: ledger.spentUsd.toFixed(2),
+                budget: ledger.budgetUsd.toFixed(2),
+              })}
+            </span>
+          </Tooltip>
         )
       }
     >
       {!loaded ? (
         <div
-          className="h-16 rounded-card bg-primary/[0.06] animate-fade-in"
+          className="h-16 rounded-card bg-surface-2 animate-fade-in"
           style={{ animationDelay: '120ms' }}
           aria-hidden
         />
@@ -149,9 +151,11 @@ export function CampaignReportPanel({
           {/* Ready to compile */}
           {pending.length > 0 && (
             <div>
-              <p className="typo-eyebrow text-ink-3 mb-1.5" title={t.director.lab_pending_hint}>
-                {t.director.lab_pending_title}
-              </p>
+              <Tooltip content={t.director.lab_pending_hint}>
+                <p className="typo-eyebrow text-ink-3 mb-1.5" >
+                  {t.director.lab_pending_title}
+                </p>
+              </Tooltip>
               <ul className="space-y-1.5">
                 {pending.map((v) => (
                   <li
@@ -212,14 +216,16 @@ function CountChip({ label, value }: { label: string; value: number }) {
 function HypothesisLine({ hypothesis }: { hypothesis: DirectorHypothesis }) {
   const { t } = useTranslation();
   return (
-    <p className="typo-caption text-foreground truncate" title={hypothesis.proposedChange}>
-      {t.director.lab_hypothesis_change}: {hypothesis.proposedChange}
-      {hypothesis.successMetric && (
-        <span className="ml-2">
-          {t.director.lab_hypothesis_metric}: {hypothesis.successMetric}
-        </span>
-      )}
-    </p>
+    <Tooltip content={hypothesis.proposedChange}>
+      <p className="typo-caption text-foreground truncate" >
+        {t.director.lab_hypothesis_change}: {hypothesis.proposedChange}
+        {hypothesis.successMetric && (
+          <span className="ml-2">
+            {t.director.lab_hypothesis_metric}: {hypothesis.successMetric}
+          </span>
+        )}
+      </p>
+    </Tooltip>
   );
 }
 
@@ -259,13 +265,17 @@ function ExperimentRow({ experiment }: { experiment: LabAbExperiment }) {
   return (
     <li className="flex items-center justify-between gap-3 px-2.5 py-2 rounded-card border border-primary/10 bg-secondary/20">
       <div className="min-w-0">
-        <p className="typo-caption text-foreground truncate" title={hypothesis.proposedChange ?? ''}>
-          {hypothesis.proposedChange ?? experiment.id}
-        </p>
-        {experiment.statusDetail && (
-          <p className="typo-caption text-foreground truncate" title={experiment.statusDetail}>
-            {experiment.statusDetail}
+        <Tooltip content={hypothesis.proposedChange ?? ''}>
+          <p className="typo-caption text-foreground truncate" >
+            {hypothesis.proposedChange ?? experiment.id}
           </p>
+        </Tooltip>
+        {experiment.statusDetail && (
+          <Tooltip content={experiment.statusDetail}>
+            <p className="typo-caption text-foreground truncate" >
+              {experiment.statusDetail}
+            </p>
+          </Tooltip>
         )}
       </div>
       <div className="flex items-center gap-2 shrink-0">

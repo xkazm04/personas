@@ -12,6 +12,7 @@ import { usePipelineNotifications } from '../hooks/usePipelineNotifications';
 import EmptyState from '@/features/shared/components/feedback/ScenarioEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
@@ -65,7 +66,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
   if (!projectId) {
     return (
       <div className="text-center py-12">
-        <p className="typo-body text-foreground">{t.gitlab.select_project_for_pipelines}</p>
+        <p className="typo-body text-ink-1">{t.gitlab.select_project_for_pipelines}</p>
       </div>
     );
   }
@@ -83,7 +84,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
     <div className="space-y-4">
       {/* Header actions */}
       <div className="flex items-center justify-between">
-        <p className="typo-body text-foreground">
+        <p className="typo-body text-ink-1">
           {pipelines.length > 0 ? tx(pipelines.length === 1 ? t.gitlab.pipeline_count_one : t.gitlab.pipeline_count_other, { count: pipelines.length }) : t.gitlab.no_pipelines}
         </p>
         <div className="flex items-center gap-2">
@@ -151,15 +152,16 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
                 </div>
                 <div className="flex items-center gap-1.5">
                   {sanitizeExternalUrl(activePipeline.webUrl) && (
-                    <a
-                      href={sanitizeExternalUrl(activePipeline.webUrl)!}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-ink-2 transition-colors"
-                      title={t.gitlab.open_in_gitlab}
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
+                    <Tooltip content={t.gitlab.open_in_gitlab}>
+                      <a
+                        href={sanitizeExternalUrl(activePipeline.webUrl)!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 rounded-card hover:bg-surface-2 text-ink-1 hover:text-ink-2 transition-colors"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </Tooltip>
                   )}
                   <Button
                     variant="ghost"
@@ -192,7 +194,7 @@ export function GitLabPipelineViewer({ projectId }: GitLabPipelineViewerProps) {
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full min-h-[200px] typo-body text-foreground">
+            <div className="flex items-center justify-center h-full min-h-[200px] typo-body text-ink-1">
               {t.gitlab.select_pipeline_to_view}
             </div>
           )}

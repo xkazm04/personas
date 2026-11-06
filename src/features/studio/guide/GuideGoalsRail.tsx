@@ -8,6 +8,8 @@ import { PlanGlyph } from '../PlanGlyph';
 import StudioChecklistStepper from '../StudioChecklistStepper';
 import type { BuildPhase } from '../studioBuildModel';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 export interface GuideGoalsRailHandle {
   /** Open the "add a goal" field and focus it (the G key). */
   startAdding: () => void;
@@ -93,14 +95,15 @@ const GuideGoalsRail = forwardRef<
                 </span>
               )}
               <div className="flex-1" />
-              <button
+              <Button
                 type="button"
                 onClick={onClose}
                 aria-label={g.goals_hide}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-secondary/60 hover:text-foreground"
+                variant="ghost"
+                size="icon-sm"
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </header>
 
             {hasPlan && (

@@ -36,6 +36,7 @@ import { resolveDirectorSurface } from './directorSurface';
 import type { DirectorRosterEntry } from '@/api/director';
 import { lazyRetry } from '@/lib/lazyRetry';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 // The deep parts of the tab load as their own chunks. The two modals load on
 // their first open and stay mounted after it (so their close animation plays);
 // the campaign report and the watched pipelines sit below the coaching table
@@ -284,16 +285,18 @@ export default function DirectorCoachingTab() {
                 )}
                 {d.lastReport && <BatchOutcomeLine outcome={describeBatchOutcome(d.lastReport)} />}
                 {openReviewCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => useOverviewStore.getState().setOverviewTab('manual-review')}
-                    title={t.director.open_reviews_hint}
-                    className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors focus-ring rounded"
-                    data-testid="director-open-reviews"
-                  >
-                    <Inbox className="w-3.5 h-3.5 text-status-warning" />
-                    {tx(t.director.open_reviews, { count: openReviewCount })}
-                  </button>
+                  <Tooltip content={t.director.open_reviews_hint}>
+                    <Button
+                      type="button"
+                      onClick={() => useOverviewStore.getState().setOverviewTab('manual-review')}
+                      data-testid="director-open-reviews"
+                      variant="ghost"
+                      size="sm"
+                    >
+                      <Inbox className="w-3.5 h-3.5 text-status-warning" />
+                      {tx(t.director.open_reviews, { count: openReviewCount })}
+                    </Button>
+                  </Tooltip>
                 )}
               </div>
               {/* Memory toggle */}
@@ -309,16 +312,19 @@ export default function DirectorCoachingTab() {
                   />
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={openBrain}
-                  className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors shrink-0"
-                  title={t.director.brain_unavailable}
-                >
-                  <Brain className="w-3.5 h-3.5" />
-                  {t.director.brain_title}
-                  <ExternalLink className="w-3 h-3" />
-                </button>
+                <Tooltip content={t.director.brain_unavailable}>
+                  <Button
+                    type="button"
+                    onClick={openBrain}
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0"
+                  >
+                    <Brain className="w-3.5 h-3.5" />
+                    {t.director.brain_title}
+                    <ExternalLink className="w-3 h-3" />
+                  </Button>
+                </Tooltip>
               )}
             </div>
 
@@ -452,9 +458,11 @@ function Scorecard({
                 const runPct = (m.executions / maxModelRuns) * 100;
                 const valuePct = m.executions > 0 ? (m.valueDelivered / m.executions) * 100 : 0;
                 return (
-                  <div key={m.model} className="grid grid-cols-[1.6fr_auto_auto_auto] items-center gap-3 px-1.5 py-1 rounded">
+                  <div key={m.model} className="grid grid-cols-[1.6fr_auto_auto_auto] items-center gap-3 px-1.5 py-1 rounded-interactive">
                     <div className="min-w-0">
-                      <div className="typo-caption text-foreground truncate" title={m.model}>{m.model}</div>
+                      <Tooltip content={m.model}>
+                        <div className="typo-caption text-foreground truncate" >{m.model}</div>
+                      </Tooltip>
                       <div className="mt-1 h-1.5 rounded-pill bg-secondary/60 overflow-hidden" style={{ width: `${Math.max(runPct, 8)}%` }}>
                         <div className="h-full rounded-pill" style={{ width: `${valuePct}%`, background: 'var(--status-success)' }} />
                       </div>
@@ -492,7 +500,7 @@ function Scorecard({
  * root delay. No pulse — the entrance stagger is the only motion.
  */
 function DirectorScorecardPlaceholder() {
-  const bar = 'bg-primary/[0.06] rounded';
+  const bar = 'bg-surface-2 rounded-interactive';
   /** Absolute delay for a section, `stepMs` past the root's own 150ms gate. */
   const delayOf = (stepMs: number) => `${150 + stepMs}ms`;
   return (

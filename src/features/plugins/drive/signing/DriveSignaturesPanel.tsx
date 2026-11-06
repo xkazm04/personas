@@ -22,6 +22,8 @@ import type { DocumentSignature, VerifyDocumentResult } from "@/api/signing";
 
 import type { useSigning } from "./useSigning";
 
+import Button from '@/features/shared/components/buttons/Button';
+
 const TITLE_ID = "drive-signatures-panel-title";
 
 // Width override — BaseModal's right-drawer default is 480px; this panel
@@ -85,14 +87,15 @@ export function DriveSignaturesPanel({
           <div id={TITLE_ID} className="typo-section-title flex-1">
             {t.plugins.doc_signing.history_heading}
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-input text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors focus-ring"
             aria-label={t.plugins.drive.cancel}
+            variant="ghost"
+            size="icon-sm"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -150,8 +153,8 @@ function SignatureRowGhosts() {
           className="px-4 py-3 border-b border-primary/10 animate-fade-in"
           style={{ animationDelay: `${120 + i * 35}ms` }}
         >
-          <span className="block h-3.5 w-40 max-w-full rounded bg-primary/[0.06]" />
-          <span className="mt-2.5 block h-3 w-28 rounded bg-primary/[0.06]" />
+          <span className="block h-3.5 w-40 max-w-full rounded-interactive bg-surface-2" />
+          <span className="mt-2.5 block h-3 w-28 rounded-interactive bg-surface-2" />
         </div>
       ))}
     </div>
@@ -243,33 +246,36 @@ function SignatureRow({
         </div>
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           {canVerify && (
-            <button
+            <Button
               type="button"
               onClick={handleVerify}
               disabled={verify.status === "verifying"}
-              title={t.plugins.doc_signing.verify_signature}
+              tooltip={t.plugins.doc_signing.verify_signature}
               aria-label={t.plugins.doc_signing.verify_signature}
-              className="p-1.5 rounded-input text-foreground hover:text-status-success hover:bg-status-success/15 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
+              variant="ghost"
+              size="icon-sm"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
             onClick={onExport}
-            title={t.plugins.doc_signing.export_sig}
-            className="p-1.5 rounded-input text-foreground hover:text-status-info hover:bg-status-info/15 transition-colors focus-ring"
+            tooltip={t.plugins.doc_signing.export_sig}
+            variant="ghost"
+            size="icon-sm"
           >
             <Download className="w-3.5 h-3.5" />
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onDelete}
-            title={t.plugins.doc_signing.delete_signature}
-            className="p-1.5 rounded-input text-foreground hover:text-status-error hover:bg-status-error/15 transition-colors focus-ring"
+            tooltip={t.plugins.doc_signing.delete_signature}
+            variant="ghost"
+            size="icon-sm"
           >
             <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -19,7 +19,7 @@ function MediaGhost() {
   return (
     <div
       aria-hidden="true"
-      className="w-full max-w-2xl h-[60vh] max-h-[560px] rounded-card bg-primary/[0.06] animate-fade-in"
+      className="w-full max-w-2xl h-[60vh] max-h-[560px] rounded-card bg-surface-2 animate-fade-in"
       style={{ animationDelay: "120ms" }}
     >
       <span className="sr-only">{t.plugins.drive.loading}</span>

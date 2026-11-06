@@ -27,24 +27,26 @@ import { AthenaChatMessageJobs } from './AthenaChatMessageJobs';
 import { AthenaChatSlowNotice } from './AthenaChatSlowNotice';
 import { CHAT_EASE } from './athenaChatMorph';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /** Inline stop affordance — lives beside the dots, inside the status line. */
 function StopReply({ compact, onClick }: { compact: boolean; onClick: () => void }) {
   const { t } = useTranslation();
   const label = t.athena.stop_turn;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      data-testid="companion-stop-turn"
-      className={`ml-1 inline-flex items-center gap-1 rounded-full border border-foreground/15 bg-foreground/[0.06] hover:bg-foreground/15 hover:border-foreground/25 text-foreground typo-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
-        compact ? 'p-1' : 'pl-1.5 pr-2 py-0.5'
-      }`}
-    >
-      <Square className="w-2.5 h-2.5 shrink-0" fill="currentColor" aria-hidden />
-      {!compact && label}
-    </button>
+    <Tooltip content={label}>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={label}
+        data-testid="companion-stop-turn"
+        className={`ml-1 inline-flex items-center gap-1 rounded-full border border-foreground/15 bg-foreground/[0.06] hover:bg-foreground/15 hover:border-foreground/25 text-foreground typo-caption transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 ${
+          compact ? 'p-1' : 'pl-1.5 pr-2 py-0.5'
+        }`}
+      >
+        <Square className="w-2.5 h-2.5 shrink-0" fill="currentColor" aria-hidden />
+        {!compact && label}
+      </button>
+    </Tooltip>
   );
 }
 

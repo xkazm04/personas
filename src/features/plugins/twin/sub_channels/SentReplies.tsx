@@ -7,6 +7,8 @@ import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import { isSentMessage } from '@/api/twin/placement';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /** A request to adapt a past sent reply in the Reply Outbox. `ts` keys
  *  consumption so the same row can be reused twice in a row. */
 export interface ReuseRequest {
@@ -76,15 +78,16 @@ export function SentReplies({ channels, onReuse }: { channels: TwinChannel[]; on
               </div>
             </div>
             <span className="flex-shrink-0 flex items-center gap-0.5">
-              <button
+              <Button
                 type="button"
                 onClick={() => onReuse({ ts: Date.now(), channel: c.channel, contactHandle: c.contact_handle ?? '', content: c.content })}
-                title={t.sentReuse}
+                tooltip={t.sentReuse}
                 aria-label={t.sentReuse}
-                className="p-1 rounded-interactive text-foreground hover:text-ink-2 hover:bg-surface-2 transition-colors focus-ring"
+                variant="ghost"
+                size="icon-sm"
               >
                 <CornerUpLeft className="w-3.5 h-3.5" />
-              </button>
+              </Button>
               <CopyButton text={c.content} className="text-foreground" />
             </span>
           </li>

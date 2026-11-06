@@ -5,6 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import type { TwinChannelKind } from '@/api/enums';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /* ------------------------------------------------------------------ *
  *  ContactThread — recent logged messages with the selected contact.
  *
@@ -68,15 +69,16 @@ export function ContactThread({
           const replyable = !outbound && !!onReplyTo;
           const row = (
             <>
-              <span
-                className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full inline-flex items-center justify-center ${
-                  outbound ? 'bg-status-success/10 text-status-success' : 'bg-surface-2 text-ink-2'
-                }`}
-                title={dirLabel}
-                aria-label={dirLabel}
-              >
-                <Icon className="w-3 h-3" />
-              </span>
+              <Tooltip content={dirLabel}>
+                <span
+                  className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full inline-flex items-center justify-center ${
+                    outbound ? 'bg-status-success/10 text-status-success' : 'bg-surface-2 text-ink-2'
+                  }`}
+                  aria-label={dirLabel}
+                >
+                  <Icon className="w-3 h-3" />
+                </span>
+              </Tooltip>
               <span className="flex-1 min-w-0 typo-caption text-foreground line-clamp-2">{c.content}</span>
               <RelativeTime timestamp={c.occurred_at} className="flex-shrink-0 typo-caption text-foreground tabular-nums" />
               {replyable && (
@@ -87,15 +89,16 @@ export function ContactThread({
           return (
             <li key={c.id}>
               {replyable ? (
-                <button
-                  type="button"
-                  onClick={() => onReplyTo(c.content)}
-                  title={t.threadReplyTo}
-                  aria-label={t.threadReplyTo}
-                  className="group w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-surface-2 transition-colors focus-ring"
-                >
-                  {row}
-                </button>
+                <Tooltip content={t.threadReplyTo}>
+                  <button
+                    type="button"
+                    onClick={() => onReplyTo(c.content)}
+                    aria-label={t.threadReplyTo}
+                    className="group w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-surface-2 transition-colors focus-ring"
+                  >
+                    {row}
+                  </button>
+                </Tooltip>
               ) : (
                 <span className="flex items-start gap-2 px-3 py-2">{row}</span>
               )}

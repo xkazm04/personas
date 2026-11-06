@@ -1,6 +1,8 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { useStudioStore } from './studioStore';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 // C6 — design adjustment knobs: quick dials that nudge the whole design via a
 // templated build instruction (the Claude Design "knob" UX at the global level).
 // Per-element knobs need the cross-origin preview-agent, deferred with A3.
@@ -56,14 +58,15 @@ export default function StudioDesignKnobs({ id, onApply }: { id: string; onApply
           <span className="typo-caption">{t.studio[k.label]}</span>
           <div className="flex gap-1">
             {k.opts.map((o) => (
-              <button
+              <Button
                 key={o.label}
                 type="button"
                 onClick={() => apply(o.prompt)}
-                className="rounded-interactive bg-secondary/40 px-2 py-0.5 typo-label text-ink-2 transition-colors hover:bg-primary/20 hover:text-primary"
+                variant="ghost"
+                size="sm"
               >
                 {t.studio[o.label]}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

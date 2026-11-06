@@ -68,7 +68,7 @@ export function ReplyShapePanel() {
     stats ? (
       <Numeric value={stats[m.key]} unit={m.unit} precision={m.precision} className="typo-body tabular-nums text-foreground" />
     ) : (
-      <span className="block h-4 w-10 rounded-card bg-primary/[0.06] animate-fade-in" aria-hidden />
+      <span className="block h-4 w-10 rounded-card bg-surface-2 animate-fade-in" aria-hidden />
     );
 
   return (

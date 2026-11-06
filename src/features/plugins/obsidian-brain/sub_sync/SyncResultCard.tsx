@@ -30,19 +30,16 @@ interface CountPill {
   key: string;
   label: string;
   count: number;
-  dotClass: string;
   textClass: string;
 }
 
 const PUSH_ACCENT = {
-  border: 'border-l-violet-500',
   icon: 'text-ink-2',
   iconBg: 'bg-surface-2 border-hair-2',
 };
 const PULL_ACCENT = {
-  border: 'border-l-emerald-500',
   icon: 'text-status-success',
-  iconBg: 'bg-status-success/12 border-status-success/25',
+  iconBg: 'bg-surface-2 border-hair-2',
 };
 
 export default function SyncResultCard({ summary }: { summary: SyncResultSummary }) {
@@ -58,12 +55,12 @@ export default function SyncResultCard({ summary }: { summary: SyncResultSummary
   // each entry is dropped below when its count is zero so the headline only
   // ever shows what actually happened.
   const allPills: CountPill[] = [
-    { key: 'created', label: ob.result_created, count: summary.created, dotClass: 'bg-status-success/10', textClass: 'text-status-success' },
-    { key: 'updated', label: ob.result_updated, count: summary.updated, dotClass: 'bg-status-info/10', textClass: 'text-status-info' },
-    { key: 'skipped', label: ob.result_skipped, count: summary.skipped ?? 0, dotClass: 'bg-surface-2', textClass: 'text-ink-2' },
-    { key: 'converged', label: ob.result_converged, count: summary.converged ?? 0, dotClass: 'bg-surface-2', textClass: 'text-ink-2' },
-    { key: 'conflicts', label: ob.result_conflicts, count: summary.conflicts ?? 0, dotClass: 'bg-status-warning/10', textClass: 'text-status-warning' },
-    { key: 'errors', label: ob.result_errors, count: summary.errors.length, dotClass: 'bg-status-error/10', textClass: 'text-status-error' },
+    { key: 'created', label: ob.result_created, count: summary.created, textClass: 'text-status-success' },
+    { key: 'updated', label: ob.result_updated, count: summary.updated, textClass: 'text-status-info' },
+    { key: 'skipped', label: ob.result_skipped, count: summary.skipped ?? 0, textClass: 'text-ink-2' },
+    { key: 'converged', label: ob.result_converged, count: summary.converged ?? 0, textClass: 'text-ink-2' },
+    { key: 'conflicts', label: ob.result_conflicts, count: summary.conflicts ?? 0, textClass: 'text-status-warning' },
+    { key: 'errors', label: ob.result_errors, count: summary.errors.length, textClass: 'text-status-error' },
   ];
   const pills = allPills.filter((p) => p.count > 0);
 
@@ -76,12 +73,12 @@ export default function SyncResultCard({ summary }: { summary: SyncResultSummary
 
   return (
     // eslint-disable-next-line custom/prefer-section-card -- bespoke collapsible card: rich header (icon + count pills + timestamp + chevron) that SectionCard's fixed header can't express
-    <div className={`bg-secondary/30 border border-primary/12 shadow-elevation-1 rounded-modal border-l-[3px] ${accent.border} overflow-hidden`}>
+    <div className={`bg-surface-1 border border-hair rounded-card overflow-hidden`}>
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
         disabled={!hasBreakdown}
-        className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-secondary/20 transition-colors select-none disabled:cursor-default disabled:hover:bg-transparent"
+        className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-surface-2 transition-colors select-none disabled:cursor-default disabled:hover:bg-transparent"
       >
         <span className={`flex-shrink-0 w-7 h-7 rounded-card border flex items-center justify-center ${accent.iconBg}`}>
           <DirIcon className={`w-3.5 h-3.5 ${accent.icon}`} />
@@ -93,17 +90,17 @@ export default function SyncResultCard({ summary }: { summary: SyncResultSummary
             {pills.map((p) => (
               <span
                 key={p.key}
-                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/10"
+                className={`inline-flex items-center gap-1.5 ${p.textClass}`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${p.dotClass}`} />
-                <span className={`typo-caption tabular-nums ${p.textClass}`}>{p.count}</span>
-                <span className="typo-caption text-foreground">{p.label}</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                <span className="typo-data">{p.count}</span>
+                <span className="typo-caption text-ink-2">{p.label}</span>
               </span>
             ))}
           </div>
         </div>
 
-        <span className="typo-caption text-foreground flex-shrink-0 tabular-nums">
+        <span className="typo-caption text-ink-2 flex-shrink-0 tabular-nums">
           {<AbsoluteTime timestamp={summary.at} variant="time" />}
         </span>
         {hasBreakdown && (
@@ -112,19 +109,19 @@ export default function SyncResultCard({ summary }: { summary: SyncResultSummary
             transition={{ duration: 0.15 }}
             className="flex-shrink-0"
           >
-            <ChevronRight className="w-3.5 h-3.5 text-foreground" />
+            <ChevronRight className="w-3.5 h-3.5 text-ink-2" />
           </motion.span>
         )}
       </button>
 
       <Collapse open={!collapsed && hasBreakdown} unmountWhenClosed duration={200}>
-        <div className="border-t border-primary/8 px-3.5 pb-3.5 pt-3 space-y-3">
+        <div className="border-t border-hair px-3.5 pb-3.5 pt-3 space-y-3">
           <div className="space-y-1.5">
             {pills.map((p) => (
               <div key={p.key} className="flex items-center gap-2.5">
-                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${p.dotClass}`} />
-                <span className={`typo-caption tabular-nums w-8 text-right ${p.textClass}`}>{p.count}</span>
-                <span className="typo-caption text-foreground">{p.label}</span>
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 bg-current ${p.textClass}`} />
+                <span className={`typo-data w-8 text-right ${p.textClass}`}>{p.count}</span>
+                <span className="typo-caption text-ink-2">{p.label}</span>
               </div>
             ))}
           </div>
@@ -139,7 +136,7 @@ export default function SyncResultCard({ summary }: { summary: SyncResultSummary
                     className="flex items-start gap-2 px-2.5 py-1.5 rounded-card bg-status-error/5 border border-status-error/15"
                   >
                     <AlertCircle className="w-3.5 h-3.5 text-status-error flex-shrink-0 mt-0.5" />
-                    <span className="typo-caption text-foreground break-words min-w-0">{err}</span>
+                    <span className="typo-caption text-ink-2 break-words min-w-0">{err}</span>
                   </div>
                 ))}
               </div>

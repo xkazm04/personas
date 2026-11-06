@@ -3,6 +3,8 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { RevitalizeSummary } from '@/api/obsidianBrain';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 interface RevitalizeSummaryCardProps {
   summary: RevitalizeSummary;
   vaultName: string | null;
@@ -45,7 +47,7 @@ export default function RevitalizeSummaryCard({
     {
       label: ob.revitalize_stat_reviewed,
       value: <Numeric value={summary.filesReviewed} />,
-      tone: 'border-primary/15 bg-secondary/20 text-foreground',
+      tone: 'border-hair bg-surface-1 text-ink-1',
     },
     {
       label: ob.revitalize_stat_tokens_saved,
@@ -61,7 +63,7 @@ export default function RevitalizeSummaryCard({
           <Numeric value={summary.notesAfter} />
         </span>
       ),
-      tone: 'border-primary/15 bg-secondary/20 text-foreground',
+      tone: 'border-hair bg-surface-1 text-ink-1',
     },
   ];
 
@@ -98,7 +100,7 @@ export default function RevitalizeSummaryCard({
         {summary.summary && (
           <div>
             <p className="typo-label typo-section-title mb-1.5">{ob.revitalize_model_summary}</p>
-            <p className="typo-body text-foreground">{summary.summary}</p>
+            <p className="typo-body text-ink-1">{summary.summary}</p>
           </div>
         )}
 
@@ -108,7 +110,7 @@ export default function RevitalizeSummaryCard({
             <p className="typo-label typo-section-title mb-1.5">{ob.revitalize_highlights}</p>
             <ul className="space-y-1.5">
               {summary.highlights.map((h, i) => (
-                <li key={i} className="flex items-start gap-2 typo-body text-foreground">
+                <li key={i} className="flex items-start gap-2 typo-body text-ink-1">
                   <Sparkles className="w-3.5 h-3.5 text-ink-2 flex-shrink-0 mt-0.5" />
                   <span className="min-w-0">{h}</span>
                 </li>
@@ -119,22 +121,24 @@ export default function RevitalizeSummaryCard({
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-1">
-          <button
+          <Button
             type="button"
             onClick={onDismiss}
-            className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-card bg-surface-2 text-ink-2 border border-hair-2 hover:bg-surface-2 transition-colors focus-ring"
+            variant="ghost"
+            size="icon-sm"
           >
             <Check className="w-3.5 h-3.5" />
             {ob.revitalize_done}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onRunAgain}
-            className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-card text-foreground border border-primary/15 hover:bg-secondary/40 transition-colors focus-ring"
+            variant="ghost"
+            size="icon-sm"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             {ob.revitalize_run_again}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

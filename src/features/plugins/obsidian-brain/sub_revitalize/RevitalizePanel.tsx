@@ -13,6 +13,8 @@ import RevitalizeHistoryTable from './RevitalizeHistoryTable';
 import { useRevitalizeJob } from './useRevitalizeJob';
 import { extractMessage } from '@/lib/silentCatch';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 export default function RevitalizePanel() {
   const { t, tx } = useTranslation();
   const ob = t.plugins.obsidian_brain;
@@ -56,7 +58,7 @@ export default function RevitalizePanel() {
       <div className="flex-1 min-w-0 max-w-2xl space-y-5">
         {vaultName && (
           <div className="flex items-center gap-2 px-1">
-            <span className="typo-caption text-foreground">{ob.active_vault_label}</span>
+            <span className="typo-caption text-ink-2">{ob.active_vault_label}</span>
             <span className="typo-caption text-ink-2">{vaultName}</span>
           </div>
         )}
@@ -98,22 +100,23 @@ export default function RevitalizePanel() {
                 placeholder={ob.revitalize_instructions_placeholder}
                 rows={2}
                 disabled={running}
-                className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-ink-3 focus-ring transition-all resize-y disabled:opacity-50"
+                className="w-full px-3 py-2 rounded-modal bg-background/50 border border-hair text-ink-1 typo-body placeholder:text-ink-3 focus-ring transition-all resize-y disabled:is-disabled"
               />
             </div>
 
-            <p className="typo-caption text-foreground">{ob.revitalize_safety_note}</p>
+            <p className="typo-caption text-ink-2">{ob.revitalize_safety_note}</p>
 
             {!running && (
-              <button
+              <Button
                 type="button"
                 onClick={handleStart}
                 data-testid="revitalize-start"
-                className="flex items-center gap-2 px-6 py-2.5 rounded-modal bg-surface-2 text-ink-2 border border-hair-2 hover:bg-surface-2 transition-colors focus-ring"
+                variant="ghost"
+                size="icon-sm"
               >
                 <MoonStar className="w-4 h-4" />
                 {ob.revitalize_start}
-              </button>
+              </Button>
             )}
           </div>
         </SectionCard>

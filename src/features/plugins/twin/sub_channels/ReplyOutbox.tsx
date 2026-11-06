@@ -281,7 +281,7 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
               type="button"
               onClick={() => handleSteer(tc[key])}
               disabled={drafting}
-              className={`px-2 py-1 rounded-full border typo-caption transition-colors focus-ring disabled:opacity-40 ${
+              className={`px-2 py-1 rounded-full border typo-caption transition-colors focus-ring disabled:is-disabled ${
                 directions.trim() === tc[key]
                   ? 'border-hair-2 bg-surface-2 text-ink-2'
                   : 'border-primary/15 bg-secondary/30 text-foreground hover:border-hair-2 hover:text-ink-2'

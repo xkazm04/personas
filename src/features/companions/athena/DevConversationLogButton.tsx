@@ -15,6 +15,8 @@ import { cursorFromMessages, fetchAllOlderMessages } from './useTranscriptPages'
 import { parseSidecars } from './turnSidecars';
 import { fetchSidecarsFor } from './useTurnSidecars';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * The freshest FULL conversation: the newest window plus every older
  * keyset page. Falls back to whatever we already have on any failure —
@@ -104,17 +106,18 @@ export function DevConversationLogButton() {
 
   return (
     <Tooltip content={t.athena.dev_dump_log}>
-      <button
+      <Button
         type="button"
         onClick={() => void onExport()}
         disabled={busy}
         aria-busy={busy}
         data-testid="companion-dev-dump-log"
-        className="p-1 rounded-interactive text-status-warning transition-colors focus-ring hover:bg-status-warning/10 hover:text-status-warning disabled:is-disabled"
         aria-label={t.athena.dev_dump_log}
+        variant="ghost"
+        size="icon-sm"
       >
         <FileDown className="w-3.5 h-3.5" aria-hidden />
-      </button>
+      </Button>
     </Tooltip>
   );
 }

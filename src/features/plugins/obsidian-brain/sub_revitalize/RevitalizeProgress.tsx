@@ -3,6 +3,8 @@ import { XCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 interface RevitalizeProgressProps {
   lines: string[];
   onCancel: () => void;
@@ -28,18 +30,19 @@ export default function RevitalizeProgress({ lines, onCancel }: RevitalizeProgre
           <p className="typo-heading text-ink-2">{ob.revitalize_running_title}</p>
           <p className="typo-caption text-ink-2">{ob.revitalize_running_hint}</p>
         </div>
-        <button
+        <Button
           type="button"
           onClick={onCancel}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption rounded-card text-foreground border border-primary/15 hover:bg-status-error/10 hover:text-status-error hover:border-status-error/25 transition-colors focus-ring"
+          variant="ghost"
+          size="icon-sm"
         >
           <XCircle className="w-3.5 h-3.5" />
           {ob.revitalize_cancel}
-        </button>
+        </Button>
       </div>
       <div
         ref={logRef}
-        className="px-5 py-3 max-h-64 overflow-y-auto font-mono typo-caption text-foreground space-y-1"
+        className="px-5 py-3 max-h-64 overflow-y-auto font-mono typo-caption text-ink-2 space-y-1"
       >
         {lines.map((line, i) => (
           <p key={i} className="whitespace-pre-wrap break-words leading-relaxed">

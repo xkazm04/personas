@@ -50,7 +50,7 @@ export function DraftChannelRow({ draft, current, checked, onToggle }: DraftChan
           type="checkbox"
           checked={checked}
           onChange={() => onToggle(draft.channel)}
-          className="h-3.5 w-3.5 shrink-0 cursor-pointer rounded border-primary/30 bg-secondary/30 accent-primary"
+          className="h-3.5 w-3.5 shrink-0 cursor-pointer rounded-interactive border-primary/30 bg-secondary/30 accent-primary"
         />
         <span className="typo-title">{tx(ts.applyTo, { channel: draft.channel })}</span>
       </label>

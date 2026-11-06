@@ -8,6 +8,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { StationSourceKind } from '@/stores/slices/system/radioSlice';
 import type { Station } from '@/lib/bindings/Station';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 interface StationPickerProps {
   stations: Station[];
   currentStationId: string | null | undefined;
@@ -107,7 +109,7 @@ export default function StationPicker({
             <div className="flex items-center gap-2 min-w-0">
               <p className="typo-body truncate">{station.name}</p>
               {station.sourceLabel && (
-                <span className="ml-auto shrink-0 typo-caption text-foreground px-1.5 py-0.5 rounded bg-secondary/30 flex items-center gap-1">
+                <span className="ml-auto shrink-0 typo-caption text-foreground px-1.5 py-0.5 rounded-interactive bg-secondary/30 flex items-center gap-1">
                   {isYt ? (
                     <Music className="w-3 h-3 text-foreground" />
                   ) : (
@@ -140,12 +142,14 @@ export default function StationPicker({
     const collapsed = collapsedSet.has(kind);
     return (
       <div key={kind}>
-        <button
+        <Button
           type="button"
           onClick={() => setSourceKindCollapsed(kind, !collapsed)}
-          className="w-full flex items-center gap-2 px-3 py-1.5 typo-caption text-foreground hover:text-ink-2 hover:bg-secondary/15 transition-colors"
           aria-label={t.radio.group_toggle_label}
           aria-expanded={!collapsed}
+          variant="ghost"
+          size="sm"
+          block
         >
           {collapsed ? (
             <ChevronRight className="w-3 h-3 shrink-0" />
@@ -157,7 +161,7 @@ export default function StationPicker({
           <span className="ml-auto text-foreground tabular-nums">
             {tx(t.radio.group_count, { count: list.length })}
           </span>
-        </button>
+        </Button>
         {!collapsed && <ul className="py-1">{list.map(renderStation)}</ul>}
       </div>
     );

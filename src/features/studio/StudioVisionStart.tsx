@@ -119,16 +119,17 @@ export default function StudioVisionStart({
 
         <div className="mb-5 flex flex-wrap gap-1.5">
           {STARTERS.map((s) => (
-            <button
+            <Button
               key={s.labelKey}
               type="button"
               data-testid="studio-vision-starter"
               onClick={() => applyStarter(s)}
-              className="inline-flex items-center gap-1.5 rounded-interactive border border-border bg-secondary/40 px-3 py-1.5 typo-label text-ink-2 transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-foreground"
+              variant="secondary"
+              size="sm"
             >
               <span aria-hidden>{s.emoji}</span>
               {t.studio[s.labelKey]}
-            </button>
+            </Button>
           ))}
         </div>
 

@@ -6,6 +6,8 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useDecisionKeys } from '../useDecisionKeys';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 // The question card (contest A/3): large, informative, grows out of the orb's
 // corner and shrinks back when answered. It says what Athena is asking, why (her
 // last beat), and every option on its own keyed row. When the question is about
@@ -61,14 +63,16 @@ export default function GuideQuestionCard({
             {tx(g.after_step, { step, minutes: Math.max(1, Math.round(lastTurnSecs / 60)) })}
           </span>
         )}
-        <button
+        <Button
           type="button"
           onClick={onHide}
-          className="ml-auto flex items-center gap-1.5 rounded-interactive px-2 py-1 typo-caption text-ink-2 hover:bg-secondary/60 hover:text-foreground"
+          variant="ghost"
+          size="sm"
+          className="ml-auto"
         >
           <kbd className="rounded-interactive border border-border px-1.5 font-mono typo-caption">Esc</kbd>
           {g.look_around}
-        </button>
+        </Button>
       </header>
       <div className="px-5 pb-5 pt-4">
         {/* Her last beat is markdown (a proposed plan comes as headings and
@@ -113,9 +117,9 @@ export default function GuideQuestionCard({
               aria-label={g.answer_placeholder}
               className="min-w-0 flex-1 rounded-input border border-border bg-background/60 px-3 py-2 typo-body text-foreground outline-none focus:border-primary/60"
             />
-            <button type="submit" disabled={!draft.trim()} className="rounded-interactive bg-primary px-3 py-2 typo-title text-background disabled:is-disabled">
+            <Button type="submit" disabled={!draft.trim()} variant="primary" size="sm">
               {g.answer_send}
-            </button>
+            </Button>
           </form>
         )}
         <p className="mt-3 typo-caption text-ink-2">

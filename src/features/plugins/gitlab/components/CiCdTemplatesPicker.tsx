@@ -27,10 +27,10 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
         className="flex items-center gap-2 w-full text-left"
       >
         <Cpu className="w-4 h-4 text-status-warning" />
-        <span className="typo-body text-foreground">{t.gitlab.cicd_agent_templates}</span>
+        <span className="typo-body text-ink-1">{t.gitlab.cicd_agent_templates}</span>
         {expanded
-          ? <ChevronUp className="w-3.5 h-3.5 text-foreground ml-auto" />
-          : <ChevronDown className="w-3.5 h-3.5 text-foreground ml-auto" />
+          ? <ChevronUp className="w-3.5 h-3.5 text-ink-1 ml-auto" />
+          : <ChevronDown className="w-3.5 h-3.5 text-ink-1 ml-auto" />
         }
       </button>
 
@@ -65,8 +65,8 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
                   onClick={() => onSelectTemplate(template)}
                   className={`text-left p-3 rounded-modal border transition-colors ${
                     available
-                      ? 'border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/20 cursor-pointer'
-                      : 'border-primary/5 bg-secondary/10 opacity-50 cursor-not-allowed'
+                      ? 'border-hair bg-surface-1 hover:bg-surface-2 hover:border-hair cursor-pointer'
+                      : 'border-hair bg-surface-1 opacity-50 cursor-not-allowed'
                   }`}
                 >
                   <div className="flex items-start gap-2.5">
@@ -83,10 +83,10 @@ export function CiCdTemplatesPicker({ userTier, onSelectTemplate }: CiCdTemplate
                           </span>
                         )}
                       </div>
-                      <p className="typo-caption text-foreground mt-0.5 line-clamp-2">
+                      <p className="typo-caption text-ink-2 mt-0.5 line-clamp-2">
                         {template.description}
                       </p>
-                      <span className="inline-block mt-1 typo-caption text-foreground font-mono">
+                      <span className="inline-block mt-1 typo-caption text-ink-2 font-mono">
                         {t.gitlab.trigger_on} {template.trigger}
                       </span>
                     </div>

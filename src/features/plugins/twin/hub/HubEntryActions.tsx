@@ -16,6 +16,8 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { HUB_REJECT_REASONS, isReviewable, type HubEntry, type HubEntryKind, type HubFeedApi, type HubRejectReason, type HubReviewStatus } from './hubContract';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 interface RoleClasses { Icon: LucideIcon; text: string; bg: string; border: string }
 
 /** kind → glyph + semantic role. Five kinds, five distinguishable roles. */
@@ -46,23 +48,25 @@ export function HubRejectChips({ onPick, onCancel, showKeys = false }: {
     <div className="flex flex-wrap items-center gap-1.5" data-testid="hub-reject-reasons">
       <span className="typo-label text-status-error">{t.entry.rejectHeading}</span>
       {HUB_REJECT_REASONS.map((reason, i) => (
-        <button
+        <Button
           key={reason}
           type="button"
           onClick={() => onPick(reason)}
           data-testid={`hub-reject-${reason}`}
-          className="px-2 py-0.5 rounded-interactive border border-status-error/30 bg-status-error/10 text-status-error typo-caption transition-colors hover:bg-status-error/20 focus-ring"
+          variant="danger"
+          size="sm"
         >
           {showKeys ? `${i + 1} · ${t.reasons[reason]}` : t.reasons[reason]}
-        </button>
+        </Button>
       ))}
-      <button
+      <Button
         type="button"
         onClick={onCancel}
-        className="px-2 py-0.5 rounded-interactive border border-border typo-caption text-foreground transition-colors hover:bg-secondary/50 focus-ring"
+        variant="secondary"
+        size="sm"
       >
         {t.entry.rejectCancel}
-      </button>
+      </Button>
     </div>
   );
 }

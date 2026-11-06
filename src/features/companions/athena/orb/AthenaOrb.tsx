@@ -41,6 +41,7 @@ import { useAthenaOrbPresence } from './athenaOrbPresence';
 import { useAthenaOrbReactions } from './athenaOrbReactions';
 import { useSystemStore } from '@/stores/systemStore';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 export { ORB_SIZE } from './athenaOrbGeometry';
 
 export function AthenaOrb({
@@ -118,66 +119,67 @@ export function AthenaOrb({
         />
       )}
 
-      <button
-        type="button"
-        {...gesture.handlers}
-        data-testid="companion-orb"
-        aria-pressed={talking}
-        className={`relative w-full h-full rounded-full overflow-visible cursor-grab active:cursor-grabbing focus-ring transition-transform ${
-          talking
-            ? `ring-2 ring-primary/60 ${reduceMotion ? '' : 'animate-pulse'}`
-            : reduceMotion
-              ? ''
-              : 'hover:scale-105'
-        }`}
-        title={t.athena.orb_talk_hint}
-        aria-label={presence.ariaLabel}
-      >
-        {presence.speaking && <OrbSpeakingGlow reduceMotion={!!reduceMotion} glowRef={glowRef} />}
-        {reactions.messageActive && <OrbPulseGlow tone="primary" />}
-        {reactions.forwardAck && <OrbPulseGlow tone="amber" reduceMotion={!!reduceMotion} />}
-        {/* Standing unread ring. Ranks BELOW the two one-shots above it: while a
-            reaction plays the user is being told about this very message, and
-            the standing ring re-asserts itself the moment that loop ends. */}
-        <span
-          className={`absolute inset-0 rounded-full overflow-hidden shadow-elevation-3 bg-primary/10 transition-[box-shadow] ${
-            reactions.forwardAck
-              ? 'ring-2 ring-status-warning'
-              : reactions.messageActive
-                ? 'ring-2 ring-primary'
-                : presence.hasUnread
-                  ? 'ring-2 ring-primary/70'
-                  : 'ring-1 ring-primary/25'
+      <Tooltip content={t.athena.orb_talk_hint}>
+        <button
+          type="button"
+          {...gesture.handlers}
+          data-testid="companion-orb"
+          aria-pressed={talking}
+          className={`relative w-full h-full rounded-full overflow-visible cursor-grab active:cursor-grabbing focus-ring transition-transform ${
+            talking
+              ? `ring-2 ring-primary/60 ${reduceMotion ? '' : 'animate-pulse'}`
+              : reduceMotion
+                ? ''
+                : 'hover:scale-105'
           }`}
+          aria-label={presence.ariaLabel}
         >
-          <AthenaAvatar
-            state={presence.avatarState}
-            fill
-            className="absolute inset-0"
-            messageNonce={reactions.messageNonce}
-            onMessageActiveChange={reactions.setMessageActive}
-          />
-        </span>
-        {talking && (
-          <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center ring-2 ring-background">
-            <span className="w-1.5 h-1.5 rounded-full bg-background animate-pulse" />
+          {presence.speaking && <OrbSpeakingGlow reduceMotion={!!reduceMotion} glowRef={glowRef} />}
+          {reactions.messageActive && <OrbPulseGlow tone="primary" />}
+          {reactions.forwardAck && <OrbPulseGlow tone="amber" reduceMotion={!!reduceMotion} />}
+          {/* Standing unread ring. Ranks BELOW the two one-shots above it: while a
+              reaction plays the user is being told about this very message, and
+              the standing ring re-asserts itself the moment that loop ends. */}
+          <span
+            className={`absolute inset-0 rounded-full overflow-hidden shadow-elevation-3 bg-primary/10 transition-[box-shadow] ${
+              reactions.forwardAck
+                ? 'ring-2 ring-status-warning'
+                : reactions.messageActive
+                  ? 'ring-2 ring-primary'
+                  : presence.hasUnread
+                    ? 'ring-2 ring-primary/70'
+                    : 'ring-1 ring-primary/25'
+            }`}
+          >
+            <AthenaAvatar
+              state={presence.avatarState}
+              fill
+              className="absolute inset-0"
+              messageNonce={reactions.messageNonce}
+              onMessageActiveChange={reactions.setMessageActive}
+            />
           </span>
-        )}
-        {presence.hasUnread && (
-          <OrbUnreadBadge
-            count={presence.unreadReplies}
-            label={presence.unreadLabel}
-            reduceMotion={!!reduceMotion}
-          />
-        )}
-        {presence.taskDots.length > 0 && (
-          <OrbTaskDots
-            dots={presence.taskDots}
-            total={presence.runningTaskCount}
-            reduceMotion={!!reduceMotion}
-          />
-        )}
-      </button>
+          {talking && (
+            <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center ring-2 ring-background">
+              <span className="w-1.5 h-1.5 rounded-full bg-background animate-pulse" />
+            </span>
+          )}
+          {presence.hasUnread && (
+            <OrbUnreadBadge
+              count={presence.unreadReplies}
+              label={presence.unreadLabel}
+              reduceMotion={!!reduceMotion}
+            />
+          )}
+          {presence.taskDots.length > 0 && (
+            <OrbTaskDots
+              dots={presence.taskDots}
+              total={presence.runningTaskCount}
+              reduceMotion={!!reduceMotion}
+            />
+          )}
+        </button>
+      </Tooltip>
 
       <AthenaOrbCornerActions
         quickInputOpen={quickInputOpen}

@@ -165,14 +165,15 @@ export default function StudioChatInput({
                     {t.studio.conversation}
                   </span>
                   <div className="flex-1" />
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setChatOpen(false)}
                     aria-label={t.studio.collapse}
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-secondary/60 hover:text-foreground"
+                    variant="ghost"
+                    size="icon-sm"
                   >
                     <ChevronDown className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </header>
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
                   <StudioMessages expanded />
@@ -250,28 +251,32 @@ export default function StudioChatInput({
               </>
             )}
             <div className="flex-1" />
-            <button
+            <Button
               type="button"
               onClick={() => void pickReference()}
               disabled={working}
               aria-label={t.studio.add_reference_image}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0"
             >
               <ImageIcon className="h-4 w-4" />
-            </button>
+            </Button>
             <StudioBuildSettings id={activeId} />
             <ToolbarDivider />
             {busy ? (
-              <button
+              <Button
                 type="button"
                 onClick={() => stopTurn(activeId)}
                 data-testid="studio-stop"
                 aria-label={t.studio.stop_athena}
-                className="flex h-7 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 typo-label text-status-error transition-colors hover:bg-status-error/20"
+                variant="danger"
+                size="sm"
+                className="shrink-0"
               >
                 <CircleStop className="h-4 w-4" />
                 {t.studio.stop}
-              </button>
+              </Button>
             ) : (
               <button
                 type="button"
@@ -306,15 +311,17 @@ export default function StudioChatInput({
             inputTestId="studio-chat-input"
             sendLabel={t.common.send}
             leading={
-              <button
+              <Button
                 type="button"
                 onClick={() => setChatOpen((v) => !v)}
                 aria-label={chatOpen ? t.studio.collapse_conversation : t.studio.expand_conversation}
                 aria-expanded={chatOpen}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-secondary/60 hover:text-primary"
+                variant="ghost"
+                size="icon-sm"
+                className="shrink-0"
               >
                 {chatOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-              </button>
+              </Button>
             }
           />
         </div>

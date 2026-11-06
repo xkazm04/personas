@@ -12,6 +12,8 @@ import { useMcpRequestStore, type McpPendingRequest } from './mcpRequestStore';
 import { resolveMcpRequest } from './useMcpRequestBridge';
 import { useMcpRequestCard } from './useMcpRequestCard';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * Stack of inline cards for in-flight MCP requests. Mounted inside
  * AthenaChatPanel above the message list so the user sees blocking
@@ -103,18 +105,19 @@ function SessionGroup({ group }: { group: SessionGroupShape }) {
               .replace('{count}', String(group.approvalCount))
               .replace('{session}', sessionLabel(group.fleetSessionId))}
           </span>
-          <button
+          <Button
             type="button"
             onClick={handleBatchApprove}
             disabled={batchSending}
-            className="inline-flex items-center gap-1 rounded-interactive bg-primary text-primary-foreground px-2 py-0.5 typo-caption disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
             data-testid="companion-mcp-batch-approve"
+            variant="primary"
+            size="sm"
           >
             <Check className="size-3" />
             {batchSending
               ? t.athena.orchestration.batch_approving
               : t.athena.orchestration.batch_approve_all}
-          </button>
+          </Button>
         </div>
       )}
       {group.requests.map((r) =>
@@ -160,15 +163,16 @@ function GuidanceCard({ request }: { request: McpPendingRequest }) {
           rows={2}
           disabled={sending !== null}
         />
-        <button
+        <Button
           type="button"
           onClick={onSubmit}
           disabled={!text.trim() || sending !== null}
-          className="rounded-interactive bg-primary text-primary-foreground px-3 py-1.5 typo-title disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
+          variant="primary"
+          size="sm"
         >
           <Send className="size-3.5" />
           {t.athena.orchestration.guidance_send}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -205,24 +209,28 @@ function ApprovalCard({ request }: { request: McpPendingRequest }) {
         disabled={sending !== null}
       />
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
           onClick={onApprove}
           disabled={sending !== null}
-          className="flex-1 rounded-interactive bg-primary text-primary-foreground px-3 py-1.5 typo-title disabled:opacity-50 inline-flex items-center justify-center gap-1"
+          variant="primary"
+          size="sm"
+          className="flex-1"
         >
           <Check className="size-3.5" />
           {t.athena.orchestration.approval_approve}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={onDeny}
           disabled={sending !== null}
-          className="flex-1 rounded-interactive border border-border bg-background text-foreground px-3 py-1.5 typo-title disabled:opacity-50 inline-flex items-center justify-center gap-1"
+          variant="secondary"
+          size="sm"
+          className="flex-1"
         >
           <X className="size-3.5" />
           {t.athena.orchestration.approval_deny}
-        </button>
+        </Button>
       </div>
     </div>
   );

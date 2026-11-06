@@ -80,7 +80,7 @@ export function AddToScopeModal({
                     type="button"
                     disabled={added}
                     onClick={() => add(p.id)}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-card hover:bg-secondary/40 transition-colors text-left disabled:opacity-60"
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-card hover:bg-secondary/40 transition-colors text-left disabled:is-disabled"
                   >
                     <PersonaIcon icon={p.icon} color={p.color} size="w-4 h-4" />
                     <span className="typo-body text-foreground truncate flex-1">{p.name}</span>

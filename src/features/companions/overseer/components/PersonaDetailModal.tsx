@@ -143,7 +143,7 @@ export function PersonaDetailModal({
         </h3>
         {entry.latestScore != null && tone && (
           <span
-            className="inline-flex items-center justify-center min-w-[1.75rem] px-2 py-0.5 rounded typo-body tabular-nums"
+            className="inline-flex items-center justify-center min-w-[1.75rem] px-2 py-0.5 rounded-interactive typo-body tabular-nums"
             style={{ color: tone.color }}
           >
             {entry.latestScore}
@@ -282,7 +282,7 @@ export function PersonaDetailModal({
                         const Icon = meta.icon;
                         return (
                           <span
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-caption shrink-0"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive typo-caption shrink-0"
                             style={{ color: meta.color }}
                           >
                             <Icon className="w-3 h-3" />
@@ -321,16 +321,17 @@ export function PersonaDetailModal({
         {/* prior coaching from long-term memory (Obsidian Brain), when enabled */}
         {brainHistory && (
           <div className="space-y-1.5">
-            <button
+            <Button
               type="button"
               onClick={() => setBrainOpen((o) => !o)}
               aria-expanded={brainOpen}
-              className="inline-flex items-center gap-1.5 typo-caption text-foreground focus-ring rounded"
+              variant="ghost"
+              size="sm"
             >
               {brainOpen ? <ChevronDown className="w-3.5 h-3.5 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
               <Brain className="w-3.5 h-3.5 text-ink-2" />
               {t.director.brain_history_title}
-            </button>
+            </Button>
             {brainOpen && (
               <div className="rounded-card border border-primary/10 bg-secondary/15 px-3 py-2 animate-fade-slide-in">
                 <MarkdownRenderer content={brainHistory} />

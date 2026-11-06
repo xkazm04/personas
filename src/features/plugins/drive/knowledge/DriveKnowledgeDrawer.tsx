@@ -16,6 +16,8 @@ import {
 import type { KbIngestProgressPayload } from "@/lib/eventRegistry";
 import { useKbIngestProgress } from "./kbIngestListener";
 
+import Button from '@/features/shared/components/buttons/Button';
+
 const TITLE_ID = "drive-knowledge-drawer-title";
 
 type Tab = "ask" | "extract";
@@ -126,7 +128,7 @@ export function DriveKnowledgeDrawer({ kb: initialKb, queuedCount, onClose }: Pr
         tab === id
           ? "bg-surface-2 border border-hair-2 text-ink-2"
           : "border border-transparent text-foreground hover:bg-secondary/50"
-      } disabled:opacity-40 disabled:cursor-not-allowed`}
+      } disabled:is-disabled`}
     >
       <Icon className="w-3.5 h-3.5" />
       {label}
@@ -149,14 +151,15 @@ export function DriveKnowledgeDrawer({ kb: initialKb, queuedCount, onClose }: Pr
                 {tx(d.kb_docs_n, { count: kb.documentCount })}
               </div>
             </div>
-            <button
+            <Button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-input text-foreground hover:bg-secondary/60 transition-colors focus-ring"
               aria-label={d.cancel}
+              variant="ghost"
+              size="icon-sm"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
           {/* The in-flight strip. It sits UNDER the permanent header rather
               than replacing it, so a running job never hides the KB it is

@@ -19,6 +19,8 @@ import { FULLSCREEN_LAYER_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKey
 import { silentCatch } from '@/lib/silentCatch';
 import { AssistantProse } from './AssistantProse';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 const reportCache = createModuleCache<string, CompanionReport>({ maxSize: 24 });
 
 /** Test hatch. */
@@ -90,14 +92,15 @@ export function ReportReader({
   return (
     <div className={shell} role="region" aria-label={c.report_kicker} data-testid="companion-report-reader">
       <header className="flex items-center gap-2 px-4 py-3 border-b border-foreground/10 shrink-0">
-        <button
+        <Button
           type="button"
           onClick={onClose}
-          className="p-1 rounded-interactive text-foreground hover:bg-foreground/5 transition-colors focus-ring"
           aria-label={t.common.back}
+          variant="ghost"
+          size="icon-sm"
         >
           <ArrowLeft className="w-4 h-4" aria-hidden />
-        </button>
+        </Button>
         <div className="min-w-0 flex-1">
           <div className="typo-eyebrow text-ink-3">{c.report_kicker}</div>
           {report ? (
@@ -118,7 +121,7 @@ export function ReportReader({
               {[92, 100, 84, 96, 60].map((w, i) => (
                 <div
                   key={i}
-                  className="h-3.5 rounded-card bg-primary/[0.06] animate-fade-in"
+                  className="h-3.5 rounded-card bg-surface-2 animate-fade-in"
                   style={{ width: `${w}%`, animationDelay: `${120 + i * 35}ms` }}
                 />
               ))}

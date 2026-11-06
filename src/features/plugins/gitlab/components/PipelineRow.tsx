@@ -16,7 +16,7 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
       className={`w-full text-left p-3 rounded-modal border transition-colors ${
         isActive
           ? 'border-status-warning/30 bg-status-warning/5'
-          : 'border-primary/10 bg-secondary/20 hover:bg-secondary/40'
+          : 'border-hair bg-surface-1 hover:bg-surface-2'
       }`}
     >
       <div className="flex items-center gap-2.5">
@@ -28,7 +28,7 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
               {pipeline.status}
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-0.5 typo-caption text-foreground">
+          <div className="flex items-center gap-2 mt-0.5 typo-caption text-ink-2">
             <span className="flex items-center gap-1">
               <GitBranch className="w-3 h-3" />
               {pipeline.ref}
@@ -46,7 +46,7 @@ export function PipelineRow({ pipeline, isActive, onSelect }: PipelineRowProps) 
             )}
           </div>
         </div>
-        <ChevronRight className={`w-4 h-4 text-foreground transition-transform ${isActive ? 'rotate-90' : ''}`} />
+        <ChevronRight className={`w-4 h-4 text-ink-1 transition-transform ${isActive ? 'rotate-90' : ''}`} />
       </div>
     </button>
   );

@@ -35,6 +35,8 @@ import { useTtsSettings } from '../useTtsSettings';
 import { useTtsVoiceSelection } from '../useTtsVoiceSelection';
 import { lastAssistantText } from '../chat/athenaChatPreview';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 export function OrbQuickInputBar({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const c = t.athena;
@@ -93,20 +95,22 @@ export function OrbQuickInputBar({ onClose }: { onClose: () => void }) {
               <span className="typo-caption text-primary">{c.name}</span>
               {streaming && (
                 <span className="inline-flex items-center gap-1.5" role="status" aria-live="polite">
-                  <span className="typo-caption text-foreground opacity-70">{c.working}</span>
+                  <span className="typo-caption text-ink-2">{c.working}</span>
                   <TypingDots />
                 </span>
               )}
-              <button
+              <Button
                 type="button"
                 onClick={() => useAthenaStore.getState().setState('open')}
                 data-testid="orb-quick-input-expand"
                 aria-label={c.orb_quick_input_expand}
-                title={c.orb_quick_input_expand}
-                className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary/60 hover:text-primary focus-ring"
+                tooltip={c.orb_quick_input_expand}
+                variant="ghost"
+                size="icon-sm"
+                className="ml-auto shrink-0"
               >
                 <ChevronsUpDown className="h-3.5 w-3.5" aria-hidden />
-              </button>
+              </Button>
             </div>
             {lastReply && (
               <>
@@ -159,16 +163,18 @@ export function OrbQuickInputBar({ onClose }: { onClose: () => void }) {
             listeningLabel: c.dictate_stop,
           }}
           trailing={
-            <button
+            <Button
               type="button"
               onClick={onClose}
               data-testid="orb-quick-input-close"
               aria-label={c.orb_quick_input_close}
-              title={c.orb_quick_input_close}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary/60 hover:text-primary"
+              tooltip={c.orb_quick_input_close}
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0"
             >
               <X className="h-3.5 w-3.5" aria-hidden />
-            </button>
+            </Button>
           }
         />
       </div>

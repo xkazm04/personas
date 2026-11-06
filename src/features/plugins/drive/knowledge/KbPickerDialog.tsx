@@ -9,6 +9,8 @@ import type { KnowledgeBase } from "@/api/vault/database/vectorKb";
 
 import type { UseDriveKnowledgeResult } from "./useDriveKnowledge";
 
+import Button from '@/features/shared/components/buttons/Button';
+
 const TITLE_ID = "drive-kb-picker-title";
 
 interface Props {
@@ -61,14 +63,15 @@ export function KbPickerDialog({
               {tx(d.kb_picker_subtitle, { target: targetLabel })}
             </div>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-input text-foreground hover:bg-secondary/60 transition-colors focus-ring"
             aria-label={d.cancel}
+            variant="ghost"
+            size="icon-sm"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-2">
@@ -84,7 +87,7 @@ export function KbPickerDialog({
               type="button"
               disabled={pending}
               onClick={() => onPick(kb)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-card border border-primary/15 bg-secondary/30 hover:bg-secondary/50 hover:border-hair-2 transition-colors text-left disabled:opacity-50 focus-ring"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-card border border-primary/15 bg-secondary/30 hover:bg-secondary/50 hover:border-hair-2 transition-colors text-left disabled:is-disabled focus-ring"
             >
               <Brain className="w-4 h-4 text-ink-2 shrink-0" />
               <span className="flex-1 min-w-0 typo-body text-foreground truncate">
@@ -110,15 +113,16 @@ export function KbPickerDialog({
                 autoFocus
                 className="flex-1 min-w-0 px-3 py-2 rounded-input bg-secondary/40 border border-primary/20 typo-body text-foreground placeholder:text-foreground focus:outline-none focus:border-hair-2 transition-colors"
               />
-              <button
+              <Button
                 type="button"
                 onClick={() => void handleCreate()}
                 disabled={!newName.trim() || pending}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-input bg-surface-2 border border-hair-2 typo-body text-ink-2 hover:bg-surface-2 disabled:opacity-40 transition-colors focus-ring"
+                variant="ghost"
+                size="icon-sm"
               >
                 {pending ? <LoadingSpinner className="text-ink-2" /> : null}
                 {d.kb_create}
-              </button>
+              </Button>
             </div>
           ) : (
             <button

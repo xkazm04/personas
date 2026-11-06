@@ -3,6 +3,8 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ShipMilestoneRow } from '@/api/companion';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 interface Props {
   row: ShipMilestoneRow;
   index: number;
@@ -49,16 +51,18 @@ export function AthenaShipMilestoneRow({
           </Tooltip>
         </div>
         <Tooltip content={c.ship_milestone_remove_row}>
-        <button
+        <Button
           type="button"
           onClick={onRemove}
           disabled={disabled}
           aria-label={c.ship_milestone_remove_row}
-          className="shrink-0 p-1 rounded-interactive text-foreground hover:bg-secondary/70 disabled:opacity-40"
           data-testid={`athena-ship-remove-${index}`}
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0"
         >
           <X className="w-3.5 h-3.5" />
-        </button>
+        </Button>
         </Tooltip>
       </div>
 
@@ -69,7 +73,7 @@ export function AthenaShipMilestoneRow({
         rows={2}
         aria-label={c.ship_milestone_description_label}
         placeholder={c.ship_milestone_description_placeholder}
-        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body text-foreground resize-y disabled:opacity-60"
+        className="w-full rounded-input bg-background/60 border border-border px-2 py-1.5 typo-body text-foreground resize-y disabled:is-disabled"
         data-testid={`athena-ship-description-${index}`}
       />
     </li>

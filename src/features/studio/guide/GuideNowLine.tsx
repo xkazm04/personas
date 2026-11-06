@@ -7,6 +7,8 @@ import { activityText, guideStrings } from './guideCopy';
 import { clock, useElapsed } from './useGuideRuntime';
 import GuideQueuedNotes from './GuideQueuedNotes';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 // One plain line under the frame: what Athena is doing now, with honest elapsed
 // time and never a percentage. The button at its left opens her tools: Studio's
 // own orb when the app-wide orb is off or hidden, else a plain tools button,
@@ -76,20 +78,22 @@ export default function GuideNowLine({
   return (
     <div className="flex min-h-10 items-center gap-3 px-1">
       {orbShown ? (
-        <button
+        <Button
           type="button"
           onClick={onOrb}
           aria-label={g.tools_open}
           aria-haspopup="menu"
           aria-expanded={toolsOpen}
           data-testid="guide-tools-button"
-          className="group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary/50 text-primary transition-colors hover:bg-primary/10"
+          variant="secondary"
+          size="sm"
+          className="relative shrink-0"
         >
           <Wand2 className="h-4 w-4" />
           <kbd className="absolute -right-2 -top-1.5 rounded-interactive border border-border bg-background px-1 font-mono typo-caption leading-4 text-ink-2 opacity-0 transition-opacity group-hover:opacity-100">
             O
           </kbd>
-        </button>
+        </Button>
       ) : (
         <button
           type="button"
@@ -133,12 +137,14 @@ export default function GuideNowLine({
 /** Brings back a question the user tucked away (Esc or the card's hide). */
 export function YourCallButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button
+    <Button
       type="button"
       onClick={onClick}
-      className="pointer-events-auto shrink-0 rounded-interactive border border-status-warning/60 bg-background/85 px-2.5 py-0.5 typo-caption text-status-warning hover:bg-status-warning/10"
+      variant="secondary"
+      size="sm"
+      className="shrink-0"
     >
       {label}
-    </button>
+    </Button>
   );
 }

@@ -21,6 +21,8 @@ import {
 import { silentCatch, toastCatch, extractMessage } from '@/lib/silentCatch';
 import { AthenaStatusSection } from './AthenaStatusSection';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 // The two deep parts of the page load as their own chunks: the browser bridge
 // is the last section and arrives once the page above it has painted, and the
 // signals modal loads on its first open and stays mounted after that so its
@@ -277,14 +279,15 @@ export default function SetupPanel() {
             onChange={() => void toggleSensory('cli_session', !(sensory?.cliSessionEnabled ?? false))}
           />
           <div className="px-1 pt-3">
-            <button
+            <Button
               type="button"
               onClick={() => setSignalsModalOpen(true)}
-              className="inline-flex items-center gap-2 typo-caption text-primary hover:underline focus-ring rounded"
+              variant="ghost"
+              size="icon-sm"
             >
               <Eye className="w-3.5 h-3.5" />
               {c.setup_desktop_view_signals}
-            </button>
+            </Button>
           </div>
         </>
       ),

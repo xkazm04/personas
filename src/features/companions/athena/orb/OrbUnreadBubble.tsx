@@ -26,6 +26,9 @@ import { useTtsSettings } from '../useTtsSettings';
 import { useTtsVoiceSelection } from '../useTtsVoiceSelection';
 import { orbDock } from './athenaOrbDock';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /** Longest preview we render before clamping. Enough for a real paragraph. */
 const PREVIEW_CHARS = 420;
 
@@ -75,7 +78,7 @@ export function OrbUnreadBubble() {
           <MessageSquareText className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden />
           <span className="typo-caption text-primary">{c.orb_unread_title}</span>
           {unreadReplies > 1 && (
-            <span className="typo-caption text-foreground opacity-70 tabular-nums">
+            <span className="typo-data text-ink-2">
               {tx(c.orb_unread_more, { count: unreadReplies - 1 })}
             </span>
           )}
@@ -102,28 +105,30 @@ export function OrbUnreadBubble() {
               synthesizing / stop / failed states. It renders nothing when no
               voice engine is configured. */}
           <BubbleReadAloud content={unreadPreview} voice={voice} voiceSettings={voiceSettings} />
-          <button
+          <Button
             type="button"
             onClick={openChat}
             data-testid="athena-unread-open-chat"
-            className="inline-flex items-center gap-1 rounded-interactive bg-primary/10 border border-primary/20 hover:bg-primary/20 px-2 py-0.5 typo-caption text-primary transition-colors focus-ring"
+            variant="secondary"
+            size="sm"
           >
             {c.orb_unread_open}
-          </button>
+          </Button>
         </div>
 
         {/* Dismiss = mark read. Deliberately not "hide": leaving the badge up
             after the user has read the words here would make it lie. */}
-        <button
-          type="button"
-          onClick={() => useAthenaStore.getState().clearUnreadReplies()}
-          data-testid="athena-unread-dismiss"
-          aria-label={c.orb_unread_dismiss}
-          title={c.orb_unread_dismiss}
-          className="absolute -top-2.5 -right-2.5 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-background/95 border border-primary/25 text-foreground shadow-elevation-2 ring-2 ring-background hover:border-primary/50 transition"
-        >
-          <X className="w-3 h-3" />
-        </button>
+        <Tooltip content={c.orb_unread_dismiss}>
+          <button
+            type="button"
+            onClick={() => useAthenaStore.getState().clearUnreadReplies()}
+            data-testid="athena-unread-dismiss"
+            aria-label={c.orb_unread_dismiss}
+            className="absolute -top-2.5 -right-2.5 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-background/95 border border-primary/25 text-foreground shadow-elevation-2 ring-2 ring-background hover:border-primary/50 transition"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </Tooltip>
       </div>
     </motion.div>
   );

@@ -58,7 +58,7 @@ export function ScoreDistribution({
               disabled={band.count === 0}
               onClick={() => onSelect(toggleFilter(filter, { type: 'score', score: band.score }))}
               aria-pressed={active}
-              className={`flex-1 flex flex-col items-center gap-1.5 h-full justify-end rounded transition-colors focus-ring ${
+              className={`flex-1 flex flex-col items-center gap-1.5 h-full justify-end rounded-interactive transition-colors focus-ring ${
                 band.count === 0 ? 'cursor-default' : 'cursor-pointer'
               } ${active ? 'bg-secondary/50' : band.count > 0 ? 'hover:bg-secondary/25' : ''}`}
             >
@@ -75,7 +75,7 @@ export function ScoreDistribution({
                   }}
                 />
               </div>
-              <span className="typo-caption tabular-nums px-1.5 rounded" style={{ color: tone.color, backgroundColor: toneFill(tone.color) }}>
+              <span className="typo-caption tabular-nums px-1.5 rounded-interactive" style={{ color: tone.color, backgroundColor: toneFill(tone.color) }}>
                 {band.score}
               </span>
             </button>
@@ -88,7 +88,7 @@ export function ScoreDistribution({
         <div aria-hidden className="absolute inset-y-0 pointer-events-none" style={{ left: `${avgLeftPct}%` }}>
           <div className="absolute inset-y-0 left-0 w-px border-l border-dashed" style={{ borderColor: 'var(--muted-foreground)' }} />
           <span
-            className="absolute -top-1 left-0 -translate-x-1/2 inline-flex items-center gap-0.5 px-1 rounded bg-background/90 typo-caption text-foreground whitespace-nowrap"
+            className="absolute -top-1 left-0 -translate-x-1/2 inline-flex items-center gap-0.5 px-1 rounded-interactive bg-background/90 typo-caption text-foreground whitespace-nowrap"
           >
             {t.director.avg_label}
             <Numeric value={avgScore} precision={1} className="tabular-nums font-medium" />

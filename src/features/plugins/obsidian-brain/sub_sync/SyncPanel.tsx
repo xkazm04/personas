@@ -24,6 +24,8 @@ import SyncResultCard, { type SyncResultSummary } from './SyncResultCard';
 import ConflictDiffView from './ConflictDiffView';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 export default function SyncPanel() {
   const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
@@ -190,7 +192,7 @@ export default function SyncPanel() {
       {/* Active Vault */}
       {activeVaultName && (
         <div className="flex items-center gap-2 px-1">
-          <span className="typo-caption text-foreground">{t.plugins.obsidian_brain.active_vault_label}</span>
+          <span className="typo-caption text-ink-2">{t.plugins.obsidian_brain.active_vault_label}</span>
           <span className="typo-caption text-ink-2">{activeVaultName}</span>
         </div>
       )}
@@ -199,26 +201,28 @@ export default function SyncPanel() {
       <SectionCard title={t.plugins.obsidian_brain.sync_actions}>
         <div className="space-y-4">
           <div className="flex gap-3">
-            <button
+            <Button
               type="button"
               onClick={pushSync}
               disabled={pushing || pulling || selectedPersonaIds.size === 0}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-surface-2 text-ink-2 border border-hair-2 hover:bg-surface-2 transition-colors disabled:opacity-40 focus-ring"
+              variant="secondary"
+              size="sm"
             >
               {pushing ? <LoadingSpinner size="sm" /> : <ArrowUpFromLine className="w-4 h-4" />}
               {pushing
                 ? t.plugins.obsidian_brain.pushing
                 : `${t.plugins.obsidian_brain.push_to_vault} (${selectedPersonaIds.size})`}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={pullSync}
               disabled={pushing || pulling}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-status-success/15 text-status-success border border-status-success/25 hover:bg-status-success/20 transition-colors disabled:opacity-40 focus-ring"
+              variant="secondary"
+              size="sm"
             >
               {pulling ? <LoadingSpinner size="sm" /> : <ArrowDownToLine className="w-4 h-4" />}
               {pulling ? t.plugins.obsidian_brain.pulling : t.plugins.obsidian_brain.pull_from_vault}
-            </button>
+            </Button>
           </div>
 
           {/* Persona Selection */}
@@ -229,29 +233,30 @@ export default function SyncPanel() {
                 <span className="typo-caption text-ink-2 tabular-nums">
                   {tx(t.plugins.obsidian_brain.personas_selected_count, { selected: selectedPersonaIds.size, total: personas.length })}
                 </span>
-                <button type="button" onClick={selectAll} className="typo-caption text-ink-2 hover:text-ink-2 transition-colors focus-ring rounded px-1.5 py-0.5">
+                <Button type="button" onClick={selectAll} variant="ghost" size="sm">
                   {t.plugins.obsidian_brain.select_all}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={deselectAll}
                   disabled={selectedPersonaIds.size === 0}
-                  className="typo-caption text-foreground hover:text-foreground transition-colors focus-ring rounded px-1.5 py-0.5 disabled:opacity-40"
+                  variant="ghost"
+                  size="sm"
                 >
                   {t.plugins.obsidian_brain.deselect_all}
-                </button>
+                </Button>
               </div>
             </div>
             {personas.length > 6 && (
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-1" />
                 <input
                   type="text"
                   value={personaFilter}
                   onChange={(e) => setPersonaFilter(e.target.value)}
                   placeholder={t.plugins.obsidian_brain.filter_personas}
                   aria-label={t.plugins.obsidian_brain.filter_personas}
-                  className="w-full pl-8 pr-3 py-1.5 rounded-card bg-background/50 border border-primary/12 text-foreground typo-caption placeholder:text-ink-3 focus-ring transition-all"
+                  className="w-full pl-8 pr-3 py-1.5 rounded-card bg-background/50 border border-hair text-ink-1 typo-caption placeholder:text-ink-3 focus-ring transition-all"
                 />
               </div>
             )}
@@ -264,7 +269,7 @@ export default function SyncPanel() {
                   className={`px-3 py-1.5 rounded-card typo-caption transition-colors border focus-ring ${
                     selectedPersonaIds.has(p.id)
                       ? 'bg-surface-2 text-ink-2 border-hair-2'
-                      : 'bg-secondary/20 text-foreground border-primary/10 hover:border-primary/20'
+                      : 'bg-surface-1 text-ink-1 border-hair hover:border-hair'
                   }`}
                 >
                   {p.name}
@@ -298,19 +303,19 @@ export default function SyncPanel() {
               <div key={c.id} className="px-4 py-3 rounded-modal bg-status-warning/5 border border-status-warning/20 space-y-3">
                 <div>
                   <p className="typo-heading typo-card-label">{c.entityType}: {c.entityId.slice(0, 8)}...</p>
-                  <p className="typo-caption text-foreground">{c.filePath}</p>
+                  <p className="typo-caption text-ink-2">{c.filePath}</p>
                 </div>
                 <ConflictDiffView appContent={c.appContent} vaultContent={c.vaultContent} />
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => resolveConflict(c, 'use_app')} className="px-3 py-1.5 rounded-card typo-caption bg-status-info/10 text-status-info border border-status-info/20 hover:bg-status-info/20 transition-colors focus-ring">
+                  <Button type="button" onClick={() => resolveConflict(c, 'use_app')} variant="secondary" size="sm">
                     {t.plugins.obsidian_brain.keep_app}
-                  </button>
-                  <button type="button" onClick={() => resolveConflict(c, 'use_vault')} className="px-3 py-1.5 rounded-card typo-caption bg-surface-2 text-ink-2 border border-hair-2 hover:bg-surface-2 transition-colors focus-ring">
+                  </Button>
+                  <Button type="button" onClick={() => resolveConflict(c, 'use_vault')} variant="secondary" size="sm">
                     {t.plugins.obsidian_brain.keep_vault}
-                  </button>
-                  <button type="button" onClick={() => resolveConflict(c, 'skip')} className="px-3 py-1.5 rounded-card typo-caption bg-secondary/30 text-foreground border border-primary/10 hover:bg-secondary/50 transition-colors focus-ring">
+                  </Button>
+                  <Button type="button" onClick={() => resolveConflict(c, 'skip')} variant="secondary" size="sm">
                     {t.plugins.obsidian_brain.skip}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -327,22 +332,22 @@ export default function SyncPanel() {
         ) : (
           <div className="space-y-1 max-h-80 overflow-y-auto">
             {syncLog.map((entry) => (
-              <div key={entry.id} className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/10 hover:bg-secondary/20 transition-colors">
+              <div key={entry.id} className="flex items-center gap-3 px-3 py-2 rounded-card bg-surface-1 hover:bg-surface-1 transition-colors">
                 {entry.action === 'created' && <CheckCircle2 className="w-3.5 h-3.5 text-status-success flex-shrink-0" />}
                 {entry.action === 'updated' && <RefreshCw className="w-3.5 h-3.5 text-status-info flex-shrink-0" />}
                 {entry.action === 'conflict' && <AlertTriangle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />}
                 {entry.action === 'converged' && <GitMerge className="w-3.5 h-3.5 text-ink-2 flex-shrink-0" />}
-                {entry.action === 'skipped' && <XCircle className="w-3.5 h-3.5 text-foreground flex-shrink-0" />}
-                {!['created', 'updated', 'conflict', 'converged', 'skipped'].includes(entry.action) && <Clock className="w-3.5 h-3.5 text-foreground flex-shrink-0" />}
+                {entry.action === 'skipped' && <XCircle className="w-3.5 h-3.5 text-ink-1 flex-shrink-0" />}
+                {!['created', 'updated', 'conflict', 'converged', 'skipped'].includes(entry.action) && <Clock className="w-3.5 h-3.5 text-ink-1 flex-shrink-0" />}
                 <div className="flex-1 min-w-0">
-                  <span className="typo-caption text-foreground">
+                  <span className="typo-caption text-ink-2">
                     {entry.syncType} {entry.entityType}
                   </span>
                   {entry.details && (
-                    <span className="typo-caption text-foreground ml-2">{entry.details}</span>
+                    <span className="typo-caption text-ink-2 ml-2">{entry.details}</span>
                   )}
                 </div>
-                <span className="typo-caption text-foreground flex-shrink-0 tabular-nums">
+                <span className="typo-caption text-ink-2 flex-shrink-0 tabular-nums">
                   {<AbsoluteTime timestamp={entry.createdAt} variant="time" />}
                 </span>
               </div>

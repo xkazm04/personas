@@ -9,6 +9,9 @@ import { synthesize, play } from './voicePlayback';
 import { useTtsSettings } from './useTtsSettings';
 import { useTtsVoiceSelection } from './useTtsVoiceSelection';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * Voice control for the chat toolbar — replaces the plain enable/disable
  * button with a popover that bundles the three things a user actually wants
@@ -109,21 +112,22 @@ export function VoiceControlPopover() {
 
   return (
     <div ref={wrapRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        data-testid="companion-voice-control"
-        className={`w-8 h-8 rounded-interactive inline-flex items-center justify-center transition-colors focus-ring ${
-          voiceEnabled
-            ? 'bg-primary/15 text-primary'
-            : 'text-foreground hover:text-foreground hover:bg-foreground/5'
-        }`}
-        aria-label={c.voice_controls_label}
-        title={c.voice_controls_label}
-        aria-expanded={open}
-      >
-        <VolumeIcon className="w-4 h-4" />
-      </button>
+      <Tooltip content={c.voice_controls_label}>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          data-testid="companion-voice-control"
+          className={`w-8 h-8 rounded-interactive inline-flex items-center justify-center transition-colors focus-ring ${
+            voiceEnabled
+              ? 'bg-primary/15 text-primary'
+              : 'text-foreground hover:text-foreground hover:bg-foreground/5'
+          }`}
+          aria-label={c.voice_controls_label}
+          aria-expanded={open}
+        >
+          <VolumeIcon className="w-4 h-4" />
+        </button>
+      </Tooltip>
 
       {open && (
         <div
@@ -157,12 +161,14 @@ export function VoiceControlPopover() {
           </div>
 
           {/* Test */}
-          <button
+          <Button
             type="button"
             onClick={() => void runTest()}
             disabled={!voiceConfigured || testState === 'synthesizing'}
             data-testid="companion-voice-test"
-            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption bg-primary/15 hover:bg-primary/25 text-primary transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed"
+            variant="ghost"
+            size="icon-sm"
+            block
           >
             {testState === 'synthesizing' ? (
               <>
@@ -180,7 +186,7 @@ export function VoiceControlPopover() {
                 {c.voice_test}
               </>
             )}
-          </button>
+          </Button>
           {!voiceConfigured && (
             <p className="typo-caption text-foreground mt-1.5">{c.voice_test_unconfigured}</p>
           )}

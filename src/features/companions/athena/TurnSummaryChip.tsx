@@ -10,6 +10,8 @@ import {
 import { useTranslation } from '@/i18n/useTranslation';
 import type { StoredTurnSummary } from './athenaStore';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * Targets a turn-summary chip part can jump to. Anything in this union
  * has an in-panel scroll-into-view target (approvals / chatCards) or an
@@ -161,16 +163,18 @@ export function TurnSummaryChip({
           return (
             <span key={p.key} className="inline-flex items-center gap-1">
               {sep}
-              <button
+              <Button
                 type="button"
                 onClick={() => onJump!(p.target!)}
-                className="inline-flex items-center gap-1 rounded-interactive hover:bg-foreground/[0.06] hover:text-ink-2 transition-colors focus-ring px-1 -mx-1 cursor-pointer"
-                title={tooltip}
+                tooltip={tooltip}
                 aria-label={tooltip}
                 data-testid={`companion-turn-summary-jump-${p.target}`}
+                variant="ghost"
+                size="sm"
+                className="-mx-1"
               >
                 {content}
-              </button>
+              </Button>
             </span>
           );
         }

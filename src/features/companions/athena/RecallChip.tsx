@@ -1,6 +1,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BrainKind, CompanionRecallLane } from '@/api/companion';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * One memory chip in the recall strip, carrying WHY it is there.
  *
@@ -61,7 +62,7 @@ export function RecallChip({
 
   const body = (
     <>
-      <span className={earned ? 'text-primary' : 'text-foreground'}>
+      <span className={earned ? 'text-primary' : 'text-ink-1'}>
         {entry.title}
       </span>
       {relevance !== null && (
@@ -82,30 +83,33 @@ export function RecallChip({
   );
 
   const baseClass =
-    'rounded-interactive bg-foreground/[0.06] border border-foreground/10 px-1.5 py-0.5';
+    'rounded-interactive bg-surface-1 border border-hair px-1.5 py-0.5';
 
   if (!onOpen || !entry.id) {
     return (
-      <span className={baseClass} title={description} data-lane={entry.lane}>
-        {body}
-      </span>
+      <Tooltip content={description}>
+        <span className={baseClass}  data-lane={entry.lane}>
+          {body}
+        </span>
+      </Tooltip>
     );
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(kind, entry.id)}
-      className={`${baseClass} text-left hover:bg-foreground/[0.10] hover:border-primary/30 transition-colors focus-ring cursor-pointer`}
-      title={`${description} — ${t.athena.recall_open_in_brain.replace('{title}', entry.title)}`}
-      aria-label={description}
-      data-testid="companion-recall-chip"
-      data-kind={kind}
-      data-id={entry.id}
-      data-lane={entry.lane}
-    >
-      {body}
-    </button>
+    <Tooltip content={`${description} — ${t.athena.recall_open_in_brain.replace('{title}', entry.title)}`}>
+      <button
+        type="button"
+        onClick={() => onOpen(kind, entry.id)}
+        className={`${baseClass} text-left hover:bg-surface-2 hover:border-hair-2 transition-colors focus-ring cursor-pointer`}
+        aria-label={description}
+        data-testid="companion-recall-chip"
+        data-kind={kind}
+        data-id={entry.id}
+        data-lane={entry.lane}
+      >
+        {body}
+      </button>
+    </Tooltip>
   );
 }
 

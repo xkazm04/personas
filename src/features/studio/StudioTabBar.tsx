@@ -12,6 +12,9 @@ import { useStudioHistory } from './studioHistory';
 import { phaseProgress, tabDotClass } from './studioBuildModel';
 import { silentCatch } from '@/lib/silentCatch';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 // Browser-style tab strip. Each open project is a tab carrying its own live
 // status dot (so you can see which projects are building while you're on
 // another). The "+" opens a picker: new build, import an existing project, or
@@ -168,17 +171,19 @@ export default function StudioTabBar({
         );
       })}
 
-      <button
+      <Button
         ref={plusRef}
         type="button"
         onClick={togglePicker}
         aria-label={t.studio.open_or_create}
         aria-haspopup="menu"
         aria-expanded={pickerOpen}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-interactive text-ink-2 hover:bg-secondary/40 hover:text-foreground"
+        variant="ghost"
+        size="icon-sm"
+        className="shrink-0"
       >
         <Plus className="h-4 w-4" />
-      </button>
+      </Button>
 
       {pickerOpen &&
         createPortal(
@@ -189,23 +194,27 @@ export default function StudioTabBar({
               className="fixed z-[121] w-64 overflow-hidden rounded-card border border-border bg-background/95 py-1 shadow-elevation-4 backdrop-blur"
               style={{ top: menuPos.top, left: menuPos.left }}
             >
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   setPickerOpen(false);
                   onNew();
                 }}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-foreground hover:bg-secondary/50"
+                variant="ghost"
+                size="sm"
+                block
               >
                 <Plus className="h-3.5 w-3.5 text-primary" /> {t.studio.new_project}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => void addExisting()}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-foreground hover:bg-secondary/50"
+                variant="ghost"
+                size="sm"
+                block
               >
                 <FolderInput className="h-3.5 w-3.5 text-primary" /> {t.studio.add_existing_project}
-              </button>
+              </Button>
               {(recent.length > 0 || importable.length > 0) && (
                 <div className="max-h-72 overflow-y-auto">
                   {recent.length > 0 && (
@@ -227,13 +236,14 @@ export default function StudioTabBar({
                             className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-md text-ink-2 hover:bg-secondary/50 hover:text-foreground"
                           >
                             <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                            <span
-                              className="flex shrink-0 items-center gap-1 typo-caption text-ink-2"
-                              title={t.studio.saved_progress_hint}
-                            >
-                              <ListChecks className="h-3 w-3" />
-                              {prog.done}/{prog.total}
-                            </span>
+                            <Tooltip content={t.studio.saved_progress_hint}>
+                              <span
+                                className="flex shrink-0 items-center gap-1 typo-caption text-ink-2"
+                              >
+                                <ListChecks className="h-3 w-3" />
+                                {prog.done}/{prog.total}
+                              </span>
+                            </Tooltip>
                           </button>
                         );
                       })}
@@ -248,37 +258,38 @@ export default function StudioTabBar({
                       {importable.map((p) => {
                         const blocked = nextReady[p.id] === false;
                         return (
-                          <button
-                            key={p.id}
-                            type="button"
-                            disabled={blocked}
-                            // `blocked` is the ADVISORY hint from the probe
-                            // above, and the probe can fail — in which case
-                            // every row here reads as openable. The authority is
-                            // the store's own guard, which re-checks and refuses
-                            // with an explanation exactly like the browse path.
-                            onClick={() => {
-                              if (blocked) return;
-                              setPickerOpen(false);
-                              void openImportable(p.id, p.name);
-                            }}
-                            title={
+                          <Tooltip content={
                               blocked ? t.studio.not_next_js_hint : p.root_path
-                            }
-                            className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-md ${
-                              blocked
-                                ? 'cursor-not-allowed text-ink-3'
-                                : 'text-ink-2 hover:bg-secondary/50 hover:text-foreground'
-                            }`}
-                          >
-                            <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-ink-2" />
-                            <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                            {blocked && (
-                              <span className="shrink-0 typo-caption text-status-warning/80">
-                                {t.studio.not_next_js}
-                              </span>
-                            )}
-                          </button>
+                            }>
+                            <button
+                              key={p.id}
+                              type="button"
+                              disabled={blocked}
+                              // `blocked` is the ADVISORY hint from the probe
+                              // above, and the probe can fail — in which case
+                              // every row here reads as openable. The authority is
+                              // the store's own guard, which re-checks and refuses
+                              // with an explanation exactly like the browse path.
+                              onClick={() => {
+                                if (blocked) return;
+                                setPickerOpen(false);
+                                void openImportable(p.id, p.name);
+                              }}
+                              className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-md ${
+                                blocked
+                                  ? 'cursor-not-allowed text-ink-3'
+                                  : 'text-ink-2 hover:bg-secondary/50 hover:text-foreground'
+                              }`}
+                            >
+                              <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-ink-2" />
+                              <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                              {blocked && (
+                                <span className="shrink-0 typo-caption text-status-warning/80">
+                                  {t.studio.not_next_js}
+                                </span>
+                              )}
+                            </button>
+                          </Tooltip>
                         );
                       })}
                     </>

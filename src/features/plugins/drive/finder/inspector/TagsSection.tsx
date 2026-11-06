@@ -79,14 +79,15 @@ export function TagsSection({ entries, meta }: Props) {
                   <span className={`w-2 h-2 rounded-full ${tagColorClass(tag.color)}`} />
                   <span className="truncate max-w-[9rem]">{tag.name}</span>
                   <Tooltip content={f.tag_remove}>
-                    <button
+                    <Button
                       type="button"
                       aria-label={`${f.tag_remove}: ${tag.name}`}
                       onClick={() => applyToAll(tag.id, false)}
-                      className="p-0.5 rounded-full hover:bg-secondary/40 focus-ring"
+                      variant="ghost"
+                      size="icon-sm"
                     >
                       <X className="w-3 h-3" />
-                    </button>
+                    </Button>
                   </Tooltip>
                 </span>
               );

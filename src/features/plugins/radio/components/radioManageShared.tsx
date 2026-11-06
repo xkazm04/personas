@@ -4,6 +4,7 @@ import type { RadioState } from '@/lib/bindings/RadioState';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useTranslation } from '@/i18n/useTranslation';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * Shared building blocks for the Radio management surface (the Settings → Radio
  * "Console" layout). Kept separate so the page + any future variant share one
@@ -135,25 +136,26 @@ export function PreviewButton({
   const dim = size === 'sm' ? 'w-8 h-8' : 'w-10 h-10';
   const icon = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      className={`${dim} rounded-full flex items-center justify-center shrink-0 border transition-colors`}
-      style={{
-        borderColor: isPreviewing ? accentColor : 'transparent',
-        background: isPreviewing ? `${accentColor}22` : 'rgba(255,255,255,0.06)',
-        color: isPreviewing ? accentColor : undefined,
-      }}
-    >
-      {isBuffering ? (
-        <Loader2 className={`${icon} animate-spin`} style={{ color: accentColor }} />
-      ) : isPreviewing ? (
-        <Pause className={icon} />
-      ) : (
-        <Play className={icon} />
-      )}
-    </button>
+    <Tooltip content={label}>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={label}
+        className={`${dim} rounded-full flex items-center justify-center shrink-0 border transition-colors`}
+        style={{
+          borderColor: isPreviewing ? accentColor : 'transparent',
+          background: isPreviewing ? `${accentColor}22` : 'rgba(255,255,255,0.06)',
+          color: isPreviewing ? accentColor : undefined,
+        }}
+      >
+        {isBuffering ? (
+          <Loader2 className={`${icon} animate-spin`} style={{ color: accentColor }} />
+        ) : isPreviewing ? (
+          <Pause className={icon} />
+        ) : (
+          <Play className={icon} />
+        )}
+      </button>
+    </Tooltip>
   );
 }

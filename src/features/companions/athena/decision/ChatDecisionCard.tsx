@@ -3,6 +3,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useDecisionCard } from './useDecisionCard';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * The CHAT-side face of a pending orb decision.
  *
@@ -101,40 +104,42 @@ export function ChatDecisionCard() {
 
       <div className="mt-2.5 flex flex-wrap gap-1.5">
         {decision.options.map((opt, i) => (
-          <button
-            key={opt.key}
-            type="button"
-            data-testid={`athena-chat-decision-option-${i + 1}`}
-            onClick={() => pickOption(opt)}
-            title={opt.hint ?? opt.label}
-            className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption transition-colors focus-ring ${
-              opt.danger
-                ? 'bg-status-error/10 border border-status-error/20 hover:bg-status-error/20 text-status-error'
-                : 'bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary'
-            }`}
-          >
-            <span
-              className={`inline-flex items-center justify-center w-4 h-4 rounded typo-caption ${
-                opt.danger ? 'bg-status-error/20' : 'bg-primary/20'
+          <Tooltip content={opt.hint ?? opt.label} key={opt.key}>
+            <button
+              type="button"
+              data-testid={`athena-chat-decision-option-${i + 1}`}
+              onClick={() => pickOption(opt)}
+              className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption transition-colors focus-ring ${
+                opt.danger
+                  ? 'bg-status-error/10 border border-status-error/20 hover:bg-status-error/20 text-status-error'
+                  : 'bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary'
               }`}
-              aria-hidden
             >
-              {i + 1}
-            </span>
-            <span className="text-left whitespace-normal break-words min-w-0">{opt.label}</span>
-          </button>
+              <span
+                className={`inline-flex items-center justify-center w-4 h-4 rounded-interactive typo-caption ${
+                  opt.danger ? 'bg-status-error/20' : 'bg-primary/20'
+                }`}
+                aria-hidden
+              >
+                {i + 1}
+              </span>
+              <span className="text-left whitespace-normal break-words min-w-0">{opt.label}</span>
+            </button>
+          </Tooltip>
         ))}
-        <button
+        <Button
           type="button"
           data-testid="athena-chat-decision-option-0"
           onClick={() => explain()}
           disabled={composing}
           aria-label={t.athena.decision_explain}
-          title={t.athena.decision_explain_hint}
-          className="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-interactive bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 text-foreground transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+          tooltip={t.athena.decision_explain_hint}
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0"
         >
           <Lightbulb className="w-4 h-4" aria-hidden />
-        </button>
+        </Button>
       </div>
     </div>
   );

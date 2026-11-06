@@ -2,6 +2,7 @@ import { AlertCircle, CheckCircle2, Hourglass, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BackgroundJob } from '@/api/companion';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * Compact, read-only tag for one background Task (Athena async-UX phase 2).
  * Renders a status icon, the task's short title, an optional determinate
@@ -42,9 +43,11 @@ export function TaskTag({ job }: { job: BackgroundJob }) {
     >
       <div className="flex items-center gap-2 typo-caption">
         <Icon className={`w-3.5 h-3.5 shrink-0 ${tone} ${running ? 'animate-spin' : ''}`} />
-        <span className="flex-1 truncate text-foreground" title={title}>
-          {title}
-        </span>
+        <Tooltip content={title}>
+          <span className="flex-1 truncate text-foreground" >
+            {title}
+          </span>
+        </Tooltip>
         {note && <span className="text-foreground shrink-0 tabular-nums">{note}</span>}
         <span className={`shrink-0 ${tone}`}>{statusLabel}</span>
       </div>

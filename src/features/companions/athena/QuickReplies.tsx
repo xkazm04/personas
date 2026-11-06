@@ -9,6 +9,8 @@
  */
 import { useEffect } from 'react';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 export function QuickReplies({
   options,
   disabled,
@@ -40,22 +42,23 @@ export function QuickReplies({
   return (
     <div className="border-t border-foreground/10 px-3 py-2 flex flex-wrap gap-1.5 shrink-0">
       {options.map((opt, i) => (
-        <button
+        <Button
           type="button"
           key={`${i}-${opt}`}
           onClick={() => onPick(opt)}
           disabled={disabled}
-          className="inline-flex items-center gap-1.5 max-w-full rounded-interactive bg-primary/15 border border-primary/30 hover:bg-primary/25 hover:border-primary/40 text-primary px-2.5 py-1.5 typo-caption disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
-          title={opt}
+          tooltip={opt}
+          variant="secondary"
+          size="sm"
         >
           <span
-            className="inline-flex items-center justify-center w-4 h-4 rounded typo-caption bg-primary/25"
+            className="inline-flex items-center justify-center w-4 h-4 rounded-interactive typo-caption bg-primary/25"
             aria-hidden
           >
             {i + 1}
           </span>
           <span className="truncate">{opt}</span>
-        </button>
+        </Button>
       ))}
     </div>
   );

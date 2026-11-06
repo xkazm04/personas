@@ -287,7 +287,7 @@ function CyclePhaseRow({ phases }: { phases: CyclePhase[] }) {
 // never paints one. No spinner, no `animate-pulse`.
 // ---------------------------------------------------------------------------
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-surface-2';
 
 function CycleGhostRows() {
   return (

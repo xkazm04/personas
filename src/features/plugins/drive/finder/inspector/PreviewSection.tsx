@@ -19,7 +19,7 @@ function PreviewGhost() {
       {["w-full", "w-5/6", "w-2/3", "w-4/6"].map((w, i) => (
         <span
           key={w}
-          className={`block h-3 ${w} rounded-pill bg-primary/[0.06] animate-fade-in`}
+          className={`block h-3 ${w} rounded-pill bg-surface-2 animate-fade-in`}
           style={{ animationDelay: `${120 + i * 35}ms` }}
         />
       ))}

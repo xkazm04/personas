@@ -4,6 +4,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useAthenaStore } from './athenaStore';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * Durable, in-chat ledger of everything Athena did WITHOUT asking this session
  * (today: fleet auto-decisions — `athena://fleet/auto-decided`).
@@ -48,14 +50,16 @@ export function AthenaActionsStrip() {
           </span>
           <span className="shrink-0 tabular-nums text-foreground">{actions.length}</span>
         </button>
-        <button
+        <Button
           type="button"
           onClick={clearAthenaActions}
           data-testid="athena-actions-clear"
-          className="shrink-0 typo-caption text-foreground hover:text-primary focus-ring rounded-interactive px-1.5 py-0.5"
+          variant="ghost"
+          size="sm"
+          className="shrink-0"
         >
           {t.athena.athena_actions_clear}
-        </button>
+        </Button>
       </div>
       {!collapsed && (
         <ul className="px-2.5 pb-2 space-y-1.5">

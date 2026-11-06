@@ -124,15 +124,16 @@ function InstallProgress({ state }: { state: InstallState }) {
 function ManualLink({ href, label }: { href: string | null; label: string }) {
   if (!href) return null;
   return (
-    <button
+    <Button
       type="button"
       onClick={() => openExternalUrl(href).catch(toastCatch('CreateAthenaStage:openInstallLink'))}
       data-testid="create-athena-install-link"
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-label transition-colors duration-fast motion-reduce:transition-none focus-ring"
+      variant="ghost"
+      size="icon-sm"
     >
       <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
       {label}
-    </button>
+    </Button>
   );
 }
 

@@ -12,6 +12,7 @@ import { ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 export function AthenaChatCompactHandle() {
   const { t } = useTranslation();
   const setCompact = useSystemStore((s) => s.setAthenaPanelCompact);
@@ -22,17 +23,18 @@ export function AthenaChatCompactHandle() {
       className="relative shrink-0 w-5 border-l border-foreground/10 bg-foreground/[0.02]"
       data-testid="companion-compact-rail"
     >
-      <button
-        type="button"
-        onClick={() => setCompact(false)}
-        data-testid="companion-toggle-compact"
-        aria-pressed
-        aria-label={label}
-        title={label}
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center justify-center w-5 h-14 rounded-full bg-secondary border border-foreground/15 text-foreground hover:bg-foreground/10 hover:border-foreground/25 shadow-elevation-2 transition-colors focus-ring"
-      >
-        <ChevronRight className="w-3.5 h-3.5" />
-      </button>
+      <Tooltip content={label}>
+        <button
+          type="button"
+          onClick={() => setCompact(false)}
+          data-testid="companion-toggle-compact"
+          aria-pressed
+          aria-label={label}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center justify-center w-5 h-14 rounded-full bg-secondary border border-foreground/15 text-foreground hover:bg-foreground/10 hover:border-foreground/25 shadow-elevation-2 transition-colors focus-ring"
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </Tooltip>
     </div>
   );
 }

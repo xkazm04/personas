@@ -2,6 +2,9 @@ import { Clock, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAthenaStore } from './athenaStore';
 
+import Button from '@/features/shared/components/buttons/Button';
+
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * Async-UX phase 4 — the strip of messages the user sent while a turn was
  * still streaming. Each waits its turn (FIFO) and is drained one-per-turn-
@@ -31,18 +34,22 @@ export function QueuedMessages() {
           data-queued-mode={m.mode}
         >
           <Clock className="w-3.5 h-3.5 shrink-0 text-foreground" />
-          <span className="flex-1 truncate text-foreground" title={m.text}>
-            {m.text}
-          </span>
+          <Tooltip content={m.text}>
+            <span className="flex-1 truncate text-foreground" >
+              {m.text}
+            </span>
+          </Tooltip>
           <span className="shrink-0 text-foreground">{t.athena.queued_badge}</span>
-          <button
+          <Button
             type="button"
             onClick={() => remove(activeConversationId, m.id)}
-            className="shrink-0 text-foreground hover:text-foreground focus-ring rounded-interactive"
             aria-label={t.athena.queued_remove}
+            variant="ghost"
+            size="icon-sm"
+            className="shrink-0"
           >
             <X className="w-3 h-3" />
-          </button>
+          </Button>
         </div>
       ))}
     </div>

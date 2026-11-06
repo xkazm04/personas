@@ -4,6 +4,8 @@ import EmptyState, {
   NoResults,
 } from '@/features/shared/components/feedback/ScenarioEmptyState';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * Presentational fragments shared by the Decisions panel prototype
  * variants — scope banner, filter input, and loading/error/empty states.
@@ -31,15 +33,17 @@ export function ScopeBanner({
         </div>
         <div className="typo-body text-foreground truncate">{intent}</div>
       </div>
-      <button
+      <Button
         type="button"
         onClick={onShowAll}
-        className="shrink-0 inline-flex items-center gap-1 typo-caption text-foreground hover:text-ink-2 rounded-interactive px-1.5 py-0.5 hover:bg-foreground/[0.06] focus-ring transition-colors"
         data-testid="companion-decisions-show-all"
+        variant="ghost"
+        size="sm"
+        className="shrink-0"
       >
         <X className="w-3 h-3" />
         {t.athena.decisions_panel_show_all}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -67,7 +71,7 @@ export function DecisionsFilterInput({
   );
 }
 
-const GHOST_BAR = 'rounded bg-primary/[0.06]';
+const GHOST_BAR = 'rounded-interactive bg-surface-2';
 const GHOST_TITLE_WIDTHS = ['w-48', 'w-36', 'w-40', 'w-32', 'w-44'];
 
 /**

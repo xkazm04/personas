@@ -39,7 +39,7 @@ export function QueueGhost() {
   return (
     <div className="flex-1 px-4 md:px-8 py-4 space-y-3" aria-hidden="true">
       {[0, 1, 2, 3].map((i) => (
-        <span key={i} className="block h-4 rounded bg-primary/[0.06] animate-fade-in"
+        <span key={i} className="block h-4 rounded-interactive bg-surface-2 animate-fade-in"
           style={{ width: `${90 - i * 12}%`, animationDelay: `${120 + i * 35}ms` }} />
       ))}
     </div>

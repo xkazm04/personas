@@ -26,6 +26,8 @@ import { BaseModal } from "@/features/shared/components/modals";
 
 import { isOcrCancellation, type useOcr } from "./useOcr";
 
+import Button from '@/features/shared/components/buttons/Button';
+
 const TITLE_ID = "drive-ocr-drawer-title";
 
 interface Props {
@@ -172,14 +174,15 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
                   : t.plugins.drive.ocr_subtitle}
               </div>
             </div>
-            <button
+            <Button
               type="button"
               onClick={handleClose}
-              className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors focus-ring"
               aria-label={t.plugins.drive.cancel}
+              variant="ghost"
+              size="icon-sm"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -216,7 +219,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
                     className={`rounded-input border px-3 py-2 typo-body text-left transition-colors focus-ring ${backend === b
                         ? "border-hair-2 bg-surface-2 text-ink-2 "
                         : "border-primary/20 bg-secondary/30 text-foreground hover:bg-secondary/50 hover:border-primary/30"
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      } disabled:is-disabled`}
                   >
                     {b === "gemini"
                       ? t.plugins.drive.ocr_backend_gemini
@@ -311,51 +314,56 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-primary/15">
           {phase === "done" ? (
             <>
-              <button
+              <Button
                 type="button"
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-body text-foreground hover:bg-secondary/60 transition-colors focus-ring"
+                variant="ghost"
+                size="sm"
               >
                 <Copy className="w-3.5 h-3.5" />
                 {t.plugins.doc_signing.copy}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleSave}
                 disabled={!!saved}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-surface-1 text-ink-2 border border-hair-2 typo-body hover: hover: disabled:opacity-50 transition-all focus-ring"
+                variant="secondary"
+                size="sm"
               >
                 <Save className="w-3.5 h-3.5" />
                 {saved ? t.plugins.drive.ocr_saved : t.plugins.drive.ocr_save}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleClose}
-                className="px-3 py-1.5 rounded-input typo-body text-foreground hover:bg-secondary/60 transition-colors focus-ring"
+                variant="ghost"
+                size="sm"
               >
                 {t.plugins.drive.confirm}
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <button
+              <Button
                 type="button"
                 onClick={handleClose}
-                className="px-3 py-1.5 rounded-input typo-body text-foreground hover:bg-secondary/60 transition-colors focus-ring"
+                variant="ghost"
+                size="sm"
               >
                 {t.plugins.drive.cancel}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleExtract}
                 disabled={!canExtract || phase === "running"}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-surface-1 text-ink-2 border border-hair-2 typo-body hover: hover: disabled:opacity-40 disabled:cursor-not-allowed transition-all focus-ring"
+                variant="secondary"
+                size="sm"
               >
                 <ScanLine className="w-3.5 h-3.5" />
                 {phase === "running"
                   ? t.plugins.drive.ocr_running
                   : t.plugins.drive.ocr_extract}
-              </button>
+              </Button>
             </>
           )}
         </div>

@@ -9,6 +9,8 @@ import { useStudioStore } from '../studioStore';
 import { useStudioHistory } from '../studioHistory';
 import type { StudioPreviewState } from '../useStudioPreview';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 // The main frame: the app being built, wrapped and given full focus (contest
 // A/1). A thin header says what the frame shows in plain words; the address,
 // reload and snapshots sit at its right edge. Its gradient hairline brightens
@@ -72,9 +74,9 @@ export default function GuideFrame({
           </div>
         )}
         {vision && onCancelCreate && (
-          <button type="button" onClick={onCancelCreate} aria-label={t.common.close} className="ml-auto rounded-interactive p-1 text-ink-2 hover:text-foreground">
+          <Button type="button" onClick={onCancelCreate} aria-label={t.common.close} variant="ghost" size="icon-sm" className="ml-auto">
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         )}
         {live && !vision && !blueprint && activeId && (
           <div className="ml-auto flex items-center gap-1">
@@ -105,9 +107,9 @@ export default function GuideFrame({
                 ))}
               </datalist>
             )}
-            <button type="button" onClick={reloadActive} aria-label={t.studio.reload_preview} className="rounded-interactive p-1.5 text-ink-2 hover:bg-secondary/60 hover:text-foreground">
+            <Button type="button" onClick={reloadActive} aria-label={t.studio.reload_preview} variant="ghost" size="icon-sm">
               <RotateCcw className="h-4 w-4" />
-            </button>
+            </Button>
             <StudioVersions id={activeId} onRestored={reloadActive} />
           </div>
         )}

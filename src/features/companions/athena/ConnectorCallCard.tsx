@@ -16,6 +16,8 @@ import { silentCatch, extractMessage } from '@/lib/silentCatch';
 import { capabilityLabel, connectorDisplayName } from './athenaLabels';
 import { useAthenaStore } from './athenaStore';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * Inline chat-card that surfaces the live state of a `connector_use`
  * background job: spinner during queued/running, ✓/✗ on completion. The
@@ -139,15 +141,16 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
       {failed && (
         <div className="mt-2 pl-5 flex items-center gap-2 typo-caption">
           {retryingState.phase === 'idle' && (
-            <button
+            <Button
               type="button"
               onClick={handleRetry}
-              className="inline-flex items-center gap-1 rounded-interactive border border-foreground/15 bg-foreground/[0.04] hover:bg-foreground/[0.08] px-2 py-0.5 text-foreground transition-colors focus-ring"
               data-testid="companion-connector-retry"
+              variant="secondary"
+              size="sm"
             >
               <RefreshCcw className="w-3 h-3" />
               <span>{t.athena.connector_call_retry}</span>
-            </button>
+            </Button>
           )}
           {retryingState.phase === 'firing' && (
             <span className="inline-flex items-center gap-1 text-foreground">

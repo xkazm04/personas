@@ -13,7 +13,7 @@ function GhostLines({ lines, delay }: { lines: number; delay: number }) {
       {Array.from({ length: lines }, (_, i) => (
         <span
           key={i}
-          className="block h-3 rounded-full bg-primary/[0.06] animate-fade-in"
+          className="block h-3 rounded-full bg-surface-2 animate-fade-in"
           style={{ width: `${92 - i * 14}%`, animationDelay: `${delay + i * 35}ms` }}
         />
       ))}

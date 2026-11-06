@@ -10,6 +10,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
 
+import Button from '@/features/shared/components/buttons/Button';
+
 interface GitLabDeployModalProps {
   projects: GitLabProject[];
   personas: Array<{ id: string; name: string; icon: string | null }>;
@@ -90,7 +92,7 @@ export function GitLabDeployModal({
     <div className="space-y-4">
       {/* Project picker */}
       <div>
-        <label htmlFor="target-project" className="block typo-body text-foreground mb-1.5">{t.gitlab.target_project}</label>
+        <label htmlFor="target-project" className="block typo-body text-ink-1 mb-1.5">{t.gitlab.target_project}</label>
         <ThemedSelect
           id="target-project"
           value={String(selectedProjectId ?? '')}
@@ -107,7 +109,7 @@ export function GitLabDeployModal({
 
       {/* Persona picker */}
       <div>
-        <label htmlFor="deploy-persona" className="block typo-body text-foreground mb-1.5">{t.gitlab.persona_to_deploy}</label>
+        <label htmlFor="deploy-persona" className="block typo-body text-ink-1 mb-1.5">{t.gitlab.persona_to_deploy}</label>
         <ThemedSelect
           id="deploy-persona"
           value={selectedPersonaId}
@@ -123,13 +125,13 @@ export function GitLabDeployModal({
       </div>
 
       {/* CI/CD Agent Templates */}
-      <div className="p-3 rounded-modal border border-primary/10 bg-secondary/10">
+      <div className="p-3 rounded-modal border border-hair bg-surface-1">
         <CiCdTemplatesPicker
           userTier={gitlabTier}
           onSelectTemplate={handleSelectTemplate}
         />
         {isCreatingFromTemplate && (
-          <div className="mt-2 flex items-center gap-2 typo-body text-foreground">
+          <div className="mt-2 flex items-center gap-2 typo-body text-ink-1">
             <LoadingSpinner size="sm" />
             {t.gitlab.creating_from_template}
           </div>
@@ -137,13 +139,13 @@ export function GitLabDeployModal({
       </div>
 
       {/* Credential provisioning toggle */}
-      <div className="p-3 rounded-card border border-primary/10 bg-primary/[0.02]">
+      <div className="p-3 rounded-card border border-hair bg-primary/[0.02]">
         <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
             checked={provisionCredentials}
             onChange={(e) => setProvisionCredentials(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-primary/20 text-status-warning focus-visible:ring-status-warning/30"
+            className="mt-0.5 h-4 w-4 rounded-interactive border-hair text-status-warning focus-visible:ring-status-warning/30"
           />
           <div>
             <div className="flex items-center gap-1.5">
@@ -152,7 +154,7 @@ export function GitLabDeployModal({
                 {t.gitlab.provision_api_credentials}
               </span>
             </div>
-            <p className="typo-body text-foreground mt-1">
+            <p className="typo-body text-ink-1 mt-1">
               {t.gitlab.provision_description}
             </p>
             {provisionCredentials && (
@@ -168,13 +170,13 @@ export function GitLabDeployModal({
       </div>
 
       {/* Version tagging toggle */}
-      <div className="p-3 rounded-card border border-primary/10 bg-primary/[0.02]">
+      <div className="p-3 rounded-card border border-hair bg-primary/[0.02]">
         <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
             checked={enableVersioning}
             onChange={(e) => setEnableVersioning(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-primary/20 text-status-warning focus-visible:ring-status-warning/30"
+            className="mt-0.5 h-4 w-4 rounded-interactive border-hair text-status-warning focus-visible:ring-status-warning/30"
           />
           <div className="flex-1">
             <div className="flex items-center gap-1.5">
@@ -183,19 +185,19 @@ export function GitLabDeployModal({
                 {t.gitlab.version_controlled_deploy}
               </span>
             </div>
-            <p className="typo-body text-foreground mt-1">
+            <p className="typo-body text-ink-1 mt-1">
               {t.gitlab.version_description}
             </p>
             {enableVersioning && (
               <div className="mt-2">
-                <label htmlFor="deploy-env" className="block typo-caption text-foreground mb-1">
+                <label htmlFor="deploy-env" className="block typo-caption text-ink-2 mb-1">
                   {t.gitlab.target_environment}
                 </label>
                 <select
                   id="deploy-env"
                   value={selectedEnvironment}
                   onChange={(e) => setSelectedEnvironment(e.target.value)}
-                  className="w-full rounded-card border border-primary/15 bg-secondary/30 px-2.5 py-1.5 typo-body text-ink-2 focus:outline-none focus:ring-1 focus:ring-status-warning/30"
+                  className="w-full rounded-card border border-hair bg-surface-1 px-2.5 py-1.5 typo-body text-ink-2 focus:outline-none focus:ring-1 focus:ring-status-warning/30"
                 >
                   <option value="">{t.gitlab.no_environment}</option>
                   <option value="dev">dev</option>
@@ -209,11 +211,12 @@ export function GitLabDeployModal({
       </div>
 
       {/* Deploy button */}
-      <button
+      <Button
         type="button"
         onClick={handleDeploy}
         disabled={isDeploying || !selectedPersonaId || !selectedProjectId}
-        className="flex items-center gap-2 px-4 py-2 typo-body rounded-modal bg-status-warning/15 border border-status-warning/25 text-status-warning hover:bg-status-warning/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        variant="secondary"
+        size="sm"
       >
         {isDeploying ? (
           <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
@@ -224,7 +227,7 @@ export function GitLabDeployModal({
           <Rocket className="w-4 h-4" />
         )}
         {isDeploying ? t.gitlab.deploying : t.gitlab.deploy_to_gitlab}
-      </button>
+      </Button>
 
       {/* Result */}
       {result && (
@@ -236,10 +239,10 @@ export function GitLabDeployModal({
                 {tx(t.gitlab.deployed_successfully, { method: result.method === 'api' ? t.gitlab.duo_agent_api : t.gitlab.agents_md })}
               </p>
               {result.agentId && (
-                <p className="typo-body text-foreground mt-1">{tx(t.gitlab.agent_id, { id: result.agentId })}</p>
+                <p className="typo-body text-ink-1 mt-1">{tx(t.gitlab.agent_id, { id: result.agentId })}</p>
               )}
               {result.credentialsProvisioned > 0 && (
-                <p className="typo-body text-foreground mt-1 flex items-center gap-1.5">
+                <p className="typo-body text-ink-1 mt-1 flex items-center gap-1.5">
                   <KeyRound className="w-3.5 h-3.5 text-status-warning" />
                   {tx(result.credentialsProvisioned === 1 ? t.gitlab.credential_provisioned_count_one : t.gitlab.credential_provisioned_count_other, { count: result.credentialsProvisioned })}
                 </p>

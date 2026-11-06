@@ -18,6 +18,8 @@ import type { AthenaChatEngine } from '../../athenaChatEngine';
 import { NEXT_COPY as C } from '../nextCopy';
 import type { WorkItem } from '../useWorkforce';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 /**
  * The one-line `[re: …]` prefix a message carries while a decision card is in
  * focus, so Athena answers about the card the operator is looking at without
@@ -82,9 +84,9 @@ export function FrameBottom({
           <span className="inline-flex items-center gap-1.5 max-w-64 rounded-full border border-primary/35 bg-primary/10 pl-2.5 pr-1 py-0.5 typo-caption text-foreground">
             <span className="text-primary shrink-0">{C.about}:</span>
             <span className="truncate">{about.title}</span>
-            <button type="button" onClick={onClearAbout} aria-label={C.clearAbout} className="p-0.5 rounded-full hover:bg-foreground/10 focus-ring">
+            <Button type="button" onClick={onClearAbout} aria-label={C.clearAbout} variant="ghost" size="icon-sm">
               <X className="w-3.5 h-3.5" aria-hidden />
-            </button>
+            </Button>
           </span>
         ) : undefined
       }

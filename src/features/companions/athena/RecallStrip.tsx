@@ -8,6 +8,7 @@ import type {
 } from '@/api/companion';
 import { RecallChip } from './RecallChip';
 
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 /**
  * Per-turn rollup of what Athena's brain pulled into the system prompt.
  * Renders as a single collapsed line above the assistant bubble; clicking
@@ -86,13 +87,14 @@ export function RecallStrip({
         <Brain className="w-3 h-3" />
         <span className="flex-1">{summary}</span>
         {preview.synthesized && (
-          <span
-            className="inline-flex items-center gap-0.5 rounded-interactive bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-primary"
-            title={t.athena.recall_synthesized_tooltip}
-          >
-            <Sparkles className="w-3 h-3" />
-            {t.athena.recall_synthesized_badge}
-          </span>
+          <Tooltip content={t.athena.recall_synthesized_tooltip}>
+            <span
+              className="inline-flex items-center gap-0.5 rounded-interactive bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-primary"
+            >
+              <Sparkles className="w-3 h-3" />
+              {t.athena.recall_synthesized_badge}
+            </span>
+          </Tooltip>
         )}
       </button>
       {open && totalMemories > 0 && (

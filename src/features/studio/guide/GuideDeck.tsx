@@ -7,6 +7,8 @@ import { ROUTE_DECISION_PRIORITY, useAppKeyboard } from '@/lib/keyboard/AppKeybo
 import { isFreeKey } from '../useDecisionKeys';
 import type { GuideCard } from './guideModel';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 // Athena's next moves after a finished step: 2-3 cards, each a real turn. Enter
 // takes the first, 1-3 pick, X passes on the first. Keys are ignored while the
 // user is typing or a popover is open (same guards as the question card), and
@@ -95,9 +97,9 @@ export default function GuideDeck({
                 {i === 0 ? g.do_it : g.yes}
                 <kbd className="rounded-interactive border border-current/40 px-1 font-mono typo-caption">{i + 1}</kbd>
               </button>
-              <button type="button" onClick={() => onDecline(c)} className="typo-body text-ink-2 hover:text-foreground">
+              <Button type="button" onClick={() => onDecline(c)} variant="ghost" size="sm">
                 {g.not_now}
-              </button>
+              </Button>
             </div>
           </motion.article>
         ))}

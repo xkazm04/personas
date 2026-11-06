@@ -23,6 +23,8 @@ import { activeRemoteJobNotice } from '@/lib/network/remoteJobNotice';
 import { useAthenaStore } from '../athenaStore';
 import { ORB_SIZE } from './AthenaOrb';
 
+import Button from '@/features/shared/components/buttons/Button';
+
 const CHIP_GAP = 12;
 /**
  * How often the expiry sweep runs. A notice clears on its own TTL, so the
@@ -102,16 +104,18 @@ export function RemoteJobNoticeChip() {
           </span>
         )}
       </span>
-      <button
+      <Button
         type="button"
         onClick={() => dismissRemoteJobNotice(notice.jobId)}
         data-testid="remote-job-notice-dismiss"
         aria-label={st.remote_notice_dismiss}
-        title={st.remote_notice_dismiss}
-        className="shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full text-foreground hover:bg-secondary transition-colors focus-ring"
+        tooltip={st.remote_notice_dismiss}
+        variant="ghost"
+        size="icon-sm"
+        className="shrink-0"
       >
         <X className="w-3 h-3" aria-hidden />
-      </button>
+      </Button>
     </motion.div>
   );
 }
