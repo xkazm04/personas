@@ -10,19 +10,19 @@ import { AwayRulesSheet } from './parts/AwayRulesSheet';
 import { DossierDrawer } from './parts/DossierDrawer';
 import { KeyLegend } from './parts/KeyLegend';
 import { useStandupController } from './useStandupController';
-import { BaselineLayout } from './variants/BaselineLayout';
-import { BriefingLayout } from './variants/briefing/BriefingLayout';
-import { FocusLayout } from './variants/focus/FocusLayout';
+import { ConsoleLayout } from './variants/console/ConsoleLayout';
+import { EditorialLayout } from './variants/editorial/EditorialLayout';
 import { LedgerLayout } from './variants/ledger/LedgerLayout';
+import { StudioLayout } from './variants/studio/StudioLayout';
 import type { StandupLayoutProps } from './variants/types';
 import { useLayoutVariant, VariantSwitch, type LayoutVariant } from './variants/VariantSwitch';
 import './standup.css';
 
 const LAYOUTS: Record<LayoutVariant, ComponentType<StandupLayoutProps>> = {
-  baseline: BaselineLayout,
   ledger: LedgerLayout,
-  focus: FocusLayout,
-  briefing: BriefingLayout,
+  console: ConsoleLayout,
+  editorial: EditorialLayout,
+  studio: StudioLayout,
 };
 
 /** Hatches the band and the rows reference by id (one definition per page). */

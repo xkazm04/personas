@@ -1,0 +1,71 @@
+/* PROTOTYPE R2 "Studio": the selected row's inset tray (Athena's read, option tiles, actions) and the responsive/motion rules. */
+.ss-detail { grid-column: 2 / -1; display: flex; flex-direction: column; gap: 0.625rem; margin: 0 0.625rem 0.625rem 0; padding: 0.75rem;
+  border-radius: var(--ss-r-row); background: var(--ss-well);
+  box-shadow: inset 0 0 0 1px var(--ss-edge), inset 0 2px 6px var(--ss-shade-soft); cursor: default; animation: ss-in var(--duration-normal) ease-out; }
+.ss-read { display: flex; align-items: flex-start; gap: 0.5rem; margin: 0; font: 400 var(--ss-t3)/1.45 var(--ss-sans); color: var(--ss-ink); }
+.ss-read > :first-child { flex: none; margin-top: -1px; }
+.ss-read__who { flex: none; font-weight: 600; color: var(--ss-ink); }
+.ss-read__text { min-width: 0; color: var(--ss-ink-2); }
+
+.ss-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0.5rem; }
+.ss-tiles.is-single { grid-template-columns: minmax(0, 42rem); }
+.ss-tile { display: flex; flex-direction: column; gap: 0.375rem; min-width: 0; padding: 0.625rem 0.75rem 0.75rem; border-radius: var(--ss-r-row);
+  background: var(--ss-s1); box-shadow: var(--ss-rest); transition: background-color var(--duration-fast) ease-out, box-shadow var(--duration-fast) ease-out; }
+.ss-tile.is-live { cursor: pointer; }
+.ss-tile.is-live:hover { background: var(--ss-s2); box-shadow: inset 0 0 0 1px var(--ss-edge-2), inset 0 1px 0 var(--ss-hi), 0 4px 12px -6px var(--ss-shade); }
+.ss-tile.is-chosen, .ss-tile.is-chosen:hover { background: color-mix(in oklab, var(--primary) 12%, var(--ss-s1));
+  box-shadow: inset 0 0 0 1.5px var(--primary), 0 0 0 3px color-mix(in oklab, var(--primary) 18%, transparent), 0 6px 16px -8px color-mix(in oklab, var(--primary) 45%, transparent); }
+.ss-tile__top { display: flex; align-items: center; gap: 0.5rem; min-height: 1.375rem; }
+.ss-tile__radio { display: grid; place-items: center; width: 1rem; height: 1rem; flex: none; border-radius: 999px;
+  border: 1.5px dashed color-mix(in oklab, var(--status-warning) 85%, transparent); }
+.ss-tile__radio svg { width: 0.625rem; height: 0.625rem; }
+.ss-tile.is-chosen .ss-tile__radio { border: 0; background: var(--primary); color: var(--ss-on-pri); }
+.ss-tile.is-ghost .ss-tile__radio { border-color: var(--ss-edge-2); }
+.ss-tile__title { font: 500 var(--ss-t2)/1.35 var(--ss-sans); letter-spacing: var(--ss-trk-2); color: var(--ss-ink); }
+.ss-tile__ev { font: 400 var(--ss-t3)/1.4 var(--ss-sans); color: var(--ss-ink-2); }
+.ss-sparkle { display: inline-flex; align-items: center; gap: 0.3125rem; height: 1.375rem; margin-left: auto; padding: 0 0.5rem 0 0.4375rem; border-radius: 999px;
+  font: 560 var(--ss-t4)/1 var(--ss-sans); color: var(--ss-pri-ink); white-space: nowrap;
+  background: color-mix(in oklab, var(--primary) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--primary) 32%, transparent); }
+.ss-sparkle svg { width: 0.8125rem; height: 0.8125rem; }
+
+.ss-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; margin-left: -0.25rem; }
+.ss-acts .ss-btn--plain { margin-right: 0.25rem; }
+.ss-typer { display: flex; align-items: center; gap: 0.5rem; max-width: 48rem; height: 2.375rem; padding: 0 0.5rem 0 0.75rem; border-radius: var(--ss-r-ctl);
+  color: var(--ss-ink-2); background: var(--ss-s1);
+  box-shadow: inset 0 0 0 1.5px var(--primary), 0 0 0 3px color-mix(in oklab, var(--primary) 18%, transparent); }
+.ss-typer__input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; outline: none;
+  font: 500 var(--ss-t2)/1 var(--ss-sans); letter-spacing: var(--ss-trk-2); color: var(--ss-ink); }
+@keyframes ss-in { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ss-row, .ss-tile, .ss-blk { transition: none; }
+  .ss-detail { animation: none; }
+}
+:root[data-motion="reduce"] :is(.ss-row, .ss-tile, .ss-blk) { transition: none; }
+:root[data-motion="reduce"] .ss-detail { animation: none; }
+
+/* A narrow body (the 1280 window): narrower name and badge, Athena's voice takes the header's second line. */
+@container ss (max-width: 1150px) {
+  .ss-page { --ss-name: 10rem; --ss-pill-w: 6.25rem; --ss-gut: 1rem; }
+  .ss-grid { grid-template-columns: var(--ss-name) minmax(0, 0.75fr) minmax(0, 2.2fr) minmax(0, 1fr); }
+  .ss-head { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'title . actions' 'voice voice meter';
+    gap: 0.5rem 1rem; padding: 0.5rem 0.625rem 0.5rem 1rem; }
+  .ss-head__title { flex-direction: row; align-items: center; gap: 0.75rem; }
+  .ss-page .ss-head { margin-top: 0.5rem; }
+  .ss-bubble { padding: 0.375rem 0.75rem; }
+  .ss-since > :last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ss-page .ss-wide { display: none; }
+  .ss-meter { width: 11rem; }
+  .ss-tick:nth-child(even) { visibility: hidden; }
+  .ss-chips { gap: 0.5rem; }
+  .ss-chips > :nth-child(n+3) { display: none; }
+  .ss-tiles { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
+}
+
+/* A short window (800px): the whole page scrolls, the header gives its height back to the rows; the
+ * pinned head + machine stay put and the action bar stays in reach. */
+@media (max-height: 900px) {
+  .ss-page { overflow-y: auto; }
+  .ss-scroll { flex: none; overflow: visible; }
+  .ss-foot { position: sticky; bottom: 0; }
+}
