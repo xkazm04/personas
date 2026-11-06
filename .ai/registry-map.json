@@ -9802,12 +9802,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/prompt/recall.rs:27 both recall_for arms (:27, :50) still unwrap_or_default a retrieval error into an empty Recall, CompanionRecallPreview (src/api/companion.ts:2351) has no failure field and RecallStrip.tsx:68 hides the strip on zero: a down store is shown and treated as novelty",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/companions/athena/RecallStrip.tsx:68 The recall strip hides itself whenever nothing came back, and the CompanionRecallPreview payload has no failure field. A retrieval error that Rust turned into an empty Recall therefore looks exactly like 'nothing relevant': the user is shown amnesia as novelty.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "chat-transcript",
@@ -10091,13 +10090,12 @@
           "revision": 52,
           "changedAt": "2026-10-25",
           "confidence": "probable",
-          "state": "not-applicable",
-          "evidence": "src-tauri/src/companion/proactive/rollup.rs:1 the 'rollup' is an end-of-day audit digest card composed deterministically from the turn ledger and delivered as a notification, not a pass that supersedes accreted memory items; the pipeline (triggers, quiet hours, budget.rs:1 attention cap) writes no memory store, so rollup-compaction and the other memory-pipeline techniques have no precondition here",
-          "evaluatedAt": "2026-10-15",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/backlog_triage.rs:128 When a project's memories fail to load, the triage silently continues without them: no log and no line in the prompt. The headless pass then judges ideas without the recorded rejections it was grounded on, which re-litigates exactly what the module's header says this grounding prevents.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "fleet-orchestration",
@@ -19730,12 +19728,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/lib/execution/knowledgeMiddleware.ts:96 guidance now rides inside the caller's input_data JSON (the user channel) with no age or sample count, and :41 failure_pattern entries still have no confidence floor, so a one-off failure string is served as standing advice; re-confirmed at rev 51",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:41 The 'Known failure patterns to avoid' tier can never fire. Failure patterns are written with success=false, so their confidence is seeded at 0.0 and stays there (knowledge.rs:131, :117), while the injection query admits only confidence >= 0.5 (knowledge.rs:450), so this filter always gets an empty list.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-runtime-assembly",
@@ -30035,12 +30032,11 @@
           "changedAt": "2026-10-25",
           "confidence": "strong",
           "state": "not-applicable",
-          "evidence": "src-tauri/src/commands/infrastructure/dev_tools/portfolio.rs:330 deterministic aggregation of project context maps; nothing an agent observed or believes, so no capture, consolidation, decay or recall stage exists here",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/plugins/dev-tools/sub_projects/projectManagerTypes.tsx:4 This surface does create/edit/organise work over DevProject bindings (name, path, repo, standards config). A search of src/features/plugins/dev-tools/sub_projects found no hits for episode, decay, distill, embedding or provenance. The only near-misses are a 'recall' label in a list of pipeline step names and the word 'consolidation' in a style comment, so nothing an agent remembers is captured, ranked or recalled here.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "mcp-tools",
@@ -36375,11 +36371,7 @@
           "confidence": "strong",
           "state": "not-applicable",
           "evidence": "src/stores/slices/agents/chatSlice.ts:97 the 500-message cap is a render buffer evicting FIFO and turn assembly lives in Rust (:180); no agent-recalled store in this slice",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-22"
         },
         {
           "subject": "test-harness",

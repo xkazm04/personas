@@ -16478,10 +16478,25 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T19:48:16.584Z",
-      "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
-      "techniques": [],
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T02:24:35.731Z",
+      "techniques": [
+        {
+          "technique": "working-memory",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/agents/chatSlice.ts:174 ChatSessionContext.workingMemory is written and read in Rust; the slice only refetches it for display"
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/agents/chatSlice.ts:97 the 500-message cap is a render buffer read by a human, not a path from a store into the agent's context"
+        },
+        {
+          "technique": "procedure-promotion",
+          "verdict": "not-applicable",
+          "evidence": "src/stores/slices/agents/matrixBuildSlice.ts:1318 a build-time switch copied from the IR's memory_policy; it sets a persona up and does not store or recall anything"
+        }
+      ],
       "superseded": [
         {
           "state": "not-applicable",
@@ -16496,8 +16511,21 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
           "reason": "replaced by ffe8a68a-826a-4845-ab8e-4e952c701b13"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/stores/slices/agents/chatSlice.ts:97 the 500-message cap is a render buffer evicting FIFO and turn assembly lives in Rust (:180); no agent-recalled store in this slice",
+          "evaluatedAt": "2026-10-22T19:48:16.584Z",
+          "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
+          "reason": "replaced by 302c293a-ee3e-4c56-9494-2f04e0ba6e06"
         }
-      ]
+      ],
+      "withdrawn": {
+        "worker": "302c293a-ee3e-4c56-9494-2f04e0ba6e06",
+        "state": "not-applicable",
+        "at": "2026-11-06T02:25:37.355445+00:00",
+        "reason": "reviewer (sonnet): The anchor chatSlice.ts:174 is a comment about the Rust turn path and never mentions workingMemory. A grep finds no workingMemory in chatSlice.ts or any non-test file under src/stores, so the technique claim that the slice only refetches it for display could not be confirmed. The one hit is a test f"
+      }
     },
     "56a0fd55-279d-428b-b2f6-7c89154abd6f/agent-memory": {
       "context": "schedules-components",
@@ -19409,9 +19437,9 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T19:48:16.584Z",
-      "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T02:24:35.731Z",
+      "worker": "302c293a-ee3e-4c56-9494-2f04e0ba6e06",
       "techniques": [],
       "superseded": [
         {
@@ -19427,6 +19455,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
           "reason": "replaced by ffe8a68a-826a-4845-ab8e-4e952c701b13"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/commands/infrastructure/dev_tools/portfolio.rs:330 deterministic aggregation of project context maps; nothing an agent observed or believes, so no capture, consolidation, decay or recall stage exists here",
+          "evaluatedAt": "2026-10-22T19:48:16.584Z",
+          "worker": "ffe8a68a-826a-4845-ab8e-4e952c701b13",
+          "reason": "replaced by 302c293a-ee3e-4c56-9494-2f04e0ba6e06"
         }
       ]
     },
@@ -26239,19 +26274,35 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:16:30.000Z",
-      "worker": "a8cfb2ff-e320-4851-83e6-2d58684935b9",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T02:24:35.731Z",
+      "worker": "302c293a-ee3e-4c56-9494-2f04e0ba6e06",
       "techniques": [
+        {
+          "technique": "memory-value-model",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:450 one 'confidence' column means success rate for every knowledge type, so the gate shuts out the failure_pattern type entirely"
+        },
         {
           "technique": "recall-injection",
           "verdict": "deviation",
-          "evidence": "src/lib/execution/knowledgeMiddleware.ts:41 failure patterns injected unfloored while tool_sequence (:28) and model_performance (:55) carry floors"
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:114 a failed recall returns the payload unchanged, so the model sees the same thing as an empty recall; the shared LIMIT 20 pool ranked only by confidence also lets one type crowd out the others before the per-type slices run"
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:92 input that is not JSON drops all guidance with no notice and no log; the slice(0,80) cut at :47 and the top-3 cuts are also unmarked"
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/knowledge.rs:452 no age or last-use term, and no demotion path; the EMA only moves when the pattern is seen again, so a pattern that stopped recurring keeps its rank forever"
         },
         {
           "technique": "exposure-is-not-credit",
           "verdict": "deviation",
-          "evidence": "src/lib/execution/knowledgeMiddleware.ts:32 prints confidence as '% success', but tool_sequence confidence is an EMA (src-tauri/db/src/repos/execution/knowledge.rs:117), so the model reads a smoothed score as a success rate - the count lost its predicate"
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:32 prints confidence as '% success', but tool_sequence confidence is an EMA (src-tauri/db/src/repos/execution/knowledge.rs:117), so the model reads a smoothed score as a success rate - the count lost its predicate",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "durable-store-failure-posture",
@@ -26267,6 +26318,13 @@
           "evaluatedAt": "2026-10-14T07:51:32.035Z",
           "worker": "fafffaa1-f7f4-49f8-b3d9-a1290fb6e924",
           "reason": "replaced by a8cfb2ff-e320-4851-83e6-2d58684935b9"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/lib/execution/knowledgeMiddleware.ts:96 guidance now rides inside the caller's input_data JSON (the user channel) with no age or sample count, and :41 failure_pattern entries still have no confidence floor, so a one-off failure string is served as standing advice; re-confirmed at rev 51",
+          "evaluatedAt": "2026-10-21T12:16:30.000Z",
+          "worker": "a8cfb2ff-e320-4851-83e6-2d58684935b9",
+          "reason": "replaced by 302c293a-ee3e-4c56-9494-2f04e0ba6e06"
         }
       ]
     },
@@ -26631,14 +26689,24 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:42:36.000Z",
-      "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T02:24:35.731Z",
+      "worker": "302c293a-ee3e-4c56-9494-2f04e0ba6e06",
       "techniques": [
         {
           "technique": "recall-injection",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/prompt/recall.rs:50 .unwrap_or_default() collapses failed recall into empty recall; the empty-vs-failed status signal is absent"
+          "evidence": "src/features/companions/athena/RecallStrip.tsx:68 empty recall and failed recall render the same way (both hidden); the preview type at src/api/companion.ts:2354 carries no status"
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src/features/companions/athena/RecallStrip.tsx:98 FloorNote (:186) reports hits dropped by the relevance floor, but it only renders inside this block; when every hit was dropped, the one notice meant to tell thin recall apart from an empty brain cannot show"
+        },
+        {
+          "technique": "durable-store-failure-posture",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/prompt/recall.rs:50 the recall path behind this strip turns any retrieval error into an empty Recall (also :27 in the ml arm), so a broken store reads as an empty one"
         }
       ],
       "superseded": [
@@ -26655,6 +26723,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by d424e3fc-5423-4b76-b2b8-c767a78d3d1a"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/prompt/recall.rs:27 both recall_for arms (:27, :50) still unwrap_or_default a retrieval error into an empty Recall, CompanionRecallPreview (src/api/companion.ts:2351) has no failure field and RecallStrip.tsx:68 hides the strip on zero: a down store is shown and treated as novelty",
+          "evaluatedAt": "2026-10-22T02:42:36.000Z",
+          "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
+          "reason": "replaced by 302c293a-ee3e-4c56-9494-2f04e0ba6e06"
         }
       ]
     },
@@ -28193,18 +28268,47 @@
       "context": "companion-proactive",
       "subject": "agent-memory",
       "bundle": "software-engineering",
-      "state": "not-applicable",
-      "evaluatedAt": "2026-10-15",
-      "evaluatedTs": "2026-10-15T12:00:00.000Z",
-      "worker": "9640126c-236c-4871-b8f2-5ff1c48cafca",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T02:24:35.731Z",
+      "worker": "302c293a-ee3e-4c56-9494-2f04e0ba6e06",
       "techniques": [
+        {
+          "technique": "recall-injection",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/backlog_triage.rs:128 a failed recall and an empty one give the model the same prompt, with nothing saying memory was unavailable"
+        },
+        {
+          "technique": "container-carries-decision-status",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/backlog_triage.rs:187 the rows have a category field, but get_for_injection admits every category (ELSE 2 at src-tauri/db/src/repos/dev_memories.rs:120, default 'learned' / task_outcome), and this header promotes all of them to settled decisions"
+        },
+        {
+          "technique": "loss-site-inventory",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/proactive/backlog_triage.rs:131 pack_by_decay skips entries over the 1000-char budget and re-ranks by decay score, undoing the constraint-first SQL order, and no count of the omitted rows reaches the prompt"
+        },
+        {
+          "technique": "episodic-capture",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/proactive/execution_review.rs:10 the review triage mints episodes only for deep_dive turns, replacing a design that wrote two append-only episodes per candidate even on 'nothing to add'"
+        },
         {
           "technique": "rollup-compaction",
           "verdict": "not-applicable",
-          "evidence": "src-tauri/src/companion/proactive/rollup.rs:1 digest card over the ledger, no store family is merged or superseded"
+          "evidence": "src-tauri/src/companion/proactive/rollup.rs:1 digest card over the ledger, no store family is merged or superseded",
+          "carriedFrom": "2026-10-15"
         }
       ],
-      "registryProposal": "Matcher resonance on the token 'rollup' (why: rollup, budget, writes): daily-digest notification rollups are not rollup-compaction. Consider a not-when line in rollup-compaction naming report/digest cards."
+      "superseded": [
+        {
+          "state": "not-applicable",
+          "evidence": "src-tauri/src/companion/proactive/rollup.rs:1 the 'rollup' is an end-of-day audit digest card composed deterministically from the turn ledger and delivered as a notification, not a pass that supersedes accreted memory items; the pipeline (triggers, quiet hours, budget.rs:1 attention cap) writes no memory store, so rollup-compaction and the other memory-pipeline techniques have no precondition here",
+          "evaluatedAt": "2026-10-15T12:00:00.000Z",
+          "worker": "9640126c-236c-4871-b8f2-5ff1c48cafca",
+          "reason": "replaced by 302c293a-ee3e-4c56-9494-2f04e0ba6e06"
+        }
+      ]
     },
     "7f6d3238-7136-4361-af8f-bca556ae2042/agent-memory": {
       "context": "mcp-server",
