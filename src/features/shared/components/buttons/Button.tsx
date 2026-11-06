@@ -185,19 +185,24 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     // the second invocation while the first promise is still pending via a synchronous ref.
     // Plain synchronous (void-returning) handlers NEVER set the ref, so rapid-click controls
     // (steppers, toggles, paginators) keep firing on every click exactly as before.
-    const inFlightRef = useRef(false);
+    //
+    // The guard is keyed to the HANDLER that is in flight, not to the element: a toggle that
+    // re-renders the same Button with a different handler while the first promise is pending
+    // (Play -> Stop, Start -> Cancel) must still fire. Found in the console-style round 2
+    // conversion of raw buttons: read-aloud's Stop was swallowed while Play's promise pended.
+    const inFlightRef = useRef<unknown>(null);
     const handleClick = useCallback(
       (e: MouseEvent<HTMLButtonElement>) => {
         if (!onClick) return;
-        if (inFlightRef.current) {
+        if (inFlightRef.current === onClick) {
           e.preventDefault();
           return;
         }
         const result = (onClick as (ev: MouseEvent<HTMLButtonElement>) => unknown)(e);
         if (result != null && typeof (result as { then?: unknown }).then === 'function') {
-          inFlightRef.current = true;
+          inFlightRef.current = onClick;
           void Promise.resolve(result).finally(() => {
-            inFlightRef.current = false;
+            if (inFlightRef.current === onClick) inFlightRef.current = null;
           });
         }
       },

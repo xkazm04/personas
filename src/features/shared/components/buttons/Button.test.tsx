@@ -154,3 +154,26 @@ describe('Button tone', () => {
     expect(screen.getByRole('button', { name: 'Go' }).className).not.toContain('status-success');
   });
 });
+
+describe('Button double-submit guard', () => {
+  it('blocks a second click of the SAME async handler while it is pending', () => {
+    let release: () => void = () => {};
+    const onClick = vi.fn(() => new Promise<void>((r) => { release = r; }));
+    render(<Button onClick={onClick}>Save</Button>);
+    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByRole('button'));
+    expect(onClick).toHaveBeenCalledTimes(1);
+    release();
+  });
+
+  it('lets a toggle fire its NEW handler while the previous one is pending (Play -> Stop)', () => {
+    const play = vi.fn(() => new Promise<void>(() => {}));
+    const stop = vi.fn();
+    const { rerender } = render(<Button onClick={play}>Play</Button>);
+    fireEvent.click(screen.getByRole('button'));
+    rerender(<Button onClick={stop}>Stop</Button>);
+    fireEvent.click(screen.getByRole('button'));
+    expect(play).toHaveBeenCalledTimes(1);
+    expect(stop).toHaveBeenCalledTimes(1);
+  });
+});
