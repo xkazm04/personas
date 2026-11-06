@@ -13,7 +13,7 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 | Tab | Behavior | Implementation |
 | --- | --- | --- |
 | Live Stream | Rolling 24h real-time event stream. The Type column shows the raw event type on a single line (e.g. `document.edited`); the Source column resolves `persona:<id-or-name>` values to the persona's icon + name (other sources keep their cloud/relay glyph). JSON highlighting + detail modal. **System operations surface here too** — e.g. `dev_tools.context_scan_started` / `dev_tools.context_scan_completed` are published to the bus by every context-map scan (manual or triggered) with no target persona, so they appear as observable lifecycle markers (icons in `sub_live_stream/eventTypeMeta.ts`). | `sub_live_stream` |
-| Speed Limits | Rate-limit dashboard over trigger/event activity | `sub_speed_limits/RateLimitDashboard.tsx` |
+| Speed Limits | Counts the triggers with a rate limit configured. Nothing records firings yet and the backend does not read these limits, so running, queued and throttled stay at zero and no run is limited | `sub_speed_limits/RateLimitDashboard.tsx` |
 | Test | Manual event test surface | `sub_test/TestTab.tsx` |
 | Local Relay | Smee relay control and switch-back to live stream | `sub_smee_relay/SmeeRelayTab.tsx` |
 | Cloud Events | Dev-only cloud webhook relay status | `sub_cloud_webhooks/CloudWebhooksTab.tsx` |
