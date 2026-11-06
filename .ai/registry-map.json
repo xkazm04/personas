@@ -11904,12 +11904,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:38 load_active (and upsert/purge_expired) is imported by no test, and its only caller, the restart-restore path src-tauri/engine/src/failover.rs:202 with_persistence, is constructed by no test - positional row.get mapping, the '-N minutes' TTL predicate and open-state reconstruction can break across a restart with every suite green",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:38 load_active, upsert and purge_expired have no test of their own. Their only caller is ProviderCircuitBreaker::with_persistence (src-tauri/engine/src/failover.rs:202), and every failover test builds the breaker with ::new() (pool: None). That means the positional row.get mapping, the '-N minutes' TTL predicate and the reconstruction of open state after a restart can all break while every suite stays green. Five other files in this context have zero #[test] as well: policy_events, scheduled_retries, test_suites, annotations and credential_recipes.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "cost-metering",

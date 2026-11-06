@@ -37991,29 +37991,50 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:44:00.000Z",
-      "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T04:21:32.977Z",
+      "worker": "02934265-8cdb-4de4-a95e-cdfda86240cc",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/failover.rs:202 with_persistence restore decisions (TTL filter, is_open -> Instant reconstruction) reached by no test; failover tests only drive the in-memory breaker"
+          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:48 The TTL restore decision is reached by no test. The failover suite makes the persistence branch unreachable by building every breaker with ::new() (failover.rs:190), and nothing declares or lists that unreached region."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/lib.rs:2466 init_test_db, which every test in this context uses, builds the migrated template once and copies it per test. It probes the copy before handing it over (:2482) and sweeps stale copies once per process (:2406)."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:2834 The cache test picks a cache key unique to itself, so tests running in parallel cannot serve or evict each other's heatmap snapshot."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:4496 The monthly-rollup window test places rows at computed instants instead of waiting on sleeps."
         },
         {
           "technique": "gate-scope-is-not-report-scope",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:16 a repo file with no test importer does not appear in any test verdict at all"
-        },
-        {
-          "technique": "fixture-economics",
-          "verdict": "realized",
-          "evidence": "src-tauri/db/src/repos/execution/executions.rs:3800 make_persona seeds through personas::create on the init_test_db template copy"
+          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:16 a repo file with no test importer does not appear in any test verdict at all",
+          "carriedFrom": "2026-10-22"
         },
         {
           "technique": "negative-control-tests",
           "verdict": "realized",
-          "evidence": "src-tauri/db/src/repos/execution/executions.rs:2900 the promotion CAS test pins the pre-CAS resurrection bug (doc :2897) by driving the reaped row it used to overwrite"
+          "evidence": "src-tauri/db/src/repos/execution/executions.rs:2900 the promotion CAS test pins the pre-CAS resurrection bug (doc :2897) by driving the reaped row it used to overwrite",
+          "carriedFrom": "2026-10-22"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/execution/circuit_breaker.rs:38 load_active (and upsert/purge_expired) is imported by no test, and its only caller, the restart-restore path src-tauri/engine/src/failover.rs:202 with_persistence, is constructed by no test - positional row.get mapping, the '-N minutes' TTL predicate and open-state reconstruction can break across a restart with every suite green",
+          "evaluatedAt": "2026-10-22T02:44:00.000Z",
+          "worker": "f48933d7-8d2c-45f1-bd6d-380a825e37a4",
+          "reason": "replaced by 02934265-8cdb-4de4-a95e-cdfda86240cc"
         }
       ]
     },
