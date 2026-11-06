@@ -36615,13 +36615,12 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "conformant",
-          "evidence": "src/stores/slices/overview/__tests__/personaHealthSlice.bundle.test.ts:142 asserts which producer answered (proxy vs measured), the event slice pins its own pre-fix defect (src/stores/slices/overview/eventSlice.test.ts:66) in a per-test harness (:34), and the no-p2p build cell is exercised (src/stores/slices/network/networkSlice.test.ts:141)",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/stores/slices/overview/homeSpineWindows.test.ts:23 The test's name claims the 24h boundary, but its rows sit an hour either side of it (NOW-HOUR, NOW-DAY-HOUR). Changing `age <= DAY_MS` (homeSpineWindows.ts:46) or `age <= 2 * DAY_MS` to `<` passes every computeActivePersonaWindow test. The sibling computeEventWindow does pin its exact cutoff (test line 56).",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "voice-io",
@@ -43644,13 +43643,12 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "conformant",
-          "evidence": "src/features/triggers/sub_triggers/triggerArmState.ts:20 the hand-kept mirror is tethered to the generated TriggerKind and tripwired from Rust (src-tauri/core/src/validation/trigger.rs:428 iterates TriggerKind::ALL and names the TS file); tests assert both drift shapes incl. the one that shipped",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/triggers/sub_triggers/triggerArmState.ts:93 isWithinActiveWindow, documented as a mirror of Rust ActiveWindow::is_active_at, checks TODAY's weekday for the after-midnight part of an overnight window, while Rust (src-tauri/core/src/models/trigger.rs, overnight branch) checks the PREVIOUS weekday. For a Monday-only 22:00-06:00 window, the badge shows Tuesday 05:00 as 'sleeping' while the engine fires, and shows Monday 05:00 as 'armed' while the engine does not. The only overnight test lists all seven days, so it never reaches this decision, and no test compares the TS mirror with Rust.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "convergence-loop-and-requeue",
@@ -45447,12 +45445,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/vault/sub_databases/__tests__/safeModeUtils.test.ts:37 is named 'carries the same CTE verb list as the backend guard' but asserts two literal verbs and never reads CTE_MUTATION_VERBS (src-tauri/src/engine/db_query.rs:293), so a verb added to the backend list leaves it green while the client regex (src/features/vault/sub_databases/safeModeUtils.ts:41) classifies that verb as a read - the exact DROP/ALTER drift the file was written after (safeModeUtils.ts:34). The anchor file sits in this context's __tests__ dir but context-map.json lists it under no context.",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:25 The file claims parity between the backend's introspect_db_tables/columns output and the UI parser, but the 'backend result' is a hand-written QueryResult. Renaming a column alias in the Rust SQL (e.g. `table_type` at src-tauri/engine/src/db_query.rs:965) breaks TablesTab while this test stays green. The column names cross the process boundary as untyped strings, which is exactly where a behavioural pin is owed.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "data-access",

@@ -15825,27 +15825,40 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:23:06.000Z",
-      "worker": "b2435f14-a79c-4550-8ac6-81f0387e4917",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T02:44:59.802Z",
+      "worker": "10e0d8b3-8b4f-4646-a322-9656ffb7b96d",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/__tests__/safeModeUtils.test.ts:37 the test name claims backend parity; mutating the decision it names (adding a verb at src-tauri/src/engine/db_query.rs:293) cannot turn it red"
+          "evidence": "src/features/vault/sub_databases/__tests__/introspectionParity.test.ts:27 The backend side is asserted from a comment, not read. Only the parser is pinned, so the name overstates. The repo's own Rust-source pins (e.g. api/__tests__) show the far side is readable."
         },
         {
-          "technique": "negative-control-tests",
-          "verdict": "deviation",
-          "evidence": "src/features/vault/sub_databases/__tests__/safeModeUtils.test.ts:37 a correspondence probe between two drifting artifacts with no recorded control - the class the technique names as most likely tautological by construction"
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:173 The poll deadline is asserted on a virtual clock on both sides of NL_QUERY_POLL_TIMEOUT_MS."
         },
         {
           "technique": "isolation-lanes",
-          "verdict": "realized",
-          "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:55 resets the module-scoped transcript cache per test, with the reason it would otherwise leak stated beside it"
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:55 The module-scoped transcript cache, which survives remounts by design, is reset per test."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/features/vault/sub_databases/__tests__/ChatTab.test.tsx:171 The 61s probe is chosen so the old 60s watchdog would fail it. The regression's control is its fix."
         }
       ],
-      "registryProposal": "Upward lesson for unreached-decisions-pin-nothing / pin-the-call-not-the-name: in this repo the same 'parity' failure appears in two contexts as a test that holds a hand-copied literal of the far side's list (vault safeModeUtils.test.ts:37, src/api/__tests__/enums.test.ts:29), while src/features/notepad/__tests__/notepadCapParity.test.ts:22 is the conformant form - it parses the Rust const at run time, throws when the needle is missing (:23) and asserts a non-empty parse (:30). A decision rule worth stating outright: a cross-language parity test that carries a copy of the far side is a third copy, not a pin; it must read the far side's source, or be mirrored by a reciprocal pin on the far side whose failure names the near file (src-tauri/src/engine/db_query.rs:3344 does the latter for READ_SHAPED_WRITES). notepadCapParity.test.ts is a candidate node--pin-the-call-not-the-name application."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/vault/sub_databases/__tests__/safeModeUtils.test.ts:37 is named 'carries the same CTE verb list as the backend guard' but asserts two literal verbs and never reads CTE_MUTATION_VERBS (src-tauri/src/engine/db_query.rs:293), so a verb added to the backend list leaves it green while the client regex (src/features/vault/sub_databases/safeModeUtils.ts:41) classifies that verb as a read - the exact DROP/ALTER drift the file was written after (safeModeUtils.ts:34). The anchor file sits in this context's __tests__ dir but context-map.json lists it under no context.",
+          "evaluatedAt": "2026-10-10T02:23:06.000Z",
+          "worker": "b2435f14-a79c-4550-8ac6-81f0387e4917",
+          "reason": "replaced by 10e0d8b3-8b4f-4646-a322-9656ffb7b96d"
+        }
+      ]
     },
     "cd7e7cc7-cc5b-44a1-9bff-76b34af21966/test-harness": {
       "context": "api-bridge-tests",
@@ -20004,130 +20017,165 @@
       "context": "triggers-triggers",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:44:50.372Z",
-      "worker": "0f6cbaed-46d8-41a7-8d89-a2237962d86b",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T02:44:59.802Z",
+      "worker": "10e0d8b3-8b4f-4646-a322-9656ffb7b96d",
       "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts:120 All seven days are listed, so the day-membership decision for the overnight tail is never reached. Changing it to prev-weekday, or leaving it as today, passes either way."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "deviation",
+          "evidence": "src/features/triggers/sub_triggers/triggerArmState.ts:89 The mirror claim lives only in a comment. Nothing reads is_active_at, and no Rust test names this file for the window logic (TIME_BASED_KINDS has such a tripwire; this function does not). The mirror has already drifted."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts:23 A fixed instant is injected, so no test depends on the wall clock or the host timezone."
+        },
         {
           "technique": "negative-control-tests",
           "verdict": "conformant",
-          "evidence": "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts:70 asserts the drift shape that shipped (enabled=0, status=active) beside its mirror (:58); the correspondence probe sits on the changing side at src-tauri/core/src/validation/trigger.rs:428"
-        },
-        {
-          "technique": "unreached-decisions-pin-nothing",
-          "verdict": "conformant",
-          "evidence": "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts:106 per-kind names claim only what each case reaches; these eight plus schedule/polling (:82) cover all ten TriggerKind members"
+          "evidence": "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts:71 The regression test asserts the exact shape that shipped, so the old enabled-only reading would fail it."
         },
         {
           "technique": "isolation-lanes",
           "verdict": "conformant",
-          "evidence": "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts:23 a fixed UTC instant, so nothing is inherited from the developer machine clock or timezone"
+          "evidence": "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts:23 a fixed UTC instant, so nothing is inherited from the developer machine clock or timezone",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "fixture-economics",
           "verdict": "conformant",
-          "evidence": "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts:5 per-test in-memory row factory that keeps status consistent with enabled unless drift is the subject"
+          "evidence": "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts:5 per-test in-memory row factory that keeps status consistent with enabled unless drift is the subject",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "approval-snapshots-with-guarded-update",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/__tests__/nlTriggerParser.test.ts:91 field-level assertions; no snapshots"
+          "evidence": "src/features/triggers/sub_triggers/__tests__/nlTriggerParser.test.ts:91 field-level assertions; no snapshots",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "assert-through-the-reader",
           "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/__tests__/nlTriggerParser.test.ts:156 parser output is form state consumed in-process, not an artifact for a foreign interpreter"
-        },
-        {
-          "technique": "pin-the-call-not-the-name",
-          "verdict": "not-applicable",
-          "evidence": "src/features/triggers/sub_triggers/__tests__/triggerArmState.test.ts:70 every assertion executes the code; no source-text pin"
+          "evidence": "src/features/triggers/sub_triggers/__tests__/nlTriggerParser.test.ts:156 parser output is form state consumed in-process, not an artifact for a foreign interpreter",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "gate-scope-is-not-report-scope",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 no coverage gate is scoped to this context"
+          "evidence": "vitest.config.ts:17 no coverage gate is scoped to this context",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "suite-partitioning",
           "verdict": "conformant",
-          "evidence": "vitest.config.ts:23 the default lane excludes src/test/e2e so these files run in exactly one lane, membership by location (:17)"
+          "evidence": "vitest.config.ts:23 the default lane excludes src/test/e2e so these files run in exactly one lane, membership by location (:17)",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "live-app-harness",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:11 jsdom unit lane; no product process is driven by these files"
+          "evidence": "vitest.config.ts:11 jsdom unit lane; no product process is driven by these files",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "derived-selection-must-be-measured",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "history-driven-partitioning",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "platform-quirk-absorption",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "flake-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "long-lane-certification",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "out-of-graph-artifacts",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "configuration-axes-cross-the-ladder",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "dynamic-verifier-classes",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "verification-inherits-driver-reach",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "mutation-lane-with-a-triaged-baseline",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "context-starved-executor",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "far-side-oracle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "constraint-injection-for-unreachable-tiers",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "recorded-interaction-fixtures",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src/features/triggers/sub_triggers/triggerArmState.ts:20 the hand-kept mirror is tethered to the generated TriggerKind and tripwired from Rust (src-tauri/core/src/validation/trigger.rs:428 iterates TriggerKind::ALL and names the TS file); tests assert both drift shapes incl. the one that shipped",
+          "evaluatedAt": "2026-10-12T12:44:50.372Z",
+          "worker": "0f6cbaed-46d8-41a7-8d89-a2237962d86b",
+          "reason": "replaced by 10e0d8b3-8b4f-4646-a322-9656ffb7b96d"
         }
       ]
     },
@@ -35667,120 +35715,151 @@
       "context": "stores-slices-overview",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T17:28:38.128Z",
-      "worker": "b92fa173-de5a-4bb3-9049-be43f3b68bb0",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T02:44:59.802Z",
+      "worker": "10e0d8b3-8b4f-4646-a322-9656ffb7b96d",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
-          "verdict": "realized",
-          "evidence": "src/stores/slices/overview/__tests__/personaHealthSlice.bundle.test.ts:142 successRateSource names the producer, so a fleet proxy cannot pass for a measured rate (:128)"
+          "verdict": "deviation",
+          "evidence": "src/stores/slices/overview/homeSpineWindows.ts:46 The decision the test name claims is never reached by any fixture. Low severity, but the name overstates. The producer discrimination in personaHealthSlice.bundle.test.ts:143 (proxy vs measured) is good practice."
         },
         {
-          "technique": "negative-control-tests",
-          "verdict": "realized",
-          "evidence": "src/stores/slices/overview/eventSlice.test.ts:66 the test is shaped to fail on the pre-fix module-scoped Map"
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/overview/homeSpineWindows.test.ts:4 Window helpers take an injected now. No wall clock is used."
         },
         {
           "technique": "isolation-lanes",
-          "verdict": "realized",
-          "evidence": "src/stores/slices/pipeline/__tests__/channelSlice.test.ts:46 resets store state per test; src/stores/slices/overview/eventSlice.test.ts:34 builds an isolated slice per test"
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/overview/eventSlice.test.ts:32 Each test builds a fresh slice, so nothing is inherited from the previous test."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/overview/eventSlice.test.ts:65 The regression test's control is its own fix: the pre-fix module Map would compute delta 0 and fail."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/network/__tests__/meshSliceParity.test.ts:15 The needle carries a typed declaration shape that prose cannot spell, and it fails loudly when not found."
+        },
+        {
+          "technique": "configuration-axes-cross-the-ladder",
+          "verdict": "conformant",
+          "evidence": "src/stores/slices/network/networkSlice.test.ts:142 Exercises the no-p2p build cell inside the default run."
         },
         {
           "technique": "fixture-economics",
           "verdict": "realized",
-          "evidence": "src/stores/slices/overview/__tests__/personaHealthSlice.bundle.test.ts:56 the seed follows the Rust 0-1 fraction contract and records why the old 92 seed was wrong"
-        },
-        {
-          "technique": "configuration-axes-cross-the-ladder",
-          "verdict": "realized",
-          "evidence": "src/stores/slices/network/networkSlice.test.ts:141 the no-p2p build is driven as its own case, and :20 stops a rejecting mock from being read as that cell"
-        },
-        {
-          "technique": "pin-the-call-not-the-name",
-          "verdict": "not-applicable",
-          "evidence": "src/stores/slices/processActivitySlice.ts:456 the exhaustiveness invariant is enforced by a never default in source, no text pin is used"
+          "evidence": "src/stores/slices/overview/__tests__/personaHealthSlice.bundle.test.ts:56 the seed follows the Rust 0-1 fraction contract and records why the old 92 seed was wrong",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "assert-through-the-reader",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/overview/eventSlice.test.ts:3 the slices emit no text for a foreign interpreter; IPC is mocked at the api seam"
+          "evidence": "src/stores/slices/overview/eventSlice.test.ts:3 the slices emit no text for a foreign interpreter; IPC is mocked at the api seam",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "suite-partitioning",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "history-driven-partitioning",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "live-app-harness",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "flake-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "long-lane-certification",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "gate-scope-is-not-report-scope",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "dynamic-verifier-classes",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "out-of-graph-artifacts",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "context-starved-executor",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "far-side-oracle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "verification-inherits-driver-reach",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "mutation-lane-with-a-triaged-baseline",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "constraint-injection-for-unreachable-tiers",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "recorded-interaction-fixtures",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
         },
         {
           "technique": "approval-snapshots-with-guarded-update",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context"
+          "evidence": "vitest.config.ts:17 the lane (include set, runner, partition) is defined repo-wide here, not in this context",
+          "carriedFrom": "2026-10-21"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src/stores/slices/overview/__tests__/personaHealthSlice.bundle.test.ts:142 asserts which producer answered (proxy vs measured), the event slice pins its own pre-fix defect (src/stores/slices/overview/eventSlice.test.ts:66) in a per-test harness (:34), and the no-p2p build cell is exercised (src/stores/slices/network/networkSlice.test.ts:141)",
+          "evaluatedAt": "2026-10-21T17:28:38.128Z",
+          "worker": "b92fa173-de5a-4bb3-9049-be43f3b68bb0",
+          "reason": "replaced by 10e0d8b3-8b4f-4646-a322-9656ffb7b96d"
         }
       ]
     },
