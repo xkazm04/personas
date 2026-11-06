@@ -17014,19 +17014,29 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T00:00:00.000Z",
-      "worker": "5a33eebf-17c9-4e12-92df-8167b502fde0",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T05:12:19.586Z",
+      "worker": "5ac4b274-fb2d-405c-bdb3-c55225c9d6b3",
       "techniques": [
         {
           "technique": "availability-probe",
           "verdict": "deviation",
-          "evidence": "src/api/agents/evolution.ts:104 installed and authorized collapse into one rejection; src/hooks/utility/data/useCliReadiness.ts:62 must then guess from the message (already a recorded deviation on hooks-utility-data) - this door is its root. The probe itself does go through the spawn door at ~$0 (src-tauri/engine/src/cli_capabilities.rs:108 build_cli_args mirrors production), and the wrapper doc at src/api/agents/evolution.ts:100 wrongly calls it 'not free'"
+          "evidence": "src/api/agents/evolution.ts:108 No force parameter is passed, and installed vs authorized are not told apart, against the technique's 'two separate questions' rule."
         },
         {
           "technique": "dated-capability-matrix",
           "verdict": "partial",
-          "evidence": "src-tauri/engine/src/cli_capabilities.rs:63 CliCapabilities carries cliVersion, probedAt and servedFromCache (dated and witnessed), but the cache at :92 never invalidates on a version change or a real-run auth failure, and src/api/agents/evolution.ts:108 passes no force to ask for one"
+          "evidence": "src-tauri/engine/src/cli_capabilities.rs:63 CliCapabilities carries cliVersion, probedAt and servedFromCache (dated and witnessed), but the cache at :92 never invalidates on a version change or a real-run auth failure, and src/api/agents/evolution.ts:108 passes no force to ask for one",
+          "carriedFrom": "2026-10-10"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/api/agents/evolution.ts:104 the probe door every readiness gate consumes documents that a rejection means 'binary missing OR no working subscription session' without distinguishing them (backend maps both to AppError::Internal, src-tauri/src/commands/execution/evolution.rs:167), and the wrapper at :107 passes no force, so installed vs authorized collapse into one rejection and a cached probe that a real run has falsified cannot be re-probed from the client",
+          "evaluatedAt": "2026-10-10T00:00:00.000Z",
+          "worker": "5a33eebf-17c9-4e12-92df-8167b502fde0",
+          "reason": "replaced by 5ac4b274-fb2d-405c-bdb3-c55225c9d6b3"
         }
       ]
     },
@@ -19574,27 +19584,37 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T11:52:43.000Z",
-      "worker": "9d8ed911-0769-45d8-96be-0e10bb822093",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T05:12:19.586Z",
+      "worker": "5ac4b274-fb2d-405c-bdb3-c55225c9d6b3",
       "techniques": [
         {
           "technique": "fallback-ladder",
           "verdict": "deviation",
-          "evidence": "src/stores/slices/system/uiSlice.ts:46 rung label travels with the result (realized) but 'descent has a reason' is not: useMorningBriefing.ts:146 defaults to 'fallback' for every failure class and briefing.rs:62 discards the error before the IPC boundary"
+          "evidence": "src/stores/slices/system/uiSlice.ts:43 The rung label travels with the result, which conforms, but 'descent has a reason' is missing."
         },
         {
           "technique": "output-normalization",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/system/devToolsScannerSlice.ts:89 scan slices hold only the scan_id; envelope parsing and completion live in the backend and in other contexts' event listeners"
+          "evidence": "src/stores/slices/system/devToolsScannerSlice.ts:89 scan slices hold only the scan_id; envelope parsing and completion live in the backend and in other contexts' event listeners",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "availability-probe",
           "verdict": "not-applicable",
-          "evidence": "src/stores/slices/system/setupSlice.ts:33 the setup wizard stores a tool PICK, not a probe result; no slice in this context holds CLI installed/authorized state"
+          "evidence": "src/stores/slices/system/setupSlice.ts:33 the setup wizard stores a tool PICK, not a probe result; no slice in this context holds CLI installed/authorized state",
+          "carriedFrom": "2026-10-12"
         }
       ],
-      "registryProposal": "fallback-ladder could name the half-realized shape seen here explicitly: a provenance label that distinguishes model/fallback/quiet but carries no reason field, with the backend error swallowed at the IPC door - it passes a 'rung label travels' check while failing 'descent has a reason'."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/stores/slices/system/uiSlice.ts:46 the morning-briefing provenance carries the fallback rung ('athena'|'fallback'|'quiet') but no descent reason: CLI absent, timeout, parse failure and empty-widget output all collapse into 'fallback' because the command turns every call_claude_text error into Ok(None) with only a log line (src-tauri/src/commands/companion/briefing.rs:62), so a fleet living on the deterministic floor is undiagnosable from the surface",
+          "evaluatedAt": "2026-10-12T11:52:43.000Z",
+          "worker": "9d8ed911-0769-45d8-96be-0e10bb822093",
+          "reason": "replaced by 5ac4b274-fb2d-405c-bdb3-c55225c9d6b3"
+        }
+      ]
     },
     "b7c818bf-fe04-44ff-aa8d-7cd51e0fc67f/agent-cli-transport": {
       "context": "persona-shared-ui",
@@ -26593,24 +26613,35 @@
       "subject": "agent-cli-transport",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T13:00:00.000Z",
-      "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T05:12:19.586Z",
+      "worker": "5ac4b274-fb2d-405c-bdb3-c55225c9d6b3",
       "techniques": [
         {
           "technique": "permission-stance-enforcement",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:202 skip-permissions with home cwd (:210) for a no-workspace call"
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:202 A generate call runs with the bypass stance. The standard says auto-accept, never bypass, and generate gets no workspace grants at all."
         },
         {
           "technique": "subscription-auth-selection",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:220 Calls the shared strip of ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN and ANTHROPIC_BASE_URL after the env is set."
+        },
+        {
+          "technique": "child-observed-posture",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:196 Reuses the shared resolver that finds claude.exe without the shim, removing the cmd re-parse seam."
+        },
+        {
+          "technique": "output-normalization",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:211 session-nesting markers not removed; only force_subscription_auth (:218) applied"
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:365 An error-subtype envelope (no result string) becomes empty text. The tool's is_error/subtype never reaches the caller as a typed value, and the run fails later as an extraction failure."
         },
         {
           "technique": "availability-probe",
           "verdict": "realized",
-          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:196 resolves via base_cli_invocation -> claude_cli_invocation (cli.rs:767)"
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:196 resolves via base_cli_invocation -> claude_cli_invocation (cli.rs:767)",
+          "carriedFrom": "2026-10-14"
         }
       ],
       "superseded": [
@@ -26620,6 +26651,13 @@
           "evaluatedAt": "2026-10-06",
           "worker": null,
           "reason": "replaced by e6722372-20b3-4f23-a4d7-abf234ee66f2"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:202 the agent_ir fix pass is a generate-shaped one-shot (JSON in/out) yet spawns with --dangerously-skip-permissions and cwd=home (:210) through a hand-rolled Command::new (:211) beside the shared headless door, so a 'generate' call holds write access over the operator's home dir and it never strips CLAUDECODE/CLAUDE_CODE (no occurrence in the file) so it can start as a nested session; auth strip (:218) and shim-immune resolver (:196) are now correctly reused",
+          "evaluatedAt": "2026-10-14T13:00:00.000Z",
+          "worker": "e6722372-20b3-4f23-a4d7-abf234ee66f2",
+          "reason": "replaced by 5ac4b274-fb2d-405c-bdb3-c55225c9d6b3"
         }
       ]
     },

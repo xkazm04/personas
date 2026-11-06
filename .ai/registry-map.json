@@ -4689,12 +4689,11 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/api/agents/evolution.ts:104 the probe door every readiness gate consumes documents that a rejection means 'binary missing OR no working subscription session' without distinguishing them (backend maps both to AppError::Internal, src-tauri/src/commands/execution/evolution.rs:167), and the wrapper at :107 passes no force, so installed vs authorized collapse into one rejection and a cached probe that a real run has falsified cannot be re-probed from the client",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/api/agents/evolution.ts:104 Every readiness gate goes through this one probe, and it merges 'installed' and 'authorized' into a single rejection. The backend maps both to AppError::Internal (src-tauri/src/commands/execution/evolution.rs:167). The wrapper never sends the backend's existing `force` flag, so a cached probe that a real run has since proved wrong cannot be re-probed from the client.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-runtime-assembly",
@@ -13314,13 +13313,12 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:202 the agent_ir fix pass is a generate-shaped one-shot (JSON in/out) yet spawns with --dangerously-skip-permissions and cwd=home (:210) through a hand-rolled Command::new (:211) beside the shared headless door, so a 'generate' call holds write access over the operator's home dir and it never strips CLAUDECODE/CLAUDE_CODE (no occurrence in the file) so it can start as a nested session; auth strip (:218) and shim-immune resolver (:196) are now correctly reused",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
+          "evidence": "src-tauri/src/engine/build_session/fix_pass.rs:202 The agent_ir fix pass is a generate-shaped one-shot (JSON in, JSON out), yet it bypasses every permission with cwd set to the operator's home directory. A model call that should touch nothing therefore holds unrestricted write and shell access over the home directory.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
           "source": "retained",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "deployment-contract",
@@ -37000,12 +36998,11 @@
           "changedAt": "2026-10-27",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/stores/slices/system/uiSlice.ts:46 the morning-briefing provenance carries the fallback rung ('athena'|'fallback'|'quiet') but no descent reason: CLI absent, timeout, parse failure and empty-widget output all collapse into 'fallback' because the command turns every call_claude_text error into Ok(None) with only a log line (src-tauri/src/commands/companion/briefing.rs:62), so a fleet living on the deterministic floor is undiagnosable from the surface",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:5791230ffb7d9fad",
-          "evaluatedRevision": 9,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/stores/slices/system/uiSlice.ts:46 The morning-briefing provenance records which rung served the briefing but not why it descended. The backend turns every compose error into Ok(None) with only a log line (src-tauri/src/commands/companion/briefing.rs:62). CLI absent, timeout, parse failure and empty output all collapse into 'fallback', so a fleet that has quietly fallen back to the deterministic floor cannot be diagnosed from the surface.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:75415727a875a42a",
+          "evaluatedRevision": 10,
+          "revisionsBehind": 1
         },
         {
           "subject": "codebase-scanning",
