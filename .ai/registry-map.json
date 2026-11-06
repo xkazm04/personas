@@ -4866,12 +4866,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/api/__tests__/enums.test.ts:14 claims 'a change on EITHER side fails this test' but the Rust sets are literal copies (:29) and nothing reads src-tauri/src/commands/infrastructure/twin.rs:524, whose own comment (twin.rs:512) names this file as its sync guard - narrowing VALID_CHANNELS (the historical defect the header records) stays green while TS-valid channels are rejected at runtime; each side believes the other pins it.",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/api/__tests__/lensScan.test.ts:21 The test is named for a camelCase-args guard, but listLensScanProducts (src/api/lensScan.ts:83) takes no arguments and the test only checks the command name. The args that startLensScan, getLensScanCommitDiff and getLensScanShot send are asserted nowhere. A grep for the guard stops at a name that guards nothing, and a snake_case key on those three wrappers would stay green.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",
@@ -16352,12 +16351,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:66 is named 'still shows the empty copy' but never asserts linked_decisions_empty; Tile renders its testid in the loading frame (src/features/shared/components/kit/Tiles.tsx:104, LinkedDecisionsWidget.tsx:106), so both waitFors and the :73 check pass before the mock resolves and an empty success rendered as an error stays green",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:66 The test never asserts linked_decisions_empty. Tile renders its testid in the loading frame (src/features/shared/components/kit/Tiles.tsx:104; LinkedDecisionsWidget.tsx:105-106), so both waitFors and the :73 check pass before the mock resolves. An empty success rendered as an error, or as a blank, stays green.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "module-design",
@@ -19353,13 +19351,12 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src/lib/analytics/sink.test.ts:31 swaps the real sink and asserts what the production trackInteraction call emitted, so the decision it names is reached; session.test.ts:21 and sink.test.ts:11 restore state per test",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/lib/analytics/index.ts:79 Tab tracking reads each dimension's store field by a string key cast through unknown. No test drives a tab dimension through a store: session.test.ts:29 stubs a state carrying only sidebarSection, and summary.test.ts checks only that keys are unique. A renamed store field would make readTab return undefined, and that tab would silently report as never visited. All 14 keys match real store fields today, so the gap is latent.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "analytics-store-design",
@@ -21533,12 +21530,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/src/mcp_server/auth_tests.rs:24 hand-writes CREATE TABLE external_api_keys / api_key_audit instead of deriving from the migrated template (src-tauri/db/src/lib.rs:2451); the schema now has several copies (src-tauri/db/src/migrations/initial.rs:350, src-tauri/db/src/repos/resources/external_api_keys.rs:375, this file), so a column or constraint added to the migration leaves the auth gate tests passing against yesterday's schema",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/mcp_server/auth_tests.rs:24 The auth-gate tests hand-write the external_api_keys and api_key_audit schema instead of using the migrated template. The table now exists in four places (initial.rs:350 plus the c03 ALTERs, external_api_keys.rs:405, broker_edges.rs:219, here), so a migration change leaves these tests passing against yesterday's schema. Each test's temp DB also uses the prefix mcp_auth_test_, which neither the crate sweep (TEST_DB_PREFIXES) nor scripts/build/run-rust-tests.mjs:319-324 reclaims, so every run leaks the files.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "voice-io",

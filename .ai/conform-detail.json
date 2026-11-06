@@ -15865,24 +15865,55 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-10",
-      "evaluatedTs": "2026-10-10T02:23:06.000Z",
-      "worker": "b2435f14-a79c-4550-8ac6-81f0387e4917",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T03:56:39.638Z",
+      "worker": "c8292b35-17bc-47bf-a5d6-350d683f6732",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src/api/__tests__/enums.test.ts:14 the file's stated claim (either-side change fails) is false under the mutation it names; the decision on the Rust side is never read"
+          "evidence": "src/api/__tests__/lensScan.test.ts:21 The test name claims a stronger guard than its assertions make. The technique says to rename it and pin the args at the crossing. The earlier enums.test.ts deviation is resolved: :52 now reads VALID_CHANNELS from twin.rs."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "conformant",
+          "evidence": "src/api/__tests__/desktopCapabilityRisk.test.ts:33 The parity pins strip comments, use call-shaped needles and fail loudly on an unmatched end needle instead of slicing to EOF. .gitattributes pins *.rs to eol=lf, so the \\n}\\n needles hold."
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "conformant",
+          "evidence": "src/api/__tests__/localDayOffsetParity.test.ts:65 The CASES population is derived by walking the Rust commands, and the walk has a floor: zero commands found is a failure, not a pass."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/api/__tests__/webbuildTimeoutParity.test.ts:66 The claim that the wrapper outlives the backend cutoff is asserted from the declared budgets read out of the Rust source, never from wall time."
+        },
+        {
+          "technique": "fixture-economics",
+          "verdict": "conformant",
+          "evidence": "src/api/__tests__/credentials.test.ts:26 These are unit tests on the in-memory fixture tier: a name-routed invoke stub, reset before every test."
         },
         {
           "technique": "negative-control-tests",
           "verdict": "deviation",
-          "evidence": "src/api/__tests__/enums.test.ts:29 correspondence probe against a hand-held copy of the far side, no recorded control; a Rust-side mutation is invisible to it"
+          "evidence": "src/api/__tests__/enums.test.ts:29 correspondence probe against a hand-held copy of the far side, no recorded control; a Rust-side mutation is invisible to it",
+          "carriedFrom": "2026-10-10"
         },
         {
           "technique": "isolation-lanes",
           "verdict": "realized",
-          "evidence": "src/test/tauriMock.ts:79 resetInvokeMocks (called per test, src/api/__tests__/personas.test.ts:50) also clears the auto-dedup response cache that would otherwise carry one test's result into the next"
+          "evidence": "src/test/tauriMock.ts:79 resetInvokeMocks (called per test, src/api/__tests__/personas.test.ts:50) also clears the auto-dedup response cache that would otherwise carry one test's result into the next",
+          "carriedFrom": "2026-10-10"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/api/__tests__/enums.test.ts:14 claims 'a change on EITHER side fails this test' but the Rust sets are literal copies (:29) and nothing reads src-tauri/src/commands/infrastructure/twin.rs:524, whose own comment (twin.rs:512) names this file as its sync guard - narrowing VALID_CHANNELS (the historical defect the header records) stays green while TS-valid channels are rejected at runtime; each side believes the other pins it.",
+          "evaluatedAt": "2026-10-10T02:23:06.000Z",
+          "worker": "b2435f14-a79c-4550-8ac6-81f0387e4917",
+          "reason": "replaced by c8292b35-17bc-47bf-a5d6-350d683f6732"
         }
       ]
     },
@@ -27584,19 +27615,34 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:14:39.000Z",
-      "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T03:56:39.638Z",
+      "worker": "c8292b35-17bc-47bf-a5d6-350d683f6732",
       "techniques": [
         {
           "technique": "fixture-economics",
-          "verdict": "not realized: table vocabulary hand-copied per test file; it matches initial.rs today but nothing ties it to the migration",
-          "evidence": "src-tauri/src/mcp_server/auth_tests.rs:24"
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/mcp_server/auth_tests.rs:24 Two failures: the fixture names no rebuild trigger and drifts from the migrations (freshness), and the per-test copy has no named reaper (auth_tests.rs:19, prefix absent from both sweep lists)."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/mcp_server/obsidian_vault_tests.rs:12 Every test gets a private DB file and vault directory, so tests can run in parallel without sharing state."
         },
         {
           "technique": "negative-control-tests",
           "verdict": "realized: rejection paths assert code, message and zero audit rows",
-          "evidence": "src-tauri/src/mcp_server/auth_tests.rs:72"
+          "evidence": "src-tauri/src/mcp_server/auth_tests.rs:72",
+          "carriedFrom": "2026-10-14"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/mcp_server/auth_tests.rs:24 hand-writes CREATE TABLE external_api_keys / api_key_audit instead of deriving from the migrated template (src-tauri/db/src/lib.rs:2451); the schema now has several copies (src-tauri/db/src/migrations/initial.rs:350, src-tauri/db/src/repos/resources/external_api_keys.rs:375, this file), so a column or constraint added to the migration leaves the auth gate tests passing against yesterday's schema",
+          "evaluatedAt": "2026-10-14T09:14:39.000Z",
+          "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+          "reason": "replaced by c8292b35-17bc-47bf-a5d6-350d683f6732"
         }
       ]
     },
@@ -30980,19 +31026,28 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:08:00.000Z",
-      "worker": "1a5f8c88-83b9-404e-92bd-a7a6d0c4e176",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T03:56:39.638Z",
+      "worker": "c8292b35-17bc-47bf-a5d6-350d683f6732",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:66 the empty-success decision is never reached: every assertion is satisfied by the loading frame, and the name overstates what is pinned"
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:66 The loading frame answers with the same testid and no alert. The name claims the empty copy is shown, but nothing asserts it."
         },
         {
           "technique": "negative-control-tests",
-          "verdict": "realized",
-          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:101 the unmount check is not vacuous: RecentDecisionsWidget starts loading=true and renders, so the waitFor must observe a transition, and the error cases (:46, :80) carry their retry controls"
+          "verdict": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:50 The real empty copy is 'No human-review tasks for this execution.', so this regex can never match. Re-introducing the original defect (error collapsed into empty) would not fire this line; only :49 still pins that test."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/home/sub_cockpit/widgets/__tests__/decisionWidgetFailure.test.tsx:66 is named 'still shows the empty copy' but never asserts linked_decisions_empty; Tile renders its testid in the loading frame (src/features/shared/components/kit/Tiles.tsx:104, LinkedDecisionsWidget.tsx:106), so both waitFors and the :73 check pass before the mock resolves and an empty success rendered as an error stays green",
+          "evaluatedAt": "2026-10-16T18:08:00.000Z",
+          "worker": "1a5f8c88-83b9-404e-92bd-a7a6d0c4e176",
+          "reason": "replaced by c8292b35-17bc-47bf-a5d6-350d683f6732"
         }
       ]
     },
@@ -39388,30 +39443,46 @@
       "context": "lib-analytics",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T19:50:20.014Z",
-      "worker": "afe29407-ce9d-4c41-80fa-262960015574",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T03:56:39.638Z",
+      "worker": "c8292b35-17bc-47bf-a5d6-350d683f6732",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
-          "verdict": "realized",
-          "evidence": "src/lib/analytics/sink.test.ts:31 name claims routing through the active sink and the assertion reads the sink that answered; activation.test.ts:96 asserts a capturing sink saw nothing under noop"
+          "verdict": "deviation",
+          "evidence": "src/lib/analytics/session.test.ts:29 The stub makes the tab-dimension decision unreachable and does not say so. The string-keyed crossing is untyped, so the technique's exemption for a typed crossing does not apply. The sink decision itself is reached (sink.test.ts:32 drives the real trackInteraction)."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/lib/analytics/sink.test.ts:12 The module-global sink is restored after every test, so test order cannot leak it."
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "conformant",
+          "evidence": "src/lib/analytics/summary.test.ts:40 The denominator is derived from the catalog and has a floor, so an empty derivation fails."
         },
         {
           "technique": "negative-control-tests",
           "verdict": "realized",
-          "evidence": "src/lib/analytics/session.test.ts:55 the emits-nothing case shares a fixture with the pagehide positives at :34, :42, :49, so the empty result is falsifiable"
+          "evidence": "src/lib/analytics/session.test.ts:55 the emits-nothing case shares a fixture with the pagehide positives at :34, :42, :49, so the empty result is falsifiable",
+          "carriedFrom": "2026-10-22"
         },
         {
           "technique": "fixture-economics",
           "verdict": "realized",
-          "evidence": "src/lib/analytics/session.test.ts:21 per-test reset plus sink restore; no shared template to go stale"
-        },
+          "evidence": "src/lib/analytics/session.test.ts:21 per-test reset plus sink restore; no shared template to go stale",
+          "carriedFrom": "2026-10-22"
+        }
+      ],
+      "superseded": [
         {
-          "technique": "isolation-lanes",
-          "verdict": "realized",
-          "evidence": "src/lib/analytics/sink.test.ts:11 afterEach restores the default sink so order cannot leak the active one"
+          "state": "conformant",
+          "evidence": "src/lib/analytics/sink.test.ts:31 swaps the real sink and asserts what the production trackInteraction call emitted, so the decision it names is reached; session.test.ts:21 and sink.test.ts:11 restore state per test",
+          "evaluatedAt": "2026-10-22T19:50:20.014Z",
+          "worker": "afe29407-ce9d-4c41-80fa-262960015574",
+          "reason": "replaced by c8292b35-17bc-47bf-a5d6-350d683f6732"
         }
       ]
     },
