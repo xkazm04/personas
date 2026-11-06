@@ -16,6 +16,8 @@ export interface ReportSlice {
   // State
   reports: PersonaReport[];
   reportsTotal: number;
+  /** Why the last read of the list failed; null once a read succeeds. Without it a failed first read drew "no reports". */
+  reportsError: string | null;
   unreadReportCount: number;
   /** IDs of reports with in-flight markAsRead calls (not yet confirmed by backend). */
   _pendingReadIds: Set<string>;
@@ -34,6 +36,7 @@ export interface ReportSlice {
 export const createReportSlice: StateCreator<OverviewStore, [], [], ReportSlice> = (set, get) => ({
   reports: [],
   reportsTotal: 0,
+  reportsError: null,
   unreadReportCount: 0,
   _pendingReadIds: new Set(),
   deliverySummaries: new Map(),
@@ -51,11 +54,12 @@ export const createReportSlice: StateCreator<OverviewStore, [], [], ReportSlice>
         // Reset replaces the whole list, so the in-flight-read guard must be
         // cleared too — a leftover id (in-flight mark that never settled, or a
         // recycled id) would otherwise permanently no-op markReportAsRead for it.
-        set({ reports: rawReports, reportsTotal: totalCount, unreadReportCount: unreadCount, _pendingReadIds: new Set() });
+        set({ reports: rawReports, reportsTotal: totalCount, reportsError: null, unreadReportCount: unreadCount, _pendingReadIds: new Set() });
       } else {
         set((state) => ({
           reports: [...state.reports, ...rawReports],
           reportsTotal: totalCount,
+          reportsError: null,
           unreadReportCount: unreadCount,
         }));
       }
@@ -63,7 +67,8 @@ export const createReportSlice: StateCreator<OverviewStore, [], [], ReportSlice>
       const ids = rawReports.map((m) => m.id);
       if (ids.length > 0) void get().fetchDeliverySummaries(ids);
     } catch (err) {
-      reportError(err, "Failed to fetch reports", set);
+      const reason = reportError(err, "Failed to fetch reports", set);
+      set({ reportsError: reason });
     }
   },
 

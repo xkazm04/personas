@@ -4,6 +4,8 @@ import { MessageSquare, CheckCheck, RefreshCw, Plus, BookOpen, Eye, EyeOff } fro
 import { useTranslation } from '@/i18n/useTranslation';
 import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { useOverviewStore } from "@/stores/overviewStore";
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePersonaMap, useEnrichedRecords } from "@/hooks/utility/data/usePersonaMap";
@@ -75,12 +77,13 @@ export default function ReportList() {
     { value: 'unread', label: t.overview.reports_view.unread },
   ];
   const {
-    reports, reportsTotal,
+    reports, reportsTotal, reportsError,
     fetchReports, fetchUnreadReportCount,
     markReportAsRead, markAllReportsAsRead, deleteReport,
   } = useOverviewStore(useShallow((s) => ({
     reports: s.reports,
     reportsTotal: s.reportsTotal,
+    reportsError: s.reportsError,
     fetchReports: s.fetchReports,
     fetchUnreadReportCount: s.fetchUnreadReportCount,
     markReportAsRead: s.markReportAsRead,
@@ -227,6 +230,9 @@ export default function ReportList() {
   // Ghost rows only when the row region would otherwise be empty while a
   // fetch runs. Rows already on screen (pre-warmed store) are never hidden.
   const showGhost = isLoading && filteredMessages.length === 0;
+  // A failed read with nothing on screen is not "no reports": it gets the failure and a
+  // retry. Not gated on the filters as Events is: this list opens on Unread, so it would never fire.
+  const readFailed = !isLoading && reports.length === 0 && reportsError != null;
 
   // Column header — static chrome, rendered identically above ghost rows and
   // real rows so the ghost→content swap moves nothing.
@@ -343,6 +349,13 @@ export default function ReportList() {
           <div className="flex-1 min-h-0 flex flex-col">
             {columnHeaderRow}
             <MessageGhostRows gridTemplate={msgGridTemplate} />
+          </div>
+        ) : readFailed ? (
+          <div className="p-4">
+            <InlineErrorBanner
+              message={resolveErrorTranslated(t, reportsError).message}
+              onRetry={() => void handleRefresh()}
+            />
           </div>
         ) : filteredMessages.length === 0 && !hasActiveFilters ? (
           <div className="flex-1 flex items-center justify-center p-4 md:p-6">
