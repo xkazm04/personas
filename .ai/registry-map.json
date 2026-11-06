@@ -5307,12 +5307,11 @@
           "changedAt": "2026-10-25",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 delete_all (exposed at src/api/overview/memories.ts:154) hard-DELETEs every non-core memory and writes no fact_key tombstone, unlike single delete (:1436), so a deliberate workspace forget is undone by the next consolidation re-deriving the same facts",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/api/overview/memories.ts:154 This context exposes an unscoped wipe of every non-core memory for every agent (doc at line 85). The backend it calls (db repo delete_all) writes no fact_key tombstone, unlike single delete, so the next consolidation can re-derive the facts the operator just forgot.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "mcp-tools",
@@ -9224,12 +9223,11 @@
           "changedAt": "2026-10-25",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166 build_consolidation_prompt stamps each episode with its instant (:1253) but never states today nor asks the model to ground relative dates, so a deferred or replayed pass mis-dates them; the sibling sleep-cycle prompt does it (src-tauri/src/companion/brain/sleep_cycle/prompts.rs:61) - re-confirmed at revision 51",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1284 build_consolidation_prompt prints each episode's created_at beside it, but the prompt (lines 1197-1300) never states today and never tells the model to resolve relative dates against the episode's instant, so a deferred or replayed pass leaves the grounding to chance.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "companion-identity",
@@ -11005,12 +11003,11 @@
           "changedAt": "2026-10-25",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/core/src/models/memory.rs:225 ACTIVE_CAP archival orders by importance/access_count/created_at (src-tauri/db/src/repos/core/memories.rs:2024) while recall ranks by decay_score (src-tauri/db/src/memory_recall.rs:157), and access_count is a pure delivery count (src-tauri/src/engine/runner/mod.rs:1347), so the cap keeps whatever was shown most - exposure ranked as credit",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/core/src/models/memory.rs:225 The memory contract in this context's model file says outright that the cap's retirement ordering differs from the decayed injection ranking (described at :218), so the janitor and the read path value items differently.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "test-harness",
@@ -11774,13 +11771,12 @@
           "changedAt": "2026-10-25",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge() still hard-DELETEs both originals in the merge tx; persona_memory_sources ON DELETE CASCADE (src-tauri/db/src/migrations/incremental/e16_living_agent.rs:107) erases their episode provenance and no supersedence link survives - re-confirmed at revision 51",
-          "evaluatedAt": "2026-10-16",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge() still hard-deletes both originals inside the merge transaction. persona_memory_sources cascades on delete, so their episode provenance goes with them, and the merged row records no supersedes link back to them.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
           "source": "conform",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "module-design",
@@ -35129,11 +35125,7 @@
           "confidence": "strong",
           "state": "not-applicable",
           "evidence": "src/features/shared/components/forms/SettingRow.tsx:34 These are presentational form controls; even SettingRow, which Brain/Companion setup panels reuse, only renders a label and a toggle and never holds or recalls memory. A search of src/features/shared/components/forms found 0 hits for recall, episode, belief and distill; the 2 'memory' hits are the phrases 'muscle memory' and 'in-memory checks'.",
-          "evaluatedAt": "2026-10-24",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-24"
         },
         {
           "subject": "settings",

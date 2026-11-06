@@ -1,0 +1,215 @@
+{
+  "schema": "conform-run/1",
+  "worker": "675a90ed-f8f2-45a8-875d-3876769e93b4",
+  "subject": "agent-memory",
+  "evaluatedAt": "2026-11-06T00:32:17.237654+00:00",
+  "provider": "claude",
+  "model": "claude-opus-5-5",
+  "pairs": [
+    {
+      "context": "companion-brain",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/src/companion/brain/consolidation.rs:1284 build_consolidation_prompt prints each episode's created_at beside it, but the prompt (lines 1197-1300) never states today and never tells the model to resolve relative dates against the episode's instant, so a deferred or replayed pass leaves the grounding to chance.",
+      "techniques": [
+        {
+          "technique": "observation-clock",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1284 The instant is shown, but no grounding instruction and no labelled 'now' are given. The technique says 'grounding is an instruction, not a hope'."
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:379 Model proposals go into companion_consolidation_item as 'pending', not into the fact store."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:455 apply_item only applies pending items after human review. validate_supersedes treats the model's supersedes_id as untrusted."
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1216 Supersedence is a link rather than an overwrite, and proposals must cite source episodes (line 1211)."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:611 Decay demotes importance with a floor and never deletes."
+        },
+        {
+          "technique": "probe-without-write-back",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/retrieval.rs:699 touch_recalled skips the last_seen write during probe reads."
+        }
+      ]
+    },
+    {
+      "context": "api-overview",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src/api/overview/memories.ts:154 This context exposes an unscoped wipe of every non-core memory for every agent (doc at line 85). The backend it calls (db repo delete_all) writes no fact_key tombstone, unlike single delete, so the next consolidation can re-derive the facts the operator just forgot.",
+      "techniques": [
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src/api/overview/memories.ts:154 Bulk forgetting leaves no audit trail or tombstone. Single deleteMemory gets one in the backend; this door does not."
+        },
+        {
+          "technique": "exposure-is-not-credit",
+          "verdict": "conformant",
+          "evidence": "src/api/overview/memories.ts:35 Helpful/wrong/outdated verdicts are filed against one named memory by the user, not spread over everything a run delivered."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src/api/overview/memories.ts:294 Review and reflection results come back as pending proposals a human applies or discards."
+        }
+      ]
+    },
+    {
+      "context": "db-repos-core",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge() still hard-deletes both originals inside the merge transaction. persona_memory_sources cascades on delete, so their episode provenance goes with them, and the merged row records no supersedes link back to them.",
+      "techniques": [
+        {
+          "technique": "rollup-compaction",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 The rollup destroys its sources instead of archiving them and linking them to the summary."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 delete_all hard-deletes and writes no tombstone, unlike single delete at :1436."
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:2024 ACTIVE_CAP archival uses its own ordering while recall and the forget floor use decay_score (memory_recall.rs:170/440). Two value policies."
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:600 create_consolidated checks tombstones inside the transaction, so a deliberately forgotten fact_key is not re-derived."
+        },
+        {
+          "technique": "exposure-is-not-credit",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1971 access_count counts deliveries, and the cap at :2024 ranks on it as credit. The log bonus in decay_score (memory_recall.rs:168) is bounded; the cap's ordering is not."
+        }
+      ]
+    },
+    {
+      "context": "core-validation",
+      "subject": "agent-memory",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evidence": "src-tauri/core/src/models/memory.rs:225 The memory contract in this context's model file says outright that the cap's retirement ordering differs from the decayed injection ranking (described at :218), so the janitor and the read path value items differently.",
+      "techniques": [
+        {
+          "technique": "memory-value-model",
+          "verdict": "deviation",
+          "evidence": "src-tauri/core/src/models/memory.rs:225 States that two value policies exist: the cap uses the 'simpler monotonic ordering'."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/memory.rs:218 Injection ranking decays usage by recency of last access, so a stale heavy-hitter sinks."
+        }
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "subject": "agent-memory",
+      "context": "shared-components-forms",
+      "reason": "withdrawn after review: reviewer (sonnet): The anchor SettingRow.tsx:34 is only the doc comment of one toggle-row component. It doesn't show that the other eleven files in the context lack agent-memory handling, and the grep term list (recall, episode, belief, distill, consolidat) is a narrow proxy for that."
+    }
+  ],
+  "consults": [
+    {
+      "ts": "2026-11-06T00:32:17.237654+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "consolidation",
+        "decay-and-forgetting",
+        "memory-governance",
+        "observation-clock",
+        "pending-beliefs-live-apart",
+        "probe-without-write-back"
+      ],
+      "deviations": 1,
+      "context": "companion-brain",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T00:32:17.237654+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "decay-and-forgetting",
+        "exposure-is-not-credit",
+        "memory-governance"
+      ],
+      "deviations": 1,
+      "context": "api-overview",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T00:32:17.237654+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "consolidation",
+        "decay-and-forgetting",
+        "exposure-is-not-credit",
+        "memory-value-model",
+        "rollup-compaction"
+      ],
+      "deviations": 1,
+      "context": "db-repos-core",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T00:32:17.237654+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [
+        "decay-and-forgetting",
+        "memory-value-model"
+      ],
+      "deviations": 1,
+      "context": "core-validation",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "ts": "2026-11-06T00:32:17.237654+00:00",
+      "bundle": "software-engineering",
+      "subjects": [
+        "agent-memory"
+      ],
+      "techniques": [],
+      "deviations": 0,
+      "context": "shared-components-forms",
+      "via": "curator-multi:claude",
+      "model": "claude-opus-5-5"
+    }
+  ]
+}

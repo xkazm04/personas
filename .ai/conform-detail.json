@@ -7611,30 +7611,40 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:04:48.459Z",
-      "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:32:17.237Z",
+      "worker": "675a90ed-f8f2-45a8-875d-3876769e93b4",
       "techniques": [
         {
-          "technique": "consolidation",
+          "technique": "rollup-compaction",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge closes two beliefs by deletion, not supersedence with a validity window"
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 The rollup destroys its sources instead of archiving them and linking them to the summary."
         },
         {
           "technique": "decay-and-forgetting",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 delete_all hard-DELETEs every non-core memory; no demotion tier, audit trail lost"
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 delete_all hard-deletes and writes no tombstone, unlike single delete at :1436."
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:2024 ACTIVE_CAP archival uses its own ordering while recall and the forget floor use decay_score (memory_recall.rs:170/440). Two value policies."
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:600 create_consolidated checks tombstones inside the transaction, so a deliberately forgotten fact_key is not re-derived."
+        },
+        {
+          "technique": "exposure-is-not-credit",
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1971 access_count counts deliveries, and the cap at :2024 ranks on it as credit. The log bonus in decay_score (memory_recall.rs:168) is bounded; the cap's ordering is not."
         },
         {
           "technique": "memory-governance",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/migrations/incremental/e16_living_agent.rs:107 source rows cascade away with the merged originals, so the merged belief can no longer answer where it came from"
-        },
-        {
-          "technique": "rollup-compaction",
-          "verdict": "not realized: compiled item replaces the record it summarizes",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1642",
-          "carriedFrom": "2026-10-14"
+          "evidence": "src-tauri/db/src/migrations/incremental/e16_living_agent.rs:107 source rows cascade away with the merged originals, so the merged belief can no longer answer where it came from",
+          "carriedFrom": "2026-10-16"
         }
       ],
       "superseded": [
@@ -7658,6 +7668,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by 8fb27c07-7f33-4b12-ad6b-9b9a01366973"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1662 merge() still hard-DELETEs both originals in the merge tx; persona_memory_sources ON DELETE CASCADE (src-tauri/db/src/migrations/incremental/e16_living_agent.rs:107) erases their episode provenance and no supersedence link survives - re-confirmed at revision 51",
+          "evaluatedAt": "2026-10-16T18:04:48.459Z",
+          "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
+          "reason": "replaced by 675a90ed-f8f2-45a8-875d-3876769e93b4"
         }
       ]
     },
@@ -13541,27 +13558,27 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:04:48.459Z",
-      "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:32:17.237Z",
+      "worker": "675a90ed-f8f2-45a8-875d-3876769e93b4",
       "techniques": [
         {
           "technique": "memory-value-model",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:2024 a second value ordering beside decay_score: the janitor and the read path disagree about what an item is worth"
+          "evidence": "src-tauri/core/src/models/memory.rs:225 States that two value policies exist: the cap uses the 'simpler monotonic ordering'."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "conformant",
+          "evidence": "src-tauri/core/src/models/memory.rs:218 Injection ranking decays usage by recency of last access, so a stale heavy-hitter sinks."
         },
         {
           "technique": "exposure-is-not-credit",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/runner/mod.rs:1347 increment_access_batch fires on every injection of prepared memories, so access_count counts delivery and then ranks survival - rank raises delivery raises rank"
-        },
-        {
-          "technique": "decay-and-forgetting",
-          "verdict": "deviation",
-          "evidence": "src-tauri/core/src/models/memory.rs:225 contract records the archival ordering as a deliberate exception to decay_score - the forgetting gate does not run on the scored value"
+          "evidence": "src-tauri/src/engine/runner/mod.rs:1347 increment_access_batch fires on every injection of prepared memories, so access_count counts delivery and then ranks survival - rank raises delivery raises rank",
+          "carriedFrom": "2026-10-16"
         }
       ],
-      "registryProposal": "exposure-is-not-credit (revision 51) applies to plain access-count recency/frequency ranking, not only to outcome-feedback learners; its use_when triggers name feedback/verdicts, so a store whose only signal is an injection counter would not reach it by trigger - consider a use_when for \"ranking or retaining by access count incremented on delivery\"",
       "superseded": [
         {
           "state": "deviation",
@@ -13576,6 +13593,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by 8fb27c07-7f33-4b12-ad6b-9b9a01366973"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/core/src/models/memory.rs:225 ACTIVE_CAP archival orders by importance/access_count/created_at (src-tauri/db/src/repos/core/memories.rs:2024) while recall ranks by decay_score (src-tauri/db/src/memory_recall.rs:157), and access_count is a pure delivery count (src-tauri/src/engine/runner/mod.rs:1347), so the cap keeps whatever was shown most - exposure ranked as credit",
+          "evaluatedAt": "2026-10-16T18:04:48.459Z",
+          "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
+          "reason": "replaced by 675a90ed-f8f2-45a8-875d-3876769e93b4"
         }
       ]
     },
@@ -13616,25 +13640,30 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T17:22:13.000Z",
-      "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:32:17.237Z",
+      "worker": "675a90ed-f8f2-45a8-875d-3876769e93b4",
       "techniques": [
         {
           "technique": "decay-and-forgetting",
           "verdict": "deviation",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 bulk forget leaves no key bar; the section 'A deliberate forget bars re-derivation' is met only by the single-row path at :1436"
+          "evidence": "src/api/overview/memories.ts:154 Bulk forgetting leaves no audit trail or tombstone. Single deleteMemory gets one in the backend; this door does not."
+        },
+        {
+          "technique": "exposure-is-not-credit",
+          "verdict": "conformant",
+          "evidence": "src/api/overview/memories.ts:35 Helpful/wrong/outdated verdicts are filed against one named memory by the user, not spread over everything a run delivered."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src/api/overview/memories.ts:294 Review and reflection results come back as pending proposals a human applies or discards."
         },
         {
           "technique": "durable-store-failure-posture",
           "verdict": "partially realized",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1509 victims are captured and handed to the reaper ledger and the core tier is spared"
-        },
-        {
-          "technique": "memory-governance",
-          "verdict": "partly: core tier guarded, reaper ledger run",
-          "evidence": "src-tauri/db/src/repos/core/memories.rs:1486",
-          "carriedFrom": "2026-10-14"
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1509 victims are captured and handed to the reaper ledger and the core tier is spared",
+          "carriedFrom": "2026-10-21"
         }
       ],
       "superseded": [
@@ -13651,6 +13680,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by 64299ba0-27fd-40c1-8af0-ddc7df52b12c"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/core/memories.rs:1506 delete_all (exposed at src/api/overview/memories.ts:154) hard-DELETEs every non-core memory and writes no fact_key tombstone, unlike single delete (:1436), so a deliberate workspace forget is undone by the next consolidation re-deriving the same facts",
+          "evaluatedAt": "2026-10-21T17:22:13.000Z",
+          "worker": "64299ba0-27fd-40c1-8af0-ddc7df52b12c",
+          "reason": "replaced by 675a90ed-f8f2-45a8-875d-3876769e93b4"
         }
       ]
     },
@@ -19262,9 +19298,8 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "not-applicable",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T00:21:27.533Z",
-      "worker": "37ccc5a0-b8db-413c-8d04-902e24c0a06b",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:32:17.237Z",
       "techniques": [],
       "superseded": [
         {
@@ -19280,8 +19315,21 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "4f615649-b5a0-4caa-ac5a-dfb0d9c79a24",
           "reason": "replaced by 37ccc5a0-b8db-413c-8d04-902e24c0a06b"
+        },
+        {
+          "state": "not-applicable",
+          "evidence": "src/features/shared/components/forms/SettingRow.tsx:34 These are presentational form controls; even SettingRow, which Brain/Companion setup panels reuse, only renders a label and a toggle and never holds or recalls memory. A search of src/features/shared/components/forms found 0 hits for recall, episode, belief and distill; the 2 'memory' hits are the phrases 'muscle memory' and 'in-memory checks'.",
+          "evaluatedAt": "2026-10-24T00:21:27.533Z",
+          "worker": "37ccc5a0-b8db-413c-8d04-902e24c0a06b",
+          "reason": "replaced by 675a90ed-f8f2-45a8-875d-3876769e93b4"
         }
-      ]
+      ],
+      "withdrawn": {
+        "worker": "675a90ed-f8f2-45a8-875d-3876769e93b4",
+        "state": "not-applicable",
+        "at": "2026-11-06T00:33:08.964530+00:00",
+        "reason": "reviewer (sonnet): The anchor SettingRow.tsx:34 is only the doc comment of one toggle-row component. It doesn't show that the other eleven files in the context lack agent-memory handling, and the grep term list (recall, episode, belief, distill, consolidat) is a narrow proxy for that."
+      }
     },
     "c5f662f2-458b-4b5d-b03b-e4acf8f54049/agent-memory": {
       "context": "plugins-dev-tools-projects",
@@ -26345,19 +26393,45 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-16",
-      "evaluatedTs": "2026-10-16T18:04:48.459Z",
-      "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:32:17.237Z",
+      "worker": "675a90ed-f8f2-45a8-875d-3876769e93b4",
       "techniques": [
         {
           "technique": "observation-clock",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166 prompt prints episode instants, never `now`, never a grounding instruction - the inverse failure the technique names"
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1284 The instant is shown, but no grounding instruction and no labelled 'now' are given. The technique says 'grounding is an instruction, not a hope'."
+        },
+        {
+          "technique": "pending-beliefs-live-apart",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:379 Model proposals go into companion_consolidation_item as 'pending', not into the fact store."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:455 apply_item only applies pending items after human review. validate_supersedes treats the model's supersedes_id as untrusted."
+        },
+        {
+          "technique": "consolidation",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1216 Supersedence is a link rather than an overwrite, and proposals must cite source episodes (line 1211)."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:611 Decay demotes importance with a floor and never deletes."
+        },
+        {
+          "technique": "probe-without-write-back",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/companion/brain/retrieval.rs:699 touch_recalled skips the last_seen write during probe reads."
         },
         {
           "technique": "filter-at-the-id-door",
           "verdict": "conformant",
-          "evidence": "src-tauri/src/companion/brain/retrieval.rs:734 vector hits re-filtered by id with importance > 0, so retired nodes cannot re-enter"
+          "evidence": "src-tauri/src/companion/brain/retrieval.rs:734 vector hits re-filtered by id with importance > 0, so retired nodes cannot re-enter",
+          "carriedFrom": "2026-10-16"
         }
       ],
       "superseded": [
@@ -26374,6 +26448,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by 8fb27c07-7f33-4b12-ad6b-9b9a01366973"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/companion/brain/consolidation.rs:1166 build_consolidation_prompt stamps each episode with its instant (:1253) but never states today nor asks the model to ground relative dates, so a deferred or replayed pass mis-dates them; the sibling sleep-cycle prompt does it (src-tauri/src/companion/brain/sleep_cycle/prompts.rs:61) - re-confirmed at revision 51",
+          "evaluatedAt": "2026-10-16T18:04:48.459Z",
+          "worker": "8fb27c07-7f33-4b12-ad6b-9b9a01366973",
+          "reason": "replaced by 675a90ed-f8f2-45a8-875d-3876769e93b4"
         }
       ]
     },
