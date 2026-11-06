@@ -7,7 +7,7 @@
  * poll. The hook's doc claimed the two "can never disagree about the count".
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import csTriggers from '@/i18n/section-locales/cs/triggers.json';
 import enCommon from '@/i18n/section-locales/en/common.json';
 
@@ -75,7 +75,10 @@ describe('held trigger fires: one queue for badge and panel', () => {
     await waitFor(() => expect(badge.textContent).toContain('2'));
     expect(calls('list_pending_trigger_fires')).toBe(1);
 
+    // A discard asks first (DW-209); the fire is resolved on the confirm.
     fireEvent.click(screen.getAllByRole('button', { name: csTriggers.pending_approval.discard })[0]!);
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: enCommon.confirm_destructive_discard }));
     await waitFor(() => expect(screen.getByTestId('pending-approvals-badge').textContent).toContain('1'));
     // No second poll was needed to bring the badge in line.
     expect(calls('list_pending_trigger_fires')).toBe(1);
