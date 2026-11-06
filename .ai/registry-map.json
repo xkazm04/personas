@@ -11450,13 +11450,12 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src-tauri/db/src/lib.rs:2451 init_test_db copies a once-per-process migrated template (:2309) per test, drops the builder handle before the first copy (:2331), removes a crashed run's template (:2319), probes each copy (:2475) and sweeps stale files (:2394); src-tauri/db/src/repos/test_fixtures.rs:10 seeds personas through personas::create, the product door",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories_tests.rs:21 dev_memories_tests.rs builds a private shared-cache in-memory pool per test and re-runs the full initial and incremental migration chain each time (about 16 tests). It bypasses the copied template every sibling repo test here uses (twin, metrics, fk_hygiene, fleet_sessions, system_ops) and skips the standard pragmas and builtin seeds, so it pays N×build and certifies a schema shaped differently from production.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "fleet-orchestration",

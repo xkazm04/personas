@@ -27173,25 +27173,40 @@
       "context": "db-repos",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:14:39.000Z",
-      "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T00:59:07.120Z",
+      "worker": "471824a4-46ac-4170-a945-4ff6074e01e4",
       "techniques": [
         {
           "technique": "fixture-economics",
-          "verdict": "realized: build once, copy per test, probe at handoff, reaper, seeds through the product write path",
-          "evidence": "src-tauri/db/src/lib.rs:2459"
+          "verdict": "deviation",
+          "evidence": "src-tauri/db/src/repos/dev_memories_tests.rs:21 A rebuild per test, which the technique names as the failure. The crate's own init_test_db does it right: build once and copy (src-tauri/db/src/lib.rs:2473), with a probe at handoff (:2487). Seeds go through the product door (test_fixtures.rs:10), though fk_hygiene.rs:685 inserts personas raw."
         },
         {
           "technique": "isolation-lanes",
-          "verdict": "realized: unique file per test instead of :memory: with the r2d2 reason stated",
-          "evidence": "src-tauri/db/src/lib.rs:2460"
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/lib.rs:2333 The template is per-pid, the stale template is reaped at startup, and stale per-test copies are swept once per process. dev_memories also gives each test its own DB name (dev_memories_tests.rs:12)."
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src-tauri/db/src/repos/dev_memories_tests.rs:68 The dedup claim first proves the write lands, so the second None comes from the unique index and not from a failing writer."
         },
         {
           "technique": "platform-quirk-absorption",
           "verdict": "realized: pid-keyed template and TEST_DB_PREFIXES sweep absorb concurrent cargo test binaries, incident reasoning kept in comments",
-          "evidence": "src-tauri/db/src/lib.rs:2352"
+          "evidence": "src-tauri/db/src/lib.rs:2352",
+          "carriedFrom": "2026-10-14"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src-tauri/db/src/lib.rs:2451 init_test_db copies a once-per-process migrated template (:2309) per test, drops the builder handle before the first copy (:2331), removes a crashed run's template (:2319), probes each copy (:2475) and sweeps stale files (:2394); src-tauri/db/src/repos/test_fixtures.rs:10 seeds personas through personas::create, the product door",
+          "evaluatedAt": "2026-10-14T09:14:39.000Z",
+          "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+          "reason": "replaced by 471824a4-46ac-4170-a945-4ff6074e01e4"
         }
       ]
     },
