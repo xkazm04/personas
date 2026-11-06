@@ -99,7 +99,7 @@ export function StateMark({ state, label, size = 'sm', className }: StateMarkPro
   return (
     <span
       data-state={state}
-      className={['inline-flex min-w-0 items-center', size === 'md' ? 'gap-2' : 'gap-1.5', className].filter(Boolean).join(' ')}
+      className={['inline-flex min-w-0 max-w-full items-center overflow-hidden align-middle', size === 'md' ? 'gap-2' : 'gap-1.5', className].filter(Boolean).join(' ')}
     >
       <svg
         data-glyph={spec.glyph}
