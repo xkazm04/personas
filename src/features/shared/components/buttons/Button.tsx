@@ -25,18 +25,18 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon-sm' | 'icon-md' | 'ic
 
 // -- Style maps ------------------------------------------------
 
-// NOTE: the active:scale-[0.98] press response lives in the base class list (see `classes`
-// below) so every variant gets identical tactile feedback in one place. Variant entries only
-// declare their color/border/shadow surface.
+// Console press look. Ghost is transparent until hover; secondary adds a hairline; primary is the
+// one solid accent of a surface; danger is error ink on a hairline with an error wash on hover.
+// No glow, no press-scale: a pressed control changes colour, never size.
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    'brightness-lock bg-btn-primary text-btn-primary-fg hover:bg-btn-primary/90 shadow-elevation-1 hover:shadow-elevation-2',
+    'brightness-lock bg-btn-primary text-btn-primary-fg hover:bg-btn-primary/90',
   secondary:
-    'border border-border bg-secondary/40 text-foreground/90 hover:bg-secondary/70 hover:border-border/80',
+    'border border-hair-2 text-ink-1 hover:bg-surface-2',
   ghost:
-    'text-foreground hover:text-foreground hover:bg-secondary/50 active:bg-secondary/70',
+    'text-ink-2 hover:text-ink-1 hover:bg-surface-2',
   danger:
-    'brightness-lock bg-red-600/90 text-btn-danger-fg hover:bg-red-600 border border-red-500/30 shadow-elevation-1',
+    'border border-hair-2 text-status-error hover:bg-status-error/10',
   // Colour comes from `tone` (TONE_CLASSES) or, without one, the neutral ink below;
   // the variant itself holds no text colour, so a tone never fights a second one.
   accent:
@@ -45,25 +45,19 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
     'text-primary hover:text-primary/80 underline-offset-2 hover:underline p-0 h-auto rounded-none',
 };
 
-// The label size. `text-md` stood here and is not a Tailwind class, so a button
-// has always inherited its parent's font-size. CONTROL_TEXT keeps exactly that
-// (1em = the parent's size) unless a type-density tier sets --type-control
-// (typography.css: data-type-density="compact" sets the compact row step), so
-// a compact surface's buttons match its rows and every other button renders
-// what it rendered before.
-const CONTROL_TEXT = 'text-[length:var(--type-control,1em)]';
+// The label: 13px weight 500, expressed through the recipe size step so the text scale still
+// reaches it. `--type-control` (set by a compact host) keeps winning when present.
+const CONTROL_TEXT = 'typo-label text-[length:var(--type-control,calc(var(--type-13)*var(--type-f)))]';
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  xs:       `px-2 py-0.5 ${CONTROL_TEXT} rounded-md gap-1`,
-  sm:       `px-2.5 py-1 ${CONTROL_TEXT} rounded-lg gap-1.5`,
-  md:       `px-3.5 py-1.5 ${CONTROL_TEXT} rounded-xl gap-2`,
-  lg:       `px-5 py-2.5 ${CONTROL_TEXT} rounded-xl gap-2.5`,
+  xs:       `h-6 px-2 ${CONTROL_TEXT} rounded-interactive gap-1`,
+  sm:       `h-[var(--control-h)] px-2.5 ${CONTROL_TEXT} rounded-interactive gap-1.5`,
+  md:       `h-[var(--control-h-lg)] px-3 ${CONTROL_TEXT} rounded-interactive gap-2`,
+  lg:       `h-9 px-4 ${CONTROL_TEXT} rounded-interactive gap-2`,
   // Coarse-pointer (touch) bump to 44x44 — WCAG 2.5.5 / HIG 44pt / Material 48dp.
-  // icon-lg is already 44px; the global `pointer: coarse` rule in globals.css
-  // supplies min-height, these add the matching width so icon buttons stay square.
-  'icon-sm': 'w-7 h-7 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-lg p-0 justify-center',
-  'icon-md': 'w-9 h-9 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-xl p-0 justify-center',
-  'icon-lg': 'w-11 h-11 rounded-xl p-0 justify-center',
+  'icon-sm': 'w-[var(--control-h)] h-[var(--control-h)] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-interactive p-0 justify-center',
+  'icon-md': 'w-[var(--control-h-lg)] h-[var(--control-h-lg)] [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-interactive p-0 justify-center',
+  'icon-lg': 'w-9 h-9 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-interactive p-0 justify-center',
 };
 
 // -- Props -----------------------------------------------------
@@ -79,18 +73,18 @@ export type ButtonTone =
   | 'agent' | 'human' | 'external' | 'highlight'
   | 'success' | 'warning' | 'error' | 'info';
 
-// The ONE tone -> token mapping (the chip recipe: 10% fill, 30% rule, full ink).
+// The ONE tone -> token mapping (tone wash, hairline rule, tone ink; no glow).
 // Every class is written out so Tailwind sees it; every token is bound per theme,
 // so no light-theme repair selector is needed.
 const TONE_CLASSES: Record<ButtonTone, string> = {
-  agent:     'border-role-agent/30 bg-role-agent/10 text-role-agent hover:bg-role-agent/20',
-  human:     'border-role-human/30 bg-role-human/10 text-role-human hover:bg-role-human/20',
-  external:  'border-role-external/30 bg-role-external/10 text-role-external hover:bg-role-external/20',
-  highlight: 'border-role-highlight/30 bg-role-highlight/10 text-role-highlight hover:bg-role-highlight/20',
-  success:   'border-status-success/30 bg-status-success/10 text-status-success hover:bg-status-success/20',
-  warning:   'border-status-warning/30 bg-status-warning/10 text-status-warning hover:bg-status-warning/20',
-  error:     'border-status-error/30 bg-status-error/10 text-status-error hover:bg-status-error/20',
-  info:      'border-status-info/30 bg-status-info/10 text-status-info hover:bg-status-info/20',
+  agent:     'border-hair-2 bg-role-agent/10 text-role-agent hover:bg-role-agent/20',
+  human:     'border-hair-2 bg-role-human/10 text-role-human hover:bg-role-human/20',
+  external:  'border-hair-2 bg-role-external/10 text-role-external hover:bg-role-external/20',
+  highlight: 'border-hair-2 bg-role-highlight/10 text-role-highlight hover:bg-role-highlight/20',
+  success:   'border-hair-2 bg-status-success/10 text-status-success hover:bg-status-success/20',
+  warning:   'border-hair-2 bg-status-warning/10 text-status-warning hover:bg-status-warning/20',
+  error:     'border-hair-2 bg-status-error/10 text-status-error hover:bg-status-error/20',
+  info:      'border-hair-2 bg-status-info/10 text-status-info hover:bg-status-info/20',
 };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -206,14 +200,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const accentClasses = variant !== 'accent'
       ? ''
       : tone
-        ? `${TONE_CLASSES[tone]} font-semibold`
-        : 'text-foreground/90';
+        ? TONE_CLASSES[tone]
+        : 'text-ink-1 border-hair-2 hover:bg-surface-2';
 
     const classes = [
-      // transition-all carries hover color/shadow; duration-100 + active:scale gives every button
-      // a snappy tactile press response (disabled buttons are pointer-events-none, so :active never
-      // fires on them). Defined once here rather than per-variant.
-      'inline-flex items-center font-medium transition-all duration-100 active:scale-[0.98]',
+      // Colour-only transition: a press never scales (Console press). Defined once here.
+      'inline-flex items-center transition-colors duration-100',
       'focus-ring',
       VARIANT_CLASSES[variant],
       accentClasses,
@@ -281,8 +273,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       // match the button's layout footprint (full width for block buttons) and show the
       // not-allowed cursor, since the pointer-events-none button can't render its own. focus-ring
       // gives keyboard users a visible focus indicator on the wrapper (the inert button's own
-      // focus-ring never shows because it can't be focused); rounded-xl keeps the ring on-radius.
-      const wrapperClass = `${block ? 'flex w-full' : 'inline-flex'} cursor-not-allowed focus-ring rounded-xl`;
+      // focus-ring never shows because it can't be focused); rounded-interactive keeps the ring on-radius.
+      const wrapperClass = `${block ? 'flex w-full' : 'inline-flex'} cursor-not-allowed focus-ring rounded-interactive`;
       return (
         <Tooltip
           content={disabledReason}

@@ -45,6 +45,7 @@ export function Section({ title, eyebrow, count, meta, actions, desc, level = 1,
             {count != null && <span className="k-count typo-data k-regular">{count}</span>}
           </Heading>
         </div>
+        <span className="k-section__rule" aria-hidden="true" />
         {meta && <div className="k-section__meta typo-caption">{meta}</div>}
         {actions && <div className="k-section__actions">{actions}</div>}
       </header>

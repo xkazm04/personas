@@ -1,63 +1,61 @@
 import { forwardRef } from 'react';
+import { StateMark, type StateMarkState } from './StateMark';
 
 // ---------------------------------------------------------------------------
 // Badge variant tokens
 //
-// Canonical opacity scale for ALL badge-like elements:
-//   bg:     {color}-500/10
-//   border: {color}-500/20
-//   text:   {color}-400
-//
-// Hover (optional): bg {color}-500/15, border {color}-500/30
+// Token maps for callers that still want a tinted chip (noteStatusMeta). Hues map to the nearest
+// status or role token: bg /10, border /20, text full. The Badge component itself renders no
+// fill: it is a StateMark (glyph + word).
 // ---------------------------------------------------------------------------
 
 export const BADGE_VARIANTS = {
-  emerald:  'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
-  amber:    'bg-amber-500/10 border-amber-500/20 text-amber-400',
-  red:      'bg-red-500/10 border-red-500/20 text-red-400',
-  rose:     'bg-rose-500/10 border-rose-500/20 text-rose-400',
-  cyan:     'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
-  purple:   'bg-purple-500/10 border-purple-500/20 text-purple-400',
-  violet:   'bg-violet-500/10 border-violet-500/20 text-violet-400',
-  blue:     'bg-blue-500/10 border-blue-500/20 text-blue-400',
-  orange:   'bg-orange-500/10 border-orange-500/20 text-orange-400',
-  yellow:   'bg-yellow-500/10 border-yellow-500/20 text-yellow-400',
-  sky:      'bg-sky-500/10 border-sky-500/20 text-sky-400',
-  neutral:  'bg-secondary/40 border-border/50 text-foreground',
+  emerald: 'bg-status-success/10 border-status-success/20 text-status-success',
+  amber: 'bg-status-warning/10 border-status-warning/20 text-status-warning',
+  red: 'bg-status-error/10 border-status-error/20 text-status-error',
+  rose: 'bg-status-error/10 border-status-error/20 text-status-error',
+  cyan: 'bg-status-info/10 border-status-info/20 text-status-info',
+  purple: 'bg-role-agent/10 border-role-agent/20 text-role-agent',
+  violet: 'bg-role-agent/10 border-role-agent/20 text-role-agent',
+  blue: 'bg-status-info/10 border-status-info/20 text-status-info',
+  orange: 'bg-status-warning/10 border-status-warning/20 text-status-warning',
+  yellow: 'bg-status-warning/10 border-status-warning/20 text-status-warning',
+  sky: 'bg-status-info/10 border-status-info/20 text-status-info',
+  neutral:  'bg-surface-2 border-hair-2 text-ink-1',
 } as const;
 
 export type BadgeVariant = keyof typeof BADGE_VARIANTS;
 
 /** Hover-state classes following the same token scale. */
 export const BADGE_HOVER: Record<BadgeVariant, string> = {
-  emerald:  'hover:bg-emerald-500/15 hover:border-emerald-500/30',
-  amber:    'hover:bg-amber-500/15 hover:border-amber-500/30',
-  red:      'hover:bg-red-500/15 hover:border-red-500/30',
-  rose:     'hover:bg-rose-500/15 hover:border-rose-500/30',
-  cyan:     'hover:bg-cyan-500/15 hover:border-cyan-500/30',
-  purple:   'hover:bg-purple-500/15 hover:border-purple-500/30',
-  violet:   'hover:bg-violet-500/15 hover:border-violet-500/30',
-  blue:     'hover:bg-blue-500/15 hover:border-blue-500/30',
-  orange:   'hover:bg-orange-500/15 hover:border-orange-500/30',
-  yellow:   'hover:bg-yellow-500/15 hover:border-yellow-500/30',
-  sky:      'hover:bg-sky-500/15 hover:border-sky-500/30',
-  neutral:  'hover:bg-secondary/60 hover:border-border/70',
+  emerald: 'hover:bg-status-success/15 hover:border-status-success/30',
+  amber: 'hover:bg-status-warning/15 hover:border-status-warning/30',
+  red: 'hover:bg-status-error/15 hover:border-status-error/30',
+  rose: 'hover:bg-status-error/15 hover:border-status-error/30',
+  cyan: 'hover:bg-status-info/15 hover:border-status-info/30',
+  purple: 'hover:bg-role-agent/15 hover:border-role-agent/30',
+  violet: 'hover:bg-role-agent/15 hover:border-role-agent/30',
+  blue: 'hover:bg-status-info/15 hover:border-status-info/30',
+  orange: 'hover:bg-status-warning/15 hover:border-status-warning/30',
+  yellow: 'hover:bg-status-warning/15 hover:border-status-warning/30',
+  sky: 'hover:bg-status-info/15 hover:border-status-info/30',
+  neutral:  'hover:bg-surface-2 hover:border-hair-2',
 };
 
 /** Decomposed token record for cases that need individual class strings. */
 export const BADGE_TOKENS: Record<BadgeVariant, { bg: string; border: string; text: string }> = {
-  emerald:  { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400' },
-  amber:    { bg: 'bg-amber-500/10',   border: 'border-amber-500/20',   text: 'text-amber-400' },
-  red:      { bg: 'bg-red-500/10',     border: 'border-red-500/20',     text: 'text-red-400' },
-  rose:     { bg: 'bg-rose-500/10',    border: 'border-rose-500/20',    text: 'text-rose-400' },
-  cyan:     { bg: 'bg-cyan-500/10',    border: 'border-cyan-500/20',    text: 'text-cyan-400' },
-  purple:   { bg: 'bg-purple-500/10',  border: 'border-purple-500/20',  text: 'text-purple-400' },
-  violet:   { bg: 'bg-violet-500/10',  border: 'border-violet-500/20',  text: 'text-violet-400' },
-  blue:     { bg: 'bg-blue-500/10',    border: 'border-blue-500/20',    text: 'text-blue-400' },
-  orange:   { bg: 'bg-orange-500/10',  border: 'border-orange-500/20',  text: 'text-orange-400' },
-  yellow:   { bg: 'bg-yellow-500/10',  border: 'border-yellow-500/20',  text: 'text-yellow-400' },
-  sky:      { bg: 'bg-sky-500/10',     border: 'border-sky-500/20',     text: 'text-sky-400' },
-  neutral:  { bg: 'bg-secondary/40',   border: 'border-border/50',      text: 'text-foreground' },
+  emerald: { bg: 'bg-status-success/10', border: 'border-status-success/20', text: 'text-status-success' },
+  amber: { bg: 'bg-status-warning/10', border: 'border-status-warning/20', text: 'text-status-warning' },
+  red: { bg: 'bg-status-error/10', border: 'border-status-error/20', text: 'text-status-error' },
+  rose: { bg: 'bg-status-error/10', border: 'border-status-error/20', text: 'text-status-error' },
+  cyan: { bg: 'bg-status-info/10', border: 'border-status-info/20', text: 'text-status-info' },
+  purple: { bg: 'bg-role-agent/10', border: 'border-role-agent/20', text: 'text-role-agent' },
+  violet: { bg: 'bg-role-agent/10', border: 'border-role-agent/20', text: 'text-role-agent' },
+  blue: { bg: 'bg-status-info/10', border: 'border-status-info/20', text: 'text-status-info' },
+  orange: { bg: 'bg-status-warning/10', border: 'border-status-warning/20', text: 'text-status-warning' },
+  yellow: { bg: 'bg-status-warning/10', border: 'border-status-warning/20', text: 'text-status-warning' },
+  sky: { bg: 'bg-status-info/10', border: 'border-status-info/20', text: 'text-status-info' },
+  neutral: { bg: 'bg-surface-2', border: 'border-hair-2', text: 'text-ink-1' },
 };
 
 // ---------------------------------------------------------------------------
@@ -66,26 +64,25 @@ export const BADGE_TOKENS: Record<BadgeVariant, { bg: string; border: string; te
 
 type BadgeSize = 'xs' | 'sm' | 'md';
 
-const SIZE_CLASSES: Record<BadgeSize, string> = {
-  xs: 'px-1.5 py-0.5 text-[10px] gap-1',
-  sm: 'px-2 py-0.5 text-xs gap-1.5',
-  md: 'px-2.5 py-1 text-sm gap-1.5',
+const BADGE_STATE: Record<BadgeVariant, StateMarkState> = {
+  emerald: 'success', amber: 'warning', red: 'error', rose: 'error', cyan: 'info', purple: 'info',
+  violet: 'info', blue: 'info', orange: 'warning', yellow: 'warning', sky: 'info', neutral: 'neutral',
 };
-
-const SHAPE_CLASSES = {
-  pill: 'rounded-full',
-  rounded: 'rounded-lg',
-} as const;
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant: BadgeVariant;
   size?: BadgeSize;
-  shape?: keyof typeof SHAPE_CLASSES;
+  /** Kept for call-site compatibility; a badge no longer has a pill shape. */
+  shape?: 'pill' | 'rounded';
   interactive?: boolean;
 }
 
+/**
+ * Badge: a tone and a word as a StateMark (glyph + word, no pill, no fill).
+ * @catalog Badge - a tone + word rendered as a StateMark; variants map to the nearest status; `interactive` makes it a focusable button.
+ */
 export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
-  ({ variant, size = 'sm', shape = 'pill', interactive = false, className = '', children, tabIndex, ...rest }, ref) => {
+  ({ variant, size = 'sm', shape: _shape, interactive = false, className = '', children, tabIndex, ...rest }, ref) => {
     // Interactive badges MUST be keyboard-reachable and render a focus ring.
     // See Design.md §7.6 — every interactive primitive applies focus-ring.
     const interactiveProps = interactive
@@ -97,16 +94,16 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
         ? { tabIndex }
         : {};
     const interactiveClasses = interactive
-      ? `cursor-pointer transition-colors focus-ring ${BADGE_HOVER[variant]}`
+      ? 'cursor-pointer rounded-interactive transition-colors focus-ring hover:bg-surface-2'
       : '';
     return (
       <span
         ref={ref}
-        className={`inline-flex items-center font-medium border ${BADGE_VARIANTS[variant]} ${SIZE_CLASSES[size]} ${SHAPE_CLASSES[shape]} ${interactiveClasses} ${className}`}
+        className={`inline-flex items-center ${interactiveClasses} ${className}`.trim()}
         {...interactiveProps}
         {...rest}
       >
-        {children}
+        <StateMark state={BADGE_STATE[variant]} size={size === 'md' ? 'md' : 'sm'} label={children} />
       </span>
     );
   },

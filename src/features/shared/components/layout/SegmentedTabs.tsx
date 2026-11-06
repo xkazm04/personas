@@ -103,10 +103,14 @@ export function SegmentedTabs<T extends string>({
     [focusEnabled, focusEdge],
   );
 
+  // Console segmented look: a hairline track, the selected cell on surface-2 in ink-1 with a 2px
+  // primary foot. Height is the control role (--control-h), 24px when dense (`sm`).
+  const heightClass = size === 'sm' ? 'h-6' : 'h-[var(--control-h)]';
   const containerClass =
     variant === 'pill'
-      ? `flex gap-1 ${size === 'sm' ? 'p-0.5' : 'p-1'} rounded-card bg-secondary/30 border border-primary/10 ${className ?? ''}`
-      : `flex rounded-card border border-primary/15 overflow-hidden ${className ?? ''}`;
+      ? `flex gap-0.5 p-0.5 ${heightClass} rounded-input bg-surface-1 border border-hair-2 ${className ?? ''}`
+      : `flex ${heightClass} rounded-input border border-hair-2 overflow-hidden ${className ?? ''}`;
+  const FOOT = 'shadow-[inset_0_-2px_0_var(--primary)]';
 
   return (
     <div role="tablist" aria-label={ariaLabel} aria-orientation="horizontal" className={containerClass.trim()}>
@@ -138,14 +142,14 @@ export function SegmentedTabs<T extends string>({
               disabled={tab.disabled}
               onClick={() => !tab.disabled && onTabChange(tab.id)}
               onKeyDown={(e) => handleKeyDown(e, index)}
-              className={`relative ${fullWidth ? 'flex-1' : ''} flex items-center justify-center gap-1.5 ${size === 'sm' ? 'px-2.5 py-1' : 'px-3 py-2'} typo-body rounded-modal transition-colors focus-ring ${
-                active ? 'text-foreground' : 'text-foreground hover:text-foreground/80 hover:bg-primary/5'
-              } ${tab.disabled ? 'text-foreground cursor-not-allowed' : ''}`}
+              className={`relative ${fullWidth ? 'flex-1' : ''} flex items-center justify-center gap-1.5 ${size === 'sm' ? 'px-2' : 'px-3'} typo-label rounded-interactive transition-colors focus-ring ${
+                active ? 'text-ink-1' : 'text-ink-2 hover:text-ink-1 hover:bg-surface-2'
+              } ${tab.disabled ? 'text-ink-4 cursor-not-allowed' : ''}`}
             >
               {active && (
                 <motion.div
                   layoutId={indicatorId}
-                  className="absolute inset-0 rounded-modal bg-primary/15 border border-primary/20"
+                  className={`absolute inset-0 rounded-interactive bg-surface-2 ${FOOT}`}
                   transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                 />
               )}
@@ -171,11 +175,11 @@ export function SegmentedTabs<T extends string>({
             disabled={tab.disabled}
             onClick={() => !tab.disabled && onTabChange(tab.id)}
             onKeyDown={(e) => handleKeyDown(e, index)}
-            className={`${size === 'sm' ? 'px-2.5 py-1' : 'px-3 py-1.5'} typo-body transition-colors focus-ring ${
-              index > 0 ? 'border-l border-primary/15' : ''
+            className={`${size === 'sm' ? 'px-2' : 'px-3'} typo-label transition-colors focus-ring ${
+              index > 0 ? 'border-l border-hair-2' : ''
             } ${
-              active ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-foreground/80'
-            } ${tab.disabled ? 'text-foreground cursor-not-allowed' : ''}`}
+              active ? `bg-surface-2 text-ink-1 ${FOOT}` : 'text-ink-2 hover:text-ink-1 hover:bg-surface-1'
+            } ${tab.disabled ? 'text-ink-4 cursor-not-allowed' : ''}`}
           >
             {tab.label}
           </button>

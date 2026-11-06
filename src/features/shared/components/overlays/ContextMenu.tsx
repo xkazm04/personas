@@ -1,3 +1,4 @@
+import { Kbd } from '../display/Kbd';
 import {
   useCallback,
   useEffect,
@@ -207,9 +208,7 @@ export function ContextMenu({
               <span className="flex-1 truncate">{item.label}</span>
             )}
             {item.shortcut && (
-              <kbd className="ml-auto typo-caption text-foreground/70 font-mono tracking-tight">
-                {item.shortcut}
-              </kbd>
+              <span className="ml-auto"><Kbd>{item.shortcut}</Kbd></span>
             )}
           </button>
         </div>

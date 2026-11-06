@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**173 reusable components** live under `src/features/shared/components/`.
+**176 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -59,10 +59,12 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `EmptyIllustration` | Compact empty state for a card or panel: small animated art (from art or the icon), heading, caption. |
 | `FacetedDecisionTable` | Left group-rail + toolbar + DataGrid table over a derived slash-path facet tree. |
 | `FieldHint` | Valid value range, e. |
+| `Figs` | Figs - a sentence with every figure (counts, times, percents) wrapped in the .num mono utility. |
 | `GroupedVirtualList` | Virtualized list that buckets ordered items under sticky date/category group headers (Today / Yesterday / …). |
 | `HeroMesh` | _(add a `@catalog` tag)_ |
 | `IllustratedEmptyState` | _(add a `@catalog` tag)_ |
 | `InlineEditableText` | Click-to-edit inline text field. |
+| `Kbd` | Kbd - a keycap (mono, hairline, 2px foot); solid for a cap on the primary control. |
 | `LiveStatusDot` | Liveness dot with one shared vocabulary (off=muted, active=emerald, syncing=amber-pulse) plus an optional ping halo — used across  |
 | `MotionizedGlyph` | Traced multi-path SVG glyph that draws itself in with a center-out reveal. |
 | `Numeric` | Canonical number/percent/count display — locale + precision + unit. Use instead of raw toFixed/toLocaleString. |
@@ -73,6 +75,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `SortableHeader` | Visible, already-translated column label. |
 | `SpringCount` | Count-up number animated with the shared cloud count-up spring (stiffness 180 / damping 22); wrap in <Numeric> for tabular figure  |
 | `StatCard` | Compact KPI / metric card — icon chip + label + big value, with an optional trend delta and hint. Use for dashboard stat rows inst |
+| `StateMark` | StateMark - a state as glyph + mono word (15 states: proposed/decided/running/done/waits/skipped/blank/filler/refused plus success |
 | `StatusBadge` | Status pill mapping a status token to label + color. Use with tokenLabel(). |
 | `StatusDot` | Minimal colored status dot for compact rows. |
 | `StatusShape` | _(add a `@catalog` tag)_ |
@@ -272,4 +275,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_173 components, 35 without a `@catalog` description._
+_176 components, 35 without a `@catalog` description._

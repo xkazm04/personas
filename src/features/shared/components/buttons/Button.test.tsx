@@ -118,7 +118,7 @@ describe('Button tone', () => {
     const cls = screen.getByRole('button', { name: 'Go' }).className;
     expect(cls).toContain(`text-${token}`);
     expect(cls).toContain(`bg-${token}/10`);
-    expect(cls).toContain(`border-${token}/30`);
+    expect(cls).toContain('border-hair-2');
     expect(cls).not.toMatch(/text-foreground/);
     expect(cls).not.toMatch(/-(?:violet|emerald|amber|rose|cyan|sky|blue|indigo)-\d/);
   });
@@ -126,7 +126,7 @@ describe('Button tone', () => {
   it('renders a neutral bordered button for accent without a tone', () => {
     render(<Button variant="accent">Go</Button>);
     const cls = screen.getByRole('button', { name: 'Go' }).className;
-    expect(cls).toContain('text-foreground/90');
+    expect(cls).toContain('text-ink-1');
     expect(cls).not.toMatch(/role-|status-/);
   });
 

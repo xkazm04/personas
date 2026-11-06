@@ -121,11 +121,11 @@ describe('CompanionsSidebarNav', () => {
   it('draws each dot from the status read, not from the switch', () => {
     render(<CompanionsSidebarNav />);
     // enabled + eligible + onboarded
-    expect(dotColorOf('athena')).toContain('emerald');
+    expect(dotColorOf('athena')).toContain('status-success');
     // enabled, but the prerequisite is gone: blocked outranks the switch
-    expect(dotColorOf('overseer')).toContain('amber');
+    expect(dotColorOf('overseer')).toContain('status-warning');
     // switched off, everything else in place
-    expect(dotColorOf('curator')).toContain('muted');
+    expect(dotColorOf('curator')).toContain('ink-3');
   });
 
   it("carries Athena's pending approvals on her group header", () => {
