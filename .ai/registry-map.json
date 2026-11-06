@@ -29498,7 +29498,11 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "unknown"
+          "state": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/__tests__/errorText.test.tsx:49 The structural check walks every Lifecycle source file looking for the old instanceof-Error pattern and passes when it finds nothing, but it never sets a minimum on how many files it visited. A wrong root path, a filter that stops matching, or a moved directory would leave it green after scanning zero files.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27
         },
         {
           "subject": "prompt-assembly",

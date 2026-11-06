@@ -44687,6 +44687,32 @@
         "at": "2026-11-06T03:41:11.674772+00:00",
         "reason": "reviewer (sonnet): The anchor (DirectorPanel.tsx:10) is a header comment that doesn't show memory is absent. It says the panel's `useDirector` hook reads portfolio, verdicts, brain and vault data, so the Director teaser touches a memory-like store. The absence search used narrow terms (recall, episode, memories, decay"
       }
+    },
+    "d9cffe6c-a868-4ed4-b5e8-6c8add36918a/test-harness": {
+      "context": "plugins-dev-tools-lifecycle",
+      "subject": "test-harness",
+      "bundle": "software-engineering",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T04:06:28.413Z",
+      "worker": "c4c09099-c0ec-4ecc-9fd0-c6350752db6b",
+      "techniques": [
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/__tests__/errorText.test.tsx:49 The walk sets no minimum file count, which breaks the technique's rule that 'the walk declares a floor'. Comments are stripped and the pin in reconcile.test.tsx:54 includes the call parentheses (correct), but the floor is still missing."
+        },
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/journey/__tests__/errorText.test.tsx:24 Before relying on the classified text, the test proves it differs from the generic fallback text, so it can tell which of the two code paths produced the answer."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/dev-tools/sub_lifecycle/lifecycleView/layer2/__tests__/stepPrefetch.test.tsx:41 The hover-intent delay is driven with fake timers by the named constant instead of being measured with a real clock."
+        }
+      ]
     }
   }
 }
