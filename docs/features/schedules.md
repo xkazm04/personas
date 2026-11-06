@@ -43,7 +43,7 @@ This view does not own a dedicated backend module — it composes existing engin
 | --- | --- |
 | `@/api/pipeline/scheduler` (`getSchedulerStatus`, `startScheduler`, `stopScheduler`) | `engine/scheduler.rs` |
 | Calendar fire times | `cron_fire_times_in_range` IPC backed by `engine/cron.rs` |
-| Past-run history | `list_recent_schedule_runs` IPC (168h / 200-row cap) — grounds past calendar slots in real executions |
+| Past-run history | `list_recent_schedule_runs` IPC (168h; at most 2100 rows per trigger and 5000 overall) — grounds past calendar slots in real executions |
 | Cron agent list | `useOverviewStore().fetchCronAgents()` (overview store fetches the full cron-agent set used both here and in Overview) |
 
 For cron parsing, DST handling, scheduler tick semantics, and incident-driven regression tests, see [execution/README.md](execution/README.md) and `engine/cron.rs`.
