@@ -46102,7 +46102,11 @@
           "revision": 44,
           "changedAt": "2026-10-14",
           "confidence": "probable",
-          "state": "unknown"
+          "state": "not-applicable",
+          "evidence": "src/features/vault/shared/playground/tabs/useCredentialRecipes.ts:76 The playground's one LLM touchpoint passes typed inputs (a credential id and a description) to the recipe generator, which runs elsewhere. RecipeCreateFlow only displays the returned prompt_template, so no prompt is assembled here. A case-insensitive search of its 6 directories found 0 hits for systemPrompt, max_tokens, cache_control, tokenBudget and contextBudget.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:ad13b2ee69c25e8d",
+          "evaluatedRevision": 44
         },
         {
           "subject": "test-harness",

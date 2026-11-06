@@ -40172,14 +40172,14 @@
       "subject": "prompt-assembly",
       "bundle": "software-engineering",
       "state": "unknown",
-      "evaluatedAt": "2026-10-24",
-      "evaluatedTs": "2026-10-24T00:42:54.155Z",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T05:02:14.320Z",
       "techniques": [],
       "withdrawn": {
-        "worker": "cd4f71ad-4273-4992-9208-8bd3635e626a",
+        "worker": "265ab190-5d28-4123-a0a0-2032d4388cb1",
         "state": "not-applicable",
-        "at": "2026-10-24T00:43:11.904358+00:00",
-        "reason": "reviewer (sonnet): The not-applicable anchor, ExposureManager.tsx:9, is an import line that doesn't show that no prompt is assembled. My own search of sub_network for prompt, llm, claude, haiku, anthropic and completion also came back empty, but the verdict needs an anchor that shows the absence."
+        "at": "2026-11-06T05:02:39.655665+00:00",
+        "reason": "reviewer (sonnet): The anchor, ExposureManager.tsx:9, is a type import line and does not show that prompt composition is absent. I also did not confirm the claim about AmbientContextPanel. My grep for prompt in the context found only store and message-metric hits, but that does not make the incidental anchor valid."
       }
     },
     "aa2197a5-6b7c-46ff-a6cd-8172d2984f50/prompt-assembly": {
@@ -44796,6 +44796,31 @@
           "evidence": "src/features/agents/sub_settings/components/__tests__/assertionConfig.test.ts:17 The reader is the product's own Rust engine, not a foreign interpreter, so the technique's own exclusion applies. The test reads the struct declaration after stripping comments rather than running serde."
         }
       ]
+    },
+    "0f1b56ac-cd96-4355-993e-dc445a20e63e/prompt-assembly": {
+      "context": "fleet-monitor-channels",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "unknown",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T05:02:14.320Z",
+      "techniques": [],
+      "withdrawn": {
+        "worker": "265ab190-5d28-4123-a0a0-2032d4388cb1",
+        "state": "not-applicable",
+        "at": "2026-11-06T05:02:39.550348+00:00",
+        "reason": "reviewer (sonnet): The verdict says no prompt is assembled in this context, but ConversationComposer.tsx:64-68 builds an Athena prompt in the frontend. It interpolates teamName, teamId and the user's text into a template and passes it to setPendingPrompt with autoSend. The anchor, useConversation.ts:233, only shows th"
+      }
+    },
+    "0a6ae5fd-fb42-446c-9602-0d2abdd220d5/prompt-assembly": {
+      "context": "vault-shared-playground",
+      "subject": "prompt-assembly",
+      "bundle": "software-engineering",
+      "state": "not-applicable",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T05:02:14.320Z",
+      "worker": "265ab190-5d28-4123-a0a0-2032d4388cb1",
+      "techniques": []
     }
   }
 }
