@@ -20207,130 +20207,166 @@
       "context": "shared-components-layout",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-10-12",
-      "evaluatedTs": "2026-10-12T12:44:50.372Z",
-      "worker": "0f6cbaed-46d8-41a7-8d89-a2237962d86b",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T03:18:11.934Z",
+      "worker": "e00f0eb6-1cdc-440d-9d0e-83dba114cd7c",
       "techniques": [
         {
-          "technique": "negative-control-tests",
-          "verdict": "conformant",
-          "evidence": "src/features/shared/components/layout/systemLoad.test.ts:51 the no-spurious-upgrade path is asserted beside the hold path; src/features/shared/components/buttons/Button.test.tsx:45 asserts the unwrapped case beside the regression fix named at :6"
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/features/shared/components/layout/systemLoad.ts:33 The memory hold decision is never exercised by any test. Separately, DeferUntilIdle.test.tsx:54 is named 'after a single rAF', but setTimeout(0) would also pass it, so its producer is not pinned either."
         },
         {
-          "technique": "unreached-decisions-pin-nothing",
+          "technique": "assert-the-schedule-not-the-stopwatch",
           "verdict": "conformant",
-          "evidence": "src/features/shared/components/layout/systemLoad.test.ts:39 each band name states the exact thresholds it sits between, and the input reaches the band (82 between exit 80 and enter 88)"
+          "evidence": "src/features/shared/components/layout/DeferUntilIdle.test.tsx:7 Deferral is checked by advancing fake time and asserting before/after mount. No wall clock is involved."
         },
         {
           "technique": "isolation-lanes",
           "verdict": "conformant",
-          "evidence": "src/features/shared/components/layout/DeferUntilIdle.test.tsx:9 restores real timers after every test; injected rIC globals are removed at :88 (inline, so only a failing final test leaks, within its own file)"
+          "evidence": "src/features/shared/components/layout/systemLoad.test.ts:1 The pure banding logic runs in the node lane and inherits no DOM."
+        },
+        {
+          "technique": "negative-control-tests",
+          "verdict": "conformant",
+          "evidence": "src/features/shared/components/layout/systemLoad.test.ts:51 the no-spurious-upgrade path is asserted beside the hold path; src/features/shared/components/buttons/Button.test.tsx:45 asserts the unwrapped case beside the regression fix named at :6",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "fixture-economics",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/layout/systemLoad.test.ts:2 pure functions over literal inputs; no fixture asset exists"
+          "evidence": "src/features/shared/components/layout/systemLoad.test.ts:2 pure functions over literal inputs; no fixture asset exists",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "approval-snapshots-with-guarded-update",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/buttons/Button.test.tsx:116 per-token className assertions; no snapshots"
+          "evidence": "src/features/shared/components/buttons/Button.test.tsx:116 per-token className assertions; no snapshots",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "assert-through-the-reader",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/buttons/Button.test.tsx:116 class strings are consumed by the in-process stylesheet, not a foreign interpreter"
+          "evidence": "src/features/shared/components/buttons/Button.test.tsx:116 class strings are consumed by the in-process stylesheet, not a foreign interpreter",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "pin-the-call-not-the-name",
           "verdict": "not-applicable",
-          "evidence": "src/features/shared/components/layout/systemLoad.test.ts:2 every assertion executes the code; no source-text pin"
+          "evidence": "src/features/shared/components/layout/systemLoad.test.ts:2 every assertion executes the code; no source-text pin",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "gate-scope-is-not-report-scope",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 no coverage gate is scoped to this context"
+          "evidence": "vitest.config.ts:17 no coverage gate is scoped to this context",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "suite-partitioning",
           "verdict": "conformant",
-          "evidence": "vitest.config.ts:23 the default lane excludes src/test/e2e so these files run in exactly one lane, membership by location (:17)"
+          "evidence": "vitest.config.ts:23 the default lane excludes src/test/e2e so these files run in exactly one lane, membership by location (:17)",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "live-app-harness",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:11 jsdom unit lane; no product process is driven by these files"
+          "evidence": "vitest.config.ts:11 jsdom unit lane; no product process is driven by these files",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "derived-selection-must-be-measured",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "history-driven-partitioning",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "platform-quirk-absorption",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "flake-lifecycle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "long-lane-certification",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "out-of-graph-artifacts",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "configuration-axes-cross-the-ladder",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "dynamic-verifier-classes",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "verification-inherits-driver-reach",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "mutation-lane-with-a-triaged-baseline",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "context-starved-executor",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "far-side-oracle",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "constraint-injection-for-unreachable-tiers",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
         },
         {
           "technique": "recorded-interaction-fixtures",
           "verdict": "not-applicable",
-          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only"
+          "evidence": "vitest.config.ts:17 lane membership, schedule and runner policy are declared in the lane config, outside this context; this context contributes unit files only",
+          "carriedFrom": "2026-10-12"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "conformant",
+          "evidence": "src/features/shared/components/layout/systemLoad.test.ts:51 the hysteresis suite carries its own control (a green machine must not hold amber) and band tests name the thresholds they sit between (:39); timers are reset per test (src/features/shared/components/buttons/Button.test.tsx:16)",
+          "evaluatedAt": "2026-10-12T12:44:50.372Z",
+          "worker": "0f6cbaed-46d8-41a7-8d89-a2237962d86b",
+          "reason": "replaced by e00f0eb6-1cdc-440d-9d0e-83dba114cd7c"
         }
       ]
     },
@@ -27367,30 +27403,56 @@
       "context": "i18n-generated",
       "subject": "test-harness",
       "bundle": "software-engineering",
-      "state": "conformant",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:14:39.000Z",
-      "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+      "state": "deviation",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T03:18:11.934Z",
+      "worker": "e00f0eb6-1cdc-440d-9d0e-83dba114cd7c",
       "techniques": [
+        {
+          "technique": "unreached-decisions-pin-nothing",
+          "verdict": "deviation",
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:7 The file claims a decision that no case reaches."
+        },
+        {
+          "technique": "pin-the-call-not-the-name",
+          "verdict": "conformant",
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:23 The needle is the full const declaration inside the parsed block. The doc-comment prose there cannot satisfy it."
+        },
+        {
+          "technique": "derived-selection-must-be-measured",
+          "verdict": "conformant",
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:31 The parse has a floor, so a match of nothing fails loudly."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/i18n/__tests__/partialCore.test.ts:11 Fresh module instances escape the shared setup's seeded sections, as the header (:4-6) explains."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/i18n/__tests__/sectionLoadBroadcast.test.tsx:11 The background load is disabled so each case decides which chunks land and when. Timing plays no part."
+        },
         {
           "technique": "gate-sees-target",
           "verdict": "realized",
-          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 reads src-tauri/db/src/chain.rs itself, the artifact the labels must cover"
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 reads src-tauri/db/src/chain.rs itself, the artifact the labels must cover",
+          "carriedFrom": "2026-10-14"
         },
         {
           "technique": "failure-not-empty-success",
           "verdict": "realized",
-          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:30 asserts >=13 consts found; :21 throws on a missing block"
-        },
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:30 asserts >=13 consts found; :21 throws on a missing block",
+          "carriedFrom": "2026-10-14"
+        }
+      ],
+      "superseded": [
         {
-          "technique": "pin-the-call-not-the-name",
-          "verdict": "realized",
-          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:22 needle is a `pub const X: &str = \"..\"` declaration, which prose in the block cannot spell"
-        },
-        {
-          "technique": "unreached-decisions-pin-nothing",
-          "verdict": "realized",
-          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:70 forces the untranslated-key link and :77 the unmatched link, each asserting a message only that link produces"
+          "state": "conformant",
+          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 parses the Rust stop_reason block at run time (:20-24) instead of holding a copy, and a floor of 13 consts (:30) makes a parse that matched nothing fail loudly; the header (:6-15) records the shipped defect it closes",
+          "evaluatedAt": "2026-10-14T09:14:39.000Z",
+          "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+          "reason": "replaced by e00f0eb6-1cdc-440d-9d0e-83dba114cd7c"
         }
       ]
     },
@@ -27440,19 +27502,39 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-14",
-      "evaluatedTs": "2026-10-14T09:14:39.000Z",
-      "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T03:18:11.934Z",
+      "worker": "e00f0eb6-1cdc-440d-9d0e-83dba114cd7c",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
-          "verdict": "not realized: a describe/header name claims a stronger guard than its single rename assertion makes",
-          "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:241"
+          "verdict": "deviation",
+          "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:7 Three of the four claimed wirings are unreached."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:376 Latest-wins is proven by releasing a held promise after the fast listing lands. No delay is involved."
+        },
+        {
+          "technique": "isolation-lanes",
+          "verdict": "conformant",
+          "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:58 IPC mocks and localStorage are reset before every test."
         },
         {
           "technique": "fixture-economics",
           "verdict": "realized: in-memory builders and per-test localStorage reset",
-          "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:59"
+          "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:59",
+          "carriedFrom": "2026-10-14"
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:241 'Recent rail refresh' and header :7 claim refreshRecent is wired into rename + remove + createFile + paste, but only rename is driven (:263); src/features/plugins/drive/hooks/useDrive.ts:663,697,717,738,755,781 wire it into six mutators, so dropping refreshRecent from remove/createFile/pasteHere/move/moveMany stays green",
+          "evaluatedAt": "2026-10-14T09:14:39.000Z",
+          "worker": "3f5beaf3-123a-44ba-b1c0-d9bfb6e33e2c",
+          "reason": "replaced by e00f0eb6-1cdc-440d-9d0e-83dba114cd7c"
         }
       ]
     },
@@ -35989,19 +36071,33 @@
       "subject": "test-harness",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T17:28:38.128Z",
-      "worker": "b92fa173-de5a-4bb3-9049-be43f3b68bb0",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T03:18:11.934Z",
+      "worker": "e00f0eb6-1cdc-440d-9d0e-83dba114cd7c",
       "techniques": [
         {
           "technique": "unreached-decisions-pin-nothing",
           "verdict": "deviation",
-          "evidence": "src/features/home/sub_cockpit/defaultCockpit.test.ts:65 the name overstates the claim; a searcher reads registry membership as checked"
+          "evidence": "src/features/home/sub_welcome/useResumeContext.test.ts:35 The test name states a 7-day boundary, but only one side of it is driven."
+        },
+        {
+          "technique": "assert-the-schedule-not-the-stopwatch",
+          "verdict": "conformant",
+          "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.test.ts:157 The heartbeat cadence is driven by fake timers, with hidden and visible arms both asserted."
         },
         {
           "technique": "isolation-lanes",
-          "verdict": "realized",
-          "evidence": "src/features/home/sub_welcome/useResumeContext.test.ts:21 clears localStorage per test; src/features/home/lib/usePausableInterval.test.ts:12 fake timers set and restored per test"
+          "verdict": "conformant",
+          "evidence": "src/features/home/sub_welcome/lib/sinceLeftBriefing.test.ts:134 The persisted anchor is cleared before each heartbeat case."
+        }
+      ],
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src/features/home/sub_cockpit/defaultCockpit.test.ts:65 is named uses only registered widget kinds but asserts ids only (:67) and never reads cockpitWidgetRegistry (src/features/home/sub_cockpit/widgetRegistry.ts:96, a Record<string, ...> tsc cannot check), so a registry rename leaves the starter cockpit composing an unregistered kind with the suite green",
+          "evaluatedAt": "2026-10-21T17:28:38.128Z",
+          "worker": "b92fa173-de5a-4bb3-9049-be43f3b68bb0",
+          "reason": "replaced by e00f0eb6-1cdc-440d-9d0e-83dba114cd7c"
         }
       ]
     },

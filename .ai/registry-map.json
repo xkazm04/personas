@@ -16778,12 +16778,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/home/sub_cockpit/defaultCockpit.test.ts:65 is named uses only registered widget kinds but asserts ids only (:67) and never reads cockpitWidgetRegistry (src/features/home/sub_cockpit/widgetRegistry.ts:96, a Record<string, ...> tsc cannot check), so a registry rename leaves the starter cockpit composing an unregistered kind with the suite green",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/home/sub_welcome/useResumeContext.test.ts:35 The only expiry case is an 8-day-old marker, and no case checks that a younger marker still resumes. Shrinking LAST_EDITED_MAX_AGE_MS (useResumeContext.ts:56) to one day stays green while the resume banner silently drops markers that are 2 to 6 days old.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "session-resume",
@@ -18562,13 +18561,12 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "probable",
-          "state": "conformant",
-          "evidence": "src/i18n/__tests__/chainStopReasons.parity.test.ts:16 parses the Rust stop_reason block at run time (:20-24) instead of holding a copy, and a floor of 13 consts (:30) makes a parse that matched nothing fail loudly; the header (:6-15) records the shipped defect it closes",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/i18n/__tests__/useTranslatedError.test.ts:7 The header claims to pin link 3 of the chain, but every case either matches ERROR_KEY_MAP (including interval_too_fast, useTranslatedError.ts:163) or is unclassified by both. Deleting the resolveError fallback (useTranslatedError.ts:258-263) leaves the file green, and registry-only errors would show the generic message.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",
@@ -30731,12 +30729,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:241 'Recent rail refresh' and header :7 claim refreshRecent is wired into rename + remove + createFile + paste, but only rename is driven (:263); src/features/plugins/drive/hooks/useDrive.ts:663,697,717,738,755,781 wire it into six mutators, so dropping refreshRecent from remove/createFile/pasteHere/move/moveMany stays green",
-          "evaluatedAt": "2026-10-14",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/plugins/drive/hooks/__tests__/useDrive.test.ts:7 The header claims the Recent rail refresh for four mutators, but only rename is driven (:263). useDrive.ts calls refreshRecent from remove, createFile, paste and the move paths (:687, :721, :762, :779, :805), so dropping it from any of them keeps the suite green while the rail shows stale or deleted files.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "mcp-tools",
@@ -35334,13 +35331,12 @@
           "revision": 27,
           "changedAt": "2026-10-23",
           "confidence": "strong",
-          "state": "conformant",
-          "evidence": "src/features/shared/components/layout/systemLoad.test.ts:51 the hysteresis suite carries its own control (a green machine must not hold amber) and band tests name the thresholds they sit between (:39); timers are reset per test (src/features/shared/components/buttons/Button.test.tsx:16)",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "state": "deviation",
+          "evidence": "src/features/shared/components/layout/systemLoad.test.ts:39 The hysteresis suite only uses CPU at memory 30, so the memory half of the hold at systemLoad.ts:33 is never reached: removing `|| memUsedPct >= MEM_EXIT_RED`, or moving MEM_EXIT_RED/MEM_EXIT_AMBER anywhere, keeps every test green while the gauge flickers on memory pressure.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "page-load-pipeline",
