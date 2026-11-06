@@ -28927,12 +28927,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:84 approvalDecision prompts a write_fact approval from label+rationale only, params ride in an unrendered payload, and write_fact is LOW_RISK (src/features/companions/athena/decision/actionRisk.ts:50) so the orb recommends approve: a durable user-scope belief is adopted by one key without the value or sources shown",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:101 The orb's approval prompt renders only the action label and rationale. The write_fact params (scope incl. user, value, sources per catalog.rs:638) ride in an unrendered payload, and write_fact is classified LOW_RISK (actionRisk.ts:50), so the orb recommends approve. A durable belief, possibly about the user, gets adopted without the reviewer seeing the value or its grounds.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "conversation-orchestration",
@@ -32924,12 +32923,11 @@
           "changedAt": "2026-10-25",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src-tauri/engine/src/prompt/templates.rs:207 the autonomous directive still makes 'record 1-3 key business learnings' a MUST per run, contradicting src-tauri/engine/src/prompt/assemble.rs:660 'If it won't change a future decision, don't store it'; writes land straight in persona_memories (src-tauri/src/engine/dispatch.rs:909), so a quota manufactures recalled beliefs",
-          "evaluatedAt": "2026-10-22",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src-tauri/engine/src/prompt/templates.rs:207 The autonomous directive still sets a per-run quota of 1-3 durable memories. dispatch.rs writes each one straight into persona_memories via mem_repo::create, so every run mints consolidated beliefs inline. Nothing goes through a batched, judged distillation pass, and this contradicts the assembler's own 'If it won't change a future decision, don't store it' (assemble.rs:660).",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:6c06fb6d8d6c900f",
+          "evaluatedRevision": 52,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-instruction-files",
@@ -46973,11 +46971,7 @@
           "confidence": "probable",
           "state": "deviation",
           "evidence": "src-tauri/src/engine/memory_reflection.rs:876 team reflection sorts members' memories by importance/access_count/created_at and truncates at 200 (persona path :805 takes the 200 newest), a store-ordered cap with no per-item shortlist, so duplicates and contradictions in the low tail are never consolidation candidates",
-          "evaluatedAt": "2026-10-21",
-          "evaluatedAgainst": "sha256-b2:4f054116d66a9495",
-          "evaluatedRevision": 51,
-          "revisionsBehind": 1,
-          "stale": true
+          "evaluatedAt": "2026-10-21"
         },
         {
           "subject": "supply-chain",

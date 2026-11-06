@@ -26286,25 +26286,29 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:42:36.000Z",
-      "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T02:55:00.422Z",
+      "worker": "0f559fe1-c48c-414b-a1c3-d19e0c4f56f4",
       "techniques": [
         {
           "technique": "consolidation",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/dispatch.rs:909 per-run agent writes enter the consolidated store under a quota, not a strict distillation judgment"
+          "evidence": "src-tauri/engine/src/prompt/templates.rs:207 Consolidation should be a batch over episodes with hindsight. Here a quota forces inline writes to the durable layer, and the preamble line 33 ('Treat memory writes as compounding') pushes the agent to hoard."
         },
         {
-          "technique": "episodic-capture",
+          "technique": "memory-governance",
           "verdict": "deviation",
-          "evidence": "src-tauri/engine/src/prompt/templates.rs:207 a fixed write count replaces the 'non-empty summary' capture criterion"
+          "evidence": "src-tauri/engine/src/prompt/templates.rs:23 Claims about the human (preference) go through the same auto-commit door as world facts. dispatch.rs:997 calls mem_repo::create with no proposal/pending lane, so a belief about the user is recalled as settled without review."
         },
         {
           "technique": "recall-injection",
-          "verdict": "realized",
-          "evidence": "src-tauri/engine/src/prompt/assemble.rs:595 recalled episodes are labeled as memory/data that cannot instruct, nonce-fenced at :599, role+timestamp per row (:588 area) and hard-capped at 8 (:28); persona-memory recall itself lives outside this context (src-tauri/src/engine/runner/mod.rs:1316)",
-          "carriedFrom": "2026-10-14"
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:28 The recency bridge (Recent Episodes) has its own small cap, separate from other sections. Only that tier is visible in this context; relevance-tier recall lives elsewhere."
+        },
+        {
+          "technique": "episodic-capture",
+          "verdict": "conformant",
+          "evidence": "src-tauri/engine/src/prompt/assemble.rs:625 Episodes are injected as fenced records ('memory/data only'), high as record and low as belief, not as instructions."
         }
       ],
       "superseded": [
@@ -26314,6 +26318,13 @@
           "evaluatedAt": "2026-10-14T07:51:32.035Z",
           "worker": "fafffaa1-f7f4-49f8-b3d9-a1290fb6e924",
           "reason": "replaced by d424e3fc-5423-4b76-b2b8-c767a78d3d1a"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/engine/src/prompt/templates.rs:207 the autonomous directive still makes 'record 1-3 key business learnings' a MUST per run, contradicting src-tauri/engine/src/prompt/assemble.rs:660 'If it won't change a future decision, don't store it'; writes land straight in persona_memories (src-tauri/src/engine/dispatch.rs:909), so a quota manufactures recalled beliefs",
+          "evaluatedAt": "2026-10-22T02:42:36.000Z",
+          "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
+          "reason": "replaced by 0f559fe1-c48c-414b-a1c3-d19e0c4f56f4"
         }
       ]
     },
@@ -26786,19 +26797,20 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-22",
-      "evaluatedTs": "2026-10-22T02:42:36.000Z",
-      "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T02:55:00.422Z",
+      "worker": "0f559fe1-c48c-414b-a1c3-d19e0c4f56f4",
       "techniques": [
         {
           "technique": "memory-governance",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:101 prompt carries label+rationale, never the asserted value; the proposal-reviewed lane reviews blind"
+          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:101 The proposal-reviewed lane requires the item to be visible and editable to the operator. Here the review surface hides the belief content and sources."
         },
         {
           "technique": "pending-beliefs-live-apart",
           "verdict": "deviation",
-          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:113 the extraction (params) is serialized into a payload documented as Not rendered, so the review card cannot show it"
+          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:113 the extraction (params) is serialized into a payload documented as Not rendered, so the review card cannot show it",
+          "carriedFrom": "2026-10-22"
         }
       ],
       "superseded": [
@@ -26815,6 +26827,13 @@
           "evaluatedAt": "2026-10-14T12:00:00.000Z",
           "worker": "eb06c63f-1bdf-4963-bd38-1f3a60ec203b",
           "reason": "replaced by d424e3fc-5423-4b76-b2b8-c767a78d3d1a"
+        },
+        {
+          "state": "deviation",
+          "evidence": "src/features/companions/athena/decision/rosterDecisions.ts:84 approvalDecision prompts a write_fact approval from label+rationale only, params ride in an unrendered payload, and write_fact is LOW_RISK (src/features/companions/athena/decision/actionRisk.ts:50) so the orb recommends approve: a durable user-scope belief is adopted by one key without the value or sources shown",
+          "evaluatedAt": "2026-10-22T02:42:36.000Z",
+          "worker": "d424e3fc-5423-4b76-b2b8-c767a78d3d1a",
+          "reason": "replaced by 0f559fe1-c48c-414b-a1c3-d19e0c4f56f4"
         }
       ]
     },
@@ -34922,22 +34941,65 @@
       "subject": "agent-memory",
       "bundle": "software-engineering",
       "state": "deviation",
-      "evaluatedAt": "2026-10-21",
-      "evaluatedTs": "2026-10-21T12:16:30.000Z",
-      "worker": "a8cfb2ff-e320-4851-83e6-2d58684935b9",
+      "evaluatedAt": "2026-11-06",
+      "evaluatedTs": "2026-11-06T02:55:00.422Z",
       "techniques": [
         {
-          "technique": "consolidation",
+          "technique": "loss-site-inventory",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/memory_reflection.rs:876 'a cap that is not a shortlist becomes a blind spot' - the exclusion is fixed by store order and compounds run over run"
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:876 Truncation at 200 writes no in-band notice into the reflection prompt about the kind or count of omitted memories."
         },
         {
           "technique": "consolidation",
           "verdict": "deviation",
-          "evidence": "src-tauri/src/engine/memory_reflection.rs:124 cluster hints normalize by the union, which the technique names as punishing short corrections against the long beliefs they overturn"
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:805 get_all defaults to ORDER BY created_at DESC (memories.rs validated_sort_column/direction), so the pass reads the newest slice and orphans older material. That is the opposite of drain-forward, and no boundary is recorded."
+        },
+        {
+          "technique": "memory-value-model",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:872 The team pool is ranked by raw importance then access_count, not by the shared decay_score (memory_recall.rs:157) that recall uses. That is a second value ordering."
+        },
+        {
+          "technique": "rollup-compaction",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:452 A two-source synthesis is accepted as an insight that replaces both, but the technique says a family needs three and a pair is a supersedence case. The cluster measure itself (Jaccard over union, threshold 0.30 at :59) is the correct symmetric one."
+        },
+        {
+          "technique": "cross-context-promotion",
+          "verdict": "deviation",
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:29 Gating on >=2 distinct owners names the predicate correctly. But the shared item replaces the member copies, which are archived, where the technique keeps the local item and adds the shared tier (own + shared measured best)."
+        },
+        {
+          "technique": "memory-governance",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:17 Reflection output is a review proposal and never mutates directly. proposal_repo::create at :754 is the realization."
+        },
+        {
+          "technique": "filter-at-the-id-door",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:433 Model-returned ids are intersected with the offered set and core-tier ids are refused, with the apply path guarding again."
+        },
+        {
+          "technique": "decay-and-forgetting",
+          "verdict": "conformant",
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:21 Forgetting is a reversible tier flip, not a delete, and synthesized items carry derived_from provenance."
         }
       ],
-      "registryProposal": "This context (webhook-ingestion) is a lumped bag of engine files; memory_reflection.rs and engine/knowledge.rs are governed by agent-memory while the context's name and description are not - a context-map split question for the consumer, not a corpus hole."
+      "superseded": [
+        {
+          "state": "deviation",
+          "evidence": "src-tauri/src/engine/memory_reflection.rs:876 team reflection sorts members' memories by importance/access_count/created_at and truncates at 200 (persona path :805 takes the 200 newest), a store-ordered cap with no per-item shortlist, so duplicates and contradictions in the low tail are never consolidation candidates",
+          "evaluatedAt": "2026-10-21T12:16:30.000Z",
+          "worker": "a8cfb2ff-e320-4851-83e6-2d58684935b9",
+          "reason": "replaced by 0f559fe1-c48c-414b-a1c3-d19e0c4f56f4"
+        }
+      ],
+      "withdrawn": {
+        "worker": "0f559fe1-c48c-414b-a1c3-d19e0c4f56f4",
+        "state": "deviation",
+        "at": "2026-11-06T02:57:29.482662+00:00",
+        "reason": "reviewer (sonnet): The evidence is about src-tauri/src/engine/memory_reflection.rs, which is not among the webhook-ingestion context files; a grep of the context's engine files, webhook.rs and composite.rs found no reference to memory_reflection, so the verdict is about a different context."
+      }
     },
     "97025c06-0d64-4025-8a1f-98b90ba1c233/eval-harness": {
       "context": "model-config",
