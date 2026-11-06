@@ -2,7 +2,7 @@
 
 Schedules is the user-facing surface for cron- and interval-driven personas: a week/month **calendar** of upcoming fire times and real past outcomes, with the scheduler engine's on/off switch and the active/paused counts in its header.
 
-> **Consolidated 2026-09-17.** The overlay used to carry three tabs — a grouped "timeline" list, the calendar, and the Autopilot orchestration ledger. The grouped list (with its per-row run-now, frequency editor, skip-next-fire, delayed run, backfill modal, run-history peek and "last 24 hours" section) was retired in favour of the calendar, and the orchestration ledger moved to the Monitor (see [Orchestration moved to the Monitor](#orchestration-moved-to-the-monitor)). Per-schedule actions live in the Triggers UI.
+> **Consolidated 2026-09-17.** The overlay used to carry three tabs — a grouped "timeline" list, the calendar, and the Autopilot orchestration ledger. The grouped list (with its per-row run-now, frequency editor, skip-next-fire, delayed run, backfill modal, run-history peek and "last 24 hours" section) was retired in favour of the calendar, and the orchestration ledger moved to the Monitor (see [Orchestration moved to the Monitor](#orchestration-moved-to-the-monitor)). Creating, pausing and re-timing a schedule live in the Triggers UI; no screen offers backfill any more.
 
 ## Page host
 
@@ -82,5 +82,6 @@ persona's failing schedule had no bound at all.
 
 ## Known gaps
 
-- The calendar is read-only; creating, pausing, re-timing or backfilling a schedule happens in the Triggers UI under `src/features/triggers/sub_triggers/` (see [events/README.md](events/README.md)).
+- The calendar is read-only; creating, pausing or re-timing a schedule happens in the Triggers UI under `src/features/triggers/sub_triggers/` (see [events/README.md](events/README.md)).
+- No screen offers backfill. `backfillSchedule` and `backfillAllMissedRuns` (`src/api/pipeline/scheduler.ts`) have no UI caller since the grouped list was retired, so missed runs cannot be recovered from the app.
 - Conflict detection in `calendarHelpers.detectConflicts` is purely visual; the scheduler does not gate firing on a UI-detected conflict.
