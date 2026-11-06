@@ -953,7 +953,10 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   const answerSaveHeldRef = useRef(false);
   const answerSaveLatest = useRef(createLatestWins()).current;
   const lastAnswerSaveRef = useRef<{ sessionId: string; json: string } | null>(null);
-  const [answerSaveError, setAnswerSaveError] = useState<string | null>(null);
+  // The rejection, not its copy: resolved at render, so persistAnswers stays
+  // stable. It is a dep of the save effect, and t changes when a locale section
+  // loads, which would otherwise write the answers again.
+  const [answerSaveError, setAnswerSaveError] = useState<{ cause: unknown } | null>(null);
   const [answerSaveEpoch, setAnswerSaveEpoch] = useState(0);
 
   const persistAnswers = useCallback((sessionId: string, json: string) => {
@@ -970,10 +973,10 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       (err: unknown) => {
         silentCatch("ChronologyAdoptionView:persistAdoptionAnswers")(err);
         if (!answerSaveLatest.isCurrent(token)) return;
-        setAnswerSaveError(inlineErrorCopy(t, err));
+        setAnswerSaveError({ cause: err });
       },
     );
-  }, [t, answerSaveLatest]);
+  }, [answerSaveLatest]);
 
   const retryAnswerSave = useCallback(() => {
     const last = lastAnswerSaveRef.current;
@@ -1618,7 +1621,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
           Persona Sigil hero + capability rows + phase-aware controls below,
           the same screen the user just configured. */}
       {answerSaveError && (
-        <InlineErrorBanner compact className="mb-2 flex-shrink-0" message={answerSaveError} onRetry={retryAnswerSave} />
+        <InlineErrorBanner compact className="mb-2 flex-shrink-0" message={inlineErrorCopy(t, answerSaveError.cause)} onRetry={retryAnswerSave} />
       )}
       <PersonaLayoutBuild
         buildPhase={build.buildPhase}
