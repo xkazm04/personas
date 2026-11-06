@@ -10,6 +10,7 @@ import { fallbackStepForData, surfacedStep } from '../reducers/navigationReducer
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { SESSION_STATUS_STYLES } from '../colorTokens';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 
 function isValidAgentIR(v: unknown): v is AgentIR {
   return v != null && typeof v === 'object' && 'name' in (v as Record<string, unknown>);
@@ -25,10 +26,10 @@ interface SessionCardProps {
   session: N8nSessionSummary;
   isBusy: boolean;
   onLoad: (session: N8nSessionSummary) => void;
-  onDelete: (e: React.MouseEvent, id: string) => void;
+  onAskDelete: (e: React.MouseEvent, id: string) => void;
 }
 
-const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelete }: SessionCardProps) {
+const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onAskDelete }: SessionCardProps) {
   const { t } = useTranslation();
   const interrupted = session.status === 'interrupted';
   const statusKey = session.status;
@@ -67,9 +68,11 @@ const SessionCard = memo(function SessionCard({ session, isBusy, onLoad, onDelet
       <div className="flex items-center gap-1 flex-shrink-0">
         <button
           type="button"
-          onClick={(e) => void onDelete(e, session.id)}
+          onClick={(e) => onAskDelete(e, session.id)}
+          // Enter and Space belong to this button: the row would load the session.
+          onKeyDown={(e) => e.stopPropagation()}
           disabled={isBusy}
-          className="p-1.5 rounded-card text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30"
+          className="p-1.5 rounded-card text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-30"
           title={t.templates.n8n.delete_session}
           data-testid={`n8n-session-delete-${session.id}`}
         >
@@ -99,6 +102,9 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Rendered outside the row: React events bubble through the dialog's portal,
+  // and the row's handlers would load the session on a press inside it.
+  const [askingDeleteId, setAskingDeleteId] = useState<string | null>(null);
 
   // Tracks session IDs with in-flight operations to prevent concurrent load+delete
   const lockedIdsRef = useRef(new Set<string>());
@@ -123,8 +129,12 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
     void fetchSessions();
   }, [fetchSessions]);
 
-  const handleDelete = useCallback(async (e: React.MouseEvent, id: string) => {
+  const handleAskDelete = useCallback((e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    setAskingDeleteId(id);
+  }, []);
+
+  const handleDelete = useCallback(async (id: string) => {
     // If session is currently loading, abort the load first
     const loadController = loadAbortRef.current.get(id);
     if (loadController) {
@@ -283,11 +293,25 @@ export function N8nSessionList({ onLoadSession }: N8nSessionListProps) {
               session={session}
               isBusy={deletingId === session.id || loadingId === session.id}
               onLoad={handleLoad}
-              onDelete={handleDelete}
+              onAskDelete={handleAskDelete}
             />
           ))
         )}
       </div>
+
+      {askingDeleteId && (
+        <ConfirmDialog
+          danger
+          title={t.templates.n8n.delete_session}
+          body={t.common.confirm_destructive_cannot_undo}
+          confirmLabel={t.common.delete}
+          onConfirm={async () => {
+            await handleDelete(askingDeleteId);
+            setAskingDeleteId(null);
+          }}
+          onCancel={() => setAskingDeleteId(null)}
+        />
+      )}
     </div>
   );
 }
