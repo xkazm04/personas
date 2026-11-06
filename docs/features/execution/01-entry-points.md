@@ -121,7 +121,7 @@ Surfaced in the UI via "Test run" buttons in `PersonaRunner` and
 3. Event bus tick claims the event → matches subscriptions/listeners →
    fires the persona
 
-**Cron parsing**: bitfield approach in `engine/cron.rs`. Standard 5-
+**Cron parsing**: bitfield approach in `src-tauri/core/src/cron.rs`. Standard 5-
 field format (`m h dom mon dow`). Seconds-precision not supported
 (use `interval_seconds` for sub-minute schedules, but mind the ~10s
 scheduler tick).
@@ -434,8 +434,8 @@ Prevents runaway cascades where A→B and B→A would infinite-loop.
 | `src-tauri/src/commands/execution/scheduler.rs` | Scheduler engine on/off + user-initiated `backfill_schedule` |
 | `src-tauri/src/engine/background.rs` | All subscription loops (scheduler, polling, event bus, desktop) |
 | `src-tauri/src/engine/bus.rs` | Event matching logic |
-| `src-tauri/src/engine/scheduler.rs` | `compute_next_from_config` + `compute_slots_in_range` for schedule triggers |
-| `src-tauri/src/engine/cron.rs` | Cron expression parsing |
+| `src-tauri/core/src/scheduler.rs` | `compute_next_from_config` + `compute_slots_in_range` for schedule triggers |
+| `src-tauri/core/src/cron.rs` | Cron expression parsing |
 | `src-tauri/src/engine/webhook.rs` | HTTP webhook server (port 9420) |
 | `src-tauri/src/engine/chain.rs` | Chain-trigger evaluation |
 | `src-tauri/src/db/models/trigger.rs` | `PersonaTrigger` + `TriggerConfig` enum |
