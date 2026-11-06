@@ -1,0 +1,156 @@
+{
+ "schema": "conform-run/1",
+ "worker": "5388405c-6a5d-4afb-9881-22f3689fcd9a",
+ "subject": "test-harness",
+ "evaluatedAt": "2026-11-06T00:20:45.725305+00:00",
+ "provider": "claude",
+ "model": "claude-opus-5-5",
+ "pairs": [
+  {
+   "context": "plugins-fleet-tests",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:75 The test claims 'the full lifecycle' but renders a hand-listed 7 states, while FleetSessionState has 10. queued, finished and expired are never rendered, and a grep for lifecycle coverage stops at this name. The sibling at :21 says 'six' and lists seven, so that name overstates too.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:75 The name overstates the case set: 7 of 10 states. Fix by deriving the cases from the binding union or renaming the test to what it actually settles."
+    },
+    {
+     "technique": "pin-the-call-not-the-name",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:52 This pin over stale.rs strips comments before matching a code-shaped needle."
+    },
+    {
+     "technique": "derived-selection-must-be-measured",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/fleet/__tests__/fleetAttention.test.ts:60 Zero matches is treated as a failure, not a pass: an explicit floor on the derived population."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:56 Records the failing shape that a weaker assertion let through, which is the reason for the exact match."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/features/plugins/fleet/__tests__/FleetBroadcastModal.test.tsx:92 Shared module mocks are reset between tests in each describe block."
+    }
+   ]
+  },
+  {
+   "context": "stores-slices-system",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/stores/slices/system/tourSlice.test.ts:203 The test name claims all tours, but the body hand-lists 7 while StaticTourId and the completion map (src/stores/slices/system/tourSlice.ts:1412) carry 9. teams-orchestration and obsidian-brain are unpinned under a name that a searcher reads as full coverage.",
+   "techniques": [
+    {
+     "technique": "unreached-decisions-pin-nothing",
+     "verdict": "deviation",
+     "evidence": "src/stores/slices/system/tourSlice.test.ts:203 The name overstates against the current registry. Derive the cases from TOUR_REGISTRY or rename."
+    },
+    {
+     "technique": "isolation-lanes",
+     "verdict": "conformant",
+     "evidence": "src/stores/slices/system/tourSlice.test.ts:92 Persisted storage is cleared and module globals reset (resetGlobals at :93) before each test."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/stores/slices/system/devToolsTaskSlice.test.ts:65 The batched flush is driven by fake timers, so ordering is asserted without wall-clock waits."
+    }
+   ]
+  },
+  {
+   "context": "mastermind-tests",
+   "subject": "test-harness",
+   "bundle": "software-engineering",
+   "state": "deviation",
+   "evidence": "src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:8 Only the freshness stamps and everLoaded are reset, never useSceneStore's own state. So 'scans: a family that never answered still goes failed' (:263) runs with the previous test's 'held' rows still in the store, and passes only because the verdict reads everLoaded. The file is order-coupled, while its sibling layoutStore.test.ts resets the store per test (:54).",
+   "techniques": [
+    {
+     "technique": "isolation-lanes",
+     "verdict": "deviation",
+     "evidence": "src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:8 There is no defined reset of the shared singleton store between serial tests."
+    },
+    {
+     "technique": "assert-the-schedule-not-the-stopwatch",
+     "verdict": "conformant",
+     "evidence": "src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:92 Concurrency width is proven by counting units in flight, not by timing."
+    },
+    {
+     "technique": "negative-control-tests",
+     "verdict": "conformant",
+     "evidence": "src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:79 Records the mutation (width forced to 1) that the weaker assertion let through."
+    }
+   ]
+  }
+ ],
+ "declined": [
+  {
+   "subject": "test-harness",
+   "context": "triggers-triggers",
+   "reason": "the seat returned unknown"
+  },
+  {
+   "subject": "test-harness",
+   "context": "engine-build-session",
+   "reason": "the seat returned unknown"
+  }
+ ],
+ "consults": [
+  {
+   "ts": "2026-11-06T00:20:45.725305+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "derived-selection-must-be-measured",
+    "isolation-lanes",
+    "negative-control-tests",
+    "pin-the-call-not-the-name",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "plugins-fleet-tests",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T00:20:45.725305+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "isolation-lanes",
+    "unreached-decisions-pin-nothing"
+   ],
+   "deviations": 1,
+   "context": "stores-slices-system",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  },
+  {
+   "ts": "2026-11-06T00:20:45.725305+00:00",
+   "bundle": "software-engineering",
+   "subjects": [
+    "test-harness"
+   ],
+   "techniques": [
+    "assert-the-schedule-not-the-stopwatch",
+    "isolation-lanes",
+    "negative-control-tests"
+   ],
+   "deviations": 1,
+   "context": "mastermind-tests",
+   "via": "curator-multi:claude",
+   "model": "claude-opus-5-5"
+  }
+ ]
+}

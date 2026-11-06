@@ -21401,13 +21401,12 @@
           "changedAt": "2026-10-23",
           "confidence": "strong",
           "state": "deviation",
-          "evidence": "src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:8 resets only the freshness clock (src/features/teams/sub_mastermind/lib/sceneStore.ts:195), never useSceneStore's own state (src/features/teams/sub_mastermind/lib/sceneStore.ts:205), so every later test inherits earlier tests' scans map, statuses and keyed latest-wins slots - the file is order-coupled where sibling store tests reset per test (src/features/teams/sub_mastermind/__tests__/layoutStore.test.ts:54); isolation-lanes requires a defined reset between serial tests. No false green observed today: each test seeds distinct ids.",
-          "evaluatedAt": "2026-10-09",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
+          "evidence": "src/features/teams/sub_mastermind/__tests__/sceneStore.test.ts:8 Only the freshness stamps and everLoaded are reset, never useSceneStore's own state. So 'scans: a family that never answered still goes failed' (:263) runs with the previous test's 'held' rows still in the store, and passes only because the verdict reads everLoaded. The file is order-coupled, while its sibling layoutStore.test.ts resets the store per test (:54).",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
           "source": "conform",
-          "revisionsBehind": 1,
-          "stale": true
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-memory",
@@ -30960,12 +30959,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:67 'handles the full lifecycle' renders a hand-listed 7 states (:68) while FleetSessionState (src/lib/bindings/FleetSessionState.ts:16) has 10, so queued/finished/expired are never rendered and the name tells a searcher they are",
-          "evaluatedAt": "2026-10-12",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/features/plugins/fleet/__tests__/FleetStatusDots.test.tsx:75 The test claims 'the full lifecycle' but renders a hand-listed 7 states, while FleetSessionState has 10. queued, finished and expired are never rendered, and a grep for lifecycle coverage stops at this name. The sibling at :21 says 'six' and lists seven, so that name overstates too.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "agent-runtime-assembly",
@@ -36942,12 +36940,11 @@
           "changedAt": "2026-10-23",
           "confidence": "probable",
           "state": "deviation",
-          "evidence": "src/stores/slices/system/tourSlice.test.ts:203 'registers_all_seven_tours_in_completion_map' hand-lists 7 tours while StaticTourId (src/stores/slices/system/tourSlice.ts:14) and the map (:1412) carry 9 - teams-orchestration (:22) and obsidian-brain are unpinned under a name a searcher reads as 'all tours covered'; derive the cases from TOUR_REGISTRY instead.",
-          "evaluatedAt": "2026-10-10",
-          "evaluatedAgainst": "sha256-b2:5521806124d93882",
-          "evaluatedRevision": 26,
-          "revisionsBehind": 1,
-          "stale": true
+          "evidence": "src/stores/slices/system/tourSlice.test.ts:203 The test name claims all tours, but the body hand-lists 7 while StaticTourId and the completion map (src/stores/slices/system/tourSlice.ts:1412) carry 9. teams-orchestration and obsidian-brain are unpinned under a name that a searcher reads as full coverage.",
+          "evaluatedAt": "2026-11-06",
+          "evaluatedAgainst": "sha256-b2:c96e1ee699a88119",
+          "evaluatedRevision": 27,
+          "revisionsBehind": 1
         },
         {
           "subject": "fleet-orchestration",
